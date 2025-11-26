@@ -28,6 +28,8 @@ import { resolveUpdates } from '../../util/util.js';
  * @extends BaseCollection
  */
 class FixEntityCollection extends BaseCollection {
+  static COLLECTION_NAME = 'FixEntityCollection';
+
   /**
    * Gets all suggestions associated with a specific FixEntity.
    *

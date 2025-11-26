@@ -41,7 +41,9 @@ chaiUse(sinonChai);
 const MockModel = class MockEntityModel extends BaseModel {
   static ENTITY_NAME = 'MockEntityModel';
 };
-const MockCollection = class MockEntityCollection extends BaseCollection {};
+const MockCollection = class MockEntityCollection extends BaseCollection {
+  static COLLECTION_NAME = 'MockEntityCollection';
+};
 
 describe('Schema', () => {
   let rawSchema;

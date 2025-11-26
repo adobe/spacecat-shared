@@ -30,7 +30,9 @@ chaiUse(sinonChai);
 const MockModel = class MockEntityModel extends BaseModel {
   static ENTITY_NAME = 'MockEntityModel';
 };
-const MockCollection = class MockEntityCollection extends BaseCollection {};
+const MockCollection = class MockEntityCollection extends BaseCollection {
+  static COLLECTION_NAME = 'MockEntityCollection';
+};
 
 const createSchema = (service, indexes) => new Schema(
   MockModel,
@@ -740,7 +742,7 @@ describe('BaseCollection', () => {
       expect(result).to.be.an('array').that.has.length(1);
       expect(result[0].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.all)
-        .to.have.been.calledOnceWithExactly({ pk: 'ALL_MOCKENTITYMODELS' });
+        .to.have.been.calledOnceWithExactly({ pk: 'all_mockentitymodels' });
     });
 
     it('applies between filter if provided', async () => {
@@ -772,7 +774,7 @@ describe('BaseCollection', () => {
       expect(result).to.be.an('array').that.has.length(1);
       expect(result[0].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.all)
-        .to.have.been.calledOnceWithExactly({ pk: 'ALL_MOCKENTITYMODELS' });
+        .to.have.been.calledOnceWithExactly({ pk: 'all_mockentitymodels' });
       expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc', attributes: ['test'] });
     });
 
@@ -939,7 +941,7 @@ describe('BaseCollection', () => {
       expect(result.record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.all)
         .to.have.been.calledOnceWithExactly(
-          { pk: 'ALL_MOCKENTITYMODELS', someKey: 'someValue' },
+          { pk: 'all_mockentitymodels', someKey: 'someValue' },
         );
     });
 
@@ -948,7 +950,7 @@ describe('BaseCollection', () => {
       expect(result).to.be.null;
       expect(mockElectroService.entities.mockEntityModel.query.all)
         .to.have.been.calledOnceWithExactly(
-          { pk: 'ALL_MOCKENTITYMODELS', someKey: 'someValue' },
+          { pk: 'all_mockentitymodels', someKey: 'someValue' },
         );
     });
   });

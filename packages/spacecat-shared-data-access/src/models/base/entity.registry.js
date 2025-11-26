@@ -101,7 +101,7 @@ class EntityRegistry {
   #initialize() {
     Object.values(EntityRegistry.entities).forEach(({ collection: Collection, schema }) => {
       const collection = new Collection(this.service, this, schema, this.log);
-      this.collections.set(Collection.name, collection);
+      this.collections.set(Collection.COLLECTION_NAME, collection);
     });
   }
 

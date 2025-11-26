@@ -28,7 +28,9 @@ describe('EntityRegistry', () => {
   const MockModel = class MockModel extends BaseModel {
     static ENTITY_NAME = 'MockModel';
   };
-  const MockCollection = class MockCollection extends BaseCollection {};
+  const MockCollection = class MockCollection extends BaseCollection {
+    static COLLECTION_NAME = 'MockCollection';
+  };
   const MockSchema = new Schema(
     MockModel,
     MockCollection,

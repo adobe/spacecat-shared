@@ -48,6 +48,14 @@ function isValidParent(parent, child) {
  */
 class BaseCollection {
   /**
+   * The collection name for this collection. Must be overridden by subclasses.
+   * This ensures the collection name is explicit and not dependent on class names
+   * which can be mangled by bundlers.
+   * @type {string}
+   */
+  static COLLECTION_NAME = undefined;
+
+  /**
    * Constructs an instance of BaseCollection.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.

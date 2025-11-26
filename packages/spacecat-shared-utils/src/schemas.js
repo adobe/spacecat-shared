@@ -127,7 +127,6 @@ export const llmoConfig = z.object({
     allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
   }).optional(),
-  globalRegion: z.array(region).optional(),
 }).superRefine((value, ctx) => {
   const {
     categories, topics, brands, competitors,

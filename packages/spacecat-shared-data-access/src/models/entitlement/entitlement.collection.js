@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class EntitlementCollection extends BaseCollection {
+  static COLLECTION_NAME = 'EntitlementCollection';
+
   // add custom methods here
 }
 

@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class TrialUserCollection extends BaseCollection {
+  static COLLECTION_NAME = 'TrialUserCollection';
+
   // add custom methods here
 }
 

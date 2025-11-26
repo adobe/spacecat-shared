@@ -22,6 +22,8 @@ import BaseModel from '../base/base.model.js';
  */
 
 class Opportunity extends BaseModel {
+  static ENTITY_NAME = 'Opportunity';
+
   static ORIGINS = {
     ESS_OPS: 'ESS_OPS',
     AI: 'AI',

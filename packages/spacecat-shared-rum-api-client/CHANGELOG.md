@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.10...@adobe/spacecat-shared-rum-api-client-v2.39.0) (2025-11-24)
+
+
+### Features
+
+* use paid event tracking source to classify ([#1166](https://github.com/adobe/spacecat-shared/issues/1166)) ([c477a04](https://github.com/adobe/spacecat-shared/commit/c477a048d3f74fdc315c5c4a6b2e2725cc0e5283))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.38.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.9...@adobe/spacecat-shared-rum-api-client-v2.38.10) (2025-11-15)
 
 

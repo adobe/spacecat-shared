@@ -202,6 +202,11 @@ describe('AuditModel', () => {
       SUMMARIZATION: 'summarization',
       PAGE_TYPE_DETECTION: 'page-type-detection',
       FAQS: 'faqs',
+      CDN_LOGS_ANALYSIS: 'cdn-logs-analysis',
+      CDN_LOGS_REPORT: 'cdn-logs-report',
+      LLMO_REFERRAL_TRAFFIC: 'llmo-referral-traffic',
+      PAGE_INTENT: 'page-intent',
+      NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

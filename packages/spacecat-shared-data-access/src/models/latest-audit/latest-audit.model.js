@@ -20,6 +20,8 @@ import Audit from '../audit/audit.model.js';
  * @extends Audit
  */
 class LatestAudit extends Audit {
+  static ENTITY_NAME = 'LatestAudit';
+
   // add your custom methods or overrides here
 }
 

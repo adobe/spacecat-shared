@@ -23,6 +23,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ScrapeJobCollection extends BaseCollection {
+  static COLLECTION_NAME = 'ScrapeJobCollection';
+
   async allByDateRange(startDate, endDate) {
     if (!isIsoDate(startDate)) {
       throw new ValidationError(`Invalid start date: ${startDate}`);

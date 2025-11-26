@@ -18,6 +18,7 @@ import { mergePatches } from './utils/patch-utils.js';
 import { getTokowakaConfigS3Path } from './utils/s3-utils.js';
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
+import { fetchHtmlWithWarmup } from './utils/custom-html-utils.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -34,7 +35,10 @@ class TokowakaClient {
    */
   static createFrom(context) {
     const { env, log = console, s3 } = context;
-    const { TOKOWAKA_SITE_CONFIG_BUCKET: bucketName } = env;
+    const {
+      TOKOWAKA_SITE_CONFIG_BUCKET: bucketName,
+      TOKOWAKA_PREVIEW_BUCKET: previewBucketName,
+    } = env;
 
     if (context.tokowakaClient) {
       return context.tokowakaClient;
@@ -43,6 +47,7 @@ class TokowakaClient {
     // s3ClientWrapper puts s3Client at context.s3.s3Client, so check both locations
     const client = new TokowakaClient({
       bucketName,
+      previewBucketName,
       s3Client: s3?.s3Client,
       env,
     }, log);
@@ -54,11 +59,14 @@ class TokowakaClient {
    * Constructor
    * @param {Object} config - Configuration object
    * @param {string} config.bucketName - S3 bucket name for configs
+   * @param {string} config.previewBucketName - S3 bucket name for preview configs
    * @param {Object} config.s3Client - AWS S3 client
    * @param {Object} config.env - Environment variables (for CDN credentials)
    * @param {Object} log - Logger instance
    */
-  constructor({ bucketName, s3Client, env = {} }, log) {
+  constructor({
+    bucketName, previewBucketName, s3Client, env = {},
+  }, log) {
     this.log = log;
 
     if (!hasText(bucketName)) {
@@ -69,7 +77,8 @@ class TokowakaClient {
       throw this.#createError('S3 client is required', HTTP_BAD_REQUEST);
     }
 
-    this.bucketName = bucketName;
+    this.deployBucketName = bucketName;
+    this.previewBucketName = previewBucketName;
     this.s3Client = s3Client;
     this.env = env;
 
@@ -164,7 +173,7 @@ class TokowakaClient {
 
     try {
       const command = new GetObjectCommand({
-        Bucket: this.bucketName,
+        Bucket: this.deployBucketName,
         Key: s3Path,
       });
 
@@ -172,12 +181,12 @@ class TokowakaClient {
       const bodyContents = await response.Body.transformToString();
       const config = JSON.parse(bodyContents);
 
-      this.log.debug(`Successfully fetched existing Tokowaka config from s3://${this.bucketName}/${s3Path}`);
+      this.log.debug(`Successfully fetched existing Tokowaka config from s3://${this.deployBucketName}/${s3Path}`);
       return config;
     } catch (error) {
       // If config doesn't exist (NoSuchKey), return null
       if (error.name === 'NoSuchKey' || error.Code === 'NoSuchKey') {
-        this.log.debug(`No existing Tokowaka config found at s3://${this.bucketName}/${s3Path}`);
+        this.log.debug(`No existing Tokowaka config found at s3://${this.deployBucketName}/${s3Path}`);
         return null;
       }
 
@@ -246,9 +255,10 @@ class TokowakaClient {
    * Uploads Tokowaka configuration to S3
    * @param {string} siteTokowakaKey - Tokowaka API key (used as S3 key prefix)
    * @param {Object} config - Tokowaka configuration object
+   * @param {boolean} isPreview - Whether to upload to preview path (default: false)
    * @returns {Promise<string>} - S3 key of uploaded config
    */
-  async uploadConfig(siteTokowakaKey, config) {
+  async uploadConfig(siteTokowakaKey, config, isPreview = false) {
     if (!hasText(siteTokowakaKey)) {
       throw this.#createError('Tokowaka API key is required', HTTP_BAD_REQUEST);
     }
@@ -257,18 +267,18 @@ class TokowakaClient {
       throw this.#createError('Config object is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = getTokowakaConfigS3Path(siteTokowakaKey);
+    const s3Path = getTokowakaConfigS3Path(siteTokowakaKey, isPreview);
 
     try {
       const command = new PutObjectCommand({
-        Bucket: this.bucketName,
+        Bucket: isPreview ? this.previewBucketName : this.deployBucketName,
         Key: s3Path,
         Body: JSON.stringify(config, null, 2),
         ContentType: 'application/json',
       });
 
       await this.s3Client.send(command);
-      this.log.info(`Successfully uploaded Tokowaka config to s3://${this.bucketName}/${s3Path}`);
+      this.log.info(`Successfully uploaded Tokowaka config to s3://${this.deployBucketName}/${s3Path}`);
 
       return s3Path;
     } catch (error) {
@@ -282,14 +292,15 @@ class TokowakaClient {
    * Currently supports CloudFront only
    * @param {string} apiKey - Tokowaka API key
    * @param {string} provider - CDN provider name (default: 'cloudfront')
+   * @param {boolean} isPreview - Whether to invalidate preview path (default: false)
    * @returns {Promise<Object|null>} - CDN invalidation result or null if skipped
    */
-  async invalidateCdnCache(apiKey, provider) {
+  async invalidateCdnCache(apiKey, provider, isPreview = false) {
     if (!hasText(apiKey) || !hasText(provider)) {
       throw this.#createError('Tokowaka API key and provider are required', HTTP_BAD_REQUEST);
     }
     try {
-      const pathsToInvalidate = [`/${getTokowakaConfigS3Path(apiKey)}`];
+      const pathsToInvalidate = [`/${getTokowakaConfigS3Path(apiKey, isPreview)}`];
       this.log.debug(`Invalidating CDN cache for ${pathsToInvalidate.length} paths via ${provider}`);
       const cdnClient = this.cdnClientRegistry.getClient(provider);
       if (!cdnClient) {
@@ -393,6 +404,291 @@ class TokowakaClient {
       cdnInvalidation: cdnInvalidationResult,
       succeededSuggestions: eligibleSuggestions,
       failedSuggestions: ineligibleSuggestions,
+    };
+  }
+
+  /**
+   * Rolls back deployed suggestions by removing their patches from the configuration
+   * @param {Object} site - Site entity
+   * @param {Object} opportunity - Opportunity entity
+   * @param {Array} suggestions - Array of suggestion entities to rollback
+   * @returns {Promise<Object>} - Rollback result with succeeded/failed suggestions
+   */
+  async rollbackSuggestions(site, opportunity, suggestions) {
+    // Get site's Tokowaka API key
+    const { apiKey } = site.getConfig()?.getTokowakaConfig() || {};
+
+    if (!hasText(apiKey)) {
+      throw this.#createError(
+        'Site does not have a Tokowaka API key configured. Please onboard the site to Tokowaka first.',
+        HTTP_BAD_REQUEST,
+      );
+    }
+
+    const opportunityType = opportunity.getType();
+    const mapper = this.mapperRegistry.getMapper(opportunityType);
+    if (!mapper) {
+      throw this.#createError(
+        `No mapper found for opportunity type: ${opportunityType}. `
+        + `Supported types: ${this.mapperRegistry.getSupportedOpportunityTypes().join(', ')}`,
+        HTTP_NOT_IMPLEMENTED,
+      );
+    }
+
+    // Validate which suggestions can be rolled back
+    // For rollback, we use the same canDeploy check to ensure data integrity
+    const {
+      eligible: eligibleSuggestions,
+      ineligible: ineligibleSuggestions,
+    } = filterEligibleSuggestions(suggestions, mapper);
+
+    this.log.debug(
+      `Rolling back ${eligibleSuggestions.length} eligible suggestions `
+      + `(${ineligibleSuggestions.length} ineligible)`,
+    );
+
+    if (eligibleSuggestions.length === 0) {
+      this.log.warn('No eligible suggestions to rollback');
+      return {
+        succeededSuggestions: [],
+        failedSuggestions: ineligibleSuggestions,
+      };
+    }
+
+    // Fetch existing configuration from S3
+    this.log.debug(`Fetching existing Tokowaka config for site ${site.getId()}`);
+    const existingConfig = await this.fetchConfig(apiKey);
+
+    if (!existingConfig || !existingConfig.tokowakaOptimizations) {
+      this.log.warn('No existing configuration found to rollback from');
+      return {
+        succeededSuggestions: [],
+        failedSuggestions: eligibleSuggestions.map((suggestion) => ({
+          suggestion,
+          reason: 'No existing configuration found',
+        })),
+      };
+    }
+
+    // Extract suggestion IDs to remove
+    const suggestionIdsToRemove = eligibleSuggestions.map((s) => s.getId());
+    const updatedConfig = mapper.rollbackPatches(
+      existingConfig,
+      suggestionIdsToRemove,
+      opportunity.getId(),
+    );
+
+    if (updatedConfig.removedCount === 0) {
+      this.log.warn('No patches found matching the provided suggestion IDs');
+      return {
+        succeededSuggestions: [],
+        failedSuggestions: eligibleSuggestions.map((suggestion) => ({
+          suggestion,
+          reason: 'No patches found for this suggestion in the current configuration',
+        })),
+      };
+    }
+
+    this.log.info(`Removed ${updatedConfig.removedCount} patches from configuration`);
+
+    // Remove the removedCount property before uploading
+    const { removedCount, ...configToUpload } = updatedConfig;
+
+    // Upload updated config to S3
+    this.log.info(`Uploading updated Tokowaka config after rolling back ${eligibleSuggestions.length} suggestions`);
+    const s3Path = await this.uploadConfig(apiKey, configToUpload);
+
+    // Invalidate CDN cache (non-blocking, failures are logged but don't fail rollback)
+    const cdnInvalidationResult = await this.invalidateCdnCache(
+      apiKey,
+      this.env.TOKOWAKA_CDN_PROVIDER,
+    );
+
+    return {
+      s3Path,
+      cdnInvalidation: cdnInvalidationResult,
+      succeededSuggestions: eligibleSuggestions,
+      failedSuggestions: ineligibleSuggestions,
+      removedPatchesCount: removedCount,
+    };
+  }
+
+  /**
+   * Previews suggestions by generating config and uploading to preview path
+   * Unlike deploySuggestions, this does NOT merge with existing config
+   * @param {Object} site - Site entity
+   * @param {Object} opportunity - Opportunity entity
+   * @param {Array} suggestions - Array of suggestion entities to preview
+   * @param {Object} options - Optional configuration for HTML fetching
+   * @returns {Promise<Object>} - Preview result with config and succeeded/failed suggestions
+   */
+  async previewSuggestions(site, opportunity, suggestions, options = {}) {
+    // Get site's Tokowaka API key
+    const { apiKey, forwardedHost } = site.getConfig()?.getTokowakaConfig() || {};
+
+    if (!hasText(apiKey) || !hasText(forwardedHost)) {
+      throw this.#createError(
+        'Site does not have a Tokowaka API key or forwarded host configured. '
+        + 'Please onboard the site to Tokowaka first.',
+        HTTP_BAD_REQUEST,
+      );
+    }
+
+    const opportunityType = opportunity.getType();
+    const mapper = this.mapperRegistry.getMapper(opportunityType);
+    if (!mapper) {
+      throw this.#createError(
+        `No mapper found for opportunity type: ${opportunityType}. `
+        + `Supported types: ${this.mapperRegistry.getSupportedOpportunityTypes().join(', ')}`,
+        HTTP_NOT_IMPLEMENTED,
+      );
+    }
+
+    // TOKOWAKA_EDGE_URL is mandatory for preview
+    const tokowakaEdgeUrl = this.env.TOKOWAKA_EDGE_URL;
+    if (!hasText(tokowakaEdgeUrl)) {
+      throw this.#createError(
+        'TOKOWAKA_EDGE_URL is required for preview functionality',
+        HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    // Validate which suggestions can be deployed using mapper's canDeploy method
+    const {
+      eligible: eligibleSuggestions,
+      ineligible: ineligibleSuggestions,
+    } = filterEligibleSuggestions(suggestions, mapper);
+
+    this.log.debug(
+      `Previewing ${eligibleSuggestions.length} eligible suggestions `
+      + `(${ineligibleSuggestions.length} ineligible)`,
+    );
+
+    if (eligibleSuggestions.length === 0) {
+      this.log.warn('No eligible suggestions to preview');
+      return {
+        config: null,
+        succeededSuggestions: [],
+        failedSuggestions: ineligibleSuggestions,
+      };
+    }
+
+    // Fetch existing deployed configuration from production S3
+    this.log.debug(`Fetching existing deployed Tokowaka config for site ${site.getId()}`);
+    const existingConfig = await this.fetchConfig(apiKey, false);
+
+    // Generate configuration with eligible preview suggestions
+    this.log.debug(`Generating preview Tokowaka config for site ${site.getId()}, opportunity ${opportunity.getId()}`);
+    const newConfig = this.generateConfig(
+      site,
+      opportunity,
+      eligibleSuggestions,
+    );
+
+    if (Object.keys(newConfig.tokowakaOptimizations).length === 0) {
+      this.log.warn('No eligible suggestions to preview');
+      return {
+        config: null,
+        succeededSuggestions: [],
+        failedSuggestions: suggestions,
+      };
+    }
+
+    // Get the preview URL from the first suggestion
+    const previewUrl = eligibleSuggestions[0].getData()?.url;
+
+    // Merge with existing deployed config to include already-deployed patches for this URL
+    let config = newConfig;
+    if (existingConfig && previewUrl) {
+      // Extract the URL path from the preview URL
+      const urlPath = new URL(previewUrl).pathname;
+
+      // Check if there are already deployed patches for this URL
+      const existingUrlOptimization = existingConfig.tokowakaOptimizations?.[urlPath];
+
+      if (existingUrlOptimization && existingUrlOptimization.patches?.length > 0) {
+        this.log.info(
+          `Found ${existingUrlOptimization.patches.length} deployed patches for ${urlPath}, `
+          + 'merging with preview suggestions',
+        );
+
+        // Create a filtered existing config with only the URL being previewed
+        const filteredExistingConfig = {
+          ...existingConfig,
+          tokowakaOptimizations: {
+            [urlPath]: existingUrlOptimization,
+          },
+        };
+
+        // Merge the existing deployed patches with new preview suggestions
+        config = this.mergeConfigs(filteredExistingConfig, newConfig);
+
+        this.log.debug(
+          `Preview config now has ${config.tokowakaOptimizations[urlPath].patches.length} total patches`,
+        );
+      } else {
+        this.log.info(`No deployed patches found for ${urlPath}, using only preview suggestions`);
+      }
+    }
+
+    // Upload to preview S3 path (replaces any existing preview config)
+    this.log.info(`Uploading preview Tokowaka config with ${eligibleSuggestions.length} new suggestions`);
+    const s3Path = await this.uploadConfig(apiKey, config, true);
+
+    // Invalidate CDN cache for preview path
+    const cdnInvalidationResult = await this.invalidateCdnCache(
+      apiKey,
+      this.env.TOKOWAKA_CDN_PROVIDER,
+      true,
+    );
+
+    // Fetch HTML content for preview
+    let originalHtml = null;
+    let optimizedHtml = null;
+
+    if (previewUrl) {
+      try {
+        // Fetch original HTML
+        originalHtml = await fetchHtmlWithWarmup(
+          previewUrl,
+          apiKey,
+          forwardedHost,
+          tokowakaEdgeUrl,
+          this.log,
+          false,
+          options,
+        );
+        // Then fetch optimized HTML
+        optimizedHtml = await fetchHtmlWithWarmup(
+          previewUrl,
+          apiKey,
+          forwardedHost,
+          tokowakaEdgeUrl,
+          this.log,
+          true,
+          options,
+        );
+        this.log.info('Successfully fetched both original and optimized HTML for preview');
+      } catch (error) {
+        this.log.error(`Failed to fetch HTML for preview: ${error.message}`);
+        throw this.#createError(
+          `Preview failed: Unable to fetch HTML - ${error.message}`,
+          HTTP_INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
+
+    return {
+      s3Path,
+      config,
+      cdnInvalidation: cdnInvalidationResult,
+      succeededSuggestions: eligibleSuggestions,
+      failedSuggestions: ineligibleSuggestions,
+      html: {
+        url: previewUrl,
+        originalHtml,
+        optimizedHtml,
+      },
     };
   }
 }

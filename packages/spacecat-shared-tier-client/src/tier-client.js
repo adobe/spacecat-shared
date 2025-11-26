@@ -59,6 +59,9 @@ class TierClient {
     }
     const organizationId = await site.getOrganizationId();
     const organization = await context.dataAccess.Organization.findById(organizationId);
+    if (!organization) {
+      throw new Error(`[TierClient] Organization not found for organizationId: ${organizationId}`);
+    }
     return new TierClient(context, organization, site, productCode);
   }
 
@@ -218,6 +221,84 @@ class TierClient {
       await existing.siteEnrollment.remove();
     } else {
       throw new Error('Site enrollment not found');
+    }
+  }
+
+  /**
+   * Gets all enrollments based on context, filtered by productCode.
+   * - If site is provided: returns site enrollment for the entitlement matching productCode
+   * - If org-only: returns all site enrollments for the entitlement matching productCode
+   * @returns {Promise<object>} Object with entitlement and enrollments array.
+   */
+  async getAllEnrollment() {
+    try {
+      const orgId = this.organization.getId();
+      const entitlement = await this.Entitlement
+        .findByOrganizationIdAndProductCode(orgId, this.productCode);
+
+      if (!entitlement) {
+        return { entitlement: null, enrollments: [] };
+      }
+
+      const allEnrollments = await this.SiteEnrollment.allByEntitlementId(entitlement.getId());
+
+      if (this.site) {
+        // Return site enrollments matching the entitlement and site
+        const siteId = this.site.getId();
+        const matchingEnrollments = allEnrollments.filter(
+          (se) => se.getSiteId() === siteId,
+        );
+        return { entitlement, enrollments: matchingEnrollments };
+      } else {
+        // Return all enrollments for the entitlement
+        return { entitlement, enrollments: allEnrollments };
+      }
+    } catch (error) {
+      this.log.error(`Error getting all enrollments: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the first enrollment and its site, filtered by productCode.
+   * - If site is provided: returns site enrollment for the entitlement matching productCode
+   * - If org-only: returns first site enrollment for the entitlement matching productCode
+   * @returns {Promise<object>} Object with entitlement, enrollment, and site.
+   */
+  async getFirstEnrollment() {
+    try {
+      const { entitlement, enrollments } = await this.getAllEnrollment();
+
+      if (!entitlement || !enrollments?.length) {
+        return { entitlement: null, enrollment: null, site: null };
+      }
+
+      const firstEnrollment = enrollments[0];
+      const enrollmentSiteId = firstEnrollment.getSiteId();
+      const site = await this.Site.findById(enrollmentSiteId);
+
+      if (!site) {
+        this.log.warn(`Site not found for enrollment ${firstEnrollment.getId()} with site ID ${enrollmentSiteId}`);
+        return { entitlement, enrollment: firstEnrollment, site: null };
+      }
+
+      return { entitlement, enrollment: firstEnrollment, site };
+    } catch (error) {
+      this.log.error(`Error getting first enrollment: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Revokes entitlement for the current organization.
+   * @returns {Promise<object>} HTTP response object.
+   */
+  async revokeEntitlement() {
+    const existing = await this.checkValidEntitlement();
+    if (existing.entitlement) {
+      await existing.entitlement.remove();
+    } else {
+      throw new Error('Entitlement not found');
     }
   }
 }

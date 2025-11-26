@@ -28,6 +28,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Audit extends BaseModel {
+  static ENTITY_NAME = 'Audit';
+
   static AUDIT_TYPES = {
     APEX: 'apex',
     CWV: 'cwv',
@@ -73,6 +75,11 @@ class Audit extends BaseModel {
     SUMMARIZATION: 'summarization',
     PAGE_TYPE_DETECTION: 'page-type-detection',
     FAQS: 'faqs',
+    CDN_LOGS_ANALYSIS: 'cdn-logs-analysis',
+    CDN_LOGS_REPORT: 'cdn-logs-report',
+    LLMO_REFERRAL_TRAFFIC: 'llmo-referral-traffic',
+    PAGE_INTENT: 'page-intent',
+    NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

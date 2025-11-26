@@ -207,4 +207,163 @@ describe('BaseOpportunityMapper', () => {
       expect(patch.lastUpdated).to.equal(new Date('2025-01-15T10:00:00.000Z').getTime());
     });
   });
+
+  describe('rollbackPatches', () => {
+    let testMapper;
+
+    beforeEach(() => {
+      class TestMapper extends BaseOpportunityMapper {
+        getOpportunityType() { return 'test'; }
+
+        requiresPrerender() { return true; }
+
+        suggestionsToPatches() { return []; }
+
+        canDeploy() { return { eligible: true }; }
+      }
+
+      testMapper = new TestMapper(log);
+    });
+
+    it('should remove patches by suggestion IDs using default implementation', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-test',
+                suggestionId: 'sugg-1',
+                op: 'replace',
+                value: 'value-1',
+              },
+              {
+                opportunityId: 'opp-test',
+                suggestionId: 'sugg-2',
+                op: 'replace',
+                value: 'value-2',
+              },
+            ],
+          },
+        },
+      };
+
+      const result = testMapper.rollbackPatches(config, ['sugg-1'], 'opp-test');
+
+      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
+      expect(result.tokowakaOptimizations['/page1'].patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.removedCount).to.equal(1);
+    });
+
+    it('should handle null/undefined config gracefully', () => {
+      const result1 = testMapper.rollbackPatches(null, ['sugg-1'], 'opp-test');
+      expect(result1).to.be.null;
+
+      const result2 = testMapper.rollbackPatches(undefined, ['sugg-1'], 'opp-test');
+      expect(result2).to.be.undefined;
+    });
+
+    it('should remove patches for multiple suggestion IDs', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-test',
+                suggestionId: 'sugg-1',
+                op: 'replace',
+                value: 'value-1',
+              },
+              {
+                opportunityId: 'opp-test',
+                suggestionId: 'sugg-2',
+                op: 'replace',
+                value: 'value-2',
+              },
+              {
+                opportunityId: 'opp-test',
+                suggestionId: 'sugg-3',
+                op: 'replace',
+                value: 'value-3',
+              },
+            ],
+          },
+        },
+      };
+
+      const result = testMapper.rollbackPatches(config, ['sugg-1', 'sugg-3'], 'opp-test');
+
+      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
+      expect(result.tokowakaOptimizations['/page1'].patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.removedCount).to.equal(2);
+    });
+
+    it('should remove URL path when all patches are removed', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-test',
+                suggestionId: 'sugg-1',
+                op: 'replace',
+                value: 'value-1',
+              },
+            ],
+          },
+        },
+      };
+
+      const result = testMapper.rollbackPatches(config, ['sugg-1'], 'opp-test');
+
+      // URL path should be removed when no patches remain
+      expect(result.tokowakaOptimizations).to.not.have.property('/page1');
+      expect(result.removedCount).to.equal(1);
+    });
+
+    it('should preserve patches from other opportunities', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-test',
+                suggestionId: 'sugg-1',
+                op: 'replace',
+                value: 'test-value',
+              },
+              {
+                opportunityId: 'opp-other',
+                suggestionId: 'sugg-2',
+                op: 'replace',
+                value: 'other-value',
+              },
+            ],
+          },
+        },
+      };
+
+      // Default implementation removes by suggestionId regardless of opportunity
+      const result = testMapper.rollbackPatches(config, ['sugg-1'], 'opp-test');
+
+      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
+      expect(result.tokowakaOptimizations['/page1'].patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.removedCount).to.equal(1);
+    });
+  });
 });

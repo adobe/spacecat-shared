@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.78.1...@adobe/spacecat-shared-utils-v1.79.0) (2025-11-25)
+
+
+### Features
+
+* add globalRegion in the llmo customer configuration ([#1168](https://github.com/adobe/spacecat-shared/issues/1168)) ([88dbf51](https://github.com/adobe/spacecat-shared/commit/88dbf514af54de20cf6b5fa2a2ec0f5e46e045af))
+
 # [@adobe/spacecat-shared-utils-v1.78.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.78.0...@adobe/spacecat-shared-utils-v1.78.1) (2025-11-22)
 
 

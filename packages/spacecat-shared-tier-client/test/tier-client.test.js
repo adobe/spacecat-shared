@@ -186,6 +186,13 @@ describe('TierClient', () => {
         expect(mockDataAccess.Organization.findById).to.have.been.calledWith(orgId);
       });
 
+      it('should throw error when organization not found for site', async () => {
+        mockDataAccess.Organization.findById.resolves(null);
+
+        await expect(TierClient.createForSite(mockContext, testSite, productCode))
+          .to.be.rejectedWith(`[TierClient] Organization not found for organizationId: ${orgId}`);
+      });
+
       it('should throw error when site is not provided', async () => {
         await expect(TierClient.createForSite(mockContext, null, productCode)).to.be.rejectedWith('Entity must be an instance of Site');
       });
@@ -542,6 +549,72 @@ describe('TierClient', () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
 
       await expect(orgOnlyClient.revokeSiteEnrollment()).to.be.rejectedWith('Site enrollment not found');
+    });
+  });
+
+  describe('revokeEntitlement', () => {
+    it('should successfully revoke entitlement when it exists', async () => {
+      const mockEntitlementWithRemove = {
+        ...mockEntitlement,
+        remove: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockEntitlementWithRemove);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await tierClient.revokeEntitlement();
+
+      expect(mockEntitlementWithRemove.remove.calledOnce).to.be.true;
+    });
+
+    it('should throw error when entitlement does not exist', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await expect(tierClient.revokeEntitlement()).to.be.rejectedWith('Entitlement not found');
+    });
+
+    it('should handle database errors during entitlement removal', async () => {
+      const mockEntitlementWithRemoveError = {
+        ...mockEntitlement,
+        remove: sandbox.stub().rejects(new Error('Database error')),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockEntitlementWithRemoveError);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await expect(tierClient.revokeEntitlement()).to.be.rejectedWith('Database error');
+    });
+
+    it('should handle errors when checking valid entitlement', async () => {
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode
+        .rejects(new Error('Database error'));
+
+      await expect(tierClient.revokeEntitlement()).to.be.rejectedWith('Database error');
+    });
+
+    it('should work with organization-only client (no site)', async () => {
+      const mockEntitlementWithRemove = {
+        ...mockEntitlement,
+        remove: sandbox.stub().resolves(),
+      };
+
+      const orgOnlyClient = new TierClient(
+        mockContext,
+        organizationInstance,
+        null,
+        productCode,
+      );
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockEntitlementWithRemove);
+
+      await orgOnlyClient.revokeEntitlement();
+
+      expect(mockEntitlementWithRemove.remove.calledOnce).to.be.true;
     });
   });
 

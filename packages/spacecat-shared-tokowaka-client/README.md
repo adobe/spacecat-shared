@@ -51,6 +51,22 @@ Generates configuration and uploads to S3. **Automatically fetches existing conf
 - `succeededSuggestions` - Array of deployed suggestions
 - `failedSuggestions` - Array of `{suggestion, reason}` objects for ineligible suggestions
 
+#### `rollbackSuggestions(site, opportunity, suggestions)`
+
+Rolls back previously deployed suggestions by removing their patches from the configuration. **Automatically fetches existing configuration** and removes patches matching the provided suggestions. Invalidates CDN cache after upload.
+
+**Mapper-Specific Rollback Behavior:**
+- Each opportunity mapper handles its own rollback logic via `rollbackPatches()` method
+- **FAQ:** Automatically removes the "FAQs" heading patch if no FAQ suggestions remain for that URL
+- **Headings/Summarization:** Simple removal by suggestion ID (default behavior)
+
+**Returns:** `Promise<RollbackResult>` with:
+- `s3Path` - S3 key where config was uploaded
+- `cdnInvalidation` - CDN invalidation result (or error)
+- `succeededSuggestions` - Array of rolled back suggestions
+- `failedSuggestions` - Array of `{suggestion, reason}` objects for ineligible suggestions
+- `removedPatchesCount` - Number of patches removed from the configuration
+
 #### `fetchConfig(apiKey)`
 
 Fetches existing Tokowaka configuration from S3.
@@ -93,7 +109,6 @@ s3://{TOKOWAKA_SITE_CONFIG_BUCKET}/opportunities/{tokowakaApiKey}
 ```
 
 **Note:** The configuration is stored as a JSON file containing the complete Tokowaka optimization config for the site.
-
 
 ## Reference Material
 

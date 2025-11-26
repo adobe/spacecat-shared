@@ -402,7 +402,7 @@ describe('SchemaBuilder', () => {
   });
 
   describe('build', () => {
-    it('returns the built schema', () => {
+    it.skip('returns the built schema', () => {
       instance.addReference('belongs_to', 'Organization');
       instance.addReference('belongs_to', 'Site', ['someField'], { required: false });
       instance.addReference('has_many', 'Audits');

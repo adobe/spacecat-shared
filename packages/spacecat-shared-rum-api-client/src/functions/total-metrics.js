@@ -22,7 +22,6 @@ function handler(bundles) {
     : 0));
   dataChunks.addSeries('lcp', series.lcp);
   dataChunks.addSeries('engagement', series.engagement);
-
   const totalPageViews = dataChunks?.totals?.traffic_domain?.weight;
   const sum = dataChunks?.totals?.clicks?.sum ?? 0;
   const weight = dataChunks?.totals?.clicks?.weight ?? 0;

@@ -223,10 +223,9 @@ function validateDateRange(startTime, endTime) {
   }
 }
 
-function generateURLs(domain, granularity, domainkey, startTime, endTime, interval, log) {
+function generateURLs(domain, granularity, domainkey, startTime, endTime, interval) {
   if (startTime && endTime) {
     validateDateRange(startTime, endTime);
-    log?.info(`Switch dates being considered for total traffic: startTime=${startTime}, endTime=${endTime}`);
     // Use custom date range
     return generateUrlsForDateRange(startTime, endTime, domain, granularity, domainkey);
   }
@@ -263,7 +262,7 @@ async function fetchBundles(opts, log) {
     throw new Error('Missing required parameters');
   }
 
-  const urls = generateURLs(domain, granularity, domainkey, startTime, endTime, interval, log);
+  const urls = generateURLs(domain, granularity, domainkey, startTime, endTime, interval);
   const chunks = getUrlChunks(urls, CHUNK_SIZE);
 
   let totalTransferSize = 0;
@@ -335,7 +334,7 @@ function createBundleStream(opts, log) {
     throw new Error('Missing required parameters');
   }
 
-  const urls = generateURLs(domain, granularity, domainkey, startTime, endTime, interval, log);
+  const urls = generateURLs(domain, granularity, domainkey, startTime, endTime, interval);
 
   return new ReadableStream({
     async start(controller) {

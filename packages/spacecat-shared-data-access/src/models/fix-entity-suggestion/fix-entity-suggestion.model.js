@@ -21,6 +21,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class FixEntitySuggestion extends BaseModel {
+  static ENTITY_NAME = 'FixEntitySuggestion';
+
   static DEFAULT_UPDATED_BY = 'spacecat';
 
   /**

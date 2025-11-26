@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class ImportUrl extends BaseModel {
+  static ENTITY_NAME = 'ImportUrl';
+
   static IMPORT_URL_EXPIRES_IN_DAYS = 30;
 
   // add your custom methods or overrides here

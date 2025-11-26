@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Entitlement extends BaseModel {
+  static ENTITY_NAME = 'Entitlement';
+
   static TIERS = {
     FREE_TRIAL: 'FREE_TRIAL',
     PAID: 'PAID',

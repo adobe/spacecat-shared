@@ -28,6 +28,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Audit extends BaseModel {
+  static ENTITY_NAME = 'Audit';
+
   static AUDIT_TYPES = {
     APEX: 'apex',
     CWV: 'cwv',

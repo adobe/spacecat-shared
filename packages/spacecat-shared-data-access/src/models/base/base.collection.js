@@ -226,9 +226,11 @@ class BaseCollection {
     }
 
     const indexName = options.index || this.schema.findIndexNameByKeys(keys);
+    this.log.info(`BaseCollection.#queryByIndexKeys [${this.entityName}]: Determined index name="${indexName}", keys=${JSON.stringify(keys)}`);
     const index = this.entity.query[indexName];
 
     if (!index) {
+      this.log.info(`BaseCollection.#queryByIndexKeys [${this.entityName}]: Query proxy [${indexName}] not found! Available indexes: ${Object.keys(this.entity.query).join(', ')}`);
       this.#logAndThrowError(`Failed to query [${this.entityName}]: query proxy [${indexName}] not found`);
     }
 
@@ -239,6 +241,8 @@ class BaseCollection {
         ...options.attributes && { attributes: options.attributes },
         ...options.cursor && { cursor: options.cursor },
       };
+
+      this.log.info(`BaseCollection.#queryByIndexKeys [${this.entityName}]: Query options=${JSON.stringify(queryOptions)}`);
 
       let query = index(keys);
 
@@ -252,6 +256,8 @@ class BaseCollection {
       // execute the initial query
       let result = await query.go(queryOptions);
       let allData = result.data;
+
+      this.log.info(`BaseCollection.#queryByIndexKeys [${this.entityName}]: Query executed, returned ${allData?.length || 0} items`);
 
       // Smart pagination behavior:
       // - fetchAllPages: true → Always paginate through all results
@@ -273,14 +279,18 @@ class BaseCollection {
       const shouldReturnCursor = options.returnCursor === true;
 
       if (options.limit === 1) {
-        return allData.length ? this.#createInstance(allData[0]) : null;
+        const returnValue = allData.length ? this.#createInstance(allData[0]) : null;
+        this.log.info(`BaseCollection.#queryByIndexKeys [${this.entityName}]: Returning single result: ${returnValue ? 'found' : 'null'}`);
+        return returnValue;
       } else {
         const instances = this.#createInstances(allData);
+        this.log.info(`BaseCollection.#queryByIndexKeys [${this.entityName}]: Returning ${instances.length} instances`);
         return shouldReturnCursor
           ? { data: instances, cursor: result.cursor || null }
           : instances;
       }
     } catch (error) {
+      this.log.info(`BaseCollection.#queryByIndexKeys [${this.entityName}]: Query failed with error:`, error);
       return this.#logAndThrowError('Failed to query', error);
     }
   }
@@ -330,8 +340,17 @@ class BaseCollection {
       throw new DataAccessError(message);
     }
 
-    const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
-    return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
+    const pkValue = entityNameToAllPKValue(this.entityName);
+    const keys = { pk: pkValue, ...sortKeys };
+    this.log.info(`BaseCollection.findByAll [${this.entityName}]: Querying with pk="${pkValue}", sortKeys=${JSON.stringify(sortKeys)}, options=${JSON.stringify(options)}`);
+    const result = await this.#queryByIndexKeys(keys, { ...options, limit: 1 });
+    if (result) {
+      this.log.info(`BaseCollection.findByAll [${this.entityName}]: Query returned a result`);
+    } else {
+      this.log.warn(`BaseCollection.findByAll [${this.entityName}]: Query returned null/undefined`);
+    }
+
+    return result;
   }
 
   /**

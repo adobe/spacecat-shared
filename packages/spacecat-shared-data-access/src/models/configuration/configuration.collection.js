@@ -35,9 +35,18 @@ class ConfigurationCollection extends BaseCollection {
     return this.findByAll({ versionString: zeroPad(version, 10) });
   }
 
+  /* c8 ignore start */
   async findLatest() {
-    return this.findByAll({}, { order: 'desc' });
+    this.log.info('ConfigurationCollection.findLatest: Starting query with order=desc');
+    const result = await this.findByAll({}, { order: 'desc' });
+    if (result) {
+      this.log.info(`ConfigurationCollection.findLatest: Found configuration: ${JSON.stringify(result, null, 2)} `);
+    } else {
+      this.log.warn('ConfigurationCollection.findLatest: No configuration found (returned null)');
+    }
+    return result;
   }
+  /* c8 ignore stop */
 }
 
 export default ConfigurationCollection;

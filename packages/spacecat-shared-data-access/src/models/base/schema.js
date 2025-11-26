@@ -195,16 +195,22 @@ class Schema {
     const { ALL, PRIMARY } = this.getIndexTypes();
     const keyNames = Object.keys(keys);
 
+    console.log(`Schema.findIndexNameByKeys [${this.getEntityName()}]: Looking for index with keys=${JSON.stringify(keyNames)}`);
+
     const index = this.findIndexBySortKeys(keyNames);
     if (index) {
-      return index.index || PRIMARY;
+      const indexName = index.index || PRIMARY;
+      console.log(`Schema.findIndexNameByKeys [${this.getEntityName()}]: Found index by sort keys: ${indexName}`);
+      return indexName;
     }
 
     const allIndex = this.findIndexByType(ALL);
     if (allIndex) {
+      console.log(`Schema.findIndexNameByKeys [${this.getEntityName()}]: Using "all" index: ${allIndex.index}`);
       return allIndex.index;
     }
 
+    console.log(`Schema.findIndexNameByKeys [${this.getEntityName()}]: Falling back to PRIMARY index`);
     return PRIMARY;
   }
 

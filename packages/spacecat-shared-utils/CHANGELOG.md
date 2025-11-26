@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.80.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.79.0...@adobe/spacecat-shared-utils-v1.80.0) (2025-11-26)
+
+
+### Features
+
+* update schema to store user id and timestamp ([#1170](https://github.com/adobe/spacecat-shared/issues/1170)) ([ad64b9c](https://github.com/adobe/spacecat-shared/commit/ad64b9cbbc581883c16099529e0cd73ca9bfb088))
+
 # [@adobe/spacecat-shared-utils-v1.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.78.1...@adobe/spacecat-shared-utils-v1.79.0) (2025-11-25)
 
 

@@ -22,13 +22,41 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ConfigurationCollection extends BaseCollection {
+  static MAX_VERSIONS = 500;
+
   async create(data) {
     const latestConfiguration = await this.findLatest();
     const version = latestConfiguration ? incrementVersion(latestConfiguration.getVersion()) : 1;
     const sanitizedData = sanitizeIdAndAuditFields('Organization', data);
     sanitizedData.version = version;
 
-    return super.create(sanitizedData);
+    const newConfig = await super.create(sanitizedData);
+
+    setImmediate(() => {
+      this.#enforceVersionLimit().catch((error) => {
+        this.log.error('Failed to enforce configuration version limit', error);
+      });
+    });
+
+    return newConfig;
+  }
+
+  async #enforceVersionLimit() {
+    const { MAX_VERSIONS } = ConfigurationCollection;
+
+    try {
+      const allConfigs = await this.all({}, { order: 'desc' });
+
+      if (allConfigs.length <= MAX_VERSIONS) {
+        return;
+      }
+
+      const versionsToDelete = allConfigs.slice(MAX_VERSIONS);
+      const ids = versionsToDelete.map((config) => config.getId());
+      await this.removeByIds(ids);
+    } catch (error) {
+      this.log.error('Configuration version limit enforcement failed', error);
+    }
   }
 
   async findByVersion(version) {

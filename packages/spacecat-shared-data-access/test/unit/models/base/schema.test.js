@@ -38,7 +38,9 @@ import Reference from '../../../../src/models/base/reference.js';
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const MockModel = class MockEntityModel extends BaseModel {};
+const MockModel = class MockEntityModel extends BaseModel {
+  static ENTITY_NAME = 'MockEntityModel';
+};
 const MockCollection = class MockEntityCollection extends BaseCollection {};
 
 describe('Schema', () => {

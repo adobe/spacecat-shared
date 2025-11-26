@@ -27,7 +27,9 @@ import { DataAccessError } from '../../../../src/index.js';
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const MockModel = class MockEntityModel extends BaseModel {};
+const MockModel = class MockEntityModel extends BaseModel {
+  static ENTITY_NAME = 'MockEntityModel';
+};
 const MockCollection = class MockEntityCollection extends BaseCollection {};
 
 const createSchema = (service, indexes) => new Schema(

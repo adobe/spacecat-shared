@@ -25,7 +25,9 @@ chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('SchemaBuilder', () => {
-  const MockModel = class MockModel extends BaseModel {};
+  const MockModel = class MockModel extends BaseModel {
+    static ENTITY_NAME = 'MockModel';
+  };
   const MockCollection = class MockCollection extends BaseCollection {};
 
   let instance;
@@ -56,6 +58,13 @@ describe('SchemaBuilder', () => {
         .to.throw(SchemaBuilderError, 'schemaVersion is required and must be a positive integer.');
       expect(() => new SchemaBuilder(MockModel, MockCollection, 1.2))
         .to.throw(SchemaBuilderError, 'schemaVersion is required and must be a positive integer.');
+    });
+
+    it('throws error if model class entity name is not defined', () => {
+      const InvalidModel = class InvalidModel extends BaseModel {};
+
+      expect(() => new SchemaBuilder(InvalidModel, MockCollection))
+        .to.throw(SchemaBuilderError, 'Model class InvalidModel must define a static ENTITY_NAME property.');
     });
 
     it('successfully creates an instance', () => {

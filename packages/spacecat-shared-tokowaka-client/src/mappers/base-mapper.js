@@ -108,7 +108,7 @@ export default class BaseOpportunityMapper {
    */
   // eslint-disable-next-line no-unused-vars
   rollbackPatches(config, suggestionIds, opportunityId) {
-    if (!config || !config.tokowakaOptimizations) {
+    if (!config || !config.patches) {
       return config;
     }
 

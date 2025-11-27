@@ -36,7 +36,7 @@ describe('AuditUrlCollection', () => {
     auditUrlId: 'au12345',
     siteId: 'site12345',
     url: 'https://example.com/page',
-    source: 'manual',
+    byCustomer: true,
     audits: ['accessibility'],
   };
 
@@ -171,34 +171,34 @@ describe('AuditUrlCollection', () => {
     });
   });
 
-  describe('removeForSiteIdAndSource', () => {
+  describe('removeForSiteIdByCustomer', () => {
     it('throws an error if siteId is not provided', async () => {
-      await expect(instance.removeForSiteIdAndSource()).to.be.rejectedWith('Both siteId and source are required');
+      await expect(instance.removeForSiteIdByCustomer()).to.be.rejectedWith('SiteId is required and byCustomer must be a boolean');
     });
 
-    it('throws an error if source is not provided', async () => {
-      await expect(instance.removeForSiteIdAndSource('site123')).to.be.rejectedWith('Both siteId and source are required');
+    it('throws an error if byCustomer is not a boolean', async () => {
+      await expect(instance.removeForSiteIdByCustomer('site123')).to.be.rejectedWith('SiteId is required and byCustomer must be a boolean');
     });
 
-    it('removes all audit URLs for a given siteId and source', async () => {
+    it('removes all audit URLs for a given siteId and byCustomer flag', async () => {
       const siteId = 'site12345';
-      const source = 'manual';
-      instance.allBySiteIdAndSource = stub().resolves([model]);
+      const byCustomer = true;
+      instance.allBySiteIdByCustomer = stub().resolves([model]);
 
-      await instance.removeForSiteIdAndSource(siteId, source);
+      await instance.removeForSiteIdByCustomer(siteId, byCustomer);
 
-      expect(instance.allBySiteIdAndSource).to.have.been.calledOnceWith(siteId, source);
+      expect(instance.allBySiteIdByCustomer).to.have.been.calledOnceWith(siteId, byCustomer);
       expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au12345' }]);
     });
 
     it('does not call remove when there are no matching audit URLs', async () => {
       const siteId = 'site12345';
-      const source = 'sitemap';
-      instance.allBySiteIdAndSource = stub().resolves([]);
+      const byCustomer = false;
+      instance.allBySiteIdByCustomer = stub().resolves([]);
 
-      await instance.removeForSiteIdAndSource(siteId, source);
+      await instance.removeForSiteIdByCustomer(siteId, byCustomer);
 
-      expect(instance.allBySiteIdAndSource).to.have.been.calledOnceWith(siteId, source);
+      expect(instance.allBySiteIdByCustomer).to.have.been.calledOnceWith(siteId, byCustomer);
       expect(mockElectroService.entities.auditUrl.delete).to.not.have.been.called;
     });
   });

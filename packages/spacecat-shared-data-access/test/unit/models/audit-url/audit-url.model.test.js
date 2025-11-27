@@ -31,7 +31,7 @@ describe('AuditUrlModel', () => {
       auditUrlId: 'au12345',
       siteId: 'site12345',
       url: 'https://example.com/page',
-      source: 'manual',
+      byCustomer: true,
       audits: ['accessibility', 'broken-backlinks'],
       createdAt: '2025-10-27T12:00:00.000Z',
       createdBy: 'user@example.com',
@@ -48,12 +48,6 @@ describe('AuditUrlModel', () => {
     it('initializes the AuditUrl instance correctly', () => {
       expect(instance).to.be.an('object');
       expect(instance.record).to.deep.equal(mockRecord);
-    });
-  });
-
-  describe('DEFAULT_SOURCE', () => {
-    it('has the correct default source value', () => {
-      expect(AuditUrl.DEFAULT_SOURCE).to.equal('manual');
     });
   });
 
@@ -147,29 +141,24 @@ describe('AuditUrlModel', () => {
     });
   });
 
-  describe('isManualSource', () => {
-    it('returns true for manual source', () => {
-      instance.record.source = 'manual';
-      expect(instance.isManualSource()).to.be.true;
+  describe('isCustomerUrl', () => {
+    it('returns true for customer-added URL', () => {
+      instance.record.byCustomer = true;
+      expect(instance.isCustomerUrl()).to.be.true;
     });
 
-    it('returns false for non-manual source', () => {
-      instance.record.source = 'sitemap';
-      expect(instance.isManualSource()).to.be.false;
-    });
-
-    it('returns false for other sources', () => {
-      instance.record.source = 'api';
-      expect(instance.isManualSource()).to.be.false;
+    it('returns false for system-added URL', () => {
+      instance.record.byCustomer = false;
+      expect(instance.isCustomerUrl()).to.be.false;
     });
 
     it('works with direct property access', () => {
       const plainObj = Object.create(AuditUrl.prototype);
-      plainObj.source = 'manual';
-      expect(plainObj.isManualSource()).to.be.true;
+      plainObj.byCustomer = true;
+      expect(plainObj.isCustomerUrl()).to.be.true;
 
-      plainObj.source = 'sitemap';
-      expect(plainObj.isManualSource()).to.be.false;
+      plainObj.byCustomer = false;
+      expect(plainObj.isCustomerUrl()).to.be.false;
     });
   });
 

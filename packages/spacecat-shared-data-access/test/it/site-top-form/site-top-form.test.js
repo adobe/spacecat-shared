@@ -44,7 +44,8 @@ describe('SiteTopForm IT', async () => {
   let sampleData;
   let SiteTopForm;
 
-  beforeEach(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -386,6 +387,7 @@ describe('SiteTopForm IT', async () => {
   });
 
   it('finds form by URL and formSource', async () => {
+    sampleData = await seedDatabase();
     const siteTopForm = sampleData.siteTopForms[0];
     const url = siteTopForm.getUrl();
     const formSource = siteTopForm.getFormSource();

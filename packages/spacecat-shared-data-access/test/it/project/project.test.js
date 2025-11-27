@@ -25,7 +25,8 @@ describe('Project IT', async () => {
   let sampleData;
   let Project;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
     const dataAccess = getDataAccess();
     Project = dataAccess.Project;

@@ -20,34 +20,34 @@ export interface AuditUrl extends BaseModel {
   getTraffic(): number | null;
   getSite(): Promise<Site>;
   getSiteId(): string;
-  getSource(): string;
+  getByCustomer(): boolean;
   getUrl(): string;
   setAudits(audits: string[]): AuditUrl;
   setCreatedBy(createdBy: string): AuditUrl;
   setRank(rank: number | null): AuditUrl;
   setTraffic(traffic: number | null): AuditUrl;
   setSiteId(siteId: string): AuditUrl;
-  setSource(source: string): AuditUrl;
+  setByCustomer(byCustomer: boolean): AuditUrl;
   setUrl(url: string): AuditUrl;
   isAuditEnabled(auditType: string): boolean;
   enableAudit(auditType: string): AuditUrl;
   disableAudit(auditType: string): AuditUrl;
-  isManualSource(): boolean;
+  isCustomerUrl(): boolean;
 }
 
 export interface AuditUrlCollection extends BaseCollection<AuditUrl> {
   allBySiteId(siteId: string): Promise<AuditUrl[]>;
-  allBySiteIdAndSource(siteId: string, source: string): Promise<AuditUrl[]>;
-  allBySiteIdAndSourceAndUrl(siteId: string, source: string, url: string): Promise<AuditUrl[]>;
+  allBySiteIdByCustomer(siteId: string, byCustomer: boolean): Promise<AuditUrl[]>;
+  allBySiteIdByCustomerAndUrl(siteId: string, byCustomer: boolean, url: string): Promise<AuditUrl[]>;
   allBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl[]>;
   allBySiteIdSorted(siteId: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
-  allBySiteIdAndSourceSorted(siteId: string, source: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
+  allBySiteIdByCustomerSorted(siteId: string, byCustomer: boolean, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
   findBySiteId(siteId: string): Promise<AuditUrl | null>;
-  findBySiteIdAndSource(siteId: string, source: string): Promise<AuditUrl | null>;
-  findBySiteIdAndSourceAndUrl(siteId: string, source: string, url: string): Promise<AuditUrl | null>;
+  findBySiteIdByCustomer(siteId: string, byCustomer: boolean): Promise<AuditUrl | null>;
+  findBySiteIdByCustomerAndUrl(siteId: string, byCustomer: boolean, url: string): Promise<AuditUrl | null>;
   findBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl | null>;
   allBySiteIdAndAuditType(siteId: string, auditType: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<AuditUrl[]>;
   removeForSiteId(siteId: string): Promise<void>;
-  removeForSiteIdAndSource(siteId: string, source: string): Promise<void>;
+  removeForSiteIdByCustomer(siteId: string, byCustomer: boolean): Promise<void>;
 }
 

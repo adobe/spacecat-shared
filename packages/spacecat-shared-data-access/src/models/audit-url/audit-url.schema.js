@@ -28,13 +28,13 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 
 Data Access Patterns:
 1. Get all URLs for a site: allBySiteId(siteId)
-2. Get all URLs for a site by source: allBySiteIdAndSource(siteId, source)
+2. Get all URLs for a site by byCustomer: allBySiteIdByCustomer(siteId, byCustomer)
 3. Get a specific URL: allBySiteIdAndUrl(siteId, url)
 4. Get URLs by audit type: allBySiteIdAndAuditType(siteId, auditType) - filtered in code
 
 Indexes:
 - Primary: siteId (PK) + url (SK) - for unique identification
-- bySiteIdAndSource: siteId + source (GSI) - for querying by source
+- bySiteIdByCustomer: siteId + byCustomer (GSI) - for querying by customer vs system added
 */
 
 const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
@@ -44,10 +44,10 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     required: true,
     validate: (value) => isValidUrl(value),
   })
-  .addAttribute('source', {
-    type: 'string',
+  .addAttribute('byCustomer', {
+    type: 'boolean',
     required: true,
-    default: AuditUrl.DEFAULT_SOURCE,
+    default: true,
   })
   .addAttribute('audits', {
     type: 'list',
@@ -96,10 +96,10 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     default: 'system',
     set: (value) => value,
   })
-  // Add a second GSI for querying by siteId and source
+  // Add a second GSI for querying by siteId and byCustomer
   .addIndex(
     { composite: ['siteId'] },
-    { composite: ['source'] },
+    { composite: ['byCustomer'] },
   );
 
 export default schema.build();

@@ -20,8 +20,6 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class AuditUrl extends BaseModel {
-  static DEFAULT_SOURCE = 'manual';
-
   /**
    * Checks if this URL is enabled for a specific audit type.
    * @param {string} auditType - The audit type to check.
@@ -69,12 +67,12 @@ class AuditUrl extends BaseModel {
   }
 
   /**
-   * Checks if this URL was manually created by a user.
-   * @returns {boolean} True if the source is manual.
+   * Checks if this URL was added by a customer.
+   * @returns {boolean} True if the URL was added by a customer.
    */
-  isManualSource() {
-    const source = this.getSource ? this.getSource() : this.source;
-    return source === AuditUrl.DEFAULT_SOURCE;
+  isCustomerUrl() {
+    const byCustomer = this.getByCustomer ? this.getByCustomer() : this.byCustomer;
+    return byCustomer === true;
   }
 }
 

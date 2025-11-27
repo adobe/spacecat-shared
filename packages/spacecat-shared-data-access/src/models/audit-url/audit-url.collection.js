@@ -170,21 +170,21 @@ class AuditUrlCollection extends BaseCollection {
   }
 
   /**
-   * Gets all audit URLs for a site by source with sorting support.
+   * Gets all audit URLs for a site by byCustomer flag with sorting support.
    * @param {string} siteId - The site ID.
-   * @param {string} source - The source to filter by.
+   * @param {boolean} byCustomer - True for customer-added, false for system-added.
    * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
    * @returns {Promise<{items: AuditUrl[], cursor?: string}>} Paginated and sorted results.
    */
-  async allBySiteIdAndSourceSorted(siteId, source, options = {}) {
-    if (!hasText(siteId) || !hasText(source)) {
-      throw new Error('Both siteId and source are required');
+  async allBySiteIdByCustomerSorted(siteId, byCustomer, options = {}) {
+    if (!hasText(siteId) || typeof byCustomer !== 'boolean') {
+      throw new Error('SiteId is required and byCustomer must be a boolean');
     }
 
     const { sortBy, sortOrder, ...queryOptions } = options;
 
-    // Get all URLs for the site and source
-    const result = await this.allBySiteIdAndSource(siteId, source, queryOptions);
+    // Get all URLs for the site and byCustomer flag
+    const result = await this.allBySiteIdByCustomer(siteId, byCustomer, queryOptions);
 
     // Handle both array and paginated result formats
     const items = Array.isArray(result) ? result : (result.items || []);
@@ -225,19 +225,19 @@ class AuditUrlCollection extends BaseCollection {
   }
 
   /**
-   * Removes audit URLs by source for a specific site.
-   * For example, remove all 'sitemap' sourced URLs.
+   * Removes audit URLs by byCustomer flag for a specific site.
+   * For example, remove all customer-added or all system-added URLs.
    *
    * @param {string} siteId - The site ID.
-   * @param {string} source - The source to filter by.
+   * @param {boolean} byCustomer - True for customer-added, false for system-added.
    * @returns {Promise<void>}
    */
-  async removeForSiteIdAndSource(siteId, source) {
-    if (!hasText(siteId) || !hasText(source)) {
-      throw new Error('Both siteId and source are required');
+  async removeForSiteIdByCustomer(siteId, byCustomer) {
+    if (!hasText(siteId) || typeof byCustomer !== 'boolean') {
+      throw new Error('SiteId is required and byCustomer must be a boolean');
     }
 
-    const urlsToRemove = await this.allBySiteIdAndSource(siteId, source);
+    const urlsToRemove = await this.allBySiteIdByCustomer(siteId, byCustomer);
     const idsToRemove = urlsToRemove.map((auditUrl) => auditUrl.getId());
 
     if (idsToRemove.length > 0) {

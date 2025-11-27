@@ -91,7 +91,7 @@ class FixEntityCollection extends BaseCollection {
 
     // Extract IDs and other values from entities
     const fixEntityId = fixEntity.getId();
-    const fixEntityCreatedAt = fixEntity.getCreatedAt();
+    const fixEntityCreatedAt = fixEntity.getExecutedAt() || fixEntity.getCreatedAt();
     const suggestionIds = suggestions.map((suggestion) => suggestion.getId());
 
     try {

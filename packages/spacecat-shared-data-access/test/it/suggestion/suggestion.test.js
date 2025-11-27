@@ -266,12 +266,15 @@ describe('Suggestion IT', async () => {
     ];
 
     // First, set up some fix entities for this suggestion using direct junction records
-    const junctionData = fixEntityIds.map((fixEntityId, index) => ({
-      suggestionId: suggestion.getId(),
-      fixEntityId,
-      opportunityId: sampleData.fixEntities[index * 2].getOpportunityId(),
-      fixEntityCreatedAt: sampleData.fixEntities[index * 2].getCreatedAt(),
-    }));
+    const junctionData = fixEntityIds.map((fixEntityId, index) => {
+      const fixEntity = sampleData.fixEntities[index * 2];
+      return {
+        suggestionId: suggestion.getId(),
+        fixEntityId,
+        opportunityId: fixEntity.getOpportunityId(),
+        fixEntityCreatedAt: fixEntity.getExecutedAt() || fixEntity.getCreatedAt(),
+      };
+    });
     await FixEntitySuggestion.createMany(junctionData);
 
     // Test the single suggestion method

@@ -438,8 +438,6 @@ export const Config = (data = {}) => {
   self.getLlmoConfig = () => state?.llmo;
   self.getLlmoDataFolder = () => state?.llmo?.dataFolder;
   self.getLlmoBrand = () => state?.llmo?.brand;
-  self.getLlmoHumanQuestions = () => state?.llmo?.questions?.Human;
-  self.getLlmoAIQuestions = () => state?.llmo?.questions?.AI;
   self.getLlmoUrlPatterns = () => state?.llmo?.urlPatterns;
   self.getLlmoCustomerIntent = () => {
     const llmoConfig = self.getLlmoConfig();
@@ -457,13 +455,12 @@ export const Config = (data = {}) => {
     };
   };
 
-  self.updateLlmoConfig = (dataFolder, brand, questions = {}, urlPatterns = undefined) => {
+  self.updateLlmoConfig = (dataFolder, brand, urlPatterns = undefined) => {
     const currentLlmoConfig = state.llmo || {};
     state.llmo = {
       ...currentLlmoConfig,
       dataFolder,
       brand,
-      questions,
       urlPatterns,
     };
   };
@@ -476,20 +473,6 @@ export const Config = (data = {}) => {
   self.updateLlmoBrand = (brand) => {
     state.llmo = state.llmo || {};
     state.llmo.brand = brand;
-  };
-
-  self.addLlmoHumanQuestions = (questions) => {
-    state.llmo = state.llmo || {};
-    state.llmo.questions = state.llmo.questions || {};
-    state.llmo.questions.Human = state.llmo.questions.Human || [];
-    state.llmo.questions.Human.push(...questions);
-  };
-
-  self.addLlmoAIQuestions = (questions) => {
-    state.llmo = state.llmo || {};
-    state.llmo.questions = state.llmo.questions || {};
-    state.llmo.questions.AI = state.llmo.questions.AI || [];
-    state.llmo.questions.AI.push(...questions);
   };
 
   self.addLlmoCustomerIntent = (customerIntentItems) => {
@@ -531,32 +514,6 @@ export const Config = (data = {}) => {
         return item;
       });
     }
-  };
-
-  self.removeLlmoQuestion = (key) => {
-    state.llmo = state.llmo || {};
-    state.llmo.questions = state.llmo.questions || {};
-    state.llmo.questions.Human = state.llmo.questions.Human || [];
-    state.llmo.questions.Human = state.llmo.questions.Human.filter(
-      (question) => question.key !== key,
-    );
-    state.llmo.questions.AI = state.llmo.questions.AI || [];
-    state.llmo.questions.AI = state.llmo.questions.AI.filter(
-      (question) => question.key !== key,
-    );
-  };
-
-  self.updateLlmoQuestion = (key, questionUpdate) => {
-    state.llmo = state.llmo || {};
-    state.llmo.questions = state.llmo.questions || {};
-    state.llmo.questions.Human = state.llmo.questions.Human || [];
-    state.llmo.questions.Human = state.llmo.questions.Human.map(
-      (question) => (question.key === key ? { ...question, ...questionUpdate, key } : question),
-    );
-    state.llmo.questions.AI = state.llmo.questions.AI || [];
-    state.llmo.questions.AI = state.llmo.questions.AI.map(
-      (question) => (question.key === key ? { ...question, ...questionUpdate, key } : question),
-    );
   };
 
   self.addLlmoUrlPatterns = (urlPatterns) => {

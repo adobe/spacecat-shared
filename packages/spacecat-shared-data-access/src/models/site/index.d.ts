@@ -77,17 +77,6 @@ export interface ImportConfig {
 export type WellKnownLmmoTag = 'market' | 'product' | 'topic';
 export type LmmoTag = `${WellKnownLmmoTag}:${string}` | string;
 
-export interface LlmoQuestion {
-  key: string;
-  question: string;
-  source?: string;
-  volume?: string;
-  importTime?: string;
-  keyword?: string;
-  url?: string;
-  tags?: LmmoTag[];
-}
-
 export interface LlmoUrlPattern {
   urlPattern: string;
   tags?: LmmoTag[];
@@ -137,10 +126,6 @@ export interface SiteConfig {
     llmo?: {
       dataFolder: string;
       brand: string;
-      questions?: {
-        Human?: Array<LlmoQuestion>;
-        AI?: Array<LlmoQuestion>;
-      };
       urlPatterns?: Array<LlmoUrlPattern>;
       customerIntent?: Array<LlmoCustomerIntent>;
     };
@@ -167,25 +152,15 @@ export interface SiteConfig {
   getLlmoConfig(): {
     dataFolder: string;
     brand: string;
-    questions?: { Human?: Array<LlmoQuestion>; AI?: Array<LlmoQuestion> };
     urlPatterns?: Array<LlmoUrlPattern>;
     customerIntent?: Array<LlmoCustomerIntent>;
   } | undefined;
-  updateLlmoConfig(dataFolder: string, brand: string, questions?: {
-    Human?: Array<LlmoQuestion>;
-    AI?: Array<LlmoQuestion>;
-  }, urlPatterns?: Array<LlmoUrlPattern>): void;
+  updateLlmoConfig(dataFolder: string, brand: string, urlPatterns?: Array<LlmoUrlPattern>): void;
   updateLlmoDataFolder(dataFolder: string): void;
   updateLlmoBrand(brand: string): void;
   getLlmoDataFolder(): string | undefined;
   getLlmoBrand(): string | undefined;
-  getLlmoHumanQuestions(): LlmoQuestion[] | undefined;
-  getLlmoAIQuestions(): LlmoQuestion[] | undefined;
   getLlmoUrlPatterns(): Array<LlmoUrlPattern> | undefined;
-  addLlmoHumanQuestions(questions: LlmoQuestion[]): void;
-  addLlmoAIQuestions(questions: LlmoQuestion[]): void;
-  removeLlmoQuestion(key: string): void;
-  updateLlmoQuestion(key: string, questionUpdate: Partial<LlmoQuestion>): void;
   addLlmoUrlPatterns(urlPatterns: Array<LlmoUrlPattern>): void;
   removeLlmoUrlPattern(urlPattern: string): void;
   getLlmoCustomerIntent(): Array<LlmoCustomerIntent>;

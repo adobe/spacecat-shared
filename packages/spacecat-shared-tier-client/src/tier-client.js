@@ -296,6 +296,22 @@ class TierClient {
   async revokeEntitlement() {
     const existing = await this.checkValidEntitlement();
     if (existing.entitlement) {
+      if (existing.entitlement.getTier() === EntitlementModel.TIERS.PAID) {
+        throw new Error('Paid entitlement cannot be revoked');
+      }
+      await existing.entitlement.remove();
+    } else {
+      throw new Error('Entitlement not found');
+    }
+  }
+
+  /**
+   * Revokes PAID/FREE entitlement for the current organization.
+   * @returns {Promise<object>} HTTP response object.
+   */
+  async revokePaidEntitlement() {
+    const existing = await this.checkValidEntitlement();
+    if (existing.entitlement) {
       await existing.entitlement.remove();
     } else {
       throw new Error('Entitlement not found');

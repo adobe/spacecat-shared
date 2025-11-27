@@ -568,6 +568,21 @@ describe('TierClient', () => {
       expect(mockEntitlementWithRemove.remove.calledOnce).to.be.true;
     });
 
+    it('should throw error when entitlement is PAID tier', async () => {
+      const mockPaidEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'PAID',
+        remove: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockPaidEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await expect(tierClient.revokeEntitlement()).to.be.rejectedWith('Paid entitlement cannot be revoked');
+      expect(mockPaidEntitlement.remove).to.not.have.been.called;
+    });
+
     it('should throw error when entitlement does not exist', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
       mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
@@ -618,6 +633,50 @@ describe('TierClient', () => {
     });
   });
 
+  describe('revokePaidEntitlement', () => {
+    it('should successfully revoke entitlement regardless of tier', async () => {
+      const mockPaidEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'PAID',
+        remove: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockPaidEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await tierClient.revokePaidEntitlement();
+
+      expect(mockPaidEntitlement.remove.calledOnce).to.be.true;
+    });
+
+    it('should throw error when entitlement does not exist', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await expect(tierClient.revokePaidEntitlement()).to.be.rejectedWith('Entitlement not found');
+    });
+
+    it('should handle database errors during entitlement removal', async () => {
+      const mockEntitlementWithRemoveError = {
+        ...mockEntitlement,
+        remove: sandbox.stub().rejects(new Error('Database error')),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockEntitlementWithRemoveError);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await expect(tierClient.revokePaidEntitlement()).to.be.rejectedWith('Database error');
+    });
+
+    it('should propagate errors when checking valid entitlement', async () => {
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode
+        .rejects(new Error('Database error'));
+
+      await expect(tierClient.revokePaidEntitlement()).to.be.rejectedWith('Database error');
+    });
+  });
   describe('getAllEnrollment', () => {
     beforeEach(() => {
       mockDataAccess.SiteEnrollment.allByEntitlementId = sandbox.stub();

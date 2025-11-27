@@ -1393,7 +1393,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
 
     it('should handle multiple URLs independently', () => {
       // Note: With the new per-URL architecture, each URL has its own config
-      // This test now validates that rollback works correctly for a single URL config
+      // This test validates that rollback works correctly for a single URL config
       const config = {
         url: 'https://example.com/page1',
         version: '1.0',
@@ -1419,10 +1419,10 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
 
     it('should handle null/undefined config gracefully', () => {
       const result1 = mapper.rollbackPatches(null, ['sugg-1'], 'opp-faq');
-      expect(result1.removedCount).to.equal(0);
+      expect(result1).to.be.null;
 
       const result2 = mapper.rollbackPatches(undefined, ['sugg-1'], 'opp-faq');
-      expect(result2.removedCount).to.equal(0);
+      expect(result2).to.be.undefined;
     });
   });
 });

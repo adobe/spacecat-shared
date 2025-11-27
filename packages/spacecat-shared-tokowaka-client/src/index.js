@@ -598,12 +598,12 @@ class TokowakaClient {
    */
   async previewSuggestions(site, opportunity, suggestions, options = {}) {
     // Get site's forwarded host for preview
-    const { forwardedHost } = site.getConfig()?.getTokowakaConfig() || {};
+    const { forwardedHost, apiKey } = site.getConfig()?.getTokowakaConfig() || {};
 
-    if (!hasText(forwardedHost)) {
+    if (!hasText(forwardedHost) || !hasText(apiKey)) {
       throw this.#createError(
-        'Site does not have forwarded host configured. '
-        + 'Please configure forwardedHost in site tokowakaConfig.',
+        'Site does not have forwarded host or api key configured. '
+        + 'Please configure forwardedHost and apiKey in site tokowakaConfig.',
         HTTP_BAD_REQUEST,
       );
     }
@@ -706,6 +706,7 @@ class TokowakaClient {
       // Fetch original HTML (without preview)
       originalHtml = await fetchHtmlWithWarmup(
         previewUrl,
+        apiKey,
         forwardedHost,
         tokowakaEdgeUrl,
         this.log,
@@ -715,6 +716,7 @@ class TokowakaClient {
       // Then fetch optimized HTML (with preview)
       optimizedHtml = await fetchHtmlWithWarmup(
         previewUrl,
+        apiKey,
         forwardedHost,
         tokowakaEdgeUrl,
         this.log,

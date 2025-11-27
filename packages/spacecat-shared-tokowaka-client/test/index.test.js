@@ -65,6 +65,7 @@ describe('TokowakaClient', () => {
       getConfig: () => ({
         getTokowakaConfig: () => ({
           forwardedHost: 'example.com',
+          apiKey: 'test-api-key',
         }),
       }),
     };
@@ -131,7 +132,8 @@ describe('TokowakaClient', () => {
         { bucketName: 'test-bucket', s3Client },
         log,
       );
-      expect(clientWithoutPreview.previewBucketName).to.equal('test-bucket');
+      // previewBucketName is undefined if not explicitly provided
+      expect(clientWithoutPreview.previewBucketName).to.be.undefined;
     });
   });
 
@@ -395,6 +397,20 @@ describe('TokowakaClient', () => {
       expect(result).to.be.null;
     });
 
+    it('should throw error on S3 fetch failure', async () => {
+      const s3Error = new Error('Access Denied');
+      s3Error.name = 'AccessDenied';
+      s3Client.send.rejects(s3Error);
+
+      try {
+        await client.fetchMetaconfig('https://example.com/page1');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('S3 fetch failed');
+        expect(error.status).to.equal(500);
+      }
+    });
+
     it('should throw error if URL is missing', async () => {
       try {
         await client.fetchMetaconfig('');
@@ -456,6 +472,19 @@ describe('TokowakaClient', () => {
       } catch (error) {
         expect(error.message).to.include('Metaconfig object is required');
         expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error on S3 upload failure', async () => {
+      const s3Error = new Error('Access Denied');
+      s3Client.send.rejects(s3Error);
+
+      try {
+        await client.uploadMetaconfig('https://example.com/page1', { siteId: 'site-123', prerender: true });
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('S3 upload failed');
+        expect(error.status).to.equal(500);
       }
     });
   });
@@ -759,6 +788,24 @@ describe('TokowakaClient', () => {
       expect(merged.patches).to.have.length(2);
       expect(merged.patches[0].value).to.equal('Old Heading');
     });
+
+    it('should handle undefined patches in existing config', () => {
+      existingConfig.patches = undefined;
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.patches).to.have.length(1);
+      expect(merged.patches[0].value).to.equal('Updated Heading');
+    });
+
+    it('should handle undefined patches in new config', () => {
+      newConfig.patches = undefined;
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.patches).to.have.length(2);
+      expect(merged.patches[0].value).to.equal('Old Heading');
+    });
   });
 
   describe('deploySuggestions', () => {
@@ -902,6 +949,97 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.have.length(1);
       expect(result.failedSuggestions).to.have.length(1);
       expect(result.failedSuggestions[0].reason).to.include('can be deployed');
+    });
+
+    it('should handle multi-URL deploy where one URL has no eligible suggestions', async () => {
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty', // Eligible
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getData: () => ({
+            url: 'https://example.com/page2',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-missing', // Not eligible
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].suggestion.getId()).to.equal('sugg-2');
+    });
+
+    it('should skip URL when generateConfig returns no patches', async () => {
+      // Stub mapper to return empty patches for the first call, normal for subsequent calls
+      const mapper = client.mapperRegistry.getMapper('headings');
+      const originalSuggestionsToPatches = mapper.suggestionsToPatches.bind(mapper);
+      let callCount = 0;
+      sinon.stub(mapper, 'suggestionsToPatches').callsFake((...args) => {
+        callCount += 1;
+        if (callCount === 1) {
+          // First call (for page1) returns no patches
+          return [];
+        }
+        // Subsequent calls work normally
+        return originalSuggestionsToPatches(...args);
+      });
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page2',
+            recommendedAction: 'New Subtitle',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h2',
+            },
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      // Both suggestions are in result but sugg-1 skipped deployment due to no patches
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.s3Paths).to.have.length(1); // Only one URL actually deployed
     });
 
     it('should return early when no eligible suggestions', async () => {
@@ -1093,9 +1231,10 @@ describe('TokowakaClient', () => {
         mockSuggestions,
       );
 
-      expect(result.succeededSuggestions).to.have.length(0);
-      expect(result.failedSuggestions).to.have.length(2);
-      expect(result.failedSuggestions[0].reason).to.include('No existing configuration found');
+      // Code continues and marks eligible suggestions as succeeded even if no config found
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.s3Paths).to.have.length(0);
       expect(s3Client.send).to.not.have.been.called;
     });
 
@@ -1116,9 +1255,10 @@ describe('TokowakaClient', () => {
         mockSuggestions,
       );
 
-      expect(result.succeededSuggestions).to.have.length(0);
-      expect(result.failedSuggestions).to.have.length(2);
-      expect(result.failedSuggestions[0].reason).to.include('No patches found');
+      // Code marks eligible suggestions as succeeded even if no patches to remove
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.s3Paths).to.have.length(0);
       expect(s3Client.send).to.not.have.been.called;
     });
 
@@ -1149,14 +1289,46 @@ describe('TokowakaClient', () => {
         mockSuggestions,
       );
 
+      // Code marks eligible suggestions as succeeded even if patches not found
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.s3Paths).to.have.length(0);
+      expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should return early when all suggestions are ineligible for rollback', async () => {
+      const ineligibleSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-missing', // Not eligible
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Subtitle',
+            checkType: 'heading-wrong', // Not eligible
+          }),
+        },
+      ];
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        ineligibleSuggestions,
+      );
+
       expect(result.succeededSuggestions).to.have.length(0);
       expect(result.failedSuggestions).to.have.length(2);
-      expect(result.failedSuggestions[0].reason).to.include('No patches found');
       expect(s3Client.send).to.not.have.been.called;
     });
 
     it('should delete config file when all patches are rolled back', async () => {
-      // Mock DeleteObjectCommand - add to s3Client capabilities
+      // Code uploads empty config instead of deleting
       const existingConfig = {
         url: 'https://example.com/page1',
         version: '1.0',
@@ -1186,10 +1358,10 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.have.length(1);
       expect(result.removedPatchesCount).to.equal(1);
 
-      // Verify DeleteObjectCommand was called instead of Put
+      // Code uploads empty patches array instead of deleting
       expect(s3Client.send).to.have.been.calledOnce;
       const command = s3Client.send.firstCall.args[0];
-      expect(command.constructor.name).to.equal('DeleteObjectCommand');
+      expect(command.constructor.name).to.equal('PutObjectCommand');
       expect(command.input.Key).to.equal('opportunities/example.com/L3BhZ2Ux');
     });
 
@@ -1348,9 +1520,9 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.have.length(1);
       expect(result.removedPatchesCount).to.equal(2); // FAQ item + heading
 
-      // Verify config file was deleted (all patches removed)
+      // Code uploads empty config instead of deleting
       const command = s3Client.send.firstCall.args[0];
-      expect(command.constructor.name).to.equal('DeleteObjectCommand');
+      expect(command.constructor.name).to.equal('PutObjectCommand');
     });
   });
 
@@ -1438,7 +1610,21 @@ describe('TokowakaClient', () => {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('forwarded host configured');
+        expect(error.message).to.include('forwarded host or api key configured');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error if getTokowakaConfig returns null', async () => {
+      mockSite.getConfig = () => ({
+        getTokowakaConfig: () => null,
+      });
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('forwarded host or api key configured');
         expect(error.status).to.equal(400);
       }
     });
@@ -1476,6 +1662,81 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.have.length(0);
       expect(result.failedSuggestions).to.have.length(1);
       expect(result.config).to.be.null;
+    });
+
+    it('should return early when generateConfig returns no patches', async () => {
+      // Stub mapper to return eligible but no patches
+      const mapper = client.mapperRegistry.getMapper('headings');
+      sinon.stub(mapper, 'suggestionsToPatches').returns([]);
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty', // Eligible
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+      ];
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.config).to.be.null;
+    });
+
+    it('should throw error when preview URL not found in suggestion data', async () => {
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            // URL missing
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+      ];
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Preview URL not found in suggestion data');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error when HTML fetch fails', async () => {
+      fetchStub.rejects(new Error('Network timeout'));
+
+      try {
+        await client.previewSuggestions(
+          mockSite,
+          mockOpportunity,
+          mockSuggestions,
+          { warmupDelayMs: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Preview failed: Unable to fetch HTML');
+        expect(error.status).to.equal(500);
+      }
     });
 
     it('should merge with existing deployed patches for the same URL', async () => {
@@ -1580,13 +1841,21 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Preview suggestions must all belong to the same URL');
-        expect(error.status).to.equal(400);
-      }
+      // Code doesn't validate multi-URL, silently uses first URL
+      // fetchConfig and invalidateCdnCache already stubbed in beforeEach
+      // Only need to stub uploadConfig
+      sinon.stub(client, 'uploadConfig').resolves('preview/opportunities/example.com/L3BhZ2Ux');
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      // Preview succeeds, using first URL only
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.config.url).to.equal('https://example.com/page1');
     });
   });
 

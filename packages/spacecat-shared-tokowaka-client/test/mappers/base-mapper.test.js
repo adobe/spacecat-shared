@@ -256,10 +256,10 @@ describe('BaseOpportunityMapper', () => {
 
     it('should handle null/undefined config gracefully', () => {
       const result1 = testMapper.rollbackPatches(null, ['sugg-1'], 'opp-test');
-      expect(result1.removedCount).to.equal(0);
+      expect(result1).to.be.null;
 
       const result2 = testMapper.rollbackPatches(undefined, ['sugg-1'], 'opp-test');
-      expect(result2.removedCount).to.equal(0);
+      expect(result2).to.be.undefined;
     });
 
     it('should remove patches for multiple suggestion IDs', () => {

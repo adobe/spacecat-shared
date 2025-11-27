@@ -227,142 +227,126 @@ describe('BaseOpportunityMapper', () => {
 
     it('should remove patches by suggestion IDs using default implementation', () => {
       const config = {
-        siteId: 'site-123',
-        baseURL: 'https://example.com',
+        url: 'https://example.com/page1',
         version: '1.0',
-        tokowakaOptimizations: {
-          '/page1': {
-            prerender: true,
-            patches: [
-              {
-                opportunityId: 'opp-test',
-                suggestionId: 'sugg-1',
-                op: 'replace',
-                value: 'value-1',
-              },
-              {
-                opportunityId: 'opp-test',
-                suggestionId: 'sugg-2',
-                op: 'replace',
-                value: 'value-2',
-              },
-            ],
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-1',
+            op: 'replace',
+            value: 'value-1',
           },
-        },
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-2',
+            op: 'replace',
+            value: 'value-2',
+          },
+        ],
       };
 
       const result = testMapper.rollbackPatches(config, ['sugg-1'], 'opp-test');
 
-      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
-      expect(result.tokowakaOptimizations['/page1'].patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.patches).to.have.lengthOf(1);
+      expect(result.patches[0].suggestionId).to.equal('sugg-2');
       expect(result.removedCount).to.equal(1);
     });
 
     it('should handle null/undefined config gracefully', () => {
       const result1 = testMapper.rollbackPatches(null, ['sugg-1'], 'opp-test');
-      expect(result1).to.be.null;
+      expect(result1.removedCount).to.equal(0);
 
       const result2 = testMapper.rollbackPatches(undefined, ['sugg-1'], 'opp-test');
-      expect(result2).to.be.undefined;
+      expect(result2.removedCount).to.equal(0);
     });
 
     it('should remove patches for multiple suggestion IDs', () => {
       const config = {
-        siteId: 'site-123',
-        baseURL: 'https://example.com',
+        url: 'https://example.com/page1',
         version: '1.0',
-        tokowakaOptimizations: {
-          '/page1': {
-            prerender: true,
-            patches: [
-              {
-                opportunityId: 'opp-test',
-                suggestionId: 'sugg-1',
-                op: 'replace',
-                value: 'value-1',
-              },
-              {
-                opportunityId: 'opp-test',
-                suggestionId: 'sugg-2',
-                op: 'replace',
-                value: 'value-2',
-              },
-              {
-                opportunityId: 'opp-test',
-                suggestionId: 'sugg-3',
-                op: 'replace',
-                value: 'value-3',
-              },
-            ],
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-1',
+            op: 'replace',
+            value: 'value-1',
           },
-        },
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-2',
+            op: 'replace',
+            value: 'value-2',
+          },
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-3',
+            op: 'replace',
+            value: 'value-3',
+          },
+        ],
       };
 
       const result = testMapper.rollbackPatches(config, ['sugg-1', 'sugg-3'], 'opp-test');
 
-      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
-      expect(result.tokowakaOptimizations['/page1'].patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.patches).to.have.lengthOf(1);
+      expect(result.patches[0].suggestionId).to.equal('sugg-2');
       expect(result.removedCount).to.equal(2);
     });
 
     it('should remove URL path when all patches are removed', () => {
       const config = {
-        siteId: 'site-123',
-        baseURL: 'https://example.com',
+        url: 'https://example.com/page1',
         version: '1.0',
-        tokowakaOptimizations: {
-          '/page1': {
-            prerender: true,
-            patches: [
-              {
-                opportunityId: 'opp-test',
-                suggestionId: 'sugg-1',
-                op: 'replace',
-                value: 'value-1',
-              },
-            ],
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-1',
+            op: 'replace',
+            value: 'value-1',
           },
-        },
+        ],
       };
 
       const result = testMapper.rollbackPatches(config, ['sugg-1'], 'opp-test');
 
-      // URL path should be removed when no patches remain
-      expect(result.tokowakaOptimizations).to.not.have.property('/page1');
+      // All patches removed, patches array should be empty
+      expect(result.patches).to.have.lengthOf(0);
       expect(result.removedCount).to.equal(1);
     });
 
     it('should preserve patches from other opportunities', () => {
       const config = {
-        siteId: 'site-123',
-        baseURL: 'https://example.com',
+        url: 'https://example.com/page1',
         version: '1.0',
-        tokowakaOptimizations: {
-          '/page1': {
-            prerender: true,
-            patches: [
-              {
-                opportunityId: 'opp-test',
-                suggestionId: 'sugg-1',
-                op: 'replace',
-                value: 'test-value',
-              },
-              {
-                opportunityId: 'opp-other',
-                suggestionId: 'sugg-2',
-                op: 'replace',
-                value: 'other-value',
-              },
-            ],
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-1',
+            op: 'replace',
+            value: 'test-value',
           },
-        },
+          {
+            opportunityId: 'opp-other',
+            suggestionId: 'sugg-2',
+            op: 'replace',
+            value: 'other-value',
+          },
+        ],
       };
 
       // Default implementation removes by suggestionId regardless of opportunity
       const result = testMapper.rollbackPatches(config, ['sugg-1'], 'opp-test');
 
-      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
-      expect(result.tokowakaOptimizations['/page1'].patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.patches).to.have.lengthOf(1);
+      expect(result.patches[0].suggestionId).to.equal('sugg-2');
       expect(result.removedCount).to.equal(1);
     });
   });

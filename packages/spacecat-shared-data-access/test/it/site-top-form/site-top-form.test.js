@@ -327,6 +327,31 @@ describe('SiteTopForm IT', async () => {
       .to.be.rejectedWith('URL is required and cannot be empty for all items');
   });
 
+  it('finds form by URL and formSource', async () => {
+    const siteTopForm = sampleData.siteTopForms[0];
+    const url = siteTopForm.getUrl();
+    const formSource = siteTopForm.getFormSource();
+
+    const foundForm = await SiteTopForm.findByUrlAndFormSource(url, formSource);
+
+    expect(foundForm).to.be.an('object');
+    expect(foundForm.getId()).to.equal(siteTopForm.getId());
+    expect(foundForm.getUrl()).to.equal(url);
+
+    // Handle the case where database might have null but fixture has empty string
+    const actualFormSource = foundForm.getFormSource();
+    const expectedFormSource = formSource;
+    if ((actualFormSource === null && expectedFormSource === '')
+      || (actualFormSource === '' && expectedFormSource === null)) {
+      // Both null and empty string are considered equivalent for optional formSource
+      expect(actualFormSource === expectedFormSource
+        || (actualFormSource === null && expectedFormSource === '')
+        || (actualFormSource === '' && expectedFormSource === null)).to.be.true;
+    } else {
+      expect(actualFormSource).to.equal(expectedFormSource);
+    }
+  });
+
   it('updates a site top form', async () => {
     const siteTopForm = await SiteTopForm.findById(sampleData.siteTopForms[0].getId());
 
@@ -384,32 +409,6 @@ describe('SiteTopForm IT', async () => {
 
     expect(siteTopForms.some((form) => form.getId() === createdForms[0].getId())).to.equal(true);
     expect(siteTopForms.some((form) => form.getId() === createdForms[1].getId())).to.equal(true);
-  });
-
-  it('finds form by URL and formSource', async () => {
-    sampleData = await seedDatabase();
-    const siteTopForm = sampleData.siteTopForms[0];
-    const url = siteTopForm.getUrl();
-    const formSource = siteTopForm.getFormSource();
-
-    const foundForm = await SiteTopForm.findByUrlAndFormSource(url, formSource);
-
-    expect(foundForm).to.be.an('object');
-    expect(foundForm.getId()).to.equal(siteTopForm.getId());
-    expect(foundForm.getUrl()).to.equal(url);
-
-    // Handle the case where database might have null but fixture has empty string
-    const actualFormSource = foundForm.getFormSource();
-    const expectedFormSource = formSource;
-    if ((actualFormSource === null && expectedFormSource === '')
-        || (actualFormSource === '' && expectedFormSource === null)) {
-      // Both null and empty string are considered equivalent for optional formSource
-      expect(actualFormSource === expectedFormSource
-             || (actualFormSource === null && expectedFormSource === '')
-             || (actualFormSource === '' && expectedFormSource === null)).to.be.true;
-    } else {
-      expect(actualFormSource).to.equal(expectedFormSource);
-    }
   });
 
   it('removes a site top form', async () => {

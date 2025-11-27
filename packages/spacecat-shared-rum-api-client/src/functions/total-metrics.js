@@ -22,11 +22,11 @@ function handler(bundles) {
     : 0));
   dataChunks.addSeries('lcp', series.lcp);
   dataChunks.addSeries('engagement', series.engagement);
-  const totalPageViews = dataChunks?.totals?.traffic_domain?.weight;
+  const totalPageViews = dataChunks?.totals?.traffic_domain?.sum;
+  const totalLCP = dataChunks?.totals?.lcp?.percentile(75) || null;
   const sum = dataChunks?.totals?.clicks?.sum ?? 0;
   const weight = dataChunks?.totals?.clicks?.weight ?? 0;
   const totalCTR = weight !== 0 ? sum / weight : 0;
-  const totalLCP = dataChunks?.totals?.lcp?.percentile(75) || null;
   const engagementCount = dataChunks?.totals?.engagement?.sum ?? 0;
 
   return {
@@ -40,5 +40,5 @@ function handler(bundles) {
 
 export default {
   handler,
-  checkpoints: ['click', 'cwv-lcp', 'viewmedia', 'viewblock'],
+  checkpoints: [],
 };

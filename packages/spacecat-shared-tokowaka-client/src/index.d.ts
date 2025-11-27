@@ -32,7 +32,7 @@ export const TARGET_USER_AGENTS_CATEGORIES: {
   ALL: 'all';
 };
 
-export interface TokowakaMetadata {
+export interface TokowakaMetaconfig {
   siteId: string;
   prerender: boolean;
 }
@@ -294,7 +294,6 @@ export default class TokowakaClient {
       TOKOWAKA_CDN_PROVIDER?: string;
       TOKOWAKA_CDN_CONFIG?: string;
       TOKOWAKA_EDGE_URL?: string;
-      TOKOWAKA_PREVIEW_API_KEY?: string;
     };
     log?: any;
     s3: { s3Client: S3Client };
@@ -321,14 +320,14 @@ export default class TokowakaClient {
   fetchConfig(url: string, isPreview?: boolean): Promise<TokowakaConfig | null>;
   
   /**
-   * Fetches domain-level metadata from S3
+   * Fetches domain-level metaconfig from S3
    */
-  fetchMetadata(url: string, isPreview?: boolean): Promise<TokowakaMetadata | null>;
+  fetchMetaconfig(url: string, isPreview?: boolean): Promise<TokowakaMetaconfig | null>;
   
   /**
-   * Uploads domain-level metadata to S3
+   * Uploads domain-level metaconfig to S3
    */
-  uploadMetadata(url: string, metadata: TokowakaMetadata, isPreview?: boolean): Promise<string>;
+  uploadMetaconfig(url: string, metaconfig: TokowakaMetaconfig, isPreview?: boolean): Promise<string>;
   
   /**
    * Merges existing configuration with new configuration

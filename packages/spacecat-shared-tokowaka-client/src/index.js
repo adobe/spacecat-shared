@@ -15,7 +15,7 @@ import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
 import { mergePatches } from './utils/patch-utils.js';
-import { getTokowakaConfigS3Path, getTokowakaMetadataS3Path } from './utils/s3-utils.js';
+import { getTokowakaConfigS3Path, getTokowakaMetaconfigS3Path } from './utils/s3-utils.js';
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { fetchHtmlWithWarmup } from './utils/custom-html-utils.js';
@@ -152,17 +152,17 @@ class TokowakaClient {
   }
 
   /**
-   * Fetches domain-level metadata from S3
+   * Fetches domain-level metaconfig from S3
    * @param {string} url - Full URL (used to extract domain)
    * @param {boolean} isPreview - Whether to fetch from preview path (default: false)
-   * @returns {Promise<Object|null>} - Metadata object or null if not found
+   * @returns {Promise<Object|null>} - Metaconfig object or null if not found
    */
-  async fetchMetadata(url, isPreview = false) {
+  async fetchMetaconfig(url, isPreview = false) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = getTokowakaMetadataS3Path(url, this.log, isPreview);
+    const s3Path = getTokowakaMetaconfigS3Path(url, this.log, isPreview);
     const bucketName = isPreview ? this.previewBucketName : this.deployBucketName;
 
     try {
@@ -173,56 +173,56 @@ class TokowakaClient {
 
       const response = await this.s3Client.send(command);
       const bodyContents = await response.Body.transformToString();
-      const metadata = JSON.parse(bodyContents);
+      const metaconfig = JSON.parse(bodyContents);
 
-      this.log.debug(`Successfully fetched metadata from s3://${bucketName}/${s3Path}`);
-      return metadata;
+      this.log.debug(`Successfully fetched metaconfig from s3://${bucketName}/${s3Path}`);
+      return metaconfig;
     } catch (error) {
-      // If metadata doesn't exist (NoSuchKey), return null
+      // If metaconfig doesn't exist (NoSuchKey), return null
       if (error.name === 'NoSuchKey' || error.Code === 'NoSuchKey') {
-        this.log.debug(`No metadata found at s3://${bucketName}/${s3Path}`);
+        this.log.debug(`No metaconfig found at s3://${bucketName}/${s3Path}`);
         return null;
       }
 
       // For other errors, log and throw
-      this.log.error(`Failed to fetch metadata from S3: ${error.message}`, error);
+      this.log.error(`Failed to fetch metaconfig from S3: ${error.message}`, error);
       throw this.#createError(`S3 fetch failed: ${error.message}`, HTTP_INTERNAL_SERVER_ERROR);
     }
   }
 
   /**
-   * Uploads domain-level metadata to S3
+   * Uploads domain-level metaconfig to S3
    * @param {string} url - Full URL (used to extract domain)
-   * @param {Object} metadata - Metadata object (siteId, prerender)
+   * @param {Object} metaconfig - Metaconfig object (siteId, prerender)
    * @param {boolean} isPreview - Whether to upload to preview path (default: false)
-   * @returns {Promise<string>} - S3 key of uploaded metadata
+   * @returns {Promise<string>} - S3 key of uploaded metaconfig
    */
-  async uploadMetadata(url, metadata, isPreview = false) {
+  async uploadMetaconfig(url, metaconfig, isPreview = false) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
-    if (!isNonEmptyObject(metadata)) {
-      throw this.#createError('Metadata object is required', HTTP_BAD_REQUEST);
+    if (!isNonEmptyObject(metaconfig)) {
+      throw this.#createError('Metaconfig object is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = getTokowakaMetadataS3Path(url, this.log, isPreview);
+    const s3Path = getTokowakaMetaconfigS3Path(url, this.log, isPreview);
     const bucketName = isPreview ? this.previewBucketName : this.deployBucketName;
 
     try {
       const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: s3Path,
-        Body: JSON.stringify(metadata, null, 2),
+        Body: JSON.stringify(metaconfig, null, 2),
         ContentType: 'application/json',
       });
 
       await this.s3Client.send(command);
-      this.log.info(`Successfully uploaded metadata to s3://${bucketName}/${s3Path}`);
+      this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path}`);
 
       return s3Path;
     } catch (error) {
-      this.log.error(`Failed to upload metadata to S3: ${error.message}`, error);
+      this.log.error(`Failed to upload metaconfig to S3: ${error.message}`, error);
       throw this.#createError(`S3 upload failed: ${error.message}`, HTTP_INTERNAL_SERVER_ERROR);
     }
   }
@@ -415,19 +415,19 @@ class TokowakaClient {
     // Group suggestions by URL
     const suggestionsByUrl = groupSuggestionsByUrlPath(eligibleSuggestions, baseURL, this.log);
 
-    // Check/create domain-level metadata (only need to do this once per deployment)
+    // Check/create domain-level metaconfig (only need to do this once per deployment)
     const firstUrl = new URL(Object.keys(suggestionsByUrl)[0], baseURL).toString();
-    let metadata = await this.fetchMetadata(firstUrl);
+    let metaconfig = await this.fetchMetaconfig(firstUrl);
 
-    if (!metadata) {
-      this.log.info('Creating domain-level metadata');
-      metadata = {
+    if (!metaconfig) {
+      this.log.info('Creating domain-level metaconfig');
+      metaconfig = {
         siteId,
         prerender: mapper.requiresPrerender(),
       };
-      await this.uploadMetadata(firstUrl, metadata);
+      await this.uploadMetaconfig(firstUrl, metaconfig);
     } else {
-      this.log.debug('Domain-level metadata already exists');
+      this.log.debug('Domain-level metaconfig already exists');
     }
 
     // Process each URL separately
@@ -627,15 +627,6 @@ class TokowakaClient {
       );
     }
 
-    // TOKOWAKA_PREVIEW_API_KEY is mandatory for preview
-    const previewApiKey = this.env.TOKOWAKA_PREVIEW_API_KEY;
-    if (!hasText(previewApiKey)) {
-      throw this.#createError(
-        'TOKOWAKA_PREVIEW_API_KEY is required for preview functionality',
-        HTTP_INTERNAL_SERVER_ERROR,
-      );
-    }
-
     // Validate which suggestions can be deployed using mapper's canDeploy method
     const {
       eligible: eligibleSuggestions,
@@ -719,7 +710,6 @@ class TokowakaClient {
         tokowakaEdgeUrl,
         this.log,
         false,
-        previewApiKey,
         options,
       );
       // Then fetch optimized HTML (with preview)
@@ -729,7 +719,6 @@ class TokowakaClient {
         tokowakaEdgeUrl,
         this.log,
         true,
-        previewApiKey,
         options,
       );
       this.log.info('Successfully fetched both original and optimized HTML for preview');

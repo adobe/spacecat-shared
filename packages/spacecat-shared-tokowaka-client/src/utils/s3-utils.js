@@ -96,22 +96,22 @@ export function getTokowakaConfigS3Path(url, logger, isPreview = false) {
 }
 
 /**
- * Generates S3 path for domain-level metadata
+ * Generates S3 path for domain-level metaconfig
  * @param {string} url - Full URL (used to extract domain)
  * @param {Object} logger - Logger instance
  * @param {boolean} isPreview - Whether this is a preview path
- * @returns {string} - S3 path for metadata (e.g., 'opportunities/example.com/metadata')
+ * @returns {string} - S3 path for metaconfig (e.g., 'opportunities/example.com/config')
  * @throws {Error} - If URL parsing fails
  */
-export function getTokowakaMetadataS3Path(url, logger, isPreview = false) {
+export function getTokowakaMetaconfigS3Path(url, logger, isPreview = false) {
   try {
     const urlObj = new URL(url);
     const normalizedHostName = getHostName(urlObj, logger);
     const prefix = isPreview ? 'preview/opportunities' : 'opportunities';
 
-    return `${prefix}/${normalizedHostName}/metadata`;
+    return `${prefix}/${normalizedHostName}/config`;
   } catch (error) {
-    logger.error(`Error generating metadata S3 path for URL ${url}: ${error.message}`);
-    throw new Error(`Failed to generate metadata S3 path: ${error.message}`);
+    logger.error(`Error generating metaconfig S3 path for URL ${url}: ${error.message}`);
+    throw new Error(`Failed to generate metaconfig S3 path: ${error.message}`);
   }
 }

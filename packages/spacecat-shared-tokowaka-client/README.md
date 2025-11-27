@@ -44,7 +44,6 @@ Creates a client instance from a context object.
 
 **Optional (for preview functionality):**
 - `TOKOWAKA_EDGE_URL` - Tokowaka edge URL for fetching HTML content during preview
-- `TOKOWAKA_PREVIEW_API_KEY` - Preview API key for authenticating with Tokowaka edge (required for preview)
 
 ### Main Methods
 
@@ -170,7 +169,7 @@ Configurations are now stored **per URL** with domain-level metadata:
 ### Structure
 ```
 s3://{TOKOWAKA_SITE_CONFIG_BUCKET}/opportunities/{normalized-domain}/
-├── metadata (domain-level: siteId, prerender)
+├── config (domain-level metaconfig: siteId, prerender)
 ├── {base64-encoded-path-1} (URL-specific patches)
 ├── {base64-encoded-path-2} (URL-specific patches)
 └── ...
@@ -179,12 +178,12 @@ s3://{TOKOWAKA_SITE_CONFIG_BUCKET}/opportunities/{normalized-domain}/
 For preview configurations:
 ```
 s3://{TOKOWAKA_PREVIEW_BUCKET}/preview/opportunities/{normalized-domain}/
-├── metadata
+├── config
 ├── {base64-encoded-path-1}
 └── ...
 ```
 
-**Architecture Change:** Each URL has its own configuration file instead of one file per site. Domain-level metadata is stored separately to avoid duplication.
+**Architecture Change:** Each URL has its own configuration file instead of one file per site. Domain-level metaconfig is stored separately to avoid duplication.
 
 **URL Normalization:**
 - Domain: Strips `www.` prefix (e.g., `www.example.com` → `example.com`)
@@ -192,12 +191,12 @@ s3://{TOKOWAKA_PREVIEW_BUCKET}/preview/opportunities/{normalized-domain}/
 
 **Example:**
 - URL: `https://www.example.com/products/item`
-- Metadata Path: `opportunities/example.com/metadata`
-- Config Path: `opportunities/example.com/L3Byb2R1Y3RzL2l0ZW0`
+- Metaconfig Path: `opportunities/example.com/config`
+- Patch Config Path: `opportunities/example.com/L3Byb2R1Y3RzL2l0ZW0`
 - Where `L3Byb2R1Y3RzL2l0ZW0` is base64 URL encoding of `/products/item`
 
-### Metadata File Structure
-Domain-level metadata (created once per domain, shared by all URLs):
+### Metaconfig File Structure
+Domain-level metaconfig (created once per domain, shared by all URLs):
 ```json
 {
   "siteId": "abc-123",
@@ -230,287 +229,11 @@ Per-URL configuration (flat structure):
 ```
 
 **Note:** 
-- `siteId` is stored only in domain-level `metadata`
-- `prerender` is stored in both metadata (domain-level) and patch files (URL-level)
+- `siteId` is stored only in domain-level `config` (metaconfig)
+- `prerender` is stored in both metaconfig (domain-level) and patch files (URL-level)
 - The `baseURL` field has been renamed to `url`
 - The `tokowakaOptimizations` nested structure has been removed
 - The `tokowakaForceFail` field has been renamed to `forceFail`
-
----
-
-## Adding Your Opportunity Type
-
-Want to enable Tokowaka edge deployment for your opportunity type? Follow this guide to create a custom mapper.
-
-### Overview
-
-To enable your opportunity type to work with Tokowaka, you need to:
-1. Create a mapper class that extends `BaseOpportunityMapper`
-2. Implement required methods to convert your suggestions into Tokowaka patches
-3. Register your mapper with the TokowakaClient
-4. Test your implementation
-
-### Step 1: Create Your Mapper
-
-Create a new file in `src/mappers/your-opportunity-mapper.js`:
-
-```javascript
-import { BaseOpportunityMapper } from './base-opportunity-mapper.js';
-import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
-
-export default class YourOpportunityMapper extends BaseOpportunityMapper {
-  /**
-   * Returns the opportunity type this mapper handles
-   * Must match the opportunity.getType() value
-   */
-  getOpportunityType() {
-    return 'your-opportunity-type';
-  }
-
-  /**
-   * Determines if prerendering is required
-   * Set to true if patches modify content visible to bots/crawlers
-   */
-  requiresPrerender() {
-    return true; // or false, depending on your use case
-  }
-
-  /**
-   * Validates if a suggestion can be deployed
-   * Check all required data fields and business rules
-   */
-  canDeploy(suggestion) {
-    const data = suggestion.getData();
-    
-    // Example validation
-    if (!data?.yourRequiredField) {
-      return {
-        eligible: false,
-        reason: 'Missing required field: yourRequiredField',
-      };
-    }
-    
-    // Add more validation as needed
-    return { eligible: true };
-  }
-
-  /**
-   * Converts suggestions to Tokowaka patches
-   * This is where you define what DOM modifications to make
-   */
-  suggestionsToPatches(urlPath, suggestions, opportunityId) {
-    return suggestions.map((suggestion) => {
-      const data = suggestion.getData();
-      
-      return {
-        opportunityId,
-        suggestionId: suggestion.getId(),
-        prerenderRequired: this.requiresPrerender(),
-        lastUpdated: Date.now(),
-        
-        // Define the DOM operation
-        op: 'appendChild', // or 'insertAfter', 'insertBefore', 'replace'
-        selector: 'main', // CSS selector for target element
-        
-        // The content to add/modify
-        value: {
-          type: 'element',
-          tagName: 'div',
-          properties: {
-            className: ['your-class'],
-          },
-          children: [
-            {
-              type: 'text',
-              value: data.yourContent,
-            },
-          ],
-        },
-        valueFormat: 'hast', // or 'text'
-        
-        // Who should see this modification
-        target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS, // or BOTS, or ALL
-      };
-    });
-  }
-}
-```
-
-### Step 2: Understanding Patch Operations
-
-#### Available Operations
-
-Any valid html operations that can be performed on html elements are supported.
-Below operations are already being handled as part of Headings, FAQ, and Summarization opportunities.
-- **`appendChild`** - Adds content as the last child of the selector
-- **`insertAfter`** - Inserts content after the selector
-- **`insertBefore`** - Inserts content before the selector
-- **`replace`** - Replaces the selector's content
-
-#### Value Formats
-
-**HAST (Hypertext Abstract Syntax Tree)** - For complex HTML:
-```javascript
-value: {
-  type: 'element',
-  tagName: 'div',
-  properties: {
-    className: ['my-class'],
-    id: 'my-id',
-  },
-  children: [
-    {
-      type: 'element',
-      tagName: 'h2',
-      children: [{ type: 'text', value: 'Title' }],
-    },
-    {
-      type: 'element',
-      tagName: 'p',
-      children: [{ type: 'text', value: 'Paragraph text' }],
-    },
-  ],
-}
-```
-
-**Text** - For simple text content:
-```javascript
-value: 'Simple text content',
-valueFormat: 'text'
-```
-
-#### Target User Agents
-
-- **`ai-bots`** - Only AI crawlers (ChatGPT, Perplexity, etc.)
-- **`bots`** - All bots including search engines
-- **`all`** - Everyone (use with caution)
-
-### Step 3: Register Your Mapper
-
-In the TokowakaClient initialization:
-
-```javascript
-import TokowakaClient from '@adobe/spacecat-shared-tokowaka-client';
-import YourOpportunityMapper from './mappers/your-opportunity-mapper.js';
-
-// Create client
-const tokowakaClient = TokowakaClient.createFrom(context);
-
-// Register your mapper
-const mapper = new YourOpportunityMapper(context.log);
-tokowakaClient.registerMapper(mapper);
-```
-
-Or if you're contributing to the core package, add it to `src/mappers/mapper-registry.js`:
-
-```javascript
-import YourOpportunityMapper from './your-opportunity-mapper.js';
-
-export default class MapperRegistry {
-  constructor(log) {
-    this.log = log;
-    this.mappers = new Map();
-    
-    // Register built-in mappers
-    this.registerMapper(new HeadingsMapper(log));
-    this.registerMapper(new FaqMapper(log));
-    this.registerMapper(new YourOpportunityMapper(log)); // Add this
-  }
-}
-```
-
-### Step 4: Suggestion Data Structure
-
-Your suggestions must include a `url` field in their data:
-
-```javascript
-{
-  id: 'suggestion-123',
-  opportunityId: 'opportunity-456',
-  data: {
-    url: 'https://example.com/page',  // Required!
-    yourRequiredField: 'value',
-    // ... other fields specific to your opportunity
-  },
-  updatedAt: '2024-01-01T00:00:00Z'
-}
-```
-
-### Step 5: Testing Your Mapper
-
-Create unit tests in `test/mappers/your-opportunity-mapper.test.js`:
-
-```javascript
-import { expect } from 'chai';
-import YourOpportunityMapper from '../../src/mappers/your-opportunity-mapper.js';
-
-describe('YourOpportunityMapper', () => {
-  let mapper;
-  
-  beforeEach(() => {
-    mapper = new YourOpportunityMapper(console);
-  });
-  
-  it('should return correct opportunity type', () => {
-    expect(mapper.getOpportunityType()).to.equal('your-opportunity-type');
-  });
-  
-  it('should validate suggestions correctly', () => {
-    const validSuggestion = {
-      getData: () => ({ yourRequiredField: 'value' }),
-    };
-    
-    const result = mapper.canDeploy(validSuggestion);
-    expect(result.eligible).to.be.true;
-  });
-  
-  it('should convert suggestions to patches', () => {
-    const suggestion = {
-      getId: () => 'suggestion-123',
-      getData: () => ({
-        yourRequiredField: 'value',
-        yourContent: 'Test content',
-      }),
-    };
-    
-    const patches = mapper.suggestionsToPatches(
-      '/page',
-      [suggestion],
-      'opportunity-456'
-    );
-    
-    expect(patches).to.have.lengthOf(1);
-    expect(patches[0].suggestionId).to.equal('suggestion-123');
-    expect(patches[0].op).to.equal('appendChild');
-  });
-});
-```
-
-### Example: FAQ Mapper
-
-For a complete reference implementation, see `src/mappers/faq-mapper.js`:
-- Handles multiple suggestions → single FAQ section
-- Adds heading patch only if needed (checks existing config)
-- Converts markdown to HAST format
-- Implements rollback logic for grouped patches
-
-### Best Practices
-
-1. **Validation** - Always validate all required fields in `canDeploy()`
-2. **Selectors** - Use stable, semantic selectors (avoid auto-generated classes)
-3. **Prerender** - Set to `true` if content should be visible to bots
-4. **Target** - Use `ai-bots` for AI-specific content, `bots` for SEO
-5. **HAST** - Use HAST format for complex HTML to ensure proper structure
-6. **Testing** - Write comprehensive unit tests for all mapper methods
-7. **Idempotency** - Ensure patches can be safely redeployed
-
-### Need Help?
-
-- Check existing mappers in `src/mappers/` for examples
-- Review Tokowaka patch format documentation (see Reference Material)
-- Ask the SpaceCat team on Slack
-
----
 
 ## Reference Material
 

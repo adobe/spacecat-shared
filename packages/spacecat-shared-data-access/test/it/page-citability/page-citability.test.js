@@ -56,7 +56,8 @@ function checkPageCitability(pc) {
 describe('PageCitability IT', async () => {
   let PageCitability;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     const dataAccess = getDataAccess();
     PageCitability = dataAccess.PageCitability;
   });

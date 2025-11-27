@@ -1610,7 +1610,7 @@ describe('TokowakaClient', () => {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('forwarded host or api key configured');
+        expect(error.message).to.include('Site does not have a Tokowaka API key or forwarded host configured');
         expect(error.status).to.equal(400);
       }
     });
@@ -1624,7 +1624,7 @@ describe('TokowakaClient', () => {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('forwarded host or api key configured');
+        expect(error.message).to.include('Site does not have a Tokowaka API key or forwarded host configured');
         expect(error.status).to.equal(400);
       }
     });

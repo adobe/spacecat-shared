@@ -602,8 +602,8 @@ class TokowakaClient {
 
     if (!hasText(forwardedHost) || !hasText(apiKey)) {
       throw this.#createError(
-        'Site does not have forwarded host or api key configured. '
-        + 'Please configure forwardedHost and apiKey in site tokowakaConfig.',
+        'Site does not have a Tokowaka API key or forwarded host configured. '
+        + 'Please onboard the site to Tokowaka first.',
         HTTP_BAD_REQUEST,
       );
     }

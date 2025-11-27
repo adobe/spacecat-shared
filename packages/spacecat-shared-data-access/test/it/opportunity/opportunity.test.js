@@ -43,9 +43,7 @@ describe('Opportunity IT', async () => {
   before(async function () {
     this.timeout(10000);
     sampleData = await seedDatabase();
-  });
 
-  beforeEach(() => {
     mockLogger = {
       debug: sinon.stub(),
       error: sinon.stub(),

@@ -143,3 +143,4 @@ junit
 .nvmrc
 .vscode
 .cursor
+xunit.xml

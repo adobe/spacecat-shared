@@ -4,7 +4,7 @@
   "description": "Shared modules of the Spacecat Services - Tier Client",
   "type": "module",
   "engines": {
-    "node": ">=22.0.0 <23.0.0",
+    "node": ">=22.0.0 <25.0.0",
     "npm": ">=10.9.0 <12.0.0"
   },
   "main": "src/index.js",
@@ -35,8 +35,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.66.0",
-    "@adobe/spacecat-shared-data-access": "^2.61.3"
+    "@adobe/spacecat-shared-utils": "1.81.0",
+    "@adobe/spacecat-shared-data-access": "2.88.3"
   },
   "devDependencies": {
     "c8": "10.1.3",

@@ -194,7 +194,6 @@ export default class AdobeImsHandler extends AbstractHandler {
         .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'debug');
-      console.log(`Failed to validate token: ${e.message}`);
     }
 
     return null;

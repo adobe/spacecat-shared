@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class SiteTopForm extends BaseModel {
+  static ENTITY_NAME = 'SiteTopForm';
+
   // add your custom methods or overrides here
 }
 

@@ -19,6 +19,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class PageCitability extends BaseModel {
+  static ENTITY_NAME = 'PageCitability';
+
   static DEFAULT_UPDATED_BY = 'spacecat';
 
   // add any custom methods or overrides here

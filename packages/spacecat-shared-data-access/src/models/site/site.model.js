@@ -70,6 +70,8 @@ export const getAuthoringType = (hostname, authoringTypes) => {
  * @extends BaseModel
  */
 class Site extends BaseModel {
+  static ENTITY_NAME = 'Site';
+
   static DELIVERY_TYPES = DELIVERY_TYPES;
 
   static DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;

@@ -19,6 +19,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class PageIntentCollection extends BaseCollection {
+  static COLLECTION_NAME = 'PageIntentCollection';
+
   // add custom collection-level methods here, if needed
 }
 

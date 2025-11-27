@@ -25,6 +25,8 @@ import Site, { AEM_CS_HOST, getAuthoringType } from './site.model.js';
  * @extends BaseCollection
  */
 class SiteCollection extends BaseCollection {
+  static COLLECTION_NAME = 'SiteCollection';
+
   async allSitesToAudit() {
     return (await this.all({}, { attributes: ['siteId'] })).map((site) => site.getId());
   }

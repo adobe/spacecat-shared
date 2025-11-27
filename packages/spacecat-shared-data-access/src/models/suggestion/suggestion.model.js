@@ -21,6 +21,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Suggestion extends BaseModel {
+  static ENTITY_NAME = 'Suggestion';
+
   static STATUSES = {
     NEW: 'NEW',
     APPROVED: 'APPROVED',

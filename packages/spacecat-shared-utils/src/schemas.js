@@ -39,11 +39,14 @@ const nonEmptyString = z.string().min(1);
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 
 const prompt = z.object({
+  id: z.uuid().optional(),
   prompt: nonEmptyString,
   regions: z.array(region),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
   source: z.union([z.literal('config'), z.literal('api'), z.string()]),
   status: z.union([z.literal('completed'), z.literal('processing'), z.string()]).optional(),
+  updatedBy: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 const entity = z.object({
@@ -72,6 +75,8 @@ const category = z.object({
   region: z.union([region, z.array(region)]),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
   urls: z.array(categoryUrl).optional(),
+  updatedBy: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 const topic = z.object({
@@ -97,6 +102,8 @@ export const llmoConfig = z.object({
         category: z.uuid().optional(),
         region: z.union([region, z.array(region)]).optional(),
         aliasMode: z.union([z.literal('extend'), z.literal('replace')]).optional(),
+        updatedBy: z.string().optional(),
+        updatedAt: z.string().optional(),
       }),
     ),
   }),
@@ -108,6 +115,8 @@ export const llmoConfig = z.object({
         name: nonEmptyString,
         aliases: z.array(nonEmptyString),
         urls: z.array(z.url().optional()),
+        updatedBy: z.string().optional(),
+        updatedAt: z.string().optional(),
       }),
     ),
   }),
@@ -119,7 +128,6 @@ export const llmoConfig = z.object({
     allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
   }).optional(),
-  globalRegion: z.array(region).optional(),
 }).superRefine((value, ctx) => {
   const {
     categories, topics, brands, competitors,
@@ -190,7 +198,7 @@ function validateTopicPromptRegions(categories, ctx, topics, topicsKey) {
    * @param {z.RefinementCtx} ctx
    * @param {string} id
    * @param {Array<number | string>} path
-   */
+      */
 function ensureCategoryExists(categories, ctx, id, path) {
   if (!categories[id]) {
     ctx.addIssue({

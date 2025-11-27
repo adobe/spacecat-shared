@@ -37,6 +37,7 @@ import entitlements from './entitlements.fixture.js';
 import trialUsers from './trial-users.fixture.js';
 import trialUserActivities from './trial-user-activities.fixture.js';
 import siteEnrollments from './site-enrollments.fixture.js';
+import pageCitabilities from './page-citabilities.fixture.js';
 
 export default {
   apiKeys,
@@ -66,4 +67,5 @@ export default {
   trialUsers,
   trialUserActivities,
   siteEnrollments,
+  pageCitabilities,
 };

@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-http-utils-v1.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.18.2...@adobe/spacecat-shared-http-utils-v1.19.0) (2025-11-20)
+
+
+### Features
+
+* **utils,http-utils:** trigger release for trace ID propagation ([#1154](https://github.com/adobe/spacecat-shared/issues/1154)) ([fb48149](https://github.com/adobe/spacecat-shared/commit/fb481497725e49dab18812b4ba1ba7186e35a8f9)), closes [#1152](https://github.com/adobe/spacecat-shared/issues/1152) [#1152](https://github.com/adobe/spacecat-shared/issues/1152) [#1097](https://github.com/adobe/spacecat-shared/issues/1097) [#1097](https://github.com/adobe/spacecat-shared/issues/1097) [#1097](https://github.com/adobe/spacecat-shared/issues/1097) [#1152](https://github.com/adobe/spacecat-shared/issues/1152) [adobe/spacecat-audit-worker#1520](https://github.com/adobe/spacecat-audit-worker/issues/1520)
+
+# [@adobe/spacecat-shared-http-utils-v1.18.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.18.1...@adobe/spacecat-shared-http-utils-v1.18.2) (2025-11-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1132](https://github.com/adobe/spacecat-shared/issues/1132)) ([ec9b6c3](https://github.com/adobe/spacecat-shared/commit/ec9b6c38fa650176fc0b3ee06edae6639b83fcb0))
+
+# [@adobe/spacecat-shared-http-utils-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.18.0...@adobe/spacecat-shared-http-utils-v1.18.1) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
 # [@adobe/spacecat-shared-http-utils-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.9...@adobe/spacecat-shared-http-utils-v1.18.0) (2025-11-06)
 
 

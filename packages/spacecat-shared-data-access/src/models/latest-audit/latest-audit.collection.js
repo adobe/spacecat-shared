@@ -21,6 +21,8 @@ import { guardId, guardString } from '../../util/index.js';
  * @extends AuditCollection
  */
 class LatestAuditCollection extends BaseCollection {
+  static COLLECTION_NAME = 'LatestAuditCollection';
+
   async create(item) {
     return super.create(item, { upsert: true });
   }

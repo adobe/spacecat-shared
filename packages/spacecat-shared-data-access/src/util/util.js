@@ -35,7 +35,7 @@ const referenceToBaseMethodName = (reference) => {
   return `get${baseName}`;
 };
 
-const entityNameToAllPKValue = (entityName) => `ALL_${pluralize.plural(entityName.toUpperCase())}`;
+const entityNameToAllPKValue = (entityName) => `all_${pluralize.plural(entityName.toLowerCase())}`;
 
 const idNameToEntityName = (idName) => {
   let result = idName;

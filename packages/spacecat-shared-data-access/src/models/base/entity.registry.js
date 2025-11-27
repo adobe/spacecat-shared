@@ -41,6 +41,7 @@ import PageIntentCollection from '../page-intent/page-intent.collection.js';
 import ReportCollection from '../report/report.collection.js';
 import TrialUserCollection from '../trial-user/trial-user.collection.js';
 import TrialUserActivityCollection from '../trial-user-activity/trial-user-activity.collection.js';
+import PageCitabilityCollection from '../page-citability/page-citability.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -70,6 +71,7 @@ import PageIntentSchema from '../page-intent/page-intent.schema.js';
 import ReportSchema from '../report/report.schema.js';
 import TrialUserSchema from '../trial-user/trial-user.schema.js';
 import TrialUserActivitySchema from '../trial-user-activity/trial-user-activity.schema.js';
+import PageCitabilitySchema from '../page-citability/page-citability.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -101,7 +103,7 @@ class EntityRegistry {
   #initialize() {
     Object.values(EntityRegistry.entities).forEach(({ collection: Collection, schema }) => {
       const collection = new Collection(this.service, this, schema, this.log);
-      this.collections.set(Collection.name, collection);
+      this.collections.set(Collection.COLLECTION_NAME, collection);
     });
   }
 
@@ -168,5 +170,6 @@ EntityRegistry.registerEntity(PageIntentSchema, PageIntentCollection);
 EntityRegistry.registerEntity(ReportSchema, ReportCollection);
 EntityRegistry.registerEntity(TrialUserSchema, TrialUserCollection);
 EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollection);
+EntityRegistry.registerEntity(PageCitabilitySchema, PageCitabilityCollection);
 
 export default EntityRegistry;

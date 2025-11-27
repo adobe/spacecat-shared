@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.2...@adobe/spacecat-shared-tier-client-v1.3.3) (2025-11-27)
+
+
+### Bug Fixes
+
+* support for revoke paid entitlement ([#1180](https://github.com/adobe/spacecat-shared/issues/1180)) ([f584c60](https://github.com/adobe/spacecat-shared/commit/f584c600937bb117f60cc6d5cab0dba5dda30d84))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.1...@adobe/spacecat-shared-tier-client-v1.3.2) (2025-11-25)
+
+
+### Bug Fixes
+
+* add lib for revoke entitlement ([#1169](https://github.com/adobe/spacecat-shared/issues/1169)) ([d0f2e67](https://github.com/adobe/spacecat-shared/commit/d0f2e67332e52ee23ece5310d484a43bd42146a4))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.0...@adobe/spacecat-shared-tier-client-v1.3.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* error message on org not found ([#1165](https://github.com/adobe/spacecat-shared/issues/1165)) ([c1a7702](https://github.com/adobe/spacecat-shared/commit/c1a77026a485b4ce483b9ce806bcf6e722064807))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.5...@adobe/spacecat-shared-tier-client-v1.3.0) (2025-11-21)
+
+
+### Features
+
+* added async export for tier-client ([#1136](https://github.com/adobe/spacecat-shared/issues/1136)) ([4098f39](https://github.com/adobe/spacecat-shared/commit/4098f394cb526d514e502d9c389168480a0987df))
+
+# [@adobe/spacecat-shared-tier-client-v1.2.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.4...@adobe/spacecat-shared-tier-client-v1.2.5) (2025-11-18)
+
+
+### Bug Fixes
+
+* adds getAllEnrollment and getFirstEnrolllment for tier client ([#1138](https://github.com/adobe/spacecat-shared/issues/1138)) ([ee8a834](https://github.com/adobe/spacecat-shared/commit/ee8a83414f49887009cad228bdba7d6c7376fe8d))
+
+# [@adobe/spacecat-shared-tier-client-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.3...@adobe/spacecat-shared-tier-client-v1.2.4) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
 # [@adobe/spacecat-shared-tier-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.2...@adobe/spacecat-shared-tier-client-v1.2.3) (2025-11-08)
 
 

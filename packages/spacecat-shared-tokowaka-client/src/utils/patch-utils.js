@@ -67,50 +67,37 @@ export function mergePatches(existingPatches, newPatches) {
 
 /**
  * Removes patches matching the given suggestion IDs from a config
+ * Works with flat config structure
  * @param {Object} config - Tokowaka configuration object
  * @param {Array<string>} suggestionIds - Array of suggestion IDs to remove
  * @param {Array<string>} additionalPatchKeys - Optional array of additional patch keys to remove
  * @returns {Object} - Updated configuration with patches removed
  */
 export function removePatchesBySuggestionIds(config, suggestionIds, additionalPatchKeys = []) {
-  if (!config || !config.tokowakaOptimizations) {
+  if (!config || !config.patches) {
     return config;
   }
 
   const suggestionIdSet = new Set(suggestionIds);
   const patchKeysToRemove = new Set(additionalPatchKeys);
-  const updatedOptimizations = {};
   let removedCount = 0;
 
-  // Iterate through each URL path and filter out patches matching suggestionIds or patch keys
-  Object.entries(config.tokowakaOptimizations).forEach(([urlPath, optimization]) => {
-    const { patches = [] } = optimization;
+  // Filter out patches with matching suggestionIds or additional patch keys
+  const filteredPatches = config.patches.filter((patch) => {
+    const shouldRemoveBySuggestionId = suggestionIdSet.has(patch.suggestionId);
+    const patchKey = getPatchKey(patch);
+    const shouldRemoveByPatchKey = patchKeysToRemove.has(patchKey);
 
-    // Filter out patches with matching suggestionIds or patch keys
-    const filteredPatches = patches.filter((patch) => {
-      const shouldRemoveBySuggestionId = suggestionIdSet.has(patch.suggestionId);
-      const patchKey = `${urlPath}:${getPatchKey(patch)}`;
-      const shouldRemoveByPatchKey = patchKeysToRemove.has(patchKey);
-
-      if (shouldRemoveBySuggestionId || shouldRemoveByPatchKey) {
-        removedCount += 1;
-        return false;
-      }
-      return true;
-    });
-
-    // Only keep URL paths that still have patches
-    if (filteredPatches.length > 0) {
-      updatedOptimizations[urlPath] = {
-        ...optimization,
-        patches: filteredPatches,
-      };
+    if (shouldRemoveBySuggestionId || shouldRemoveByPatchKey) {
+      removedCount += 1;
+      return false;
     }
+    return true;
   });
 
   return {
     ...config,
-    tokowakaOptimizations: updatedOptimizations,
+    patches: filteredPatches,
     removedCount,
   };
 }

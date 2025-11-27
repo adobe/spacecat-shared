@@ -1325,132 +1325,96 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
   describe('rollbackPatches', () => {
     it('should remove FAQ heading when last FAQ suggestion is rolled back', () => {
       const config = {
-        siteId: 'site-123',
-        baseURL: 'https://example.com',
+        url: 'https://example.com/page1',
         version: '1.0',
-        tokowakaOptimizations: {
-          '/page1': {
-            prerender: true,
-            patches: [
-              {
-                opportunityId: 'opp-faq',
-                // FAQ heading patch (no suggestionId)
-                op: 'appendChild',
-                selector: 'body',
-                value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'FAQs' }] },
-              },
-              {
-                opportunityId: 'opp-faq',
-                suggestionId: 'sugg-1',
-                op: 'appendChild',
-                value: { type: 'element', tagName: 'div' },
-              },
-            ],
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-faq',
+            // FAQ heading patch (no suggestionId)
+            op: 'appendChild',
+            selector: 'body',
+            value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'FAQs' }] },
           },
-        },
+          {
+            opportunityId: 'opp-faq',
+            suggestionId: 'sugg-1',
+            op: 'appendChild',
+            value: { type: 'element', tagName: 'div' },
+          },
+        ],
       };
 
       const result = mapper.rollbackPatches(config, ['sugg-1'], 'opp-faq');
 
       // Both FAQ item and heading should be removed
-      expect(result.tokowakaOptimizations).to.not.have.property('/page1');
+      expect(result.patches).to.have.lengthOf(0);
       expect(result.removedCount).to.equal(2);
     });
 
     it('should keep FAQ heading when other FAQ suggestions remain', () => {
       const config = {
-        siteId: 'site-123',
-        baseURL: 'https://example.com',
+        url: 'https://example.com/page1',
         version: '1.0',
-        tokowakaOptimizations: {
-          '/page1': {
-            prerender: true,
-            patches: [
-              {
-                opportunityId: 'opp-faq',
-                // FAQ heading patch
-                op: 'appendChild',
-                selector: 'body',
-                value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'FAQs' }] },
-              },
-              {
-                opportunityId: 'opp-faq',
-                suggestionId: 'sugg-1',
-                op: 'appendChild',
-                value: { type: 'element', tagName: 'div' },
-              },
-              {
-                opportunityId: 'opp-faq',
-                suggestionId: 'sugg-2',
-                op: 'appendChild',
-                value: { type: 'element', tagName: 'div' },
-              },
-            ],
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-faq',
+            // FAQ heading patch
+            op: 'appendChild',
+            selector: 'body',
+            value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'FAQs' }] },
           },
-        },
+          {
+            opportunityId: 'opp-faq',
+            suggestionId: 'sugg-1',
+            op: 'appendChild',
+            value: { type: 'element', tagName: 'div' },
+          },
+          {
+            opportunityId: 'opp-faq',
+            suggestionId: 'sugg-2',
+            op: 'appendChild',
+            value: { type: 'element', tagName: 'div' },
+          },
+        ],
       };
 
       const result = mapper.rollbackPatches(config, ['sugg-1'], 'opp-faq');
 
       // Only sugg-1 removed, heading and sugg-2 remain
-      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(2);
-      expect(result.tokowakaOptimizations['/page1'].patches[0]).to.not.have.property('suggestionId'); // Heading
-      expect(result.tokowakaOptimizations['/page1'].patches[1].suggestionId).to.equal('sugg-2');
+      expect(result.patches).to.have.lengthOf(2);
+      expect(result.patches[0]).to.not.have.property('suggestionId'); // Heading
+      expect(result.patches[1].suggestionId).to.equal('sugg-2');
       expect(result.removedCount).to.equal(1);
     });
 
     it('should handle multiple URLs independently', () => {
+      // Note: With the new per-URL architecture, each URL has its own config
+      // This test validates that rollback works correctly for a single URL config
       const config = {
-        siteId: 'site-123',
-        baseURL: 'https://example.com',
+        url: 'https://example.com/page1',
         version: '1.0',
-        tokowakaOptimizations: {
-          '/page1': {
-            prerender: true,
-            patches: [
-              { opportunityId: 'opp-faq', op: 'appendChild', value: 'FAQs' },
-              {
-                opportunityId: 'opp-faq',
-                suggestionId: 'sugg-1',
-                op: 'appendChild',
-                value: 'FAQ1',
-              },
-            ],
+        forceFail: false,
+        prerender: true,
+        patches: [
+          { opportunityId: 'opp-faq', op: 'appendChild', value: 'FAQs' },
+          {
+            opportunityId: 'opp-faq',
+            suggestionId: 'sugg-1',
+            op: 'appendChild',
+            value: 'FAQ1',
           },
-          '/page2': {
-            prerender: true,
-            patches: [
-              { opportunityId: 'opp-faq', op: 'appendChild', value: 'FAQs' },
-              {
-                opportunityId: 'opp-faq',
-                suggestionId: 'sugg-2',
-                op: 'appendChild',
-                value: 'FAQ2',
-              },
-              {
-                opportunityId: 'opp-faq',
-                suggestionId: 'sugg-3',
-                op: 'appendChild',
-                value: 'FAQ3',
-              },
-            ],
-          },
-        },
+        ],
       };
 
-      // Remove sugg-1 from page1 (should remove heading too)
-      // Remove sugg-2 from page2 (should keep heading because sugg-3 remains)
-      const result = mapper.rollbackPatches(config, ['sugg-1', 'sugg-2'], 'opp-faq');
+      const result = mapper.rollbackPatches(config, ['sugg-1'], 'opp-faq');
 
-      // page1 completely removed
-      expect(result.tokowakaOptimizations).to.not.have.property('/page1');
-
-      // page2 still has heading + sugg-3
-      expect(result.tokowakaOptimizations['/page2'].patches).to.have.lengthOf(2);
-      expect(result.tokowakaOptimizations['/page2'].patches[0]).to.not.have.property('suggestionId');
-      expect(result.tokowakaOptimizations['/page2'].patches[1].suggestionId).to.equal('sugg-3');
-
-      expect(result.removedCount).to.equal(3); // page1: heading+sugg-1, page2: sugg-2
+      // All patches removed (heading + FAQ item)
+      expect(result.patches).to.have.lengthOf(0);
+      expect(result.removedCount).to.equal(2);
     });
 
     it('should handle null/undefined config gracefully', () => {

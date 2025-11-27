@@ -205,41 +205,36 @@ export default class FaqMapper extends BaseOpportunityMapper {
 
   /**
    * Removes patches from configuration for FAQ suggestions
-   * FAQ-specific logic: Also removes the heading patch when no FAQ suggestions remain for a URL
+   * FAQ-specific logic: Also removes the heading patch when no FAQ suggestions remain
    * @param {Object} config - Current Tokowaka configuration
    * @param {Array<string>} suggestionIds - Suggestion IDs to remove
    * @param {string} opportunityId - Opportunity ID
    * @returns {Object} - Updated configuration with patches removed
    */
   rollbackPatches(config, suggestionIds, opportunityId) {
-    if (!config || !config.tokowakaOptimizations) {
+    if (!config || !config.patches) {
       return config;
     }
 
     const suggestionIdsSet = new Set(suggestionIds);
     const additionalPatchKeys = [];
 
-    // Analyze each URL to determine if FAQ heading patch should be removed
-    Object.entries(config.tokowakaOptimizations).forEach(([urlPath, optimization]) => {
-      const { patches = [] } = optimization;
+    // Find FAQ patches for this opportunity
+    const opportunityPatches = config.patches.filter((p) => p.opportunityId === opportunityId);
 
-      // Find FAQ patches for this opportunity
-      const opportunityPatches = patches.filter((p) => p.opportunityId === opportunityId);
+    // Get FAQ suggestion IDs that will remain after rollback
+    const remainingSuggestionIds = opportunityPatches
+      .filter((p) => p.suggestionId && !suggestionIdsSet.has(p.suggestionId))
+      .map((p) => p.suggestionId);
 
-      // Get FAQ suggestion IDs that will remain after rollback (for this URL)
-      const remainingSuggestionIds = opportunityPatches
-        .filter((p) => p.suggestionId && !suggestionIdsSet.has(p.suggestionId))
-        .map((p) => p.suggestionId);
-
-      // If no FAQ suggestions remain for this URL, remove the heading patch too
-      if (remainingSuggestionIds.length === 0) {
-        this.log.debug(`No remaining FAQ suggestions for ${urlPath}, marking heading patch for removal`);
-        // Add heading patch key (opportunityId only, no suggestionId)
-        additionalPatchKeys.push(`${urlPath}:${opportunityId}`);
-      } else {
-        this.log.debug(`${remainingSuggestionIds.length} FAQ suggestions remain for ${urlPath}, keeping heading patch`);
-      }
-    });
+    // If no FAQ suggestions remain, remove the heading patch too
+    if (remainingSuggestionIds.length === 0) {
+      this.log.debug('No remaining FAQ suggestions, marking heading patch for removal');
+      // Add heading patch key (opportunityId only, no suggestionId)
+      additionalPatchKeys.push(opportunityId);
+    } else {
+      this.log.debug(`${remainingSuggestionIds.length} FAQ suggestions remain, keeping heading patch`);
+    }
 
     // Remove FAQ suggestion patches and any orphaned heading patches
     this.log.debug(

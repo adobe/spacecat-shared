@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.1.0...@adobe/spacecat-shared-tokowaka-client-v1.2.0) (2025-11-27)
+
+
+### Features
+
+* url path-wise edge deployment  ([#1178](https://github.com/adobe/spacecat-shared/issues/1178)) ([37b0d1a](https://github.com/adobe/spacecat-shared/commit/37b0d1a388f842a62cb95eb5272feb49d1dfb3e8))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.0.6...@adobe/spacecat-shared-tokowaka-client-v1.1.0) (2025-11-25)
 
 

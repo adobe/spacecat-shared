@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.2...@adobe/spacecat-shared-tier-client-v1.3.3) (2025-11-27)
+
+
+### Bug Fixes
+
+* support for revoke paid entitlement ([#1180](https://github.com/adobe/spacecat-shared/issues/1180)) ([f584c60](https://github.com/adobe/spacecat-shared/commit/f584c600937bb117f60cc6d5cab0dba5dda30d84))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.1...@adobe/spacecat-shared-tier-client-v1.3.2) (2025-11-25)
 
 

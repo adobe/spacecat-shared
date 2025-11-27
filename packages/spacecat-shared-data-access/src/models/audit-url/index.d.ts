@@ -12,27 +12,12 @@
 
 import type { BaseCollection, BaseModel, Site } from '../index';
 
-export const PLATFORM_TYPES: {
-  PRIMARY_SITE: 'primary-site';
-  WIKIPEDIA: 'wikipedia';
-  YOUTUBE_CHANNEL: 'youtube-channel';
-  REDDIT_COMMUNITY: 'reddit-community';
-  FACEBOOK_PAGE: 'facebook-page';
-  TWITTER_PROFILE: 'twitter-profile';
-  LINKEDIN_COMPANY: 'linkedin-company';
-  INSTAGRAM_ACCOUNT: 'instagram-account';
-  TIKTOK_ACCOUNT: 'tiktok-account';
-  GITHUB_ORG: 'github-org';
-  MEDIUM_PUBLICATION: 'medium-publication';
-};
-
 export interface AuditUrl extends BaseModel {
   getAudits(): string[];
   getCreatedAt(): string;
   getCreatedBy(): string;
   getRank(): number | null;
   getTraffic(): number | null;
-  getPlatformType(): string;
   getSite(): Promise<Site>;
   getSiteId(): string;
   getSource(): string;
@@ -41,7 +26,6 @@ export interface AuditUrl extends BaseModel {
   setCreatedBy(createdBy: string): AuditUrl;
   setRank(rank: number | null): AuditUrl;
   setTraffic(traffic: number | null): AuditUrl;
-  setPlatformType(platformType: string): AuditUrl;
   setSiteId(siteId: string): AuditUrl;
   setSource(source: string): AuditUrl;
   setUrl(url: string): AuditUrl;
@@ -49,8 +33,6 @@ export interface AuditUrl extends BaseModel {
   enableAudit(auditType: string): AuditUrl;
   disableAudit(auditType: string): AuditUrl;
   isManualSource(): boolean;
-  isOffsitePlatform(): boolean;
-  isPlatformType(type: string): boolean;
 }
 
 export interface AuditUrlCollection extends BaseCollection<AuditUrl> {
@@ -60,8 +42,6 @@ export interface AuditUrlCollection extends BaseCollection<AuditUrl> {
   allBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl[]>;
   allBySiteIdSorted(siteId: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
   allBySiteIdAndSourceSorted(siteId: string, source: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
-  allBySiteIdAndPlatform(siteId: string, platformType: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
-  allOffsiteUrls(siteId: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
   findBySiteId(siteId: string): Promise<AuditUrl | null>;
   findBySiteIdAndSource(siteId: string, source: string): Promise<AuditUrl | null>;
   findBySiteIdAndSourceAndUrl(siteId: string, source: string, url: string): Promise<AuditUrl | null>;

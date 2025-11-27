@@ -26,7 +26,7 @@ function checkAuditUrl(auditUrl) {
   expect(auditUrl.getId()).to.be.a('string');
   expect(auditUrl.getSiteId()).to.be.a('string');
   expect(auditUrl.getUrl()).to.be.a('string');
-  expect(auditUrl.getSource()).to.be.a('string');
+  expect(auditUrl.getByCustomer()).to.be.a('boolean');
   expect(auditUrl.getAudits()).to.be.an('array');
   expect(auditUrl.getCreatedAt()).to.be.a('string');
   expect(auditUrl.getCreatedBy()).to.be.a('string');
@@ -68,11 +68,11 @@ describe('AuditUrl IT', async () => {
     });
   });
 
-  it('gets all audit URLs for a site by source', async () => {
+  it('gets all audit URLs for a site by byCustomer flag', async () => {
     const site = sampleData.sites[0];
-    const source = 'manual';
+    const byCustomer = true;
 
-    const auditUrls = await AuditUrl.allBySiteIdAndSource(site.getId(), source);
+    const auditUrls = await AuditUrl.allBySiteIdByCustomer(site.getId(), byCustomer);
 
     expect(auditUrls).to.be.an('array');
     expect(auditUrls.length).to.equal(2);
@@ -80,7 +80,7 @@ describe('AuditUrl IT', async () => {
     auditUrls.forEach((auditUrl) => {
       checkAuditUrl(auditUrl);
       expect(auditUrl.getSiteId()).to.equal(site.getId());
-      expect(auditUrl.getSource()).to.equal(source);
+      expect(auditUrl.getByCustomer()).to.equal(byCustomer);
     });
   });
 
@@ -110,7 +110,7 @@ describe('AuditUrl IT', async () => {
     const data = {
       siteId: site.getId(),
       url: 'https://example0.com/new-page',
-      source: 'manual',
+      byCustomer: true,
       audits: ['accessibility', 'broken-backlinks'],
       createdBy: 'test@example.com',
     };
@@ -120,7 +120,7 @@ describe('AuditUrl IT', async () => {
     checkAuditUrl(auditUrl);
     expect(auditUrl.getSiteId()).to.equal(data.siteId);
     expect(auditUrl.getUrl()).to.equal(data.url);
-    expect(auditUrl.getSource()).to.equal(data.source);
+    expect(auditUrl.getByCustomer()).to.equal(data.byCustomer);
     expect(auditUrl.getAudits()).to.deep.equal(data.audits);
     expect(auditUrl.getCreatedBy()).to.equal(data.createdBy);
   });
@@ -136,7 +136,7 @@ describe('AuditUrl IT', async () => {
     const auditUrl = await AuditUrl.create(data);
 
     checkAuditUrl(auditUrl);
-    expect(auditUrl.getSource()).to.equal('manual'); // Default
+    expect(auditUrl.getByCustomer()).to.equal(true); // Default
     expect(auditUrl.getAudits()).to.deep.equal([]); // Default
   });
 
@@ -157,7 +157,7 @@ describe('AuditUrl IT', async () => {
     const data = {
       siteId: site.getId(),
       url: 'https://example0.com/to-delete',
-      source: 'manual',
+      byCustomer: true,
       audits: ['accessibility'],
       createdBy: 'test@example.com',
     };
@@ -206,12 +206,12 @@ describe('AuditUrl IT', async () => {
       expect(auditUrl.getAudits()).to.not.include('accessibility');
     });
 
-    it('checks if source is manual', async () => {
-      const manualUrl = await AuditUrl.findById(sampleData.auditUrls[0].getId());
-      const sitemapUrl = await AuditUrl.findById(sampleData.auditUrls[1].getId());
+    it('checks if URL is customer-added', async () => {
+      const customerUrl = await AuditUrl.findById(sampleData.auditUrls[0].getId());
+      const systemUrl = await AuditUrl.findById(sampleData.auditUrls[1].getId());
 
-      expect(manualUrl.isManualSource()).to.be.true;
-      expect(sitemapUrl.isManualSource()).to.be.false;
+      expect(customerUrl.isCustomerUrl()).to.be.true;
+      expect(systemUrl.isCustomerUrl()).to.be.false;
     });
   });
 
@@ -248,16 +248,16 @@ describe('AuditUrl IT', async () => {
       expect(auditUrls.length).to.equal(0);
     });
 
-    it('removes audit URLs by source', async () => {
+    it('removes audit URLs by byCustomer flag', async () => {
       const site = sampleData.sites[0];
 
-      // Remove all manual URLs
-      await AuditUrl.removeForSiteIdAndSource(site.getId(), 'manual');
+      // Remove all customer-added URLs
+      await AuditUrl.removeForSiteIdByCustomer(site.getId(), true);
 
-      // Verify only sitemap URLs remain
+      // Verify only system-added URLs remain
       const auditUrls = await AuditUrl.allBySiteId(site.getId());
       auditUrls.forEach((auditUrl) => {
-        expect(auditUrl.getSource()).to.not.equal('manual');
+        expect(auditUrl.getByCustomer()).to.equal(false);
       });
     });
   });

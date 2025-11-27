@@ -341,13 +341,13 @@ describe('AuditUrlCollection', () => {
     });
   });
 
-  describe('allBySiteIdAndSourceSorted', () => {
+  describe('allBySiteIdByCustomerSorted', () => {
     it('throws an error if siteId is not provided', async () => {
-      await expect(instance.allBySiteIdAndSourceSorted()).to.be.rejectedWith('Both siteId and source are required');
+      await expect(instance.allBySiteIdByCustomerSorted()).to.be.rejectedWith('SiteId is required and byCustomer must be a boolean');
     });
 
-    it('throws an error if source is not provided', async () => {
-      await expect(instance.allBySiteIdAndSourceSorted('site-123')).to.be.rejectedWith('Both siteId and source are required');
+    it('throws an error if byCustomer is not a boolean', async () => {
+      await expect(instance.allBySiteIdByCustomerSorted('site-123', 'not-a-boolean')).to.be.rejectedWith('SiteId is required and byCustomer must be a boolean');
     });
 
     it('returns sorted URLs when sortBy is provided', async () => {
@@ -355,9 +355,9 @@ describe('AuditUrlCollection', () => {
       const url2 = { getRank: () => 3, getUrl: () => 'url2' };
       const url3 = { getRank: () => 2, getUrl: () => 'url3' };
 
-      instance.allBySiteIdAndSource = stub().resolves({ items: [url2, url1, url3], cursor: 'cursor123' });
+      instance.allBySiteIdByCustomer = stub().resolves({ items: [url2, url1, url3], cursor: 'cursor123' });
 
-      const result = await instance.allBySiteIdAndSourceSorted('site-123', 'manual', { sortBy: 'rank', sortOrder: 'asc' });
+      const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'rank', sortOrder: 'asc' });
 
       expect(result.items).to.be.an('array').with.lengthOf(3);
       expect(result.items[0]).to.equal(url1);
@@ -370,9 +370,9 @@ describe('AuditUrlCollection', () => {
       const url1 = { getUrl: () => 'url1' };
       const url2 = { getUrl: () => 'url2' };
 
-      instance.allBySiteIdAndSource = stub().resolves({ items: [url2, url1] });
+      instance.allBySiteIdByCustomer = stub().resolves({ items: [url2, url1] });
 
-      const result = await instance.allBySiteIdAndSourceSorted('site-123', 'sitemap', {});
+      const result = await instance.allBySiteIdByCustomerSorted('site-123', false, {});
 
       expect(result.items).to.deep.equal([url2, url1]);
     });
@@ -381,21 +381,21 @@ describe('AuditUrlCollection', () => {
       const url1 = { getRank: () => 1, getUrl: () => 'url1' };
       const url2 = { getRank: () => 2, getUrl: () => 'url2' };
 
-      instance.allBySiteIdAndSource = stub().resolves([url2, url1]);
+      instance.allBySiteIdByCustomer = stub().resolves([url2, url1]);
 
-      const result = await instance.allBySiteIdAndSourceSorted('site-123', 'manual', { sortBy: 'rank', sortOrder: 'asc' });
+      const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'rank', sortOrder: 'asc' });
 
       expect(result).to.be.an('array').with.lengthOf(2);
       expect(result[0]).to.equal(url1);
       expect(result[1]).to.equal(url2);
     });
 
-    it('passes query options to allBySiteIdAndSource', async () => {
-      instance.allBySiteIdAndSource = stub().resolves({ items: [] });
+    it('passes query options to allBySiteIdByCustomer', async () => {
+      instance.allBySiteIdByCustomer = stub().resolves({ items: [] });
 
-      await instance.allBySiteIdAndSourceSorted('site-123', 'manual', { limit: 10, cursor: 'abc', sortBy: 'rank' });
+      await instance.allBySiteIdByCustomerSorted('site-123', true, { limit: 10, cursor: 'abc', sortBy: 'rank' });
 
-      expect(instance.allBySiteIdAndSource).to.have.been.calledOnceWith('site-123', 'manual', { limit: 10, cursor: 'abc' });
+      expect(instance.allBySiteIdByCustomer).to.have.been.calledOnceWith('site-123', true, { limit: 10, cursor: 'abc' });
     });
   });
 

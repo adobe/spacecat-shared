@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.2.2...@adobe/spacecat-shared-tokowaka-client-v1.2.3) (2025-11-28)
+
+
+### Bug Fixes
+
+* readability opportunity handling in edge APIs ([#1188](https://github.com/adobe/spacecat-shared/issues/1188)) ([fdf1bd9](https://github.com/adobe/spacecat-shared/commit/fdf1bd9678e5284200e3fd4378391e515ee8baba))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.2.1...@adobe/spacecat-shared-tokowaka-client-v1.2.2) (2025-11-28)
 
 

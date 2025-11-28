@@ -15,24 +15,7 @@
  * Provides HTML to Markdown and Markdown to HTML conversions
  */
 
-import { isBrowser } from './utils.js';
-
-/**
- * Get global object in a cross-platform way
- * @private
- * @returns {Object} Global object
- */
-function getGlobalObject() {
-  // eslint-disable-next-line no-undef
-  if (typeof globalThis !== 'undefined') return globalThis;
-  // eslint-disable-next-line no-undef
-  if (typeof self !== 'undefined') return self;
-  // eslint-disable-next-line no-undef
-  if (typeof window !== 'undefined') return window;
-  // eslint-disable-next-line no-undef
-  if (typeof global !== 'undefined') return global;
-  return {};
-}
+import { isBrowser, getGlobalObject } from './utils.js';
 
 /**
  * Get Turndown service instance

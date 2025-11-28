@@ -58,4 +58,5 @@ export {
   pct,
   formatNumberToK,
   isBrowser,
+  getGlobalObject,
 } from './utils.js';

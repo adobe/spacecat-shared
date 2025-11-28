@@ -43,6 +43,7 @@ import {
   pct,
   formatNumberToK,
   isBrowser,
+  getGlobalObject,
 } from './index.js';
 
 // Create global object for Chrome extension
@@ -91,17 +92,8 @@ const HTMLAnalyzer = {
 
 // Make available globally for Chrome extension script tags
 // This needs to be executed immediately when the bundle loads
-/* eslint-env browser */
-/* global window, self */
 (function setGlobal() {
-  // Determine the global object (works in browser, Node.js, Web Workers)
-  const globalObject = (function getGlobalObject() {
-    if (typeof window !== 'undefined') return window;
-    if (typeof globalThis !== 'undefined') return globalThis;
-    if (typeof self !== 'undefined') return self;
-    return this || {};
-  }());
-
+  const globalObject = getGlobalObject();
   // Assign to global scope
   globalObject.HTMLAnalyzer = HTMLAnalyzer;
 }());

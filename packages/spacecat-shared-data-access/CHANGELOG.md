@@ -1,3 +1,11 @@
+# [@adobe/spacecat-shared-data-access-v2.88.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.4...@adobe/spacecat-shared-data-access-v2.88.5) (2025-11-28)
+
+
+### Bug Fixes
+
+* package lock ([#1185](https://github.com/adobe/spacecat-shared/issues/1185)) ([d0708cc](https://github.com/adobe/spacecat-shared/commit/d0708cc8b7cbbea35a4440d684db2b3613240469))
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
 # [@adobe/spacecat-shared-data-access-v2.88.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.3...@adobe/spacecat-shared-data-access-v2.88.4) (2025-11-28)
 
 

@@ -147,13 +147,16 @@ describe('TierClient', () => {
         expect(client.createEntitlement).to.be.a('function');
       });
 
-      it('should throw error when organization is not provided', () => {
-        expect(() => TierClient.createForOrg(mockContext, null, productCode)).to.throw('Cannot read properties of null');
+      it('should allow null organization (validation removed)', () => {
+        const client = TierClient.createForOrg(mockContext, null, productCode);
+        expect(client).to.be.an('object');
+        expect(client.createEntitlement).to.be.a('function');
       });
 
-      it('should throw error when organization has no getId method', () => {
+      it('should allow organization without getId (validation removed)', () => {
         const invalidOrg = { name: 'test' };
-        expect(() => TierClient.createForOrg(mockContext, invalidOrg, productCode)).to.throw('Entity must be an instance of Organization');
+        const client = TierClient.createForOrg(mockContext, invalidOrg, productCode);
+        expect(client).to.be.an('object');
       });
 
       it('should throw error when context is invalid', () => {
@@ -204,7 +207,7 @@ describe('TierClient', () => {
 
       it('should throw error when site has no getId method', async () => {
         const invalidSite = { name: 'test' };
-        await expect(TierClient.createForSite(mockContext, invalidSite, productCode)).to.be.rejectedWith('Entity must be an instance of Site');
+        await expect(TierClient.createForSite(mockContext, invalidSite, productCode)).to.be.rejectedWith('site.getOrganizationId is not a function');
       });
 
       it('should throw error when context is invalid', async () => {

@@ -40,7 +40,8 @@ describe('LatestAudit IT', async () => {
   let Audit;
   let dataAccess;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     dataAccess = getDataAccess();

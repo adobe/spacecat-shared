@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-html-analyzer-v1.0.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.6...@adobe/spacecat-shared-html-analyzer-v1.0.7) (2025-11-28)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.0.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.5...@adobe/spacecat-shared-html-analyzer-v1.0.6) (2025-11-15)
 
 

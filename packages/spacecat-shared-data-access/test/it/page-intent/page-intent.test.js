@@ -35,7 +35,8 @@ describe('PageIntent IT', async () => {
   let sampleData;
   let PageIntent;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

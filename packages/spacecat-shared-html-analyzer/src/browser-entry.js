@@ -32,6 +32,13 @@ import {
   countLines,
   diffTokens,
   generateDiffReport,
+  htmlToMarkdown,
+  markdownToHtml,
+  htmlToMarkdownToHtml,
+  diffDOMBlocks,
+  createMarkdownTableDiff,
+  generateMarkdownDiff,
+  htmlToRenderedMarkdown,
   hashDJB2,
   pct,
   formatNumberToK,
@@ -59,6 +66,17 @@ const HTMLAnalyzer = {
   // Diff engine functions
   diffTokens,
   generateDiffReport,
+
+  // Markdown conversion functions
+  htmlToMarkdown,
+  markdownToHtml,
+  htmlToMarkdownToHtml,
+
+  // Markdown diff functions
+  diffDOMBlocks,
+  createMarkdownTableDiff,
+  generateMarkdownDiff,
+  htmlToRenderedMarkdown,
 
   // Utility functions
   hashDJB2,

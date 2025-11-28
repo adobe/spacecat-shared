@@ -36,7 +36,9 @@
     "access": "public"
   },
   "dependencies": {
-    "cheerio": "^1.0.0-rc.12"
+    "cheerio": "^1.0.0-rc.12",
+    "turndown": "^7.2.0",
+    "marked": "^16.2.0"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",

@@ -51,16 +51,8 @@ jobs:
         with:
           persist-credentials: 'false'
 
-      - name: Set up Node.js 22 (for semantic-release compatibility)
-        uses: actions/setup-node@v6
-        with:
-          node-version: '22.21.1'
-
-      - name: Update NPM
-        run: npm install -g npm@10.9.4
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup Node & NPM
+        uses: ./.github/actions/setup-node-npm
 
       - name: Semantic Release
         run: npm run semantic-release

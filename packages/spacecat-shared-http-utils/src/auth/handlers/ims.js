@@ -136,7 +136,7 @@ export default class AdobeImsHandler extends AbstractHandler {
       throw new Error('expires_in and created_at claims must be numbers');
     }
 
-    if (createdAt >= now) {
+    if (createdAt > now) {
       throw new Error('created_at should be in the past');
     }
 

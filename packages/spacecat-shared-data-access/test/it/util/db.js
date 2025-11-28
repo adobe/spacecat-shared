@@ -77,6 +77,8 @@ const getDynamoClients = (config = {}) => {
 };
 
 export const getDataAccess = (config, logger = console) => {
+  // eslint-disable-next-line no-param-reassign
+  logger.debug = () => {};
   const { dbClient } = getDynamoClients(config);
   return createDataAccess(TEST_DA_CONFIG, logger, dbClient);
 };

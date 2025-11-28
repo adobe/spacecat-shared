@@ -145,7 +145,7 @@ describe('ReadabilityMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'transformRules.op is required',
+        reason: 'transformRules.op must be "replace" for readability suggestions',
       });
     });
 
@@ -249,47 +249,6 @@ describe('ReadabilityMapper', () => {
       expect(result).to.deep.equal({
         eligible: false,
         reason: 'pageUrl undefined is not a valid URL',
-      });
-    });
-
-    it('should return ineligible when displayText is null', () => {
-      const suggestion = {
-        getData: () => ({
-          displayText: null,
-          pageUrl: 'https://www.example.com',
-          transformRules: {
-            value: 'New text',
-            op: 'replace',
-            selector: '#content',
-          },
-        }),
-      };
-
-      const result = mapper.canDeploy(suggestion);
-
-      expect(result).to.deep.equal({
-        eligible: false,
-        reason: 'displayText is required',
-      });
-    });
-
-    it('should return ineligible when displayText is undefined', () => {
-      const suggestion = {
-        getData: () => ({
-          pageUrl: 'https://www.example.com',
-          transformRules: {
-            value: 'New text',
-            op: 'replace',
-            selector: '#content',
-          },
-        }),
-      };
-
-      const result = mapper.canDeploy(suggestion);
-
-      expect(result).to.deep.equal({
-        eligible: false,
-        reason: 'displayText is required',
       });
     });
   });

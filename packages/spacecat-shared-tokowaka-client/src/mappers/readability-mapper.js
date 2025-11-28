@@ -97,10 +97,6 @@ export default class ReadabilityMapper extends BaseOpportunityMapper {
       return { eligible: false, reason: 'transformRules.selector is required' };
     }
 
-    if (!hasText(transformRules.op)) {
-      return { eligible: false, reason: 'transformRules.op is required' };
-    }
-
     if (transformRules.op !== 'replace') {
       return {
         eligible: false,
@@ -110,10 +106,6 @@ export default class ReadabilityMapper extends BaseOpportunityMapper {
 
     if (!hasText(transformRules.value)) {
       return { eligible: false, reason: 'transformRules.value is required' };
-    }
-
-    if (data.displayText == null) {
-      return { eligible: false, reason: 'displayText is required' };
     }
 
     return { eligible: true };

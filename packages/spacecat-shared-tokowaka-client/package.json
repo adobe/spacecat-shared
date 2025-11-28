@@ -34,7 +34,7 @@
     "spec": "test/**/*.test.js"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.81.0",
+    "@adobe/spacecat-shared-utils": "1.81.1",
     "@aws-sdk/client-cloudfront": "3.940.0",
     "@aws-sdk/client-s3": "3.940.0",
     "mdast-util-from-markdown": "2.0.2",

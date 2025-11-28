@@ -57,5 +57,8 @@
   },
   "lint-staged": {
     "*.js": "eslint"
+  },
+  "overrides": {
+    "punycode": "npm:punycode.js@^2.3.1"
   }
 }

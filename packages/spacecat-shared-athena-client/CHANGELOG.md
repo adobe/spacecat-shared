@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.7.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.7.5...@adobe/spacecat-shared-athena-client-v1.7.6) (2025-11-28)
+
+
+### Bug Fixes
+
+* package lock ([#1185](https://github.com/adobe/spacecat-shared/issues/1185)) ([d0708cc](https://github.com/adobe/spacecat-shared/commit/d0708cc8b7cbbea35a4440d684db2b3613240469))
+
 # [@adobe/spacecat-shared-athena-client-v1.7.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.7.4...@adobe/spacecat-shared-athena-client-v1.7.5) (2025-11-28)
 
 

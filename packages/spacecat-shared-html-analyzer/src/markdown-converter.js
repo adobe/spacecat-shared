@@ -17,12 +17,16 @@
 
 import { isBrowser, getGlobalObject } from './utils.js';
 
+// Cache for imported modules in Node.js
+let TurndownServiceClass = null;
+let markedParser = null;
+
 /**
  * Get Turndown service instance
  * @private
- * @returns {Object} TurndownService instance
+ * @returns {Promise<Object>} TurndownService instance
  */
-function getTurndownService() {
+async function getTurndownService() {
   if (isBrowser()) {
     // In browser environment, expect global TurndownService
     const globalObj = getGlobalObject();
@@ -31,18 +35,20 @@ function getTurndownService() {
     }
     throw new Error('TurndownService must be loaded in browser environment');
   }
-  // In Node.js environment, require turndown directly
-  // eslint-disable-next-line import/no-extraneous-dependencies, global-require
-  const TurndownService = require('turndown');
-  return new TurndownService();
+  // In Node.js environment, dynamically import turndown
+  if (!TurndownServiceClass) {
+    const module = await import('turndown');
+    TurndownServiceClass = module.default;
+  }
+  return new TurndownServiceClass();
 }
 
 /**
  * Get marked parser
  * @private
- * @returns {Object} marked parser
+ * @returns {Promise<Object>} marked parser
  */
-function getMarked() {
+async function getMarked() {
   if (isBrowser()) {
     // In browser environment, expect global marked
     const globalObj = getGlobalObject();
@@ -51,37 +57,39 @@ function getMarked() {
     }
     throw new Error('marked must be loaded in browser environment');
   }
-  // In Node.js environment, require marked directly
-  // eslint-disable-next-line import/no-extraneous-dependencies, global-require
-  const { marked } = require('marked');
-  return marked;
+  // In Node.js environment, dynamically import marked
+  if (!markedParser) {
+    const module = await import('marked');
+    markedParser = module.marked;
+  }
+  return markedParser;
 }
 
 /**
  * Convert HTML to Markdown
  * @param {string} html - HTML content to convert
- * @returns {string} Markdown content
+ * @returns {Promise<string>} Markdown content
  */
-export function htmlToMarkdown(html) {
+export async function htmlToMarkdown(html) {
   if (!html || typeof html !== 'string') {
     return '';
   }
 
-  const turndownService = getTurndownService();
+  const turndownService = await getTurndownService();
   return turndownService.turndown(html);
 }
 
 /**
  * Convert Markdown to HTML
  * @param {string} markdown - Markdown content to convert
- * @returns {string} HTML content
+ * @returns {Promise<string>} HTML content
  */
-export function markdownToHtml(markdown) {
+export async function markdownToHtml(markdown) {
   if (!markdown || typeof markdown !== 'string') {
     return '';
   }
 
-  const marked = getMarked();
+  const marked = await getMarked();
   return marked.parse(markdown);
 }
 
@@ -89,9 +97,9 @@ export function markdownToHtml(markdown) {
  * Convert HTML to Markdown and then render it back to HTML
  * Useful for normalizing HTML through markdown representation
  * @param {string} html - HTML content to convert
- * @returns {string} Rendered HTML from markdown
+ * @returns {Promise<string>} Rendered HTML from markdown
  */
-export function htmlToMarkdownToHtml(html) {
-  const markdown = htmlToMarkdown(html);
+export async function htmlToMarkdownToHtml(html) {
+  const markdown = await htmlToMarkdown(html);
   return markdownToHtml(markdown);
 }

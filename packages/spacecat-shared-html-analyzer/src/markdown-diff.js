@@ -214,24 +214,15 @@ export function createMarkdownTableDiff(originalChildren, currentChildren) {
  * Convert HTML to rendered markdown HTML (for display)
  * @param {string} html - HTML content to convert
  * @param {boolean} [ignoreNavFooter=true] - Whether to filter nav/footer elements
- * @returns {string} Rendered markdown HTML
+ * @returns {Promise<string>} Rendered markdown HTML
  */
-export function htmlToRenderedMarkdown(html, ignoreNavFooter = true) {
+export async function htmlToRenderedMarkdown(html, ignoreNavFooter = true) {
   // Extract body content only (with nav/footer filtering applied)
-  // Handle both sync (browser) and async (Node.js) filterHtmlContent
-  const bodyContentResult = filterHtmlContent(html, ignoreNavFooter, false);
+  const bodyContent = await filterHtmlContent(html, ignoreNavFooter, false);
 
-  // For browser (sync)
-  if (!(bodyContentResult instanceof Promise)) {
-    const markdown = htmlToMarkdown(bodyContentResult);
-    return markdownToHtml(markdown);
-  }
-
-  // For Node.js (async) - though this won't be used in browser
-  return bodyContentResult.then((bodyContent) => {
-    const markdown = htmlToMarkdown(bodyContent);
-    return markdownToHtml(markdown);
-  });
+  // Convert to markdown and back to HTML
+  const markdown = await htmlToMarkdown(bodyContent);
+  return markdownToHtml(markdown);
 }
 
 /**
@@ -239,15 +230,16 @@ export function htmlToRenderedMarkdown(html, ignoreNavFooter = true) {
  * @param {string} originalHtml - Original HTML content
  * @param {string} currentHtml - Current HTML content
  * @param {boolean} [ignoreNavFooter=true] - Whether to filter nav/footer elements
- * @returns {{originalRenderedHtml: string, currentRenderedHtml: string}}
+ * @returns {Promise<{originalRenderedHtml: string, currentRenderedHtml: string}>}
  * Rendered markdown HTML for both sides
  */
-export function generateMarkdownDiff(originalHtml, currentHtml, ignoreNavFooter = true) {
+export async function generateMarkdownDiff(originalHtml, currentHtml, ignoreNavFooter = true) {
   // Convert both HTMLs to rendered markdown HTML
-  const originalRenderedHtml = htmlToRenderedMarkdown(originalHtml, ignoreNavFooter);
-  const currentRenderedHtml = htmlToRenderedMarkdown(currentHtml, ignoreNavFooter);
+  const [originalRenderedHtml, currentRenderedHtml] = await Promise.all([
+    htmlToRenderedMarkdown(originalHtml, ignoreNavFooter),
+    htmlToRenderedMarkdown(currentHtml, ignoreNavFooter),
+  ]);
 
-  // Return the rendered HTML strings for the caller to parse and diff
   return {
     originalRenderedHtml,
     currentRenderedHtml,

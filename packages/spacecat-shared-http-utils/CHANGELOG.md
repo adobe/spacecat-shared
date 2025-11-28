@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.19.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.19.1...@adobe/spacecat-shared-http-utils-v1.19.2) (2025-11-28)
+
+
+### Bug Fixes
+
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
 # [@adobe/spacecat-shared-http-utils-v1.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.19.0...@adobe/spacecat-shared-http-utils-v1.19.1) (2025-11-28)
 
 

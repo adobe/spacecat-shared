@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "@adobe/helix-universal": "5.3.0",
-    "@adobe/spacecat-shared-ims-client": "1.11.3",
-    "@adobe/spacecat-shared-utils": "1.81.0"
+    "@adobe/spacecat-shared-ims-client": "1.11.4",
+    "@adobe/spacecat-shared-utils": "1.81.1"
   },
   "devDependencies": {
     "chai": "6.2.1",

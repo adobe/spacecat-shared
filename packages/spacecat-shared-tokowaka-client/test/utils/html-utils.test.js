@@ -39,7 +39,6 @@ describe('HTML Utils', () => {
       try {
         await fetchHtmlWithWarmup(
           '',
-          'api-key',
           'host',
           'edge-url',
           log,
@@ -48,22 +47,6 @@ describe('HTML Utils', () => {
         expect.fail('Should have thrown error');
       } catch (error) {
         expect(error.message).to.equal('URL is required for fetching HTML');
-      }
-    });
-
-    it('should throw error when apiKey is missing', async () => {
-      try {
-        await fetchHtmlWithWarmup(
-          'https://example.com/page',
-          '',
-          'host',
-          'edge-url',
-          log,
-          false,
-        );
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.equal('Tokowaka API key is required for fetching HTML');
       }
     });
 
@@ -96,6 +79,22 @@ describe('HTML Utils', () => {
         expect.fail('Should have thrown error');
       } catch (error) {
         expect(error.message).to.equal('TOKOWAKA_EDGE_URL is not configured');
+      }
+    });
+
+    it('should throw error when apiKey is missing', async () => {
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          '',
+          'host',
+          'edge-url',
+          log,
+          false,
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('Tokowaka API key is required for fetching HTML');
       }
     });
 
@@ -273,7 +272,6 @@ describe('HTML Utils', () => {
         // This tests the defensive 'throw lastError' fallback
         await fetchHtmlWithWarmup(
           'https://example.com/page',
-          'api-key',
           'host',
           'https://edge.example.com',
           log,

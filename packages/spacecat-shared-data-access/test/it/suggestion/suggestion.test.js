@@ -30,7 +30,7 @@ describe('Suggestion IT', async () => {
   let Suggestion;
   let FixEntitySuggestion;
 
-  beforeEach(async function () {
+  before(async function () {
     this.timeout(10000);
     sampleData = await seedDatabase();
 

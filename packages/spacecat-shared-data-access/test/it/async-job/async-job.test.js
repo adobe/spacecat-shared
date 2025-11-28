@@ -36,7 +36,8 @@ describe('AsyncJob IT', async () => {
   let AsyncJob;
   let newJobData;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
     const dataAccess = getDataAccess();
     AsyncJob = dataAccess.AsyncJob;

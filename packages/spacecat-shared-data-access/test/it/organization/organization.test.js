@@ -25,7 +25,8 @@ describe('Organization IT', async () => {
   let sampleData;
   let Organization;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.88.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.5...@adobe/spacecat-shared-data-access-v2.88.6) (2025-11-28)
+
+
+### Bug Fixes
+
+* adds executedAt as default createdAt for indexing fixEntity suggestion relationship ([#1177](https://github.com/adobe/spacecat-shared/issues/1177)) ([1db57ad](https://github.com/adobe/spacecat-shared/commit/1db57ade028db638b2185860bebcd4c4187c261e))
+
 # [@adobe/spacecat-shared-data-access-v2.88.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.4...@adobe/spacecat-shared-data-access-v2.88.5) (2025-11-28)
 
 

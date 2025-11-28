@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.6...@adobe/spacecat-shared-tier-client-v1.3.7) (2025-11-28)
+
+
+### Bug Fixes
+
+* using entity name instead of instanceof ([#1190](https://github.com/adobe/spacecat-shared/issues/1190)) ([eccda60](https://github.com/adobe/spacecat-shared/commit/eccda60d02f1df7d251957430cb7fcef4041f89c))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.5...@adobe/spacecat-shared-tier-client-v1.3.6) (2025-11-28)
 
 

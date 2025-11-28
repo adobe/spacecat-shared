@@ -45,7 +45,7 @@ describe('ReadabilityMapper', () => {
     it('should return eligible for valid readability suggestion', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Lorem ipsum...',
+          textPreview: 'Lorem ipsum...',
           pageUrl: 'https://www.website.com',
           transformRules: {
             value: 'Tech enthusiasts keep up with the latest tech news...',
@@ -65,7 +65,7 @@ describe('ReadabilityMapper', () => {
     it('should return eligible for readability suggestion without target (uses default)', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Lorem ipsum...',
+          textPreview: 'Lorem ipsum...',
           pageUrl: 'https://www.website.com',
           transformRules: {
             value: 'Improved readability text...',
@@ -83,7 +83,7 @@ describe('ReadabilityMapper', () => {
     it('should return ineligible when transformRules is missing', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Lorem ipsum...',
+          textPreview: 'Lorem ipsum...',
           pageUrl: 'https://www.website.com',
         }),
       };
@@ -112,7 +112,7 @@ describe('ReadabilityMapper', () => {
     it('should return ineligible when transformRules.selector is missing', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           pageUrl: 'https://www.example.com',
           transformRules: {
             value: 'New text',
@@ -132,7 +132,7 @@ describe('ReadabilityMapper', () => {
     it('should return ineligible when transformRules.op is missing', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           pageUrl: 'https://www.example.com',
           transformRules: {
             value: 'New text',
@@ -152,7 +152,7 @@ describe('ReadabilityMapper', () => {
     it('should return ineligible when transformRules.op is not "replace"', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           pageUrl: 'https://www.example.com',
           transformRules: {
             value: 'New text',
@@ -173,7 +173,7 @@ describe('ReadabilityMapper', () => {
     it('should return ineligible when transformRules.value is missing', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           pageUrl: 'https://www.example.com',
           transformRules: {
             op: 'replace',
@@ -193,7 +193,7 @@ describe('ReadabilityMapper', () => {
     it('should return ineligible when transformRules.selector is empty string', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           pageUrl: 'https://www.example.com',
           transformRules: {
             value: 'New text',
@@ -214,7 +214,7 @@ describe('ReadabilityMapper', () => {
     it('should return ineligible when pageUrl is invalid', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           pageUrl: 'not-a-valid-url',
           transformRules: {
             value: 'New text',
@@ -235,7 +235,7 @@ describe('ReadabilityMapper', () => {
     it('should return ineligible when pageUrl is missing', () => {
       const suggestion = {
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           transformRules: {
             value: 'New text',
             op: 'replace',
@@ -259,7 +259,7 @@ describe('ReadabilityMapper', () => {
         getId: () => 'sugg-123',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          displayText: 'Lorem ipsum...',
+          textPreview: 'Lorem ipsum...',
           pageUrl: 'https://www.website.com',
           scrapedAt: '2025-09-20T06:21:12.584Z',
           transformRules: {
@@ -295,7 +295,7 @@ describe('ReadabilityMapper', () => {
         getId: () => 'sugg-456',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          displayText: 'Original text...',
+          textPreview: 'Original text...',
           pageUrl: 'https://www.example.com',
           scrapedAt: '2025-09-20T06:21:12.584Z',
           transformRules: {
@@ -318,7 +318,7 @@ describe('ReadabilityMapper', () => {
         getId: () => 'sugg-789',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           pageUrl: 'https://www.example.com',
           transformRules: {
             value: 'Better text',
@@ -340,7 +340,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getId: () => 'sugg-999',
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           pageUrl: 'https://www.example.com',
           // Missing transformRules
         }),
@@ -363,7 +363,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getId: () => 'sugg-warn',
         getData: () => ({
-          displayText: 'Text...',
+          textPreview: 'Text...',
           pageUrl: 'https://www.example.com',
           transformRules: {
             op: 'replace',
@@ -385,7 +385,7 @@ describe('ReadabilityMapper', () => {
           getId: () => 'sugg-1',
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
-            displayText: 'Original text 1',
+            textPreview: 'Original text 1',
             pageUrl: 'https://www.example.com/page1',
             transformRules: {
               value: 'First improved text',
@@ -398,7 +398,7 @@ describe('ReadabilityMapper', () => {
           getId: () => 'sugg-2',
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
-            displayText: 'Original text 2',
+            textPreview: 'Original text 2',
             pageUrl: 'https://www.example.com/page2',
             transformRules: {
               value: 'Second improved text',

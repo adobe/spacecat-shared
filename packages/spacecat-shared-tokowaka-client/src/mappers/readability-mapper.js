@@ -63,7 +63,7 @@ export default class ReadabilityMapper extends BaseOpportunityMapper {
           isBoolean(transformRules.prerenderRequired)
            && { prerenderRequired: transformRules.prerenderRequired }
         ),
-        ...(hasText(data.displayText) && { currValue: data.displayText }),
+        ...(hasText(data.textPreview) && { currValue: data.textPreview }),
         target: transformRules.target || TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
       };
 

@@ -24,7 +24,7 @@ runs:
           ${{ runner.os }}-node-
 
     - name: Update NPM (only if cache miss)
-      run: npm install -g npm@10.9.2
+      run: npm install -g npm@10.9.4
       shell: bash
 
     - name: Install dependencies (only if cache miss)

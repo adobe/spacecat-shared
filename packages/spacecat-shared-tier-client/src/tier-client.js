@@ -28,7 +28,7 @@ class TierClient {
    * @returns {TierClient} TierClient instance for organization operations.
    */
   static createForOrg(context, organization, productCode) {
-    if (!(organization instanceof Organization)) {
+    if (!(organization.entityName === Organization.ENTITY_NAME)) {
       throw new Error('Entity must be an instance of Organization');
     }
     if (!hasText(productCode)) {
@@ -48,7 +48,7 @@ class TierClient {
    * @returns {TierClient} TierClient instance for site operations.
    */
   static async createForSite(context, site, productCode) {
-    if (!(site instanceof Site)) {
+    if (!(site.entityName === Site.ENTITY_NAME)) {
       throw new Error('Entity must be an instance of Site');
     }
     if (!hasText(productCode)) {

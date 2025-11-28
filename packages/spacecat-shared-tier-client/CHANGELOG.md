@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.7...@adobe/spacecat-shared-tier-client-v1.3.8) (2025-11-28)
+
+
+### Bug Fixes
+
+* remove instanceof check ([#1191](https://github.com/adobe/spacecat-shared/issues/1191)) ([c2bf75d](https://github.com/adobe/spacecat-shared/commit/c2bf75d44003e1d0c25bea75640559cd46794301))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.6...@adobe/spacecat-shared-tier-client-v1.3.7) (2025-11-28)
 
 

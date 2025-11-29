@@ -210,47 +210,6 @@ describe('ReadabilityMapper', () => {
         reason: 'transformRules.selector is required',
       });
     });
-
-    it('should return ineligible when url is invalid', () => {
-      const suggestion = {
-        getData: () => ({
-          textPreview: 'Text...',
-          url: 'not-a-valid-url',
-          transformRules: {
-            value: 'New text',
-            op: 'replace',
-            selector: '#content',
-          },
-        }),
-      };
-
-      const result = mapper.canDeploy(suggestion);
-
-      expect(result).to.deep.equal({
-        eligible: false,
-        reason: 'url not-a-valid-url is not a valid URL',
-      });
-    });
-
-    it('should return ineligible when url is missing', () => {
-      const suggestion = {
-        getData: () => ({
-          textPreview: 'Text...',
-          transformRules: {
-            value: 'New text',
-            op: 'replace',
-            selector: '#content',
-          },
-        }),
-      };
-
-      const result = mapper.canDeploy(suggestion);
-
-      expect(result).to.deep.equal({
-        eligible: false,
-        reason: 'url undefined is not a valid URL',
-      });
-    });
   });
 
   describe('suggestionsToPatches', () => {

@@ -89,8 +89,8 @@ export default class ReadabilityMapper extends BaseOpportunityMapper {
 
     const { transformRules } = data;
 
-    if (!isValidUrl(data.pageUrl)) {
-      return { eligible: false, reason: `pageUrl ${data.pageUrl} is not a valid URL` };
+    if (!isValidUrl(data.url)) {
+      return { eligible: false, reason: `url ${data.url} is not a valid URL` };
     }
 
     if (!hasText(transformRules.selector)) {

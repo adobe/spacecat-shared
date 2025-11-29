@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.2.3...@adobe/spacecat-shared-tokowaka-client-v1.2.4) (2025-11-29)
+
+
+### Bug Fixes
+
+* url param in tokowaka readability mapper ([#1192](https://github.com/adobe/spacecat-shared/issues/1192)) ([566b9f1](https://github.com/adobe/spacecat-shared/commit/566b9f1d9ca03a9ffe6bbf59a89d6ccba8b278c0))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.2.2...@adobe/spacecat-shared-tokowaka-client-v1.2.3) (2025-11-28)
 
 

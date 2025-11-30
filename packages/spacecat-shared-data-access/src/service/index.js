@@ -16,7 +16,7 @@ import { Service } from 'electrodb';
 
 import { instrumentAWSClient } from '@adobe/spacecat-shared-utils';
 import { EntityRegistry } from '../models/index.js';
-import { registerLogger } from '../util/logger-registry.js';
+import { getEntitySchemas } from '../models/base/entity-definitions.js';
 
 export * from '../errors/index.js';
 export * from '../models/index.js';
@@ -56,7 +56,7 @@ const createElectroService = (client, config, log) => {
   /* c8 ignore end */
 
   return new Service(
-    EntityRegistry.getEntities(),
+    getEntitySchemas(),
     {
       client,
       table,
@@ -74,8 +74,6 @@ const createElectroService = (client, config, log) => {
  * @returns {object} Data access collections for interacting with entities
  */
 export const createDataAccess = (config, log = console, client = undefined) => {
-  registerLogger(log);
-
   const rawClient = createRawClient(client);
   const electroService = createElectroService(rawClient, config, log);
   const entityRegistry = new EntityRegistry(electroService, log);

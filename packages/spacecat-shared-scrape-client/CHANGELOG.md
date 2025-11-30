@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-scrape-client-v2.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.5...@adobe/spacecat-shared-scrape-client-v2.3.6) (2025-11-30)
+
+
+### Bug Fixes
+
+* update data-access ([#1196](https://github.com/adobe/spacecat-shared/issues/1196)) ([c9461e7](https://github.com/adobe/spacecat-shared/commit/c9461e7c25634014088320d2faaf7839f164845c))
+
 # [@adobe/spacecat-shared-scrape-client-v2.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.4...@adobe/spacecat-shared-scrape-client-v2.3.5) (2025-11-28)
 
 

@@ -46,7 +46,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Lorem ipsum...',
-          pageUrl: 'https://www.website.com',
+          url: 'https://www.website.com',
           transformRules: {
             value: 'Tech enthusiasts keep up with the latest tech news...',
             op: 'replace',
@@ -66,7 +66,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Lorem ipsum...',
-          pageUrl: 'https://www.website.com',
+          url: 'https://www.website.com',
           transformRules: {
             value: 'Improved readability text...',
             op: 'replace',
@@ -84,7 +84,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Lorem ipsum...',
-          pageUrl: 'https://www.website.com',
+          url: 'https://www.website.com',
         }),
       };
 
@@ -113,7 +113,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Text...',
-          pageUrl: 'https://www.example.com',
+          url: 'https://www.example.com',
           transformRules: {
             value: 'New text',
             op: 'replace',
@@ -133,7 +133,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Text...',
-          pageUrl: 'https://www.example.com',
+          url: 'https://www.example.com',
           transformRules: {
             value: 'New text',
             selector: '#content',
@@ -153,7 +153,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Text...',
-          pageUrl: 'https://www.example.com',
+          url: 'https://www.example.com',
           transformRules: {
             value: 'New text',
             op: 'insertAfter',
@@ -174,7 +174,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Text...',
-          pageUrl: 'https://www.example.com',
+          url: 'https://www.example.com',
           transformRules: {
             op: 'replace',
             selector: '#content',
@@ -194,7 +194,7 @@ describe('ReadabilityMapper', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Text...',
-          pageUrl: 'https://www.example.com',
+          url: 'https://www.example.com',
           transformRules: {
             value: 'New text',
             op: 'replace',
@@ -211,11 +211,11 @@ describe('ReadabilityMapper', () => {
       });
     });
 
-    it('should return ineligible when pageUrl is invalid', () => {
+    it('should return ineligible when url is invalid', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Text...',
-          pageUrl: 'not-a-valid-url',
+          url: 'not-a-valid-url',
           transformRules: {
             value: 'New text',
             op: 'replace',
@@ -228,11 +228,11 @@ describe('ReadabilityMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'pageUrl not-a-valid-url is not a valid URL',
+        reason: 'url not-a-valid-url is not a valid URL',
       });
     });
 
-    it('should return ineligible when pageUrl is missing', () => {
+    it('should return ineligible when url is missing', () => {
       const suggestion = {
         getData: () => ({
           textPreview: 'Text...',
@@ -248,7 +248,7 @@ describe('ReadabilityMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'pageUrl undefined is not a valid URL',
+        reason: 'url undefined is not a valid URL',
       });
     });
   });
@@ -260,7 +260,7 @@ describe('ReadabilityMapper', () => {
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
           textPreview: 'Lorem ipsum...',
-          pageUrl: 'https://www.website.com',
+          url: 'https://www.website.com',
           scrapedAt: '2025-09-20T06:21:12.584Z',
           transformRules: {
             value: 'Tech enthusiasts keep up with the latest tech news...',
@@ -296,7 +296,7 @@ describe('ReadabilityMapper', () => {
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
           textPreview: 'Original text...',
-          pageUrl: 'https://www.example.com',
+          url: 'https://www.example.com',
           scrapedAt: '2025-09-20T06:21:12.584Z',
           transformRules: {
             value: 'Improved readability text',
@@ -319,7 +319,7 @@ describe('ReadabilityMapper', () => {
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
           textPreview: 'Text...',
-          pageUrl: 'https://www.example.com',
+          url: 'https://www.example.com',
           transformRules: {
             value: 'Better text',
             op: 'replace',
@@ -341,7 +341,7 @@ describe('ReadabilityMapper', () => {
         getId: () => 'sugg-999',
         getData: () => ({
           textPreview: 'Text...',
-          pageUrl: 'https://www.example.com',
+          url: 'https://www.example.com',
           // Missing transformRules
         }),
       };
@@ -364,7 +364,7 @@ describe('ReadabilityMapper', () => {
         getId: () => 'sugg-warn',
         getData: () => ({
           textPreview: 'Text...',
-          pageUrl: 'https://www.example.com',
+          url: 'https://www.example.com',
           transformRules: {
             op: 'replace',
             // Missing selector and value
@@ -386,7 +386,7 @@ describe('ReadabilityMapper', () => {
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             textPreview: 'Original text 1',
-            pageUrl: 'https://www.example.com/page1',
+            url: 'https://www.example.com/page1',
             transformRules: {
               value: 'First improved text',
               op: 'replace',
@@ -399,7 +399,7 @@ describe('ReadabilityMapper', () => {
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             textPreview: 'Original text 2',
-            pageUrl: 'https://www.example.com/page2',
+            url: 'https://www.example.com/page2',
             transformRules: {
               value: 'Second improved text',
               op: 'replace',

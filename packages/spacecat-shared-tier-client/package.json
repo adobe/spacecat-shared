@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "@adobe/spacecat-shared-data-access": "2.88.5"
+    "@adobe/spacecat-shared-data-access": "2.88.7"
   },
   "devDependencies": {
     "c8": "10.1.3",

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.8.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.9...@adobe/spacecat-shared-content-client-v1.8.10) (2025-11-30)
+
+
+### Bug Fixes
+
+* update data-access ([#1196](https://github.com/adobe/spacecat-shared/issues/1196)) ([c9461e7](https://github.com/adobe/spacecat-shared/commit/c9461e7c25634014088320d2faaf7839f164845c))
+
 # [@adobe/spacecat-shared-content-client-v1.8.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.8...@adobe/spacecat-shared-content-client-v1.8.9) (2025-11-30)
 
 

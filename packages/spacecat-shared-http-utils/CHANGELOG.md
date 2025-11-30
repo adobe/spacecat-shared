@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.19.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.19.3...@adobe/spacecat-shared-http-utils-v1.19.4) (2025-11-30)
+
+
+### Bug Fixes
+
+* update data-access ([#1196](https://github.com/adobe/spacecat-shared/issues/1196)) ([c9461e7](https://github.com/adobe/spacecat-shared/commit/c9461e7c25634014088320d2faaf7839f164845c))
+
 # [@adobe/spacecat-shared-http-utils-v1.19.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.19.2...@adobe/spacecat-shared-http-utils-v1.19.3) (2025-11-28)
 
 

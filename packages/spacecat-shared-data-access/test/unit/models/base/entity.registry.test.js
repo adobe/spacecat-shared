@@ -18,43 +18,20 @@ import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
 import EntityRegistry from '../../../../src/models/base/entity.registry.js';
-import { BaseCollection, BaseModel, DataAccessError } from '../../../../src/index.js';
-import Schema from '../../../../src/models/base/schema.js';
+import { BaseCollection, DataAccessError } from '../../../../src/index.js';
+import { getEntitySchemas } from '../../../../src/models/base/entity-definitions.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('EntityRegistry', () => {
-  const MockModel = class MockModel extends BaseModel {
-    static ENTITY_NAME = 'MockModel';
-  };
-  const MockCollection = class MockCollection extends BaseCollection {
-    static COLLECTION_NAME = 'MockCollection';
-  };
-  const MockSchema = new Schema(
-    MockModel,
-    MockCollection,
-    {
-      attributes: { test: {} },
-      indexes: { test: {} },
-      serviceName: 'SpaceDog',
-      schemaVersion: 1,
-      references: [],
-      options: { allowRemove: true, allowUpdates: true },
-    },
-  );
-
   let electroService;
   let entityRegistry;
-  let originalEntities;
 
   beforeEach(() => {
-    originalEntities = { ...EntityRegistry.entities };
-    EntityRegistry.entities = {};
-
     electroService = {
       entities: {
-        mockModel: {
+        apiKey: {
           model: {
             name: 'test',
             indexes: [],
@@ -67,17 +44,11 @@ describe('EntityRegistry', () => {
       },
     };
 
-    EntityRegistry.registerEntity(MockSchema, MockCollection);
-
     entityRegistry = new EntityRegistry(electroService, console);
   });
 
-  afterEach(() => {
-    EntityRegistry.entities = originalEntities;
-  });
-
   it('gets collection by collection name', () => {
-    const collection = entityRegistry.getCollection('MockCollection');
+    const collection = entityRegistry.getCollection('ApiKeyCollection');
 
     expect(collection).to.be.an.instanceOf(BaseCollection);
   });
@@ -91,29 +62,19 @@ describe('EntityRegistry', () => {
     const collections = entityRegistry.getCollections();
 
     expect(collections).to.be.an('object');
-    expect(Object.keys(collections)).to.have.lengthOf(1);
-    expect(collections.Mock).to.be.an.instanceOf(MockCollection);
+    // Should have all registered entities from ENTITY_DEFINITIONS
+    expect(Object.keys(collections).length).to.be.greaterThan(0);
+    expect(collections.ApiKey).to.be.an.instanceOf(BaseCollection);
   });
 
-  it('gets all entities', () => {
-    const entities = EntityRegistry.getEntities();
+  it('getEntitySchemas returns all entity schemas', () => {
+    const entities = getEntitySchemas();
 
     expect(entities).to.be.an('object');
-    expect(Object.keys(entities)).to.have.lengthOf(1);
-    expect(entities).to.deep.equal({
-      mockModel: {
-        attributes: {
-          test: {},
-        },
-        indexes: {
-          test: {},
-        },
-        model: {
-          entity: 'MockModel',
-          service: 'SpaceDog',
-          version: '1',
-        },
-      },
-    });
+    // Should have all registered entities from ENTITY_DEFINITIONS
+    expect(Object.keys(entities).length).to.be.greaterThan(0);
+    expect(entities.apiKey).to.be.an('object');
+    expect(entities.apiKey.model).to.be.an('object');
+    expect(entities.apiKey.attributes).to.be.an('object');
   });
 });

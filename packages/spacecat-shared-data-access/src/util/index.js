@@ -21,8 +21,3 @@ export {
   guardSet,
   guardString,
 } from './guards.js';
-
-export {
-  registerLogger,
-  getLogger,
-} from './logger-registry.js';

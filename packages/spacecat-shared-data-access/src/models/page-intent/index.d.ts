@@ -18,11 +18,19 @@ export interface PageIntent extends BaseModel {
     getUrl(): string;
     getPageIntent(): string;
     getTopic(): string;
+    getAnalysisStatus(): string | null;
+    getAnalysisAttempts(): number | null;
+    getLastAnalysisAt(): string | null;
+    getAnalysisError(): { code: string; message: string; details?: any } | null;
 
     setSiteId(siteId: string): PageIntent;
     setUrl(url: string): PageIntent;
     setPageIntent(pageIntent: string): PageIntent;
     setTopic(topic: string): PageIntent;
+    setAnalysisStatus(status: string): PageIntent;
+    setAnalysisAttempts(attempts: number): PageIntent;
+    setLastAnalysisAt(timestamp: string): PageIntent;
+    setAnalysisError(error: { code: string; message: string; details?: any }): PageIntent;
 }
 
 export interface PageIntentCollection extends BaseCollection<PageIntent> {

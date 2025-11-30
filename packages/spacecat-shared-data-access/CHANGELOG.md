@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.88.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.6...@adobe/spacecat-shared-data-access-v2.88.7) (2025-11-30)
+
+
+### Bug Fixes
+
+* avoid static for esbuild ([#1195](https://github.com/adobe/spacecat-shared/issues/1195)) ([9ed69e3](https://github.com/adobe/spacecat-shared/commit/9ed69e3bb57d2f5fa84cb0ce60f4ab1a52a7bb70)), closes [#instance](https://github.com/adobe/spacecat-shared/issues/instance)
+
 # [@adobe/spacecat-shared-data-access-v2.88.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.5...@adobe/spacecat-shared-data-access-v2.88.6) (2025-11-28)
 
 

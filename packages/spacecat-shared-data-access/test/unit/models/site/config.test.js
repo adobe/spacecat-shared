@@ -17,8 +17,13 @@ import { expect } from 'chai';
 import {
   Config, validateConfiguration,
 } from '../../../../src/models/site/config.js';
+import { registerLogger } from '../../../../src/util/logger-registry.js';
 
 describe('Config Tests', () => {
+  beforeEach(() => {
+    registerLogger(null);
+  });
+
   describe('Brand Profile', () => {
     it('creates a Config with brandProfile (generic top-level content)', () => {
       const data = {
@@ -171,15 +176,20 @@ describe('Config Tests', () => {
       expect(config.getHandlers()).to.be.undefined;
     });
 
-    it('logs error when validation fails', () => {
-      // Spy on console.error
+    it('logs error when validation fails and logger is available', () => {
+      // Create a mock logger
+      const mockLogger = {};
+
+      // Spy on the logger error method
       let loggedError = null;
       let loggedData = null;
-      const originalConsoleError = console.error;
-      console.error = (message, data) => {
+      mockLogger.error = (message, data) => {
         loggedError = message;
         loggedData = data;
       };
+
+      // Register the mock logger
+      registerLogger(mockLogger);
 
       const invalidData = {
         slack: {
@@ -195,9 +205,6 @@ describe('Config Tests', () => {
 
       const config = Config(invalidData);
 
-      // Restore console.error
-      console.error = originalConsoleError;
-
       // Should preserve the provided invalid data
       expect(config.getSlackConfig()).to.deep.equal({
         channel: 'channel1',
@@ -209,7 +216,7 @@ describe('Config Tests', () => {
         },
       });
 
-      // Should have logged the error to console
+      // Should have logged the error
       expect(loggedError).to.equal('Site configuration validation failed, using provided data');
       expect(loggedData).to.have.property('error');
       expect(loggedData).to.have.property('invalidConfig');

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.88.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.7...@adobe/spacecat-shared-data-access-v2.88.8) (2025-12-01)
+
+
+### Bug Fixes
+
+* use correct model name ([#1199](https://github.com/adobe/spacecat-shared/issues/1199)) ([3f5fb03](https://github.com/adobe/spacecat-shared/commit/3f5fb036c961036367376617d04bc1a7181146b1)), closes [#pk](https://github.com/adobe/spacecat-shared/issues/pk) [#sk](https://github.com/adobe/spacecat-shared/issues/sk)
+
 # [@adobe/spacecat-shared-data-access-v2.88.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.6...@adobe/spacecat-shared-data-access-v2.88.7) (2025-11-30)
 
 

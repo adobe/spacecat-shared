@@ -27,7 +27,8 @@ class ConfigurationCollection extends BaseCollection {
   async create(data) {
     const latestConfiguration = await this.findLatest();
     const version = latestConfiguration ? incrementVersion(latestConfiguration.getVersion()) : 1;
-    const sanitizedData = sanitizeIdAndAuditFields('Organization', data);
+    const sanitizedData = sanitizeIdAndAuditFields('Configuration', data);
+
     sanitizedData.version = version;
 
     return super.create(sanitizedData);

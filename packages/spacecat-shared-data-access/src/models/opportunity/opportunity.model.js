@@ -185,7 +185,8 @@ class Opportunity extends BaseModel {
     fixEntityCreateResult.createdItems.forEach((createdFixEntity, index) => {
       const originalFixEntity = fixEntitiesToCreate[index];
       const fixEntityId = createdFixEntity.getId();
-      const fixEntityCreatedAt = createdFixEntity.getCreatedAt();
+      const fixEntityCreatedAt = createdFixEntity.getExecutedAt()
+        || createdFixEntity.getCreatedAt();
 
       originalFixEntity.suggestions.forEach((suggestionId) => {
         junctionRecordsToCreate.push({

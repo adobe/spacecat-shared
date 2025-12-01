@@ -240,12 +240,15 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     ];
 
     // First set up the relationships using direct junction records
-    const junctionData = fixEntityIds.map((fixEntityId, index) => ({
-      suggestionId: suggestion.getId(),
-      fixEntityId,
-      opportunityId: sampleData.fixEntities[index].getOpportunityId(),
-      fixEntityCreatedAt: sampleData.fixEntities[index].getCreatedAt(),
-    }));
+    const junctionData = fixEntityIds.map((fixEntityId, index) => {
+      const fixEntity = sampleData.fixEntities[index];
+      return {
+        suggestionId: suggestion.getId(),
+        fixEntityId,
+        opportunityId: fixEntity.getOpportunityId(),
+        fixEntityCreatedAt: fixEntity.getExecutedAt() || fixEntity.getCreatedAt(),
+      };
+    });
     await FixEntitySuggestion.createMany(junctionData);
 
     // Then retrieve them
@@ -282,18 +285,20 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
   });
 
   it('creates junction records directly', async () => {
+    const fixEntity0 = sampleData.fixEntities[0];
+    const fixEntity1 = sampleData.fixEntities[1];
     const junctionData = [
       {
         suggestionId: sampleData.suggestions[0].getId(),
-        fixEntityId: sampleData.fixEntities[0].getId(),
-        opportunityId: sampleData.fixEntities[0].getOpportunityId(),
-        fixEntityCreatedAt: sampleData.fixEntities[0].getCreatedAt(),
+        fixEntityId: fixEntity0.getId(),
+        opportunityId: fixEntity0.getOpportunityId(),
+        fixEntityCreatedAt: fixEntity0.getExecutedAt() || fixEntity0.getCreatedAt(),
       },
       {
         suggestionId: sampleData.suggestions[1].getId(),
-        fixEntityId: sampleData.fixEntities[1].getId(),
-        opportunityId: sampleData.fixEntities[1].getOpportunityId(),
-        fixEntityCreatedAt: sampleData.fixEntities[1].getCreatedAt(),
+        fixEntityId: fixEntity1.getId(),
+        opportunityId: fixEntity1.getOpportunityId(),
+        fixEntityCreatedAt: fixEntity1.getExecutedAt() || fixEntity1.getCreatedAt(),
       },
     ];
 
@@ -318,7 +323,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
       suggestionId,
       fixEntityId: fixEntity.getId(),
       opportunityId: fixEntity.getOpportunityId(),
-      fixEntityCreatedAt: fixEntity.getCreatedAt(),
+      fixEntityCreatedAt: fixEntity.getExecutedAt() || fixEntity.getCreatedAt(),
     });
 
     const junctionRecords = await FixEntitySuggestion.allBySuggestionId(suggestionId);
@@ -341,7 +346,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
       suggestionId: sampleData.suggestions[0].getId(),
       fixEntityId,
       opportunityId: fixEntity.getOpportunityId(),
-      fixEntityCreatedAt: fixEntity.getCreatedAt(),
+      fixEntityCreatedAt: fixEntity.getExecutedAt() || fixEntity.getCreatedAt(),
     });
 
     const junctionRecords = await FixEntitySuggestion.allByFixEntityId(fixEntityId);
@@ -541,13 +546,13 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
         suggestionId: suggestion.getId(),
         fixEntityId: fixEntity1.getId(),
         opportunityId: fixEntity1.getOpportunityId(),
-        fixEntityCreatedAt: fixEntity1.getCreatedAt(),
+        fixEntityCreatedAt: fixEntity1.getExecutedAt() || fixEntity1.getCreatedAt(),
       },
       {
         suggestionId: suggestion.getId(),
         fixEntityId: fixEntity2.getId(),
         opportunityId: fixEntity2.getOpportunityId(),
-        fixEntityCreatedAt: fixEntity2.getCreatedAt(),
+        fixEntityCreatedAt: fixEntity2.getExecutedAt() || fixEntity2.getCreatedAt(),
       },
     ];
     await FixEntitySuggestion.createMany(junctionData);
@@ -692,6 +697,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
         description: 'Test fix entity 1',
         changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
       },
+      executedAt: '2024-01-15T10:30:00.000Z',
     });
 
     const fixEntity2 = await FixEntity.create({
@@ -702,6 +708,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
         description: 'Test fix entity 2',
         changes: [{ field: 'description', oldValue: 'Old Desc', newValue: 'New Desc' }],
       },
+      executedAt: '2024-01-15T14:45:00.000Z',
     });
 
     const fixEntity3 = await FixEntity.create({
@@ -712,6 +719,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
         description: 'Test fix entity 3',
         changes: [{ field: 'code', oldValue: 'Old Code', newValue: 'New Code' }],
       },
+      executedAt: '2024-01-15T16:00:00.000Z',
     });
 
     const suggestion1 = await Suggestion.create({
@@ -739,14 +747,14 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
       suggestionId: suggestion1.getId(),
       fixEntityId: fixEntity1.getId(),
       opportunityId: fixEntity1.getOpportunityId(),
-      fixEntityCreatedAt: '2024-01-15T10:30:00.000Z',
+      fixEntityCreatedAt: fixEntity1.getExecutedAt() || fixEntity1.getCreatedAt(),
     });
 
     await FixEntitySuggestion.create({
       suggestionId: suggestion2.getId(),
       fixEntityId: fixEntity2.getId(),
       opportunityId: fixEntity2.getOpportunityId(),
-      fixEntityCreatedAt: '2024-01-15T14:45:00.000Z',
+      fixEntityCreatedAt: fixEntity2.getExecutedAt() || fixEntity2.getCreatedAt(),
     });
 
     // Create a junction record with different opportunity ID (should not be returned)
@@ -754,7 +762,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
       suggestionId: suggestion1.getId(),
       fixEntityId: fixEntity3.getId(),
       opportunityId: fixEntity3.getOpportunityId(),
-      fixEntityCreatedAt: '2024-01-15T16:00:00.000Z',
+      fixEntityCreatedAt: fixEntity3.getExecutedAt() || fixEntity3.getCreatedAt(),
     });
 
     // Test the accessor method
@@ -834,6 +842,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
         description: 'Date test fix entity',
         changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
       },
+      executedAt: '2024-01-15T23:59:59.999Z',
     });
 
     const suggestion = await Suggestion.create({
@@ -851,7 +860,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
       suggestionId: suggestion.getId(),
       fixEntityId: fixEntity.getId(),
       opportunityId: fixEntity.getOpportunityId(),
-      fixEntityCreatedAt: '2024-01-15T23:59:59.999Z',
+      fixEntityCreatedAt: fixEntity.getExecutedAt() || fixEntity.getCreatedAt(),
     });
 
     // Test that the date is correctly extracted (should be 2024-01-15)
@@ -882,6 +891,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
           description: `Pagination test fix entity ${i}`,
           changes: [{ field: 'title', oldValue: `Old Title ${i}`, newValue: `New Title ${i}` }],
         },
+        executedAt: '2024-01-15T10:00:00.000Z',
       });
 
       const suggestion = await Suggestion.create({
@@ -899,7 +909,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
         suggestionId: suggestion.getId(),
         fixEntityId: fixEntity.getId(),
         opportunityId: fixEntity.getOpportunityId(),
-        fixEntityCreatedAt: '2024-01-15T10:00:00.000Z',
+        fixEntityCreatedAt: fixEntity.getExecutedAt() || fixEntity.getCreatedAt(),
       });
 
       return { fixEntity, suggestion };
@@ -927,5 +937,95 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     );
 
     expect(allResult).to.be.an('array').with.length(5);
+  });
+
+  it('uses executedAt when present, falls back to createdAt when not', async () => {
+    const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e687';
+
+    // Create fix entity WITH executedAt
+    const fixEntityWithExecutedAt = await FixEntity.create({
+      opportunityId,
+      type: 'CONTENT_UPDATE',
+      status: 'PENDING',
+      changeDetails: {
+        description: 'Fix entity with executedAt',
+        changes: [{ field: 'title', oldValue: 'Old', newValue: 'New' }],
+      },
+      executedAt: '2024-01-15T10:00:00.000Z',
+    });
+
+    // Create fix entity WITHOUT executedAt (will use createdAt)
+    const fixEntityWithoutExecutedAt = await FixEntity.create({
+      opportunityId,
+      type: 'METADATA_UPDATE',
+      status: 'PENDING',
+      changeDetails: {
+        description: 'Fix entity without executedAt',
+        changes: [{ field: 'description', oldValue: 'Old', newValue: 'New' }],
+      },
+    });
+
+    // Create suggestions
+    const suggestion1 = await Suggestion.create({
+      opportunityId,
+      title: 'Test Suggestion 1',
+      description: 'Description for Test Suggestion 1',
+      data: { foo: 'bar-1' },
+      type: 'CONTENT_UPDATE',
+      rank: 0,
+      status: 'NEW',
+    });
+
+    const suggestion2 = await Suggestion.create({
+      opportunityId,
+      title: 'Test Suggestion 2',
+      description: 'Description for Test Suggestion 2',
+      data: { foo: 'bar-2' },
+      type: 'METADATA_UPDATE',
+      rank: 1,
+      status: 'NEW',
+    });
+
+    // Set suggestions for both fix entities
+    const opportunity = { getId: () => opportunityId };
+    await FixEntity.setSuggestionsForFixEntity(
+      opportunity.getId(),
+      fixEntityWithExecutedAt,
+      [suggestion1],
+    );
+    await FixEntity.setSuggestionsForFixEntity(
+      opportunity.getId(),
+      fixEntityWithoutExecutedAt,
+      [suggestion2],
+    );
+
+    // Get junction records for the fix entity WITH executedAt
+    const junctionWithExecutedAt = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion1.getId(),
+      fixEntityId: fixEntityWithExecutedAt.getId(),
+    });
+
+    expect(junctionWithExecutedAt).to.be.an('array').with.length(1);
+    expect(junctionWithExecutedAt[0].getFixEntityCreatedAt())
+      .to.equal('2024-01-15T10:00:00.000Z');
+
+    // Get junction records for the fix entity WITHOUT executedAt
+    const junctionWithoutExecutedAt = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion2.getId(),
+      fixEntityId: fixEntityWithoutExecutedAt.getId(),
+    });
+
+    expect(junctionWithoutExecutedAt).to.be.an('array').with.length(1);
+    // Should use createdAt since executedAt is not present
+    expect(junctionWithoutExecutedAt[0].getFixEntityCreatedAt())
+      .to.equal(fixEntityWithoutExecutedAt.getCreatedAt());
+
+    // Verify that the two timestamps are different
+    expect(junctionWithExecutedAt[0].getFixEntityCreatedAt())
+      .to.not.equal(junctionWithoutExecutedAt[0].getFixEntityCreatedAt());
+
+    // Verify that executedAt was used for the first and createdAt for the second
+    expect(fixEntityWithExecutedAt.getExecutedAt()).to.equal('2024-01-15T10:00:00.000Z');
+    expect(fixEntityWithoutExecutedAt.getExecutedAt()).to.be.undefined;
   });
 });

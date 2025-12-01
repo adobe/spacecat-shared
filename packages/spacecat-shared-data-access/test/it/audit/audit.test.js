@@ -36,7 +36,8 @@ describe('Audit IT', async () => {
   let sampleData;
   let Audit;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

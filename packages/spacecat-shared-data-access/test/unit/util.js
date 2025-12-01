@@ -14,21 +14,15 @@ import { Entity } from 'electrodb';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { spy, stub } from 'sinon';
 
-import { ENTITY_DEFINITIONS } from '../../src/models/base/entity-definitions.js';
-import { modelNameToEntityName, decapitalize } from '../../src/util/util.js';
+import EntityRegistry from '../../src/models/base/entity.registry.js';
+import { modelNameToEntityName } from '../../src/util/util.js';
 
 export const createElectroMocks = (Model, record) => {
   const entityName = modelNameToEntityName(Model.name);
-
-  // Find the entity definition from ENTITY_DEFINITIONS
-  const entityDef = ENTITY_DEFINITIONS.find(
-    (def) => decapitalize(def.schema.getEntityName()) === entityName,
-  );
-  if (!entityDef) {
-    throw new Error(`Entity definition not found for ${entityName}`);
-  }
-
-  const { schema, collection: Collection } = entityDef;
+  const {
+    schema,
+    collection: Collection,
+  } = EntityRegistry.entities[modelNameToEntityName(Model.name)];
   const entity = new Entity(schema.toElectroDBSchema());
 
   const mockLogger = {

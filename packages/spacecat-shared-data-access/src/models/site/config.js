@@ -14,6 +14,8 @@ import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import crypto from 'crypto';
 import Joi from 'joi';
 
+import { getLogger } from '../../util/logger-registry.js';
+
 export const IMPORT_TYPES = {
   LLMO_QUESTIONS_IMPORT_TYPE: 'llmo-prompts-ahrefs',
   ORGANIC_KEYWORDS: 'organic-keywords',
@@ -404,12 +406,13 @@ export const Config = (data = {}) => {
   try {
     configData = validateConfiguration(data);
   } catch (error) {
-    // Log validation errors to console as this is called from schema getters
-    // where we don't have access to the logger instance
-    console.error('Site configuration validation failed, using provided data', {
-      error: error.message,
-      invalidConfig: data,
-    });
+    const logger = getLogger();
+    if (logger && logger !== console) {
+      logger.error('Site configuration validation failed, using provided data', {
+        error: error.message,
+        invalidConfig: data,
+      });
+    }
     configData = { ...data };
   }
 

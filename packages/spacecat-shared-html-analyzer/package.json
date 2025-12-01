@@ -12,6 +12,7 @@
   "scripts": {
     "test": "c8 mocha",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules",
     "build": "rollup -c",
     "build:chrome": "rollup -c && echo '✅ Chrome extension bundle ready: dist/html-analyzer.min.js'"

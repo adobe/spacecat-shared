@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-html-analyzer-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.7...@adobe/spacecat-shared-html-analyzer-v1.1.0) (2025-12-01)
+
+
+### Features
+
+* added utilities for markdown diff & conversion from LLMO chrome extension ([#1184](https://github.com/adobe/spacecat-shared/issues/1184)) ([dc9867e](https://github.com/adobe/spacecat-shared/commit/dc9867ea4ac0cf9f8bd2fdc3f22ab74cd3e1f12e))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.0.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.6...@adobe/spacecat-shared-html-analyzer-v1.0.7) (2025-11-28)
 
 

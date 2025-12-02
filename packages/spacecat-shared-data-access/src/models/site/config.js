@@ -18,6 +18,7 @@ import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
   LLMO_QUESTIONS_IMPORT_TYPE: 'llmo-prompts-ahrefs',
+  LLMO_PROMPTS_GSC: 'llmo-prompts-gsc',
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',
@@ -82,6 +83,12 @@ const IMPORT_BASE_KEYS = {
 export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE).required(),
+    enabled: Joi.boolean().default(true),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+  }),
+  [IMPORT_TYPES.LLMO_PROMPTS_GSC]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.LLMO_PROMPTS_GSC).required(),
     enabled: Joi.boolean().default(true),
     limit: Joi.number().integer().min(1).max(100)
       .optional(),
@@ -172,6 +179,10 @@ export const IMPORT_TYPE_SCHEMAS = {
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
+  'llmo-prompts-gsc': {
+    type: 'llmo-prompts-gsc',
+    enabled: true,
+  },
   'organic-keywords': {
     type: 'organic-keywords',
     destinations: ['default'],
@@ -407,9 +418,10 @@ export const Config = (data = {}) => {
     configData = validateConfiguration(data);
   } catch (error) {
     const logger = getLogger();
+    const errorMessage = error instanceof Error ? error.message : String(error);
     if (logger && logger !== console) {
       logger.error('Site configuration validation failed, using provided data', {
-        error: error.message,
+        error: errorMessage,
         invalidConfig: data,
       });
     }

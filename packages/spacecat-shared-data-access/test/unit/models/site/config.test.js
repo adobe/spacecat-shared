@@ -97,6 +97,22 @@ describe('Config Tests', () => {
       expect(afterSecond.contentHash).to.not.equal(afterFirst.contentHash);
     });
 
+    it('handles empty or non-object profile updates gracefully', () => {
+      const config = Config();
+      config.updateBrandProfile({ main_profile: { id: 'test' } });
+      const afterFirst = config.getBrandProfile();
+      expect(afterFirst.version).to.equal(1);
+
+      // Empty object or null should still be handled without error
+      config.updateBrandProfile({});
+      const afterEmpty = config.getBrandProfile();
+      expect(afterEmpty).to.exist;
+
+      config.updateBrandProfile(null);
+      const afterNull = config.getBrandProfile();
+      expect(afterNull).to.exist;
+    });
+
     it('includes brandProfile in toDynamoItem conversion', () => {
       const config = Config();
       config.updateBrandProfile({
@@ -221,6 +237,43 @@ describe('Config Tests', () => {
       expect(loggedData).to.have.property('error');
       expect(loggedData).to.have.property('invalidConfig');
       expect(loggedData.invalidConfig).to.deep.equal(invalidData);
+    });
+
+    it('handles non-Error exceptions during validation', () => {
+      // Create a mock logger
+      const mockLogger = {};
+      let loggedError = null;
+      let loggedData = null;
+      mockLogger.error = (message, data) => {
+        loggedError = message;
+        loggedData = data;
+      };
+      registerLogger(mockLogger);
+
+      let callCount = 0;
+
+      // Create an object with a malicious getter that throws a non-Error only once
+      // After the first throw, return a normal value to prevent escape
+      const maliciousData = {};
+
+      Object.defineProperty(maliciousData, 'handlers', {
+        get() {
+          callCount += 1;
+          if (callCount === 1) {
+            throw 'non-error exception'; // eslint-disable-line no-throw-literal
+          }
+          return undefined; // On subsequent calls, return undefined
+        },
+        enumerable: true,
+      });
+
+      const config = Config(maliciousData);
+
+      // Should have logged the error with String(error)
+      expect(loggedError).to.equal('Site configuration validation failed, using provided data');
+      expect(loggedData).to.have.property('error');
+      expect(loggedData.error).to.equal('non-error exception');
+      expect(config).to.exist;
     });
 
     it('creates a Config with llmo property', () => {
@@ -1128,6 +1181,17 @@ describe('Config Tests', () => {
       expect(validated).to.deep.equal(config);
     });
 
+    it('can retrieve handler properties including includedURLs', () => {
+      const config = Config({
+        handlers: {
+          404: {
+            includedURLs: ['https://example.com/included'],
+          },
+        },
+      });
+      expect(config.getIncludedURLs('404')).to.deep.equal(['https://example.com/included']);
+    });
+
     it('throws error for invalid slack configuration', () => {
       const config = {
         slack: {
@@ -1165,7 +1229,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]');
+            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].type" must be [llmo-prompts-gsc]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -1174,6 +1238,16 @@ describe('Config Tests', () => {
                 type: 'any.only',
                 context: {
                   valids: ['llmo-prompts-ahrefs'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              }, {
+                message: '"imports[0].type" must be [llmo-prompts-gsc]',
+                path: ['imports', 0, 'type'],
+                type: 'any.only',
+                context: {
+                  valids: ['llmo-prompts-gsc'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',
@@ -2013,6 +2087,12 @@ describe('Config Tests', () => {
 
         const updatedPatterns = config.getLlmoUrlPatterns();
         expect(updatedPatterns).to.deep.equal(existingUrlPatterns);
+      });
+
+      it('does nothing if there are no urlPatterns', () => {
+        const configWithoutPatterns = Config({ llmo: {} });
+        configWithoutPatterns.removeLlmoUrlPattern('https://test.com');
+        expect(configWithoutPatterns.getLlmoUrlPatterns()).to.be.undefined;
       });
     });
   });

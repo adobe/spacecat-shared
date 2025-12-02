@@ -17,7 +17,7 @@
  * Patches with no suggestionId:
  *    → Key: opportunityId
  */
-function getPatchKey(patch) {
+export function getPatchKey(patch) {
   // Heading patch (no suggestionId): use special key
   if (!patch.suggestionId) {
     return `${patch.opportunityId}`;
@@ -63,4 +63,41 @@ export function mergePatches(existingPatches, newPatches) {
   });
 
   return { patches: mergedPatches, updateCount, addCount };
+}
+
+/**
+ * Removes patches matching the given suggestion IDs from a config
+ * Works with flat config structure
+ * @param {Object} config - Tokowaka configuration object
+ * @param {Array<string>} suggestionIds - Array of suggestion IDs to remove
+ * @param {Array<string>} additionalPatchKeys - Optional array of additional patch keys to remove
+ * @returns {Object} - Updated configuration with patches removed
+ */
+export function removePatchesBySuggestionIds(config, suggestionIds, additionalPatchKeys = []) {
+  if (!config || !config.patches) {
+    return config;
+  }
+
+  const suggestionIdSet = new Set(suggestionIds);
+  const patchKeysToRemove = new Set(additionalPatchKeys);
+  let removedCount = 0;
+
+  // Filter out patches with matching suggestionIds or additional patch keys
+  const filteredPatches = config.patches.filter((patch) => {
+    const shouldRemoveBySuggestionId = suggestionIdSet.has(patch.suggestionId);
+    const patchKey = getPatchKey(patch);
+    const shouldRemoveByPatchKey = patchKeysToRemove.has(patchKey);
+
+    if (shouldRemoveBySuggestionId || shouldRemoveByPatchKey) {
+      removedCount += 1;
+      return false;
+    }
+    return true;
+  });
+
+  return {
+    ...config,
+    patches: filteredPatches,
+    removedCount,
+  };
 }

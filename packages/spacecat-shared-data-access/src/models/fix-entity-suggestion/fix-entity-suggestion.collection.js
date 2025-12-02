@@ -26,6 +26,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class FixEntitySuggestionCollection extends BaseCollection {
+  static COLLECTION_NAME = 'FixEntitySuggestionCollection';
+
   /**
    * Gets all junction records associated with a specific Suggestion.
    *

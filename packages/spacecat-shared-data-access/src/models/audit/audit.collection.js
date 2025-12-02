@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class AuditCollection extends BaseCollection {
+  static COLLECTION_NAME = 'AuditCollection';
+
   // create a copy of the audit as a LatestAudit entity
   async _onCreate(item) {
     const collection = this.entityRegistry.getCollection('LatestAuditCollection');

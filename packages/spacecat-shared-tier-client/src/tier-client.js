@@ -12,9 +12,7 @@
 
 import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
 import {
-  Site,
   Entitlement as EntitlementModel,
-  Organization,
 } from '@adobe/spacecat-shared-data-access';
 /**
  * TierClient provides methods to manage entitlements and site enrollments.
@@ -28,9 +26,6 @@ class TierClient {
    * @returns {TierClient} TierClient instance for organization operations.
    */
   static createForOrg(context, organization, productCode) {
-    if (!(organization instanceof Organization)) {
-      throw new Error('Entity must be an instance of Organization');
-    }
     if (!hasText(productCode)) {
       throw new Error('Product code is required');
     }
@@ -48,9 +43,6 @@ class TierClient {
    * @returns {TierClient} TierClient instance for site operations.
    */
   static async createForSite(context, site, productCode) {
-    if (!(site instanceof Site)) {
-      throw new Error('Entity must be an instance of Site');
-    }
     if (!hasText(productCode)) {
       throw new Error('Product code is required');
     }
@@ -59,6 +51,9 @@ class TierClient {
     }
     const organizationId = await site.getOrganizationId();
     const organization = await context.dataAccess.Organization.findById(organizationId);
+    if (!organization) {
+      throw new Error(`[TierClient] Organization not found for organizationId: ${organizationId}`);
+    }
     return new TierClient(context, organization, site, productCode);
   }
 
@@ -283,6 +278,35 @@ class TierClient {
     } catch (error) {
       this.log.error(`Error getting first enrollment: ${error.message}`);
       throw error;
+    }
+  }
+
+  /**
+   * Revokes entitlement for the current organization.
+   * @returns {Promise<object>} HTTP response object.
+   */
+  async revokeEntitlement() {
+    const existing = await this.checkValidEntitlement();
+    if (existing.entitlement) {
+      if (existing.entitlement.getTier() === EntitlementModel.TIERS.PAID) {
+        throw new Error('Paid entitlement cannot be revoked');
+      }
+      await existing.entitlement.remove();
+    } else {
+      throw new Error('Entitlement not found');
+    }
+  }
+
+  /**
+   * Revokes PAID/FREE entitlement for the current organization.
+   * @returns {Promise<object>} HTTP response object.
+   */
+  async revokePaidEntitlement() {
+    const existing = await this.checkValidEntitlement();
+    if (existing.entitlement) {
+      await existing.entitlement.remove();
+    } else {
+      throw new Error('Entitlement not found');
     }
   }
 }

@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-google-client-v1.4.62](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.61...@adobe/spacecat-shared-google-client-v1.4.62) (2025-11-28)
+
+
+### Bug Fixes
+
+* update deps ([#1189](https://github.com/adobe/spacecat-shared/issues/1189)) ([81abf0b](https://github.com/adobe/spacecat-shared/commit/81abf0b72186f9979ef9c9114c1e8a121005988e))
+
+# [@adobe/spacecat-shared-google-client-v1.4.61](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.60...@adobe/spacecat-shared-google-client-v1.4.61) (2025-11-28)
+
+
+### Bug Fixes
+
+* update deps ([#1187](https://github.com/adobe/spacecat-shared/issues/1187)) ([8632e20](https://github.com/adobe/spacecat-shared/commit/8632e2049e6061018c26399b8db702fd72e65620))
+
+# [@adobe/spacecat-shared-google-client-v1.4.60](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.59...@adobe/spacecat-shared-google-client-v1.4.60) (2025-11-28)
+
+
+### Bug Fixes
+
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
+# [@adobe/spacecat-shared-google-client-v1.4.59](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.58...@adobe/spacecat-shared-google-client-v1.4.59) (2025-11-28)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
+# [@adobe/spacecat-shared-google-client-v1.4.58](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.57...@adobe/spacecat-shared-google-client-v1.4.58) (2025-11-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1162](https://github.com/adobe/spacecat-shared/issues/1162)) ([f0152c5](https://github.com/adobe/spacecat-shared/commit/f0152c5ecddb75b6b3c6e2f0d756d5fb04171dd3))
+
 # [@adobe/spacecat-shared-google-client-v1.4.57](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.56...@adobe/spacecat-shared-google-client-v1.4.57) (2025-11-15)
 
 

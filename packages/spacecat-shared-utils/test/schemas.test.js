@@ -280,6 +280,82 @@ describe('schemas', () => {
           const result = llmoConfig.safeParse(config);
           expect(result.success).true;
         });
+
+        it('validates brand alias with aliasMode extend', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                category: categoryWithRegionsId,
+                region: 'us',
+                aliasMode: 'extend',
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+          if (result.success) {
+            expect(result.data.brands.aliases[0].aliasMode).equals('extend');
+          }
+        });
+
+        it('validates brand alias with aliasMode replace', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                category: categoryWithRegionsId,
+                region: 'us',
+                aliasMode: 'replace',
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+          if (result.success) {
+            expect(result.data.brands.aliases[0].aliasMode).equals('replace');
+          }
+        });
+
+        it('validates brand alias without aliasMode (optional field)', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                category: categoryWithRegionsId,
+                region: 'us',
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+          if (result.success) {
+            expect(result.data.brands.aliases[0].aliasMode).to.be.undefined;
+          }
+        });
+
+        it('fails when brand alias has invalid aliasMode value', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                category: categoryWithRegionsId,
+                region: 'us',
+                aliasMode: 'invalid-mode',
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+        });
       });
 
       describe('competitors', () => {

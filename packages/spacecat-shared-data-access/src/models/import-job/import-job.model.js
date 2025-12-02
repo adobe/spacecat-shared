@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class ImportJob extends BaseModel {
+  static ENTITY_NAME = 'ImportJob';
+
   /**
    * Import Job Status types.
    * Any changes to this object needs to be reflected in the index.d.ts file as well.

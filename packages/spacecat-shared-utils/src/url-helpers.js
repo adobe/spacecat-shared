@@ -12,7 +12,7 @@
 
 import { context as h2, h1 } from '@adobe/fetch';
 import URI from 'urijs';
-import { hasText } from './functions.js';
+import { hasText, isValidUrl } from './functions.js';
 import { SPACECAT_USER_AGENT } from './tracing-fetch.js';
 
 /* c8 ignore next 3 */
@@ -277,7 +277,7 @@ function toggleWWWHostname(hostname) {
  */
 async function wwwUrlResolver(site, rumApiClient, log) {
   const overrideBaseURL = site.getConfig()?.getFetchConfig()?.overrideBaseURL;
-  if (overrideBaseURL && (overrideBaseURL.startsWith('http://') || overrideBaseURL.startsWith('https://'))) {
+  if (isValidUrl(overrideBaseURL)) {
     return overrideBaseURL.replace(/^https?:\/\//, '');
   }
 

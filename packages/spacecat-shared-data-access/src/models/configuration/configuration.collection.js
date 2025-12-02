@@ -24,7 +24,7 @@ import BaseCollection from '../base/base.collection.js';
 class ConfigurationCollection extends BaseCollection {
   static COLLECTION_NAME = 'ConfigurationCollection';
 
-  static MAX_VERSIONS = 500;
+  static MAX_VERSIONS = 499;
 
   async create(data) {
     const latestConfiguration = await this.findLatest();

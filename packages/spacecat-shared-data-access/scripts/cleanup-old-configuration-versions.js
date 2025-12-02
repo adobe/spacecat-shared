@@ -63,9 +63,26 @@ async function cleanupOldConfigVersions() {
   try {
     // Initialize data access
     console.log('Initializing data access...');
+
+    // Create data access (reads from environment variables)
     dataAccess = createDataAccess({
       log: console,
     });
+
+    // Verify Configuration entity is available
+    if (!dataAccess || !dataAccess.Configuration) {
+      console.error('ERROR: Configuration entity is not available');
+      console.error('   Troubleshooting:');
+      console.error('   1. Ensure DYNAMO_TABLE_NAME is set correctly');
+      console.error('   2. Ensure AWS credentials are configured');
+      console.error('   3. Try running: npm install (to ensure all dependencies are installed)');
+      console.error('');
+      console.error('   Current environment:');
+      console.error(`   - DYNAMO_TABLE_NAME: ${process.env.DYNAMO_TABLE_NAME || 'NOT SET'}`);
+      console.error(`   - AWS_REGION: ${process.env.AWS_REGION || 'NOT SET'}`);
+      console.error(`   - AWS_ACCESS_KEY_ID: ${process.env.AWS_ACCESS_KEY_ID ? 'SET' : 'NOT SET'}`);
+      process.exit(1);
+    }
 
     const { Configuration } = dataAccess;
 

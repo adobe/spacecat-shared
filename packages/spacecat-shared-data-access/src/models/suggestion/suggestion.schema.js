@@ -45,10 +45,21 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),
   })
+  .addAttribute('pageUrl', {
+    type: 'string',
+    hidden: true,
+    readOnly: true,
+    watch: ['data'],
+    set: (_, { data }) => (data?.url),
+  })
   .addAttribute('status', {
     type: Object.values(Suggestion.STATUSES),
     required: true,
     default: Suggestion.STATUSES.NEW,
-  });
+  })
+  .addIndex(
+    { composite: ['pageUrl'] },
+    { composite: ['status'] },
+  );
 
 export default schema.build();

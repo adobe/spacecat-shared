@@ -11,6 +11,8 @@
  */
 
 import { context as h2, h1 } from '@adobe/fetch';
+import URI from 'urijs';
+import { hasText } from './functions.js';
 import { SPACECAT_USER_AGENT } from './tracing-fetch.js';
 
 /* c8 ignore next 3 */
@@ -240,6 +242,76 @@ function urlMatchesFilter(url, filterUrls) {
   }
 }
 
+/**
+ * Checks if a URL has a subdomain other than 'www'.
+ * @param {string} baseUrl - The URL to check.
+ * @returns {boolean} - True if the URL has a non-www subdomain, false otherwise.
+ * @throws {Error} - If the baseURL cannot be parsed.
+ */
+function hasNonWWWSubdomain(baseUrl) {
+  try {
+    const uri = new URI(baseUrl);
+    return hasText(uri.domain()) && hasText(uri.subdomain()) && uri.subdomain() !== 'www';
+  } catch {
+    throw new Error(`Cannot parse baseURL: ${baseUrl}`);
+  }
+}
+
+/**
+ * Toggles the www subdomain in a given hostname.
+ * @param {string} hostname - The hostname to toggle the www subdomain in.
+ * @returns {string} - The hostname with the www subdomain toggled.
+ */
+function toggleWWWHostname(hostname) {
+  /* c8 ignore next 1 */
+  if (hasNonWWWSubdomain(`https://${hostname}`)) return hostname;
+  return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
+}
+
+/**
+ * Resolves the correct URL for a site by checking RUM data availability.
+ * Tries www-toggled version first, then falls back to original.
+ * @param {object} site - The site object with getBaseURL() and getConfig() methods.
+ * @param {object} rumApiClient - The RUM API client instance with retrieveDomainkey method.
+ * @param {object} log - Logger instance with debug() and error() methods.
+ * @returns {Promise<string>} - The resolved hostname without protocol.
+ */
+async function wwwUrlResolver(site, rumApiClient, log) {
+  const overrideBaseURL = site.getConfig()?.getFetchConfig()?.overrideBaseURL;
+  if (overrideBaseURL && (overrideBaseURL.startsWith('http://') || overrideBaseURL.startsWith('https://'))) {
+    return overrideBaseURL.replace(/^https?:\/\//, '');
+  }
+
+  const baseURL = site.getBaseURL();
+  const { hostname } = new URL(prependSchema(baseURL));
+
+  if (hasNonWWWSubdomain(baseURL)) {
+    log.debug(`Resolved URL ${hostname} since ${baseURL} contains subdomain`);
+    return hostname;
+  }
+
+  try {
+    const wwwToggledHostname = toggleWWWHostname(hostname);
+    await rumApiClient.retrieveDomainkey(wwwToggledHostname);
+    log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
+    return wwwToggledHostname;
+  } catch (e) {
+    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+  }
+
+  try {
+    await rumApiClient.retrieveDomainkey(hostname);
+    log.debug(`Resolved URL ${hostname} for ${baseURL} using RUM API Client`);
+    return hostname;
+  } catch (e) {
+    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+  }
+
+  const fallback = hostname.startsWith('www.') ? hostname : `www.${hostname}`;
+  log.debug(`Fallback to ${fallback} for URL resolution for ${baseURL}`);
+  return fallback;
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,
@@ -252,4 +324,7 @@ export {
   stripTrailingSlash,
   stripWWW,
   urlMatchesFilter,
+  hasNonWWWSubdomain,
+  toggleWWWHostname,
+  wwwUrlResolver,
 };

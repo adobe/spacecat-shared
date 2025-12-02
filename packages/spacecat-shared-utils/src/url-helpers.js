@@ -283,9 +283,11 @@ async function wwwUrlResolver(site, rumApiClient, log) {
   }
 
   const baseURL = site.getBaseURL();
-  const { hostname } = new URL(prependSchema(baseURL));
+  const uri = new URI(baseURL);
+  const hostname = uri.hostname();
+  const subdomain = uri.subdomain();
 
-  if (hasNonWWWSubdomain(baseURL)) {
+  if (hasText(subdomain) && subdomain !== 'www') {
     log.debug(`Resolved URL ${hostname} since ${baseURL} contains subdomain`);
     return hostname;
   }

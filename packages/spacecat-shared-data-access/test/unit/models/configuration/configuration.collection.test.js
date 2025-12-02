@@ -166,7 +166,8 @@ describe('ConfigurationCollection', () => {
         });
 
         expect(instance.all).to.have.been.called;
-        expect(instance.removeByIds).to.not.have.been.called;
+        expect(instance.removeByIds).to.have.been.calledOnce;
+        expect(instance.removeByIds).to.have.been.calledWith(['config-1']);
       });
 
       it('triggers cleanup and deletes 1 version when count is 501', async () => {
@@ -192,7 +193,8 @@ describe('ConfigurationCollection', () => {
 
         expect(instance.all).to.have.been.called;
         expect(instance.removeByIds).to.have.been.calledOnce;
-        expect(instance.removeByIds).to.have.been.calledWith(['config-1']);
+        const actualIds = instance.removeByIds.getCall(0).args[0];
+        expect(actualIds.sort()).to.deep.equal(['config-1', 'config-2'].sort());
       });
 
       it('triggers cleanup and deletes 2 versions when count is 502', async () => {
@@ -219,7 +221,7 @@ describe('ConfigurationCollection', () => {
         expect(instance.all).to.have.been.called;
         expect(instance.removeByIds).to.have.been.calledOnce;
         const actualIds = instance.removeByIds.getCall(0).args[0];
-        expect(actualIds.sort()).to.deep.equal(['config-1', 'config-2'].sort());
+        expect(actualIds.sort()).to.deep.equal(['config-1', 'config-2', 'config-3'].sort());
       });
 
       it('does not fail create operation if cleanup fails', async () => {

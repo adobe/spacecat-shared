@@ -263,7 +263,6 @@ function hasNonWWWSubdomain(baseUrl) {
  * @returns {string} - The hostname with the www subdomain toggled.
  */
 function toggleWWWHostname(hostname) {
-  /* c8 ignore next 1 */
   if (hasNonWWWSubdomain(`https://${hostname}`)) return hostname;
   return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
 }

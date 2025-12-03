@@ -21,7 +21,7 @@ import BaseOpportunityMapper from './base-mapper.js';
 export default class GenericMapper extends BaseOpportunityMapper {
   constructor(log) {
     super(log);
-    this.opportunityType = 'generic-tokowaka-patch';
+    this.opportunityType = 'generic-autofix-edge';
     this.prerenderRequired = true;
   }
 

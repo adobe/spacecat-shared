@@ -22,6 +22,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class AuditUrlCollection extends BaseCollection {
+  static COLLECTION_NAME = 'AuditUrlCollection';
+
   /**
    * Sorts audit URLs by a specified field.
    * @param {Array} auditUrls - Array of AuditUrl objects to sort.

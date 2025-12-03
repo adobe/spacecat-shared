@@ -570,6 +570,63 @@ describe('GenericMapper', () => {
       expect(patches[0].value).to.equal('Line 1\nLine 2\nLine 3');
     });
 
+    it('should include tag when provided', () => {
+      const suggestion = {
+        getId: () => 'sugg-with-tag',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
+          patchValue: 'Content with tag',
+          format: 'hast',
+          tag: 'div',
+          url: 'https://example.com/page',
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-tag');
+
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch).to.deep.include({
+        op: 'insertAfter',
+        selector: '#selector',
+        value: 'Content with tag',
+        valueFormat: 'hast',
+        tag: 'div',
+        opportunityId: 'opp-tag',
+        suggestionId: 'sugg-with-tag',
+        prerenderRequired: true,
+      });
+      expect(patch.lastUpdated).to.be.a('number');
+    });
+
+    it('should not include tag when not provided', () => {
+      const suggestion = {
+        getId: () => 'sugg-no-tag',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
+          patchValue: 'Content without tag',
+          url: 'https://example.com/page',
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-no-tag');
+
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch.tag).to.be.undefined;
+      expect(patch.valueFormat).to.equal('text');
+    });
+
     it('should not include UI-only fields in patch', () => {
       const suggestion = {
         getId: () => 'sugg-ui',

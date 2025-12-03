@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-scrape-client",
-  "version": "2.3.2",
+  "version": "2.3.6",
   "description": "Shared modules of the Spacecat Services - Scrape Client",
   "type": "module",
   "engines": {
@@ -36,8 +36,8 @@
   },
   "dependencies": {
     "@adobe/helix-universal": "5.3.0",
-    "@adobe/spacecat-shared-data-access": "2.88.3",
-    "@adobe/spacecat-shared-utils": "1.81.0"
+    "@adobe/spacecat-shared-data-access": "2.88.7",
+    "@adobe/spacecat-shared-utils": "1.81.1"
   },
   "devDependencies": {
     "chai": "6.2.1",

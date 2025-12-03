@@ -174,6 +174,23 @@ export class HeadingsMapper extends BaseOpportunityMapper {
 }
 
 /**
+ * Readability opportunity mapper
+ * Handles conversion of readability suggestions to Tokowaka patches
+ */
+export class ReadabilityMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+}
+
+/**
  * Content summarization opportunity mapper
  * Handles conversion of content summarization suggestions to Tokowaka patches with HAST format
  */

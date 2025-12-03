@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-example",
-  "version": "1.2.31",
+  "version": "1.2.32",
   "description": "Shared modules of the Spacecat Services - example",
   "type": "module",
   "engines": {

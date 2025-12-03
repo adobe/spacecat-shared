@@ -12,9 +12,7 @@
 
 import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
 import {
-  Site,
   Entitlement as EntitlementModel,
-  Organization,
 } from '@adobe/spacecat-shared-data-access';
 /**
  * TierClient provides methods to manage entitlements and site enrollments.
@@ -28,9 +26,6 @@ class TierClient {
    * @returns {TierClient} TierClient instance for organization operations.
    */
   static createForOrg(context, organization, productCode) {
-    if (!(organization instanceof Organization)) {
-      throw new Error('Entity must be an instance of Organization');
-    }
     if (!hasText(productCode)) {
       throw new Error('Product code is required');
     }
@@ -48,9 +43,6 @@ class TierClient {
    * @returns {TierClient} TierClient instance for site operations.
    */
   static async createForSite(context, site, productCode) {
-    if (!(site instanceof Site)) {
-      throw new Error('Entity must be an instance of Site');
-    }
     if (!hasText(productCode)) {
       throw new Error('Product code is required');
     }

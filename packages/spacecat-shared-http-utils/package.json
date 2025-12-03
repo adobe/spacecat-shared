@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-http-utils",
-  "version": "1.19.0",
+  "version": "1.19.4",
   "description": "Shared modules of the Spacecat Services - HTTP Utils",
   "type": "module",
   "engines": {
@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.2.3",
-    "@adobe/spacecat-shared-data-access": "2.88.3",
-    "@adobe/spacecat-shared-utils": "1.81.0",
+    "@adobe/spacecat-shared-data-access": "2.88.7",
+    "@adobe/spacecat-shared-utils": "1.81.1",
     "jose": "6.1.2"
   },
   "devDependencies": {

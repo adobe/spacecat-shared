@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-html-analyzer",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "Analyze HTML content visibility for AI crawlers and citations - compare static HTML vs fully rendered content",
   "type": "module",
   "engines": {
@@ -12,6 +12,7 @@
   "scripts": {
     "test": "c8 mocha",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules",
     "build": "rollup -c",
     "build:chrome": "rollup -c && echo '✅ Chrome extension bundle ready: dist/html-analyzer.min.js'"
@@ -36,7 +37,9 @@
     "access": "public"
   },
   "dependencies": {
-    "cheerio": "^1.0.0-rc.12"
+    "cheerio": "^1.0.0-rc.12",
+    "turndown": "^7.2.0",
+    "marked": "^16.2.0"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",

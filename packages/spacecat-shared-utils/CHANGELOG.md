@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.82.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.81.1...@adobe/spacecat-shared-utils-v1.82.0) (2025-12-03)
+
+
+### Features
+
+* move www url resolver in audit worker to shared utils ([#1207](https://github.com/adobe/spacecat-shared/issues/1207)) ([40dbf3a](https://github.com/adobe/spacecat-shared/commit/40dbf3a18681cd304c168602d74b51c0baf8ead6))
+
 # [@adobe/spacecat-shared-utils-v1.81.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.81.0...@adobe/spacecat-shared-utils-v1.81.1) (2025-11-28)
 
 

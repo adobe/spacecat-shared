@@ -31,7 +31,7 @@ describe('GenericMapper', () => {
 
   describe('getOpportunityType', () => {
     it('should return generic', () => {
-      expect(mapper.getOpportunityType()).to.equal('generic-tokowaka-patch');
+      expect(mapper.getOpportunityType()).to.equal('generic-autofix-edge');
     });
   });
 

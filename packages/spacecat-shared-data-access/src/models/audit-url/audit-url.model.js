@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class AuditUrl extends BaseModel {
+  static ENTITY_NAME = 'AuditUrl';
+
   /**
    * Checks if this URL is enabled for a specific audit type.
    * @param {string} auditType - The audit type to check.

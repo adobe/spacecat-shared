@@ -166,6 +166,8 @@ class AuditUrlCollection extends BaseCollection {
 
   /**
    * Gets all audit URLs for a site by byCustomer flag with sorting support.
+   * Note: Uses allBySiteId + filter because the accessor utility doesn't handle
+   * boolean false values properly (hasText validation fails).
    * @param {string} siteId - The site ID.
    * @param {boolean} byCustomer - True for customer-added, false for system-added.
    * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
@@ -178,11 +180,18 @@ class AuditUrlCollection extends BaseCollection {
 
     const { sortBy, sortOrder, ...queryOptions } = options;
 
-    // Get all URLs for the site and byCustomer flag (method name includes "And")
-    const result = await this.allBySiteIdAndByCustomer(siteId, byCustomer, queryOptions);
+    // Get all URLs for the site and filter by byCustomer
+    // (can't use GSI directly because accessor validation fails for boolean false)
+    const result = await this.allBySiteId(siteId, queryOptions);
 
     // Handle both array and paginated result formats
-    const items = Array.isArray(result) ? result : (result.items || []);
+    const allItems = Array.isArray(result) ? result : (result.items || []);
+
+    // Filter by byCustomer flag
+    const items = allItems.filter((auditUrl) => {
+      const urlByCustomer = auditUrl.getByCustomer?.() ?? auditUrl.byCustomer;
+      return urlByCustomer === byCustomer;
+    });
 
     // Apply sorting if requested
     const sortedItems = sortBy
@@ -222,6 +231,8 @@ class AuditUrlCollection extends BaseCollection {
   /**
    * Removes audit URLs by byCustomer flag for a specific site.
    * For example, remove all customer-added or all system-added URLs.
+   * Note: Uses allBySiteId + filter because the accessor utility doesn't handle
+   * boolean false values properly.
    *
    * @param {string} siteId - The site ID.
    * @param {boolean} byCustomer - True for customer-added, false for system-added.
@@ -232,7 +243,13 @@ class AuditUrlCollection extends BaseCollection {
       throw new Error('SiteId is required and byCustomer must be a boolean');
     }
 
-    const urlsToRemove = await this.allBySiteIdAndByCustomer(siteId, byCustomer);
+    // Get all URLs for the site and filter by byCustomer
+    const allUrls = await this.allBySiteId(siteId);
+    const urlsToRemove = allUrls.filter((auditUrl) => {
+      const urlByCustomer = auditUrl.getByCustomer?.() ?? auditUrl.byCustomer;
+      return urlByCustomer === byCustomer;
+    });
+
     const idsToRemove = urlsToRemove.map((auditUrl) => auditUrl.getId());
 
     if (idsToRemove.length > 0) {

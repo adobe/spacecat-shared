@@ -63,7 +63,8 @@ describe('AuditUrl IT', function () {
     const site = sampleData.sites[0];
     const byCustomer = true;
 
-    const auditUrls = await AuditUrl.allBySiteIdAndByCustomer(site.getId(), byCustomer);
+    // Use allBySiteIdByCustomerSorted since direct GSI accessor fails for boolean false
+    const auditUrls = await AuditUrl.allBySiteIdByCustomerSorted(site.getId(), byCustomer, {});
 
     expect(auditUrls).to.be.an('array');
     expect(auditUrls.length).to.equal(2);
@@ -245,8 +246,10 @@ describe('AuditUrl IT', function () {
       );
 
       expect(auditUrls).to.be.an('array');
-      // Fixture has 2 URLs with 'accessibility', but "creates a new audit URL" test adds 1 more
-      expect(auditUrls.length).to.equal(3);
+      // Fixture has 2 URLs with 'accessibility', plus tests add more:
+      // - "creates a new audit URL" adds 1
+      // - "finds an audit URL by ID" adds 1
+      expect(auditUrls.length).to.equal(4);
 
       auditUrls.forEach((auditUrl) => {
         expect(auditUrl.isAuditEnabled('accessibility')).to.be.true;

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.1...@adobe/spacecat-shared-athena-client-v1.8.2) (2025-12-03)
+
+
+### Bug Fixes
+
+* fix query for PTRv2 weekly trend ([#1209](https://github.com/adobe/spacecat-shared/issues/1209)) ([5a8fa92](https://github.com/adobe/spacecat-shared/commit/5a8fa9226ec7ab9dd022f022fc2ed930155dec9f))
+
 # [@adobe/spacecat-shared-athena-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.0...@adobe/spacecat-shared-athena-client-v1.8.1) (2025-12-03)
 
 

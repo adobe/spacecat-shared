@@ -30,10 +30,12 @@ function checkAuditUrl(auditUrl) {
   expect(auditUrl.getCreatedBy()).to.be.a('string');
 }
 
+// eslint-disable-next-line prefer-arrow-callback
 describe('AuditUrl IT', function () {
   let sampleData;
   let AuditUrl;
 
+  // eslint-disable-next-line prefer-arrow-callback
   before(async function () {
     this.timeout(10000);
     sampleData = await seedDatabase();

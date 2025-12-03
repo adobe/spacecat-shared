@@ -45,9 +45,11 @@ describe('GenericMapper', () => {
     it('should return eligible for valid suggestion with all required fields', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '#create-with-multiple-top-ai-models-all-in-one-place',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#create-with-multiple-top-ai-models-all-in-one-place',
+          },
           patchValue: 'Blah Blah some text',
-          insertionOperation: 'insertAfter',
           url: 'https://www.adobe.com/products/firefly.html',
         }),
       };
@@ -60,9 +62,11 @@ describe('GenericMapper', () => {
     it('should return eligible for insertBefore operation', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: 'h1',
+          transformRules: {
+            action: 'insertBefore',
+            selector: 'h1',
+          },
           patchValue: 'New content',
-          insertionOperation: 'insertBefore',
           url: 'https://example.com/page',
         }),
       };
@@ -75,9 +79,11 @@ describe('GenericMapper', () => {
     it('should return eligible for replace operation', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '.content',
+          transformRules: {
+            action: 'replace',
+            selector: '.content',
+          },
           patchValue: 'Replaced content',
-          insertionOperation: 'replace',
           url: 'https://example.com/page',
         }),
       };
@@ -87,11 +93,10 @@ describe('GenericMapper', () => {
       expect(result).to.deep.equal({ eligible: true });
     });
 
-    it('should return ineligible when cssSelector is missing', () => {
+    it('should return ineligible when transformRules is missing', () => {
       const suggestion = {
         getData: () => ({
           patchValue: 'Some text',
-          insertionOperation: 'insertAfter',
           url: 'https://example.com/page',
         }),
       };
@@ -100,16 +105,17 @@ describe('GenericMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'cssSelector is required',
+        reason: 'transformRules is required',
       });
     });
 
-    it('should return ineligible when cssSelector is empty string', () => {
+    it('should return ineligible when selector is missing', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '',
+          transformRules: {
+            action: 'insertAfter',
+          },
           patchValue: 'Some text',
-          insertionOperation: 'insertAfter',
           url: 'https://example.com/page',
         }),
       };
@@ -118,15 +124,37 @@ describe('GenericMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'cssSelector is required',
+        reason: 'transformRules.selector is required',
+      });
+    });
+
+    it('should return ineligible when selector is empty string', () => {
+      const suggestion = {
+        getData: () => ({
+          transformRules: {
+            action: 'insertAfter',
+            selector: '',
+          },
+          patchValue: 'Some text',
+          url: 'https://example.com/page',
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'transformRules.selector is required',
       });
     });
 
     it('should return ineligible when patchValue is missing', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '#selector',
-          insertionOperation: 'insertAfter',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
           url: 'https://example.com/page',
         }),
       };
@@ -142,9 +170,11 @@ describe('GenericMapper', () => {
     it('should return ineligible when patchValue is empty string', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '#selector',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
           patchValue: '',
-          insertionOperation: 'insertAfter',
           url: 'https://example.com/page',
         }),
       };
@@ -157,10 +187,12 @@ describe('GenericMapper', () => {
       });
     });
 
-    it('should return ineligible when insertionOperation is missing', () => {
+    it('should return ineligible when action is missing', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '#selector',
+          transformRules: {
+            selector: '#selector',
+          },
           patchValue: 'Some text',
           url: 'https://example.com/page',
         }),
@@ -170,16 +202,18 @@ describe('GenericMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'insertionOperation is required',
+        reason: 'transformRules.action is required',
       });
     });
 
-    it('should return ineligible when insertionOperation is empty string', () => {
+    it('should return ineligible when action is empty string', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '#selector',
+          transformRules: {
+            action: '',
+            selector: '#selector',
+          },
           patchValue: 'Some text',
-          insertionOperation: '',
           url: 'https://example.com/page',
         }),
       };
@@ -188,16 +222,18 @@ describe('GenericMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'insertionOperation is required',
+        reason: 'transformRules.action is required',
       });
     });
 
-    it('should return ineligible when insertionOperation is invalid', () => {
+    it('should return ineligible when action is invalid', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '#selector',
+          transformRules: {
+            action: 'invalidOperation',
+            selector: '#selector',
+          },
           patchValue: 'Some text',
-          insertionOperation: 'invalidOperation',
           url: 'https://example.com/page',
         }),
       };
@@ -206,16 +242,18 @@ describe('GenericMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'insertionOperation must be one of: insertBefore, insertAfter, replace. Got: invalidOperation',
+        reason: 'transformRules.action must be one of: insertBefore, insertAfter, replace. Got: invalidOperation',
       });
     });
 
     it('should return ineligible when url is missing', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '#selector',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
           patchValue: 'Some text',
-          insertionOperation: 'insertAfter',
         }),
       };
 
@@ -230,9 +268,11 @@ describe('GenericMapper', () => {
     it('should return ineligible when url is empty string', () => {
       const suggestion = {
         getData: () => ({
-          cssSelector: '#selector',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
           patchValue: 'Some text',
-          insertionOperation: 'insertAfter',
           url: '',
         }),
       };
@@ -254,7 +294,7 @@ describe('GenericMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'cssSelector is required',
+        reason: 'transformRules is required',
       });
     });
 
@@ -267,7 +307,7 @@ describe('GenericMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'cssSelector is required',
+        reason: 'transformRules is required',
       });
     });
   });
@@ -278,9 +318,11 @@ describe('GenericMapper', () => {
         getId: () => 'ee8fc5e8-29c1-4894-9391-efc10b8a5f5c',
         getUpdatedAt: () => '2025-11-27T16:22:14.258Z',
         getData: () => ({
-          cssSelector: '#create-with-multiple-top-ai-models-all-in-one-place',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#create-with-multiple-top-ai-models-all-in-one-place',
+          },
           patchValue: 'Blah Blah some text',
-          insertionOperation: 'insertAfter',
           url: 'https://www.adobe.com/products/firefly.html',
           contentBefore: '**Create with multiple top AI models, all in one place.**',
           rationale: 'This makes LLMs read more text about blah blah.',
@@ -314,9 +356,11 @@ describe('GenericMapper', () => {
         getId: () => 'sugg-123',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          cssSelector: 'h1',
+          transformRules: {
+            action: 'insertBefore',
+            selector: 'h1',
+          },
           patchValue: 'Important notice',
-          insertionOperation: 'insertBefore',
           url: 'https://example.com/page',
         }),
       };
@@ -343,9 +387,11 @@ describe('GenericMapper', () => {
         getId: () => 'sugg-456',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          cssSelector: '.content',
+          transformRules: {
+            action: 'replace',
+            selector: '.content',
+          },
           patchValue: 'Replaced content text',
-          insertionOperation: 'replace',
           url: 'https://example.com/page2',
         }),
       };
@@ -373,9 +419,11 @@ describe('GenericMapper', () => {
           getId: () => 'sugg-1',
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
-            cssSelector: '#selector1',
+            transformRules: {
+              action: 'insertAfter',
+              selector: '#selector1',
+            },
             patchValue: 'Text 1',
-            insertionOperation: 'insertAfter',
             url: 'https://example.com/page',
           }),
         },
@@ -383,9 +431,11 @@ describe('GenericMapper', () => {
           getId: () => 'sugg-2',
           getUpdatedAt: () => '2025-01-15T11:00:00.000Z',
           getData: () => ({
-            cssSelector: '#selector2',
+            transformRules: {
+              action: 'insertBefore',
+              selector: '#selector2',
+            },
             patchValue: 'Text 2',
-            insertionOperation: 'insertBefore',
             url: 'https://example.com/page',
           }),
         },
@@ -404,9 +454,11 @@ describe('GenericMapper', () => {
       const suggestion = {
         getId: () => 'sugg-invalid',
         getData: () => ({
-          cssSelector: '#selector',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
           // Missing patchValue
-          insertionOperation: 'insertAfter',
           url: 'https://example.com/page',
         }),
       };
@@ -422,18 +474,22 @@ describe('GenericMapper', () => {
           getId: () => 'sugg-valid',
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
-            cssSelector: '#valid',
+            transformRules: {
+              action: 'insertAfter',
+              selector: '#valid',
+            },
             patchValue: 'Valid text',
-            insertionOperation: 'insertAfter',
             url: 'https://example.com/page',
           }),
         },
         {
           getId: () => 'sugg-invalid',
           getData: () => ({
-            cssSelector: '#invalid',
+            transformRules: {
+              action: 'insertAfter',
+              selector: '#invalid',
+            },
             // Missing patchValue
-            insertionOperation: 'insertAfter',
             url: 'https://example.com/page',
           }),
         },
@@ -458,9 +514,11 @@ describe('GenericMapper', () => {
       const suggestion = {
         getId: () => 'sugg-warn',
         getData: () => ({
-          cssSelector: '#selector',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
           // Missing patchValue
-          insertionOperation: 'insertAfter',
           url: 'https://example.com/page',
         }),
       };
@@ -477,9 +535,11 @@ describe('GenericMapper', () => {
         getId: () => 'sugg-complex',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          cssSelector: '#text-85a9876220 > h2:nth-of-type(1)',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#text-85a9876220 > h2:nth-of-type(1)',
+          },
           patchValue: 'Complex selector content',
-          insertionOperation: 'insertAfter',
           url: 'https://example.com/page',
         }),
       };
@@ -495,9 +555,11 @@ describe('GenericMapper', () => {
         getId: () => 'sugg-multiline',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          cssSelector: '.content',
+          transformRules: {
+            action: 'replace',
+            selector: '.content',
+          },
           patchValue: 'Line 1\nLine 2\nLine 3',
-          insertionOperation: 'replace',
           url: 'https://example.com/page',
         }),
       };
@@ -513,9 +575,11 @@ describe('GenericMapper', () => {
         getId: () => 'sugg-ui',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          cssSelector: '#selector',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
           patchValue: 'Text content',
-          insertionOperation: 'insertAfter',
           url: 'https://example.com/page',
           contentBefore: 'Original content',
           expectedContentAfter: 'Expected result',

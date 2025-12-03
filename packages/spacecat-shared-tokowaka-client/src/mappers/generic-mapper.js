@@ -51,15 +51,20 @@ export default class GenericMapper extends BaseOpportunityMapper {
       }
 
       const data = suggestion.getData();
+      const { transformRules } = data;
 
       const patch = {
         ...this.createBasePatch(suggestion, opportunityId),
-        op: data.insertionOperation,
-        selector: data.cssSelector,
+        op: transformRules.action,
+        selector: transformRules.selector,
         value: data.patchValue,
-        valueFormat: 'text',
+        valueFormat: data.format || 'text',
         target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
       };
+
+      if (data.tag) {
+        patch.tag = data.tag;
+      }
 
       patches.push(patch);
     });
@@ -76,25 +81,30 @@ export default class GenericMapper extends BaseOpportunityMapper {
   canDeploy(suggestion) {
     const data = suggestion.getData();
 
+    // Validate transformRules exists
+    if (!data?.transformRules) {
+      return { eligible: false, reason: 'transformRules is required' };
+    }
+
     // Validate required fields
-    if (!hasText(data?.cssSelector)) {
-      return { eligible: false, reason: 'cssSelector is required' };
+    if (!hasText(data.transformRules.selector)) {
+      return { eligible: false, reason: 'transformRules.selector is required' };
     }
 
     if (!hasText(data?.patchValue)) {
       return { eligible: false, reason: 'patchValue is required' };
     }
 
-    if (!hasText(data?.insertionOperation)) {
-      return { eligible: false, reason: 'insertionOperation is required' };
+    if (!hasText(data.transformRules.action)) {
+      return { eligible: false, reason: 'transformRules.action is required' };
     }
 
-    // Validate insertionOperation value
+    // Validate action value
     const validOperations = ['insertBefore', 'insertAfter', 'replace'];
-    if (!validOperations.includes(data.insertionOperation)) {
+    if (!validOperations.includes(data.transformRules.action)) {
       return {
         eligible: false,
-        reason: `insertionOperation must be one of: ${validOperations.join(', ')}. Got: ${data.insertionOperation}`,
+        reason: `transformRules.action must be one of: ${validOperations.join(', ')}. Got: ${data.transformRules.action}`,
       };
     }
 

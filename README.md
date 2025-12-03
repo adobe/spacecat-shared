@@ -16,3 +16,5 @@ $ npm install @adobe/spacecat-shared-utils
 
 ## Usage
 See the [API documentation](docs/API.md).
+
+<!-- Coverage test -->

@@ -26,7 +26,7 @@ class AuditUrl extends BaseModel {
    * @returns {boolean} True if the audit is enabled for this URL.
    */
   isAuditEnabled(auditType) {
-    const audits = (this.getAudits ? this.getAudits() : this.audits) || [];
+    const audits = this.getAudits?.() ?? this.audits ?? [];
     return audits.includes(auditType);
   }
 
@@ -36,7 +36,7 @@ class AuditUrl extends BaseModel {
    * @returns {this} The current instance for chaining.
    */
   enableAudit(auditType) {
-    const audits = (this.getAudits ? this.getAudits() : this.audits) || [];
+    const audits = this.getAudits?.() ?? this.audits ?? [];
     if (!audits.includes(auditType)) {
       // Create a new array instead of mutating the existing one
       const updatedAudits = [...audits, auditType];
@@ -55,7 +55,7 @@ class AuditUrl extends BaseModel {
    * @returns {this} The current instance for chaining.
    */
   disableAudit(auditType) {
-    const audits = (this.getAudits ? this.getAudits() : this.audits) || [];
+    const audits = this.getAudits?.() ?? this.audits ?? [];
     // filter() already creates a new array
     const filtered = audits.filter((a) => a !== auditType);
     if (this.setAudits) {
@@ -71,7 +71,7 @@ class AuditUrl extends BaseModel {
    * @returns {boolean} True if the URL was added by a customer.
    */
   isCustomerUrl() {
-    const byCustomer = this.getByCustomer ? this.getByCustomer() : this.byCustomer;
+    const byCustomer = this.getByCustomer?.() ?? this.byCustomer;
     return byCustomer === true;
   }
 }

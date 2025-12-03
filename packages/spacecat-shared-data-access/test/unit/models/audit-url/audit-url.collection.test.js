@@ -214,43 +214,7 @@ describe('AuditUrlCollection', () => {
       expect(result).to.be.null;
     });
 
-    it('sorts by rank in ascending order', () => {
-      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
-      const url2 = { getRank: () => 3, getUrl: () => 'url2' };
-      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
-
-      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'rank', 'asc');
-
-      expect(result[0]).to.equal(url1);
-      expect(result[1]).to.equal(url3);
-      expect(result[2]).to.equal(url2);
-    });
-
-    it('sorts by rank in descending order', () => {
-      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
-      const url2 = { getRank: () => 3, getUrl: () => 'url2' };
-      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
-
-      const result = AuditUrlCollection.sortAuditUrls([url1, url3, url2], 'rank', 'desc');
-
-      expect(result[0]).to.equal(url2);
-      expect(result[1]).to.equal(url3);
-      expect(result[2]).to.equal(url1);
-    });
-
-    it('sorts by traffic in ascending order', () => {
-      const url1 = { getTraffic: () => 100, getUrl: () => 'url1' };
-      const url2 = { getTraffic: () => 300, getUrl: () => 'url2' };
-      const url3 = { getTraffic: () => 200, getUrl: () => 'url3' };
-
-      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'traffic', 'asc');
-
-      expect(result[0]).to.equal(url1);
-      expect(result[1]).to.equal(url3);
-      expect(result[2]).to.equal(url2);
-    });
-
-    it('sorts by url alphabetically', () => {
+    it('sorts by url alphabetically in ascending order', () => {
       const url1 = { getUrl: () => 'https://a.com' };
       const url2 = { getUrl: () => 'https://c.com' };
       const url3 = { getUrl: () => 'https://b.com' };
@@ -262,28 +226,74 @@ describe('AuditUrlCollection', () => {
       expect(result[2]).to.equal(url2);
     });
 
-    it('handles null values by pushing them to the end', () => {
-      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
-      const url2 = { getRank: () => null, getUrl: () => 'url2' };
-      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
+    it('sorts by url in descending order', () => {
+      const url1 = { getUrl: () => 'https://a.com' };
+      const url2 = { getUrl: () => 'https://c.com' };
+      const url3 = { getUrl: () => 'https://b.com' };
 
-      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'rank', 'asc');
+      const result = AuditUrlCollection.sortAuditUrls([url1, url3, url2], 'url', 'desc');
+
+      expect(result[0]).to.equal(url2);
+      expect(result[1]).to.equal(url3);
+      expect(result[2]).to.equal(url1);
+    });
+
+    it('sorts by createdAt in ascending order', () => {
+      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
+      const url2 = { getCreatedAt: () => '2025-01-03T00:00:00Z', getUrl: () => 'url2' };
+      const url3 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url3' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'createdAt', 'asc');
 
       expect(result[0]).to.equal(url1);
       expect(result[1]).to.equal(url3);
       expect(result[2]).to.equal(url2);
     });
 
-    it('handles objects without getter methods', () => {
-      const url1 = { rank: 1, url: 'url1' };
-      const url2 = { rank: 3, url: 'url2' };
-      const url3 = { rank: 2, url: 'url3' };
+    it('sorts by updatedAt in ascending order', () => {
+      const url1 = { getUpdatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
+      const url2 = { getUpdatedAt: () => '2025-01-03T00:00:00Z', getUrl: () => 'url2' };
+      const url3 = { getUpdatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url3' };
 
-      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'rank', 'asc');
+      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'updatedAt', 'asc');
 
       expect(result[0]).to.equal(url1);
       expect(result[1]).to.equal(url3);
       expect(result[2]).to.equal(url2);
+    });
+
+    it('handles null values by pushing them to the end', () => {
+      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
+      const url2 = { getCreatedAt: () => null, getUrl: () => 'url2' };
+      const url3 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url3' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'createdAt', 'asc');
+
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url3);
+      expect(result[2]).to.equal(url2);
+    });
+
+    it('handles objects without getter methods (uses optional chaining)', () => {
+      const url1 = { url: 'https://a.com' };
+      const url2 = { url: 'https://c.com' };
+      const url3 = { url: 'https://b.com' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'url', 'asc');
+
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url3);
+      expect(result[2]).to.equal(url2);
+    });
+
+    it('returns original order for unknown sortBy field', () => {
+      const url1 = { getUrl: () => 'url1' };
+      const url2 = { getUrl: () => 'url2' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url1, url2], 'unknown', 'asc');
+
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url2);
     });
   });
 
@@ -293,13 +303,13 @@ describe('AuditUrlCollection', () => {
     });
 
     it('returns sorted URLs when sortBy is provided', async () => {
-      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
-      const url2 = { getRank: () => 3, getUrl: () => 'url2' };
-      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
+      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
+      const url2 = { getCreatedAt: () => '2025-01-03T00:00:00Z', getUrl: () => 'url2' };
+      const url3 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url3' };
 
       instance.allBySiteId = stub().resolves({ items: [url2, url1, url3], cursor: 'cursor123' });
 
-      const result = await instance.allBySiteIdSorted('site-123', { sortBy: 'rank', sortOrder: 'asc' });
+      const result = await instance.allBySiteIdSorted('site-123', { sortBy: 'createdAt', sortOrder: 'asc' });
 
       expect(result.items).to.be.an('array').with.lengthOf(3);
       expect(result.items[0]).to.equal(url1);
@@ -320,12 +330,12 @@ describe('AuditUrlCollection', () => {
     });
 
     it('handles array result format', async () => {
-      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
-      const url2 = { getRank: () => 2, getUrl: () => 'url2' };
+      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
+      const url2 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url2' };
 
       instance.allBySiteId = stub().resolves([url2, url1]);
 
-      const result = await instance.allBySiteIdSorted('site-123', { sortBy: 'rank', sortOrder: 'asc' });
+      const result = await instance.allBySiteIdSorted('site-123', { sortBy: 'createdAt', sortOrder: 'asc' });
 
       expect(result).to.be.an('array').with.lengthOf(2);
       expect(result[0]).to.equal(url1);
@@ -335,7 +345,7 @@ describe('AuditUrlCollection', () => {
     it('passes query options to allBySiteId', async () => {
       instance.allBySiteId = stub().resolves({ items: [] });
 
-      await instance.allBySiteIdSorted('site-123', { limit: 10, cursor: 'abc', sortBy: 'rank' });
+      await instance.allBySiteIdSorted('site-123', { limit: 10, cursor: 'abc', sortBy: 'createdAt' });
 
       expect(instance.allBySiteId).to.have.been.calledOnceWith('site-123', { limit: 10, cursor: 'abc' });
     });
@@ -351,13 +361,13 @@ describe('AuditUrlCollection', () => {
     });
 
     it('returns sorted URLs when sortBy is provided', async () => {
-      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
-      const url2 = { getRank: () => 3, getUrl: () => 'url2' };
-      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
+      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
+      const url2 = { getCreatedAt: () => '2025-01-03T00:00:00Z', getUrl: () => 'url2' };
+      const url3 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url3' };
 
       instance.allBySiteIdByCustomer = stub().resolves({ items: [url2, url1, url3], cursor: 'cursor123' });
 
-      const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'rank', sortOrder: 'asc' });
+      const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'createdAt', sortOrder: 'asc' });
 
       expect(result.items).to.be.an('array').with.lengthOf(3);
       expect(result.items[0]).to.equal(url1);
@@ -378,12 +388,12 @@ describe('AuditUrlCollection', () => {
     });
 
     it('handles array result format', async () => {
-      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
-      const url2 = { getRank: () => 2, getUrl: () => 'url2' };
+      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
+      const url2 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url2' };
 
       instance.allBySiteIdByCustomer = stub().resolves([url2, url1]);
 
-      const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'rank', sortOrder: 'asc' });
+      const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'createdAt', sortOrder: 'asc' });
 
       expect(result).to.be.an('array').with.lengthOf(2);
       expect(result[0]).to.equal(url1);
@@ -393,7 +403,7 @@ describe('AuditUrlCollection', () => {
     it('passes query options to allBySiteIdByCustomer', async () => {
       instance.allBySiteIdByCustomer = stub().resolves({ items: [] });
 
-      await instance.allBySiteIdByCustomerSorted('site-123', true, { limit: 10, cursor: 'abc', sortBy: 'rank' });
+      await instance.allBySiteIdByCustomerSorted('site-123', true, { limit: 10, cursor: 'abc', sortBy: 'createdAt' });
 
       expect(instance.allBySiteIdByCustomer).to.have.been.calledOnceWith('site-123', true, { limit: 10, cursor: 'abc' });
     });
@@ -404,16 +414,16 @@ describe('AuditUrlCollection', () => {
       const mockModel1 = Object.create(AuditUrl.prototype);
       mockModel1.audits = ['accessibility'];
       mockModel1.isAuditEnabled = (type) => mockModel1.audits.includes(type);
-      mockModel1.getRank = () => 2;
+      mockModel1.getCreatedAt = () => '2025-01-02T00:00:00Z';
 
       const mockModel2 = Object.create(AuditUrl.prototype);
       mockModel2.audits = ['accessibility'];
       mockModel2.isAuditEnabled = (type) => mockModel2.audits.includes(type);
-      mockModel2.getRank = () => 1;
+      mockModel2.getCreatedAt = () => '2025-01-01T00:00:00Z';
 
       instance.allBySiteId = stub().resolves([mockModel1, mockModel2]);
 
-      const result = await instance.allBySiteIdAndAuditType('site123', 'accessibility', { sortBy: 'rank', sortOrder: 'asc' });
+      const result = await instance.allBySiteIdAndAuditType('site123', 'accessibility', { sortBy: 'createdAt', sortOrder: 'asc' });
 
       expect(result).to.be.an('array').with.lengthOf(2);
       expect(result[0]).to.equal(mockModel2);

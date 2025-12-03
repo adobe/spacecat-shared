@@ -12,10 +12,7 @@
 
 /* c8 ignore start */
 
-import {
-  isIsoDate,
-  isValidUrl,
-} from '@adobe/spacecat-shared-utils';
+import { isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import AuditUrl from './audit-url.model.js';
@@ -29,15 +26,21 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 Data Access Patterns:
 1. Get all URLs for a site: allBySiteId(siteId)
 2. Get all URLs for a site by byCustomer: allBySiteIdByCustomer(siteId, byCustomer)
-3. Get a specific URL: allBySiteIdAndUrl(siteId, url)
+3. Get a specific URL: findBySiteIdAndUrl(siteId, url) - uses composite primary key
 4. Get URLs by audit type: allBySiteIdAndAuditType(siteId, auditType) - filtered in code
 
-Indexes:
-- Primary: siteId (PK) + url (SK) - for unique identification
-- bySiteIdByCustomer: siteId + byCustomer (GSI) - for querying by customer vs system added
+Primary Key:
+- PK: siteId - partition key
+- SK: url - sort key
+This makes siteId + url the natural composite primary key (no separate auditUrlId needed).
+
+GSI Indexes:
+- bySiteIdByCustomer: siteId + byCustomer - for querying by customer vs system added
 */
 
 const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
+  .withPrimaryPartitionKeys(['siteId'])
+  .withPrimarySortKeys(['url'])
   .addReference('belongs_to', 'Site', ['url'])
   .addAttribute('url', {
     type: 'string',
@@ -50,38 +53,10 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     default: true,
   })
   .addAttribute('audits', {
-    type: 'list',
-    items: {
-      type: 'string',
-    },
+    type: 'set',
+    items: 'string',
     required: true,
     default: [],
-  })
-  .addAttribute('rank', {
-    type: 'number',
-    required: false,
-    default: null,
-  })
-  .addAttribute('traffic', {
-    type: 'number',
-    required: false,
-    default: null,
-  })
-  .addAttribute('createdAt', {
-    type: 'string',
-    required: true,
-    readOnly: true,
-    default: () => new Date().toISOString(),
-    validate: (value) => isIsoDate(value),
-  })
-  .addAttribute('updatedAt', {
-    type: 'string',
-    required: true,
-    readOnly: true,
-    watch: '*',
-    default: () => new Date().toISOString(),
-    set: () => new Date().toISOString(),
-    validate: (value) => isIsoDate(value),
   })
   .addAttribute('createdBy', {
     type: 'string',
@@ -89,14 +64,7 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     readOnly: true,
     default: 'system',
   })
-  .addAttribute('updatedBy', {
-    type: 'string',
-    required: true,
-    watch: '*',
-    default: 'system',
-    set: (value) => value,
-  })
-  // Add a second GSI for querying by siteId and byCustomer
+  // Add a GSI for querying by siteId and byCustomer
   .addIndex(
     { composite: ['siteId'] },
     { composite: ['byCustomer'] },

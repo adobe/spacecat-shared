@@ -17,13 +17,11 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
-import { sanitizeTimestamps } from '../../../src/util/util.js';
 
 use(chaiAsPromised);
 
 function checkAuditUrl(auditUrl) {
   expect(auditUrl).to.be.an('object');
-  expect(auditUrl.getId()).to.be.a('string');
   expect(auditUrl.getSiteId()).to.be.a('string');
   expect(auditUrl.getUrl()).to.be.a('string');
   expect(auditUrl.getByCustomer()).to.be.a('boolean');
@@ -41,17 +39,6 @@ describe('AuditUrl IT', async () => {
 
     const dataAccess = getDataAccess();
     AuditUrl = dataAccess.AuditUrl;
-  });
-
-  it('finds one audit URL by id', async () => {
-    const auditUrl = await AuditUrl.findById(sampleData.auditUrls[0].getId());
-
-    expect(auditUrl).to.be.an('object');
-    expect(
-      sanitizeTimestamps(auditUrl.toJSON()),
-    ).to.eql(
-      sanitizeTimestamps(sampleData.auditUrls[0].toJSON()),
-    );
   });
 
   it('gets all audit URLs for a site', async () => {
@@ -84,7 +71,7 @@ describe('AuditUrl IT', async () => {
     });
   });
 
-  it('finds an audit URL by site ID and URL', async () => {
+  it('finds an audit URL by site ID and URL (composite primary key)', async () => {
     const site = sampleData.sites[0];
     const url = 'https://example0.com/page-1';
 
@@ -141,7 +128,9 @@ describe('AuditUrl IT', async () => {
   });
 
   it('updates an audit URL', async () => {
-    const auditUrl = await AuditUrl.findById(sampleData.auditUrls[0].getId());
+    const site = sampleData.sites[0];
+    const url = 'https://example0.com/page-1';
+    const auditUrl = await AuditUrl.findBySiteIdAndUrl(site.getId(), url);
 
     auditUrl.setAudits(['accessibility']);
     auditUrl.setUpdatedBy('updater@example.com');
@@ -163,24 +152,27 @@ describe('AuditUrl IT', async () => {
     };
 
     const auditUrl = await AuditUrl.create(data);
-    const id = auditUrl.getId();
+    const siteId = auditUrl.getSiteId();
+    const url = auditUrl.getUrl();
 
     await auditUrl.remove();
 
-    const deleted = await AuditUrl.findById(id);
+    const deleted = await AuditUrl.findBySiteIdAndUrl(siteId, url);
     expect(deleted).to.be.null;
   });
 
   describe('Custom Methods', () => {
     it('checks if an audit is enabled', async () => {
-      const auditUrl = await AuditUrl.findById(sampleData.auditUrls[0].getId());
+      const site = sampleData.sites[0];
+      const auditUrl = await AuditUrl.findBySiteIdAndUrl(site.getId(), 'https://example0.com/page-1');
 
       expect(auditUrl.isAuditEnabled('accessibility')).to.be.true;
       expect(auditUrl.isAuditEnabled('lhs-mobile')).to.be.false;
     });
 
     it('enables an audit', async () => {
-      const auditUrl = await AuditUrl.findById(sampleData.auditUrls[0].getId());
+      const site = sampleData.sites[0];
+      const auditUrl = await AuditUrl.findBySiteIdAndUrl(site.getId(), 'https://example0.com/page-1');
       const originalAudits = auditUrl.getAudits();
 
       auditUrl.enableAudit('lhs-mobile');
@@ -190,7 +182,8 @@ describe('AuditUrl IT', async () => {
     });
 
     it('does not duplicate audits when enabling', async () => {
-      const auditUrl = await AuditUrl.findById(sampleData.auditUrls[0].getId());
+      const site = sampleData.sites[0];
+      const auditUrl = await AuditUrl.findBySiteIdAndUrl(site.getId(), 'https://example0.com/page-1');
       const originalLength = auditUrl.getAudits().length;
 
       auditUrl.enableAudit('accessibility'); // Already enabled
@@ -199,7 +192,8 @@ describe('AuditUrl IT', async () => {
     });
 
     it('disables an audit', async () => {
-      const auditUrl = await AuditUrl.findById(sampleData.auditUrls[0].getId());
+      const site = sampleData.sites[0];
+      const auditUrl = await AuditUrl.findBySiteIdAndUrl(site.getId(), 'https://example0.com/page-1');
 
       auditUrl.disableAudit('accessibility');
 
@@ -207,8 +201,9 @@ describe('AuditUrl IT', async () => {
     });
 
     it('checks if URL is customer-added', async () => {
-      const customerUrl = await AuditUrl.findById(sampleData.auditUrls[0].getId());
-      const systemUrl = await AuditUrl.findById(sampleData.auditUrls[1].getId());
+      const site = sampleData.sites[0];
+      const customerUrl = await AuditUrl.findBySiteIdAndUrl(site.getId(), 'https://example0.com/page-1');
+      const systemUrl = await AuditUrl.findBySiteIdAndUrl(site.getId(), 'https://example0.com/page-2');
 
       expect(customerUrl.isCustomerUrl()).to.be.true;
       expect(systemUrl.isCustomerUrl()).to.be.false;

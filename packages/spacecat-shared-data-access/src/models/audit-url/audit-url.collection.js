@@ -25,12 +25,12 @@ class AuditUrlCollection extends BaseCollection {
   /**
    * Sorts audit URLs by a specified field.
    * @param {Array} auditUrls - Array of AuditUrl objects to sort.
-   * @param {string} sortBy - Field to sort by ('rank', 'traffic', 'url', 'createdAt', 'updatedAt').
+   * @param {string} sortBy - Field to sort by ('url', 'createdAt', 'updatedAt').
    * @param {string} sortOrder - Sort order ('asc' or 'desc'). Default: 'asc'.
    * @returns {Array} Sorted array of AuditUrl objects.
    * @private
    */
-  static sortAuditUrls(auditUrls, sortBy = 'rank', sortOrder = 'asc') {
+  static sortAuditUrls(auditUrls, sortBy = 'createdAt', sortOrder = 'asc') {
     if (!auditUrls || auditUrls.length === 0) {
       return auditUrls;
     }
@@ -39,27 +39,19 @@ class AuditUrlCollection extends BaseCollection {
       let aValue;
       let bValue;
 
-      // Get values using getter methods if available
+      // Get values using getter methods if available (with optional chaining)
       switch (sortBy) {
-        case 'rank':
-          aValue = a.getRank ? a.getRank() : a.rank;
-          bValue = b.getRank ? b.getRank() : b.rank;
-          break;
-        case 'traffic':
-          aValue = a.getTraffic ? a.getTraffic() : a.traffic;
-          bValue = b.getTraffic ? b.getTraffic() : b.traffic;
-          break;
         case 'url':
-          aValue = a.getUrl ? a.getUrl() : a.url;
-          bValue = b.getUrl ? b.getUrl() : b.url;
+          aValue = a.getUrl?.() ?? a.url;
+          bValue = b.getUrl?.() ?? b.url;
           break;
         case 'createdAt':
-          aValue = a.getCreatedAt ? a.getCreatedAt() : a.createdAt;
-          bValue = b.getCreatedAt ? b.getCreatedAt() : b.createdAt;
+          aValue = a.getCreatedAt?.() ?? a.createdAt;
+          bValue = b.getCreatedAt?.() ?? b.createdAt;
           break;
         case 'updatedAt':
-          aValue = a.getUpdatedAt ? a.getUpdatedAt() : a.updatedAt;
-          bValue = b.getUpdatedAt ? b.getUpdatedAt() : b.updatedAt;
+          aValue = a.getUpdatedAt?.() ?? a.updatedAt;
+          bValue = b.getUpdatedAt?.() ?? b.updatedAt;
           break;
         default:
           return 0;
@@ -107,7 +99,7 @@ class AuditUrlCollection extends BaseCollection {
 
   /**
    * Gets all audit URLs for a site that have a specific audit type enabled.
-   * Note: This performs filtering after retrieval since audits is an array.
+   * Note: This performs filtering after retrieval since audits is a list.
    *
    * @param {string} siteId - The site ID.
    * @param {string} auditType - The audit type to filter by.

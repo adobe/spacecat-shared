@@ -12,23 +12,25 @@
 
 import type { BaseCollection, BaseModel, Site } from '../index';
 
+/**
+ * AuditUrl entity representing a URL to be audited for a site.
+ * Primary key is composite: siteId (PK) + url (SK)
+ */
 export interface AuditUrl extends BaseModel {
   getAudits(): string[];
   getCreatedAt(): string;
   getCreatedBy(): string;
-  getRank(): number | null;
-  getTraffic(): number | null;
+  getUpdatedAt(): string;
+  getUpdatedBy(): string;
   getSite(): Promise<Site>;
   getSiteId(): string;
   getByCustomer(): boolean;
   getUrl(): string;
   setAudits(audits: string[]): AuditUrl;
-  setCreatedBy(createdBy: string): AuditUrl;
-  setRank(rank: number | null): AuditUrl;
-  setTraffic(traffic: number | null): AuditUrl;
   setSiteId(siteId: string): AuditUrl;
   setByCustomer(byCustomer: boolean): AuditUrl;
   setUrl(url: string): AuditUrl;
+  setUpdatedBy(updatedBy: string): AuditUrl;
   isAuditEnabled(auditType: string): boolean;
   enableAudit(auditType: string): AuditUrl;
   disableAudit(auditType: string): AuditUrl;
@@ -42,12 +44,8 @@ export interface AuditUrlCollection extends BaseCollection<AuditUrl> {
   allBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl[]>;
   allBySiteIdSorted(siteId: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
   allBySiteIdByCustomerSorted(siteId: string, byCustomer: boolean, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
-  findBySiteId(siteId: string): Promise<AuditUrl | null>;
-  findBySiteIdByCustomer(siteId: string, byCustomer: boolean): Promise<AuditUrl | null>;
-  findBySiteIdByCustomerAndUrl(siteId: string, byCustomer: boolean, url: string): Promise<AuditUrl | null>;
   findBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl | null>;
   allBySiteIdAndAuditType(siteId: string, auditType: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<AuditUrl[]>;
   removeForSiteId(siteId: string): Promise<void>;
   removeForSiteIdByCustomer(siteId: string, byCustomer: boolean): Promise<void>;
 }
-

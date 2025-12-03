@@ -84,7 +84,7 @@ class AuditUrlCollection extends BaseCollection {
 
   /**
    * Finds an audit URL by site ID and URL.
-   * This is a convenience method for looking up a specific URL.
+   * Uses the siteId GSI with url as sort key for efficient lookup.
    *
    * @param {string} siteId - The site ID.
    * @param {string} url - The URL to find.
@@ -95,6 +95,7 @@ class AuditUrlCollection extends BaseCollection {
       throw new Error('Both siteId and url are required');
     }
 
+    // Use allBySiteId and filter by URL (GSI provides siteId + url index)
     const results = await this.allBySiteIdAndUrl(siteId, url);
     return results.length > 0 ? results[0] : null;
   }
@@ -177,8 +178,8 @@ class AuditUrlCollection extends BaseCollection {
 
     const { sortBy, sortOrder, ...queryOptions } = options;
 
-    // Get all URLs for the site and byCustomer flag
-    const result = await this.allBySiteIdByCustomer(siteId, byCustomer, queryOptions);
+    // Get all URLs for the site and byCustomer flag (method name includes "And")
+    const result = await this.allBySiteIdAndByCustomer(siteId, byCustomer, queryOptions);
 
     // Handle both array and paginated result formats
     const items = Array.isArray(result) ? result : (result.items || []);
@@ -231,7 +232,7 @@ class AuditUrlCollection extends BaseCollection {
       throw new Error('SiteId is required and byCustomer must be a boolean');
     }
 
-    const urlsToRemove = await this.allBySiteIdByCustomer(siteId, byCustomer);
+    const urlsToRemove = await this.allBySiteIdAndByCustomer(siteId, byCustomer);
     const idsToRemove = urlsToRemove.map((auditUrl) => auditUrl.getId());
 
     if (idsToRemove.length > 0) {

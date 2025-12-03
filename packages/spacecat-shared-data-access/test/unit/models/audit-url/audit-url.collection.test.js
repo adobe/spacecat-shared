@@ -183,22 +183,22 @@ describe('AuditUrlCollection', () => {
     it('removes all audit URLs for a given siteId and byCustomer flag', async () => {
       const siteId = 'site12345';
       const byCustomer = true;
-      instance.allBySiteIdByCustomer = stub().resolves([model]);
+      instance.allBySiteIdAndByCustomer = stub().resolves([model]);
 
       await instance.removeForSiteIdByCustomer(siteId, byCustomer);
 
-      expect(instance.allBySiteIdByCustomer).to.have.been.calledOnceWith(siteId, byCustomer);
+      expect(instance.allBySiteIdAndByCustomer).to.have.been.calledOnceWith(siteId, byCustomer);
       expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au12345' }]);
     });
 
     it('does not call remove when there are no matching audit URLs', async () => {
       const siteId = 'site12345';
       const byCustomer = false;
-      instance.allBySiteIdByCustomer = stub().resolves([]);
+      instance.allBySiteIdAndByCustomer = stub().resolves([]);
 
       await instance.removeForSiteIdByCustomer(siteId, byCustomer);
 
-      expect(instance.allBySiteIdByCustomer).to.have.been.calledOnceWith(siteId, byCustomer);
+      expect(instance.allBySiteIdAndByCustomer).to.have.been.calledOnceWith(siteId, byCustomer);
       expect(mockElectroService.entities.auditUrl.delete).to.not.have.been.called;
     });
   });
@@ -365,7 +365,7 @@ describe('AuditUrlCollection', () => {
       const url2 = { getCreatedAt: () => '2025-01-03T00:00:00Z', getUrl: () => 'url2' };
       const url3 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url3' };
 
-      instance.allBySiteIdByCustomer = stub().resolves({ items: [url2, url1, url3], cursor: 'cursor123' });
+      instance.allBySiteIdAndByCustomer = stub().resolves({ items: [url2, url1, url3], cursor: 'cursor123' });
 
       const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'createdAt', sortOrder: 'asc' });
 
@@ -380,7 +380,7 @@ describe('AuditUrlCollection', () => {
       const url1 = { getUrl: () => 'url1' };
       const url2 = { getUrl: () => 'url2' };
 
-      instance.allBySiteIdByCustomer = stub().resolves({ items: [url2, url1] });
+      instance.allBySiteIdAndByCustomer = stub().resolves({ items: [url2, url1] });
 
       const result = await instance.allBySiteIdByCustomerSorted('site-123', false, {});
 
@@ -391,7 +391,7 @@ describe('AuditUrlCollection', () => {
       const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
       const url2 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url2' };
 
-      instance.allBySiteIdByCustomer = stub().resolves([url2, url1]);
+      instance.allBySiteIdAndByCustomer = stub().resolves([url2, url1]);
 
       const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'createdAt', sortOrder: 'asc' });
 
@@ -400,12 +400,12 @@ describe('AuditUrlCollection', () => {
       expect(result[1]).to.equal(url2);
     });
 
-    it('passes query options to allBySiteIdByCustomer', async () => {
-      instance.allBySiteIdByCustomer = stub().resolves({ items: [] });
+    it('passes query options to allBySiteIdAndByCustomer', async () => {
+      instance.allBySiteIdAndByCustomer = stub().resolves({ items: [] });
 
       await instance.allBySiteIdByCustomerSorted('site-123', true, { limit: 10, cursor: 'abc', sortBy: 'createdAt' });
 
-      expect(instance.allBySiteIdByCustomer).to.have.been.calledOnceWith('site-123', true, { limit: 10, cursor: 'abc' });
+      expect(instance.allBySiteIdAndByCustomer).to.have.been.calledOnceWith('site-123', true, { limit: 10, cursor: 'abc' });
     });
   });
 

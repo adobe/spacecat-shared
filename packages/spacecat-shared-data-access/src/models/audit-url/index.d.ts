@@ -14,9 +14,11 @@ import type { BaseCollection, BaseModel, Site } from '../index';
 
 /**
  * AuditUrl entity representing a URL to be audited for a site.
- * Primary key is composite: siteId (PK) + url (SK)
+ * Primary key: auditUrlId (auto-generated UUID)
+ * GSI: siteId + url for lookups
  */
 export interface AuditUrl extends BaseModel {
+  getAuditUrlId(): string;
   getAudits(): string[];
   getCreatedAt(): string;
   getCreatedBy(): string;
@@ -39,8 +41,7 @@ export interface AuditUrl extends BaseModel {
 
 export interface AuditUrlCollection extends BaseCollection<AuditUrl> {
   allBySiteId(siteId: string): Promise<AuditUrl[]>;
-  allBySiteIdByCustomer(siteId: string, byCustomer: boolean): Promise<AuditUrl[]>;
-  allBySiteIdByCustomerAndUrl(siteId: string, byCustomer: boolean, url: string): Promise<AuditUrl[]>;
+  allBySiteIdAndByCustomer(siteId: string, byCustomer: boolean): Promise<AuditUrl[]>;
   allBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl[]>;
   allBySiteIdSorted(siteId: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
   allBySiteIdByCustomerSorted(siteId: string, byCustomer: boolean, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;

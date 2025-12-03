@@ -25,22 +25,21 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 
 Data Access Patterns:
 1. Get all URLs for a site: allBySiteId(siteId)
-2. Get all URLs for a site by byCustomer: allBySiteIdByCustomer(siteId, byCustomer)
-3. Get a specific URL: findBySiteIdAndUrl(siteId, url) - uses composite primary key
+2. Get all URLs for a site by byCustomer: allBySiteIdAndByCustomer(siteId, byCustomer)
+3. Get a specific URL: findBySiteIdAndUrl(siteId, url) - uses GSI
 4. Get URLs by audit type: allBySiteIdAndAuditType(siteId, auditType) - filtered in code
 
 Primary Key:
-- PK: siteId - partition key
-- SK: url - sort key
-This makes siteId + url the natural composite primary key (no separate auditUrlId needed).
+- PK: auditUrlId (auto-generated UUID)
+- This follows the standard pattern for entities in this codebase.
 
 GSI Indexes:
+- bySiteId: siteId + url - for lookups by site and URL (unique constraint)
 - bySiteIdByCustomer: siteId + byCustomer - for querying by customer vs system added
 */
 
 const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
-  .withPrimaryPartitionKeys(['siteId'])
-  .withPrimarySortKeys(['url'])
+  // belongs_to Site creates a GSI for siteId lookups
   .addReference('belongs_to', 'Site', ['url'])
   .addAttribute('url', {
     type: 'string',
@@ -64,7 +63,7 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     readOnly: true,
     default: 'system',
   })
-  // Add a GSI for querying by siteId and byCustomer
+  // GSI for querying by siteId and byCustomer
   .addIndex(
     { composite: ['siteId'] },
     { composite: ['byCustomer'] },

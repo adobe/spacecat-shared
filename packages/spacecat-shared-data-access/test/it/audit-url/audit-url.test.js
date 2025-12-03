@@ -22,6 +22,7 @@ use(chaiAsPromised);
 
 function checkAuditUrl(auditUrl) {
   expect(auditUrl).to.be.an('object');
+  expect(auditUrl.getAuditUrlId()).to.be.a('string');
   expect(auditUrl.getSiteId()).to.be.a('string');
   expect(auditUrl.getUrl()).to.be.a('string');
   expect(auditUrl.getByCustomer()).to.be.a('boolean');
@@ -62,7 +63,7 @@ describe('AuditUrl IT', function () {
     const site = sampleData.sites[0];
     const byCustomer = true;
 
-    const auditUrls = await AuditUrl.allBySiteIdByCustomer(site.getId(), byCustomer);
+    const auditUrls = await AuditUrl.allBySiteIdAndByCustomer(site.getId(), byCustomer);
 
     expect(auditUrls).to.be.an('array');
     expect(auditUrls.length).to.equal(2);
@@ -74,7 +75,7 @@ describe('AuditUrl IT', function () {
     });
   });
 
-  it('finds an audit URL by site ID and URL (composite primary key)', async () => {
+  it('finds an audit URL by site ID and URL (GSI lookup)', async () => {
     const site = sampleData.sites[0];
     const url = 'https://example0.com/page-1';
 
@@ -128,6 +129,27 @@ describe('AuditUrl IT', function () {
     checkAuditUrl(auditUrl);
     expect(auditUrl.getByCustomer()).to.equal(true); // Default
     expect(auditUrl.getAudits()).to.deep.equal([]); // Default
+  });
+
+  it('finds an audit URL by ID (primary key)', async () => {
+    const site = sampleData.sites[0];
+    const data = {
+      siteId: site.getId(),
+      url: 'https://example0.com/findbyid-page',
+      byCustomer: true,
+      audits: ['accessibility'],
+      createdBy: 'test@example.com',
+    };
+
+    const created = await AuditUrl.create(data);
+    const auditUrlId = created.getAuditUrlId();
+
+    const found = await AuditUrl.findById(auditUrlId);
+
+    expect(found).to.not.be.null;
+    checkAuditUrl(found);
+    expect(found.getAuditUrlId()).to.equal(auditUrlId);
+    expect(found.getUrl()).to.equal(data.url);
   });
 
   it('updates an audit URL', async () => {

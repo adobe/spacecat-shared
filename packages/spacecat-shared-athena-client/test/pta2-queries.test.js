@@ -366,6 +366,16 @@ describe('PTA2 Queries', () => {
       const result = getPreviousPeriod({ week: 10, month: 5, year: 2024 });
       expect(result).to.deep.equal({ week: 9, year: 2024 });
     });
+
+    it('should handle month correctly when week is explicitly undefined', () => {
+      const result = getPreviousPeriod({ week: undefined, month: 11, year: 2025 });
+      expect(result).to.deep.equal({ month: 10, year: 2025 });
+    });
+
+    it('should handle edge case with week undefined and month at year boundary', () => {
+      const result = getPreviousPeriod({ week: undefined, month: 1, year: 2025 });
+      expect(result).to.deep.equal({ month: 12, year: 2024 });
+    });
   });
 
   describe('PTASummaryResponseDto', () => {

@@ -68,6 +68,9 @@ class AuditUrlCollection extends BaseCollection {
       let comparison = 0;
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         comparison = aValue.localeCompare(bValue);
+        /* c8 ignore start */
+        // Defensive: all current sort fields return strings,
+        // but keep numeric comparison for future extensibility
       } else if (aValue < bValue) {
         comparison = -1;
       } else if (aValue > bValue) {
@@ -75,6 +78,7 @@ class AuditUrlCollection extends BaseCollection {
       } else {
         comparison = 0;
       }
+      /* c8 ignore stop */
 
       return sortOrder === 'desc' ? -comparison : comparison;
     });

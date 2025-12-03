@@ -180,25 +180,77 @@ describe('AuditUrlCollection', () => {
       await expect(instance.removeForSiteIdByCustomer('site123')).to.be.rejectedWith('SiteId is required and byCustomer must be a boolean');
     });
 
-    it('removes all audit URLs for a given siteId and byCustomer flag', async () => {
+    it('removes customer URLs when byCustomer is true', async () => {
       const siteId = 'site12345';
-      const byCustomer = true;
-      instance.allBySiteIdAndByCustomer = stub().resolves([model]);
+      const customerUrl = {
+        getId: () => 'au-customer-1',
+        getByCustomer: () => true,
+      };
+      const systemUrl = {
+        getId: () => 'au-system-1',
+        getByCustomer: () => false,
+      };
+      instance.allBySiteId = stub().resolves([customerUrl, systemUrl]);
 
-      await instance.removeForSiteIdByCustomer(siteId, byCustomer);
+      await instance.removeForSiteIdByCustomer(siteId, true);
 
-      expect(instance.allBySiteIdAndByCustomer).to.have.been.calledOnceWith(siteId, byCustomer);
-      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au12345' }]);
+      expect(instance.allBySiteId).to.have.been.calledOnceWith(siteId);
+      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au-customer-1' }]);
+    });
+
+    it('removes system URLs when byCustomer is false', async () => {
+      const siteId = 'site12345';
+      const customerUrl = {
+        getId: () => 'au-customer-1',
+        getByCustomer: () => true,
+      };
+      const systemUrl = {
+        getId: () => 'au-system-1',
+        getByCustomer: () => false,
+      };
+      instance.allBySiteId = stub().resolves([customerUrl, systemUrl]);
+
+      await instance.removeForSiteIdByCustomer(siteId, false);
+
+      expect(instance.allBySiteId).to.have.been.calledOnceWith(siteId);
+      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au-system-1' }]);
+    });
+
+    it('handles URLs with byCustomer property instead of method', async () => {
+      const siteId = 'site12345';
+      const urlWithProperty = {
+        getId: () => 'au-prop-1',
+        byCustomer: true, // Property instead of method
+      };
+      instance.allBySiteId = stub().resolves([urlWithProperty]);
+
+      await instance.removeForSiteIdByCustomer(siteId, true);
+
+      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au-prop-1' }]);
     });
 
     it('does not call remove when there are no matching audit URLs', async () => {
       const siteId = 'site12345';
-      const byCustomer = false;
-      instance.allBySiteIdAndByCustomer = stub().resolves([]);
+      const customerUrl = {
+        getId: () => 'au-customer-1',
+        getByCustomer: () => true,
+      };
+      instance.allBySiteId = stub().resolves([customerUrl]);
 
-      await instance.removeForSiteIdByCustomer(siteId, byCustomer);
+      // Try to remove system URLs, but none exist
+      await instance.removeForSiteIdByCustomer(siteId, false);
 
-      expect(instance.allBySiteIdAndByCustomer).to.have.been.calledOnceWith(siteId, byCustomer);
+      expect(instance.allBySiteId).to.have.been.calledOnceWith(siteId);
+      expect(mockElectroService.entities.auditUrl.delete).to.not.have.been.called;
+    });
+
+    it('does not call remove when allBySiteId returns empty array', async () => {
+      const siteId = 'site12345';
+      instance.allBySiteId = stub().resolves([]);
+
+      await instance.removeForSiteIdByCustomer(siteId, true);
+
+      expect(instance.allBySiteId).to.have.been.calledOnceWith(siteId);
       expect(mockElectroService.entities.auditUrl.delete).to.not.have.been.called;
     });
   });
@@ -360,12 +412,14 @@ describe('AuditUrlCollection', () => {
       await expect(instance.allBySiteIdByCustomerSorted('site-123', 'not-a-boolean')).to.be.rejectedWith('SiteId is required and byCustomer must be a boolean');
     });
 
-    it('returns sorted URLs when sortBy is provided', async () => {
-      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
-      const url2 = { getCreatedAt: () => '2025-01-03T00:00:00Z', getUrl: () => 'url2' };
-      const url3 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url3' };
+    it('returns sorted customer URLs when sortBy is provided', async () => {
+      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1', getByCustomer: () => true };
+      const url2 = { getCreatedAt: () => '2025-01-03T00:00:00Z', getUrl: () => 'url2', getByCustomer: () => true };
+      const url3 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url3', getByCustomer: () => true };
+      const systemUrl = { getCreatedAt: () => '2025-01-04T00:00:00Z', getUrl: () => 'sys', getByCustomer: () => false };
 
-      instance.allBySiteIdAndByCustomer = stub().resolves({ items: [url2, url1, url3], cursor: 'cursor123' });
+      // allBySiteId returns all URLs, filtering happens in the method
+      instance.allBySiteId = stub().resolves({ items: [url2, url1, url3, systemUrl], cursor: 'cursor123' });
 
       const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'createdAt', sortOrder: 'asc' });
 
@@ -376,22 +430,26 @@ describe('AuditUrlCollection', () => {
       expect(result.cursor).to.equal('cursor123');
     });
 
-    it('returns unsorted URLs when sortBy is not provided', async () => {
-      const url1 = { getUrl: () => 'url1' };
-      const url2 = { getUrl: () => 'url2' };
+    it('returns unsorted system URLs when sortBy is not provided', async () => {
+      const customerUrl = { getUrl: () => 'cust', getByCustomer: () => true };
+      const url1 = { getUrl: () => 'url1', getByCustomer: () => false };
+      const url2 = { getUrl: () => 'url2', getByCustomer: () => false };
 
-      instance.allBySiteIdAndByCustomer = stub().resolves({ items: [url2, url1] });
+      instance.allBySiteId = stub().resolves({ items: [customerUrl, url2, url1] });
 
       const result = await instance.allBySiteIdByCustomerSorted('site-123', false, {});
 
-      expect(result.items).to.deep.equal([url2, url1]);
+      // Should only include system URLs (byCustomer: false)
+      expect(result.items).to.be.an('array').with.lengthOf(2);
+      expect(result.items[0]).to.equal(url2);
+      expect(result.items[1]).to.equal(url1);
     });
 
     it('handles array result format', async () => {
-      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1' };
-      const url2 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url2' };
+      const url1 = { getCreatedAt: () => '2025-01-01T00:00:00Z', getUrl: () => 'url1', getByCustomer: () => true };
+      const url2 = { getCreatedAt: () => '2025-01-02T00:00:00Z', getUrl: () => 'url2', getByCustomer: () => true };
 
-      instance.allBySiteIdAndByCustomer = stub().resolves([url2, url1]);
+      instance.allBySiteId = stub().resolves([url2, url1]);
 
       const result = await instance.allBySiteIdByCustomerSorted('site-123', true, { sortBy: 'createdAt', sortOrder: 'asc' });
 
@@ -400,12 +458,23 @@ describe('AuditUrlCollection', () => {
       expect(result[1]).to.equal(url2);
     });
 
-    it('passes query options to allBySiteIdAndByCustomer', async () => {
-      instance.allBySiteIdAndByCustomer = stub().resolves({ items: [] });
+    it('passes query options to allBySiteId', async () => {
+      instance.allBySiteId = stub().resolves({ items: [] });
 
       await instance.allBySiteIdByCustomerSorted('site-123', true, { limit: 10, cursor: 'abc', sortBy: 'createdAt' });
 
-      expect(instance.allBySiteIdAndByCustomer).to.have.been.calledOnceWith('site-123', true, { limit: 10, cursor: 'abc' });
+      expect(instance.allBySiteId).to.have.been.calledOnceWith('site-123', { limit: 10, cursor: 'abc' });
+    });
+
+    it('handles URLs with byCustomer property instead of method', async () => {
+      const urlWithProperty = { getUrl: () => 'url1', byCustomer: true };
+      const urlWithMethod = { getUrl: () => 'url2', getByCustomer: () => true };
+
+      instance.allBySiteId = stub().resolves({ items: [urlWithProperty, urlWithMethod] });
+
+      const result = await instance.allBySiteIdByCustomerSorted('site-123', true, {});
+
+      expect(result.items).to.be.an('array').with.lengthOf(2);
     });
   });
 

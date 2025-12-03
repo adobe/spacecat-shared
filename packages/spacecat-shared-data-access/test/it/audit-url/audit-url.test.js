@@ -30,11 +30,12 @@ function checkAuditUrl(auditUrl) {
   expect(auditUrl.getCreatedBy()).to.be.a('string');
 }
 
-describe('AuditUrl IT', async () => {
+describe('AuditUrl IT', function () {
   let sampleData;
   let AuditUrl;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

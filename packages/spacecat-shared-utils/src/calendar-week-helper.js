@@ -208,7 +208,7 @@ export function getTemporalCondition({
   year,
   numSeries = 1,
 } = {}) {
-  const hasWeek = Number.isInteger(week) && Number.isInteger(year);
+  const hasWeek = Number.isInteger(week) && week >= 1 && Number.isInteger(year);
   const hasMonth = Number.isInteger(month) && Number.isInteger(year);
 
   if (numSeries > 1) {

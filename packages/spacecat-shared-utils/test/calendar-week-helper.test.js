@@ -407,6 +407,18 @@ describe('Utils - temporal helpers', () => {
       expect(c).to.equal('(year=2025 AND month=8)');
     });
 
+    it('rejects week 0 and falls back to last full week when no month provided', () => {
+      clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+      const c = getTemporalCondition({ week: 0, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
+
+    it('rejects negative week numbers and falls back to last full week', () => {
+      clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+      const c = getTemporalCondition({ week: -1, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
+
     it('week 53 in 2020 returns OR across years and months', () => {
       const c = getTemporalCondition({ week: 53, year: 2020 });
       expect(c).to.equal('(year=2020 AND month=12 AND week=53) OR (year=2021 AND month=1 AND week=53)');
@@ -437,6 +449,16 @@ describe('Utils - temporal helpers', () => {
 
       it('throws error when numSeries > 1 and only month is provided without year', () => {
         expect(() => getTemporalCondition({ month: 7, numSeries: 2 }))
+          .to.throw('Missing required parameters: week or month');
+      });
+
+      it('throws error when numSeries > 1 and week is 0', () => {
+        expect(() => getTemporalCondition({ week: 0, year: 2025, numSeries: 2 }))
+          .to.throw('Missing required parameters: week or month');
+      });
+
+      it('throws error when numSeries > 1 and week is negative', () => {
+        expect(() => getTemporalCondition({ week: -5, year: 2025, numSeries: 2 }))
           .to.throw('Missing required parameters: week or month');
       });
 

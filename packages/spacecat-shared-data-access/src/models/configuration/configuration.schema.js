@@ -14,56 +14,14 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import Joi from 'joi';
-
 import SchemaBuilder from '../base/schema.builder.js';
 import Configuration from './configuration.model.js';
 import ConfigurationCollection from './configuration.collection.js';
 import { zeroPad } from '../../util/util.js';
+import { checkConfiguration, handlerSchema } from './configuration.validator.js';
 
-const handlerSchema = Joi.object().pattern(Joi.string(), Joi.object(
-  {
-    enabled: Joi.object({
-      sites: Joi.array().items(Joi.string()),
-      orgs: Joi.array().items(Joi.string()),
-    }),
-    disabled: Joi.object({
-      sites: Joi.array().items(Joi.string()),
-      orgs: Joi.array().items(Joi.string()),
-    }),
-    enabledByDefault: Joi.boolean().required(),
-    movingAvgThreshold: Joi.number().min(1).optional(),
-    percentageChangeThreshold: Joi.number().min(1).optional(),
-    dependencies: Joi.array().items(Joi.object(
-      {
-        handler: Joi.string(),
-        actions: Joi.array().items(Joi.string()),
-      },
-    )),
-    productCodes: Joi.array().items(Joi.string()).min(1).required(),
-  },
-)).unknown(true);
-
-const jobsSchema = Joi.array().required();
-
-const queueSchema = Joi.object().required();
-
-const configurationSchema = Joi.object({
-  version: Joi.number().required(),
-  queues: queueSchema,
-  handlers: handlerSchema,
-  jobs: jobsSchema,
-}).unknown(true);
-
-export const checkConfiguration = (data, schema = configurationSchema) => {
-  const { error, value } = schema.validate(data);
-
-  if (error) {
-    throw new Error(`Configuration validation error: ${error.message}`);
-  }
-
-  return value;
-};
+// Re-export checkConfiguration for backward compatibility
+export { checkConfiguration } from './configuration.validator.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/

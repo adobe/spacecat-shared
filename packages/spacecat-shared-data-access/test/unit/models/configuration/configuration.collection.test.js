@@ -171,6 +171,20 @@ describe('ConfigurationCollection', () => {
       await expect(instance.create(mockRecord))
         .to.be.rejectedWith('Original error');
     });
+
+    it('throws validation error when configuration schema is invalid', async () => {
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      mockS3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const invalidConfig = {
+        // Missing required 'queues' field
+        jobs: [],
+      };
+
+      await expect(instance.create(invalidConfig))
+        .to.be.rejectedWith('Configuration validation error');
+    });
   });
 
   describe('findByVersion', () => {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.88.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.8...@adobe/spacecat-shared-data-access-v2.88.9) (2025-12-04)
+
+
+### Bug Fixes
+
+* adding toc audit type ([#1214](https://github.com/adobe/spacecat-shared/issues/1214)) ([7dab7d7](https://github.com/adobe/spacecat-shared/commit/7dab7d7afdcd4b56a56c10b65a3dff0fefb52e4e))
+
 # [@adobe/spacecat-shared-data-access-v2.88.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.7...@adobe/spacecat-shared-data-access-v2.88.8) (2025-12-01)
 
 

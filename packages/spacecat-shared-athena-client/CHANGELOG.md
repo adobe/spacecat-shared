@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-athena-client-v1.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.1...@adobe/spacecat-shared-athena-client-v1.8.2) (2025-12-03)
+
+
+### Bug Fixes
+
+* fix query for PTRv2 weekly trend ([#1209](https://github.com/adobe/spacecat-shared/issues/1209)) ([5a8fa92](https://github.com/adobe/spacecat-shared/commit/5a8fa9226ec7ab9dd022f022fc2ed930155dec9f))
+
+# [@adobe/spacecat-shared-athena-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.0...@adobe/spacecat-shared-athena-client-v1.8.1) (2025-12-03)
+
+
+### Bug Fixes
+
+* expose traffic_loss in result mapper for consent-banner ([#1208](https://github.com/adobe/spacecat-shared/issues/1208)) ([2b89f67](https://github.com/adobe/spacecat-shared/commit/2b89f6754ebc9766b8853ece11fa99dbb2c6a1c5))
+
+# [@adobe/spacecat-shared-athena-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.7.6...@adobe/spacecat-shared-athena-client-v1.8.0) (2025-12-02)
+
+
+### Features
+
+* added query for PTRv2 ([#1205](https://github.com/adobe/spacecat-shared/issues/1205)) ([e291c2d](https://github.com/adobe/spacecat-shared/commit/e291c2d028bf20cc5851116d201a2d6c7c925d65))
+
 # [@adobe/spacecat-shared-athena-client-v1.7.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.7.5...@adobe/spacecat-shared-athena-client-v1.7.6) (2025-11-28)
 
 

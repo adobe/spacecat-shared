@@ -261,6 +261,7 @@ export {
   getTrafficAnalysisQueryPlaceholders,
   buildPageTypeCase,
   getTrafficAnalysisQueryPlaceholdersFilled,
+  getTop3PagesWithTrafficLostTemplate,
 } from './traffic-analysis/queries.js';
 export { TrafficDataResponseDto } from './traffic-analysis/traffic-data-base-response.js';
 export { TrafficDataWithCWVDto } from './traffic-analysis/traffic-data-with-cwv.js';

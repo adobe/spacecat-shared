@@ -21,7 +21,8 @@ import { getTemporalCondition } from '@adobe/spacecat-shared-utils';
  * @returns {Object} Previous period with week/month and year
  */
 export function getPreviousPeriod({ week, month, year }) {
-  if (week !== undefined) {
+  // Check if week is defined and valid (prioritize week over month)
+  if (Number.isInteger(week)) {
     // Calculate previous week
     const prevWeek = week - 1;
     if (prevWeek < 1) {
@@ -33,7 +34,7 @@ export function getPreviousPeriod({ week, month, year }) {
     return { week: prevWeek, year };
   }
 
-  if (month !== undefined) {
+  if (Number.isInteger(month)) {
     // Calculate previous month
     const prevMonth = month - 1;
     if (prevMonth < 1) {

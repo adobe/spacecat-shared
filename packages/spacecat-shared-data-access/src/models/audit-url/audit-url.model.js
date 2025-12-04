@@ -76,6 +76,18 @@ class AuditUrl extends BaseModel {
     const byCustomer = this.getByCustomer?.() ?? this.byCustomer;
     return byCustomer === true;
   }
+
+  /**
+   * Generates the composite keys for the AuditUrl model.
+   * Required for ElectroDB operations with composite primary key (siteId + url).
+   * @returns {Object} - The composite keys.
+   */
+  generateCompositeKeys() {
+    return {
+      siteId: this.getSiteId(),
+      url: this.getUrl(),
+    };
+  }
 }
 
 export default AuditUrl;

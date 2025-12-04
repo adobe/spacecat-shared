@@ -174,4 +174,23 @@ describe('AuditUrlModel', () => {
       expect(instance.isAuditEnabled('accessibility')).to.be.false;
     });
   });
+
+  describe('generateCompositeKeys', () => {
+    it('returns composite keys with siteId and url', () => {
+      const result = instance.generateCompositeKeys();
+
+      expect(result).to.be.an('object');
+      expect(result).to.have.property('siteId');
+      expect(result).to.have.property('url');
+      expect(result.siteId).to.equal(mockRecord.siteId);
+      expect(result.url).to.equal(mockRecord.url);
+    });
+
+    it('returns the same values as getSiteId and getUrl methods', () => {
+      const result = instance.generateCompositeKeys();
+
+      expect(result.siteId).to.equal(instance.getSiteId());
+      expect(result.url).to.equal(instance.getUrl());
+    });
+  });
 });

@@ -45,6 +45,7 @@ describe('EntityRegistry', () => {
   );
 
   let electroService;
+  let services;
   let entityRegistry;
   let originalEntities;
 
@@ -67,9 +68,14 @@ describe('EntityRegistry', () => {
       },
     };
 
+    services = {
+      dynamo: electroService,
+      s3: null,
+    };
+
     EntityRegistry.registerEntity(MockSchema, MockCollection);
 
-    entityRegistry = new EntityRegistry(electroService, console);
+    entityRegistry = new EntityRegistry(services, console);
   });
 
   afterEach(() => {

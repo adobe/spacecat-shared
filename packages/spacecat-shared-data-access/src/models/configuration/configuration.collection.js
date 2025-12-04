@@ -14,8 +14,10 @@ import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 import DataAccessError from '../../errors/data-access.error.js';
 import { incrementVersion, sanitizeIdAndAuditFields } from '../../util/util.js';
+import { DATASTORE_TYPE } from '../../util/index.js';
 import BaseCollection from '../base/base.collection.js';
 import Configuration from './configuration.model.js';
+import { checkConfiguration } from './configuration.validator.js';
 
 const S3_CONFIG_KEY = 'config/global/global-config.json';
 
@@ -29,6 +31,8 @@ const S3_CONFIG_KEY = 'config/global/global-config.json';
  */
 class ConfigurationCollection extends BaseCollection {
   static COLLECTION_NAME = 'ConfigurationCollection';
+
+  static DATASTORE_TYPE = DATASTORE_TYPE.S3;
 
   /**
    * Constructs an instance of ConfigurationCollection.
@@ -104,6 +108,9 @@ class ConfigurationCollection extends BaseCollection {
         createdAt: now,
         updatedAt: now,
       };
+
+      // Validate the configuration against the schema before storing
+      checkConfiguration(configData);
 
       const command = new PutObjectCommand({
         Bucket: this.s3Bucket,

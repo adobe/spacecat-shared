@@ -67,14 +67,14 @@ const createElectroService = (client, config, log) => {
 };
 
 /**
- * Creates an S3 client if bucket configuration is provided.
+ * Creates an S3 service configuration if bucket configuration is provided.
  *
  * @param {object} config - Configuration object
  * @param {string} [config.s3Bucket] - S3 bucket name
  * @param {string} [config.region] - AWS region
  * @returns {{s3Client: S3Client, s3Bucket: string}|null} - S3 client and bucket or null
  */
-const createS3Client = (config) => {
+const createS3Service = (config) => {
   const { s3Bucket, region } = config;
 
   if (!s3Bucket) {
@@ -86,6 +86,19 @@ const createS3Client = (config) => {
 
   return { s3Client, s3Bucket };
 };
+
+/**
+ * Creates a services dictionary containing all datastore services.
+ * Each collection can declare which service it needs via its DATASTORE_TYPE.
+ *
+ * @param {object} electroService - The ElectroDB service for DynamoDB operations
+ * @param {object} config - Configuration object
+ * @returns {object} Services dictionary with dynamo and s3 services
+ */
+const createServices = (electroService, config) => ({
+  dynamo: electroService,
+  s3: createS3Service(config),
+});
 
 /**
  * Creates a data access layer for interacting with DynamoDB using ElectroDB.
@@ -101,8 +114,8 @@ export const createDataAccess = (config, log = console, client = undefined) => {
 
   const rawClient = createRawClient(client);
   const electroService = createElectroService(rawClient, config, log);
-  const s3Config = createS3Client(config);
-  const entityRegistry = new EntityRegistry(electroService, log, s3Config);
+  const services = createServices(electroService, config);
+  const entityRegistry = new EntityRegistry(services, log);
 
   return entityRegistry.getCollections();
 };

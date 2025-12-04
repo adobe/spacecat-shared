@@ -19,6 +19,16 @@ import { filterHtmlContent } from './html-filter.js';
 import { htmlToMarkdown, markdownToHtml } from './markdown-converter.js';
 
 /**
+ * Check if element is a browser DOM element (has outerHTML property)
+ * @param {Object} el - Element to check
+ * @returns {boolean} True if DOM element, false if cheerio element
+ * @private
+ */
+function isDOMElement(el) {
+  return typeof el.outerHTML === 'string';
+}
+
+/**
  * Diff DOM blocks using LCS algorithm
  * Compares blocks based on text content while preserving full HTML structure
  * @param {Array<{html: string, text: string, tagName: string}>} originalBlocks
@@ -101,50 +111,113 @@ export function diffDOMBlocks(originalBlocks, currentBlocks) {
 }
 
 /**
+ * Get tag name from element
+ * @param {Object} el - Element (DOM or cheerio)
+ * @returns {string} Uppercase tag name
+ * @private
+ */
+function getTagName(el) {
+  // DOM elements have uppercase tagName, cheerio has lowercase name
+  return (el.tagName || el.name || '').toUpperCase();
+}
+
+/**
+ * Get children elements
+ * @param {Object} el - Element (DOM or cheerio)
+ * @returns {Array} Array of child elements
+ * @private
+ */
+function getChildren(el) {
+  if (isDOMElement(el)) {
+    return Array.from(el.children || []);
+  }
+  // Cheerio raw element has children array with type info
+  return (el.children || []).filter((c) => c.type === 'tag');
+}
+
+/**
+ * Get text content from element
+ * @param {Object} el - Element (DOM or cheerio)
+ * @param {Function} [$] - Cheerio instance (required for cheerio elements)
+ * @returns {string} Text content
+ * @private
+ */
+function getTextContent(el, $) {
+  if (isDOMElement(el)) {
+    return el.textContent || '';
+  }
+  // Use cheerio's text() method
+  return $(el).text();
+}
+
+/**
+ * Get outer HTML from element
+ * @param {Object} el - Element (DOM or cheerio)
+ * @param {Function} [$] - Cheerio instance (required for cheerio elements)
+ * @returns {string} Outer HTML
+ * @private
+ */
+function getOuterHTML(el, $) {
+  if (isDOMElement(el)) {
+    return el.outerHTML;
+  }
+  // Use cheerio's html() method
+  return $.html(el);
+}
+
+/**
  * Extract blocks from parsed HTML, breaking down lists into individual items
- * @param {Array} children - Array of child elements
+ * Works with both browser DOM elements and cheerio raw elements
+ * @param {Array} children - Array of child elements (DOM or cheerio)
+ * @param {Function} [$] - Cheerio instance (required for Node.js, optional for browser)
  * @returns {Array<{html: string, text: string, tagName: string}>} Extracted blocks
  * @private
  */
-function extractBlocks(children) {
+function extractBlocks(children, $) {
   const blocks = [];
   children.forEach((el) => {
+    const tagName = getTagName(el);
+
     // If it's a list (ul/ol), break it down into individual list items
-    if (el.tagName === 'UL' || el.tagName === 'OL') {
-      const listType = el.tagName.toLowerCase();
-      Array.from(el.children).forEach((li) => {
-        if (li.tagName === 'LI') {
+    if (tagName === 'UL' || tagName === 'OL') {
+      const listType = tagName.toLowerCase();
+      const listChildren = getChildren(el);
+
+      listChildren.forEach((li) => {
+        if (getTagName(li) === 'LI') {
           // Skip empty list items - they cause alignment issues
-          const liText = li.textContent?.trim() || '';
+          const liText = getTextContent(li, $).trim();
           if (!liText) return;
 
           // Check if the list item contains nested block elements (p, div, h1-h6, etc.)
-          const nestedBlocks = Array.from(li.children).filter((child) => {
-            const tag = child.tagName;
-            return tag === 'P' || tag === 'DIV' || tag === 'H1' || tag === 'H2'
-                   || tag === 'H3' || tag === 'H4' || tag === 'H5' || tag === 'H6'
-                   || tag === 'BLOCKQUOTE' || tag === 'PRE';
+          const liChildren = getChildren(li);
+          const nestedBlocks = liChildren.filter((child) => {
+            const childTag = getTagName(child);
+            return childTag === 'P' || childTag === 'DIV' || childTag === 'H1'
+                   || childTag === 'H2' || childTag === 'H3' || childTag === 'H4'
+                   || childTag === 'H5' || childTag === 'H6'
+                   || childTag === 'BLOCKQUOTE' || childTag === 'PRE';
           });
 
           if (nestedBlocks.length > 0) {
             // Extract nested blocks individually for better matching
             // but wrap them in li/ul for proper display
             nestedBlocks.forEach((child) => {
-              const childText = child.textContent?.trim() || '';
+              const childText = getTextContent(child, $).trim();
               if (!childText) return; // Skip empty nested blocks too
 
               blocks.push({
-                html: `<${listType}><li>${child.outerHTML}</li></${listType}>`,
-                text: child.textContent?.trim() || '',
-                tagName: child.tagName.toLowerCase(),
+                html: `<${listType}><li>${getOuterHTML(child, $)}</li></${listType}>`,
+                text: childText,
+                tagName: getTagName(child).toLowerCase(),
               });
             });
           } else {
             // No nested blocks, treat the whole li as one block
             // wrap in ul/ol for proper display
             blocks.push({
-              html: `<${listType}>${li.outerHTML}</${listType}>`,
-              text: li.textContent?.trim() || '',
+              html: `<${listType}>${getOuterHTML(li, $)}</${listType}>`,
+              text: liText,
               tagName: 'li',
             });
           }
@@ -152,26 +225,58 @@ function extractBlocks(children) {
       });
     } else {
       // For all other elements, add them as-is
-      blocks.push({
-        html: el.outerHTML,
-        text: el.textContent?.trim() || '',
-        tagName: el.tagName.toLowerCase(),
-      });
+      const text = getTextContent(el, $).trim();
+      if (text) {
+        blocks.push({
+          html: getOuterHTML(el, $),
+          text,
+          tagName: tagName.toLowerCase(),
+        });
+      }
     }
   });
   return blocks;
 }
 
 /**
+ * Get only the added markdown blocks (content in current but not in original)
+ * @param {Array} originalChildren - Array of original DOM child elements
+ * @param {Array} currentChildren - Array of current DOM child elements
+ * @param {Function} [$] - Cheerio instance (required for Node.js, optional for browser)
+ * @returns {{addedBlocks: Array<{html: string, text: string}>, addedCount: number}}
+ * Added blocks with both HTML and text content
+ */
+export function getAddedMarkdownBlocks(originalChildren, currentChildren, $) {
+  const originalBlocks = extractBlocks(originalChildren, $);
+  const currentBlocks = extractBlocks(currentChildren, $);
+
+  const ops = diffDOMBlocks(originalBlocks, currentBlocks);
+
+  // Extract both HTML and text content from added blocks
+  const addedBlocks = ops
+    .filter((op) => op.type === 'add')
+    .map((op) => ({
+      html: op.currentBlock.html,
+      text: op.currentBlock.text,
+    }));
+
+  return {
+    addedBlocks,
+    addedCount: addedBlocks.length,
+  };
+}
+
+/**
  * Create markdown table diff from parsed DOM children
  * @param {Array} originalChildren - Array of original DOM child elements
  * @param {Array} currentChildren - Array of current DOM child elements
+ * @param {Function} [$] - Cheerio instance (required for Node.js, optional for browser)
  * @returns {{tableHtml: string, counters: string}} Diff table and counter information
  */
-export function createMarkdownTableDiff(originalChildren, currentChildren) {
+export function createMarkdownTableDiff(originalChildren, currentChildren, $) {
   // Get all block-level elements from both sides and extract their text content
-  const originalBlocks = extractBlocks(originalChildren);
-  const currentBlocks = extractBlocks(currentChildren);
+  const originalBlocks = extractBlocks(originalChildren, $);
+  const currentBlocks = extractBlocks(currentChildren, $);
 
   // Run diff algorithm once and count changes
   const ops = diffDOMBlocks(originalBlocks, currentBlocks);

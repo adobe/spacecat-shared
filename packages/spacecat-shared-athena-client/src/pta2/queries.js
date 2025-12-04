@@ -22,7 +22,7 @@ import { getTemporalCondition } from '@adobe/spacecat-shared-utils';
  */
 export function getPreviousPeriod({ week, month, year }) {
   // Check if week is defined and valid (prioritize week over month)
-  if (Number.isInteger(week)) {
+  if (Number.isInteger(week) && week > 0 && week <= 53) {
     // Calculate previous week
     const prevWeek = week - 1;
     if (prevWeek < 1) {

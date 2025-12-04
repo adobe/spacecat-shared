@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-html-analyzer-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.1.0...@adobe/spacecat-shared-html-analyzer-v1.2.0) (2025-12-04)
+
+
+### Features
+
+* added utility method to get added blocks in markdown diff, made compatible for nodejs scripts ([#1213](https://github.com/adobe/spacecat-shared/issues/1213)) ([07d8b74](https://github.com/adobe/spacecat-shared/commit/07d8b7419a681f2c5e07870c526ae26d28108989))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.7...@adobe/spacecat-shared-html-analyzer-v1.1.0) (2025-12-01)
 
 

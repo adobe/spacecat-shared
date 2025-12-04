@@ -84,10 +84,12 @@ class EntityRegistry {
    * @constructor
    * @param {Object} service - The ElectroDB service instance used to manage entities.
    * @param {Object} log - A logger for capturing and logging information.
+   * @param {{s3Client: S3Client, s3Bucket: string}|null} [s3Config] - Optional S3 configuration.
    */
-  constructor(service, log) {
+  constructor(service, log, s3Config = null) {
     this.service = service;
     this.log = log;
+    this.s3Config = s3Config;
     this.collections = new Map();
 
     this.#initialize();
@@ -100,7 +102,11 @@ class EntityRegistry {
    */
   #initialize() {
     Object.values(EntityRegistry.entities).forEach(({ collection: Collection, schema }) => {
-      const collection = new Collection(this.service, this, schema, this.log);
+      // Pass S3 config only to ConfigurationCollection
+      const extraConfig = Collection.COLLECTION_NAME === 'ConfigurationCollection'
+        ? this.s3Config
+        : null;
+      const collection = new Collection(this.service, this, schema, this.log, extraConfig);
       this.collections.set(Collection.COLLECTION_NAME, collection);
     });
   }

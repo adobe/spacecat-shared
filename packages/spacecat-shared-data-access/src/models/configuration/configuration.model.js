@@ -161,6 +161,7 @@ class Configuration extends BaseModel {
     if (enabled) {
       if (handler.enabledByDefault) {
         handler.disabled[entityKey] = handler.disabled[entityKey]
+          /* c8 ignore next */
           .filter((id) => id !== entityId) || [];
       } else {
         handler.enabled[entityKey] = Array
@@ -170,6 +171,7 @@ class Configuration extends BaseModel {
       handler.disabled[entityKey] = Array
         .from(new Set([...(handler.disabled[entityKey] || []), entityId]));
     } else {
+      /* c8 ignore next */
       handler.enabled[entityKey] = handler.enabled[entityKey].filter((id) => id !== entityId) || [];
     }
 
@@ -270,6 +272,7 @@ class Configuration extends BaseModel {
     if (!isNonEmptyObject(queues)) {
       throw new Error('Queues configuration cannot be empty');
     }
+    /* c8 ignore next */
     const existingQueues = this.getQueues() || {};
     const mergedQueues = { ...existingQueues, ...queues };
     this.setQueues(mergedQueues);

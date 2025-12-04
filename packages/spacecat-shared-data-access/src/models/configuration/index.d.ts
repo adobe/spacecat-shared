@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import type { S3Client } from '@aws-sdk/client-s3';
 import type {
   BaseCollection, BaseModel, Organization, Site,
 } from '../index';
@@ -44,6 +45,14 @@ export interface Configuration extends BaseModel {
 }
 
 export interface ConfigurationCollection extends BaseCollection<Configuration> {
-  findByVersion(version: number): Promise<Configuration | null>;
+  /** S3 client for file storage operations. Only available if ENV is configured. */
+  s3Client?: S3Client;
+  /** S3 bucket name for file storage (spacecat-{env}-importer). Only available if ENV is configured. */
+  s3Bucket?: string;
+  /**
+   * Finds a configuration by S3 VersionId.
+   * @param version - The S3 VersionId (will be cast to string).
+   */
+  findByVersion(version: number | string): Promise<Configuration | null>;
   findLatest(): Promise<Configuration | null>;
 }

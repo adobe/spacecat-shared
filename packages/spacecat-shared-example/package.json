@@ -1,10 +1,10 @@
 {
   "name": "@adobe/spacecat-shared-example",
-  "version": "1.2.31",
+  "version": "1.2.32",
   "description": "Shared modules of the Spacecat Services - example",
   "type": "module",
   "engines": {
-    "node": ">=22.0.0 <23.0.0",
+    "node": ">=22.0.0 <25.0.0",
     "npm": ">=10.9.0 <12.0.0"
   },
   "main": "src/example-wrapper.js",

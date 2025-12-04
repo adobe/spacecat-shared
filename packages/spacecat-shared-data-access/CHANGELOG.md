@@ -1,3 +1,46 @@
+# [@adobe/spacecat-shared-data-access-v2.88.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.8...@adobe/spacecat-shared-data-access-v2.88.9) (2025-12-04)
+
+
+### Bug Fixes
+
+* adding toc audit type ([#1214](https://github.com/adobe/spacecat-shared/issues/1214)) ([7dab7d7](https://github.com/adobe/spacecat-shared/commit/7dab7d7afdcd4b56a56c10b65a3dff0fefb52e4e))
+
+# [@adobe/spacecat-shared-data-access-v2.88.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.7...@adobe/spacecat-shared-data-access-v2.88.8) (2025-12-01)
+
+
+### Bug Fixes
+
+* use correct model name ([#1199](https://github.com/adobe/spacecat-shared/issues/1199)) ([3f5fb03](https://github.com/adobe/spacecat-shared/commit/3f5fb036c961036367376617d04bc1a7181146b1)), closes [#pk](https://github.com/adobe/spacecat-shared/issues/pk) [#sk](https://github.com/adobe/spacecat-shared/issues/sk)
+
+# [@adobe/spacecat-shared-data-access-v2.88.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.6...@adobe/spacecat-shared-data-access-v2.88.7) (2025-11-30)
+
+
+### Bug Fixes
+
+* avoid static for esbuild ([#1195](https://github.com/adobe/spacecat-shared/issues/1195)) ([9ed69e3](https://github.com/adobe/spacecat-shared/commit/9ed69e3bb57d2f5fa84cb0ce60f4ab1a52a7bb70)), closes [#instance](https://github.com/adobe/spacecat-shared/issues/instance)
+
+# [@adobe/spacecat-shared-data-access-v2.88.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.5...@adobe/spacecat-shared-data-access-v2.88.6) (2025-11-28)
+
+
+### Bug Fixes
+
+* adds executedAt as default createdAt for indexing fixEntity suggestion relationship ([#1177](https://github.com/adobe/spacecat-shared/issues/1177)) ([1db57ad](https://github.com/adobe/spacecat-shared/commit/1db57ade028db638b2185860bebcd4c4187c261e))
+
+# [@adobe/spacecat-shared-data-access-v2.88.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.4...@adobe/spacecat-shared-data-access-v2.88.5) (2025-11-28)
+
+
+### Bug Fixes
+
+* package lock ([#1185](https://github.com/adobe/spacecat-shared/issues/1185)) ([d0708cc](https://github.com/adobe/spacecat-shared/commit/d0708cc8b7cbbea35a4440d684db2b3613240469))
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
+# [@adobe/spacecat-shared-data-access-v2.88.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.3...@adobe/spacecat-shared-data-access-v2.88.4) (2025-11-28)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
 # [@adobe/spacecat-shared-data-access-v2.88.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.2...@adobe/spacecat-shared-data-access-v2.88.3) (2025-11-26)
 
 

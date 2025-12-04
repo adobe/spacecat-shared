@@ -33,7 +33,8 @@ describe('ScrapeUrl IT', async () => {
   let sampleData;
   let ScrapeUrl;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

@@ -66,6 +66,9 @@ export {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  hasNonWWWSubdomain,
+  toggleWWWHostname,
+  wwwUrlResolver,
 } from './url-helpers.js';
 
 export {

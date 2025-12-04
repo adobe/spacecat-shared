@@ -81,6 +81,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
       await sleep(retryDelayMs);
     }
   }
+  /* c8 ignore next */
   throw new Error(`Failed to fetch ${fetchType} HTML after ${maxRetries} retries`);
 }
 

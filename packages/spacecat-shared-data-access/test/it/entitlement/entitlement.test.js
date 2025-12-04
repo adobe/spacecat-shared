@@ -24,6 +24,7 @@ use(chaiAsPromised);
 describe('Entitlement IT', async () => {
   let sampleData;
   let Entitlement;
+  let SiteEnrollment;
 
   before(async function () {
     this.timeout(10000);
@@ -31,6 +32,7 @@ describe('Entitlement IT', async () => {
 
     const dataAccess = getDataAccess();
     Entitlement = dataAccess.Entitlement;
+    SiteEnrollment = dataAccess.SiteEnrollment;
   });
 
   it('gets an entitlement by id', async () => {
@@ -155,9 +157,6 @@ describe('Entitlement IT', async () => {
   });
 
   it('removes an entitlement and its dependent site enrollments', async () => {
-    const dataAccess = getDataAccess();
-    const { SiteEnrollment } = dataAccess;
-
     const entitlement = await Entitlement.findById(sampleData.entitlements[1].getId());
     const siteEnrollments = await entitlement.getSiteEnrollments();
 

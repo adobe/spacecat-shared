@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.8.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.2...@adobe/spacecat-shared-athena-client-v1.8.3) (2025-12-04)
+
+
+### Bug Fixes
+
+* month query passes 0 week ([#1215](https://github.com/adobe/spacecat-shared/issues/1215)) ([1821efd](https://github.com/adobe/spacecat-shared/commit/1821efda813b681f2eb9eab164ad5da1c9d3f59f))
+
 # [@adobe/spacecat-shared-athena-client-v1.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.1...@adobe/spacecat-shared-athena-client-v1.8.2) (2025-12-03)
 
 

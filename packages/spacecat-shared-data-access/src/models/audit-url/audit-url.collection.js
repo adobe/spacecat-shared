@@ -87,21 +87,27 @@ class AuditUrlCollection extends BaseCollection {
   }
 
   /**
-   * Finds an audit URL by site ID and URL.
-   * Uses the siteId GSI with url as sort key for efficient lookup.
+   * Finds an audit URL by its composite primary key (siteId + url).
+   * This is the primary lookup method, similar to LatestAudit.findById(siteId, auditType).
    *
-   * @param {string} siteId - The site ID.
-   * @param {string} url - The URL to find.
+   * @param {string} siteId - The site ID (partition key).
+   * @param {string} url - The URL (sort key).
    * @returns {Promise<AuditUrl|null>} The found AuditUrl or null.
    */
-  async findBySiteIdAndUrl(siteId, url) {
+  async findById(siteId, url) {
     if (!hasText(siteId) || !hasText(url)) {
       throw new Error('Both siteId and url are required');
     }
 
-    // Use allBySiteId and filter by URL (GSI provides siteId + url index)
-    const results = await this.allBySiteIdAndUrl(siteId, url);
-    return results.length > 0 ? results[0] : null;
+    return this.findByIndexKeys({ siteId, url });
+  }
+
+  /**
+   * Alias for findById for backwards compatibility.
+   * @deprecated Use findById(siteId, url) instead.
+   */
+  async findBySiteIdAndUrl(siteId, url) {
+    return this.findById(siteId, url);
   }
 
   /**
@@ -225,10 +231,14 @@ class AuditUrlCollection extends BaseCollection {
     }
 
     const urlsToRemove = await this.allBySiteId(siteId);
-    const idsToRemove = urlsToRemove.map((auditUrl) => auditUrl.getId());
 
-    if (idsToRemove.length > 0) {
-      await this.removeByIds(idsToRemove);
+    if (urlsToRemove.length > 0) {
+      // Use composite keys (siteId + url) for deletion
+      const keysToRemove = urlsToRemove.map((auditUrl) => ({
+        siteId,
+        url: auditUrl.getUrl?.() ?? auditUrl.url,
+      }));
+      await this.removeByIndexKeys(keysToRemove);
     }
   }
 
@@ -254,10 +264,13 @@ class AuditUrlCollection extends BaseCollection {
       return urlByCustomer === byCustomer;
     });
 
-    const idsToRemove = urlsToRemove.map((auditUrl) => auditUrl.getId());
-
-    if (idsToRemove.length > 0) {
-      await this.removeByIds(idsToRemove);
+    if (urlsToRemove.length > 0) {
+      // Use composite keys (siteId + url) for deletion
+      const keysToRemove = urlsToRemove.map((auditUrl) => ({
+        siteId,
+        url: auditUrl.getUrl?.() ?? auditUrl.url,
+      }));
+      await this.removeByIndexKeys(keysToRemove);
     }
   }
 }

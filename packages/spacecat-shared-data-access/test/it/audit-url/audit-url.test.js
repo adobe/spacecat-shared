@@ -22,7 +22,7 @@ use(chaiAsPromised);
 
 function checkAuditUrl(auditUrl) {
   expect(auditUrl).to.be.an('object');
-  expect(auditUrl.getAuditUrlId()).to.be.a('string');
+  // Composite primary key: siteId + url
   expect(auditUrl.getSiteId()).to.be.a('string');
   expect(auditUrl.getUrl()).to.be.a('string');
   expect(auditUrl.getByCustomer()).to.be.a('boolean');
@@ -132,7 +132,7 @@ describe('AuditUrl IT', function () {
     expect(auditUrl.getAudits()).to.deep.equal([]); // Default
   });
 
-  it('finds an audit URL by ID (primary key)', async () => {
+  it('finds an audit URL by composite primary key (siteId + url)', async () => {
     const site = sampleData.sites[0];
     const data = {
       siteId: site.getId(),
@@ -143,14 +143,16 @@ describe('AuditUrl IT', function () {
     };
 
     const created = await AuditUrl.create(data);
-    const auditUrlId = created.getAuditUrlId();
+    const siteId = created.getSiteId();
+    const url = created.getUrl();
 
-    const found = await AuditUrl.findById(auditUrlId);
+    // findById uses composite key (siteId + url)
+    const found = await AuditUrl.findById(siteId, url);
 
     expect(found).to.not.be.null;
     checkAuditUrl(found);
-    expect(found.getAuditUrlId()).to.equal(auditUrlId);
-    expect(found.getUrl()).to.equal(data.url);
+    expect(found.getSiteId()).to.equal(siteId);
+    expect(found.getUrl()).to.equal(url);
   });
 
   it('updates an audit URL', async () => {
@@ -248,7 +250,7 @@ describe('AuditUrl IT', function () {
       expect(auditUrls).to.be.an('array');
       // Fixture has 2 URLs with 'accessibility', plus tests add more:
       // - "creates a new audit URL" adds 1
-      // - "finds an audit URL by ID" adds 1
+      // - "finds an audit URL by composite key" adds 1
       expect(auditUrls.length).to.equal(4);
 
       auditUrls.forEach((auditUrl) => {

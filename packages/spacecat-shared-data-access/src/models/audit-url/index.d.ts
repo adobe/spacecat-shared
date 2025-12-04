@@ -14,11 +14,10 @@ import type { BaseCollection, BaseModel, Site } from '../index';
 
 /**
  * AuditUrl entity representing a URL to be audited for a site.
- * Primary key: auditUrlId (auto-generated UUID)
- * GSI: siteId + url for lookups
+ * Composite primary key: siteId (PK) + url (SK)
+ * Similar pattern to LatestAudit (siteId + auditType)
  */
 export interface AuditUrl extends BaseModel {
-  getAuditUrlId(): string;
   getAudits(): string[];
   getCreatedAt(): string;
   getCreatedBy(): string;
@@ -40,12 +39,14 @@ export interface AuditUrl extends BaseModel {
 }
 
 export interface AuditUrlCollection extends BaseCollection<AuditUrl> {
+  findById(siteId: string, url: string): Promise<AuditUrl | null>;
+  /** @deprecated Use findById(siteId, url) instead */
+  findBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl | null>;
   allBySiteId(siteId: string): Promise<AuditUrl[]>;
   allBySiteIdAndByCustomer(siteId: string, byCustomer: boolean): Promise<AuditUrl[]>;
   allBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl[]>;
   allBySiteIdSorted(siteId: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
   allBySiteIdByCustomerSorted(siteId: string, byCustomer: boolean, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
-  findBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl | null>;
   allBySiteIdAndAuditType(siteId: string, auditType: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<AuditUrl[]>;
   removeForSiteId(siteId: string): Promise<void>;
   removeForSiteIdByCustomer(siteId: string, byCustomer: boolean): Promise<void>;

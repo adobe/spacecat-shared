@@ -62,30 +62,47 @@ describe('AuditUrlCollection', () => {
     });
   });
 
-  describe('findBySiteIdAndUrl', () => {
+  describe('findById (composite key)', () => {
     it('throws an error if siteId is not provided', async () => {
-      await expect(instance.findBySiteIdAndUrl()).to.be.rejectedWith('Both siteId and url are required');
+      await expect(instance.findById()).to.be.rejectedWith('Both siteId and url are required');
     });
 
     it('throws an error if url is not provided', async () => {
-      await expect(instance.findBySiteIdAndUrl('site123')).to.be.rejectedWith('Both siteId and url are required');
+      await expect(instance.findById('site123')).to.be.rejectedWith('Both siteId and url are required');
     });
 
     it('returns the audit URL when found', async () => {
-      instance.allBySiteIdAndUrl = stub().resolves([model]);
+      instance.findByIndexKeys = stub().resolves(model);
+
+      const result = await instance.findById('site123', 'https://example.com/page');
+
+      expect(result).to.equal(model);
+      expect(instance.findByIndexKeys).to.have.been.calledOnceWith({
+        siteId: 'site123',
+        url: 'https://example.com/page',
+      });
+    });
+
+    it('returns null when audit URL is not found', async () => {
+      instance.findByIndexKeys = stub().resolves(null);
+
+      const result = await instance.findById('site123', 'https://example.com/page');
+
+      expect(result).to.be.null;
+    });
+  });
+
+  describe('findBySiteIdAndUrl (alias)', () => {
+    it('delegates to findById', async () => {
+      instance.findByIndexKeys = stub().resolves(model);
 
       const result = await instance.findBySiteIdAndUrl('site123', 'https://example.com/page');
 
       expect(result).to.equal(model);
-      expect(instance.allBySiteIdAndUrl).to.have.been.calledOnceWith('site123', 'https://example.com/page');
-    });
-
-    it('returns null when audit URL is not found', async () => {
-      instance.allBySiteIdAndUrl = stub().resolves([]);
-
-      const result = await instance.findBySiteIdAndUrl('site123', 'https://example.com/page');
-
-      expect(result).to.be.null;
+      expect(instance.findByIndexKeys).to.have.been.calledOnceWith({
+        siteId: 'site123',
+        url: 'https://example.com/page',
+      });
     });
   });
 
@@ -150,14 +167,19 @@ describe('AuditUrlCollection', () => {
       await expect(instance.removeForSiteId()).to.be.rejectedWith('SiteId is required');
     });
 
-    it('removes all audit URLs for a given siteId', async () => {
+    it('removes all audit URLs for a given siteId using composite keys', async () => {
       const siteId = 'site12345';
-      instance.allBySiteId = stub().resolves([model]);
+      const urlModel = {
+        getUrl: () => 'https://example.com/page1',
+      };
+      instance.allBySiteId = stub().resolves([urlModel]);
 
       await instance.removeForSiteId(siteId);
 
       expect(instance.allBySiteId).to.have.been.calledOnceWith(siteId);
-      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au12345' }]);
+      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([
+        { siteId, url: 'https://example.com/page1' },
+      ]);
     });
 
     it('does not call remove when there are no audit URLs', async () => {
@@ -183,11 +205,11 @@ describe('AuditUrlCollection', () => {
     it('removes customer URLs when byCustomer is true', async () => {
       const siteId = 'site12345';
       const customerUrl = {
-        getId: () => 'au-customer-1',
+        getUrl: () => 'https://example.com/customer-page',
         getByCustomer: () => true,
       };
       const systemUrl = {
-        getId: () => 'au-system-1',
+        getUrl: () => 'https://example.com/system-page',
         getByCustomer: () => false,
       };
       instance.allBySiteId = stub().resolves([customerUrl, systemUrl]);
@@ -195,17 +217,19 @@ describe('AuditUrlCollection', () => {
       await instance.removeForSiteIdByCustomer(siteId, true);
 
       expect(instance.allBySiteId).to.have.been.calledOnceWith(siteId);
-      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au-customer-1' }]);
+      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([
+        { siteId, url: 'https://example.com/customer-page' },
+      ]);
     });
 
     it('removes system URLs when byCustomer is false', async () => {
       const siteId = 'site12345';
       const customerUrl = {
-        getId: () => 'au-customer-1',
+        getUrl: () => 'https://example.com/customer-page',
         getByCustomer: () => true,
       };
       const systemUrl = {
-        getId: () => 'au-system-1',
+        getUrl: () => 'https://example.com/system-page',
         getByCustomer: () => false,
       };
       instance.allBySiteId = stub().resolves([customerUrl, systemUrl]);
@@ -213,26 +237,30 @@ describe('AuditUrlCollection', () => {
       await instance.removeForSiteIdByCustomer(siteId, false);
 
       expect(instance.allBySiteId).to.have.been.calledOnceWith(siteId);
-      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au-system-1' }]);
+      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([
+        { siteId, url: 'https://example.com/system-page' },
+      ]);
     });
 
     it('handles URLs with byCustomer property instead of method', async () => {
       const siteId = 'site12345';
       const urlWithProperty = {
-        getId: () => 'au-prop-1',
+        url: 'https://example.com/prop-page', // Property instead of method
         byCustomer: true, // Property instead of method
       };
       instance.allBySiteId = stub().resolves([urlWithProperty]);
 
       await instance.removeForSiteIdByCustomer(siteId, true);
 
-      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([{ auditUrlId: 'au-prop-1' }]);
+      expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([
+        { siteId, url: 'https://example.com/prop-page' },
+      ]);
     });
 
     it('does not call remove when there are no matching audit URLs', async () => {
       const siteId = 'site12345';
       const customerUrl = {
-        getId: () => 'au-customer-1',
+        getUrl: () => 'https://example.com/customer-page',
         getByCustomer: () => true,
       };
       instance.allBySiteId = stub().resolves([customerUrl]);

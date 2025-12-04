@@ -25,22 +25,23 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 
 Data Access Patterns:
 1. Get all URLs for a site: allBySiteId(siteId)
-2. Get all URLs for a site by byCustomer: allBySiteIdAndByCustomer(siteId, byCustomer)
-3. Get a specific URL: findBySiteIdAndUrl(siteId, url) - uses GSI
-4. Get URLs by audit type: allBySiteIdAndAuditType(siteId, auditType) - filtered in code
+2. Get all URLs for a site by byCustomer: filter in code after allBySiteId
+3. Get a specific URL: findById(siteId, url) - uses composite primary key
+4. Get URLs by audit type: filter in code after allBySiteId
 
-Primary Key:
-- PK: auditUrlId (auto-generated UUID)
-- This follows the standard pattern for entities in this codebase.
+Primary Key (Composite):
+- Partition Key (PK): siteId
+- Sort Key (SK): url
+- This provides natural uniqueness for siteId + url combinations
+- Similar pattern to LatestAudit (siteId + auditType)
 
-GSI Indexes:
-- bySiteId: siteId + url - for lookups by site and URL (unique constraint)
-- bySiteIdByCustomer: siteId + byCustomer - for querying by customer vs system added
+No GSI needed - all queries go through the primary index via siteId.
 */
 
 const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
-  // belongs_to Site creates a GSI for siteId lookups
-  .addReference('belongs_to', 'Site', ['url'])
+  .withPrimaryPartitionKeys(['siteId'])
+  .withPrimarySortKeys(['url'])
+  .addReference('belongs_to', 'Site')
   .addAttribute('url', {
     type: 'string',
     required: true,
@@ -62,11 +63,6 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     required: true,
     readOnly: true,
     default: 'system',
-  })
-  // GSI for querying by siteId and byCustomer
-  .addIndex(
-    { composite: ['siteId'] },
-    { composite: ['byCustomer'] },
-  );
+  });
 
 export default schema.build();

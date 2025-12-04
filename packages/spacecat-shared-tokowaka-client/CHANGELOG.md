@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.2.4...@adobe/spacecat-shared-tokowaka-client-v1.3.0) (2025-12-04)
+
+
+### Features
+
+* Tokowaka generic oppty mapper ([#1204](https://github.com/adobe/spacecat-shared/issues/1204)) ([710a36c](https://github.com/adobe/spacecat-shared/commit/710a36cd8b4e6f91a702da252c5a8739444a4e46))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.2.3...@adobe/spacecat-shared-tokowaka-client-v1.2.4) (2025-11-29)
 
 

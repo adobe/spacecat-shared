@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { removePatchesBySuggestionIds } from '../utils/patch-utils.js';
+
 /**
  * Base class for opportunity mappers
  * Each opportunity type should extend this class and implement the abstract methods
@@ -92,5 +94,25 @@ export default class BaseOpportunityMapper {
       prerenderRequired: this.requiresPrerender(),
       lastUpdated,
     };
+  }
+
+  /**
+   * Removes patches from configuration for given suggestions
+   * Default implementation simply removes patches matching the suggestion IDs.
+   * Override this method in subclasses if custom rollback logic is needed
+   * (e.g., FAQ mapper removes heading patch when no suggestions remain).
+   * @param {Object} config - Current Tokowaka configuration
+   * @param {Array<string>} suggestionIds - Suggestion IDs to remove
+   * @param {string} opportunityId - Opportunity ID
+   * @returns {Object} - Updated configuration with patches removed
+   */
+  // eslint-disable-next-line no-unused-vars
+  rollbackPatches(config, suggestionIds, opportunityId) {
+    if (!config || !config.patches) {
+      return config;
+    }
+
+    this.log.debug(`Removing patches for ${suggestionIds.length} suggestions`);
+    return removePatchesBySuggestionIds(config, suggestionIds);
   }
 }

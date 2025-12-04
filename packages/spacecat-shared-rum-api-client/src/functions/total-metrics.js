@@ -20,18 +20,25 @@ function handler(bundles) {
   dataChunks.addSeries('clicks', (bundle) => (bundle.events.some((e) => e.checkpoint === 'click')
     ? bundle.weight
     : 0));
-  const totalPageViews = dataChunks?.totals?.traffic_domain?.weight;
+  dataChunks.addSeries('lcp', series.lcp);
+  dataChunks.addSeries('engagement', series.engagement);
+  const totalPageViews = dataChunks?.totals?.traffic_domain?.sum;
+  const totalLCP = dataChunks?.totals?.lcp?.percentile(75) || null;
   const sum = dataChunks?.totals?.clicks?.sum ?? 0;
   const weight = dataChunks?.totals?.clicks?.weight ?? 0;
   const totalCTR = weight !== 0 ? sum / weight : 0;
+  const engagementCount = dataChunks?.totals?.engagement?.sum ?? 0;
+
   return {
     totalPageViews,
     totalCTR,
     totalClicks: sum,
+    totalLCP,
+    totalEngagement: engagementCount,
   };
 }
 
 export default {
   handler,
-  checkpoints: ['click'],
+  checkpoints: ['click', 'cwv-lcp', 'viewmedia', 'viewblock'],
 };

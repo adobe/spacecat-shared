@@ -22,6 +22,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class ApiKey extends BaseModel {
+  static ENTITY_NAME = 'ApiKey';
+
   static SCOPE_NAMES = [
     'sites.read_all',
     'sites.write_all',

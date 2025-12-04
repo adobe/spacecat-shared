@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class AsyncJobCollection extends BaseCollection {
+  static COLLECTION_NAME = 'AsyncJobCollection';
+
   // Add custom methods or overrides here if needed
 }
 

@@ -1,3 +1,59 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.8...@adobe/spacecat-shared-tier-client-v1.3.9) (2025-11-30)
+
+
+### Bug Fixes
+
+* update data-access ([#1196](https://github.com/adobe/spacecat-shared/issues/1196)) ([c9461e7](https://github.com/adobe/spacecat-shared/commit/c9461e7c25634014088320d2faaf7839f164845c))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.7...@adobe/spacecat-shared-tier-client-v1.3.8) (2025-11-28)
+
+
+### Bug Fixes
+
+* remove instanceof check ([#1191](https://github.com/adobe/spacecat-shared/issues/1191)) ([c2bf75d](https://github.com/adobe/spacecat-shared/commit/c2bf75d44003e1d0c25bea75640559cd46794301))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.6...@adobe/spacecat-shared-tier-client-v1.3.7) (2025-11-28)
+
+
+### Bug Fixes
+
+* using entity name instead of instanceof ([#1190](https://github.com/adobe/spacecat-shared/issues/1190)) ([eccda60](https://github.com/adobe/spacecat-shared/commit/eccda60d02f1df7d251957430cb7fcef4041f89c))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.5...@adobe/spacecat-shared-tier-client-v1.3.6) (2025-11-28)
+
+
+### Bug Fixes
+
+* update deps ([#1187](https://github.com/adobe/spacecat-shared/issues/1187)) ([8632e20](https://github.com/adobe/spacecat-shared/commit/8632e2049e6061018c26399b8db702fd72e65620))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.4...@adobe/spacecat-shared-tier-client-v1.3.5) (2025-11-28)
+
+
+### Bug Fixes
+
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
+# [@adobe/spacecat-shared-tier-client-v1.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.3...@adobe/spacecat-shared-tier-client-v1.3.4) (2025-11-28)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.2...@adobe/spacecat-shared-tier-client-v1.3.3) (2025-11-27)
+
+
+### Bug Fixes
+
+* support for revoke paid entitlement ([#1180](https://github.com/adobe/spacecat-shared/issues/1180)) ([f584c60](https://github.com/adobe/spacecat-shared/commit/f584c600937bb117f60cc6d5cab0dba5dda30d84))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.1...@adobe/spacecat-shared-tier-client-v1.3.2) (2025-11-25)
+
+
+### Bug Fixes
+
+* add lib for revoke entitlement ([#1169](https://github.com/adobe/spacecat-shared/issues/1169)) ([d0f2e67](https://github.com/adobe/spacecat-shared/commit/d0f2e67332e52ee23ece5310d484a43bd42146a4))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.0...@adobe/spacecat-shared-tier-client-v1.3.1) (2025-11-24)
 
 

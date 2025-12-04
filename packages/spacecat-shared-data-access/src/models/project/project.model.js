@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Project extends BaseModel {
+  static ENTITY_NAME = 'Project';
+
   async getPrimaryLocaleSites() {
     const sites = await this.getSites();
     return sites.filter((site) => site.getIsPrimaryLocale());

@@ -40,14 +40,13 @@ export interface AuditUrl extends BaseModel {
 
 export interface AuditUrlCollection extends BaseCollection<AuditUrl> {
   findById(siteId: string, url: string): Promise<AuditUrl | null>;
-  /** @deprecated Use findById(siteId, url) instead */
   findBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl | null>;
   allBySiteId(siteId: string): Promise<AuditUrl[]>;
   allBySiteIdAndByCustomer(siteId: string, byCustomer: boolean): Promise<AuditUrl[]>;
   allBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl[]>;
-  allBySiteIdSorted(siteId: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
-  allBySiteIdByCustomerSorted(siteId: string, byCustomer: boolean, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
-  allBySiteIdAndAuditType(siteId: string, auditType: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<AuditUrl[]>;
+  allBySiteIdSorted(siteId: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ data: AuditUrl[]; cursor: string | null }>;
+  allBySiteIdByCustomerSorted(siteId: string, byCustomer: boolean, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ data: AuditUrl[]; cursor: string | null }>;
+  allBySiteIdAndAuditType(siteId: string, auditType: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ data: AuditUrl[]; cursor: string | null }>;
   removeForSiteId(siteId: string): Promise<void>;
   removeForSiteIdByCustomer(siteId: string, byCustomer: boolean): Promise<void>;
 }

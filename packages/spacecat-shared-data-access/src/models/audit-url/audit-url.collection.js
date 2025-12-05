@@ -103,8 +103,10 @@ class AuditUrlCollection extends BaseCollection {
   }
 
   /**
-   * Alias for findById for backwards compatibility.
-   * @deprecated Use findById(siteId, url) instead.
+   * Convenience alias for findById.
+   * @param {string} siteId - The site ID (partition key).
+   * @param {string} url - The URL (sort key).
+   * @returns {Promise<AuditUrl|null>} The found AuditUrl or null.
    */
   async findBySiteIdAndUrl(siteId, url) {
     return this.findById(siteId, url);
@@ -112,12 +114,12 @@ class AuditUrlCollection extends BaseCollection {
 
   /**
    * Gets all audit URLs for a site that have a specific audit type enabled.
-   * Note: This performs filtering after retrieval since audits is a list.
+   * Uses DynamoDB FilterExpression to filter at the database level.
    *
    * @param {string} siteId - The site ID.
    * @param {string} auditType - The audit type to filter by.
    * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
-   * @returns {Promise<{items: AuditUrl[], cursor?: string}>} Paginated results.
+   * @returns {Promise<{data: AuditUrl[], cursor: string|null}>} Paginated results.
    */
   async allBySiteIdAndAuditType(siteId, auditType, options = {}) {
     if (!hasText(siteId) || !hasText(auditType)) {
@@ -126,25 +128,36 @@ class AuditUrlCollection extends BaseCollection {
 
     const { sortBy, sortOrder, ...queryOptions } = options;
 
-    // Get all URLs for the site
-    const allUrls = await this.allBySiteId(siteId, queryOptions);
+    // Use FilterExpression to filter at DynamoDB level (reduces network transfer)
+    const result = await this.allByIndexKeys(
+      { siteId },
+      {
+        ...queryOptions,
+        returnCursor: true,
+        where: (attr, op) => op.contains(attr.audits, auditType),
+      },
+    );
 
-    // Filter by audit type
-    let filtered = allUrls.filter((auditUrl) => auditUrl.isAuditEnabled(auditType));
+    // Handle result format
+    const data = result.data || [];
+    const { cursor } = result;
 
     // Apply sorting if requested
-    if (sortBy) {
-      filtered = AuditUrlCollection.sortAuditUrls(filtered, sortBy, sortOrder);
-    }
+    const sortedData = sortBy
+      ? AuditUrlCollection.sortAuditUrls(data, sortBy, sortOrder)
+      : data;
 
-    return filtered;
+    return {
+      data: sortedData,
+      cursor,
+    };
   }
 
   /**
    * Gets all audit URLs for a site with sorting support.
    * @param {string} siteId - The site ID.
    * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
-   * @returns {Promise<{items: AuditUrl[], cursor?: string}>} Paginated and sorted results.
+   * @returns {Promise<{data: AuditUrl[], cursor: string|null}>} Paginated and sorted results.
    */
   async allBySiteIdSorted(siteId, options = {}) {
     if (!hasText(siteId)) {
@@ -153,35 +166,34 @@ class AuditUrlCollection extends BaseCollection {
 
     const { sortBy, sortOrder, ...queryOptions } = options;
 
-    // Get all URLs for the site
-    const result = await this.allBySiteId(siteId, queryOptions);
+    // Get all URLs for the site with pagination metadata
+    const result = await this.allByIndexKeys(
+      { siteId },
+      { ...queryOptions, returnCursor: true },
+    );
 
-    // Handle both array and paginated result formats
-    const items = Array.isArray(result) ? result : (result.items || []);
+    // Handle result format
+    const data = result.data || [];
+    const { cursor } = result;
 
     // Apply sorting if requested
-    const sortedItems = sortBy
-      ? AuditUrlCollection.sortAuditUrls(items, sortBy, sortOrder) : items;
-
-    // Return in the same format as received
-    if (Array.isArray(result)) {
-      return sortedItems;
-    }
+    const sortedData = sortBy
+      ? AuditUrlCollection.sortAuditUrls(data, sortBy, sortOrder)
+      : data;
 
     return {
-      items: sortedItems,
-      cursor: result.cursor,
+      data: sortedData,
+      cursor,
     };
   }
 
   /**
    * Gets all audit URLs for a site by byCustomer flag with sorting support.
-   * Note: Uses allBySiteId + filter because the accessor utility doesn't handle
-   * boolean false values properly (hasText validation fails).
+   * Uses GSI bySiteIdAndByCustomer for efficient querying.
    * @param {string} siteId - The site ID.
    * @param {boolean} byCustomer - True for customer-added, false for system-added.
    * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
-   * @returns {Promise<{items: AuditUrl[], cursor?: string}>} Paginated and sorted results.
+   * @returns {Promise<{data: AuditUrl[], cursor: string|null}>} Paginated and sorted results.
    */
   async allBySiteIdByCustomerSorted(siteId, byCustomer, options = {}) {
     if (!hasText(siteId) || typeof byCustomer !== 'boolean') {
@@ -190,31 +202,28 @@ class AuditUrlCollection extends BaseCollection {
 
     const { sortBy, sortOrder, ...queryOptions } = options;
 
-    // Get all URLs for the site and filter by byCustomer
-    // (can't use GSI directly because accessor validation fails for boolean false)
-    const result = await this.allBySiteId(siteId, queryOptions);
+    // Use GSI for efficient querying by siteId + byCustomer with pagination metadata
+    const result = await this.allByIndexKeys(
+      { siteId, byCustomer },
+      {
+        ...queryOptions,
+        returnCursor: true,
+        index: 'bySiteIdAndByCustomer',
+      },
+    );
 
-    // Handle both array and paginated result formats
-    const allItems = Array.isArray(result) ? result : (result.items || []);
-
-    // Filter by byCustomer flag
-    const items = allItems.filter((auditUrl) => {
-      const urlByCustomer = auditUrl.getByCustomer?.() ?? auditUrl.byCustomer;
-      return urlByCustomer === byCustomer;
-    });
+    // Handle result format
+    const data = result.data || [];
+    const { cursor } = result;
 
     // Apply sorting if requested
-    const sortedItems = sortBy
-      ? AuditUrlCollection.sortAuditUrls(items, sortBy, sortOrder) : items;
-
-    // Return in the same format as received
-    if (Array.isArray(result)) {
-      return sortedItems;
-    }
+    const sortedData = sortBy
+      ? AuditUrlCollection.sortAuditUrls(data, sortBy, sortOrder)
+      : data;
 
     return {
-      items: sortedItems,
-      cursor: result.cursor,
+      data: sortedData,
+      cursor,
     };
   }
 
@@ -245,8 +254,7 @@ class AuditUrlCollection extends BaseCollection {
   /**
    * Removes audit URLs by byCustomer flag for a specific site.
    * For example, remove all customer-added or all system-added URLs.
-   * Note: Uses allBySiteId + filter because the accessor utility doesn't handle
-   * boolean false values properly.
+   * Uses GSI bySiteIdAndByCustomer for efficient querying.
    *
    * @param {string} siteId - The site ID.
    * @param {boolean} byCustomer - True for customer-added, false for system-added.
@@ -257,12 +265,11 @@ class AuditUrlCollection extends BaseCollection {
       throw new Error('SiteId is required and byCustomer must be a boolean');
     }
 
-    // Get all URLs for the site and filter by byCustomer
-    const allUrls = await this.allBySiteId(siteId);
-    const urlsToRemove = allUrls.filter((auditUrl) => {
-      const urlByCustomer = auditUrl.getByCustomer?.() ?? auditUrl.byCustomer;
-      return urlByCustomer === byCustomer;
-    });
+    // Use GSI for efficient querying by siteId + byCustomer
+    const urlsToRemove = await this.allByIndexKeys(
+      { siteId, byCustomer },
+      { index: 'bySiteIdAndByCustomer' },
+    );
 
     if (urlsToRemove.length > 0) {
       // Use composite keys (siteId + url) for deletion

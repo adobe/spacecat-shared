@@ -25,9 +25,9 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 
 Data Access Patterns:
 1. Get all URLs for a site: allBySiteId(siteId)
-2. Get all URLs for a site by byCustomer: filter in code after allBySiteId
+2. Get all URLs for a site by byCustomer: allBySiteIdAndByCustomer(siteId, byCustomer) - uses GSI
 3. Get a specific URL: findById(siteId, url) - uses composite primary key
-4. Get URLs by audit type: filter in code after allBySiteId
+4. Get URLs by audit type: filter in code after allBySiteId (audits is a Set)
 
 Primary Key (Composite):
 - Partition Key (PK): siteId
@@ -35,7 +35,10 @@ Primary Key (Composite):
 - This provides natural uniqueness for siteId + url combinations
 - Similar pattern to LatestAudit (siteId + auditType)
 
-No GSI needed - all queries go through the primary index via siteId.
+GSI: bySiteIdAndByCustomer
+- Partition Key: siteId
+- Sort Key: byCustomer
+- Enables efficient filtering by customer-added vs system-added URLs
 */
 
 const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
@@ -52,6 +55,11 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     required: true,
     default: true,
   })
+  .addIndex(
+    'bySiteIdAndByCustomer',
+    { composite: ['siteId'] },
+    { composite: ['byCustomer'] },
+  )
   .addAttribute('audits', {
     type: 'set',
     items: 'string',

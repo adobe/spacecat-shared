@@ -40,6 +40,7 @@ export default class PrerenderMapper extends BaseOpportunityMapper {
    * @param {string} opportunityId - Opportunity ID
    * @returns {Array} - Empty array (prerender doesn't use patches)
    */
+  // eslint-disable-next-line class-methods-use-this, no-unused-vars
   suggestionsToPatches(urlPath, suggestions, opportunityId) {
     // Prerender suggestions don't generate patches
     // They just enable prerendering for the URL
@@ -65,5 +66,3 @@ export default class PrerenderMapper extends BaseOpportunityMapper {
     return { eligible: true };
   }
 }
-
-

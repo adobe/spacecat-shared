@@ -124,7 +124,7 @@ class TokowakaClient {
 
     // For prerender opportunities, allow configs with no patches (prerender-only)
     const isPrerenderOnly = opportunityType === 'prerender' && patches.length === 0;
-    
+
     if (patches.length === 0 && !isPrerenderOnly) {
       return null;
     }
@@ -456,7 +456,7 @@ class TokowakaClient {
 
       // For prerender, allow configs with no patches (prerender-only config)
       const isPrerenderOnly = opportunity.getType() === 'prerender' && newConfig.patches.length === 0;
-      
+
       if (!isPrerenderOnly && (!newConfig.patches || newConfig.patches.length === 0)) {
         this.log.warn(`No eligible suggestions to deploy for URL: ${fullUrl}`);
         // eslint-disable-next-line no-continue

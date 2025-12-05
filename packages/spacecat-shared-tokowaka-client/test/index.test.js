@@ -1040,6 +1040,59 @@ describe('TokowakaClient', () => {
       // Both suggestions are in result but sugg-1 skipped deployment due to no patches
       expect(result.succeededSuggestions).to.have.length(2);
       expect(result.s3Paths).to.have.length(1); // Only one URL actually deployed
+      expect(log.warn).to.have.been.calledWith('No config generated for URL: https://example.com/page1');
+    });
+
+    it('should skip URL when config has no patches after generation', async () => {
+      // Stub generateConfig to return a config with no patches (defensive check)
+      const originalGenerateConfig = client.generateConfig.bind(client);
+      sinon.stub(client, 'generateConfig').callsFake((url, ...args) => {
+        const config = originalGenerateConfig(url, ...args);
+        if (config && url === 'https://example.com/page1') {
+          // Return config but with empty patches array (simulating edge case)
+          return { ...config, patches: [] };
+        }
+        return config;
+      });
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page2',
+            recommendedAction: 'New Subtitle',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h2',
+            },
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.s3Paths).to.have.length(1); // Only page2 deployed
+      expect(log.warn).to.have.been.calledWith('No eligible suggestions to deploy for URL: https://example.com/page1');
     });
 
     it('should return early when no eligible suggestions', async () => {

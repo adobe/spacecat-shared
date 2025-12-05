@@ -122,7 +122,10 @@ class TokowakaClient {
       opportunity.getId(),
     );
 
-    if (patches.length === 0) {
+    // For prerender opportunities, allow configs with no patches (prerender-only)
+    const isPrerenderOnly = opportunityType === 'prerender' && patches.length === 0;
+    
+    if (patches.length === 0 && !isPrerenderOnly) {
       return null;
     }
 
@@ -445,7 +448,16 @@ class TokowakaClient {
       // Generate configuration for this URL with eligible suggestions only
       const newConfig = this.generateConfig(fullUrl, opportunity, urlSuggestions);
 
-      if (!newConfig || !newConfig.patches || newConfig.patches.length === 0) {
+      if (!newConfig) {
+        this.log.warn(`No config generated for URL: ${fullUrl}`);
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
+      // For prerender, allow configs with no patches (prerender-only config)
+      const isPrerenderOnly = opportunity.getType() === 'prerender' && newConfig.patches.length === 0;
+      
+      if (!isPrerenderOnly && (!newConfig.patches || newConfig.patches.length === 0)) {
         this.log.warn(`No eligible suggestions to deploy for URL: ${fullUrl}`);
         // eslint-disable-next-line no-continue
         continue;

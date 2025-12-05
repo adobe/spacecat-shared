@@ -34,7 +34,9 @@ export const TARGET_USER_AGENTS_CATEGORIES: {
 
 export interface TokowakaMetaconfig {
   siteId: string;
-  prerender: boolean;
+  prerender?: {
+    allowList?: string[];
+  } | boolean;
 }
 
 export interface TokowakaConfig {

@@ -15,6 +15,7 @@ import ContentSummarizationMapper from './content-summarization-mapper.js';
 import FaqMapper from './faq-mapper.js';
 import ReadabilityMapper from './readability-mapper.js';
 import GenericMapper from './generic-mapper.js';
+import PrerenderMapper from './prerender-mapper.js';
 
 /**
  * Registry for opportunity mappers
@@ -38,6 +39,7 @@ export default class MapperRegistry {
       FaqMapper,
       ReadabilityMapper,
       GenericMapper,
+      PrerenderMapper,
       // more mappers here
     ];
 

@@ -12,6 +12,7 @@
 
 import { DataAccessError } from '../../errors/index.js';
 import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
+import { DATASTORE_TYPE } from '../../util/index.js';
 
 import ApiKeyCollection from '../api-key/api-key.collection.js';
 import AsyncJobCollection from '../async-job/async-job.collection.js';
@@ -82,11 +83,13 @@ class EntityRegistry {
   /**
    * Constructs an instance of EntityRegistry.
    * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage entities.
+   * @param {Object} services - Dictionary of services keyed by datastore type.
+   * @param {Object} services.dynamo - The ElectroDB service instance for DynamoDB operations.
+   * @param {{s3Client: S3Client, s3Bucket: string}|null} [services.s3] - S3 service configuration.
    * @param {Object} log - A logger for capturing and logging information.
    */
-  constructor(service, log) {
-    this.service = service;
+  constructor(services, log) {
+    this.services = services;
     this.log = log;
     this.collections = new Map();
 
@@ -96,11 +99,16 @@ class EntityRegistry {
   /**
    * Initializes the collections managed by the EntityRegistry.
    * This method creates instances of each collection and stores them in an internal map.
+   * Collections declare their datastore type via DATASTORE_TYPE static property,
+   * and the appropriate service is passed to them during initialization.
    * @private
    */
   #initialize() {
     Object.values(EntityRegistry.entities).forEach(({ collection: Collection, schema }) => {
-      const collection = new Collection(this.service, this, schema, this.log);
+      /* c8 ignore next */
+      const datastoreType = Collection.DATASTORE_TYPE || DATASTORE_TYPE.DYNAMO;
+      const service = this.services[datastoreType];
+      const collection = new Collection(this.services.dynamo, this, schema, this.log, service);
       this.collections.set(Collection.COLLECTION_NAME, collection);
     });
   }

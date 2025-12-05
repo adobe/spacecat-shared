@@ -42,6 +42,8 @@ class Audit extends BaseModel {
     BROKEN_BACKLINKS: 'broken-backlinks',
     BROKEN_INTERNAL_LINKS: 'broken-internal-links',
     EXPERIMENTATION: 'experimentation',
+    CONTENT_FRAGMENT_404: 'content-fragment-404',
+    CONTENT_FRAGMENT_404_AUTO_SUGGEST: 'content-fragment-404-auto-suggest',
     CONVERSION: 'conversion',
     ORGANIC_KEYWORDS: 'organic-keywords',
     ORGANIC_TRAFFIC: 'organic-traffic',

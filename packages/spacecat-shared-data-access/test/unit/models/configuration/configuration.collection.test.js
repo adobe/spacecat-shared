@@ -12,9 +12,6 @@
 
 /* eslint-env mocha */
 
-import { Readable } from 'stream';
-import { sdkStreamMixin } from '@smithy/util-stream';
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
@@ -28,13 +25,14 @@ import { createElectroMocks } from '../../util.js';
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-// Helper to create a mock S3 response body
-const createMockS3Body = (data) => {
-  const stream = new Readable();
-  stream.push(JSON.stringify(data));
-  stream.push(null);
-  return sdkStreamMixin(stream);
-};
+/**
+ * Creates a mock S3 response body without using sdkStreamMixin.
+ * @param {object} data - The data to return as JSON.
+ * @returns {object} Mock body with transformToString method.
+ */
+const createMockS3Body = (data) => ({
+  transformToString: async () => JSON.stringify(data),
+});
 
 describe('ConfigurationCollection', () => {
   let instance;
@@ -114,35 +112,15 @@ describe('ConfigurationCollection', () => {
   });
 
   describe('create', () => {
-    it('creates a new configuration as first version in S3', async () => {
-      // First call to findLatest returns null (no existing config)
-      const noSuchKeyError = new Error('NoSuchKey');
-      noSuchKeyError.name = 'NoSuchKey';
-      mockS3Client.send.onFirstCall().rejects(noSuchKeyError);
-      // Second call is the PutObject
-      mockS3Client.send.onSecondCall().resolves({});
+    it('creates a new configuration in S3 and captures VersionId', async () => {
+      mockS3Client.send.resolves({ VersionId: 'new-version-id-123' });
 
       const result = await instance.create(mockRecord);
 
       expect(result).to.be.an('object');
       expect(result.getVersion()).to.equal(1);
-      expect(mockS3Client.send).to.have.been.calledTwice;
-    });
-
-    it('creates a new configuration as a new version in S3', async () => {
-      const existingConfig = { ...mockRecord, version: 1 };
-      // First call to findLatest returns existing config
-      mockS3Client.send.onFirstCall().resolves({
-        Body: createMockS3Body(existingConfig),
-      });
-      // Second call is the PutObject
-      mockS3Client.send.onSecondCall().resolves({});
-
-      const result = await instance.create(mockRecord);
-
-      expect(result).to.be.an('object');
-      expect(result.getVersion()).to.equal(2);
-      expect(mockS3Client.send).to.have.been.calledTwice;
+      expect(result.getId()).to.equal('new-version-id-123');
+      expect(mockS3Client.send).to.have.been.calledOnce;
     });
 
     it('throws error when S3 is not configured', async () => {
@@ -187,37 +165,37 @@ describe('ConfigurationCollection', () => {
     });
   });
 
-  describe('findByVersion', () => {
-    it('finds configuration by S3 version ID (string)', async () => {
+  describe('findById', () => {
+    it('finds configuration by S3 version ID and sets configurationId', async () => {
       const versionId = 'abc123-version-id';
       mockS3Client.send.resolves({
         Body: createMockS3Body(mockRecord),
       });
 
-      const result = await instance.findByVersion(versionId);
+      const result = await instance.findById(versionId);
 
       expect(result).to.be.an('object');
       expect(result.getVersion()).to.equal(mockRecord.version);
+      expect(result.getId()).to.equal(versionId);
       expect(mockS3Client.send).to.have.been.calledOnce;
     });
 
-    it('finds configuration by version number (casts to string)', async () => {
-      mockS3Client.send.resolves({
-        Body: createMockS3Body(mockRecord),
-      });
+    it('returns null when version not found (NoSuchKey)', async () => {
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      mockS3Client.send.rejects(noSuchKeyError);
 
-      const result = await instance.findByVersion(3);
+      const result = await instance.findById('non-existent-version');
 
-      expect(result).to.be.an('object');
-      expect(mockS3Client.send).to.have.been.calledOnce;
+      expect(result).to.be.null;
     });
 
-    it('returns null when version not found', async () => {
+    it('returns null when version not found (NoSuchVersion)', async () => {
       const noSuchVersionError = new Error('NoSuchVersion');
       noSuchVersionError.name = 'NoSuchVersion';
       mockS3Client.send.rejects(noSuchVersionError);
 
-      const result = await instance.findByVersion('non-existent-version');
+      const result = await instance.findById('non-existent-version');
 
       expect(result).to.be.null;
     });
@@ -226,15 +204,15 @@ describe('ConfigurationCollection', () => {
       instance.s3Client = undefined;
       instance.s3Bucket = undefined;
 
-      await expect(instance.findByVersion('some-version'))
+      await expect(instance.findById('some-version'))
         .to.be.rejectedWith('S3 configuration is required for Configuration storage');
     });
 
     it('throws error when S3 get fails', async () => {
       mockS3Client.send.rejects(new Error('S3 error'));
 
-      await expect(instance.findByVersion('some-version'))
-        .to.be.rejectedWith('Failed to retrieve configuration version');
+      await expect(instance.findById('some-version'))
+        .to.be.rejectedWith('Failed to retrieve configuration with ID');
     });
 
     it('rethrows DataAccessError without wrapping', async () => {
@@ -242,21 +220,38 @@ describe('ConfigurationCollection', () => {
       const originalError = new DataAccessError('Original error', instance);
       mockS3Client.send.rejects(originalError);
 
-      await expect(instance.findByVersion('some-version'))
+      await expect(instance.findById('some-version'))
         .to.be.rejectedWith('Original error');
     });
   });
 
-  describe('findLatest', () => {
-    it('returns the latest configuration from S3', async () => {
+  describe('findByVersion', () => {
+    it('is an alias for findById', async () => {
+      const versionId = 'abc123-version-id';
       mockS3Client.send.resolves({
         Body: createMockS3Body(mockRecord),
+      });
+
+      const result = await instance.findByVersion(versionId);
+
+      expect(result).to.be.an('object');
+      expect(result.getId()).to.equal(versionId);
+      expect(mockS3Client.send).to.have.been.calledOnce;
+    });
+  });
+
+  describe('findLatest', () => {
+    it('returns the latest configuration from S3 with VersionId as configurationId', async () => {
+      mockS3Client.send.resolves({
+        Body: createMockS3Body(mockRecord),
+        VersionId: 'latest-version-id',
       });
 
       const result = await instance.findLatest();
 
       expect(result).to.be.an('object');
       expect(result.getVersion()).to.equal(mockRecord.version);
+      expect(result.getId()).to.equal('latest-version-id');
       expect(mockS3Client.send).to.have.been.calledOnce;
     });
 
@@ -292,6 +287,222 @@ describe('ConfigurationCollection', () => {
 
       await expect(instance.findLatest())
         .to.be.rejectedWith('Original error');
+    });
+  });
+
+  describe('findByAll', () => {
+    it('is an alias for findLatest', async () => {
+      mockS3Client.send.resolves({
+        Body: createMockS3Body(mockRecord),
+        VersionId: 'latest-version-id',
+      });
+
+      const result = await instance.findByAll();
+
+      expect(result).to.be.an('object');
+      expect(result.getId()).to.equal('latest-version-id');
+    });
+  });
+
+  describe('all', () => {
+    it('returns all configuration versions from S3', async () => {
+      // First call - ListObjectVersions
+      mockS3Client.send.onFirstCall().resolves({
+        Versions: [
+          { VersionId: 'version-1', IsDeleteMarker: false },
+          { VersionId: 'version-2', IsDeleteMarker: false },
+          { VersionId: 'version-3', IsDeleteMarker: true }, // Should be filtered out
+        ],
+      });
+      // Subsequent calls - GetObject for each version
+      mockS3Client.send.onSecondCall().resolves({
+        Body: createMockS3Body({ ...mockRecord, version: 1 }),
+      });
+      mockS3Client.send.onThirdCall().resolves({
+        Body: createMockS3Body({ ...mockRecord, version: 2 }),
+      });
+
+      const result = await instance.all();
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].getId()).to.equal('version-1');
+      expect(result[1].getId()).to.equal('version-2');
+    });
+
+    it('returns empty array when no versions exist', async () => {
+      mockS3Client.send.resolves({ Versions: [] });
+
+      const result = await instance.all();
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(0);
+    });
+
+    it('returns empty array when Versions is undefined', async () => {
+      mockS3Client.send.resolves({});
+
+      const result = await instance.all();
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(0);
+    });
+
+    it('throws error when S3 is not configured', async () => {
+      instance.s3Client = undefined;
+      instance.s3Bucket = undefined;
+
+      await expect(instance.all())
+        .to.be.rejectedWith('S3 configuration is required for Configuration storage');
+    });
+
+    it('throws error when S3 list fails', async () => {
+      mockS3Client.send.rejects(new Error('S3 error'));
+
+      await expect(instance.all())
+        .to.be.rejectedWith('Failed to list configuration versions from S3');
+    });
+
+    it('rethrows DataAccessError without wrapping', async () => {
+      const { default: DataAccessError } = await import('../../../../src/errors/data-access.error.js');
+      const originalError = new DataAccessError('Original error', instance);
+      mockS3Client.send.rejects(originalError);
+
+      await expect(instance.all())
+        .to.be.rejectedWith('Original error');
+    });
+  });
+
+  describe('existsById', () => {
+    it('returns true when configuration exists', async () => {
+      mockS3Client.send.resolves({
+        Body: createMockS3Body(mockRecord),
+      });
+
+      const result = await instance.existsById('some-version-id');
+
+      expect(result).to.be.true;
+    });
+
+    it('returns false when configuration does not exist', async () => {
+      const noSuchVersionError = new Error('NoSuchVersion');
+      noSuchVersionError.name = 'NoSuchVersion';
+      mockS3Client.send.rejects(noSuchVersionError);
+
+      const result = await instance.existsById('non-existent-version');
+
+      expect(result).to.be.false;
+    });
+  });
+
+  describe('exists', () => {
+    it('returns true when any configuration exists', async () => {
+      mockS3Client.send.resolves({
+        Body: createMockS3Body(mockRecord),
+        VersionId: 'some-version',
+      });
+
+      const result = await instance.exists();
+
+      expect(result).to.be.true;
+    });
+
+    it('returns false when no configuration exists', async () => {
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      mockS3Client.send.rejects(noSuchKeyError);
+
+      const result = await instance.exists();
+
+      expect(result).to.be.false;
+    });
+  });
+
+  describe('removeByIds', () => {
+    it('removes configuration versions by IDs', async () => {
+      mockS3Client.send.resolves({ Deleted: [{ VersionId: 'v1' }, { VersionId: 'v2' }] });
+
+      await instance.removeByIds(['v1', 'v2']);
+
+      expect(mockS3Client.send).to.have.been.calledOnce;
+    });
+
+    it('logs warning when some deletions fail', async () => {
+      mockS3Client.send.resolves({
+        Deleted: [{ VersionId: 'v1' }],
+        Errors: [{ VersionId: 'v2', Code: 'AccessDenied' }],
+      });
+
+      await instance.removeByIds(['v1', 'v2']);
+
+      expect(mockS3Client.send).to.have.been.calledOnce;
+    });
+
+    it('throws error when ids is not an array', async () => {
+      await expect(instance.removeByIds('not-an-array'))
+        .to.be.rejectedWith('ids must be a non-empty array');
+    });
+
+    it('throws error when ids is empty', async () => {
+      await expect(instance.removeByIds([]))
+        .to.be.rejectedWith('ids must be a non-empty array');
+    });
+
+    it('throws error when S3 is not configured', async () => {
+      instance.s3Client = undefined;
+      instance.s3Bucket = undefined;
+
+      await expect(instance.removeByIds(['v1']))
+        .to.be.rejectedWith('S3 configuration is required for Configuration storage');
+    });
+
+    it('throws error when S3 delete fails', async () => {
+      mockS3Client.send.rejects(new Error('S3 error'));
+
+      await expect(instance.removeByIds(['v1']))
+        .to.be.rejectedWith('Failed to delete configuration versions from S3');
+    });
+
+    it('rethrows DataAccessError without wrapping', async () => {
+      const { default: DataAccessError } = await import('../../../../src/errors/data-access.error.js');
+      const originalError = new DataAccessError('Original error', instance);
+      mockS3Client.send.rejects(originalError);
+
+      await expect(instance.removeByIds(['v1']))
+        .to.be.rejectedWith('Original error');
+    });
+  });
+
+  describe('unsupported methods', () => {
+    it('createMany throws error', async () => {
+      await expect(instance.createMany([{}]))
+        .to.be.rejectedWith('createMany() is not supported for Configuration');
+    });
+
+    it('_saveMany throws error', async () => {
+      // eslint-disable-next-line no-underscore-dangle
+      await expect(instance._saveMany([{}]))
+        .to.be.rejectedWith('_saveMany() is not supported for Configuration');
+    });
+
+    it('batchGetByKeys throws error', async () => {
+      await expect(instance.batchGetByKeys([{}]))
+        .to.be.rejectedWith('batchGetByKeys() is not supported for Configuration');
+    });
+
+    it('allByIndexKeys throws error', async () => {
+      await expect(instance.allByIndexKeys({}))
+        .to.be.rejectedWith('allByIndexKeys() is not supported for Configuration');
+    });
+
+    it('findByIndexKeys throws error', async () => {
+      await expect(instance.findByIndexKeys({}))
+        .to.be.rejectedWith('findByIndexKeys() is not supported for Configuration');
+    });
+
+    it('removeByIndexKeys throws error', async () => {
+      await expect(instance.removeByIndexKeys([{}]))
+        .to.be.rejectedWith('removeByIndexKeys() is not supported for Configuration');
     });
   });
 });

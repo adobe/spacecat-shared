@@ -20,7 +20,7 @@
 export function groupSuggestionsByUrlPath(suggestions, baseURL, log) {
   return suggestions.reduce((acc, suggestion) => {
     const data = suggestion.getData();
-    const url = data?.url;
+    const url = data?.url || data?.pageUrl;
 
     if (!url) {
       log.warn(`Suggestion ${suggestion.getId()} does not have a URL, skipping`);

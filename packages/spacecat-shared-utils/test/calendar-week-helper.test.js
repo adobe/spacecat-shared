@@ -445,10 +445,10 @@ describe('Utils - temporal helpers', () => {
       expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
     });
 
-    it('only month without year falls back to last full week', () => {
+    it('only month without year falls back to last full month', () => {
       clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
       const c = getTemporalCondition({ month: 8 });
-      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+      expect(c).to.equal('(year=2025 AND month=6)');
     });
 
     describe('numSeries > 1 tests', () => {

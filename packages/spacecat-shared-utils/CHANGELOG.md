@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.82.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.0...@adobe/spacecat-shared-utils-v1.82.1) (2025-12-05)
+
+
+### Bug Fixes
+
+* 0 week valid month on  numSeries ([#1220](https://github.com/adobe/spacecat-shared/issues/1220)) ([7670da9](https://github.com/adobe/spacecat-shared/commit/7670da9691b2623aa149b1b07c36c97585112ca7))
+
 # [@adobe/spacecat-shared-utils-v1.82.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.81.1...@adobe/spacecat-shared-utils-v1.82.0) (2025-12-03)
 
 

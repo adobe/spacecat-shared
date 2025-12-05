@@ -148,8 +148,8 @@ class TierClient {
       if (existing.entitlement) {
         const currentTier = existing.entitlement.getTier();
 
-        // If tier doesn't match, update it
-        if (currentTier !== tier) {
+        // If currentTier doesn't match with given tier and is not PAID, update it
+        if (currentTier !== tier && currentTier !== EntitlementModel.TIERS.PAID) {
           existing.entitlement.setTier(tier);
           await existing.entitlement.save();
         }

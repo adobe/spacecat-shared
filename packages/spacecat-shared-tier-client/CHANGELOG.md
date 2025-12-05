@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.9...@adobe/spacecat-shared-tier-client-v1.3.10) (2025-12-05)
+
+
+### Bug Fixes
+
+* no override paid tier ([#1221](https://github.com/adobe/spacecat-shared/issues/1221)) ([a528e1e](https://github.com/adobe/spacecat-shared/commit/a528e1e345cce2c542b32dc43c221b49e3f86464))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.8...@adobe/spacecat-shared-tier-client-v1.3.9) (2025-11-30)
 
 

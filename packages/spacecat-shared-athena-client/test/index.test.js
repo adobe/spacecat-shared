@@ -1018,6 +1018,7 @@ describe('DTO Tests', () => {
     it('should convert traffic data to JSON format', () => {
       const inputData = {
         week: 12,
+        month: 6,
         trf_type: 'organic',
         trf_channel: 'search',
         trf_platform: 'google',
@@ -1039,6 +1040,7 @@ describe('DTO Tests', () => {
 
       expect(result).to.deep.equal({
         week: 12,
+        month: 6,
         type: 'organic',
         channel: 'search',
         platform: 'google',

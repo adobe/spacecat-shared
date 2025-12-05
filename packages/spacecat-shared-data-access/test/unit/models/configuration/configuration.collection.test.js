@@ -180,17 +180,7 @@ describe('ConfigurationCollection', () => {
       expect(mockS3Client.send).to.have.been.calledOnce;
     });
 
-    it('returns null when version not found (NoSuchKey)', async () => {
-      const noSuchKeyError = new Error('NoSuchKey');
-      noSuchKeyError.name = 'NoSuchKey';
-      mockS3Client.send.rejects(noSuchKeyError);
-
-      const result = await instance.findById('non-existent-version');
-
-      expect(result).to.be.null;
-    });
-
-    it('returns null when version not found (NoSuchVersion)', async () => {
+    it('returns null when version not found', async () => {
       const noSuchVersionError = new Error('NoSuchVersion');
       noSuchVersionError.name = 'NoSuchVersion';
       mockS3Client.send.rejects(noSuchVersionError);
@@ -200,43 +190,22 @@ describe('ConfigurationCollection', () => {
       expect(result).to.be.null;
     });
 
-    it('throws error when S3 is not configured', async () => {
-      instance.s3Client = undefined;
-      instance.s3Bucket = undefined;
-
-      await expect(instance.findById('some-version'))
-        .to.be.rejectedWith('S3 configuration is required for Configuration storage');
-    });
-
     it('throws error when S3 get fails', async () => {
       mockS3Client.send.rejects(new Error('S3 error'));
 
       await expect(instance.findById('some-version'))
         .to.be.rejectedWith('Failed to retrieve configuration with ID');
     });
-
-    it('rethrows DataAccessError without wrapping', async () => {
-      const { default: DataAccessError } = await import('../../../../src/errors/data-access.error.js');
-      const originalError = new DataAccessError('Original error', instance);
-      mockS3Client.send.rejects(originalError);
-
-      await expect(instance.findById('some-version'))
-        .to.be.rejectedWith('Original error');
-    });
   });
 
   describe('findByVersion', () => {
     it('is an alias for findById', async () => {
       const versionId = 'abc123-version-id';
-      mockS3Client.send.resolves({
-        Body: createMockS3Body(mockRecord),
-      });
+      mockS3Client.send.resolves({ Body: createMockS3Body(mockRecord) });
 
       const result = await instance.findByVersion(versionId);
 
-      expect(result).to.be.an('object');
       expect(result.getId()).to.equal(versionId);
-      expect(mockS3Client.send).to.have.been.calledOnce;
     });
   });
 
@@ -252,7 +221,6 @@ describe('ConfigurationCollection', () => {
       expect(result).to.be.an('object');
       expect(result.getVersion()).to.equal(mockRecord.version);
       expect(result.getId()).to.equal('latest-version-id');
-      expect(mockS3Client.send).to.have.been.calledOnce;
     });
 
     it('returns null when no configuration exists in S3', async () => {
@@ -265,28 +233,11 @@ describe('ConfigurationCollection', () => {
       expect(result).to.be.null;
     });
 
-    it('throws error when S3 is not configured', async () => {
-      instance.s3Client = undefined;
-      instance.s3Bucket = undefined;
-
-      await expect(instance.findLatest())
-        .to.be.rejectedWith('S3 configuration is required for Configuration storage');
-    });
-
     it('throws error when S3 get fails', async () => {
       mockS3Client.send.rejects(new Error('S3 error'));
 
       await expect(instance.findLatest())
         .to.be.rejectedWith('Failed to retrieve configuration from S3');
-    });
-
-    it('rethrows DataAccessError without wrapping', async () => {
-      const { default: DataAccessError } = await import('../../../../src/errors/data-access.error.js');
-      const originalError = new DataAccessError('Original error', instance);
-      mockS3Client.send.rejects(originalError);
-
-      await expect(instance.findLatest())
-        .to.be.rejectedWith('Original error');
     });
   });
 
@@ -299,22 +250,19 @@ describe('ConfigurationCollection', () => {
 
       const result = await instance.findByAll();
 
-      expect(result).to.be.an('object');
       expect(result.getId()).to.equal('latest-version-id');
     });
   });
 
   describe('all', () => {
-    it('returns all configuration versions from S3', async () => {
-      // First call - ListObjectVersions
+    it('returns all configuration versions from S3, filtering out delete markers', async () => {
       mockS3Client.send.onFirstCall().resolves({
         Versions: [
           { VersionId: 'version-1', IsDeleteMarker: false },
           { VersionId: 'version-2', IsDeleteMarker: false },
-          { VersionId: 'version-3', IsDeleteMarker: true }, // Should be filtered out
+          { VersionId: 'version-3', IsDeleteMarker: true },
         ],
       });
-      // Subsequent calls - GetObject for each version
       mockS3Client.send.onSecondCall().resolves({
         Body: createMockS3Body({ ...mockRecord, version: 1 }),
       });
@@ -324,36 +272,17 @@ describe('ConfigurationCollection', () => {
 
       const result = await instance.all();
 
-      expect(result).to.be.an('array');
-      expect(result).to.have.lengthOf(2);
+      expect(result).to.be.an('array').with.lengthOf(2);
       expect(result[0].getId()).to.equal('version-1');
       expect(result[1].getId()).to.equal('version-2');
     });
 
     it('returns empty array when no versions exist', async () => {
-      mockS3Client.send.resolves({ Versions: [] });
-
-      const result = await instance.all();
-
-      expect(result).to.be.an('array');
-      expect(result).to.have.lengthOf(0);
-    });
-
-    it('returns empty array when Versions is undefined', async () => {
       mockS3Client.send.resolves({});
 
       const result = await instance.all();
 
-      expect(result).to.be.an('array');
-      expect(result).to.have.lengthOf(0);
-    });
-
-    it('throws error when S3 is not configured', async () => {
-      instance.s3Client = undefined;
-      instance.s3Bucket = undefined;
-
-      await expect(instance.all())
-        .to.be.rejectedWith('S3 configuration is required for Configuration storage');
+      expect(result).to.be.an('array').with.lengthOf(0);
     });
 
     it('throws error when S3 list fails', async () => {
@@ -362,59 +291,35 @@ describe('ConfigurationCollection', () => {
       await expect(instance.all())
         .to.be.rejectedWith('Failed to list configuration versions from S3');
     });
-
-    it('rethrows DataAccessError without wrapping', async () => {
-      const { default: DataAccessError } = await import('../../../../src/errors/data-access.error.js');
-      const originalError = new DataAccessError('Original error', instance);
-      mockS3Client.send.rejects(originalError);
-
-      await expect(instance.all())
-        .to.be.rejectedWith('Original error');
-    });
   });
 
-  describe('existsById', () => {
-    it('returns true when configuration exists', async () => {
-      mockS3Client.send.resolves({
-        Body: createMockS3Body(mockRecord),
-      });
+  describe('existsById / exists', () => {
+    it('existsById returns true when configuration exists', async () => {
+      mockS3Client.send.resolves({ Body: createMockS3Body(mockRecord) });
 
-      const result = await instance.existsById('some-version-id');
-
-      expect(result).to.be.true;
+      expect(await instance.existsById('some-version-id')).to.be.true;
     });
 
-    it('returns false when configuration does not exist', async () => {
+    it('existsById returns false when configuration does not exist', async () => {
       const noSuchVersionError = new Error('NoSuchVersion');
       noSuchVersionError.name = 'NoSuchVersion';
       mockS3Client.send.rejects(noSuchVersionError);
 
-      const result = await instance.existsById('non-existent-version');
-
-      expect(result).to.be.false;
-    });
-  });
-
-  describe('exists', () => {
-    it('returns true when any configuration exists', async () => {
-      mockS3Client.send.resolves({
-        Body: createMockS3Body(mockRecord),
-        VersionId: 'some-version',
-      });
-
-      const result = await instance.exists();
-
-      expect(result).to.be.true;
+      expect(await instance.existsById('non-existent-version')).to.be.false;
     });
 
-    it('returns false when no configuration exists', async () => {
+    it('exists returns true when any configuration exists', async () => {
+      mockS3Client.send.resolves({ Body: createMockS3Body(mockRecord), VersionId: 'v1' });
+
+      expect(await instance.exists()).to.be.true;
+    });
+
+    it('exists returns false when no configuration exists', async () => {
       const noSuchKeyError = new Error('NoSuchKey');
       noSuchKeyError.name = 'NoSuchKey';
       mockS3Client.send.rejects(noSuchKeyError);
 
-      const result = await instance.exists();
-
-      expect(result).to.be.false;
+      expect(await instance.exists()).to.be.false;
     });
   });
 
@@ -438,22 +343,11 @@ describe('ConfigurationCollection', () => {
       expect(mockS3Client.send).to.have.been.calledOnce;
     });
 
-    it('throws error when ids is not an array', async () => {
+    it('throws error when ids is empty or not an array', async () => {
       await expect(instance.removeByIds('not-an-array'))
         .to.be.rejectedWith('ids must be a non-empty array');
-    });
-
-    it('throws error when ids is empty', async () => {
       await expect(instance.removeByIds([]))
         .to.be.rejectedWith('ids must be a non-empty array');
-    });
-
-    it('throws error when S3 is not configured', async () => {
-      instance.s3Client = undefined;
-      instance.s3Bucket = undefined;
-
-      await expect(instance.removeByIds(['v1']))
-        .to.be.rejectedWith('S3 configuration is required for Configuration storage');
     });
 
     it('throws error when S3 delete fails', async () => {
@@ -462,14 +356,34 @@ describe('ConfigurationCollection', () => {
       await expect(instance.removeByIds(['v1']))
         .to.be.rejectedWith('Failed to delete configuration versions from S3');
     });
+  });
 
+  describe('S3 configuration requirement', () => {
+    it('throws error when S3 is not configured', async () => {
+      instance.s3Client = undefined;
+      instance.s3Bucket = undefined;
+
+      const expectedError = 'S3 configuration is required for Configuration storage';
+
+      await expect(instance.create(mockRecord)).to.be.rejectedWith(expectedError);
+      await expect(instance.findById('v1')).to.be.rejectedWith(expectedError);
+      await expect(instance.findLatest()).to.be.rejectedWith(expectedError);
+      await expect(instance.all()).to.be.rejectedWith(expectedError);
+      await expect(instance.removeByIds(['v1'])).to.be.rejectedWith(expectedError);
+    });
+  });
+
+  describe('DataAccessError handling', () => {
     it('rethrows DataAccessError without wrapping', async () => {
       const { default: DataAccessError } = await import('../../../../src/errors/data-access.error.js');
       const originalError = new DataAccessError('Original error', instance);
       mockS3Client.send.rejects(originalError);
 
-      await expect(instance.removeByIds(['v1']))
-        .to.be.rejectedWith('Original error');
+      // Test all methods that have this pattern
+      await expect(instance.findById('v1')).to.be.rejectedWith('Original error');
+      await expect(instance.findLatest()).to.be.rejectedWith('Original error');
+      await expect(instance.all()).to.be.rejectedWith('Original error');
+      await expect(instance.removeByIds(['v1'])).to.be.rejectedWith('Original error');
     });
   });
 

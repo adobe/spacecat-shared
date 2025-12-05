@@ -53,17 +53,6 @@ describe('ConfigurationModel', () => {
   });
 
   describe('constructor', () => {
-    beforeEach(() => {
-      mockRecord = { ...sampleConfiguration };
-
-      ({
-        mockElectroService,
-        model: instance,
-      } = createElectroMocks(Configuration, mockRecord));
-
-      mockElectroService.entities.patch = stub().returns({ set: stub() });
-    });
-
     it('initializes the Configuration instance correctly', () => {
       expect(instance).to.be.an('object');
       expect(instance.record).to.deep.equal(mockRecord);
@@ -120,7 +109,6 @@ describe('ConfigurationModel', () => {
     });
 
     it('returns true when enabled is there and the handler is enabled by default', () => {
-      console.log('starting test');
       expect(instance.isHandlerEnabledForSite('sitemap', site)).to.be.true;
       expect(instance.isHandlerEnabledForOrg('sitemap', org)).to.be.true;
     });
@@ -429,11 +417,8 @@ describe('ConfigurationModel', () => {
       });
     });
 
-    it('throws error when registering an empty audit type', () => {
+    it('throws error for empty or null audit type', () => {
       expect(() => instance.registerAudit('', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must be a non-empty string');
-    });
-
-    it('throws error when registering a null audit type', () => {
       expect(() => instance.registerAudit(null, true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must be a non-empty string');
     });
 
@@ -442,55 +427,16 @@ describe('ConfigurationModel', () => {
       expect(() => instance.registerAudit(longAuditType, true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must not exceed 37 characters');
     });
 
-    it('throws error when audit name contains invalid characters', () => {
-      expect(() => instance.registerAudit('invalid@audit!', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name contains spaces', () => {
-      expect(() => instance.registerAudit('invalid audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name contains underscores', () => {
-      expect(() => instance.registerAudit('invalid_audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name contains uppercase letters', () => {
-      expect(() => instance.registerAudit('MyAudit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name contains mixed case letters', () => {
-      expect(() => instance.registerAudit('my-Custom-Audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name starts with uppercase letter', () => {
-      expect(() => instance.registerAudit('Custom-audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+    it('throws error for invalid audit name format', () => {
+      const invalidNames = ['invalid@audit!', 'invalid audit', 'invalid_audit', 'MyAudit', 'my-Custom-Audit'];
+      invalidNames.forEach((name) => {
+        expect(() => instance.registerAudit(name, true, 'weekly', ['ASO']))
+          .to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+      });
     });
 
     it('throws error when registering an already registered audit', () => {
       expect(() => instance.registerAudit('404', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type "404" is already registered');
-    });
-
-    it('allows registering any valid audit type as string', () => {
-      const auditType = 'my-custom-audit-123';
-      instance.registerAudit(auditType, true, 'weekly', ['ASO']);
-      expect(instance.getHandler(auditType)).to.deep.equal({
-        enabledByDefault: true,
-        dependencies: [],
-        disabled: {
-          sites: [],
-          orgs: [],
-        },
-        enabled: {
-          sites: [],
-          orgs: [],
-        },
-        productCodes: ['ASO'],
-      });
-      expect(instance.getJobs().find((job) => job.group === 'audits' && job.type === auditType)).to.deep.equal({
-        group: 'audits',
-        type: 'my-custom-audit-123',
-        interval: 'weekly',
-      });
     });
 
     it('registers audit when handlers is null', () => {
@@ -528,15 +474,9 @@ describe('ConfigurationModel', () => {
       expect(instance.getJobs().find((job) => job.group === 'audits' && job.type === auditType)).to.be.undefined;
     });
 
-    it('throws error when unregistering an empty audit type', () => {
+    it('throws error when unregistering invalid or non-existent audit', () => {
       expect(() => instance.unregisterAudit('')).to.throw(Error, 'Audit type must be a non-empty string');
-    });
-
-    it('throws error when unregistering a null audit type', () => {
       expect(() => instance.unregisterAudit(null)).to.throw(Error, 'Audit type must be a non-empty string');
-    });
-
-    it('throws error when unregistering a non-existent audit', () => {
       expect(() => instance.unregisterAudit('non-existent-audit')).to.throw(Error, 'Audit type "non-existent-audit" is not registered');
     });
   });

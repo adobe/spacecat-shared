@@ -35,9 +35,9 @@ Primary Key (Composite):
 - This provides natural uniqueness for siteId + url combinations
 - Similar pattern to LatestAudit (siteId + auditType)
 
-GSI: bySiteIdAndByCustomer
+GSI: spacecat-data-gsi2pk-gsi2sk (byCustomer)
 - Partition Key: siteId
-- Sort Key: byCustomer
+- Sort Key: byCustomer, url
 - Enables efficient filtering by customer-added vs system-added URLs
 */
 
@@ -56,9 +56,8 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     default: true,
   })
   .addIndex(
-    'bySiteIdAndByCustomer',
     { composite: ['siteId'] },
-    { composite: ['byCustomer'] },
+    { composite: ['byCustomer', 'url'] },
   )
   .addAttribute('audits', {
     type: 'set',

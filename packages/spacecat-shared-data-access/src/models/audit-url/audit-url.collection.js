@@ -189,7 +189,7 @@ class AuditUrlCollection extends BaseCollection {
 
   /**
    * Gets all audit URLs for a site by byCustomer flag with sorting support.
-   * Uses GSI bySiteIdAndByCustomer for efficient querying.
+   * Uses GSI (spacecat-data-gsi2pk-gsi2sk) for efficient querying.
    * @param {string} siteId - The site ID.
    * @param {boolean} byCustomer - True for customer-added, false for system-added.
    * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
@@ -208,7 +208,7 @@ class AuditUrlCollection extends BaseCollection {
       {
         ...queryOptions,
         returnCursor: true,
-        index: 'bySiteIdAndByCustomer',
+        index: 'spacecat-data-gsi2pk-gsi2sk',
       },
     );
 
@@ -254,7 +254,7 @@ class AuditUrlCollection extends BaseCollection {
   /**
    * Removes audit URLs by byCustomer flag for a specific site.
    * For example, remove all customer-added or all system-added URLs.
-   * Uses GSI bySiteIdAndByCustomer for efficient querying.
+   * Uses GSI (spacecat-data-gsi2pk-gsi2sk) for efficient querying.
    *
    * @param {string} siteId - The site ID.
    * @param {boolean} byCustomer - True for customer-added, false for system-added.
@@ -268,7 +268,7 @@ class AuditUrlCollection extends BaseCollection {
     // Use GSI for efficient querying by siteId + byCustomer
     const urlsToRemove = await this.allByIndexKeys(
       { siteId, byCustomer },
-      { index: 'bySiteIdAndByCustomer' },
+      { index: 'spacecat-data-gsi2pk-gsi2sk' },
     );
 
     if (urlsToRemove.length > 0) {

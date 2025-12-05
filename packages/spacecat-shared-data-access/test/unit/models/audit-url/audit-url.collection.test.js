@@ -211,7 +211,7 @@ describe('AuditUrlCollection', () => {
       expect(instance.allByIndexKeys).to.have.been.calledOnce;
       const callArgs = instance.allByIndexKeys.getCall(0).args;
       expect(callArgs[0]).to.deep.equal({ siteId, byCustomer: true });
-      expect(callArgs[1]).to.deep.equal({ index: 'bySiteIdAndByCustomer' });
+      expect(callArgs[1]).to.deep.equal({ index: 'spacecat-data-gsi2pk-gsi2sk' });
       expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([
         { siteId, url: 'https://example.com/customer-page' },
       ]);
@@ -231,7 +231,7 @@ describe('AuditUrlCollection', () => {
       expect(instance.allByIndexKeys).to.have.been.calledOnce;
       const callArgs = instance.allByIndexKeys.getCall(0).args;
       expect(callArgs[0]).to.deep.equal({ siteId, byCustomer: false });
-      expect(callArgs[1]).to.deep.equal({ index: 'bySiteIdAndByCustomer' });
+      expect(callArgs[1]).to.deep.equal({ index: 'spacecat-data-gsi2pk-gsi2sk' });
       expect(mockElectroService.entities.auditUrl.delete).to.have.been.calledOnceWith([
         { siteId, url: 'https://example.com/system-page' },
       ]);
@@ -493,7 +493,7 @@ describe('AuditUrlCollection', () => {
       const callArgs = instance.allByIndexKeys.getCall(0).args;
       expect(callArgs[0]).to.deep.equal({ siteId: 'site-123', byCustomer: true });
       expect(callArgs[1]).to.include({
-        limit: 10, cursor: 'abc', returnCursor: true, index: 'bySiteIdAndByCustomer',
+        limit: 10, cursor: 'abc', returnCursor: true, index: 'spacecat-data-gsi2pk-gsi2sk',
       });
     });
 

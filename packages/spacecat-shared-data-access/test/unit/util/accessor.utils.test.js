@@ -141,6 +141,68 @@ describe('Accessor Utils', () => { /* eslint-disable no-underscore-dangle */
       expect(mockCollection.findByIndexKeys).to.have.been.calledOnceWith({ test: 'test' });
     });
 
+    it('calling accessor with boolean value true works correctly', async () => {
+      mockCollection.schema.getAttribute = stub().returns({ type: 'boolean' });
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'testBoolean',
+        requiredKeys: ['isEnabled'],
+      };
+
+      createAccessor(config);
+
+      await expect(mockContext.testBoolean(true)).to.be.eventually.deep.equal({});
+      expect(mockCollection.schema.getAttribute).to.have.been.calledOnceWith('isEnabled');
+      expect(mockCollection.findByIndexKeys).to.have.been.calledOnceWith({ isEnabled: true });
+    });
+
+    it('calling accessor with boolean value false works correctly', async () => {
+      mockCollection.schema.getAttribute = stub().returns({ type: 'boolean' });
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'testBooleanFalse',
+        requiredKeys: ['isEnabled'],
+      };
+
+      createAccessor(config);
+
+      await expect(mockContext.testBooleanFalse(false)).to.be.eventually.deep.equal({});
+      expect(mockCollection.schema.getAttribute).to.have.been.calledOnceWith('isEnabled');
+      expect(mockCollection.findByIndexKeys).to.have.been.calledOnceWith({ isEnabled: false });
+    });
+
+    it('calling accessor with boolean type throws error for non-boolean value', async () => {
+      mockCollection.schema.getAttribute = stub().returns({ type: 'boolean' });
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'testBooleanInvalid',
+        requiredKeys: ['isEnabled'],
+      };
+
+      createAccessor(config);
+
+      await expect(mockContext.testBooleanInvalid('not-a-boolean')).to.be.rejectedWith('isEnabled is required');
+    });
+
+    it('calling accessor with number value works correctly', async () => {
+      mockCollection.schema.getAttribute = stub().returns({ type: 'number' });
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'testNumber',
+        requiredKeys: ['count'],
+      };
+
+      createAccessor(config);
+
+      await expect(mockContext.testNumber(42)).to.be.eventually.deep.equal({});
+      expect(mockCollection.schema.getAttribute).to.have.been.calledOnceWith('count');
+      expect(mockCollection.findByIndexKeys).to.have.been.calledOnceWith({ count: 42 });
+    });
+
     it('calling accessor calls allByIndexKeys', async () => {
       const config = {
         collection: mockCollection,

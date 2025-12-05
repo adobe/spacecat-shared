@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.8.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.3...@adobe/spacecat-shared-athena-client-v1.8.4) (2025-12-05)
+
+
+### Bug Fixes
+
+* consent banner queries temporal series ([#1219](https://github.com/adobe/spacecat-shared/issues/1219)) ([c5c48ef](https://github.com/adobe/spacecat-shared/commit/c5c48ef7d5d4c1caedbf2344a7baf812364ae299))
+
 # [@adobe/spacecat-shared-athena-client-v1.8.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.2...@adobe/spacecat-shared-athena-client-v1.8.3) (2025-12-04)
 
 

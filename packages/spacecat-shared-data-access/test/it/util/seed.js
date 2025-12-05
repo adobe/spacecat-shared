@@ -54,6 +54,15 @@ const seedV2Fixtures = async () => {
     }
 
     const modelName = idNameToEntityName(key);
+
+    // Skip Configuration - it uses S3 storage and doesn't support createMany().
+    // Configuration IT tests set up their own mock S3 client.
+    if (modelName === 'Configuration') {
+      console.log(`Skipping ${key} - uses S3 storage.`);
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
     const Model = dataAccess[modelName];
 
     if (!Model) {

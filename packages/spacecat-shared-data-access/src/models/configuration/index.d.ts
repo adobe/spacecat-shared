@@ -44,15 +44,55 @@ export interface Configuration extends BaseModel {
   unregisterAudit(type: string): void;
 }
 
-export interface ConfigurationCollection extends BaseCollection<Configuration> {
+export interface ConfigurationCollection extends Omit<BaseCollection<Configuration>,
+  'createMany' | '_saveMany' | 'batchGetByKeys' | 'allByIndexKeys' | 'findByIndexKeys' | 'removeByIndexKeys'
+> {
   /** S3 client for file storage operations. Only available if ENV is configured. */
   s3Client?: S3Client;
   /** S3 bucket name for file storage (spacecat-{env}-importer). Only available if ENV is configured. */
   s3Bucket?: string;
+
   /**
-   * Finds a configuration by S3 VersionId.
-   * @param version - The S3 VersionId (will be cast to string).
+   * Finds a configuration by its ID (S3 VersionId).
+   * @param id - The S3 VersionId.
    */
-  findByVersion(version: number | string): Promise<Configuration | null>;
+  findById(id: string): Promise<Configuration | null>;
+
+  /**
+   * Finds a configuration by S3 VersionId. Alias for findById().
+   * @param version - The S3 VersionId.
+   */
+  findByVersion(version: string): Promise<Configuration | null>;
+
+  /**
+   * Retrieves the latest configuration from S3.
+   */
   findLatest(): Promise<Configuration | null>;
+
+  /**
+   * Finds a single configuration. Alias for findLatest().
+   */
+  findByAll(): Promise<Configuration | null>;
+
+  /**
+   * Retrieves all configuration versions from S3.
+   */
+  all(): Promise<Configuration[]>;
+
+  /**
+   * Checks if a configuration with the given ID (S3 VersionId) exists.
+   * @param id - The S3 VersionId to check.
+   */
+  existsById(id: string): Promise<boolean>;
+
+  /**
+   * Checks if any configuration exists in S3.
+   */
+  exists(): Promise<boolean>;
+
+  /**
+   * Removes configuration versions by their IDs (S3 VersionIds).
+   * @param ids - Array of S3 VersionIds to remove.
+   */
+  removeByIds(ids: string[]): Promise<void>;
 }

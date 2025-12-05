@@ -258,9 +258,9 @@ describe('Optimization Report Metrics', () => {
 
       const result = optimizationMetrics.handler(bundles, opts);
 
-      // Should include all bundles when URLs is empty
-      expect(result.pageViews.total).to.equal(100);
-      expect(result.conversions.total).to.equal(100);
+      // Should return empty results when URLs is empty
+      expect(result.pageViews.total).to.equal(0);
+      expect(result.conversions.total).to.equal(0);
     });
 
     it('should handle null options', () => {

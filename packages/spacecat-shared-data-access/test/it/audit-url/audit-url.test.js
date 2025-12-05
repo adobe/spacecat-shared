@@ -64,12 +64,14 @@ describe('AuditUrl IT', function () {
     const byCustomer = true;
 
     // Use allBySiteIdByCustomerSorted since direct GSI accessor fails for boolean false
-    const auditUrls = await AuditUrl.allBySiteIdByCustomerSorted(site.getId(), byCustomer, {});
+    const result = await AuditUrl.allBySiteIdByCustomerSorted(site.getId(), byCustomer, {});
 
-    expect(auditUrls).to.be.an('array');
-    expect(auditUrls.length).to.equal(2);
+    // Returns { data, cursor } format for pagination
+    expect(result).to.be.an('object');
+    expect(result.data).to.be.an('array');
+    expect(result.data.length).to.equal(2);
 
-    auditUrls.forEach((auditUrl) => {
+    result.data.forEach((auditUrl) => {
       checkAuditUrl(auditUrl);
       expect(auditUrl.getSiteId()).to.equal(site.getId());
       expect(auditUrl.getByCustomer()).to.equal(byCustomer);
@@ -242,18 +244,20 @@ describe('AuditUrl IT', function () {
     it('gets all audit URLs by audit type', async () => {
       const site = sampleData.sites[0];
 
-      const auditUrls = await AuditUrl.allBySiteIdAndAuditType(
+      const result = await AuditUrl.allBySiteIdAndAuditType(
         site.getId(),
         'accessibility',
       );
 
-      expect(auditUrls).to.be.an('array');
+      // Returns { data, cursor } format for pagination
+      expect(result).to.be.an('object');
+      expect(result.data).to.be.an('array');
       // Fixture has 2 URLs with 'accessibility', plus tests add more:
       // - "creates a new audit URL" adds 1
       // - "finds an audit URL by composite key" adds 1
-      expect(auditUrls.length).to.equal(4);
+      expect(result.data.length).to.equal(4);
 
-      auditUrls.forEach((auditUrl) => {
+      result.data.forEach((auditUrl) => {
         expect(auditUrl.isAuditEnabled('accessibility')).to.be.true;
       });
     });

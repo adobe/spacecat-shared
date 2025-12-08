@@ -16,6 +16,7 @@ import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
 import ApiKeyCollection from '../api-key/api-key.collection.js';
 import AsyncJobCollection from '../async-job/async-job.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
+import AuditUrlCollection from '../audit-url/audit-url.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
 import EntitlementCollection from '../entitlement/entitlement.collection.js';
@@ -45,6 +46,7 @@ import PageCitabilityCollection from '../page-citability/page-citability.collect
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
+import AuditUrlSchema from '../audit-url/audit-url.schema.js';
 import ConfigurationSchema from '../configuration/configuration.schema.js';
 import EntitlementSchema from '../entitlement/entitlement.schema.js';
 import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
@@ -143,6 +145,7 @@ class EntityRegistry {
 EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
+EntityRegistry.registerEntity(AuditUrlSchema, AuditUrlCollection);
 EntityRegistry.registerEntity(ConfigurationSchema, ConfigurationCollection);
 EntityRegistry.registerEntity(EntitlementSchema, EntitlementCollection);
 EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);

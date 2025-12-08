@@ -57,25 +57,4 @@ describe('Data Access Wrapper Tests', () => {
 
     expect(mockContext.dataAccess).to.deep.equal({ existingDataAccess: true });
   });
-
-  it('derives S3 bucket name from ENV variable (lowercase)', async function () {
-    this.timeout(10000);
-    mockContext.env.ENV = 'PROD';
-    mockContext.env.AWS_REGION = 'us-east-1';
-    const wrappedFn = dataAccessWrapper(mockFn);
-
-    await wrappedFn(mockRequest, mockContext);
-
-    // The S3 bucket should be derived as spacecat-{env}-importer with lowercase env
-    expect(mockContext.dataAccess.Configuration.s3Bucket).to.equal('spacecat-prod-importer');
-  });
-
-  it('sets s3Bucket to undefined when ENV is not set', async function () {
-    this.timeout(10000);
-    const wrappedFn = dataAccessWrapper(mockFn);
-
-    await wrappedFn(mockRequest, mockContext);
-
-    expect(mockContext.dataAccess.Configuration.s3Bucket).to.be.undefined;
-  });
 });

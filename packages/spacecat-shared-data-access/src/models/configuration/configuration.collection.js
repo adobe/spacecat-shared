@@ -11,45 +11,35 @@
  */
 
 import {
-  DeleteObjectsCommand,
   GetObjectCommand,
-  ListObjectVersionsCommand,
   PutObjectCommand,
 } from '@aws-sdk/client-s3';
 
 import DataAccessError from '../../errors/data-access.error.js';
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
-import { DATASTORE_TYPE } from '../../util/index.js';
-import BaseCollection from '../base/base.collection.js';
 import Configuration from './configuration.model.js';
-import { checkConfiguration } from './configuration.validator.js';
+import { checkConfiguration } from './configuration.schema.js';
 
-const S3_CONFIG_KEY = 'config/global/global-config.json';
+const S3_CONFIG_KEY = 'config/spacecat/global-config.json';
 
 /**
- * ConfigurationCollection - A collection class responsible for managing Configuration entities.
- * Extends the BaseCollection to provide specific methods for interacting with
- * Configuration records stored in S3.
+ * ConfigurationCollection - A standalone collection class for managing Configuration entities.
+ * Unlike other collections, this does not use ElectroDB or DynamoDB.
+ * Configuration is stored as a versioned JSON object in S3.
  *
  * @class ConfigurationCollection
- * @extends BaseCollection
  */
-class ConfigurationCollection extends BaseCollection {
+class ConfigurationCollection {
   static COLLECTION_NAME = 'ConfigurationCollection';
-
-  static DATASTORE_TYPE = DATASTORE_TYPE.S3;
 
   /**
    * Constructs an instance of ConfigurationCollection.
    * @constructor
-   * @param {Object} electroService - The ElectroDB service used for managing entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection.
-   * @param {Object} schema - The schema for the entity.
+   * @param {{s3Client: S3Client, s3Bucket: string}|null} s3Config - S3 configuration.
    * @param {Object} log - A logger for capturing logging information.
-   * @param {{s3Client: S3Client, s3Bucket: string}|null} [s3Config] - Optional S3 configuration.
    */
-  constructor(electroService, entityRegistry, schema, log, s3Config = null) {
-    super(electroService, entityRegistry, schema, log);
+  constructor(s3Config, log) {
+    this.log = log;
 
     if (s3Config) {
       this.s3Client = s3Config.s3Client;
@@ -66,26 +56,21 @@ class ConfigurationCollection extends BaseCollection {
     if (!this.s3Client || !this.s3Bucket) {
       throw new DataAccessError(
         'S3 configuration is required for Configuration storage. '
-        + 'Ensure ENV environment variable is set.',
+        + 'Ensure S3_CONFIG_BUCKET environment variable is set.',
         this,
       );
     }
   }
 
   /**
-   * Creates an instance of the Configuration model from a record.
+   * Creates an instance of the Configuration model from data and versionId.
    * @private
-   * @param {Object} record - The configuration data.
+   * @param {Object} data - The configuration data.
+   * @param {string} versionId - The S3 VersionId.
    * @returns {Configuration} - The Configuration model instance.
    */
-  #createInstance(record) {
-    return new Configuration(
-      this.electroService,
-      this.entityRegistry,
-      this.schema,
-      record,
-      this.log,
-    );
+  #createInstance(data, versionId) {
+    return new Configuration(data, versionId, this, this.log);
   }
 
   /**
@@ -106,9 +91,9 @@ class ConfigurationCollection extends BaseCollection {
       const now = new Date().toISOString();
       const configData = {
         ...sanitizedData,
-        version: 1,
         createdAt: now,
         updatedAt: now,
+        updatedBy: sanitizedData.updatedBy || 'system',
       };
 
       // Validate the configuration against the schema
@@ -122,13 +107,11 @@ class ConfigurationCollection extends BaseCollection {
       });
 
       const response = await this.s3Client.send(command);
+      const { VersionId: versionId } = response;
 
-      // Use S3 VersionId as the configurationId
-      configData.configurationId = response.VersionId;
+      this.log.info(`Configuration stored in S3 with VersionId ${versionId}`);
 
-      this.log.info(`Configuration stored in S3 with VersionId ${response.VersionId}`);
-
-      return this.#createInstance(configData);
+      return this.#createInstance(configData, versionId);
     } catch (error) {
       if (error instanceof DataAccessError) {
         throw error;
@@ -140,16 +123,16 @@ class ConfigurationCollection extends BaseCollection {
   }
 
   /**
-   * Finds a configuration by its ID (S3 VersionId).
+   * Finds a configuration by S3 VersionId.
    *
-   * @param {string} id - The S3 VersionId.
+   * @param {string} version - The S3 VersionId.
    * @returns {Promise<Configuration|null>} - The Configuration instance or null if not found.
    * @throws {DataAccessError} If S3 is not configured or the operation fails.
    */
-  async findById(id) {
+  async findByVersion(version) {
     this.#requireS3();
 
-    const versionId = String(id);
+    const versionId = String(version);
 
     try {
       const command = new GetObjectCommand({
@@ -162,13 +145,10 @@ class ConfigurationCollection extends BaseCollection {
       const bodyString = await response.Body.transformToString();
       const configData = JSON.parse(bodyString);
 
-      // Set the configurationId to the S3 VersionId
-      configData.configurationId = versionId;
-
-      return this.#createInstance(configData);
+      return this.#createInstance(configData, versionId);
     } catch (error) {
       if (error.name === 'NoSuchKey' || error.name === 'NoSuchVersion') {
-        this.log.info(`Configuration with ID ${versionId} not found in S3`);
+        this.log.info(`Configuration with version ${versionId} not found in S3`);
         return null;
       }
 
@@ -176,22 +156,10 @@ class ConfigurationCollection extends BaseCollection {
         throw error;
       }
 
-      const message = `Failed to retrieve configuration with ID ${versionId} from S3: ${error.message}`;
+      const message = `Failed to retrieve configuration with version ${versionId} from S3: ${error.message}`;
       this.log.error(message, error);
       throw new DataAccessError(message, this, error);
     }
-  }
-
-  /**
-   * Finds a configuration by S3 VersionId.
-   * Alias for findById().
-   *
-   * @param {string} version - The S3 VersionId.
-   * @returns {Promise<Configuration|null>} - The Configuration instance or null if not found.
-   * @throws {DataAccessError} If S3 is not configured or the operation fails.
-   */
-  async findByVersion(version) {
-    return this.findById(version);
   }
 
   /**
@@ -214,11 +182,9 @@ class ConfigurationCollection extends BaseCollection {
       const response = await this.s3Client.send(command);
       const bodyString = await response.Body.transformToString();
       const configData = JSON.parse(bodyString);
+      const { VersionId: versionId } = response;
 
-      // Set the configurationId to the S3 VersionId
-      configData.configurationId = response.VersionId;
-
-      return this.#createInstance(configData);
+      return this.#createInstance(configData, versionId);
     } catch (error) {
       // If the object doesn't exist, return null (first-time setup)
       if (error.name === 'NoSuchKey') {
@@ -234,195 +200,6 @@ class ConfigurationCollection extends BaseCollection {
       this.log.error(message, error);
       throw new DataAccessError(message, this, error);
     }
-  }
-
-  /**
-   * Finds a single configuration from the collection.
-   * Alias for findLatest() since Configuration is a singleton.
-   *
-   * @returns {Promise<Configuration|null>} - The latest Configuration instance or null.
-   * @throws {DataAccessError} If S3 is not configured or the operation fails.
-   */
-  async findByAll() {
-    return this.findLatest();
-  }
-
-  /**
-   * Retrieves all configuration versions from S3.
-   *
-   * @returns {Promise<Configuration[]>} - Array of all Configuration versions.
-   * @throws {DataAccessError} If S3 is not configured or the operation fails.
-   */
-  async all() {
-    this.#requireS3();
-
-    try {
-      const command = new ListObjectVersionsCommand({
-        Bucket: this.s3Bucket,
-        Prefix: S3_CONFIG_KEY,
-      });
-
-      const response = await this.s3Client.send(command);
-
-      if (!response.Versions?.length) {
-        return [];
-      }
-
-      // Fetch each version's content (exclude delete markers)
-      const configurations = await Promise.all(
-        response.Versions
-          .filter((v) => !v.IsDeleteMarker)
-          .map((v) => this.findById(v.VersionId)),
-      );
-
-      return configurations.filter(Boolean);
-    } catch (error) {
-      if (error instanceof DataAccessError) {
-        throw error;
-      }
-
-      const message = `Failed to list configuration versions from S3: ${error.message}`;
-      this.log.error(message, error);
-      throw new DataAccessError(message, this, error);
-    }
-  }
-
-  /**
-   * Checks if a configuration with the given ID (S3 VersionId) exists.
-   *
-   * @param {string} id - The S3 VersionId to check.
-   * @returns {Promise<boolean>} - True if the configuration exists, false otherwise.
-   * @throws {DataAccessError} If S3 is not configured or the operation fails.
-   */
-  async existsById(id) {
-    const config = await this.findById(id);
-    return config !== null;
-  }
-
-  /**
-   * Checks if any configuration exists in S3.
-   *
-   * @returns {Promise<boolean>} - True if a configuration exists, false otherwise.
-   * @throws {DataAccessError} If S3 is not configured or the operation fails.
-   */
-  async exists() {
-    const config = await this.findLatest();
-    return config !== null;
-  }
-
-  /**
-   * Removes configuration versions by their IDs (S3 VersionIds).
-   *
-   * @param {string[]} ids - Array of S3 VersionIds to remove.
-   * @returns {Promise<void>}
-   * @throws {DataAccessError} If S3 is not configured or the operation fails.
-   */
-  async removeByIds(ids) {
-    this.#requireS3();
-
-    if (!Array.isArray(ids) || ids.length === 0) {
-      const message = 'Failed to remove configurations: ids must be a non-empty array';
-      this.log.error(message);
-      throw new DataAccessError(message, this);
-    }
-
-    try {
-      const command = new DeleteObjectsCommand({
-        Bucket: this.s3Bucket,
-        Delete: {
-          Objects: ids.map((id) => ({
-            Key: S3_CONFIG_KEY,
-            VersionId: String(id),
-          })),
-        },
-      });
-
-      const response = await this.s3Client.send(command);
-
-      if (response.Errors?.length) {
-        this.log.warn(`Some configuration versions could not be deleted: ${JSON.stringify(response.Errors)}`);
-      }
-
-      this.log.info(`Deleted ${ids.length - (response.Errors?.length || 0)} configuration version(s)`);
-    } catch (error) {
-      if (error instanceof DataAccessError) {
-        throw error;
-      }
-
-      const message = `Failed to delete configuration versions from S3: ${error.message}`;
-      this.log.error(message, error);
-      throw new DataAccessError(message, this, error);
-    }
-  }
-
-  // ============================================================================
-  // Unsupported methods - throw clear errors
-  // ============================================================================
-
-  /**
-   * Not supported for Configuration. Use create() instead.
-   * @throws {DataAccessError} Always throws.
-   */
-  async createMany() {
-    throw new DataAccessError(
-      'createMany() is not supported for Configuration. Use create() instead.',
-      this,
-    );
-  }
-
-  /**
-   * Not supported for Configuration.
-   * @throws {DataAccessError} Always throws.
-   */
-  async _saveMany() {
-    throw new DataAccessError(
-      '_saveMany() is not supported for Configuration.',
-      this,
-    );
-  }
-
-  /**
-   * Not supported for Configuration. Use findById() instead.
-   * @throws {DataAccessError} Always throws.
-   */
-  async batchGetByKeys() {
-    throw new DataAccessError(
-      'batchGetByKeys() is not supported for Configuration. Use findById() instead.',
-      this,
-    );
-  }
-
-  /**
-   * Not supported for Configuration. Use findById() or findLatest() instead.
-   * @throws {DataAccessError} Always throws.
-   */
-  async allByIndexKeys() {
-    throw new DataAccessError(
-      'allByIndexKeys() is not supported for Configuration. Use all() instead.',
-      this,
-    );
-  }
-
-  /**
-   * Not supported for Configuration. Use findById() or findLatest() instead.
-   * @throws {DataAccessError} Always throws.
-   */
-  async findByIndexKeys() {
-    throw new DataAccessError(
-      'findByIndexKeys() is not supported for Configuration. Use findById() or findLatest() instead.',
-      this,
-    );
-  }
-
-  /**
-   * Not supported for Configuration. Use removeByIds() instead.
-   * @throws {DataAccessError} Always throws.
-   */
-  async removeByIndexKeys() {
-    throw new DataAccessError(
-      'removeByIndexKeys() is not supported for Configuration. Use removeByIds() instead.',
-      this,
-    );
   }
 }
 

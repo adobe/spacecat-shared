@@ -19,13 +19,13 @@ import sinonChai from 'sinon-chai';
 
 import Configuration from '../../../../src/models/configuration/configuration.model.js';
 import configurationFixtures from '../../../fixtures/configurations.fixture.js';
-import { createElectroMocks } from '../../util.js';
 import { sanitizeIdAndAuditFields } from '../../../../src/util/util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 const sampleConfiguration = configurationFixtures[0];
+const sampleVersionId = sampleConfiguration.versionId;
 const site = {
   getId: () => 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
   getOrganizationId: () => '757ceb98-05c8-4e07-bb23-bc722115b2b0',
@@ -37,39 +37,54 @@ const org = {
 
 describe('ConfigurationModel', () => {
   let instance;
-
-  let mockElectroService;
-  let mockRecord;
+  let mockData;
+  let mockCollection;
+  let mockLogger;
 
   beforeEach(() => {
-    mockRecord = { ...sampleConfiguration };
+    mockData = { ...sampleConfiguration };
 
-    ({
-      mockElectroService,
-      model: instance,
-    } = createElectroMocks(Configuration, mockRecord));
+    mockCollection = {
+      create: stub().resolves(),
+    };
 
-    mockElectroService.entities.patch = stub().returns({ set: stub() });
+    mockLogger = {
+      info: stub(),
+      warn: stub(),
+      error: stub(),
+      debug: stub(),
+    };
+
+    instance = new Configuration(mockData, sampleVersionId, mockCollection, mockLogger);
   });
 
   describe('constructor', () => {
     it('initializes the Configuration instance correctly', () => {
       expect(instance).to.be.an('object');
-      expect(instance.record).to.deep.equal(mockRecord);
+      expect(instance.handlers).to.deep.equal(mockData.handlers);
+      expect(instance.jobs).to.deep.equal(mockData.jobs);
+      expect(instance.queues).to.deep.equal(mockData.queues);
+      expect(instance.versionId).to.equal(sampleVersionId);
+      expect(instance.collection).to.equal(mockCollection);
+      expect(instance.log).to.equal(mockLogger);
     });
   });
 
   describe('configurationId', () => {
     it('gets configurationId', () => {
-      expect(instance.getId()).to.equal(sampleConfiguration.configurationId);
+      expect(instance.getId()).to.equal(sampleVersionId);
+    });
+
+    it('gets configurationId via getConfigurationId', () => {
+      expect(instance.getConfigurationId()).to.equal(sampleVersionId);
+    });
+
+    it('gets version via getVersion', () => {
+      expect(instance.getVersion()).to.equal(sampleVersionId);
     });
   });
 
   describe('attributes', () => {
-    it('gets version', () => {
-      expect(instance.getVersion()).to.equal(2);
-    });
-
     it('gets queues', () => {
       expect(instance.getQueues()).to.deep.equal(sampleConfiguration.queues);
     });
@@ -90,10 +105,28 @@ describe('ConfigurationModel', () => {
       expect(instance.getSlackRoles()).to.deep.equal(sampleConfiguration.slackRoles);
     });
 
+    it('sets slackRoles', () => {
+      const newSlackRoles = { admin: ['USER123', 'USER456'] };
+      instance.setSlackRoles(newSlackRoles);
+      expect(instance.getSlackRoles()).to.deep.equal(newSlackRoles);
+    });
+
     it('gets slackRoleMembersByRole', () => {
       expect(instance.getSlackRoleMembersByRole('scrape')).to.deep.equal(sampleConfiguration.slackRoles.scrape);
-      delete instance.record.slackRoles;
+      instance.slackRoles = undefined;
       expect(instance.getSlackRoleMembersByRole('scrape')).to.deep.equal([]);
+    });
+
+    it('gets createdAt and updatedAt', () => {
+      instance.createdAt = '2024-01-01T00:00:00.000Z';
+      instance.updatedAt = '2024-01-02T00:00:00.000Z';
+      expect(instance.getCreatedAt()).to.equal('2024-01-01T00:00:00.000Z');
+      expect(instance.getUpdatedAt()).to.equal('2024-01-02T00:00:00.000Z');
+    });
+
+    it('gets and sets updatedBy', () => {
+      instance.setUpdatedBy('user@example.com');
+      expect(instance.getUpdatedBy()).to.equal('user@example.com');
     });
   });
 
@@ -136,7 +169,7 @@ describe('ConfigurationModel', () => {
 
     it('gets enabled site ids for a handler', () => {
       expect(instance.getEnabledSiteIdsForHandler('lhs-mobile')).to.deep.equal(['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe']);
-      delete instance.record.handlers;
+      instance.handlers = undefined;
       expect(instance.getEnabledSiteIdsForHandler('lhs-mobile')).to.deep.equal([]);
     });
 
@@ -153,22 +186,22 @@ describe('ConfigurationModel', () => {
     });
 
     it('returns empty array for disabled audits when no handlers exist', () => {
-      delete instance.record.handlers;
+      instance.handlers = undefined;
       expect(instance.getDisabledAuditsForSite(site)).to.deep.equal([]);
     });
 
     it('returns empty array for disabled audits when no jobs exist', () => {
-      delete instance.record.jobs;
+      instance.jobs = undefined;
       expect(instance.getDisabledAuditsForSite(site)).to.deep.equal([]);
     });
 
     it('returns empty array for enabled audits when handlers is null', () => {
-      delete instance.record.handlers;
+      instance.handlers = undefined;
       expect(instance.getEnabledAuditsForSite(site)).to.deep.equal([]);
     });
 
     it('returns empty array for enabled audits when jobs is null', () => {
-      delete instance.record.jobs;
+      instance.jobs = undefined;
       expect(instance.getEnabledAuditsForSite(site)).to.deep.equal([]);
     });
   });
@@ -184,7 +217,7 @@ describe('ConfigurationModel', () => {
     });
 
     it('adds a new handler when handlers object is null', () => {
-      delete instance.record.handlers;
+      instance.handlers = undefined;
 
       const handlerData = {
         enabledByDefault: true,

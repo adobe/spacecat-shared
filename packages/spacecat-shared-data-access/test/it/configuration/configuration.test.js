@@ -57,7 +57,6 @@ describe('Configuration IT', async () => {
         productCodes: ['CDN'],
       },
     },
-    version: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -113,20 +112,6 @@ describe('Configuration IT', async () => {
           };
         }
 
-        if (commandName === 'ListObjectVersionsCommand') {
-          const versions = Array.from(s3Storage.keys()).map((versionId) => ({
-            VersionId: versionId,
-            IsDeleteMarker: false,
-          }));
-          return { Versions: versions };
-        }
-
-        if (commandName === 'DeleteObjectsCommand') {
-          const { Objects } = command.input.Delete;
-          Objects.forEach(({ VersionId }) => s3Storage.delete(VersionId));
-          return { Deleted: Objects };
-        }
-
         return {};
       }),
     };
@@ -145,7 +130,6 @@ describe('Configuration IT', async () => {
 
     expect(configuration).to.be.an('object');
     expect(configuration.getId()).to.be.a('string');
-    expect(configuration.getVersion()).to.equal(1);
     expect(s3Storage.size).to.equal(1);
   });
 
@@ -159,17 +143,7 @@ describe('Configuration IT', async () => {
     expect(configuration.getId()).to.equal(created.getId());
   });
 
-  it('finds configuration by ID (S3 VersionId)', async () => {
-    const created = await Configuration.create(sampleConfigData);
-    const versionId = created.getId();
-
-    const configuration = await Configuration.findById(versionId);
-
-    expect(configuration).to.be.an('object');
-    expect(configuration.getId()).to.equal(versionId);
-  });
-
-  it('finds configuration by version (alias for findById)', async () => {
+  it('finds configuration by version (S3 VersionId)', async () => {
     const created = await Configuration.create(sampleConfigData);
     const versionId = created.getId();
 
@@ -179,55 +153,16 @@ describe('Configuration IT', async () => {
     expect(configuration.getId()).to.equal(versionId);
   });
 
-  it('returns null when configuration not found', async () => {
-    const configuration = await Configuration.findById('non-existent-version');
+  it('returns null when configuration version not found', async () => {
+    const configuration = await Configuration.findByVersion('non-existent-version');
 
     expect(configuration).to.be.null;
   });
 
-  it('gets all configurations', async () => {
-    // Create multiple configurations
-    await Configuration.create(sampleConfigData);
-    await Configuration.create({ ...sampleConfigData, handlers: {} });
+  it('returns null when no configuration exists', async () => {
+    const configuration = await Configuration.findLatest();
 
-    const configurations = await Configuration.all();
-
-    expect(configurations).to.be.an('array');
-    expect(configurations).to.have.lengthOf(2);
-  });
-
-  it('checks if configuration exists by ID', async () => {
-    const created = await Configuration.create(sampleConfigData);
-
-    const exists = await Configuration.existsById(created.getId());
-    const notExists = await Configuration.existsById('non-existent');
-
-    expect(exists).to.be.true;
-    expect(notExists).to.be.false;
-  });
-
-  it('checks if any configuration exists', async () => {
-    // Initially no configurations
-    let exists = await Configuration.exists();
-    expect(exists).to.be.false;
-
-    // After creating one
-    await Configuration.create(sampleConfigData);
-    exists = await Configuration.exists();
-    expect(exists).to.be.true;
-  });
-
-  it('removes configurations by IDs', async () => {
-    const config1 = await Configuration.create(sampleConfigData);
-    const config2 = await Configuration.create({ ...sampleConfigData, handlers: {} });
-
-    expect(s3Storage.size).to.equal(2);
-
-    await Configuration.removeByIds([config1.getId()]);
-
-    expect(s3Storage.size).to.equal(1);
-    expect(await Configuration.existsById(config1.getId())).to.be.false;
-    expect(await Configuration.existsById(config2.getId())).to.be.true;
+    expect(configuration).to.be.null;
   });
 
   it('updates a configuration (creates new version)', async () => {
@@ -294,36 +229,5 @@ describe('Configuration IT', async () => {
 
     const updatedConfiguration = await Configuration.findLatest();
     expect(updatedConfiguration.getHandler('structured-data')).to.be.undefined;
-  });
-
-  it('findByAll is an alias for findLatest', async () => {
-    await Configuration.create(sampleConfigData);
-
-    const byAll = await Configuration.findByAll();
-    const latest = await Configuration.findLatest();
-
-    expect(byAll.getId()).to.equal(latest.getId());
-  });
-
-  describe('unsupported methods throw errors', () => {
-    it('createMany throws error', async () => {
-      await expect(Configuration.createMany([{}]))
-        .to.be.rejectedWith('createMany() is not supported for Configuration');
-    });
-
-    it('allByIndexKeys throws error', async () => {
-      await expect(Configuration.allByIndexKeys({}))
-        .to.be.rejectedWith('allByIndexKeys() is not supported for Configuration');
-    });
-
-    it('findByIndexKeys throws error', async () => {
-      await expect(Configuration.findByIndexKeys({}))
-        .to.be.rejectedWith('findByIndexKeys() is not supported for Configuration');
-    });
-
-    it('removeByIndexKeys throws error', async () => {
-      await expect(Configuration.removeByIndexKeys([{}]))
-        .to.be.rejectedWith('removeByIndexKeys() is not supported for Configuration');
-    });
   });
 });

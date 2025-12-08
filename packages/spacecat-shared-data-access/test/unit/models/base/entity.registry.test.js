@@ -97,8 +97,10 @@ describe('EntityRegistry', () => {
     const collections = entityRegistry.getCollections();
 
     expect(collections).to.be.an('object');
-    expect(Object.keys(collections)).to.have.lengthOf(1);
+    // 2 collections: MockCollection + ConfigurationCollection (standalone S3-based)
+    expect(Object.keys(collections)).to.have.lengthOf(2);
     expect(collections.Mock).to.be.an.instanceOf(MockCollection);
+    expect(collections.Configuration).to.exist;
   });
 
   it('gets all entities', () => {

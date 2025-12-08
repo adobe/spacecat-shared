@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.90.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.89.0...@adobe/spacecat-shared-data-access-v2.90.0) (2025-12-08)
+
+
+### Features
+
+* **data-access:** handle configuration via s3 ([#1216](https://github.com/adobe/spacecat-shared/issues/1216)) ([ef03ab7](https://github.com/adobe/spacecat-shared/commit/ef03ab705bae8653162de12405bcbc65c32bb5a8))
+
 # [@adobe/spacecat-shared-data-access-v2.89.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.9...@adobe/spacecat-shared-data-access-v2.89.0) (2025-12-08)
 
 

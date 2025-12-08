@@ -762,6 +762,24 @@ describe('BaseCollection', () => {
       expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc' });
     });
 
+    it('applies where filter (FilterExpression) if provided', async () => {
+      const mockFindResult = { data: [mockRecord] };
+      const mockGo = stub().resolves(mockFindResult);
+      const mockWhere = stub().returns({ go: mockGo });
+      mockElectroService.entities.mockEntityModel.query.all().where = mockWhere;
+
+      const whereClause = (attr, op) => op.contains(attr.audits, 'test-audit');
+      const result = await baseCollectionInstance.all(
+        {},
+        { where: whereClause },
+      );
+
+      expect(result).to.be.an('array').that.has.length(1);
+      expect(result[0].record).to.deep.include(mockRecord);
+      expect(mockWhere).to.have.been.calledOnceWithExactly(whereClause);
+      expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc' });
+    });
+
     it('applies attribute filter if provided', async () => {
       const mockFindResult = { data: [mockRecord] };
       const mockGo = stub().resolves(mockFindResult);

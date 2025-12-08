@@ -257,6 +257,11 @@ class BaseCollection {
         );
       }
 
+      // Apply where clause (FilterExpression) if provided
+      if (typeof options.where === 'function') {
+        query = query.where(options.where);
+      }
+
       // execute the initial query
       let result = await query.go(queryOptions);
       let allData = result.data;

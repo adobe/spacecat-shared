@@ -648,7 +648,8 @@ class TokowakaClient {
     }
 
     // Get the preview URL from the first suggestion
-    const previewUrl = eligibleSuggestions[0].getData()?.url;
+    const previewUrl = eligibleSuggestions[0].getData()?.url
+     || eligibleSuggestions[0].getData()?.pageUrl;
     if (!hasText(previewUrl)) {
       throw this.#createError('Preview URL not found in suggestion data', HTTP_BAD_REQUEST);
     }

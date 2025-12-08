@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidUrl, isBoolean } from '@adobe/spacecat-shared-utils';
+import { hasText, isBoolean } from '@adobe/spacecat-shared-utils';
 import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
 
@@ -88,10 +88,6 @@ export default class ReadabilityMapper extends BaseOpportunityMapper {
     }
 
     const { transformRules } = data;
-
-    if (!isValidUrl(data.url)) {
-      return { eligible: false, reason: `url ${data.url} is not a valid URL` };
-    }
 
     if (!hasText(transformRules.selector)) {
       return { eligible: false, reason: 'transformRules.selector is required' };

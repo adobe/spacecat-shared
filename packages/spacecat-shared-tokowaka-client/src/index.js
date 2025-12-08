@@ -583,7 +583,6 @@ class TokowakaClient {
         continue;
       }
 
-      // For configs with patches (non-prerender opportunities), use mapper to remove them
       if (!existingConfig.patches) {
         this.log.warn(`No patches found in configuration for URL: ${fullUrl}`);
         // eslint-disable-next-line no-continue

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.89.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.9...@adobe/spacecat-shared-data-access-v2.89.0) (2025-12-08)
+
+
+### Features
+
+* **audit-url:** add URL store data model and data access ([#1211](https://github.com/adobe/spacecat-shared/issues/1211)) ([a7e458e](https://github.com/adobe/spacecat-shared/commit/a7e458e91d4f1aa93b7243cea5361f028ef2b7db))
+
 # [@adobe/spacecat-shared-data-access-v2.88.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.8...@adobe/spacecat-shared-data-access-v2.88.9) (2025-12-04)
 
 

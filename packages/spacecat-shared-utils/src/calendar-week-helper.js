@@ -208,17 +208,17 @@ export function getTemporalCondition({
   year,
   numSeries = 1,
 } = {}) {
-  const hasWeek = Number.isInteger(week) && Number.isInteger(year);
-  const hasMonth = Number.isInteger(month) && Number.isInteger(year);
+  const hasValidWeek = isValidWeek(week, year);
+  const hasValidMonth = isValidMonth(month, year);
 
   if (numSeries > 1) {
-    if (!hasWeek && !hasMonth) {
+    if (!hasValidWeek && !hasValidMonth) {
       throw new Error('Missing required parameters: week or month');
     }
 
     const conditions = [];
     for (let i = 0; i < numSeries; i += 1) {
-      if (hasWeek) {
+      if (hasValidWeek) {
         let currentWeek = week - i;
         let currentYear = year;
         if (currentWeek < 1) {
@@ -226,7 +226,7 @@ export function getTemporalCondition({
           currentYear -= 1;
         }
         conditions.push(getWeekInfo(currentWeek, currentYear).temporalCondition);
-      } else if (hasMonth) {
+      } else if (hasValidMonth) {
         let currentMonth = month - i;
         let currentYear = year;
         if (currentMonth < 1) {
@@ -239,22 +239,27 @@ export function getTemporalCondition({
     return conditions.join(' OR ');
   }
 
-  if (hasWeek && isValidWeek(week, year)) {
+  if (hasValidWeek) {
     return getWeekInfo(week, year).temporalCondition;
   }
 
-  if (hasMonth && isValidMonth(month, year)) {
+  if (hasValidMonth) {
     return getMonthInfo(month, year).temporalCondition;
   }
 
   // Fallbacks
-  if (Number.isInteger(week) || (!hasWeek && !hasMonth)) {
-    // default last full week
+  // If week was provided (even if invalid), default to last full week
+  if (Number.isInteger(week)) {
     return getWeekInfo().temporalCondition;
   }
 
-  // Otherwise fall back to last full month
-  return getMonthInfo().temporalCondition;
+  // If month was provided (even if invalid), default to last full month
+  if (Number.isInteger(month)) {
+    return getMonthInfo().temporalCondition;
+  }
+
+  // If neither was provided, default to last full week
+  return getWeekInfo().temporalCondition;
 }
 
 // Note: This function binds week exclusively to one year

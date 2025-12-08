@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.4...@adobe/spacecat-shared-athena-client-v1.9.0) (2025-12-08)
+
+
+### Features
+
+* **audit-url:** add URL store data model and data access ([#1211](https://github.com/adobe/spacecat-shared/issues/1211)) ([a7e458e](https://github.com/adobe/spacecat-shared/commit/a7e458e91d4f1aa93b7243cea5361f028ef2b7db))
+
 # [@adobe/spacecat-shared-athena-client-v1.8.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.3...@adobe/spacecat-shared-athena-client-v1.8.4) (2025-12-05)
 
 

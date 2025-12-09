@@ -148,7 +148,7 @@ describe('Bot Blocker Detection', () => {
     it('respects custom timeout', async () => {
       nock(baseUrl)
         .head('/')
-        .delay(100)
+        .delayConnection(100)
         .reply(200);
 
       const result = await detectBotBlocker({ baseUrl, timeout: 50 });

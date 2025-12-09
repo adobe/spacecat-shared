@@ -264,17 +264,17 @@ describe('logWrapper tests', () => {
     expect(logArgs.message).to.equal('test message');
   });
 
-  // Test format string interpolation - now converted to JSON with data array
+  // Test string with additional non-object arguments - converted to JSON with data array
   logLevels.forEach((level) => {
-    it(`should properly handle format strings with placeholders in ${level} log`, async () => {
+    it(`should properly handle strings with non-object arguments in ${level} log`, async () => {
       getTraceIdStub.returns('1-abc-def');
       const originalLog = mockContext.log;
       const wrappedFn = logWrapper(mockFnFromSqs);
 
       await wrappedFn(message, mockContext);
 
-      // Log with format string placeholders
-      mockContext.log[level]('Found %d items for site %s', 42, 'example.com');
+      // Log with non-object arguments
+      mockContext.log[level]('Found items', 42, 'example.com');
 
       // Verify that the enhanced log was called with JSON object
       expect(originalLog[level].calledOnce).to.be.true;
@@ -284,7 +284,7 @@ describe('logWrapper tests', () => {
       expect(logArgs).to.be.an('object');
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.traceId).to.equal('1-abc-def');
-      expect(logArgs.message).to.equal('Found %d items for site %s');
+      expect(logArgs.message).to.equal('Found items');
       expect(logArgs.data).to.be.an('array');
       expect(logArgs.data).to.deep.equal([42, 'example.com']);
     });
@@ -363,6 +363,56 @@ describe('logWrapper tests', () => {
       expect(logArgs.traceId).to.equal('1-abc-def');
       expect(logArgs.data).to.be.an('array');
       expect(logArgs.data[0]).to.deep.equal(arrayArg);
+    });
+  });
+
+  // Test string + object (should merge object into log)
+  logLevels.forEach((level) => {
+    it(`should merge object when passed as second argument after string in ${level} log`, async () => {
+      getTraceIdStub.returns('1-abc-def');
+      const originalLog = mockContext.log;
+      const wrappedFn = logWrapper(mockFnFromSqs);
+
+      await wrappedFn(message, mockContext);
+
+      // Log with string + object
+      mockContext.log[level]('Processing site', { siteId: 'test-site', count: 42 });
+
+      // Verify that the object fields are merged into the log object
+      expect(originalLog[level].calledOnce).to.be.true;
+      const logArgs = originalLog[level].getCall(0).args[0];
+      expect(logArgs).to.be.an('object');
+      expect(logArgs.jobId).to.equal(message.jobId);
+      expect(logArgs.traceId).to.equal('1-abc-def');
+      expect(logArgs.message).to.equal('Processing site');
+      expect(logArgs.siteId).to.equal('test-site');
+      expect(logArgs.count).to.equal(42);
+      expect(logArgs.data).to.be.undefined; // No data array when only string + object
+    });
+  });
+
+  // Test string + object + additional args (object merged, rest in data)
+  logLevels.forEach((level) => {
+    it(`should merge object and put additional args in data in ${level} log`, async () => {
+      getTraceIdStub.returns('1-abc-def');
+      const originalLog = mockContext.log;
+      const wrappedFn = logWrapper(mockFnFromSqs);
+
+      await wrappedFn(message, mockContext);
+
+      // Log with string + object + additional args
+      mockContext.log[level]('Processing', { siteId: 'xyz' }, 42, 'extra');
+
+      // Verify that the object is merged and additional args are in data
+      expect(originalLog[level].calledOnce).to.be.true;
+      const logArgs = originalLog[level].getCall(0).args[0];
+      expect(logArgs).to.be.an('object');
+      expect(logArgs.jobId).to.equal(message.jobId);
+      expect(logArgs.traceId).to.equal('1-abc-def');
+      expect(logArgs.message).to.equal('Processing');
+      expect(logArgs.siteId).to.equal('xyz');
+      expect(logArgs.data).to.be.an('array');
+      expect(logArgs.data).to.deep.equal([42, 'extra']);
     });
   });
 });

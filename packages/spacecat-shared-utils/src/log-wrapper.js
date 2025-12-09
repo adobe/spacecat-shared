@@ -13,6 +13,19 @@
 import { getTraceId } from './xray.js';
 
 /**
+ * Check if a value is a plain object (not Array, not Error, not null, not other special objects)
+ * @param {*} value - The value to check
+ * @returns {boolean} - True if the value is a plain object
+ */
+function isPlainObject(value) {
+  return typeof value === 'object'
+    && value !== null
+    && !Array.isArray(value)
+    && !(value instanceof Error)
+    && value.constructor === Object;
+}
+
+/**
  * A higher-order function that wraps a given function and enhances logging by converting
  * all logs to JSON format and appending `jobId` and `traceId` to log messages when available.
  *
@@ -48,14 +61,8 @@ export function logWrapper(fn) {
       context.log = logLevels.reduce((accumulator, level) => {
         if (typeof log[level] === 'function') {
           accumulator[level] = (...args) => {
-            // If first argument is a plain object
-            // (not Error, not Array, not null), merge with markers
-            if (args.length > 0
-                && typeof args[0] === 'object'
-                && args[0] !== null
-                && !Array.isArray(args[0])
-                && !(args[0] instanceof Error)
-                && args[0].constructor === Object) {
+            // If first argument is a plain object, merge with markers
+            if (args.length > 0 && isPlainObject(args[0])) {
               return log[level]({ ...markers, ...args[0] });
             }
 
@@ -66,8 +73,17 @@ export function logWrapper(fn) {
                 message: args[0],
               };
 
-              // If there are additional arguments, add them as 'data'
-              if (args.length > 1) {
+              // If second argument is a plain object, merge it into the log object
+              if (args.length > 1 && isPlainObject(args[1])) {
+                Object.assign(logObject, args[1]);
+
+                // If there are more arguments after the object, add them as 'data'
+                if (args.length > 2) {
+                  logObject.data = args.slice(2);
+                }
+              } else if (args.length > 1) {
+                // If there are additional arguments but second is not a plain object,
+                // add all additional args as 'data'
                 logObject.data = args.slice(1);
               }
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.40.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.1...@adobe/spacecat-shared-rum-api-client-v2.40.2) (2025-12-09)
+
+
+### Bug Fixes
+
+* **rum-api-client:** traffic attibution for new llms ([#1229](https://github.com/adobe/spacecat-shared/issues/1229)) ([a6aac37](https://github.com/adobe/spacecat-shared/commit/a6aac37993e4c5e7527d4f1853a137f2ed9c2779))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.40.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.0...@adobe/spacecat-shared-rum-api-client-v2.40.1) (2025-12-04)
 
 

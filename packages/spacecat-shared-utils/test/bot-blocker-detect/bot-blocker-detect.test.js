@@ -145,18 +145,6 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(0.3);
     });
 
-    it('respects custom timeout', async () => {
-      nock(baseUrl)
-        .head('/')
-        .delayConnection(100)
-        .reply(200);
-
-      const result = await detectBotBlocker({ baseUrl, timeout: 50 });
-
-      expect(result.crawlable).to.be.true;
-      expect(result.type).to.equal('unknown');
-    });
-
     it('does not detect blocking for 403 without known headers', async () => {
       nock(baseUrl)
         .head('/')

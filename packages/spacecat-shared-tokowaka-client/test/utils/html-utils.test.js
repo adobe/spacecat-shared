@@ -54,7 +54,7 @@ describe('HTML Utils', () => {
       try {
         await fetchHtmlWithWarmup(
           'https://example.com/page',
-          'api-key',
+          'preview-api-key',
           '',
           'edge-url',
           log,
@@ -70,7 +70,7 @@ describe('HTML Utils', () => {
       try {
         await fetchHtmlWithWarmup(
           'https://example.com/page',
-          'api-key',
+          'preview-api-key',
           'host',
           '',
           log,
@@ -82,7 +82,7 @@ describe('HTML Utils', () => {
       }
     });
 
-    it('should throw error when apiKey is missing', async () => {
+    it('should throw error when preview API key is missing', async () => {
       try {
         await fetchHtmlWithWarmup(
           'https://example.com/page',
@@ -94,7 +94,7 @@ describe('HTML Utils', () => {
         );
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.equal('Tokowaka API key is required for fetching HTML');
+        expect(error.message).to.equal('Tokowaka preview API key is required for fetching HTML');
       }
     });
 
@@ -111,7 +111,7 @@ describe('HTML Utils', () => {
 
       const html = await fetchHtmlWithWarmup(
         'https://example.com/page',
-        'api-key',
+        'preview-api-key',
         'host',
         'https://edge.example.com',
         log,
@@ -136,7 +136,7 @@ describe('HTML Utils', () => {
 
       const html = await fetchHtmlWithWarmup(
         'https://example.com/page?param=value',
-        'api-key',
+        'preview-api-key',
         'host',
         'https://edge.example.com',
         log,
@@ -178,7 +178,7 @@ describe('HTML Utils', () => {
       try {
         await fetchHtmlWithWarmup(
           'https://example.com/page',
-          'api-key',
+          'preview-api-key',
           'host',
           'https://edge.example.com',
           log,
@@ -208,7 +208,7 @@ describe('HTML Utils', () => {
       try {
         await fetchHtmlWithWarmup(
           'https://example.com/page',
-          'api-key',
+          'preview-api-key',
           'host',
           'https://edge.example.com',
           log,
@@ -239,7 +239,7 @@ describe('HTML Utils', () => {
       try {
         await fetchHtmlWithWarmup(
           'https://example.com/page',
-          'api-key',
+          'preview-api-key',
           'host',
           'https://edge.example.com',
           log,
@@ -319,7 +319,7 @@ describe('HTML Utils', () => {
 
       const html = await fetchHtmlWithWarmup(
         'https://example.com/page',
-        'api-key',
+        'preview-api-key',
         'host',
         'https://edge.example.com',
         log,
@@ -375,7 +375,7 @@ describe('HTML Utils', () => {
       try {
         await fetchHtmlWithWarmup(
           'https://example.com/page',
-          'api-key',
+          'preview-api-key',
           'host',
           'https://edge.example.com',
           log,
@@ -416,7 +416,7 @@ describe('HTML Utils', () => {
 
       const html = await fetchHtmlWithWarmup(
         'https://example.com/page',
-        'api-key',
+        'preview-api-key',
         'host',
         'https://edge.example.com',
         log,

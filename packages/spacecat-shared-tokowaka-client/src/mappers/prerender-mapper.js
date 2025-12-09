@@ -33,6 +33,16 @@ export default class PrerenderMapper extends BaseOpportunityMapper {
   }
 
   /**
+   * Prerender allows configurations without patches
+   * Prerender-only configs just enable prerendering without DOM modifications
+   * @returns {boolean} - True, prerender allows configs without patches
+   */
+  // eslint-disable-next-line class-methods-use-this
+  allowConfigsWithoutPatch() {
+    return true;
+  }
+
+  /**
    * Converts suggestions to Tokowaka patches
    * For prerender, we don't generate patches - just mark prerender as required
    * @param {string} urlPath - URL path for the suggestions

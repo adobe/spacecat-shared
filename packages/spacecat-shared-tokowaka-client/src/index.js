@@ -122,10 +122,8 @@ class TokowakaClient {
       opportunity.getId(),
     );
 
-    // For prerender opportunities, allow configs with no patches (prerender-only)
-    const isPrerenderOnly = opportunityType === 'prerender' && patches.length === 0;
-
-    if (patches.length === 0 && !isPrerenderOnly) {
+    // Check if configs without patches are allowed (e.g., prerender-only)
+    if (patches.length === 0 && !mapper.allowConfigsWithoutPatch()) {
       return null;
     }
 

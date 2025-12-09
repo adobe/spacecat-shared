@@ -41,6 +41,12 @@ describe('GenericMapper', () => {
     });
   });
 
+  describe('allowConfigsWithoutPatch', () => {
+    it('should return false for generic mapper', () => {
+      expect(mapper.allowConfigsWithoutPatch()).to.be.false;
+    });
+  });
+
   describe('canDeploy', () => {
     it('should return eligible for valid suggestion with all required fields', () => {
       const suggestion = {

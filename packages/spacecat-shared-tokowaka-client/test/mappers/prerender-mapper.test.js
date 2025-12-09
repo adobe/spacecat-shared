@@ -41,6 +41,12 @@ describe('PrerenderMapper', () => {
     });
   });
 
+  describe('allowConfigsWithoutPatch', () => {
+    it('should return true for prerender mapper', () => {
+      expect(mapper.allowConfigsWithoutPatch()).to.be.true;
+    });
+  });
+
   describe('suggestionsToPatches', () => {
     it('should return empty array for prerender suggestions', () => {
       const suggestion = {

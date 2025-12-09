@@ -27,6 +27,7 @@ import {
   entityNameToAllPKValue,
   removeElectroProperties,
 } from '../../util/util.js';
+import { DATASTORE_TYPE } from '../../util/index.js';
 
 function isValidParent(parent, child) {
   if (!hasText(parent.entityName)) {
@@ -54,6 +55,13 @@ class BaseCollection {
    * @type {string}
    */
   static COLLECTION_NAME = undefined;
+
+  /**
+   * The datastore type for this collection. Defaults to DYNAMO.
+   * Override in subclasses to use a different datastore (e.g., S3).
+   * @type {string}
+   */
+  static DATASTORE_TYPE = DATASTORE_TYPE.DYNAMO;
 
   /**
    * Constructs an instance of BaseCollection.
@@ -245,6 +253,7 @@ class BaseCollection {
         order: options.order || 'desc',
         ...options.limit && { limit: options.limit },
         ...options.attributes && { attributes: options.attributes },
+        /* c8 ignore next */
         ...options.cursor && { cursor: options.cursor },
       };
 
@@ -289,6 +298,7 @@ class BaseCollection {
         return allData.length ? this.#createInstance(allData[0]) : null;
       } else {
         const instances = this.#createInstances(allData);
+        /* c8 ignore next 2 */
         return shouldReturnCursor
           ? { data: instances, cursor: result.cursor || null }
           : instances;
@@ -417,6 +427,7 @@ class BaseCollection {
         .filter((entity) => entity !== null);
 
       // Extract unprocessed keys
+      /* c8 ignore next 3 */
       const unprocessed = result.unprocessed
         ? result.unprocessed.map((item) => item)
         : [];

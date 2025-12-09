@@ -47,7 +47,6 @@ import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
 import AuditUrlSchema from '../audit-url/audit-url.schema.js';
-import ConfigurationSchema from '../configuration/configuration.schema.js';
 import EntitlementSchema from '../entitlement/entitlement.schema.js';
 import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
 import FixEntitySuggestionSchema from '../fix-entity-suggestion/fix-entity-suggestion.schema.js';
@@ -84,11 +83,13 @@ class EntityRegistry {
   /**
    * Constructs an instance of EntityRegistry.
    * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage entities.
+   * @param {Object} services - Dictionary of services keyed by datastore type.
+   * @param {Object} services.dynamo - The ElectroDB service instance for DynamoDB operations.
+   * @param {{s3Client: S3Client, s3Bucket: string}|null} [services.s3] - S3 service configuration.
    * @param {Object} log - A logger for capturing and logging information.
    */
-  constructor(service, log) {
-    this.service = service;
+  constructor(services, log) {
+    this.services = services;
     this.log = log;
     this.collections = new Map();
 
@@ -98,13 +99,20 @@ class EntityRegistry {
   /**
    * Initializes the collections managed by the EntityRegistry.
    * This method creates instances of each collection and stores them in an internal map.
+   * ElectroDB-based collections are initialized with the dynamo service.
+   * Configuration is handled specially as it's a standalone S3-based collection.
    * @private
    */
   #initialize() {
+    // Initialize ElectroDB-based collections
     Object.values(EntityRegistry.entities).forEach(({ collection: Collection, schema }) => {
-      const collection = new Collection(this.service, this, schema, this.log);
+      const collection = new Collection(this.services.dynamo, this, schema, this.log);
       this.collections.set(Collection.COLLECTION_NAME, collection);
     });
+
+    // Initialize Configuration collection separately (standalone S3-based)
+    const configCollection = new ConfigurationCollection(this.services.s3, this.log);
+    this.collections.set(ConfigurationCollection.COLLECTION_NAME, configCollection);
   }
 
   /**
@@ -142,11 +150,11 @@ class EntityRegistry {
   }
 }
 
+// Register ElectroDB-based entities only (Configuration is handled separately)
 EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(AuditUrlSchema, AuditUrlCollection);
-EntityRegistry.registerEntity(ConfigurationSchema, ConfigurationCollection);
 EntityRegistry.registerEntity(EntitlementSchema, EntitlementCollection);
 EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);
 EntityRegistry.registerEntity(FixEntitySuggestionSchema, FixEntitySuggestionCollection);

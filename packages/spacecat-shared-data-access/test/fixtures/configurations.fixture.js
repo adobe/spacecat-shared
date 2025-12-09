@@ -12,7 +12,8 @@
 
 const configurations = [
   {
-    configurationId: '3c29b306-5075-4a2d-a965-730d0e565e7f',
+    // Note: configurationId is now the S3 VersionId, passed separately to the model constructor
+    versionId: '3c29b306-5075-4a2d-a965-730d0e565e7f',
     jobs: [
       {
         group: 'audits',
@@ -117,10 +118,9 @@ const configurations = [
         'S03CR0FDC2V',
       ],
     },
-    version: 2,
   },
   {
-    configurationId: 'a76a5b01-d065-4349-a28f-f1beaf96aee6',
+    versionId: 'a76a5b01-d065-4349-a28f-f1beaf96aee6',
     jobs: [
       {
         group: 'audits',
@@ -137,7 +137,6 @@ const configurations = [
       audits: 'sqs://.../spacecat-services-audit-jobs',
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
-    version: 1,
   },
 ];
 

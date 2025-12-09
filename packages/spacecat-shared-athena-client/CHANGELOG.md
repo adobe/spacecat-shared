@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.9.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.0...@adobe/spacecat-shared-athena-client-v1.9.1) (2025-12-08)
+
+
+### Bug Fixes
+
+* use updated shared utils ([#1226](https://github.com/adobe/spacecat-shared/issues/1226)) ([ac8b015](https://github.com/adobe/spacecat-shared/commit/ac8b0159128257f107e08a6b868b69ebe66312d2))
+
 # [@adobe/spacecat-shared-athena-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.8.4...@adobe/spacecat-shared-athena-client-v1.9.0) (2025-12-08)
 
 

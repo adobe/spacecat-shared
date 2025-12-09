@@ -14,6 +14,7 @@ import HeadingsMapper from './headings-mapper.js';
 import ContentSummarizationMapper from './content-summarization-mapper.js';
 import FaqMapper from './faq-mapper.js';
 import ReadabilityMapper from './readability-mapper.js';
+import TocMapper from './toc-mapper.js';
 import GenericMapper from './generic-mapper.js';
 
 /**
@@ -37,6 +38,7 @@ export default class MapperRegistry {
       ContentSummarizationMapper,
       FaqMapper,
       ReadabilityMapper,
+      TocMapper,
       GenericMapper,
       // more mappers here
     ];

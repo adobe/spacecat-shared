@@ -232,6 +232,23 @@ export class FaqMapper extends BaseOpportunityMapper {
 }
 
 /**
+ * Table of Contents (TOC) opportunity mapper
+ * Handles conversion of TOC suggestions to Tokowaka patches with HAST format
+ */
+export class TocMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+}
+
+/**
  * Registry for opportunity mappers
  */
 export class MapperRegistry {

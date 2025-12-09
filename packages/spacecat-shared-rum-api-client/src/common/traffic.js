@@ -49,7 +49,7 @@ const referrers = {
   social: /^\b((www\.)?x)\b|(.*(facebook|tiktok|snapchat|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
   ad: /googlesyndication|2mdn|doubleclick|syndicatedsearch/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
-  llm: /\b(chatgpt|openai)\b|perplexity|claude|gemini\.google|copilot\.microsoft/,
+  llm: /\b(chatgpt|openai)\b|perplexity|claude|gemini\.google|copilot\.microsoft|m365\.cloud|(^|\.)?meta$|deepseek|(^|\.)?mistral$/,
 };
 
 const mediums = {
@@ -74,7 +74,7 @@ const sources = {
   display: /optumib2b|jun|googleads|dv360|dv36|microsoft|flipboard|programmatic|yext|gdn|banner|newsshowcase/,
   affiliate: /brandreward|yieldkit|fashionistatop|partner|linkbux|stylesblog|linkinbio|affiliate/,
   email: /sfmc|email/,
-  llm: /chatgpt/,
+  llm: /chatgpt|openai|perplexity|claude|gemini|copilot|metaai|deepseek|mistral/,
 };
 
 /**
@@ -92,7 +92,7 @@ const vendorClassifications = [
   { regex: /linkedin|\b(ln)\b/i, result: 'linkedin' },
   { regex: /twitter|^\b(x)\b/i, result: 'x' },
   { regex: /snapchat/i, result: 'snapchat' },
-  { regex: /microsoft|copilot/i, result: 'microsoft' },
+  { regex: /microsoft|copilot|m365\.cloud/i, result: 'microsoft' },
   { regex: /pinterest/i, result: 'pinterest' },
   { regex: /reddit/i, result: 'reddit' },
   { regex: /spotify/i, result: 'spotify' },
@@ -114,6 +114,9 @@ const vendorClassifications = [
   { regex: /\b(chatgpt|openai)\b/i, result: 'openai' },
   { regex: /perplexity/i, result: 'perplexity' },
   { regex: /claude/i, result: 'claude' },
+  { regex: /deepseek/i, result: 'deepseek' },
+  { regex: /mistral/i, result: 'mistral' },
+  { regex: /meta\.ai/i, result: 'meta' },
   { regex: /direct/i, result: 'direct' },
 ];
 
@@ -149,6 +152,10 @@ const notEmpty = (text) => hasText(text);
 // overrides
 const OVERRIDES = [
   { when: (ctx) => (ctx.utmSource || '').toLowerCase() === 'chatgpt.com', set: { type: 'earned', category: 'llm', vendor: 'openai' } },
+  // meta ai: when referrer is 'meta', set vendor to 'meta' (not 'facebook')
+  { when: (ctx) => ctx.type === 'earned' && ctx.category === 'llm' && /(^|\.)meta$/i.test(ctx.referrerDomain), set: { vendor: 'meta' } },
+  // meta ai: when utm_source is 'meta.ai', set vendor to 'meta' (not 'facebook')
+  { when: (ctx) => ctx.type === 'earned' && ctx.category === 'llm' && /^meta\.ai$/i.test(ctx.utmSource || ''), set: { vendor: 'meta' } },
 ];
 
 function applyOverrides(classification, context) {
@@ -159,7 +166,7 @@ function applyOverrides(classification, context) {
 // allowed known vendors per category
 const ALLOWED_VENDORS = {
   earned: {
-    llm: ['openai', 'claude', 'perplexity', 'microsoft', 'google'],
+    llm: ['openai', 'claude', 'perplexity', 'microsoft', 'google', 'deepseek', 'mistral', 'meta'],
     search: ['google', 'bing', 'yahoo', 'yandex', 'baidu', 'duckduckgo', 'brave', 'ecosia', 'aol'],
     social: null, // any vendor allowed
     video: ['youtube', 'vimeo', 'twitch', 'tiktok', 'dailymotion'],
@@ -329,7 +336,7 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
   // apply overrides
   const overridden = applyOverrides(
     { type, category, vendor },
-    { utmSource, utmMedium, referrerDomain },
+    { type, category, utmSource, utmMedium, referrerDomain },
   );
   type = overridden.type;
   category = overridden.category;

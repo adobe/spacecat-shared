@@ -62,7 +62,7 @@ describe('Locale Detection', () => {
         baseUrl,
         indicatorFuncs: [],
         html: '<html><head><title>Test Page</title></head></html>',
-        headers: {},
+        headers: { 'content-type': 'text/html' },
       });
       expect(result).to.deep.equal({ language: 'en', region: 'US' });
     });
@@ -76,7 +76,7 @@ describe('Locale Detection', () => {
         baseUrl,
         indicatorFuncs: [indicator],
         html: '<html><head><title>Test Page</title></head></html>',
-        headers: {},
+        headers: { 'content-type': 'text/html' },
       });
       expect(result).to.deep.equal({ language: 'de', region: 'CH' });
     });
@@ -91,7 +91,7 @@ describe('Locale Detection', () => {
         baseUrl,
         indicatorFuncs: [indicator],
         html: '<html><head><title>Test Page</title></head></html>',
-        headers: {},
+        headers: { 'content-type': 'text/html' },
       });
       expect(result).to.deep.equal({ language: 'de', region: 'CH' });
     });

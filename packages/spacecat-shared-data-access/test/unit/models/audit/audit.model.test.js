@@ -183,6 +183,7 @@ describe('AuditModel', () => {
       FORMS_OPPORTUNITIES: 'forms-opportunities',
       SITE_DETECTION: 'site-detection',
       ALT_TEXT: 'alt-text',
+      IMAGE_OPTIMIZATION: 'image-optimization',
       ACCESSIBILITY: 'accessibility',
       SECURITY_CSP: 'security-csp',
       SECURITY_VULNERABILITIES: 'security-vulnerabilities',

@@ -452,10 +452,10 @@ class TokowakaClient {
         continue;
       }
 
-      // For prerender, allow configs with no patches (prerender-only config)
-      const isPrerenderOnly = opportunity.getType() === 'prerender' && newConfig.patches.length === 0;
+      // Check if mapper allows configs without patches (e.g., prerender-only config)
+      const allowsNoPatch = mapper.allowConfigsWithoutPatch() && newConfig.patches.length === 0;
 
-      if (!isPrerenderOnly && (!newConfig.patches || newConfig.patches.length === 0)) {
+      if (!allowsNoPatch && (!newConfig.patches || newConfig.patches.length === 0)) {
         this.log.warn(`No eligible suggestions to deploy for URL: ${fullUrl}`);
         // eslint-disable-next-line no-continue
         continue;
@@ -582,7 +582,7 @@ class TokowakaClient {
       }
 
       if (!existingConfig.patches) {
-        this.log.warn(`No patches found in configuration for URL: ${fullUrl}`);
+        this.log.info(`No patches found in configuration for URL: ${fullUrl}`);
         // eslint-disable-next-line no-continue
         continue;
       }
@@ -705,7 +705,17 @@ class TokowakaClient {
     this.log.debug(`Generating preview Tokowaka config for opportunity ${opportunity.getId()}`);
     const newConfig = this.generateConfig(previewUrl, opportunity, eligibleSuggestions);
 
-    if (!newConfig || !newConfig.patches || newConfig.patches.length === 0) {
+    if (!newConfig) {
+      this.log.warn('No config generated for preview');
+      return {
+        config: null,
+        succeededSuggestions: [],
+        failedSuggestions: suggestions,
+      };
+    }
+
+    /* c8 ignore next 9 */
+    if (newConfig.patches.length === 0 && !mapper.allowConfigsWithoutPatch()) {
       this.log.warn('No eligible suggestions to preview');
       return {
         config: null,

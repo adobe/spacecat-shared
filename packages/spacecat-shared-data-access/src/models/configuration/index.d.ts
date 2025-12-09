@@ -10,40 +10,52 @@
  * governing permissions and limitations under the License.
  */
 
-import type {
-  BaseCollection, BaseModel, Organization, Site,
-} from '../index';
+import type { Organization, Site } from '../index';
 
-export interface Configuration extends BaseModel {
+export interface Configuration {
   addHandler(type: string, handler: object): void;
-  disableHandlerForOrganization(type: string, organization: Organization): void;
+  disableHandlerForOrg(type: string, org: Organization): void;
   disableHandlerForSite(type: string, site: Site): void;
-  enableHandlerForOrganization(type: string, organization: Organization): void;
+  enableHandlerForOrg(type: string, org: Organization): void;
   enableHandlerForSite(type: string, site: Site): void;
   getConfigurationId(): string;
-  getEnabledSiteIdsForHandler(type: string): string[];
-  getEnabledAuditsForSite(site: Site): string[];
+  getCreatedAt(): string;
   getDisabledAuditsForSite(site: Site): string[];
+  getEnabledAuditsForSite(site: Site): string[];
+  getEnabledSiteIdsForHandler(type: string): string[];
   getHandler(type: string): object | undefined;
   getHandlers(): object;
-  getJobs(): object;
+  getId(): string;
+  getJobs(): object[];
   getQueues(): object;
   getSlackRoleMembersByRole(role: string): string[];
   getSlackRoles(): object;
-  getVersion(): number;
-  isHandlerEnabledForOrg(type: string, organization: Organization): boolean;
+  getUpdatedAt(): string;
+  getUpdatedBy(): string;
+  getVersion(): string;
+  isHandlerDependencyMetForOrg(type: string, org: Organization): true | string[];
+  isHandlerDependencyMetForSite(type: string, site: Site): true | string[];
+  isHandlerEnabledForOrg(type: string, org: Organization): boolean;
   isHandlerEnabledForSite(type: string, site: Site): boolean;
+  registerAudit(type: string, enabledByDefault?: boolean, interval?: string, productCodes?: string[]): void;
+  save(): Promise<Configuration>;
   setHandlers(handlers: object): void;
-  setJobs(jobs: object): void;
+  setJobs(jobs: object[]): void;
   setQueues(queues: object): void;
   setSlackRoles(slackRoles: object): void;
-  updateHandlerOrgs(type: string, orgId: string, enabled: boolean): void;
-  updateHandlerSites(type: string, siteId: string, enabled: boolean): void;
-  registerAudit(type: string, enabledByDefault?: boolean, interval?: string, productCodes?: string[]): void;
+  setUpdatedBy(updatedBy: string): void;
+  toJSON(): object;
   unregisterAudit(type: string): void;
+  updateConfiguration(data: object): void;
+  updateHandlerOrgs(type: string, orgId: string, enabled: boolean): void;
+  updateHandlerProperties(type: string, properties: object): void;
+  updateHandlerSites(type: string, siteId: string, enabled: boolean): void;
+  updateJob(type: string, properties: { interval?: string; group?: string }): void;
+  updateQueues(queues: object): void;
 }
 
-export interface ConfigurationCollection extends BaseCollection<Configuration> {
-  findByVersion(version: number): Promise<Configuration | null>;
+export interface ConfigurationCollection {
+  create(data: object): Promise<Configuration>;
+  findByVersion(version: string): Promise<Configuration | null>;
   findLatest(): Promise<Configuration | null>;
 }

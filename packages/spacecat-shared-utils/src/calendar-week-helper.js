@@ -207,9 +207,11 @@ export function getTemporalCondition({
   month,
   year,
   numSeries = 1,
+  log = null,
 } = {}) {
   const hasValidWeek = isValidWeek(week, year);
   const hasValidMonth = isValidMonth(month, year);
+  log?.info(`[getTemporalCondition] hasValidWeek: ${hasValidWeek}, hasValidMonth: ${hasValidMonth}`);
 
   if (numSeries > 1) {
     if (!hasValidWeek && !hasValidMonth) {
@@ -225,6 +227,7 @@ export function getTemporalCondition({
           currentWeek = has53CalendarWeeks(currentYear) ? 53 : 52;
           currentYear -= 1;
         }
+        log?.info(`[getTemporalCondition] currentWeek: ${currentWeek}, currentYear: ${currentYear}`);
         conditions.push(getWeekInfo(currentWeek, currentYear).temporalCondition);
       } else if (hasValidMonth) {
         let currentMonth = month - i;
@@ -233,6 +236,7 @@ export function getTemporalCondition({
           currentMonth = 12;
           currentYear -= 1;
         }
+        log?.info(`[getTemporalCondition] currentMonth: ${currentMonth}, currentYear: ${currentYear}`);
         conditions.push(getMonthInfo(currentMonth, currentYear).temporalCondition);
       }
     }

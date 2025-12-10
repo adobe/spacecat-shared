@@ -361,6 +361,33 @@ describe('PTA2 Queries', () => {
       );
     });
 
+    it('should fall back to month when week is 0 and month is provided', () => {
+      // Bug: API passes week: 0 when they meant to omit it or pass undefined
+      // Week 0 is not a valid week number (weeks are 1-53)
+      // Should fall back to month if available
+      const result = getPreviousPeriod({ week: 0, month: 6, year: 2024 });
+      expect(result).to.deep.equal({ month: 5, year: 2024 });
+    });
+
+    it('should throw error when week is 0 and no month is provided', () => {
+      // Week 0 is invalid and should be treated as not provided
+      expect(() => getPreviousPeriod({ week: 0, year: 2024 })).to.throw(
+        'Either week or month must be provided',
+      );
+    });
+
+    it('should throw error when week is negative', () => {
+      expect(() => getPreviousPeriod({ week: -1, year: 2024 })).to.throw(
+        'Either week or month must be provided',
+      );
+    });
+
+    it('should throw error when week is greater than 53', () => {
+      expect(() => getPreviousPeriod({ week: 54, year: 2024 })).to.throw(
+        'Either week or month must be provided',
+      );
+    });
+
     it('should prioritize week when both are provided', () => {
       // Week should be checked first
       const result = getPreviousPeriod({ week: 10, month: 5, year: 2024 });

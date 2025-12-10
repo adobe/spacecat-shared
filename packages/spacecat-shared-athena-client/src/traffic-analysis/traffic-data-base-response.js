@@ -34,6 +34,7 @@ export const TrafficDataResponseDto = {
    */
   toJSON: (data) => ({
     week: data.week,
+    month: data.month,
     type: data.trf_type,
     channel: data.trf_channel,
     platform: data.trf_platform,

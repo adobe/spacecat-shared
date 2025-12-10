@@ -21,6 +21,7 @@ export function sanitizeHeaders(headers) {
   return {
     ...headers,
     ...(headers.Authorization && { Authorization: '***' }),
-    ...(headers['x-api-key'] && { 'x-api-key': '****' }),
+    ...(headers['x-api-key'] && { 'x-api-key': '***' }),
+    ...(headers['api-key'] && { 'api-key': '***' }),
   };
 }

@@ -417,7 +417,7 @@ describe('TierClient', () => {
     it('should update tier when entitlement exists with different tier', async () => {
       const mockEntitlementWithDifferentTier = {
         ...mockEntitlement,
-        getTier: () => 'PAID',
+        getTier: () => 'FREE_TRIAL', // current non-PAID
         setTier: sandbox.stub().returnsThis(),
         save: sandbox.stub().resolves(),
       };
@@ -426,15 +426,37 @@ describe('TierClient', () => {
         .findByOrganizationIdAndProductCode.resolves(mockEntitlementWithDifferentTier);
       mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
 
-      const result = await tierClient.createEntitlement('FREE_TRIAL');
+      const result = await tierClient.createEntitlement('PAID');
 
-      expect(mockEntitlementWithDifferentTier.setTier).to.have.been.calledWith('FREE_TRIAL');
+      expect(mockEntitlementWithDifferentTier.setTier).to.have.been.calledWith('PAID');
       expect(mockEntitlementWithDifferentTier.save).to.have.been.called;
       expect(result).to.deep.equal({
         entitlement: mockEntitlementWithDifferentTier,
         siteEnrollment: mockSiteEnrollment,
       });
       expect(mockDataAccess.Entitlement.create).to.not.have.been.called;
+    });
+
+    it('should not update tier when entitlement exists with same tier', async () => {
+      const mockEntitlementWithSameTier = {
+        ...mockEntitlement,
+        getTier: () => 'FREE_TRIAL',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockEntitlementWithSameTier);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      const result = await tierClient.createEntitlement('FREE_TRIAL');
+
+      expect(mockEntitlementWithSameTier.setTier).to.not.have.been.called;
+      expect(mockEntitlementWithSameTier.save).to.not.have.been.called;
+      expect(result).to.deep.equal({
+        entitlement: mockEntitlementWithSameTier,
+        siteEnrollment: mockSiteEnrollment,
+      });
     });
 
     it('should throw error when organization not found', async () => {

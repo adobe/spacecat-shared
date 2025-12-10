@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.91.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.90.0...@adobe/spacecat-shared-data-access-v2.91.0) (2025-12-10)
+
+
+### Features
+
+* add unused content fragment audit type ([#1135](https://github.com/adobe/spacecat-shared/issues/1135)) ([dfdd01e](https://github.com/adobe/spacecat-shared/commit/dfdd01e2603ab737da2f1935139b66693edb9d70))
+
+# [@adobe/spacecat-shared-data-access-v2.90.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.89.0...@adobe/spacecat-shared-data-access-v2.90.0) (2025-12-08)
+
+
+### Features
+
+* **data-access:** handle configuration via s3 ([#1216](https://github.com/adobe/spacecat-shared/issues/1216)) ([ef03ab7](https://github.com/adobe/spacecat-shared/commit/ef03ab705bae8653162de12405bcbc65c32bb5a8))
+
+# [@adobe/spacecat-shared-data-access-v2.89.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.9...@adobe/spacecat-shared-data-access-v2.89.0) (2025-12-08)
+
+
+### Features
+
+* **audit-url:** add URL store data model and data access ([#1211](https://github.com/adobe/spacecat-shared/issues/1211)) ([a7e458e](https://github.com/adobe/spacecat-shared/commit/a7e458e91d4f1aa93b7243cea5361f028ef2b7db))
+
+# [@adobe/spacecat-shared-data-access-v2.88.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.8...@adobe/spacecat-shared-data-access-v2.88.9) (2025-12-04)
+
+
+### Bug Fixes
+
+* adding toc audit type ([#1214](https://github.com/adobe/spacecat-shared/issues/1214)) ([7dab7d7](https://github.com/adobe/spacecat-shared/commit/7dab7d7afdcd4b56a56c10b65a3dff0fefb52e4e))
+
 # [@adobe/spacecat-shared-data-access-v2.88.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.7...@adobe/spacecat-shared-data-access-v2.88.8) (2025-12-01)
 
 

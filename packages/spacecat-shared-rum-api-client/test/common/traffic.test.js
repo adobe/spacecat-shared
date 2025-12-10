@@ -88,23 +88,58 @@ describe('Traffic classification', () => {
   it('earned llm', () => {
     const expected = { type: 'earned', category: 'llm', vendor: '' };
 
+    // OpenAI / ChatGPT
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://chatgpt.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: '', utmSource: 'chatgpt.com', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: '', utmSource: 'chatgpt.com', utmMedium: 'paidsearch', tracking: 'paid' });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://openai.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://subdomain.chatgpt.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://subdomain.openai.com/', utmSource: '', utmMedium: '', tracking: null });
-    assert({ ...expected, vendor: 'perplexity' }, { referrer: 'https://www.perplexity.ai/', utmSource: '', utmMedium: '', tracking: null });
-    assert({ ...expected, vendor: 'claude' }, { referrer: 'https://claude.ai/', utmSource: '', utmMedium: '', tracking: null });
-    assert({ ...expected, vendor: 'microsoft' }, { referrer: 'https://copilot.microsoft.com/', utmSource: '', utmMedium: '', tracking: null });
-    assert({ ...expected, vendor: 'google' }, { referrer: 'https://gemini.google.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'openai.com', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'subdomain.chatgpt.com', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'subdomain.openai.com', utmSource: '', utmMedium: '', tracking: null });
+
+    // Perplexity
+    assert({ ...expected, vendor: 'perplexity' }, { referrer: 'https://www.perplexity.ai/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'perplexity' }, { referrer: 'www.perplexity.ai', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'perplexity' }, { referrer: '', utmSource: 'perplexity', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'perplexity' }, { referrer: '', utmSource: 'perplexity.ai', utmMedium: '', tracking: null });
+
+    // Claude
+    assert({ ...expected, vendor: 'claude' }, { referrer: 'https://claude.ai/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'claude' }, { referrer: 'claude.ai', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'claude' }, { referrer: '', utmSource: 'claude', utmMedium: '', tracking: null });
+
+    // Microsoft Copilot
+    assert({ ...expected, vendor: 'microsoft' }, { referrer: 'https://copilot.microsoft.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'microsoft' }, { referrer: 'copilot.microsoft.com', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'microsoft' }, { referrer: 'https://m365.cloud.microsoft/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'microsoft' }, { referrer: '', utmSource: 'copilot', utmMedium: '', tracking: null });
+
+    // Google Gemini
+    assert({ ...expected, vendor: 'google' }, { referrer: 'https://gemini.google.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'google' }, { referrer: 'gemini.google.com', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'google' }, { referrer: '', utmSource: 'gemini', utmMedium: '', tracking: null });
+
+    // DeepSeek
+    assert({ ...expected, vendor: 'deepseek' }, { referrer: 'https://deepseek.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'deepseek' }, { referrer: 'https://chat.deepseek.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'deepseek' }, { referrer: 'deepseek.com', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'deepseek' }, { referrer: '', utmSource: 'deepseek', utmMedium: '', tracking: null });
+
+    // Mistral
+    assert({ ...expected, vendor: 'mistral' }, { referrer: 'https://chat.mistral.ai/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'mistral' }, { referrer: 'chat.mistral.ai', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'mistral' }, { referrer: 'mistral.ai', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'mistral' }, { referrer: '', utmSource: 'mistral', utmMedium: '', tracking: null });
+
+    // Meta AI - with subdomain like l.meta.ai
+    assert({ ...expected, vendor: 'meta' }, { referrer: 'https://meta.ai/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'meta' }, { referrer: 'https://l.meta.ai/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'meta' }, { referrer: 'https://www.meta.ai/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'meta' }, { referrer: 'meta.ai', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'meta' }, { referrer: 'l.meta.ai', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'meta' }, { referrer: '', utmSource: 'meta.ai', utmMedium: '', tracking: null });
   });
 
   it('earned search', () => {
@@ -198,6 +233,19 @@ describe('Traffic classification', () => {
     it('does not falsely classify referrer as llm', () => {
       const expected = { type: 'earned', category: 'referral', vendor: '' };
       assert(expected, { referrer: 'https://example.chatopenai.com/', utmSource: '', utmMedium: '', tracking: null });
+    });
+
+    it('meta as utm_source in paid social context maps to facebook, not meta', () => {
+      // When utm_source is 'meta' but context is paid social (not LLM), vendor should be 'facebook'
+      const expected = { type: 'paid', category: 'social', vendor: 'facebook' };
+      assert(expected, { referrer: '', utmSource: 'meta', utmMedium: 'paidsocial', tracking: null });
+    });
+
+    it('meta.ai referrer in LLM context maps to vendor meta, not facebook', () => {
+      // When referrer is meta.ai (LLM), vendor should be 'meta' not 'facebook'
+      const expected = { type: 'earned', category: 'llm', vendor: 'meta' };
+      assert(expected, { referrer: 'https://l.meta.ai/', utmSource: '', utmMedium: '', tracking: null });
+      assert(expected, { referrer: 'meta.ai', utmSource: '', utmMedium: '', tracking: null });
     });
   });
 });

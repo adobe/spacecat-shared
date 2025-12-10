@@ -49,6 +49,7 @@ export {
 export {
   diffDOMBlocks,
   createMarkdownTableDiff,
+  getAddedMarkdownBlocks,
   generateMarkdownDiff,
   htmlToRenderedMarkdown,
 } from './markdown-diff.js';

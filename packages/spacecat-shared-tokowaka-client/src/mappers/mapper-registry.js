@@ -16,6 +16,7 @@ import FaqMapper from './faq-mapper.js';
 import ReadabilityMapper from './readability-mapper.js';
 import TocMapper from './toc-mapper.js';
 import GenericMapper from './generic-mapper.js';
+import PrerenderMapper from './prerender-mapper.js';
 
 /**
  * Registry for opportunity mappers
@@ -40,6 +41,7 @@ export default class MapperRegistry {
       ReadabilityMapper,
       TocMapper,
       GenericMapper,
+      PrerenderMapper,
       // more mappers here
     ];
 

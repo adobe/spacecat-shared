@@ -122,7 +122,8 @@ class TokowakaClient {
       opportunity.getId(),
     );
 
-    if (patches.length === 0) {
+    // Check if configs without patches are allowed (e.g., prerender-only)
+    if (patches.length === 0 && !mapper.allowConfigsWithoutPatch()) {
       return null;
     }
 
@@ -445,7 +446,16 @@ class TokowakaClient {
       // Generate configuration for this URL with eligible suggestions only
       const newConfig = this.generateConfig(fullUrl, opportunity, urlSuggestions);
 
-      if (!newConfig || !newConfig.patches || newConfig.patches.length === 0) {
+      if (!newConfig) {
+        this.log.warn(`No config generated for URL: ${fullUrl}`);
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
+      // Check if mapper allows configs without patches (e.g., prerender-only config)
+      const allowsNoPatch = mapper.allowConfigsWithoutPatch() && newConfig.patches.length === 0;
+
+      if (!allowsNoPatch && (!newConfig.patches || newConfig.patches.length === 0)) {
         this.log.warn(`No eligible suggestions to deploy for URL: ${fullUrl}`);
         // eslint-disable-next-line no-continue
         continue;
@@ -534,7 +544,7 @@ class TokowakaClient {
       // eslint-disable-next-line no-await-in-loop
       const existingConfig = await this.fetchConfig(fullUrl);
 
-      if (!existingConfig || !existingConfig.patches) {
+      if (!existingConfig) {
         this.log.warn(`No existing configuration found for URL: ${fullUrl}`);
         // eslint-disable-next-line no-continue
         continue;
@@ -542,6 +552,40 @@ class TokowakaClient {
 
       // Extract suggestion IDs to remove for this URL
       const suggestionIdsToRemove = urlSuggestions.map((s) => s.getId());
+
+      // For prerender opportunities, disable prerender flag
+      if (opportunityType === 'prerender') {
+        this.log.info(`Rolling back prerender config for URL: ${fullUrl}`);
+
+        // Set prerender to false (keep other patches if they exist)
+        const updatedConfig = {
+          ...existingConfig,
+          prerender: false,
+        };
+
+        // Upload updated config to S3 for this URL
+        // eslint-disable-next-line no-await-in-loop
+        const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
+        s3Paths.push(s3Path);
+
+        // Invalidate CDN cache
+        // eslint-disable-next-line no-await-in-loop
+        const cdnInvalidationResult = await this.invalidateCdnCache(
+          fullUrl,
+          this.env.TOKOWAKA_CDN_PROVIDER,
+        );
+        cdnInvalidations.push(cdnInvalidationResult);
+
+        totalRemovedCount += 1; // Count as 1 rollback
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
+      if (!existingConfig.patches) {
+        this.log.info(`No patches found in configuration for URL: ${fullUrl}`);
+        // eslint-disable-next-line no-continue
+        continue;
+      }
 
       // Use mapper to remove patches
       const updatedConfig = mapper.rollbackPatches(
@@ -551,7 +595,7 @@ class TokowakaClient {
       );
 
       if (updatedConfig.removedCount === 0) {
-        this.log.warn(`No patches found for URL: ${fullUrl}`);
+        this.log.warn(`No patches found for suggestions at URL: ${fullUrl}`);
         // eslint-disable-next-line no-continue
         continue;
       }
@@ -661,7 +705,17 @@ class TokowakaClient {
     this.log.debug(`Generating preview Tokowaka config for opportunity ${opportunity.getId()}`);
     const newConfig = this.generateConfig(previewUrl, opportunity, eligibleSuggestions);
 
-    if (!newConfig || !newConfig.patches || newConfig.patches.length === 0) {
+    if (!newConfig) {
+      this.log.warn('No config generated for preview');
+      return {
+        config: null,
+        succeededSuggestions: [],
+        failedSuggestions: suggestions,
+      };
+    }
+
+    /* c8 ignore next 9 */
+    if (newConfig.patches.length === 0 && !mapper.allowConfigsWithoutPatch()) {
       this.log.warn('No eligible suggestions to preview');
       return {
         config: null,

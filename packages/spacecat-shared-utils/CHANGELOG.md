@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.83.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.3...@adobe/spacecat-shared-utils-v1.83.0) (2025-12-10)
+
+
+### Features
+
+* Implement Structured (JSON) Logging for Spacecat Audits ([#1232](https://github.com/adobe/spacecat-shared/issues/1232)) ([7eae4d6](https://github.com/adobe/spacecat-shared/commit/7eae4d62fe9f0592f8124082fc66e9754803dd2b))
+
+# [@adobe/spacecat-shared-utils-v1.82.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.2...@adobe/spacecat-shared-utils-v1.82.3) (2025-12-10)
+
+
+### Bug Fixes
+
+* heading and toc mappers ([#1230](https://github.com/adobe/spacecat-shared/issues/1230)) ([f767fb3](https://github.com/adobe/spacecat-shared/commit/f767fb319c97ed64848a1c5fc5913693a52290d9))
+
 # [@adobe/spacecat-shared-utils-v1.82.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.1...@adobe/spacecat-shared-utils-v1.82.2) (2025-12-09)
 
 

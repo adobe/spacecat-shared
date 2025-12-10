@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.3.0...@adobe/spacecat-shared-tokowaka-client-v1.3.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* heading and toc mappers ([#1230](https://github.com/adobe/spacecat-shared/issues/1230)) ([f767fb3](https://github.com/adobe/spacecat-shared/commit/f767fb319c97ed64848a1c5fc5913693a52290d9))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.2.4...@adobe/spacecat-shared-tokowaka-client-v1.3.0) (2025-12-04)
 
 

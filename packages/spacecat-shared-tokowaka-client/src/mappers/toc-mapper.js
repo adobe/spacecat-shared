@@ -15,13 +15,13 @@ import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
 
 /**
- * Mapper for headings opportunity
- * Handles conversion of heading suggestions to Tokowaka patches
+ * Mapper for Table of Contents (TOC) opportunity
+ * Handles conversion of TOC suggestions to Tokowaka patches
  */
-export default class HeadingsMapper extends BaseOpportunityMapper {
+export default class TocMapper extends BaseOpportunityMapper {
   constructor(log) {
     super(log);
-    this.opportunityType = 'headings';
+    this.opportunityType = 'toc';
     this.prerenderRequired = true;
   }
 
@@ -46,26 +46,21 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
     suggestions.forEach((suggestion) => {
       const eligibility = this.canDeploy(suggestion);
       if (!eligibility.eligible) {
-        this.log.warn(`Headings suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
+        this.log.warn(`TOC suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
         return;
       }
 
       const data = suggestion.getData();
-      const { checkType, transformRules } = data;
+      const { transformRules } = data;
 
       const patch = {
         ...this.createBasePatch(suggestion, opportunityId),
         op: transformRules.action,
         selector: transformRules.selector,
-        value: data.recommendedAction,
-        valueFormat: 'text',
-        ...(data.currentValue !== null && { currValue: data.currentValue }),
+        value: transformRules.value,
+        valueFormat: 'hast',
         target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
       };
-
-      if (checkType === 'heading-missing-h1' && transformRules.tag) {
-        patch.tag = transformRules.tag;
-      }
 
       patches.push(patch);
     });
@@ -74,8 +69,7 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
   }
 
   /**
-   * Checks if a heading suggestion can be deployed
-   * Supports: heading-empty, heading-missing-h1, heading-h1-length
+   * Checks if a TOC suggestion can be deployed
    * @param {Object} suggestion - Suggestion object
    * @returns {Object} { eligible: boolean, reason?: string }
    */
@@ -85,61 +79,36 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
     const checkType = data?.checkType;
 
     // Check if checkType is eligible
-    const eligibleCheckTypes = ['heading-empty', 'heading-missing-h1', 'heading-h1-length', 'heading-order-invalid'];
-    if (!eligibleCheckTypes.includes(checkType)) {
+    if (checkType !== 'toc') {
       return {
         eligible: false,
-        reason: `Only ${eligibleCheckTypes.join(', ')} can be deployed. This suggestion has checkType: ${checkType}`,
+        reason: `Only toc checkType can be deployed. This suggestion has checkType: ${checkType}`,
       };
     }
 
     // Validate required fields
-    if (!data?.recommendedAction) {
-      return { eligible: false, reason: 'recommendedAction is required' };
-    }
-
     if (!hasText(data.transformRules?.selector)) {
       return { eligible: false, reason: 'transformRules.selector is required' };
     }
 
-    // Validate based on checkType
-    if (checkType === 'heading-missing-h1') {
-      if (!['insertBefore', 'insertAfter'].includes(data.transformRules?.action)) {
-        return {
-          eligible: false,
-          reason: 'transformRules.action must be insertBefore or insertAfter for heading-missing-h1',
-        };
-      }
-      if (!hasText(data.transformRules?.tag)) {
-        return {
-          eligible: false,
-          reason: 'transformRules.tag is required for heading-missing-h1',
-        };
-      }
+    if (!data.transformRules?.value) {
+      return { eligible: false, reason: 'transformRules.value is required' };
     }
 
-    if (checkType === 'heading-h1-length' || checkType === 'heading-empty') {
-      if (data.transformRules?.action !== 'replace') {
-        return {
-          eligible: false,
-          reason: `transformRules.action must be replace for ${checkType}`,
-        };
-      }
+    if (data.transformRules?.valueFormat !== 'hast') {
+      return {
+        eligible: false,
+        reason: 'transformRules.valueFormat must be hast for toc',
+      };
     }
 
-    if (checkType === 'heading-order-invalid') {
-      if (data.transformRules?.action !== 'replaceWith') {
-        return {
-          eligible: false,
-          reason: `transformRules.action must be replaceWith for ${checkType}`,
-        };
-      }
-      if (data.transformRules?.valueFormat !== 'hast') {
-        return {
-          eligible: false,
-          reason: `transformRules.valueFormat must be hast for ${checkType}`,
-        };
-      }
+    // Validate action
+    const validActions = ['insertBefore', 'insertAfter'];
+    if (!validActions.includes(data.transformRules?.action)) {
+      return {
+        eligible: false,
+        reason: `transformRules.action must be one of ${validActions.join(', ')} for toc`,
+      };
     }
 
     return { eligible: true };

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.82.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.2...@adobe/spacecat-shared-utils-v1.82.3) (2025-12-10)
+
+
+### Bug Fixes
+
+* heading and toc mappers ([#1230](https://github.com/adobe/spacecat-shared/issues/1230)) ([f767fb3](https://github.com/adobe/spacecat-shared/commit/f767fb319c97ed64848a1c5fc5913693a52290d9))
+
 # [@adobe/spacecat-shared-utils-v1.82.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.1...@adobe/spacecat-shared-utils-v1.82.2) (2025-12-09)
 
 

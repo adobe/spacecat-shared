@@ -58,6 +58,10 @@ describe('Locale Detection', () => {
     });
 
     it('returns a default locale if no indicator results are available', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', { 'content-type': 'text/html' });
+
       const result = await detectLocale({
         baseUrl,
         indicatorFuncs: [],
@@ -68,6 +72,10 @@ describe('Locale Detection', () => {
     });
 
     it('summarizes indicator results with mixed indicators', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', { 'content-type': 'text/html' });
+
       const indicator = () => ([
         { language: 'de' },
         { region: 'CH' },
@@ -82,6 +90,10 @@ describe('Locale Detection', () => {
     });
 
     it('summarizes indicator results by majority', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', { 'content-type': 'text/html' });
+
       const indicator = () => ([
         { language: 'de', region: 'DE' },
         { region: 'CH' },

@@ -69,6 +69,18 @@ export default class BaseOpportunityMapper {
   }
 
   /**
+   * Determines if configurations without patches are allowed for this opportunity type
+   * By default, configurations must have at least one patch to be valid
+   * Override this method in subclasses if configs without patches are acceptable
+   * (e.g., prerender-only configs that just enable prerendering)
+   * @returns {boolean} - True if configs without patches are allowed
+   */
+  // eslint-disable-next-line class-methods-use-this
+  allowConfigsWithoutPatch() {
+    return false;
+  }
+
+  /**
    * Helper method to create base patch structure
    * @protected
    * @param {Object} suggestion - Suggestion entity with getUpdatedAt() method

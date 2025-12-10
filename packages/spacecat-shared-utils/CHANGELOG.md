@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.84.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.83.0...@adobe/spacecat-shared-utils-v1.84.0) (2025-12-10)
+
+
+### Features
+
+* add bot-blocker-detect ([#1233](https://github.com/adobe/spacecat-shared/issues/1233)) ([5d73f1b](https://github.com/adobe/spacecat-shared/commit/5d73f1b07ba5ea9735577b0bb0519d9d1cfd278c))
+
 # [@adobe/spacecat-shared-utils-v1.83.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.3...@adobe/spacecat-shared-utils-v1.83.0) (2025-12-10)
 
 

@@ -34,7 +34,9 @@ export const TARGET_USER_AGENTS_CATEGORIES: {
 
 export interface TokowakaMetaconfig {
   siteId: string;
-  prerender: boolean;
+  prerender?: {
+    allowList?: string[];
+  } | boolean;
 }
 
 export interface TokowakaConfig {
@@ -229,6 +231,23 @@ export class FaqMapper extends BaseOpportunityMapper {
     opportunityId: string,
     existingConfig: TokowakaConfig | null
   ): TokawakaPatch[];
+}
+
+/**
+ * Table of Contents (TOC) opportunity mapper
+ * Handles conversion of TOC suggestions to Tokowaka patches with HAST format
+ */
+export class TocMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
 }
 
 /**

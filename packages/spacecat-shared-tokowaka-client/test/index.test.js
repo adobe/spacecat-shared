@@ -1040,6 +1040,59 @@ describe('TokowakaClient', () => {
       // Both suggestions are in result but sugg-1 skipped deployment due to no patches
       expect(result.succeededSuggestions).to.have.length(2);
       expect(result.s3Paths).to.have.length(1); // Only one URL actually deployed
+      expect(log.warn).to.have.been.calledWith('No config generated for URL: https://example.com/page1');
+    });
+
+    it('should skip URL when config has no patches after generation', async () => {
+      // Stub generateConfig to return a config with no patches (defensive check)
+      const originalGenerateConfig = client.generateConfig.bind(client);
+      sinon.stub(client, 'generateConfig').callsFake((url, ...args) => {
+        const config = originalGenerateConfig(url, ...args);
+        if (config && url === 'https://example.com/page1') {
+          // Return config but with empty patches array (simulating edge case)
+          return { ...config, patches: [] };
+        }
+        return config;
+      });
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page2',
+            recommendedAction: 'New Subtitle',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h2',
+            },
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.s3Paths).to.have.length(1); // Only page2 deployed
+      expect(log.warn).to.have.been.calledWith('No eligible suggestions to deploy for URL: https://example.com/page1');
     });
 
     it('should return early when no eligible suggestions', async () => {
@@ -1064,6 +1117,50 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions).to.have.length(1);
       expect(log.warn).to.have.been.calledWith('No eligible suggestions to deploy');
       expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should deploy prerender-only suggestions with no patches', async () => {
+      // Create prerender opportunity
+      const prerenderOpportunity = {
+        getId: () => 'opp-prerender-123',
+        getType: () => 'prerender',
+      };
+
+      // Create prerender suggestions with no transform rules (prerender-only)
+      const prerenderSuggestions = [
+        {
+          getId: () => 'prerender-sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            // No transform rules - prerender only
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        prerenderOpportunity,
+        prerenderSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.s3Paths).to.have.length(1);
+      expect(result.cdnInvalidations).to.have.length(1);
+
+      // Verify uploaded config has no patches but prerender is enabled
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.patches).to.have.length(0);
+      expect(uploadedConfig.prerender).to.equal(true);
+      expect(uploadedConfig.url).to.equal('https://example.com/page1');
+
+      // Verify CDN was invalidated
+      expect(client.invalidateCdnCache).to.have.been.calledOnce;
+      expect(client.invalidateCdnCache).to.have.been.calledWith(
+        'https://example.com/page1',
+        'cloudfront',
+      );
     });
 
     it('should throw error for unsupported opportunity type', async () => {
@@ -1222,6 +1319,70 @@ describe('TokowakaClient', () => {
       expect(uploadedConfig.patches[0].suggestionId).to.equal('sugg-3');
     });
 
+    it('should rollback prerender suggestions by disabling prerender flag', async () => {
+      // Create prerender opportunity
+      const prerenderOpportunity = {
+        getId: () => 'opp-prerender-123',
+        getType: () => 'prerender',
+      };
+
+      // Create prerender suggestions
+      const prerenderSuggestions = [
+        {
+          getId: () => 'prerender-sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+          }),
+        },
+      ];
+
+      const existingConfig = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            op: 'replace',
+            selector: 'h1',
+            value: 'Heading 1',
+            opportunityId: 'opp-other-123',
+            suggestionId: 'other-sugg-1',
+            prerenderRequired: false,
+            lastUpdated: 1234567890,
+          },
+        ],
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        prerenderSuggestions,
+      );
+
+      expect(result.s3Paths).to.have.length(1);
+      expect(result.s3Paths[0]).to.equal('opportunities/example.com/L3BhZ2Ux');
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.removedPatchesCount).to.equal(1);
+
+      // Verify uploaded config has prerender disabled but patches intact
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.prerender).to.equal(false);
+      expect(uploadedConfig.patches).to.have.length(1);
+      expect(uploadedConfig.patches[0].suggestionId).to.equal('other-sugg-1');
+
+      // Verify CDN was invalidated
+      expect(client.invalidateCdnCache).to.have.been.calledOnce;
+      expect(client.invalidateCdnCache).to.have.been.calledWith(
+        'https://example.com/page1',
+        'cloudfront',
+      );
+    });
+
     it('should handle no existing config gracefully', async () => {
       sinon.stub(client, 'fetchConfig').resolves(null);
 
@@ -1256,6 +1417,30 @@ describe('TokowakaClient', () => {
       );
 
       // Code marks eligible suggestions as succeeded even if no patches to remove
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.s3Paths).to.have.length(0);
+      expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should handle missing patches property in config', async () => {
+      const existingConfig = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        // patches property is missing
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      // Code marks eligible suggestions as succeeded even if patches property missing
       expect(result.succeededSuggestions).to.have.length(2);
       expect(result.failedSuggestions).to.have.length(0);
       expect(result.s3Paths).to.have.length(0);
@@ -1585,6 +1770,64 @@ describe('TokowakaClient', () => {
 
       // Verify fetch was called for HTML fetching
       // (4 times: warmup + actual for original and optimized)
+      expect(fetchStub.callCount).to.equal(4);
+      expect(s3Client.send).to.have.been.calledOnce;
+    });
+
+    it('should preview prerender-only suggestions with no patches', async () => {
+      // Update fetchConfig to return existing config with deployed patches
+      client.fetchConfig.resolves({
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: false,
+        patches: [
+          {
+            op: 'replace',
+            selector: 'h1',
+            value: 'Existing Heading',
+            opportunityId: 'opp-other-123',
+            suggestionId: 'sugg-other',
+            prerenderRequired: false,
+            lastUpdated: 1234567890,
+          },
+        ],
+      });
+
+      // Create prerender opportunity
+      const prerenderOpportunity = {
+        getId: () => 'opp-prerender-123',
+        getType: () => 'prerender',
+      };
+
+      // Create prerender suggestions with no transform rules (prerender-only)
+      const prerenderSuggestions = [
+        {
+          getId: () => 'prerender-sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            // No transform rules - prerender only
+          }),
+        },
+      ];
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        prerenderSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result).to.have.property('s3Path');
+      expect(result.config).to.not.be.null;
+      expect(result.config.patches).to.have.length(1); // Merged with existing deployed patch
+      expect(result.config.prerender).to.equal(true); // Prerender enabled
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result).to.have.property('html');
+
+      // Verify fetch was called for HTML fetching
       expect(fetchStub.callCount).to.equal(4);
       expect(s3Client.send).to.have.been.calledOnce;
     });

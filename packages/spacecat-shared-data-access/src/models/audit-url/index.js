@@ -10,18 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { context as h2, h1 } from '@adobe/fetch';
+import AuditUrl from './audit-url.model.js';
+import AuditUrlCollection from './audit-url.collection.js';
 
-/* c8 ignore next 3 */
-export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
-  ? h1()
-  : h2();
-
-export function sanitizeHeaders(headers) {
-  return {
-    ...headers,
-    ...(headers.Authorization && { Authorization: '***' }),
-    ...(headers['x-api-key'] && { 'x-api-key': '***' }),
-    ...(headers['api-key'] && { 'api-key': '***' }),
-  };
-}
+export {
+  AuditUrl,
+  AuditUrlCollection,
+};

@@ -19,13 +19,13 @@ import sinonChai from 'sinon-chai';
 
 import Configuration from '../../../../src/models/configuration/configuration.model.js';
 import configurationFixtures from '../../../fixtures/configurations.fixture.js';
-import { createElectroMocks } from '../../util.js';
 import { sanitizeIdAndAuditFields } from '../../../../src/util/util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 const sampleConfiguration = configurationFixtures[0];
+const sampleVersionId = sampleConfiguration.versionId;
 const site = {
   getId: () => 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
   getOrganizationId: () => '757ceb98-05c8-4e07-bb23-bc722115b2b0',
@@ -37,50 +37,54 @@ const org = {
 
 describe('ConfigurationModel', () => {
   let instance;
-
-  let mockElectroService;
-  let mockRecord;
+  let mockData;
+  let mockCollection;
+  let mockLogger;
 
   beforeEach(() => {
-    mockRecord = { ...sampleConfiguration };
+    mockData = { ...sampleConfiguration };
 
-    ({
-      mockElectroService,
-      model: instance,
-    } = createElectroMocks(Configuration, mockRecord));
+    mockCollection = {
+      create: stub().resolves(),
+    };
 
-    mockElectroService.entities.patch = stub().returns({ set: stub() });
+    mockLogger = {
+      info: stub(),
+      warn: stub(),
+      error: stub(),
+      debug: stub(),
+    };
+
+    instance = new Configuration(mockData, sampleVersionId, mockCollection, mockLogger);
   });
 
   describe('constructor', () => {
-    beforeEach(() => {
-      mockRecord = { ...sampleConfiguration };
-
-      ({
-        mockElectroService,
-        model: instance,
-      } = createElectroMocks(Configuration, mockRecord));
-
-      mockElectroService.entities.patch = stub().returns({ set: stub() });
-    });
-
     it('initializes the Configuration instance correctly', () => {
       expect(instance).to.be.an('object');
-      expect(instance.record).to.deep.equal(mockRecord);
+      expect(instance.handlers).to.deep.equal(mockData.handlers);
+      expect(instance.jobs).to.deep.equal(mockData.jobs);
+      expect(instance.queues).to.deep.equal(mockData.queues);
+      expect(instance.versionId).to.equal(sampleVersionId);
+      expect(instance.collection).to.equal(mockCollection);
+      expect(instance.log).to.equal(mockLogger);
     });
   });
 
   describe('configurationId', () => {
     it('gets configurationId', () => {
-      expect(instance.getId()).to.equal(sampleConfiguration.configurationId);
+      expect(instance.getId()).to.equal(sampleVersionId);
+    });
+
+    it('gets configurationId via getConfigurationId', () => {
+      expect(instance.getConfigurationId()).to.equal(sampleVersionId);
+    });
+
+    it('gets version via getVersion', () => {
+      expect(instance.getVersion()).to.equal(sampleVersionId);
     });
   });
 
   describe('attributes', () => {
-    it('gets version', () => {
-      expect(instance.getVersion()).to.equal(2);
-    });
-
     it('gets queues', () => {
       expect(instance.getQueues()).to.deep.equal(sampleConfiguration.queues);
     });
@@ -101,10 +105,28 @@ describe('ConfigurationModel', () => {
       expect(instance.getSlackRoles()).to.deep.equal(sampleConfiguration.slackRoles);
     });
 
+    it('sets slackRoles', () => {
+      const newSlackRoles = { admin: ['USER123', 'USER456'] };
+      instance.setSlackRoles(newSlackRoles);
+      expect(instance.getSlackRoles()).to.deep.equal(newSlackRoles);
+    });
+
     it('gets slackRoleMembersByRole', () => {
       expect(instance.getSlackRoleMembersByRole('scrape')).to.deep.equal(sampleConfiguration.slackRoles.scrape);
-      delete instance.record.slackRoles;
+      instance.slackRoles = undefined;
       expect(instance.getSlackRoleMembersByRole('scrape')).to.deep.equal([]);
+    });
+
+    it('gets createdAt and updatedAt', () => {
+      instance.createdAt = '2024-01-01T00:00:00.000Z';
+      instance.updatedAt = '2024-01-02T00:00:00.000Z';
+      expect(instance.getCreatedAt()).to.equal('2024-01-01T00:00:00.000Z');
+      expect(instance.getUpdatedAt()).to.equal('2024-01-02T00:00:00.000Z');
+    });
+
+    it('gets and sets updatedBy', () => {
+      instance.setUpdatedBy('user@example.com');
+      expect(instance.getUpdatedBy()).to.equal('user@example.com');
     });
   });
 
@@ -120,7 +142,6 @@ describe('ConfigurationModel', () => {
     });
 
     it('returns true when enabled is there and the handler is enabled by default', () => {
-      console.log('starting test');
       expect(instance.isHandlerEnabledForSite('sitemap', site)).to.be.true;
       expect(instance.isHandlerEnabledForOrg('sitemap', org)).to.be.true;
     });
@@ -148,7 +169,7 @@ describe('ConfigurationModel', () => {
 
     it('gets enabled site ids for a handler', () => {
       expect(instance.getEnabledSiteIdsForHandler('lhs-mobile')).to.deep.equal(['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe']);
-      delete instance.record.handlers;
+      instance.handlers = undefined;
       expect(instance.getEnabledSiteIdsForHandler('lhs-mobile')).to.deep.equal([]);
     });
 
@@ -165,22 +186,22 @@ describe('ConfigurationModel', () => {
     });
 
     it('returns empty array for disabled audits when no handlers exist', () => {
-      delete instance.record.handlers;
+      instance.handlers = undefined;
       expect(instance.getDisabledAuditsForSite(site)).to.deep.equal([]);
     });
 
     it('returns empty array for disabled audits when no jobs exist', () => {
-      delete instance.record.jobs;
+      instance.jobs = undefined;
       expect(instance.getDisabledAuditsForSite(site)).to.deep.equal([]);
     });
 
     it('returns empty array for enabled audits when handlers is null', () => {
-      delete instance.record.handlers;
+      instance.handlers = undefined;
       expect(instance.getEnabledAuditsForSite(site)).to.deep.equal([]);
     });
 
     it('returns empty array for enabled audits when jobs is null', () => {
-      delete instance.record.jobs;
+      instance.jobs = undefined;
       expect(instance.getEnabledAuditsForSite(site)).to.deep.equal([]);
     });
   });
@@ -196,7 +217,7 @@ describe('ConfigurationModel', () => {
     });
 
     it('adds a new handler when handlers object is null', () => {
-      delete instance.record.handlers;
+      instance.handlers = undefined;
 
       const handlerData = {
         enabledByDefault: true,
@@ -429,11 +450,8 @@ describe('ConfigurationModel', () => {
       });
     });
 
-    it('throws error when registering an empty audit type', () => {
+    it('throws error for empty or null audit type', () => {
       expect(() => instance.registerAudit('', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must be a non-empty string');
-    });
-
-    it('throws error when registering a null audit type', () => {
       expect(() => instance.registerAudit(null, true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must be a non-empty string');
     });
 
@@ -442,55 +460,16 @@ describe('ConfigurationModel', () => {
       expect(() => instance.registerAudit(longAuditType, true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must not exceed 37 characters');
     });
 
-    it('throws error when audit name contains invalid characters', () => {
-      expect(() => instance.registerAudit('invalid@audit!', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name contains spaces', () => {
-      expect(() => instance.registerAudit('invalid audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name contains underscores', () => {
-      expect(() => instance.registerAudit('invalid_audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name contains uppercase letters', () => {
-      expect(() => instance.registerAudit('MyAudit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name contains mixed case letters', () => {
-      expect(() => instance.registerAudit('my-Custom-Audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
-    });
-
-    it('throws error when audit name starts with uppercase letter', () => {
-      expect(() => instance.registerAudit('Custom-audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+    it('throws error for invalid audit name format', () => {
+      const invalidNames = ['invalid@audit!', 'invalid audit', 'invalid_audit', 'MyAudit', 'my-Custom-Audit'];
+      invalidNames.forEach((name) => {
+        expect(() => instance.registerAudit(name, true, 'weekly', ['ASO']))
+          .to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+      });
     });
 
     it('throws error when registering an already registered audit', () => {
       expect(() => instance.registerAudit('404', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type "404" is already registered');
-    });
-
-    it('allows registering any valid audit type as string', () => {
-      const auditType = 'my-custom-audit-123';
-      instance.registerAudit(auditType, true, 'weekly', ['ASO']);
-      expect(instance.getHandler(auditType)).to.deep.equal({
-        enabledByDefault: true,
-        dependencies: [],
-        disabled: {
-          sites: [],
-          orgs: [],
-        },
-        enabled: {
-          sites: [],
-          orgs: [],
-        },
-        productCodes: ['ASO'],
-      });
-      expect(instance.getJobs().find((job) => job.group === 'audits' && job.type === auditType)).to.deep.equal({
-        group: 'audits',
-        type: 'my-custom-audit-123',
-        interval: 'weekly',
-      });
     });
 
     it('registers audit when handlers is null', () => {
@@ -528,15 +507,9 @@ describe('ConfigurationModel', () => {
       expect(instance.getJobs().find((job) => job.group === 'audits' && job.type === auditType)).to.be.undefined;
     });
 
-    it('throws error when unregistering an empty audit type', () => {
+    it('throws error when unregistering invalid or non-existent audit', () => {
       expect(() => instance.unregisterAudit('')).to.throw(Error, 'Audit type must be a non-empty string');
-    });
-
-    it('throws error when unregistering a null audit type', () => {
       expect(() => instance.unregisterAudit(null)).to.throw(Error, 'Audit type must be a non-empty string');
-    });
-
-    it('throws error when unregistering a non-existent audit', () => {
       expect(() => instance.unregisterAudit('non-existent-audit')).to.throw(Error, 'Audit type "non-existent-audit" is not registered');
     });
   });

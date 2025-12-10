@@ -26,6 +26,7 @@ export default function dataAccessWrapper(fn) {
    * Wrapper for data access layer. This wrapper will create a data access layer if it is not
    * already created. It requires the context to have a log object. It will also use the
    * DYNAMO_TABLE_NAME_DATA environment variable to create the data access layer.
+   * Optionally, it will use the ENV and AWS_REGION environment variables
    *
    * @param {object} request - The request object
    * @param {object} context - The context object
@@ -37,10 +38,14 @@ export default function dataAccessWrapper(fn) {
 
       const {
         DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
+        S3_CONFIG_BUCKET: s3Bucket,
+        AWS_REGION: region,
       } = context.env;
 
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
+        s3Bucket,
+        region,
       }, log);
     }
 

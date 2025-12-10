@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-utils-v1.82.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.2...@adobe/spacecat-shared-utils-v1.82.3) (2025-12-10)
+
+
+### Bug Fixes
+
+* heading and toc mappers ([#1230](https://github.com/adobe/spacecat-shared/issues/1230)) ([f767fb3](https://github.com/adobe/spacecat-shared/commit/f767fb319c97ed64848a1c5fc5913693a52290d9))
+
+# [@adobe/spacecat-shared-utils-v1.82.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.1...@adobe/spacecat-shared-utils-v1.82.2) (2025-12-09)
+
+
+### Bug Fixes
+
+* **rum-api-client:** traffic attibution for new llms ([#1229](https://github.com/adobe/spacecat-shared/issues/1229)) ([a6aac37](https://github.com/adobe/spacecat-shared/commit/a6aac37993e4c5e7527d4f1853a137f2ed9c2779))
+
+# [@adobe/spacecat-shared-utils-v1.82.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.0...@adobe/spacecat-shared-utils-v1.82.1) (2025-12-05)
+
+
+### Bug Fixes
+
+* 0 week valid month on  numSeries ([#1220](https://github.com/adobe/spacecat-shared/issues/1220)) ([7670da9](https://github.com/adobe/spacecat-shared/commit/7670da9691b2623aa149b1b07c36c97585112ca7))
+
 # [@adobe/spacecat-shared-utils-v1.82.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.81.1...@adobe/spacecat-shared-utils-v1.82.0) (2025-12-03)
 
 

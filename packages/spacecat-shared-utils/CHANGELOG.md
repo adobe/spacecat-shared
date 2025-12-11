@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.85.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.0...@adobe/spacecat-shared-utils-v1.85.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* Structured (JSON) for Logging should be JSON string ([#1237](https://github.com/adobe/spacecat-shared/issues/1237)) ([cfcee6e](https://github.com/adobe/spacecat-shared/commit/cfcee6e4315aa518c52e4ca50b99b0cb762f5a61))
+
 # [@adobe/spacecat-shared-utils-v1.85.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.84.0...@adobe/spacecat-shared-utils-v1.85.0) (2025-12-11)
 
 

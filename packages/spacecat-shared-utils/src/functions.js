@@ -186,33 +186,50 @@ function isIsoTimeOffsetsDate(str) {
 
 /**
  * Validates whether the given string is a valid URL with http or https protocol.
- * Validates that the URL is clean: no explicit ports, hash fragments, or query parameters.
- * Paths are allowed for flexibility with other URL fields.
  *
  * @param {string} urlString - The string to validate.
  * @returns {boolean} True if the given string validates successfully.
  */
 function isValidUrl(urlString) {
   try {
-    let url = urlString.trim().toLowerCase();
+    const url = new URL(urlString);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
-    // reject control characters (LF, CR etc)
+/**
+ * Validates whether the given string is a valid BaseURL with http or https protocol.
+ * Validates that the URL is clean: no explicit ports, hash fragments, or query parameters.
+ * Paths are allowed.
+ *
+ * @param {string} urlString - The string to validate.
+ * @returns {boolean} True if the given string validates successfully.
+ */
+function isValidBaseUrl(urlString) {
+  try {
+    let url = urlString.trim();
+
+    // reject control characters (LF, CR, etc.)
     if ([...url].some((c) => {
       const code = c.charCodeAt(0);
       return code < 32 || code === 127;
     })) return false;
 
-    // only allow https
-    if (!/^https:\/\//i.test(url)) {
+    const hasProtocol = /^[a-z][a-z0-9+\-.]*:\/\//i.test(url);
+    if (!hasProtocol) {
       url = `https://${url}`;
     }
 
-    const hostInput = url.slice('https://'.length);
-    if (/[/\\?#:]/.test(hostInput)) return false;
-
     const urlObj = new URL(url);
 
-    // ensure the hostname is a valid registrable domain and not an ip
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') return false;
+    if (urlObj.search || urlObj.hash || urlObj.port) return false;
+    if (urlObj.username || urlObj.password) return false;
+    if (urlObj.pathname.includes('..') || urlObj.pathname.includes('//')) return false;
+
+    // ensure the hostname is a valid registrable domain and not an IP
     const domain = parse(urlObj.hostname, { allowPrivateDomains: true });
     if (!domain.domain || domain.isIp) return false;
     if (!domain.isIcann && !domain.isPrivate) return false;
@@ -366,6 +383,7 @@ export {
   isValidDate,
   isValidEmail,
   isValidUrl,
+  isValidBaseUrl,
   isValidUUID,
   isValidIMSOrgId,
   isValidHelixPreviewUrl,

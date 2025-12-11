@@ -93,6 +93,35 @@ class TokowakaClient {
   }
 
   /**
+   * Gets the list of CDN providers from environment configuration
+   * Supports both single provider (string) and multiple providers (comma-separated string or array)
+   * @returns {Array<string>} Array of CDN provider names
+   * @private
+   */
+  #getCdnProviders() {
+    const providerConfig = this.env.TOKOWAKA_CDN_PROVIDER;
+
+    if (!providerConfig) {
+      return [];
+    }
+
+    // If it's already an array, return it
+    if (Array.isArray(providerConfig)) {
+      return providerConfig.filter(Boolean);
+    }
+
+    // If it's a comma-separated string, split it
+    if (typeof providerConfig === 'string') {
+      return providerConfig
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  /**
    * Generates Tokowaka site configuration from suggestions for a specific URL
    * @param {string} url - Full URL for which to generate config
    * @param {Object} opportunity - Opportunity entity
@@ -342,34 +371,122 @@ class TokowakaClient {
 
   /**
    * Invalidates CDN cache for the Tokowaka config for a specific URL
-   * Currently supports CloudFront only
+   * Supports multiple CDN providers in parallel (CloudFront, Fastly, etc.)
    * @param {string} url - Full URL (e.g., 'https://www.example.com/products/item')
-   * @param {string} provider - CDN provider name (default: 'cloudfront')
+   * @param {string|Array<string>} providers - CDN provider name(s)
+   *   (e.g., 'cloudfront' or ['cloudfront', 'fastly'])
    * @param {boolean} isPreview - Whether to invalidate preview path (default: false)
-   * @returns {Promise<Object|null>} - CDN invalidation result or null if skipped
+   * @returns {Promise<Array<Object>>} - Array of CDN invalidation results
    */
-  async invalidateCdnCache(url, provider, isPreview = false) {
-    if (!hasText(url) || !hasText(provider)) {
-      throw this.#createError('URL and provider are required', HTTP_BAD_REQUEST);
+  async invalidateCdnCache(url, providers, isPreview = false) {
+    if (!hasText(url)) {
+      throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
-    try {
-      const pathsToInvalidate = [`/${getTokowakaConfigS3Path(url, this.log, isPreview)}`];
-      this.log.debug(`Invalidating CDN cache for ${pathsToInvalidate.length} paths via ${provider}`);
-      const cdnClient = this.cdnClientRegistry.getClient(provider);
-      if (!cdnClient) {
-        throw this.#createError(`No CDN client available for provider: ${provider}`, HTTP_NOT_IMPLEMENTED);
+
+    // Convert single provider to array for uniform handling
+    const providerList = Array.isArray(providers) ? providers : [providers].filter(Boolean);
+
+    if (providerList.length === 0) {
+      this.log.warn('No CDN providers specified for cache invalidation');
+      return [];
+    }
+
+    const pathsToInvalidate = [`/${getTokowakaConfigS3Path(url, this.log, isPreview)}`];
+    this.log.debug(`Invalidating CDN cache for ${pathsToInvalidate.length} paths via providers: ${providerList.join(', ')}`);
+
+    // Invalidate all providers in parallel
+    const invalidationPromises = providerList.map(async (provider) => {
+      try {
+        const cdnClient = this.cdnClientRegistry.getClient(provider);
+        if (!cdnClient) {
+          this.log.warn(`No CDN client available for provider: ${provider}`);
+          return {
+            status: 'error',
+            provider,
+            message: `No CDN client available for provider: ${provider}`,
+          };
+        }
+        const result = await cdnClient.invalidateCache(pathsToInvalidate);
+        this.log.info(`CDN cache invalidation completed for ${provider}: ${JSON.stringify(result)}`);
+        return result;
+      } catch (error) {
+        this.log.error(`Failed to invalidate ${provider} CDN cache: ${error.message}`, error);
+        return {
+          status: 'error',
+          provider,
+          message: error.message,
+        };
       }
-      const result = await cdnClient.invalidateCache(pathsToInvalidate);
-      this.log.info(`CDN cache invalidation completed: ${JSON.stringify(result)}`);
-      return result;
-    } catch (error) {
-      this.log.error(`Failed to invalidate Tokowaka CDN cache: ${error.message}`, error);
-      return {
-        status: 'error',
-        provider: 'cloudfront',
-        message: error.message,
-      };
+    });
+
+    // Wait for all invalidations to complete
+    const results = await Promise.all(invalidationPromises);
+    return results;
+  }
+
+  /**
+   * Batch invalidates CDN cache for multiple URLs at once
+   * More efficient than individual invalidations when processing multiple URLs
+   * @param {Array<string>} urls - Array of full URLs to invalidate
+   * @param {string|Array<string>} providers - CDN provider name(s)
+   * @param {boolean} isPreview - Whether to invalidate preview paths (default: false)
+   * @returns {Promise<Array<Object>>} - Array of CDN invalidation results (one per provider)
+   */
+  async batchInvalidateCdnCache(urls, providers, isPreview = false) {
+    if (!Array.isArray(urls) || urls.length === 0) {
+      this.log.warn('No URLs provided for batch cache invalidation');
+      return [];
     }
+
+    // Convert single provider to array for uniform handling
+    const providerList = Array.isArray(providers) ? providers : [providers].filter(Boolean);
+
+    if (providerList.length === 0) {
+      this.log.warn('No CDN providers specified for batch cache invalidation');
+      return [];
+    }
+
+    // Generate all S3 paths for the URLs
+    const pathsToInvalidate = urls.map((url) => `/${getTokowakaConfigS3Path(url, this.log, isPreview)}`);
+
+    this.log.debug(
+      `Batch invalidating CDN cache for ${pathsToInvalidate.length} paths `
+      + `via providers: ${providerList.join(', ')}`,
+    );
+
+    // Invalidate all providers in parallel with batched paths
+    const invalidationPromises = providerList.map(async (provider) => {
+      try {
+        const cdnClient = this.cdnClientRegistry.getClient(provider);
+        if (!cdnClient) {
+          this.log.warn(`No CDN client available for provider: ${provider}`);
+          return {
+            status: 'error',
+            provider,
+            message: `No CDN client available for provider: ${provider}`,
+          };
+        }
+
+        // Pass all paths at once for batch invalidation
+        const result = await cdnClient.invalidateCache(pathsToInvalidate);
+        this.log.info(
+          `Batch CDN cache invalidation completed for ${provider}: `
+          + `${pathsToInvalidate.length} paths (${JSON.stringify(result)})`,
+        );
+        return result;
+      } catch (error) {
+        this.log.error(`Failed to batch invalidate ${provider} CDN cache: ${error.message}`, error);
+        return {
+          status: 'error',
+          provider,
+          message: error.message,
+        };
+      }
+    });
+
+    // Wait for all provider invalidations to complete
+    const results = await Promise.all(invalidationPromises);
+    return results;
   }
 
   /**
@@ -433,7 +550,7 @@ class TokowakaClient {
 
     // Process each URL separately
     const s3Paths = [];
-    const cdnInvalidations = [];
+    const deployedUrls = []; // Track URLs for batch CDN invalidation
 
     for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
       const fullUrl = new URL(urlPath, baseURL).toString();
@@ -468,17 +585,17 @@ class TokowakaClient {
       // eslint-disable-next-line no-await-in-loop
       const s3Path = await this.uploadConfig(fullUrl, config);
       s3Paths.push(s3Path);
-
-      // Invalidate CDN cache (non-blocking, failures are logged but don't fail deployment)
-      // eslint-disable-next-line no-await-in-loop
-      const cdnInvalidationResult = await this.invalidateCdnCache(
-        fullUrl,
-        this.env.TOKOWAKA_CDN_PROVIDER,
-      );
-      cdnInvalidations.push(cdnInvalidationResult);
+      deployedUrls.push(fullUrl); // Collect URL for batch invalidation
     }
 
     this.log.info(`Uploaded Tokowaka configs for ${s3Paths.length} URLs`);
+
+    // Batch invalidate CDN cache for all deployed URLs at once
+    // (much more efficient than individual invalidations)
+    const cdnInvalidations = await this.batchInvalidateCdnCache(
+      deployedUrls,
+      this.#getCdnProviders(),
+    );
 
     return {
       s3Paths,
@@ -533,7 +650,7 @@ class TokowakaClient {
 
     // Process each URL separately
     const s3Paths = [];
-    const cdnInvalidations = [];
+    const rolledBackUrls = []; // Track URLs for batch CDN invalidation
     let totalRemovedCount = 0;
 
     for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
@@ -567,14 +684,7 @@ class TokowakaClient {
         // eslint-disable-next-line no-await-in-loop
         const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
         s3Paths.push(s3Path);
-
-        // Invalidate CDN cache
-        // eslint-disable-next-line no-await-in-loop
-        const cdnInvalidationResult = await this.invalidateCdnCache(
-          fullUrl,
-          this.env.TOKOWAKA_CDN_PROVIDER,
-        );
-        cdnInvalidations.push(cdnInvalidationResult);
+        rolledBackUrls.push(fullUrl); // Collect URL for batch invalidation
 
         totalRemovedCount += 1; // Count as 1 rollback
         // eslint-disable-next-line no-continue
@@ -610,17 +720,17 @@ class TokowakaClient {
       // eslint-disable-next-line no-await-in-loop
       const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
       s3Paths.push(s3Path);
-
-      // Invalidate CDN cache (non-blocking, failures are logged but don't fail rollback)
-      // eslint-disable-next-line no-await-in-loop
-      const cdnInvalidationResult = await this.invalidateCdnCache(
-        fullUrl,
-        this.env.TOKOWAKA_CDN_PROVIDER,
-      );
-      cdnInvalidations.push(cdnInvalidationResult);
+      rolledBackUrls.push(fullUrl); // Collect URL for batch invalidation
     }
 
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
+
+    // Batch invalidate CDN cache for all rolled back URLs at once
+    // (much more efficient than individual invalidations)
+    const cdnInvalidations = await this.batchInvalidateCdnCache(
+      rolledBackUrls,
+      this.#getCdnProviders(),
+    );
 
     return {
       s3Paths,
@@ -745,10 +855,10 @@ class TokowakaClient {
     this.log.info(`Uploading preview Tokowaka config with ${eligibleSuggestions.length} new suggestions`);
     const s3Path = await this.uploadConfig(previewUrl, config, true);
 
-    // Invalidate CDN cache for preview path
-    const cdnInvalidationResult = await this.invalidateCdnCache(
+    // Invalidate CDN cache for all providers in parallel (preview path)
+    const cdnInvalidationResults = await this.invalidateCdnCache(
       previewUrl,
-      this.env.TOKOWAKA_CDN_PROVIDER,
+      this.#getCdnProviders(),
       true,
     );
 
@@ -789,7 +899,7 @@ class TokowakaClient {
     return {
       s3Path,
       config,
-      cdnInvalidation: cdnInvalidationResult,
+      cdnInvalidations: cdnInvalidationResults,
       succeededSuggestions: eligibleSuggestions,
       failedSuggestions: ineligibleSuggestions,
       html: {

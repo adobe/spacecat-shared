@@ -816,6 +816,12 @@ describe('TokowakaClient', () => {
         provider: 'cloudfront',
         invalidationId: 'I123',
       });
+      // Stub batch CDN invalidation for deploy tests
+      sinon.stub(client, 'batchInvalidateCdnCache').resolves([{
+        status: 'success',
+        provider: 'cloudfront',
+        invalidationId: 'I123',
+      }]);
       // Stub fetchConfig to return null by default (no existing config)
       sinon.stub(client, 'fetchConfig').resolves(null);
       // Stub fetchMetaconfig to return null by default (will create new)
@@ -911,7 +917,8 @@ describe('TokowakaClient', () => {
       );
 
       expect(result.s3Paths).to.have.length(2);
-      expect(result.cdnInvalidations).to.have.length(2);
+      // Batch invalidation returns 1 result per CDN provider, not per URL
+      expect(result.cdnInvalidations).to.have.length(1);
       expect(result.succeededSuggestions).to.have.length(2);
     });
 
@@ -1155,11 +1162,11 @@ describe('TokowakaClient', () => {
       expect(uploadedConfig.prerender).to.equal(true);
       expect(uploadedConfig.url).to.equal('https://example.com/page1');
 
-      // Verify CDN was invalidated
-      expect(client.invalidateCdnCache).to.have.been.calledOnce;
-      expect(client.invalidateCdnCache).to.have.been.calledWith(
-        'https://example.com/page1',
-        'cloudfront',
+      // Verify CDN was invalidated using batch method
+      expect(client.batchInvalidateCdnCache).to.have.been.calledOnce;
+      expect(client.batchInvalidateCdnCache).to.have.been.calledWith(
+        ['https://example.com/page1'],
+        ['cloudfront'], // Providers are always passed as array
       );
     });
 
@@ -1260,6 +1267,12 @@ describe('TokowakaClient', () => {
         provider: 'cloudfront',
         invalidationId: 'I123',
       });
+      // Stub batch CDN invalidation for rollback tests
+      sinon.stub(client, 'batchInvalidateCdnCache').resolves([{
+        status: 'success',
+        provider: 'cloudfront',
+        invalidationId: 'I123',
+      }]);
     });
 
     it('should rollback suggestions successfully', async () => {
@@ -1375,11 +1388,11 @@ describe('TokowakaClient', () => {
       expect(uploadedConfig.patches).to.have.length(1);
       expect(uploadedConfig.patches[0].suggestionId).to.equal('other-sugg-1');
 
-      // Verify CDN was invalidated
-      expect(client.invalidateCdnCache).to.have.been.calledOnce;
-      expect(client.invalidateCdnCache).to.have.been.calledWith(
-        'https://example.com/page1',
-        'cloudfront',
+      // Verify CDN was invalidated using batch method
+      expect(client.batchInvalidateCdnCache).to.have.been.calledOnce;
+      expect(client.batchInvalidateCdnCache).to.have.been.calledWith(
+        ['https://example.com/page1'],
+        ['cloudfront'], // Providers are always passed as array
       );
     });
 
@@ -1629,7 +1642,8 @@ describe('TokowakaClient', () => {
       );
 
       expect(result.s3Paths).to.have.length(2);
-      expect(result.cdnInvalidations).to.have.length(2);
+      // Batch invalidation returns 1 result per CDN provider, not per URL
+      expect(result.cdnInvalidations).to.have.length(1);
       expect(result.succeededSuggestions).to.have.length(2);
     });
 
@@ -2050,7 +2064,8 @@ describe('TokowakaClient', () => {
       expect(client.invalidateCdnCache).to.have.been.calledOnce;
       const { firstCall } = client.invalidateCdnCache;
       expect(firstCall.args[0]).to.equal('https://example.com/page1');
-      expect(firstCall.args[1]).to.equal('cloudfront');
+      // Provider is now returned as array
+      expect(firstCall.args[1]).to.deep.equal(['cloudfront']);
       expect(firstCall.args[2]).to.be.true; // isPreview
     });
 
@@ -2120,7 +2135,10 @@ describe('TokowakaClient', () => {
     it('should invalidate CDN cache successfully', async () => {
       const result = await client.invalidateCdnCache('https://example.com/page1', 'cloudfront');
 
-      expect(result).to.deep.equal({
+      // Now returns array with one result per provider
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
         status: 'success',
         provider: 'cloudfront',
         invalidationId: 'I123',
@@ -2146,19 +2164,15 @@ describe('TokowakaClient', () => {
         await client.invalidateCdnCache('', 'cloudfront');
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.equal('URL and provider are required');
+        expect(error.message).to.equal('URL is required');
         expect(error.status).to.equal(400);
       }
     });
 
-    it('should throw error if provider is missing', async () => {
-      try {
-        await client.invalidateCdnCache('https://example.com/page1', '');
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.equal('URL and provider are required');
-        expect(error.status).to.equal(400);
-      }
+    it('should return empty array if provider is missing', async () => {
+      const result = await client.invalidateCdnCache('https://example.com/page1', '');
+      expect(result).to.deep.equal([]);
+      expect(log.warn).to.have.been.calledWith('No CDN providers specified for cache invalidation');
     });
 
     it('should return error object if no CDN client available', async () => {
@@ -2166,12 +2180,14 @@ describe('TokowakaClient', () => {
 
       const result = await client.invalidateCdnCache('https://example.com/page1', 'cloudfront');
 
-      expect(result).to.deep.equal({
+      // Now returns array with one result per provider
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
         status: 'error',
         provider: 'cloudfront',
         message: 'No CDN client available for provider: cloudfront',
       });
-      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate Tokowaka CDN cache/));
     });
 
     it('should return error object if CDN invalidation fails', async () => {
@@ -2179,13 +2195,174 @@ describe('TokowakaClient', () => {
 
       const result = await client.invalidateCdnCache('https://example.com/page1', 'cloudfront');
 
-      expect(result).to.deep.equal({
+      // Now returns array with one result per provider
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
         status: 'error',
         provider: 'cloudfront',
         message: 'CDN API error',
       });
 
-      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate Tokowaka CDN cache/));
+      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate cloudfront CDN cache/));
+    });
+  });
+
+  describe('batchInvalidateCdnCache', () => {
+    let mockCdnClient;
+
+    beforeEach(() => {
+      mockCdnClient = {
+        invalidateCache: sinon.stub().resolves({
+          status: 'success',
+          provider: 'cloudfront',
+          invalidationId: 'I123',
+        }),
+      };
+
+      sinon.stub(client.cdnClientRegistry, 'getClient').returns(mockCdnClient);
+    });
+
+    it('should batch invalidate CDN cache for multiple URLs', async () => {
+      const urls = [
+        'https://example.com/page1',
+        'https://example.com/page2',
+        'https://example.com/page3',
+      ];
+
+      const result = await client.batchInvalidateCdnCache(urls, 'cloudfront');
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
+        status: 'success',
+        provider: 'cloudfront',
+        invalidationId: 'I123',
+      });
+
+      expect(mockCdnClient.invalidateCache).to.have.been.calledWith([
+        '/opportunities/example.com/L3BhZ2Ux',
+        '/opportunities/example.com/L3BhZ2Uy',
+        '/opportunities/example.com/L3BhZ2Uz',
+      ]);
+      expect(log.debug).to.have.been.calledWith(sinon.match(/Batch invalidating CDN cache for 3 paths/));
+    });
+
+    it('should return empty array for empty URLs array', async () => {
+      const result = await client.batchInvalidateCdnCache([], 'cloudfront');
+      expect(result).to.deep.equal([]);
+      expect(log.warn).to.have.been.calledWith('No URLs provided for batch cache invalidation');
+    });
+
+    it('should return empty array if providers is empty', async () => {
+      const result = await client.batchInvalidateCdnCache(['https://example.com/page1'], '');
+      expect(result).to.deep.equal([]);
+      expect(log.warn).to.have.been.calledWith('No CDN providers specified for batch cache invalidation');
+    });
+
+    it('should return error object if no CDN client available', async () => {
+      client.cdnClientRegistry.getClient.returns(null);
+
+      const result = await client.batchInvalidateCdnCache(['https://example.com/page1'], 'cloudfront');
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
+        status: 'error',
+        provider: 'cloudfront',
+        message: 'No CDN client available for provider: cloudfront',
+      });
+    });
+
+    it('should return error object if CDN invalidation fails', async () => {
+      mockCdnClient.invalidateCache.rejects(new Error('CDN API error'));
+
+      const result = await client.batchInvalidateCdnCache(['https://example.com/page1'], 'cloudfront');
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
+        status: 'error',
+        provider: 'cloudfront',
+        message: 'CDN API error',
+      });
+    });
+
+    it('should handle multiple providers in parallel', async () => {
+      const mockFastlyClient = {
+        invalidateCache: sinon.stub().resolves({
+          status: 'success',
+          provider: 'fastly',
+          purgeId: 'F456',
+        }),
+      };
+
+      client.cdnClientRegistry.getClient.withArgs('cloudfront').returns(mockCdnClient);
+      client.cdnClientRegistry.getClient.withArgs('fastly').returns(mockFastlyClient);
+
+      const result = await client.batchInvalidateCdnCache(
+        ['https://example.com/page1'],
+        ['cloudfront', 'fastly'],
+      );
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].provider).to.equal('cloudfront');
+      expect(result[1].provider).to.equal('fastly');
+
+      expect(mockCdnClient.invalidateCache).to.have.been.calledOnce;
+      expect(mockFastlyClient.invalidateCache).to.have.been.calledOnce;
+    });
+
+    it('should handle errors from getClient', async () => {
+      // Simulate an error when getting the CDN client
+      client.cdnClientRegistry.getClient.restore();
+      sinon.stub(client.cdnClientRegistry, 'getClient').throws(new Error('Unexpected error'));
+
+      const result = await client.batchInvalidateCdnCache(['https://example.com/page1'], 'cloudfront');
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
+        status: 'error',
+        provider: 'cloudfront',
+        message: 'Unexpected error',
+      });
+
+      // Error is caught in provider-specific error handler
+      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to batch invalidate cloudfront CDN cache/));
+    });
+
+    it('should handle empty CDN provider config', async () => {
+      // Test with existing client but passing no providers
+      const result = await client.batchInvalidateCdnCache(['https://example.com/page1'], []);
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(0);
+      expect(log.warn).to.have.been.calledWith('No CDN providers specified for batch cache invalidation');
+    });
+
+    it('should handle multiple providers passed as array', async () => {
+      const mockFastlyClient = {
+        invalidateCache: sinon.stub().resolves({
+          status: 'success',
+          provider: 'fastly',
+        }),
+      };
+
+      client.cdnClientRegistry.getClient.restore();
+      sinon.stub(client.cdnClientRegistry, 'getClient')
+        .withArgs('cloudfront')
+        .returns(mockCdnClient)
+        .withArgs('fastly')
+        .returns(mockFastlyClient);
+
+      const result = await client.batchInvalidateCdnCache(['https://example.com/page1'], ['cloudfront', 'fastly']);
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(2);
+      expect(mockCdnClient.invalidateCache).to.have.been.calledOnce;
+      expect(mockFastlyClient.invalidateCache).to.have.been.calledOnce;
     });
   });
 });

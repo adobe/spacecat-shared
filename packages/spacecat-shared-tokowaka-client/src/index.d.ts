@@ -49,23 +49,39 @@ export interface TokowakaConfig {
 
 export interface CdnInvalidationResult {
   status: string;
-  provider?: string;
+  provider: string;
   purgeId?: string;
+  invalidationId?: string;
+  invalidationStatus?: string;
+  createTime?: string;
   estimatedSeconds?: number;
   paths?: number;
+  totalPaths?: number;
+  totalKeys?: number;
+  successCount?: number;
+  failedCount?: number;
+  serviceId?: string;
+  duration?: number;
+  results?: Array<{
+    key: string;
+    status: string;
+    statusCode?: number;
+    error?: string;
+  }>;
   message?: string;
+  error?: string;
 }
 
 export interface DeploymentResult {
   s3Paths: string[];
-  cdnInvalidations: (CdnInvalidationResult | null)[];
+  cdnInvalidations: CdnInvalidationResult[];
   succeededSuggestions: Array<any>;
   failedSuggestions: Array<{ suggestion: any; reason: string }>;
 }
 
 export interface RollbackResult {
   s3Paths: string[];
-  cdnInvalidations: (CdnInvalidationResult | null)[];
+  cdnInvalidations: CdnInvalidationResult[];
   succeededSuggestions: Array<any>;
   failedSuggestions: Array<{ suggestion: any; reason: string }>;
   removedPatchesCount: number;
@@ -74,7 +90,7 @@ export interface RollbackResult {
 export interface PreviewResult {
   s3Path: string;
   config: TokowakaConfig;
-  cdnInvalidation: CdnInvalidationResult | null;
+  cdnInvalidations: CdnInvalidationResult[];
   succeededSuggestions: Array<any>;
   failedSuggestions: Array<{ suggestion: any; reason: string }>;
   html: {
@@ -301,13 +317,26 @@ export class CloudFrontCdnClient extends BaseCdnClient {
 }
 
 /**
+ * Fastly CDN client implementation
+ */
+export class FastlyCdnClient extends BaseCdnClient {
+  constructor(env: {
+    TOKOWAKA_CDN_CONFIG: string; // JSON string with fastly config
+  }, log: any);
+  
+  getProviderName(): string;
+  validateConfig(): boolean;
+  invalidateCache(paths: string[]): Promise<CdnInvalidationResult>;
+}
+
+/**
  * Registry for CDN clients
  */
 export class CdnClientRegistry {
-  constructor(log: any);
+  constructor(env: Record<string, any>, log: any);
   
   registerClient(provider: string, ClientClass: typeof BaseCdnClient): void;
-  getClient(provider: string, config: Record<string, any>): BaseCdnClient | null;
+  getClient(provider: string): BaseCdnClient | null;
   getSupportedProviders(): string[];
   isProviderSupported(provider: string): boolean;
 }
@@ -327,8 +356,8 @@ export default class TokowakaClient {
     env: {
       TOKOWAKA_SITE_CONFIG_BUCKET: string;
       TOKOWAKA_PREVIEW_BUCKET?: string;
-      TOKOWAKA_CDN_PROVIDER?: string;
-      TOKOWAKA_CDN_CONFIG?: string;
+      TOKOWAKA_CDN_PROVIDER?: string | string[]; // Single provider or comma-separated list
+      TOKOWAKA_CDN_CONFIG?: string; // JSON with cloudfront and/or fastly config
       TOKOWAKA_EDGE_URL?: string;
     };
     log?: any;
@@ -372,8 +401,15 @@ export default class TokowakaClient {
   
   /**
    * Invalidates CDN cache for a specific URL
+   * Supports multiple CDN providers in parallel
    */
-  invalidateCdnCache(url: string, provider?: string, isPreview?: boolean): Promise<CdnInvalidationResult | null>;
+  invalidateCdnCache(url: string, providers?: string | string[], isPreview?: boolean): Promise<CdnInvalidationResult[]>;
+
+  /**
+   * Batch invalidates CDN cache for multiple URLs at once
+   * More efficient than individual invalidations when processing multiple URLs
+   */
+  batchInvalidateCdnCache(urls: string[], providers?: string | string[], isPreview?: boolean): Promise<CdnInvalidationResult[]>;
 
   /**
    * Deploys suggestions to Tokowaka edge

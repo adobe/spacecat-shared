@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.85.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.1...@adobe/spacecat-shared-utils-v1.85.2) (2025-12-11)
+
+
+### Bug Fixes
+
+* Implement Structured (JSON) Logging for Spacecat Audits - rollback ([#1239](https://github.com/adobe/spacecat-shared/issues/1239)) ([1f174d7](https://github.com/adobe/spacecat-shared/commit/1f174d7dd188dbdc610b75bf58644992925755b1))
+
 # [@adobe/spacecat-shared-utils-v1.85.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.0...@adobe/spacecat-shared-utils-v1.85.1) (2025-12-11)
 
 

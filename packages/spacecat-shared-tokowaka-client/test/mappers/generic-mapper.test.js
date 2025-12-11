@@ -586,7 +586,6 @@ describe('GenericMapper', () => {
             selector: '#selector',
           },
           patchValue: 'Content with tag',
-          format: 'hast',
           tag: 'div',
           url: 'https://example.com/page',
         }),
@@ -601,7 +600,7 @@ describe('GenericMapper', () => {
         op: 'insertAfter',
         selector: '#selector',
         value: 'Content with tag',
-        valueFormat: 'hast',
+        valueFormat: 'text',
         tag: 'div',
         opportunityId: 'opp-tag',
         suggestionId: 'sugg-with-tag',
@@ -630,6 +629,60 @@ describe('GenericMapper', () => {
       const patch = patches[0];
 
       expect(patch.tag).to.be.undefined;
+      expect(patch.valueFormat).to.equal('text');
+    });
+
+    it('should parse JSON patchValue when format is hast', () => {
+      const hastValue = {
+        type: 'element',
+        tagName: 'div',
+        properties: { className: ['test-class'] },
+        children: [{ type: 'text', value: 'Test content' }],
+      };
+
+      const suggestion = {
+        getId: () => 'sugg-hast-json',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
+          patchValue: JSON.stringify(hastValue),
+          format: 'hast',
+          url: 'https://example.com/page',
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-hast');
+
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch.value).to.deep.equal(hastValue);
+      expect(patch.valueFormat).to.equal('hast');
+    });
+
+    it('should use raw patchValue when format is not hast', () => {
+      const suggestion = {
+        getId: () => 'sugg-text',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
+          patchValue: 'Plain text content',
+          url: 'https://example.com/page',
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-text');
+
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch.value).to.equal('Plain text content');
       expect(patch.valueFormat).to.equal('text');
     });
 

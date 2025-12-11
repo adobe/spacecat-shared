@@ -16,7 +16,8 @@ import { isValidUrl } from '../functions.js';
 /**
  * Confidence levels used in bot blocker detection:
  * - 1.0 (ABSOLUTE): Site responds successfully with 200 OK - definitively crawlable
- * - 0.99 (HIGH): Known bot blocker signature detected (Cloudflare cf-ray, Imperva x-iinfo/x-cdn)
+ * - 0.99 (HIGH): Known bot blocker signature detected
+ *   (Cloudflare, Imperva, Akamai, Fastly, CloudFront)
  * - 0.95 (MEDIUM): HTTP/2 protocol errors indicating potential blocking
  * - 0.5: Unknown status code without known blocker signature (e.g., 403 without headers)
  * - 0.3: Unknown error occurred during request
@@ -32,7 +33,20 @@ const DEFAULT_TIMEOUT = 5000;
 function analyzeResponse(response) {
   const { status, headers } = response;
 
-  if (status === 403 && headers.get('cf-ray')) {
+  // Check for CDN/blocker infrastructure presence
+  const hasCloudflare = headers.get('cf-ray') || headers.get('server') === 'cloudflare';
+  const hasImperva = headers.get('x-iinfo') || headers.get('x-cdn') === 'Incapsula';
+  const hasAkamai = headers.get('x-akamai-request-id')
+    || headers.get('x-akamai-session-id')
+    || headers.get('server')?.includes('AkamaiGHost');
+  const hasFastly = headers.get('x-served-by')?.includes('cache-')
+    || headers.get('fastly-io-info');
+  const hasCloudFront = headers.get('x-amz-cf-id')
+    || headers.get('x-amz-cf-pop')
+    || headers.get('via')?.includes('CloudFront');
+
+  // Active blocking (403 status with known blocker)
+  if (status === 403 && hasCloudflare) {
     return {
       crawlable: false,
       type: 'cloudflare',
@@ -40,7 +54,7 @@ function analyzeResponse(response) {
     };
   }
 
-  if (status === 403 && (headers.get('x-iinfo') || headers.get('x-cdn') === 'Incapsula')) {
+  if (status === 403 && hasImperva) {
     return {
       crawlable: false,
       type: 'imperva',
@@ -48,6 +62,72 @@ function analyzeResponse(response) {
     };
   }
 
+  if (status === 403 && hasAkamai) {
+    return {
+      crawlable: false,
+      type: 'akamai',
+      confidence: CONFIDENCE_HIGH,
+    };
+  }
+
+  if (status === 403 && hasFastly) {
+    return {
+      crawlable: false,
+      type: 'fastly',
+      confidence: CONFIDENCE_HIGH,
+    };
+  }
+
+  if (status === 403 && hasCloudFront) {
+    return {
+      crawlable: false,
+      type: 'cloudfront',
+      confidence: CONFIDENCE_HIGH,
+    };
+  }
+
+  // Success with known infrastructure present (infrastructure detected but allowing requests)
+  if (status === 200 && hasCloudflare) {
+    return {
+      crawlable: true,
+      type: 'cloudflare-allowed',
+      confidence: CONFIDENCE_ABSOLUTE,
+    };
+  }
+
+  if (status === 200 && hasImperva) {
+    return {
+      crawlable: true,
+      type: 'imperva-allowed',
+      confidence: CONFIDENCE_ABSOLUTE,
+    };
+  }
+
+  if (status === 200 && hasAkamai) {
+    return {
+      crawlable: true,
+      type: 'akamai-allowed',
+      confidence: CONFIDENCE_ABSOLUTE,
+    };
+  }
+
+  if (status === 200 && hasFastly) {
+    return {
+      crawlable: true,
+      type: 'fastly-allowed',
+      confidence: CONFIDENCE_ABSOLUTE,
+    };
+  }
+
+  if (status === 200 && hasCloudFront) {
+    return {
+      crawlable: true,
+      type: 'cloudfront-allowed',
+      confidence: CONFIDENCE_ABSOLUTE,
+    };
+  }
+
+  // Success with no known infrastructure
   if (status === 200) {
     return {
       crawlable: true,
@@ -56,6 +136,7 @@ function analyzeResponse(response) {
     };
   }
 
+  // Unknown status without known blocker signature
   return {
     crawlable: true,
     type: 'unknown',
@@ -86,14 +167,24 @@ function analyzeError(error) {
  * Currently detects:
  * - Cloudflare bot blocking (403 + cf-ray header)
  * - Imperva/Incapsula (403 + x-iinfo or x-cdn: Incapsula header)
+ * - Akamai (403 + x-akamai-request-id or related headers)
+ * - Fastly (403 + x-served-by or fastly-io-info headers)
+ * - AWS CloudFront (403 + x-amz-cf-id or via: CloudFront header)
  * - HTTP/2 stream errors (NGHTTP2_INTERNAL_ERROR, ERR_HTTP2_STREAM_ERROR)
+ *
+ * Also detects infrastructure presence on successful requests (200 OK):
+ * - Returns 'cloudflare-allowed', 'imperva-allowed', 'akamai-allowed',
+ *   'fastly-allowed', or 'cloudfront-allowed' when infrastructure is present
+ *   but allowing the request through
  *
  * @param {Object} config - Configuration object
  * @param {string} config.baseUrl - The base URL to check
  * @param {number} [config.timeout=5000] - Request timeout in milliseconds
  * @returns {Promise<Object>} Detection result with:
  *   - crawlable {boolean}: Whether the site can be crawled by bots
- *   - type {string}: Blocker type ('cloudflare', 'imperva', 'http2-block', 'none', 'unknown')
+ *   - type {string}: Blocker type ('cloudflare', 'imperva', 'akamai', 'fastly',
+ *     'cloudfront', 'http2-block', 'cloudflare-allowed', 'imperva-allowed',
+ *     'akamai-allowed', 'fastly-allowed', 'cloudfront-allowed', 'none', 'unknown')
  *   - confidence {number}: Confidence level (0.0-1.0, see confidence level constants)
  * @throws {Error} If baseUrl is invalid
  */

@@ -138,20 +138,20 @@ export async function fetchHtmlWithWarmup(
 
   // Parse the URL to extract path and construct full URL
   const urlObj = new URL(url);
-  const urlPath = urlObj.pathname + urlObj.search;
-
-  // Add tokowakaPreview param for optimized HTML
+  const urlPath = urlObj.pathname;
   let fullUrl = `${tokowakaEdgeUrl}${urlPath}`;
-  if (isOptimized) {
-    const separator = urlPath.includes('?') ? '&' : '?';
-    fullUrl = `${fullUrl}${separator}tokowakaPreview=true`;
-  }
 
   const headers = {
     'x-forwarded-host': forwardedHost,
     'x-tokowaka-api-key': apiKey,
     'x-tokowaka-url': urlPath,
   };
+
+  if (isOptimized) {
+    // Add tokowakaPreview param for optimized HTML
+    fullUrl = `${fullUrl}?tokowakaPreview=true`;
+    headers['x-tokowaka-url'] = `${urlPath}?tokowakaPreview=true`;
+  }
 
   const fetchOptions = {
     method: 'GET',

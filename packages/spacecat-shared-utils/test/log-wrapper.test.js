@@ -119,8 +119,9 @@ describe('logWrapper tests', () => {
       mockContext.log[level](`${level} log`);
 
       // Verify that the jobId is included in the log statement as JSON object
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.message).to.equal(`${level} log`);
     });
@@ -138,8 +139,9 @@ describe('logWrapper tests', () => {
       mockContext.log[level](`${level} log`);
 
       // Verify that the log is still converted to JSON but without jobId
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.message).to.equal(`${level} log`);
       expect(logArgs.jobId).to.be.undefined;
     });
@@ -157,8 +159,9 @@ describe('logWrapper tests', () => {
       mockContext.log[level](`${level} log`);
 
       // Verify that the traceId is included in the log statement as JSON object
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.traceId).to.equal('1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e');
       expect(logArgs.message).to.equal(`${level} log`);
     });
@@ -176,8 +179,9 @@ describe('logWrapper tests', () => {
       mockContext.log[level](`${level} log`);
 
       // Verify that both jobId and traceId are included in the log statement as JSON object
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.traceId).to.equal('1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e');
       expect(logArgs.message).to.equal(`${level} log`);
@@ -195,8 +199,9 @@ describe('logWrapper tests', () => {
     mockContext.log.info('info log');
 
     // Verify that the traceId is not included in the log statement as JSON object
-    const logArgs = originalLog.info.getCall(0).args[0];
+    const logArgs = JSON.parse(originalLog.info.getCall(0).args[0]);
     expect(logArgs).to.be.an('object');
+    expect(logArgs.severity).to.equal('info');
     expect(logArgs.jobId).to.equal(message.jobId);
     expect(logArgs.traceId).to.be.undefined;
     expect(logArgs.message).to.equal('info log');
@@ -215,8 +220,9 @@ describe('logWrapper tests', () => {
     // Log something to verify JSON wrapping
     mockContext.log.info('test message');
 
-    const logArgs = originalLog.info.getCall(0).args[0];
+    const logArgs = JSON.parse(originalLog.info.getCall(0).args[0]);
     expect(logArgs).to.be.an('object');
+    expect(logArgs.severity).to.equal('info');
     expect(logArgs.message).to.equal('test message');
     expect(logArgs.jobId).to.be.undefined;
     expect(logArgs.traceId).to.be.undefined;
@@ -238,8 +244,9 @@ describe('logWrapper tests', () => {
       mockContext.log[level](`${level} log`);
 
       // Verify that the original log method was called with JSON object containing markers
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.traceId).to.equal('1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e');
       expect(logArgs.message).to.equal(`${level} log`);
@@ -259,8 +266,9 @@ describe('logWrapper tests', () => {
     // Log something to verify JSON wrapping
     mockContext.log.info('test message');
 
-    const logArgs = originalLog.info.getCall(0).args[0];
+    const logArgs = JSON.parse(originalLog.info.getCall(0).args[0]);
     expect(logArgs).to.be.an('object');
+    expect(logArgs.severity).to.equal('info');
     expect(logArgs.message).to.equal('test message');
   });
 
@@ -278,10 +286,11 @@ describe('logWrapper tests', () => {
 
       // Verify that the enhanced log was called with JSON object
       expect(originalLog[level].calledOnce).to.be.true;
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
 
       // Should be a JSON object with message and data array
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.traceId).to.equal('1-abc-def');
       expect(logArgs.message).to.equal('Found items');
@@ -305,12 +314,14 @@ describe('logWrapper tests', () => {
 
       // Verify that the original log was called with JSON object wrapping the error
       expect(originalLog[level].calledOnce).to.be.true;
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.traceId).to.equal('1-abc-def');
       expect(logArgs.data).to.be.an('array');
-      expect(logArgs.data[0]).to.equal(errorObject);
+      // Error objects don't serialize to JSON cleanly, so we need to check the structure
+      expect(logArgs.data).to.have.lengthOf(1);
     });
   });
 
@@ -332,8 +343,9 @@ describe('logWrapper tests', () => {
 
       // Verify that the original log was called with merged object
       expect(originalLog[level].calledOnce).to.be.true;
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.traceId).to.equal('1-abc-def');
       expect(logArgs.action).to.equal('processing');
@@ -357,8 +369,9 @@ describe('logWrapper tests', () => {
 
       // Verify that the original log was called with JSON object wrapping the array
       expect(originalLog[level].calledOnce).to.be.true;
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.traceId).to.equal('1-abc-def');
       expect(logArgs.data).to.be.an('array');
@@ -380,8 +393,9 @@ describe('logWrapper tests', () => {
 
       // Verify that the object fields are merged into the log object
       expect(originalLog[level].calledOnce).to.be.true;
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.traceId).to.equal('1-abc-def');
       expect(logArgs.message).to.equal('Processing site');
@@ -405,8 +419,9 @@ describe('logWrapper tests', () => {
 
       // Verify that the object is merged and additional args are in data
       expect(originalLog[level].calledOnce).to.be.true;
-      const logArgs = originalLog[level].getCall(0).args[0];
+      const logArgs = JSON.parse(originalLog[level].getCall(0).args[0]);
       expect(logArgs).to.be.an('object');
+      expect(logArgs.severity).to.equal(level);
       expect(logArgs.jobId).to.equal(message.jobId);
       expect(logArgs.traceId).to.equal('1-abc-def');
       expect(logArgs.message).to.equal('Processing');

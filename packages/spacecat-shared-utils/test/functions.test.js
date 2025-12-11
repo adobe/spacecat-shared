@@ -34,6 +34,7 @@ import {
   isValidDate,
   isValidEmail,
   isValidUrl,
+  isValidBaseUrl,
   isValidUUID,
   isValidIMSOrgId,
   isValidHelixPreviewUrl,
@@ -282,6 +283,28 @@ describe('Shared functions', () => {
   });
 
   describe('isValidUrl', () => {
+    it('returns false for invalid Url', async () => {
+      const invalidUrls = [
+        null,
+        undefined,
+        1234,
+        true,
+        'example.com',
+        'www.example.com',
+        '255.255.255.256',
+        'ftp://abc.com',
+      ];
+
+      invalidUrls.forEach((url) => expect(isValidUrl(url)).to.be.false);
+    });
+
+    it('returns true for valid url', async () => {
+      expect(isValidUrl('http://abc.xyz')).to.be.true;
+      expect(isValidUrl('https://abc.xyz')).to.be.true;
+    });
+  });
+
+  describe('isValidBaseUrl', () => {
     it('returns false for non-string inputs', async () => {
       const nonStringInputs = [
         null,
@@ -294,27 +317,21 @@ describe('Shared functions', () => {
         Symbol('test'),
       ];
 
-      nonStringInputs.forEach((url) => expect(isValidUrl(url)).to.be.false);
+      nonStringInputs.forEach((url) => expect(isValidBaseUrl(url)).to.be.false);
     });
 
     it('returns false for empty or whitespace-only strings', async () => {
-      expect(isValidUrl('')).to.be.false;
-      expect(isValidUrl('   ')).to.be.false;
-      expect(isValidUrl('\t')).to.be.false;
+      expect(isValidBaseUrl('')).to.be.false;
+      expect(isValidBaseUrl('   ')).to.be.false;
+      expect(isValidBaseUrl('\t')).to.be.false;
     });
 
     it('returns false for strings with control characters', async () => {
-      expect(isValidUrl('example.com\u0000')).to.be.false;
-      expect(isValidUrl('example.com\u001F')).to.be.false;
-      expect(isValidUrl('example.com\u007F')).to.be.false;
-      expect(isValidUrl('example\u0000.com')).to.be.false;
-      expect(isValidUrl('https://example\u0000.com')).to.be.false;
-    });
-
-    it('returns false for URLs with http protocol', async () => {
-      expect(isValidUrl('http://example.com')).to.be.false;
-      expect(isValidUrl('http://abc.xyz')).to.be.false;
-      expect(isValidUrl('http://subdomain.example.com')).to.be.false;
+      expect(isValidBaseUrl('example.com\u0000')).to.be.false;
+      expect(isValidBaseUrl('example.com\u001F')).to.be.false;
+      expect(isValidBaseUrl('example.com\u007F')).to.be.false;
+      expect(isValidBaseUrl('example\u0000.com')).to.be.false;
+      expect(isValidBaseUrl('https://example\u0000.com')).to.be.false;
     });
 
     it('returns false for URLs with non-http/https protocols', async () => {
@@ -329,173 +346,143 @@ describe('Shared functions', () => {
         'wss://example.com',
       ];
 
-      invalidProtocols.forEach((url) => expect(isValidUrl(url)).to.be.false);
+      invalidProtocols.forEach((url) => expect(isValidBaseUrl(url)).to.be.false);
     });
 
-    it('returns false for URLs with paths', async () => {
-      expect(isValidUrl('example.com/path')).to.be.false;
-      expect(isValidUrl('https://example.com/path')).to.be.false;
-      expect(isValidUrl('https://example.com/path/to/resource')).to.be.false;
-      expect(isValidUrl('http://example.com/path')).to.be.false;
+    it('returns false for URLs with invalid paths', async () => {
+      expect(isValidBaseUrl('example.com/asd..dsa')).to.be.false;
+      expect(isValidBaseUrl('https://example.com/..asd')).to.be.false;
+      expect(isValidBaseUrl('https://example.com/.../asd')).to.be.false;
+      expect(isValidBaseUrl('http://example.com//')).to.be.false;
+      expect(isValidBaseUrl('http://example.com/asd//dsa')).to.be.false;
     });
 
     it('returns false for URLs with query parameters', async () => {
-      expect(isValidUrl('https://example.com?param=value')).to.be.false;
-      expect(isValidUrl('https://example.com?foo=bar&baz=qux')).to.be.false;
-      expect(isValidUrl('example.com?param=value')).to.be.false;
+      expect(isValidBaseUrl('https://example.com?param=value')).to.be.false;
+      expect(isValidBaseUrl('https://example.com?foo=bar&baz=qux')).to.be.false;
+      expect(isValidBaseUrl('example.com?param=value')).to.be.false;
     });
 
     it('returns false for URLs with hash fragments', async () => {
-      expect(isValidUrl('https://example.com#section')).to.be.false;
-      expect(isValidUrl('https://example.com#anchor')).to.be.false;
-      expect(isValidUrl('example.com#section')).to.be.false;
+      expect(isValidBaseUrl('https://example.com#section')).to.be.false;
+      expect(isValidBaseUrl('https://example.com#anchor')).to.be.false;
+      expect(isValidBaseUrl('example.com#section')).to.be.false;
     });
 
     it('returns false for URLs with explicit ports', async () => {
-      expect(isValidUrl('https://example.com:0')).to.be.false;
-      expect(isValidUrl('https://example.com:80')).to.be.false;
-      expect(isValidUrl('https://example.com:443')).to.be.false;
-      expect(isValidUrl('https://example.com:8080')).to.be.false;
-      expect(isValidUrl('https://example.com:5')).to.be.false;
-      expect(isValidUrl('example.com:0')).to.be.false;
-      expect(isValidUrl('example.com:80')).to.be.false;
-      expect(isValidUrl('example.com:443')).to.be.false;
-      expect(isValidUrl('example.com:8080')).to.be.false;
+      expect(isValidBaseUrl('https://example.com:0')).to.be.false;
+      expect(isValidBaseUrl('https://example.com:80')).to.be.false;
+      expect(isValidBaseUrl('http://example.com:8080')).to.be.false;
+      expect(isValidBaseUrl('http://example.com:8')).to.be.false;
+      expect(isValidBaseUrl('example.com:0')).to.be.false;
+      expect(isValidBaseUrl('example.com:80')).to.be.false;
+      expect(isValidBaseUrl('example.com:8080')).to.be.false;
     });
 
     it('returns false for IP addresses', async () => {
-      expect(isValidUrl('https://192.168.1.1')).to.be.false;
-      expect(isValidUrl('https://127.0.0.1')).to.be.false;
-      expect(isValidUrl('https://255.255.255.255')).to.be.false;
-      expect(isValidUrl('192.168.1.1')).to.be.false;
-      expect(isValidUrl('255.255.255.256')).to.be.false;
+      expect(isValidBaseUrl('https://192.168.1.1')).to.be.false;
+      expect(isValidBaseUrl('https://127.0.0.1')).to.be.false;
+      expect(isValidBaseUrl('http://255.255.255.255')).to.be.false;
+      expect(isValidBaseUrl('192.168.1.1')).to.be.false;
+      expect(isValidBaseUrl('255.255.255.256')).to.be.false;
     });
 
     it('returns false for invalid domain labels', async () => {
-      expect(isValidUrl('https://-example.com')).to.be.false;
-      expect(isValidUrl('-example.com')).to.be.false;
-
-      expect(isValidUrl('https://example-.com')).to.be.false;
-      expect(isValidUrl('example-.com')).to.be.false;
-
-      expect(isValidUrl('https://example_.com')).to.be.false;
-      expect(isValidUrl('https://example@.com')).to.be.false;
-
-      expect(isValidUrl('https://.example.com')).to.be.false;
-      expect(isValidUrl('https://example..com')).to.be.false;
-      expect(isValidUrl('.example.com')).to.be.false;
-      expect(isValidUrl('example..com')).to.be.false;
+      expect(isValidBaseUrl('https://-example.com')).to.be.false;
+      expect(isValidBaseUrl('https://example-.com')).to.be.false;
+      expect(isValidBaseUrl('-example.com')).to.be.false;
+      expect(isValidBaseUrl('example-.com')).to.be.false;
+      expect(isValidBaseUrl('https://example_.com')).to.be.false;
+      expect(isValidBaseUrl('https://example@.com')).to.be.false;
+      expect(isValidBaseUrl('https://.example.com')).to.be.false;
+      expect(isValidBaseUrl('https://example..com')).to.be.false;
+      expect(isValidBaseUrl('https://examp#le..com')).to.be.false;
+      expect(isValidBaseUrl('.example.com')).to.be.false;
+      expect(isValidBaseUrl('example..com')).to.be.false;
     });
 
     it('returns false for domain labels exceeding 63 characters', async () => {
       const longLabel = 'a'.repeat(64);
-      expect(isValidUrl(`https://${longLabel}.com`)).to.be.false;
-      expect(isValidUrl(`${longLabel}.com`)).to.be.false;
+      expect(isValidBaseUrl(`https://${longLabel}.com`)).to.be.false;
+      expect(isValidBaseUrl(`${longLabel}.com`)).to.be.false;
     });
 
     it('returns false for invalid domains (not ICANN or private)', async () => {
-      expect(isValidUrl('https://invalid..domain')).to.be.false;
-      expect(isValidUrl('invalid..domain')).to.be.false;
+      expect(isValidBaseUrl('https://invalid..domain')).to.be.false;
+      expect(isValidBaseUrl('invalid..domain')).to.be.false;
     });
 
     it('returns false for malformed URLs that cause URL constructor to throw', async () => {
-      const malformedUrls = [
-        'https://',
-        'https:////',
-        '://example.com',
-      ];
-
-      malformedUrls.forEach((url) => expect(isValidUrl(url)).to.be.false);
+      expect(isValidBaseUrl('https://')).to.be.false;
+      expect(isValidBaseUrl('https:////')).to.be.false;
+      expect(isValidBaseUrl('://example.com')).to.be.false;
     });
 
     it('returns true for valid https URLs', async () => {
-      const validHttpsUrls = [
-        'https://abc.xyz',
-        'https://example.com',
-        'https://subdomain.example.com',
-        'https://test.co.uk',
-        'https://example.org',
-      ];
-
-      validHttpsUrls.forEach((url) => expect(isValidUrl(url)).to.be.true);
+      expect(isValidBaseUrl('https://abc.xyz')).to.be.true;
+      expect(isValidBaseUrl('https://example.com/path')).to.be.true;
+      expect(isValidBaseUrl('https://subdomain.example.com/path/abc')).to.be.true;
+      expect(isValidBaseUrl('https://test.co.uk/path/')).to.be.true;
+      expect(isValidBaseUrl('https://exam-ple.org')).to.be.true;
     });
 
     it('returns true for valid domains without protocol (auto-prepends https://)', async () => {
-      const validDomains = [
-        'example.com',
-        'www.example.com',
-        'subdomain.example.com',
-        'abc.xyz',
-        'test.co.uk',
-        'example.org',
-      ];
-
-      validDomains.forEach((url) => expect(isValidUrl(url)).to.be.true);
+      expect(isValidBaseUrl('example.com')).to.be.true;
+      expect(isValidBaseUrl('www.example.com')).to.be.true;
+      expect(isValidBaseUrl('subdomain.example.com')).to.be.true;
+      expect(isValidBaseUrl('abc.xyz')).to.be.true;
+      expect(isValidBaseUrl('test.co.uk')).to.be.true;
+      expect(isValidBaseUrl('example.org')).to.be.true;
     });
 
     it('handles case-insensitive protocol matching', async () => {
-      expect(isValidUrl('HTTPS://example.com')).to.be.true;
-      expect(isValidUrl('Https://example.com')).to.be.true;
-      expect(isValidUrl('https://EXAMPLE.COM')).to.be.true;
-      expect(isValidUrl('https://EXAmpLE.COM')).to.be.true;
+      expect(isValidBaseUrl('HTTPS://example.com')).to.be.true;
+      expect(isValidBaseUrl('Https://example.com')).to.be.true;
+      expect(isValidBaseUrl('https://EXAMPLE.COM')).to.be.true;
+      expect(isValidBaseUrl('https://EXAmpLE.COM')).to.be.true;
     });
 
     it('handles URLs with leading/trailing whitespace', async () => {
-      expect(isValidUrl('  https://example.com  ')).to.be.true;
-      expect(isValidUrl('  example.com  ')).to.be.true;
+      expect(isValidBaseUrl('  https://example.com  ')).to.be.true;
+      expect(isValidBaseUrl('  example.com  ')).to.be.true;
     });
 
     it('returns true for valid domain labels at maximum length', async () => {
       const maxLengthLabel = 'a'.repeat(63);
-      expect(isValidUrl(`https://${maxLengthLabel}.com`)).to.be.true;
-      expect(isValidUrl(`${maxLengthLabel}.com`)).to.be.true;
+      expect(isValidBaseUrl(`https://${maxLengthLabel}.com`)).to.be.true;
+      expect(isValidBaseUrl(`${maxLengthLabel}.com`)).to.be.true;
     });
 
     it('returns true for domains with hyphens in labels', async () => {
-      expect(isValidUrl('https://sub-domain.example.com')).to.be.true;
-      expect(isValidUrl('https://my-site.example.org')).to.be.true;
-      expect(isValidUrl('sub-domain.example.com')).to.be.true;
+      expect(isValidBaseUrl('https://sub-domain.example.com')).to.be.true;
+      expect(isValidBaseUrl('https://my-site.example.org')).to.be.true;
+      expect(isValidBaseUrl('sub-domain.example.com')).to.be.true;
     });
 
     it('returns true for domains with numbers in labels', async () => {
-      expect(isValidUrl('https://test123.example.com')).to.be.true;
-      expect(isValidUrl('test123.example.com')).to.be.true;
-    });
-
-    it('returns false for URLs with backslashes', async () => {
-      expect(isValidUrl('https://example.com\\path')).to.be.false;
-      expect(isValidUrl('example.com\\path')).to.be.false;
+      expect(isValidBaseUrl('https://test123.example.com')).to.be.true;
+      expect(isValidBaseUrl('test123.example.com')).to.be.true;
     });
 
     it('returns false for URLs with anything past the TLD', async () => {
-      expect(isValidUrl('https://example.com/')).to.be.false;
-      expect(isValidUrl('https://example.com/.')).to.be.false;
-      expect(isValidUrl('https://example.com/..')).to.be.false;
-      expect(isValidUrl('https://example.com\\')).to.be.false;
-      expect(isValidUrl('https://example.com\\.')).to.be.false;
-      expect(isValidUrl('https://example.com\\..')).to.be.false;
-      expect(isValidUrl('https://example.com?')).to.be.false;
-      expect(isValidUrl('https://example.com#')).to.be.false;
-      expect(isValidUrl('https://example.com:')).to.be.false;
-      expect(isValidUrl('https://example.com/path')).to.be.false;
-      expect(isValidUrl('https://example.com?query=value')).to.be.false;
-      expect(isValidUrl('https://example.com#hash')).to.be.false;
-      expect(isValidUrl('https://example.com:8080')).to.be.false;
+      expect(isValidBaseUrl('https://example.com?query=value')).to.be.false;
+      expect(isValidBaseUrl('https://example.com#hash')).to.be.false;
+      expect(isValidBaseUrl('https://example.com:8080')).to.be.false;
     });
 
     it('returns true for non ascii characters', async () => {
-      expect(isValidUrl('https://тест.example.com')).to.be.true;
-      expect(isValidUrl('https://тест.мкд')).to.be.true;
-      expect(isValidUrl('https://परीक्षा.संगठन')).to.be.true;
+      expect(isValidBaseUrl('https://тест.example.com')).to.be.true;
+      expect(isValidBaseUrl('https://тест.мкд')).to.be.true;
+      expect(isValidBaseUrl('https://परीक्षा.संगठन')).to.be.true;
     });
 
     it('returns false for invalid TLDs', async () => {
-      expect(isValidUrl('https://example.c')).to.be.false;
-      expect(isValidUrl('https://example.qq')).to.be.false;
+      expect(isValidBaseUrl('https://example.c')).to.be.false;
+      expect(isValidBaseUrl('https://example.qq')).to.be.false;
     });
 
     it('returns false for invalid domain labels', async () => {
-      expect(isValidUrl('https://example.-ab.com')).to.be.false;
+      expect(isValidBaseUrl('https://example.-ab.com')).to.be.false;
     });
   });
 

@@ -27,11 +27,13 @@ function isPlainObject(value) {
 
 /**
  * A higher-order function that wraps a given function and enhances logging by converting
- * all logs to JSON format and appending `jobId` and `traceId` to log messages when available.
+ * all logs to JSON format and appending `severity`, `jobId`and `traceId`
+ * to log messages when available.
  *
  * All log messages are automatically converted to structured JSON format:
- * - String messages become: { message: "...", jobId: "...", traceId: "..." }
- * - Object messages are merged with: { ...yourObject, jobId: "...", traceId: "..." }
+ * - String messages become: { severity: "info", message: "...", jobId: "...", traceId: "..." }
+ * - Object messages are merged with:
+ * { severity: "info", ...yourObject, jobId: "...", traceId: "..." }
  *
  * @param {function} fn - The original function to be wrapped
  * @returns {function(object, object): Promise<Response>} - A wrapped function with JSON logging
@@ -63,12 +65,13 @@ export function logWrapper(fn) {
           accumulator[level] = (...args) => {
             // If first argument is a plain object, merge with markers
             if (args.length > 0 && isPlainObject(args[0])) {
-              return log[level]({ ...markers, ...args[0] });
+              return log[level](JSON.stringify({ severity: level, ...markers, ...args[0] }));
             }
 
             // If first argument is a string, convert to structured format
             if (args.length > 0 && typeof args[0] === 'string') {
               const logObject = {
+                severity: level,
                 ...markers,
                 message: args[0],
               };
@@ -87,11 +90,11 @@ export function logWrapper(fn) {
                 logObject.data = args.slice(1);
               }
 
-              return log[level](logObject);
+              return log[level](JSON.stringify(logObject));
             }
 
             // For other types (arrays, primitives, Error objects), wrap in object
-            return log[level]({ ...markers, data: args });
+            return log[level](JSON.stringify({ severity: level, ...markers, data: args }));
           };
         }
         return accumulator;

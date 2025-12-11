@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.85.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.84.0...@adobe/spacecat-shared-utils-v1.85.0) (2025-12-11)
+
+
+### Features
+
+* add WIKIPEDIA_ANALYSIS audit type and opportunity type ([#1222](https://github.com/adobe/spacecat-shared/issues/1222)) ([5a1b113](https://github.com/adobe/spacecat-shared/commit/5a1b113ff343a930e80bb5aafedbe2b8c5423534))
+
 # [@adobe/spacecat-shared-utils-v1.84.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.83.0...@adobe/spacecat-shared-utils-v1.84.0) (2025-12-10)
 
 

@@ -20,6 +20,7 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ProjectCollection extends BaseCollection {
+  static COLLECTION_NAME = 'ProjectCollection';
 }
 
 export default ProjectCollection;

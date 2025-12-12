@@ -38,7 +38,8 @@ describe('Data Access Wrapper Tests', () => {
     sinon.restore();
   });
 
-  it('adds dataAccess to context and calls the wrapped function', async () => {
+  it('adds dataAccess to context and calls the wrapped function', async function () {
+    this.timeout(10000);
     const wrappedFn = dataAccessWrapper(mockFn);
 
     const response = await wrappedFn(mockRequest, mockContext);
@@ -47,7 +48,8 @@ describe('Data Access Wrapper Tests', () => {
     expect(response).to.equal('function response');
   });
 
-  it('does not recreate dataAccess if already present in context', async () => {
+  it('does not recreate dataAccess if already present in context', async function () {
+    this.timeout(10000);
     mockContext.dataAccess = { existingDataAccess: true };
     const wrappedFn = dataAccessWrapper(mockFn);
 

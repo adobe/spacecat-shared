@@ -95,12 +95,12 @@ describe('Utilities', () => {
   });
 
   describe('entityNameToAllPKValue', () => {
-    it('Convert entity name to ALL_ upper plural form', () => {
-      expect(entityNameToAllPKValue('User')).to.equal('ALL_USERS');
+    it('Convert entity name to all_ lower plural form', () => {
+      expect(entityNameToAllPKValue('User')).to.equal('all_users');
     });
 
     it('Handle already plural entity name', () => {
-      expect(entityNameToAllPKValue('Users')).to.equal('ALL_USERS');
+      expect(entityNameToAllPKValue('Users')).to.equal('all_users');
     });
   });
 

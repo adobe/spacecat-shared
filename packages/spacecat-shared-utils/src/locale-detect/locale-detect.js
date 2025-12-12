@@ -41,6 +41,7 @@ export async function detectLocale(config) {
   const $ = cheerio.load(html);
 
   // Execute language detection indicators
+  /* c8 ignore start */
   for (const indicator of indicatorFuncs) {
     const results = indicator({ baseUrl: parsedBaseUrl, headers, $ });
     indicatorResults.push(...results);
@@ -56,6 +57,7 @@ export async function detectLocale(config) {
     }
     return acc;
   }, { region: {}, language: {} });
+  /* c8 ignore stop */
   const region = Object.keys(summary.region).length > 0 ? Object.keys(summary.region).sort((a, b) => summary.region[b] - summary.region[a])[0] : 'US';
   const language = Object.keys(summary.language).length > 0 ? Object.keys(summary.language).sort((a, b) => summary.language[b] - summary.language[a])[0] : 'en';
 

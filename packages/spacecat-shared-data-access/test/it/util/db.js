@@ -51,6 +51,7 @@ export const TEST_DA_CONFIG = {
   tableNameSiteTopPages: 'spacecat-services-site-top-pages',
   tableNameSites: 'spacecat-services-sites',
   tableNamePageIntents: 'spacecat-services-page-intents',
+  tableNamePageCitabilities: 'spacecat-services-page-citabilities',
   tableNameSpacecatData: 'spacecat-data',
 };
 
@@ -76,6 +77,8 @@ const getDynamoClients = (config = {}) => {
 };
 
 export const getDataAccess = (config, logger = console) => {
+  // eslint-disable-next-line no-param-reassign
+  logger.debug = () => {};
   const { dbClient } = getDynamoClients(config);
   return createDataAccess(TEST_DA_CONFIG, logger, dbClient);
 };

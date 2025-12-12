@@ -14,6 +14,7 @@ import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
 import { markdownToHast } from '../utils/markdown-utils.js';
+import { removePatchesBySuggestionIds } from '../utils/patch-utils.js';
 
 /**
 * Mapper for FAQ opportunity
@@ -200,5 +201,47 @@ export default class FaqMapper extends BaseOpportunityMapper {
     }
 
     return { eligible: true };
+  }
+
+  /**
+   * Removes patches from configuration for FAQ suggestions
+   * FAQ-specific logic: Also removes the heading patch when no FAQ suggestions remain
+   * @param {Object} config - Current Tokowaka configuration
+   * @param {Array<string>} suggestionIds - Suggestion IDs to remove
+   * @param {string} opportunityId - Opportunity ID
+   * @returns {Object} - Updated configuration with patches removed
+   */
+  rollbackPatches(config, suggestionIds, opportunityId) {
+    if (!config || !config.patches) {
+      return config;
+    }
+
+    const suggestionIdsSet = new Set(suggestionIds);
+    const additionalPatchKeys = [];
+
+    // Find FAQ patches for this opportunity
+    const opportunityPatches = config.patches.filter((p) => p.opportunityId === opportunityId);
+
+    // Get FAQ suggestion IDs that will remain after rollback
+    const remainingSuggestionIds = opportunityPatches
+      .filter((p) => p.suggestionId && !suggestionIdsSet.has(p.suggestionId))
+      .map((p) => p.suggestionId);
+
+    // If no FAQ suggestions remain, remove the heading patch too
+    if (remainingSuggestionIds.length === 0) {
+      this.log.debug('No remaining FAQ suggestions, marking heading patch for removal');
+      // Add heading patch key (opportunityId only, no suggestionId)
+      additionalPatchKeys.push(opportunityId);
+    } else {
+      this.log.debug(`${remainingSuggestionIds.length} FAQ suggestions remain, keeping heading patch`);
+    }
+
+    // Remove FAQ suggestion patches and any orphaned heading patches
+    this.log.debug(
+      `Removing ${suggestionIds.length} FAQ suggestion patches `
+      + `and ${additionalPatchKeys.length} heading patches`,
+    );
+
+    return removePatchesBySuggestionIds(config, suggestionIds, additionalPatchKeys);
   }
 }

@@ -32,17 +32,19 @@ export const TARGET_USER_AGENTS_CATEGORIES: {
   ALL: 'all';
 };
 
-export interface TokowakaUrlOptimization {
-  prerender: boolean;
-  patches: TokawakaPatch[];
+export interface TokowakaMetaconfig {
+  siteId: string;
+  prerender?: {
+    allowList?: string[];
+  } | boolean;
 }
 
 export interface TokowakaConfig {
-  siteId: string;
-  baseURL: string;
+  url: string;
   version: string;
-  tokowakaForceFail: boolean;
-  tokowakaOptimizations: Record<string, TokowakaUrlOptimization>;
+  forceFail: boolean;
+  prerender: boolean;
+  patches: TokawakaPatch[];
 }
 
 export interface CdnInvalidationResult {
@@ -55,16 +57,37 @@ export interface CdnInvalidationResult {
 }
 
 export interface DeploymentResult {
-  s3Path: string;
-  cdnInvalidation: CdnInvalidationResult | null;
+  s3Paths: string[];
+  cdnInvalidations: (CdnInvalidationResult | null)[];
   succeededSuggestions: Array<any>;
   failedSuggestions: Array<{ suggestion: any; reason: string }>;
 }
 
+export interface RollbackResult {
+  s3Paths: string[];
+  cdnInvalidations: (CdnInvalidationResult | null)[];
+  succeededSuggestions: Array<any>;
+  failedSuggestions: Array<{ suggestion: any; reason: string }>;
+  removedPatchesCount: number;
+}
+
+export interface PreviewResult {
+  s3Path: string;
+  config: TokowakaConfig;
+  cdnInvalidation: CdnInvalidationResult | null;
+  succeededSuggestions: Array<any>;
+  failedSuggestions: Array<{ suggestion: any; reason: string }>;
+  html: {
+    url: string;
+    originalHtml: string;
+    optimizedHtml: string;
+  };
+}
+
 export interface SiteConfig {
   getTokowakaConfig(): {
-    apiKey: string;
-    cdnProvider?: string;
+    apiKey?: string;
+    forwardedHost?: string;
   };
   getFetchConfig?(): {
     overrideBaseURL?: string;
@@ -153,6 +176,23 @@ export class HeadingsMapper extends BaseOpportunityMapper {
 }
 
 /**
+ * Readability opportunity mapper
+ * Handles conversion of readability suggestions to Tokowaka patches
+ */
+export class ReadabilityMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+}
+
+/**
  * Content summarization opportunity mapper
  * Handles conversion of content summarization suggestions to Tokowaka patches with HAST format
  */
@@ -191,6 +231,23 @@ export class FaqMapper extends BaseOpportunityMapper {
     opportunityId: string,
     existingConfig: TokowakaConfig | null
   ): TokawakaPatch[];
+}
+
+/**
+ * Table of Contents (TOC) opportunity mapper
+ * Handles conversion of TOC suggestions to Tokowaka patches with HAST format
+ */
+export class TocMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
 }
 
 /**
@@ -261,6 +318,7 @@ export class CdnClientRegistry {
 export default class TokowakaClient {
   constructor(config: {
     bucketName: string;
+    previewBucketName?: string;
     s3Client: S3Client;
     env?: Record<string, any>;
   }, log: any);
@@ -268,26 +326,44 @@ export default class TokowakaClient {
   static createFrom(context: {
     env: {
       TOKOWAKA_SITE_CONFIG_BUCKET: string;
+      TOKOWAKA_PREVIEW_BUCKET?: string;
       TOKOWAKA_CDN_PROVIDER?: string;
       TOKOWAKA_CDN_CONFIG?: string;
+      TOKOWAKA_EDGE_URL?: string;
     };
     log?: any;
     s3: { s3Client: S3Client };
     tokowakaClient?: TokowakaClient;
   }): TokowakaClient;
 
+  /**
+   * Generates Tokowaka configuration from suggestions for a specific URL
+   */
   generateConfig(
-    site: Site,
+    url: string,
     opportunity: Opportunity,
     suggestions: Suggestion[]
-  ): TokowakaConfig;
+  ): TokowakaConfig | null;
 
-  uploadConfig(apiKey: string, config: TokowakaConfig): Promise<string>;
+  /**
+   * Uploads configuration to S3 for a specific URL
+   */
+  uploadConfig(url: string, config: TokowakaConfig, isPreview?: boolean): Promise<string>;
   
   /**
-   * Fetches existing Tokowaka configuration from S3
+   * Fetches existing Tokowaka configuration from S3 for a specific URL
    */
-  fetchConfig(apiKey: string): Promise<TokowakaConfig | null>;
+  fetchConfig(url: string, isPreview?: boolean): Promise<TokowakaConfig | null>;
+  
+  /**
+   * Fetches domain-level metaconfig from S3
+   */
+  fetchMetaconfig(url: string, isPreview?: boolean): Promise<TokowakaMetaconfig | null>;
+  
+  /**
+   * Uploads domain-level metaconfig to S3
+   */
+  uploadMetaconfig(url: string, metaconfig: TokowakaMetaconfig, isPreview?: boolean): Promise<string>;
   
   /**
    * Merges existing configuration with new configuration
@@ -295,15 +371,41 @@ export default class TokowakaClient {
   mergeConfigs(existingConfig: TokowakaConfig, newConfig: TokowakaConfig): TokowakaConfig;
   
   /**
-   * Invalidates CDN cache
+   * Invalidates CDN cache for a specific URL
    */
-  invalidateCdnCache(apiKey: string, cdnProvider?: string): Promise<CdnInvalidationResult | null>;
+  invalidateCdnCache(url: string, provider?: string, isPreview?: boolean): Promise<CdnInvalidationResult | null>;
 
+  /**
+   * Deploys suggestions to Tokowaka edge
+   */
   deploySuggestions(
     site: Site,
     opportunity: Opportunity,
     suggestions: Suggestion[]
   ): Promise<DeploymentResult>;
+  
+  /**
+   * Rolls back deployed suggestions
+   */
+  rollbackSuggestions(
+    site: Site,
+    opportunity: Opportunity,
+    suggestions: Suggestion[]
+  ): Promise<RollbackResult>;
+  
+  /**
+   * Previews suggestions (all must belong to same URL)
+   */
+  previewSuggestions(
+    site: Site,
+    opportunity: Opportunity,
+    suggestions: Suggestion[],
+    options?: {
+      warmupDelayMs?: number;
+      maxRetries?: number;
+      retryDelayMs?: number;
+    }
+  ): Promise<PreviewResult>;
   
   /**
    * Registers a custom mapper for an opportunity type

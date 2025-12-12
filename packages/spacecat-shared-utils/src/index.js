@@ -53,7 +53,7 @@ export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';
 
 export { logWrapper } from './log-wrapper.js';
-export { instrumentAWSClient } from './xray.js';
+export { instrumentAWSClient, getTraceId, addTraceIdHeader } from './xray.js';
 
 export {
   composeBaseURL,
@@ -67,6 +67,9 @@ export {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  hasNonWWWSubdomain,
+  toggleWWWHostname,
+  wwwUrlResolver,
 } from './url-helpers.js';
 
 export {
@@ -77,6 +80,8 @@ export {
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';
 
 export { s3Wrapper } from './s3.js';
+
+export { OPPORTUNITY_TYPES } from './constants.js';
 
 export { fetch } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';
@@ -106,4 +111,17 @@ export * as llmoConfig from './llmo-config.js';
 export * as schemas from './schemas.js';
 
 export { detectLocale } from './locale-detect/locale-detect.js';
+export { detectBotBlocker } from './bot-blocker-detect/bot-blocker-detect.js';
 export { prettifyLogForwardingConfig } from './cdn-helpers.js';
+
+export {
+  buildAggregationKey,
+  buildAggregationKeyFromSuggestion,
+  buildSuggestionKey,
+  buildIndividualKey,
+  buildKey,
+  getGranularityForIssueType,
+  Granularity,
+  GRANULARITY_KEY_BUILDERS,
+  ISSUE_GRANULARITY_MAP,
+} from './aggregation/aggregation-strategies.js';

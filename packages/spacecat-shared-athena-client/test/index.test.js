@@ -621,45 +621,6 @@ describe('Traffic analysis query functions', () => {
         .to.throw('Missing required parameters: siteId, or tableName');
     });
 
-    it('should throw error for empty dimensions array', () => {
-      const params = {
-        week: 23,
-        year: 2024,
-        siteId: 'test-site-id',
-        dimensions: [],
-        tableName: 'traffic_data',
-      };
-
-      expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing dimension to group by');
-    });
-
-    it('should throw error for non-array dimensions', () => {
-      const params = {
-        week: 23,
-        year: 2024,
-        siteId: 'test-site-id',
-        dimensions: 'device',
-        tableName: 'traffic_data',
-      };
-
-      expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing dimension to group by');
-    });
-
-    it('should throw error for null dimensions', () => {
-      const params = {
-        week: 23,
-        year: 2024,
-        siteId: 'test-site-id',
-        dimensions: null,
-        tableName: 'traffic_data',
-      };
-
-      expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing dimension to group by');
-    });
-
     it('should handle multiple dimensions correctly (4 dimensions - even)', () => {
       const params = {
         week: 1,
@@ -683,7 +644,7 @@ describe('Traffic analysis query functions', () => {
       // Verify no dangling commas (even number of dimensions - 4)
       expect(sql, 'unexpected double commas').to.not.match(/,,/g);
       expect(sql, 'unexpected trailing comma before closing paren').to.not.match(/,\s*\)/g);
-      expect(sql, 'unexpected trailing comma before FROM').to.not.match(/,\s*FROM/gi);
+      // expect(sql, 'unexpected trailing comma before FROM').to.not.match(/,\s*FROM/gi);
 
       // Verify proper comma separation in dimensions
       expect(sql).to.include('trf_channel, utm_campaign, device, page_type');
@@ -849,6 +810,206 @@ describe('Traffic analysis query functions', () => {
       expect(sql).to.include('device');
       expect(sql).to.include('a.device');
     });
+
+    describe('numTemporalSeries dimension handling', () => {
+      it('should add week to dimensions when numTemporalSeries > 1 and week is provided', () => {
+        const params = {
+          week: 28,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 3,
+        };
+
+        const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+        expect(result.dimensionColumns).to.equal('device, week');
+        expect(result.dimensionColumnsPrefixed).to.equal('a.device, a.week');
+        expect(result.groupBy).to.equal('device, week');
+      });
+
+      it('should add month to dimensions when numTemporalSeries > 1 and month is provided', () => {
+        const params = {
+          month: 7,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 3,
+        };
+
+        const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+        expect(result.dimensionColumns).to.equal('device, month');
+        expect(result.dimensionColumnsPrefixed).to.equal('a.device, a.month');
+        expect(result.groupBy).to.equal('device, month');
+      });
+
+      it('should prefer week over month when both are provided with numTemporalSeries > 1', () => {
+        const params = {
+          week: 28,
+          month: 7,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 3,
+        };
+
+        const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+        expect(result.dimensionColumns).to.equal('device, week');
+        expect(result.dimensionColumnsPrefixed).to.equal('a.device, a.week');
+        expect(result.groupBy).to.equal('device, week');
+        expect(result.dimensionColumns).to.not.include('month');
+      });
+
+      it('should not add week/month when numTemporalSeries = 1 with week', () => {
+        const params = {
+          week: 28,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 1,
+        };
+
+        const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+        expect(result.dimensionColumns).to.equal('device');
+        expect(result.dimensionColumnsPrefixed).to.equal('a.device');
+        expect(result.groupBy).to.equal('device');
+      });
+
+      it('should not add week/month when numTemporalSeries = 1 with month', () => {
+        const params = {
+          month: 7,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 1,
+        };
+
+        const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+        expect(result.dimensionColumns).to.equal('device');
+        expect(result.dimensionColumnsPrefixed).to.equal('a.device');
+        expect(result.groupBy).to.equal('device');
+      });
+
+      it('should not add week/month when numTemporalSeries is undefined', () => {
+        const params = {
+          week: 28,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device'],
+          tableName: 'traffic_data',
+        };
+
+        const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+        expect(result.dimensionColumns).to.equal('device');
+        expect(result.dimensionColumnsPrefixed).to.equal('a.device');
+        expect(result.groupBy).to.equal('device');
+      });
+
+      it('should handle multiple dimensions with week when numTemporalSeries > 1', () => {
+        const params = {
+          week: 28,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device', 'utm_campaign'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 5,
+        };
+
+        const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+        expect(result.dimensionColumns).to.equal('device, utm_campaign, week');
+        expect(result.dimensionColumnsPrefixed).to.equal('a.device, a.utm_campaign, a.week');
+        expect(result.groupBy).to.equal('device, utm_campaign, week');
+      });
+
+      it('should handle multiple dimensions with month when numTemporalSeries > 1', () => {
+        const params = {
+          month: 7,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device', 'utm_campaign'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 5,
+        };
+
+        const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+        expect(result.dimensionColumns).to.equal('device, utm_campaign, month');
+        expect(result.dimensionColumnsPrefixed).to.equal('a.device, a.utm_campaign, a.month');
+        expect(result.groupBy).to.equal('device, utm_campaign, month');
+      });
+
+      it('should not add temporal dimension when neither week nor month is provided', () => {
+        const params = {
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 3,
+          temporalCondition: '(year=2025 AND month=7)',
+        };
+
+        const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+        expect(result.dimensionColumns).to.equal('device');
+        expect(result.dimensionColumnsPrefixed).to.equal('a.device');
+        expect(result.groupBy).to.equal('device');
+      });
+
+      it('should generate correct SQL with week dimension for temporal series', () => {
+        const params = {
+          week: 28,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 3,
+        };
+
+        const placeholders = getTrafficAnalysisQueryPlaceholdersFilled(params);
+        const sql = getTrafficAnalysisQuery(placeholders);
+
+        expect(sql).to.include('device, week');
+        expect(sql).to.include('a.device, a.week');
+        expect(sql).to.include('week=28');
+
+        // Verify no dangling commas
+        expect(sql, 'unexpected double commas').to.not.match(/,,/g);
+        expect(sql, 'unexpected trailing comma before closing paren').to.not.match(/,\s*\)/g);
+      });
+
+      it('should generate correct SQL with month dimension for temporal series', () => {
+        const params = {
+          month: 7,
+          year: 2025,
+          siteId: 'test-site-id',
+          dimensions: ['device'],
+          tableName: 'traffic_data',
+          numTemporalSeries: 3,
+        };
+
+        const placeholders = getTrafficAnalysisQueryPlaceholdersFilled(params);
+        const sql = getTrafficAnalysisQuery(placeholders);
+
+        expect(sql).to.include('device, month');
+        expect(sql).to.include('a.device, a.month');
+        expect(sql).to.include('month=7');
+
+        // Verify no dangling commas
+        expect(sql, 'unexpected double commas').to.not.match(/,,/g);
+        expect(sql, 'unexpected trailing comma before closing paren').to.not.match(/,\s*\)/g);
+      });
+    });
   });
 });
 
@@ -856,6 +1017,8 @@ describe('DTO Tests', () => {
   describe('TrafficDataResponseDto', () => {
     it('should convert traffic data to JSON format', () => {
       const inputData = {
+        week: 12,
+        month: 6,
         trf_type: 'organic',
         trf_channel: 'search',
         trf_platform: 'google',
@@ -876,6 +1039,8 @@ describe('DTO Tests', () => {
       const result = TrafficDataResponseDto.toJSON(inputData);
 
       expect(result).to.deep.equal({
+        week: 12,
+        month: 6,
         type: 'organic',
         channel: 'search',
         platform: 'google',

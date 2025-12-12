@@ -13,6 +13,7 @@
 export * from './api-key/index.js';
 export * from './async-job/index.js';
 export * from './audit/index.js';
+export * from './audit-url/index.js';
 export * from './base/index.js';
 export * from './configuration/index.js';
 export * from './entitlement/index.js';
@@ -38,3 +39,4 @@ export * from './page-intent/index.js';
 export * from './report/index.js';
 export * from './trial-user/index.js';
 export * from './trial-user-activity/index.js';
+export * from './page-citability/index.js';

@@ -28,6 +28,8 @@ import { resolveUpdates } from '../../util/util.js';
  * @extends BaseCollection
  */
 class FixEntityCollection extends BaseCollection {
+  static COLLECTION_NAME = 'FixEntityCollection';
+
   /**
    * Gets all suggestions associated with a specific FixEntity.
    *
@@ -89,7 +91,7 @@ class FixEntityCollection extends BaseCollection {
 
     // Extract IDs and other values from entities
     const fixEntityId = fixEntity.getId();
-    const fixEntityCreatedAt = fixEntity.getCreatedAt();
+    const fixEntityCreatedAt = fixEntity.getExecutedAt() || fixEntity.getCreatedAt();
     const suggestionIds = suggestions.map((suggestion) => suggestion.getId());
 
     try {

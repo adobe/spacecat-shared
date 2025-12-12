@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ScrapeUrlCollection extends BaseCollection {
+  static COLLECTION_NAME = 'ScrapeUrlCollection';
+
   async allRecentByUrlAndProcessingType(url, processingType, maxAgeInHours = 168) {
     const now = new Date();
     const pastDate = new Date(now.getTime() - maxAgeInHours * 60 * 60 * 1000);

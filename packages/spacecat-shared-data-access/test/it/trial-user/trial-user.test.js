@@ -25,7 +25,8 @@ describe('TrialUser IT', async () => {
   let sampleData;
   let TrialUser;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

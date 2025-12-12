@@ -67,6 +67,13 @@ const sites = [
       slack: {
         channel: 'some-channel',
       },
+      // minimal brandProfile seed to validate read-paths
+      brandProfile: {
+        discovery: { pages_analyzed: 1 },
+        main_profile: { id: 'main', communication_style: 'Fixture seed' },
+        confidence_score: 0.5,
+        pages_considered: 1,
+      },
     },
   },
   {

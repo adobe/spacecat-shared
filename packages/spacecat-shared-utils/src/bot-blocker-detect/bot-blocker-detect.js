@@ -33,20 +33,20 @@ const DEFAULT_TIMEOUT = 5000;
 function analyzeResponse(response) {
   const { status, headers } = response;
 
-  // Check for CDN/blocker infrastructure presence
-  const hasCloudflare = headers.get('cf-ray') || headers.get('server') === 'cloudflare';
-  const hasImperva = headers.get('x-iinfo') || headers.get('x-cdn') === 'Incapsula';
-  const hasAkamai = headers.get('x-akamai-request-id')
+  // Check for CDN/blocker infrastructure presence (lazy evaluation for performance)
+  const hasCloudflare = () => headers.get('cf-ray') || headers.get('server') === 'cloudflare';
+  const hasImperva = () => headers.get('x-iinfo') || headers.get('x-cdn') === 'Incapsula';
+  const hasAkamai = () => headers.get('x-akamai-request-id')
     || headers.get('x-akamai-session-id')
     || headers.get('server')?.includes('AkamaiGHost');
-  const hasFastly = headers.get('x-served-by')?.includes('cache-')
+  const hasFastly = () => headers.get('x-served-by')?.startsWith('cache-')
     || headers.get('fastly-io-info');
-  const hasCloudFront = headers.get('x-amz-cf-id')
+  const hasCloudFront = () => headers.get('x-amz-cf-id')
     || headers.get('x-amz-cf-pop')
     || headers.get('via')?.includes('CloudFront');
 
   // Active blocking (403 status with known blocker)
-  if (status === 403 && hasCloudflare) {
+  if (status === 403 && hasCloudflare()) {
     return {
       crawlable: false,
       type: 'cloudflare',
@@ -54,7 +54,7 @@ function analyzeResponse(response) {
     };
   }
 
-  if (status === 403 && hasImperva) {
+  if (status === 403 && hasImperva()) {
     return {
       crawlable: false,
       type: 'imperva',
@@ -62,7 +62,7 @@ function analyzeResponse(response) {
     };
   }
 
-  if (status === 403 && hasAkamai) {
+  if (status === 403 && hasAkamai()) {
     return {
       crawlable: false,
       type: 'akamai',
@@ -70,7 +70,7 @@ function analyzeResponse(response) {
     };
   }
 
-  if (status === 403 && hasFastly) {
+  if (status === 403 && hasFastly()) {
     return {
       crawlable: false,
       type: 'fastly',
@@ -78,7 +78,7 @@ function analyzeResponse(response) {
     };
   }
 
-  if (status === 403 && hasCloudFront) {
+  if (status === 403 && hasCloudFront()) {
     return {
       crawlable: false,
       type: 'cloudfront',
@@ -87,7 +87,7 @@ function analyzeResponse(response) {
   }
 
   // Success with known infrastructure present (infrastructure detected but allowing requests)
-  if (status === 200 && hasCloudflare) {
+  if (status === 200 && hasCloudflare()) {
     return {
       crawlable: true,
       type: 'cloudflare-allowed',
@@ -95,7 +95,7 @@ function analyzeResponse(response) {
     };
   }
 
-  if (status === 200 && hasImperva) {
+  if (status === 200 && hasImperva()) {
     return {
       crawlable: true,
       type: 'imperva-allowed',
@@ -103,7 +103,7 @@ function analyzeResponse(response) {
     };
   }
 
-  if (status === 200 && hasAkamai) {
+  if (status === 200 && hasAkamai()) {
     return {
       crawlable: true,
       type: 'akamai-allowed',
@@ -111,7 +111,7 @@ function analyzeResponse(response) {
     };
   }
 
-  if (status === 200 && hasFastly) {
+  if (status === 200 && hasFastly()) {
     return {
       crawlable: true,
       type: 'fastly-allowed',
@@ -119,7 +119,7 @@ function analyzeResponse(response) {
     };
   }
 
-  if (status === 200 && hasCloudFront) {
+  if (status === 200 && hasCloudFront()) {
     return {
       crawlable: true,
       type: 'cloudfront-allowed',

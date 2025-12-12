@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.85.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.1...@adobe/spacecat-shared-utils-v1.85.2) (2025-12-11)
+
+
+### Bug Fixes
+
+* Implement Structured (JSON) Logging for Spacecat Audits - rollback ([#1239](https://github.com/adobe/spacecat-shared/issues/1239)) ([1f174d7](https://github.com/adobe/spacecat-shared/commit/1f174d7dd188dbdc610b75bf58644992925755b1))
+
+# [@adobe/spacecat-shared-utils-v1.85.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.0...@adobe/spacecat-shared-utils-v1.85.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* Structured (JSON) for Logging should be JSON string ([#1237](https://github.com/adobe/spacecat-shared/issues/1237)) ([cfcee6e](https://github.com/adobe/spacecat-shared/commit/cfcee6e4315aa518c52e4ca50b99b0cb762f5a61))
+
+# [@adobe/spacecat-shared-utils-v1.85.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.84.0...@adobe/spacecat-shared-utils-v1.85.0) (2025-12-11)
+
+
+### Features
+
+* add WIKIPEDIA_ANALYSIS audit type and opportunity type ([#1222](https://github.com/adobe/spacecat-shared/issues/1222)) ([5a1b113](https://github.com/adobe/spacecat-shared/commit/5a1b113ff343a930e80bb5aafedbe2b8c5423534))
+
+# [@adobe/spacecat-shared-utils-v1.84.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.83.0...@adobe/spacecat-shared-utils-v1.84.0) (2025-12-10)
+
+
+### Features
+
+* add bot-blocker-detect ([#1233](https://github.com/adobe/spacecat-shared/issues/1233)) ([5d73f1b](https://github.com/adobe/spacecat-shared/commit/5d73f1b07ba5ea9735577b0bb0519d9d1cfd278c))
+
 # [@adobe/spacecat-shared-utils-v1.83.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.3...@adobe/spacecat-shared-utils-v1.83.0) (2025-12-10)
 
 

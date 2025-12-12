@@ -82,6 +82,7 @@ class Audit extends BaseModel {
     PAGE_INTENT: 'page-intent',
     NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
     TOC: 'toc',
+    WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

@@ -83,6 +83,7 @@ describe('Index Exports', () => {
     'extractUrlsFromOpportunity',
     'extractUrlsFromSuggestion',
     'detectAEMVersion',
+    'detectBotBlocker',
     'determineAEMCSPageId',
     'AUTHORING_TYPES',
     'DELIVERY_TYPES',

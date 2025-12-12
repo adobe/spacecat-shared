@@ -123,7 +123,7 @@ describe('HTML Utils', () => {
       expect(fetchStub.callCount).to.equal(2); // warmup + actual
     });
 
-    it('should handle URL with existing query parameters when fetching optimized HTML', async () => {
+    it('should drop query parameters from URL when fetching optimized HTML', async () => {
       fetchStub.resolves({
         ok: true,
         status: 200,
@@ -147,11 +147,11 @@ describe('HTML Utils', () => {
       expect(html).to.equal('<html>Optimized HTML</html>');
       expect(fetchStub.callCount).to.equal(2); // warmup + actual
 
-      // Verify the URL includes & for the preview param (not ?)
+      // Verify original query params are dropped and only tokowakaPreview is present
       const actualUrl = fetchStub.secondCall.args[0];
-      expect(actualUrl).to.include('param=value');
-      expect(actualUrl).to.include('&tokowakaPreview=true');
-      expect(actualUrl).to.not.include('?tokowakaPreview=true');
+      expect(actualUrl).to.not.include('param=value');
+      expect(actualUrl).to.include('?tokowakaPreview=true');
+      expect(actualUrl).to.equal('https://edge.example.com/page?tokowakaPreview=true');
     });
 
     it('should throw error when HTTP response is not ok', async () => {

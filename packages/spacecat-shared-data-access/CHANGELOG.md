@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.92.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.91.0...@adobe/spacecat-shared-data-access-v2.92.0) (2025-12-11)
+
+
+### Features
+
+* add WIKIPEDIA_ANALYSIS audit type and opportunity type ([#1222](https://github.com/adobe/spacecat-shared/issues/1222)) ([5a1b113](https://github.com/adobe/spacecat-shared/commit/5a1b113ff343a930e80bb5aafedbe2b8c5423534))
+
+# [@adobe/spacecat-shared-data-access-v2.91.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.90.0...@adobe/spacecat-shared-data-access-v2.91.0) (2025-12-10)
+
+
+### Features
+
+* add unused content fragment audit type ([#1135](https://github.com/adobe/spacecat-shared/issues/1135)) ([dfdd01e](https://github.com/adobe/spacecat-shared/commit/dfdd01e2603ab737da2f1935139b66693edb9d70))
+
 # [@adobe/spacecat-shared-data-access-v2.90.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.89.0...@adobe/spacecat-shared-data-access-v2.90.0) (2025-12-08)
 
 

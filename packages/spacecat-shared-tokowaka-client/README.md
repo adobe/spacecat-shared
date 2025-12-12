@@ -28,8 +28,8 @@ Creates a client instance from a context object.
 - `context.log` (Object, optional): Logger instance
 - `context.env.TOKOWAKA_SITE_CONFIG_BUCKET` (string): S3 bucket name for deployed configurations
 - `context.env.TOKOWAKA_PREVIEW_BUCKET` (string): S3 bucket name for preview configurations
-- `context.env.TOKOWAKA_CDN_PROVIDER` (string): CDN provider for cache invalidation
-- `context.env.TOKOWAKA_CDN_CONFIG` (string): JSON configuration for CDN client
+- `context.env.TOKOWAKA_CDN_PROVIDER` (string | string[]): CDN provider(s) for cache invalidation
+- `context.env.TOKOWAKA_CDN_CONFIG` (string): JSON configuration for CDN clients
 - `context.env.TOKOWAKA_EDGE_URL` (string): Tokowaka edge URL for preview HTML fetching
 
 ## Environment Variables
@@ -39,8 +39,23 @@ Creates a client instance from a context object.
 - `TOKOWAKA_PREVIEW_BUCKET` - S3 bucket name for storing preview configurations
 
 **Optional (for CDN invalidation):**
-- `TOKOWAKA_CDN_PROVIDER` - CDN provider name (e.g., "cloudfront")
-- `TOKOWAKA_CDN_CONFIG` - JSON string with CDN-specific configuration. (e.g., { "cloudfront": { "distributionId": <distribution-id>, "region": "us-east-1" }})
+- `TOKOWAKA_CDN_PROVIDER` - CDN provider name(s). Can be a single provider (e.g., "cloudfront") or multiple providers as comma-separated string (e.g., "cloudfront,fastly") or array
+- `TOKOWAKA_CDN_CONFIG` - JSON string with CDN-specific configuration for all providers:
+  ```json
+  {
+    "cloudfront": {
+      "distributionId": "<distribution-id>",
+      "region": "us-east-1"
+    },
+    "fastly": {
+      "serviceId": "<service-id>",
+      "apiToken": "<api-token>",
+      "distributionUrl": "https://<cloudfront-distribution>.cloudfront.net"
+    }
+  }
+  ```
+  
+  **Note for Fastly**: The `distributionUrl` is required and should be the full CloudFront distribution URL (e.g., `https://deftbrsarcsf4.cloudfront.net`). Fastly uses this to construct full URLs as surrogate keys for cache purging.
 
 **Optional (for preview functionality):**
 - `TOKOWAKA_EDGE_URL` - Tokowaka edge URL for fetching HTML content during preview
@@ -55,7 +70,7 @@ Generates configuration and uploads to S3 **per URL**. **Automatically fetches e
 
 **Returns:** `Promise<DeploymentResult>` with:
 - `s3Paths` - Array of S3 keys where configs were uploaded (one per URL)
-- `cdnInvalidations` - Array of CDN invalidation results (one per URL)
+- `cdnInvalidations` - Array of CDN invalidation results (one per URL per provider)
 - `succeededSuggestions` - Array of deployed suggestions
 - `failedSuggestions` - Array of `{suggestion, reason}` objects for ineligible suggestions
 
@@ -72,7 +87,7 @@ Rolls back previously deployed suggestions by removing their patches from the co
 
 **Returns:** `Promise<RollbackResult>` with:
 - `s3Paths` - Array of S3 keys where configs were uploaded (one per URL)
-- `cdnInvalidations` - Array of CDN invalidation results (one per URL)
+- `cdnInvalidations` - Array of CDN invalidation results (one per URL per provider)
 - `succeededSuggestions` - Array of rolled back suggestions
 - `failedSuggestions` - Array of `{suggestion, reason}` objects for ineligible suggestions
 - `removedPatchesCount` - Total number of patches removed across all URLs
@@ -84,7 +99,7 @@ Previews suggestions by uploading to preview S3 path and fetching HTML compariso
 **Returns:** `Promise<PreviewResult>` with:
 - `s3Path` - S3 key where preview config was uploaded
 - `config` - Preview configuration object
-- `cdnInvalidation` - CDN invalidation result
+- `cdnInvalidations` - Array of CDN invalidation results (one per provider)
 - `succeededSuggestions` - Array of previewed suggestions
 - `failedSuggestions` - Array of `{suggestion, reason}` objects for ineligible suggestions
 - `html` - Object with `url`, `originalHtml`, and `optimizedHtml`
@@ -234,6 +249,91 @@ Per-URL configuration (flat structure):
 - The `baseURL` field has been renamed to `url`
 - The `tokowakaOptimizations` nested structure has been removed
 - The `tokowakaForceFail` field has been renamed to `forceFail`
+
+## CDN Cache Invalidation
+
+The client supports multiple CDN providers for cache invalidation with **intelligent batching** for optimal performance.
+
+### Batch Optimization
+
+When deploying or rolling back multiple URLs:
+- **Before**: Each URL triggered separate CDN invalidation calls (N URLs = N×2 API calls for 2 providers)
+- **After**: All URLs are collected and invalidated in a single batch call per provider (N URLs = 2 API calls for 2 providers)
+
+**Example Performance Improvement:**
+- 10 URLs with CloudFront + Fastly
+- Old: 20 API calls (10 per provider)
+- New: **2 API calls** (1 per provider)
+- **90% reduction in API calls!**
+
+### Supported CDN Providers
+
+#### CloudFront
+AWS CloudFront CDN invalidation using the AWS SDK.
+
+**Configuration:**
+```json
+{
+  "cloudfront": {
+    "distributionId": "E1234567890ABC",
+    "region": "us-east-1"
+  }
+}
+```
+
+#### Fastly
+Fastly CDN purging using surrogate key purging.
+
+**Configuration:**
+```json
+{
+  "fastly": {
+    "serviceId": "abc123xyz",
+    "apiToken": "your-fastly-api-token"
+  }
+}
+```
+
+### Multiple CDN Providers
+
+To invalidate cache on multiple CDNs simultaneously:
+
+**Environment Variable:**
+```bash
+TOKOWAKA_CDN_PROVIDER="cloudfront,fastly"
+# or as array in code: ["cloudfront", "fastly"]
+
+TOKOWAKA_CDN_CONFIG='{"cloudfront":{"distributionId":"...","region":"us-east-1"},"fastly":{"serviceId":"...","apiToken":"...","distributionUrl":"https://xxx.cloudfront.net"}}'
+```
+
+**Behavior:**
+- All URLs are batched into a single invalidation request per provider
+- All CDN providers are invalidated in parallel using `Promise.all()`
+- Failures in one CDN don't block others
+- Each CDN returns its own result in the `cdnInvalidations` array
+- Results include status, provider name, and provider-specific details
+
+### Fastly Batch Purging
+
+The Fastly client uses surrogate key purging with full CloudFront URLs:
+- **Surrogate Keys**: Constructed as full CloudFront URLs (e.g., `https://xxx.cloudfront.net/opportunities/adobe.com/config`)
+- **Batch Purging**: All paths are sent in a single API call using the `Surrogate-Key` header (space-separated URLs)
+- **Configuration**: Requires `distributionUrl` in the Fastly config to construct full URLs
+- Significantly reduces API calls and improves performance for bulk operations
+
+**Example Fastly Configuration:**
+```json
+{
+  "serviceId": "abc123xyz",
+  "apiToken": "your-fastly-api-token",
+  "distributionUrl": "https://deftbrsarcsf4.cloudfront.net"
+}
+```
+
+This configuration allows Fastly to purge cache entries using URLs like:
+```
+fastly purge --key https://deftbrsarcsf4.cloudfront.net/opportunities/adobe.com/config
+```
 
 ## Reference Material
 

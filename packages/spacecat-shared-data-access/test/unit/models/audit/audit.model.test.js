@@ -168,6 +168,8 @@ describe('AuditModel', () => {
       REDIRECT_CHAINS: 'redirect-chains',
       BROKEN_BACKLINKS: 'broken-backlinks',
       BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+      CONTENT_FRAGMENT_UNUSED: 'content-fragment-unused',
+      CONTENT_FRAGMENT_UNUSED_AUTO_FIX: 'content-fragment-unused-auto-fix',
       EXPERIMENTATION: 'experimentation',
       CONVERSION: 'conversion',
       ORGANIC_KEYWORDS: 'organic-keywords',
@@ -207,6 +209,7 @@ describe('AuditModel', () => {
       PAGE_INTENT: 'page-intent',
       NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
       TOC: 'toc',
+      WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

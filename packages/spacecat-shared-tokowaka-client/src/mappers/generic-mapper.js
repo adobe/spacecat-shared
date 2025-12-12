@@ -57,13 +57,17 @@ export default class GenericMapper extends BaseOpportunityMapper {
         ...this.createBasePatch(suggestion, opportunityId),
         op: transformRules.action,
         selector: transformRules.selector,
-        value: data.patchValue,
+        value: (data.format === 'hast' || data.format === 'json') ? JSON.parse(data.patchValue) : data.patchValue,
         valueFormat: data.format || 'text',
         target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
       };
 
       if (data.tag) {
         patch.tag = data.tag;
+      }
+
+      if (data.attrs) {
+        patch.attrs = JSON.parse(data.attrs);
       }
 
       patches.push(patch);

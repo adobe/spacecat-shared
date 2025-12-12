@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.0...@adobe/spacecat-shared-tokowaka-client-v1.4.1) (2025-12-12)
+
+
+### Bug Fixes
+
+* fastly CDN cache invalidation ([#1240](https://github.com/adobe/spacecat-shared/issues/1240)) ([fbb43e4](https://github.com/adobe/spacecat-shared/commit/fbb43e411053c6dc71255fc3883255785c301659))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.3.2...@adobe/spacecat-shared-tokowaka-client-v1.4.0) (2025-12-11)
+
+
+### Features
+
+* Generic mapper hast ([#1236](https://github.com/adobe/spacecat-shared/issues/1236)) ([9791ca6](https://github.com/adobe/spacecat-shared/commit/9791ca6fd2b7a5880ac0ca99897da87631bbc25a))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.3.1...@adobe/spacecat-shared-tokowaka-client-v1.3.2) (2025-12-11)
+
+
+### Bug Fixes
+
+* tokowaka url header for preview ([#1235](https://github.com/adobe/spacecat-shared/issues/1235)) ([f265db8](https://github.com/adobe/spacecat-shared/commit/f265db821a9ea54809850e7fc771fdf3554f324f))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.3.0...@adobe/spacecat-shared-tokowaka-client-v1.3.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* heading and toc mappers ([#1230](https://github.com/adobe/spacecat-shared/issues/1230)) ([f767fb3](https://github.com/adobe/spacecat-shared/commit/f767fb319c97ed64848a1c5fc5913693a52290d9))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.2.4...@adobe/spacecat-shared-tokowaka-client-v1.3.0) (2025-12-04)
 
 

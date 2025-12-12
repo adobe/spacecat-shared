@@ -367,25 +367,6 @@ describe('TokowakaClient', () => {
       expect(command.input.Key).to.equal('opportunities/example.com/config');
     });
 
-    it('should fetch metaconfig from preview bucket', async () => {
-      const metaconfig = {
-        siteId: 'site-123',
-        prerender: true,
-      };
-
-      s3Client.send.resolves({
-        Body: {
-          transformToString: async () => JSON.stringify(metaconfig),
-        },
-      });
-
-      await client.fetchMetaconfig('https://example.com/page1', true);
-
-      const command = s3Client.send.firstCall.args[0];
-      expect(command.input.Bucket).to.equal('test-preview-bucket');
-      expect(command.input.Key).to.equal('preview/opportunities/example.com/config');
-    });
-
     it('should return null if metaconfig does not exist', async () => {
       const noSuchKeyError = new Error('NoSuchKey');
       noSuchKeyError.name = 'NoSuchKey';
@@ -438,20 +419,6 @@ describe('TokowakaClient', () => {
       expect(command.input.Key).to.equal('opportunities/example.com/config');
       expect(command.input.ContentType).to.equal('application/json');
       expect(JSON.parse(command.input.Body)).to.deep.equal(metaconfig);
-    });
-
-    it('should upload metaconfig to preview bucket', async () => {
-      const metaconfig = {
-        siteId: 'site-123',
-        prerender: true,
-      };
-
-      const s3Path = await client.uploadMetaconfig('https://example.com/page1', metaconfig, true);
-
-      expect(s3Path).to.equal('preview/opportunities/example.com/config');
-
-      const command = s3Client.send.firstCall.args[0];
-      expect(command.input.Bucket).to.equal('test-preview-bucket');
     });
 
     it('should throw error if URL is missing', async () => {
@@ -809,16 +776,19 @@ describe('TokowakaClient', () => {
 
   describe('deploySuggestions', () => {
     beforeEach(() => {
-      // Stub CDN invalidation for deploy tests
-      sinon.stub(client, 'invalidateCdnCache').resolves({
+      // Stub CDN invalidation for deploy tests (now handles both single and batch)
+      sinon.stub(client, 'invalidateCdnCache').resolves([{
         status: 'success',
         provider: 'cloudfront',
         invalidationId: 'I123',
-      });
+      }]);
       // Stub fetchConfig to return null by default (no existing config)
       sinon.stub(client, 'fetchConfig').resolves(null);
-      // Stub fetchMetaconfig to return null by default (will create new)
-      sinon.stub(client, 'fetchMetaconfig').resolves(null);
+      // Stub fetchMetaconfig to return existing metaconfig (required for deployment)
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: true,
+      });
       // Stub uploadMetaconfig
       sinon.stub(client, 'uploadMetaconfig').resolves('opportunities/example.com/config');
     });
@@ -834,43 +804,28 @@ describe('TokowakaClient', () => {
       expect(result.s3Paths).to.be.an('array').with.length(1);
       expect(result.s3Paths[0]).to.equal('opportunities/example.com/L3BhZ2Ux');
       expect(result).to.have.property('cdnInvalidations');
+      // Only 1 invalidation result returned (for batch URLs)
+      // Metaconfig invalidation happens inside uploadMetaconfig() automatically
       expect(result.cdnInvalidations).to.be.an('array').with.length(1);
       expect(result.succeededSuggestions).to.have.length(2);
       expect(result.failedSuggestions).to.have.length(0);
       expect(s3Client.send).to.have.been.called;
     });
 
-    it('should create metaconfig on first deployment', async () => {
-      await client.deploySuggestions(
-        mockSite,
-        mockOpportunity,
-        mockSuggestions,
-      );
+    it('should throw error if metaconfig does not exist', async () => {
+      client.fetchMetaconfig.resolves(null);
 
-      expect(client.fetchMetaconfig).to.have.been.calledOnce;
-      expect(client.uploadMetaconfig).to.have.been.calledOnce;
-
-      const metaconfigArg = client.uploadMetaconfig.firstCall.args[1];
-      expect(metaconfigArg).to.deep.include({
-        siteId: 'site-123',
-        prerender: true,
-      });
-    });
-
-    it('should reuse existing metaconfig', async () => {
-      client.fetchMetaconfig.resolves({
-        siteId: 'site-123',
-        prerender: true,
-      });
-
-      await client.deploySuggestions(
-        mockSite,
-        mockOpportunity,
-        mockSuggestions,
-      );
-
-      expect(client.fetchMetaconfig).to.have.been.calledOnce;
-      expect(client.uploadMetaconfig).to.not.have.been.called;
+      try {
+        await client.deploySuggestions(
+          mockSite,
+          mockOpportunity,
+          mockSuggestions,
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('No domain-level metaconfig found');
+        expect(error.status).to.equal(400);
+      }
     });
 
     it('should handle suggestions for multiple URLs', async () => {
@@ -910,7 +865,9 @@ describe('TokowakaClient', () => {
       );
 
       expect(result.s3Paths).to.have.length(2);
-      expect(result.cdnInvalidations).to.have.length(2);
+      // Only 1 invalidation result returned (for batch URLs)
+      // Metaconfig invalidation happens inside uploadMetaconfig() automatically
+      expect(result.cdnInvalidations).to.have.length(1);
       expect(result.succeededSuggestions).to.have.length(2);
     });
 
@@ -1039,6 +996,59 @@ describe('TokowakaClient', () => {
       // Both suggestions are in result but sugg-1 skipped deployment due to no patches
       expect(result.succeededSuggestions).to.have.length(2);
       expect(result.s3Paths).to.have.length(1); // Only one URL actually deployed
+      expect(log.warn).to.have.been.calledWith('No config generated for URL: https://example.com/page1');
+    });
+
+    it('should skip URL when config has no patches after generation', async () => {
+      // Stub generateConfig to return a config with no patches (defensive check)
+      const originalGenerateConfig = client.generateConfig.bind(client);
+      sinon.stub(client, 'generateConfig').callsFake((url, ...args) => {
+        const config = originalGenerateConfig(url, ...args);
+        if (config && url === 'https://example.com/page1') {
+          // Return config but with empty patches array (simulating edge case)
+          return { ...config, patches: [] };
+        }
+        return config;
+      });
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page2',
+            recommendedAction: 'New Subtitle',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h2',
+            },
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.s3Paths).to.have.length(1); // Only page2 deployed
+      expect(log.warn).to.have.been.calledWith('No eligible suggestions to deploy for URL: https://example.com/page1');
     });
 
     it('should return early when no eligible suggestions', async () => {
@@ -1063,6 +1073,52 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions).to.have.length(1);
       expect(log.warn).to.have.been.calledWith('No eligible suggestions to deploy');
       expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should deploy prerender-only suggestions with no patches', async () => {
+      // Create prerender opportunity
+      const prerenderOpportunity = {
+        getId: () => 'opp-prerender-123',
+        getType: () => 'prerender',
+      };
+
+      // Create prerender suggestions with no transform rules (prerender-only)
+      const prerenderSuggestions = [
+        {
+          getId: () => 'prerender-sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            // No transform rules - prerender only
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        prerenderOpportunity,
+        prerenderSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.s3Paths).to.have.length(1);
+      // Only 1 invalidation result returned (for batch URLs)
+      // Metaconfig invalidation happens inside uploadMetaconfig() automatically
+      expect(result.cdnInvalidations).to.have.length(1);
+
+      // Verify uploaded config has no patches but prerender is enabled
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.patches).to.have.length(0);
+      expect(uploadedConfig.prerender).to.equal(true);
+      expect(uploadedConfig.url).to.equal('https://example.com/page1');
+
+      // Verify CDN was invalidated using batch method with new options signature
+      expect(client.invalidateCdnCache).to.have.been.calledOnce;
+      const invalidateCall = client.invalidateCdnCache.firstCall.args[0];
+      expect(invalidateCall).to.deep.include({
+        urls: ['https://example.com/page1'],
+      });
     });
 
     it('should throw error for unsupported opportunity type', async () => {
@@ -1156,12 +1212,12 @@ describe('TokowakaClient', () => {
 
   describe('rollbackSuggestions', () => {
     beforeEach(() => {
-      // Stub CDN invalidation for rollback tests
-      sinon.stub(client, 'invalidateCdnCache').resolves({
+      // Stub CDN invalidation for rollback tests (now handles both single and batch)
+      sinon.stub(client, 'invalidateCdnCache').resolves([{
         status: 'success',
         provider: 'cloudfront',
         invalidationId: 'I123',
-      });
+      }]);
     });
 
     it('should rollback suggestions successfully', async () => {
@@ -1221,6 +1277,70 @@ describe('TokowakaClient', () => {
       expect(uploadedConfig.patches[0].suggestionId).to.equal('sugg-3');
     });
 
+    it('should rollback prerender suggestions by disabling prerender flag', async () => {
+      // Create prerender opportunity
+      const prerenderOpportunity = {
+        getId: () => 'opp-prerender-123',
+        getType: () => 'prerender',
+      };
+
+      // Create prerender suggestions
+      const prerenderSuggestions = [
+        {
+          getId: () => 'prerender-sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+          }),
+        },
+      ];
+
+      const existingConfig = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            op: 'replace',
+            selector: 'h1',
+            value: 'Heading 1',
+            opportunityId: 'opp-other-123',
+            suggestionId: 'other-sugg-1',
+            prerenderRequired: false,
+            lastUpdated: 1234567890,
+          },
+        ],
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        prerenderSuggestions,
+      );
+
+      expect(result.s3Paths).to.have.length(1);
+      expect(result.s3Paths[0]).to.equal('opportunities/example.com/L3BhZ2Ux');
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.removedPatchesCount).to.equal(1);
+
+      // Verify uploaded config has prerender disabled but patches intact
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.prerender).to.equal(false);
+      expect(uploadedConfig.patches).to.have.length(1);
+      expect(uploadedConfig.patches[0].suggestionId).to.equal('other-sugg-1');
+
+      // Verify CDN was invalidated using batch method with new options signature
+      expect(client.invalidateCdnCache).to.have.been.calledOnce;
+      const invalidateCall = client.invalidateCdnCache.firstCall.args[0];
+      expect(invalidateCall).to.deep.include({
+        urls: ['https://example.com/page1'],
+      });
+    });
+
     it('should handle no existing config gracefully', async () => {
       sinon.stub(client, 'fetchConfig').resolves(null);
 
@@ -1255,6 +1375,30 @@ describe('TokowakaClient', () => {
       );
 
       // Code marks eligible suggestions as succeeded even if no patches to remove
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.s3Paths).to.have.length(0);
+      expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should handle missing patches property in config', async () => {
+      const existingConfig = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        // patches property is missing
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      // Code marks eligible suggestions as succeeded even if patches property missing
       expect(result.succeededSuggestions).to.have.length(2);
       expect(result.failedSuggestions).to.have.length(0);
       expect(result.s3Paths).to.have.length(0);
@@ -1443,7 +1587,8 @@ describe('TokowakaClient', () => {
       );
 
       expect(result.s3Paths).to.have.length(2);
-      expect(result.cdnInvalidations).to.have.length(2);
+      // Batch invalidation returns 1 result per CDN provider, not per URL
+      expect(result.cdnInvalidations).to.have.length(1);
       expect(result.succeededSuggestions).to.have.length(2);
     });
 
@@ -1600,6 +1745,64 @@ describe('TokowakaClient', () => {
         expect(error.message).to.include('TOKOWAKA_PREVIEW_API_KEY is required for preview');
         expect(error.status).to.equal(500);
       }
+    });
+
+    it('should preview prerender-only suggestions with no patches', async () => {
+      // Update fetchConfig to return existing config with deployed patches
+      client.fetchConfig.resolves({
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: false,
+        patches: [
+          {
+            op: 'replace',
+            selector: 'h1',
+            value: 'Existing Heading',
+            opportunityId: 'opp-other-123',
+            suggestionId: 'sugg-other',
+            prerenderRequired: false,
+            lastUpdated: 1234567890,
+          },
+        ],
+      });
+
+      // Create prerender opportunity
+      const prerenderOpportunity = {
+        getId: () => 'opp-prerender-123',
+        getType: () => 'prerender',
+      };
+
+      // Create prerender suggestions with no transform rules (prerender-only)
+      const prerenderSuggestions = [
+        {
+          getId: () => 'prerender-sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            // No transform rules - prerender only
+          }),
+        },
+      ];
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        prerenderSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result).to.have.property('s3Path');
+      expect(result.config).to.not.be.null;
+      expect(result.config.patches).to.have.length(1); // Merged with existing deployed patch
+      expect(result.config.prerender).to.equal(true); // Prerender enabled
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result).to.have.property('html');
+
+      // Verify fetch was called for HTML fetching
+      expect(fetchStub.callCount).to.equal(4);
+      expect(s3Client.send).to.have.been.calledOnce;
     });
 
     it('should throw error if TOKOWAKA_EDGE_URL is not configured', async () => {
@@ -1818,10 +2021,11 @@ describe('TokowakaClient', () => {
       );
 
       expect(client.invalidateCdnCache).to.have.been.calledOnce;
-      const { firstCall } = client.invalidateCdnCache;
-      expect(firstCall.args[0]).to.equal('https://example.com/page1');
-      expect(firstCall.args[1]).to.equal('cloudfront');
-      expect(firstCall.args[2]).to.be.true; // isPreview
+      const invalidateCall = client.invalidateCdnCache.firstCall.args[0];
+      expect(invalidateCall).to.deep.include({
+        urls: ['https://example.com/page1'],
+        isPreview: true,
+      });
     });
 
     it('should throw error if suggestions span multiple URLs', async () => {
@@ -1888,9 +2092,12 @@ describe('TokowakaClient', () => {
     });
 
     it('should invalidate CDN cache successfully', async () => {
-      const result = await client.invalidateCdnCache('https://example.com/page1', 'cloudfront');
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront' });
 
-      expect(result).to.deep.equal({
+      // Now returns array with one result per provider
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
         status: 'success',
         provider: 'cloudfront',
         invalidationId: 'I123',
@@ -1899,63 +2106,299 @@ describe('TokowakaClient', () => {
       expect(mockCdnClient.invalidateCache).to.have.been.calledWith([
         '/opportunities/example.com/L3BhZ2Ux',
       ]);
-      expect(log.debug).to.have.been.calledWith(sinon.match(/Invalidating CDN cache/));
+      expect(log.info).to.have.been.calledWith(sinon.match(/Invalidating CDN cache/));
       expect(log.info).to.have.been.calledWith(sinon.match(/CDN cache invalidation completed/));
     });
 
     it('should invalidate CDN cache for preview path', async () => {
-      await client.invalidateCdnCache('https://example.com/page1', 'cloudfront', true);
+      await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront', isPreview: true });
 
       expect(mockCdnClient.invalidateCache).to.have.been.calledWith([
         '/preview/opportunities/example.com/L3BhZ2Ux',
       ]);
     });
 
-    it('should throw error if URL is missing', async () => {
-      try {
-        await client.invalidateCdnCache('', 'cloudfront');
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.equal('URL and provider are required');
-        expect(error.status).to.equal(400);
-      }
+    it('should return empty array if URL array is empty', async () => {
+      const result = await client.invalidateCdnCache({ urls: [], providers: 'cloudfront' });
+      expect(result).to.deep.equal([]);
     });
 
-    it('should throw error if provider is missing', async () => {
-      try {
-        await client.invalidateCdnCache('https://example.com/page1', '');
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.equal('URL and provider are required');
-        expect(error.status).to.equal(400);
-      }
+    it('should return empty array if provider is missing', async () => {
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: '' });
+      expect(result).to.deep.equal([]);
+      expect(log.warn).to.have.been.calledWith('No CDN providers specified for cache invalidation');
     });
 
     it('should return error object if no CDN client available', async () => {
       client.cdnClientRegistry.getClient.returns(null);
 
-      const result = await client.invalidateCdnCache('https://example.com/page1', 'cloudfront');
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront' });
 
-      expect(result).to.deep.equal({
+      // Now returns array with one result per provider
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
         status: 'error',
         provider: 'cloudfront',
         message: 'No CDN client available for provider: cloudfront',
       });
-      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate Tokowaka CDN cache/));
     });
 
     it('should return error object if CDN invalidation fails', async () => {
       mockCdnClient.invalidateCache.rejects(new Error('CDN API error'));
 
-      const result = await client.invalidateCdnCache('https://example.com/page1', 'cloudfront');
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront' });
 
-      expect(result).to.deep.equal({
+      // Now returns array with one result per provider
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
         status: 'error',
         provider: 'cloudfront',
         message: 'CDN API error',
       });
 
-      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate Tokowaka CDN cache/));
+      expect(log.warn).to.have.been.calledWith(sinon.match(/Failed to invalidate cloudfront CDN cache/));
+    });
+  });
+
+  describe('invalidateCdnCache (batch/multiple URLs)', () => {
+    let mockCdnClient;
+
+    beforeEach(() => {
+      mockCdnClient = {
+        invalidateCache: sinon.stub().resolves({
+          status: 'success',
+          provider: 'cloudfront',
+          invalidationId: 'I123',
+        }),
+      };
+
+      sinon.stub(client.cdnClientRegistry, 'getClient').returns(mockCdnClient);
+    });
+
+    it('should invalidate CDN cache for multiple URLs (batch)', async () => {
+      const urls = [
+        'https://example.com/page1',
+        'https://example.com/page2',
+        'https://example.com/page3',
+      ];
+
+      // Pass array of URLs for batch invalidation
+      const result = await client.invalidateCdnCache({ urls, providers: 'cloudfront' });
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
+        status: 'success',
+        provider: 'cloudfront',
+        invalidationId: 'I123',
+      });
+
+      expect(mockCdnClient.invalidateCache).to.have.been.calledWith([
+        '/opportunities/example.com/L3BhZ2Ux',
+        '/opportunities/example.com/L3BhZ2Uy',
+        '/opportunities/example.com/L3BhZ2Uz',
+      ]);
+      expect(log.info).to.have.been.calledWith(sinon.match(/Invalidating CDN cache for 3 path\(s\)/));
+    });
+
+    it('should return empty array for empty URLs array', async () => {
+      const result = await client.invalidateCdnCache({ urls: [], providers: 'cloudfront' });
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should return empty array if providers is empty', async () => {
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: '' });
+      expect(result).to.deep.equal([]);
+      expect(log.warn).to.have.been.calledWith('No CDN providers specified for cache invalidation');
+    });
+
+    it('should return error object if no CDN client available', async () => {
+      client.cdnClientRegistry.getClient.returns(null);
+
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront' });
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
+        status: 'error',
+        provider: 'cloudfront',
+        message: 'No CDN client available for provider: cloudfront',
+      });
+    });
+
+    it('should return error object if CDN invalidation fails', async () => {
+      mockCdnClient.invalidateCache.rejects(new Error('CDN API error'));
+
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront' });
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
+        status: 'error',
+        provider: 'cloudfront',
+        message: 'CDN API error',
+      });
+    });
+
+    it('should handle multiple providers in parallel', async () => {
+      const mockFastlyClient = {
+        invalidateCache: sinon.stub().resolves({
+          status: 'success',
+          provider: 'fastly',
+          purgeId: 'F456',
+        }),
+      };
+
+      client.cdnClientRegistry.getClient.withArgs('cloudfront').returns(mockCdnClient);
+      client.cdnClientRegistry.getClient.withArgs('fastly').returns(mockFastlyClient);
+
+      const result = await client.invalidateCdnCache({
+        urls: ['https://example.com/page1'],
+        providers: ['cloudfront', 'fastly'],
+      });
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].provider).to.equal('cloudfront');
+      expect(result[1].provider).to.equal('fastly');
+
+      expect(mockCdnClient.invalidateCache).to.have.been.calledOnce;
+      expect(mockFastlyClient.invalidateCache).to.have.been.calledOnce;
+    });
+
+    it('should handle errors from getClient', async () => {
+      // Simulate an error when getting the CDN client
+      client.cdnClientRegistry.getClient.restore();
+      sinon.stub(client.cdnClientRegistry, 'getClient').throws(new Error('Unexpected error'));
+
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront' });
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.equal({
+        status: 'error',
+        provider: 'cloudfront',
+        message: 'Unexpected error',
+      });
+
+      // Error is caught in provider-specific error handler
+      expect(log.warn).to.have.been.calledWith(sinon.match(/Failed to invalidate cloudfront CDN cache/));
+    });
+
+    it('should handle empty CDN provider config', async () => {
+      // Test with existing client but passing no providers
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: [] });
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(0);
+      expect(log.warn).to.have.been.calledWith('No CDN providers specified for cache invalidation');
+    });
+
+    it('should handle multiple providers passed as array', async () => {
+      const mockFastlyClient = {
+        invalidateCache: sinon.stub().resolves({
+          status: 'success',
+          provider: 'fastly',
+        }),
+      };
+
+      client.cdnClientRegistry.getClient.restore();
+      sinon.stub(client.cdnClientRegistry, 'getClient')
+        .withArgs('cloudfront')
+        .returns(mockCdnClient)
+        .withArgs('fastly')
+        .returns(mockFastlyClient);
+
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: ['cloudfront', 'fastly'] });
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(2);
+      expect(mockCdnClient.invalidateCache).to.have.been.calledOnce;
+      expect(mockFastlyClient.invalidateCache).to.have.been.calledOnce;
+    });
+
+    it('should handle empty paths after filtering', async () => {
+      // Call the method with URLs to test path generation
+      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront' });
+
+      // Should successfully invalidate (paths are generated from URL)
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(1);
+    });
+  });
+
+  describe('#getCdnProviders (edge cases)', () => {
+    it('should handle missing CDN provider config (lines 105-106)', async () => {
+      // Temporarily remove TOKOWAKA_CDN_PROVIDER to test early return
+      const originalProvider = client.env.TOKOWAKA_CDN_PROVIDER;
+      delete client.env.TOKOWAKA_CDN_PROVIDER;
+
+      // Call uploadMetaconfig which uses #getCdnProviders internally
+      await client.uploadMetaconfig('https://example.com/page1', { siteId: 'test', prerender: true });
+
+      // No CDN invalidation should happen (no providers configured)
+      expect(log.warn).to.have.been.calledWith('No CDN providers specified for cache invalidation');
+
+      // Restore
+      client.env.TOKOWAKA_CDN_PROVIDER = originalProvider;
+    });
+
+    it('should handle array provider config with falsy values (line 111)', async () => {
+      // Temporarily modify env to test array filtering
+      const originalProvider = client.env.TOKOWAKA_CDN_PROVIDER;
+      client.env.TOKOWAKA_CDN_PROVIDER = ['cloudfront', '', null, undefined]; // Array with falsy values
+
+      const mockCloudFrontClient = {
+        invalidateCache: sinon.stub().resolves({
+          status: 'success',
+          provider: 'cloudfront',
+        }),
+      };
+
+      sinon.stub(client.cdnClientRegistry, 'getClient')
+        .withArgs('cloudfront')
+        .returns(mockCloudFrontClient);
+
+      // Call uploadMetaconfig which uses #getCdnProviders internally
+      await client.uploadMetaconfig('https://example.com/page1', { siteId: 'test', prerender: true });
+
+      // Should only use 'cloudfront' (falsy values filtered out)
+      expect(mockCloudFrontClient.invalidateCache).to.have.been.calledOnce;
+
+      // Restore
+      client.env.TOKOWAKA_CDN_PROVIDER = originalProvider;
+    });
+
+    it('should handle invalid CDN provider type - number (lines 120-121)', async () => {
+      // Temporarily modify env to test invalid type
+      const originalProvider = client.env.TOKOWAKA_CDN_PROVIDER;
+      client.env.TOKOWAKA_CDN_PROVIDER = 12345; // Invalid type (number)
+
+      // Call uploadMetaconfig which uses #getCdnProviders internally
+      await client.uploadMetaconfig('https://example.com/page1', { siteId: 'test', prerender: true });
+
+      // No CDN invalidation should happen (no providers)
+      expect(log.warn).to.have.been.calledWith('No CDN providers specified for cache invalidation');
+
+      // Restore
+      client.env.TOKOWAKA_CDN_PROVIDER = originalProvider;
+    });
+
+    it('should handle invalid CDN provider type - object (lines 120-121)', async () => {
+      // Temporarily modify env to test invalid type
+      const originalProvider = client.env.TOKOWAKA_CDN_PROVIDER;
+      client.env.TOKOWAKA_CDN_PROVIDER = { key: 'value' }; // Invalid type (object)
+
+      // Call uploadMetaconfig which uses #getCdnProviders internally
+      await client.uploadMetaconfig('https://example.com/page1', { siteId: 'test', prerender: true });
+
+      // No CDN invalidation should happen (no providers)
+      expect(log.warn).to.have.been.calledWith('No CDN providers specified for cache invalidation');
+
+      // Restore
+      client.env.TOKOWAKA_CDN_PROVIDER = originalProvider;
     });
   });
 });

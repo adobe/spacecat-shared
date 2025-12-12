@@ -158,5 +158,189 @@ describe('Bot Blocker Detection', () => {
       expect(result.type).to.equal('unknown');
       expect(result.confidence).to.equal(0.5);
     });
+
+    // New CDN detection tests
+    it('detects Akamai blocking with 403 and x-akamai-request-id header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          'x-akamai-request-id': 'abc123',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('akamai');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects Akamai blocking with 403 and x-akamai-session-id header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          'x-akamai-session-id': 'session-123',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('akamai');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects Akamai blocking with 403 and AkamaiGHost server header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          server: 'AkamaiGHost',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('akamai');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects Fastly blocking with 403 and x-served-by cache header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          'x-served-by': 'cache-sjc10039-SJC',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('fastly');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects Fastly blocking with 403 and fastly-io-info header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          'fastly-io-info': 'some-value',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('fastly');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects CloudFront blocking with 403 and x-amz-cf-id header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          'x-amz-cf-id': 'cf-id-123',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudfront');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects CloudFront blocking with 403 and x-amz-cf-pop header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          'x-amz-cf-pop': 'SEA73-P1',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudfront');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects CloudFront blocking with 403 and via CloudFront header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          via: '1.1 abc123.cloudfront.net (CloudFront)',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudfront');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    // Infrastructure detection on 200 OK responses
+    it('detects Cloudflare infrastructure on 200 OK', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', {
+          'cf-ray': '123456789-CDG',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    it('detects Imperva infrastructure on 200 OK', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', {
+          'x-iinfo': 'some-value',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('imperva-allowed');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    it('detects Akamai infrastructure on 200 OK', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', {
+          'x-akamai-request-id': 'abc123',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('akamai-allowed');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    it('detects Fastly infrastructure on 200 OK', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', {
+          'x-served-by': 'cache-sjc10039-SJC',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('fastly-allowed');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    it('detects CloudFront infrastructure on 200 OK', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', {
+          'x-amz-cf-id': 'cf-id-123',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudfront-allowed');
+      expect(result.confidence).to.equal(1.0);
+    });
   });
 });

@@ -12,7 +12,7 @@
 
 import * as cheerio from 'cheerio';
 
-import { hasText, isNonEmptyObject, isValidBaseUrl } from '../functions.js';
+import { hasText, isNonEmptyObject, isValidUrl } from '../functions.js';
 import { tracingFetch } from '../tracing-fetch.js';
 import { indicators } from './indicators.js';
 
@@ -20,7 +20,7 @@ export async function detectLocale(config) {
   const { baseUrl, indicatorFuncs = indicators } = config;
 
   // Abort if baseUrl was not provided or cannot be parsed
-  if (!baseUrl || !isValidBaseUrl(baseUrl)) {
+  if (!baseUrl || !isValidUrl(baseUrl)) {
     throw new Error('Invalid baseUrl');
   }
   const indicatorResults = [];

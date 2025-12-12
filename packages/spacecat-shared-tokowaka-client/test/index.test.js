@@ -64,8 +64,7 @@ describe('TokowakaClient', () => {
       getBaseURL: () => 'https://example.com',
       getConfig: () => ({
         getTokowakaConfig: () => ({
-          forwardedHost: 'example.com',
-          apiKey: 'test-api-key',
+          forwardedHost: 'www.example.com',
         }),
       }),
     };
@@ -1698,14 +1697,16 @@ describe('TokowakaClient', () => {
       // Stub fetchConfig to return null by default (no existing config)
       sinon.stub(client, 'fetchConfig').resolves(null);
 
-      // Add TOKOWAKA_EDGE_URL to env
+      // Add TOKOWAKA_EDGE_URL and TOKOWAKA_PREVIEW_API_KEY to env
       client.env.TOKOWAKA_EDGE_URL = 'https://edge-dev.tokowaka.now';
+      client.env.TOKOWAKA_PREVIEW_API_KEY = 'internal-preview-key-123';
     });
 
     afterEach(() => {
       // fetchStub will be restored by global afterEach sinon.restore()
       // Just clean up env changes
       delete client.env.TOKOWAKA_EDGE_URL;
+      delete client.env.TOKOWAKA_PREVIEW_API_KEY;
     });
 
     it('should preview suggestions successfully with HTML', async () => {
@@ -1732,6 +1733,18 @@ describe('TokowakaClient', () => {
       // (4 times: warmup + actual for original and optimized)
       expect(fetchStub.callCount).to.equal(4);
       expect(s3Client.send).to.have.been.calledOnce;
+    });
+
+    it('should throw error if TOKOWAKA_PREVIEW_API_KEY is not configured', async () => {
+      delete client.env.TOKOWAKA_PREVIEW_API_KEY;
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('TOKOWAKA_PREVIEW_API_KEY is required for preview');
+        expect(error.status).to.equal(500);
+      }
     });
 
     it('should preview prerender-only suggestions with no patches', async () => {
@@ -1813,7 +1826,7 @@ describe('TokowakaClient', () => {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('Site does not have a Tokowaka API key or forwarded host configured');
+        expect(error.message).to.include('Site does not have a Tokowaka forwarded host configured');
         expect(error.status).to.equal(400);
       }
     });
@@ -1827,7 +1840,7 @@ describe('TokowakaClient', () => {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('Site does not have a Tokowaka API key or forwarded host configured');
+        expect(error.message).to.include('Site does not have a Tokowaka forwarded host configured');
         expect(error.status).to.equal(400);
       }
     });

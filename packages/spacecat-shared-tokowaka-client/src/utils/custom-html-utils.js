@@ -89,7 +89,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
  * Fetches HTML content from Tokowaka edge with warmup call and retry logic
  * Makes an initial warmup call, waits, then makes the actual call with retries
  * @param {string} url - Full URL to fetch
- * @param {string} apiKey - Tokowaka API key
+ * @param {string} previewApiKey - Tokowaka preview API key (internal)
  * @param {string} forwardedHost - Host to forward in x-forwarded-host header
  * @param {string} tokowakaEdgeUrl - Tokowaka edge URL
  * @param {boolean} isOptimized - Whether to fetch optimized HTML (with preview param)
@@ -103,7 +103,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
  */
 export async function fetchHtmlWithWarmup(
   url,
-  apiKey,
+  previewApiKey,
   forwardedHost,
   tokowakaEdgeUrl,
   log,
@@ -115,8 +115,8 @@ export async function fetchHtmlWithWarmup(
     throw new Error('URL is required for fetching HTML');
   }
 
-  if (!hasText(apiKey)) {
-    throw new Error('Tokowaka API key is required for fetching HTML');
+  if (!hasText(previewApiKey)) {
+    throw new Error('Tokowaka preview API key is required for fetching HTML');
   }
 
   if (!hasText(forwardedHost)) {
@@ -143,7 +143,7 @@ export async function fetchHtmlWithWarmup(
 
   const headers = {
     'x-forwarded-host': forwardedHost,
-    'x-tokowaka-api-key': apiKey,
+    'x-tokowaka-preview-api-key': previewApiKey,
     'x-tokowaka-url': urlPath,
   };
 

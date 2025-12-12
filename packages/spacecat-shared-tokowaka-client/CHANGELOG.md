@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.1...@adobe/spacecat-shared-tokowaka-client-v1.4.2) (2025-12-12)
+
+
+### Bug Fixes
+
+* use preview key instead of site api key in Edge Preview API ([#1228](https://github.com/adobe/spacecat-shared/issues/1228)) ([8e0c1a9](https://github.com/adobe/spacecat-shared/commit/8e0c1a9c228a740de66c29bf2480042d29aa88a6))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.0...@adobe/spacecat-shared-tokowaka-client-v1.4.1) (2025-12-12)
 
 

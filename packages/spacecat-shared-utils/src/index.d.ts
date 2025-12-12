@@ -48,6 +48,8 @@ export function toBoolean(value: unknown): boolean;
 
 export function isValidUrl(urlString: string): boolean;
 
+export function isValidBaseUrl(urlString: string): boolean;
+
 export function isValidHelixPreviewUrl(urlString: string): boolean;
 
 export function isValidUUID(uuid: string): boolean;

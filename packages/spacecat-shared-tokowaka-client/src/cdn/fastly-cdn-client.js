@@ -71,6 +71,8 @@ export default class FastlyCdnClient extends BaseCdnClient {
       return { status: 'skipped', message: 'No paths to invalidate' };
     }
 
+    this.log.info(`Starting Fastly cache invalidation for ${paths.length} path(s)`);
+
     // Construct full CloudFront URLs as surrogate keys
     // Example: "https://deftbrsarcsf4.cloudfront.net/opportunities/adobe.com/config"
     const surrogateKeys = paths.map((path) => {
@@ -81,7 +83,13 @@ export default class FastlyCdnClient extends BaseCdnClient {
       return fullUrl;
     });
 
+    this.log.debug(`Generated ${surrogateKeys.length} surrogate key(s) for purge`);
+    // info level for testing purpose, will be removed before merge to main
+    this.log.info(`Surrogate keys: ${surrogateKeys.join(', ')}`);
+
     const startTime = Date.now();
+    const apiEndpoint = `https://api.fastly.com/service/${this.cdnConfig.serviceId}/purge`;
+    this.log.debug(`Calling Fastly API: POST ${apiEndpoint}`);
     try {
       // Fastly batch purge using Surrogate-Key header (space-separated)
       // Works for both single and multiple keys
@@ -114,8 +122,10 @@ export default class FastlyCdnClient extends BaseCdnClient {
       }
 
       const result = await response.json();
+      const duration = Date.now() - startTime;
       this.log.info(
-        `Successfully purged ${surrogateKeys.length} Fastly cache key(s) (took ${Date.now() - startTime}ms)`,
+        `Successfully purged ${surrogateKeys.length} Fastly cache key(s) `
+        + `for service ${this.cdnConfig.serviceId} (took ${duration}ms)`,
       );
 
       return {
@@ -127,7 +137,7 @@ export default class FastlyCdnClient extends BaseCdnClient {
         successCount: surrogateKeys.length,
         failedCount: 0,
         purgeId: result.id,
-        duration: Date.now() - startTime,
+        duration,
       };
     } catch (error) {
       this.log.error(`Error purging Fastly cache: ${error.message}`, error);

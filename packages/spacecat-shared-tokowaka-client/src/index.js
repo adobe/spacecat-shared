@@ -191,7 +191,7 @@ class TokowakaClient {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = getTokowakaMetaconfigS3Path(url, this.log, false);
+    const s3Path = getTokowakaMetaconfigS3Path(url, this.log);
     const bucketName = this.deployBucketName;
 
     try {
@@ -234,7 +234,7 @@ class TokowakaClient {
       throw this.#createError('Metaconfig object is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = getTokowakaMetaconfigS3Path(url, this.log, false);
+    const s3Path = getTokowakaMetaconfigS3Path(url, this.log);
     const bucketName = this.deployBucketName;
 
     try {

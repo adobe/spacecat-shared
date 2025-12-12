@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.86.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.2...@adobe/spacecat-shared-utils-v1.86.0) (2025-12-12)
+
+
+### Features
+
+* add detection for Akamai, Fastly, and CloudFront ([#1238](https://github.com/adobe/spacecat-shared/issues/1238)) ([3f7aad9](https://github.com/adobe/spacecat-shared/commit/3f7aad96fbc823b2e9d59541a71ba3b4e6d315e8))
+
 # [@adobe/spacecat-shared-utils-v1.85.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.1...@adobe/spacecat-shared-utils-v1.85.2) (2025-12-11)
 
 

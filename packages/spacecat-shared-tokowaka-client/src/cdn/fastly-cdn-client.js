@@ -39,9 +39,14 @@ export default class FastlyCdnClient extends BaseCdnClient {
   }
 
   validateConfig() {
-    // serviceId and apiToken are required for Fastly API
+    // serviceId, apiToken, and distributionUrl are required for Fastly API
     if (!this.cdnConfig.serviceId || !this.cdnConfig.apiToken) {
       this.log.error('Fastly CDN config missing required fields: serviceId and apiToken');
+      return false;
+    }
+
+    if (!this.cdnConfig.distributionUrl) {
+      this.log.error('Fastly CDN config missing distributionUrl (CloudFront distribution URL)');
       return false;
     }
 
@@ -49,9 +54,11 @@ export default class FastlyCdnClient extends BaseCdnClient {
   }
 
   /**
-   * Invalidates Fastly CDN cache for given paths using batch surrogate key purging
+   * Invalidates Fastly CDN cache for given paths using surrogate key purging
+   * Constructs full CloudFront URLs as surrogate keys for Fastly purge
    * Works efficiently for both single and multiple paths
    * @param {Array<string>} paths - Array of URL paths to invalidate
+   *   (e.g., '/opportunities/adobe.com/config')
    * @returns {Promise<Object>} Result of the invalidation request
    */
   async invalidateCache(paths) {
@@ -64,12 +71,14 @@ export default class FastlyCdnClient extends BaseCdnClient {
       return { status: 'skipped', message: 'No paths to invalidate' };
     }
 
-    // Generate surrogate keys from paths (use path as surrogate key)
-    // Fastly allows purging by surrogate key which is more efficient
+    // Construct full CloudFront URLs as surrogate keys
+    // Example: "https://deftbrsarcsf4.cloudfront.net/opportunities/adobe.com/config"
     const surrogateKeys = paths.map((path) => {
-      // Remove leading slash and replace special chars for surrogate key
-      const key = path.replace(/^\//, '').replace(/[^a-zA-Z0-9-_]/g, '-');
-      return key;
+      // Ensure path starts with /
+      const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+      // Combine CloudFront distribution URL with path
+      const fullUrl = `${this.cdnConfig.distributionUrl}${normalizedPath}`;
+      return fullUrl;
     });
 
     const startTime = Date.now();

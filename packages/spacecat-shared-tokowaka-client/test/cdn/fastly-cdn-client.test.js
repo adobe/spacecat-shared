@@ -63,6 +63,7 @@ describe('FastlyCdnClient', () => {
           fastly: {
             serviceId: 'test-service-id',
             apiToken: 'test-api-token',
+            distributionUrl: 'https://test.cloudfront.net',
           },
         }),
       };
@@ -79,6 +80,7 @@ describe('FastlyCdnClient', () => {
         TOKOWAKA_CDN_CONFIG: JSON.stringify({
           fastly: {
             apiToken: 'test-api-token',
+            distributionUrl: 'https://test.cloudfront.net',
           },
         }),
       };
@@ -93,6 +95,7 @@ describe('FastlyCdnClient', () => {
         TOKOWAKA_CDN_CONFIG: JSON.stringify({
           fastly: {
             serviceId: 'test-service-id',
+            distributionUrl: 'https://test.cloudfront.net',
           },
         }),
       };
@@ -102,12 +105,28 @@ describe('FastlyCdnClient', () => {
       expect(log.error.calledOnce).to.be.true;
     });
 
+    it('should return false if distributionUrl is missing', () => {
+      const env = {
+        TOKOWAKA_CDN_CONFIG: JSON.stringify({
+          fastly: {
+            serviceId: 'test-service-id',
+            apiToken: 'test-api-token',
+          },
+        }),
+      };
+
+      const client = new FastlyCdnClient(env, log);
+      expect(client.validateConfig()).to.be.false;
+      expect(log.error).to.have.been.calledWith(sinon.match(/distributionUrl/));
+    });
+
     it('should return true with valid config', () => {
       const env = {
         TOKOWAKA_CDN_CONFIG: JSON.stringify({
           fastly: {
             serviceId: 'test-service-id',
             apiToken: 'test-api-token',
+            distributionUrl: 'https://test.cloudfront.net',
           },
         }),
       };
@@ -127,6 +146,7 @@ describe('FastlyCdnClient', () => {
           fastly: {
             serviceId: 'test-service-id',
             apiToken: 'test-api-token',
+            distributionUrl: 'https://test.cloudfront.net',
           },
         }),
       };
@@ -257,11 +277,31 @@ describe('FastlyCdnClient', () => {
       // Now uses batch, so only 1 call
       expect(fetchStub.callCount).to.equal(1);
 
-      // Check that surrogate keys are in the header (space-separated)
+      // Check that surrogate keys are full CloudFront URLs (space-separated)
       const fetchCall = fetchStub.getCall(0);
       const surrogateKey = fetchCall.args[1].headers['Surrogate-Key'];
-      expect(surrogateKey).to.include('opportunities-example-com-L3Byb2R1Y3Rz');
-      expect(surrogateKey).to.include('preview-opportunities-test-com-abc123');
+      expect(surrogateKey).to.include('https://test.cloudfront.net/opportunities/example.com/L3Byb2R1Y3Rz');
+      expect(surrogateKey).to.include('https://test.cloudfront.net/preview/opportunities/test.com/abc123');
+    });
+
+    it('should normalize paths without leading slash (line 78)', async () => {
+      const paths = [
+        'opportunities/example.com/config', // No leading slash - tests line 78
+      ];
+
+      fetchStub.resolves({
+        ok: true,
+        json: async () => ({ status: 'ok', id: 'normalize-test' }),
+      });
+
+      const result = await client.invalidateCache(paths);
+
+      expect(result.status).to.equal('success');
+
+      // Check that path was normalized with leading slash
+      const fetchCall = fetchStub.getCall(0);
+      const surrogateKey = fetchCall.args[1].headers['Surrogate-Key'];
+      expect(surrogateKey).to.equal('https://test.cloudfront.net/opportunities/example.com/config');
     });
 
     it('should include duration in result for single path', async () => {
@@ -308,6 +348,7 @@ describe('FastlyCdnClient', () => {
           fastly: {
             serviceId: 'test-service-id',
             apiToken: 'test-api-token',
+            distributionUrl: 'https://test.cloudfront.net',
           },
         }),
       };
@@ -342,12 +383,12 @@ describe('FastlyCdnClient', () => {
       const fetchCall = fetchStub.getCall(0);
       expect(fetchCall.args[0]).to.equal('https://api.fastly.com/service/test-service-id/purge');
 
-      // Check that surrogate keys are in header (space-separated)
+      // Check that surrogate keys are full CloudFront URLs (space-separated)
       const { headers } = fetchCall.args[1];
       expect(headers['Surrogate-Key']).to.be.a('string');
       const keys = headers['Surrogate-Key'].split(' ');
       expect(keys).to.have.lengthOf(3);
-      expect(headers['Surrogate-Key']).to.include('opportunities-example-com');
+      expect(headers['Surrogate-Key']).to.include('https://test.cloudfront.net/opportunities/example.com/');
     });
 
     it('should handle batch purge failures', async () => {
@@ -407,7 +448,7 @@ describe('FastlyCdnClient', () => {
       // Should use batch endpoint even for single path (consistent behavior)
       const fetchCall = fetchStub.getCall(0);
       expect(fetchCall.args[0]).to.equal('https://api.fastly.com/service/test-service-id/purge');
-      expect(fetchCall.args[1].headers['Surrogate-Key']).to.equal('opportunities-example-com-L3Byb2R1Y3Rz');
+      expect(fetchCall.args[1].headers['Surrogate-Key']).to.equal('https://test.cloudfront.net/opportunities/example.com/L3Byb2R1Y3Rz');
     });
 
     it('should handle single path purge failure', async () => {

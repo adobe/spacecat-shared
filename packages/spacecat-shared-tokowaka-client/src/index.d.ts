@@ -387,12 +387,12 @@ export default class TokowakaClient {
   /**
    * Fetches domain-level metaconfig from S3
    */
-  fetchMetaconfig(url: string, isPreview?: boolean): Promise<TokowakaMetaconfig | null>;
+  fetchMetaconfig(url: string): Promise<TokowakaMetaconfig | null>;
   
   /**
    * Uploads domain-level metaconfig to S3
    */
-  uploadMetaconfig(url: string, metaconfig: TokowakaMetaconfig, isPreview?: boolean): Promise<string>;
+  uploadMetaconfig(url: string, metaconfig: TokowakaMetaconfig): Promise<string>;
   
   /**
    * Merges existing configuration with new configuration

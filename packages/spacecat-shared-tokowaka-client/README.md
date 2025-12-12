@@ -49,10 +49,13 @@ Creates a client instance from a context object.
     },
     "fastly": {
       "serviceId": "<service-id>",
-      "apiToken": "<api-token>"
+      "apiToken": "<api-token>",
+      "distributionUrl": "https://<cloudfront-distribution>.cloudfront.net"
     }
   }
   ```
+  
+  **Note for Fastly**: The `distributionUrl` is required and should be the full CloudFront distribution URL (e.g., `https://deftbrsarcsf4.cloudfront.net`). Fastly uses this to construct full URLs as surrogate keys for cache purging.
 
 **Optional (for preview functionality):**
 - `TOKOWAKA_EDGE_URL` - Tokowaka edge URL for fetching HTML content during preview
@@ -300,7 +303,7 @@ To invalidate cache on multiple CDNs simultaneously:
 TOKOWAKA_CDN_PROVIDER="cloudfront,fastly"
 # or as array in code: ["cloudfront", "fastly"]
 
-TOKOWAKA_CDN_CONFIG='{"cloudfront":{"distributionId":"...","region":"us-east-1"},"fastly":{"serviceId":"...","apiToken":"..."}}'
+TOKOWAKA_CDN_CONFIG='{"cloudfront":{"distributionId":"...","region":"us-east-1"},"fastly":{"serviceId":"...","apiToken":"...","distributionUrl":"https://xxx.cloudfront.net"}}'
 ```
 
 **Behavior:**
@@ -312,10 +315,25 @@ TOKOWAKA_CDN_CONFIG='{"cloudfront":{"distributionId":"...","region":"us-east-1"}
 
 ### Fastly Batch Purging
 
-The Fastly client automatically uses batch purging for multiple paths:
-- **Single path**: Uses individual surrogate key purge (`/service/{service_id}/purge/{key}`)
-- **Multiple paths**: Uses batch purge with `Surrogate-Key` header containing space-separated keys
+The Fastly client uses surrogate key purging with full CloudFront URLs:
+- **Surrogate Keys**: Constructed as full CloudFront URLs (e.g., `https://xxx.cloudfront.net/opportunities/adobe.com/config`)
+- **Batch Purging**: All paths are sent in a single API call using the `Surrogate-Key` header (space-separated URLs)
+- **Configuration**: Requires `distributionUrl` in the Fastly config to construct full URLs
 - Significantly reduces API calls and improves performance for bulk operations
+
+**Example Fastly Configuration:**
+```json
+{
+  "serviceId": "abc123xyz",
+  "apiToken": "your-fastly-api-token",
+  "distributionUrl": "https://deftbrsarcsf4.cloudfront.net"
+}
+```
+
+This configuration allows Fastly to purge cache entries using URLs like:
+```
+fastly purge --key https://deftbrsarcsf4.cloudfront.net/opportunities/adobe.com/config
+```
 
 ## Reference Material
 

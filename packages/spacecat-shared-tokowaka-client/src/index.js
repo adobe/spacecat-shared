@@ -93,6 +93,35 @@ class TokowakaClient {
   }
 
   /**
+   * Gets the list of CDN providers from environment configuration
+   * Supports both single provider (string) and multiple providers (comma-separated string or array)
+   * @returns {Array<string>} Array of CDN provider names
+   * @private
+   */
+  #getCdnProviders() {
+    const providerConfig = this.env.TOKOWAKA_CDN_PROVIDER;
+
+    if (!providerConfig) {
+      return [];
+    }
+
+    // If it's already an array, return it
+    if (Array.isArray(providerConfig)) {
+      return providerConfig.filter(Boolean);
+    }
+
+    // If it's a comma-separated string, split it
+    if (typeof providerConfig === 'string') {
+      return providerConfig
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  /**
    * Generates Tokowaka site configuration from suggestions for a specific URL
    * @param {string} url - Full URL for which to generate config
    * @param {Object} opportunity - Opportunity entity
@@ -155,16 +184,15 @@ class TokowakaClient {
   /**
    * Fetches domain-level metaconfig from S3
    * @param {string} url - Full URL (used to extract domain)
-   * @param {boolean} isPreview - Whether to fetch from preview path (default: false)
    * @returns {Promise<Object|null>} - Metaconfig object or null if not found
    */
-  async fetchMetaconfig(url, isPreview = false) {
+  async fetchMetaconfig(url) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = getTokowakaMetaconfigS3Path(url, this.log, isPreview);
-    const bucketName = isPreview ? this.previewBucketName : this.deployBucketName;
+    const s3Path = getTokowakaMetaconfigS3Path(url, this.log);
+    const bucketName = this.deployBucketName;
 
     try {
       const command = new GetObjectCommand({
@@ -195,10 +223,9 @@ class TokowakaClient {
    * Uploads domain-level metaconfig to S3
    * @param {string} url - Full URL (used to extract domain)
    * @param {Object} metaconfig - Metaconfig object (siteId, prerender)
-   * @param {boolean} isPreview - Whether to upload to preview path (default: false)
    * @returns {Promise<string>} - S3 key of uploaded metaconfig
    */
-  async uploadMetaconfig(url, metaconfig, isPreview = false) {
+  async uploadMetaconfig(url, metaconfig) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -207,8 +234,8 @@ class TokowakaClient {
       throw this.#createError('Metaconfig object is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = getTokowakaMetaconfigS3Path(url, this.log, isPreview);
-    const bucketName = isPreview ? this.previewBucketName : this.deployBucketName;
+    const s3Path = getTokowakaMetaconfigS3Path(url, this.log);
+    const bucketName = this.deployBucketName;
 
     try {
       const command = new PutObjectCommand({
@@ -220,6 +247,10 @@ class TokowakaClient {
 
       await this.s3Client.send(command);
       this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path}`);
+
+      // Invalidate CDN cache for the metaconfig (both CloudFront and Fastly)
+      this.log.info('Invalidating CDN cache for uploaded metaconfig');
+      await this.invalidateCdnCache({ paths: [`/${s3Path}`] });
 
       return s3Path;
     } catch (error) {
@@ -341,41 +372,86 @@ class TokowakaClient {
   }
 
   /**
-   * Invalidates CDN cache for the Tokowaka config for a specific URL
-   * Currently supports CloudFront only
-   * @param {string} url - Full URL (e.g., 'https://www.example.com/products/item')
-   * @param {string} provider - CDN provider name (default: 'cloudfront')
-   * @param {boolean} isPreview - Whether to invalidate preview path (default: false)
-   * @returns {Promise<Object|null>} - CDN invalidation result or null if skipped
+   * CDN cache invalidation method that supports invalidating URL configs
+   * or custom S3 paths across provided or default CDN providers
+   * @param {Object} options - Invalidation options
+   * @param {Array<string>} options.urls - Array of full URLs to invalidate (for URL configs)
+   * @param {Array<string>} options.paths - Custom S3 paths to invalidate directly
+   * @param {string|Array<string>} options.providers - CDN provider name(s)
+   *  (default: all supported providers)
+   * @param {boolean} options.isPreview - Whether to invalidate preview paths (default: false)
+   * @returns {Promise<Array<Object>>} - Array of CDN invalidation results
    */
-  async invalidateCdnCache(url, provider, isPreview = false) {
-    if (!hasText(url) || !hasText(provider)) {
-      throw this.#createError('URL and provider are required', HTTP_BAD_REQUEST);
+  async invalidateCdnCache({
+    urls = [],
+    paths = [],
+    providers = this.#getCdnProviders(),
+    isPreview = false,
+  }) {
+    // Convert single provider to array for uniform handling
+    const providerList = Array.isArray(providers) ? providers : [providers].filter(Boolean);
+
+    if (providerList.length === 0) {
+      this.log.warn('No CDN providers specified for cache invalidation');
+      return [];
     }
-    try {
-      const pathsToInvalidate = [`/${getTokowakaConfigS3Path(url, this.log, isPreview)}`];
-      this.log.debug(`Invalidating CDN cache for ${pathsToInvalidate.length} paths via ${provider}`);
-      const cdnClient = this.cdnClientRegistry.getClient(provider);
-      if (!cdnClient) {
-        throw this.#createError(`No CDN client available for provider: ${provider}`, HTTP_NOT_IMPLEMENTED);
+
+    // Build list of paths to invalidate
+    const pathsToInvalidate = [...paths];
+
+    // Add URL config paths
+    if (urls.length > 0) {
+      const urlPaths = urls.map((url) => `/${getTokowakaConfigS3Path(url, this.log, isPreview)}`);
+      pathsToInvalidate.push(...urlPaths);
+    }
+
+    // Return early if no paths to invalidate
+    if (pathsToInvalidate.length === 0) {
+      this.log.debug('No paths to invalidate for CDN cache');
+      return [];
+    }
+
+    this.log.info(
+      `Invalidating CDN cache for ${pathsToInvalidate.length} path(s) `
+      + `via providers: ${providerList.join(', ')}`,
+    );
+
+    // Invalidate all providers in parallel
+    const invalidationPromises = providerList.map(async (provider) => {
+      try {
+        const cdnClient = this.cdnClientRegistry.getClient(provider);
+        if (!cdnClient) {
+          this.log.warn(`No CDN client available for provider: ${provider}`);
+          return {
+            status: 'error',
+            provider,
+            message: `No CDN client available for provider: ${provider}`,
+          };
+        }
+
+        const result = await cdnClient.invalidateCache(pathsToInvalidate);
+        this.log.info(
+          `CDN cache invalidation completed for ${provider}: `
+          + `${pathsToInvalidate.length} path(s)`,
+        );
+        return result;
+      } catch (error) {
+        this.log.warn(`Failed to invalidate ${provider} CDN cache: ${error.message}`, error);
+        return {
+          status: 'error',
+          provider,
+          message: error.message,
+        };
       }
-      const result = await cdnClient.invalidateCache(pathsToInvalidate);
-      this.log.info(`CDN cache invalidation completed: ${JSON.stringify(result)}`);
-      return result;
-    } catch (error) {
-      this.log.error(`Failed to invalidate Tokowaka CDN cache: ${error.message}`, error);
-      return {
-        status: 'error',
-        provider: 'cloudfront',
-        message: error.message,
-      };
-    }
+    });
+
+    // Wait for all provider invalidations to complete
+    const results = await Promise.all(invalidationPromises);
+    return results;
   }
 
   /**
-   * Deploys suggestions to Tokowaka by generating config and uploading to S3
-   * Now creates one file per URL instead of a single file with all URLs
-   * Also creates/updates domain-level metadata if needed
+   * Deploys suggestions to Tokowaka by generating patch config and uploading to S3
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
    * @param {Array} suggestions - Array of suggestion entities to deploy
@@ -384,7 +460,6 @@ class TokowakaClient {
   async deploySuggestions(site, opportunity, suggestions) {
     const opportunityType = opportunity.getType();
     const baseURL = getEffectiveBaseURL(site);
-    const siteId = site.getId();
     const mapper = this.mapperRegistry.getMapper(opportunityType);
     if (!mapper) {
       throw this.#createError(
@@ -416,24 +491,21 @@ class TokowakaClient {
     // Group suggestions by URL
     const suggestionsByUrl = groupSuggestionsByUrlPath(eligibleSuggestions, baseURL, this.log);
 
-    // Check/create domain-level metaconfig (only need to do this once per deployment)
+    // Check if domain-level metaconfig exists
     const firstUrl = new URL(Object.keys(suggestionsByUrl)[0], baseURL).toString();
-    let metaconfig = await this.fetchMetaconfig(firstUrl);
+    const metaconfig = await this.fetchMetaconfig(firstUrl);
 
     if (!metaconfig) {
-      this.log.info('Creating domain-level metaconfig');
-      metaconfig = {
-        siteId,
-        prerender: mapper.requiresPrerender(),
-      };
-      await this.uploadMetaconfig(firstUrl, metaconfig);
-    } else {
-      this.log.debug('Domain-level metaconfig already exists');
+      throw this.#createError(
+        'No domain-level metaconfig found. '
+        + 'A domain-level metaconfig needs to be created first before deploying suggestions.',
+        HTTP_BAD_REQUEST,
+      );
     }
 
     // Process each URL separately
     const s3Paths = [];
-    const cdnInvalidations = [];
+    const deployedUrls = []; // Track URLs for batch CDN invalidation
 
     for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
       const fullUrl = new URL(urlPath, baseURL).toString();
@@ -468,17 +540,13 @@ class TokowakaClient {
       // eslint-disable-next-line no-await-in-loop
       const s3Path = await this.uploadConfig(fullUrl, config);
       s3Paths.push(s3Path);
-
-      // Invalidate CDN cache (non-blocking, failures are logged but don't fail deployment)
-      // eslint-disable-next-line no-await-in-loop
-      const cdnInvalidationResult = await this.invalidateCdnCache(
-        fullUrl,
-        this.env.TOKOWAKA_CDN_PROVIDER,
-      );
-      cdnInvalidations.push(cdnInvalidationResult);
+      deployedUrls.push(fullUrl);
     }
 
     this.log.info(`Uploaded Tokowaka configs for ${s3Paths.length} URLs`);
+
+    // Invalidate CDN cache for all deployed URLs at once
+    const cdnInvalidations = await this.invalidateCdnCache({ urls: deployedUrls });
 
     return {
       s3Paths,
@@ -533,7 +601,7 @@ class TokowakaClient {
 
     // Process each URL separately
     const s3Paths = [];
-    const cdnInvalidations = [];
+    const rolledBackUrls = []; // Track URLs for batch CDN invalidation
     let totalRemovedCount = 0;
 
     for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
@@ -567,14 +635,7 @@ class TokowakaClient {
         // eslint-disable-next-line no-await-in-loop
         const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
         s3Paths.push(s3Path);
-
-        // Invalidate CDN cache
-        // eslint-disable-next-line no-await-in-loop
-        const cdnInvalidationResult = await this.invalidateCdnCache(
-          fullUrl,
-          this.env.TOKOWAKA_CDN_PROVIDER,
-        );
-        cdnInvalidations.push(cdnInvalidationResult);
+        rolledBackUrls.push(fullUrl); // Collect URL for batch invalidation
 
         totalRemovedCount += 1; // Count as 1 rollback
         // eslint-disable-next-line no-continue
@@ -610,17 +671,14 @@ class TokowakaClient {
       // eslint-disable-next-line no-await-in-loop
       const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
       s3Paths.push(s3Path);
-
-      // Invalidate CDN cache (non-blocking, failures are logged but don't fail rollback)
-      // eslint-disable-next-line no-await-in-loop
-      const cdnInvalidationResult = await this.invalidateCdnCache(
-        fullUrl,
-        this.env.TOKOWAKA_CDN_PROVIDER,
-      );
-      cdnInvalidations.push(cdnInvalidationResult);
+      rolledBackUrls.push(fullUrl); // Collect URL for batch invalidation
     }
 
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
+
+    // Batch invalidate CDN cache for all rolled back URLs at once
+    // (much more efficient than individual invalidations)
+    const cdnInvalidations = await this.invalidateCdnCache({ urls: rolledBackUrls });
 
     return {
       s3Paths,
@@ -745,12 +803,11 @@ class TokowakaClient {
     this.log.info(`Uploading preview Tokowaka config with ${eligibleSuggestions.length} new suggestions`);
     const s3Path = await this.uploadConfig(previewUrl, config, true);
 
-    // Invalidate CDN cache for preview path
-    const cdnInvalidationResult = await this.invalidateCdnCache(
-      previewUrl,
-      this.env.TOKOWAKA_CDN_PROVIDER,
-      true,
-    );
+    // Invalidate CDN cache for all providers in parallel (preview path)
+    const cdnInvalidationResults = await this.invalidateCdnCache({
+      urls: [previewUrl],
+      isPreview: true,
+    });
 
     // Fetch HTML content for preview
     let originalHtml = null;
@@ -789,7 +846,7 @@ class TokowakaClient {
     return {
       s3Path,
       config,
-      cdnInvalidation: cdnInvalidationResult,
+      cdnInvalidations: cdnInvalidationResults,
       succeededSuggestions: eligibleSuggestions,
       failedSuggestions: ineligibleSuggestions,
       html: {

@@ -663,6 +663,36 @@ describe('GenericMapper', () => {
       expect(patch.valueFormat).to.equal('hast');
     });
 
+    it('should parse JSON patchValue when format is json', () => {
+      const jsonValue = {
+        title: 'Test Title',
+        description: 'Test description',
+        metadata: { key: 'value' },
+      };
+
+      const suggestion = {
+        getId: () => 'sugg-json-format',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          transformRules: {
+            action: 'replace',
+            selector: '.content',
+          },
+          patchValue: JSON.stringify(jsonValue),
+          format: 'json',
+          url: 'https://example.com/page',
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-json');
+
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch.value).to.deep.equal(jsonValue);
+      expect(patch.valueFormat).to.equal('json');
+    });
+
     it('should use raw patchValue when format is not hast', () => {
       const suggestion = {
         getId: () => 'sugg-text',
@@ -684,6 +714,58 @@ describe('GenericMapper', () => {
 
       expect(patch.value).to.equal('Plain text content');
       expect(patch.valueFormat).to.equal('text');
+    });
+
+    it('should parse and include attrs when provided', () => {
+      const attrs = {
+        id: 'custom-id',
+        class: 'custom-class',
+        'data-test': 'test-value',
+      };
+
+      const suggestion = {
+        getId: () => 'sugg-with-attrs',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
+          patchValue: 'Content with attributes',
+          attrs: JSON.stringify(attrs),
+          url: 'https://example.com/page',
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-attrs');
+
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch.attrs).to.deep.equal(attrs);
+      expect(patch.value).to.equal('Content with attributes');
+    });
+
+    it('should not include attrs when not provided', () => {
+      const suggestion = {
+        getId: () => 'sugg-no-attrs',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#selector',
+          },
+          patchValue: 'Content without attributes',
+          url: 'https://example.com/page',
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-no-attrs');
+
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch.attrs).to.be.undefined;
     });
 
     it('should not include UI-only fields in patch', () => {

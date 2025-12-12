@@ -11,6 +11,7 @@
  */
 
 import CloudFrontCdnClient from './cloudfront-cdn-client.js';
+import FastlyCdnClient from './fastly-cdn-client.js';
 
 /**
  * Registry for CDN clients
@@ -30,6 +31,7 @@ export default class CdnClientRegistry {
    */
   #registerDefaultClients() {
     this.registerClient('cloudfront', CloudFrontCdnClient);
+    this.registerClient('fastly', FastlyCdnClient);
   }
 
   /**

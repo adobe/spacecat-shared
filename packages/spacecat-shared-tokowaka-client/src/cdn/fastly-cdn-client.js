@@ -84,8 +84,7 @@ export default class FastlyCdnClient extends BaseCdnClient {
     });
 
     this.log.debug(`Generated ${surrogateKeys.length} surrogate key(s) for purge`);
-    // info level for testing purpose, will be removed before merge to main
-    this.log.info(`Surrogate keys: ${surrogateKeys.join(', ')}`);
+    this.log.debug(`Surrogate keys: ${surrogateKeys.join(', ')}`);
 
     const startTime = Date.now();
     const apiEndpoint = `https://api.fastly.com/service/${this.cdnConfig.serviceId}/purge`;

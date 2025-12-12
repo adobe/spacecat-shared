@@ -1,5 +1,5 @@
 name: Protect NYC config
-description: Block all edits to .nycrc.json
+description: Block all edits to .nycrc.json files in root and all packages
 
 runs:
   using: composite
@@ -31,9 +31,18 @@ runs:
           "$FILES_API")
         echo "Files in PR:"
         echo "$RESPONSE" | jq -r '.[].filename' || echo "Failed to parse response"
-        if echo "$RESPONSE" | grep -qF '".nycrc.json"'; then
+        
+        # Check for any .nycrc.json files (root or in packages)
+        NYCRC_FILES=$(echo "$RESPONSE" | jq -r '.[].filename' | grep -E '\.nycrc(\.json)?$' || true)
+        
+        if [ -n "$NYCRC_FILES" ]; then
           echo "nycrc-changed=true" >> "$GITHUB_OUTPUT"
-          echo "✗ .nycrc.json modifications detected - BLOCKING"
+          echo "nycrc-files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$NYCRC_FILES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "✗ .nycrc.json modifications detected in:"
+          echo "$NYCRC_FILES" | sed 's/^/  - /'
+          echo "BLOCKING"
         else
           echo "nycrc-changed=false" >> "$GITHUB_OUTPUT"
           echo "✓ No .nycrc.json modifications detected"
@@ -42,7 +51,7 @@ runs:
     - name: Skip when .nycrc.json unchanged
       if: github.event_name == 'pull_request' && steps.detect.outputs.nycrc-changed != 'true'
       shell: bash
-      run: echo "Skipping protection check because .nycrc.json was not touched."
+      run: echo "Skipping protection check because no .nycrc.json files were modified."
 
     - name: Skip check for draft PRs
       if: github.event_name == 'pull_request' && steps.detect.outputs.nycrc-changed == 'true' && github.event.pull_request.draft == true
@@ -53,7 +62,10 @@ runs:
       if: github.event_name == 'pull_request' && steps.detect.outputs.nycrc-changed == 'true' && github.event.pull_request.draft == false
       shell: bash
       run: |
-        echo "ERROR: Modifications to .nycrc.json are not allowed." >&2
-        echo "This file is protected and cannot be changed via pull request." >&2
+        echo "ERROR: Modifications to .nycrc.json files are not allowed." >&2
+        echo "The following protected files were modified:" >&2
+        echo "${{ steps.detect.outputs.nycrc-files }}" | sed 's/^/  - /' >&2
+        echo "" >&2
+        echo "These files are protected and cannot be changed via pull request." >&2
         exit 1
 

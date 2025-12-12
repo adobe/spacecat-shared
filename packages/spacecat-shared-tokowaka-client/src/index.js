@@ -700,11 +700,11 @@ class TokowakaClient {
    */
   async previewSuggestions(site, opportunity, suggestions, options = {}) {
     // Get site's forwarded host for preview
-    const { forwardedHost } = site.getConfig()?.getTokowakaConfig() || {};
+    const { forwardedHost, apiKey } = site.getConfig()?.getTokowakaConfig() || {};
 
-    if (!hasText(forwardedHost)) {
+    if (!hasText(forwardedHost) || !hasText(apiKey)) {
       throw this.#createError(
-        'Site does not have a Tokowaka forwarded host configured. '
+        'Site does not have a Tokowaka API key or forwarded host configured. '
         + 'Please onboard the site to Tokowaka first.',
         HTTP_BAD_REQUEST,
       );
@@ -717,15 +717,6 @@ class TokowakaClient {
         `No mapper found for opportunity type: ${opportunityType}. `
         + `Supported types: ${this.mapperRegistry.getSupportedOpportunityTypes().join(', ')}`,
         HTTP_NOT_IMPLEMENTED,
-      );
-    }
-
-    // TOKOWAKA_PREVIEW_API_KEY is mandatory for preview
-    const tokowakaPreviewApiKey = this.env.TOKOWAKA_PREVIEW_API_KEY;
-    if (!hasText(tokowakaPreviewApiKey)) {
-      throw this.#createError(
-        'TOKOWAKA_PREVIEW_API_KEY is required for preview functionality',
-        HTTP_INTERNAL_SERVER_ERROR,
       );
     }
 
@@ -826,7 +817,7 @@ class TokowakaClient {
       // Fetch original HTML (without preview)
       originalHtml = await fetchHtmlWithWarmup(
         previewUrl,
-        tokowakaPreviewApiKey,
+        apiKey,
         forwardedHost,
         tokowakaEdgeUrl,
         this.log,
@@ -836,7 +827,7 @@ class TokowakaClient {
       // Then fetch optimized HTML (with preview)
       optimizedHtml = await fetchHtmlWithWarmup(
         previewUrl,
-        tokowakaPreviewApiKey,
+        apiKey,
         forwardedHost,
         tokowakaEdgeUrl,
         this.log,

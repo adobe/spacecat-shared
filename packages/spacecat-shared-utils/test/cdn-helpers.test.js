@@ -249,6 +249,26 @@ describe('CDN Helper Functions', () => {
         });
       });
 
+      it('should handle byocdn-other', () => {
+        const otherPayload = {
+          ...mockPayload,
+          logSource: 'byocdn-other',
+          allowedPaths: ['9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-other/'],
+        };
+        const result = prettifyLogForwardingConfig(otherPayload);
+        expect(result).to.deep.equal({
+          'Bucket name': 'cdn-logs-adobe-dev',
+          Region: 'us-east-1',
+          Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-other/<year>/<month>/<day>',
+          'Access Key': 'AKIAZ5TC4XVOZ65PV3X2',
+          'Secret Key': 'somesecret',
+          'Timestamp format': 'RFC3339',
+          'Log format': 'JSON lines (one log per line)',
+          Compression: 'Optional, but prefered. Please use Gzip compression if you decide to compress the log files.',
+          'Example of valid log line': '{"timestamp":"2025-12-01T13:00:05Z","host":"www.example.com","url":"/docs/getting-started","request_method":"GET","request_user_agent":"Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.0; +https://openai.com/gptbot)","response_status":200,"request_referer":"https://www.chatgpt.com/","response_content_type":"text/html; charset=utf-8","time_to_first_byte":123}',
+        });
+      });
+
       it('should handle empty allowed paths array for byocdn-akamai', () => {
         const payloadWithEmptyPaths = {
           ...mockPayload,
@@ -353,6 +373,22 @@ describe('CDN Helper Functions', () => {
 
       it('should throw error when secretKey is missing for byocdn-akamai', () => {
         const payloadWithoutSecretKey = { ...mockPayload, logSource: 'byocdn-akamai' };
+        delete payloadWithoutSecretKey.secretKey;
+        expect(() => prettifyLogForwardingConfig(payloadWithoutSecretKey)).to.throw(
+          'secretKey is required in payload',
+        );
+      });
+
+      it('should throw error when accessKey is missing for byocdn-other', () => {
+        const payloadWithoutAccessKey = { ...mockPayload, logSource: 'byocdn-other' };
+        delete payloadWithoutAccessKey.accessKey;
+        expect(() => prettifyLogForwardingConfig(payloadWithoutAccessKey)).to.throw(
+          'accessKey is required in payload',
+        );
+      });
+
+      it('should throw error when secretKey is missing for byocdn-other', () => {
+        const payloadWithoutSecretKey = { ...mockPayload, logSource: 'byocdn-other' };
         delete payloadWithoutSecretKey.secretKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutSecretKey)).to.throw(
           'secretKey is required in payload',

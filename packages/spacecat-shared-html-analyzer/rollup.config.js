@@ -28,6 +28,29 @@ const injectVersion = () => ({
   },
 });
 
+// Plugin to remove Node.js dynamic imports in renderChunk phase (after bundling)
+const removeNodeImports = () => ({
+  name: 'remove-node-imports',
+  renderChunk(code) {
+    // Remove the entire block containing the turndown import
+    let cleanedCode = code.replace(
+      /const module = await import\(['"]turndown['"]\);[\s\n]*TurndownServiceClass = module\.default;/g,
+      '// Turndown import removed for browser build',
+    );
+
+    // Remove the entire block containing the marked import
+    cleanedCode = cleanedCode.replace(
+      /const module = await import\(['"]marked['"]\);[\s\n]*markedParser = module\.marked;/g,
+      '// Marked import removed for browser build',
+    );
+
+    return {
+      code: cleanedCode,
+      map: null,
+    };
+  },
+});
+
 export default {
   input: 'src/browser-entry.js', // Special browser entry point
   output: [
@@ -55,6 +78,7 @@ export default {
       browser: true, // Use browser field in package.json
       preferBuiltins: false, // Don't include Node.js built-ins
     }),
+    removeNodeImports(), // Remove Node.js dynamic imports after bundling
   ],
   external: [
     // Exclude Node.js-only dependencies from bundle - they won't work in browser anyway

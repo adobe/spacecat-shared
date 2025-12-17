@@ -24,7 +24,7 @@ import { FragmentManagement, FragmentVersioning, FragmentTagging } from './sites
 /**
  * Builder for creating AEM client instances with selected capabilities.
  *
- * Provides a interface for constructing an AEM client with only
+ * Provides an interface for constructing an AEM client with only
  * the required functionality.
  *
  * @example

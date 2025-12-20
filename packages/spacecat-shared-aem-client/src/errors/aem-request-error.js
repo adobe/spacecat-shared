@@ -39,14 +39,15 @@ export class AemRequestError extends AemClientError {
    * @param {string} message - The error message.
    * @param {object} [context={}] - Additional context for the error.
    * @param {string} [context.resource] - The resource path that failed.
+   * @param {string} [context.parameter] - The parameter that caused the error (for 400).
    * @returns {AemClientError} The appropriate error instance.
    */
   static fromResponse(statusCode, message, context = {}) {
-    const { resource } = context;
+    const { resource, parameter } = context;
 
     switch (statusCode) {
       case 400:
-        return new AemBadRequestError(message);
+        return new AemBadRequestError(message, parameter);
       case 401:
         return new AemAuthenticationError(message);
       case 403:

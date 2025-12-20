@@ -17,12 +17,13 @@ export class AemClientError extends Error {
   constructor(message: string, statusCode?: number, errorCode?: string);
 }
 
-export class AemConfigurationError extends AemClientError {
-  constructor(message: string);
+export class AemBadRequestError extends AemClientError {
+  parameter: string;
+  constructor(message: string, parameter: string);
 }
 
-export class AemBadRequestError extends AemClientError {
-  constructor(message: string);
+export class AemConfigurationError extends AemBadRequestError {
+  constructor(message: string, parameter: string);
 }
 
 export class AemAuthenticationError extends AemClientError {
@@ -48,7 +49,7 @@ export class AemPreconditionFailedError extends AemClientError {
 export class AemRequestError extends AemClientError {
   responseBody: string | null;
   constructor(statusCode: number, message: string, responseBody?: string | null);
-  static fromResponse(statusCode: number, message: string, context?: { resource?: string }): AemClientError;
+  static fromResponse(statusCode: number, message: string, context?: { resource?: string; parameter?: string }): AemClientError;
 }
 
 export class FragmentNotFoundError extends AemClientError {

@@ -30,11 +30,11 @@ export class AemBaseClient {
    */
   constructor(baseUrl, imsClient, log = console) {
     if (!baseUrl) {
-      throw new AemConfigurationError('base URL is required');
+      throw new AemConfigurationError('base URL is required', 'baseUrl');
     }
 
     if (!imsClient) {
-      throw new AemConfigurationError('IMS client is required');
+      throw new AemConfigurationError('IMS client is required', 'imsClient');
     }
 
     this.baseUrl = baseUrl;
@@ -64,7 +64,7 @@ export class AemBaseClient {
 
     const authorUrl = site.getDeliveryConfig().authorURL;
     if (!authorUrl) {
-      throw new AemConfigurationError('author URL required');
+      throw new AemConfigurationError('author URL required', 'authorURL');
     }
 
     const imsClient = ImsClient.createFrom({

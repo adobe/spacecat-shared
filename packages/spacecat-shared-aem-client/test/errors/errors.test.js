@@ -51,33 +51,40 @@ describe('AEM Client Errors', () => {
   });
 
   describe('AemConfigurationError', () => {
-    it('should create configuration error', () => {
-      const error = new AemConfigurationError('Missing config');
+    it('should create configuration error with parameter', () => {
+      const error = new AemConfigurationError('Missing config', 'baseUrl');
 
       expect(error.message).to.equal('Missing config');
       expect(error.name).to.equal('AemConfigurationError');
-      expect(error.statusCode).to.equal(500);
+      expect(error.statusCode).to.equal(400);
       expect(error.errorCode).to.equal('AEM_CONFIGURATION_ERROR');
+      expect(error.parameter).to.equal('baseUrl');
+    });
+
+    it('should be instance of AemBadRequestError', () => {
+      const error = new AemConfigurationError('Test', 'testParam');
+      expect(error).to.be.instanceOf(AemBadRequestError);
     });
 
     it('should be instance of AemClientError', () => {
-      const error = new AemConfigurationError('Test');
+      const error = new AemConfigurationError('Test', 'testParam');
       expect(error).to.be.instanceOf(AemClientError);
     });
   });
 
   describe('AemBadRequestError', () => {
-    it('should create bad request error', () => {
-      const error = new AemBadRequestError('Invalid input');
+    it('should create bad request error with parameter', () => {
+      const error = new AemBadRequestError('Invalid input', 'fragmentId');
 
       expect(error.message).to.equal('Invalid input');
       expect(error.name).to.equal('AemBadRequestError');
       expect(error.statusCode).to.equal(400);
       expect(error.errorCode).to.equal('BAD_REQUEST');
+      expect(error.parameter).to.equal('fragmentId');
     });
 
     it('should be instance of AemClientError', () => {
-      const error = new AemBadRequestError('Test');
+      const error = new AemBadRequestError('Test', 'testParam');
       expect(error).to.be.instanceOf(AemClientError);
     });
   });
@@ -101,10 +108,11 @@ describe('AEM Client Errors', () => {
 
     describe('fromResponse', () => {
       it('should return AemBadRequestError for 400', () => {
-        const error = AemRequestError.fromResponse(400, 'Bad Request');
+        const error = AemRequestError.fromResponse(400, 'Bad Request', { parameter: 'fragmentId' });
 
         expect(error).to.be.instanceOf(AemBadRequestError);
         expect(error.message).to.equal('Bad Request');
+        expect(error.parameter).to.equal('fragmentId');
       });
 
       it('should return AemAuthenticationError for 401', () => {

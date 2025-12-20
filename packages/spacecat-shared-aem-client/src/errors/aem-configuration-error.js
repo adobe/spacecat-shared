@@ -10,19 +10,21 @@
  * governing permissions and limitations under the License.
  */
 
-import { AemClientError } from './aem-client-error.js';
+import { AemBadRequestError } from './aem-bad-request-error.js';
 
 /**
  * Error thrown when the AEM client is misconfigured.
  * Examples: missing base URL, invalid IMS client configuration.
  */
-export class AemConfigurationError extends AemClientError {
+export class AemConfigurationError extends AemBadRequestError {
   /**
    * Creates a new AemConfigurationError.
    * @param {string} message - Description of the configuration issue.
+   * @param {string} parameter - The configuration parameter that is missing or invalid.
    */
-  constructor(message) {
-    super(message, 500, 'AEM_CONFIGURATION_ERROR');
+  constructor(message, parameter) {
+    super(message, parameter);
     this.name = 'AemConfigurationError';
+    this.errorCode = 'AEM_CONFIGURATION_ERROR';
   }
 }

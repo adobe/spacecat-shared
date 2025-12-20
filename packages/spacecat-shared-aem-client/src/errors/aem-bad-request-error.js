@@ -19,9 +19,11 @@ export class AemBadRequestError extends AemClientError {
   /**
    * Creates a new AemBadRequestError.
    * @param {string} message - Description of the invalid input.
+   * @param {string} parameter - The parameter that was invalid.
    */
-  constructor(message) {
+  constructor(message, parameter) {
     super(message, 400, 'BAD_REQUEST');
     this.name = 'AemBadRequestError';
+    this.parameter = parameter;
   }
 }

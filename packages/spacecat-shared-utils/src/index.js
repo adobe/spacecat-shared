@@ -110,7 +110,12 @@ export * as llmoConfig from './llmo-config.js';
 export * as schemas from './schemas.js';
 
 export { detectLocale } from './locale-detect/locale-detect.js';
-export { detectBotBlocker } from './bot-blocker-detect/bot-blocker-detect.js';
+export {
+  detectBotBlocker,
+  analyzeBotProtection,
+  SPACECAT_BOT_USER_AGENT,
+  SPACECAT_BOT_IPS,
+} from './bot-blocker-detect/bot-blocker-detect.js';
 export { prettifyLogForwardingConfig } from './cdn-helpers.js';
 
 export {

@@ -15,7 +15,10 @@
 import { expect } from 'chai';
 import nock from 'nock';
 
-import { detectBotBlocker } from '../../src/bot-blocker-detect/bot-blocker-detect.js';
+import {
+  detectBotBlocker,
+  analyzeBotProtection,
+} from '../../src/bot-blocker-detect/bot-blocker-detect.js';
 
 describe('Bot Blocker Detection', () => {
   const baseUrl = 'https://www.example.com';
@@ -341,6 +344,259 @@ describe('Bot Blocker Detection', () => {
       expect(result.crawlable).to.be.true;
       expect(result.type).to.equal('cloudfront-allowed');
       expect(result.confidence).to.equal(1.0);
+    });
+  });
+
+  describe('analyzeBotProtection', () => {
+    it('detects Cloudflare challenge page with 200 status', () => {
+      const html = '<html><title>Just a moment...</title><body>Checking your browser before accessing example.com</body></html>';
+      const headers = { 'cf-ray': '123456789-CDG', server: 'cloudflare' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+      expect(result.confidence).to.equal(0.99);
+      expect(result.reason).to.equal('Challenge page detected despite 200 status');
+    });
+
+    it('detects Cloudflare challenge page with "Verifying you are human"', () => {
+      const html = '<html><body><h1>zepbound.lilly.com</h1><p>Verifying you are human. This may take a few seconds.</p></body></html>';
+      const headers = { 'cf-ray': '9a211d4cca225831' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects Cloudflare challenge page with turnstile', () => {
+      const html = '<html><body><input type="hidden" name="cf-turnstile-response"></body></html>';
+      const headers = { 'cf-ray': '123' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+    });
+
+    it('returns cloudflare-allowed when Cloudflare present but no challenge', () => {
+      // Create HTML > 10KB to ensure it's not flagged as "suspiciously short"
+      const realContent = 'This is real page content. '.repeat(400); // ~11KB
+      const html = `<html><head><title>Real Page Title</title></head><body><h1>Welcome to our site</h1><p>${realContent}</p></body></html>`;
+      const headers = { 'cf-ray': '123456789-CDG' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    it('detects Imperva challenge page with 200 status', () => {
+      const html = '<html><body>_Incapsula_Resource detected</body></html>';
+      const headers = { 'x-iinfo': 'some-value' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('imperva');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('returns imperva-allowed when Imperva present but no challenge', () => {
+      // Create HTML > 10KB to ensure it's not flagged as "suspiciously short"
+      const realContent = 'Real content with no Imperva patterns. '.repeat(300); // ~12KB
+      const html = `<html><body>${realContent}</body></html>`;
+      const headers = { 'x-iinfo': 'some-value' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('imperva-allowed');
+    });
+
+    it('detects generic CAPTCHA challenge', () => {
+      const html = '<html><body><div class="g-recaptcha" data-sitekey="abc123"></div></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('works without HTML (backwards compatibility)', () => {
+      const headers = { 'cf-ray': '123456789-CDG' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html: null,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+    });
+
+    it('works with Headers object', () => {
+      const html = '<html><title>Just a moment...</title></html>';
+      const headers = new Headers({ 'cf-ray': '123' });
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+    });
+
+    it('detects Cloudflare blocking with 403', () => {
+      const html = '<html><body>Access denied</body></html>';
+      const headers = { 'cf-ray': '123' };
+
+      const result = analyzeBotProtection({
+        status: 403,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('returns none for clean 200 with no protection', () => {
+      const html = '<html><body>Normal page content</body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('none');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    // New tests for enhanced patterns
+    it('detects Cloudflare challenge widget (cf-chl-widget)', () => {
+      const html = '<html><body><div id="cf-chl-widget-abc123"></div></body></html>';
+      const headers = { 'cf-ray': '123' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+    });
+
+    it('detects Cloudflare challenge token (__cf_chl_tk)', () => {
+      const html = '<html><body><input type="hidden" name="__cf_chl_tk" value="xyz"></body></html>';
+      const headers = { 'cf-ray': '123' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+    });
+
+    it('detects Imperva session cookie pattern (incap_ses)', () => {
+      const html = '<html><body>incap_ses_123_456789 detected</body></html>';
+      const headers = { 'x-iinfo': 'some-value' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('imperva');
+    });
+
+    it('detects DataDome bot protection', () => {
+      const html = '<html><body><script>window.datadome = {};</script></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('detects reCAPTCHA', () => {
+      const html = '<html><body><div class="g-recaptcha"></div></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+    });
+
+    it('detects Akamai challenge page', () => {
+      const html = '<html><body>Access Denied by Akamai security policy</body></html>';
+      const headers = { 'x-akamai-request-id': 'abc123' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('akamai');
     });
   });
 });

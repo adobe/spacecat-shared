@@ -42,7 +42,7 @@ export class AemRequestError extends AemClientError {
    * @param {string} [context.parameter] - The parameter that caused the error (for 400).
    * @returns {AemClientError} The appropriate error instance.
    */
-  static fromResponse(statusCode, message, context = {}) {
+  static fromStatusCode(statusCode, message, context = {}) {
     const { resource, parameter } = context;
 
     switch (statusCode) {

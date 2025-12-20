@@ -154,7 +154,7 @@ export class AemBaseClient {
     if (!response.ok) {
       const errorText = await response.text();
       this.log.error(`[AEM Client] Request failed with status ${response.status}: ${errorText}`);
-      throw AemRequestError.fromResponse(response.status, errorText, { resource: path, method });
+      throw AemRequestError.fromStatusCode(response.status, errorText, { resource: path, method });
     }
 
     // Handle non-empty responses

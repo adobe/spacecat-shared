@@ -106,9 +106,9 @@ describe('AEM Client Errors', () => {
       expect(error.responseBody).to.be.null;
     });
 
-    describe('fromResponse', () => {
+    describe('fromStatusCode', () => {
       it('should return AemBadRequestError for 400', () => {
-        const error = AemRequestError.fromResponse(400, 'Bad Request', { parameter: 'fragmentId' });
+        const error = AemRequestError.fromStatusCode(400, 'Bad Request', { parameter: 'fragmentId' });
 
         expect(error).to.be.instanceOf(AemBadRequestError);
         expect(error.message).to.equal('Bad Request');
@@ -116,42 +116,42 @@ describe('AEM Client Errors', () => {
       });
 
       it('should return AemAuthenticationError for 401', () => {
-        const error = AemRequestError.fromResponse(401, 'Unauthorized');
+        const error = AemRequestError.fromStatusCode(401, 'Unauthorized');
 
         expect(error).to.be.instanceOf(AemAuthenticationError);
         expect(error.message).to.equal('Unauthorized');
       });
 
       it('should return AemForbiddenError for 403', () => {
-        const error = AemRequestError.fromResponse(403, 'Forbidden', { resource: '/api/test' });
+        const error = AemRequestError.fromStatusCode(403, 'Forbidden', { resource: '/api/test' });
 
         expect(error).to.be.instanceOf(AemForbiddenError);
         expect(error.resource).to.equal('/api/test');
       });
 
       it('should return AemConflictError for 409', () => {
-        const error = AemRequestError.fromResponse(409, 'Conflict', { resource: '/api/test' });
+        const error = AemRequestError.fromStatusCode(409, 'Conflict', { resource: '/api/test' });
 
         expect(error).to.be.instanceOf(AemConflictError);
         expect(error.resource).to.equal('/api/test');
       });
 
       it('should return AemPreconditionFailedError for 412', () => {
-        const error = AemRequestError.fromResponse(412, 'ETag mismatch', { resource: '/api/test' });
+        const error = AemRequestError.fromStatusCode(412, 'ETag mismatch', { resource: '/api/test' });
 
         expect(error).to.be.instanceOf(AemPreconditionFailedError);
         expect(error.resource).to.equal('/api/test');
       });
 
       it('should return AemRequestError for other status codes', () => {
-        const error = AemRequestError.fromResponse(500, 'Internal error');
+        const error = AemRequestError.fromStatusCode(500, 'Internal error');
 
         expect(error).to.be.instanceOf(AemRequestError);
         expect(error.statusCode).to.equal(500);
       });
 
       it('should handle missing context', () => {
-        const error = AemRequestError.fromResponse(403, 'Forbidden');
+        const error = AemRequestError.fromStatusCode(403, 'Forbidden');
 
         expect(error).to.be.instanceOf(AemForbiddenError);
         // Resource is undefined when context is empty

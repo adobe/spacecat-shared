@@ -49,7 +49,7 @@ export class AemPreconditionFailedError extends AemClientError {
 export class AemRequestError extends AemClientError {
   responseBody: string | null;
   constructor(statusCode: number, message: string, responseBody?: string | null);
-  static fromResponse(statusCode: number, message: string, context?: { resource?: string; parameter?: string }): AemClientError;
+  static fromStatusCode(statusCode: number, message: string, context?: { resource?: string; parameter?: string }): AemClientError;
 }
 
 export class FragmentNotFoundError extends AemClientError {

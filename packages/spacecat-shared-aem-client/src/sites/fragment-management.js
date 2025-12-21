@@ -235,4 +235,54 @@ export class FragmentManagement {
     const fragmentId = await this.resolveFragmentId(fragmentPath);
     return this.deleteFragmentById(fragmentId);
   }
+
+  /**
+   * Lists content fragments under a path with pagination support.
+   * @param {string} path - The DAM path to search (e.g., /content/dam/).
+   * @param {Object} [options={}] - Query options.
+   * @param {string} [options.cursor] - Pagination cursor from previous response.
+   * @param {string} [options.projection='minimal'] - Response projection (minimal, full).
+   * @param {number} [options.limit] - Maximum items per page.
+   * @returns {Promise<{items: Array, cursor: string|null}>} Paginated fragment list.
+   */
+  async getFragments(path, options = {}) {
+    const { log } = this.client;
+    const {
+      cursor = null,
+      projection = 'minimal',
+      limit = 1,
+    } = options;
+
+    log.info(`[AEM Client][Fragment Management] Listing fragments from ${path}`);
+
+    const params = new URLSearchParams({
+      path,
+      projection,
+    });
+
+    if (cursor) {
+      params.set('cursor', cursor);
+    }
+
+    if (limit) {
+      params.set('limit', limit.toString());
+    }
+
+    const queryPath = `${API_SITES_CF_FRAGMENTS}?${params.toString()}`;
+
+    try {
+      const data = await this.client.request('GET', queryPath);
+
+      log.info(`[AEM Client][Fragment Management] Retrieved ${data?.items?.length || 0} fragments from ${path}`);
+
+      return {
+        items: data?.items || [],
+        cursor: data?.cursor || null,
+      };
+    } catch (error) {
+      log.error(`[AEM Client][Fragment Management] Failed to list fragments from ${path}:`, error);
+
+      throw error;
+    }
+  }
 }

@@ -362,4 +362,113 @@ describe('FragmentManagement', () => {
       expect(result).to.be.null;
     });
   });
+
+  describe('getFragments', () => {
+    it('should fetch fragments with default options', async () => {
+      const responseData = {
+        items: [
+          { path: '/content/dam/fragment1', status: 'NEW' },
+          { path: '/content/dam/fragment2', status: 'DRAFT' },
+        ],
+        cursor: null,
+      };
+
+      clientMock.request.resolves(responseData);
+
+      const result = await fragmentManagement.getFragments('/content/dam/');
+
+      expect(clientMock.request).to.have.been.calledWith(
+        'GET',
+        '/adobe/sites/cf/fragments?path=%2Fcontent%2Fdam%2F&projection=minimal',
+      );
+      expect(result.items).to.have.lengthOf(2);
+      expect(result.cursor).to.be.null;
+    });
+
+    it('should return empty array when no items', async () => {
+      clientMock.request.resolves({});
+
+      const result = await fragmentManagement.getFragments('/content/dam/');
+
+      expect(result.items).to.be.an('array').that.is.empty;
+      expect(result.cursor).to.be.null;
+    });
+
+    it('should return empty array when response is null', async () => {
+      clientMock.request.resolves(null);
+
+      const result = await fragmentManagement.getFragments('/content/dam/');
+
+      expect(result.items).to.be.an('array').that.is.empty;
+      expect(result.cursor).to.be.null;
+    });
+
+    it('should include cursor in query when provided', async () => {
+      clientMock.request.resolves({ items: [], cursor: null });
+
+      await fragmentManagement.getFragments('/content/dam/', { cursor: 'abc123' });
+
+      expect(clientMock.request).to.have.been.calledWith(
+        'GET',
+        '/adobe/sites/cf/fragments?path=%2Fcontent%2Fdam%2F&projection=minimal&cursor=abc123',
+      );
+    });
+
+    it('should include limit in query when provided', async () => {
+      clientMock.request.resolves({ items: [], cursor: null });
+
+      await fragmentManagement.getFragments('/content/dam/', { limit: 50 });
+
+      expect(clientMock.request).to.have.been.calledWith(
+        'GET',
+        '/adobe/sites/cf/fragments?path=%2Fcontent%2Fdam%2F&projection=minimal&limit=50',
+      );
+    });
+
+    it('should use custom projection when provided', async () => {
+      clientMock.request.resolves({ items: [], cursor: null });
+
+      await fragmentManagement.getFragments('/content/dam/', { projection: 'full' });
+
+      expect(clientMock.request).to.have.been.calledWith(
+        'GET',
+        '/adobe/sites/cf/fragments?path=%2Fcontent%2Fdam%2F&projection=full',
+      );
+    });
+
+    it('should return cursor for pagination', async () => {
+      const responseData = {
+        items: [{ path: '/content/dam/fragment1', status: 'NEW' }],
+        cursor: 'next-page-cursor',
+      };
+
+      clientMock.request.resolves(responseData);
+
+      const result = await fragmentManagement.getFragments('/content/dam/');
+
+      expect(result.cursor).to.equal('next-page-cursor');
+    });
+
+    it('should include all query parameters together', async () => {
+      clientMock.request.resolves({ items: [], cursor: null });
+
+      await fragmentManagement.getFragments('/content/dam/', {
+        projection: 'full',
+        cursor: 'page2',
+        limit: 100,
+      });
+
+      expect(clientMock.request).to.have.been.calledWith(
+        'GET',
+        '/adobe/sites/cf/fragments?path=%2Fcontent%2Fdam%2F&projection=full&cursor=page2&limit=100',
+      );
+    });
+
+    it('should propagate request errors', async () => {
+      clientMock.request.rejects(new AemRequestError(500, 'Internal Server Error'));
+
+      await expect(fragmentManagement.getFragments('/content/dam/'))
+        .to.be.rejectedWith(AemRequestError);
+    });
+  });
 });

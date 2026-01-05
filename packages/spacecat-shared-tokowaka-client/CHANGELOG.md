@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.3...@adobe/spacecat-shared-tokowaka-client-v1.4.4) (2026-01-05)
+
+
+### Bug Fixes
+
+* allow replaceWith and appendChild in tokowaka generic patch ([#1245](https://github.com/adobe/spacecat-shared/issues/1245)) ([dcb1beb](https://github.com/adobe/spacecat-shared/commit/dcb1beb8e9b7b176406cfebbc5ae6a53ea0f17f4))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.4.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.2...@adobe/spacecat-shared-tokowaka-client-v1.4.3) (2025-12-12)
 
 

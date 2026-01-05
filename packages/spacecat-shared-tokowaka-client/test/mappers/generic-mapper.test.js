@@ -248,7 +248,7 @@ describe('GenericMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'transformRules.action must be one of: insertBefore, insertAfter, replace. Got: invalidOperation',
+        reason: 'transformRules.action must be one of: insertBefore, insertAfter, replace, replaceWith, appendChild. Got: invalidOperation',
       });
     });
 

@@ -152,6 +152,17 @@ const CDN_TRANSFORMATIONS = {
     'Compress logs': 'Yes',
     HelpUrl: 'https://docs-cybersec.thalesgroup.com/bundle/cloud-application-security/page/siem-log-configuration.htm',
   }),
+  'byocdn-other': (payload) => ({
+    'Bucket name': payload.bucketName,
+    Region: payload.region,
+    Path: `${payload.allowedPaths?.[0] || ''}<year>/<month>/<day>`,
+    'Access Key': payload.accessKey,
+    'Secret Key': payload.secretKey,
+    'Timestamp format': 'RFC3339',
+    'Log format': 'JSON lines (one log per line)',
+    Compression: 'Optional, but prefered. Please use Gzip compression if you decide to compress the log files.',
+    'Example of valid log line': '{"timestamp":"2025-12-01T13:00:05Z","host":"www.example.com","url":"/docs/getting-started","request_method":"GET","request_user_agent":"Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.0; +https://openai.com/gptbot)","response_status":200,"request_referer":"https://www.chatgpt.com/","response_content_type":"text/html; charset=utf-8","time_to_first_byte":123}',
+  }),
 };
 
 /**
@@ -164,7 +175,8 @@ const CDN_TRANSFORMATIONS = {
  *
  * @param {Object} payload - The result from CDN-Logs-Infrastructure-Provisioning API
  * @param {string} payload.logSource - The CDN type ('byocdn-fastly' | 'byocdn-akamai'
- *   | 'byocdn-cloudflare' | 'byocdn-cloudfront' | 'ams-cloudfront' | 'byocdn-imperva')
+ *   | 'byocdn-cloudflare' | 'byocdn-cloudfront' | 'ams-cloudfront' | 'byocdn-imperva'
+ *   | 'byocdn-other')
  * @returns {Object} - The prepared log forwarding configuration parameters
  * @throws {Error} - If logSource is not supported or missing
  */
@@ -193,7 +205,7 @@ const prettifyLogForwardingConfig = (payload) => {
     throw new Error('allowedPaths is required in payload');
   }
 
-  if (payload.logSource === 'byocdn-fastly' || payload.logSource === 'byocdn-akamai') {
+  if (payload.logSource === 'byocdn-fastly' || payload.logSource === 'byocdn-akamai' || payload.logSource === 'byocdn-other') {
     if (!payload.accessKey) {
       throw new Error('accessKey is required in payload');
     }

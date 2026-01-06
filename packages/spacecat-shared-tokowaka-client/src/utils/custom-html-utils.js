@@ -197,7 +197,21 @@ export async function fetchHtmlWithWarmup(
 export function calculateForwardedHost(url, logger = console) {
   try {
     const urlObj = new URL(url);
-    const forwardedHost = urlObj.hostname.replace(/^www\./, '');
+    const { hostname } = urlObj;
+
+    // If hostname already starts with www., keep it as is
+    if (hostname.startsWith('www.')) {
+      logger.debug(`Forwarded host: ${hostname}`);
+      return hostname;
+    }
+
+    // Count dots to determine if it's a bare domain or has a subdomain
+    const dotCount = (hostname.match(/\./g) || []).length;
+
+    // If only 1 dot (bare domain like example.com), prepend www.
+    // If 2+ dots (subdomain like subdomain.example.com), keep as is
+    const forwardedHost = dotCount === 1 ? `www.${hostname}` : hostname;
+
     logger.debug(`Forwarded host: ${forwardedHost}`);
     return forwardedHost;
   } catch (error) {

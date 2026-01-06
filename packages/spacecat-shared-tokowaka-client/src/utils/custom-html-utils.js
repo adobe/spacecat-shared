@@ -197,7 +197,9 @@ export async function fetchHtmlWithWarmup(
 export function calculateForwardedHost(url, logger = console) {
   try {
     const urlObj = new URL(url);
-    return urlObj.hostname.replace(/^www\./, '');
+    const forwardedHost = urlObj.hostname.replace(/^www\./, '');
+    logger.debug(`Forwarded host: ${forwardedHost}`);
+    return forwardedHost;
   } catch (error) {
     logger.error(`Error calculating forwarded host from URL ${url}: ${error.message}`);
     throw new Error(`Error calculating forwarded host from URL ${url}: ${error.message}`);

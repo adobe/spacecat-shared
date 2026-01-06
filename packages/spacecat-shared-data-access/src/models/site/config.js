@@ -338,7 +338,7 @@ export const configSchema = Joi.object({
     outputLocation: Joi.string().required(),
   }).optional(),
   tokowakaConfig: Joi.object({
-    apiKey: Joi.string().required(),
+    apiKey: Joi.string().optional(),
     forwardedHost: Joi.string().optional(),
   }).optional(),
   contentAiConfig: Joi.object({

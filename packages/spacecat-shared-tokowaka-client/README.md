@@ -144,23 +144,6 @@ Uploads configuration to S3 for a specific URL.
 
 The client invalidates CDN cache after uploading configurations. Failures are logged but don't block deployment.
 
-## Site Configuration
-
-Sites must have the following configuration in their `tokowakaConfig`:
-
-```javascript
-{
-  "tokowakaConfig": {
-    "apiKey": "legacy-key-kept-for-backward-compatibility", // Optional, kept for backward compatibility
-    "forwardedHost": "www.example.com"  // Required for preview functionality
-  }
-}
-```
-
-**Note:** 
-- `apiKey` is optional and **not used** for S3 paths or HTTP headers (kept in schema for potential future use)
-- `forwardedHost` is **required** for preview functionality to fetch HTML from Tokowaka edge
-
 ## Supported Opportunity Types
 
 ### Headings
@@ -215,9 +198,12 @@ Domain-level metaconfig (created once per domain, shared by all URLs):
 ```json
 {
   "siteId": "abc-123",
+  "apiKeys": ["tokowaka-api-key-1", "tokowaka-api-key-2"],
   "prerender": true
 }
 ```
+
+**Note:** `apiKeys` is an array of API keys. The first key in the array is used for preview functionality.
 
 ### Configuration File Structure
 Per-URL configuration (flat structure):
@@ -308,7 +294,7 @@ TOKOWAKA_CDN_CONFIG='{"cloudfront":{"distributionId":"...","region":"us-east-1"}
 
 **Behavior:**
 - All URLs are batched into a single invalidation request per provider
-- All CDN providers are invalidated in parallel using `Promise.all()`
+- All CDN providers are invalidated sequentially to avoid rate limits
 - Failures in one CDN don't block others
 - Each CDN returns its own result in the `cdnInvalidations` array
 - Results include status, provider name, and provider-specific details

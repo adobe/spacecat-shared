@@ -14,7 +14,7 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { fetchHtmlWithWarmup } from '../../src/utils/custom-html-utils.js';
+import { fetchHtmlWithWarmup, calculateForwardedHost } from '../../src/utils/custom-html-utils.js';
 
 describe('HTML Utils', () => {
   describe('fetchHtmlWithWarmup', () => {
@@ -427,6 +427,96 @@ describe('HTML Utils', () => {
       expect(html).to.equal('<html>Cached HTML</html>');
       // Should not retry if cache header found on first attempt
       expect(fetchStub.callCount).to.equal(2); // warmup + 1 actual
+    });
+  });
+
+  describe('calculateForwardedHost', () => {
+    let log;
+
+    beforeEach(() => {
+      log = {
+        debug: sinon.stub(),
+        warn: sinon.stub(),
+        error: sinon.stub(),
+        info: sinon.stub(),
+      };
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('should calculate forwarded host from URL without www', async () => {
+      const result = calculateForwardedHost('https://example.com/page', log);
+      expect(result).to.equal('example.com');
+    });
+
+    it('should remove www prefix from hostname', async () => {
+      const result = calculateForwardedHost('https://www.example.com/page', log);
+      expect(result).to.equal('example.com');
+    });
+
+    it('should handle URL with subdomain', async () => {
+      const result = calculateForwardedHost('https://subdomain.example.com/page', log);
+      expect(result).to.equal('subdomain.example.com');
+    });
+
+    it('should handle URL with www and subdomain', async () => {
+      const result = calculateForwardedHost('https://www.subdomain.example.com/page', log);
+      expect(result).to.equal('subdomain.example.com');
+    });
+
+    it('should handle URL with port (port is not included in hostname)', async () => {
+      const result = calculateForwardedHost('https://www.example.com:8080/page', log);
+      // Note: URL.hostname does not include the port
+      expect(result).to.equal('example.com');
+    });
+
+    it('should handle URL with query parameters', async () => {
+      const result = calculateForwardedHost('https://www.example.com/page?param=value', log);
+      expect(result).to.equal('example.com');
+    });
+
+    it('should handle URL with hash fragment', async () => {
+      const result = calculateForwardedHost('https://www.example.com/page#section', log);
+      expect(result).to.equal('example.com');
+    });
+
+    it('should handle http protocol', async () => {
+      const result = calculateForwardedHost('http://www.example.com/page', log);
+      expect(result).to.equal('example.com');
+    });
+
+    it('should throw error for invalid URL', async () => {
+      try {
+        calculateForwardedHost('not-a-valid-url', log);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Error calculating forwarded host from URL');
+        expect(error.message).to.include('not-a-valid-url');
+        expect(log.error).to.have.been.calledOnce;
+      }
+    });
+
+    it('should throw error for empty URL', async () => {
+      try {
+        calculateForwardedHost('', log);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Error calculating forwarded host from URL');
+        expect(log.error).to.have.been.calledOnce;
+      }
+    });
+
+    it('should use console as default logger when not provided', async () => {
+      const result = calculateForwardedHost('https://www.example.com/page');
+      expect(result).to.equal('example.com');
+    });
+
+    it('should handle URL with multiple www prefixes (edge case)', async () => {
+      // This is an edge case where someone might have www.www.example.com
+      const result = calculateForwardedHost('https://www.www.example.com/page', log);
+      expect(result).to.equal('www.example.com');
     });
   });
 });

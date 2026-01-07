@@ -109,7 +109,6 @@ export interface SiteConfig {
     handlers?: Record<string, {
       mentions?: Record<string, string[]>;
       excludedURLs?: string[];
-      autofixExcludedURLs?: string[];
       manualOverwrites?: Array<{
         brokenTargetURL?: string;
         targetURL?: string;
@@ -157,7 +156,6 @@ export interface SiteConfig {
   getHandlerConfig(type: string): object;
   getSlackMentions(type: string): string[] | undefined;
   getExcludedURLs(type: string): string[] | undefined;
-  getAutofixExcludedURLs(type: string): string[] | undefined;
   getManualOverwrites(type: string):
     Array<{ brokenTargetURL?: string; targetURL?: string }> | undefined;
   getFixedURLs(type: string): Array<{ brokenTargetURL?: string; targetURL?: string }> | undefined;

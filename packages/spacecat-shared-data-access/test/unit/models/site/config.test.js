@@ -391,25 +391,6 @@ describe('Config Tests', () => {
       expect(excludedURLs).to.deep.equal(['url1', 'url2']);
     });
 
-    it('correctly updates the autofix excluded URLs', () => {
-      const config = Config();
-      config.updateAutofixExcludedURLs('meta-tags', [
-        'https://www.example.com/page1',
-        'https://www.example.com/page2',
-      ]);
-
-      const autofixExcludedURLs = config.getAutofixExcludedURLs('meta-tags');
-      expect(autofixExcludedURLs).to.deep.equal([
-        'https://www.example.com/page1',
-        'https://www.example.com/page2',
-      ]);
-    });
-
-    it('returns undefined for autofix excluded URLs when handler is not present', () => {
-      const config = Config();
-      expect(config.getAutofixExcludedURLs('non-existent-handler')).to.be.undefined;
-    });
-
     it('correctly updates the manual overrides', () => {
       const config = Config();
       const manualOverwrites = [
@@ -472,7 +453,6 @@ describe('Config Tests', () => {
       expect(config.getSlackMentions('404')).to.be.undefined;
       expect(config.getHandlerConfig('404')).to.be.undefined;
       expect(config.getExcludedURLs('404')).to.be.undefined;
-      expect(config.getAutofixExcludedURLs('404')).to.be.undefined;
       expect(config.getManualOverwrites('404')).to.be.undefined;
       expect(config.getFixedURLs('404')).to.be.undefined;
       expect(config.getIncludedURLs('404')).to.be.undefined;

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.92.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.92.0...@adobe/spacecat-shared-data-access-v2.92.1) (2026-01-07)
+
+
+### Bug Fixes
+
+* fetch api key from s3 and fix invalidation sequence ([#1251](https://github.com/adobe/spacecat-shared/issues/1251)) ([fe66bd6](https://github.com/adobe/spacecat-shared/commit/fe66bd6732dc200ab4df27babc1e0831f6187271))
+
 # [@adobe/spacecat-shared-data-access-v2.92.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.91.0...@adobe/spacecat-shared-data-access-v2.92.0) (2025-12-11)
 
 

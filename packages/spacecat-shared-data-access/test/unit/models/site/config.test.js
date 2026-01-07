@@ -2475,6 +2475,75 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('Edge Optimize Config', () => {
+    it('creates a Config with edgeOptimizeConfig property', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
+    it('has undefined edgeOptimizeConfig in default config', () => {
+      const config = Config();
+      expect(config.getEdgeOptimizeConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for edgeOptimizeConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getEdgeOptimizeConfig()).to.be.undefined;
+    });
+
+    it('should preserve provided data if edgeOptimizeConfig is invalid', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          // missing required enabled
+        },
+      };
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.be.undefined;
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal({});
+    });
+
+    it('should be able to update edgeOptimizeConfig', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      };
+      const config = Config({});
+      config.updateEdgeOptimizeConfig(data.edgeOptimizeConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
+    it('should be able to update edgeOptimizeConfig with different enabled', () => {
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      });
+
+      const newConfig = {
+        enabled: false,
+      };
+      config.updateEdgeOptimizeConfig(newConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes edgeOptimizeConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.edgeOptimizeConfig).to.deep.equal(data.getEdgeOptimizeConfig());
+    });
+  });
+
   describe('LLMO Well Known Tags', () => {
     const { extractWellKnownTags } = Config();
 

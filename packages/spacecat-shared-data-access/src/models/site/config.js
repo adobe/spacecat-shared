@@ -338,8 +338,11 @@ export const configSchema = Joi.object({
     outputLocation: Joi.string().required(),
   }).optional(),
   tokowakaConfig: Joi.object({
-    apiKey: Joi.string().required(),
+    apiKey: Joi.string().optional(),
     forwardedHost: Joi.string().optional(),
+  }).optional(),
+  edgeOptimizeConfig: Joi.object({
+    enabled: Joi.boolean().required(),
   }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -448,7 +451,7 @@ export const Config = (data = {}) => {
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
-
+  self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
@@ -741,6 +744,10 @@ export const Config = (data = {}) => {
     state.tokowakaConfig = tokowakaConfig;
   };
 
+  self.updateEdgeOptimizeConfig = (edgeOptimizeConfig) => {
+    state.edgeOptimizeConfig = edgeOptimizeConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -757,4 +764,5 @@ Config.toDynamoItem = (config) => ({
   cdnLogsConfig: config.getCdnLogsConfig(),
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
+  edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
 });

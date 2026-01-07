@@ -121,16 +121,17 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(1.0);
     });
 
-    it('returns unknown for unrecognized status codes', async () => {
+    it('detects 500 server error as not crawlable', async () => {
       nock(baseUrl)
         .head('/')
         .reply(500);
 
       const result = await detectBotBlocker({ baseUrl });
 
-      expect(result.crawlable).to.be.true;
-      expect(result.type).to.equal('unknown');
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('server-error');
       expect(result.confidence).to.equal(0.5);
+      expect(result.reason).to.include('HTTP 500');
     });
 
     it('returns unknown for unrecognized errors', async () => {
@@ -148,7 +149,7 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(0.3);
     });
 
-    it('does not detect blocking for 403 without known headers', async () => {
+    it('detects 403 as blocked even without known CDN headers', async () => {
       nock(baseUrl)
         .head('/')
         .reply(403, '', {
@@ -157,9 +158,10 @@ describe('Bot Blocker Detection', () => {
 
       const result = await detectBotBlocker({ baseUrl });
 
-      expect(result.crawlable).to.be.true;
+      expect(result.crawlable).to.be.false;
       expect(result.type).to.equal('unknown');
-      expect(result.confidence).to.equal(0.5);
+      expect(result.confidence).to.equal(0.7);
+      expect(result.reason).to.equal('HTTP 403 Forbidden - access denied');
     });
 
     // New CDN detection tests
@@ -597,6 +599,199 @@ describe('Bot Blocker Detection', () => {
 
       expect(result.crawlable).to.be.false;
       expect(result.type).to.equal('akamai');
+    });
+
+    // Tests for generic HTTP error code handling
+    it('detects generic 403 Forbidden without known CDN', () => {
+      const html = '<html><body>Access denied</body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 403,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+      expect(result.reason).to.equal('HTTP 403 Forbidden - access denied');
+    });
+
+    it('detects 429 Too Many Requests (rate limiting)', () => {
+      const html = '<html><body>Too many requests</body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 429,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('rate-limit');
+      expect(result.confidence).to.equal(0.99);
+      expect(result.reason).to.equal('HTTP 429 Too Many Requests - rate limit exceeded');
+    });
+
+    it('detects 401 Unauthorized', () => {
+      const html = '<html><body>Unauthorized</body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 401,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('auth-required');
+      expect(result.confidence).to.equal(0.99);
+      expect(result.reason).to.equal('HTTP 401 Unauthorized - authentication required');
+    });
+
+    it('detects 406 Not Acceptable (user-agent rejection)', () => {
+      const html = '<html><body>Not acceptable</body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 406,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('user-agent-rejected');
+      expect(result.confidence).to.equal(0.8);
+      expect(result.reason).to.equal('HTTP 406 Not Acceptable - likely user-agent rejection');
+    });
+
+    it('detects other 4xx client errors', () => {
+      const html = '<html><body>Error</body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 418,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('http-error');
+      expect(result.confidence).to.equal(0.6);
+      expect(result.reason).to.equal('HTTP 418 - client error');
+    });
+
+    it('detects 5xx server errors', () => {
+      const html = '<html><body>Internal server error</body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 500,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('server-error');
+      expect(result.confidence).to.equal(0.5);
+      expect(result.reason).to.equal('HTTP 500 - server error');
+    });
+
+    it('prioritizes known CDN detection over generic 403', () => {
+      // This ensures that if we have both 403 AND Cloudflare headers,
+      // we return the more specific 'cloudflare' type, not generic 'unknown'
+      const html = '<html><body>Access denied</body></html>';
+      const headers = { 'cf-ray': '123456' };
+
+      const result = analyzeBotProtection({
+        status: 403,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    // Edge case: 3xx redirects (not handled by specific rules)
+    it('returns unknown with crawlable true for 3xx redirect status codes', () => {
+      const html = '<html><body>Redirecting...</body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 301,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.5);
+    });
+
+    // Edge case: 1xx informational responses
+    it('returns unknown with crawlable true for 1xx informational status codes', () => {
+      const html = '';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 100,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.5);
+    });
+
+    // Edge case: Unusual 5xx-range status codes
+    it('treats very unusual 5xx status codes as server errors', () => {
+      const html = '';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 999,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('server-error');
+      expect(result.confidence).to.equal(0.5);
+      expect(result.reason).to.equal('HTTP 999 - server error');
+    });
+
+    // Edge case: No headers provided (null/undefined)
+    it('handles null headers gracefully', () => {
+      const html = '<html><body>Normal page</body></html>';
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers: null,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('none');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    // Edge case: Undefined headers
+    it('handles undefined headers gracefully', () => {
+      const html = '<html><body>Normal page</body></html>';
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers: undefined,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('none');
+      expect(result.confidence).to.equal(1.0);
     });
   });
 });

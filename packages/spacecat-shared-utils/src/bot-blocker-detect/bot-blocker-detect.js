@@ -240,6 +240,66 @@ function analyzeResponse(response, html = null) {
     };
   }
 
+  // Generic 403 Forbidden - definitely blocked (unknown CDN/protection)
+  if (status === 403) {
+    return {
+      crawlable: false,
+      type: 'unknown',
+      confidence: 0.7,
+      reason: 'HTTP 403 Forbidden - access denied',
+    };
+  }
+
+  // Rate limiting
+  if (status === 429) {
+    return {
+      crawlable: false,
+      type: 'rate-limit',
+      confidence: CONFIDENCE_HIGH,
+      reason: 'HTTP 429 Too Many Requests - rate limit exceeded',
+    };
+  }
+
+  // 401 Unauthorized
+  if (status === 401) {
+    return {
+      crawlable: false,
+      type: 'auth-required',
+      confidence: CONFIDENCE_HIGH,
+      reason: 'HTTP 401 Unauthorized - authentication required',
+    };
+  }
+
+  // 406 Not Acceptable (often user-agent rejection)
+  if (status === 406) {
+    return {
+      crawlable: false,
+      type: 'user-agent-rejected',
+      confidence: 0.8,
+      reason: 'HTTP 406 Not Acceptable - likely user-agent rejection',
+    };
+  }
+
+  // Other 4xx client errors
+  if (status >= 400 && status < 500) {
+    return {
+      crawlable: false,
+      type: 'http-error',
+      confidence: 0.6,
+      reason: `HTTP ${status} - client error`,
+    };
+  }
+
+  // 5xx server errors - not necessarily bot protection, but also not crawlable
+  if (status >= 500) {
+    return {
+      crawlable: false,
+      type: 'server-error',
+      confidence: 0.5,
+      reason: `HTTP ${status} - server error`,
+    };
+  }
+
   // Unknown status without known blocker signature
   return {
     crawlable: true,

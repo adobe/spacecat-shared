@@ -18,7 +18,7 @@ import { mergePatches } from './utils/patch-utils.js';
 import { getTokowakaConfigS3Path, getTokowakaMetaconfigS3Path } from './utils/s3-utils.js';
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
-import { fetchHtmlWithWarmup } from './utils/custom-html-utils.js';
+import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -222,7 +222,7 @@ class TokowakaClient {
   /**
    * Uploads domain-level metaconfig to S3
    * @param {string} url - Full URL (used to extract domain)
-   * @param {Object} metaconfig - Metaconfig object (siteId, prerender)
+   * @param {Object} metaconfig - Metaconfig object (siteId, apiKeys, prerender)
    * @returns {Promise<string>} - S3 key of uploaded metaconfig
    */
   async uploadMetaconfig(url, metaconfig) {
@@ -373,7 +373,7 @@ class TokowakaClient {
 
   /**
    * CDN cache invalidation method that supports invalidating URL configs
-   * or custom S3 paths across provided or default CDN providers
+   * or custom S3 paths across provided or default CDN providers.
    * @param {Object} options - Invalidation options
    * @param {Array<string>} options.urls - Array of full URLs to invalidate (for URL configs)
    * @param {Array<string>} options.paths - Custom S3 paths to invalidate directly
@@ -416,37 +416,37 @@ class TokowakaClient {
       + `via providers: ${providerList.join(', ')}`,
     );
 
-    // Invalidate all providers in parallel
-    const invalidationPromises = providerList.map(async (provider) => {
+    const results = [];
+    for (const provider of providerList) {
       try {
         const cdnClient = this.cdnClientRegistry.getClient(provider);
         if (!cdnClient) {
           this.log.warn(`No CDN client available for provider: ${provider}`);
-          return {
+          results.push({
             status: 'error',
             provider,
             message: `No CDN client available for provider: ${provider}`,
-          };
+          });
+          // eslint-disable-next-line no-continue
+          continue;
         }
 
+        // eslint-disable-next-line no-await-in-loop
         const result = await cdnClient.invalidateCache(pathsToInvalidate);
         this.log.info(
           `CDN cache invalidation completed for ${provider}: `
           + `${pathsToInvalidate.length} path(s)`,
         );
-        return result;
+        results.push(result);
       } catch (error) {
         this.log.warn(`Failed to invalidate ${provider} CDN cache: ${error.message}`, error);
-        return {
+        results.push({
           status: 'error',
           provider,
           message: error.message,
-        };
+        });
       }
-    });
-
-    // Wait for all provider invalidations to complete
-    const results = await Promise.all(invalidationPromises);
+    }
     return results;
   }
 
@@ -699,17 +699,6 @@ class TokowakaClient {
    * @returns {Promise<Object>} - Preview result with config and succeeded/failed suggestions
    */
   async previewSuggestions(site, opportunity, suggestions, options = {}) {
-    // Get site's forwarded host for preview
-    const { forwardedHost, apiKey } = site.getConfig()?.getTokowakaConfig() || {};
-
-    if (!hasText(forwardedHost) || !hasText(apiKey)) {
-      throw this.#createError(
-        'Site does not have a Tokowaka API key or forwarded host configured. '
-        + 'Please onboard the site to Tokowaka first.',
-        HTTP_BAD_REQUEST,
-      );
-    }
-
     const opportunityType = opportunity.getType();
     const mapper = this.mapperRegistry.getMapper(opportunityType);
     if (!mapper) {
@@ -754,6 +743,29 @@ class TokowakaClient {
     if (!hasText(previewUrl)) {
       throw this.#createError('Preview URL not found in suggestion data', HTTP_BAD_REQUEST);
     }
+
+    // Fetch metaconfig to get API key
+    const metaconfig = await this.fetchMetaconfig(previewUrl);
+
+    if (!metaconfig) {
+      throw this.#createError(
+        'No domain-level metaconfig found. '
+        + 'A domain-level metaconfig needs to be created first before previewing suggestions.',
+        HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const { apiKeys } = metaconfig;
+    if (!Array.isArray(apiKeys) || apiKeys.length === 0 || !hasText(apiKeys[0])) {
+      throw this.#createError(
+        'Metaconfig does not have valid API keys configured. '
+        + 'Please ensure the metaconfig has at least one API key.',
+        HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const apiKey = apiKeys[0];
+    const forwardedHost = calculateForwardedHost(previewUrl, this.log);
 
     // Fetch existing deployed configuration for this URL from production S3
     this.log.debug(`Fetching existing deployed Tokowaka config for URL: ${previewUrl}`);

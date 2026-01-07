@@ -36,19 +36,34 @@ const DEFAULT_TIMEOUT = 5000;
 export const SPACECAT_BOT_USER_AGENT = 'Spacecat/1.0';
 
 /**
- * SpaceCat bot IPs by environment
+ * Gets SpaceCat bot IPs from environment variable
+ * @param {string} ipsString - Comma-separated IPs (from env/secrets) - REQUIRED
+ * @returns {Array<string>} Array of IP addresses
+ * @throws {Error} If ipsString is not provided
  */
-export const SPACECAT_BOT_IPS = {
-  production: [
-    '3.218.16.42',
-    '52.55.82.37',
-    '54.172.145.38',
-  ],
-  development: [
-    '44.218.57.115',
-    '54.87.205.187',
-  ],
-};
+export function getSpacecatBotIps(ipsString) {
+  if (!ipsString) {
+    throw new Error('SPACECAT_BOT_IPS environment variable is required but not set');
+  }
+
+  return ipsString.split(',').map((ip) => ip.trim()).filter((ip) => ip);
+}
+
+/**
+ * Formats allowlist message with current bot IPs
+ * @param {string} botIps - Comma-separated IPs from secrets - REQUIRED
+ * @returns {object} Formatted message with IPs and user-agent
+ * @throws {Error} If botIps is not provided
+ */
+export function formatAllowlistMessage(botIps) {
+  const ips = getSpacecatBotIps(botIps);
+
+  return {
+    title: 'To allowlist SpaceCat bot:',
+    ips,
+    userAgent: SPACECAT_BOT_USER_AGENT,
+  };
+}
 
 /**
  * HTML patterns for detecting challenge pages
@@ -287,16 +302,6 @@ function analyzeResponse(response, html = null) {
       type: 'http-error',
       confidence: 0.6,
       reason: `HTTP ${status} - client error`,
-    };
-  }
-
-  // 5xx server errors - not necessarily bot protection, but also not crawlable
-  if (status >= 500) {
-    return {
-      crawlable: false,
-      type: 'server-error',
-      confidence: 0.5,
-      reason: `HTTP ${status} - server error`,
     };
   }
 

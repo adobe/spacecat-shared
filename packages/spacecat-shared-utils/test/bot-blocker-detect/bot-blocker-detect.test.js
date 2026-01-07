@@ -18,6 +18,9 @@ import nock from 'nock';
 import {
   detectBotBlocker,
   analyzeBotProtection,
+  getSpacecatBotIps,
+  formatAllowlistMessage,
+  SPACECAT_BOT_USER_AGENT,
 } from '../../src/bot-blocker-detect/bot-blocker-detect.js';
 
 describe('Bot Blocker Detection', () => {
@@ -119,19 +122,6 @@ describe('Bot Blocker Detection', () => {
       expect(result.crawlable).to.be.true;
       expect(result.type).to.equal('none');
       expect(result.confidence).to.equal(1.0);
-    });
-
-    it('detects 500 server error as not crawlable', async () => {
-      nock(baseUrl)
-        .head('/')
-        .reply(500);
-
-      const result = await detectBotBlocker({ baseUrl });
-
-      expect(result.crawlable).to.be.false;
-      expect(result.type).to.equal('server-error');
-      expect(result.confidence).to.equal(0.5);
-      expect(result.reason).to.include('HTTP 500');
     });
 
     it('returns unknown for unrecognized errors', async () => {
@@ -682,7 +672,7 @@ describe('Bot Blocker Detection', () => {
       expect(result.reason).to.equal('HTTP 418 - client error');
     });
 
-    it('detects 5xx server errors', () => {
+    it('does not treat 5xx server errors as bot protection', () => {
       const html = '<html><body>Internal server error</body></html>';
       const headers = {};
 
@@ -692,10 +682,10 @@ describe('Bot Blocker Detection', () => {
         html,
       });
 
-      expect(result.crawlable).to.be.false;
-      expect(result.type).to.equal('server-error');
+      // Server errors are NOT bot protection - they're infrastructure issues
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('unknown');
       expect(result.confidence).to.equal(0.5);
-      expect(result.reason).to.equal('HTTP 500 - server error');
     });
 
     it('prioritizes known CDN detection over generic 403', () => {
@@ -747,8 +737,8 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(0.5);
     });
 
-    // Edge case: Unusual 5xx-range status codes
-    it('treats very unusual 5xx status codes as server errors', () => {
+    // Edge case: Unusual 5xx-range status codes are NOT bot protection
+    it('does not treat very unusual 5xx status codes as bot protection', () => {
       const html = '';
       const headers = {};
 
@@ -758,10 +748,10 @@ describe('Bot Blocker Detection', () => {
         html,
       });
 
-      expect(result.crawlable).to.be.false;
-      expect(result.type).to.equal('server-error');
+      // Server errors (even unusual ones) are NOT bot protection
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('unknown');
       expect(result.confidence).to.equal(0.5);
-      expect(result.reason).to.equal('HTTP 999 - server error');
     });
 
     // Edge case: No headers provided (null/undefined)
@@ -792,6 +782,68 @@ describe('Bot Blocker Detection', () => {
       expect(result.crawlable).to.be.true;
       expect(result.type).to.equal('none');
       expect(result.confidence).to.equal(1.0);
+    });
+  });
+
+  describe('IP Management Functions', () => {
+    describe('getSpacecatBotIps', () => {
+      it('should throw error when IPs not provided', () => {
+        expect(() => getSpacecatBotIps(null)).to.throw('SPACECAT_BOT_IPS environment variable is required but not set');
+        expect(() => getSpacecatBotIps('')).to.throw('SPACECAT_BOT_IPS environment variable is required but not set');
+        expect(() => getSpacecatBotIps(undefined)).to.throw('SPACECAT_BOT_IPS environment variable is required but not set');
+      });
+
+      it('should parse comma-separated IPs', () => {
+        const botIps = '1.2.3.4,5.6.7.8,9.10.11.12';
+        const ips = getSpacecatBotIps(botIps);
+
+        expect(ips).to.deep.equal(['1.2.3.4', '5.6.7.8', '9.10.11.12']);
+      });
+
+      it('should trim whitespace from IP addresses', () => {
+        const botIps = ' 1.2.3.4 , 5.6.7.8 , 9.10.11.12 ';
+        const ips = getSpacecatBotIps(botIps);
+
+        expect(ips).to.deep.equal(['1.2.3.4', '5.6.7.8', '9.10.11.12']);
+      });
+
+      it('should filter out empty IP entries', () => {
+        const botIps = '1.2.3.4,,5.6.7.8,  ,9.10.11.12';
+        const ips = getSpacecatBotIps(botIps);
+
+        expect(ips).to.deep.equal(['1.2.3.4', '5.6.7.8', '9.10.11.12']);
+      });
+
+      it('should handle single IP', () => {
+        const botIps = '192.168.1.1';
+        const ips = getSpacecatBotIps(botIps);
+
+        expect(ips).to.deep.equal(['192.168.1.1']);
+      });
+    });
+
+    describe('formatAllowlistMessage', () => {
+      it('should format allowlist message with IPs', () => {
+        const botIps = '1.2.3.4,5.6.7.8,9.10.11.12';
+        const message = formatAllowlistMessage(botIps);
+
+        expect(message).to.deep.equal({
+          title: 'To allowlist SpaceCat bot:',
+          ips: ['1.2.3.4', '5.6.7.8', '9.10.11.12'],
+          userAgent: SPACECAT_BOT_USER_AGENT,
+        });
+      });
+
+      it('should throw error when IPs not provided', () => {
+        expect(() => formatAllowlistMessage(null)).to.throw('SPACECAT_BOT_IPS environment variable is required but not set');
+      });
+
+      it('should include correct user-agent', () => {
+        const botIps = '1.2.3.4';
+        const message = formatAllowlistMessage(botIps);
+
+        expect(message.userAgent).to.equal('Spacecat/1.0');
+      });
     });
   });
 });

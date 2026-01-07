@@ -114,7 +114,8 @@ export {
   detectBotBlocker,
   analyzeBotProtection,
   SPACECAT_BOT_USER_AGENT,
-  SPACECAT_BOT_IPS,
+  getSpacecatBotIps,
+  formatAllowlistMessage,
 } from './bot-blocker-detect/bot-blocker-detect.js';
 export { prettifyLogForwardingConfig } from './cdn-helpers.js';
 

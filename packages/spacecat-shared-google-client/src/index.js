@@ -20,6 +20,7 @@ import {
   isInteger,
   isValidDate,
   isValidUrl,
+  isValidBaseUrl,
   resolveCustomerSecretsName,
 } from '@adobe/spacecat-shared-utils';
 import { fetch as httpFetch } from './utils.js';
@@ -61,7 +62,7 @@ export default class GoogleClient {
   }
 
   static async createFrom(context, baseURL) {
-    if (!isValidUrl(baseURL)) {
+    if (!isValidBaseUrl(baseURL)) {
       throw new Error('Error creating GoogleClient: Invalid base URL');
     }
 

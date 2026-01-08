@@ -1,0 +1,11 @@
+{
+  "spec": {
+    "stdout": "-"
+  },
+  "mocha-junit-reporter": {
+    "stdout": "-",
+    "options": {
+      "mochaFile": "junit/test-results.xml"
+    }
+  }
+}

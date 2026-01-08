@@ -28,6 +28,7 @@ export {
   isValidDate,
   isValidEmail,
   isValidUrl,
+  isValidBaseUrl,
   isValidUUID,
   isValidIMSOrgId,
   isValidHelixPreviewUrl,

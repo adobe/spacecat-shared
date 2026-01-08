@@ -422,13 +422,21 @@ export default class ImsClient extends ImsBaseClient {
     if (!hasText(imsId)) {
       throw new Error('imsId param is required.');
     }
+
     const { guid, authSource } = extractGuidAndAuthSource(imsId);
-    const response = await this.imsApiCall(
-      IMS_ADMIN_ORGANIZATIONS_ENDPOINT,
-      {},
+    const serviceToken = await this.getServiceAccessToken();
+
+    const formBody = `guid=${guid}&auth_src=${authSource}`;
+
+    const response = await fetch(
+      `https://${this.config.imsHost}${IMS_ADMIN_ORGANIZATIONS_ENDPOINT}`,
       {
-        guid,
-        auth_src: authSource,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Bearer ${serviceToken.access_token}`,
+        },
+        body: formBody,
       },
     );
 

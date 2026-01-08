@@ -1698,6 +1698,12 @@ describe('TokowakaClient', () => {
       // Stub fetchConfig to return null by default (no existing config)
       sinon.stub(client, 'fetchConfig').resolves(null);
 
+      // Stub fetchMetaconfig to return metaconfig with apiKeys array
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        apiKeys: ['test-api-key-1', 'test-api-key-2'],
+      });
+
       // Add TOKOWAKA_EDGE_URL to env
       client.env.TOKOWAKA_EDGE_URL = 'https://edge-dev.tokowaka.now';
     });
@@ -1804,31 +1810,60 @@ describe('TokowakaClient', () => {
       }
     });
 
-    it('should throw error if site does not have forwardedHost', async () => {
-      mockSite.getConfig = () => ({
-        getTokowakaConfig: () => ({}),
-      });
+    it('should throw error if metaconfig does not exist', async () => {
+      client.fetchMetaconfig.resolves(null);
 
       try {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('Site does not have a Tokowaka API key or forwarded host configured');
-        expect(error.status).to.equal(400);
+        expect(error.message).to.include('No domain-level metaconfig found');
+        expect(error.status).to.equal(500);
       }
     });
 
-    it('should throw error if getTokowakaConfig returns null', async () => {
-      mockSite.getConfig = () => ({
-        getTokowakaConfig: () => null,
+    it('should throw error if metaconfig does not have apiKeys', async () => {
+      client.fetchMetaconfig.resolves({
+        siteId: 'site-123',
+        // apiKeys missing
       });
 
       try {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('Site does not have a Tokowaka API key or forwarded host configured');
-        expect(error.status).to.equal(400);
+        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
+        expect(error.status).to.equal(500);
+      }
+    });
+
+    it('should throw error if metaconfig has empty apiKeys array', async () => {
+      client.fetchMetaconfig.resolves({
+        siteId: 'site-123',
+        apiKeys: [],
+      });
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
+        expect(error.status).to.equal(500);
+      }
+    });
+
+    it('should throw error if metaconfig apiKeys first value is empty', async () => {
+      client.fetchMetaconfig.resolves({
+        siteId: 'site-123',
+        apiKeys: ['', 'test-api-key-2'],
+      });
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
+        expect(error.status).to.equal(500);
       }
     });
 

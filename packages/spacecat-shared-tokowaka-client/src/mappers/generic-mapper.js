@@ -104,7 +104,7 @@ export default class GenericMapper extends BaseOpportunityMapper {
     }
 
     // Validate action value
-    const validOperations = ['insertBefore', 'insertAfter', 'replace'];
+    const validOperations = ['insertBefore', 'insertAfter', 'replace', 'replaceWith', 'appendChild'];
     if (!validOperations.includes(data.transformRules.action)) {
       return {
         eligible: false,

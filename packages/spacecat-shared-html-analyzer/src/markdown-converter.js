@@ -31,7 +31,7 @@ async function getTurndownService() {
     // In browser environment, expect global TurndownService
     const globalObj = getGlobalObject();
     if (globalObj.TurndownService) {
-      return new globalObj.TurndownService();
+      return new globalObj.TurndownService({ codeBlockStyle: 'fenced' });
     }
     throw new Error('TurndownService must be loaded in browser environment');
   }
@@ -40,7 +40,7 @@ async function getTurndownService() {
     const module = await import('turndown');
     TurndownServiceClass = module.default;
   }
-  return new TurndownServiceClass();
+  return new TurndownServiceClass({ codeBlockStyle: 'fenced' });
 }
 
 /**

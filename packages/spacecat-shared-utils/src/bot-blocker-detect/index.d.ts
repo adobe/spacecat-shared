@@ -17,7 +17,10 @@ export interface BotBlockerConfig {
 
 export interface BotBlockerResult {
   crawlable: boolean;
-  type: 'cloudflare' | 'imperva' | 'http2-block' | 'none' | 'unknown';
+  type: 'cloudflare' | 'imperva' | 'akamai' | 'fastly' | 'cloudfront'
+    | 'cloudflare-allowed' | 'imperva-allowed' | 'akamai-allowed'
+    | 'fastly-allowed' | 'cloudfront-allowed'
+    | 'http2-block' | 'none' | 'unknown';
   confidence: number;
 }
 

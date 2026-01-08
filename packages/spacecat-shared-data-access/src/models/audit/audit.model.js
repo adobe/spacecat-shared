@@ -194,17 +194,27 @@ class Audit extends BaseModel {
        * @param context - The context object.
        * @returns {object} - The formatted payload for the scrape client.
        */
-      formatPayload: (stepResult, auditContext, context) => ({
-        urls: stepResult.urls.map((urlObj) => urlObj.url),
-        processingType: stepResult.processingType || 'default',
-        options: stepResult.options || {},
-        maxScrapeAge: isNumber(stepResult.maxScrapeAge) ? stepResult.maxScrapeAge : 24,
-        auditData: {
-          siteId: stepResult.siteId,
-          completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
-          auditContext,
-        },
-      }),
+      formatPayload: (stepResult, auditContext, context) => {
+        const payload = {
+          urls: stepResult.urls.map((urlObj) => urlObj.url),
+          processingType: stepResult.processingType || 'default',
+          options: stepResult.options || {},
+          maxScrapeAge: isNumber(stepResult.maxScrapeAge) ? stepResult.maxScrapeAge : 24,
+          auditData: {
+            siteId: stepResult.siteId,
+            completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
+            auditContext,
+          },
+        };
+
+        // Propagate traceId for cross-worker tracing continuity
+        // This allows the scrape client to maintain the same trace across multiple workers
+        if (context.traceId) {
+          payload.traceId = context.traceId;
+        }
+
+        return payload;
+      },
     },
   };
 

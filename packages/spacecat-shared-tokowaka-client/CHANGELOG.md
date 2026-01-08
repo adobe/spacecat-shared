@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.4...@adobe/spacecat-shared-tokowaka-client-v1.4.5) (2026-01-07)
+
+
+### Bug Fixes
+
+* fetch api key from s3 and fix invalidation sequence ([#1251](https://github.com/adobe/spacecat-shared/issues/1251)) ([fe66bd6](https://github.com/adobe/spacecat-shared/commit/fe66bd6732dc200ab4df27babc1e0831f6187271))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.3...@adobe/spacecat-shared-tokowaka-client-v1.4.4) (2026-01-05)
+
+
+### Bug Fixes
+
+* allow replaceWith and appendChild in tokowaka generic patch ([#1245](https://github.com/adobe/spacecat-shared/issues/1245)) ([dcb1beb](https://github.com/adobe/spacecat-shared/commit/dcb1beb8e9b7b176406cfebbc5ae6a53ea0f17f4))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.2...@adobe/spacecat-shared-tokowaka-client-v1.4.3) (2025-12-12)
+
+
+### Bug Fixes
+
+* revert using preview key in Edge Preview API ([#1244](https://github.com/adobe/spacecat-shared/issues/1244)) ([8ac3ff6](https://github.com/adobe/spacecat-shared/commit/8ac3ff6b397a2235f1df4fffa6918f6fe6dc107d)), closes [adobe/spacecat-shared#1228](https://github.com/adobe/spacecat-shared/issues/1228)
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.1...@adobe/spacecat-shared-tokowaka-client-v1.4.2) (2025-12-12)
+
+
+### Bug Fixes
+
+* use preview key instead of site api key in Edge Preview API ([#1228](https://github.com/adobe/spacecat-shared/issues/1228)) ([8e0c1a9](https://github.com/adobe/spacecat-shared/commit/8e0c1a9c228a740de66c29bf2480042d29aa88a6))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.0...@adobe/spacecat-shared-tokowaka-client-v1.4.1) (2025-12-12)
 
 

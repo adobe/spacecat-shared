@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.93.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.92.1...@adobe/spacecat-shared-data-access-v2.93.0) (2026-01-08)
+
+
+### Features
+
+* propagate traceId across workers for cross-worker tracing ([#1247](https://github.com/adobe/spacecat-shared/issues/1247)) ([f7d194d](https://github.com/adobe/spacecat-shared/commit/f7d194d2a8d23426c9dd66aae33f1118d226e827))
+
+# [@adobe/spacecat-shared-data-access-v2.92.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.92.0...@adobe/spacecat-shared-data-access-v2.92.1) (2026-01-07)
+
+
+### Bug Fixes
+
+* fetch api key from s3 and fix invalidation sequence ([#1251](https://github.com/adobe/spacecat-shared/issues/1251)) ([fe66bd6](https://github.com/adobe/spacecat-shared/commit/fe66bd6732dc200ab4df27babc1e0831f6187271))
+
 # [@adobe/spacecat-shared-data-access-v2.92.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.91.0...@adobe/spacecat-shared-data-access-v2.92.0) (2025-12-11)
 
 

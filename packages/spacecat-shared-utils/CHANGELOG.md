@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.87.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.86.0...@adobe/spacecat-shared-utils-v1.87.0) (2026-01-08)
+
+
+### Features
+
+* propagate traceId across workers for cross-worker tracing ([#1247](https://github.com/adobe/spacecat-shared/issues/1247)) ([f7d194d](https://github.com/adobe/spacecat-shared/commit/f7d194d2a8d23426c9dd66aae33f1118d226e827))
+
+# [@adobe/spacecat-shared-utils-v1.86.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.2...@adobe/spacecat-shared-utils-v1.86.0) (2025-12-12)
+
+
+### Features
+
+* add detection for Akamai, Fastly, and CloudFront ([#1238](https://github.com/adobe/spacecat-shared/issues/1238)) ([3f7aad9](https://github.com/adobe/spacecat-shared/commit/3f7aad96fbc823b2e9d59541a71ba3b4e6d315e8))
+
 # [@adobe/spacecat-shared-utils-v1.85.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.1...@adobe/spacecat-shared-utils-v1.85.2) (2025-12-11)
 
 

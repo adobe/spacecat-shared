@@ -11,6 +11,7 @@
  */
 
 import isEmail from 'validator/lib/isEmail.js';
+import { parse } from 'tldts';
 
 // Precompile regular expressions
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
@@ -199,6 +200,53 @@ function isValidUrl(urlString) {
 }
 
 /**
+ * Validates whether the given string is a valid BaseURL with http or https protocol.
+ * Validates that the URL is clean: no explicit ports, hash fragments, or query parameters.
+ * Paths are allowed.
+ *
+ * @param {string} baseUrlString - The string to validate.
+ * @returns {boolean} True if the given string validates successfully.
+ */
+function isValidBaseUrl(baseUrlString) {
+  try {
+    let url = baseUrlString.trim();
+
+    // reject control characters (LF, CR, etc.)
+    if ([...url].some((c) => {
+      const code = c.charCodeAt(0);
+      return code < 32 || code === 127;
+    })) return false;
+
+    const hasProtocol = /^[a-z][a-z0-9+\-.]*:\/\//i.test(url);
+    if (!hasProtocol) {
+      url = `https://${url}`;
+    }
+
+    const urlObj = new URL(url);
+
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') return false;
+    if (urlObj.search || urlObj.hash || urlObj.port) return false;
+    if (urlObj.username || urlObj.password) return false;
+    if (urlObj.pathname.includes('..') || urlObj.pathname.includes('//')) return false;
+
+    // ensure the hostname is a valid registrable domain and not an IP
+    const domain = parse(urlObj.hostname, { allowPrivateDomains: true });
+    if (!domain.domain || domain.isIp) return false;
+    if (!domain.isIcann && !domain.isPrivate) return false;
+
+    // validate each label for length and allowed characters
+    for (const label of urlObj.hostname.split('.')) {
+      if (label.length === 0 || label.length > 63) return false;
+      if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label)) return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validates whether the given string is a valid UUID.
  * @param {string} uuid - The string to validate.
  * @return {boolean} True if the given string is a valid UUID.
@@ -335,6 +383,7 @@ export {
   isValidDate,
   isValidEmail,
   isValidUrl,
+  isValidBaseUrl,
   isValidUUID,
   isValidIMSOrgId,
   isValidHelixPreviewUrl,

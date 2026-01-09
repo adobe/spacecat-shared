@@ -255,7 +255,7 @@ function analyzeResponse(response, html = null) {
     };
   }
 
-  // Generic 403 Forbidden - definitely blocked (unknown CDN/protection)
+  // Could be blocked by unknown CDN/protection
   if (status === 403) {
     return {
       crawlable: false,
@@ -265,47 +265,8 @@ function analyzeResponse(response, html = null) {
     };
   }
 
-  // Rate limiting
-  if (status === 429) {
-    return {
-      crawlable: false,
-      type: 'rate-limit',
-      confidence: CONFIDENCE_HIGH,
-      reason: 'HTTP 429 Too Many Requests - rate limit exceeded',
-    };
-  }
-
-  // 401 Unauthorized
-  if (status === 401) {
-    return {
-      crawlable: false,
-      type: 'auth-required',
-      confidence: CONFIDENCE_HIGH,
-      reason: 'HTTP 401 Unauthorized - authentication required',
-    };
-  }
-
-  // 406 Not Acceptable (often user-agent rejection)
-  if (status === 406) {
-    return {
-      crawlable: false,
-      type: 'user-agent-rejected',
-      confidence: 0.8,
-      reason: 'HTTP 406 Not Acceptable - likely user-agent rejection',
-    };
-  }
-
-  // Other 4xx client errors
-  if (status >= 400 && status < 500) {
-    return {
-      crawlable: false,
-      type: 'http-error',
-      confidence: 0.6,
-      reason: `HTTP ${status} - client error`,
-    };
-  }
-
-  // Unknown status without known blocker signature
+  // Other client/server errors are not considered bot protection
+  // (429 rate limiting, 401 auth, 406 content negotiation, etc. should be handled separately)
   return {
     crawlable: true,
     type: 'unknown',

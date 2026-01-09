@@ -608,84 +608,28 @@ describe('Bot Blocker Detection', () => {
       expect(result.reason).to.equal('HTTP 403 Forbidden - access denied');
     });
 
-    it('detects 429 Too Many Requests (rate limiting)', () => {
-      const html = '<html><body>Too many requests</body></html>';
-      const headers = {};
+    it('does not treat non-bot-protection status codes (429, 401, 406, 4xx, 5xx) as bot protection', () => {
+      // Test various status codes that are NOT bot protection
+      const testCases = [
+        { status: 401, desc: '401 Unauthorized (auth issue, not bot protection)' },
+        { status: 406, desc: '406 Not Acceptable (content negotiation, not bot protection)' },
+        { status: 418, desc: '418 I\'m a teapot (other 4xx, not bot protection)' },
+        { status: 429, desc: '429 Too Many Requests (rate limiting, should retry)' },
+        { status: 500, desc: '500 Internal Server Error (server issue, not bot protection)' },
+      ];
 
-      const result = analyzeBotProtection({
-        status: 429,
-        headers,
-        html,
+      testCases.forEach(({ status, desc }) => {
+        const result = analyzeBotProtection({
+          status,
+          headers: {},
+          html: '<html><body>Error</body></html>',
+        });
+
+        // These should be treated as crawlable (not bot protection)
+        expect(result.crawlable, `${desc} should be crawlable`).to.be.true;
+        expect(result.type, `${desc} should have type=unknown`).to.equal('unknown');
+        expect(result.confidence, `${desc} should have confidence=0.5`).to.equal(0.5);
       });
-
-      expect(result.crawlable).to.be.false;
-      expect(result.type).to.equal('rate-limit');
-      expect(result.confidence).to.equal(0.99);
-      expect(result.reason).to.equal('HTTP 429 Too Many Requests - rate limit exceeded');
-    });
-
-    it('detects 401 Unauthorized', () => {
-      const html = '<html><body>Unauthorized</body></html>';
-      const headers = {};
-
-      const result = analyzeBotProtection({
-        status: 401,
-        headers,
-        html,
-      });
-
-      expect(result.crawlable).to.be.false;
-      expect(result.type).to.equal('auth-required');
-      expect(result.confidence).to.equal(0.99);
-      expect(result.reason).to.equal('HTTP 401 Unauthorized - authentication required');
-    });
-
-    it('detects 406 Not Acceptable (user-agent rejection)', () => {
-      const html = '<html><body>Not acceptable</body></html>';
-      const headers = {};
-
-      const result = analyzeBotProtection({
-        status: 406,
-        headers,
-        html,
-      });
-
-      expect(result.crawlable).to.be.false;
-      expect(result.type).to.equal('user-agent-rejected');
-      expect(result.confidence).to.equal(0.8);
-      expect(result.reason).to.equal('HTTP 406 Not Acceptable - likely user-agent rejection');
-    });
-
-    it('detects other 4xx client errors', () => {
-      const html = '<html><body>Error</body></html>';
-      const headers = {};
-
-      const result = analyzeBotProtection({
-        status: 418,
-        headers,
-        html,
-      });
-
-      expect(result.crawlable).to.be.false;
-      expect(result.type).to.equal('http-error');
-      expect(result.confidence).to.equal(0.6);
-      expect(result.reason).to.equal('HTTP 418 - client error');
-    });
-
-    it('does not treat 5xx server errors as bot protection', () => {
-      const html = '<html><body>Internal server error</body></html>';
-      const headers = {};
-
-      const result = analyzeBotProtection({
-        status: 500,
-        headers,
-        html,
-      });
-
-      // Server errors are NOT bot protection - they're infrastructure issues
-      expect(result.crawlable).to.be.true;
-      expect(result.type).to.equal('unknown');
-      expect(result.confidence).to.equal(0.5);
     });
 
     it('prioritizes known CDN detection over generic 403', () => {

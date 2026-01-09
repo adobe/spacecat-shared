@@ -350,6 +350,7 @@ export const configSchema = Joi.object({
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),
+    autofixExcludedURLs: Joi.array().items(Joi.string()),
     manualOverwrites: Joi.array().items(Joi.object({
       brokenTargetURL: Joi.string().optional(),
       targetURL: Joi.string().optional(),
@@ -429,6 +430,7 @@ export const Config = (data = {}) => {
   self.getHandlers = () => state.handlers;
   self.getImports = () => state.imports;
   self.getExcludedURLs = (type) => state?.handlers?.[type]?.excludedURLs;
+  self.getAutofixExcludedURLs = (type) => state?.handlers?.[type]?.autofixExcludedURLs;
   self.getManualOverwrites = (type) => state?.handlers?.[type]?.manualOverwrites;
   self.getFixedURLs = (type) => state?.handlers?.[type]?.fixedURLs;
   self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
@@ -617,6 +619,12 @@ export const Config = (data = {}) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = state.handlers[type] || {};
     state.handlers[type].excludedURLs = excludedURLs;
+  };
+
+  self.updateAutofixExcludedURLs = (type, autofixExcludedURLs) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].autofixExcludedURLs = autofixExcludedURLs;
   };
 
   self.updateManualOverwrites = (type, manualOverwrites) => {

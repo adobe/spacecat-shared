@@ -43,8 +43,9 @@ export function logWrapper(fn) {
         markers.push(`[jobId=${jobId}]`);
       }
 
-      // Extract traceId from AWS X-Ray
-      const traceId = getTraceId();
+      // Extract traceId: prioritize context.traceId (from SQS message propagation)
+      // over X-Ray segment (which is new for each Lambda invocation)
+      const traceId = context.traceId || getTraceId();
       if (traceId) {
         markers.push(`[traceId=${traceId}]`);
       }

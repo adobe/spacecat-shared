@@ -255,7 +255,7 @@ function analyzeResponse(response, html = null) {
     };
   }
 
-  // Could be blocked by unknown CDN/protection
+  // Potential CDN/protection blocked the request
   if (status === 403) {
     return {
       crawlable: false,
@@ -265,8 +265,6 @@ function analyzeResponse(response, html = null) {
     };
   }
 
-  // Other client/server errors are not considered bot protection
-  // (429 rate limiting, 401 auth, 406 content negotiation, etc. should be handled separately)
   return {
     crawlable: true,
     type: 'unknown',
@@ -354,10 +352,10 @@ export function analyzeBotProtection({ status, headers, html }) {
     ? headers
     : new Headers(Object.entries(headers || {}));
 
-  const mockResponse = {
+  const response = {
     status,
     headers: headersObj,
   };
 
-  return analyzeResponse(mockResponse, html);
+  return analyzeResponse(response, html);
 }

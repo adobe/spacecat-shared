@@ -260,7 +260,7 @@ class TokowakaClient {
     const metaconfig = {
       siteId,
       apiKeys: [apiKey],
-      tokowakaEnabled: options.tokowakaEnabled || true,
+      tokowakaEnabled: options.tokowakaEnabled ?? true,
       enhancements: true,
     };
 

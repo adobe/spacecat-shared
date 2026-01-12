@@ -456,6 +456,91 @@ describe('TokowakaClient', () => {
     });
   });
 
+  describe('createMetaconfig', () => {
+    it('should create metaconfig with generated API key', async () => {
+      s3Client.send.resolves();
+
+      const result = await client.createMetaconfig('https://example.com/page1', 'site-123');
+
+      expect(result).to.exist;
+      expect(result.siteId).to.equal('site-123');
+      expect(result.apiKeys).to.be.an('array');
+      expect(result.apiKeys).to.have.lengthOf(1);
+      expect(result.apiKeys[0]).to.be.a('string');
+      expect(result.apiKeys[0].length).to.be.greaterThan(0);
+      expect(result.enhancements).to.equal(true);
+      expect(result.tokowakaEnabled).to.equal(true);
+
+      // Verify S3 upload was called
+      expect(s3Client.send).to.have.been.calledOnce;
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Bucket).to.equal('test-bucket');
+      expect(command.input.Key).to.equal('opportunities/example.com/config');
+      expect(command.input.ContentType).to.equal('application/json');
+
+      const uploadedMetaconfig = JSON.parse(command.input.Body);
+      expect(uploadedMetaconfig.siteId).to.equal('site-123');
+      expect(uploadedMetaconfig.apiKeys).to.have.lengthOf(1);
+      expect(uploadedMetaconfig.enhancements).to.equal(true);
+      expect(uploadedMetaconfig.tokowakaEnabled).to.equal(true);
+    });
+
+    it('should handle www subdomain correctly', async () => {
+      s3Client.send.resolves();
+
+      const result = await client.createMetaconfig('https://www.example.com/page1', 'site-123');
+
+      expect(result.siteId).to.equal('site-123');
+      expect(s3Client.send).to.have.been.calledOnce;
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Key).to.equal('opportunities/example.com/config');
+    });
+
+    it('should handle tokowakaEnabled option', async () => {
+      s3Client.send.resolves();
+
+      const result = await client.createMetaconfig('https://example.com/page1', 'site-123', {
+        tokowakaEnabled: false,
+      });
+
+      expect(result.tokowakaEnabled).to.equal(false);
+    });
+
+    it('should throw error if URL is missing', async () => {
+      try {
+        await client.createMetaconfig('', 'site-123');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('URL is required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error if siteId is missing', async () => {
+      try {
+        await client.createMetaconfig('https://example.com', '');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Site ID is required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error on S3 upload failure', async () => {
+      const s3Error = new Error('Access Denied');
+      s3Client.send.rejects(s3Error);
+
+      try {
+        await client.createMetaconfig('https://example.com/page1', 'site-123');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('S3 upload failed');
+        expect(error.status).to.equal(500);
+      }
+    });
+  });
+
   describe('uploadConfig', () => {
     it('should upload config to S3', async () => {
       const config = {

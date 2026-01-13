@@ -106,6 +106,7 @@ describe('Index Exports', () => {
     'GRANULARITY_KEY_BUILDERS',
     'ISSUE_GRANULARITY_MAP',
     'wwwUrlResolver',
+    'TokowakaKVClient',
   ];
 
   it('exports all expected functions', () => {

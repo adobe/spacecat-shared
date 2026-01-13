@@ -17,6 +17,12 @@ export { AUTHORING_TYPES, DELIVERY_TYPES } from './aem.js';
 
 export { OPPORTUNITY_TYPES } from './constants.js';
 
+export const OPPORTUNITY_TAG_MAPPINGS: Record<string, string[]>;
+
+export function getTagsForOpportunityType(opportunityType: string): string[];
+
+export function mergeTagsWithHardcodedTags(opportunityType: string, currentTags?: string[]): string[];
+
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
 

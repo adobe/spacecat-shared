@@ -21,6 +21,7 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
   HEADINGS: 'headings',
   HREFLANG: 'hreflang',
   INVALID_OR_MISSING_METADATA: 'meta-tags',
+  PRODUCT_METATAGS: 'product-metatags',
   NOTFOUND: '404',
   PRERENDER: 'prerender',
   SECURITY_CSP: 'security-csp',
@@ -55,6 +56,12 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
   // Accessibility Sub-types
   A11Y_ASSISTIVE: 'a11y-assistive',
   COLOR_CONTRAST: 'a11y-color-contrast',
+
+  // Content/LLM Opportunities
+  TOC: 'toc',
+  READABILITY: 'readability',
+  SUMMARIZATION: 'summarization',
+  FAQ: 'faq',
 
   // Security
   SECURITY_XSS: 'security-xss',

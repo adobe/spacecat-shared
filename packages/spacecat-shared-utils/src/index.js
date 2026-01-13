@@ -124,3 +124,5 @@ export {
   GRANULARITY_KEY_BUILDERS,
   ISSUE_GRANULARITY_MAP,
 } from './aggregation/aggregation-strategies.js';
+
+export { TokowakaKVClient } from './tokowaka-kv-client.js';

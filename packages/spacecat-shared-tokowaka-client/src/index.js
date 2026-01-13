@@ -261,7 +261,7 @@ class TokowakaClient {
       siteId,
       apiKeys: [apiKey],
       tokowakaEnabled: options.tokowakaEnabled ?? true,
-      enhancements: true,
+      enhancements: false,
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig);

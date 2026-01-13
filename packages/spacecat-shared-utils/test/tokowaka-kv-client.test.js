@@ -205,5 +205,47 @@ describe('TokowakaKVClient', () => {
       expect(result).to.have.lengthOf(0);
       expect(log.warn.called).to.be.true;
     });
+
+    it('should skip keys that return 404', async () => {
+      const client = new TokowakaKVClient(env, log);
+      const keys = ['sugg-deleted', 'sugg-exists'];
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys`)
+        .query({ limit: '100' })
+        .reply(200, { data: keys, meta: {} });
+
+      // First key returns 404
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[0])}`)
+        .reply(404, 'Not Found');
+
+      // Second key exists and is stale
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[1])}`)
+        .reply(200, JSON.stringify({ url: 'https://example.com', status: 'stale' }));
+
+      const result = await client.listAllStaleKeys();
+
+      // Only the existing stale key should be returned
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].suggestionId).to.equal('sugg-exists');
+    });
+
+    it('should throw error when listing keys fails', async () => {
+      const client = new TokowakaKVClient(env, log);
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys`)
+        .query({ limit: '100' })
+        .reply(500, 'Internal Server Error');
+
+      try {
+        await client.listAllStaleKeys();
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to list keys from KV Store');
+      }
+    });
   });
 });

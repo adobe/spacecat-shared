@@ -10,12 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
+import crypto from 'crypto';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { v4 as uuidv4 } from 'uuid';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
 import { mergePatches } from './utils/patch-utils.js';
-import { getTokowakaConfigS3Path, getTokowakaMetaconfigS3Path } from './utils/s3-utils.js';
+import { getTokowakaConfigS3Path, getTokowakaMetaconfigS3Path, getHostName } from './utils/s3-utils.js';
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
@@ -217,6 +219,56 @@ class TokowakaClient {
       this.log.error(`Failed to fetch metaconfig from S3: ${error.message}`, error);
       throw this.#createError(`S3 fetch failed: ${error.message}`, HTTP_INTERNAL_SERVER_ERROR);
     }
+  }
+
+  /**
+   * Generates an API key for Tokowaka based on domain
+   * @param {string} domain - Domain name (e.g., 'example.com')
+   * @returns {string} - Base64 URL-encoded API key
+   * @private
+   */
+  /* eslint-disable class-methods-use-this */
+  #generateApiKey(normalizedHostName) {
+    const uuid = uuidv4();
+    return crypto
+      .createHash('sha256')
+      .update(`${uuid}${normalizedHostName}`)
+      .digest('base64url');
+  }
+
+  /**
+   * Creates and uploads domain-level metaconfig to S3
+   * Generates a new API key and creates the metaconfig structure
+   * @param {string} url - Full URL (used to extract domain)
+   * @param {string} siteId - Site ID
+   * @param {Object} options - Optional configuration
+   * @param {boolean} options.tokowakaEnabled - Whether to enable Tokowaka (default: true)
+   * @returns {Promise<Object>} - Object with s3Path and metaconfig
+   */
+  async createMetaconfig(url, siteId, options = {}) {
+    if (!hasText(url)) {
+      throw this.#createError('URL is required', HTTP_BAD_REQUEST);
+    }
+
+    if (!hasText(siteId)) {
+      throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
+    }
+
+    const normalizedHostName = getHostName(url, this.log);
+    const apiKey = this.#generateApiKey(normalizedHostName);
+
+    const metaconfig = {
+      siteId,
+      apiKeys: [apiKey],
+      tokowakaEnabled: options.tokowakaEnabled ?? true,
+      enhancements: false,
+    };
+
+    const s3Path = await this.uploadMetaconfig(url, metaconfig);
+
+    this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
+
+    return metaconfig;
   }
 
   /**

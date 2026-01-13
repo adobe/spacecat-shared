@@ -109,7 +109,7 @@ export interface SiteConfig {
     handlers?: Record<string, {
       mentions?: Record<string, string[]>;
       excludedURLs?: string[];
-      autofixExcludedURLs?: string[]; // a new function
+      autofixExcludedURLs?: string[];
       manualOverwrites?: Array<{
         brokenTargetURL?: string;
         targetURL?: string;

@@ -57,12 +57,6 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
   A11Y_ASSISTIVE: 'a11y-assistive',
   COLOR_CONTRAST: 'a11y-color-contrast',
 
-  // Content/LLM Opportunities
-  TOC: 'toc',
-  READABILITY: 'readability',
-  SUMMARIZATION: 'summarization',
-  FAQ: 'faq',
-
   // Security
   SECURITY_XSS: 'security-xss',
 

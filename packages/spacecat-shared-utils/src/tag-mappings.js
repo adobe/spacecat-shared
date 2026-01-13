@@ -21,46 +21,38 @@ export const OPPORTUNITY_TAG_MAPPINGS = {
 
   // Traffic Acquisition - SEO
   'meta-tags': ['Meta Tags', 'SEO'],
-  'product-metatags': ['Product Meta Tags', 'SEO'],
   'broken-backlinks': ['Backlinks', 'SEO'],
-  'broken-internal-links': ['Broken Internal Links', 'SEO'],
+  'broken-internal-links': ['Internal links', 'SEO', 'Engagement'],
   sitemap: ['Sitemap', 'SEO'],
   canonical: ['Canonical URLs', 'SEO'],
   hreflang: ['Hreflang', 'SEO'],
   'structured-data': ['Structured Data', 'SEO'],
-  'missing-structured-data': ['Missing Structured Data', 'SEO'],
   'redirect-chains': ['Redirect Chains', 'SEO'],
   headings: ['Headings', 'SEO', 'Engagement'],
 
   // Traffic Acquisition - Paid Media
   'consent-banner': ['Consent Banner', 'Engagement'],
-  'paid-traffic': ['Paid Traffic', 'Engagement'],
+  'no-cta-above-the-fold': ['CTA Optimization', 'Engagement'],
 
   // Compliance & Accessibility
-  'a11y-assistive': ['ARIA Labels', 'Accessibility'],
+  'a11y-assistive': ['Screen Readers', 'Accessibility'],
   'a11y-color-contrast': ['Color Contrast', 'Accessibility', 'Engagement'],
-  readability: ['Readability', 'Accessibility', 'Engagement'],
   'alt-text': ['Alt-Text', 'Accessibility', 'SEO'],
+
+  // Compliance & Accessibility
   'form-accessibility': ['Form Accessibility', 'Accessibility', 'Engagement'],
 
   // Engagement & Conversion
   'high-organic-low-ctr': ['Low CTR', 'Engagement'],
   'high-page-views-low-form-views': ['Form Visibility', 'Engagement'],
   'high-page-views-low-form-nav': ['Form Placement', 'Engagement'],
-  'high-form-views-low-conversions': ['Form Conversion', 'Conversion'],
-  'no-cta-above-the-fold': ['CTA Optimization', 'Engagement'],
+  'high-form-views-low-conversions': ['Form CTR', 'Conversion'],
 
   // Security
-  'security-vulnerabilities': ['Security Vulnerabilities', 'Security'],
+  'security-vulnerabilities': ['3rd Party Libraries', 'Security'],
   'security-permissions': ['Permission Settings', 'Security'],
   'security-permissions-redundant': ['Permission Settings', 'Security'],
   'security-xss': ['Cross Site Scripting', 'Security'],
-  'security-csp': ['Content Security Policy', 'Security'],
-
-  // AI & Content
-  summarization: ['Summarization', 'AI', 'Content'],
-  faq: ['FAQ', 'AI', 'Content'],
-  toc: ['Table of Contents', 'Content', 'Engagement'],
 };
 
 /**

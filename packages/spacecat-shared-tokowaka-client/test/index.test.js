@@ -498,41 +498,6 @@ describe('TokowakaClient', () => {
       expect(result).to.have.property('enhancements', false);
     });
 
-    it('should create metaconfig with enhancements set to true', async () => {
-      const siteId = 'site-123';
-      const url = 'https://example.com';
-
-      const result = await client.createMetaconfig(url, siteId, { enhancements: true });
-
-      expect(result).to.have.property('enhancements', true);
-      expect(result).to.have.property('tokowakaEnabled', true);
-      expect(result.apiKeys).to.have.lengthOf(1);
-    });
-
-    it('should create metaconfig with enhancements set to false explicitly', async () => {
-      const siteId = 'site-123';
-      const url = 'https://example.com';
-
-      const result = await client.createMetaconfig(url, siteId, { enhancements: false });
-
-      expect(result).to.have.property('enhancements', false);
-      expect(result).to.have.property('tokowakaEnabled', true);
-    });
-
-    it('should create metaconfig with both tokowakaEnabled and enhancements set', async () => {
-      const siteId = 'site-123';
-      const url = 'https://example.com';
-
-      const result = await client.createMetaconfig(url, siteId, {
-        tokowakaEnabled: false,
-        enhancements: true,
-      });
-
-      expect(result).to.have.property('tokowakaEnabled', false);
-      expect(result).to.have.property('enhancements', true);
-      expect(result.apiKeys).to.have.lengthOf(1);
-    });
-
     it('should throw error if URL is missing', async () => {
       try {
         await client.createMetaconfig('', 'site-123');

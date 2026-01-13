@@ -243,7 +243,6 @@ class TokowakaClient {
    * @param {string} siteId - Site ID
    * @param {Object} options - Optional configuration
    * @param {boolean} options.tokowakaEnabled - Whether to enable Tokowaka (default: true)
-   * @param {boolean} options.enhancements - Whether to enable enhancements (default: false)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
   async createMetaconfig(url, siteId, options = {}) {
@@ -262,7 +261,7 @@ class TokowakaClient {
       siteId,
       apiKeys: [apiKey],
       tokowakaEnabled: options.tokowakaEnabled ?? true,
-      enhancements: options.enhancements ?? false,
+      enhancements: false,
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig);

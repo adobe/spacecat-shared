@@ -17,6 +17,7 @@ import * as allExports from '../src/index.js';
 
 describe('Index Exports', () => {
   const expectedExports = [
+    'analyzeBotProtection',
     'arrayEquals',
     'composeAuditURL',
     'composeBaseURL',
@@ -66,6 +67,9 @@ describe('Index Exports', () => {
     'getHighPageViewsLowFormViewsMetrics',
     'getHighPageViewsLowFormCtrMetrics',
     'FORMS_AUDIT_INTERVAL',
+    'getSpacecatBotIps',
+    'formatAllowlistMessage',
+    'SPACECAT_BOT_USER_AGENT',
     'SPACECAT_USER_AGENT',
     'isAWSLambda',
     'instrumentAWSClient',

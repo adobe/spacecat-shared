@@ -30,7 +30,85 @@ const CONFIDENCE_MEDIUM = 0.95;
 const CONFIDENCE_ABSOLUTE = 1.0;
 const DEFAULT_TIMEOUT = 5000;
 
-function analyzeResponse(response) {
+/**
+ * SpaceCat bot identification constants
+ */
+export const SPACECAT_BOT_USER_AGENT = 'Spacecat/1.0';
+
+/**
+ * Gets SpaceCat bot IPs from environment variable
+ * @param {string} ipsString - Comma-separated IPs (from env/secrets) - REQUIRED
+ * @returns {Array<string>} Array of IP addresses
+ * @throws {Error} If ipsString is not provided
+ */
+export function getSpacecatBotIps(ipsString) {
+  if (!ipsString) {
+    throw new Error('SPACECAT_BOT_IPS environment variable is required but not set');
+  }
+
+  return ipsString.split(',').map((ip) => ip.trim()).filter((ip) => ip);
+}
+
+/**
+ * Formats allowlist message with current bot IPs
+ * @param {string} botIps - Comma-separated IPs from secrets - REQUIRED
+ * @returns {object} Formatted message with IPs and user-agent
+ * @throws {Error} If botIps is not provided
+ */
+export function formatAllowlistMessage(botIps) {
+  const ips = getSpacecatBotIps(botIps);
+
+  return {
+    title: 'To allowlist SpaceCat bot:',
+    ips,
+    userAgent: SPACECAT_BOT_USER_AGENT,
+  };
+}
+
+/**
+ * HTML patterns for detecting challenge pages
+ */
+const CHALLENGE_PATTERNS = {
+  cloudflare: [
+    /Checking your browser/i,
+    /Just a moment\.\.\./i,
+    /Verifying you are human/i,
+    /Please wait.*CloudFlare/i,
+    /cf-turnstile/i,
+    /challenge-platform/i,
+    /cf-chl-widget/i, // Cloudflare challenge widget
+    /ray\s*id.*cloudflare/i, // Cloudflare Ray ID in error pages
+    /__cf_chl_tk/i, // Cloudflare challenge token
+    /cloudflare.*security/i,
+    /attention required.*cloudflare/i,
+  ],
+  imperva: [
+    /_Incapsula_Resource/i,
+    /Incapsula incident ID/i,
+    /incap_ses/i, // Imperva session cookie
+    /visid_incap/i, // Imperva visitor ID
+  ],
+  akamai: [
+    /Access Denied.*Akamai/i,
+    /Reference.*Akamai/i,
+  ],
+  general: [
+    /captcha/i,
+    /human verification/i,
+    /recaptcha/i,
+    /hcaptcha/i,
+    /datadome/i,
+    /dd-request-id/i,
+  ],
+};
+
+/**
+ * Analyzes response for bot protection indicators
+ * @param {Object} response - Response object with status and headers
+ * @param {string} [html] - Optional HTML content for deeper analysis
+ * @returns {Object} Detection result
+ */
+function analyzeResponse(response, html = null) {
   const { status, headers } = response;
 
   // Check for CDN/blocker infrastructure presence (lazy evaluation for performance)
@@ -44,6 +122,12 @@ function analyzeResponse(response) {
   const hasCloudFront = () => headers.get('x-amz-cf-id')
     || headers.get('x-amz-cf-pop')
     || headers.get('via')?.includes('CloudFront');
+
+  // Check HTML content for challenge page patterns (if HTML provided)
+  const htmlHasChallenge = (patterns) => {
+    if (!html) return false;
+    return patterns.some((pattern) => pattern.test(html));
+  };
 
   // Active blocking (403 status with known blocker)
   if (status === 403 && hasCloudflare()) {
@@ -88,6 +172,16 @@ function analyzeResponse(response) {
 
   // Success with known infrastructure present (infrastructure detected but allowing requests)
   if (status === 200 && hasCloudflare()) {
+    // Check if HTML contains challenge page (even though status is 200)
+    if (htmlHasChallenge(CHALLENGE_PATTERNS.cloudflare)) {
+      return {
+        crawlable: false,
+        type: 'cloudflare',
+        confidence: CONFIDENCE_HIGH,
+        reason: 'Challenge page detected despite 200 status',
+      };
+    }
+
     return {
       crawlable: true,
       type: 'cloudflare-allowed',
@@ -96,6 +190,14 @@ function analyzeResponse(response) {
   }
 
   if (status === 200 && hasImperva()) {
+    if (htmlHasChallenge(CHALLENGE_PATTERNS.imperva)) {
+      return {
+        crawlable: false,
+        type: 'imperva',
+        confidence: CONFIDENCE_HIGH,
+        reason: 'Challenge page detected despite 200 status',
+      };
+    }
     return {
       crawlable: true,
       type: 'imperva-allowed',
@@ -104,6 +206,14 @@ function analyzeResponse(response) {
   }
 
   if (status === 200 && hasAkamai()) {
+    if (htmlHasChallenge(CHALLENGE_PATTERNS.akamai)) {
+      return {
+        crawlable: false,
+        type: 'akamai',
+        confidence: CONFIDENCE_HIGH,
+        reason: 'Challenge page detected despite 200 status',
+      };
+    }
     return {
       crawlable: true,
       type: 'akamai-allowed',
@@ -129,6 +239,15 @@ function analyzeResponse(response) {
 
   // Success with no known infrastructure
   if (status === 200) {
+    // Still check for generic challenge patterns
+    if (htmlHasChallenge(CHALLENGE_PATTERNS.general)) {
+      return {
+        crawlable: false,
+        type: 'unknown',
+        confidence: 0.7,
+        reason: 'Generic challenge patterns detected',
+      };
+    }
     return {
       crawlable: true,
       type: 'none',
@@ -136,7 +255,16 @@ function analyzeResponse(response) {
     };
   }
 
-  // Unknown status without known blocker signature
+  // Potential CDN/protection blocked the request
+  if (status === 403) {
+    return {
+      crawlable: false,
+      type: 'unknown',
+      confidence: 0.7,
+      reason: 'HTTP 403 Forbidden - access denied',
+    };
+  }
+
   return {
     crawlable: true,
     type: 'unknown',
@@ -206,4 +334,28 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT }) {
   } catch (error) {
     return analyzeError(error);
   }
+}
+
+/**
+ * Analyzes already-fetched response data for bot protection.
+ * Used by content scraper to analyze Puppeteer results without making another request.
+ *
+ * @param {Object} data - Response data to analyze
+ * @param {number} data.status - HTTP status code
+ * @param {Object} data.headers - Response headers (plain object or Headers object)
+ * @param {string} [data.html] - Optional HTML content for challenge page detection
+ * @returns {Object} Detection result (same format as detectBotBlocker)
+ */
+export function analyzeBotProtection({ status, headers, html }) {
+  // Convert headers to Headers object if plain object
+  const headersObj = headers instanceof Headers
+    ? headers
+    : new Headers(Object.entries(headers || {}));
+
+  const response = {
+    status,
+    headers: headersObj,
+  };
+
+  return analyzeResponse(response, html);
 }

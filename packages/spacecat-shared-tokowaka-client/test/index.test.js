@@ -1030,6 +1030,161 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions[0].suggestion.getId()).to.equal('sugg-2');
     });
 
+    it('should update metaconfig patches field with deployed endpoints', async () => {
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'Page 1 Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page2',
+            recommendedAction: 'Page 2 Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      // Verify uploadMetaconfig was called to update the metaconfig
+      expect(client.uploadMetaconfig).to.have.been.called;
+      // Check that the last call included the patches field
+      const { lastCall } = client.uploadMetaconfig;
+      expect(lastCall.args[1]).to.have.property('patches');
+      expect(lastCall.args[1].patches).to.deep.equal({
+        '/page1': true,
+        '/page2': true,
+      });
+    });
+
+    it('should add to existing patches in metaconfig when deploying new endpoints', async () => {
+      // Set up metaconfig with existing patches
+      // Reset the stub to provide consistent behavior
+      client.fetchMetaconfig.reset();
+      client.fetchMetaconfig.resolves({
+        siteId: 'site-123',
+        prerender: true,
+        patches: {
+          '/existing-page': true,
+        },
+      });
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/new-page',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+      ];
+
+      await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      // Verify the updated metaconfig includes both existing and new patches
+      const { lastCall } = client.uploadMetaconfig;
+      expect(lastCall.args[1].patches).to.deep.equal({
+        '/existing-page': true,
+        '/new-page': true,
+      });
+    });
+
+    it('should throw error when metaconfig update fails', async () => {
+      // Make uploadMetaconfig fail during the update
+      client.uploadMetaconfig.rejects(new Error('S3 upload error'));
+
+      try {
+        await client.deploySuggestions(
+          mockSite,
+          mockOpportunity,
+          mockSuggestions,
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to update metaconfig with deployed paths');
+        expect(error.status).to.equal(500);
+      }
+    });
+
+    it('should return early when no eligible suggestions to deploy', async () => {
+      // All suggestions are ineligible
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-missing', // Not eligible
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      // No suggestions deployed - returns early before metaconfig check
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(1);
+      // fetchMetaconfig should not be called at all (returns before that point)
+      expect(client.fetchMetaconfig).to.not.have.been.called;
+      // uploadMetaconfig should not be called at all
+      expect(client.uploadMetaconfig).to.not.have.been.called;
+    });
+
+    it('should not update metaconfig when all URLs fail to generate configs', async () => {
+      // Stub generateConfig to return null (no config generated)
+      sinon.stub(client, 'generateConfig').returns(null);
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      // Suggestions are marked as succeeded (eligible) but no configs uploaded
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.s3Paths).to.have.length(0); // No configs uploaded
+      // fetchMetaconfig called once for initial check, but not for update
+      // since no URLs were actually deployed (deployedUrls is empty)
+      expect(client.fetchMetaconfig).to.have.been.calledOnce;
+      // uploadMetaconfig should not be called at all
+      expect(client.uploadMetaconfig).to.not.have.been.called;
+    });
+
     it('should skip URL when generateConfig returns no patches', async () => {
       // Stub mapper to return empty patches for the first call, normal for subsequent calls
       const mapper = client.mapperRegistry.getMapper('headings');

@@ -17,7 +17,12 @@ import { v4 as uuidv4 } from 'uuid';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
 import { mergePatches } from './utils/patch-utils.js';
-import { getTokowakaConfigS3Path, getTokowakaMetaconfigS3Path, getHostName } from './utils/s3-utils.js';
+import {
+  getTokowakaConfigS3Path,
+  getTokowakaMetaconfigS3Path,
+  getHostName,
+  normalizePath,
+} from './utils/s3-utils.js';
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
@@ -92,6 +97,44 @@ class TokowakaClient {
     const error = Object.assign(new Error(message), { status });
     this.log.error(error.message);
     return error;
+  }
+
+  /**
+   * Updates the metaconfig with deployed endpoint paths
+   * @param {Object} metaconfig - Existing metaconfig object
+   * @param {Array<string>} deployedUrls - Array of successfully deployed URLs
+   * @param {string} baseUrl - Base URL for uploading metaconfig
+   * @returns {Promise<void>}
+   * @private
+   */
+  async #updateMetaconfigWithDeployedPaths(metaconfig, deployedUrls, baseUrl) {
+    if (!Array.isArray(deployedUrls) || deployedUrls.length === 0) {
+      return;
+    }
+
+    try {
+      // Initialize patches field if it doesn't exist
+      const updatedMetaconfig = {
+        ...metaconfig,
+        patches: { ...(metaconfig.patches || {}) },
+      };
+
+      // Extract normalized paths from deployed URLs and add to patches object
+      deployedUrls.forEach((url) => {
+        const urlObj = new URL(url);
+        const normalizedPath = normalizePath(urlObj.pathname);
+        updatedMetaconfig.patches[normalizedPath] = true;
+      });
+
+      await this.uploadMetaconfig(baseUrl, updatedMetaconfig);
+      this.log.info(`Updated metaconfig with ${deployedUrls.length} deployed endpoint(s)`);
+    } catch (error) {
+      this.log.error(`Failed to update metaconfig with deployed paths: ${error.message}`, error);
+      throw this.#createError(
+        `Failed to update metaconfig with deployed paths: ${error.message}`,
+        HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**
@@ -596,6 +639,9 @@ class TokowakaClient {
     }
 
     this.log.info(`Uploaded Tokowaka configs for ${s3Paths.length} URLs`);
+
+    // Update metaconfig with deployed paths
+    await this.#updateMetaconfigWithDeployedPaths(metaconfig, deployedUrls, baseURL);
 
     // Invalidate CDN cache for all deployed URLs at once
     const cdnInvalidations = await this.invalidateCdnCache({ urls: deployedUrls });

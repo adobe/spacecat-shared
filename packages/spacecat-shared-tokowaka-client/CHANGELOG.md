@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.6...@adobe/spacecat-shared-tokowaka-client-v1.4.7) (2026-01-14)
+
+
+### Bug Fixes
+
+* update tokowaka s3 config with patches ([#1263](https://github.com/adobe/spacecat-shared/issues/1263)) ([59605e9](https://github.com/adobe/spacecat-shared/commit/59605e9b75b7289029bd14e1832e594ea565296d))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.4.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.5...@adobe/spacecat-shared-tokowaka-client-v1.4.6) (2026-01-13)
 
 

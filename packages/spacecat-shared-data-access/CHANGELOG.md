@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.94.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.93.0...@adobe/spacecat-shared-data-access-v2.94.0) (2026-01-15)
+
+
+### Features
+
+* add TokowakaKVClient for fetching stale suggestions from edge o… ([#1262](https://github.com/adobe/spacecat-shared/issues/1262)) ([e8d440b](https://github.com/adobe/spacecat-shared/commit/e8d440bcc462419b4c82d3415f3a83dfde5195f1))
+
 # [@adobe/spacecat-shared-data-access-v2.93.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.92.1...@adobe/spacecat-shared-data-access-v2.93.0) (2026-01-08)
 
 

@@ -126,7 +126,11 @@ export class TokowakaKVClient {
         // eslint-disable-next-line no-await-in-loop
         const value = await this.#getValue(keyName);
 
-        if (value?.status === 'stale' && hasText(keyName)) {
+        const normalizedStatus = typeof value?.status === 'string'
+          ? value.status.trim().toLowerCase()
+          : '';
+
+        if (normalizedStatus === 'stale' && hasText(keyName)) {
           staleEntries.push({
             key: keyName,
             suggestionId: keyName,

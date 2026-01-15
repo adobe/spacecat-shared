@@ -10,23 +10,26 @@
  * governing permissions and limitations under the License.
  */
 
-import { tracingFetch as fetch } from './tracing-fetch.js';
-import { hasText, isNonEmptyArray } from './functions.js';
+import {
+  tracingFetch as fetch,
+  hasText,
+  isNonEmptyArray,
+} from '@adobe/spacecat-shared-utils';
 
 const FASTLY_KV_API_BASE = 'https://api.fastly.com/resources/stores/kv';
 const DEFAULT_PAGE_SIZE = 100;
 const DEFAULT_TIMEOUT = 30000;
 
 /**
- * Client for interacting with Tokowaka Edge Optimization Fastly KV Store.
+ * Client for interacting with Fastly KV Store used by Tokowaka.
  * Used to fetch stale suggestion IDs for cleanup.
  *
  * Key format: `${suggestionId}`
  * Value format: { url: string, status: 'stale' | 'live' }
  */
-export class TokowakaKVClient {
+export class FastlyKVClient {
   /**
-   * Creates a new TokowakaKVClient instance.
+   * Creates a new FastlyKVClient instance.
    * @param {object} env - Environment variables containing FASTLY_KV_STORE_ID and FASTLY_API_TOKEN
    * @param {object} log - Logger instance
    */
@@ -162,7 +165,7 @@ export class TokowakaKVClient {
     let cursor = null;
     let pageCount = 0;
 
-    this.log.info('Starting to fetch stale keys from Tokowaka KV Store');
+    this.log.info('Starting to fetch stale keys from Fastly KV Store');
 
     do {
       // eslint-disable-next-line no-await-in-loop
@@ -175,7 +178,9 @@ export class TokowakaKVClient {
       cursor = result.cursor;
       pageCount += 1;
 
-      this.log.debug(`Fetched page ${pageCount}, found ${result.keys.length} stale keys, total: ${allStaleKeys.length}`);
+      this.log.debug(
+        `Fetched page ${pageCount}, found ${result.keys.length} stale keys, total: ${allStaleKeys.length}`,
+      );
 
       if (pageCount >= maxPages) {
         this.log.warn(`Reached maximum page limit (${maxPages}), stopping pagination`);
@@ -189,4 +194,4 @@ export class TokowakaKVClient {
   }
 }
 
-export default TokowakaKVClient;
+export default FastlyKVClient;

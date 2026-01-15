@@ -20,6 +20,8 @@ import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/su
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
 
+export { FastlyKVClient } from './fastly-kv-client.js';
+
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;

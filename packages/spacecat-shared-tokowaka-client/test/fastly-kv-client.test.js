@@ -15,9 +15,9 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import nock from 'nock';
-import { TokowakaKVClient } from '../src/tokowaka-kv-client.js';
+import { FastlyKVClient } from '../src/fastly-kv-client.js';
 
-describe('TokowakaKVClient', () => {
+describe('FastlyKVClient', () => {
   let sandbox;
   let log;
   let env;
@@ -47,29 +47,32 @@ describe('TokowakaKVClient', () => {
 
   describe('constructor', () => {
     it('should create a client with valid configuration', () => {
-      const client = new TokowakaKVClient(env, log);
+      const client = new FastlyKVClient(env, log);
       expect(client.storeId).to.equal(TEST_STORE_ID);
       expect(client.apiToken).to.equal(TEST_API_TOKEN);
     });
 
     it('should throw error if FASTLY_KV_STORE_ID is missing', () => {
       delete env.FASTLY_KV_STORE_ID;
-      expect(() => new TokowakaKVClient(env, log)).to.throw('FASTLY_KV_STORE_ID environment variable is required');
+      expect(() => new FastlyKVClient(env, log))
+        .to.throw('FASTLY_KV_STORE_ID environment variable is required');
     });
 
     it('should throw error if FASTLY_API_TOKEN is missing', () => {
       delete env.FASTLY_API_TOKEN;
-      expect(() => new TokowakaKVClient(env, log)).to.throw('FASTLY_API_TOKEN environment variable is required');
+      expect(() => new FastlyKVClient(env, log))
+        .to.throw('FASTLY_API_TOKEN environment variable is required');
     });
 
     it('should throw error if env is null', () => {
-      expect(() => new TokowakaKVClient(null, log)).to.throw('FASTLY_KV_STORE_ID environment variable is required');
+      expect(() => new FastlyKVClient(null, log))
+        .to.throw('FASTLY_KV_STORE_ID environment variable is required');
     });
   });
 
   describe('listAllStaleKeys', () => {
     it('should fetch all pages of stale keys', async () => {
-      const client = new TokowakaKVClient(env, log);
+      const client = new FastlyKVClient(env, log);
       const keysPage1 = ['sugg-1'];
       const keysPage2 = ['sugg-2'];
       const staleValue = { url: 'https://example.com', status: 'stale' };
@@ -102,7 +105,7 @@ describe('TokowakaKVClient', () => {
     });
 
     it('should filter out non-stale keys', async () => {
-      const client = new TokowakaKVClient(env, log);
+      const client = new FastlyKVClient(env, log);
       const keys = ['sugg-stale', 'sugg-live'];
 
       nock(FASTLY_KV_API_BASE)
@@ -126,7 +129,7 @@ describe('TokowakaKVClient', () => {
     });
 
     it('should respect maxPages limit', async () => {
-      const client = new TokowakaKVClient(env, log);
+      const client = new FastlyKVClient(env, log);
       const staleValue = { url: 'https://example.com', status: 'stale' };
 
       // Always return a next cursor to simulate infinite pages
@@ -148,7 +151,7 @@ describe('TokowakaKVClient', () => {
     });
 
     it('should return empty array if no stale keys found', async () => {
-      const client = new TokowakaKVClient(env, log);
+      const client = new FastlyKVClient(env, log);
 
       nock(FASTLY_KV_API_BASE)
         .get(`/${TEST_STORE_ID}/keys`)
@@ -161,7 +164,7 @@ describe('TokowakaKVClient', () => {
     });
 
     it('should continue processing if individual key fetch fails', async () => {
-      const client = new TokowakaKVClient(env, log);
+      const client = new FastlyKVClient(env, log);
       const keys = ['sugg-fail', 'sugg-success'];
 
       nock(FASTLY_KV_API_BASE)
@@ -187,7 +190,7 @@ describe('TokowakaKVClient', () => {
     });
 
     it('should handle non-JSON response gracefully', async () => {
-      const client = new TokowakaKVClient(env, log);
+      const client = new FastlyKVClient(env, log);
       const keys = ['sugg-1'];
 
       nock(FASTLY_KV_API_BASE)
@@ -207,7 +210,7 @@ describe('TokowakaKVClient', () => {
     });
 
     it('should skip keys that return 404', async () => {
-      const client = new TokowakaKVClient(env, log);
+      const client = new FastlyKVClient(env, log);
       const keys = ['sugg-deleted', 'sugg-exists'];
 
       nock(FASTLY_KV_API_BASE)
@@ -233,7 +236,7 @@ describe('TokowakaKVClient', () => {
     });
 
     it('should throw error when listing keys fails', async () => {
-      const client = new TokowakaKVClient(env, log);
+      const client = new FastlyKVClient(env, log);
 
       nock(FASTLY_KV_API_BASE)
         .get(`/${TEST_STORE_ID}/keys`)

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.95.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.94.0...@adobe/spacecat-shared-data-access-v2.95.0) (2026-01-15)
+
+
+### Features
+
+* Add autofixExcludedURLs configuration support for meta-tags opportunity ([#1258](https://github.com/adobe/spacecat-shared/issues/1258)) ([b5c5025](https://github.com/adobe/spacecat-shared/commit/b5c50250bb067799b352d98ab3ee860f3db324b4))
+
 # [@adobe/spacecat-shared-data-access-v2.94.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.93.0...@adobe/spacecat-shared-data-access-v2.94.0) (2026-01-15)
 
 

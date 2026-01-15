@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.6...@adobe/spacecat-shared-tokowaka-client-v1.4.7) (2026-01-14)
+
+
+### Bug Fixes
+
+* update tokowaka s3 config with patches ([#1263](https://github.com/adobe/spacecat-shared/issues/1263)) ([59605e9](https://github.com/adobe/spacecat-shared/commit/59605e9b75b7289029bd14e1832e594ea565296d))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.4.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.5...@adobe/spacecat-shared-tokowaka-client-v1.4.6) (2026-01-13)
+
+
+### Bug Fixes
+
+* add api to create/update s3 edge config ([#1260](https://github.com/adobe/spacecat-shared/issues/1260)) ([b5cfff2](https://github.com/adobe/spacecat-shared/commit/b5cfff29cdb6fa29e1b440f86eb86cf8dd471e43))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.4.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.4...@adobe/spacecat-shared-tokowaka-client-v1.4.5) (2026-01-07)
 
 

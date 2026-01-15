@@ -27,6 +27,7 @@ import {
   IMS_VALIDATE_TOKEN_ENDPOINT,
   IMS_ADMIN_PROFILE_ENDPOINT,
   IMS_ACCOUNT_CLUSTER_ENDPOINT,
+  IMS_ADMIN_ORGANIZATIONS_ENDPOINT,
 } from '../utils.js';
 
 export default class ImsClient extends ImsBaseClient {
@@ -409,5 +410,40 @@ export default class ImsClient extends ImsBaseClient {
     }
 
     return accountClusterResponse.json();
+  }
+
+  /**
+   * Fetches list of organizations for a given IMS ID
+   * @param {string} imsId - The IMS ID of the user
+   * @returns {Promise<Object>} The user's profile data
+   * @throws {Error} If the request fails
+   */
+  async getImsAdminOrganizations(imsId) {
+    if (!hasText(imsId)) {
+      throw new Error('imsId param is required.');
+    }
+
+    const { guid, authSource } = extractGuidAndAuthSource(imsId);
+    const serviceToken = await this.getServiceAccessToken();
+
+    const formBody = `guid=${guid}&auth_src=${authSource}`;
+
+    const response = await fetch(
+      `https://${this.config.imsHost}${IMS_ADMIN_ORGANIZATIONS_ENDPOINT}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Bearer ${serviceToken.access_token}`,
+        },
+        body: formBody,
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`IMS getImsAdminOrganizations request failed with status: ${response.status}`);
+    }
+
+    return response.json();
   }
 }

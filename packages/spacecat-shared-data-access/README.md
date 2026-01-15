@@ -102,7 +102,7 @@ npm install @adobe/spacecat-shared-data-access
 - **opportunityId** (String): ID of the associated opportunity.
 - **createdAt** (String): Timestamp of creation.
 - **updatedAt** (String): Timestamp of the last update.
-- **status** (String): Status of the suggestion (NEW, APPROVED, IN_PROGRESS, SKIPPED, FIXED, ERROR, OUTDATED).
+- **status** (String): Status of the suggestion (NEW, APPROVED, IN_PROGRESS, SKIPPED, FIXED, ERROR, OUTDATED, PENDING_VALIDATION, REJECTED).
 - **type** (String): Type of the suggestion (CODE_CHANGE, CONTENT_UPDATE, REDIRECT_UPDATE, METADATA_UPDATE, AI_INSIGHTS, CONFIG_UPDATE).
 - **rank** (Number): Rank/priority of the suggestion.
 - **data** (Object): Data payload for the suggestion.

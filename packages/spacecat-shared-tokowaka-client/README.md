@@ -64,9 +64,11 @@ Creates a client instance from a context object.
 
 #### `deploySuggestions(site, opportunity, suggestions)`
 
-Generates configuration and uploads to S3 **per URL**. **Automatically fetches existing configuration for each URL and merges** new suggestions with it. Invalidates CDN cache after upload.
+Generates configuration and uploads to S3 **per URL**. **Automatically fetches existing configuration for each URL and merges** new suggestions with it. Invalidates CDN cache after upload. **Updates the metaconfig's `patches` field** to track deployed endpoints.
 
 **Architecture Change:** Creates one S3 file per URL instead of a single file with all URLs. This prevents files from growing too large over time.
+
+**Metaconfig Tracking:** After successful deployment, the method updates the domain-level metaconfig's `patches` object with the normalized paths of all deployed endpoints (e.g., `{ "/products/item": true }`). This provides a centralized registry of all deployed endpoints for the domain.
 
 **Returns:** `Promise<DeploymentResult>` with:
 - `s3Paths` - Array of S3 keys where configs were uploaded (one per URL)
@@ -212,7 +214,17 @@ Domain-level metaconfig (created once per domain, shared by all URLs):
 {
   "siteId": "abc-123",
   "apiKeys": ["tokowaka-api-key-1"],
-  "prerender": true
+  "tokowakaEnabled": true,
+  "enhancements": true,
+  "prerender": {
+    "allowList": [],
+    "denyList": ["/*"]
+  },
+  "patches": {
+    "/products/item": true,
+    "/about": true,
+    "/contact": true
+  }
 }
 ```
 

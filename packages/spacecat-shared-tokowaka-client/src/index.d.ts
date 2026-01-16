@@ -128,6 +128,25 @@ export interface Suggestion {
   getUpdatedAt(): string;
 }
 
+export interface FastlyKVEntry {
+  key: string;
+  suggestionId: string;
+  url: string;
+}
+
+export class FastlyKVClient {
+  constructor(env: {
+    FASTLY_KV_STORE_ID: string;
+    FASTLY_API_TOKEN: string;
+    FASTLY_KV_TIMEOUT?: number;
+  }, log: any);
+
+  listAllStaleKeys(options?: {
+    pageSize?: number;
+    maxPages?: number;
+  }): Promise<FastlyKVEntry[]>;
+}
+
 /**
  * Base class for opportunity mappers
  * Extend this class to create custom mappers for new opportunity types

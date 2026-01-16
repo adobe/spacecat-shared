@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.96.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.95.0...@adobe/spacecat-shared-data-access-v2.96.0) (2026-01-16)
+
+
+### Features
+
+* add ACO product code to Entitlement model ([#1259](https://github.com/adobe/spacecat-shared/issues/1259)) ([256f66a](https://github.com/adobe/spacecat-shared/commit/256f66a3114a5d8a27379a92109fc15c969be8b1))
+
 # [@adobe/spacecat-shared-data-access-v2.95.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.94.0...@adobe/spacecat-shared-data-access-v2.95.0) (2026-01-15)
 
 

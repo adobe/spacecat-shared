@@ -21,6 +21,7 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
   HEADINGS: 'headings',
   HREFLANG: 'hreflang',
   INVALID_OR_MISSING_METADATA: 'meta-tags',
+  PRODUCT_METATAGS: 'product-metatags',
   NOTFOUND: '404',
   PRERENDER: 'prerender',
   SECURITY_CSP: 'security-csp',

@@ -224,8 +224,8 @@ export function getTemporalCondition({
         let currentWeek = week - i;
         let currentYear = year;
         if (currentWeek < 1) {
-          currentWeek = has53CalendarWeeks(currentYear) ? 53 : 52;
           currentYear -= 1;
+          currentWeek = has53CalendarWeeks(currentYear) ? 53 : 52;
         }
         log?.info(`[getTemporalCondition] currentWeek: ${currentWeek}, currentYear: ${currentYear}`);
         conditions.push(getWeekInfo(currentWeek, currentYear).temporalCondition);

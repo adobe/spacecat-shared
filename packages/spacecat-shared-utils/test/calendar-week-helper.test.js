@@ -501,10 +501,6 @@ describe('Utils - temporal helpers', () => {
         expect(c).to.include('(year=2025 AND month=7 AND week=28)');
         // Week 27 spans two months (June and July), uses simplified format
         expect(c).to.include('(year=2025 AND week=27)');
-        // Week 27 spans two months (June and July), uses simplified format
-        expect(c).to.include('(year=2025 AND week=27)');
-        // Week 27 spans two months (June and July), uses simplified format
-        expect(c).to.include('(year=2025 AND week=27)');
         expect(c).to.include('(year=2025 AND month=6 AND week=26)');
       });
 
@@ -528,8 +524,6 @@ describe('Utils - temporal helpers', () => {
         // 2020 has 53 weeks, so it correctly uses week 53 of 2020
         const c = getTemporalCondition({ week: 2, year: 2021, numSeries: 3 });
         expect(c).to.include('(year=2021 AND month=1 AND week=2)');
-        // Week 1 of 2021 does NOT span months, uses full format
-        expect(c).to.include('(year=2021 AND month=1 AND week=1)');
         // Week 1 of 2021 does NOT span months, uses full format
         expect(c).to.include('(year=2021 AND month=1 AND week=1)');
         // Week 53 spans months/years, uses simplified format

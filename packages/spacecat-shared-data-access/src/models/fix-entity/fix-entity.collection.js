@@ -293,8 +293,18 @@ class FixEntityCollection extends BaseCollection {
     // Validate each suggestion update
     for (const update of suggestionUpdates) {
       guardId('suggestionId', update.suggestionId, 'FixEntityCollection');
-      guardId('opportunityId', update.opportunityId, 'FixEntityCollection');
     }
+
+    // Fetch all suggestions first to get their rank values (needed for GSI update)
+    const suggestionEntities = await Promise.all(
+      suggestionUpdates.map((update) => this.electroService.entities.suggestion.get({ suggestionId: update.suggestionId }).go()),
+    );
+
+    // Build enriched update list with rank values
+    const enrichedUpdates = suggestionUpdates.map((update, index) => ({
+      ...update,
+      rank: suggestionEntities[index].data?.rank,
+    }));
 
     try {
       // Perform the transaction with ALL operations atomically
@@ -314,13 +324,14 @@ class FixEntityCollection extends BaseCollection {
 
           // 2. Update each Suggestion status from ERROR to SKIPPED
           // The condition ensures each suggestion must be in ERROR status
-          for (const update of suggestionUpdates) {
-            const { suggestionId } = update;
+          for (const update of enrichedUpdates) {
+            const { suggestionId, rank } = update;
 
             mutations.push(
               suggestion
                 .patch({ suggestionId })
                 .set({ status: 'SKIPPED' })
+                .composite({ rank }) // Provide rank for GSI key formatting
                 .where(({ status }, { eq }) => eq(status, 'ERROR'))
                 .commit({ response: 'all_old' }),
             );
@@ -359,19 +370,9 @@ class FixEntityCollection extends BaseCollection {
       return {
         canceled: transactionResult.canceled,
         data: transactionResult.data,
-        updatedCount: suggestionUpdates.length,
       };
     } catch (error) {
-      this.log.error('Failed to rollback fix entity with suggestion updates', {
-        error: error.message,
-        name: error.name,
-        stack: error.stack,
-        code: error.code,
-        cause: error.cause,
-        fixEntityId,
-        opportunityId,
-        suggestionCount: suggestionUpdates.length,
-      });
+      this.log.error('Failed to rollback fix entity with suggestion updates', error);
 
       if (error instanceof DataAccessError || error instanceof ValidationError) {
         throw error;

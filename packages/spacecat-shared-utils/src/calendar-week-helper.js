@@ -167,11 +167,21 @@ export function getWeekInfo(inputWeek = null, inputYear = null) {
   );
   const month = thursday.getUTCMonth() + 1;
 
+  // If week spans multiple calendar months or years, use simplified condition without month
+  // This avoids ambiguous queries like (year=2025 AND month=12 AND week=1)
+  const spansMultipleMonthsOrYears = triples.length > 1 && (
+    triples.some((t) => t.month !== month) || triples.some((t) => t.year !== effectiveYear)
+  );
+
+  const temporalCondition = spansMultipleMonthsOrYears
+    ? `(year=${effectiveYear} AND week=${effectiveWeek})`
+    : buildWeeklyCondition(triples);
+
   return {
     week: effectiveWeek,
     year: effectiveYear,
     month,
-    temporalCondition: buildWeeklyCondition(triples),
+    temporalCondition,
   };
 }
 

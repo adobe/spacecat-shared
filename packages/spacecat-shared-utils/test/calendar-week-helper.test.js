@@ -289,7 +289,8 @@ describe('Utils - temporal helpers', () => {
     expect(info.week).to.equal(5);
     expect(info.year).to.equal(2025);
     expect(info.month).to.equal(1); // Thursday is Jan 30
-    expect(info.temporalCondition).to.equal('(year=2025 AND month=1 AND week=5) OR (year=2025 AND month=2 AND week=5)');
+    // Weeks spanning multiple months use simplified condition without month
+    expect(info.temporalCondition).to.equal('(year=2025 AND week=5)');
   });
 
   it('getWeekInfo: invalid inputs fallback to last full week (covers helper)', () => {
@@ -327,10 +328,11 @@ describe('Utils - temporal helpers', () => {
     expect(info.temporalCondition).to.equal('(year=2025 AND month=7 AND week=28)');
   });
 
-  it('getWeekInfo: week 53 in 2020 spans two months and sets month=12', () => {
+  it('getWeekInfo: week 53 in 2020 spans two months and years', () => {
     const info = getWeekInfo(53, 2020); // 2020-12-28..2021-01-03
     expect(info.month).to.equal(12);
-    expect(info.temporalCondition).to.equal('(year=2020 AND month=12 AND week=53) OR (year=2021 AND month=1 AND week=53)');
+    // Weeks spanning years use simplified condition without month
+    expect(info.temporalCondition).to.equal('(year=2020 AND week=53)');
   });
 
   it('getMonthInfo: missing year falls back to last full month', () => {
@@ -366,7 +368,8 @@ describe('Utils - temporal helpers', () => {
 
     it('returns condition for valid week/year spanning two months', () => {
       const c = getTemporalCondition({ week: 5, year: 2025 });
-      expect(c).to.equal('(year=2025 AND month=1 AND week=5) OR (year=2025 AND month=2 AND week=5)');
+      // Weeks spanning multiple months use simplified condition
+      expect(c).to.equal('(year=2025 AND week=5)');
     });
 
     it('returns condition for valid month/year', () => {
@@ -399,7 +402,8 @@ describe('Utils - temporal helpers', () => {
 
     it('prefers week when both week and month are provided (two-month week)', () => {
       const c = getTemporalCondition({ week: 5, month: 8, year: 2025 });
-      expect(c).to.equal('(year=2025 AND month=1 AND week=5) OR (year=2025 AND month=2 AND week=5)');
+      // Weeks spanning multiple months use simplified condition
+      expect(c).to.equal('(year=2025 AND week=5)');
     });
 
     it('uses month when week invalid but month valid', () => {
@@ -434,9 +438,10 @@ describe('Utils - temporal helpers', () => {
       expect(c).to.equal('(year=2025 AND month=3)');
     });
 
-    it('week 53 in 2020 returns OR across years and months', () => {
+    it('week 53 in 2020 returns simplified condition', () => {
       const c = getTemporalCondition({ week: 53, year: 2020 });
-      expect(c).to.equal('(year=2020 AND month=12 AND week=53) OR (year=2021 AND month=1 AND week=53)');
+      // Weeks spanning years use simplified condition
+      expect(c).to.equal('(year=2020 AND week=53)');
     });
 
     it('only week without year falls back to last full week', () => {
@@ -494,9 +499,12 @@ describe('Utils - temporal helpers', () => {
       it('returns multiple week conditions when numSeries > 1 with valid week/year', () => {
         const c = getTemporalCondition({ week: 28, year: 2025, numSeries: 3 });
         expect(c).to.include('(year=2025 AND month=7 AND week=28)');
-        // Week 27 spans two months (June and July)
-        expect(c).to.include('(year=2025 AND month=6 AND week=27)');
-        expect(c).to.include('(year=2025 AND month=7 AND week=27)');
+        // Week 27 spans two months (June and July), uses simplified format
+        expect(c).to.include('(year=2025 AND week=27)');
+        // Week 27 spans two months (June and July), uses simplified format
+        expect(c).to.include('(year=2025 AND week=27)');
+        // Week 27 spans two months (June and July), uses simplified format
+        expect(c).to.include('(year=2025 AND week=27)');
         expect(c).to.include('(year=2025 AND month=6 AND week=26)');
       });
 
@@ -509,7 +517,8 @@ describe('Utils - temporal helpers', () => {
         // Week 2 of 2025, going back 3 weeks should include weeks 2, 1, and 52 of 2024
         const c = getTemporalCondition({ week: 2, year: 2025, numSeries: 3 });
         expect(c).to.include('(year=2025 AND month=1 AND week=2)');
-        expect(c).to.include('(year=2025 AND month=1 AND week=1)');
+        // Week 1 spans months, so uses simplified format
+        expect(c).to.include('(year=2025 AND week=1)');
         expect(c).to.include('(year=2024 AND month=12 AND week=52)');
       });
 
@@ -519,8 +528,12 @@ describe('Utils - temporal helpers', () => {
         // 2020 has 53 weeks, so it correctly uses week 53 of 2020
         const c = getTemporalCondition({ week: 2, year: 2021, numSeries: 3 });
         expect(c).to.include('(year=2021 AND month=1 AND week=2)');
+        // Week 1 of 2021 does NOT span months, uses full format
         expect(c).to.include('(year=2021 AND month=1 AND week=1)');
-        expect(c).to.include('(year=2020 AND month=12 AND week=53)');
+        // Week 1 of 2021 does NOT span months, uses full format
+        expect(c).to.include('(year=2021 AND month=1 AND week=1)');
+        // Week 53 spans months/years, uses simplified format
+        expect(c).to.include('(year=2020 AND week=53)');
       });
 
       it('covers has53CalendarWeeks true branch when transitioning from a 53-week year', () => {
@@ -530,9 +543,9 @@ describe('Utils - temporal helpers', () => {
         // This specifically covers line 231 where has53CalendarWeeks returns true
         const c = getTemporalCondition({ week: 1, year: 2020, numSeries: 2 });
         const parts = c.split(' OR ');
-        // Should contain conditions from week 1 of 2020
-        expect(c).to.include('(year=2020 AND month=1 AND week=1)');
-        // Verify it attempted to use week 53 (which validates and falls back)
+        // Should contain conditions from week 1 of 2020 (simplified format since it spans months)
+        expect(c).to.include('(year=2020 AND week=1)');
+        // Verify it attempted to use week 53
         expect(parts.length).to.be.greaterThan(1);
       });
 
@@ -550,7 +563,8 @@ describe('Utils - temporal helpers', () => {
         const c = getTemporalCondition({ week: 1, year: 2025, numSeries: 5 });
         const parts = c.split(' OR ');
         expect(parts.length).to.be.at.least(5);
-        expect(c).to.include('(year=2025 AND month=1 AND week=1)');
+        // Week 1 spans months, uses simplified format
+        expect(c).to.include('(year=2025 AND week=1)');
         // All subsequent weeks will be set to week 52 due to the implementation
         expect(c).to.include('(year=2024 AND month=12 AND week=52)');
       });
@@ -587,7 +601,8 @@ describe('Utils - temporal helpers', () => {
       it('handles week that spans two months with numSeries > 1', () => {
         // Week 5 of 2025 spans January and February
         const c = getTemporalCondition({ week: 5, year: 2025, numSeries: 2 });
-        expect(c).to.include('(year=2025 AND month=1 AND week=5) OR (year=2025 AND month=2 AND week=5)');
+        // Week 5 spans months, uses simplified format
+        expect(c).to.include('(year=2025 AND week=5)');
         expect(c).to.include('(year=2025 AND month=1 AND week=4)');
       });
 

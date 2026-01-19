@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.1...@adobe/spacecat-shared-athena-client-v1.9.2) (2026-01-19)
+
+
+### Bug Fixes
+
+* added function getTrafficTypeAnalysisTemplate to athena client ([#1266](https://github.com/adobe/spacecat-shared/issues/1266)) ([1103cbb](https://github.com/adobe/spacecat-shared/commit/1103cbbc7893fc209d4dc3e07feb64372d8e77e8))
+
 # [@adobe/spacecat-shared-athena-client-v1.9.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.0...@adobe/spacecat-shared-athena-client-v1.9.1) (2025-12-08)
 
 

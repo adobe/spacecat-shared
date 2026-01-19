@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.87.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.87.0...@adobe/spacecat-shared-utils-v1.87.1) (2026-01-19)
+
+
+### Bug Fixes
+
+* wrong temporalCondition when traversing year boundary ([#1267](https://github.com/adobe/spacecat-shared/issues/1267)) ([a44003e](https://github.com/adobe/spacecat-shared/commit/a44003ef683ca4477748532a1b84a4c947b7b9eb))
+
 # [@adobe/spacecat-shared-utils-v1.87.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.86.0...@adobe/spacecat-shared-utils-v1.87.0) (2026-01-08)
 
 

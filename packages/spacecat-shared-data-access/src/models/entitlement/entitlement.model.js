@@ -30,6 +30,7 @@ class Entitlement extends BaseModel {
   static PRODUCT_CODES = {
     LLMO: 'LLMO',
     ASO: 'ASO',
+    ACO: 'ACO',
   };
 
   // add your custom methods or overrides here

@@ -513,15 +513,14 @@ describe('Utils - temporal helpers', () => {
         expect(c).to.include('(year=2024 AND month=12 AND week=52)');
       });
 
-      it('handles year transition when week goes below 1 (checking has53CalendarWeeks on current year)', () => {
+      it('handles year transition when week goes below 1 (checking has53CalendarWeeks on previous year)', () => {
         // Week 2 of 2021, going back 3 weeks
-        // When week becomes 0, it checks has53CalendarWeeks(2021) which is false, so uses 52
-        // Note: This tests the actual implementation behavior where year check happens
-        // before decrement
+        // When week becomes 0, it decrements year to 2020, then checks has53CalendarWeeks(2020)
+        // 2020 has 53 weeks, so it correctly uses week 53 of 2020
         const c = getTemporalCondition({ week: 2, year: 2021, numSeries: 3 });
         expect(c).to.include('(year=2021 AND month=1 AND week=2)');
         expect(c).to.include('(year=2021 AND month=1 AND week=1)');
-        expect(c).to.include('(year=2020 AND month=12 AND week=52)');
+        expect(c).to.include('(year=2020 AND month=12 AND week=53)');
       });
 
       it('covers has53CalendarWeeks true branch when transitioning from a 53-week year', () => {

@@ -174,3 +174,50 @@ export function calculateBothScenarioStats(
   currentHTML: string
 ): Promise<BothScenariosStats>;
 
+/** MARKDOWN DIFF FUNCTIONS */
+interface MarkdownDiffBlock {
+  html: string;
+  text: string;
+  tagName: string;
+}
+
+interface MarkdownDiffOperation {
+  type: "same" | "add" | "del";
+  originalBlock?: MarkdownDiffBlock;
+  currentBlock?: MarkdownDiffBlock;
+}
+
+/**
+ * Diff DOM blocks using LCS algorithm
+ */
+export function diffDOMBlocks(
+  originalBlocks: MarkdownDiffBlock[],
+  currentBlocks: MarkdownDiffBlock[]
+): MarkdownDiffOperation[];
+
+/**
+ * Create markdown table diff from parsed DOM children
+ */
+export function createMarkdownTableDiff(
+  originalChildren: Element[],
+  currentChildren: Element[],
+  $?: unknown
+): { tableHtml: string; counters: string };
+
+/**
+ * Convert HTML to rendered markdown HTML (for display)
+ */
+export function htmlToRenderedMarkdown(
+  html: string,
+  ignoreNavFooter?: boolean
+): Promise<string>;
+
+/**
+ * Generate complete markdown diff with HTML to Markdown conversion
+ */
+export function generateMarkdownDiff(
+  originalHtml: string,
+  currentHtml: string,
+  ignoreNavFooter?: boolean
+): Promise<{ originalRenderedHtml: string; currentRenderedHtml: string }>;
+

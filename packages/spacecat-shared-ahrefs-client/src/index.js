@@ -277,6 +277,8 @@ export default class AhrefsAPIClient {
    * @param {string} [date] - The date for the analysis in YYYY-MM-DD format.
    *                          Defaults to today's date.
    * @param {number} [limit=200] - Maximum number of results to return (max: 1000)
+   * @param {string} [mode='prefix'] - Search mode: 'exact' for exact domain match,
+   *                                   'prefix' for domain and all subpages
    * @returns {Promise<{result: Object, fullAuditRef: string}>} Response object containing:
    *   - result.pages: Array of paid page objects with properties:
    *     - url: The page URL
@@ -291,10 +293,14 @@ export default class AhrefsAPIClient {
    *     - value: The estimated cost of a page's monthly paid search traffic, in USD cents.
    *   - fullAuditRef: Full URL of the API request for reference
    * @example
-   * const result = await client.getPaidPages('example.com', '2025-11-10', 50);
+   * // Using defaults (today's date, limit 200, prefix mode)
+   * const result = await client.getPaidPages('example.com');
+   *
+   * // With custom parameters
+   * const result = await client.getPaidPages('example.com', '2025-11-10', 50, 'exact');
    * console.log(result.result.pages); // Array of paid pages
    */
-  async getPaidPages(url, date = new Date().toISOString().split('T')[0], limit = 200) {
+  async getPaidPages(url, date = new Date().toISOString().split('T')[0], limit = 200, mode = 'prefix') {
     const queryParams = {
       target: url,
       date,
@@ -309,6 +315,7 @@ export default class AhrefsAPIClient {
       ].join(','),
       order_by: 'sum_traffic:desc',
       limit: getLimit(limit, 1000),
+      mode,
       output: 'json',
     };
 

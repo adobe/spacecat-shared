@@ -94,7 +94,7 @@ describe('HTML Utils', () => {
         );
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.equal('Tokowaka API key is required for fetching HTML');
+        expect(error.message).to.equal('Edge Optimize API key is required for fetching HTML');
       }
     });
 
@@ -104,7 +104,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html>Test HTML</html>',
       });
@@ -129,7 +129,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html>Optimized HTML</html>',
       });
@@ -285,7 +285,7 @@ describe('HTML Utils', () => {
       }
     });
 
-    it('should stop retrying when x-tokowaka-cache header is found', async () => {
+    it('should stop retrying when x-edge-optimize-cache header is found', async () => {
       // Warmup succeeds
       fetchStub.onCall(0).resolves({
         ok: true,
@@ -312,7 +312,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html>Cached HTML</html>',
       });
@@ -385,7 +385,7 @@ describe('HTML Utils', () => {
         expect.fail('Should have thrown error');
       } catch (error) {
         expect(error.message).to.include('Failed to fetch original HTML');
-        expect(error.message).to.include('Cache header (x-tokowaka-cache) not found after 2 retries');
+        expect(error.message).to.include('Cache header (x-edge-optimize-cache) not found after 2 retries');
       }
 
       // Should have tried 3 times (initial + 2 retries) plus warmup
@@ -409,7 +409,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html>Cached HTML</html>',
       });

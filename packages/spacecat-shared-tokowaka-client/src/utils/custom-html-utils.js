@@ -25,7 +25,7 @@ function sleep(ms) {
 
 /**
  * Makes an HTTP request with retry logic
- * Retries until max retries are exhausted or x-tokowaka-cache header is present
+ * Retries until max retries are exhausted or x-edge-optimize-cache header is present
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
  * @param {number} maxRetries - Maximum number of retries
@@ -48,10 +48,10 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // Check for x-tokowaka-cache header - if present, stop retrying
-      const cacheHeader = response.headers.get('x-tokowaka-cache');
+      // Check for x-edge-optimize-cache header - if present, stop retrying
+      const cacheHeader = response.headers.get('x-edge-optimize-cache');
       if (cacheHeader) {
-        log.debug(`Cache header found (x-tokowaka-cache: ${cacheHeader}), stopping retry logic`);
+        log.debug(`Cache header found (x-edge-optimize-cache: ${cacheHeader}), stopping retry logic`);
         return response;
       }
 
@@ -65,7 +65,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
       } else {
         // Last attempt without cache header - throw error
         log.error(`Max retries (${maxRetries}) exhausted without cache header`);
-        throw new Error(`Cache header (x-tokowaka-cache) not found after ${maxRetries} retries`);
+        throw new Error(`Cache header (x-edge-optimize-cache) not found after ${maxRetries} retries`);
       }
     } catch (error) {
       log.warn(`Attempt ${attempt} failed for ${fetchType} HTML, error: ${error.message}`);
@@ -86,12 +86,12 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
 }
 
 /**
- * Fetches HTML content from Tokowaka edge with warmup call and retry logic
+ * Fetches HTML content from edge with warmup call and retry logic
  * Makes an initial warmup call, waits, then makes the actual call with retries
  * @param {string} url - Full URL to fetch
- * @param {string} apiKey - Tokowaka API key
+ * @param {string} apiKey - Edge Optimize API key
  * @param {string} forwardedHost - Host to forward in x-forwarded-host header
- * @param {string} tokowakaEdgeUrl - Tokowaka edge URL
+ * @param {string} edgeUrl - Edge URL
  * @param {boolean} isOptimized - Whether to fetch optimized HTML (with preview param)
  * @param {Object} log - Logger instance
  * @param {Object} options - Additional options
@@ -105,7 +105,7 @@ export async function fetchHtmlWithWarmup(
   url,
   apiKey,
   forwardedHost,
-  tokowakaEdgeUrl,
+  edgeUrl,
   log,
   isOptimized = false,
   options = {},
@@ -116,14 +116,14 @@ export async function fetchHtmlWithWarmup(
   }
 
   if (!hasText(apiKey)) {
-    throw new Error('Tokowaka API key is required for fetching HTML');
+    throw new Error('Edge Optimize API key is required for fetching HTML');
   }
 
   if (!hasText(forwardedHost)) {
     throw new Error('Forwarded host is required for fetching HTML');
   }
 
-  if (!hasText(tokowakaEdgeUrl)) {
+  if (!hasText(edgeUrl)) {
     throw new Error('TOKOWAKA_EDGE_URL is not configured');
   }
 
@@ -139,18 +139,18 @@ export async function fetchHtmlWithWarmup(
   // Parse the URL to extract path and construct full URL
   const urlObj = new URL(url);
   const urlPath = urlObj.pathname;
-  let fullUrl = `${tokowakaEdgeUrl}${urlPath}`;
+  let fullUrl = `${edgeUrl}${urlPath}`;
 
   const headers = {
     'x-forwarded-host': forwardedHost,
-    'x-tokowaka-api-key': apiKey,
-    'x-tokowaka-url': urlPath,
+    'x-edge-optimize-api-key': apiKey,
+    'x-edge-optimize-url': urlPath,
   };
 
   if (isOptimized) {
     // Add tokowakaPreview param for optimized HTML
     fullUrl = `${fullUrl}?tokowakaPreview=true`;
-    headers['x-tokowaka-url'] = `${urlPath}?tokowakaPreview=true`;
+    headers['x-edge-optimize-url'] = `${urlPath}?tokowakaPreview=true`;
   }
 
   const fetchOptions = {

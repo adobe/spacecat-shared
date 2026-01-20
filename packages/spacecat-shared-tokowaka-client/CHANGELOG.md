@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.0...@adobe/spacecat-shared-tokowaka-client-v1.5.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* rename tokowaka to edge-optimize in preview api ([#1269](https://github.com/adobe/spacecat-shared/issues/1269)) ([d40caa4](https://github.com/adobe/spacecat-shared/commit/d40caa46d2bb72506e45081a263f4513fce4ce41))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.4.7...@adobe/spacecat-shared-tokowaka-client-v1.5.0) (2026-01-15)
 
 

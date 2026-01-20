@@ -306,7 +306,7 @@ class TokowakaClient {
       siteId,
       apiKeys: [apiKey],
       tokowakaEnabled: options.tokowakaEnabled ?? true,
-      enhancements: false,
+      enhancements: options.enhancements ?? false,
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig);
@@ -810,8 +810,8 @@ class TokowakaClient {
     }
 
     // TOKOWAKA_EDGE_URL is mandatory for preview
-    const tokowakaEdgeUrl = this.env.TOKOWAKA_EDGE_URL;
-    if (!hasText(tokowakaEdgeUrl)) {
+    const edgeUrl = this.env.TOKOWAKA_EDGE_URL;
+    if (!hasText(edgeUrl)) {
       throw this.#createError(
         'TOKOWAKA_EDGE_URL is required for preview functionality',
         HTTP_INTERNAL_SERVER_ERROR,
@@ -931,7 +931,7 @@ class TokowakaClient {
         previewUrl,
         apiKey,
         forwardedHost,
-        tokowakaEdgeUrl,
+        edgeUrl,
         this.log,
         false,
         options,
@@ -941,7 +941,7 @@ class TokowakaClient {
         previewUrl,
         apiKey,
         forwardedHost,
-        tokowakaEdgeUrl,
+        edgeUrl,
         this.log,
         true,
         options,

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.5.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.3...@adobe/spacecat-shared-tokowaka-client-v1.5.4) (2026-01-21)
+
+
+### Bug Fixes
+
+* edge preview api headers handling ([#1276](https://github.com/adobe/spacecat-shared/issues/1276)) ([e2a7ba8](https://github.com/adobe/spacecat-shared/commit/e2a7ba88df77ee7e369d39e623966b5760ac9d12))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.5.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.2...@adobe/spacecat-shared-tokowaka-client-v1.5.3) (2026-01-21)
 
 

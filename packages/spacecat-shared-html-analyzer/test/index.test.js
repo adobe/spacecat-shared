@@ -46,6 +46,20 @@ describe('HTML Visibility Analyzer', () => {
       expect(result.initialText).to.equal('');
       expect(result.finalText.length).to.be.greaterThan(0);
     });
+
+    it('should include noscript in initial HTML and exclude in final HTML', async () => {
+      const initHtml = '<html><body><h1>Title</h1><noscript>Enable JS</noscript><p>Content</p></body></html>';
+      const finHtml = '<html><body><h1>Title</h1><noscript>Enable JS</noscript><p>Content</p><div>Extra</div></body></html>';
+      const result = await analyzeTextComparison(initHtml, finHtml);
+
+      // Initial text should include noscript content
+      expect(result.initialText).to.include('Enable JS');
+      // Final text should NOT include noscript content
+      expect(result.finalText).to.not.include('Enable JS');
+      // Both should have the main content
+      expect(result.initialText).to.include('Title');
+      expect(result.finalText).to.include('Title');
+    });
   });
 
   describe('calculateStats', () => {
@@ -63,6 +77,21 @@ describe('HTML Visibility Analyzer', () => {
       expect(result.wordDiff).to.be.a('number');
       expect(result.contentIncreaseRatio).to.be.a('number');
       expect(result.citationReadability).to.be.a('number');
+    });
+
+    it('should handle noscript elements correctly in word counts', async () => {
+      const originalHtml = '<html><body><h1>Title</h1><noscript>Enable JavaScript</noscript><p>Original content</p></body></html>';
+      const currentHtml = '<html><body><h1>Title</h1><noscript>Enable JavaScript</noscript><p>Original content</p><p>New content</p></body></html>';
+      const result = await calculateStats(originalHtml, currentHtml);
+
+      // Word counts should reflect the includeNoscript behavior
+      // originalText includes noscript (includeNoscript=true):
+      //     "Title Enable JavaScript Original content"
+      // currentText excludes noscript (includeNoscript=false):
+      //     "Title Original content New content"
+      expect(result.wordCountBefore).to.be.greaterThan(0);
+      expect(result.wordCountAfter).to.be.greaterThan(0);
+      expect(result.contentIncreaseRatio).to.be.a('number');
     });
   });
 
@@ -117,6 +146,56 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Content');
       expect(text).to.include('Navigation');
       expect(text).to.include('Footer');
+    });
+
+    it('should remove noscript elements by default', async () => {
+      const html = '<html><body><h1>Title</h1><noscript>Please enable JavaScript</noscript><p>Content</p></body></html>';
+      const text = await stripTagsToText(html);
+
+      expect(text).to.include('Title');
+      expect(text).to.include('Content');
+      expect(text).to.not.include('Please enable JavaScript');
+      expect(text).to.not.include('noscript');
+    });
+
+    it('should remove noscript elements when includeNoscript is false', async () => {
+      const html = '<html><body><h1>Title</h1><noscript>Noscript content</noscript><p>Regular content</p></body></html>';
+      const text = await stripTagsToText(html, true, false);
+
+      expect(text).to.include('Title');
+      expect(text).to.include('Regular content');
+      expect(text).to.not.include('Noscript content');
+    });
+
+    it('should keep noscript elements when includeNoscript is true', async () => {
+      const html = '<html><body><h1>Title</h1><noscript>Noscript fallback</noscript><p>Regular content</p></body></html>';
+      const text = await stripTagsToText(html, true, true);
+
+      expect(text).to.include('Title');
+      expect(text).to.include('Regular content');
+      expect(text).to.include('Noscript fallback');
+    });
+
+    it('should handle multiple noscript elements with includeNoscript', async () => {
+      const html = `<html><body>
+        <h1>Title</h1>
+        <noscript>First noscript</noscript>
+        <p>Content</p>
+        <noscript>Second noscript</noscript>
+      </body></html>`;
+
+      const textWithout = await stripTagsToText(html, true, false);
+      const textWith = await stripTagsToText(html, true, true);
+
+      expect(textWithout).to.include('Title');
+      expect(textWithout).to.include('Content');
+      expect(textWithout).to.not.include('First noscript');
+      expect(textWithout).to.not.include('Second noscript');
+
+      expect(textWith).to.include('Title');
+      expect(textWith).to.include('Content');
+      expect(textWith).to.include('First noscript');
+      expect(textWith).to.include('Second noscript');
     });
   });
 });

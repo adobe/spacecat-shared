@@ -35,3 +35,5 @@ export type * from './suggestion';
 export type * from './report';
 export type * from './trial-user';
 export type * from './trial-user-activity';
+export type * from './sentiment-guideline';
+export type * from './sentiment-topic';

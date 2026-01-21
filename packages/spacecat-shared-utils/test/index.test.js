@@ -90,6 +90,7 @@ describe('Index Exports', () => {
     'OPPORTUNITY_TYPES',
     'getPageEditUrl',
     'llmoConfig',
+    'llmoStrategy',
     'schemas',
     'detectLocale',
     'prettifyLogForwardingConfig',

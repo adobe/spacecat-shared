@@ -84,6 +84,8 @@ export default class AuthInfo {
 
   isAdmin() { return this.profile?.is_admin; }
 
+  isEdgeDeployer() { return this.profile?.is_edge_deployer; }
+
   hasOrganization(orgId) {
     const [id] = orgId.split('@');
     return this.profile?.tenants?.some(

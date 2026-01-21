@@ -182,16 +182,17 @@ function filterNavigationAndFooterCheerio($) {
  * @param {string} htmlContent - Raw HTML content
  * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
  * @param {boolean} returnText - Whether to return text only
+ * @param {boolean} includeNoscript - Whether to include noscript elements
  * @returns {string} Filtered content
  */
-function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
+function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNoscript) {
   const parser = new DOMParser(); // eslint-disable-line no-undef
   const doc = parser.parseFromString(htmlContent, 'text/html');
 
   // Process the entire document to capture JSON-LD in both head and body
   const documentElement = doc.documentElement || doc;
 
-  // Remove script elements except JSON-LD, also remove style, noscript, template
+  // Remove script elements except JSON-LD, also remove style, template
   documentElement.querySelectorAll('script').forEach((n) => {
     // Preserve JSON-LD structured data scripts by converting them to code blocks
     if (n.type === 'application/ld+json') {
@@ -234,7 +235,12 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
     }
     n.remove();
   });
-  documentElement.querySelectorAll('style,noscript,template').forEach((n) => n.remove());
+
+  if (includeNoscript) {
+    documentElement.querySelectorAll('style,template').forEach((n) => n.remove());
+  } else {
+    documentElement.querySelectorAll('noscript,style,template').forEach((n) => n.remove());
+  }
 
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   const mediaSelector = 'img,video,audio,picture,svg,canvas,embed,object,iframe';
@@ -259,9 +265,10 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
  * @param {string} htmlContent - Raw HTML content
  * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
  * @param {boolean} returnText - Whether to return text only
+ * @param {boolean} includeNoscript - Whether to include noscript elements
  * @returns {Promise<string>} Filtered content
  */
-async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
+async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeNoscript) {
   let cheerio;
   try {
     cheerio = await import('cheerio');
@@ -305,7 +312,12 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
       $(this).remove();
     }
   });
-  $('style, noscript, template').remove();
+
+  if (includeNoscript) {
+    $('style, template').remove();
+  } else {
+    $('style, noscript, template').remove();
+  }
 
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   $('img, video, audio, picture, svg, canvas, embed, object, iframe').remove();
@@ -332,28 +344,35 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
  * @param {string} htmlContent - Raw HTML content
  * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
  * @param {boolean} returnText - Whether to return text only (true) or filtered HTML (false)
+ * @param {boolean} includeNoscript - Whether to include noscript elements
  * @returns {string|Promise<string>} Filtered content (sync in browser, async in Node.js)
  */
-export function filterHtmlContent(htmlContent, ignoreNavFooter = true, returnText = true) {
+export function filterHtmlContent(
+  htmlContent,
+  ignoreNavFooter = true,
+  returnText = true,
+  includeNoscript = false,
+) {
   if (!htmlContent) return '';
 
   // Browser environment (DOMParser) - works in Chrome extensions too - SYNCHRONOUS
   if (isBrowser()) {
-    return filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText);
+    return filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNoscript);
   }
 
   // Node.js environment (cheerio) - dynamic import to avoid bundling issues - ASYNCHRONOUS
-  return filterHtmlNode(htmlContent, ignoreNavFooter, returnText);
+  return filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeNoscript);
 }
 
 /**
  * Strip HTML tags and return plain text
  * @param {string} htmlContent - Raw HTML content
  * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
+ * @param {boolean} includeNoscript - Whether to include noscript elements
  * @returns {string|Promise<string>} Plain text content (sync in browser, async in Node.js)
  */
-export function stripTagsToText(htmlContent, ignoreNavFooter = true) {
-  return filterHtmlContent(htmlContent, ignoreNavFooter, true);
+export function stripTagsToText(htmlContent, ignoreNavFooter = true, includeNoscript = false) {
+  return filterHtmlContent(htmlContent, ignoreNavFooter, true, includeNoscript);
 }
 
 /**

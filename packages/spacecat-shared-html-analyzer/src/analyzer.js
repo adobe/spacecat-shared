@@ -29,8 +29,8 @@ import { hashDJB2, pct } from './utils.js';
  */
 export async function analyzeTextComparison(initHtml, finHtml, ignoreNavFooter = true) {
   // Handle both sync (browser) and async (Node.js) stripTagsToText
-  const initTextResult = stripTagsToText(initHtml, ignoreNavFooter);
-  const finTextResult = stripTagsToText(finHtml, ignoreNavFooter);
+  const initTextResult = stripTagsToText(initHtml, ignoreNavFooter, true);
+  const finTextResult = stripTagsToText(finHtml, ignoreNavFooter, false);
 
   const initText = await Promise.resolve(initTextResult);
   const finText = await Promise.resolve(finTextResult);
@@ -65,8 +65,8 @@ export async function analyzeTextComparison(initHtml, finHtml, ignoreNavFooter =
  */
 export async function calculateStats(originalHTML, currentHTML, ignoreNavFooter = true) {
   // Handle both sync (browser) and async (Node.js) stripTagsToText
-  const originalTextResult = stripTagsToText(originalHTML, ignoreNavFooter);
-  const currentTextResult = stripTagsToText(currentHTML, ignoreNavFooter);
+  const originalTextResult = stripTagsToText(originalHTML, ignoreNavFooter, true);
+  const currentTextResult = stripTagsToText(currentHTML, ignoreNavFooter, false);
 
   const originalText = await Promise.resolve(originalTextResult);
   const currentText = await Promise.resolve(currentTextResult);

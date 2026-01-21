@@ -598,8 +598,9 @@ describe('TokowakaClient', () => {
       expect(result).to.have.property('siteId', siteId);
       expect(result).to.have.property('apiKeys');
       expect(result.apiKeys).to.deep.equal(['existing-api-key-123']);
-      expect(result).to.have.property('tokowakaEnabled', true);
-      expect(result).to.have.property('enhancements', true);
+      // Should preserve existing metaconfig values when options not provided
+      expect(result).to.have.property('tokowakaEnabled', false);
+      expect(result).to.have.property('enhancements', false);
       expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
       expect(result).to.not.have.property('forceFail');
     });
@@ -611,7 +612,7 @@ describe('TokowakaClient', () => {
       const result = await client.updateMetaconfig(url, siteId, { tokowakaEnabled: false });
 
       expect(result).to.have.property('tokowakaEnabled', false);
-      expect(result).to.have.property('enhancements', true);
+      expect(result).to.have.property('enhancements', false);
       expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
       expect(result).to.not.have.property('forceFail');
     });
@@ -623,8 +624,9 @@ describe('TokowakaClient', () => {
       const result = await client.updateMetaconfig(url, siteId, { tokowakaEnabled: true });
 
       expect(result).to.have.property('tokowakaEnabled', true);
-      expect(result).to.have.property('enhancements', true);
+      expect(result).to.have.property('enhancements', false);
       expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+      expect(result).to.not.have.property('forceFail');
     });
 
     it('should update metaconfig with enhancements set to false', async () => {
@@ -633,9 +635,10 @@ describe('TokowakaClient', () => {
 
       const result = await client.updateMetaconfig(url, siteId, { enhancements: false });
 
-      expect(result).to.have.property('tokowakaEnabled', true);
+      expect(result).to.have.property('tokowakaEnabled', false);
       expect(result).to.have.property('enhancements', false);
       expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+      expect(result).to.not.have.property('forceFail');
     });
 
     it('should update metaconfig with enhancements set to true explicitly', async () => {
@@ -644,9 +647,10 @@ describe('TokowakaClient', () => {
 
       const result = await client.updateMetaconfig(url, siteId, { enhancements: true });
 
-      expect(result).to.have.property('tokowakaEnabled', true);
+      expect(result).to.have.property('tokowakaEnabled', false);
       expect(result).to.have.property('enhancements', true);
       expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+      expect(result).to.not.have.property('forceFail');
     });
 
     it('should override patches when non-empty patches object is provided', async () => {
@@ -708,13 +712,13 @@ describe('TokowakaClient', () => {
       expect(result).to.have.property('forceFail', true);
     });
 
-    it('should not include forceFail when set to false', async () => {
+    it('should include forceFail when set to false', async () => {
       const siteId = 'site-789';
       const url = 'https://example.com';
 
       const result = await client.updateMetaconfig(url, siteId, { forceFail: false });
 
-      expect(result).to.not.have.property('forceFail');
+      expect(result).to.have.property('forceFail', false);
     });
 
     it('should not include forceFail when undefined', async () => {
@@ -724,6 +728,38 @@ describe('TokowakaClient', () => {
       const result = await client.updateMetaconfig(url, siteId);
 
       expect(result).to.not.have.property('forceFail');
+    });
+
+    it('should use forceFail as false when options.forceFail is null and existingMetaconfig has no forceFail', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: null });
+
+      expect(result).to.have.property('forceFail', false);
+    });
+
+    it('should preserve existingMetaconfig forceFail when options.forceFail is null', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: true,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: null });
+
+      expect(result).to.have.property('forceFail', true);
     });
 
     it('should update metaconfig with multiple options', async () => {
@@ -854,6 +890,259 @@ describe('TokowakaClient', () => {
       const result = await client.updateMetaconfig(url, siteId, { patches: singlePatch });
 
       expect(result.patches).to.deep.equal(singlePatch);
+    });
+
+    it('should preserve existing patches when options.patches is null', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { patches: null });
+
+      expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+    });
+
+    it('should preserve tokowakaEnabled=true from existingMetaconfig when options not provided', async () => {
+      const configWithTokowakaEnabled = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: false,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithTokowakaEnabled)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('tokowakaEnabled', true);
+    });
+
+    it('should preserve enhancements=true from existingMetaconfig when options not provided', async () => {
+      const configWithEnhancements = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: true,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithEnhancements)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('enhancements', true);
+    });
+
+    it('should default tokowakaEnabled to true when not in existingMetaconfig or options', async () => {
+      const configWithoutTokowakaEnabled = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        enhancements: false,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithoutTokowakaEnabled)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('tokowakaEnabled', true);
+    });
+
+    it('should default enhancements to true when not in existingMetaconfig or options', async () => {
+      const configWithoutEnhancements = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithoutEnhancements)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('enhancements', true);
+    });
+
+    it('should preserve forceFail=true from existingMetaconfig when options not provided', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: true,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('forceFail', true);
+    });
+
+    it('should override existingMetaconfig forceFail when explicitly set to false in options', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: true,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: false });
+
+      expect(result).to.have.property('forceFail', false);
+    });
+
+    it('should override existingMetaconfig forceFail when explicitly set to true in options', async () => {
+      const configWithoutForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: false,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithoutForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: true });
+
+      expect(result).to.have.property('forceFail', true);
+    });
+
+    it('should preserve forceFail=false from existingMetaconfig when options not provided', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: false,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('forceFail', false);
+    });
+
+    it('should override existingMetaconfig tokowakaEnabled=false when explicitly set to true', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      // existingMetaconfig has tokowakaEnabled: false
+
+      const result = await client.updateMetaconfig(url, siteId, { tokowakaEnabled: true });
+
+      expect(result).to.have.property('tokowakaEnabled', true);
+    });
+
+    it('should override existingMetaconfig enhancements=false when explicitly set to true', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      // existingMetaconfig has enhancements: false
+
+      const result = await client.updateMetaconfig(url, siteId, { enhancements: true });
+
+      expect(result).to.have.property('enhancements', true);
+    });
+
+    it('should handle case where options.forceFail and existingMetaconfig.forceFail are both true', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: true,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: true });
+
+      expect(result).to.have.property('forceFail', true);
+    });
+
+    it('should handle case where options.forceFail and existingMetaconfig.forceFail are both false', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: false,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('forceFail', false);
     });
   });
 

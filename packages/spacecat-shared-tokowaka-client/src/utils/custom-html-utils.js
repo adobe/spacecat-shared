@@ -24,8 +24,11 @@ function sleep(ms) {
 }
 
 /**
- * Makes an HTTP request with retry logic
- * Retries until max retries are exhausted or x-edge-optimize-cache header is present
+ * Makes an HTTP request with retry logic for both original and optimized HTML.
+ * Header validation logic (same for both):
+ * - No proxy AND no cache header: Return response immediately (success)
+ * - Proxy header present BUT no cache header: Retry until cache header found
+ * - Cache header present (regardless of proxy): Return response (success)
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
  * @param {number} maxRetries - Maximum number of retries
@@ -48,23 +51,35 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // Check for x-edge-optimize-cache header - if present, stop retrying
+      // Check for edge optimize headers
       const cacheHeader = response.headers.get('x-edge-optimize-cache');
+      const proxyHeader = response.headers.get('x-edge-optimize-proxy');
+
+      log.debug(`Headers - cache: ${cacheHeader || 'none'}, proxy: ${proxyHeader || 'none'}`);
+
+      // Case 1: Cache header present (regardless of proxy) -> Success
       if (cacheHeader) {
         log.debug(`Cache header found (x-edge-optimize-cache: ${cacheHeader}), stopping retry logic`);
         return response;
       }
 
-      // If no cache header and we haven't exhausted retries, continue
+      // Case 2: No cache header AND no proxy header -> Success (return immediately)
+      if (!proxyHeader) {
+        log.debug('No edge optimize headers found, proceeding as successful flow');
+        return response;
+      }
+
+      // Case 3: Proxy header present BUT no cache header -> Retry until cache found
+      log.debug('Proxy header present without cache header, will retry...');
+
+      // If we haven't exhausted retries, continue
       if (attempt < maxRetries + 1) {
-        log.debug(`No cache header found on attempt ${attempt}, will retry...`);
-        // Wait before retrying
         log.debug(`Waiting ${retryDelayMs}ms before retry...`);
         // eslint-disable-next-line no-await-in-loop
         await sleep(retryDelayMs);
       } else {
-        // Last attempt without cache header - throw error
-        log.error(`Max retries (${maxRetries}) exhausted without cache header`);
+        // Last attempt - throw error
+        log.error(`Max retries (${maxRetries}) exhausted. Proxy header present but cache header not found`);
         throw new Error(`Cache header (x-edge-optimize-cache) not found after ${maxRetries} retries`);
       }
     } catch (error) {
@@ -145,6 +160,7 @@ export async function fetchHtmlWithWarmup(
     'x-forwarded-host': forwardedHost,
     'x-edge-optimize-api-key': apiKey,
     'x-edge-optimize-url': urlPath,
+    'Accept-Encoding': 'identity', // Disable compression to avoid content-length: 0 issue
   };
 
   if (isOptimized) {

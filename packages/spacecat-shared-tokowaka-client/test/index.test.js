@@ -590,7 +590,7 @@ describe('TokowakaClient', () => {
     });
 
     it('should update metaconfig with default options', async () => {
-      const siteId = 'site-789';
+      const siteId = 'site-456';
       const url = 'https://www.example.com/page1';
 
       const result = await client.updateMetaconfig(url, siteId);
@@ -1143,6 +1143,170 @@ describe('TokowakaClient', () => {
       const result = await client.updateMetaconfig(url, siteId);
 
       expect(result).to.have.property('forceFail', false);
+    });
+
+    it('should include prerender when provided in options', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const prerenderConfig = { allowList: ['/*'] };
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: prerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should preserve existingMetaconfig prerender when options.prerender is undefined', async () => {
+      const existingPrerenderConfig = { allowList: ['/*', '/products/*'] };
+      const configWithPrerender = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: false,
+        patches: {},
+        prerender: existingPrerenderConfig,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithPrerender)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(existingPrerenderConfig);
+    });
+
+    it('should use existingMetaconfig prerender when options.prerender is null', async () => {
+      const existingPrerenderConfig = { allowList: ['/*'] };
+      const configWithPrerender = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: false,
+        patches: {},
+        prerender: existingPrerenderConfig,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithPrerender)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: null });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(existingPrerenderConfig);
+    });
+
+    it('should override existingMetaconfig prerender when provided in options', async () => {
+      const existingPrerenderConfig = { allowList: ['/blog/*'] };
+      const newPrerenderConfig = { allowList: ['/*', '/products/*'] };
+      const configWithPrerender = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: false,
+        patches: {},
+        prerender: existingPrerenderConfig,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithPrerender)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: newPrerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(newPrerenderConfig);
+    });
+
+    it('should not include prerender when neither options nor existingMetaconfig have it', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.not.have.property('prerender');
+    });
+
+    it('should not include prerender when both options and existingMetaconfig have empty prerender', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: {} });
+
+      expect(result).to.not.have.property('prerender');
+    });
+
+    it('should include prerender from options when existingMetaconfig does not have it', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const prerenderConfig = { allowList: ['/*'] };
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: prerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should handle prerender with multiple paths in allowList', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const prerenderConfig = {
+        allowList: ['/*', '/products/*', '/blog/*', '/about'],
+      };
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: prerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should use options.prerender even when it is an empty object if existingMetaconfig has no prerender', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: {} });
+
+      // Empty object is not null/undefined, so it will be used by nullish coalescing
+      // But hasPrerender will be false, so it won't be included in final metaconfig
+      expect(result).to.not.have.property('prerender');
+    });
+
+    it('should handle case where existingMetaconfig.prerender is undefined and options.prerender is provided', async () => {
+      const configWithoutPrerender = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: false,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithoutPrerender)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const prerenderConfig = { allowList: ['/*'] };
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: prerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(prerenderConfig);
     });
   });
 

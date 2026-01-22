@@ -287,12 +287,6 @@ export function calculateCPCValue(context: object, siteId: string): Promise<numb
 export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;
 
-/**
- * Default CPC (Cost Per Click) value in dollars used when Ahrefs organic traffic data
- * is not available or invalid.
- */
-export const DEFAULT_CPC_VALUE: number;
-
 export function fetch(url: string | Request, options?: RequestOptions): Promise<Response>;
 
 export function tracingFetch(url: string | Request, options?: RequestOptions): Promise<Response>;

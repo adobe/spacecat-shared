@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { DEFAULT_CPC_VALUE } from './constants.js';
 import { getObjectFromKey } from './s3.js';
 
 function createFilePath({ siteId, source, metric }) {
@@ -113,7 +112,7 @@ export async function calculateCPCValue(context, siteId) {
       return {
         success: false,
         reason: 'Organic traffic data not available',
-        value: DEFAULT_CPC_VALUE,
+        value: 1.5,
       };
     }
     const lastTraffic = organicTrafficData.at(-1);
@@ -122,7 +121,7 @@ export async function calculateCPCValue(context, siteId) {
       return {
         success: false,
         reason: 'Invalid organic traffic data',
-        value: DEFAULT_CPC_VALUE,
+        value: 1.5,
       };
     }
     // dividing by 100 for cents to dollar conversion

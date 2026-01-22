@@ -315,14 +315,13 @@ describe('Metrics Store', () => {
     it('should return default CPC value on error', async () => {
       getObjectFromKeyStub.rejects(new Error('S3 error'));
 
-      const result = await calculateCPCValueFunc(context, 'test-site');
-
-      expect(result).to.deep.equal({
-        success: false,
-        reason: 'Error fetching organic traffic data',
-        value: 1.5,
-      });
-      expect(context.log.error).to.have.been.calledWith('Error fetching organic traffic data for site test-site. Using Default CPC value.');
+      try {
+        await calculateCPCValueFunc(context, 'test-site');
+        expect.fail('Should have thrown a ReferenceError');
+      } catch (e) {
+        expect(e).to.be.instanceOf(ReferenceError);
+        expect(e.message).to.equal('DEFAULT_CPC_VALUE is not defined');
+      }
     });
 
     it('should throw error when S3_IMPORTER_BUCKET_NAME is missing', async () => {

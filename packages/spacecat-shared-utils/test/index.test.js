@@ -23,7 +23,6 @@ describe('Index Exports', () => {
     'composeBaseURL',
     'dateAfterDays',
     'deepEqual',
-    'DEFAULT_CPC_VALUE',
     'DELIVERY_TYPES',
     'AUTHORING_TYPES',
     'detectAEMVersion',

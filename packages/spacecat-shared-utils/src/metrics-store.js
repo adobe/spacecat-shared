@@ -87,7 +87,8 @@ export async function storeMetrics(content, config, context) {
  * https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=AEMSites&title=Success+Studio+Projected+Business+Impact+Metrics#SuccessStudioProjectedBusinessImpactMetrics-IdentifyingCPCvalueforadomain
  * @param context
  * @param siteId
- * @returns {object} Object containing either { success: true, value: number } on success or { success: false, reason: string, value: number } on failure
+ * @returns {object} Object containing either { success: true, value: number } on success
+ * or { success: false, reason: string, value: number } on failure
  */
 export async function calculateCPCValue(context, siteId) {
   if (!context?.env?.S3_IMPORTER_BUCKET_NAME) {
@@ -134,7 +135,7 @@ export async function calculateCPCValue(context, siteId) {
     return {
       success: false,
       reason: 'Error fetching organic traffic data',
-      value: DEFAULT_CPC_VALUE,
+      value: 1.5,
     };
   }
 }

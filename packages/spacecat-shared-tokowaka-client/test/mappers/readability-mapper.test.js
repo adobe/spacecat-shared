@@ -261,7 +261,6 @@ describe('ReadabilityMapper', () => {
         getData: () => ({
           textPreview: 'Lorem ipsum...',
           url: 'https://www.website.com',
-          scrapedAt: '2025-09-20T06:21:12.584Z',
           transformRules: {
             value: 'Tech enthusiasts keep up with the latest tech news...',
             op: 'replace',
@@ -290,14 +289,13 @@ describe('ReadabilityMapper', () => {
       expect(patch.lastUpdated).to.be.a('number');
     });
 
-    it('should create patch with scrapedAt timestamp', () => {
+    it('should create patch with updatedAt timestamp', () => {
       const suggestion = {
         getId: () => 'sugg-456',
-        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getUpdatedAt: () => '2025-09-20T06:21:12.584Z',
         getData: () => ({
           textPreview: 'Original text...',
           url: 'https://www.example.com',
-          scrapedAt: '2025-09-20T06:21:12.584Z',
           transformRules: {
             value: 'Improved readability text',
             op: 'replace',

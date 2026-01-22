@@ -1,3 +1,11 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.5.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.5...@adobe/spacecat-shared-tokowaka-client-v1.5.6) (2026-01-22)
+
+
+### Bug Fixes
+
+* edge apis, ignore scrapedAt prop for lastUpdated calculation ([#1280](https://github.com/adobe/spacecat-shared/issues/1280)) ([05e4bde](https://github.com/adobe/spacecat-shared/commit/05e4bde07fc865e8d0aee71639f799798e68594d))
+* update prerender config ([#1279](https://github.com/adobe/spacecat-shared/issues/1279)) ([4502ba4](https://github.com/adobe/spacecat-shared/commit/4502ba43f6a26e5d774ce0e2e7dfc6e886ab7402))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.5.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.4...@adobe/spacecat-shared-tokowaka-client-v1.5.5) (2026-01-21)
 
 

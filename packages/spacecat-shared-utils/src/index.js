@@ -107,6 +107,7 @@ export { detectAEMVersion, DELIVERY_TYPES, AUTHORING_TYPES } from './aem.js';
 export { determineAEMCSPageId, getPageEditUrl } from './aem-content-api-utils.js';
 
 export * as llmoConfig from './llmo-config.js';
+export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
 
 export { detectLocale } from './locale-detect/locale-detect.js';

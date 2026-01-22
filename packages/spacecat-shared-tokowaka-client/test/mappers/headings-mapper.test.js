@@ -98,11 +98,12 @@ describe('HeadingsMapper', () => {
       const suggestion = {
         getData: () => ({
           checkType: 'heading-order-invalid',
-          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          recommendedAction: 'Adjust heading levels to maintain proper hierarchy.',
           transformRules: {
             action: 'replaceWith',
             selector: '.invalid-section',
             valueFormat: 'hast',
+            value: { type: 'element', tagName: 'h2', children: [] },
           },
         }),
       };
@@ -254,11 +255,12 @@ describe('HeadingsMapper', () => {
       const suggestion = {
         getData: () => ({
           checkType: 'heading-order-invalid',
-          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          recommendedAction: 'Adjust heading levels to maintain proper hierarchy.',
           transformRules: {
             action: 'replace',
             selector: '.invalid-section',
             valueFormat: 'hast',
+            value: { type: 'element', tagName: 'h2', children: [] },
           },
         }),
       };
@@ -275,10 +277,11 @@ describe('HeadingsMapper', () => {
       const suggestion = {
         getData: () => ({
           checkType: 'heading-order-invalid',
-          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          recommendedAction: 'Adjust heading levels to maintain proper hierarchy.',
           transformRules: {
             action: 'replaceWith',
             selector: '.invalid-section',
+            value: { type: 'element', tagName: 'h2', children: [] },
           },
         }),
       };
@@ -295,11 +298,12 @@ describe('HeadingsMapper', () => {
       const suggestion = {
         getData: () => ({
           checkType: 'heading-order-invalid',
-          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          recommendedAction: 'Adjust heading levels to maintain proper hierarchy.',
           transformRules: {
             action: 'replaceWith',
             selector: '.invalid-section',
             valueFormat: 'text',
+            value: { type: 'element', tagName: 'h2', children: [] },
           },
         }),
       };
@@ -447,11 +451,12 @@ describe('HeadingsMapper', () => {
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
           checkType: 'heading-order-invalid',
-          recommendedAction: hastValue,
+          recommendedAction: 'Adjust heading levels to maintain proper hierarchy.',
           transformRules: {
             action: 'replaceWith',
             selector: '.content-section',
             valueFormat: 'hast',
+            value: hastValue,
           },
         }),
       };
@@ -464,6 +469,7 @@ describe('HeadingsMapper', () => {
         op: 'replaceWith',
         selector: '.content-section',
         value: hastValue,
+        valueFormat: 'hast',
         opportunityId: 'opp-101',
         suggestionId: 'sugg-101',
         prerenderRequired: true,
@@ -477,7 +483,7 @@ describe('HeadingsMapper', () => {
         getId: () => 'sugg-102',
         getData: () => ({
           checkType: 'heading-order-invalid',
-          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          recommendedAction: 'Adjust heading levels to maintain proper hierarchy.',
         }),
       };
 
@@ -490,11 +496,12 @@ describe('HeadingsMapper', () => {
         getId: () => 'sugg-103',
         getData: () => ({
           checkType: 'heading-order-invalid',
-          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          recommendedAction: 'Adjust heading levels to maintain proper hierarchy.',
           transformRules: {
             action: 'replace',
             selector: '.content-section',
             valueFormat: 'hast',
+            value: { type: 'element', tagName: 'h2', children: [] },
           },
         }),
       };

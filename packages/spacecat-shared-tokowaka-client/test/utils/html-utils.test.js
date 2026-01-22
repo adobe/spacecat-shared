@@ -154,6 +154,150 @@ describe('HTML Utils', () => {
       expect(actualUrl).to.equal('https://edge.example.com/page?tokowakaPreview=true');
     });
 
+    it('should return immediately for optimized HTML when no headers present', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call - no headers, should succeed
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => '<html>No headers</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        true, // isOptimized
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>No headers</html>');
+      // Should succeed immediately (warmup + 1 attempt)
+      expect(fetchStub.callCount).to.equal(2);
+    });
+
+    it('should throw error for optimized HTML when proxy present but cache not found after retries', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // All actual calls have proxy but no cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 1</html>',
+      });
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 2</html>',
+      });
+      fetchStub.onCall(3).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 3</html>',
+      });
+
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          'https://edge.example.com',
+          log,
+          true, // isOptimized
+          { warmupDelayMs: 0, maxRetries: 2, retryDelayMs: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to fetch optimized HTML');
+        expect(error.message).to.include('Cache header (x-edge-optimize-cache) not found after 2 retries');
+      }
+
+      // Should have tried 3 times (initial + 2 retries) plus warmup
+      expect(fetchStub.callCount).to.equal(4);
+    });
+
+    it('should retry for optimized HTML when proxy present until cache found', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First call has only proxy header - should retry
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only</html>',
+      });
+      // Second call has cache header (proxy might still be there) - should succeed
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Cached HTML</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        true, // isOptimized
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Cached HTML</html>');
+      // Should retry when only proxy present (warmup + 2 attempts)
+      expect(fetchStub.callCount).to.equal(3);
+    });
+
     it('should throw error when HTTP response is not ok', async () => {
       // Warmup succeeds
       fetchStub.onCall(0).resolves({
@@ -285,7 +429,7 @@ describe('HTML Utils', () => {
       }
     });
 
-    it('should stop retrying when x-edge-optimize-cache header is found', async () => {
+    it('should return immediately when no edge optimize headers are present', async () => {
       // Warmup succeeds
       fetchStub.onCall(0).resolves({
         ok: true,
@@ -296,7 +440,7 @@ describe('HTML Utils', () => {
         },
         text: async () => 'warmup',
       });
-      // First actual call - no cache header
+      // First actual call - no headers, should succeed immediately
       fetchStub.onCall(1).resolves({
         ok: true,
         status: 200,
@@ -304,17 +448,7 @@ describe('HTML Utils', () => {
         headers: {
           get: () => null,
         },
-        text: async () => '<html>No cache</html>',
-      });
-      // Second actual call - cache header found
-      fetchStub.onCall(2).resolves({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        headers: {
-          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
-        },
-        text: async () => '<html>Cached HTML</html>',
+        text: async () => '<html>No headers</html>',
       });
 
       const html = await fetchHtmlWithWarmup(
@@ -327,12 +461,12 @@ describe('HTML Utils', () => {
         { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
       );
 
-      expect(html).to.equal('<html>Cached HTML</html>');
-      // Should stop after finding cache header (warmup + 2 attempts)
-      expect(fetchStub.callCount).to.equal(3);
+      expect(html).to.equal('<html>No headers</html>');
+      // Should succeed immediately without retry (warmup + 1 attempt)
+      expect(fetchStub.callCount).to.equal(2);
     });
 
-    it('should throw error when cache header not found after max retries', async () => {
+    it('should retry when proxy header present without cache until cache is found', async () => {
       // Warmup succeeds
       fetchStub.onCall(0).resolves({
         ok: true,
@@ -343,33 +477,84 @@ describe('HTML Utils', () => {
         },
         text: async () => 'warmup',
       });
-      // All actual calls succeed but no cache header
+      // First call has proxy header but no cache - should retry
       fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only</html>',
+      });
+      // Second call has both headers - should succeed
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => {
+            if (name === 'x-edge-optimize-cache') return 'HIT';
+            if (name === 'x-edge-optimize-proxy') return 'true';
+            return null;
+          },
+        },
+        text: async () => '<html>Both headers</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Both headers</html>');
+      // Should retry when only proxy present (warmup + 2 attempts)
+      expect(fetchStub.callCount).to.equal(3);
+    });
+
+    it('should throw error when proxy header present but cache not found after max retries', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
         ok: true,
         status: 200,
         statusText: 'OK',
         headers: {
           get: () => null,
         },
-        text: async () => '<html>No cache 1</html>',
+        text: async () => 'warmup',
+      });
+      // All actual calls have proxy but no cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 1</html>',
       });
       fetchStub.onCall(2).resolves({
         ok: true,
         status: 200,
         statusText: 'OK',
         headers: {
-          get: () => null,
+          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
         },
-        text: async () => '<html>No cache 2</html>',
+        text: async () => '<html>Proxy only 2</html>',
       });
       fetchStub.onCall(3).resolves({
         ok: true,
         status: 200,
         statusText: 'OK',
         headers: {
-          get: () => null,
+          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
         },
-        text: async () => '<html>No cache 3</html>',
+        text: async () => '<html>Proxy only 3</html>',
       });
 
       try {
@@ -427,6 +612,84 @@ describe('HTML Utils', () => {
       expect(html).to.equal('<html>Cached HTML</html>');
       // Should not retry if cache header found on first attempt
       expect(fetchStub.callCount).to.equal(2); // warmup + 1 actual
+    });
+
+    it('should return immediately when cache header is present (with or without proxy)', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call has cache header (proxy may or may not be present)
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => {
+            if (name === 'x-edge-optimize-cache') return 'HIT';
+            if (name === 'x-edge-optimize-proxy') return 'true';
+            return null;
+          },
+        },
+        text: async () => '<html>Cache header present</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Cache header present</html>');
+      // Should succeed immediately when cache header present (warmup + 1 attempt)
+      expect(fetchStub.callCount).to.equal(2);
+    });
+
+    it('should succeed when only cache header is present (no proxy header)', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call has only cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Cache only HTML</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Cache only HTML</html>');
+      // Should succeed immediately with cache header only (warmup + 1 attempt)
+      expect(fetchStub.callCount).to.equal(2);
     });
   });
 

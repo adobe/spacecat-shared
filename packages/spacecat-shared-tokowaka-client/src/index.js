@@ -349,15 +349,21 @@ class TokowakaClient {
 
     // dont override api keys
     // if patches exist, they cannot reset to empty object
+    const hasForceFail = options.forceFail !== undefined
+      || existingMetaconfig.forceFail !== undefined;
+    const forceFail = options.forceFail
+      ?? existingMetaconfig.forceFail
+      ?? false;
+
     const metaconfig = {
       siteId,
       apiKeys: existingMetaconfig.apiKeys,
-      tokowakaEnabled: options.tokowakaEnabled ?? true,
-      enhancements: options.enhancements ?? true,
+      tokowakaEnabled: options.tokowakaEnabled ?? existingMetaconfig.tokowakaEnabled ?? true,
+      enhancements: options.enhancements ?? existingMetaconfig.enhancements ?? true,
       patches: isNonEmptyObject(options.patches)
         ? options.patches
         : (existingMetaconfig.patches ?? {}),
-      ...(options.forceFail && { forceFail: true }),
+      ...(hasForceFail && { forceFail }),
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig);

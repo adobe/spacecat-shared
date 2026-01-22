@@ -17,6 +17,8 @@ export { AUTHORING_TYPES, DELIVERY_TYPES } from './aem.js';
 
 export { OPPORTUNITY_TYPES } from './constants.js';
 
+export const DEFAULT_CPC_VALUE: number;
+
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
 

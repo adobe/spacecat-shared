@@ -11,6 +11,7 @@
  */
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getObjectFromKey } from './s3.js';
+import { DEFAULT_CPC_VALUE } from './constants.js';
 
 function createFilePath({ siteId, source, metric }) {
   if (!siteId) {
@@ -113,7 +114,7 @@ export async function calculateCPCValue(context, siteId) {
       return {
         success: false,
         reason: 'Organic traffic data not available',
-        value: 1.5,
+        value: DEFAULT_CPC_VALUE,
       };
     }
     const lastTraffic = organicTrafficData.at(-1);
@@ -122,7 +123,7 @@ export async function calculateCPCValue(context, siteId) {
       return {
         success: false,
         reason: 'Invalid organic traffic data',
-        value: 1.5,
+        value: DEFAULT_CPC_VALUE,
       };
     }
     // dividing by 100 for cents to dollar conversion
@@ -135,7 +136,7 @@ export async function calculateCPCValue(context, siteId) {
     return {
       success: false,
       reason: 'Error fetching organic traffic data',
-      value: 1.5,
+      value: DEFAULT_CPC_VALUE,
     };
   }
 }

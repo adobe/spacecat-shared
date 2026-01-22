@@ -19,6 +19,7 @@ import chaiAsPromised from 'chai-as-promised';
 import esmock from 'esmock';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getStoredMetrics, storeMetrics } from '../src/metrics-store.js';
+import { DEFAULT_CPC_VALUE } from '../src/constants.js';
 
 use(sinonChai);
 use(chaiAsPromised);
@@ -260,7 +261,7 @@ describe('Metrics Store', () => {
       expect(result).to.deep.equal({
         success: false,
         reason: 'Organic traffic data not available',
-        value: 1.5,
+        value: DEFAULT_CPC_VALUE,
       });
       expect(context.log.warn).to.have.been.calledWith('Organic traffic data not available for test-site. Using Default CPC value.');
     });
@@ -273,7 +274,7 @@ describe('Metrics Store', () => {
       expect(result).to.deep.equal({
         success: false,
         reason: 'Organic traffic data not available',
-        value: 1.5,
+        value: DEFAULT_CPC_VALUE,
       });
       expect(context.log.warn).to.have.been.calledWith('Organic traffic data not available for test-site. Using Default CPC value.');
     });
@@ -290,7 +291,7 @@ describe('Metrics Store', () => {
       expect(result).to.deep.equal({
         success: false,
         reason: 'Invalid organic traffic data',
-        value: 1.5,
+        value: DEFAULT_CPC_VALUE,
       });
       expect(context.log.warn).to.have.been.calledWith('Invalid organic traffic data present for test-site - cost:undefined value:5000, Using Default CPC value.');
     });
@@ -307,7 +308,7 @@ describe('Metrics Store', () => {
       expect(result).to.deep.equal({
         success: false,
         reason: 'Invalid organic traffic data',
-        value: 1.5,
+        value: DEFAULT_CPC_VALUE,
       });
       expect(context.log.warn).to.have.been.calledWith('Invalid organic traffic data present for test-site - cost:200000 value:undefined, Using Default CPC value.');
     });
@@ -320,7 +321,7 @@ describe('Metrics Store', () => {
       expect(result).to.deep.equal({
         success: false,
         reason: 'Error fetching organic traffic data',
-        value: 1.5,
+        value: DEFAULT_CPC_VALUE,
       });
       expect(context.log.error).to.have.been.calledWith('Error fetching organic traffic data for site test-site. Using Default CPC value.');
     });

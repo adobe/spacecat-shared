@@ -65,12 +65,6 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     required: true,
     default: [],
   })
-  .addAttribute('guidelineIds', {
-    type: 'set',
-    items: 'string',
-    required: true,
-    default: [],
-  })
   .addAttribute('audits', {
     type: 'set',
     items: 'string',

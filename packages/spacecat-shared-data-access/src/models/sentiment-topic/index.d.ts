@@ -22,7 +22,6 @@ export interface SentimentTopic extends BaseModel {
   getDescription(): string | undefined;
   getTopicName(): string;
   getSubPrompts(): string[];
-  getGuidelineIds(): string[];
   getAudits(): string[];
   getEnabled(): boolean;
   getCreatedAt(): string;
@@ -36,7 +35,6 @@ export interface SentimentTopic extends BaseModel {
   setDescription(description: string): SentimentTopic;
   setTopicName(topicName: string): SentimentTopic;
   setSubPrompts(subPrompts: string[]): SentimentTopic;
-  setGuidelineIds(guidelineIds: string[]): SentimentTopic;
   setAudits(audits: string[]): SentimentTopic;
   setEnabled(enabled: boolean): SentimentTopic;
   setUpdatedBy(updatedBy: string): SentimentTopic;
@@ -44,9 +42,6 @@ export interface SentimentTopic extends BaseModel {
   isAuditEnabled(auditType: string): boolean;
   enableAudit(auditType: string): SentimentTopic;
   disableAudit(auditType: string): SentimentTopic;
-  hasGuideline(guidelineId: string): boolean;
-  addGuideline(guidelineId: string): SentimentTopic;
-  removeGuideline(guidelineId: string): SentimentTopic;
   addSubPrompt(prompt: string): SentimentTopic;
   removeSubPrompt(prompt: string): SentimentTopic;
 }

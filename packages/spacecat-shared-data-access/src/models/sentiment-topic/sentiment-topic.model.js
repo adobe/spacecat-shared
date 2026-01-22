@@ -67,50 +67,6 @@ class SentimentTopic extends BaseModel {
   }
 
   /**
-   * Checks if a guideline is linked to this topic.
-   * @param {string} guidelineId - The guideline ID to check.
-   * @returns {boolean} True if the guideline is linked.
-   */
-  hasGuideline(guidelineId) {
-    const guidelineIds = this.getGuidelineIds?.() ?? this.guidelineIds ?? [];
-    return guidelineIds.includes(guidelineId);
-  }
-
-  /**
-   * Adds a guideline to the topic if not already present.
-   * @param {string} guidelineId - The guideline ID to add.
-   * @returns {this} The current instance for chaining.
-   */
-  addGuideline(guidelineId) {
-    const guidelineIds = this.getGuidelineIds?.() ?? this.guidelineIds ?? [];
-    if (!guidelineIds.includes(guidelineId)) {
-      const updated = [...guidelineIds, guidelineId];
-      if (this.setGuidelineIds) {
-        this.setGuidelineIds(updated);
-      } else {
-        this.guidelineIds = updated;
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Removes a guideline from the topic.
-   * @param {string} guidelineId - The guideline ID to remove.
-   * @returns {this} The current instance for chaining.
-   */
-  removeGuideline(guidelineId) {
-    const guidelineIds = this.getGuidelineIds?.() ?? this.guidelineIds ?? [];
-    const filtered = guidelineIds.filter((g) => g !== guidelineId);
-    if (this.setGuidelineIds) {
-      this.setGuidelineIds(filtered);
-    } else {
-      this.guidelineIds = filtered;
-    }
-    return this;
-  }
-
-  /**
    * Adds a sub-prompt to the topic.
    * @param {string} prompt - The prompt to add.
    * @returns {this} The current instance for chaining.

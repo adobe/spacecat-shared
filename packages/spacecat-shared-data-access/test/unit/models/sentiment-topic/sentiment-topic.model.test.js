@@ -34,7 +34,6 @@ describe('SentimentTopicModel', () => {
       description: 'Track sentiment around the BMW XM luxury SUV',
       topicName: 'BMW XM 2026',
       subPrompts: ['What about hybrid performance?', 'Interior quality?'],
-      guidelineIds: ['guideline-001', 'guideline-002'],
       audits: ['wikipedia-analysis', 'reddit-analysis'],
       enabled: true,
       createdAt: '2026-01-21T12:00:00.000Z',
@@ -132,82 +131,6 @@ describe('SentimentTopicModel', () => {
     });
   });
 
-  describe('hasGuideline', () => {
-    it('returns true when guideline is linked', () => {
-      expect(instance.hasGuideline('guideline-001')).to.be.true;
-    });
-
-    it('returns false when guideline is not linked', () => {
-      expect(instance.hasGuideline('guideline-999')).to.be.false;
-    });
-
-    it('handles empty guidelineIds array', () => {
-      instance.record.guidelineIds = [];
-      expect(instance.hasGuideline('guideline-001')).to.be.false;
-    });
-
-    it('handles undefined guidelineIds', () => {
-      instance.record.guidelineIds = undefined;
-      expect(instance.hasGuideline('guideline-001')).to.be.false;
-    });
-
-    it('works with direct property access', () => {
-      const plainObj = Object.create(SentimentTopic.prototype);
-      plainObj.guidelineIds = ['guideline-001'];
-      expect(plainObj.hasGuideline('guideline-001')).to.be.true;
-    });
-  });
-
-  describe('addGuideline', () => {
-    it('adds guideline when not present', () => {
-      instance.addGuideline('guideline-003');
-      expect(instance.getGuidelineIds()).to.include('guideline-003');
-    });
-
-    it('does not add duplicate guideline', () => {
-      const originalLength = instance.getGuidelineIds().length;
-      instance.addGuideline('guideline-001'); // Already exists
-      expect(instance.getGuidelineIds().length).to.equal(originalLength);
-    });
-
-    it('returns the instance for method chaining', () => {
-      const result = instance.addGuideline('guideline-003');
-      expect(result).to.equal(instance);
-    });
-
-    it('works with direct property access', () => {
-      const plainObj = Object.create(SentimentTopic.prototype);
-      plainObj.guidelineIds = [];
-      plainObj.addGuideline('guideline-001');
-      expect(plainObj.guidelineIds).to.deep.equal(['guideline-001']);
-    });
-  });
-
-  describe('removeGuideline', () => {
-    it('removes guideline when present', () => {
-      instance.removeGuideline('guideline-001');
-      expect(instance.getGuidelineIds()).to.not.include('guideline-001');
-    });
-
-    it('does nothing if guideline is not in the list', () => {
-      const originalLength = instance.getGuidelineIds().length;
-      instance.removeGuideline('guideline-999'); // Not in list
-      expect(instance.getGuidelineIds().length).to.equal(originalLength);
-    });
-
-    it('returns the instance for method chaining', () => {
-      const result = instance.removeGuideline('guideline-001');
-      expect(result).to.equal(instance);
-    });
-
-    it('works with direct property access', () => {
-      const plainObj = Object.create(SentimentTopic.prototype);
-      plainObj.guidelineIds = ['guideline-001', 'guideline-002'];
-      plainObj.removeGuideline('guideline-001');
-      expect(plainObj.guidelineIds).to.deep.equal(['guideline-002']);
-    });
-  });
-
   describe('addSubPrompt', () => {
     it('adds sub-prompt to the list', () => {
       instance.addSubPrompt('New question about pricing?');
@@ -262,16 +185,14 @@ describe('SentimentTopicModel', () => {
     it('allows chaining multiple methods', () => {
       instance
         .enableAudit('youtube-analysis')
-        .addGuideline('guideline-003')
         .addSubPrompt('New prompt')
         .disableAudit('wikipedia-analysis')
-        .removeGuideline('guideline-001');
+        .removeSubPrompt('Interior quality?');
 
       expect(instance.isAuditEnabled('youtube-analysis')).to.be.true;
       expect(instance.isAuditEnabled('wikipedia-analysis')).to.be.false;
-      expect(instance.hasGuideline('guideline-003')).to.be.true;
-      expect(instance.hasGuideline('guideline-001')).to.be.false;
       expect(instance.getSubPrompts()).to.include('New prompt');
+      expect(instance.getSubPrompts()).to.not.include('Interior quality?');
     });
   });
 });

@@ -9,7 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import crypto from 'crypto';
 
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
@@ -314,7 +313,7 @@ class FixEntityCollection extends BaseCollection {
 
     try {
       // Pre-generate the fixEntityId so we can use it in the transaction
-      const fixEntityId = fixEntityData.fixEntityId || crypto.randomUUID();
+      const { fixEntityId } = fixEntityData;
       const fixEntityCreatedAt = fixEntityData.executedAt || new Date().toISOString();
 
       // Add the ID to the fix entity data

@@ -88,7 +88,7 @@ export async function storeMetrics(content, config, context) {
  * https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=AEMSites&title=Success+Studio+Projected+Business+Impact+Metrics#SuccessStudioProjectedBusinessImpactMetrics-IdentifyingCPCvalueforadomain
  * @param context
  * @param siteId
- * @returns {number} CPC value
+ * @returns {object} Object containing either { success: true, value: number } on success or { success: false, reason: string, value: number } on failure
  */
 export async function calculateCPCValue(context, siteId) {
   if (!context?.env?.S3_IMPORTER_BUCKET_NAME) {
@@ -110,17 +110,32 @@ export async function calculateCPCValue(context, siteId) {
     const organicTrafficData = await getObjectFromKey(s3Client, bucketName, key, log);
     if (!Array.isArray(organicTrafficData) || organicTrafficData.length === 0) {
       log.warn(`Organic traffic data not available for ${siteId}. Using Default CPC value.`);
-      return DEFAULT_CPC_VALUE;
+      return {
+        success: false,
+        reason: 'Organic traffic data not available',
+        value: DEFAULT_CPC_VALUE,
+      };
     }
     const lastTraffic = organicTrafficData.at(-1);
     if (!lastTraffic.cost || !lastTraffic.value) {
       log.warn(`Invalid organic traffic data present for ${siteId} - cost:${lastTraffic.cost} value:${lastTraffic.value}, Using Default CPC value.`);
-      return DEFAULT_CPC_VALUE;
+      return {
+        success: false,
+        reason: 'Invalid organic traffic data',
+        value: DEFAULT_CPC_VALUE,
+      };
     }
     // dividing by 100 for cents to dollar conversion
-    return lastTraffic.cost / lastTraffic.value / 100;
+    return {
+      success: true,
+      value: lastTraffic.cost / lastTraffic.value / 100,
+    };
   } catch (err) {
     log.error(`Error fetching organic traffic data for site ${siteId}. Using Default CPC value.`, err);
-    return DEFAULT_CPC_VALUE;
+    return {
+      success: false,
+      reason: 'Error fetching organic traffic data',
+      value: DEFAULT_CPC_VALUE,
+    };
   }
 }

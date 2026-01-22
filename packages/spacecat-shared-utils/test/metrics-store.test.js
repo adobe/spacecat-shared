@@ -243,7 +243,7 @@ describe('Metrics Store', () => {
 
       const result = await calculateCPCValueFunc(context, 'test-site');
 
-      expect(result).to.equal(0.4); // 200000 / 5000 / 100 = 0.4
+      expect(result).to.deep.equal({ success: true, value: 0.4 }); // 200000 / 5000 / 100 = 0.4
       expect(getObjectFromKeyStub).to.have.been.calledWith(
         context.s3Client,
         'test-bucket',
@@ -257,7 +257,11 @@ describe('Metrics Store', () => {
 
       const result = await calculateCPCValueFunc(context, 'test-site');
 
-      expect(result).to.equal(1.5);
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Organic traffic data not available',
+        value: 1.5,
+      });
       expect(context.log.warn).to.have.been.calledWith('Organic traffic data not available for test-site. Using Default CPC value.');
     });
 
@@ -266,7 +270,11 @@ describe('Metrics Store', () => {
 
       const result = await calculateCPCValueFunc(context, 'test-site');
 
-      expect(result).to.equal(1.5);
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Organic traffic data not available',
+        value: 1.5,
+      });
       expect(context.log.warn).to.have.been.calledWith('Organic traffic data not available for test-site. Using Default CPC value.');
     });
 
@@ -279,7 +287,11 @@ describe('Metrics Store', () => {
 
       const result = await calculateCPCValueFunc(context, 'test-site');
 
-      expect(result).to.equal(1.5);
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Invalid organic traffic data',
+        value: 1.5,
+      });
       expect(context.log.warn).to.have.been.calledWith('Invalid organic traffic data present for test-site - cost:undefined value:5000, Using Default CPC value.');
     });
 
@@ -292,7 +304,11 @@ describe('Metrics Store', () => {
 
       const result = await calculateCPCValueFunc(context, 'test-site');
 
-      expect(result).to.equal(1.5);
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Invalid organic traffic data',
+        value: 1.5,
+      });
       expect(context.log.warn).to.have.been.calledWith('Invalid organic traffic data present for test-site - cost:200000 value:undefined, Using Default CPC value.');
     });
 
@@ -301,7 +317,11 @@ describe('Metrics Store', () => {
 
       const result = await calculateCPCValueFunc(context, 'test-site');
 
-      expect(result).to.equal(1.5);
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Error fetching organic traffic data',
+        value: 1.5,
+      });
       expect(context.log.error).to.have.been.calledWith('Error fetching organic traffic data for site test-site. Using Default CPC value.');
     });
 

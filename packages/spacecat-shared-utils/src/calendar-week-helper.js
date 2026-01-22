@@ -202,26 +202,68 @@ export function getMonthInfo(inputMonth = null, inputYear = null) {
 }
 
 // --- Public: Main decision function ---
-export function getTemporalCondition({ week, month, year } = {}) {
-  const hasWeek = Number.isInteger(week) && Number.isInteger(year);
-  const hasMonth = Number.isInteger(month) && Number.isInteger(year);
+export function getTemporalCondition({
+  week,
+  month,
+  year,
+  numSeries = 1,
+  log = null,
+} = {}) {
+  const hasValidWeek = isValidWeek(week, year);
+  const hasValidMonth = isValidMonth(month, year);
+  log?.info(`[getTemporalCondition] hasValidWeek: ${hasValidWeek}, hasValidMonth: ${hasValidMonth}`);
 
-  if (hasWeek && isValidWeek(week, year)) {
+  if (numSeries > 1) {
+    if (!hasValidWeek && !hasValidMonth) {
+      throw new Error('Missing required parameters: week or month');
+    }
+
+    const conditions = [];
+    for (let i = 0; i < numSeries; i += 1) {
+      if (hasValidWeek) {
+        let currentWeek = week - i;
+        let currentYear = year;
+        if (currentWeek < 1) {
+          currentYear -= 1;
+          currentWeek = has53CalendarWeeks(currentYear) ? 53 : 52;
+        }
+        log?.info(`[getTemporalCondition] currentWeek: ${currentWeek}, currentYear: ${currentYear}`);
+        conditions.push(getWeekInfo(currentWeek, currentYear).temporalCondition);
+      } else if (hasValidMonth) {
+        let currentMonth = month - i;
+        let currentYear = year;
+        if (currentMonth < 1) {
+          currentMonth = 12;
+          currentYear -= 1;
+        }
+        log?.info(`[getTemporalCondition] currentMonth: ${currentMonth}, currentYear: ${currentYear}`);
+        conditions.push(getMonthInfo(currentMonth, currentYear).temporalCondition);
+      }
+    }
+    return conditions.join(' OR ');
+  }
+
+  if (hasValidWeek) {
     return getWeekInfo(week, year).temporalCondition;
   }
 
-  if (hasMonth && isValidMonth(month, year)) {
+  if (hasValidMonth) {
     return getMonthInfo(month, year).temporalCondition;
   }
 
   // Fallbacks
-  if (Number.isInteger(week) || (!hasWeek && !hasMonth)) {
-    // default last full week
+  // If week was provided (even if invalid), default to last full week
+  if (Number.isInteger(week)) {
     return getWeekInfo().temporalCondition;
   }
 
-  // Otherwise fall back to last full month
-  return getMonthInfo().temporalCondition;
+  // If month was provided (even if invalid), default to last full month
+  if (Number.isInteger(month)) {
+    return getMonthInfo().temporalCondition;
+  }
+
+  // If neither was provided, default to last full week
+  return getWeekInfo().temporalCondition;
 }
 
 // Note: This function binds week exclusively to one year

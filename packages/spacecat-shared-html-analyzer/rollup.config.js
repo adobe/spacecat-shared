@@ -57,8 +57,10 @@ export default {
     }),
   ],
   external: [
-    // Exclude cheerio from bundle - it won't work in browser anyway
+    // Exclude Node.js-only dependencies from bundle - they won't work in browser anyway
     'cheerio',
+    'turndown',
+    'marked',
   ],
   onwarn(warning, warn) {
     // Suppress warnings about dynamic imports that we'll handle

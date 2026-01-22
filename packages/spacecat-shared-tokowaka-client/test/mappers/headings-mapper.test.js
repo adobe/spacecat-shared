@@ -94,6 +94,24 @@ describe('HeadingsMapper', () => {
       expect(result).to.deep.equal({ eligible: true });
     });
 
+    it('should return eligible for heading-order-invalid checkType', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-order-invalid',
+          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          transformRules: {
+            action: 'replaceWith',
+            selector: '.invalid-section',
+            valueFormat: 'hast',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({ eligible: true });
+    });
+
     it('should return ineligible for unknown checkType', () => {
       const suggestion = {
         getData: () => ({ checkType: 'unknown-type' }),
@@ -103,7 +121,7 @@ describe('HeadingsMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'Only heading-empty, heading-missing-h1, heading-h1-length can be deployed. This suggestion has checkType: unknown-type',
+        reason: 'Only heading-empty, heading-missing-h1, heading-h1-length, heading-order-invalid can be deployed. This suggestion has checkType: unknown-type',
       });
     });
 
@@ -116,7 +134,7 @@ describe('HeadingsMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'Only heading-empty, heading-missing-h1, heading-h1-length can be deployed. This suggestion has checkType: undefined',
+        reason: 'Only heading-empty, heading-missing-h1, heading-h1-length, heading-order-invalid can be deployed. This suggestion has checkType: undefined',
       });
     });
 
@@ -129,7 +147,7 @@ describe('HeadingsMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'Only heading-empty, heading-missing-h1, heading-h1-length can be deployed. This suggestion has checkType: undefined',
+        reason: 'Only heading-empty, heading-missing-h1, heading-h1-length, heading-order-invalid can be deployed. This suggestion has checkType: undefined',
       });
     });
 
@@ -231,9 +249,71 @@ describe('HeadingsMapper', () => {
         reason: 'transformRules.action must be replace for heading-h1-length',
       });
     });
+
+    it('should return ineligible for heading-order-invalid with invalid action', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-order-invalid',
+          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          transformRules: {
+            action: 'replace',
+            selector: '.invalid-section',
+            valueFormat: 'hast',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'transformRules.action must be replaceWith for heading-order-invalid',
+      });
+    });
+
+    it('should return ineligible for heading-order-invalid with missing valueFormat', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-order-invalid',
+          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          transformRules: {
+            action: 'replaceWith',
+            selector: '.invalid-section',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'transformRules.valueFormat must be hast for heading-order-invalid',
+      });
+    });
+
+    it('should return ineligible for heading-order-invalid with invalid valueFormat', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-order-invalid',
+          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          transformRules: {
+            action: 'replaceWith',
+            selector: '.invalid-section',
+            valueFormat: 'text',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'transformRules.valueFormat must be hast for heading-order-invalid',
+      });
+    });
   });
 
-  describe('suggestionToPatch', () => {
+  describe('suggestionsToPatches', () => {
     it('should create patch for heading-empty with transformRules', () => {
       const suggestion = {
         getId: () => 'sugg-123',
@@ -248,7 +328,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-123');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-123');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.deep.include({
         op: 'replace',
@@ -275,7 +357,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-123');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-123');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.deep.include({
         op: 'replace',
@@ -302,7 +386,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-456');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-456');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.deep.include({
         op: 'insertAfter',
@@ -330,7 +416,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-789');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-789');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.deep.include({
         op: 'replace',
@@ -344,7 +432,78 @@ describe('HeadingsMapper', () => {
       expect(patch.tag).to.be.undefined;
     });
 
-    it('should return null for heading-missing-h1 without transformRules', () => {
+    it('should create patch for heading-order-invalid with transformRules', () => {
+      const hastValue = {
+        type: 'element',
+        tagName: 'div',
+        children: [
+          { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'Section Title' }] },
+          { type: 'element', tagName: 'h3', children: [{ type: 'text', value: 'Subsection' }] },
+        ],
+      };
+
+      const suggestion = {
+        getId: () => 'sugg-101',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          checkType: 'heading-order-invalid',
+          recommendedAction: hastValue,
+          transformRules: {
+            action: 'replaceWith',
+            selector: '.content-section',
+            valueFormat: 'hast',
+          },
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-101');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch).to.deep.include({
+        op: 'replaceWith',
+        selector: '.content-section',
+        value: hastValue,
+        opportunityId: 'opp-101',
+        suggestionId: 'sugg-101',
+        prerenderRequired: true,
+      });
+      expect(patch.lastUpdated).to.be.a('number');
+      expect(patch.tag).to.be.undefined;
+    });
+
+    it('should return empty array for heading-order-invalid without transformRules', () => {
+      const suggestion = {
+        getId: () => 'sugg-102',
+        getData: () => ({
+          checkType: 'heading-order-invalid',
+          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-102');
+      expect(patches.length).to.equal(0);
+    });
+
+    it('should return empty array for heading-order-invalid with invalid action', () => {
+      const suggestion = {
+        getId: () => 'sugg-103',
+        getData: () => ({
+          checkType: 'heading-order-invalid',
+          recommendedAction: { type: 'element', tagName: 'h2', children: [] },
+          transformRules: {
+            action: 'replace',
+            selector: '.content-section',
+            valueFormat: 'hast',
+          },
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-103');
+      expect(patches.length).to.equal(0);
+    });
+
+    it('should return empty array for heading-missing-h1 without transformRules', () => {
       const suggestion = {
         getId: () => 'sugg-999',
         getData: () => ({
@@ -353,12 +512,11 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-999');
-
-      expect(patch).to.be.null;
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-999');
+      expect(patches.length).to.equal(0);
     });
 
-    it('should return null for heading-h1-length without selector in transformRules', () => {
+    it('should return empty array for heading-h1-length without selector in transformRules', () => {
       const suggestion = {
         getId: () => 'sugg-888',
         getData: () => ({
@@ -370,9 +528,8 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-888');
-
-      expect(patch).to.be.null;
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-888');
+      expect(patches.length).to.equal(0);
     });
 
     it('should log warning for heading-missing-h1 with missing transformRules - validation path', () => {
@@ -393,9 +550,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = warnMapper.suggestionToPatch(suggestion, 'opp-warn');
+      const patches = warnMapper.suggestionsToPatches('/path', [suggestion], 'opp-warn');
 
-      expect(patch).to.be.null;
+      expect(patches.length).to.equal(0);
       expect(warnLogged).to.be.true;
     });
 
@@ -419,9 +576,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = warnMapper.suggestionToPatch(suggestion, 'opp-defensive');
+      const patches = warnMapper.suggestionsToPatches('/path', [suggestion], 'opp-defensive');
 
-      expect(patch).to.be.null;
+      expect(patches.length).to.equal(0);
       expect(warnMessage).to.include('cannot be deployed');
     });
   });

@@ -10,11 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { toHast } from 'mdast-util-to-hast';
-import { fromMarkdown } from 'mdast-util-from-markdown';
 import { hasText } from '@adobe/spacecat-shared-utils';
 import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
+import { markdownToHast } from '../utils/markdown-utils.js';
 
 /**
  * Mapper for content opportunity
@@ -37,43 +36,47 @@ export default class ContentSummarizationMapper extends BaseOpportunityMapper {
   }
 
   /**
-   * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
-   * @param {string} markdown - Markdown text
-   * @returns {Object} - HAST object
+   * Converts suggestions to Tokowaka patches
+   * @param {string} urlPath - URL path for the suggestions
+   * @param {Array} suggestions - Array of suggestion entities for the same URL
+   * @param {string} opportunityId - Opportunity ID
+   * @returns {Array} - Array of Tokowaka patch objects
    */
-  // eslint-disable-next-line class-methods-use-this
-  markdownToHast(markdown) {
-    const mdast = fromMarkdown(markdown);
-    return toHast(mdast);
-  }
+  suggestionsToPatches(urlPath, suggestions, opportunityId) {
+    const patches = [];
 
-  suggestionToPatch(suggestion, opportunityId) {
-    const eligibility = this.canDeploy(suggestion);
-    if (!eligibility.eligible) {
-      this.log.warn(`Content-Summarization suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
-      return null;
-    }
+    suggestions.forEach((suggestion) => {
+      const eligibility = this.canDeploy(suggestion);
+      if (!eligibility.eligible) {
+        this.log.warn(`Content-Summarization suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
+        return;
+      }
 
-    const data = suggestion.getData();
-    const { summarizationText, transformRules } = data;
+      const data = suggestion.getData();
+      const { summarizationText, transformRules } = data;
 
-    // Convert markdown to HAST
-    let hastValue;
-    try {
-      hastValue = this.markdownToHast(summarizationText);
-    } catch (error) {
-      this.log.error(`Failed to convert markdown to HAST for suggestion ${suggestion.getId()}: ${error.message}`);
-      return null;
-    }
+      // Convert markdown to HAST
+      let hastValue;
+      try {
+        hastValue = markdownToHast(summarizationText);
+      } catch (error) {
+        this.log.error(`Failed to convert markdown to HAST for suggestion ${suggestion.getId()}: ${error.message}`);
+        return;
+      }
 
-    return {
-      ...this.createBasePatch(suggestion, opportunityId),
-      op: transformRules.action,
-      selector: transformRules.selector,
-      value: hastValue,
-      valueFormat: 'hast',
-      target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
-    };
+      const patch = {
+        ...this.createBasePatch(suggestion, opportunityId),
+        op: transformRules.action,
+        selector: transformRules.selector,
+        value: hastValue,
+        valueFormat: 'hast',
+        target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
+      };
+
+      patches.push(patch);
+    });
+
+    return patches;
   }
 
   /**

@@ -39,11 +39,14 @@ const nonEmptyString = z.string().min(1);
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 
 const prompt = z.object({
+  id: z.uuid().optional(),
   prompt: nonEmptyString,
   regions: z.array(region),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
   source: z.union([z.literal('config'), z.literal('api'), z.string()]),
   status: z.union([z.literal('completed'), z.literal('processing'), z.string()]).optional(),
+  updatedBy: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 const entity = z.object({
@@ -72,6 +75,8 @@ const category = z.object({
   region: z.union([region, z.array(region)]),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
   urls: z.array(categoryUrl).optional(),
+  updatedBy: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 const topic = z.object({
@@ -89,12 +94,16 @@ export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
   categories: z.record(z.uuid(), category),
   topics: z.record(z.uuid(), topic),
+  aiTopics: z.record(z.uuid(), topic).optional(),
   brands: z.object({
     aliases: z.array(
       z.object({
         aliases: z.array(nonEmptyString),
         category: z.uuid().optional(),
         region: z.union([region, z.array(region)]).optional(),
+        aliasMode: z.union([z.literal('extend'), z.literal('replace')]).optional(),
+        updatedBy: z.string().optional(),
+        updatedAt: z.string().optional(),
       }),
     ),
   }),
@@ -106,6 +115,8 @@ export const llmoConfig = z.object({
         name: nonEmptyString,
         aliases: z.array(nonEmptyString),
         urls: z.array(z.url().optional()),
+        updatedBy: z.string().optional(),
+        updatedAt: z.string().optional(),
       }),
     ),
   }),
@@ -148,6 +159,21 @@ export const llmoConfig = z.object({
   });
 
   // Validate topic prompts regions against their category
+  validateTopicPromptRegions(categories, ctx, topics, 'topics');
+
+  // Validate aiTopics prompts regions against their category
+  if (value.aiTopics) {
+    validateTopicPromptRegions(categories, ctx, value.aiTopics, 'aiTopics');
+  }
+});
+
+/**
+ * @param {LLMOConfig['categories']} categories
+ * @param {z.RefinementCtx} ctx
+ * @param {Record<string, z.infer<typeof topic>>} topics
+ * @param {string} topicsKey - The key name in the path (e.g., 'topics' or 'aiTopics')
+ */
+function validateTopicPromptRegions(categories, ctx, topics, topicsKey) {
   Object.entries(topics).forEach(([topicId, topicEntity]) => {
     if (topicEntity.prompts && topicEntity.category) {
       // If category is a UUID, validate against the referenced category entity
@@ -158,21 +184,21 @@ export const llmoConfig = z.object({
             ctx,
             topicEntity.category,
             promptItem.regions,
-            ['topics', topicId, 'prompts', promptIndex, 'regions'],
-            'topic prompt',
+            [topicsKey, topicId, 'prompts', promptIndex, 'regions'],
+            `${topicsKey} prompt`,
           );
         });
       }
     }
   });
-});
+}
 
 /**
    * @param {LLMOConfig['categories']} categories
    * @param {z.RefinementCtx} ctx
    * @param {string} id
    * @param {Array<number | string>} path
-   */
+      */
 function ensureCategoryExists(categories, ctx, id, path) {
   if (!categories[id]) {
     ctx.addIssue({

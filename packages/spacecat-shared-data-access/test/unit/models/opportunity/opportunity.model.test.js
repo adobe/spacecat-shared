@@ -83,6 +83,7 @@ describe('OpportunityModel', () => {
       const mockFixEntity = {
         getId: stub().returns('fix-entity-1'),
         getCreatedAt: stub().returns('2024-01-01T00:00:00Z'),
+        getExecutedAt: stub().returns('2024-01-01T00:00:00Z'),
       };
       const mockSuggestion = {
         getId: stub().returns('suggestion-1'),
@@ -207,6 +208,7 @@ describe('OpportunityModel', () => {
       const mockFixEntity = {
         getId: stub().returns('fix-entity-1'),
         getCreatedAt: stub().returns('2024-01-01T00:00:00Z'),
+        getExecutedAt: stub().returns('2024-01-01T00:00:00Z'),
       };
       const mockSuggestion = {
         getId: stub().returns('suggestion-1'),

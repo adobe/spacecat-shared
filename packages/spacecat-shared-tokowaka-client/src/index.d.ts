@@ -21,7 +21,7 @@ export interface TokawakaPatch {
   currValue?: string;
   target: 'ai-bots' | 'bots' | 'all';
   opportunityId: string;
-  suggestionId: string;
+  suggestionId?: string;
   prerenderRequired: boolean;
   lastUpdated: number;
 }
@@ -32,39 +32,79 @@ export const TARGET_USER_AGENTS_CATEGORIES: {
   ALL: 'all';
 };
 
-export interface TokowakaUrlOptimization {
+export interface TokowakaMetaconfig {
+  siteId: string;
+  apiKeys?: string[];
+  prerender?: {
+    allowList?: string[];
+  } | boolean;
+}
+
+export interface TokowakaConfig {
+  url: string;
+  version: string;
+  forceFail: boolean;
   prerender: boolean;
   patches: TokawakaPatch[];
 }
 
-export interface TokowakaConfig {
-  siteId: string;
-  baseURL: string;
-  version: string;
-  tokowakaForceFail: boolean;
-  tokowakaOptimizations: Record<string, TokowakaUrlOptimization>;
-}
-
 export interface CdnInvalidationResult {
   status: string;
-  provider?: string;
+  provider: string;
   purgeId?: string;
+  invalidationId?: string;
+  invalidationStatus?: string;
+  createTime?: string;
   estimatedSeconds?: number;
   paths?: number;
+  totalPaths?: number;
+  totalKeys?: number;
+  successCount?: number;
+  failedCount?: number;
+  serviceId?: string;
+  duration?: number;
+  results?: Array<{
+    key: string;
+    status: string;
+    statusCode?: number;
+    error?: string;
+  }>;
   message?: string;
+  error?: string;
 }
 
 export interface DeploymentResult {
-  s3Path: string;
-  cdnInvalidation: CdnInvalidationResult | null;
+  s3Paths: string[];
+  cdnInvalidations: CdnInvalidationResult[];
   succeededSuggestions: Array<any>;
   failedSuggestions: Array<{ suggestion: any; reason: string }>;
 }
 
+export interface RollbackResult {
+  s3Paths: string[];
+  cdnInvalidations: CdnInvalidationResult[];
+  succeededSuggestions: Array<any>;
+  failedSuggestions: Array<{ suggestion: any; reason: string }>;
+  removedPatchesCount: number;
+}
+
+export interface PreviewResult {
+  s3Path: string;
+  config: TokowakaConfig;
+  cdnInvalidations: CdnInvalidationResult[];
+  succeededSuggestions: Array<any>;
+  failedSuggestions: Array<{ suggestion: any; reason: string }>;
+  html: {
+    url: string;
+    originalHtml: string;
+    optimizedHtml: string;
+  };
+}
+
 export interface SiteConfig {
   getTokowakaConfig(): {
-    apiKey: string;
-    cdnProvider?: string;
+    apiKey?: string;
+    forwardedHost?: string;
   };
   getFetchConfig?(): {
     overrideBaseURL?: string;
@@ -88,6 +128,25 @@ export interface Suggestion {
   getUpdatedAt(): string;
 }
 
+export interface FastlyKVEntry {
+  key: string;
+  suggestionId: string;
+  url: string;
+}
+
+export class FastlyKVClient {
+  constructor(env: {
+    FASTLY_KV_STORE_ID: string;
+    FASTLY_API_TOKEN: string;
+    FASTLY_KV_TIMEOUT?: number;
+  }, log: any);
+
+  listAllStaleKeys(options?: {
+    pageSize?: number;
+    maxPages?: number;
+  }): Promise<FastlyKVEntry[]>;
+}
+
 /**
  * Base class for opportunity mappers
  * Extend this class to create custom mappers for new opportunity types
@@ -108,12 +167,14 @@ export abstract class BaseOpportunityMapper {
   abstract requiresPrerender(): boolean;
   
   /**
-   * Converts a suggestion to a Tokowaka patch
+   * Converts suggestions to Tokowaka patches
    */
-  abstract suggestionToPatch(
-    suggestion: Suggestion,
-    opportunityId: string
-  ): TokawakaPatch | null;
+  abstract suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string,
+    existingConfig: TokowakaConfig | null
+  ): TokawakaPatch[];
   
   /**
    * Checks if a suggestion can be deployed for this opportunity type
@@ -142,7 +203,28 @@ export class HeadingsMapper extends BaseOpportunityMapper {
   
   getOpportunityType(): string;
   requiresPrerender(): boolean;
-  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+}
+
+/**
+ * Readability opportunity mapper
+ * Handles conversion of readability suggestions to Tokowaka patches
+ */
+export class ReadabilityMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
 }
 
@@ -155,13 +237,53 @@ export class ContentSummarizationMapper extends BaseOpportunityMapper {
   
   getOpportunityType(): string;
   requiresPrerender(): boolean;
-  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+}
+
+/**
+ * FAQ opportunity mapper
+ * Handles conversion of FAQ suggestions to Tokowaka patches
+ */
+export class FaqMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
   
   /**
-   * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
+   * Creates patches for FAQ suggestions
+   * First patch is heading (h2) if it doesn't exist, then individual FAQ divs
+   * @throws {Error} if suggestionToPatch is called directly
    */
-  markdownToHast(markdown: string): object;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string,
+    existingConfig: TokowakaConfig | null
+  ): TokawakaPatch[];
+}
+
+/**
+ * Table of Contents (TOC) opportunity mapper
+ * Handles conversion of TOC suggestions to Tokowaka patches with HAST format
+ */
+export class TocMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
 }
 
 /**
@@ -215,13 +337,26 @@ export class CloudFrontCdnClient extends BaseCdnClient {
 }
 
 /**
+ * Fastly CDN client implementation
+ */
+export class FastlyCdnClient extends BaseCdnClient {
+  constructor(env: {
+    TOKOWAKA_CDN_CONFIG: string; // JSON string with fastly config
+  }, log: any);
+  
+  getProviderName(): string;
+  validateConfig(): boolean;
+  invalidateCache(paths: string[]): Promise<CdnInvalidationResult>;
+}
+
+/**
  * Registry for CDN clients
  */
 export class CdnClientRegistry {
-  constructor(log: any);
+  constructor(env: Record<string, any>, log: any);
   
   registerClient(provider: string, ClientClass: typeof BaseCdnClient): void;
-  getClient(provider: string, config: Record<string, any>): BaseCdnClient | null;
+  getClient(provider: string): BaseCdnClient | null;
   getSupportedProviders(): string[];
   isProviderSupported(provider: string): boolean;
 }
@@ -232,6 +367,7 @@ export class CdnClientRegistry {
 export default class TokowakaClient {
   constructor(config: {
     bucketName: string;
+    previewBucketName?: string;
     s3Client: S3Client;
     env?: Record<string, any>;
   }, log: any);
@@ -239,26 +375,44 @@ export default class TokowakaClient {
   static createFrom(context: {
     env: {
       TOKOWAKA_SITE_CONFIG_BUCKET: string;
-      TOKOWAKA_CDN_PROVIDER?: string;
-      TOKOWAKA_CDN_CONFIG?: string;
+      TOKOWAKA_PREVIEW_BUCKET?: string;
+      TOKOWAKA_CDN_PROVIDER?: string | string[]; // Single provider or comma-separated list
+      TOKOWAKA_CDN_CONFIG?: string; // JSON with cloudfront and/or fastly config
+      TOKOWAKA_EDGE_URL?: string;
     };
     log?: any;
     s3: { s3Client: S3Client };
     tokowakaClient?: TokowakaClient;
   }): TokowakaClient;
 
+  /**
+   * Generates Tokowaka configuration from suggestions for a specific URL
+   */
   generateConfig(
-    site: Site,
+    url: string,
     opportunity: Opportunity,
     suggestions: Suggestion[]
-  ): TokowakaConfig;
+  ): TokowakaConfig | null;
 
-  uploadConfig(apiKey: string, config: TokowakaConfig): Promise<string>;
+  /**
+   * Uploads configuration to S3 for a specific URL
+   */
+  uploadConfig(url: string, config: TokowakaConfig, isPreview?: boolean): Promise<string>;
   
   /**
-   * Fetches existing Tokowaka configuration from S3
+   * Fetches existing Tokowaka configuration from S3 for a specific URL
    */
-  fetchConfig(apiKey: string): Promise<TokowakaConfig | null>;
+  fetchConfig(url: string, isPreview?: boolean): Promise<TokowakaConfig | null>;
+  
+  /**
+   * Fetches domain-level metaconfig from S3
+   */
+  fetchMetaconfig(url: string): Promise<TokowakaMetaconfig | null>;
+  
+  /**
+   * Uploads domain-level metaconfig to S3
+   */
+  uploadMetaconfig(url: string, metaconfig: TokowakaMetaconfig): Promise<string>;
   
   /**
    * Merges existing configuration with new configuration
@@ -266,15 +420,48 @@ export default class TokowakaClient {
   mergeConfigs(existingConfig: TokowakaConfig, newConfig: TokowakaConfig): TokowakaConfig;
   
   /**
-   * Invalidates CDN cache
+   * Invalidates CDN cache for a specific URL
+   * Supports multiple CDN providers in parallel
    */
-  invalidateCdnCache(apiKey: string, cdnProvider?: string): Promise<CdnInvalidationResult | null>;
+  invalidateCdnCache(url: string, providers?: string | string[], isPreview?: boolean): Promise<CdnInvalidationResult[]>;
 
+  /**
+   * Batch invalidates CDN cache for multiple URLs at once
+   * More efficient than individual invalidations when processing multiple URLs
+   */
+  batchInvalidateCdnCache(urls: string[], providers?: string | string[], isPreview?: boolean): Promise<CdnInvalidationResult[]>;
+
+  /**
+   * Deploys suggestions to Tokowaka edge
+   */
   deploySuggestions(
     site: Site,
     opportunity: Opportunity,
     suggestions: Suggestion[]
   ): Promise<DeploymentResult>;
+  
+  /**
+   * Rolls back deployed suggestions
+   */
+  rollbackSuggestions(
+    site: Site,
+    opportunity: Opportunity,
+    suggestions: Suggestion[]
+  ): Promise<RollbackResult>;
+  
+  /**
+   * Previews suggestions (all must belong to same URL)
+   */
+  previewSuggestions(
+    site: Site,
+    opportunity: Opportunity,
+    suggestions: Suggestion[],
+    options?: {
+      warmupDelayMs?: number;
+      maxRetries?: number;
+      retryDelayMs?: number;
+    }
+  ): Promise<PreviewResult>;
   
   /**
    * Registers a custom mapper for an opportunity type

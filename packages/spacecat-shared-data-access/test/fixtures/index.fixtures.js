@@ -13,6 +13,7 @@
 import apiKeys from './api-keys.fixtures.js';
 import asyncJobs from './async-jobs.fixture.js';
 import audits from './audits.fixture.js';
+import auditUrls from './audit-urls.fixture.js';
 import configurations from './configurations.fixture.js';
 import experiments from './experiments.fixture.js';
 import importJobs from './import-jobs.fixture.js';
@@ -36,11 +37,13 @@ import entitlements from './entitlements.fixture.js';
 import trialUsers from './trial-users.fixture.js';
 import trialUserActivities from './trial-user-activities.fixture.js';
 import siteEnrollments from './site-enrollments.fixture.js';
+import pageCitabilities from './page-citabilities.fixture.js';
 
 export default {
   apiKeys,
   asyncJobs,
   audits,
+  auditUrls,
   configurations,
   experiments,
   fixEntities,
@@ -64,4 +67,5 @@ export default {
   trialUsers,
   trialUserActivities,
   siteEnrollments,
+  pageCitabilities,
 };

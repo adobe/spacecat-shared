@@ -40,6 +40,14 @@ import Reference from './reference.js';
  */
 class BaseModel {
   /**
+   * The entity name for this model. Must be overridden by subclasses.
+   * This ensures the entity name is explicit and not dependent on class names
+   * which can be mangled by bundlers.
+   * @type {string}
+   */
+  static ENTITY_NAME = undefined;
+
+  /**
    * Constructs an instance of BaseModel.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.

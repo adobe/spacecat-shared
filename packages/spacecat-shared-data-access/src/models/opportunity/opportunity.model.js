@@ -22,6 +22,8 @@ import BaseModel from '../base/base.model.js';
  */
 
 class Opportunity extends BaseModel {
+  static ENTITY_NAME = 'Opportunity';
+
   static ORIGINS = {
     ESS_OPS: 'ESS_OPS',
     AI: 'AI',
@@ -183,7 +185,8 @@ class Opportunity extends BaseModel {
     fixEntityCreateResult.createdItems.forEach((createdFixEntity, index) => {
       const originalFixEntity = fixEntitiesToCreate[index];
       const fixEntityId = createdFixEntity.getId();
-      const fixEntityCreatedAt = createdFixEntity.getCreatedAt();
+      const fixEntityCreatedAt = createdFixEntity.getExecutedAt()
+        || createdFixEntity.getCreatedAt();
 
       originalFixEntity.suggestions.forEach((suggestionId) => {
         junctionRecordsToCreate.push({

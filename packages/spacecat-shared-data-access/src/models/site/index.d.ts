@@ -47,6 +47,7 @@ export type IMPORT_TYPES = {
   readonly ORGANIC_KEYWORDS: 'organic-keywords';
   readonly ORGANIC_TRAFFIC: 'organic-traffic';
   readonly TOP_PAGES: 'top-pages';
+  readonly AHREF_PAID_PAGES: 'ahref-paid-pages';
   readonly TOP_FORMS: 'top-forms';
 };
 
@@ -59,7 +60,7 @@ export type IMPORT_SOURCES = {
   readonly GSC: 'google';
 };
 
-export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages' | 'top-forms';
+export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages' | 'top-forms' | 'ahref-paid-pages' ;
 export type ImportDestination = 'default';
 export type ImportSource = 'ahrefs' | 'google';
 
@@ -108,6 +109,7 @@ export interface SiteConfig {
     handlers?: Record<string, {
       mentions?: Record<string, string[]>;
       excludedURLs?: string[];
+      autofixExcludedURLs?: string[];
       manualOverwrites?: Array<{
         brokenTargetURL?: string;
         targetURL?: string;
@@ -155,6 +157,7 @@ export interface SiteConfig {
   getHandlerConfig(type: string): object;
   getSlackMentions(type: string): string[] | undefined;
   getExcludedURLs(type: string): string[] | undefined;
+  getAutofixExcludedURLs(type: string): string[] | undefined;
   getManualOverwrites(type: string):
     Array<{ brokenTargetURL?: string; targetURL?: string }> | undefined;
   getFixedURLs(type: string): Array<{ brokenTargetURL?: string; targetURL?: string }> | undefined;

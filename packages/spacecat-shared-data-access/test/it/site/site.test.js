@@ -16,6 +16,9 @@ import { isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 import siteFixtures from '../../fixtures/sites.fixture.js';
 import { sanitizeTimestamps } from '../../../src/util/util.js';
@@ -47,7 +50,8 @@ describe('Site IT', async () => {
   let sampleData;
   let Site;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -506,6 +510,45 @@ describe('Site IT', async () => {
     const config = site.getConfig();
     expect(config).to.be.an('object');
     expect(config.state).to.deep.equals(configFixture);
+  });
+
+  it('reads brandProfile from a seeded site', async () => {
+    const site = await Site.findById('5d6d4439-6659-46c2-b646-92d110fa5a52');
+    const config = site.getConfig();
+    const brandProfile = config.getBrandProfile();
+    expect(brandProfile).to.be.an('object');
+    expect(brandProfile.discovery.pages_analyzed).to.equal(1);
+    expect(brandProfile.main_profile.id).to.equal('main');
+  });
+
+  it('updates and persists brandProfile using sample-brand-profile.json', async () => {
+    const site = await Site.findById('5d6d4439-6659-46c2-b646-92d110fa5a52');
+    const config = site.getConfig();
+
+    const filename = fileURLToPath(import.meta.url);
+    const dirname = path.dirname(filename);
+    const samplePath = path.resolve(dirname, '../../fixtures/sample-brand-profile.json');
+    const sample = JSON.parse(readFileSync(samplePath, 'utf-8'));
+
+    // update
+    config.updateBrandProfile(sample);
+    const afterUpdate = config.getBrandProfile();
+    expect(afterUpdate.version).to.equal(1);
+    expect(afterUpdate.contentHash).to.be.a('string').that.is.not.empty;
+    expect(afterUpdate.updatedAt).to.be.a('string');
+    expect(afterUpdate.discovery.pages_analyzed).to.equal(sample.discovery.pages_analyzed);
+
+    // persist
+    site.setConfig(Config.toDynamoItem(config));
+    await site.save();
+
+    // refetch and verify persisted values
+    const reloaded = await Site.findById(site.getId());
+    const reloadedProfile = reloaded.getConfig().getBrandProfile();
+    expect(reloadedProfile.version).to.equal(1);
+    expect(reloadedProfile.contentHash).to.equal(afterUpdate.contentHash);
+    expect(reloadedProfile.discovery.pages_analyzed).to.equal(sample.discovery.pages_analyzed);
+    expect(reloadedProfile.main_profile.id).to.equal(sample.main_profile.id);
   });
 
   it('removes a site', async () => {

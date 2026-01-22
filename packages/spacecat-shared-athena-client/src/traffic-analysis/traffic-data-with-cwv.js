@@ -58,6 +58,11 @@ export const TrafficDataWithCWVDto = {
    *   inp_score: string,
    *   cls_score: string,
    *   overall_cwv_score: string,
+   *   traffic_loss: number,
+   *   url: string,
+   *   path: string,
+   *   page_type: string,
+   *   device: string,
    * }} JSON object.
      */
   toJSON: (data, thresholdConfig, baseUrl) => {
@@ -85,6 +90,7 @@ export const TrafficDataWithCWVDto = {
       path: data.path,
       page_type: data.page_type,
       device: data.device,
+      traffic_loss: data.traffic_loss,
       p70_lcp: lcp,
       p70_cls: cls,
       p70_inp: inp,

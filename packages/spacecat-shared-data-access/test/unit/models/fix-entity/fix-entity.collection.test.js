@@ -43,6 +43,7 @@ describe('FixEntityCollection', () => {
   const mockFixEntity = {
     getId: () => '123e4567-e89b-12d3-a456-426614174000',
     getCreatedAt: () => '2024-01-15T10:30:00.000Z',
+    getExecutedAt: () => undefined,
   };
 
   const mockSuggestions = [
@@ -516,6 +517,41 @@ describe('FixEntityCollection', () => {
       ]);
     });
 
+    it('should use executedAt when available, fallback to createdAt when not', async () => {
+      const mockFixEntityWithExecutedAt = {
+        getId: () => '123e4567-e89b-12d3-a456-426614174000',
+        getCreatedAt: () => '2024-01-15T10:30:00.000Z',
+        getExecutedAt: () => '2024-01-15T09:00:00.000Z',
+      };
+
+      const mockFixEntitySuggestionCollection = {
+        allByFixEntityId: stub().resolves([
+          { getSuggestionId: () => 'suggestion-1' },
+        ]),
+        removeByIndexKeys: stub().resolves([]),
+        createMany: stub().resolves({
+          createdItems: [{ id: 'junction-1' }],
+          errorItems: [],
+        }),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      await fixEntityCollection
+        .setSuggestionsForFixEntity(
+          mockOpportunity.getId(),
+          mockFixEntityWithExecutedAt,
+          mockSuggestions,
+        );
+
+      // Verify that executedAt was used instead of createdAt
+      expect(mockFixEntitySuggestionCollection.createMany).to.have.been.calledWith(
+        sinon.match((items) => items.every((item) => item.fixEntityCreatedAt === '2024-01-15T09:00:00.000Z')),
+      );
+    });
+
     it('should handle undefined promises (no operations needed)', async () => {
       const singleSuggestion = [{ getId: () => 'suggestion-1' }];
 
@@ -708,16 +744,16 @@ describe('FixEntityCollection', () => {
       expect(FixEntity.STATUSES.ROLLED_BACK).to.equal('ROLLED_BACK');
     });
 
-    it('ORIGINS enum has exactly 2 values', () => {
+    it('ORIGINS enum has exactly 3 values', () => {
       const originValues = Object.values(FixEntity.ORIGINS);
-      expect(originValues).to.have.lengthOf(2);
-      expect(originValues).to.include.members(['spacecat', 'aso']);
+      expect(originValues).to.have.lengthOf(3);
+      expect(originValues).to.include.members(['spacecat', 'aso', 'reporting']);
     });
 
     it('ORIGINS enum keys match expected format', () => {
       const originKeys = Object.keys(FixEntity.ORIGINS);
-      expect(originKeys).to.have.lengthOf(2);
-      expect(originKeys).to.include.members(['SPACECAT', 'ASO']);
+      expect(originKeys).to.have.lengthOf(3);
+      expect(originKeys).to.include.members(['SPACECAT', 'ASO', 'REPORTING']);
     });
   });
 });

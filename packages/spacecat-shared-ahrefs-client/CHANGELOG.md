@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.3...@adobe/spacecat-shared-ahrefs-client-v1.10.4) (2026-01-20)
+
+
+### Bug Fixes
+
+* getPaidPages was missing parameter mode ([#1271](https://github.com/adobe/spacecat-shared/issues/1271)) ([09e597f](https://github.com/adobe/spacecat-shared/commit/09e597ff7ede8f9c9752dc1b35cd81539a48019a))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.2...@adobe/spacecat-shared-ahrefs-client-v1.10.3) (2025-11-28)
+
+
+### Bug Fixes
+
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.1...@adobe/spacecat-shared-ahrefs-client-v1.10.2) (2025-11-27)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.0...@adobe/spacecat-shared-ahrefs-client-v1.10.1) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.13...@adobe/spacecat-shared-ahrefs-client-v1.10.0) (2025-11-13)
+
+
+### Features
+
+* (ahref) add endpoints with paid data ([#1119](https://github.com/adobe/spacecat-shared/issues/1119)) ([cc2abb0](https://github.com/adobe/spacecat-shared/commit/cc2abb058a5686fffb1040a2243452160330b086))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.9.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.12...@adobe/spacecat-shared-ahrefs-client-v1.9.13) (2025-11-04)
 
 

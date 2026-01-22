@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-scrape-client-v2.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.5...@adobe/spacecat-shared-scrape-client-v2.3.6) (2025-11-30)
+
+
+### Bug Fixes
+
+* update data-access ([#1196](https://github.com/adobe/spacecat-shared/issues/1196)) ([c9461e7](https://github.com/adobe/spacecat-shared/commit/c9461e7c25634014088320d2faaf7839f164845c))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.4...@adobe/spacecat-shared-scrape-client-v2.3.5) (2025-11-28)
+
+
+### Bug Fixes
+
+* update deps ([#1187](https://github.com/adobe/spacecat-shared/issues/1187)) ([8632e20](https://github.com/adobe/spacecat-shared/commit/8632e2049e6061018c26399b8db702fd72e65620))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.3...@adobe/spacecat-shared-scrape-client-v2.3.4) (2025-11-28)
+
+
+### Bug Fixes
+
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.2...@adobe/spacecat-shared-scrape-client-v2.3.3) (2025-11-28)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.1...@adobe/spacecat-shared-scrape-client-v2.3.2) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
 # [@adobe/spacecat-shared-scrape-client-v2.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.0...@adobe/spacecat-shared-scrape-client-v2.3.1) (2025-11-07)
 
 

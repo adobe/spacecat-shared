@@ -58,16 +58,24 @@ describe('Locale Detection', () => {
     });
 
     it('returns a default locale if no indicator results are available', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', { 'content-type': 'text/html' });
+
       const result = await detectLocale({
         baseUrl,
         indicatorFuncs: [],
         html: '<html><head><title>Test Page</title></head></html>',
-        headers: {},
+        headers: { 'content-type': 'text/html' },
       });
       expect(result).to.deep.equal({ language: 'en', region: 'US' });
     });
 
     it('summarizes indicator results with mixed indicators', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', { 'content-type': 'text/html' });
+
       const indicator = () => ([
         { language: 'de' },
         { region: 'CH' },
@@ -76,12 +84,16 @@ describe('Locale Detection', () => {
         baseUrl,
         indicatorFuncs: [indicator],
         html: '<html><head><title>Test Page</title></head></html>',
-        headers: {},
+        headers: { 'content-type': 'text/html' },
       });
       expect(result).to.deep.equal({ language: 'de', region: 'CH' });
     });
 
     it('summarizes indicator results by majority', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(200, '', { 'content-type': 'text/html' });
+
       const indicator = () => ([
         { language: 'de', region: 'DE' },
         { region: 'CH' },
@@ -91,7 +103,7 @@ describe('Locale Detection', () => {
         baseUrl,
         indicatorFuncs: [indicator],
         html: '<html><head><title>Test Page</title></head></html>',
-        headers: {},
+        headers: { 'content-type': 'text/html' },
       });
       expect(result).to.deep.equal({ language: 'de', region: 'CH' });
     });

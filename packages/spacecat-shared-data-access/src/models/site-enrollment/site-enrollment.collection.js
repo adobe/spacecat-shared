@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class SiteEnrollmentCollection extends BaseCollection {
+  static COLLECTION_NAME = 'SiteEnrollmentCollection';
+
   // add your custom collection methods here
 }
 

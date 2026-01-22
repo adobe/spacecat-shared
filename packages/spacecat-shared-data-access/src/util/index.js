@@ -26,3 +26,13 @@ export {
   registerLogger,
   getLogger,
 } from './logger-registry.js';
+
+/**
+ * Datastore types that collections can use to declare their storage backend.
+ * @readonly
+ * @enum {string}
+ */
+export const DATASTORE_TYPE = Object.freeze({
+  DYNAMO: 'dynamo',
+  S3: 's3',
+});

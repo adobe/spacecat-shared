@@ -1,3 +1,64 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.40.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.3...@adobe/spacecat-shared-rum-api-client-v2.40.4) (2026-01-09)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.22.2 ([#1257](https://github.com/adobe/spacecat-shared/issues/1257)) ([9e7ccd5](https://github.com/adobe/spacecat-shared/commit/9e7ccd53bd34253ec64b52d64854a1a331ce14f8))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.40.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.2...@adobe/spacecat-shared-rum-api-client-v2.40.3) (2025-12-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.22.1 ([#1234](https://github.com/adobe/spacecat-shared/issues/1234)) ([6fef066](https://github.com/adobe/spacecat-shared/commit/6fef066633f737af65819e04eb4f27067c67d19e))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.40.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.1...@adobe/spacecat-shared-rum-api-client-v2.40.2) (2025-12-09)
+
+
+### Bug Fixes
+
+* **rum-api-client:** traffic attibution for new llms ([#1229](https://github.com/adobe/spacecat-shared/issues/1229)) ([a6aac37](https://github.com/adobe/spacecat-shared/commit/a6aac37993e4c5e7527d4f1853a137f2ed9c2779))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.40.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.0...@adobe/spacecat-shared-rum-api-client-v2.40.1) (2025-12-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.21.0 ([#1217](https://github.com/adobe/spacecat-shared/issues/1217)) ([acf206f](https://github.com/adobe/spacecat-shared/commit/acf206fd35b41489a44b323aa7865ffe244ace0e))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.39.1...@adobe/spacecat-shared-rum-api-client-v2.40.0) (2025-11-28)
+
+
+### Bug Fixes
+
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
+
+### Features
+
+* Add LCP and Engagement Metrics to Total Metrics Query ([#1175](https://github.com/adobe/spacecat-shared/issues/1175)) ([acbadbd](https://github.com/adobe/spacecat-shared/commit/acbadbd208787143b2aafe3916fa37710e02af26))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.39.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.39.0...@adobe/spacecat-shared-rum-api-client-v2.39.1) (2025-11-28)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.10...@adobe/spacecat-shared-rum-api-client-v2.39.0) (2025-11-24)
+
+
+### Features
+
+* use paid event tracking source to classify ([#1166](https://github.com/adobe/spacecat-shared/issues/1166)) ([c477a04](https://github.com/adobe/spacecat-shared/commit/c477a048d3f74fdc315c5c4a6b2e2725cc0e5283))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.38.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.9...@adobe/spacecat-shared-rum-api-client-v2.38.10) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.38.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.8...@adobe/spacecat-shared-rum-api-client-v2.38.9) (2025-11-04)
 
 

@@ -280,6 +280,82 @@ describe('schemas', () => {
           const result = llmoConfig.safeParse(config);
           expect(result.success).true;
         });
+
+        it('validates brand alias with aliasMode extend', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                category: categoryWithRegionsId,
+                region: 'us',
+                aliasMode: 'extend',
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+          if (result.success) {
+            expect(result.data.brands.aliases[0].aliasMode).equals('extend');
+          }
+        });
+
+        it('validates brand alias with aliasMode replace', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                category: categoryWithRegionsId,
+                region: 'us',
+                aliasMode: 'replace',
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+          if (result.success) {
+            expect(result.data.brands.aliases[0].aliasMode).equals('replace');
+          }
+        });
+
+        it('validates brand alias without aliasMode (optional field)', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                category: categoryWithRegionsId,
+                region: 'us',
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+          if (result.success) {
+            expect(result.data.brands.aliases[0].aliasMode).to.be.undefined;
+          }
+        });
+
+        it('fails when brand alias has invalid aliasMode value', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                category: categoryWithRegionsId,
+                region: 'us',
+                aliasMode: 'invalid-mode',
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+        });
       });
 
       describe('competitors', () => {
@@ -445,7 +521,7 @@ describe('schemas', () => {
           if (result.success) {
             throw new Error('Expected validation to fail');
           }
-          expect(result.error.issues[0].message).equals('topic prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
+          expect(result.error.issues[0].message).equals('topics prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
         });
 
         it('validates when topic category is a string name (no region validation)', () => {
@@ -514,6 +590,98 @@ describe('schemas', () => {
 
           const result = llmoConfig.safeParse(config);
           expect(result.success).false;
+        });
+      });
+
+      describe('aiTopics prompts', () => {
+        it('validates when aiTopics prompt regions are subset of category regions', () => {
+          const aiTopicId = '999e9999-e99b-49d9-a999-999999999999';
+          const config = {
+            ...configWithRegions,
+            aiTopics: {
+              [aiTopicId]: {
+                name: 'AI Test Topic',
+                prompts: [
+                  {
+                    prompt: 'AI Test prompt 1',
+                    regions: ['us'],
+                    origin: 'ai',
+                    source: 'flow',
+                  },
+                  {
+                    prompt: 'AI Test prompt 2',
+                    regions: ['ca', 'us'],
+                    origin: 'ai',
+                    source: 'flow',
+                  },
+                ],
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
+
+        it('fails when aiTopics prompt has regions not in category', () => {
+          const aiTopicId = 'aaaa0000-ea0b-40d0-a000-000000000000';
+          const config = {
+            ...configWithRegions,
+            aiTopics: {
+              [aiTopicId]: {
+                name: 'AI Test Topic',
+                prompts: [
+                  {
+                    prompt: 'AI Test prompt',
+                    regions: ['us', 'mx'], // mx not in category regions
+                    origin: 'ai',
+                    source: 'flow',
+                  },
+                ],
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+          if (result.success) {
+            throw new Error('Expected validation to fail');
+          }
+          expect(result.error.issues[0].message).equals('aiTopics prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
+        });
+
+        it('validates when aiTopics category is a string name (no region validation)', () => {
+          const aiTopicId = 'bbbb1111-eb1b-41d1-a111-111111111111';
+          const config = {
+            ...configWithRegions,
+            aiTopics: {
+              [aiTopicId]: {
+                name: 'AI Test Topic',
+                prompts: [
+                  {
+                    prompt: 'AI Test prompt',
+                    regions: ['mx'], // Any regions allowed when category is string
+                    origin: 'ai',
+                    source: 'flow',
+                  },
+                ],
+                category: 'AI Test Category Name', // String name, not UUID
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
+
+        it('validates configuration without aiTopics (optional field)', () => {
+          const result = llmoConfig.safeParse(configWithRegions);
+          expect(result.success).true;
+          if (result.success) {
+            expect(result.data.aiTopics).to.be.undefined;
+          }
         });
       });
     });

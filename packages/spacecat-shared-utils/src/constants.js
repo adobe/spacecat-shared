@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-const OPPORTUNITY_TYPES = {
+export const OPPORTUNITY_TYPES = /** @type {const} */ ({
   // Core Audit Types
   ACCESSIBILITY: 'accessibility',
   ALT_TEXT: 'alt-text',
@@ -64,8 +64,7 @@ const OPPORTUNITY_TYPES = {
 
   // Paid Cookie Consent
   PAID_COOKIE_CONSENT: 'paid-cookie-consent',
-};
 
-export {
-  OPPORTUNITY_TYPES,
-};
+  // Wikipedia Analysis (LLMO)
+  WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
+});

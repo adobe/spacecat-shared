@@ -111,10 +111,7 @@ export default class FaqMapper extends BaseOpportunityMapper {
     // Calculate the most recent lastUpdated from all eligible suggestions
     // The heading patch should have the same timestamp as the newest FAQ
     const maxLastUpdated = Math.max(...eligibleSuggestions.map((suggestion) => {
-      const data = suggestion.getData();
-      const updatedAt = data?.scrapedAt
-        || data?.transformRules?.scrapedAt
-        || suggestion.getUpdatedAt();
+      const updatedAt = suggestion.getUpdatedAt();
 
       if (updatedAt) {
         const parsed = new Date(updatedAt).getTime();

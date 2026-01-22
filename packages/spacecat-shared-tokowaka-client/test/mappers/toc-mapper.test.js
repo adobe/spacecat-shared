@@ -340,7 +340,6 @@ describe('TocMapper', () => {
             selector: 'h1#main-heading',
             valueFormat: 'hast',
             value: tocValue,
-            scrapedAt: '2025-12-06T06:27:04.663Z',
           },
         }),
       };

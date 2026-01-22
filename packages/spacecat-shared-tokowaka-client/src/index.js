@@ -355,20 +355,25 @@ class TokowakaClient {
       ?? existingMetaconfig.forceFail
       ?? false;
 
+    const hasPrerender = isNonEmptyObject(options.prerender)
+      || isNonEmptyObject(existingMetaconfig.prerender);
+    const prerender = options.prerender
+      ?? existingMetaconfig.prerender;
+
     const metaconfig = {
-      siteId,
-      apiKeys: existingMetaconfig.apiKeys,
+      ...existingMetaconfig,
       tokowakaEnabled: options.tokowakaEnabled ?? existingMetaconfig.tokowakaEnabled ?? true,
       enhancements: options.enhancements ?? existingMetaconfig.enhancements ?? true,
       patches: isNonEmptyObject(options.patches)
         ? options.patches
         : (existingMetaconfig.patches ?? {}),
       ...(hasForceFail && { forceFail }),
+      ...(hasPrerender && { prerender }),
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig);
 
-    this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
+    this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;
   }

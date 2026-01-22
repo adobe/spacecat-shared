@@ -64,4 +64,7 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
 
   // Paid Cookie Consent
   PAID_COOKIE_CONSENT: 'paid-cookie-consent',
+
+  // Wikipedia Analysis (LLMO)
+  WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
 });

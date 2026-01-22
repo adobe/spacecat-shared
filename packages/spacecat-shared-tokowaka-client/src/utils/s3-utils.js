@@ -35,10 +35,17 @@ export function normalizePath(pathname) {
  * @returns {string} - Normalized hostname
  * @throws {Error} - If hostname extraction fails
  */
-export function getHostName(url, logger) {
+export function getHostName(url, logger = console) {
   try {
-    const finalHostname = url.hostname.replace(/^www\./, '');
-    return finalHostname;
+    let urlObj;
+    if (url instanceof URL) {
+      urlObj = url;
+    } else if (typeof url === 'string') {
+      urlObj = new URL(url);
+    } else {
+      throw new TypeError('Input must be a URL or a string');
+    }
+    return urlObj.hostname.replace(/^www\./, '');
   } catch (error) {
     logger.error(`Error extracting host name: ${error.message}`);
     throw new Error(`Error extracting host name: ${url.toString()}`);

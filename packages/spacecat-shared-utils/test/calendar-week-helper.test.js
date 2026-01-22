@@ -407,6 +407,33 @@ describe('Utils - temporal helpers', () => {
       expect(c).to.equal('(year=2025 AND month=8)');
     });
 
+    it('uses month codepath with correct year when week is 0 and month is valid', () => {
+      const c = getTemporalCondition({ week: 0, month: 11, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=11)');
+    });
+
+    it('uses month codepath with correct year when week is negative and month is valid', () => {
+      const c = getTemporalCondition({ week: -10, month: 1, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=1)');
+    });
+
+    it('rejects week 0 and falls back to last full week when no month provided', () => {
+      clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+      const c = getTemporalCondition({ week: 0, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
+
+    it('rejects negative week numbers and falls back to last full week', () => {
+      clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+      const c = getTemporalCondition({ week: -1, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
+
+    it('rejects negative week numbers but uses month when provided', () => {
+      const c = getTemporalCondition({ week: -5, month: 3, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=3)');
+    });
+
     it('week 53 in 2020 returns OR across years and months', () => {
       const c = getTemporalCondition({ week: 53, year: 2020 });
       expect(c).to.equal('(year=2020 AND month=12 AND week=53) OR (year=2021 AND month=1 AND week=53)');
@@ -418,10 +445,10 @@ describe('Utils - temporal helpers', () => {
       expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
     });
 
-    it('only month without year falls back to last full week', () => {
+    it('only month without year falls back to last full month', () => {
       clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
       const c = getTemporalCondition({ month: 8 });
-      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+      expect(c).to.equal('(year=2025 AND month=6)');
     });
 
     describe('numSeries > 1 tests', () => {
@@ -438,6 +465,30 @@ describe('Utils - temporal helpers', () => {
       it('throws error when numSeries > 1 and only month is provided without year', () => {
         expect(() => getTemporalCondition({ month: 7, numSeries: 2 }))
           .to.throw('Missing required parameters: week or month');
+      });
+
+      it('throws error when numSeries > 1 and week is 0 with no month', () => {
+        expect(() => getTemporalCondition({ week: 0, year: 2025, numSeries: 2 }))
+          .to.throw('Missing required parameters: week or month');
+      });
+
+      it('throws error when numSeries > 1 and week is negative with no month', () => {
+        expect(() => getTemporalCondition({ week: -5, year: 2025, numSeries: 2 }))
+          .to.throw('Missing required parameters: week or month');
+      });
+
+      it('uses month when numSeries > 1 and week is 0 but month is valid', () => {
+        const c = getTemporalCondition({
+          week: 0, month: 7, year: 2025, numSeries: 3,
+        });
+        expect(c).to.equal('(year=2025 AND month=7) OR (year=2025 AND month=6) OR (year=2025 AND month=5)');
+      });
+
+      it('uses month when numSeries > 1 and week is negative but month is valid', () => {
+        const c = getTemporalCondition({
+          week: -10, month: 3, year: 2025, numSeries: 2,
+        });
+        expect(c).to.equal('(year=2025 AND month=3) OR (year=2025 AND month=2)');
       });
 
       it('returns multiple week conditions when numSeries > 1 with valid week/year', () => {
@@ -462,15 +513,14 @@ describe('Utils - temporal helpers', () => {
         expect(c).to.include('(year=2024 AND month=12 AND week=52)');
       });
 
-      it('handles year transition when week goes below 1 (checking has53CalendarWeeks on current year)', () => {
+      it('handles year transition when week goes below 1 (checking has53CalendarWeeks on previous year)', () => {
         // Week 2 of 2021, going back 3 weeks
-        // When week becomes 0, it checks has53CalendarWeeks(2021) which is false, so uses 52
-        // Note: This tests the actual implementation behavior where year check happens
-        // before decrement
+        // When week becomes 0, it decrements year to 2020, then checks has53CalendarWeeks(2020)
+        // 2020 has 53 weeks, so it correctly uses week 53 of 2020
         const c = getTemporalCondition({ week: 2, year: 2021, numSeries: 3 });
         expect(c).to.include('(year=2021 AND month=1 AND week=2)');
         expect(c).to.include('(year=2021 AND month=1 AND week=1)');
-        expect(c).to.include('(year=2020 AND month=12 AND week=52)');
+        expect(c).to.include('(year=2020 AND month=12 AND week=53)');
       });
 
       it('covers has53CalendarWeeks true branch when transitioning from a 53-week year', () => {

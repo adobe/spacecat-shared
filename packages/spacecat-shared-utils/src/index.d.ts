@@ -327,6 +327,8 @@ export function extractUrlsFromOpportunity(opts: {
 }): string[];
 
 export * as llmoConfig from './llmo-config.js';
+export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
 
 export { type detectLocale } from './locale-detect/index.js';
+export { type detectBotBlocker } from './bot-blocker-detect/index.js';

@@ -85,7 +85,7 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
     const checkType = data?.checkType;
 
     // Check if checkType is eligible
-    const eligibleCheckTypes = ['heading-empty', 'heading-missing-h1', 'heading-h1-length'];
+    const eligibleCheckTypes = ['heading-empty', 'heading-missing-h1', 'heading-h1-length', 'heading-order-invalid'];
     if (!eligibleCheckTypes.includes(checkType)) {
       return {
         eligible: false,
@@ -123,6 +123,21 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
         return {
           eligible: false,
           reason: `transformRules.action must be replace for ${checkType}`,
+        };
+      }
+    }
+
+    if (checkType === 'heading-order-invalid') {
+      if (data.transformRules?.action !== 'replaceWith') {
+        return {
+          eligible: false,
+          reason: `transformRules.action must be replaceWith for ${checkType}`,
+        };
+      }
+      if (data.transformRules?.valueFormat !== 'hast') {
+        return {
+          eligible: false,
+          reason: `transformRules.valueFormat must be hast for ${checkType}`,
         };
       }
     }

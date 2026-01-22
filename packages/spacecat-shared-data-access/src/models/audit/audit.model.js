@@ -41,6 +41,8 @@ class Audit extends BaseModel {
     REDIRECT_CHAINS: 'redirect-chains',
     BROKEN_BACKLINKS: 'broken-backlinks',
     BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+    CONTENT_FRAGMENT_UNUSED: 'content-fragment-unused',
+    CONTENT_FRAGMENT_UNUSED_AUTO_FIX: 'content-fragment-unused-auto-fix',
     EXPERIMENTATION: 'experimentation',
     CONVERSION: 'conversion',
     ORGANIC_KEYWORDS: 'organic-keywords',
@@ -79,6 +81,8 @@ class Audit extends BaseModel {
     LLMO_REFERRAL_TRAFFIC: 'llmo-referral-traffic',
     PAGE_INTENT: 'page-intent',
     NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
+    TOC: 'toc',
+    WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
@@ -190,17 +194,27 @@ class Audit extends BaseModel {
        * @param context - The context object.
        * @returns {object} - The formatted payload for the scrape client.
        */
-      formatPayload: (stepResult, auditContext, context) => ({
-        urls: stepResult.urls.map((urlObj) => urlObj.url),
-        processingType: stepResult.processingType || 'default',
-        options: stepResult.options || {},
-        maxScrapeAge: isNumber(stepResult.maxScrapeAge) ? stepResult.maxScrapeAge : 24,
-        auditData: {
-          siteId: stepResult.siteId,
-          completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
-          auditContext,
-        },
-      }),
+      formatPayload: (stepResult, auditContext, context) => {
+        const payload = {
+          urls: stepResult.urls.map((urlObj) => urlObj.url),
+          processingType: stepResult.processingType || 'default',
+          options: stepResult.options || {},
+          maxScrapeAge: isNumber(stepResult.maxScrapeAge) ? stepResult.maxScrapeAge : 24,
+          auditData: {
+            siteId: stepResult.siteId,
+            completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
+            auditContext,
+          },
+        };
+
+        // Propagate traceId for cross-worker tracing continuity
+        // This allows the scrape client to maintain the same trace across multiple workers
+        if (context.traceId) {
+          payload.traceId = context.traceId;
+        }
+
+        return payload;
+      },
     },
   };
 

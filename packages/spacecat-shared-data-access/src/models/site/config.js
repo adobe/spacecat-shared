@@ -338,8 +338,11 @@ export const configSchema = Joi.object({
     outputLocation: Joi.string().required(),
   }).optional(),
   tokowakaConfig: Joi.object({
-    apiKey: Joi.string().required(),
+    apiKey: Joi.string().optional(),
     forwardedHost: Joi.string().optional(),
+  }).optional(),
+  edgeOptimizeConfig: Joi.object({
+    enabled: Joi.boolean().required(),
   }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -347,6 +350,7 @@ export const configSchema = Joi.object({
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),
+    autofixExcludedURLs: Joi.array().items(Joi.string()),
     manualOverwrites: Joi.array().items(Joi.object({
       brokenTargetURL: Joi.string().optional(),
       targetURL: Joi.string().optional(),
@@ -426,6 +430,7 @@ export const Config = (data = {}) => {
   self.getHandlers = () => state.handlers;
   self.getImports = () => state.imports;
   self.getExcludedURLs = (type) => state?.handlers?.[type]?.excludedURLs;
+  self.getAutofixExcludedURLs = (type) => state?.handlers?.[type]?.autofixExcludedURLs;
   self.getManualOverwrites = (type) => state?.handlers?.[type]?.manualOverwrites;
   self.getFixedURLs = (type) => state?.handlers?.[type]?.fixedURLs;
   self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
@@ -448,7 +453,7 @@ export const Config = (data = {}) => {
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
-
+  self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
@@ -616,6 +621,12 @@ export const Config = (data = {}) => {
     state.handlers[type].excludedURLs = excludedURLs;
   };
 
+  self.updateAutofixExcludedURLs = (type, autofixExcludedURLs) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].autofixExcludedURLs = autofixExcludedURLs;
+  };
+
   self.updateManualOverwrites = (type, manualOverwrites) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = state.handlers[type] || {};
@@ -741,6 +752,10 @@ export const Config = (data = {}) => {
     state.tokowakaConfig = tokowakaConfig;
   };
 
+  self.updateEdgeOptimizeConfig = (edgeOptimizeConfig) => {
+    state.edgeOptimizeConfig = edgeOptimizeConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -757,4 +772,5 @@ Config.toDynamoItem = (config) => ({
   cdnLogsConfig: config.getCdnLogsConfig(),
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
+  edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
 });

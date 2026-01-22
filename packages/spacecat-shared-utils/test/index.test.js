@@ -29,6 +29,7 @@ describe('Index Exports', () => {
     'getStaticContent',
     'getPrompt',
     'getQuery',
+    'hasNonWWWSubdomain',
     'hasText',
     'isArray',
     'isBoolean',
@@ -59,6 +60,7 @@ describe('Index Exports', () => {
     'stripTrailingSlash',
     'stripWWW',
     'toBoolean',
+    'toggleWWWHostname',
     'tracingFetch',
     'getHighFormViewsLowConversionMetrics',
     'getHighPageViewsLowFormViewsMetrics',
@@ -81,12 +83,14 @@ describe('Index Exports', () => {
     'extractUrlsFromOpportunity',
     'extractUrlsFromSuggestion',
     'detectAEMVersion',
+    'detectBotBlocker',
     'determineAEMCSPageId',
     'AUTHORING_TYPES',
     'DELIVERY_TYPES',
     'OPPORTUNITY_TYPES',
     'getPageEditUrl',
     'llmoConfig',
+    'llmoStrategy',
     'schemas',
     'detectLocale',
     'prettifyLogForwardingConfig',
@@ -102,6 +106,7 @@ describe('Index Exports', () => {
     'Granularity',
     'GRANULARITY_KEY_BUILDERS',
     'ISSUE_GRANULARITY_MAP',
+    'wwwUrlResolver',
   ];
 
   it('exports all expected functions', () => {

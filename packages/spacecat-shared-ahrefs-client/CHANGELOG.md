@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.3...@adobe/spacecat-shared-ahrefs-client-v1.10.4) (2026-01-20)
+
+
+### Bug Fixes
+
+* getPaidPages was missing parameter mode ([#1271](https://github.com/adobe/spacecat-shared/issues/1271)) ([09e597f](https://github.com/adobe/spacecat-shared/commit/09e597ff7ede8f9c9752dc1b35cd81539a48019a))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.10.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.2...@adobe/spacecat-shared-ahrefs-client-v1.10.3) (2025-11-28)
 
 

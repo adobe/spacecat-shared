@@ -66,6 +66,9 @@ export {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  hasNonWWWSubdomain,
+  toggleWWWHostname,
+  wwwUrlResolver,
 } from './url-helpers.js';
 
 export {
@@ -104,9 +107,11 @@ export { detectAEMVersion, DELIVERY_TYPES, AUTHORING_TYPES } from './aem.js';
 export { determineAEMCSPageId, getPageEditUrl } from './aem-content-api-utils.js';
 
 export * as llmoConfig from './llmo-config.js';
+export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
 
 export { detectLocale } from './locale-detect/locale-detect.js';
+export { detectBotBlocker } from './bot-blocker-detect/bot-blocker-detect.js';
 export { prettifyLogForwardingConfig } from './cdn-helpers.js';
 
 export {

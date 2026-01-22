@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.9...@adobe/spacecat-shared-tier-client-v1.3.10) (2025-12-05)
+
+
+### Bug Fixes
+
+* no override paid tier ([#1221](https://github.com/adobe/spacecat-shared/issues/1221)) ([a528e1e](https://github.com/adobe/spacecat-shared/commit/a528e1e345cce2c542b32dc43c221b49e3f86464))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.8...@adobe/spacecat-shared-tier-client-v1.3.9) (2025-11-30)
+
+
+### Bug Fixes
+
+* update data-access ([#1196](https://github.com/adobe/spacecat-shared/issues/1196)) ([c9461e7](https://github.com/adobe/spacecat-shared/commit/c9461e7c25634014088320d2faaf7839f164845c))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.7...@adobe/spacecat-shared-tier-client-v1.3.8) (2025-11-28)
+
+
+### Bug Fixes
+
+* remove instanceof check ([#1191](https://github.com/adobe/spacecat-shared/issues/1191)) ([c2bf75d](https://github.com/adobe/spacecat-shared/commit/c2bf75d44003e1d0c25bea75640559cd46794301))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.6...@adobe/spacecat-shared-tier-client-v1.3.7) (2025-11-28)
+
+
+### Bug Fixes
+
+* using entity name instead of instanceof ([#1190](https://github.com/adobe/spacecat-shared/issues/1190)) ([eccda60](https://github.com/adobe/spacecat-shared/commit/eccda60d02f1df7d251957430cb7fcef4041f89c))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.5...@adobe/spacecat-shared-tier-client-v1.3.6) (2025-11-28)
+
+
+### Bug Fixes
+
+* update deps ([#1187](https://github.com/adobe/spacecat-shared/issues/1187)) ([8632e20](https://github.com/adobe/spacecat-shared/commit/8632e2049e6061018c26399b8db702fd72e65620))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.4...@adobe/spacecat-shared-tier-client-v1.3.5) (2025-11-28)
 
 

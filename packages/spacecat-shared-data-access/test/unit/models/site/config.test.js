@@ -391,6 +391,25 @@ describe('Config Tests', () => {
       expect(excludedURLs).to.deep.equal(['url1', 'url2']);
     });
 
+    it('correctly updates the autofix excluded URLs', () => {
+      const config = Config();
+      config.updateAutofixExcludedURLs('meta-tags', [
+        'https://www.example.com/page1',
+        'https://www.example.com/page2',
+      ]);
+
+      const autofixExcludedURLs = config.getAutofixExcludedURLs('meta-tags');
+      expect(autofixExcludedURLs).to.deep.equal([
+        'https://www.example.com/page1',
+        'https://www.example.com/page2',
+      ]);
+    });
+
+    it('returns undefined for autofix excluded URLs when handler is not present', () => {
+      const config = Config();
+      expect(config.getAutofixExcludedURLs('non-existent-handler')).to.be.undefined;
+    });
+
     it('correctly updates the manual overrides', () => {
       const config = Config();
       const manualOverwrites = [
@@ -453,6 +472,7 @@ describe('Config Tests', () => {
       expect(config.getSlackMentions('404')).to.be.undefined;
       expect(config.getHandlerConfig('404')).to.be.undefined;
       expect(config.getExcludedURLs('404')).to.be.undefined;
+      expect(config.getAutofixExcludedURLs('404')).to.be.undefined;
       expect(config.getManualOverwrites('404')).to.be.undefined;
       expect(config.getFixedURLs('404')).to.be.undefined;
       expect(config.getIncludedURLs('404')).to.be.undefined;
@@ -2472,6 +2492,75 @@ describe('Config Tests', () => {
       });
       const dynamoItem = Config.toDynamoItem(data);
       expect(dynamoItem.tokowakaConfig).to.deep.equal(data.getTokowakaConfig());
+    });
+  });
+
+  describe('Edge Optimize Config', () => {
+    it('creates a Config with edgeOptimizeConfig property', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
+    it('has undefined edgeOptimizeConfig in default config', () => {
+      const config = Config();
+      expect(config.getEdgeOptimizeConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for edgeOptimizeConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getEdgeOptimizeConfig()).to.be.undefined;
+    });
+
+    it('should preserve provided data if edgeOptimizeConfig is invalid', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          // missing required enabled
+        },
+      };
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.be.undefined;
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal({});
+    });
+
+    it('should be able to update edgeOptimizeConfig', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      };
+      const config = Config({});
+      config.updateEdgeOptimizeConfig(data.edgeOptimizeConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
+    it('should be able to update edgeOptimizeConfig with different enabled', () => {
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      });
+
+      const newConfig = {
+        enabled: false,
+      };
+      config.updateEdgeOptimizeConfig(newConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes edgeOptimizeConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.edgeOptimizeConfig).to.deep.equal(data.getEdgeOptimizeConfig());
     });
   });
 

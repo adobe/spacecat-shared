@@ -191,6 +191,25 @@ describe('logWrapper tests', () => {
     expect(logArgs).to.contain(`[jobId=${message.jobId}]`);
   });
 
+  it('should prioritize context.traceId over X-Ray traceId', async () => {
+    // Set both context.traceId and X-Ray traceId
+    mockContext.traceId = '1-context-trace-id';
+    getTraceIdStub.returns('1-xray-trace-id');
+
+    const originalLog = mockContext.log;
+    const wrappedFn = logWrapper(mockFnFromSqs);
+
+    await wrappedFn(message, mockContext);
+
+    // Log something to test the wrapper
+    mockContext.log.info('test log');
+
+    // Verify that context.traceId is used, not X-Ray traceId
+    const logArgs = originalLog.info.getCall(0).args[0];
+    expect(logArgs).to.contain('[traceId=1-context-trace-id]');
+    expect(logArgs).to.not.contain('[traceId=1-xray-trace-id]');
+  });
+
   it('should not modify context.log when neither jobId nor traceId are available', async () => {
     getTraceIdStub.returns(null);
     const originalLog = mockContext.log;

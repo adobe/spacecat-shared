@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-gpt-client-v1.6.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.14...@adobe/spacecat-shared-gpt-client-v1.6.15) (2025-12-08)
+
+
+### Bug Fixes
+
+* **gpt-client:** add additional sanitization ([#1227](https://github.com/adobe/spacecat-shared/issues/1227)) ([0279c64](https://github.com/adobe/spacecat-shared/commit/0279c6482846ddb05bcf08e483bb4339933a1be7))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.14](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.13...@adobe/spacecat-shared-gpt-client-v1.6.14) (2025-11-28)
+
+
+### Bug Fixes
+
+* update deps ([#1189](https://github.com/adobe/spacecat-shared/issues/1189)) ([81abf0b](https://github.com/adobe/spacecat-shared/commit/81abf0b72186f9979ef9c9114c1e8a121005988e))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.12...@adobe/spacecat-shared-gpt-client-v1.6.13) (2025-11-28)
+
+
+### Bug Fixes
+
+* update deps ([#1187](https://github.com/adobe/spacecat-shared/issues/1187)) ([8632e20](https://github.com/adobe/spacecat-shared/commit/8632e2049e6061018c26399b8db702fd72e65620))
+
 # [@adobe/spacecat-shared-gpt-client-v1.6.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.11...@adobe/spacecat-shared-gpt-client-v1.6.12) (2025-11-28)
 
 

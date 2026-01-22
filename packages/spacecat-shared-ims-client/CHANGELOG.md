@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-ims-client-v1.11.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.7...@adobe/spacecat-shared-ims-client-v1.11.8) (2026-01-08)
+
+
+### Bug Fixes
+
+* API to get all orgs for a user profile ([#1254](https://github.com/adobe/spacecat-shared/issues/1254)) ([4a0401c](https://github.com/adobe/spacecat-shared/commit/4a0401c73e372272b7055463a412be6ad691b615))
+
+# [@adobe/spacecat-shared-ims-client-v1.11.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.6...@adobe/spacecat-shared-ims-client-v1.11.7) (2025-11-30)
+
+
+### Bug Fixes
+
+* update data-access ([#1196](https://github.com/adobe/spacecat-shared/issues/1196)) ([c9461e7](https://github.com/adobe/spacecat-shared/commit/c9461e7c25634014088320d2faaf7839f164845c))
+
+# [@adobe/spacecat-shared-ims-client-v1.11.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.5...@adobe/spacecat-shared-ims-client-v1.11.6) (2025-11-28)
+
+
+### Bug Fixes
+
+* update deps ([#1187](https://github.com/adobe/spacecat-shared/issues/1187)) ([8632e20](https://github.com/adobe/spacecat-shared/commit/8632e2049e6061018c26399b8db702fd72e65620))
+
 # [@adobe/spacecat-shared-ims-client-v1.11.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.4...@adobe/spacecat-shared-ims-client-v1.11.5) (2025-11-28)
 
 

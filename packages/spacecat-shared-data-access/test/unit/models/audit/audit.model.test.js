@@ -210,7 +210,7 @@ describe('AuditModel', () => {
       NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
       TOC: 'toc',
       WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
-      COMMERCE_PAGE_ENRICHMENT: 'commerce-page-enrichment',
+      COMMERCE_PRODUCT_ENRICHMENTS: 'commerce-product-enrichments',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

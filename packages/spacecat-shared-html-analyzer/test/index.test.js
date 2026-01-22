@@ -47,18 +47,33 @@ describe('HTML Visibility Analyzer', () => {
       expect(result.finalText.length).to.be.greaterThan(0);
     });
 
-    it('should include noscript in initial HTML and exclude in final HTML', async () => {
+    it('should include noscript in initial HTML and exclude in final HTML by default', async () => {
       const initHtml = '<html><body><h1>Title</h1><noscript>Enable JS</noscript><p>Content</p></body></html>';
       const finHtml = '<html><body><h1>Title</h1><noscript>Enable JS</noscript><p>Content</p><div>Extra</div></body></html>';
       const result = await analyzeTextComparison(initHtml, finHtml);
 
       // Initial text should include noscript content
       expect(result.initialText).to.include('Enable JS');
-      // Final text should NOT include noscript content
+      // Final text should NOT include noscript content by default
       expect(result.finalText).to.not.include('Enable JS');
       // Both should have the main content
       expect(result.initialText).to.include('Title');
       expect(result.finalText).to.include('Title');
+    });
+
+    it('should include noscript in final HTML when includeNoscriptInFinal is true', async () => {
+      const initHtml = '<html><body><h1>Title</h1><noscript>Enable JS</noscript><p>Content</p></body></html>';
+      const finHtml = '<html><body><h1>Title</h1><noscript>Enable JS</noscript><p>Content</p><div>Extra</div></body></html>';
+      const result = await analyzeTextComparison(initHtml, finHtml, true, true);
+
+      // Initial text should include noscript content
+      expect(result.initialText).to.include('Enable JS');
+      // Final text should ALSO include noscript content when flag is true
+      expect(result.finalText).to.include('Enable JS');
+      // Both should have the main content
+      expect(result.initialText).to.include('Title');
+      expect(result.finalText).to.include('Title');
+      expect(result.finalText).to.include('Extra');
     });
   });
 
@@ -79,7 +94,7 @@ describe('HTML Visibility Analyzer', () => {
       expect(result.citationReadability).to.be.a('number');
     });
 
-    it('should handle noscript elements correctly in word counts', async () => {
+    it('should handle noscript elements correctly in word counts by default', async () => {
       const originalHtml = '<html><body><h1>Title</h1><noscript>Enable JavaScript</noscript><p>Original content</p></body></html>';
       const currentHtml = '<html><body><h1>Title</h1><noscript>Enable JavaScript</noscript><p>Original content</p><p>New content</p></body></html>';
       const result = await calculateStats(originalHtml, currentHtml);
@@ -92,6 +107,26 @@ describe('HTML Visibility Analyzer', () => {
       expect(result.wordCountBefore).to.be.greaterThan(0);
       expect(result.wordCountAfter).to.be.greaterThan(0);
       expect(result.contentIncreaseRatio).to.be.a('number');
+    });
+
+    it('should include noscript in current HTML when includeNoscriptInCurrent is true', async () => {
+      const originalHtml = '<html><body><h1>Title</h1><noscript>Enable JavaScript</noscript><p>Original content</p></body></html>';
+      const currentHtml = '<html><body><h1>Title</h1><noscript>Enable JavaScript</noscript><p>Original content</p><p>New content</p></body></html>';
+      const resultWithout = await calculateStats(originalHtml, currentHtml, true, false);
+      const resultWith = await calculateStats(originalHtml, currentHtml, true, true);
+
+      // When noscript is excluded from current, word count should be lower
+      expect(resultWithout.wordCountAfter).to.be.lessThan(resultWith.wordCountAfter);
+
+      // Note: Text extraction concatenates without spaces, so words merge
+      // originalHtml with noscript: "TitleEnable JavaScriptOriginal content" = 3 words
+      // originalHtml without noscript: "TitleOriginal content" = 2 words
+      // currentHtml without noscript: "TitleOriginal contentNew content" = 3 words
+      // currentHtml with noscript: "TitleEnable JavaScriptOriginal contentNew content" = 4 words
+      expect(resultWithout.wordCountBefore).to.equal(3);
+      expect(resultWithout.wordCountAfter).to.equal(3);
+      expect(resultWith.wordCountBefore).to.equal(3);
+      expect(resultWith.wordCountAfter).to.equal(4);
     });
   });
 

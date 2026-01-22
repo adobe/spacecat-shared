@@ -182,7 +182,7 @@ function filterNavigationAndFooterCheerio($) {
  * @param {string} htmlContent - Raw HTML content
  * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
  * @param {boolean} returnText - Whether to return text only
- * @param {boolean} includeNoscript - Whether to include noscript elements
+ * @param {boolean} includeNoscript - Whether to include noscript elements (false excludes them)
  * @returns {string} Filtered content
  */
 function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNoscript) {
@@ -265,7 +265,7 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNosc
  * @param {string} htmlContent - Raw HTML content
  * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
  * @param {boolean} returnText - Whether to return text only
- * @param {boolean} includeNoscript - Whether to include noscript elements
+ * @param {boolean} includeNoscript - Whether to include noscript elements (false excludes them)
  * @returns {Promise<string>} Filtered content
  */
 async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeNoscript) {
@@ -342,9 +342,9 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
 /**
  * Filter HTML content by removing unwanted elements
  * @param {string} htmlContent - Raw HTML content
- * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
- * @param {boolean} returnText - Whether to return text only (true) or filtered HTML (false)
- * @param {boolean} includeNoscript - Whether to include noscript elements
+ * @param {boolean} [ignoreNavFooter=true] - Whether to remove navigation/footer elements
+ * @param {boolean} [returnText=true] - Whether to return text only (true) or filtered HTML (false)
+ * @param {boolean} [includeNoscript=false] - Whether to include noscript elements
  * @returns {string|Promise<string>} Filtered content (sync in browser, async in Node.js)
  */
 export function filterHtmlContent(
@@ -366,9 +366,10 @@ export function filterHtmlContent(
 
 /**
  * Strip HTML tags and return plain text
+ *
  * @param {string} htmlContent - Raw HTML content
- * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
- * @param {boolean} includeNoscript - Whether to include noscript elements
+ * @param {boolean} [ignoreNavFooter=true] - Whether to remove navigation/footer elements
+ * @param {boolean} [includeNoscript=false] - Whether to include noscript elements
  * @returns {string|Promise<string>} Plain text content (sync in browser, async in Node.js)
  */
 export function stripTagsToText(htmlContent, ignoreNavFooter = true, includeNoscript = false) {
@@ -378,16 +379,17 @@ export function stripTagsToText(htmlContent, ignoreNavFooter = true, includeNosc
 /**
  * Extract word count from HTML content
  * @param {string} htmlContent - Raw HTML content
- * @param {boolean} ignoreNavFooter - Whether to ignore navigation/footer
+ * @param {boolean} [ignoreNavFooter=true] - Whether to ignore navigation/footer
+ * @param {boolean} [includeNoscript=false] - Whether to include noscript elements
  * @returns {Object|Promise<Object>} Object with word_count property
  *   (sync in browser, async in Node.js)
  */
-export function extractWordCount(htmlContent, ignoreNavFooter = true) {
+export function extractWordCount(htmlContent, ignoreNavFooter = true, includeNoscript = false) {
   if (!htmlContent) {
     return { word_count: 0 };
   }
 
-  const textContent = stripTagsToText(htmlContent, ignoreNavFooter);
+  const textContent = stripTagsToText(htmlContent, ignoreNavFooter, includeNoscript);
 
   // Handle both sync (browser) and async (Node.js) cases
   if (textContent && typeof textContent.then === 'function') {

@@ -90,17 +90,30 @@ export function generateDiffReport(initText: string, finText: string, mode?: "wo
 /**
  * Filter HTML content by removing unwanted elements
  */
-export function filterHtmlContent(htmlContent: string, ignoreNavFooter?: boolean, returnText?: boolean): Promise<string>;
+export function filterHtmlContent(
+  htmlContent: string, 
+  ignoreNavFooter?: boolean, 
+  returnText?: boolean, 
+  includeNoscript?: boolean
+): Promise<string>;
 
 /**
  * Extract plain text from HTML content
  */
-export function stripTagsToText(htmlContent: string, ignoreNavFooter?: boolean): Promise<string>;
+export function stripTagsToText(
+  htmlContent: string, 
+  ignoreNavFooter?: boolean, 
+  includeNoscript?: boolean
+): Promise<string>;
 
 /**
  * Extract word count from HTML content
  */
-export function extractWordCount(htmlContent: string, ignoreNavFooter?: boolean): Promise<{ word_count: number }>;
+export function extractWordCount(
+  htmlContent: string, 
+  ignoreNavFooter?: boolean, 
+  includeNoscript?: boolean
+): Promise<{ word_count: number }>;
 
 /**
  * Remove navigation and footer elements from DOM element (browser environment)
@@ -150,28 +163,42 @@ interface BothScenariosStats {
 
 /**
  * Comprehensive text-only analysis between initial and final HTML (original chrome extension logic)
+ * @param initHtml - Initial HTML content (what crawlers/bots see - server-side rendered)
+ * @param finHtml - Final HTML content (what users see - client-side rendered)
+ * @param ignoreNavFooter - Whether to ignore navigation/footer elements
+ * @param includeNoscriptInFinal - Whether to include noscript content in final HTML (client-side)
  */
 export function analyzeTextComparison(
   initHtml: string, 
   finHtml: string, 
-  ignoreNavFooter?: boolean
+  ignoreNavFooter?: boolean,
+  includeNoscriptInFinal?: boolean
 ): Promise<TextComparison>;
 
 /**
  * Calculate basic stats from HTML comparison (original chrome extension logic)
+ * @param originalHTML - Initial HTML content (server-side)
+ * @param currentHTML - Final HTML content (client-side)
+ * @param ignoreNavFooter - Whether to ignore navigation/footer elements
+ * @param includeNoscriptInCurrent - Whether to include noscript content in current HTML (client-side)
  */
 export function calculateStats(
   originalHTML: string, 
   currentHTML: string, 
-  ignoreNavFooter?: boolean
+  ignoreNavFooter?: boolean,
+  includeNoscriptInCurrent?: boolean
 ): Promise<BasicStats>;
 
 /**
  * Calculate stats for both nav/footer scenarios (original chrome extension logic)
+ * @param originalHTML - Initial HTML content (server-side)
+ * @param currentHTML - Final HTML content (client-side)
+ * @param includeNoscriptInCurrent - Whether to include noscript content in current HTML (client-side)
  */
 export function calculateBothScenarioStats(
   originalHTML: string, 
-  currentHTML: string
+  currentHTML: string,
+  includeNoscriptInCurrent?: boolean
 ): Promise<BothScenariosStats>;
 
 /** MARKDOWN DIFF FUNCTIONS */

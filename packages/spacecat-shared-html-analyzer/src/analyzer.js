@@ -25,12 +25,20 @@ import { hashDJB2, pct } from './utils.js';
  * @param {string} initHtml - Initial HTML content (what crawlers see)
  * @param {string} finHtml - Final HTML content (what users see)
  * @param {boolean} [ignoreNavFooter=true] - Whether to ignore navigation/footer elements
+ * @param {boolean} [includeNoscriptInFinal=false] -
+ * Whether to include noscript content in final HTML
  * @returns {Promise<Object>} Comprehensive analysis results
  */
-export async function analyzeTextComparison(initHtml, finHtml, ignoreNavFooter = true) {
-  // Handle both sync (browser) and async (Node.js) stripTagsToText
+export async function analyzeTextComparison(
+  initHtml,
+  finHtml,
+  ignoreNavFooter = true,
+  includeNoscriptInFinal = false,
+) {
+  // Server-side (initial): Always includes noscript (true) - what crawlers see
   const initTextResult = stripTagsToText(initHtml, ignoreNavFooter, true);
-  const finTextResult = stripTagsToText(finHtml, ignoreNavFooter, false);
+  // Client-side (final): Configurable noscript inclusion - what users see
+  const finTextResult = stripTagsToText(finHtml, ignoreNavFooter, includeNoscriptInFinal);
 
   const initText = await Promise.resolve(initTextResult);
   const finText = await Promise.resolve(finTextResult);
@@ -61,12 +69,20 @@ export async function analyzeTextComparison(initHtml, finHtml, ignoreNavFooter =
  * @param {string} originalHTML - Initial HTML content
  * @param {string} currentHTML - Final HTML content
  * @param {boolean} [ignoreNavFooter=true] - Whether to ignore navigation/footer elements
+ * @param {boolean} [includeNoscriptInCurrent=false] -
+ * Whether to include noscript content in current HTML
  * @returns {Promise<Object>} Basic statistics
  */
-export async function calculateStats(originalHTML, currentHTML, ignoreNavFooter = true) {
-  // Handle both sync (browser) and async (Node.js) stripTagsToText
+export async function calculateStats(
+  originalHTML,
+  currentHTML,
+  ignoreNavFooter = true,
+  includeNoscriptInCurrent = false,
+) {
+  // Server-side (original): Always includes noscript (true) - what crawlers see
   const originalTextResult = stripTagsToText(originalHTML, ignoreNavFooter, true);
-  const currentTextResult = stripTagsToText(currentHTML, ignoreNavFooter, false);
+  // Client-side (current): Configurable noscript inclusion - what users see
+  const currentTextResult = stripTagsToText(currentHTML, ignoreNavFooter, includeNoscriptInCurrent);
 
   const originalText = await Promise.resolve(originalTextResult);
   const currentText = await Promise.resolve(currentTextResult);
@@ -103,14 +119,30 @@ export async function calculateStats(originalHTML, currentHTML, ignoreNavFooter 
  * Calculate stats for both nav/footer scenarios
  * @param {string} originalHTML - Initial HTML content
  * @param {string} currentHTML - Final HTML content
+ * @param {boolean} [includeNoscriptInCurrent=false] -
+ * Whether to include noscript content in current HTML
  * @returns {Promise<Object>} Analysis results for both scenarios
  */
-export async function calculateBothScenarioStats(originalHTML, currentHTML) {
+export async function calculateBothScenarioStats(
+  originalHTML,
+  currentHTML,
+  includeNoscriptInCurrent = false,
+) {
   // Calculate stats with nav/footer ignored
-  const statsIgnored = await calculateStats(originalHTML, currentHTML, true);
+  const statsIgnored = await calculateStats(
+    originalHTML,
+    currentHTML,
+    true,
+    includeNoscriptInCurrent,
+  );
 
   // Calculate stats without nav/footer ignored
-  const statsNotIgnored = await calculateStats(originalHTML, currentHTML, false);
+  const statsNotIgnored = await calculateStats(
+    originalHTML,
+    currentHTML,
+    false,
+    includeNoscriptInCurrent,
+  );
   return {
     withNavFooterIgnored: {
       wordCountBefore: statsIgnored.wordCountBefore,

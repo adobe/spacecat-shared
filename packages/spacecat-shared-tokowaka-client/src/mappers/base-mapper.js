@@ -88,10 +88,7 @@ export default class BaseOpportunityMapper {
    * @returns {Object} - Base patch object
    */
   createBasePatch(suggestion, opportunityId) {
-    const data = suggestion.getData();
-    const updatedAt = data?.scrapedAt
-      || data?.transformRules?.scrapedAt
-      || suggestion.getUpdatedAt();
+    const updatedAt = suggestion.getUpdatedAt();
 
     // Parse timestamp, fallback to Date.now() if invalid
     let lastUpdated = Date.now();

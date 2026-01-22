@@ -38,7 +38,6 @@ describe('SentimentTopicCollection', () => {
     description: 'Track sentiment around the BMW XM luxury SUV',
     topicName: 'BMW XM 2026',
     subPrompts: ['What about performance?'],
-    guidelineIds: ['guideline-001'],
     audits: ['wikipedia-analysis'],
     enabled: true,
   };

@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.89.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.88.0...@adobe/spacecat-shared-utils-v1.89.0) (2026-01-22)
+
+
+### Features
+
+* moved `calculateCpcValue` function to spacecat-shared-utils ([#1048](https://github.com/adobe/spacecat-shared/issues/1048)) ([5006e5b](https://github.com/adobe/spacecat-shared/commit/5006e5be51c8959f2e6d72664251e1e0264d44a1))
+
+# [@adobe/spacecat-shared-utils-v1.88.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.87.1...@adobe/spacecat-shared-utils-v1.88.0) (2026-01-22)
+
+
+### Features
+
+* new json obj in S3 for storing opportunity workspace data ([#1278](https://github.com/adobe/spacecat-shared/issues/1278)) ([68b0db0](https://github.com/adobe/spacecat-shared/commit/68b0db054d9eb43d485cdec9dd55059f8e07318e))
+
 # [@adobe/spacecat-shared-utils-v1.87.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.87.0...@adobe/spacecat-shared-utils-v1.87.1) (2026-01-19)
 
 

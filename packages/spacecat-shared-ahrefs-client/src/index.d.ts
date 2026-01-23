@@ -90,8 +90,9 @@ export default class AhrefsAPIClient {
    * @param url - The target URL
    * @param date - Optional date in YYYY-MM-DD format, defaults to today
    * @param limit - Maximum number of results to return (max: 1000)
+   * @param mode - Search mode: 'exact' for exact domain match, 'prefix' for domain and all subpages (default: 'prefix')
    */
-  getPaidPages(url: string, date?: string, limit?: number):
+  getPaidPages(url: string, date?: string, limit?: number, mode?: 'exact' | 'prefix' | 'domain' | 'subdomains'):
       Promise<{ result: object, fullAuditRef: string }>;
 
   /**

@@ -624,6 +624,7 @@ describe('AhrefsAPIClient', () => {
           ].join(','),
           order_by: 'sum_traffic:desc',
           limit: 200,
+          mode: 'prefix',
           output: 'json',
         })
         .reply(200, paidPagesResponse);
@@ -631,7 +632,7 @@ describe('AhrefsAPIClient', () => {
       const result = await client.getPaidPages(target);
       expect(result).to.deep.equal({
         result: paidPagesResponse,
-        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${date}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=200&output=json`,
+        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${date}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=200&mode=prefix&output=json`,
       });
     });
 
@@ -656,6 +657,7 @@ describe('AhrefsAPIClient', () => {
           ].join(','),
           order_by: 'sum_traffic:desc',
           limit: customLimit,
+          mode: 'prefix',
           output: 'json',
         })
         .reply(200, paidPagesResponse);
@@ -663,7 +665,7 @@ describe('AhrefsAPIClient', () => {
       const result = await client.getPaidPages(target, customDate, customLimit);
       expect(result).to.deep.equal({
         result: paidPagesResponse,
-        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${customDate}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=${customLimit}&output=json`,
+        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${customDate}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=${customLimit}&mode=prefix&output=json`,
       });
     });
 
@@ -687,6 +689,7 @@ describe('AhrefsAPIClient', () => {
           ].join(','),
           order_by: 'sum_traffic:desc',
           limit: 1000,
+          mode: 'prefix',
           output: 'json',
         })
         .reply(200, paidPagesResponse);
@@ -694,7 +697,40 @@ describe('AhrefsAPIClient', () => {
       const result = await client.getPaidPages(target, date, 5000);
       expect(result).to.deep.equal({
         result: paidPagesResponse,
-        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${date}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=1000&output=json`,
+        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${date}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=1000&mode=prefix&output=json`,
+      });
+    });
+
+    it('sends API request with custom mode parameter', async () => {
+      const target = 'test-site.com';
+      const date = mockDate.split('T')[0];
+      const customMode = 'exact';
+
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/paid-pages')
+        .query({
+          target,
+          date,
+          select: [
+            'url',
+            'top_keyword',
+            'top_keyword_best_position_title',
+            'top_keyword_country',
+            'top_keyword_volume',
+            'sum_traffic',
+            'value',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          limit: 200,
+          mode: customMode,
+          output: 'json',
+        })
+        .reply(200, paidPagesResponse);
+
+      const result = await client.getPaidPages(target, date, 200, customMode);
+      expect(result).to.deep.equal({
+        result: paidPagesResponse,
+        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${date}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=200&mode=${customMode}&output=json`,
       });
     });
   });

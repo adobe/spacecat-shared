@@ -133,7 +133,30 @@ For a detailed schema, refer to `docs/schema.json`. This schema is importable to
 
 ## Integration Testing
 
-The module includes comprehensive integration tests embedding a local DynamoDB server with in-memory storage for testing:
+The module includes comprehensive integration tests embedding a local DynamoDB server with in-memory storage for 
+testing.
+
+### Pre-requisites
+
+Java Runtime Environment (JRE) version 17.x or newer must be installed and properly configured to run the 
+local DynamoDB server. See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html
+
+How to check the installed Java version:
+
+```bash
+java -version
+```
+
+Run this command both in the `spacecat-shared` and `spacecat-shared-data-access` directories to install
+the required dependencies:
+
+```bash
+npm run install
+```
+
+### Running the integration tests
+
+To run the integration tests, execute the following command in the `spacecat-shared-data-access` directory:
 
 ```bash
 npm run test:it

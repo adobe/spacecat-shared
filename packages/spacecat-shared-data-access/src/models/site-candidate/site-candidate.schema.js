@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isObject, isValidUrl, isValidUUID } from '@adobe/spacecat-shared-utils';
+import { isObject, isValidBaseUrl, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import SiteCandidate from './site-candidate.model.js';
@@ -33,7 +33,7 @@ const schema = new SchemaBuilder(SiteCandidate, SiteCandidateCollection)
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
-    validate: (value) => isValidUrl(value),
+    validate: (value) => isValidBaseUrl(value),
   })
   .addAttribute('hlxConfig', {
     type: 'any',

@@ -54,7 +54,7 @@ export function initializeDataChunks(bundles, options = {}) {
   const validBundles = (!bundles || !Array.isArray(bundles)) ? [] : bundles;
 
   // Filter out bundles with missing or invalid URLs
-  const processedBundles = validBundles.filter((bundle) => bundle && bundle.url);
+  const processedBundles = validBundles.filter((bundle) => bundle?.url);
 
   loadBundles(processedBundles, dataChunks);
 
@@ -143,9 +143,9 @@ export function calculateMetrics(chunk) {
  */
 export function calculateTotals(timeSeriesData) {
   return timeSeriesData.reduce((acc, data) => {
-    METRIC_NAMES.forEach((metric) => {
+    for (const metric of METRIC_NAMES) {
       acc[metric] += (data[metric] || 0);
-    });
+    }
     return acc;
   }, METRIC_NAMES.reduce((acc, metric) => {
     acc[metric] = 0;
@@ -178,13 +178,16 @@ export function filterBundles(bundles, opts) {
   let filteredBundles = bundles;
   if (outlierUrls && outlierUrls.length > 0) {
     filteredBundles = filteredBundles
-      .filter((item) => item && item.url && !urlMatchesFilter(item.url, outlierUrls));
+      .filter((item) => item?.url && !urlMatchesFilter(item.url, outlierUrls));
   }
 
   // If urls filter is provided, keep only those URLs
-  if (urls && urls.length > 0) {
+  if (urls !== undefined && urls !== null) {
+    if (urls.length === 0) {
+      return [];
+    }
     filteredBundles = filteredBundles
-      .filter((item) => item && item.url && urlMatchesFilter(item.url, urls));
+      .filter((item) => item?.url && urlMatchesFilter(item.url, urls));
   }
   return filteredBundles;
 }

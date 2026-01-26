@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.89.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.89.0...@adobe/spacecat-shared-utils-v1.89.1) (2026-01-26)
+
+
+### Bug Fixes
+
+* Additional checks and methods on bot protection ([#1250](https://github.com/adobe/spacecat-shared/issues/1250)) ([0c34a8d](https://github.com/adobe/spacecat-shared/commit/0c34a8d850abef6e2a024132bc1c61d10865c1a0))
+
 # [@adobe/spacecat-shared-utils-v1.89.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.88.0...@adobe/spacecat-shared-utils-v1.89.0) (2026-01-22)
 
 

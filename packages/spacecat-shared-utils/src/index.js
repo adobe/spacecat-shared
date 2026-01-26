@@ -111,7 +111,13 @@ export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
 
 export { detectLocale } from './locale-detect/locale-detect.js';
-export { detectBotBlocker } from './bot-blocker-detect/bot-blocker-detect.js';
+export {
+  detectBotBlocker,
+  analyzeBotProtection,
+  SPACECAT_BOT_USER_AGENT,
+  getSpacecatBotIps,
+  formatAllowlistMessage,
+} from './bot-blocker-detect/bot-blocker-detect.js';
 export { prettifyLogForwardingConfig } from './cdn-helpers.js';
 
 export {

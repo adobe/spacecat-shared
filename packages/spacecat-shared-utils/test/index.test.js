@@ -17,6 +17,7 @@ import * as allExports from '../src/index.js';
 
 describe('Index Exports', () => {
   const expectedExports = [
+    'analyzeBotProtection',
     'addTraceIdHeader',
     'arrayEquals',
     'AUTHORING_TYPES',
@@ -40,6 +41,7 @@ describe('Index Exports', () => {
     'extractUrlsFromOpportunity',
     'extractUrlsFromSuggestion',
     'fetch',
+    'formatAllowlistMessage',
     'FORMS_AUDIT_INTERVAL',
     'generateCSVFile',
     'getDateRanges',
@@ -53,6 +55,7 @@ describe('Index Exports', () => {
     'getPageEditUrl',
     'getPrompt',
     'getQuery',
+    'getSpacecatBotIps',
     'getSpacecatRequestHeaders',
     'getStaticContent',
     'getStoredMetrics',
@@ -97,6 +100,7 @@ describe('Index Exports', () => {
     'resolveSecretsName',
     's3Wrapper',
     'schemas',
+    'SPACECAT_BOT_USER_AGENT',
     'SPACECAT_USER_AGENT',
     'sqsEventAdapter',
     'sqsWrapper',

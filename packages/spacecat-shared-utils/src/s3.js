@@ -10,8 +10,54 @@
  * governing permissions and limitations under the License.
  */
 
-import { S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { instrumentAWSClient } from './xray.js';
+
+/**
+ * Retrieves an object from S3 by its key and returns its JSON parsed content.
+ * If the object is not JSON, returns the raw body.
+ * If the object is not found, returns null.
+ * @param {import('@aws-sdk/client-s3').S3Client} s3Client - an S3 client
+ * @param {string} bucketName - the name of the S3 bucket
+ * @param {string} key - the key of the S3 object
+ * @param {import('@azure/logger').Logger} log - a logger instance
+ * @returns {Promise<import('@aws-sdk/client-s3').GetObjectOutput['Body'] | null>}
+ * - the content of the S3 object
+ */
+export async function getObjectFromKey(s3Client, bucketName, key, log) {
+  if (!s3Client || !bucketName || !key) {
+    log.error(
+      'Invalid input parameters in getObjectFromKey: ensure s3Client, bucketName, and key are provided.',
+    );
+    return null;
+  }
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+  });
+  try {
+    const response = await s3Client.send(command);
+    const contentType = response.ContentType;
+    const body = await response.Body.transformToString();
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        return JSON.parse(body);
+      } catch (parseError) {
+        log.error(`Unable to parse content for key ${key}`, parseError);
+        return null;
+      }
+    }
+    // Always return body for non-JSON content types
+    return body;
+  } catch (err) {
+    log.error(
+      `Error while fetching S3 object from bucket ${bucketName} using key ${key}`,
+      err,
+    );
+    return null;
+  }
+}
 
 /**
  * Adds an S3Client instance and bucket to the context.

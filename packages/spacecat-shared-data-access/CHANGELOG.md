@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.97.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.96.0...@adobe/spacecat-shared-data-access-v2.97.0) (2026-01-22)
+
+
+### Features
+
+* **AGENTCOM-302:** add new audit type for commerce product enrichments ([#1282](https://github.com/adobe/spacecat-shared/issues/1282)) ([7f3bfcc](https://github.com/adobe/spacecat-shared/commit/7f3bfcc9625bdd024173cf3c1bbf9182a3075fc2))
+
 # [@adobe/spacecat-shared-data-access-v2.96.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.95.0...@adobe/spacecat-shared-data-access-v2.96.0) (2026-01-16)
 
 

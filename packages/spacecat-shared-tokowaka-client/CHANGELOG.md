@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.5.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.7...@adobe/spacecat-shared-tokowaka-client-v1.5.8) (2026-01-27)
+
+
+### Bug Fixes
+
+* rename x-edge-optimize to x-edgeoptimize ([#1284](https://github.com/adobe/spacecat-shared/issues/1284)) ([63ba2ac](https://github.com/adobe/spacecat-shared/commit/63ba2ac9141612a5f581b0162cb1b30343c5980c))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.5.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.6...@adobe/spacecat-shared-tokowaka-client-v1.5.7) (2026-01-22)
 
 

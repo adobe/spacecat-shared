@@ -280,7 +280,12 @@ class FixEntityCollection extends BaseCollection {
    *   { token: 'rollback-fix-123-2024-01-15' }
    * );
    */
-  async rollbackFixWithSuggestionUpdates(fixEntityId, opportunityId, suggestionUpdates = [], options = {}) {
+  async rollbackFixWithSuggestionUpdates(
+    fixEntityId,
+    opportunityId,
+    suggestionUpdates = [],
+    options = {},
+  ) {
     // Validate inputs
     guardId('fixEntityId', fixEntityId, 'FixEntityCollection');
     guardId('opportunityId', opportunityId, 'FixEntityCollection');
@@ -297,7 +302,9 @@ class FixEntityCollection extends BaseCollection {
 
     // Fetch all suggestions first to get their rank values (needed for GSI update)
     const suggestionEntities = await Promise.all(
-      suggestionUpdates.map((update) => this.electroService.entities.suggestion.get({ suggestionId: update.suggestionId }).go()),
+      suggestionUpdates.map((update) => this.electroService.entities.suggestion
+        .get({ suggestionId: update.suggestionId })
+        .go()),
     );
 
     // Build enriched update list with rank values
@@ -350,9 +357,9 @@ class FixEntityCollection extends BaseCollection {
                 index,
                 code: item.code,
                 message: item.message,
-                item: index === 0 ? 'fixEntity' : `suggestion`,
+                item: index === 0 ? 'fixEntity' : 'suggestion',
               };
-              
+
               // Include actual data from 'all_old' for debugging if available
               if (item.fixEntityId || item.suggestionId) {
                 failedOp.id = item.fixEntityId || item.suggestionId;
@@ -360,7 +367,7 @@ class FixEntityCollection extends BaseCollection {
               if (item.status) {
                 failedOp.status = item.status;
               }
-              
+
               return failedOp;
             }
             return null;

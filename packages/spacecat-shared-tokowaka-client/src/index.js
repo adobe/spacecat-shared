@@ -282,17 +282,23 @@ class TokowakaClient {
   }
 
   /**
-   * Creates and uploads domain-level metaconfig to S3
+   * Creates and uploads domain-level metaconfig to S3 if it does not exists
    * Generates a new API key and creates the metaconfig structure
    * @param {string} url - Full URL (used to extract domain)
    * @param {string} siteId - Site ID
    * @param {Object} options - Optional configuration
-   * @param {boolean} options.tokowakaEnabled - Whether to enable Tokowaka (default: true)
+   * @param {boolean} options.enhancements - Whether to enable enhancements (default: true)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
   async createMetaconfig(url, siteId, options = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
+    }
+
+    const existingMetaconfig = await this.fetchMetaconfig(url);
+
+    if (existingMetaconfig) {
+      throw this.#createError('Metaconfig already exists for this URL', HTTP_BAD_REQUEST);
     }
 
     if (!hasText(siteId)) {
@@ -305,13 +311,69 @@ class TokowakaClient {
     const metaconfig = {
       siteId,
       apiKeys: [apiKey],
-      tokowakaEnabled: options.tokowakaEnabled ?? true,
-      enhancements: false,
+      tokowakaEnabled: true,
+      enhancements: options.enhancements ?? true,
+      patches: {},
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig);
 
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
+
+    return metaconfig;
+  }
+
+  /**
+   * Updates domain-level metaconfig to S3 if it does not exists
+   * Reuses the same API key and updates the metaconfig structure
+   * @param {string} url - Full URL (used to extract domain)
+   * @param {string} siteId - Site ID
+   * @param {Object} options - Optional configuration
+   * @returns {Promise<Object>} - Object with s3Path and metaconfig
+   */
+  async updateMetaconfig(url, siteId, options = {}) {
+    if (!hasText(url)) {
+      throw this.#createError('URL is required', HTTP_BAD_REQUEST);
+    }
+
+    const existingMetaconfig = await this.fetchMetaconfig(url);
+    if (!existingMetaconfig) {
+      throw this.#createError('Metaconfig does not exist for this URL', HTTP_BAD_REQUEST);
+    }
+
+    if (!hasText(siteId)) {
+      throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
+    }
+
+    const normalizedHostName = getHostName(url, this.log);
+
+    // dont override api keys
+    // if patches exist, they cannot reset to empty object
+    const hasForceFail = options.forceFail !== undefined
+      || existingMetaconfig.forceFail !== undefined;
+    const forceFail = options.forceFail
+      ?? existingMetaconfig.forceFail
+      ?? false;
+
+    const hasPrerender = isNonEmptyObject(options.prerender)
+      || isNonEmptyObject(existingMetaconfig.prerender);
+    const prerender = options.prerender
+      ?? existingMetaconfig.prerender;
+
+    const metaconfig = {
+      ...existingMetaconfig,
+      tokowakaEnabled: options.tokowakaEnabled ?? existingMetaconfig.tokowakaEnabled ?? true,
+      enhancements: options.enhancements ?? existingMetaconfig.enhancements ?? true,
+      patches: isNonEmptyObject(options.patches)
+        ? options.patches
+        : (existingMetaconfig.patches ?? {}),
+      ...(hasForceFail && { forceFail }),
+      ...(hasPrerender && { prerender }),
+    };
+
+    const s3Path = await this.uploadMetaconfig(url, metaconfig);
+
+    this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;
   }
@@ -810,8 +872,8 @@ class TokowakaClient {
     }
 
     // TOKOWAKA_EDGE_URL is mandatory for preview
-    const tokowakaEdgeUrl = this.env.TOKOWAKA_EDGE_URL;
-    if (!hasText(tokowakaEdgeUrl)) {
+    const edgeUrl = this.env.TOKOWAKA_EDGE_URL;
+    if (!hasText(edgeUrl)) {
       throw this.#createError(
         'TOKOWAKA_EDGE_URL is required for preview functionality',
         HTTP_INTERNAL_SERVER_ERROR,
@@ -931,7 +993,7 @@ class TokowakaClient {
         previewUrl,
         apiKey,
         forwardedHost,
-        tokowakaEdgeUrl,
+        edgeUrl,
         this.log,
         false,
         options,
@@ -941,7 +1003,7 @@ class TokowakaClient {
         previewUrl,
         apiKey,
         forwardedHost,
-        tokowakaEdgeUrl,
+        edgeUrl,
         this.log,
         true,
         options,

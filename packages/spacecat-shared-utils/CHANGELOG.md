@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.89.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.89.0...@adobe/spacecat-shared-utils-v1.89.1) (2026-01-26)
+
+
+### Bug Fixes
+
+* Additional checks and methods on bot protection ([#1250](https://github.com/adobe/spacecat-shared/issues/1250)) ([0c34a8d](https://github.com/adobe/spacecat-shared/commit/0c34a8d850abef6e2a024132bc1c61d10865c1a0))
+
+# [@adobe/spacecat-shared-utils-v1.89.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.88.0...@adobe/spacecat-shared-utils-v1.89.0) (2026-01-22)
+
+
+### Features
+
+* moved `calculateCpcValue` function to spacecat-shared-utils ([#1048](https://github.com/adobe/spacecat-shared/issues/1048)) ([5006e5b](https://github.com/adobe/spacecat-shared/commit/5006e5be51c8959f2e6d72664251e1e0264d44a1))
+
+# [@adobe/spacecat-shared-utils-v1.88.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.87.1...@adobe/spacecat-shared-utils-v1.88.0) (2026-01-22)
+
+
+### Features
+
+* new json obj in S3 for storing opportunity workspace data ([#1278](https://github.com/adobe/spacecat-shared/issues/1278)) ([68b0db0](https://github.com/adobe/spacecat-shared/commit/68b0db054d9eb43d485cdec9dd55059f8e07318e))
+
+# [@adobe/spacecat-shared-utils-v1.87.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.87.0...@adobe/spacecat-shared-utils-v1.87.1) (2026-01-19)
+
+
+### Bug Fixes
+
+* wrong temporalCondition when traversing year boundary ([#1267](https://github.com/adobe/spacecat-shared/issues/1267)) ([a44003e](https://github.com/adobe/spacecat-shared/commit/a44003ef683ca4477748532a1b84a4c947b7b9eb))
+
 # [@adobe/spacecat-shared-utils-v1.87.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.86.0...@adobe/spacecat-shared-utils-v1.87.0) (2026-01-08)
 
 

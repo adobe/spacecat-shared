@@ -744,7 +744,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
               question: 'Old Q?',
               answer: 'Old A.',
             },
-            tokowakaDeployed: 1704884400000,
             transformRules: {
               action: 'appendChild',
               selector: 'main',
@@ -1154,7 +1153,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
     });
   });
 
-  describe('tokowakaDeployed filtering', () => {
+  describe('edgeDeployed filtering', () => {
     it('should always create heading patch even when FAQ already deployed for URL', () => {
       const newSuggestion = {
         getId: () => 'sugg-new-1',

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-html-analyzer-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.1...@adobe/spacecat-shared-html-analyzer-v1.2.2) (2026-01-22)
+
+
+### Bug Fixes
+
+* added option to include noscript tags in server-side html ([#1274](https://github.com/adobe/spacecat-shared/issues/1274)) ([f26e320](https://github.com/adobe/spacecat-shared/commit/f26e3200cc2b129237073da5c7cae1cbfb3ae4b1))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.0...@adobe/spacecat-shared-html-analyzer-v1.2.1) (2026-01-15)
 
 

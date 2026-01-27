@@ -13,7 +13,7 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { prettifyLogForwardingConfig } from '../src/cdn-helpers.js';
+import { prettifyLogForwardingConfig, formatRelativeTime } from '../src/cdn-helpers.js';
 
 const FASTLY_LOG_FORMAT = `{
     "timestamp": "%{strftime(\\{"%Y-%m-%dT%H:%M:%S%z"\\}, time.start)}V",
@@ -29,6 +29,92 @@ const FASTLY_LOG_FORMAT = `{
 }`;
 
 describe('CDN Helper Functions', () => {
+  describe('formatRelativeTime', () => {
+    it('should return "today" for current date', () => {
+      const now = new Date();
+      const result = formatRelativeTime(now.toISOString());
+      expect(result).to.equal('today');
+    });
+
+    it('should return "1 day ago" for yesterday', () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const result = formatRelativeTime(yesterday.toISOString());
+      expect(result).to.equal('1 day ago');
+    });
+
+    it('should return "2 days ago" for two days ago', () => {
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const result = formatRelativeTime(twoDaysAgo.toISOString());
+      expect(result).to.equal('2 days ago');
+    });
+
+    it('should return "30 days ago" for 30 days ago', () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const result = formatRelativeTime(thirtyDaysAgo.toISOString());
+      expect(result).to.equal('30 days ago');
+    });
+
+    it('should return "364 days ago" for 364 days ago', () => {
+      const date = new Date();
+      date.setDate(date.getDate() - 364);
+      const result = formatRelativeTime(date.toISOString());
+      expect(result).to.equal('364 days ago');
+    });
+
+    it('should return "more than 1 year ago" for exactly 365 days ago', () => {
+      const date = new Date();
+      date.setDate(date.getDate() - 365);
+      const result = formatRelativeTime(date.toISOString());
+      expect(result).to.equal('more than 1 year ago');
+    });
+
+    it('should return "more than 1 year ago" for 400 days ago', () => {
+      const date = new Date();
+      date.setDate(date.getDate() - 400);
+      const result = formatRelativeTime(date.toISOString());
+      expect(result).to.equal('more than 1 year ago');
+    });
+
+    it('should return "more than 2 years ago" for 730 days ago', () => {
+      const date = new Date();
+      date.setDate(date.getDate() - 730);
+      const result = formatRelativeTime(date.toISOString());
+      expect(result).to.equal('more than 2 years ago');
+    });
+
+    it('should return "more than 3 years ago" for 1095 days ago', () => {
+      const date = new Date();
+      date.setDate(date.getDate() - 1095);
+      const result = formatRelativeTime(date.toISOString());
+      expect(result).to.equal('more than 3 years ago');
+    });
+
+    it('should return empty string for null timestamp', () => {
+      const result = formatRelativeTime(null);
+      expect(result).to.equal('');
+    });
+
+    it('should return empty string for undefined timestamp', () => {
+      const result = formatRelativeTime(undefined);
+      expect(result).to.equal('');
+    });
+
+    it('should return empty string for empty string timestamp', () => {
+      const result = formatRelativeTime('');
+      expect(result).to.equal('');
+    });
+
+    it('should handle ISO 8601 timestamp with milliseconds', () => {
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const result = formatRelativeTime(twoDaysAgo.toISOString());
+      expect(result).to.equal('2 days ago');
+    });
+  });
+
   describe('prettifyLogForwardingConfig', () => {
     const mockPayload = {
       bucketName: 'cdn-logs-adobe-dev',
@@ -68,8 +154,8 @@ describe('CDN Helper Functions', () => {
           Placement: 'Format Version Default',
           'Log format': FASTLY_LOG_FORMAT,
           'Access method': 'User credentials',
-          'Access key': 'AKIAZ5TC4XVOZ65PV3X2',
-          'Secret key': 'somesecret',
+          'Access Key': 'AKIAZ5TC4XVOZ65PV3X2',
+          'Secret Key': 'somesecret',
           Period: 300,
           'Log line format': 'Blank',
           Compression: 'Gzip',
@@ -135,8 +221,8 @@ describe('CDN Helper Functions', () => {
           'Log file suffix': '.log',
           'Log format': 'JSON',
           'Log interval': '60 seconds',
-          'Access key': 'AKIAZ5TC4XVOZ65PV3X2',
-          'Secret key': 'somesecret',
+          'Access Key': 'AKIAZ5TC4XVOZ65PV3X2',
+          'Secret Key': 'somesecret',
           HelpUrl: 'https://techdocs.akamai.com/datastream2/docs/stream-amazon-s3',
         });
       });
@@ -347,51 +433,51 @@ describe('CDN Helper Functions', () => {
         );
       });
 
-      it('should throw error when accessKey is missing for byocdn-fastly', () => {
+      it('should throw error when accessKey/currentAccessKey is missing for byocdn-fastly', () => {
         const payloadWithoutAccessKey = { ...mockPayload };
         delete payloadWithoutAccessKey.accessKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutAccessKey)).to.throw(
-          'accessKey is required in payload',
+          'accessKey or currentAccessKey is required in payload',
         );
       });
 
-      it('should throw error when secretKey is missing for byocdn-fastly', () => {
+      it('should throw error when secretKey/currentSecretKey is missing for byocdn-fastly', () => {
         const payloadWithoutSecretKey = { ...mockPayload };
         delete payloadWithoutSecretKey.secretKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutSecretKey)).to.throw(
-          'secretKey is required in payload',
+          'secretKey or currentSecretKey is required in payload',
         );
       });
 
-      it('should throw error when accessKey is missing for byocdn-akamai', () => {
+      it('should throw error when accessKey/currentAccessKey is missing for byocdn-akamai', () => {
         const payloadWithoutAccessKey = { ...mockPayload, logSource: 'byocdn-akamai' };
         delete payloadWithoutAccessKey.accessKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutAccessKey)).to.throw(
-          'accessKey is required in payload',
+          'accessKey or currentAccessKey is required in payload',
         );
       });
 
-      it('should throw error when secretKey is missing for byocdn-akamai', () => {
+      it('should throw error when secretKey/currentSecretKey is missing for byocdn-akamai', () => {
         const payloadWithoutSecretKey = { ...mockPayload, logSource: 'byocdn-akamai' };
         delete payloadWithoutSecretKey.secretKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutSecretKey)).to.throw(
-          'secretKey is required in payload',
+          'secretKey or currentSecretKey is required in payload',
         );
       });
 
-      it('should throw error when accessKey is missing for byocdn-other', () => {
+      it('should throw error when accessKey/currentAccessKey is missing for byocdn-other', () => {
         const payloadWithoutAccessKey = { ...mockPayload, logSource: 'byocdn-other' };
         delete payloadWithoutAccessKey.accessKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutAccessKey)).to.throw(
-          'accessKey is required in payload',
+          'accessKey or currentAccessKey is required in payload',
         );
       });
 
-      it('should throw error when secretKey is missing for byocdn-other', () => {
+      it('should throw error when secretKey/currentSecretKey is missing for byocdn-other', () => {
         const payloadWithoutSecretKey = { ...mockPayload, logSource: 'byocdn-other' };
         delete payloadWithoutSecretKey.secretKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutSecretKey)).to.throw(
-          'secretKey is required in payload',
+          'secretKey or currentSecretKey is required in payload',
         );
       });
 
@@ -485,6 +571,126 @@ describe('CDN Helper Functions', () => {
         expect(originalPayload['Bucket Name']).to.be.undefined;
         expect(originalPayload.Domain).to.be.undefined;
         expect(originalPayload.Path).to.be.undefined;
+      });
+    });
+
+    describe('credential backwards compatibility', () => {
+      it('should support old format with accessKey and secretKey for byocdn-fastly', () => {
+        const result = prettifyLogForwardingConfig({ ...mockPayload, logSource: 'byocdn-fastly' });
+
+        expect(result['Access Key']).to.equal('AKIAZ5TC4XVOZ65PV3X2');
+        expect(result['Secret Key']).to.equal('somesecret');
+        expect(result['Access Key (current)']).to.be.undefined;
+        expect(result['Secret Key (current)']).to.be.undefined;
+      });
+
+      it('should support new format with currentAccessKey and currentSecretKey for byocdn-fastly', () => {
+        const newFormatPayload = {
+          ...mockPayload,
+          logSource: 'byocdn-fastly',
+          currentAccessKey: 'AKIAZ5TC4XVOZ65PV3X3',
+          currentSecretKey: 'newsecret',
+        };
+        delete newFormatPayload.accessKey;
+        delete newFormatPayload.secretKey;
+
+        const result = prettifyLogForwardingConfig(newFormatPayload);
+
+        expect(result['Access Key (current)']).to.equal('AKIAZ5TC4XVOZ65PV3X3');
+        expect(result['Secret Key (current)']).to.equal('newsecret');
+        expect(result['Access Key']).to.be.undefined;
+        expect(result['Secret Key']).to.be.undefined;
+      });
+
+      it('should show both current and old credentials when both are provided for byocdn-fastly', () => {
+        const payloadWithBothCredentials = {
+          ...mockPayload,
+          logSource: 'byocdn-fastly',
+          currentAccessKey: 'AKIAZ5TC4XVOZ65PV3X3',
+          currentSecretKey: 'newsecret',
+          oldAccessKey: 'AKIAZ5TC4XVOZ65PV3X2',
+          oldSecretKey: 'oldsecret',
+        };
+        delete payloadWithBothCredentials.accessKey;
+        delete payloadWithBothCredentials.secretKey;
+
+        const result = prettifyLogForwardingConfig(payloadWithBothCredentials);
+
+        expect(result['Access Key (current)']).to.equal('AKIAZ5TC4XVOZ65PV3X3');
+        expect(result['Secret Key (current)']).to.equal('newsecret');
+        expect(result['Access Key (to be retired)']).to.equal('AKIAZ5TC4XVOZ65PV3X2');
+        expect(result['Secret Key (to be retired)']).to.equal('oldsecret');
+      });
+
+      it('should format timestamp fields when provided for byocdn-fastly', () => {
+        const now = new Date();
+        const today = now.toISOString();
+        const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
+        const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString();
+        const twoYearsAgo = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000).toISOString();
+
+        const payloadWithTimestamps = {
+          ...mockPayload,
+          logSource: 'byocdn-fastly',
+          currentAccessKey: 'AKIAZ5TC4XVOZ65PV3X3',
+          currentSecretKey: 'newsecret',
+          oldAccessKey: 'AKIAZ5TC4XVOZ65PV3X2',
+          oldSecretKey: 'oldsecret',
+          currentCredentialsCreatedAt: twoDaysAgo,
+          currentCredentialsLastUsed: today,
+          oldCredentialsCreatedAt: twoYearsAgo,
+          oldCredentialsLastUsed: oneYearAgo,
+        };
+        delete payloadWithTimestamps.accessKey;
+        delete payloadWithTimestamps.secretKey;
+
+        const result = prettifyLogForwardingConfig(payloadWithTimestamps);
+
+        expect(result.currentCredentialsCreatedAt).to.equal('2 days ago');
+        expect(result.currentCredentialsLastUsed).to.equal('today');
+        expect(result.oldCredentialsCreatedAt).to.equal('more than 2 years ago');
+        expect(result.oldCredentialsLastUsed).to.match(/^(365 days ago|more than 1 year ago)$/);
+      });
+
+      it('should show both current and old credentials when both are provided for byocdn-akamai', () => {
+        const payloadWithBothCredentials = {
+          ...mockPayload,
+          logSource: 'byocdn-akamai',
+          currentAccessKey: 'AKIAZ5TC4XVOZ65PV3X3',
+          currentSecretKey: 'newsecret',
+          oldAccessKey: 'AKIAZ5TC4XVOZ65PV3X2',
+          oldSecretKey: 'oldsecret',
+        };
+        delete payloadWithBothCredentials.accessKey;
+        delete payloadWithBothCredentials.secretKey;
+
+        const result = prettifyLogForwardingConfig(payloadWithBothCredentials);
+
+        expect(result['Access Key (current)']).to.equal('AKIAZ5TC4XVOZ65PV3X3');
+        expect(result['Secret Key (current)']).to.equal('newsecret');
+        expect(result['Access Key (to be retired)']).to.equal('AKIAZ5TC4XVOZ65PV3X2');
+        expect(result['Secret Key (to be retired)']).to.equal('oldsecret');
+      });
+
+      it('should show both current and old credentials when both are provided for byocdn-other', () => {
+        const payloadWithBothCredentials = {
+          ...mockPayload,
+          logSource: 'byocdn-other',
+          currentAccessKey: 'AKIAZ5TC4XVOZ65PV3X3',
+          currentSecretKey: 'newsecret',
+          oldAccessKey: 'AKIAZ5TC4XVOZ65PV3X2',
+          oldSecretKey: 'oldsecret',
+          allowedPaths: ['9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-other/'],
+        };
+        delete payloadWithBothCredentials.accessKey;
+        delete payloadWithBothCredentials.secretKey;
+
+        const result = prettifyLogForwardingConfig(payloadWithBothCredentials);
+
+        expect(result['Access Key (current)']).to.equal('AKIAZ5TC4XVOZ65PV3X3');
+        expect(result['Secret Key (current)']).to.equal('newsecret');
+        expect(result['Access Key (to be retired)']).to.equal('AKIAZ5TC4XVOZ65PV3X2');
+        expect(result['Secret Key (to be retired)']).to.equal('oldsecret');
       });
     });
   });

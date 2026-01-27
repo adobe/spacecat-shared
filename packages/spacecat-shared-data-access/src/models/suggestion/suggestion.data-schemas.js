@@ -22,12 +22,6 @@ import Joi from 'joi';
 import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
 
 /**
- * Field transformation functions for data projections.
- * @see {@link ./suggestion.projection-utils.js}
- */
-export { FIELD_TRANSFORMERS, FALLBACK_PROJECTION } from './suggestion.projection-utils.js';
-
-/**
  * Data schemas configuration per opportunity type.
  *
  * @typedef {Object} OpportunityTypeSchema

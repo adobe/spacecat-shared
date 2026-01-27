@@ -11,7 +11,8 @@
  */
 
 import BaseModel from '../base/base.model.js';
-import { DATA_SCHEMAS, FIELD_TRANSFORMERS, FALLBACK_PROJECTION } from './suggestion.data-schemas.js';
+import { DATA_SCHEMAS } from './suggestion.data-schemas.js';
+import { FIELD_TRANSFORMERS, FALLBACK_PROJECTION } from './suggestion.projection-utils.js';
 
 /**
  * Suggestion - A class representing a Suggestion entity.

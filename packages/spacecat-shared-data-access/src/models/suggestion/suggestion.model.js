@@ -11,6 +11,7 @@
  */
 
 import BaseModel from '../base/base.model.js';
+import { DATA_SCHEMAS, FIELD_TRANSFORMERS, FALLBACK_PROJECTION } from './suggestion.data-schemas.js';
 
 /**
  * Suggestion - A class representing a Suggestion entity.
@@ -42,6 +43,101 @@ class Suggestion extends BaseModel {
     AI_INSIGHTS: 'AI_INSIGHTS',
     CONFIG_UPDATE: 'CONFIG_UPDATE',
   };
+
+  // Import schemas from external file for maintainability
+  static FIELD_TRANSFORMERS = FIELD_TRANSFORMERS;
+
+  static DATA_SCHEMAS = DATA_SCHEMAS;
+
+  static FALLBACK_PROJECTION = FALLBACK_PROJECTION;
+
+  /**
+   * Gets the projection configuration for a given opportunity type and view.
+   * Falls back to FALLBACK_PROJECTION if no schema is defined for the type.
+   *
+   * @param {string} opportunityType - The opportunity type from OPPORTUNITY_TYPES enum
+   * @param {string} [viewName='minimal'] - The view name (e.g., 'minimal', 'summary')
+   * @returns {Object} Projection configuration with fields and transformers
+   *
+   * @example
+   * const projection = Suggestion.getProjection('cwv', 'minimal');
+   * // Returns: { fields: ['url', 'type', 'metrics', 'issues'],
+   * //   transformers: { metrics: 'filterCwvMetrics' } }
+   */
+  static getProjection(opportunityType, viewName = 'minimal') {
+    const schemaConfig = this.DATA_SCHEMAS[opportunityType];
+
+    if (schemaConfig?.projections?.[viewName]) {
+      return schemaConfig.projections[viewName];
+    }
+
+    // Fallback for unknown types
+    return this.FALLBACK_PROJECTION[viewName] || this.FALLBACK_PROJECTION.minimal;
+  }
+
+  /**
+   * Extracts the primary URL from suggestion data based on opportunity type.
+   * Uses type-specific extraction logic defined in DATA_SCHEMAS.
+   *
+   * @param {Object} data - Suggestion data object
+   * @param {string} opportunityType - The opportunity type from OPPORTUNITY_TYPES enum
+   * @returns {string|null} Extracted URL or null if not found
+   *
+   * @example
+   * const url = Suggestion.extractUrl({ recommendations: [{ pageUrl: 'https://example.com' }] }, 'alt-text');
+   * // Returns: 'https://example.com'
+   */
+  static extractUrl(data, opportunityType) {
+    if (!data) return null;
+
+    const schemaConfig = this.DATA_SCHEMAS[opportunityType];
+
+    if (schemaConfig?.urlExtraction) {
+      const { primary, fallback } = schemaConfig.urlExtraction;
+      return primary(data) || (fallback ? fallback(data) : null);
+    }
+
+    // Fallback URL extraction for unknown types
+    return data.url
+      || data.pageUrl
+      || data.url_from
+      || data.urlFrom
+      || null;
+  }
+
+  /**
+   * Validates suggestion data against the Joi schema for the given opportunity type.
+   * If no schema is defined, validation is skipped (graceful fallback).
+   *
+   * **Usage:** Call this in audit-worker before creating/updating suggestions to ensure
+   * data structure consistency across services.
+   *
+   * @param {Object} data - Suggestion data to validate
+   * @param {string} opportunityType - The opportunity type from OPPORTUNITY_TYPES enum
+   * @throws {Error} If validation fails with details
+   *
+   * @example
+   * // In audit-worker before creating a suggestion:
+   * try {
+   *   Suggestion.validateData({ url: 'https://example.com' }, 'structured-data');
+   *   // Proceed with creating suggestion
+   * } catch (error) {
+   *   log.error('Invalid suggestion data:', error.message);
+   * }
+   */
+  static validateData(data, opportunityType) {
+    const schemaConfig = this.DATA_SCHEMAS[opportunityType];
+
+    if (!schemaConfig?.schema) {
+      // No schema defined, skip validation
+      return;
+    }
+
+    const { error } = schemaConfig.schema.validate(data);
+    if (error) {
+      throw new Error(`Invalid data for opportunity type ${opportunityType}: ${error.message}`);
+    }
+  }
 
   // add your customized method  here
 }

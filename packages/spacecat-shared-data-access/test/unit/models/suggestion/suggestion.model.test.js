@@ -143,4 +143,87 @@ describe('SuggestionModel', () => {
       expect(instance.record.kpiDeltas).to.deep.equal({ conversionRate: 0.1 });
     });
   });
+
+  describe('Static Methods', () => {
+    describe('getProjection', () => {
+      it('returns projection config for defined opportunity type', () => {
+        const projection = Suggestion.getProjection('cwv', 'minimal');
+        expect(projection).to.be.an('object');
+        expect(projection.fields).to.be.an('array');
+        expect(projection.fields).to.include('url');
+      });
+
+      it('returns fallback projection for undefined opportunity type', () => {
+        const projection = Suggestion.getProjection('unknown-type', 'minimal');
+        expect(projection).to.be.an('object');
+        expect(projection.fields).to.be.an('array');
+      });
+
+      it('defaults to minimal view when viewName not provided', () => {
+        const projection = Suggestion.getProjection('cwv');
+        expect(projection).to.be.an('object');
+        expect(projection.fields).to.be.an('array');
+      });
+    });
+
+    describe('extractUrl', () => {
+      it('extracts URL using type-specific logic', () => {
+        const url = Suggestion.extractUrl({ url: 'https://example.com' }, 'structured-data');
+        expect(url).to.equal('https://example.com');
+      });
+
+      it('extracts URL from recommendations for alt-text type', () => {
+        const data = { recommendations: [{ pageUrl: 'https://example.com/page' }] };
+        const url = Suggestion.extractUrl(data, 'alt-text');
+        expect(url).to.equal('https://example.com/page');
+      });
+
+      it('uses fallback for recommendations URL', () => {
+        const data = { recommendations: [{ url: 'https://example.com' }] };
+        const url = Suggestion.extractUrl(data, 'alt-text');
+        expect(url).to.equal('https://example.com');
+      });
+
+      it('returns null when no data provided', () => {
+        const url = Suggestion.extractUrl(null, 'cwv');
+        expect(url).to.be.null;
+      });
+
+      it('uses fallback extraction for undefined type', () => {
+        const url = Suggestion.extractUrl({ url: 'https://example.com' }, 'unknown-type');
+        expect(url).to.equal('https://example.com');
+      });
+
+      it('checks multiple fallback URL fields', () => {
+        const url1 = Suggestion.extractUrl({ pageUrl: 'https://example.com' }, 'unknown-type');
+        expect(url1).to.equal('https://example.com');
+
+        const url2 = Suggestion.extractUrl({ url_from: 'https://example.com' }, 'unknown-type');
+        expect(url2).to.equal('https://example.com');
+
+        const url3 = Suggestion.extractUrl({ urlFrom: 'https://example.com' }, 'unknown-type');
+        expect(url3).to.equal('https://example.com');
+      });
+    });
+
+    describe('validateData', () => {
+      it('validates data successfully for defined schema', () => {
+        expect(() => {
+          Suggestion.validateData({ url: 'https://example.com' }, 'structured-data');
+        }).to.not.throw();
+      });
+
+      it('throws error for invalid data', () => {
+        expect(() => {
+          Suggestion.validateData({ url: 'invalid-url' }, 'structured-data');
+        }).to.throw();
+      });
+
+      it('skips validation for undefined type (graceful fallback)', () => {
+        expect(() => {
+          Suggestion.validateData({ anything: 'goes' }, 'unknown-type');
+        }).to.not.throw();
+      });
+    });
+  });
 });

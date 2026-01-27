@@ -2692,7 +2692,7 @@ describe('TokowakaClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html><body>Test HTML</body></html>',
       });

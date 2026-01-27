@@ -79,21 +79,31 @@ export const FIELD_TRANSFORMERS = {
 
 /**
  * Default projection configuration for opportunity types without explicit schemas.
- * Includes common URL-related fields and standard metadata fields.
+ * Conservative fallback that only includes common URL-related fields.
+ * Forces engineers to define explicit schemas if they need specific data fields.
  *
  * @type {Object}
  * @property {Object} minimal - Minimal view configuration
- * @property {string[]} minimal.fields - Common fields for undefined opportunity types
+ * @property {string[]} minimal.fields - Common URL fields only (13 fields)
  * @property {Object} minimal.transformers - No transformers applied by default
  */
 export const FALLBACK_PROJECTION = {
   minimal: {
     fields: [
-      'url', 'urls', 'urlFrom', 'urlTo', 'url_from', 'url_to',
-      'pageUrl', 'sitemapUrl', 'pattern', 'link', 'path',
-      'sourceUrl', 'destinationUrl', 'recommendations',
-      'cves', 'findings', 'form', 'page', 'accessibility',
-      'urlsSuggested', 'metrics', 'type', 'pageviews', 'issues',
+      'url',
+      'urls',
+      'urlFrom',
+      'urlTo',
+      'url_from',
+      'url_to',
+      'urlsSuggested',
+      'pageUrl',
+      'sitemapUrl',
+      'pattern',
+      'link',
+      'path',
+      'sourceUrl',
+      'destinationUrl',
     ],
     transformers: {},
   },

@@ -77,36 +77,6 @@ class Suggestion extends BaseModel {
   }
 
   /**
-   * Extracts the primary URL from suggestion data based on opportunity type.
-   * Uses type-specific extraction logic defined in DATA_SCHEMAS.
-   *
-   * @param {Object} data - Suggestion data object
-   * @param {string} opportunityType - The opportunity type from OPPORTUNITY_TYPES enum
-   * @returns {string|null} Extracted URL or null if not found
-   *
-   * @example
-   * const url = Suggestion.extractUrl({ recommendations: [{ pageUrl: 'https://example.com' }] }, 'alt-text');
-   * // Returns: 'https://example.com'
-   */
-  static extractUrl(data, opportunityType) {
-    if (!data) return null;
-
-    const schemaConfig = this.DATA_SCHEMAS[opportunityType];
-
-    if (schemaConfig?.urlExtraction) {
-      const { primary, fallback } = schemaConfig.urlExtraction;
-      return primary(data) || (fallback ? fallback(data) : null);
-    }
-
-    // Fallback URL extraction for unknown types
-    return data.url
-      || data.pageUrl
-      || data.url_from
-      || data.urlFrom
-      || null;
-  }
-
-  /**
    * Validates suggestion data against the Joi schema for the given opportunity type.
    * If no schema is defined, validation is skipped (graceful fallback).
    *

@@ -12,7 +12,7 @@
 
 /**
  * @fileoverview Type-specific data schemas for suggestion opportunity types.
- * Defines validation schemas, projection configurations, and URL extraction logic.
+ * Defines validation schemas and projection configurations.
  *
  * Validation schemas should be used in audit-worker when creating/updating suggestions
  * to ensure data structure consistency before writing to the database.
@@ -30,9 +30,6 @@ import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
  * @property {Object} projections.minimal - Minimal view configuration
  * @property {string[]} projections.minimal.fields - Fields to include in minimal view
  * @property {Object<string, string>} projections.minimal.transformers - Field transformers to apply
- * @property {Object} urlExtraction - URL extraction functions
- * @property {Function} urlExtraction.primary - Primary URL extraction function
- * @property {Function|null} urlExtraction.fallback - Fallback URL extraction function
  *
  * @type {Object<string, OpportunityTypeSchema>}
  *
@@ -47,10 +44,6 @@ import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
  *       fields: ['url', 'customField'],
  *       transformers: { customField: 'myTransformerName' }
  *     }
- *   },
- *   urlExtraction: {
- *     primary: (data) => data.url,
- *     fallback: (data) => data.pageUrl
  *   }
  * }
  */
@@ -66,10 +59,6 @@ export const DATA_SCHEMAS = {
         fields: ['url'],
         transformers: {},
       },
-    },
-    urlExtraction: {
-      primary: (data) => data.url,
-      fallback: null,
     },
   },
   [OPPORTUNITY_TYPES.COLOR_CONTRAST]: {
@@ -99,10 +88,6 @@ export const DATA_SCHEMAS = {
         },
       },
     },
-    urlExtraction: {
-      primary: (data) => data.url,
-      fallback: null,
-    },
   },
   [OPPORTUNITY_TYPES.A11Y_ASSISTIVE]: {
     schema: Joi.object({
@@ -130,10 +115,6 @@ export const DATA_SCHEMAS = {
           issues: 'filterIssuesOccurrences',
         },
       },
-    },
-    urlExtraction: {
-      primary: (data) => data.url,
-      fallback: null,
     },
   },
   [OPPORTUNITY_TYPES.CWV]: {
@@ -168,10 +149,6 @@ export const DATA_SCHEMAS = {
         },
       },
     },
-    urlExtraction: {
-      primary: (data) => data.url,
-      fallback: null,
-    },
   },
   [OPPORTUNITY_TYPES.ALT_TEXT]: {
     schema: Joi.object({
@@ -197,10 +174,6 @@ export const DATA_SCHEMAS = {
         },
       },
     },
-    urlExtraction: {
-      primary: (data) => data.recommendations?.[0]?.pageUrl,
-      fallback: (data) => data.recommendations?.[0]?.url,
-    },
   },
   [OPPORTUNITY_TYPES.SECURITY_PERMISSIONS]: {
     schema: Joi.object({
@@ -219,10 +192,6 @@ export const DATA_SCHEMAS = {
         fields: ['path'],
         transformers: {},
       },
-    },
-    urlExtraction: {
-      primary: (data) => data.path,
-      fallback: null,
     },
   },
   [OPPORTUNITY_TYPES.SECURITY_VULNERABILITIES]: {
@@ -248,10 +217,6 @@ export const DATA_SCHEMAS = {
           cves: 'extractCveUrls',
         },
       },
-    },
-    urlExtraction: {
-      primary: (data) => data.cves?.[0]?.url || null,
-      fallback: null,
     },
   },
   [OPPORTUNITY_TYPES.FORM_ACCESSIBILITY]: {
@@ -283,10 +248,6 @@ export const DATA_SCHEMAS = {
           issues: 'filterIssuesOccurrences',
         },
       },
-    },
-    urlExtraction: {
-      primary: (data) => data.url,
-      fallback: null,
     },
   },
 };

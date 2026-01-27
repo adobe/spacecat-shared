@@ -166,46 +166,6 @@ describe('SuggestionModel', () => {
       });
     });
 
-    describe('extractUrl', () => {
-      it('extracts URL using type-specific logic', () => {
-        const url = Suggestion.extractUrl({ url: 'https://example.com' }, 'structured-data');
-        expect(url).to.equal('https://example.com');
-      });
-
-      it('extracts URL from recommendations for alt-text type', () => {
-        const data = { recommendations: [{ pageUrl: 'https://example.com/page' }] };
-        const url = Suggestion.extractUrl(data, 'alt-text');
-        expect(url).to.equal('https://example.com/page');
-      });
-
-      it('uses fallback for recommendations URL', () => {
-        const data = { recommendations: [{ url: 'https://example.com' }] };
-        const url = Suggestion.extractUrl(data, 'alt-text');
-        expect(url).to.equal('https://example.com');
-      });
-
-      it('returns null when no data provided', () => {
-        const url = Suggestion.extractUrl(null, 'cwv');
-        expect(url).to.be.null;
-      });
-
-      it('uses fallback extraction for undefined type', () => {
-        const url = Suggestion.extractUrl({ url: 'https://example.com' }, 'unknown-type');
-        expect(url).to.equal('https://example.com');
-      });
-
-      it('checks multiple fallback URL fields', () => {
-        const url1 = Suggestion.extractUrl({ pageUrl: 'https://example.com' }, 'unknown-type');
-        expect(url1).to.equal('https://example.com');
-
-        const url2 = Suggestion.extractUrl({ url_from: 'https://example.com' }, 'unknown-type');
-        expect(url2).to.equal('https://example.com');
-
-        const url3 = Suggestion.extractUrl({ urlFrom: 'https://example.com' }, 'unknown-type');
-        expect(url3).to.equal('https://example.com');
-      });
-    });
-
     describe('validateData', () => {
       it('validates data successfully for defined schema', () => {
         expect(() => {

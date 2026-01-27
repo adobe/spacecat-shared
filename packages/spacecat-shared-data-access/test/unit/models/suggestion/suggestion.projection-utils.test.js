@@ -141,5 +141,24 @@ describe('Suggestion Projection Utils', () => {
       expect(fields).to.include('url_to');
       expect(fields).to.include('pattern');
     });
+
+    it('does not include data fields (conservative approach)', () => {
+      const { fields } = FALLBACK_PROJECTION.minimal;
+      // Ensure fallback is truly minimal - no data fields
+      expect(fields).to.not.include('recommendations');
+      expect(fields).to.not.include('cves');
+      expect(fields).to.not.include('findings');
+      expect(fields).to.not.include('form');
+      expect(fields).to.not.include('page');
+      expect(fields).to.not.include('accessibility');
+      expect(fields).to.not.include('metrics');
+      expect(fields).to.not.include('type');
+      expect(fields).to.not.include('pageviews');
+      expect(fields).to.not.include('issues');
+    });
+
+    it('has exactly 14 URL-related fields', () => {
+      expect(FALLBACK_PROJECTION.minimal.fields).to.have.lengthOf(14);
+    });
   });
 });

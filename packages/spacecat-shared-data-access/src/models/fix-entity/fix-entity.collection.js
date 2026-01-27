@@ -346,12 +346,22 @@ class FixEntityCollection extends BaseCollection {
         const failedOperations = transactionResult.data
           .map((item, index) => {
             if (item.rejected) {
-              return {
+              const failedOp = {
                 index,
                 code: item.code,
                 message: item.message,
-                item: index === 0 ? 'fixEntity' : `suggestion[${index - 1}]`,
+                item: index === 0 ? 'fixEntity' : `suggestion`,
               };
+              
+              // Include actual data from 'all_old' for debugging if available
+              if (item.fixEntityId || item.suggestionId) {
+                failedOp.id = item.fixEntityId || item.suggestionId;
+              }
+              if (item.status) {
+                failedOp.status = item.status;
+              }
+              
+              return failedOp;
             }
             return null;
           })

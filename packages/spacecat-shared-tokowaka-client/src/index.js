@@ -314,6 +314,7 @@ class TokowakaClient {
       tokowakaEnabled: true,
       enhancements: options.enhancements ?? true,
       patches: {},
+      createdAt: new Date().toISOString(),
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig);
@@ -369,6 +370,7 @@ class TokowakaClient {
         : (existingMetaconfig.patches ?? {}),
       ...(hasForceFail && { forceFail }),
       ...(hasPrerender && { prerender }),
+      lastUpdated: new Date().toISOString(),
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig);

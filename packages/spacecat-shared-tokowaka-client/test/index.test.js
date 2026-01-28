@@ -575,15 +575,15 @@ describe('TokowakaClient', () => {
       noSuchKeyError.name = 'NoSuchKey';
       s3Client.send.onFirstCall().rejects(noSuchKeyError);
 
-      const beforeTimestamp = new Date().toISOString();
+      const beforeTimestamp = new Date();
       const result = await client.createMetaconfig(url, siteId);
-      const afterTimestamp = new Date().toISOString();
+      const afterTimestamp = new Date();
 
       expect(result).to.have.property('createdAt');
       expect(result.createdAt).to.be.a('string');
       expect(result.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-      expect(result.createdAt).to.be.at.least(beforeTimestamp);
-      expect(result.createdAt).to.be.at.most(afterTimestamp);
+      expect(new Date(result.createdAt).getTime()).to.be.at.least(beforeTimestamp.getTime());
+      expect(new Date(result.createdAt).getTime()).to.be.at.most(afterTimestamp.getTime());
     });
   });
 
@@ -1331,15 +1331,15 @@ describe('TokowakaClient', () => {
       const siteId = 'site-456';
       const url = 'https://www.example.com';
 
-      const beforeTimestamp = new Date().toISOString();
+      const beforeTimestamp = new Date();
       const result = await client.updateMetaconfig(url, siteId, { tokowakaEnabled: true });
-      const afterTimestamp = new Date().toISOString();
+      const afterTimestamp = new Date();
 
       expect(result).to.have.property('lastUpdated');
       expect(result.lastUpdated).to.be.a('string');
       expect(result.lastUpdated).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-      expect(result.lastUpdated).to.be.at.least(beforeTimestamp);
-      expect(result.lastUpdated).to.be.at.most(afterTimestamp);
+      expect(new Date(result.lastUpdated).getTime()).to.be.at.least(beforeTimestamp.getTime());
+      expect(new Date(result.lastUpdated).getTime()).to.be.at.most(afterTimestamp.getTime());
     });
   });
 

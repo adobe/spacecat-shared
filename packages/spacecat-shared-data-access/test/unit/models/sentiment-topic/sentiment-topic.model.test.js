@@ -32,9 +32,7 @@ describe('SentimentTopicModel', () => {
       siteId: 'site-12345',
       name: 'BMW XM Latest',
       description: 'Track sentiment around the BMW XM luxury SUV',
-      topicName: 'BMW XM 2026',
       subPrompts: ['What about hybrid performance?', 'Interior quality?'],
-      audits: ['wikipedia-analysis', 'reddit-analysis'],
       enabled: true,
       createdAt: '2026-01-21T12:00:00.000Z',
       createdBy: 'user@example.com',
@@ -51,83 +49,6 @@ describe('SentimentTopicModel', () => {
     it('initializes the SentimentTopic instance correctly', () => {
       expect(instance).to.be.an('object');
       expect(instance.record).to.deep.equal(mockRecord);
-    });
-  });
-
-  describe('isAuditEnabled', () => {
-    it('returns true when audit is enabled', () => {
-      expect(instance.isAuditEnabled('wikipedia-analysis')).to.be.true;
-      expect(instance.isAuditEnabled('reddit-analysis')).to.be.true;
-    });
-
-    it('returns false when audit is not enabled', () => {
-      expect(instance.isAuditEnabled('youtube-analysis')).to.be.false;
-    });
-
-    it('handles empty audits array', () => {
-      instance.record.audits = [];
-      expect(instance.isAuditEnabled('wikipedia-analysis')).to.be.false;
-    });
-
-    it('handles undefined audits', () => {
-      instance.record.audits = undefined;
-      expect(instance.isAuditEnabled('wikipedia-analysis')).to.be.false;
-    });
-
-    it('works with direct property access when getAudits is not available', () => {
-      const plainObj = Object.create(SentimentTopic.prototype);
-      plainObj.audits = ['wikipedia-analysis'];
-      expect(plainObj.isAuditEnabled('wikipedia-analysis')).to.be.true;
-    });
-  });
-
-  describe('enableAudit', () => {
-    it('adds audit to the list when not present', () => {
-      instance.enableAudit('youtube-analysis');
-      expect(instance.getAudits()).to.include('youtube-analysis');
-    });
-
-    it('does not add duplicate audits', () => {
-      const originalLength = instance.getAudits().length;
-      instance.enableAudit('wikipedia-analysis'); // Already exists
-      expect(instance.getAudits().length).to.equal(originalLength);
-    });
-
-    it('returns the instance for method chaining', () => {
-      const result = instance.enableAudit('youtube-analysis');
-      expect(result).to.equal(instance);
-    });
-
-    it('works with direct property access', () => {
-      const plainObj = Object.create(SentimentTopic.prototype);
-      plainObj.audits = [];
-      plainObj.enableAudit('wikipedia-analysis');
-      expect(plainObj.audits).to.deep.equal(['wikipedia-analysis']);
-    });
-  });
-
-  describe('disableAudit', () => {
-    it('removes audit from the list when present', () => {
-      instance.disableAudit('wikipedia-analysis');
-      expect(instance.getAudits()).to.not.include('wikipedia-analysis');
-    });
-
-    it('does nothing if audit is not in the list', () => {
-      const originalLength = instance.getAudits().length;
-      instance.disableAudit('youtube-analysis'); // Not in list
-      expect(instance.getAudits().length).to.equal(originalLength);
-    });
-
-    it('returns the instance for method chaining', () => {
-      const result = instance.disableAudit('wikipedia-analysis');
-      expect(result).to.equal(instance);
-    });
-
-    it('works with direct property access', () => {
-      const plainObj = Object.create(SentimentTopic.prototype);
-      plainObj.audits = ['wikipedia-analysis', 'reddit-analysis'];
-      plainObj.disableAudit('wikipedia-analysis');
-      expect(plainObj.audits).to.deep.equal(['reddit-analysis']);
     });
   });
 
@@ -184,13 +105,9 @@ describe('SentimentTopicModel', () => {
   describe('method chaining', () => {
     it('allows chaining multiple methods', () => {
       instance
-        .enableAudit('youtube-analysis')
         .addSubPrompt('New prompt')
-        .disableAudit('wikipedia-analysis')
         .removeSubPrompt('Interior quality?');
 
-      expect(instance.isAuditEnabled('youtube-analysis')).to.be.true;
-      expect(instance.isAuditEnabled('wikipedia-analysis')).to.be.false;
       expect(instance.getSubPrompts()).to.include('New prompt');
       expect(instance.getSubPrompts()).to.not.include('Interior quality?');
     });

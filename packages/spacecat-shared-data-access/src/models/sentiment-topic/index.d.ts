@@ -20,9 +20,7 @@ export interface SentimentTopic extends BaseModel {
   getTopicId(): string;
   getName(): string;
   getDescription(): string | undefined;
-  getTopicName(): string;
   getSubPrompts(): string[];
-  getAudits(): string[];
   getEnabled(): boolean;
   getCreatedAt(): string;
   getCreatedBy(): string;
@@ -33,15 +31,10 @@ export interface SentimentTopic extends BaseModel {
 
   setName(name: string): SentimentTopic;
   setDescription(description: string): SentimentTopic;
-  setTopicName(topicName: string): SentimentTopic;
   setSubPrompts(subPrompts: string[]): SentimentTopic;
-  setAudits(audits: string[]): SentimentTopic;
   setEnabled(enabled: boolean): SentimentTopic;
   setUpdatedBy(updatedBy: string): SentimentTopic;
 
-  isAuditEnabled(auditType: string): boolean;
-  enableAudit(auditType: string): SentimentTopic;
-  disableAudit(auditType: string): SentimentTopic;
   addSubPrompt(prompt: string): SentimentTopic;
   removeSubPrompt(prompt: string): SentimentTopic;
 }
@@ -50,7 +43,6 @@ export interface SentimentTopicCollection extends BaseCollection<SentimentTopic>
   findById(siteId: string, topicId: string): Promise<SentimentTopic | null>;
   allBySiteId(siteId: string): Promise<SentimentTopic[]>;
   allBySiteIdPaginated(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentTopic[]; cursor: string | null }>;
-  allBySiteIdAndAuditType(siteId: string, auditType: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentTopic[]; cursor: string | null }>;
   allBySiteIdEnabled(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentTopic[]; cursor: string | null }>;
   removeForSiteId(siteId: string): Promise<void>;
 }

@@ -63,35 +63,6 @@ class SentimentTopicCollection extends BaseCollection {
   }
 
   /**
-   * Gets all sentiment topics for a site that have a specific audit type enabled.
-   * Uses FilterExpression to filter at the database level.
-   *
-   * @param {string} siteId - The site ID.
-   * @param {string} auditType - The audit type to filter by.
-   * @param {object} [options={}] - Query options (limit, cursor).
-   * @returns {Promise<{data: SentimentTopic[], cursor: string|null}>} Paginated results.
-   */
-  async allBySiteIdAndAuditType(siteId, auditType, options = {}) {
-    if (!hasText(siteId) || !hasText(auditType)) {
-      throw new Error('Both siteId and auditType are required');
-    }
-
-    const result = await this.allByIndexKeys(
-      { siteId },
-      {
-        ...options,
-        returnCursor: true,
-        where: (attr, op) => op.contains(attr.audits, auditType),
-      },
-    );
-
-    return {
-      data: result.data || [],
-      cursor: result.cursor,
-    };
-  }
-
-  /**
    * Gets all enabled sentiment topics for a site.
    *
    * @param {string} siteId - The site ID.

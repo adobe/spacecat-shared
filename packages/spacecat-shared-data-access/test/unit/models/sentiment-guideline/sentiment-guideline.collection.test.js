@@ -36,6 +36,7 @@ describe('SentimentGuidelineCollection', () => {
     siteId: 'site-12345',
     name: 'Product Quality Focus',
     instruction: 'Analyze sentiment around build quality and materials.',
+    audits: ['wikipedia-analysis'],
     enabled: true,
   };
 
@@ -149,6 +150,44 @@ describe('SentimentGuidelineCollection', () => {
       const callArgs = instance.allByIndexKeys.getCall(0).args;
       expect(callArgs[1]).to.have.property('where');
       expect(callArgs[1].returnCursor).to.be.true;
+    });
+  });
+
+  describe('allBySiteIdAndAuditType', () => {
+    it('throws an error if siteId is not provided', async () => {
+      await expect(instance.allBySiteIdAndAuditType()).to.be.rejectedWith('Both siteId and auditType are required');
+    });
+
+    it('throws an error if auditType is not provided', async () => {
+      await expect(instance.allBySiteIdAndAuditType('site123')).to.be.rejectedWith('Both siteId and auditType are required');
+    });
+
+    it('filters guidelines by audit type using FilterExpression', async () => {
+      const mockGuideline1 = { getGuidelineId: () => 'guideline-1' };
+      const mockGuideline2 = { getGuidelineId: () => 'guideline-2' };
+
+      instance.allByIndexKeys = stub().resolves({ data: [mockGuideline1, mockGuideline2], cursor: 'cursor123' });
+
+      const result = await instance.allBySiteIdAndAuditType('site123', 'wikipedia-analysis');
+
+      expect(result).to.be.an('object');
+      expect(result.data).to.be.an('array').with.lengthOf(2);
+      expect(result.cursor).to.equal('cursor123');
+
+      expect(instance.allByIndexKeys).to.have.been.calledOnce;
+      const callArgs = instance.allByIndexKeys.getCall(0).args;
+      expect(callArgs[0]).to.deep.equal({ siteId: 'site123' });
+      expect(callArgs[1]).to.have.property('where');
+      expect(callArgs[1].returnCursor).to.be.true;
+    });
+
+    it('returns empty data array when no guidelines match', async () => {
+      instance.allByIndexKeys = stub().resolves({ data: [], cursor: null });
+
+      const result = await instance.allBySiteIdAndAuditType('site123', 'reddit-analysis');
+
+      expect(result.data).to.be.an('array').with.lengthOf(0);
+      expect(result.cursor).to.be.null;
     });
   });
 

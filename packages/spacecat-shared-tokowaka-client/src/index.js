@@ -1102,6 +1102,7 @@ class TokowakaClient {
       }
     }
 
+    /* istanbul ignore next */
     // This should never be reached, but needed for consistent-return
     throw this.#createError(
       'Failed to check edge optimize status after all retries',

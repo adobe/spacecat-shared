@@ -17,3 +17,6 @@ export {
   Suggestion,
   SuggestionCollection,
 };
+
+// Export DATA_SCHEMAS for api-service to reference
+export const { DATA_SCHEMAS } = Suggestion;

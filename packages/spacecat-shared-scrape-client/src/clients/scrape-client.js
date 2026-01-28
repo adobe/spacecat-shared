@@ -269,7 +269,7 @@ export default class ScrapeClient {
         return null;
       }
       const { ScrapeUrl } = this.config.dataAccess;
-      const scrapeUrls = await ScrapeUrl.allByScrapeJobId(job.getId());
+      const scrapeUrls = await ScrapeUrl.allByScrapeJobId(job.getId(), { fetchAllPages: true });
       const results = scrapeUrls.map((url) => ({
         url: url.getUrl(),
         status: url.getStatus(),

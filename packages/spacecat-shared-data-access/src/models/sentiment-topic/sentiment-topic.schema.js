@@ -26,8 +26,7 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 Data Access Patterns:
 1. Get all topics for a site: allBySiteId(siteId)
 2. Get a specific topic: findById(siteId, topicId)
-3. Get topics by audit type: allBySiteIdAndAuditType(siteId, auditType) - uses FilterExpression
-4. Get enabled topics: allBySiteIdEnabled(siteId) - uses FilterExpression
+3. Get enabled topics: allBySiteIdEnabled(siteId) - uses FilterExpression
 
 Primary Key (Composite):
 - Partition Key (PK): siteId
@@ -55,19 +54,9 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     type: 'string',
     required: false,
   })
-  .addAttribute('topicName', {
-    type: 'string',
-    required: true,
-  })
   .addAttribute('subPrompts', {
     type: 'list',
     items: { type: 'string' },
-    required: true,
-    default: [],
-  })
-  .addAttribute('audits', {
-    type: 'set',
-    items: 'string',
     required: true,
     default: [],
   })

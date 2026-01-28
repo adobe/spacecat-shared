@@ -27,14 +27,15 @@ Data Access Patterns:
 1. Get all guidelines for a site: allBySiteId(siteId)
 2. Get a specific guideline: findById(siteId, guidelineId)
 3. Get enabled guidelines: allBySiteIdEnabled(siteId) - uses FilterExpression
-4. Get multiple guidelines by IDs: findByIds(siteId, guidelineIds) - for resolving topic links
+4. Get guidelines by audit type: allBySiteIdAndAuditType(siteId, auditType) - uses FilterExpression
+5. Get multiple guidelines by IDs: findByIds(siteId, guidelineIds)
 
 Primary Key (Composite):
 - Partition Key (PK): siteId
 - Sort Key (SK): guidelineId
 - Provides natural uniqueness for siteId + guidelineId combinations
 
-No GSI needed - all queries are site-scoped
+No GSI needed - all queries are site-scoped with FilterExpression
 */
 
 const schema = new SchemaBuilder(SentimentGuideline, SentimentGuidelineCollection)
@@ -55,6 +56,12 @@ const schema = new SchemaBuilder(SentimentGuideline, SentimentGuidelineCollectio
     type: 'string',
     required: true,
     validate: (value) => hasText(value),
+  })
+  .addAttribute('audits', {
+    type: 'set',
+    items: 'string',
+    required: true,
+    default: [],
   })
   .addAttribute('enabled', {
     type: 'boolean',

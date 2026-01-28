@@ -29,6 +29,50 @@ class SentimentGuideline extends BaseModel {
   isEnabled() {
     return this.getEnabled?.() ?? this.enabled ?? true;
   }
+
+  /**
+   * Checks if this guideline is enabled for a specific audit type.
+   * @param {string} auditType - The audit type to check.
+   * @returns {boolean} True if the audit is enabled for this guideline.
+   */
+  isAuditEnabled(auditType) {
+    const audits = this.getAudits?.() ?? this.audits ?? [];
+    return audits.includes(auditType);
+  }
+
+  /**
+   * Adds an audit type to the audits array if not already present.
+   * @param {string} auditType - The audit type to add.
+   * @returns {this} The current instance for chaining.
+   */
+  enableAudit(auditType) {
+    const audits = this.getAudits?.() ?? this.audits ?? [];
+    if (!audits.includes(auditType)) {
+      const updatedAudits = [...audits, auditType];
+      if (this.setAudits) {
+        this.setAudits(updatedAudits);
+      } else {
+        this.audits = updatedAudits;
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Removes an audit type from the audits array.
+   * @param {string} auditType - The audit type to remove.
+   * @returns {this} The current instance for chaining.
+   */
+  disableAudit(auditType) {
+    const audits = this.getAudits?.() ?? this.audits ?? [];
+    const filtered = audits.filter((a) => a !== auditType);
+    if (this.setAudits) {
+      this.setAudits(filtered);
+    } else {
+      this.audits = filtered;
+    }
+    return this;
+  }
 }
 
 export default SentimentGuideline;

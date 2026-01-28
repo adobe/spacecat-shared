@@ -20,6 +20,7 @@ export interface SentimentGuideline extends BaseModel {
   getGuidelineId(): string;
   getName(): string;
   getInstruction(): string;
+  getAudits(): string[];
   getEnabled(): boolean;
   getCreatedAt(): string;
   getCreatedBy(): string;
@@ -30,10 +31,14 @@ export interface SentimentGuideline extends BaseModel {
 
   setName(name: string): SentimentGuideline;
   setInstruction(instruction: string): SentimentGuideline;
+  setAudits(audits: string[]): SentimentGuideline;
   setEnabled(enabled: boolean): SentimentGuideline;
   setUpdatedBy(updatedBy: string): SentimentGuideline;
 
   isEnabled(): boolean;
+  isAuditEnabled(auditType: string): boolean;
+  enableAudit(auditType: string): SentimentGuideline;
+  disableAudit(auditType: string): SentimentGuideline;
 }
 
 export interface SentimentGuidelineCollection extends BaseCollection<SentimentGuideline> {
@@ -41,6 +46,7 @@ export interface SentimentGuidelineCollection extends BaseCollection<SentimentGu
   allBySiteId(siteId: string): Promise<SentimentGuideline[]>;
   allBySiteIdPaginated(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentGuideline[]; cursor: string | null }>;
   allBySiteIdEnabled(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentGuideline[]; cursor: string | null }>;
+  allBySiteIdAndAuditType(siteId: string, auditType: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentGuideline[]; cursor: string | null }>;
   findByIds(siteId: string, guidelineIds: string[]): Promise<SentimentGuideline[]>;
   removeForSiteId(siteId: string): Promise<void>;
 }

@@ -104,7 +104,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html>Test HTML</html>',
       });
@@ -129,7 +129,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html>Optimized HTML</html>',
       });
@@ -208,7 +208,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
         },
         text: async () => '<html>Proxy only 1</html>',
       });
@@ -217,7 +217,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
         },
         text: async () => '<html>Proxy only 2</html>',
       });
@@ -226,7 +226,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
         },
         text: async () => '<html>Proxy only 3</html>',
       });
@@ -244,7 +244,7 @@ describe('HTML Utils', () => {
         expect.fail('Should have thrown error');
       } catch (error) {
         expect(error.message).to.include('Failed to fetch optimized HTML');
-        expect(error.message).to.include('Cache header (x-edge-optimize-cache) not found after 2 retries');
+        expect(error.message).to.include('Cache header (x-edgeoptimize-cache) not found after 2 retries');
       }
 
       // Should have tried 3 times (initial + 2 retries) plus warmup
@@ -268,7 +268,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
         },
         text: async () => '<html>Proxy only</html>',
       });
@@ -278,7 +278,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html>Cached HTML</html>',
       });
@@ -483,7 +483,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
         },
         text: async () => '<html>Proxy only</html>',
       });
@@ -494,8 +494,8 @@ describe('HTML Utils', () => {
         statusText: 'OK',
         headers: {
           get: (name) => {
-            if (name === 'x-edge-optimize-cache') return 'HIT';
-            if (name === 'x-edge-optimize-proxy') return 'true';
+            if (name === 'x-edgeoptimize-cache') return 'HIT';
+            if (name === 'x-edgeoptimize-proxy') return 'true';
             return null;
           },
         },
@@ -534,7 +534,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
         },
         text: async () => '<html>Proxy only 1</html>',
       });
@@ -543,7 +543,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
         },
         text: async () => '<html>Proxy only 2</html>',
       });
@@ -552,7 +552,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-proxy' ? 'true' : null),
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
         },
         text: async () => '<html>Proxy only 3</html>',
       });
@@ -570,7 +570,7 @@ describe('HTML Utils', () => {
         expect.fail('Should have thrown error');
       } catch (error) {
         expect(error.message).to.include('Failed to fetch original HTML');
-        expect(error.message).to.include('Cache header (x-edge-optimize-cache) not found after 2 retries');
+        expect(error.message).to.include('Cache header (x-edgeoptimize-cache) not found after 2 retries');
       }
 
       // Should have tried 3 times (initial + 2 retries) plus warmup
@@ -594,7 +594,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html>Cached HTML</html>',
       });
@@ -632,8 +632,8 @@ describe('HTML Utils', () => {
         statusText: 'OK',
         headers: {
           get: (name) => {
-            if (name === 'x-edge-optimize-cache') return 'HIT';
-            if (name === 'x-edge-optimize-proxy') return 'true';
+            if (name === 'x-edgeoptimize-cache') return 'HIT';
+            if (name === 'x-edgeoptimize-proxy') return 'true';
             return null;
           },
         },
@@ -672,7 +672,7 @@ describe('HTML Utils', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-edge-optimize-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html>Cache only HTML</html>',
       });

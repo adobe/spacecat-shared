@@ -67,6 +67,10 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
         patch.tag = transformRules.tag;
       }
 
+      if (checkType === 'heading-order-invalid') {
+        patch.value = transformRules.value;
+        patch.valueFormat = transformRules.valueFormat;
+      }
       patches.push(patch);
     });
 

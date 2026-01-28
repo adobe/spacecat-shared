@@ -52,14 +52,14 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
       }
 
       // Check for edge optimize headers
-      const cacheHeader = response.headers.get('x-edge-optimize-cache');
-      const proxyHeader = response.headers.get('x-edge-optimize-proxy');
+      const cacheHeader = response.headers.get('x-edgeoptimize-cache');
+      const proxyHeader = response.headers.get('x-edgeoptimize-proxy');
 
       log.debug(`Headers - cache: ${cacheHeader || 'none'}, proxy: ${proxyHeader || 'none'}`);
 
       // Case 1: Cache header present (regardless of proxy) -> Success
       if (cacheHeader) {
-        log.debug(`Cache header found (x-edge-optimize-cache: ${cacheHeader}), stopping retry logic`);
+        log.debug(`Cache header found (x-edgeoptimize-cache: ${cacheHeader}), stopping retry logic`);
         return response;
       }
 
@@ -80,7 +80,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
       } else {
         // Last attempt - throw error
         log.error(`Max retries (${maxRetries}) exhausted. Proxy header present but cache header not found`);
-        throw new Error(`Cache header (x-edge-optimize-cache) not found after ${maxRetries} retries`);
+        throw new Error(`Cache header (x-edgeoptimize-cache) not found after ${maxRetries} retries`);
       }
     } catch (error) {
       log.warn(`Attempt ${attempt} failed for ${fetchType} HTML, error: ${error.message}`);
@@ -158,15 +158,15 @@ export async function fetchHtmlWithWarmup(
 
   const headers = {
     'x-forwarded-host': forwardedHost,
-    'x-edge-optimize-api-key': apiKey,
-    'x-edge-optimize-url': urlPath,
+    'x-edgeoptimize-api-key': apiKey,
+    'x-edgeoptimize-url': urlPath,
     'Accept-Encoding': 'identity', // Disable compression to avoid content-length: 0 issue
   };
 
   if (isOptimized) {
     // Add tokowakaPreview param for optimized HTML
     fullUrl = `${fullUrl}?tokowakaPreview=true`;
-    headers['x-edge-optimize-url'] = `${urlPath}?tokowakaPreview=true`;
+    headers['x-edgeoptimize-url'] = `${urlPath}?tokowakaPreview=true`;
   }
 
   const fetchOptions = {

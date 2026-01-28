@@ -68,3 +68,5 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
   // Wikipedia Analysis (LLMO)
   WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
 });
+
+export const DEFAULT_CPC_VALUE = 1.5;

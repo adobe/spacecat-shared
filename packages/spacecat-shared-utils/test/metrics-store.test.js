@@ -16,8 +16,10 @@ import { expect, use } from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
+import esmock from 'esmock';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getStoredMetrics, storeMetrics } from '../src/metrics-store.js';
+import { DEFAULT_CPC_VALUE } from '../src/constants.js';
 
 use(sinonChai);
 use(chaiAsPromised);
@@ -205,6 +207,164 @@ describe('Metrics Store', () => {
       } catch (e) {
         expect(e.message).to.equal('Failed to upload metrics to metrics/testSite/testSource/testMetric.json, error: Test error');
         expect(context.log.error).to.have.been.calledWith('Failed to upload metrics to metrics/testSite/testSource/testMetric.json, error: Test error');
+      }
+    });
+  });
+
+  describe('calculateCPCValue', () => {
+    let getObjectFromKeyStub;
+    let calculateCPCValueFunc;
+
+    beforeEach(async () => {
+      getObjectFromKeyStub = sinon.stub();
+      const { calculateCPCValue } = await esmock('../src/metrics-store.js', {
+        '../src/s3.js': {
+          getObjectFromKey: getObjectFromKeyStub,
+        },
+      });
+      context = {
+        s3Client: {},
+        log: {
+          warn: sinon.stub(),
+          error: sinon.stub(),
+        },
+        env: {
+          S3_IMPORTER_BUCKET_NAME: 'test-bucket',
+        },
+      };
+      calculateCPCValueFunc = calculateCPCValue;
+    });
+
+    it('should calculate CPC value correctly from organic traffic data', async () => {
+      const organicTrafficData = [
+        { cost: 150000, value: 10000 },
+        { cost: 200000, value: 5000 },
+      ];
+      getObjectFromKeyStub.resolves(organicTrafficData);
+
+      const result = await calculateCPCValueFunc(context, 'test-site');
+
+      expect(result).to.deep.equal({ success: true, value: 0.4 }); // 200000 / 5000 / 100 = 0.4
+      expect(getObjectFromKeyStub).to.have.been.calledWith(
+        context.s3Client,
+        'test-bucket',
+        'metrics/test-site/ahrefs/organic-traffic.json',
+        context.log,
+      );
+    });
+
+    it('should return default CPC value when organic traffic data is not available', async () => {
+      getObjectFromKeyStub.resolves(null);
+
+      const result = await calculateCPCValueFunc(context, 'test-site');
+
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Organic traffic data not available',
+        value: DEFAULT_CPC_VALUE,
+      });
+      expect(context.log.warn).to.have.been.calledWith('Organic traffic data not available for test-site. Using Default CPC value.');
+    });
+
+    it('should return default CPC value when organic traffic data is empty array', async () => {
+      getObjectFromKeyStub.resolves([]);
+
+      const result = await calculateCPCValueFunc(context, 'test-site');
+
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Organic traffic data not available',
+        value: DEFAULT_CPC_VALUE,
+      });
+      expect(context.log.warn).to.have.been.calledWith('Organic traffic data not available for test-site. Using Default CPC value.');
+    });
+
+    it('should return default CPC value when cost is missing', async () => {
+      const organicTrafficData = [
+        { cost: 150000, value: 10000 },
+        { value: 5000 },
+      ];
+      getObjectFromKeyStub.resolves(organicTrafficData);
+
+      const result = await calculateCPCValueFunc(context, 'test-site');
+
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Invalid organic traffic data',
+        value: DEFAULT_CPC_VALUE,
+      });
+      expect(context.log.warn).to.have.been.calledWith('Invalid organic traffic data present for test-site - cost:undefined value:5000, Using Default CPC value.');
+    });
+
+    it('should return default CPC value when value is missing', async () => {
+      const organicTrafficData = [
+        { cost: 150000, value: 10000 },
+        { cost: 200000 },
+      ];
+      getObjectFromKeyStub.resolves(organicTrafficData);
+
+      const result = await calculateCPCValueFunc(context, 'test-site');
+
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Invalid organic traffic data',
+        value: DEFAULT_CPC_VALUE,
+      });
+      expect(context.log.warn).to.have.been.calledWith('Invalid organic traffic data present for test-site - cost:200000 value:undefined, Using Default CPC value.');
+    });
+
+    it('should return default CPC value on error', async () => {
+      getObjectFromKeyStub.rejects(new Error('S3 error'));
+
+      const result = await calculateCPCValueFunc(context, 'test-site');
+
+      expect(result).to.deep.equal({
+        success: false,
+        reason: 'Error fetching organic traffic data',
+        value: DEFAULT_CPC_VALUE,
+      });
+      expect(context.log.error).to.have.been.calledWith('Error fetching organic traffic data for site test-site. Using Default CPC value.');
+    });
+
+    it('should throw error when S3_IMPORTER_BUCKET_NAME is missing', async () => {
+      context.env.S3_IMPORTER_BUCKET_NAME = null;
+
+      try {
+        await calculateCPCValueFunc(context, 'test-site');
+        expect.fail('Should have thrown an error');
+      } catch (e) {
+        expect(e.message).to.equal('S3 importer bucket name is required');
+      }
+    });
+
+    it('should throw error when s3Client is missing', async () => {
+      context.s3Client = null;
+
+      try {
+        await calculateCPCValueFunc(context, 'test-site');
+        expect.fail('Should have thrown an error');
+      } catch (e) {
+        expect(e.message).to.equal('S3 client is required');
+      }
+    });
+
+    it('should throw error when log is missing', async () => {
+      context.log = null;
+
+      try {
+        await calculateCPCValueFunc(context, 'test-site');
+        expect.fail('Should have thrown an error');
+      } catch (e) {
+        expect(e.message).to.equal('Logger is required');
+      }
+    });
+
+    it('should throw error when siteId is missing', async () => {
+      try {
+        await calculateCPCValueFunc(context, null);
+        expect.fail('Should have thrown an error');
+      } catch (e) {
+        expect(e.message).to.equal('SiteId is required');
       }
     });
   });

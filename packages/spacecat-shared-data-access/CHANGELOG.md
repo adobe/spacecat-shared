@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-data-access-v2.97.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.0...@adobe/spacecat-shared-data-access-v2.97.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* Add a dummy code ([#1283](https://github.com/adobe/spacecat-shared/issues/1283)) ([94e4ee1](https://github.com/adobe/spacecat-shared/commit/94e4ee121f5d5cfad14b4a7f73c0069515aa34be))
+
+# [@adobe/spacecat-shared-data-access-v2.97.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.96.0...@adobe/spacecat-shared-data-access-v2.97.0) (2026-01-22)
+
+
+### Features
+
+* **AGENTCOM-302:** add new audit type for commerce product enrichments ([#1282](https://github.com/adobe/spacecat-shared/issues/1282)) ([7f3bfcc](https://github.com/adobe/spacecat-shared/commit/7f3bfcc9625bdd024173cf3c1bbf9182a3075fc2))
+
+# [@adobe/spacecat-shared-data-access-v2.96.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.95.0...@adobe/spacecat-shared-data-access-v2.96.0) (2026-01-16)
+
+
+### Features
+
+* add ACO product code to Entitlement model ([#1259](https://github.com/adobe/spacecat-shared/issues/1259)) ([256f66a](https://github.com/adobe/spacecat-shared/commit/256f66a3114a5d8a27379a92109fc15c969be8b1))
+
+# [@adobe/spacecat-shared-data-access-v2.95.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.94.0...@adobe/spacecat-shared-data-access-v2.95.0) (2026-01-15)
+
+
+### Features
+
+* Add autofixExcludedURLs configuration support for meta-tags opportunity ([#1258](https://github.com/adobe/spacecat-shared/issues/1258)) ([b5c5025](https://github.com/adobe/spacecat-shared/commit/b5c50250bb067799b352d98ab3ee860f3db324b4))
+
+# [@adobe/spacecat-shared-data-access-v2.94.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.93.0...@adobe/spacecat-shared-data-access-v2.94.0) (2026-01-15)
+
+
+### Features
+
+* add TokowakaKVClient for fetching stale suggestions from edge o… ([#1262](https://github.com/adobe/spacecat-shared/issues/1262)) ([e8d440b](https://github.com/adobe/spacecat-shared/commit/e8d440bcc462419b4c82d3415f3a83dfde5195f1))
+
 # [@adobe/spacecat-shared-data-access-v2.93.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.92.1...@adobe/spacecat-shared-data-access-v2.93.0) (2026-01-08)
 
 
@@ -2930,7 +2965,6 @@
 
 * github org ([02f86c3](https://github.com/adobe/spacecat-shared/commit/02f86c351b2b1ab99ce5aca7fd5e6af2246c0efd))
 
-<<<<<<< Updated upstream
 # [@adobe/spacecat-shared-data-access-v1.6.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.2...@adobe/spacecat-shared-data-access-v1.6.0) (2024-01-12)
 
 
@@ -2938,10 +2972,7 @@
 
 * site delivery type ([#77](https://github.com/adobe-rnd/spacecat-shared/issues/77)) ([005bc38](https://github.com/adobe-rnd/spacecat-shared/commit/005bc388ed6ab0f82c8b0f562d4c1f4c0d1e2894))
 
-# [@adobe/spacecat-shared-data-access-v1.5.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.1...@adobe/spacecat-shared-data-access-v1.5.2) (2023-12-30)
-=======
 # [@adobe/spacecat-shared-data-access-v1.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.1...@adobe/spacecat-shared-data-access-v1.5.2) (2023-12-30)
->>>>>>> Stashed changes
 
 
 ### Bug Fixes

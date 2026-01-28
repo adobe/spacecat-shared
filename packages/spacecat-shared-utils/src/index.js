@@ -76,11 +76,11 @@ export {
   extractUrlsFromSuggestion,
 } from './url-extractors.js';
 
-export { getStoredMetrics, storeMetrics } from './metrics-store.js';
+export { getStoredMetrics, storeMetrics, calculateCPCValue } from './metrics-store.js';
 
-export { s3Wrapper } from './s3.js';
+export { s3Wrapper, getObjectFromKey } from './s3.js';
 
-export { OPPORTUNITY_TYPES } from './constants.js';
+export { OPPORTUNITY_TYPES, DEFAULT_CPC_VALUE } from './constants.js';
 
 export {
   OPPORTUNITY_TAG_MAPPINGS,
@@ -113,10 +113,17 @@ export { detectAEMVersion, DELIVERY_TYPES, AUTHORING_TYPES } from './aem.js';
 export { determineAEMCSPageId, getPageEditUrl } from './aem-content-api-utils.js';
 
 export * as llmoConfig from './llmo-config.js';
+export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
 
 export { detectLocale } from './locale-detect/locale-detect.js';
-export { detectBotBlocker } from './bot-blocker-detect/bot-blocker-detect.js';
+export {
+  detectBotBlocker,
+  analyzeBotProtection,
+  SPACECAT_BOT_USER_AGENT,
+  getSpacecatBotIps,
+  formatAllowlistMessage,
+} from './bot-blocker-detect/bot-blocker-detect.js';
 export { prettifyLogForwardingConfig } from './cdn-helpers.js';
 
 export {

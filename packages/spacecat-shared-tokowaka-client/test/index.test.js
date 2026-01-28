@@ -456,6 +456,860 @@ describe('TokowakaClient', () => {
     });
   });
 
+  describe('createMetaconfig', () => {
+    it('should create the default metaconfig with generated API key', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId);
+
+      expect(result).to.have.property('siteId', siteId);
+      expect(result).to.have.property('apiKeys');
+      expect(result.apiKeys).to.be.an('array').with.lengthOf(1);
+      expect(result.apiKeys[0]).to.be.a('string');
+      expect(result).to.have.property('tokowakaEnabled', true);
+      expect(result).to.have.property('enhancements', true);
+      expect(result.patches).to.be.empty;
+
+      // Verify uploadMetaconfig was called with correct metaconfig
+      expect(s3Client.send).to.have.been.calledTwice;
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Bucket).to.equal('test-bucket');
+      expect(command.input.Key).to.equal('opportunities/example.com/config');
+    });
+
+    it('should throw error if metaconfig exists', async () => {
+      const existingMetaconfig = {
+        siteId: 'site-123',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+      };
+      // Mock fetchMetaconfig to return existing config
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfig)),
+        },
+      });
+      try {
+        await client.createMetaconfig('https://example.com', 'site-123');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Metaconfig already exists for this URL');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should create metaconfig with enhancements set to false', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId, { enhancements: false });
+
+      expect(result).to.have.property('tokowakaEnabled', true);
+      expect(result).to.have.property('enhancements', false);
+    });
+
+    it('should throw error if URL is missing', async () => {
+      try {
+        await client.createMetaconfig('', 'site-123');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('URL is required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error if siteId is missing', async () => {
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+      try {
+        await client.createMetaconfig('https://example.com', '');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Site ID is required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should handle S3 upload failure', async () => {
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+      const s3Error = new Error('S3 network error');
+      s3Client.send.onSecondCall().rejects(s3Error);
+      try {
+        await client.createMetaconfig('https://example.com', 'site-123');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('S3 upload failed');
+        expect(error.status).to.equal(500);
+      }
+    });
+
+    it('should strip www. from domain in metaconfig path', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/some/path';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      await client.createMetaconfig(url, siteId);
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Key).to.equal('opportunities/example.com/config');
+    });
+  });
+
+  describe('updateMetaconfig', () => {
+    const existingMetaconfig = {
+      siteId: 'site-456',
+      apiKeys: ['existing-api-key-123'],
+      tokowakaEnabled: false,
+      enhancements: false,
+      patches: { 'existing-patch': 'value' },
+    };
+
+    beforeEach(() => {
+      // Mock fetchMetaconfig to return existing config
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfig)),
+        },
+      });
+      // Mock uploadMetaconfig S3 upload
+      s3Client.send.onSecondCall().resolves();
+    });
+
+    it('should update metaconfig with default options', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com/page1';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('siteId', siteId);
+      expect(result).to.have.property('apiKeys');
+      expect(result.apiKeys).to.deep.equal(['existing-api-key-123']);
+      // Should preserve existing metaconfig values when options not provided
+      expect(result).to.have.property('tokowakaEnabled', false);
+      expect(result).to.have.property('enhancements', false);
+      expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+      expect(result).to.not.have.property('forceFail');
+    });
+
+    it('should update metaconfig with tokowakaEnabled set to false', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { tokowakaEnabled: false });
+
+      expect(result).to.have.property('tokowakaEnabled', false);
+      expect(result).to.have.property('enhancements', false);
+      expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+      expect(result).to.not.have.property('forceFail');
+    });
+
+    it('should update metaconfig with tokowakaEnabled set to true explicitly', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { tokowakaEnabled: true });
+
+      expect(result).to.have.property('tokowakaEnabled', true);
+      expect(result).to.have.property('enhancements', false);
+      expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+      expect(result).to.not.have.property('forceFail');
+    });
+
+    it('should update metaconfig with enhancements set to false', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { enhancements: false });
+
+      expect(result).to.have.property('tokowakaEnabled', false);
+      expect(result).to.have.property('enhancements', false);
+      expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+      expect(result).to.not.have.property('forceFail');
+    });
+
+    it('should update metaconfig with enhancements set to true explicitly', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { enhancements: true });
+
+      expect(result).to.have.property('tokowakaEnabled', false);
+      expect(result).to.have.property('enhancements', true);
+      expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+      expect(result).to.not.have.property('forceFail');
+    });
+
+    it('should override patches when non-empty patches object is provided', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const newPatches = { 'new-patch': 'new-value', 'another-patch': 'another-value' };
+
+      const result = await client.updateMetaconfig(url, siteId, { patches: newPatches });
+
+      expect(result.patches).to.deep.equal(newPatches);
+      expect(result.patches).to.not.deep.equal({ 'existing-patch': 'value' });
+    });
+
+    it('should preserve existing patches when empty patches object is provided', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { patches: {} });
+
+      expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+    });
+
+    it('should preserve existing patches when patches is undefined', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+    });
+
+    it('should use empty patches object when existing config has no patches and no patches provided', async () => {
+      const configWithoutPatches = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: false,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithoutPatches)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result.patches).to.deep.equal({});
+    });
+
+    it('should include forceFail when set to true', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: true });
+
+      expect(result).to.have.property('forceFail', true);
+    });
+
+    it('should include forceFail when set to false', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: false });
+
+      expect(result).to.have.property('forceFail', false);
+    });
+
+    it('should not include forceFail when undefined', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.not.have.property('forceFail');
+    });
+
+    it('should use forceFail as false when options.forceFail is null and existingMetaconfig has no forceFail', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: null });
+
+      expect(result).to.have.property('forceFail', false);
+    });
+
+    it('should preserve existingMetaconfig forceFail when options.forceFail is null', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: true,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: null });
+
+      expect(result).to.have.property('forceFail', true);
+    });
+
+    it('should update metaconfig with multiple options', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const newPatches = { 'custom-patch': 'custom-value' };
+
+      const result = await client.updateMetaconfig(url, siteId, {
+        tokowakaEnabled: false,
+        enhancements: false,
+        patches: newPatches,
+        forceFail: true,
+      });
+
+      expect(result).to.have.property('tokowakaEnabled', false);
+      expect(result).to.have.property('enhancements', false);
+      expect(result.patches).to.deep.equal(newPatches);
+      expect(result).to.have.property('forceFail', true);
+      expect(result.apiKeys).to.deep.equal(['existing-api-key-123']);
+    });
+
+    it('should preserve apiKeys from existing metaconfig', async () => {
+      const existingWithMultipleKeys = {
+        siteId: 'site-456',
+        apiKeys: ['key-1', 'key-2', 'key-3'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(existingWithMultipleKeys)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result.apiKeys).to.deep.equal(['key-1', 'key-2', 'key-3']);
+    });
+
+    it('should throw error if URL is missing', async () => {
+      try {
+        await client.updateMetaconfig('', 'site-123');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('URL is required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error if siteId is missing', async () => {
+      try {
+        await client.updateMetaconfig('https://example.com', '');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Site ID is required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error if metaconfig does not exist', async () => {
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      try {
+        await client.updateMetaconfig('https://example.com', 'site-123');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Metaconfig does not exist for this URL');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should handle S3 upload failure', async () => {
+      const s3Error = new Error('S3 network error');
+      s3Client.send.onSecondCall().rejects(s3Error);
+
+      try {
+        await client.updateMetaconfig('https://example.com', 'site-123');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('S3 upload failed');
+        expect(error.status).to.equal(500);
+      }
+    });
+
+    it('should strip www. from domain in metaconfig path', async () => {
+      const siteId = 'site-789';
+      const url = 'https://www.example.com/some/path';
+
+      await client.updateMetaconfig(url, siteId);
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Key).to.equal('opportunities/example.com/config');
+    });
+
+    it('should handle metaconfig with null patches', async () => {
+      const configWithNullPatches = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: null,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithNullPatches)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result.patches).to.deep.equal({});
+    });
+
+    it('should handle single patch in options.patches', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const singlePatch = { 'only-patch': 'only-value' };
+
+      const result = await client.updateMetaconfig(url, siteId, { patches: singlePatch });
+
+      expect(result.patches).to.deep.equal(singlePatch);
+    });
+
+    it('should preserve existing patches when options.patches is null', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { patches: null });
+
+      expect(result.patches).to.deep.equal({ 'existing-patch': 'value' });
+    });
+
+    it('should preserve tokowakaEnabled=true from existingMetaconfig when options not provided', async () => {
+      const configWithTokowakaEnabled = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: false,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithTokowakaEnabled)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('tokowakaEnabled', true);
+    });
+
+    it('should preserve enhancements=true from existingMetaconfig when options not provided', async () => {
+      const configWithEnhancements = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: true,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithEnhancements)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('enhancements', true);
+    });
+
+    it('should default tokowakaEnabled to true when not in existingMetaconfig or options', async () => {
+      const configWithoutTokowakaEnabled = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        enhancements: false,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithoutTokowakaEnabled)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('tokowakaEnabled', true);
+    });
+
+    it('should default enhancements to true when not in existingMetaconfig or options', async () => {
+      const configWithoutEnhancements = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithoutEnhancements)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('enhancements', true);
+    });
+
+    it('should preserve forceFail=true from existingMetaconfig when options not provided', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: true,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('forceFail', true);
+    });
+
+    it('should override existingMetaconfig forceFail when explicitly set to false in options', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: true,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: false });
+
+      expect(result).to.have.property('forceFail', false);
+    });
+
+    it('should override existingMetaconfig forceFail when explicitly set to true in options', async () => {
+      const configWithoutForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: false,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithoutForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: true });
+
+      expect(result).to.have.property('forceFail', true);
+    });
+
+    it('should preserve forceFail=false from existingMetaconfig when options not provided', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: false,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('forceFail', false);
+    });
+
+    it('should override existingMetaconfig tokowakaEnabled=false when explicitly set to true', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      // existingMetaconfig has tokowakaEnabled: false
+
+      const result = await client.updateMetaconfig(url, siteId, { tokowakaEnabled: true });
+
+      expect(result).to.have.property('tokowakaEnabled', true);
+    });
+
+    it('should override existingMetaconfig enhancements=false when explicitly set to true', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      // existingMetaconfig has enhancements: false
+
+      const result = await client.updateMetaconfig(url, siteId, { enhancements: true });
+
+      expect(result).to.have.property('enhancements', true);
+    });
+
+    it('should handle case where options.forceFail and existingMetaconfig.forceFail are both true', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: true,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { forceFail: true });
+
+      expect(result).to.have.property('forceFail', true);
+    });
+
+    it('should handle case where options.forceFail and existingMetaconfig.forceFail are both false', async () => {
+      const configWithForceFail = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: true,
+        enhancements: true,
+        patches: {},
+        forceFail: false,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('forceFail', false);
+    });
+
+    it('should include prerender when provided in options', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const prerenderConfig = { allowList: ['/*'] };
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: prerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should preserve existingMetaconfig prerender when options.prerender is undefined', async () => {
+      const existingPrerenderConfig = { allowList: ['/*', '/products/*'] };
+      const configWithPrerender = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: false,
+        patches: {},
+        prerender: existingPrerenderConfig,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithPrerender)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(existingPrerenderConfig);
+    });
+
+    it('should use existingMetaconfig prerender when options.prerender is null', async () => {
+      const existingPrerenderConfig = { allowList: ['/*'] };
+      const configWithPrerender = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: false,
+        patches: {},
+        prerender: existingPrerenderConfig,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithPrerender)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: null });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(existingPrerenderConfig);
+    });
+
+    it('should override existingMetaconfig prerender when provided in options', async () => {
+      const existingPrerenderConfig = { allowList: ['/blog/*'] };
+      const newPrerenderConfig = { allowList: ['/*', '/products/*'] };
+      const configWithPrerender = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: false,
+        patches: {},
+        prerender: existingPrerenderConfig,
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithPrerender)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: newPrerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(newPrerenderConfig);
+    });
+
+    it('should not include prerender when neither options nor existingMetaconfig have it', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId);
+
+      expect(result).to.not.have.property('prerender');
+    });
+
+    it('should not include prerender when both options and existingMetaconfig have empty prerender', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: {} });
+
+      expect(result).to.not.have.property('prerender');
+    });
+
+    it('should include prerender from options when existingMetaconfig does not have it', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const prerenderConfig = { allowList: ['/*'] };
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: prerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should handle prerender with multiple paths in allowList', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const prerenderConfig = {
+        allowList: ['/*', '/products/*', '/blog/*', '/about'],
+      };
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: prerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should use options.prerender even when it is an empty object if existingMetaconfig has no prerender', async () => {
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: {} });
+
+      // Empty object is not null/undefined, so it will be used by nullish coalescing
+      // But hasPrerender will be false, so it won't be included in final metaconfig
+      expect(result).to.not.have.property('prerender');
+    });
+
+    it('should handle case where existingMetaconfig.prerender is undefined and options.prerender is provided', async () => {
+      const configWithoutPrerender = {
+        siteId: 'site-456',
+        apiKeys: ['existing-api-key-123'],
+        tokowakaEnabled: false,
+        enhancements: false,
+        patches: {},
+      };
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(configWithoutPrerender)),
+        },
+      });
+
+      const siteId = 'site-789';
+      const url = 'https://example.com';
+      const prerenderConfig = { allowList: ['/*'] };
+
+      const result = await client.updateMetaconfig(url, siteId, { prerender: prerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+  });
+
   describe('uploadConfig', () => {
     it('should upload config to S3', async () => {
       const config = {
@@ -942,6 +1796,161 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.have.length(1);
       expect(result.failedSuggestions).to.have.length(1);
       expect(result.failedSuggestions[0].suggestion.getId()).to.equal('sugg-2');
+    });
+
+    it('should update metaconfig patches field with deployed endpoints', async () => {
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'Page 1 Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page2',
+            recommendedAction: 'Page 2 Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      // Verify uploadMetaconfig was called to update the metaconfig
+      expect(client.uploadMetaconfig).to.have.been.called;
+      // Check that the last call included the patches field
+      const { lastCall } = client.uploadMetaconfig;
+      expect(lastCall.args[1]).to.have.property('patches');
+      expect(lastCall.args[1].patches).to.deep.equal({
+        '/page1': true,
+        '/page2': true,
+      });
+    });
+
+    it('should add to existing patches in metaconfig when deploying new endpoints', async () => {
+      // Set up metaconfig with existing patches
+      // Reset the stub to provide consistent behavior
+      client.fetchMetaconfig.reset();
+      client.fetchMetaconfig.resolves({
+        siteId: 'site-123',
+        prerender: true,
+        patches: {
+          '/existing-page': true,
+        },
+      });
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/new-page',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+      ];
+
+      await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      // Verify the updated metaconfig includes both existing and new patches
+      const { lastCall } = client.uploadMetaconfig;
+      expect(lastCall.args[1].patches).to.deep.equal({
+        '/existing-page': true,
+        '/new-page': true,
+      });
+    });
+
+    it('should throw error when metaconfig update fails', async () => {
+      // Make uploadMetaconfig fail during the update
+      client.uploadMetaconfig.rejects(new Error('S3 upload error'));
+
+      try {
+        await client.deploySuggestions(
+          mockSite,
+          mockOpportunity,
+          mockSuggestions,
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to update metaconfig with deployed paths');
+        expect(error.status).to.equal(500);
+      }
+    });
+
+    it('should return early when no eligible suggestions to deploy', async () => {
+      // All suggestions are ineligible
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-missing', // Not eligible
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      // No suggestions deployed - returns early before metaconfig check
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(1);
+      // fetchMetaconfig should not be called at all (returns before that point)
+      expect(client.fetchMetaconfig).to.not.have.been.called;
+      // uploadMetaconfig should not be called at all
+      expect(client.uploadMetaconfig).to.not.have.been.called;
+    });
+
+    it('should not update metaconfig when all URLs fail to generate configs', async () => {
+      // Stub generateConfig to return null (no config generated)
+      sinon.stub(client, 'generateConfig').returns(null);
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      // Suggestions are marked as succeeded (eligible) but no configs uploaded
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.s3Paths).to.have.length(0); // No configs uploaded
+      // fetchMetaconfig called once for initial check, but not for update
+      // since no URLs were actually deployed (deployedUrls is empty)
+      expect(client.fetchMetaconfig).to.have.been.calledOnce;
+      // uploadMetaconfig should not be called at all
+      expect(client.uploadMetaconfig).to.not.have.been.called;
     });
 
     it('should skip URL when generateConfig returns no patches', async () => {
@@ -1683,7 +2692,7 @@ describe('TokowakaClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {
-          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
         },
         text: async () => '<html><body>Test HTML</body></html>',
       });

@@ -10,15 +10,24 @@
  * governing permissions and limitations under the License.
  */
 
+import crypto from 'crypto';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { v4 as uuidv4 } from 'uuid';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
 import { mergePatches } from './utils/patch-utils.js';
-import { getTokowakaConfigS3Path, getTokowakaMetaconfigS3Path } from './utils/s3-utils.js';
+import {
+  getTokowakaConfigS3Path,
+  getTokowakaMetaconfigS3Path,
+  getHostName,
+  normalizePath,
+} from './utils/s3-utils.js';
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
+
+export { FastlyKVClient } from './fastly-kv-client.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -90,6 +99,44 @@ class TokowakaClient {
     const error = Object.assign(new Error(message), { status });
     this.log.error(error.message);
     return error;
+  }
+
+  /**
+   * Updates the metaconfig with deployed endpoint paths
+   * @param {Object} metaconfig - Existing metaconfig object
+   * @param {Array<string>} deployedUrls - Array of successfully deployed URLs
+   * @param {string} baseUrl - Base URL for uploading metaconfig
+   * @returns {Promise<void>}
+   * @private
+   */
+  async #updateMetaconfigWithDeployedPaths(metaconfig, deployedUrls, baseUrl) {
+    if (!Array.isArray(deployedUrls) || deployedUrls.length === 0) {
+      return;
+    }
+
+    try {
+      // Initialize patches field if it doesn't exist
+      const updatedMetaconfig = {
+        ...metaconfig,
+        patches: { ...(metaconfig.patches || {}) },
+      };
+
+      // Extract normalized paths from deployed URLs and add to patches object
+      deployedUrls.forEach((url) => {
+        const urlObj = new URL(url);
+        const normalizedPath = normalizePath(urlObj.pathname);
+        updatedMetaconfig.patches[normalizedPath] = true;
+      });
+
+      await this.uploadMetaconfig(baseUrl, updatedMetaconfig);
+      this.log.info(`Updated metaconfig with ${deployedUrls.length} deployed endpoint(s)`);
+    } catch (error) {
+      this.log.error(`Failed to update metaconfig with deployed paths: ${error.message}`, error);
+      throw this.#createError(
+        `Failed to update metaconfig with deployed paths: ${error.message}`,
+        HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**
@@ -217,6 +264,118 @@ class TokowakaClient {
       this.log.error(`Failed to fetch metaconfig from S3: ${error.message}`, error);
       throw this.#createError(`S3 fetch failed: ${error.message}`, HTTP_INTERNAL_SERVER_ERROR);
     }
+  }
+
+  /**
+   * Generates an API key for Tokowaka based on domain
+   * @param {string} domain - Domain name (e.g., 'example.com')
+   * @returns {string} - Base64 URL-encoded API key
+   * @private
+   */
+  /* eslint-disable class-methods-use-this */
+  #generateApiKey(normalizedHostName) {
+    const uuid = uuidv4();
+    return crypto
+      .createHash('sha256')
+      .update(`${uuid}${normalizedHostName}`)
+      .digest('base64url');
+  }
+
+  /**
+   * Creates and uploads domain-level metaconfig to S3 if it does not exists
+   * Generates a new API key and creates the metaconfig structure
+   * @param {string} url - Full URL (used to extract domain)
+   * @param {string} siteId - Site ID
+   * @param {Object} options - Optional configuration
+   * @param {boolean} options.enhancements - Whether to enable enhancements (default: true)
+   * @returns {Promise<Object>} - Object with s3Path and metaconfig
+   */
+  async createMetaconfig(url, siteId, options = {}) {
+    if (!hasText(url)) {
+      throw this.#createError('URL is required', HTTP_BAD_REQUEST);
+    }
+
+    const existingMetaconfig = await this.fetchMetaconfig(url);
+
+    if (existingMetaconfig) {
+      throw this.#createError('Metaconfig already exists for this URL', HTTP_BAD_REQUEST);
+    }
+
+    if (!hasText(siteId)) {
+      throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
+    }
+
+    const normalizedHostName = getHostName(url, this.log);
+    const apiKey = this.#generateApiKey(normalizedHostName);
+
+    const metaconfig = {
+      siteId,
+      apiKeys: [apiKey],
+      tokowakaEnabled: true,
+      enhancements: options.enhancements ?? true,
+      patches: {},
+    };
+
+    const s3Path = await this.uploadMetaconfig(url, metaconfig);
+
+    this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
+
+    return metaconfig;
+  }
+
+  /**
+   * Updates domain-level metaconfig to S3 if it does not exists
+   * Reuses the same API key and updates the metaconfig structure
+   * @param {string} url - Full URL (used to extract domain)
+   * @param {string} siteId - Site ID
+   * @param {Object} options - Optional configuration
+   * @returns {Promise<Object>} - Object with s3Path and metaconfig
+   */
+  async updateMetaconfig(url, siteId, options = {}) {
+    if (!hasText(url)) {
+      throw this.#createError('URL is required', HTTP_BAD_REQUEST);
+    }
+
+    const existingMetaconfig = await this.fetchMetaconfig(url);
+    if (!existingMetaconfig) {
+      throw this.#createError('Metaconfig does not exist for this URL', HTTP_BAD_REQUEST);
+    }
+
+    if (!hasText(siteId)) {
+      throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
+    }
+
+    const normalizedHostName = getHostName(url, this.log);
+
+    // dont override api keys
+    // if patches exist, they cannot reset to empty object
+    const hasForceFail = options.forceFail !== undefined
+      || existingMetaconfig.forceFail !== undefined;
+    const forceFail = options.forceFail
+      ?? existingMetaconfig.forceFail
+      ?? false;
+
+    const hasPrerender = isNonEmptyObject(options.prerender)
+      || isNonEmptyObject(existingMetaconfig.prerender);
+    const prerender = options.prerender
+      ?? existingMetaconfig.prerender;
+
+    const metaconfig = {
+      ...existingMetaconfig,
+      tokowakaEnabled: options.tokowakaEnabled ?? existingMetaconfig.tokowakaEnabled ?? true,
+      enhancements: options.enhancements ?? existingMetaconfig.enhancements ?? true,
+      patches: isNonEmptyObject(options.patches)
+        ? options.patches
+        : (existingMetaconfig.patches ?? {}),
+      ...(hasForceFail && { forceFail }),
+      ...(hasPrerender && { prerender }),
+    };
+
+    const s3Path = await this.uploadMetaconfig(url, metaconfig);
+
+    this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
+
+    return metaconfig;
   }
 
   /**
@@ -545,6 +704,9 @@ class TokowakaClient {
 
     this.log.info(`Uploaded Tokowaka configs for ${s3Paths.length} URLs`);
 
+    // Update metaconfig with deployed paths
+    await this.#updateMetaconfigWithDeployedPaths(metaconfig, deployedUrls, baseURL);
+
     // Invalidate CDN cache for all deployed URLs at once
     const cdnInvalidations = await this.invalidateCdnCache({ urls: deployedUrls });
 
@@ -710,8 +872,8 @@ class TokowakaClient {
     }
 
     // TOKOWAKA_EDGE_URL is mandatory for preview
-    const tokowakaEdgeUrl = this.env.TOKOWAKA_EDGE_URL;
-    if (!hasText(tokowakaEdgeUrl)) {
+    const edgeUrl = this.env.TOKOWAKA_EDGE_URL;
+    if (!hasText(edgeUrl)) {
       throw this.#createError(
         'TOKOWAKA_EDGE_URL is required for preview functionality',
         HTTP_INTERNAL_SERVER_ERROR,
@@ -831,7 +993,7 @@ class TokowakaClient {
         previewUrl,
         apiKey,
         forwardedHost,
-        tokowakaEdgeUrl,
+        edgeUrl,
         this.log,
         false,
         options,
@@ -841,7 +1003,7 @@ class TokowakaClient {
         previewUrl,
         apiKey,
         forwardedHost,
-        tokowakaEdgeUrl,
+        edgeUrl,
         this.log,
         true,
         options,

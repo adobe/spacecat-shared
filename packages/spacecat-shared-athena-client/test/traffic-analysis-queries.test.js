@@ -19,6 +19,7 @@ import {
   buildPageTypeCase,
   getTrafficAnalysisQueryPlaceholdersFilled,
   getTop3PagesWithTrafficLostTemplate,
+  getTrafficTypeAnalysisTemplate,
 } from '../src/traffic-analysis/queries.js';
 
 describe('Traffic Analysis Queries', () => {
@@ -870,6 +871,408 @@ describe('Traffic Analysis Queries', () => {
 
       expect(result).to.include('FROM agg a');
       expect(result).to.include('CROSS JOIN grand_total t');
+    });
+  });
+
+  describe('getTrafficTypeAnalysisTemplate', () => {
+    it('should generate traffic type analysis query with all parameters', () => {
+      const params = {
+        siteId: 'test-site-123',
+        tableName: 'traffic_table',
+        temporalCondition: 'year=2024 AND week=45',
+        dimensionColumns: 'trf_type, device',
+        groupBy: 'trf_type, device',
+        dimensionColumnsPrefixed: 'a.trf_type, a.device',
+        pageViewThreshold: 1000,
+        limit: 10,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.be.a('string');
+      expect(result.length).to.be.greaterThan(0);
+
+      // Verify CTEs are present
+      expect(result).to.include('WITH min_totals AS');
+      expect(result).to.include('raw AS');
+      expect(result).to.include('agg AS');
+      expect(result).to.include('grand_total AS');
+
+      // Verify siteId
+      expect(result).to.include("siteid = 'test-site-123'");
+
+      // Verify NO consent filter (key difference from getTop3PagesWithTrafficLostTemplate)
+      expect(result).to.not.include("consent='show'");
+
+      // Verify tableName
+      expect(result).to.include('FROM traffic_table');
+
+      // Verify temporal condition
+      expect(result).to.include('year=2024 AND week=45');
+
+      // Verify pageViewThreshold
+      expect(result).to.include('SUM(pageviews) >= 1000');
+
+      // Verify limit
+      expect(result).to.include('LIMIT 10');
+
+      // Verify dimensions
+      expect(result).to.include('trf_type, device');
+      expect(result).to.include('a.trf_type, a.device');
+
+      // Verify ORDER BY
+      expect(result).to.include('ORDER BY traffic_loss DESC');
+    });
+
+    it('should include traffic_loss calculation', () => {
+      const params = {
+        siteId: 'loss-calc-site',
+        tableName: 'loss_table',
+        temporalCondition: 'year=2024 AND month=3',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 500,
+        limit: 5,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('traffic_loss');
+      expect(result).to.include('CAST(a.pageviews AS DOUBLE) * (1 - CAST(a.engagements AS DOUBLE) / NULLIF(a.row_count, 0))');
+    });
+
+    it('should include bounce_rate calculation', () => {
+      const params = {
+        siteId: 'bounce-site',
+        tableName: 'bounce_table',
+        temporalCondition: 'year=2024 AND week=10',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1000,
+        limit: 3,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('bounce_rate');
+      expect(result).to.include('1 - CAST(a.engagements AS DOUBLE) / NULLIF(a.row_count, 0)');
+    });
+
+    it('should include all engagement metrics', () => {
+      const params = {
+        siteId: 'metrics-site',
+        tableName: 'metrics_table',
+        temporalCondition: 'year=2024 AND month=6',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1000,
+        limit: 10,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      // Verify all metrics are present
+      expect(result).to.include('pageviews');
+      expect(result).to.include('pct_pageviews');
+      expect(result).to.include('click_rate');
+      expect(result).to.include('engagement_rate');
+      expect(result).to.include('engaged_scroll_rate');
+      expect(result).to.include('p70_scroll');
+      expect(result).to.include('p70_lcp');
+      expect(result).to.include('p70_cls');
+      expect(result).to.include('p70_inp');
+    });
+
+    it('should include Core Web Vitals aggregations', () => {
+      const params = {
+        siteId: 'cwv-site',
+        tableName: 'cwv_table',
+        temporalCondition: 'year=2024 AND month=9',
+        dimensionColumns: 'trf_type, device',
+        groupBy: 'trf_type, device',
+        dimensionColumnsPrefixed: 'a.trf_type, a.device',
+        pageViewThreshold: 2000,
+        limit: 5,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('approx_percentile(lcp, 0.70)');
+      expect(result).to.include('approx_percentile(cls, 0.70)');
+      expect(result).to.include('approx_percentile(inp, 0.70)');
+      expect(result).to.include('approx_percentile(latest_scroll, 0.70)');
+    });
+
+    it('should include engaged_scroll calculation', () => {
+      const params = {
+        siteId: 'scroll-site',
+        tableName: 'scroll_table',
+        temporalCondition: 'year=2024 AND week=30',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 750,
+        limit: 3,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('CASE WHEN latest_scroll >= 10000 THEN 1 ELSE 0 END AS engaged_scroll');
+      expect(result).to.include('engaged_scroll');
+      expect(result).to.include('engaged_scroll_rate');
+    });
+
+    it('should include all raw data columns', () => {
+      const params = {
+        siteId: 'columns-site',
+        tableName: 'columns_table',
+        temporalCondition: 'year=2024 AND month=12',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1000,
+        limit: 3,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      // Verify all columns in raw CTE
+      const rawColumns = [
+        'week',
+        'month',
+        'path',
+        'trf_type',
+        'trf_channel',
+        'trf_platform',
+        'device',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'referrer',
+        'consent',
+        'notfound',
+        'pageviews',
+        'clicked',
+        'engaged',
+        'latest_scroll',
+        'lcp',
+        'cls',
+        'inp',
+      ];
+
+      rawColumns.forEach((col) => {
+        expect(result).to.include(col);
+      });
+    });
+
+    it('should work without limit parameter', () => {
+      const params = {
+        siteId: 'no-limit-site',
+        tableName: 'no_limit_table',
+        temporalCondition: 'year=2024 AND week=15',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 500,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.not.include('LIMIT');
+    });
+
+    it('should work with limit set to 0', () => {
+      const params = {
+        siteId: 'zero-limit-site',
+        tableName: 'zero_limit_table',
+        temporalCondition: 'year=2024 AND week=20',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1000,
+        limit: 0,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.not.include('LIMIT');
+    });
+
+    it('should join min_totals with raw data', () => {
+      const params = {
+        siteId: 'join-test-site',
+        tableName: 'join_table',
+        temporalCondition: 'year=2024 AND month=5',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1500,
+        limit: 3,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('JOIN min_totals t ON m.path = t.min_key');
+    });
+
+    it('should NOT filter by consent (key difference from getTop3PagesWithTrafficLostTemplate)', () => {
+      const params = {
+        siteId: 'no-consent-site',
+        tableName: 'no_consent_table',
+        temporalCondition: 'year=2024 AND week=25',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1000,
+        limit: 3,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      // Should NOT appear at all
+      expect(result).to.not.include("consent='show'");
+      expect(result).to.not.include('consent=');
+    });
+
+    it('should use NULLIF to avoid division by zero', () => {
+      const params = {
+        siteId: 'nullif-site',
+        tableName: 'nullif_table',
+        temporalCondition: 'year=2024 AND month=8',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1000,
+        limit: 3,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('NULLIF(a.row_count, 0)');
+      expect(result).to.include('NULLIF(t.total_pv, 0)');
+    });
+
+    it('should cast aggregations to appropriate types', () => {
+      const params = {
+        siteId: 'cast-site',
+        tableName: 'cast_table',
+        temporalCondition: 'year=2024 AND week=35',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1000,
+        limit: 3,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('CAST(SUM(pageviews) AS BIGINT)');
+      expect(result).to.include('CAST(SUM(clicked) AS BIGINT)');
+      expect(result).to.include('CAST(SUM(engaged) AS BIGINT)');
+      expect(result).to.include('CAST(SUM(engaged_scroll) AS BIGINT)');
+      expect(result).to.include('CAST(a.pageviews AS DOUBLE)');
+      expect(result).to.include('CAST(a.clicks AS DOUBLE)');
+      expect(result).to.include('CAST(a.engagements AS DOUBLE)');
+      expect(result).to.include('CAST(a.engaged_scroll AS DOUBLE)');
+    });
+
+    it('should handle multiple dimensions', () => {
+      const params = {
+        siteId: 'multi-dim-site',
+        tableName: 'multi_dim_table',
+        temporalCondition: 'year=2024 AND month=11',
+        dimensionColumns: 'trf_type, trf_channel, device',
+        groupBy: 'trf_type, trf_channel, device',
+        dimensionColumnsPrefixed: 'a.trf_type, a.trf_channel, a.device',
+        pageViewThreshold: 2000,
+        limit: 10,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('trf_type, trf_channel, device');
+      expect(result).to.include('a.trf_type, a.trf_channel, a.device');
+      expect(result).to.include('GROUP BY trf_type, trf_channel, device');
+    });
+
+    it('should produce valid SQL structure', () => {
+      const params = {
+        siteId: 'structure-site',
+        tableName: 'structure_table',
+        temporalCondition: 'year=2024 AND week=40',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1000,
+        limit: 3,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      // Check for common SQL syntax issues
+      expect(result).to.not.include('undefined');
+      expect(result).to.not.include('null');
+      expect(result).to.not.match(/,,/); // No double commas
+      expect(result).to.not.match(/WHERE\s+AND/); // No WHERE AND without condition
+    });
+
+    it('should cross join agg with grand_total', () => {
+      const params = {
+        siteId: 'crossjoin-site',
+        tableName: 'crossjoin_table',
+        temporalCondition: 'year=2024 AND month=7',
+        dimensionColumns: 'trf_type',
+        groupBy: 'trf_type',
+        dimensionColumnsPrefixed: 'a.trf_type',
+        pageViewThreshold: 1000,
+        limit: 3,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('FROM agg a');
+      expect(result).to.include('CROSS JOIN grand_total t');
+    });
+
+    it('should handle trf_type as a dimension', () => {
+      const params = {
+        siteId: 'trf-type-dim-site',
+        tableName: 'trf_type_table',
+        temporalCondition: 'year=2024 AND month=4',
+        dimensionColumns: 'trf_type, trf_channel, trf_platform',
+        groupBy: 'trf_type, trf_channel, trf_platform',
+        dimensionColumnsPrefixed: 'a.trf_type, a.trf_channel, a.trf_platform',
+        pageViewThreshold: 1000,
+        limit: 5,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('trf_type');
+      expect(result).to.include('trf_channel');
+      expect(result).to.include('trf_platform');
+    });
+
+    it('should handle path dimension alongside traffic dimensions', () => {
+      const params = {
+        siteId: 'mixed-dim-site',
+        tableName: 'mixed_table',
+        temporalCondition: 'year=2024 AND week=28',
+        dimensionColumns: 'path, trf_type',
+        groupBy: 'path, trf_type',
+        dimensionColumnsPrefixed: 'a.path, a.trf_type',
+        pageViewThreshold: 800,
+        limit: 20,
+      };
+
+      const result = getTrafficTypeAnalysisTemplate(params);
+
+      expect(result).to.include('path, trf_type');
+      expect(result).to.include('a.path, a.trf_type');
+      expect(result).to.include('GROUP BY path, trf_type');
     });
   });
 });

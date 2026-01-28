@@ -22,6 +22,7 @@ export const OPPORTUNITY_TAG_MAPPINGS: Record<string, string[]>;
 export function getTagsForOpportunityType(opportunityType: string): string[];
 
 export function mergeTagsWithHardcodedTags(opportunityType: string, currentTags?: string[]): string[];
+export const DEFAULT_CPC_VALUE: number;
 
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
@@ -293,6 +294,35 @@ export function getStoredMetrics(config: object, context: object):
  */
 export function storeMetrics(content: object, config: object, context: object): Promise<string>;
 
+/**
+ * Retrieves an object from S3 by its key and returns its JSON parsed content.
+ * If the object is not JSON, returns the raw body.
+ * If the object is not found, returns null.
+ * @param s3Client - The S3 client
+ * @param bucketName - The name of the S3 bucket
+ * @param key - The key of the S3 object
+ * @param log - A logger instance
+ * @returns The content of the S3 object or null if not found
+ */
+export function getObjectFromKey(
+  s3Client: any,
+  bucketName: string,
+  key: string,
+  log: any
+): Promise<any | null>;
+
+/**
+ * Fetches the organic traffic data for a site from S3 and calculates the CPC value
+ * @param context - Context object
+ * @param context.env - Environment variables
+ * @param context.env.S3_IMPORTER_BUCKET_NAME - S3 importer bucket name
+ * @param context.s3Client - S3 client
+ * @param context.log - Logger
+ * @param siteId - The site ID
+ * @returns CPC value in dollars
+ */
+export function calculateCPCValue(context: object, siteId: string): Promise<number>;
+
 export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;
 
@@ -333,6 +363,7 @@ export function extractUrlsFromOpportunity(opts: {
 }): string[];
 
 export * as llmoConfig from './llmo-config.js';
+export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
 
 export { type detectLocale } from './locale-detect/index.js';

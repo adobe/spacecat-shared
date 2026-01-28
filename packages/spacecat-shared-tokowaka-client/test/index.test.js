@@ -567,6 +567,24 @@ describe('TokowakaClient', () => {
       const command = s3Client.send.firstCall.args[0];
       expect(command.input.Key).to.equal('opportunities/example.com/config');
     });
+
+    it('should include createdAt timestamp when creating metaconfig', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const beforeTimestamp = new Date().toISOString();
+      const result = await client.createMetaconfig(url, siteId);
+      const afterTimestamp = new Date().toISOString();
+
+      expect(result).to.have.property('createdAt');
+      expect(result.createdAt).to.be.a('string');
+      expect(result.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(result.createdAt).to.be.at.least(beforeTimestamp);
+      expect(result.createdAt).to.be.at.most(afterTimestamp);
+    });
   });
 
   describe('updateMetaconfig', () => {
@@ -1307,6 +1325,21 @@ describe('TokowakaClient', () => {
 
       expect(result).to.have.property('prerender');
       expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should include lastUpdated timestamp when updating metaconfig', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+
+      const beforeTimestamp = new Date().toISOString();
+      const result = await client.updateMetaconfig(url, siteId, { tokowakaEnabled: true });
+      const afterTimestamp = new Date().toISOString();
+
+      expect(result).to.have.property('lastUpdated');
+      expect(result.lastUpdated).to.be.a('string');
+      expect(result.lastUpdated).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(result.lastUpdated).to.be.at.least(beforeTimestamp);
+      expect(result.lastUpdated).to.be.at.most(afterTimestamp);
     });
   });
 

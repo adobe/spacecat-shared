@@ -3432,4 +3432,815 @@ describe('TokowakaClient', () => {
       client.env.TOKOWAKA_CDN_PROVIDER = originalProvider;
     });
   });
+
+  describe('checkEdgeOptimizeStatus', () => {
+    let fetchStub;
+
+    beforeEach(() => {
+      fetchStub = sinon.stub(global, 'fetch');
+    });
+
+    afterEach(() => {
+      fetchStub.restore();
+    });
+
+    describe('Input Validation', () => {
+      it('should throw error when site is not provided', async () => {
+        try {
+          await client.checkEdgeOptimizeStatus(null, '/');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Site is required');
+          expect(error.status).to.equal(400);
+        }
+      });
+
+      it('should throw error when site is empty object', async () => {
+        try {
+          await client.checkEdgeOptimizeStatus({}, '/');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Site is required');
+        }
+      });
+
+      it('should throw error when path is not provided', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        try {
+          await client.checkEdgeOptimizeStatus(site, '');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Path is required');
+          expect(error.status).to.equal(400);
+        }
+      });
+
+      it('should throw error when path is null', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        try {
+          await client.checkEdgeOptimizeStatus(site, null);
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Path is required');
+        }
+      });
+    });
+
+    describe('Direct Response (No Redirect)', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should return edgeoptimizedenabled: true when x-tokowaka-request-id header is present', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map([
+            ['x-tokowaka-request-id', 'abc123'],
+          ]),
+        };
+        mockResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(mockResponse.headers);
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeoptimizedenabled: true,
+        });
+        expect(fetchStub).to.have.been.calledOnce;
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/');
+      });
+
+      it('should return edgeoptimizedenabled: true when x-edgeoptimize-request-id header is present', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map([
+            ['x-edgeoptimize-request-id', 'xyz789'],
+          ]),
+        };
+        mockResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(mockResponse.headers);
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/products');
+
+        expect(result).to.deep.equal({
+          edgeoptimizedenabled: true,
+        });
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/products');
+      });
+
+      it('should return edgeoptimizedenabled: false when headers are not present', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeoptimizedenabled: false,
+        });
+      });
+
+      it('should work with 404 status and edge optimize enabled', async () => {
+        const mockResponse = {
+          status: 404,
+          headers: new Map([
+            ['x-tokowaka-request-id', 'abc123'],
+          ]),
+        };
+        mockResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(mockResponse.headers);
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/not-found');
+
+        expect(result).to.deep.equal({
+          edgeoptimizedenabled: true,
+        });
+      });
+
+      it('should send correct User-Agent header', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/');
+
+        const fetchOptions = fetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['User-Agent']).to.equal('AdobeEdgeOptimize-AI');
+        expect(fetchOptions.redirect).to.equal('manual');
+      });
+    });
+
+    describe('Single-Level Redirect', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should follow 301 redirect and check headers on final response', async () => {
+        const redirectResponse = {
+          status: 301,
+          headers: new Map([
+            ['location', 'https://example.com/new-path'],
+          ]),
+        };
+        redirectResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(redirectResponse.headers);
+
+        const finalResponse = {
+          status: 200,
+          headers: new Map([
+            ['x-tokowaka-request-id', 'abc123'],
+          ]),
+        };
+        finalResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(finalResponse.headers);
+
+        fetchStub.onFirstCall().resolves(redirectResponse);
+        fetchStub.onSecondCall().resolves(finalResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/old-path');
+
+        expect(result).to.deep.equal({
+          status: 200,
+          edgeoptimizedenabled: true,
+        });
+        expect(fetchStub).to.have.been.calledTwice;
+      });
+
+      it('should handle 302 redirect with relative location', async () => {
+        const redirectResponse = {
+          status: 302,
+          headers: new Map([
+            ['location', '/new-path'],
+          ]),
+        };
+        redirectResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(redirectResponse.headers);
+
+        const finalResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        finalResponse.headers.get = () => null;
+
+        fetchStub.onFirstCall().resolves(redirectResponse);
+        fetchStub.onSecondCall().resolves(finalResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/old-path');
+
+        expect(result).to.deep.equal({
+          status: 200,
+          edgeoptimizedenabled: false,
+        });
+        expect(fetchStub.secondCall.args[0]).to.equal('https://example.com/new-path');
+      });
+
+      it('should handle 303 redirect', async () => {
+        const redirectResponse = {
+          status: 303,
+          headers: new Map([
+            ['location', 'https://example.com/see-other'],
+          ]),
+        };
+        redirectResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(redirectResponse.headers);
+
+        const finalResponse = {
+          status: 200,
+          headers: new Map([
+            ['x-edgeoptimize-request-id', 'xyz789'],
+          ]),
+        };
+        finalResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(finalResponse.headers);
+
+        fetchStub.onFirstCall().resolves(redirectResponse);
+        fetchStub.onSecondCall().resolves(finalResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          status: 200,
+          edgeoptimizedenabled: true,
+        });
+      });
+
+      it('should handle 307 redirect', async () => {
+        const redirectResponse = {
+          status: 307,
+          headers: new Map([
+            ['location', 'https://example.com/temp-redirect'],
+          ]),
+        };
+        redirectResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(redirectResponse.headers);
+
+        const finalResponse = {
+          status: 200,
+          headers: new Map([
+            ['x-edgeoptimize-request-id', 'xyz789'],
+          ]),
+        };
+        finalResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(finalResponse.headers);
+
+        fetchStub.onFirstCall().resolves(redirectResponse);
+        fetchStub.onSecondCall().resolves(finalResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          status: 200,
+          edgeoptimizedenabled: true,
+        });
+      });
+
+      it('should handle 308 redirect', async () => {
+        const redirectResponse = {
+          status: 308,
+          headers: new Map([
+            ['location', 'https://example.com/permanent-redirect'],
+          ]),
+        };
+        redirectResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(redirectResponse.headers);
+
+        const finalResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        finalResponse.headers.get = () => null;
+
+        fetchStub.onFirstCall().resolves(redirectResponse);
+        fetchStub.onSecondCall().resolves(finalResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          status: 200,
+          edgeoptimizedenabled: false,
+        });
+      });
+
+      it('should throw error when redirect has no location header', async () => {
+        const redirectResponse = {
+          status: 301,
+          headers: new Map(),
+        };
+        redirectResponse.headers.get = () => null;
+
+        fetchStub.resolves(redirectResponse);
+
+        try {
+          await client.checkEdgeOptimizeStatus(site, '/');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Redirect response without location header');
+        }
+      });
+
+      it('should send same User-Agent on redirect', async () => {
+        const redirectResponse = {
+          status: 301,
+          headers: new Map([
+            ['location', '/new-path'],
+          ]),
+        };
+        redirectResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(redirectResponse.headers);
+
+        const finalResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        finalResponse.headers.get = () => null;
+
+        fetchStub.onFirstCall().resolves(redirectResponse);
+        fetchStub.onSecondCall().resolves(finalResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/');
+
+        const firstCallOptions = fetchStub.firstCall.args[1];
+        const secondCallOptions = fetchStub.secondCall.args[1];
+
+        expect(firstCallOptions.headers['User-Agent']).to.equal('AdobeEdgeOptimize-AI');
+        expect(secondCallOptions.headers['User-Agent']).to.equal('AdobeEdgeOptimize-AI');
+      });
+    });
+
+    describe('Multi-Level Redirect', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should return edgeoptimizedenabled: false for multi-level redirects (301->302)', async () => {
+        const firstRedirect = {
+          status: 301,
+          headers: new Map([
+            ['location', 'https://example.com/redirect-1'],
+          ]),
+        };
+        firstRedirect.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(firstRedirect.headers);
+
+        const secondRedirect = {
+          status: 302,
+          headers: new Map([
+            ['location', 'https://example.com/redirect-2'],
+          ]),
+        };
+        secondRedirect.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(secondRedirect.headers);
+
+        fetchStub.onFirstCall().resolves(firstRedirect);
+        fetchStub.onSecondCall().resolves(secondRedirect);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          status: 302,
+          edgeoptimizedenabled: false,
+        });
+        expect(fetchStub).to.have.been.calledTwice;
+        expect(log.warn).to.have.been.calledWith(sinon.match(/Multi-level redirect detected/));
+      });
+
+      it('should return edgeoptimizedenabled: false for multi-level redirects (302->301)', async () => {
+        const firstRedirect = {
+          status: 302,
+          headers: new Map([
+            ['location', 'https://example.com/redirect-1'],
+          ]),
+        };
+        firstRedirect.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(firstRedirect.headers);
+
+        const secondRedirect = {
+          status: 301,
+          headers: new Map([
+            ['location', 'https://example.com/redirect-2'],
+          ]),
+        };
+        secondRedirect.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(secondRedirect.headers);
+
+        fetchStub.onFirstCall().resolves(firstRedirect);
+        fetchStub.onSecondCall().resolves(secondRedirect);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          status: 301,
+          edgeoptimizedenabled: false,
+        });
+      });
+
+      it('should return edgeoptimizedenabled: false for multi-level redirects (307->308)', async () => {
+        const firstRedirect = {
+          status: 307,
+          headers: new Map([
+            ['location', 'https://example.com/redirect-1'],
+          ]),
+        };
+        firstRedirect.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(firstRedirect.headers);
+
+        const secondRedirect = {
+          status: 308,
+          headers: new Map([
+            ['location', 'https://example.com/redirect-2'],
+          ]),
+        };
+        secondRedirect.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(secondRedirect.headers);
+
+        fetchStub.onFirstCall().resolves(firstRedirect);
+        fetchStub.onSecondCall().resolves(secondRedirect);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          status: 308,
+          edgeoptimizedenabled: false,
+        });
+      });
+    });
+
+    describe('Retry Logic', () => {
+      let site;
+      let clock;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+        clock = sinon.useFakeTimers();
+      });
+
+      afterEach(() => {
+        clock.restore();
+      });
+
+      it('should retry 3 times on network error with exponential backoff', async () => {
+        const networkError = new Error('Network timeout');
+        fetchStub.rejects(networkError);
+
+        const promise = client.checkEdgeOptimizeStatus(site, '/');
+
+        // Wait for first attempt
+        await clock.tickAsync(0);
+
+        // Wait for 200ms delay after first failure
+        await clock.tickAsync(200);
+
+        // Wait for 400ms delay after second failure
+        await clock.tickAsync(400);
+
+        // Wait for 800ms delay after third failure
+        await clock.tickAsync(800);
+
+        try {
+          await promise;
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Failed to check edge optimize status');
+          expect(error.message).to.include('Network timeout');
+          expect(error.status).to.equal(500);
+          expect(fetchStub.callCount).to.equal(4); // Initial + 3 retries
+        }
+      });
+
+      it('should succeed on second attempt after first failure', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map([
+            ['x-tokowaka-request-id', 'abc123'],
+          ]),
+        };
+        mockResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(mockResponse.headers);
+
+        fetchStub.onFirstCall().rejects(new Error('Temporary failure'));
+        fetchStub.onSecondCall().resolves(mockResponse);
+
+        const promise = client.checkEdgeOptimizeStatus(site, '/');
+
+        await clock.tickAsync(200);
+
+        const result = await promise;
+
+        expect(result).to.deep.equal({
+          edgeoptimizedenabled: true,
+        });
+        expect(fetchStub).to.have.been.calledTwice;
+      });
+
+      it('should succeed on third attempt after two failures', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map([
+            ['x-edgeoptimize-request-id', 'xyz789'],
+          ]),
+        };
+        mockResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(mockResponse.headers);
+
+        fetchStub.onFirstCall().rejects(new Error('Failure 1'));
+        fetchStub.onSecondCall().rejects(new Error('Failure 2'));
+        fetchStub.onThirdCall().resolves(mockResponse);
+
+        const promise = client.checkEdgeOptimizeStatus(site, '/');
+
+        await clock.tickAsync(200); // First retry delay
+        await clock.tickAsync(400); // Second retry delay
+
+        const result = await promise;
+
+        expect(result).to.deep.equal({
+          edgeoptimizedenabled: true,
+        });
+        expect(fetchStub.callCount).to.equal(3);
+      });
+
+      it('should log warnings on retries', async () => {
+        const networkError = new Error('Connection refused');
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.onFirstCall().rejects(networkError);
+        fetchStub.onSecondCall().resolves(mockResponse);
+
+        const promise = client.checkEdgeOptimizeStatus(site, '/');
+        await clock.tickAsync(200);
+        await promise;
+
+        expect(log.warn).to.have.been.calledWith(
+          sinon.match(/Attempt 1 to fetch failed.*Connection refused.*Retrying in 200ms/),
+        );
+      });
+    });
+
+    describe('URL Construction', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should construct URL correctly with simple path', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/products/chairs');
+
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/products/chairs');
+      });
+
+      it('should construct URL correctly with multi-level path', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/a/b/c/d');
+
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/a/b/c/d');
+      });
+
+      it('should handle baseURL with trailing slash', async () => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com/',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/about');
+
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/about');
+      });
+
+      it('should handle baseURL without trailing slash', async () => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/about');
+
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/about');
+      });
+    });
+
+    describe('Edge Cases', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should handle both headers present', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map([
+            ['x-tokowaka-request-id', 'abc123'],
+            ['x-edgeoptimize-request-id', 'xyz789'],
+          ]),
+        };
+        mockResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(mockResponse.headers);
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result.edgeoptimizedenabled).to.be.true;
+      });
+
+      it('should handle 500 error with edge optimize header', async () => {
+        const mockResponse = {
+          status: 500,
+          headers: new Map([
+            ['x-tokowaka-request-id', 'abc123'],
+          ]),
+        };
+        mockResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(mockResponse.headers);
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/error');
+
+        expect(result).to.deep.equal({
+          edgeoptimizedenabled: true,
+        });
+      });
+
+      it('should handle redirect to same domain', async () => {
+        const redirectResponse = {
+          status: 301,
+          headers: new Map([
+            ['location', 'https://example.com/same-domain'],
+          ]),
+        };
+        redirectResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(redirectResponse.headers);
+
+        const finalResponse = {
+          status: 200,
+          headers: new Map([
+            ['x-tokowaka-request-id', 'abc123'],
+          ]),
+        };
+        finalResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(finalResponse.headers);
+
+        fetchStub.onFirstCall().resolves(redirectResponse);
+        fetchStub.onSecondCall().resolves(finalResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/old');
+
+        expect(result.edgeoptimizedenabled).to.be.true;
+        expect(fetchStub.secondCall.args[0]).to.equal('https://example.com/same-domain');
+      });
+
+      it('should handle redirect to different domain', async () => {
+        const redirectResponse = {
+          status: 301,
+          headers: new Map([
+            ['location', 'https://different.com/page'],
+          ]),
+        };
+        redirectResponse.headers.get = function (key) {
+          return this.get(key) || null;
+        }.bind(redirectResponse.headers);
+
+        const finalResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        finalResponse.headers.get = () => null;
+
+        fetchStub.onFirstCall().resolves(redirectResponse);
+        fetchStub.onSecondCall().resolves(finalResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result.edgeoptimizedenabled).to.be.false;
+        expect(fetchStub.secondCall.args[0]).to.equal('https://different.com/page');
+      });
+    });
+  });
 });

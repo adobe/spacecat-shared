@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.97.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.1...@adobe/spacecat-shared-data-access-v2.97.2) (2026-01-28)
+
+
+### Bug Fixes
+
+* page-citability adding new field in schema ([#1293](https://github.com/adobe/spacecat-shared/issues/1293)) ([9b4728e](https://github.com/adobe/spacecat-shared/commit/9b4728e1e97c8c4f80c2c9ccd011cc14195f5214))
+
 # [@adobe/spacecat-shared-data-access-v2.97.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.0...@adobe/spacecat-shared-data-access-v2.97.1) (2026-01-23)
 
 

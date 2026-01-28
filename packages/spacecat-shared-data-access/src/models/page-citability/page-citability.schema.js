@@ -68,6 +68,12 @@ const schema = new SchemaBuilder(PageCitability, PageCitabilityCollection)
     validate: (value) => !value || (typeof value === 'number' && !Number.isNaN(value)),
   })
 
+  // flag indicating if URL is deployed on Edge Delivery/Tokowaka
+  .addAttribute('isDeployedAtEdge', {
+    type: 'boolean',
+    required: false,
+  })
+
   // optionally track who last updated
   .addAttribute('updatedBy', {
     type: 'string',

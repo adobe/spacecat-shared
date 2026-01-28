@@ -1101,13 +1101,13 @@ class TokowakaClient {
         });
       }
     }
-
-    /* istanbul ignore next */
+    /* c8 ignore start */
     // This should never be reached, but needed for consistent-return
     throw this.#createError(
       'Failed to check edge optimize status after all retries',
       HTTP_INTERNAL_SERVER_ERROR,
     );
+    /* c8 ignore stop */
   }
 }
 

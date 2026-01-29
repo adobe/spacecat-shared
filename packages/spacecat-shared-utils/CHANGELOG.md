@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.90.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.89.1...@adobe/spacecat-shared-utils-v1.90.0) (2026-01-29)
+
+
+### Features
+
+* LLMO-1534 Pretty format old and new log forwarding credentials ([#1290](https://github.com/adobe/spacecat-shared/issues/1290)) ([df84629](https://github.com/adobe/spacecat-shared/commit/df84629c1a49e81b43e352eb4b8b542b9eb3085e))
+
 # [@adobe/spacecat-shared-utils-v1.89.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.89.0...@adobe/spacecat-shared-utils-v1.89.1) (2026-01-26)
 
 

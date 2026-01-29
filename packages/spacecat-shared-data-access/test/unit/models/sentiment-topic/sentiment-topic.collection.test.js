@@ -92,9 +92,9 @@ describe('SentimentTopicCollection', () => {
     });
   });
 
-  describe('allBySiteIdPaginated', () => {
+  describe('allBySiteId', () => {
     it('throws an error if siteId is not provided', async () => {
-      await expect(instance.allBySiteIdPaginated()).to.be.rejectedWith('SiteId is required');
+      await expect(instance.allBySiteId()).to.be.rejectedWith('SiteId is required');
     });
 
     it('returns paginated results', async () => {
@@ -103,7 +103,7 @@ describe('SentimentTopicCollection', () => {
 
       instance.allByIndexKeys = stub().resolves({ data: [mockTopic1, mockTopic2], cursor: 'cursor123' });
 
-      const result = await instance.allBySiteIdPaginated('site123');
+      const result = await instance.allBySiteId('site123');
 
       expect(result).to.be.an('object');
       expect(result.data).to.be.an('array').with.lengthOf(2);
@@ -113,7 +113,7 @@ describe('SentimentTopicCollection', () => {
     it('returns empty data array when no topics exist', async () => {
       instance.allByIndexKeys = stub().resolves({ data: [], cursor: null });
 
-      const result = await instance.allBySiteIdPaginated('site123');
+      const result = await instance.allBySiteId('site123');
 
       expect(result.data).to.be.an('array').with.lengthOf(0);
       expect(result.cursor).to.be.null;
@@ -122,7 +122,7 @@ describe('SentimentTopicCollection', () => {
     it('passes pagination options to allByIndexKeys', async () => {
       instance.allByIndexKeys = stub().resolves({ data: [], cursor: null });
 
-      await instance.allBySiteIdPaginated('site123', { limit: 50, cursor: 'abc123' });
+      await instance.allBySiteId('site123', { limit: 50, cursor: 'abc123' });
 
       const callArgs = instance.allByIndexKeys.getCall(0).args;
       expect(callArgs[1]).to.include({ limit: 50, cursor: 'abc123', returnCursor: true });

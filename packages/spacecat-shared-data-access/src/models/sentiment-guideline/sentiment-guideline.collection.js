@@ -40,13 +40,13 @@ class SentimentGuidelineCollection extends BaseCollection {
   }
 
   /**
-   * Gets all sentiment guidelines for a site.
+   * Gets all sentiment guidelines for a site with pagination.
    *
    * @param {string} siteId - The site ID.
    * @param {object} [options={}] - Query options (limit, cursor).
    * @returns {Promise<{data: SentimentGuideline[], cursor: string|null}>} Paginated results.
    */
-  async allBySiteIdPaginated(siteId, options = {}) {
+  async allBySiteId(siteId, options = {}) {
     if (!hasText(siteId)) {
       throw new Error('SiteId is required');
     }

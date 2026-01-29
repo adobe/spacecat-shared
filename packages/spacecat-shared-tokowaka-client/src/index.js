@@ -290,7 +290,7 @@ class TokowakaClient {
    * @param {boolean} options.enhancements - Whether to enable enhancements (default: true)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
-  async createMetaconfig(url, siteId, options = {}) {
+  async createMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -316,8 +316,7 @@ class TokowakaClient {
       patches: {},
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig);
-
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;
@@ -331,7 +330,7 @@ class TokowakaClient {
    * @param {Object} options - Optional configuration
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
-  async updateMetaconfig(url, siteId, options = {}) {
+  async updateMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -371,8 +370,7 @@ class TokowakaClient {
       ...(hasPrerender && { prerender }),
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig);
-
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
     this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;
@@ -382,9 +380,10 @@ class TokowakaClient {
    * Uploads domain-level metaconfig to S3
    * @param {string} url - Full URL (used to extract domain)
    * @param {Object} metaconfig - Metaconfig object (siteId, apiKeys, prerender)
+   * @param {Object} metadata - Optional S3 user-defined metadata (key-value pairs)
    * @returns {Promise<string>} - S3 key of uploaded metaconfig
-   */
-  async uploadMetaconfig(url, metaconfig) {
+  */
+  async uploadMetaconfig(url, metaconfig, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -397,12 +396,19 @@ class TokowakaClient {
     const bucketName = this.deployBucketName;
 
     try {
-      const command = new PutObjectCommand({
+      const putObjectParams = {
         Bucket: bucketName,
         Key: s3Path,
         Body: JSON.stringify(metaconfig, null, 2),
         ContentType: 'application/json',
-      });
+      };
+
+      // Add user-defined metadata if provided
+      if (isNonEmptyObject(metadata)) {
+        putObjectParams.Metadata = metadata;
+      }
+
+      const command = new PutObjectCommand(putObjectParams);
 
       await this.s3Client.send(command);
       this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path}`);

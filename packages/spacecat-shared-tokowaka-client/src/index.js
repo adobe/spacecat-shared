@@ -314,10 +314,11 @@ class TokowakaClient {
       tokowakaEnabled: true,
       enhancements: options.enhancements ?? true,
       patches: {},
-      createdAt: new Date().toISOString(),
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig);
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, {
+      'x-amz-meta-last-modified-by': options.lastModifiedBy,
+    });
 
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
@@ -370,10 +371,11 @@ class TokowakaClient {
         : (existingMetaconfig.patches ?? {}),
       ...(hasForceFail && { forceFail }),
       ...(hasPrerender && { prerender }),
-      lastUpdated: new Date().toISOString(),
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig);
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, {
+      'x-amz-meta-last-modified-by': options.lastModifiedBy,
+    });
 
     this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
@@ -384,9 +386,10 @@ class TokowakaClient {
    * Uploads domain-level metaconfig to S3
    * @param {string} url - Full URL (used to extract domain)
    * @param {Object} metaconfig - Metaconfig object (siteId, apiKeys, prerender)
+   * @param {Object} metadata - Optional S3 user-defined metadata (key-value pairs)
    * @returns {Promise<string>} - S3 key of uploaded metaconfig
-   */
-  async uploadMetaconfig(url, metaconfig) {
+  */
+  async uploadMetaconfig(url, metaconfig, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -399,12 +402,19 @@ class TokowakaClient {
     const bucketName = this.deployBucketName;
 
     try {
-      const command = new PutObjectCommand({
+      const putObjectParams = {
         Bucket: bucketName,
         Key: s3Path,
         Body: JSON.stringify(metaconfig, null, 2),
         ContentType: 'application/json',
-      });
+      };
+
+      // Add user-defined metadata if provided
+      if (isNonEmptyObject(metadata)) {
+        putObjectParams.Metadata = metadata;
+      }
+
+      const command = new PutObjectCommand(putObjectParams);
 
       await this.s3Client.send(command);
       this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path}`);

@@ -220,6 +220,7 @@ class TierClient {
    * Gets all enrollments based on context, filtered by productCode.
    * - If site is provided: returns site enrollment for the entitlement matching productCode
    * - If org-only: returns all site enrollments for the entitlement matching productCode
+   * - Filters out enrollments where the site's orgId doesn't match the entitlement's orgId
    * @returns {Promise<object>} Object with entitlement and enrollments array.
    */
   async getAllEnrollment() {
@@ -234,16 +235,54 @@ class TierClient {
 
       const allEnrollments = await this.SiteEnrollment.allByEntitlementId(entitlement.getId());
 
+      if (allEnrollments.length === 0) {
+        return { entitlement, enrollments: [] };
+      }
+
+      // Fetch all sites using batchGetByKeys
+      const siteKeys = allEnrollments.map((enrollment) => ({ siteId: enrollment.getSiteId() }));
+      const sitesResult = await this.Site.batchGetByKeys(siteKeys);
+      const sitesMap = new Map(sitesResult.data.map((site) => [site.getId(), site]));
+
+      // Filter enrollments where site's orgId matches the entitlement's orgId
+      const validEnrollments = [];
+      const mismatchedEnrollments = [];
+
+      for (const enrollment of allEnrollments) {
+        const site = sitesMap.get(enrollment.getSiteId());
+        if (!site) {
+          // Site not found, log warning and skip
+          this.log.warn(`Site not found for enrollment ${enrollment.getId()} with siteId ${enrollment.getSiteId()}`);
+        } else {
+          const siteOrgId = site.getOrganizationId();
+          if (siteOrgId !== orgId) {
+            mismatchedEnrollments.push({
+              enrollmentId: enrollment.getId(),
+              siteId: enrollment.getSiteId(),
+              siteOrgId,
+              expectedOrgId: orgId,
+            });
+          } else {
+            validEnrollments.push(enrollment);
+          }
+        }
+      }
+
+      // Log warning for mismatched enrollments
+      if (mismatchedEnrollments.length > 0) {
+        this.log.warn(`Found ${mismatchedEnrollments.length} enrollment(s) with mismatching orgId: ${JSON.stringify(mismatchedEnrollments)}`);
+      }
+
       if (this.site) {
         // Return site enrollments matching the entitlement and site
         const siteId = this.site.getId();
-        const matchingEnrollments = allEnrollments.filter(
+        const matchingEnrollments = validEnrollments.filter(
           (se) => se.getSiteId() === siteId,
         );
         return { entitlement, enrollments: matchingEnrollments };
       } else {
-        // Return all enrollments for the entitlement
-        return { entitlement, enrollments: allEnrollments };
+        // Return all valid enrollments for the entitlement
+        return { entitlement, enrollments: validEnrollments };
       }
     } catch (error) {
       this.log.error(`Error getting all enrollments: ${error.message}`);

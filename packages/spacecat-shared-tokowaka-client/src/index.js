@@ -316,9 +316,12 @@ class TokowakaClient {
       patches: {},
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig, {
-      'last-modified-by': options.lastModifiedBy,
-    });
+    const metadata = {};
+    if (hasText(options.lastModifiedBy)) {
+      metadata['last-modified-by'] = options.lastModifiedBy;
+    }
+
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
 
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
@@ -373,9 +376,12 @@ class TokowakaClient {
       ...(hasPrerender && { prerender }),
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig, {
-      'last-modified-by': options.lastModifiedBy,
-    });
+    const metadata = {};
+    if (hasText(options.lastModifiedBy)) {
+      metadata['last-modified-by'] = options.lastModifiedBy;
+    }
+
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
 
     this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 

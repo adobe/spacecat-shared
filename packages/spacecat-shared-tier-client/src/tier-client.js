@@ -246,7 +246,6 @@ class TierClient {
 
       // Filter enrollments where site's orgId matches the entitlement's orgId
       const validEnrollments = [];
-      const mismatchedEnrollments = [];
 
       for (const enrollment of allEnrollments) {
         const site = sitesMap.get(enrollment.getSiteId());
@@ -255,22 +254,10 @@ class TierClient {
           this.log.warn(`Site not found for enrollment ${enrollment.getId()} with siteId ${enrollment.getSiteId()}`);
         } else {
           const siteOrgId = site.getOrganizationId();
-          if (siteOrgId !== orgId) {
-            mismatchedEnrollments.push({
-              enrollmentId: enrollment.getId(),
-              siteId: enrollment.getSiteId(),
-              siteOrgId,
-              expectedOrgId: orgId,
-            });
-          } else {
+          if (siteOrgId === orgId) {
             validEnrollments.push(enrollment);
           }
         }
-      }
-
-      // Log warning for mismatched enrollments
-      if (mismatchedEnrollments.length > 0) {
-        this.log.warn(`Found ${mismatchedEnrollments.length} enrollment(s) with mismatching orgId: ${JSON.stringify(mismatchedEnrollments)}`);
       }
 
       if (this.site) {

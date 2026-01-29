@@ -871,7 +871,7 @@ describe('TierClient', () => {
       expect(result.enrollments).to.deep.equal([mockSiteEnrollment, mockEnrollment3]);
     });
 
-    it('should filter out enrollments with mismatching orgId and log warning', async () => {
+    it('should filter out enrollments with mismatching orgId', async () => {
       const tierClientWithoutSite = new TierClient(
         mockContext,
         organizationInstance,
@@ -910,9 +910,6 @@ describe('TierClient', () => {
 
       expect(result.enrollments).to.have.lengthOf(1);
       expect(result.enrollments[0].getId()).to.equal('enrollment-123');
-      expect(mockContext.log.warn).to.have.been.calledWith(
-        sinon.match(/Found 1 enrollment\(s\) with mismatching orgId/),
-      );
     });
 
     it('should log warning when site not found for enrollment', async () => {

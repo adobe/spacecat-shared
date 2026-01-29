@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.98.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.2...@adobe/spacecat-shared-data-access-v2.98.0) (2026-01-29)
+
+
+### Features
+
+* new flag opted added in edgeoptimizeconfig ([#1294](https://github.com/adobe/spacecat-shared/issues/1294)) ([8386e38](https://github.com/adobe/spacecat-shared/commit/8386e3805e9e67c18e4569428bef7ac5723eb991))
+
 # [@adobe/spacecat-shared-data-access-v2.97.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.1...@adobe/spacecat-shared-data-access-v2.97.2) (2026-01-28)
 
 

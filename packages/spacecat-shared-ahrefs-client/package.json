@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.2.3",
-    "@adobe/helix-universal": "5.3.0",
+    "@adobe/helix-universal": "5.4.0",
     "@adobe/spacecat-shared-utils": "1.81.1"
   },
   "devDependencies": {

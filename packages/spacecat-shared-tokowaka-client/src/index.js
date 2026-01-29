@@ -907,26 +907,13 @@ class TokowakaClient {
     }
 
     // Fetch metaconfig to get API key
-    const metaconfig = await this.fetchMetaconfig(previewUrl);
+    const metaconfig = await this.fetchMetaconfig(previewUrl) || {};
 
-    if (!metaconfig) {
-      throw this.#createError(
-        'No domain-level metaconfig found. '
-        + 'A domain-level metaconfig needs to be created first before previewing suggestions.',
-        HTTP_INTERNAL_SERVER_ERROR,
-      );
+    let apiKey;
+    if (Array.isArray(metaconfig.apiKeys) && metaconfig.apiKeys.length > 0) {
+      [apiKey] = metaconfig.apiKeys;
     }
 
-    const { apiKeys } = metaconfig;
-    if (!Array.isArray(apiKeys) || apiKeys.length === 0 || !hasText(apiKeys[0])) {
-      throw this.#createError(
-        'Metaconfig does not have valid API keys configured. '
-        + 'Please ensure the metaconfig has at least one API key.',
-        HTTP_INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    const apiKey = apiKeys[0];
     const forwardedHost = calculateForwardedHost(previewUrl, this.log);
 
     // Fetch existing deployed configuration for this URL from production S3

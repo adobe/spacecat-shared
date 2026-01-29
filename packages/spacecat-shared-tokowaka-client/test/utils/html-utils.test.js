@@ -82,20 +82,33 @@ describe('HTML Utils', () => {
       }
     });
 
-    it('should throw error when apiKey is missing', async () => {
-      try {
-        await fetchHtmlWithWarmup(
-          'https://example.com/page',
-          '',
-          'host',
-          'edge-url',
-          log,
-          false,
-        );
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.equal('Edge Optimize API key is required for fetching HTML');
-      }
+    it('should successfully fetch HTML without apiKey (optional parameter)', async () => {
+      fetchStub.resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Test HTML without API key</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        null, // apiKey is optional
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Test HTML without API key</html>');
+      expect(fetchStub.callCount).to.equal(2); // warmup + actual
+
+      // Verify that x-edgeoptimize-api-key header is not present
+      const fetchOptions = fetchStub.firstCall.args[1];
+      expect(fetchOptions.headers).to.not.have.property('x-edgeoptimize-api-key');
     });
 
     it('should successfully fetch HTML with all required parameters', async () => {

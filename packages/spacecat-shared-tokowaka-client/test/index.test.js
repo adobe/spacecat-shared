@@ -2819,61 +2819,70 @@ describe('TokowakaClient', () => {
       }
     });
 
-    it('should throw error if metaconfig does not exist', async () => {
+    it('should preview suggestions successfully without metaconfig (optional)', async () => {
+      // Override the stub from beforeEach to return null
       client.fetchMetaconfig.resolves(null);
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('No domain-level metaconfig found');
-        expect(error.status).to.equal(500);
-      }
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.config).to.exist;
+      expect(result.html).to.exist;
+      expect(result.html.originalHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(result.html.optimizedHtml).to.equal('<html><body>Test HTML</body></html>');
+
+      // Verify fetch was called without API key (undefined)
+      expect(fetchStub.callCount).to.equal(4); // 2 warmup + 2 actual (original + optimized)
     });
 
-    it('should throw error if metaconfig does not have apiKeys', async () => {
+    it('should preview suggestions successfully without apiKeys in metaconfig (optional)', async () => {
+      // Override the stub from beforeEach
       client.fetchMetaconfig.resolves({
         siteId: 'site-123',
-        // apiKeys missing
+        // apiKeys missing - should work without it
       });
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
-        expect(error.status).to.equal(500);
-      }
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.config).to.exist;
+      expect(result.html).to.exist;
+      expect(result.html.originalHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(result.html.optimizedHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(fetchStub.callCount).to.equal(4);
     });
 
-    it('should throw error if metaconfig has empty apiKeys array', async () => {
+    it('should preview suggestions successfully with empty apiKeys array (optional)', async () => {
+      // Override the stub from beforeEach
       client.fetchMetaconfig.resolves({
         siteId: 'site-123',
         apiKeys: [],
       });
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
-        expect(error.status).to.equal(500);
-      }
-    });
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
 
-    it('should throw error if metaconfig apiKeys first value is empty', async () => {
-      client.fetchMetaconfig.resolves({
-        siteId: 'site-123',
-        apiKeys: ['', 'test-api-key-2'],
-      });
-
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
-        expect(error.status).to.equal(500);
-      }
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.config).to.exist;
+      expect(result.html).to.exist;
+      expect(fetchStub.callCount).to.equal(4);
     });
 
     it('should throw error for unsupported opportunity type', async () => {

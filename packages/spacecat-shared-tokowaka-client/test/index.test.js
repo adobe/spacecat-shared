@@ -605,14 +605,14 @@ describe('TokowakaClient', () => {
       expect(command.input.Key).to.equal('opportunities/example.com/config');
     });
 
-    it('should include user-defined metadata when lastModifiedBy is provided', async () => {
+    it('should include user-defined metadata when metadata is provided', async () => {
       const siteId = 'site-123';
       const url = 'https://www.example.com/page1';
       const noSuchKeyError = new Error('NoSuchKey');
       noSuchKeyError.name = 'NoSuchKey';
       s3Client.send.onFirstCall().rejects(noSuchKeyError);
 
-      await client.createMetaconfig(url, siteId, { lastModifiedBy: 'john@example.com' });
+      await client.createMetaconfig(url, siteId, {}, { 'last-modified-by': 'john@example.com' });
 
       // Second call is the uploadMetaconfig
       const uploadCommand = s3Client.send.secondCall.args[0];
@@ -621,42 +621,28 @@ describe('TokowakaClient', () => {
       });
     });
 
-    it('should not include metadata when lastModifiedBy is undefined', async () => {
+    it('should not include metadata when metadata is empty object', async () => {
       const siteId = 'site-123';
       const url = 'https://www.example.com/page1';
       const noSuchKeyError = new Error('NoSuchKey');
       noSuchKeyError.name = 'NoSuchKey';
       s3Client.send.onFirstCall().rejects(noSuchKeyError);
 
-      await client.createMetaconfig(url, siteId, { lastModifiedBy: undefined });
+      await client.createMetaconfig(url, siteId, {}, {});
 
       // Second call is the uploadMetaconfig
       const uploadCommand = s3Client.send.secondCall.args[0];
       expect(uploadCommand.input.Metadata).to.be.undefined;
     });
 
-    it('should not include metadata when lastModifiedBy is empty string', async () => {
+    it('should not include metadata when metadata is not provided', async () => {
       const siteId = 'site-123';
       const url = 'https://www.example.com/page1';
       const noSuchKeyError = new Error('NoSuchKey');
       noSuchKeyError.name = 'NoSuchKey';
       s3Client.send.onFirstCall().rejects(noSuchKeyError);
 
-      await client.createMetaconfig(url, siteId, { lastModifiedBy: '' });
-
-      // Second call is the uploadMetaconfig
-      const uploadCommand = s3Client.send.secondCall.args[0];
-      expect(uploadCommand.input.Metadata).to.be.undefined;
-    });
-
-    it('should not include metadata when lastModifiedBy is null', async () => {
-      const siteId = 'site-123';
-      const url = 'https://www.example.com/page1';
-      const noSuchKeyError = new Error('NoSuchKey');
-      noSuchKeyError.name = 'NoSuchKey';
-      s3Client.send.onFirstCall().rejects(noSuchKeyError);
-
-      await client.createMetaconfig(url, siteId, { lastModifiedBy: null });
+      await client.createMetaconfig(url, siteId);
 
       // Second call is the uploadMetaconfig
       const uploadCommand = s3Client.send.secondCall.args[0];
@@ -1404,14 +1390,13 @@ describe('TokowakaClient', () => {
       expect(result.prerender).to.deep.equal(prerenderConfig);
     });
 
-    it('should include user-defined metadata when lastModifiedBy is provided', async () => {
+    it('should include user-defined metadata when metadata is provided', async () => {
       const siteId = 'site-456';
       const url = 'https://www.example.com';
 
       await client.updateMetaconfig(url, siteId, {
         tokowakaEnabled: true,
-        lastModifiedBy: 'jane@example.com',
-      });
+      }, { 'last-modified-by': 'jane@example.com' });
 
       // Second call is the uploadMetaconfig
       const uploadCommand = s3Client.send.secondCall.args[0];
@@ -1420,41 +1405,25 @@ describe('TokowakaClient', () => {
       });
     });
 
-    it('should not include metadata when lastModifiedBy is undefined', async () => {
+    it('should not include metadata when metadata is empty object', async () => {
       const siteId = 'site-456';
       const url = 'https://www.example.com';
 
       await client.updateMetaconfig(url, siteId, {
         tokowakaEnabled: true,
-        lastModifiedBy: undefined,
-      });
+      }, {});
 
       // Second call is the uploadMetaconfig
       const uploadCommand = s3Client.send.secondCall.args[0];
       expect(uploadCommand.input.Metadata).to.be.undefined;
     });
 
-    it('should not include metadata when lastModifiedBy is empty string', async () => {
+    it('should not include metadata when metadata is not provided', async () => {
       const siteId = 'site-456';
       const url = 'https://www.example.com';
 
       await client.updateMetaconfig(url, siteId, {
         tokowakaEnabled: true,
-        lastModifiedBy: '',
-      });
-
-      // Second call is the uploadMetaconfig
-      const uploadCommand = s3Client.send.secondCall.args[0];
-      expect(uploadCommand.input.Metadata).to.be.undefined;
-    });
-
-    it('should not include metadata when lastModifiedBy is null', async () => {
-      const siteId = 'site-456';
-      const url = 'https://www.example.com';
-
-      await client.updateMetaconfig(url, siteId, {
-        tokowakaEnabled: true,
-        lastModifiedBy: null,
       });
 
       // Second call is the uploadMetaconfig

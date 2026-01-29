@@ -290,7 +290,7 @@ class TokowakaClient {
    * @param {boolean} options.enhancements - Whether to enable enhancements (default: true)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
-  async createMetaconfig(url, siteId, options = {}) {
+  async createMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -316,13 +316,7 @@ class TokowakaClient {
       patches: {},
     };
 
-    const metadata = {};
-    if (hasText(options.lastModifiedBy)) {
-      metadata['last-modified-by'] = options.lastModifiedBy;
-    }
-
     const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
-
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;
@@ -336,7 +330,7 @@ class TokowakaClient {
    * @param {Object} options - Optional configuration
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
-  async updateMetaconfig(url, siteId, options = {}) {
+  async updateMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -376,13 +370,7 @@ class TokowakaClient {
       ...(hasPrerender && { prerender }),
     };
 
-    const metadata = {};
-    if (hasText(options.lastModifiedBy)) {
-      metadata['last-modified-by'] = options.lastModifiedBy;
-    }
-
     const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
-
     this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;

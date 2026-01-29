@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.90.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.0...@adobe/spacecat-shared-utils-v1.90.1) (2026-01-29)
+
+
+### Bug Fixes
+
+* log warn instead of error if metrics missing ([#1286](https://github.com/adobe/spacecat-shared/issues/1286)) ([e823a7d](https://github.com/adobe/spacecat-shared/commit/e823a7da4ce76c60f3256517f91532d71830f49d))
+
 # [@adobe/spacecat-shared-utils-v1.90.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.89.1...@adobe/spacecat-shared-utils-v1.90.0) (2026-01-29)
 
 

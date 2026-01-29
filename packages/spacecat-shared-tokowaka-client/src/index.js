@@ -317,7 +317,7 @@ class TokowakaClient {
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig, {
-      'x-amz-meta-last-modified-by': options.lastModifiedBy,
+      'last-modified-by': options.lastModifiedBy,
     });
 
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
@@ -374,7 +374,7 @@ class TokowakaClient {
     };
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig, {
-      'x-amz-meta-last-modified-by': options.lastModifiedBy,
+      'last-modified-by': options.lastModifiedBy,
     });
 
     this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);

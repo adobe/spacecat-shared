@@ -73,6 +73,18 @@ class SentimentGuideline extends BaseModel {
     }
     return this;
   }
+
+  /**
+   * Generates the composite keys for remove/update operations.
+   * Required for entities with composite primary keys.
+   * @returns {Object} - The composite keys (siteId + guidelineId).
+   */
+  generateCompositeKeys() {
+    return {
+      siteId: this.getSiteId(),
+      guidelineId: this.getGuidelineId(),
+    };
+  }
 }
 
 export default SentimentGuideline;

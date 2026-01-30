@@ -53,6 +53,18 @@ class SentimentTopic extends BaseModel {
     }
     return this;
   }
+
+  /**
+   * Generates the composite keys for remove/update operations.
+   * Required for entities with composite primary keys.
+   * @returns {Object} - The composite keys (siteId + topicId).
+   */
+  generateCompositeKeys() {
+    return {
+      siteId: this.getSiteId(),
+      topicId: this.getTopicId(),
+    };
+  }
 }
 
 export default SentimentTopic;

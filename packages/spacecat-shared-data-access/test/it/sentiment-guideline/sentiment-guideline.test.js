@@ -26,7 +26,9 @@ function checkSentimentGuideline(guideline) {
   expect(guideline.getGuidelineId()).to.be.a('string');
   expect(guideline.getName()).to.be.a('string');
   expect(guideline.getInstruction()).to.be.a('string');
-  expect(guideline.getAudits()).to.be.an('array');
+  // audits is a Set type which may return null or array
+  const audits = guideline.getAudits();
+  expect(audits === null || Array.isArray(audits)).to.be.true;
   expect(guideline.getEnabled()).to.be.a('boolean');
   expect(guideline.getCreatedAt()).to.be.a('string');
   expect(guideline.getCreatedBy()).to.be.a('string');
@@ -156,41 +158,44 @@ describe('SentimentGuideline IT', function () {
   });
 
   describe('Custom Methods', () => {
-    it('adds an audit', async () => {
+    it('enables an audit', async () => {
       const site = sampleData.sites[0];
       const guidelineId = sampleData.sentimentGuidelines[0].getGuidelineId();
       const guideline = await SentimentGuideline.findById(site.getId(), guidelineId);
-      const originalLength = guideline.getAudits().length;
+      const audits = guideline.getAudits() || [];
+      const originalLength = audits.length;
 
-      guideline.addAudit('new-audit-type');
+      guideline.enableAudit('new-audit-type');
 
       expect(guideline.getAudits()).to.include('new-audit-type');
       expect(guideline.getAudits().length).to.equal(originalLength + 1);
     });
 
-    it('removes an audit', async () => {
+    it('disables an audit', async () => {
       const site = sampleData.sites[0];
       const guidelineId = sampleData.sentimentGuidelines[0].getGuidelineId();
       const guideline = await SentimentGuideline.findById(site.getId(), guidelineId);
 
       // Ensure there's an audit to remove
-      const auditToRemove = guideline.getAudits()[0];
+      const audits = guideline.getAudits() || [];
+      const auditToRemove = audits[0];
       if (auditToRemove) {
-        guideline.removeAudit(auditToRemove);
+        guideline.disableAudit(auditToRemove);
         expect(guideline.getAudits()).to.not.include(auditToRemove);
       }
     });
 
-    it('checks if audit is linked', async () => {
+    it('checks if audit is enabled', async () => {
       const site = sampleData.sites[0];
       const guidelineId = sampleData.sentimentGuidelines[0].getGuidelineId();
       const guideline = await SentimentGuideline.findById(site.getId(), guidelineId);
 
-      const linkedAudit = guideline.getAudits()[0];
+      const audits = guideline.getAudits() || [];
+      const linkedAudit = audits[0];
       if (linkedAudit) {
-        expect(guideline.isAuditLinked(linkedAudit)).to.be.true;
+        expect(guideline.isAuditEnabled(linkedAudit)).to.be.true;
       }
-      expect(guideline.isAuditLinked('nonexistent-audit')).to.be.false;
+      expect(guideline.isAuditEnabled('nonexistent-audit')).to.be.false;
     });
 
     it('toggles enabled state', async () => {
@@ -231,7 +236,7 @@ describe('SentimentGuideline IT', function () {
       expect(result.data).to.be.an('array');
 
       result.data.forEach((guideline) => {
-        expect(guideline.isAuditLinked('wikipedia-analysis')).to.be.true;
+        expect(guideline.isAuditEnabled('wikipedia-analysis')).to.be.true;
       });
     });
 

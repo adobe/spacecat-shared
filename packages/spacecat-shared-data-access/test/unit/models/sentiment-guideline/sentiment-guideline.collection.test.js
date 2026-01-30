@@ -213,7 +213,8 @@ describe('SentimentGuidelineCollection', () => {
       const mockGuideline2 = { getGuidelineId: () => 'guideline-2' };
       const mockGuideline3 = { getGuidelineId: () => 'guideline-3' };
 
-      instance.allBySiteId = stub().resolves([mockGuideline1, mockGuideline2, mockGuideline3]);
+      const mockData = [mockGuideline1, mockGuideline2, mockGuideline3];
+      instance.allBySiteId = stub().resolves({ data: mockData, cursor: null });
 
       const result = await instance.findByIds('site123', ['guideline-1', 'guideline-3']);
 
@@ -227,7 +228,8 @@ describe('SentimentGuidelineCollection', () => {
       const mockGuideline1 = { guidelineId: 'guideline-1' };
       const mockGuideline2 = { guidelineId: 'guideline-2' };
 
-      instance.allBySiteId = stub().resolves([mockGuideline1, mockGuideline2]);
+      const mockData = [mockGuideline1, mockGuideline2];
+      instance.allBySiteId = stub().resolves({ data: mockData, cursor: null });
 
       const result = await instance.findByIds('site123', ['guideline-1']);
 
@@ -246,7 +248,7 @@ describe('SentimentGuidelineCollection', () => {
       const guidelineModel = {
         getGuidelineId: () => 'guideline-001',
       };
-      instance.allBySiteId = stub().resolves([guidelineModel]);
+      instance.allBySiteId = stub().resolves({ data: [guidelineModel], cursor: null });
 
       await instance.removeForSiteId(siteId);
 
@@ -258,7 +260,7 @@ describe('SentimentGuidelineCollection', () => {
 
     it('does not call remove when there are no guidelines', async () => {
       const siteId = 'site-12345';
-      instance.allBySiteId = stub().resolves([]);
+      instance.allBySiteId = stub().resolves({ data: [], cursor: null });
 
       await instance.removeForSiteId(siteId);
 
@@ -271,7 +273,7 @@ describe('SentimentGuidelineCollection', () => {
       const guidelineWithProperty = {
         guidelineId: 'guideline-prop-001',
       };
-      instance.allBySiteId = stub().resolves([guidelineWithProperty]);
+      instance.allBySiteId = stub().resolves({ data: [guidelineWithProperty], cursor: null });
 
       await instance.removeForSiteId(siteId);
 

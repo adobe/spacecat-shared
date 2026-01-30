@@ -154,4 +154,23 @@ describe('SentimentGuidelineModel', () => {
       expect(plainObj.audits).to.deep.equal(['reddit-analysis']);
     });
   });
+
+  describe('generateCompositeKeys', () => {
+    it('returns composite keys with siteId and guidelineId', () => {
+      const result = instance.generateCompositeKeys();
+
+      expect(result).to.be.an('object');
+      expect(result).to.have.property('siteId');
+      expect(result).to.have.property('guidelineId');
+      expect(result.siteId).to.equal(mockRecord.siteId);
+      expect(result.guidelineId).to.equal(mockRecord.guidelineId);
+    });
+
+    it('returns the same values as getSiteId and getGuidelineId methods', () => {
+      const result = instance.generateCompositeKeys();
+
+      expect(result.siteId).to.equal(instance.getSiteId());
+      expect(result.guidelineId).to.equal(instance.getGuidelineId());
+    });
+  });
 });

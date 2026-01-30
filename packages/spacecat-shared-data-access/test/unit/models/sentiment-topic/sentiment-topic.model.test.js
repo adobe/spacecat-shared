@@ -112,4 +112,23 @@ describe('SentimentTopicModel', () => {
       expect(instance.getSubPrompts()).to.not.include('Interior quality?');
     });
   });
+
+  describe('generateCompositeKeys', () => {
+    it('returns composite keys with siteId and topicId', () => {
+      const result = instance.generateCompositeKeys();
+
+      expect(result).to.be.an('object');
+      expect(result).to.have.property('siteId');
+      expect(result).to.have.property('topicId');
+      expect(result.siteId).to.equal(mockRecord.siteId);
+      expect(result.topicId).to.equal(mockRecord.topicId);
+    });
+
+    it('returns the same values as getSiteId and getTopicId methods', () => {
+      const result = instance.generateCompositeKeys();
+
+      expect(result.siteId).to.equal(instance.getSiteId());
+      expect(result.topicId).to.equal(instance.getTopicId());
+    });
+  });
 });

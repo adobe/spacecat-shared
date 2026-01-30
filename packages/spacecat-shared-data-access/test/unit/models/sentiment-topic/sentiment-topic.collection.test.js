@@ -162,7 +162,7 @@ describe('SentimentTopicCollection', () => {
       const topicModel = {
         getTopicId: () => 'topic-001',
       };
-      instance.allBySiteId = stub().resolves([topicModel]);
+      instance.allBySiteId = stub().resolves({ data: [topicModel], cursor: null });
 
       await instance.removeForSiteId(siteId);
 
@@ -174,7 +174,7 @@ describe('SentimentTopicCollection', () => {
 
     it('does not call remove when there are no topics', async () => {
       const siteId = 'site-12345';
-      instance.allBySiteId = stub().resolves([]);
+      instance.allBySiteId = stub().resolves({ data: [], cursor: null });
 
       await instance.removeForSiteId(siteId);
 
@@ -187,7 +187,7 @@ describe('SentimentTopicCollection', () => {
       const topicWithProperty = {
         topicId: 'topic-prop-001',
       };
-      instance.allBySiteId = stub().resolves([topicWithProperty]);
+      instance.allBySiteId = stub().resolves({ data: [topicWithProperty], cursor: null });
 
       await instance.removeForSiteId(siteId);
 

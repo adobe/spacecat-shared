@@ -17,7 +17,7 @@ import {
   isIsoDate,
   isNumber,
   isObject,
-  isValidUrl,
+  isValidBaseUrl,
   isString,
 } from '@adobe/spacecat-shared-utils';
 
@@ -37,7 +37,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
-    validate: (value) => isValidUrl(value),
+    validate: (value) => isValidBaseUrl(value),
   })
   .addAttribute('processingType', {
     type: 'string',

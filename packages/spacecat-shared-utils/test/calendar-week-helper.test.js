@@ -600,6 +600,24 @@ describe('Utils - temporal helpers', () => {
         // After month goes below 1, it becomes 12 repeatedly due to implementation
         expect(parts[14]).to.equal('(year=2024 AND month=12)');
       });
+
+      it('logs info when log is provided with weeks', () => {
+        const log = { info: sinon.stub() };
+        const c = getTemporalCondition({
+          week: 28, year: 2025, numSeries: 2, log,
+        });
+        expect(c).to.include('week=28');
+        expect(log.info.called).to.be.true;
+      });
+
+      it('logs info when log is provided with months', () => {
+        const log = { info: sinon.stub() };
+        const c = getTemporalCondition({
+          month: 7, year: 2025, numSeries: 2, log,
+        });
+        expect(c).to.include('month=7');
+        expect(log.info.called).to.be.true;
+      });
     });
   });
 });

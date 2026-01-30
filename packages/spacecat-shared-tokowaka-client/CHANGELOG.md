@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.6.0...@adobe/spacecat-shared-tokowaka-client-v1.6.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* api key now optional for edge-preview ([#1299](https://github.com/adobe/spacecat-shared/issues/1299)) ([76eb046](https://github.com/adobe/spacecat-shared/commit/76eb04640dab752a83909a51827abde1e41fc57e))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.8...@adobe/spacecat-shared-tokowaka-client-v1.6.0) (2026-01-29)
 
 

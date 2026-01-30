@@ -304,6 +304,30 @@ describe('CDN Helper Functions', () => {
         const result = prettifyLogForwardingConfig(payloadWithEmptyPaths);
         expect(result.Path).to.equal('');
       });
+
+      it('should handle empty allowed paths array for byocdn-imperva', () => {
+        const payloadWithEmptyPaths = {
+          ...mockPayload,
+          logSource: 'byocdn-imperva',
+          allowedPaths: [],
+        };
+        delete payloadWithEmptyPaths.accessKey;
+        delete payloadWithEmptyPaths.secretKey;
+
+        const result = prettifyLogForwardingConfig(payloadWithEmptyPaths);
+        expect(result.Path).to.equal('');
+      });
+
+      it('should handle empty allowed paths array for byocdn-other', () => {
+        const payloadWithEmptyPaths = {
+          ...mockPayload,
+          logSource: 'byocdn-other',
+          allowedPaths: [],
+        };
+
+        const result = prettifyLogForwardingConfig(payloadWithEmptyPaths);
+        expect(result.Path).to.equal('<year>/<month>/<day>');
+      });
     });
 
     describe('error handling', () => {

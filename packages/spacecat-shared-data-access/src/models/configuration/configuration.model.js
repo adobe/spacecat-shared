@@ -47,6 +47,7 @@ class Configuration {
     FORTNIGHTLY_SATURDAY: 'fortnightly-saturday',
     FORTNIGHTLY_SUNDAY: 'fortnightly-sunday',
     MONTHLY: 'monthly',
+    QUARTERLY: 'quarterly',
   };
 
   static AUDIT_NAME_REGEX = /^[a-z0-9-]+$/;

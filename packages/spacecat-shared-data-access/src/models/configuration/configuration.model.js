@@ -36,6 +36,7 @@ class Configuration {
     NEVER: 'never', // allows to enable imports without scheduling them.
     EVERY_HOUR: 'every-hour',
     TWO_HOURS: 'two-hours',
+    TWELVE_HOURS: 'twelve-hours',
     TWENTY_PAST: 'twenty-past',
     DAILY: 'daily',
     DAILY_1AM: 'daily-1am',

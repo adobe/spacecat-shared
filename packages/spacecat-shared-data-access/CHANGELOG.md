@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.99.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.98.0...@adobe/spacecat-shared-data-access-v2.99.0) (2026-01-30)
+
+
+### Features
+
+* **configuration:** add QUARTERLY job interval ([#1302](https://github.com/adobe/spacecat-shared/issues/1302)) ([30d3c10](https://github.com/adobe/spacecat-shared/commit/30d3c1006c5f9f3043b103b3a23893664090619f))
+
 # [@adobe/spacecat-shared-data-access-v2.98.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.2...@adobe/spacecat-shared-data-access-v2.98.0) (2026-01-29)
 
 

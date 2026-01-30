@@ -46,6 +46,7 @@ const schema = new SchemaBuilder(SentimentGuideline, SentimentGuidelineCollectio
     type: 'string',
     required: true,
     readOnly: true,
+    default: () => crypto.randomUUID(),
   })
   .addAttribute('name', {
     type: 'string',

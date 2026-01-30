@@ -44,6 +44,7 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     type: 'string',
     required: true,
     readOnly: true,
+    default: () => crypto.randomUUID(),
   })
   .addAttribute('name', {
     type: 'string',

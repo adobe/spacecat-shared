@@ -137,7 +137,8 @@ class SentimentGuidelineCollection extends BaseCollection {
 
     // Fetch all guidelines for the site and filter
     // Note: For large datasets, consider implementing batch get
-    const allGuidelines = await this.allBySiteId(siteId);
+    const result = await this.allBySiteId(siteId);
+    const allGuidelines = result.data || [];
     const guidelineIdSet = new Set(guidelineIds);
 
     return allGuidelines.filter((guideline) => {
@@ -157,7 +158,8 @@ class SentimentGuidelineCollection extends BaseCollection {
       throw new Error('SiteId is required');
     }
 
-    const guidelinesToRemove = await this.allBySiteId(siteId);
+    const result = await this.allBySiteId(siteId);
+    const guidelinesToRemove = result.data || [];
 
     if (guidelinesToRemove.length > 0) {
       const keysToRemove = guidelinesToRemove.map((guideline) => ({

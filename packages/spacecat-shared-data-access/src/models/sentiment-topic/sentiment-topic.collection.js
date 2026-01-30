@@ -100,7 +100,8 @@ class SentimentTopicCollection extends BaseCollection {
       throw new Error('SiteId is required');
     }
 
-    const topicsToRemove = await this.allBySiteId(siteId);
+    const result = await this.allBySiteId(siteId);
+    const topicsToRemove = result.data || [];
 
     if (topicsToRemove.length > 0) {
       const keysToRemove = topicsToRemove.map((topic) => ({

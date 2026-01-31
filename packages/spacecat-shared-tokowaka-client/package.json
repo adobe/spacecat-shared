@@ -35,11 +35,11 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "@aws-sdk/client-cloudfront": "3.940.0",
-    "@aws-sdk/client-s3": "3.940.0",
+    "@aws-sdk/client-cloudfront": "3.980.0",
+    "@aws-sdk/client-s3": "3.980.0",
     "mdast-util-from-markdown": "2.0.2",
     "mdast-util-to-hast": "12.3.0",
-    "uuid": "11.0.5"
+    "uuid": "11.1.0"
   },
   "devDependencies": {
     "aws-sdk-client-mock": "4.1.0",

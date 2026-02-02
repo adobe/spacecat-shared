@@ -3641,7 +3641,7 @@ describe('TokowakaClient', () => {
         };
       });
 
-      it('should return edgeoptimizedenabled: true when x-tokowaka-request-id header is present', async () => {
+      it('should return edgeOptimizeEnabled: true when x-tokowaka-request-id header is present', async () => {
         const headersMap = new Map([
           ['x-tokowaka-request-id', 'abc123'],
         ]);
@@ -3657,13 +3657,13 @@ describe('TokowakaClient', () => {
         const result = await client.checkEdgeOptimizeStatus(site, '/');
 
         expect(result).to.deep.equal({
-          edgeoptimizedenabled: true,
+          edgeOptimizeEnabled: true,
         });
         expect(fetchStub).to.have.been.calledOnce;
         expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/');
       });
 
-      it('should return edgeoptimizedenabled: true when x-edgeoptimize-request-id header is present', async () => {
+      it('should return edgeOptimizeEnabled: true when x-edgeoptimize-request-id header is present', async () => {
         const headersMap = new Map([
           ['x-edgeoptimize-request-id', 'xyz789'],
         ]);
@@ -3679,12 +3679,12 @@ describe('TokowakaClient', () => {
         const result = await client.checkEdgeOptimizeStatus(site, '/products');
 
         expect(result).to.deep.equal({
-          edgeoptimizedenabled: true,
+          edgeOptimizeEnabled: true,
         });
         expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/products');
       });
 
-      it('should return edgeoptimizedenabled: false when headers are not present', async () => {
+      it('should return edgeOptimizeEnabled: false when headers are not present', async () => {
         const mockResponse = {
           status: 200,
           headers: new Map(),
@@ -3696,7 +3696,7 @@ describe('TokowakaClient', () => {
         const result = await client.checkEdgeOptimizeStatus(site, '/');
 
         expect(result).to.deep.equal({
-          edgeoptimizedenabled: false,
+          edgeOptimizeEnabled: false,
         });
       });
 
@@ -3716,7 +3716,7 @@ describe('TokowakaClient', () => {
         const result = await client.checkEdgeOptimizeStatus(site, '/not-found');
 
         expect(result).to.deep.equal({
-          edgeoptimizedenabled: true,
+          edgeOptimizeEnabled: true,
         });
       });
 
@@ -3804,7 +3804,7 @@ describe('TokowakaClient', () => {
         const result = await promise;
 
         expect(result).to.deep.equal({
-          edgeoptimizedenabled: true,
+          edgeOptimizeEnabled: true,
         });
         expect(fetchStub).to.have.been.calledTwice;
       });
@@ -3832,7 +3832,7 @@ describe('TokowakaClient', () => {
         const result = await promise;
 
         expect(result).to.deep.equal({
-          edgeoptimizedenabled: true,
+          edgeOptimizeEnabled: true,
         });
         expect(fetchStub.callCount).to.equal(3);
       });
@@ -3969,7 +3969,7 @@ describe('TokowakaClient', () => {
 
         const result = await client.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result.edgeoptimizedenabled).to.be.true;
+        expect(result.edgeOptimizeEnabled).to.be.true;
       });
 
       it('should handle 500 error with edge optimize header', async () => {
@@ -3988,7 +3988,7 @@ describe('TokowakaClient', () => {
         const result = await client.checkEdgeOptimizeStatus(site, '/error');
 
         expect(result).to.deep.equal({
-          edgeoptimizedenabled: true,
+          edgeOptimizeEnabled: true,
         });
       });
     });

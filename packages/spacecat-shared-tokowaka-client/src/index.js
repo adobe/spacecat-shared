@@ -1029,7 +1029,7 @@ class TokowakaClient {
    * Follows one level of redirect and retries on failures
    * @param {Object} site - Site entity
    * @param {string} path - Path to check (e.g., '/products/chair')
-   * @returns {Promise<Object>} - Status result with edgeoptimizedenabled flag
+   * @returns {Promise<Object>} - Status result with edgeOptimizeEnabled flag
    */
   async checkEdgeOptimizeStatus(site, path) {
     if (!isNonEmptyObject(site)) {
@@ -1069,7 +1069,7 @@ class TokowakaClient {
         this.log.debug(`Edge optimize headers found: ${edgeOptimizeEnabled}`);
 
         return {
-          edgeoptimizedenabled: edgeOptimizeEnabled,
+          edgeOptimizeEnabled,
         };
       } catch (error) {
         attempt += 1;

@@ -2562,6 +2562,34 @@ describe('Config Tests', () => {
       const dynamoItem = Config.toDynamoItem(data);
       expect(dynamoItem.edgeOptimizeConfig).to.deep.equal(data.getEdgeOptimizeConfig());
     });
+
+    it('should be able to create edgeOptimizeConfig with opted field', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+          opted: true,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+      expect(config.getEdgeOptimizeConfig().opted).to.equal(true);
+    });
+
+    it('should be able to update edgeOptimizeConfig with opted field', () => {
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: false,
+        },
+      });
+
+      const newConfig = {
+        enabled: true,
+        opted: true,
+      };
+      config.updateEdgeOptimizeConfig(newConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
+      expect(config.getEdgeOptimizeConfig().opted).to.equal(true);
+    });
   });
 
   describe('LLMO Well Known Tags', () => {

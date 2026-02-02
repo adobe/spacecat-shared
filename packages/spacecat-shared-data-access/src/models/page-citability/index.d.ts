@@ -21,6 +21,7 @@ export interface PageCitability extends BaseModel {
     getWordDifference(): number | undefined;
     getBotWords(): number | undefined;
     getNormalWords(): number | undefined;
+    getIsDeployedAtEdge(): boolean | undefined;
 
     setSiteId(siteId: string): PageCitability;
     setUrl(url: string): PageCitability;
@@ -29,6 +30,7 @@ export interface PageCitability extends BaseModel {
     setWordDifference(wordDifference?: number): PageCitability;
     setBotWords(botWords?: number): PageCitability;
     setNormalWords(normalWords?: number): PageCitability;
+    setIsDeployedAtEdge(isDeployedAtEdge?: boolean): PageCitability;
 }
 
 export interface PageCitabilityCollection extends BaseCollection<PageCitability> {

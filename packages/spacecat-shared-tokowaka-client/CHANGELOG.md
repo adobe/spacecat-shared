@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.6.1...@adobe/spacecat-shared-tokowaka-client-v1.7.0) (2026-02-02)
+
+
+### Features
+
+* edge optimize status api addition ([#1292](https://github.com/adobe/spacecat-shared/issues/1292)) ([f2c89be](https://github.com/adobe/spacecat-shared/commit/f2c89be3fb4fb2580a13a3a3f7517ce92cf1ce69))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.6.0...@adobe/spacecat-shared-tokowaka-client-v1.6.1) (2026-01-30)
 
 

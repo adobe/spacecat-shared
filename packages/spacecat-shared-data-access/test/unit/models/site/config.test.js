@@ -2564,7 +2564,7 @@ describe('Config Tests', () => {
     });
 
     it('should be able to create edgeOptimizeConfig with opted field', () => {
-      const optedTimestamp = new Date('2024-01-15T10:30:00Z');
+      const optedTimestamp = new Date('2024-01-15T10:30:00Z').getTime();
       const data = {
         edgeOptimizeConfig: {
           enabled: true,
@@ -2573,7 +2573,7 @@ describe('Config Tests', () => {
       };
       const config = Config(data);
       expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
-      expect(config.getEdgeOptimizeConfig().opted).to.deep.equal(optedTimestamp);
+      expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
     });
 
     it('should be able to update edgeOptimizeConfig with opted field', () => {
@@ -2583,14 +2583,14 @@ describe('Config Tests', () => {
         },
       });
 
-      const optedTimestamp = new Date('2024-01-20T14:45:00Z');
+      const optedTimestamp = new Date('2024-01-20T14:45:00Z').getTime();
       const newConfig = {
         enabled: true,
         opted: optedTimestamp,
       };
       config.updateEdgeOptimizeConfig(newConfig);
       expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
-      expect(config.getEdgeOptimizeConfig().opted).to.deep.equal(optedTimestamp);
+      expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
     });
   });
 

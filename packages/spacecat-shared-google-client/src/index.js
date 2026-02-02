@@ -107,8 +107,8 @@ export default class GoogleClient {
     if (!isInteger(rowLimit) || !isInteger(startRow)) {
       throw new Error('Error retrieving organic search data from Google API: Invalid row limit or start row format');
     }
-    if (rowLimit > 1000 || rowLimit < 1) {
-      throw new Error('Error retrieving organic search data from Google API: Row limit must be between 1 and 1000');
+    if (rowLimit > 25000 || rowLimit < 1) {
+      throw new Error('Error retrieving organic search data from Google API: Row limit must be between 1 and 25000');
     }
     if (startRow < 0) {
       throw new Error('Error retrieving organic search data from Google API: Start row must be greater than or equal to 0');
@@ -186,6 +186,25 @@ export default class GoogleClient {
     }
   }
 
+  async getSite(siteUrl) {
+    if (!isValidUrl(siteUrl) && !siteUrl?.startsWith('sc-domain')) {
+      throw new Error(`Error retrieving site information: Invalid site URL format (${siteUrl})`);
+    }
+
+    await this.#refreshTokenIfExpired();
+
+    const webmasters = google.webmasters({
+      version: 'v3',
+      auth: this.authClient,
+    });
+    try {
+      return await webmasters.sites.get({ siteUrl });
+    } catch (error) {
+      this.log.error('Error retrieving site information:', error.message);
+      throw new Error(`Error retrieving site information from Google API: ${error.message}`);
+    }
+  }
+
   async listSites() {
     await this.#refreshTokenIfExpired();
 
@@ -198,6 +217,55 @@ export default class GoogleClient {
     } catch (error) {
       this.log.error('Error retrieving sites:', error.message);
       throw new Error(`Error retrieving sites from Google API: ${error.message}`);
+    }
+  }
+
+  async getSitemap(sitemapUrl) {
+    if (!isValidUrl(sitemapUrl)) {
+      throw new Error(`Error retrieving sitemap information: Invalid sitemap URL format (${sitemapUrl})`);
+    }
+
+    await this.#refreshTokenIfExpired();
+
+    const webmasters = google.webmasters({
+      version: 'v3',
+      auth: this.authClient,
+    });
+    try {
+      return await webmasters.sitemaps.get({
+        siteUrl: this.siteUrl,
+        feedpath: sitemapUrl,
+      });
+    } catch (error) {
+      this.log.error('Error retrieving sitemap information:', error.message);
+      throw new Error(`Error retrieving sitemap information from Google API: ${error.message}`);
+    }
+  }
+
+  async listSitemaps(sitemapIndex) {
+    await this.#refreshTokenIfExpired();
+
+    const webmasters = google.webmasters({
+      version: 'v3',
+      auth: this.authClient,
+    });
+
+    const params = {
+      siteUrl: this.siteUrl,
+    };
+
+    if (sitemapIndex) {
+      if (!isValidUrl(sitemapIndex)) {
+        throw new Error(`Error listing sitemaps: Invalid sitemap index URL format (${sitemapIndex})`);
+      }
+      params.sitemapIndex = sitemapIndex;
+    }
+
+    try {
+      return await webmasters.sitemaps.list(params);
+    } catch (error) {
+      this.log.error('Error listing sitemaps:', error.message);
+      throw new Error(`Error listing sitemaps from Google API: ${error.message}`);
     }
   }
 }

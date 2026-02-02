@@ -303,13 +303,23 @@ describe('GoogleClient', () => {
       }
     });
 
-    it('should throw an error if the row limit is greater than 1000', async () => {
+    it('should throw an error if the row limit is greater than 25000', async () => {
       stubSecretManager(defaultConfig);
       const googleClient = await GoogleClient.createFrom(context, baseURL);
       try {
-        await googleClient.getOrganicSearchData(startDate, endDate, ['page'], 1001);
+        await googleClient.getOrganicSearchData(startDate, endDate, ['page'], 25001);
       } catch (error) {
-        expect(error.message).to.equal('Error retrieving organic search data from Google API: Row limit must be between 1 and 1000');
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Row limit must be between 1 and 25000');
+      }
+    });
+
+    it('should throw an error if the row limit is less than 1', async () => {
+      stubSecretManager(defaultConfig);
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getOrganicSearchData(startDate, endDate, ['page'], 0);
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Row limit must be between 1 and 25000');
       }
     });
 
@@ -385,6 +395,254 @@ describe('GoogleClient', () => {
         await googleClient.listSites();
       } catch (error) {
         expect(error.message).to.equal(`Error retrieving sites from Google API: ${failMessage}`);
+      }
+    });
+  });
+
+  describe('getSite', () => {
+    it('should return information about a specific site', async () => {
+      const siteUrl = 'https://www.example.com/';
+      const siteInfo = {
+        data: {
+          siteUrl,
+          permissionLevel: 'siteOwner',
+        },
+      };
+
+      stubSecretManager(defaultConfig);
+      const webmastersStub = sinon.stub().resolves(siteInfo);
+      sinon.stub(google, 'webmasters').returns({
+        sites: {
+          get: webmastersStub,
+        },
+      });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.getSite(siteUrl);
+
+      expect(result).to.eql(siteInfo);
+      expect(webmastersStub.calledOnce).to.be.true;
+      expect(webmastersStub.calledWith({ siteUrl })).to.be.true;
+    });
+
+    it('should work with domain properties', async () => {
+      const siteUrl = 'sc-domain:example.com';
+      const siteInfo = {
+        data: {
+          siteUrl,
+          permissionLevel: 'siteOwner',
+        },
+      };
+
+      stubSecretManager(defaultConfig);
+      const webmastersStub = sinon.stub().resolves(siteInfo);
+      sinon.stub(google, 'webmasters').returns({
+        sites: {
+          get: webmastersStub,
+        },
+      });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.getSite(siteUrl);
+
+      expect(result).to.eql(siteInfo);
+      expect(webmastersStub.calledOnce).to.be.true;
+    });
+
+    it('should throw an error if the site URL is invalid', async () => {
+      const invalidUrl = 'not a valid url';
+      stubSecretManager(defaultConfig);
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getSite(invalidUrl);
+      } catch (error) {
+        expect(error.message).to.equal(`Error retrieving site information: Invalid site URL format (${invalidUrl})`);
+      }
+    });
+
+    it('should handle errors when the Google API call fails', async () => {
+      const siteUrl = 'https://www.example.com/';
+      const failMessage = 'Google API call failed';
+      stubSecretManager(defaultConfig);
+      sinon.stub(google, 'webmasters').returns({
+        sites: {
+          get: sinon.stub().rejects(new Error(failMessage)),
+        },
+      });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getSite(siteUrl);
+      } catch (error) {
+        expect(error.message).to.equal(`Error retrieving site information from Google API: ${failMessage}`);
+      }
+    });
+  });
+
+  describe('getSitemap', () => {
+    it('should return information about a specific sitemap', async () => {
+      const sitemapUrl = 'https://www.example.com/sitemap.xml';
+      const sitemapInfo = {
+        data: {
+          path: sitemapUrl,
+          lastSubmitted: '2024-01-01T00:00:00.000Z',
+          isPending: false,
+          isSitemapsIndex: false,
+          type: 'sitemap',
+          lastDownloaded: '2024-01-01T00:00:00.000Z',
+          warnings: '0',
+          errors: '0',
+        },
+      };
+
+      stubSecretManager(defaultConfig);
+      const webmastersStub = sinon.stub().resolves(sitemapInfo);
+      sinon.stub(google, 'webmasters').returns({
+        sitemaps: {
+          get: webmastersStub,
+        },
+      });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.getSitemap(sitemapUrl);
+
+      expect(result).to.eql(sitemapInfo);
+      expect(webmastersStub.calledOnce).to.be.true;
+      expect(webmastersStub.calledWith({
+        siteUrl: baseURL,
+        feedpath: sitemapUrl,
+      })).to.be.true;
+    });
+
+    it('should throw an error if the sitemap URL is invalid', async () => {
+      const invalidUrl = 'not a valid url';
+      stubSecretManager(defaultConfig);
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getSitemap(invalidUrl);
+      } catch (error) {
+        expect(error.message).to.equal(`Error retrieving sitemap information: Invalid sitemap URL format (${invalidUrl})`);
+      }
+    });
+
+    it('should handle errors when the Google API call fails', async () => {
+      const sitemapUrl = 'https://www.example.com/sitemap.xml';
+      const failMessage = 'Google API call failed';
+      stubSecretManager(defaultConfig);
+      sinon.stub(google, 'webmasters').returns({
+        sitemaps: {
+          get: sinon.stub().rejects(new Error(failMessage)),
+        },
+      });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getSitemap(sitemapUrl);
+      } catch (error) {
+        expect(error.message).to.equal(`Error retrieving sitemap information from Google API: ${failMessage}`);
+      }
+    });
+  });
+
+  describe('listSitemaps', () => {
+    it('should return a list of sitemaps for a site', async () => {
+      const sitemaps = {
+        data: {
+          sitemap: [
+            {
+              path: 'https://www.example.com/sitemap.xml',
+              lastSubmitted: '2024-01-01T00:00:00.000Z',
+              isPending: false,
+              isSitemapsIndex: false,
+            },
+            {
+              path: 'https://www.example.com/sitemap2.xml',
+              lastSubmitted: '2024-01-02T00:00:00.000Z',
+              isPending: false,
+              isSitemapsIndex: false,
+            },
+          ],
+        },
+      };
+
+      stubSecretManager(defaultConfig);
+      const webmastersStub = sinon.stub().resolves(sitemaps);
+      sinon.stub(google, 'webmasters').returns({
+        sitemaps: {
+          list: webmastersStub,
+        },
+      });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.listSitemaps();
+
+      expect(result).to.eql(sitemaps);
+      expect(webmastersStub.calledOnce).to.be.true;
+      expect(webmastersStub.calledWith({ siteUrl: baseURL })).to.be.true;
+    });
+
+    it('should list sitemaps with a sitemap index', async () => {
+      const sitemapIndexUrl = 'https://www.example.com/sitemap-index.xml';
+      const sitemaps = {
+        data: {
+          sitemap: [
+            {
+              path: 'https://www.example.com/sitemap1.xml',
+              lastSubmitted: '2024-01-01T00:00:00.000Z',
+              isPending: false,
+              isSitemapsIndex: false,
+            },
+          ],
+        },
+      };
+
+      stubSecretManager(defaultConfig);
+      const webmastersStub = sinon.stub().resolves(sitemaps);
+      sinon.stub(google, 'webmasters').returns({
+        sitemaps: {
+          list: webmastersStub,
+        },
+      });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.listSitemaps(sitemapIndexUrl);
+
+      expect(result).to.eql(sitemaps);
+      expect(webmastersStub.calledOnce).to.be.true;
+      expect(webmastersStub.calledWith({
+        siteUrl: baseURL,
+        sitemapIndex: sitemapIndexUrl,
+      })).to.be.true;
+    });
+
+    it('should throw an error if the sitemap index URL is invalid', async () => {
+      const invalidUrl = 'not a valid url';
+      stubSecretManager(defaultConfig);
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.listSitemaps(invalidUrl);
+      } catch (error) {
+        expect(error.message).to.equal(`Error listing sitemaps: Invalid sitemap index URL format (${invalidUrl})`);
+      }
+    });
+
+    it('should handle errors when the Google API call fails', async () => {
+      const failMessage = 'Google API call failed';
+      stubSecretManager(defaultConfig);
+      sinon.stub(google, 'webmasters').returns({
+        sitemaps: {
+          list: sinon.stub().rejects(new Error(failMessage)),
+        },
+      });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.listSitemaps();
+      } catch (error) {
+        expect(error.message).to.equal(`Error listing sitemaps from Google API: ${failMessage}`);
       }
     });
   });

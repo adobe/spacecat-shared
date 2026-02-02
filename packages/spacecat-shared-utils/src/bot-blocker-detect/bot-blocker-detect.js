@@ -99,6 +99,14 @@ const CHALLENGE_PATTERNS = {
     /hcaptcha/i,
     /datadome/i,
     /dd-request-id/i,
+    /press.*hold/i, // Press and hold challenges (hCaptcha, custom implementations)
+    /click.*hold/i, // Click and hold button challenges
+    /geetest/i, // GeeTest interactive challenges
+    /arkose/i, // Arkose Labs bot protection
+    /funcaptcha/i, // FunCaptcha interactive challenges
+    /interactive.*challenge/i, // Generic interactive challenges
+    /verify.*human.*interaction/i, // Human interaction verification
+    /prove.*you.*are.*human/i, // Proof of humanity challenges
   ],
 };
 

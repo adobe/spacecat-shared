@@ -97,6 +97,10 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   .addAttribute('results', {
     type: 'any',
   })
+  .addAttribute('abortInfo', {
+    type: 'any',
+    validate: (value) => !value || isObject(value),
+  })
   .addAttribute('optEnableJavascript', {
     type: 'string',
     hidden: true,

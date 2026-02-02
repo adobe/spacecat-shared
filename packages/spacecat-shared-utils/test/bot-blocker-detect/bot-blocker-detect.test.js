@@ -577,6 +577,96 @@ describe('Bot Blocker Detection', () => {
       expect(result.type).to.equal('unknown');
     });
 
+    it('detects "Press and Hold" challenge', () => {
+      const html = '<html><body><div>Press and hold the button to continue</div></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('detects "Click and Hold" challenge', () => {
+      const html = '<html><body><button>Click and hold to verify you are human</button></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('detects GeeTest interactive challenge', () => {
+      const html = '<html><body><div class="geetest_challenge"></div></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('detects Arkose Labs FunCAPTCHA', () => {
+      const html = '<html><body><div id="arkose-container"><script>funcaptcha.load();</script></div></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('detects generic interactive challenge', () => {
+      const html = '<html><body><div>Complete the interactive challenge to continue</div></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('detects "Prove you are human" challenge', () => {
+      const html = '<html><body><p>Please prove you are human before continuing</p></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
     it('detects Akamai challenge page', () => {
       const html = '<html><body>Access Denied by Akamai security policy</body></html>';
       const headers = { 'x-akamai-request-id': 'abc123' };

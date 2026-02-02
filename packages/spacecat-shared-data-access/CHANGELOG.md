@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v2.100.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.99.0...@adobe/spacecat-shared-data-access-v2.100.0) (2026-02-02)
+
+
+### Features
+
+* **data-access:** add type-specific data schemas for suggestions [SITES-39183] ([#1289](https://github.com/adobe/spacecat-shared/issues/1289)) ([9824b22](https://github.com/adobe/spacecat-shared/commit/9824b22bc494467849a2ae903ce902ed3f9fde80))
+
+# [@adobe/spacecat-shared-data-access-v2.99.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.98.0...@adobe/spacecat-shared-data-access-v2.99.0) (2026-01-30)
+
+
+### Features
+
+* **configuration:** add QUARTERLY job interval ([#1302](https://github.com/adobe/spacecat-shared/issues/1302)) ([30d3c10](https://github.com/adobe/spacecat-shared/commit/30d3c1006c5f9f3043b103b3a23893664090619f))
+
+# [@adobe/spacecat-shared-data-access-v2.98.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.2...@adobe/spacecat-shared-data-access-v2.98.0) (2026-01-29)
+
+
+### Features
+
+* new flag opted added in edgeoptimizeconfig ([#1294](https://github.com/adobe/spacecat-shared/issues/1294)) ([8386e38](https://github.com/adobe/spacecat-shared/commit/8386e3805e9e67c18e4569428bef7ac5723eb991))
+
 # [@adobe/spacecat-shared-data-access-v2.97.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.1...@adobe/spacecat-shared-data-access-v2.97.2) (2026-01-28)
 
 

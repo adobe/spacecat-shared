@@ -16,6 +16,11 @@
  *
  * Validation schemas should be used in audit-worker when creating/updating suggestions
  * to ensure data structure consistency before writing to the database.
+ *
+ * Each schema defines:
+ * - Required fields (those in minimal projection) used for listing page in ASO UI
+ * - Optional fields for additional data
+ * - Projection configurations for minimal views
  */
 
 import Joi from 'joi';

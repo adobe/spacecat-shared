@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.100.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.0...@adobe/spacecat-shared-data-access-v2.100.1) (2026-02-02)
+
+
+### Bug Fixes
+
+* improve suggestion schema documentation ([#1304](https://github.com/adobe/spacecat-shared/issues/1304)) ([8d87f3f](https://github.com/adobe/spacecat-shared/commit/8d87f3f474dae73a0207d51cdf1e1b040befcf89))
+
 # [@adobe/spacecat-shared-data-access-v2.100.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.99.0...@adobe/spacecat-shared-data-access-v2.100.0) (2026-02-02)
 
 

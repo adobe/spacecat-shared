@@ -3563,4 +3563,434 @@ describe('TokowakaClient', () => {
       client.env.TOKOWAKA_CDN_PROVIDER = originalProvider;
     });
   });
+
+  describe('checkEdgeOptimizeStatus', () => {
+    let fetchStub;
+
+    beforeEach(() => {
+      fetchStub = sinon.stub(global, 'fetch');
+    });
+
+    afterEach(() => {
+      fetchStub.restore();
+    });
+
+    describe('Input Validation', () => {
+      it('should throw error when site is not provided', async () => {
+        try {
+          await client.checkEdgeOptimizeStatus(null, '/');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Site is required');
+          expect(error.status).to.equal(400);
+        }
+      });
+
+      it('should throw error when site is empty object', async () => {
+        try {
+          await client.checkEdgeOptimizeStatus({}, '/');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Site is required');
+        }
+      });
+
+      it('should throw error when path is not provided', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        try {
+          await client.checkEdgeOptimizeStatus(site, '');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Path is required');
+          expect(error.status).to.equal(400);
+        }
+      });
+
+      it('should throw error when path is null', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        try {
+          await client.checkEdgeOptimizeStatus(site, null);
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Path is required');
+        }
+      });
+    });
+
+    describe('Direct Response (No Redirect)', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should return edgeOptimizeEnabled: true when x-tokowaka-request-id header is present', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+        expect(fetchStub).to.have.been.calledOnce;
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/');
+      });
+
+      it('should return edgeOptimizeEnabled: true when x-edgeoptimize-request-id header is present', async () => {
+        const headersMap = new Map([
+          ['x-edgeoptimize-request-id', 'xyz789'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/products');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/products');
+      });
+
+      it('should return edgeOptimizeEnabled: false when headers are not present', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: false,
+        });
+      });
+
+      it('should work with 404 status and edge optimize enabled', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+        ]);
+        const mockResponse = {
+          status: 404,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/not-found');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+      });
+
+      it('should send correct User-Agent header', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/');
+
+        const fetchOptions = fetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['User-Agent']).to.equal('chatgpt-user');
+      });
+    });
+
+    describe('Retry Logic', () => {
+      let site;
+      let clock;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+        clock = sinon.useFakeTimers();
+      });
+
+      afterEach(() => {
+        clock.restore();
+      });
+
+      it('should retry 3 times on network error with exponential backoff', async () => {
+        const networkError = new Error('Network timeout');
+        fetchStub.rejects(networkError);
+
+        const promise = client.checkEdgeOptimizeStatus(site, '/');
+
+        // Wait for first attempt
+        await clock.tickAsync(0);
+
+        // Wait for 200ms delay after first failure
+        await clock.tickAsync(200);
+
+        // Wait for 400ms delay after second failure
+        await clock.tickAsync(400);
+
+        // Wait for 800ms delay after third failure
+        await clock.tickAsync(800);
+
+        try {
+          await promise;
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Failed to check edge optimize status');
+          expect(error.message).to.include('Network timeout');
+          expect(error.status).to.equal(500);
+          expect(fetchStub.callCount).to.equal(4); // Initial + 3 retries
+        }
+      });
+
+      it('should succeed on second attempt after first failure', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        fetchStub.onFirstCall().rejects(new Error('Temporary failure'));
+        fetchStub.onSecondCall().resolves(mockResponse);
+
+        const promise = client.checkEdgeOptimizeStatus(site, '/');
+
+        await clock.tickAsync(200);
+
+        const result = await promise;
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+        expect(fetchStub).to.have.been.calledTwice;
+      });
+
+      it('should succeed on third attempt after two failures', async () => {
+        const headersMap = new Map([
+          ['x-edgeoptimize-request-id', 'xyz789'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        fetchStub.onFirstCall().rejects(new Error('Failure 1'));
+        fetchStub.onSecondCall().rejects(new Error('Failure 2'));
+        fetchStub.onThirdCall().resolves(mockResponse);
+
+        const promise = client.checkEdgeOptimizeStatus(site, '/');
+
+        await clock.tickAsync(200); // First retry delay
+        await clock.tickAsync(400); // Second retry delay
+
+        const result = await promise;
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+        expect(fetchStub.callCount).to.equal(3);
+      });
+
+      it('should log warnings on retries', async () => {
+        const networkError = new Error('Connection refused');
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.onFirstCall().rejects(networkError);
+        fetchStub.onSecondCall().resolves(mockResponse);
+
+        const promise = client.checkEdgeOptimizeStatus(site, '/');
+        await clock.tickAsync(200);
+        await promise;
+
+        expect(log.warn).to.have.been.calledWith(
+          sinon.match(/Attempt 1 to fetch failed.*Connection refused.*Retrying in 200ms/),
+        );
+      });
+    });
+
+    describe('URL Construction', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should construct URL correctly with simple path', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/products/chairs');
+
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/products/chairs');
+      });
+
+      it('should construct URL correctly with multi-level path', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/a/b/c/d');
+
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/a/b/c/d');
+      });
+
+      it('should handle baseURL with trailing slash', async () => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com/',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/about');
+
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/about');
+      });
+
+      it('should handle baseURL without trailing slash', async () => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/about');
+
+        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/about');
+      });
+    });
+
+    describe('Edge Cases', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should handle both headers present', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+          ['x-edgeoptimize-request-id', 'xyz789'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result.edgeOptimizeEnabled).to.be.true;
+      });
+
+      it('should handle 500 error with edge optimize header', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+        ]);
+        const mockResponse = {
+          status: 500,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/error');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+      });
+    });
+  });
 });

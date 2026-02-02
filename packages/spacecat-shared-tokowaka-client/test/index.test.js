@@ -454,6 +454,43 @@ describe('TokowakaClient', () => {
         expect(error.status).to.equal(500);
       }
     });
+
+    it('should upload metaconfig with user-defined metadata when provided', async () => {
+      const metaconfig = {
+        siteId: 'site-123',
+        prerender: true,
+      };
+      const metadata = {
+        'last-modified-by': 'john@example.com',
+        'created-by': 'admin',
+      };
+
+      const s3Path = await client.uploadMetaconfig('https://example.com/page1', metaconfig, metadata);
+
+      expect(s3Path).to.equal('opportunities/example.com/config');
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Bucket).to.equal('test-bucket');
+      expect(command.input.Key).to.equal('opportunities/example.com/config');
+      expect(command.input.ContentType).to.equal('application/json');
+      expect(JSON.parse(command.input.Body)).to.deep.equal(metaconfig);
+      expect(command.input.Metadata).to.deep.equal(metadata);
+    });
+
+    it('should upload metaconfig without Metadata field when metadata is empty object', async () => {
+      const metaconfig = {
+        siteId: 'site-123',
+        prerender: true,
+      };
+
+      const s3Path = await client.uploadMetaconfig('https://example.com/page1', metaconfig, {});
+
+      expect(s3Path).to.equal('opportunities/example.com/config');
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Bucket).to.equal('test-bucket');
+      expect(command.input.Metadata).to.be.undefined;
+    });
   });
 
   describe('createMetaconfig', () => {
@@ -566,6 +603,50 @@ describe('TokowakaClient', () => {
 
       const command = s3Client.send.firstCall.args[0];
       expect(command.input.Key).to.equal('opportunities/example.com/config');
+    });
+
+    it('should include user-defined metadata when metadata is provided', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      await client.createMetaconfig(url, siteId, {}, { 'last-modified-by': 'john@example.com' });
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.deep.equal({
+        'last-modified-by': 'john@example.com',
+      });
+    });
+
+    it('should not include metadata when metadata is empty object', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      await client.createMetaconfig(url, siteId, {}, {});
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.be.undefined;
+    });
+
+    it('should not include metadata when metadata is not provided', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      await client.createMetaconfig(url, siteId);
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.be.undefined;
     });
   });
 
@@ -1307,6 +1388,47 @@ describe('TokowakaClient', () => {
 
       expect(result).to.have.property('prerender');
       expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should include user-defined metadata when metadata is provided', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+
+      await client.updateMetaconfig(url, siteId, {
+        tokowakaEnabled: true,
+      }, { 'last-modified-by': 'jane@example.com' });
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.deep.equal({
+        'last-modified-by': 'jane@example.com',
+      });
+    });
+
+    it('should not include metadata when metadata is empty object', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+
+      await client.updateMetaconfig(url, siteId, {
+        tokowakaEnabled: true,
+      }, {});
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.be.undefined;
+    });
+
+    it('should not include metadata when metadata is not provided', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+
+      await client.updateMetaconfig(url, siteId, {
+        tokowakaEnabled: true,
+      });
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.be.undefined;
     });
   });
 
@@ -2819,61 +2941,70 @@ describe('TokowakaClient', () => {
       }
     });
 
-    it('should throw error if metaconfig does not exist', async () => {
+    it('should preview suggestions successfully without metaconfig (optional)', async () => {
+      // Override the stub from beforeEach to return null
       client.fetchMetaconfig.resolves(null);
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('No domain-level metaconfig found');
-        expect(error.status).to.equal(500);
-      }
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.config).to.exist;
+      expect(result.html).to.exist;
+      expect(result.html.originalHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(result.html.optimizedHtml).to.equal('<html><body>Test HTML</body></html>');
+
+      // Verify fetch was called without API key (undefined)
+      expect(fetchStub.callCount).to.equal(4); // 2 warmup + 2 actual (original + optimized)
     });
 
-    it('should throw error if metaconfig does not have apiKeys', async () => {
+    it('should preview suggestions successfully without apiKeys in metaconfig (optional)', async () => {
+      // Override the stub from beforeEach
       client.fetchMetaconfig.resolves({
         siteId: 'site-123',
-        // apiKeys missing
+        // apiKeys missing - should work without it
       });
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
-        expect(error.status).to.equal(500);
-      }
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.config).to.exist;
+      expect(result.html).to.exist;
+      expect(result.html.originalHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(result.html.optimizedHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(fetchStub.callCount).to.equal(4);
     });
 
-    it('should throw error if metaconfig has empty apiKeys array', async () => {
+    it('should preview suggestions successfully with empty apiKeys array (optional)', async () => {
+      // Override the stub from beforeEach
       client.fetchMetaconfig.resolves({
         siteId: 'site-123',
         apiKeys: [],
       });
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
-        expect(error.status).to.equal(500);
-      }
-    });
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
 
-    it('should throw error if metaconfig apiKeys first value is empty', async () => {
-      client.fetchMetaconfig.resolves({
-        siteId: 'site-123',
-        apiKeys: ['', 'test-api-key-2'],
-      });
-
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
-        expect(error.status).to.equal(500);
-      }
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.config).to.exist;
+      expect(result.html).to.exist;
+      expect(fetchStub.callCount).to.equal(4);
     });
 
     it('should throw error for unsupported opportunity type', async () => {

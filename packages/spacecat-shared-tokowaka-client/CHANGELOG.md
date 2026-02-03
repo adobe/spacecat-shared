@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.0...@adobe/spacecat-shared-tokowaka-client-v1.7.1) (2026-02-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency mdast-util-to-hast to v13 [security] ([#1201](https://github.com/adobe/spacecat-shared/issues/1201)) ([3678e25](https://github.com/adobe/spacecat-shared/commit/3678e254ea25d393a64260b14599bb02309e1fb8)), closes [#x20](https://github.com/adobe/spacecat-shared/issues/x20)
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.6.1...@adobe/spacecat-shared-tokowaka-client-v1.7.0) (2026-02-02)
+
+
+### Features
+
+* edge optimize status api addition ([#1292](https://github.com/adobe/spacecat-shared/issues/1292)) ([f2c89be](https://github.com/adobe/spacecat-shared/commit/f2c89be3fb4fb2580a13a3a3f7517ce92cf1ce69))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.6.0...@adobe/spacecat-shared-tokowaka-client-v1.6.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* api key now optional for edge-preview ([#1299](https://github.com/adobe/spacecat-shared/issues/1299)) ([76eb046](https://github.com/adobe/spacecat-shared/commit/76eb04640dab752a83909a51827abde1e41fc57e))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.8...@adobe/spacecat-shared-tokowaka-client-v1.6.0) (2026-01-29)
+
+
+### Features
+
+* new flag opted added in edgeoptimizeconfig ([#1294](https://github.com/adobe/spacecat-shared/issues/1294)) ([8386e38](https://github.com/adobe/spacecat-shared/commit/8386e3805e9e67c18e4569428bef7ac5723eb991))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.5.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.7...@adobe/spacecat-shared-tokowaka-client-v1.5.8) (2026-01-27)
 
 

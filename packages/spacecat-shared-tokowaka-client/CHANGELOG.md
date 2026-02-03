@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.0...@adobe/spacecat-shared-tokowaka-client-v1.7.1) (2026-02-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency mdast-util-to-hast to v13 [security] ([#1201](https://github.com/adobe/spacecat-shared/issues/1201)) ([3678e25](https://github.com/adobe/spacecat-shared/commit/3678e254ea25d393a64260b14599bb02309e1fb8)), closes [#x20](https://github.com/adobe/spacecat-shared/issues/x20)
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.6.1...@adobe/spacecat-shared-tokowaka-client-v1.7.0) (2026-02-02)
 
 

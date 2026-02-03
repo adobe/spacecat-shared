@@ -11,9 +11,44 @@
  */
 
 /**
+ * Transforms credential fields object with backwards compatibility
+ * @param {Object} payload - The payload containing credential information
+ * @returns {Object} - Object with credential fields
+ */
+const transformCredentialFields = (payload) => {
+  const fields = {};
+
+  if (payload.currentAccessKey) {
+    fields['Access Key (current)'] = payload.currentAccessKey;
+  } else if (payload.accessKey) {
+    fields['Access Key'] = payload.accessKey;
+  }
+
+  if (payload.currentSecretKey) {
+    fields['Secret Key (current)'] = payload.currentSecretKey;
+  } else if (payload.secretKey) {
+    fields['Secret Key'] = payload.secretKey;
+  }
+
+  if (payload.oldAccessKey) {
+    fields['Access Key (to be retired)'] = payload.oldAccessKey;
+  }
+
+  if (payload.oldSecretKey) {
+    fields['Secret Key (to be retired)'] = payload.oldSecretKey;
+  }
+
+  fields.currentCredentialsCreatedAt = payload.currentCredentialsCreatedAt;
+  fields.currentCredentialsLastUsed = payload.currentCredentialsLastUsed;
+  fields.oldCredentialsCreatedAt = payload.oldCredentialsCreatedAt;
+  fields.oldCredentialsLastUsed = payload.oldCredentialsLastUsed;
+
+  return fields;
+};
+
+/**
  * CDN-specific transformations for log forwarding configuration preparation
  */
-
 const FASTLY_LOG_FORMAT = `{
     "timestamp": "%{strftime(\\{"%Y-%m-%dT%H:%M:%S%z"\\}, time.start)}V",
     "host": "%{if(req.http.Fastly-Orig-Host, req.http.Fastly-Orig-Host, req.http.Host)}V",
@@ -35,8 +70,7 @@ const CDN_TRANSFORMATIONS = {
     Placement: 'Format Version Default',
     'Log format': FASTLY_LOG_FORMAT,
     'Access method': 'User credentials',
-    'Access key': payload.accessKey,
-    'Secret key': payload.secretKey,
+    ...transformCredentialFields(payload),
     Period: 300,
     'Log line format': 'Blank',
     Compression: 'Gzip',
@@ -67,8 +101,7 @@ const CDN_TRANSFORMATIONS = {
     'Log file prefix': '{%Y}-{%m}-{%d}T{%H}:{%M}:{%S}.000',
     'Log file suffix': '.log',
     'Log interval': '60 seconds',
-    'Access key': payload.accessKey,
-    'Secret key': payload.secretKey,
+    ...transformCredentialFields(payload),
     HelpUrl: 'https://techdocs.akamai.com/datastream2/docs/stream-amazon-s3',
   }),
   'byocdn-cloudflare': (payload) => ({
@@ -156,8 +189,7 @@ const CDN_TRANSFORMATIONS = {
     'Bucket name': payload.bucketName,
     Region: payload.region,
     Path: `${payload.allowedPaths?.[0] || ''}<year>/<month>/<day>`,
-    'Access Key': payload.accessKey,
-    'Secret Key': payload.secretKey,
+    ...transformCredentialFields(payload),
     'Timestamp format': 'RFC3339',
     'Log format': 'JSON lines (one log per line)',
     Compression: 'Optional, but prefered. Please use Gzip compression if you decide to compress the log files.',
@@ -206,11 +238,11 @@ const prettifyLogForwardingConfig = (payload) => {
   }
 
   if (payload.logSource === 'byocdn-fastly' || payload.logSource === 'byocdn-akamai' || payload.logSource === 'byocdn-other') {
-    if (!payload.accessKey) {
-      throw new Error('accessKey is required in payload');
+    if (!payload.accessKey && !payload.currentAccessKey) {
+      throw new Error('accessKey or currentAccessKey is required in payload');
     }
-    if (!payload.secretKey) {
-      throw new Error('secretKey is required in payload');
+    if (!payload.secretKey && !payload.currentSecretKey) {
+      throw new Error('secretKey or currentSecretKey is required in payload');
     }
   }
 

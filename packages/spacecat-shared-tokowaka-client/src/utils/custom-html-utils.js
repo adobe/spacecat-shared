@@ -104,7 +104,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
  * Fetches HTML content from edge with warmup call and retry logic
  * Makes an initial warmup call, waits, then makes the actual call with retries
  * @param {string} url - Full URL to fetch
- * @param {string} apiKey - Edge Optimize API key
+ * @param {string} apiKey - Edge Optimize API key (optional)
  * @param {string} forwardedHost - Host to forward in x-forwarded-host header
  * @param {string} edgeUrl - Edge URL
  * @param {boolean} isOptimized - Whether to fetch optimized HTML (with preview param)
@@ -128,10 +128,6 @@ export async function fetchHtmlWithWarmup(
   // Validate required parameters
   if (!hasText(url)) {
     throw new Error('URL is required for fetching HTML');
-  }
-
-  if (!hasText(apiKey)) {
-    throw new Error('Edge Optimize API key is required for fetching HTML');
   }
 
   if (!hasText(forwardedHost)) {
@@ -158,7 +154,7 @@ export async function fetchHtmlWithWarmup(
 
   const headers = {
     'x-forwarded-host': forwardedHost,
-    'x-edgeoptimize-api-key': apiKey,
+    ...(apiKey && { 'x-edgeoptimize-api-key': apiKey }),
     'x-edgeoptimize-url': urlPath,
     'Accept-Encoding': 'identity', // Disable compression to avoid content-length: 0 issue
   };

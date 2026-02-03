@@ -290,7 +290,7 @@ class TokowakaClient {
    * @param {boolean} options.enhancements - Whether to enable enhancements (default: true)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
-  async createMetaconfig(url, siteId, options = {}) {
+  async createMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -316,8 +316,7 @@ class TokowakaClient {
       patches: {},
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig);
-
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;
@@ -331,7 +330,7 @@ class TokowakaClient {
    * @param {Object} options - Optional configuration
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
-  async updateMetaconfig(url, siteId, options = {}) {
+  async updateMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -371,8 +370,7 @@ class TokowakaClient {
       ...(hasPrerender && { prerender }),
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig);
-
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
     this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;
@@ -382,9 +380,10 @@ class TokowakaClient {
    * Uploads domain-level metaconfig to S3
    * @param {string} url - Full URL (used to extract domain)
    * @param {Object} metaconfig - Metaconfig object (siteId, apiKeys, prerender)
+   * @param {Object} metadata - Optional S3 user-defined metadata (key-value pairs)
    * @returns {Promise<string>} - S3 key of uploaded metaconfig
-   */
-  async uploadMetaconfig(url, metaconfig) {
+  */
+  async uploadMetaconfig(url, metaconfig, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -397,12 +396,19 @@ class TokowakaClient {
     const bucketName = this.deployBucketName;
 
     try {
-      const command = new PutObjectCommand({
+      const putObjectParams = {
         Bucket: bucketName,
         Key: s3Path,
         Body: JSON.stringify(metaconfig, null, 2),
         ContentType: 'application/json',
-      });
+      };
+
+      // Add user-defined metadata if provided
+      if (isNonEmptyObject(metadata)) {
+        putObjectParams.Metadata = metadata;
+      }
+
+      const command = new PutObjectCommand(putObjectParams);
 
       await this.s3Client.send(command);
       this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path}`);
@@ -907,26 +913,13 @@ class TokowakaClient {
     }
 
     // Fetch metaconfig to get API key
-    const metaconfig = await this.fetchMetaconfig(previewUrl);
+    const metaconfig = await this.fetchMetaconfig(previewUrl) || {};
 
-    if (!metaconfig) {
-      throw this.#createError(
-        'No domain-level metaconfig found. '
-        + 'A domain-level metaconfig needs to be created first before previewing suggestions.',
-        HTTP_INTERNAL_SERVER_ERROR,
-      );
+    let apiKey;
+    if (Array.isArray(metaconfig.apiKeys) && metaconfig.apiKeys.length > 0) {
+      [apiKey] = metaconfig.apiKeys;
     }
 
-    const { apiKeys } = metaconfig;
-    if (!Array.isArray(apiKeys) || apiKeys.length === 0 || !hasText(apiKeys[0])) {
-      throw this.#createError(
-        'Metaconfig does not have valid API keys configured. '
-        + 'Please ensure the metaconfig has at least one API key.',
-        HTTP_INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    const apiKey = apiKeys[0];
     const forwardedHost = calculateForwardedHost(previewUrl, this.log);
 
     // Fetch existing deployed configuration for this URL from production S3
@@ -1029,6 +1022,85 @@ class TokowakaClient {
         optimizedHtml,
       },
     };
+  }
+
+  /**
+   * Checks if Edge Optimize is enabled for a specific page path
+   * Follows one level of redirect and retries on failures
+   * @param {Object} site - Site entity
+   * @param {string} path - Path to check (e.g., '/products/chair')
+   * @returns {Promise<Object>} - Status result with edgeOptimizeEnabled flag
+   */
+  async checkEdgeOptimizeStatus(site, path) {
+    if (!isNonEmptyObject(site)) {
+      throw this.#createError('Site is required', HTTP_BAD_REQUEST);
+    }
+
+    if (!hasText(path)) {
+      throw this.#createError('Path is required', HTTP_BAD_REQUEST);
+    }
+
+    const baseURL = getEffectiveBaseURL(site);
+    const targetUrl = new URL(path, baseURL).toString();
+
+    this.log.info(`Checking edge optimize status for ${targetUrl}`);
+
+    const maxRetries = 3;
+    let attempt = 0;
+
+    while (attempt <= maxRetries) {
+      try {
+        this.log.debug(`Attempt ${attempt + 1}/${maxRetries + 1}: Checking edge optimize status for ${targetUrl}`);
+
+        // eslint-disable-next-line no-await-in-loop
+        const response = await fetch(targetUrl, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'chatgpt-user',
+            'fastly-debug': '1',
+          },
+        });
+
+        this.log.debug(`Response status: ${response.status}`);
+
+        const edgeOptimizeEnabled = response.headers.get('x-tokowaka-request-id') !== null
+          || response.headers.get('x-edgeoptimize-request-id') !== null;
+
+        this.log.debug(`Edge optimize headers found: ${edgeOptimizeEnabled}`);
+
+        return {
+          edgeOptimizeEnabled,
+        };
+      } catch (error) {
+        attempt += 1;
+
+        if (attempt > maxRetries) {
+          // All retries exhausted
+          this.log.error(`Failed after ${maxRetries + 1} attempts: ${error.message}`);
+          throw this.#createError(
+            `Failed to check edge optimize status: ${error.message}`,
+            HTTP_INTERNAL_SERVER_ERROR,
+          );
+        }
+
+        // Exponential backoff: 200ms, 400ms, 800ms
+        const delay = 100 * (2 ** attempt);
+        this.log.warn(
+          `Attempt ${attempt} to fetch failed: ${error.message}. Retrying in ${delay}ms...`,
+        );
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((res) => {
+          setTimeout(res, delay);
+        });
+      }
+    }
+    /* c8 ignore start */
+    // This should never be reached, but needed for consistent-return
+    throw this.#createError(
+      'Failed to check edge optimize status after all retries',
+      HTTP_INTERNAL_SERVER_ERROR,
+    );
+    /* c8 ignore stop */
   }
 }
 

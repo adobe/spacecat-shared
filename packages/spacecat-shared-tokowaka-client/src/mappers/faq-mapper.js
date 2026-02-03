@@ -108,19 +108,7 @@ export default class FaqMapper extends BaseOpportunityMapper {
     const firstData = firstSuggestion.getData();
     const { headingText = 'FAQs', transformRules } = firstData;
 
-    // Calculate the most recent lastUpdated from all eligible suggestions
-    // The heading patch should have the same timestamp as the newest FAQ
-    const maxLastUpdated = Math.max(...eligibleSuggestions.map((suggestion) => {
-      const updatedAt = suggestion.getUpdatedAt();
-
-      if (updatedAt) {
-        const parsed = new Date(updatedAt).getTime();
-        return Number.isNaN(parsed) ? Date.now() : parsed;
-      }
-      return Date.now();
-    }));
-
-    // Always create/update heading patch with latest timestamp
+    // Always create/update heading patch
     // mergePatches will replace existing heading if it already exists
     this.log.debug(`Creating/updating heading patch for ${urlPath}`);
 
@@ -135,7 +123,7 @@ export default class FaqMapper extends BaseOpportunityMapper {
       opportunityId,
       // No suggestionId for FAQ heading patch
       prerenderRequired: this.requiresPrerender(),
-      lastUpdated: maxLastUpdated,
+      lastUpdated: Date.now(),
       op: transformRules.action,
       selector: transformRules.selector,
       value: headingHast,

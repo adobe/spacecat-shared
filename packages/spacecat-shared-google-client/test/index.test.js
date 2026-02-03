@@ -149,6 +149,67 @@ describe('GoogleClient', () => {
         expect(error.message).to.equal('Error creating GoogleClient: Token refresh failed');
       }
     });
+
+    it('should use LLMO credentials when x-client-type header is llm-optimizer-ui', async () => {
+      const llmoContext = {
+        ...context,
+        env: {
+          ...context.env,
+          LLMO_GOOGLE_CLIENT_ID: 'llmoClientId',
+          LLMO_GOOGLE_CLIENT_SECRET: 'llmoClientSecret',
+          LLMO_GOOGLE_REDIRECT_URI: 'llmoRedirectUri',
+        },
+        pathInfo: {
+          headers: {
+            'x-client-type': 'llm-optimizer-ui',
+          },
+        },
+      };
+      stubSecretManager(defaultConfig);
+
+      const googleClient = await GoogleClient.createFrom(llmoContext, baseURL);
+
+      expect(googleClient).to.be.instanceOf(GoogleClient);
+    });
+
+    it('should use default credentials when x-client-type header is not llm-optimizer-ui', async () => {
+      const nonLlmoContext = {
+        ...context,
+        pathInfo: {
+          headers: {
+            'x-client-type': 'sites-optimizer-ui',
+          },
+        },
+      };
+      stubSecretManager(defaultConfig);
+
+      const googleClient = await GoogleClient.createFrom(nonLlmoContext, baseURL);
+
+      expect(googleClient).to.be.instanceOf(GoogleClient);
+    });
+
+    it('should use custom LLMO_CLIENT_TYPE env var for matching', async () => {
+      const customLlmoContext = {
+        ...context,
+        env: {
+          ...context.env,
+          LLMO_CLIENT_TYPE: 'custom-llmo-client',
+          LLMO_GOOGLE_CLIENT_ID: 'llmoClientId',
+          LLMO_GOOGLE_CLIENT_SECRET: 'llmoClientSecret',
+          LLMO_GOOGLE_REDIRECT_URI: 'llmoRedirectUri',
+        },
+        pathInfo: {
+          headers: {
+            'x-client-type': 'custom-llmo-client',
+          },
+        },
+      };
+      stubSecretManager(defaultConfig);
+
+      const googleClient = await GoogleClient.createFrom(customLlmoContext, baseURL);
+
+      expect(googleClient).to.be.instanceOf(GoogleClient);
+    });
   });
 
   describe('getOrganicSearchData', () => {

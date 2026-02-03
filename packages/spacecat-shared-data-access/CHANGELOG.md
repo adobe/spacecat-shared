@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.100.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.1...@adobe/spacecat-shared-data-access-v2.100.2) (2026-02-03)
+
+
+### Bug Fixes
+
+* opted changed to timestamp ([#1306](https://github.com/adobe/spacecat-shared/issues/1306)) ([24d34dc](https://github.com/adobe/spacecat-shared/commit/24d34dc9353460043441335ddb4f2a4f8b41584f))
+
 # [@adobe/spacecat-shared-data-access-v2.100.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.0...@adobe/spacecat-shared-data-access-v2.100.1) (2026-02-02)
 
 

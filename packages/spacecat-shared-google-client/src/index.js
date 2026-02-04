@@ -73,11 +73,6 @@ export default class GoogleClient {
       const response = await client.send(command);
       const secrets = JSON.parse(response.SecretString);
 
-      // Check if request is from LLMO UI to use different OAuth client
-      const clientType = context.pathInfo?.headers?.['x-client-type'];
-      const llmoClientType = context.env.LLMO_CLIENT_TYPE || 'llm-optimizer-ui';
-      const isLlmoClient = clientType === llmoClientType;
-
       const config = {
         accessToken: secrets.access_token,
         refreshToken: secrets.refresh_token,
@@ -85,15 +80,9 @@ export default class GoogleClient {
         expiryDate: secrets.expiry_date,
         siteUrl: secrets.site_url,
         baseUrl: baseURL,
-        clientId: isLlmoClient
-          ? context.env.LLMO_GOOGLE_CLIENT_ID
-          : context.env.GOOGLE_CLIENT_ID,
-        clientSecret: isLlmoClient
-          ? context.env.LLMO_GOOGLE_CLIENT_SECRET
-          : context.env.GOOGLE_CLIENT_SECRET,
-        redirectUri: isLlmoClient
-          ? context.env.LLMO_GOOGLE_REDIRECT_URI
-          : context.env.GOOGLE_REDIRECT_URI,
+        clientId: context.env.GOOGLE_CLIENT_ID,
+        clientSecret: context.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: context.env.GOOGLE_REDIRECT_URI,
       };
 
       const googleClient = new GoogleClient(config, context.log);

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-tokowaka-client",
-  "version": "1.7.0",
+  "version": "1.7.3",
   "description": "Tokowaka Client for SpaceCat - Edge optimization config management",
   "type": "module",
   "engines": {
@@ -38,7 +38,7 @@
     "@aws-sdk/client-cloudfront": "3.940.0",
     "@aws-sdk/client-s3": "3.940.0",
     "mdast-util-from-markdown": "2.0.2",
-    "mdast-util-to-hast": "12.3.0",
+    "mdast-util-to-hast": "13.2.1",
     "uuid": "11.0.5"
   },
   "devDependencies": {

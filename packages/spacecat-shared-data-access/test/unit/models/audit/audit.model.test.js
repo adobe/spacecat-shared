@@ -211,6 +211,8 @@ describe('AuditModel', () => {
       TOC: 'toc',
       WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
       COMMERCE_PRODUCT_ENRICHMENTS: 'commerce-product-enrichments',
+      COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',
+      COMMERCE_PRODUCT_CATALOG_ENRICHMENT: 'commerce-product-catalog-enrichment',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
@@ -342,10 +344,12 @@ describe('AuditModel', () => {
         options: { someOption: 'someValue' },
         processingType: 'someProcessingType',
         maxScrapeAge: 24,
-        auditData: {
-          siteId: 'someSiteId',
-          completionQueueUrl: 'audit-jobs-queue-url',
-          auditContext: { some: 'context' },
+        metaData: {
+          auditData: {
+            siteId: 'someSiteId',
+            completionQueueUrl: 'audit-jobs-queue-url',
+            auditContext: { some: 'context' },
+          },
         },
       });
     });
@@ -373,10 +377,12 @@ describe('AuditModel', () => {
         processingType: 'someProcessingType',
         maxScrapeAge: 24,
         traceId: '1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e',
-        auditData: {
-          siteId: 'someSiteId',
-          completionQueueUrl: 'audit-jobs-queue-url',
-          auditContext: { some: 'context' },
+        metaData: {
+          auditData: {
+            siteId: 'someSiteId',
+            completionQueueUrl: 'audit-jobs-queue-url',
+            auditContext: { some: 'context' },
+          },
         },
       });
     });

@@ -187,7 +187,7 @@ export default class ScrapeClient {
         customHeaders,
         processingType = ScrapeJobModel.ScrapeProcessingType.DEFAULT,
         maxScrapeAge = 24,
-        auditData = {},
+        metaData = {},
       } = data;
 
       this.config.log.debug(`Creating a new scrape job with ${urls.length} URLs.`);
@@ -205,7 +205,7 @@ export default class ScrapeClient {
         mergedOptions,
         customHeaders,
         maxScrapeAge,
-        auditData,
+        metaData,
       );
       return ScrapeJobDto.toJSON(job);
     } catch (error) {

@@ -211,6 +211,8 @@ describe('AuditModel', () => {
       TOC: 'toc',
       WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
       COMMERCE_PRODUCT_ENRICHMENTS: 'commerce-product-enrichments',
+      COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',
+      COMMERCE_PRODUCT_CATALOG_ENRICHMENT: 'commerce-product-catalog-enrichment',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.0...@adobe/spacecat-shared-google-client-v1.5.1) (2026-02-04)
+
+
+### Bug Fixes
+
+* llmo auth client ([#1312](https://github.com/adobe/spacecat-shared/issues/1312)) ([8662248](https://github.com/adobe/spacecat-shared/commit/8662248d6a1987b95d8f3c09fff8621d9bf16215))
+
 # [@adobe/spacecat-shared-google-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.63...@adobe/spacecat-shared-google-client-v1.5.0) (2026-02-03)
 
 

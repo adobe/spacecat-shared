@@ -949,6 +949,12 @@ class TokowakaClient {
       };
     }
 
+    // preview for all: never drop stale suggestions that are being previewed
+    newConfig.patches = newConfig.patches.map((patch) => ({
+      ...patch,
+      applyStale: true,
+    }));
+
     // Merge with existing deployed config to include already-deployed patches for this URL
     let config = newConfig;
     if (existingConfig && existingConfig.patches?.length > 0) {

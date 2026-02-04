@@ -88,20 +88,13 @@ export default class BaseOpportunityMapper {
    * @returns {Object} - Base patch object
    */
   createBasePatch(suggestion, opportunityId) {
-    const updatedAt = suggestion.getUpdatedAt();
-
-    // Parse timestamp, fallback to Date.now() if invalid
-    let lastUpdated = Date.now();
-    if (updatedAt) {
-      const parsed = new Date(updatedAt).getTime();
-      lastUpdated = Number.isNaN(parsed) ? Date.now() : parsed;
-    }
-
     return {
       opportunityId,
       suggestionId: suggestion.getId(),
       prerenderRequired: this.requiresPrerender(),
-      lastUpdated,
+      // the lastUpdated is kept as 'now' assuming the user has reviewed
+      // the suggestion being deployed, we will revisit this if need arises.
+      lastUpdated: Date.now(),
     };
   }
 

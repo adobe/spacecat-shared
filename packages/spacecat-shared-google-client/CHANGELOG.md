@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-google-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.0...@adobe/spacecat-shared-google-client-v1.5.1) (2026-02-04)
+
+
+### Bug Fixes
+
+* llmo auth client ([#1312](https://github.com/adobe/spacecat-shared/issues/1312)) ([8662248](https://github.com/adobe/spacecat-shared/commit/8662248d6a1987b95d8f3c09fff8621d9bf16215))
+
+# [@adobe/spacecat-shared-google-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.63...@adobe/spacecat-shared-google-client-v1.5.0) (2026-02-03)
+
+
+### Features
+
+* **google-client:** support separate OAuth client for LLMO UI ([#1311](https://github.com/adobe/spacecat-shared/issues/1311)) ([656d9e8](https://github.com/adobe/spacecat-shared/commit/656d9e8a8c7c6c2e0ce563f369aa4b1bcd629828))
+
 # [@adobe/spacecat-shared-google-client-v1.4.63](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.62...@adobe/spacecat-shared-google-client-v1.4.63) (2026-01-29)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-scrape-client-v2.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.7...@adobe/spacecat-shared-scrape-client-v2.4.0) (2026-02-04)
+
+
+### Features
+
+* scrape client slack message ([#1314](https://github.com/adobe/spacecat-shared/issues/1314)) ([bcf2e83](https://github.com/adobe/spacecat-shared/commit/bcf2e8369743c97a3cd1f4d512a69f0f5abedd6b))
+
 # [@adobe/spacecat-shared-scrape-client-v2.3.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.6...@adobe/spacecat-shared-scrape-client-v2.3.7) (2026-01-29)
 
 

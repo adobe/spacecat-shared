@@ -43,8 +43,7 @@ export interface SentimentGuideline extends BaseModel {
 
 export interface SentimentGuidelineCollection extends BaseCollection<SentimentGuideline> {
   findById(siteId: string, guidelineId: string): Promise<SentimentGuideline | null>;
-  allBySiteId(siteId: string): Promise<SentimentGuideline[]>;
-  allBySiteIdPaginated(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentGuideline[]; cursor: string | null }>;
+  allBySiteId(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentGuideline[]; cursor: string | null }>;
   allBySiteIdEnabled(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentGuideline[]; cursor: string | null }>;
   allBySiteIdAndAuditType(siteId: string, auditType: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentGuideline[]; cursor: string | null }>;
   findByIds(siteId: string, guidelineIds: string[]): Promise<SentimentGuideline[]>;

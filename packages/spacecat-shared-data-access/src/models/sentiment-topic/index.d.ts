@@ -41,8 +41,7 @@ export interface SentimentTopic extends BaseModel {
 
 export interface SentimentTopicCollection extends BaseCollection<SentimentTopic> {
   findById(siteId: string, topicId: string): Promise<SentimentTopic | null>;
-  allBySiteId(siteId: string): Promise<SentimentTopic[]>;
-  allBySiteIdPaginated(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentTopic[]; cursor: string | null }>;
+  allBySiteId(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentTopic[]; cursor: string | null }>;
   allBySiteIdEnabled(siteId: string, options?: { limit?: number; cursor?: string }): Promise<{ data: SentimentTopic[]; cursor: string | null }>;
   removeForSiteId(siteId: string): Promise<void>;
 }

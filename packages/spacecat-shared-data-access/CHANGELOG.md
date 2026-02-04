@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.101.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.2...@adobe/spacecat-shared-data-access-v2.101.0) (2026-02-04)
+
+
+### Features
+
+* update audit destination scrapeClient ([#1313](https://github.com/adobe/spacecat-shared/issues/1313)) ([d050937](https://github.com/adobe/spacecat-shared/commit/d0509370042ec48e8493496ba4b7d52d249c3689))
+
 # [@adobe/spacecat-shared-data-access-v2.100.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.1...@adobe/spacecat-shared-data-access-v2.100.2) (2026-02-03)
 
 

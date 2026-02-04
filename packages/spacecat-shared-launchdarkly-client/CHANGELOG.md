@@ -1,3 +1,10 @@
+# @adobe/spacecat-shared-launchdarkly-client-v1.0.0 (2026-02-04)
+
+
+### Bug Fixes
+
+* introduce Ld support libs ([#1316](https://github.com/adobe/spacecat-shared/issues/1316)) ([76efb22](https://github.com/adobe/spacecat-shared/commit/76efb22e5dc088deef1054cf2a4b2ea4842b4517))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

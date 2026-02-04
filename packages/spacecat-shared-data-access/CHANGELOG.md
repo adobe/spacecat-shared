@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.103.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.102.0...@adobe/spacecat-shared-data-access-v2.103.0) (2026-02-04)
+
+
+### Features
+
+* add brand sentiment guidelines ([#1297](https://github.com/adobe/spacecat-shared/issues/1297)) ([93f0a1d](https://github.com/adobe/spacecat-shared/commit/93f0a1dada56c1a3b6c40cff32a4b7be186e82e6))
+
 # [@adobe/spacecat-shared-data-access-v2.102.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.101.0...@adobe/spacecat-shared-data-access-v2.102.0) (2026-02-04)
 
 

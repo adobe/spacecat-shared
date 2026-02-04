@@ -92,6 +92,8 @@ export default class BaseOpportunityMapper {
       opportunityId,
       suggestionId: suggestion.getId(),
       prerenderRequired: this.requiresPrerender(),
+      // the lastUpdated is kept as 'now' assuming the user has reviewed
+      // the suggestion being deployed, we will revisit this if need arises.
       lastUpdated: Date.now(),
     };
   }

@@ -30,8 +30,6 @@ const NAVIGATION_FOOTER_SELECTOR = [
   // Header/footer classes
   '.header', '.site-header', '.page-header', '.top-header', '.header-wrapper',
   '.footer', '.site-footer', '.page-footer', '.bottom-footer', '.footer-wrapper',
-  // Breadcrumb navigation
-  '.breadcrumb', '.breadcrumbs',
   // Common ID selectors
   '#nav', '#navigation', '#navbar', '#header', '#footer', '#menu', '#main-menu',
   '#site-header', '#site-footer', '#page-header', '#page-footer',

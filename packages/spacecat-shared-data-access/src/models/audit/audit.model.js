@@ -201,10 +201,13 @@ class Audit extends BaseModel {
           processingType: stepResult.processingType || 'default',
           options: stepResult.options || {},
           maxScrapeAge: isNumber(stepResult.maxScrapeAge) ? stepResult.maxScrapeAge : 24,
-          auditData: {
-            siteId: stepResult.siteId,
-            completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
-            auditContext,
+          metaData: {
+            auditData: {
+              siteId: stepResult.siteId,
+              completionQueueUrl:
+                stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL || '',
+              auditContext,
+            },
           },
         };
 

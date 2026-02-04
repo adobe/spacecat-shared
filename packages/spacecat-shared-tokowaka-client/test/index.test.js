@@ -2871,6 +2871,51 @@ describe('TokowakaClient', () => {
       expect(s3Client.send).to.have.been.calledOnce;
     });
 
+    it('should set applyStale to true for all preview patches', async () => {
+      // Create a scenario with existing deployed patches
+      client.fetchConfig.resolves({
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            op: 'replace',
+            selector: 'h3',
+            value: 'Existing Heading',
+            opportunityId: 'opp-999',
+            suggestionId: 'sugg-999',
+            prerenderRequired: true,
+            lastUpdated: 1234567890,
+          },
+        ],
+      });
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.config).to.exist;
+      expect(result.config.patches).to.have.length(3); // 2 new + 1 existing
+
+      // Verify that all new preview patches have applyStale: true
+      const newPatches = result.config.patches.filter(
+        (p) => p.suggestionId === 'sugg-1' || p.suggestionId === 'sugg-2',
+      );
+      expect(newPatches).to.have.length(2);
+      newPatches.forEach((patch) => {
+        expect(patch.applyStale).to.equal(true);
+      });
+
+      // Existing patch should not have applyStale field
+      const existingPatch = result.config.patches.find((p) => p.suggestionId === 'sugg-999');
+      expect(existingPatch).to.exist;
+      expect(existingPatch.applyStale).to.be.undefined;
+    });
+
     it('should preview prerender-only suggestions with no patches', async () => {
       // Update fetchConfig to return existing config with deployed patches
       client.fetchConfig.resolves({

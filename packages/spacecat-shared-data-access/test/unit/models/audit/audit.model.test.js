@@ -342,10 +342,12 @@ describe('AuditModel', () => {
         options: { someOption: 'someValue' },
         processingType: 'someProcessingType',
         maxScrapeAge: 24,
-        auditData: {
-          siteId: 'someSiteId',
-          completionQueueUrl: 'audit-jobs-queue-url',
-          auditContext: { some: 'context' },
+        metaData: {
+          auditData: {
+            siteId: 'someSiteId',
+            completionQueueUrl: 'audit-jobs-queue-url',
+            auditContext: { some: 'context' },
+          },
         },
       });
     });
@@ -373,10 +375,12 @@ describe('AuditModel', () => {
         processingType: 'someProcessingType',
         maxScrapeAge: 24,
         traceId: '1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e',
-        auditData: {
-          siteId: 'someSiteId',
-          completionQueueUrl: 'audit-jobs-queue-url',
-          auditContext: { some: 'context' },
+        metaData: {
+          auditData: {
+            siteId: 'someSiteId',
+            completionQueueUrl: 'audit-jobs-queue-url',
+            auditContext: { some: 'context' },
+          },
         },
       });
     });

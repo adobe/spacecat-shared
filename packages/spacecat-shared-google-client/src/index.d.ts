@@ -87,4 +87,65 @@ export default class GoogleClient {
    *}
    * */
   listSites(): Promise<JSON>;
+
+  /**
+   * Retrieves information about a specific site in Google Search Console.
+   *
+   * @param {string} siteUrl - The URL of the site to retrieve information for.
+   * @returns {Promise<JSON>} A promise that resolves to the site information.
+   * @throws {Error} If an error occurs while retrieving the site information.
+   * Format: {
+   *  "data": {
+   *    "siteUrl": string,
+   *    "permissionLevel": string
+   *  }
+   *}
+   * */
+  getSite(siteUrl: string): Promise<JSON>;
+
+  /**
+   * Lists all sitemaps submitted for a site in Google Search Console.
+   *
+   * @param {string} [sitemapIndex] - Optional sitemap index URL to filter results.
+   * @returns {Promise<JSON>} A promise that resolves to the list of sitemaps.
+   * @throws {Error} If an error occurs while listing the sitemaps.
+   * Format: {
+   *  "data": {
+   *    "sitemap": [
+   *      {
+   *       "path": string,
+   *       "lastSubmitted": string,
+   *       "isPending": boolean,
+   *       "isSitemapsIndex": boolean,
+   *       "type": string,
+   *       "lastDownloaded": string,
+   *       "warnings": string,
+   *       "errors": string
+   *      }
+   *    ]
+   *  }
+   *}
+   * */
+  listSitemaps(sitemapIndex?: string): Promise<JSON>;
+
+  /**
+   * Retrieves information about a specific sitemap in Google Search Console.
+   *
+   * @param {string} sitemapUrl - The URL of the sitemap to retrieve information for.
+   * @returns {Promise<JSON>} A promise that resolves to the sitemap information.
+   * @throws {Error} If an error occurs while retrieving the sitemap information.
+   * Format: {
+   *  "data": {
+   *    "path": string,
+   *    "lastSubmitted": string,
+   *    "isPending": boolean,
+   *    "isSitemapsIndex": boolean,
+   *    "type": string,
+   *    "lastDownloaded": string,
+   *    "warnings": string,
+   *    "errors": string
+   *  }
+   *}
+   * */
+  getSitemap(sitemapUrl: string): Promise<JSON>;
 }

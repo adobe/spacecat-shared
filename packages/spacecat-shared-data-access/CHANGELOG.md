@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.102.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.101.0...@adobe/spacecat-shared-data-access-v2.102.0) (2026-02-04)
+
+
+### Features
+
+* add new types for commerce product enrichments ([#1317](https://github.com/adobe/spacecat-shared/issues/1317)) ([14a4f10](https://github.com/adobe/spacecat-shared/commit/14a4f104c06ed800cbaa318e72d0106f5398ca85))
+
 # [@adobe/spacecat-shared-data-access-v2.101.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.2...@adobe/spacecat-shared-data-access-v2.101.0) (2026-02-04)
 
 

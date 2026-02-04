@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-html-analyzer-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.1...@adobe/spacecat-shared-html-analyzer-v1.2.2) (2026-01-22)
+
+
+### Bug Fixes
+
+* added option to include noscript tags in server-side html ([#1274](https://github.com/adobe/spacecat-shared/issues/1274)) ([f26e320](https://github.com/adobe/spacecat-shared/commit/f26e3200cc2b129237073da5c7cae1cbfb3ae4b1))
+
+# [@adobe/spacecat-shared-html-analyzer-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.0...@adobe/spacecat-shared-html-analyzer-v1.2.1) (2026-01-15)
+
+
+### Bug Fixes
+
+* html-analyser pkg adding exported methods in typescript file ([#1265](https://github.com/adobe/spacecat-shared/issues/1265)) ([10d173b](https://github.com/adobe/spacecat-shared/commit/10d173b68c3c4158a49465a3f3d7a78b68dccc3b))
+
+# [@adobe/spacecat-shared-html-analyzer-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.1.0...@adobe/spacecat-shared-html-analyzer-v1.2.0) (2025-12-04)
+
+
+### Features
+
+* added utility method to get added blocks in markdown diff, made compatible for nodejs scripts ([#1213](https://github.com/adobe/spacecat-shared/issues/1213)) ([07d8b74](https://github.com/adobe/spacecat-shared/commit/07d8b7419a681f2c5e07870c526ae26d28108989))
+
+# [@adobe/spacecat-shared-html-analyzer-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.7...@adobe/spacecat-shared-html-analyzer-v1.1.0) (2025-12-01)
+
+
+### Features
+
+* added utilities for markdown diff & conversion from LLMO chrome extension ([#1184](https://github.com/adobe/spacecat-shared/issues/1184)) ([dc9867e](https://github.com/adobe/spacecat-shared/commit/dc9867ea4ac0cf9f8bd2fdc3f22ab74cd3e1f12e))
+
+# [@adobe/spacecat-shared-html-analyzer-v1.0.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.6...@adobe/spacecat-shared-html-analyzer-v1.0.7) (2025-11-28)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.0.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.5...@adobe/spacecat-shared-html-analyzer-v1.0.6) (2025-11-15)
 
 

@@ -13,6 +13,8 @@
 import BaseModel from '../base/base.model.js';
 
 class Report extends BaseModel {
+  static ENTITY_NAME = 'Report';
+
   static STATUSES = {
     PROCESSING: 'processing',
     SUCCESS: 'success',

@@ -1,3 +1,185 @@
+# [@adobe/spacecat-shared-utils-v1.90.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.0...@adobe/spacecat-shared-utils-v1.90.1) (2026-01-29)
+
+
+### Bug Fixes
+
+* log warn instead of error if metrics missing ([#1286](https://github.com/adobe/spacecat-shared/issues/1286)) ([e823a7d](https://github.com/adobe/spacecat-shared/commit/e823a7da4ce76c60f3256517f91532d71830f49d))
+
+# [@adobe/spacecat-shared-utils-v1.90.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.89.1...@adobe/spacecat-shared-utils-v1.90.0) (2026-01-29)
+
+
+### Features
+
+* LLMO-1534 Pretty format old and new log forwarding credentials ([#1290](https://github.com/adobe/spacecat-shared/issues/1290)) ([df84629](https://github.com/adobe/spacecat-shared/commit/df84629c1a49e81b43e352eb4b8b542b9eb3085e))
+
+# [@adobe/spacecat-shared-utils-v1.89.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.89.0...@adobe/spacecat-shared-utils-v1.89.1) (2026-01-26)
+
+
+### Bug Fixes
+
+* Additional checks and methods on bot protection ([#1250](https://github.com/adobe/spacecat-shared/issues/1250)) ([0c34a8d](https://github.com/adobe/spacecat-shared/commit/0c34a8d850abef6e2a024132bc1c61d10865c1a0))
+
+# [@adobe/spacecat-shared-utils-v1.89.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.88.0...@adobe/spacecat-shared-utils-v1.89.0) (2026-01-22)
+
+
+### Features
+
+* moved `calculateCpcValue` function to spacecat-shared-utils ([#1048](https://github.com/adobe/spacecat-shared/issues/1048)) ([5006e5b](https://github.com/adobe/spacecat-shared/commit/5006e5be51c8959f2e6d72664251e1e0264d44a1))
+
+# [@adobe/spacecat-shared-utils-v1.88.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.87.1...@adobe/spacecat-shared-utils-v1.88.0) (2026-01-22)
+
+
+### Features
+
+* new json obj in S3 for storing opportunity workspace data ([#1278](https://github.com/adobe/spacecat-shared/issues/1278)) ([68b0db0](https://github.com/adobe/spacecat-shared/commit/68b0db054d9eb43d485cdec9dd55059f8e07318e))
+
+# [@adobe/spacecat-shared-utils-v1.87.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.87.0...@adobe/spacecat-shared-utils-v1.87.1) (2026-01-19)
+
+
+### Bug Fixes
+
+* wrong temporalCondition when traversing year boundary ([#1267](https://github.com/adobe/spacecat-shared/issues/1267)) ([a44003e](https://github.com/adobe/spacecat-shared/commit/a44003ef683ca4477748532a1b84a4c947b7b9eb))
+
+# [@adobe/spacecat-shared-utils-v1.87.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.86.0...@adobe/spacecat-shared-utils-v1.87.0) (2026-01-08)
+
+
+### Features
+
+* propagate traceId across workers for cross-worker tracing ([#1247](https://github.com/adobe/spacecat-shared/issues/1247)) ([f7d194d](https://github.com/adobe/spacecat-shared/commit/f7d194d2a8d23426c9dd66aae33f1118d226e827))
+
+# [@adobe/spacecat-shared-utils-v1.86.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.2...@adobe/spacecat-shared-utils-v1.86.0) (2025-12-12)
+
+
+### Features
+
+* add detection for Akamai, Fastly, and CloudFront ([#1238](https://github.com/adobe/spacecat-shared/issues/1238)) ([3f7aad9](https://github.com/adobe/spacecat-shared/commit/3f7aad96fbc823b2e9d59541a71ba3b4e6d315e8))
+
+# [@adobe/spacecat-shared-utils-v1.85.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.1...@adobe/spacecat-shared-utils-v1.85.2) (2025-12-11)
+
+
+### Bug Fixes
+
+* Implement Structured (JSON) Logging for Spacecat Audits - rollback ([#1239](https://github.com/adobe/spacecat-shared/issues/1239)) ([1f174d7](https://github.com/adobe/spacecat-shared/commit/1f174d7dd188dbdc610b75bf58644992925755b1))
+
+# [@adobe/spacecat-shared-utils-v1.85.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.85.0...@adobe/spacecat-shared-utils-v1.85.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* Structured (JSON) for Logging should be JSON string ([#1237](https://github.com/adobe/spacecat-shared/issues/1237)) ([cfcee6e](https://github.com/adobe/spacecat-shared/commit/cfcee6e4315aa518c52e4ca50b99b0cb762f5a61))
+
+# [@adobe/spacecat-shared-utils-v1.85.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.84.0...@adobe/spacecat-shared-utils-v1.85.0) (2025-12-11)
+
+
+### Features
+
+* add WIKIPEDIA_ANALYSIS audit type and opportunity type ([#1222](https://github.com/adobe/spacecat-shared/issues/1222)) ([5a1b113](https://github.com/adobe/spacecat-shared/commit/5a1b113ff343a930e80bb5aafedbe2b8c5423534))
+
+# [@adobe/spacecat-shared-utils-v1.84.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.83.0...@adobe/spacecat-shared-utils-v1.84.0) (2025-12-10)
+
+
+### Features
+
+* add bot-blocker-detect ([#1233](https://github.com/adobe/spacecat-shared/issues/1233)) ([5d73f1b](https://github.com/adobe/spacecat-shared/commit/5d73f1b07ba5ea9735577b0bb0519d9d1cfd278c))
+
+# [@adobe/spacecat-shared-utils-v1.83.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.3...@adobe/spacecat-shared-utils-v1.83.0) (2025-12-10)
+
+
+### Features
+
+* Implement Structured (JSON) Logging for Spacecat Audits ([#1232](https://github.com/adobe/spacecat-shared/issues/1232)) ([7eae4d6](https://github.com/adobe/spacecat-shared/commit/7eae4d62fe9f0592f8124082fc66e9754803dd2b))
+
+# [@adobe/spacecat-shared-utils-v1.82.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.2...@adobe/spacecat-shared-utils-v1.82.3) (2025-12-10)
+
+
+### Bug Fixes
+
+* heading and toc mappers ([#1230](https://github.com/adobe/spacecat-shared/issues/1230)) ([f767fb3](https://github.com/adobe/spacecat-shared/commit/f767fb319c97ed64848a1c5fc5913693a52290d9))
+
+# [@adobe/spacecat-shared-utils-v1.82.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.1...@adobe/spacecat-shared-utils-v1.82.2) (2025-12-09)
+
+
+### Bug Fixes
+
+* **rum-api-client:** traffic attibution for new llms ([#1229](https://github.com/adobe/spacecat-shared/issues/1229)) ([a6aac37](https://github.com/adobe/spacecat-shared/commit/a6aac37993e4c5e7527d4f1853a137f2ed9c2779))
+
+# [@adobe/spacecat-shared-utils-v1.82.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.82.0...@adobe/spacecat-shared-utils-v1.82.1) (2025-12-05)
+
+
+### Bug Fixes
+
+* 0 week valid month on  numSeries ([#1220](https://github.com/adobe/spacecat-shared/issues/1220)) ([7670da9](https://github.com/adobe/spacecat-shared/commit/7670da9691b2623aa149b1b07c36c97585112ca7))
+
+# [@adobe/spacecat-shared-utils-v1.82.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.81.1...@adobe/spacecat-shared-utils-v1.82.0) (2025-12-03)
+
+
+### Features
+
+* move www url resolver in audit worker to shared utils ([#1207](https://github.com/adobe/spacecat-shared/issues/1207)) ([40dbf3a](https://github.com/adobe/spacecat-shared/commit/40dbf3a18681cd304c168602d74b51c0baf8ead6))
+
+# [@adobe/spacecat-shared-utils-v1.81.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.81.0...@adobe/spacecat-shared-utils-v1.81.1) (2025-11-28)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
+# [@adobe/spacecat-shared-utils-v1.81.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.80.0...@adobe/spacecat-shared-utils-v1.81.0) (2025-11-26)
+
+
+### Features
+
+* add id to prompt in llmo config ([#1172](https://github.com/adobe/spacecat-shared/issues/1172)) ([c5a77dc](https://github.com/adobe/spacecat-shared/commit/c5a77dcaa6cf5f473882d2ba96ee7637961b452b))
+
+# [@adobe/spacecat-shared-utils-v1.80.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.79.0...@adobe/spacecat-shared-utils-v1.80.0) (2025-11-26)
+
+
+### Features
+
+* update schema to store user id and timestamp ([#1170](https://github.com/adobe/spacecat-shared/issues/1170)) ([ad64b9c](https://github.com/adobe/spacecat-shared/commit/ad64b9cbbc581883c16099529e0cd73ca9bfb088))
+
+# [@adobe/spacecat-shared-utils-v1.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.78.1...@adobe/spacecat-shared-utils-v1.79.0) (2025-11-25)
+
+
+### Features
+
+* add globalRegion in the llmo customer configuration ([#1168](https://github.com/adobe/spacecat-shared/issues/1168)) ([88dbf51](https://github.com/adobe/spacecat-shared/commit/88dbf514af54de20cf6b5fa2a2ec0f5e46e045af))
+
+# [@adobe/spacecat-shared-utils-v1.78.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.78.0...@adobe/spacecat-shared-utils-v1.78.1) (2025-11-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1162](https://github.com/adobe/spacecat-shared/issues/1162)) ([f0152c5](https://github.com/adobe/spacecat-shared/commit/f0152c5ecddb75b6b3c6e2f0d756d5fb04171dd3))
+
+# [@adobe/spacecat-shared-utils-v1.78.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.77.1...@adobe/spacecat-shared-utils-v1.78.0) (2025-11-21)
+
+
+### Features
+
+* add aliasMode to llmoConfig schema LLMO-1095 ([#1151](https://github.com/adobe/spacecat-shared/issues/1151)) ([04a1075](https://github.com/adobe/spacecat-shared/commit/04a10753ce4806dea49015dde022747613db535a))
+
+# [@adobe/spacecat-shared-utils-v1.77.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.77.0...@adobe/spacecat-shared-utils-v1.77.1) (2025-11-20)
+
+
+### Bug Fixes
+
+* **utils:** correct logWrapper format string handling ([#1156](https://github.com/adobe/spacecat-shared/issues/1156)) ([dabe38c](https://github.com/adobe/spacecat-shared/commit/dabe38c258b2a221c6733165657e856d978e5636))
+
+# [@adobe/spacecat-shared-utils-v1.77.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.76.0...@adobe/spacecat-shared-utils-v1.77.0) (2025-11-20)
+
+
+### Features
+
+* utils function getTemporalCondition extended ([#1155](https://github.com/adobe/spacecat-shared/issues/1155)) ([aad2d1c](https://github.com/adobe/spacecat-shared/commit/aad2d1c7229e98c7e45f07a541c81c1d4cf7c0c4))
+
+# [@adobe/spacecat-shared-utils-v1.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.75.0...@adobe/spacecat-shared-utils-v1.76.0) (2025-11-20)
+
+
+### Features
+
+* **utils,http-utils:** trigger release for trace ID propagation ([#1154](https://github.com/adobe/spacecat-shared/issues/1154)) ([fb48149](https://github.com/adobe/spacecat-shared/commit/fb481497725e49dab18812b4ba1ba7186e35a8f9)), closes [#1152](https://github.com/adobe/spacecat-shared/issues/1152) [#1152](https://github.com/adobe/spacecat-shared/issues/1152) [#1097](https://github.com/adobe/spacecat-shared/issues/1097) [#1097](https://github.com/adobe/spacecat-shared/issues/1097) [#1097](https://github.com/adobe/spacecat-shared/issues/1097) [#1152](https://github.com/adobe/spacecat-shared/issues/1152) [adobe/spacecat-audit-worker#1520](https://github.com/adobe/spacecat-audit-worker/issues/1520)
+
 # [@adobe/spacecat-shared-utils-v1.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.74.0...@adobe/spacecat-shared-utils-v1.75.0) (2025-11-19)
 
 

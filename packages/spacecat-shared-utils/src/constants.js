@@ -64,4 +64,9 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
 
   // Paid Cookie Consent
   PAID_COOKIE_CONSENT: 'paid-cookie-consent',
+
+  // Wikipedia Analysis (LLMO)
+  WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
 });
+
+export const DEFAULT_CPC_VALUE = 1.5;

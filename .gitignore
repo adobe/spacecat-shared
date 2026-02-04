@@ -139,7 +139,11 @@ junit
 # Mac OS
 .DS_Store
 
-# NVM (Node Version Manager)
-.nvmrc
 .vscode
-.cursor
+xunit.xml
+
+# Cursor
+.cursor/*
+!.cursor/rules/
+!.cursor/commands/
+.cursor/commands/speckit.*

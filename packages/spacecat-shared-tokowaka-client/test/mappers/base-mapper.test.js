@@ -68,7 +68,6 @@ describe('BaseOpportunityMapper', () => {
       const testMapper = new TestMapper(log);
       const suggestion = {
         getId: () => 'test-123',
-        getData: () => ({}),
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
       };
 
@@ -94,7 +93,6 @@ describe('BaseOpportunityMapper', () => {
       const testMapper = new TestMapper(log);
       const suggestion = {
         getId: () => 'test-no-date',
-        getData: () => ({}),
         getUpdatedAt: () => null, // Returns null
       };
 
@@ -107,54 +105,6 @@ describe('BaseOpportunityMapper', () => {
       expect(patch.lastUpdated).to.be.at.least(beforeTime);
       expect(patch.lastUpdated).to.be.at.most(afterTime);
       expect(patch.prerenderRequired).to.be.true;
-    });
-
-    it('should prioritize scrapedAt from getData()', () => {
-      class TestMapper extends BaseOpportunityMapper {
-        getOpportunityType() { return 'test'; }
-
-        requiresPrerender() { return true; }
-
-        suggestionsToPatches() { return []; }
-
-        canDeploy() { return { eligible: true }; }
-      }
-
-      const testMapper = new TestMapper(log);
-      const scrapedTime = '2025-01-20T15:30:00.000Z';
-      const suggestion = {
-        getId: () => 'test-scraped',
-        getData: () => ({ scrapedAt: scrapedTime }),
-        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
-      };
-
-      const patch = testMapper.createBasePatch(suggestion, 'opp-scraped');
-
-      expect(patch.lastUpdated).to.equal(new Date(scrapedTime).getTime());
-    });
-
-    it('should use transformRules.scrapedAt when scrapedAt is not available', () => {
-      class TestMapper extends BaseOpportunityMapper {
-        getOpportunityType() { return 'test'; }
-
-        requiresPrerender() { return true; }
-
-        suggestionsToPatches() { return []; }
-
-        canDeploy() { return { eligible: true }; }
-      }
-
-      const testMapper = new TestMapper(log);
-      const transformScrapedTime = '2025-01-18T12:00:00.000Z';
-      const suggestion = {
-        getId: () => 'test-transform',
-        getData: () => ({ transformRules: { scrapedAt: transformScrapedTime } }),
-        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
-      };
-
-      const patch = testMapper.createBasePatch(suggestion, 'opp-transform');
-
-      expect(patch.lastUpdated).to.equal(new Date(transformScrapedTime).getTime());
     });
 
     it('should handle invalid date strings by using Date.now()', () => {
@@ -171,7 +121,6 @@ describe('BaseOpportunityMapper', () => {
       const testMapper = new TestMapper(log);
       const suggestion = {
         getId: () => 'test-invalid',
-        getData: () => ({}),
         getUpdatedAt: () => 'invalid-date-string',
       };
 
@@ -183,8 +132,12 @@ describe('BaseOpportunityMapper', () => {
       expect(patch.lastUpdated).to.be.at.least(beforeTime);
       expect(patch.lastUpdated).to.be.at.most(afterTime);
     });
+  });
 
-    it('should handle missing getData() gracefully', () => {
+  describe('rollbackPatches', () => {
+    let testMapper;
+
+    beforeEach(() => {
       class TestMapper extends BaseOpportunityMapper {
         getOpportunityType() { return 'test'; }
 
@@ -195,16 +148,132 @@ describe('BaseOpportunityMapper', () => {
         canDeploy() { return { eligible: true }; }
       }
 
-      const testMapper = new TestMapper(log);
-      const suggestion = {
-        getId: () => 'test-no-data',
-        getData: () => null,
-        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+      testMapper = new TestMapper(log);
+    });
+
+    it('should remove patches by suggestion IDs using default implementation', () => {
+      const config = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-1',
+            op: 'replace',
+            value: 'value-1',
+          },
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-2',
+            op: 'replace',
+            value: 'value-2',
+          },
+        ],
       };
 
-      const patch = testMapper.createBasePatch(suggestion, 'opp-no-data');
+      const result = testMapper.rollbackPatches(config, ['sugg-1'], 'opp-test');
 
-      expect(patch.lastUpdated).to.equal(new Date('2025-01-15T10:00:00.000Z').getTime());
+      expect(result.patches).to.have.lengthOf(1);
+      expect(result.patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.removedCount).to.equal(1);
+    });
+
+    it('should handle null/undefined config gracefully', () => {
+      const result1 = testMapper.rollbackPatches(null, ['sugg-1'], 'opp-test');
+      expect(result1).to.be.null;
+
+      const result2 = testMapper.rollbackPatches(undefined, ['sugg-1'], 'opp-test');
+      expect(result2).to.be.undefined;
+    });
+
+    it('should remove patches for multiple suggestion IDs', () => {
+      const config = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-1',
+            op: 'replace',
+            value: 'value-1',
+          },
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-2',
+            op: 'replace',
+            value: 'value-2',
+          },
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-3',
+            op: 'replace',
+            value: 'value-3',
+          },
+        ],
+      };
+
+      const result = testMapper.rollbackPatches(config, ['sugg-1', 'sugg-3'], 'opp-test');
+
+      expect(result.patches).to.have.lengthOf(1);
+      expect(result.patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.removedCount).to.equal(2);
+    });
+
+    it('should remove URL path when all patches are removed', () => {
+      const config = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-1',
+            op: 'replace',
+            value: 'value-1',
+          },
+        ],
+      };
+
+      const result = testMapper.rollbackPatches(config, ['sugg-1'], 'opp-test');
+
+      // All patches removed, patches array should be empty
+      expect(result.patches).to.have.lengthOf(0);
+      expect(result.removedCount).to.equal(1);
+    });
+
+    it('should preserve patches from other opportunities', () => {
+      const config = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-test',
+            suggestionId: 'sugg-1',
+            op: 'replace',
+            value: 'test-value',
+          },
+          {
+            opportunityId: 'opp-other',
+            suggestionId: 'sugg-2',
+            op: 'replace',
+            value: 'other-value',
+          },
+        ],
+      };
+
+      // Default implementation removes by suggestionId regardless of opportunity
+      const result = testMapper.rollbackPatches(config, ['sugg-1'], 'opp-test');
+
+      expect(result.patches).to.have.lengthOf(1);
+      expect(result.patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.removedCount).to.equal(1);
     });
   });
 });

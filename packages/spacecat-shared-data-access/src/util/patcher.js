@@ -138,13 +138,31 @@ class Patcher {
   }
 
   /**
+   * Gets the primary key values for the entity from the schema's primary index.
+   * This supports composite primary keys (e.g., siteId + url).
+   * @return {Object} - An object containing the primary key values.
+   * @private
+   */
+  #getPrimaryKeyValues() {
+    const primaryKeys = this.schema.getIndexKeys('primary');
+    if (isNonEmptyArray(primaryKeys)) {
+      return primaryKeys.reduce((acc, key) => {
+        acc[key] = this.record[key];
+        return acc;
+      }, {});
+    }
+    // Fallback to default id name
+    return { [this.idName]: this.record[this.idName] };
+  }
+
+  /**
    * Gets the patch record for the entity. If it does not exist, it will be created.
    * @return {Object} - The patch record for the entity.
    * @private
    */
   #getPatchRecord() {
     if (!this.patchRecord) {
-      this.patchRecord = this.entity.patch({ [this.idName]: this.record[this.idName] });
+      this.patchRecord = this.entity.patch(this.#getPrimaryKeyValues());
     }
     return this.patchRecord;
   }

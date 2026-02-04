@@ -13,17 +13,18 @@
 import { isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
-import BaseModel from '../base/base.model.js';
 import { Entitlement } from '../entitlement/index.js';
 
 /**
- * Configuration - A class representing an Configuration entity.
- * Provides methods to access and manipulate Configuration-specific data.
+ * Configuration - A standalone class representing the global Configuration entity.
+ * This is a singleton entity stored in S3 with versioning.
+ * Unlike other entities, Configuration does not use ElectroDB or DynamoDB.
  *
  * @class Configuration
- * @extends BaseModel
  */
-class Configuration extends BaseModel {
+class Configuration {
+  static ENTITY_NAME = 'Configuration';
+
   static JOB_GROUPS = {
     AUDITS: 'audits',
     IMPORTS: 'imports',
@@ -34,6 +35,7 @@ class Configuration extends BaseModel {
   static JOB_INTERVALS = {
     NEVER: 'never', // allows to enable imports without scheduling them.
     EVERY_HOUR: 'every-hour',
+    TWO_HOURS: 'two-hours',
     TWENTY_PAST: 'twenty-past',
     DAILY: 'daily',
     DAILY_1AM: 'daily-1am',
@@ -45,13 +47,85 @@ class Configuration extends BaseModel {
     FORTNIGHTLY_SATURDAY: 'fortnightly-saturday',
     FORTNIGHTLY_SUNDAY: 'fortnightly-sunday',
     MONTHLY: 'monthly',
+    QUARTERLY: 'quarterly',
   };
 
   static AUDIT_NAME_REGEX = /^[a-z0-9-]+$/;
 
   static AUDIT_NAME_MAX_LENGTH = 37;
 
-  // add your custom methods or overrides here
+  constructor(data, versionId, collection, log) {
+    this.handlers = data.handlers;
+    this.jobs = data.jobs;
+    this.queues = data.queues;
+    this.slackRoles = data.slackRoles;
+    this.createdAt = data.createdAt;
+    this.updatedAt = data.updatedAt;
+    this.updatedBy = data.updatedBy;
+    this.versionId = versionId;
+    this.collection = collection;
+    this.log = log;
+  }
+
+  getId() {
+    return this.versionId;
+  }
+
+  getConfigurationId() {
+    return this.versionId;
+  }
+
+  getVersion() {
+    return this.versionId;
+  }
+
+  getCreatedAt() {
+    return this.createdAt;
+  }
+
+  getUpdatedAt() {
+    return this.updatedAt;
+  }
+
+  getUpdatedBy() {
+    return this.updatedBy;
+  }
+
+  setUpdatedBy(updatedBy) {
+    this.updatedBy = updatedBy;
+  }
+
+  getHandlers() {
+    return this.handlers;
+  }
+
+  setHandlers(handlers) {
+    this.handlers = handlers;
+  }
+
+  getJobs() {
+    return this.jobs;
+  }
+
+  setJobs(jobs) {
+    this.jobs = jobs;
+  }
+
+  getQueues() {
+    return this.queues;
+  }
+
+  setQueues(queues) {
+    this.queues = queues;
+  }
+
+  getSlackRoles() {
+    return this.slackRoles;
+  }
+
+  setSlackRoles(slackRoles) {
+    this.slackRoles = slackRoles;
+  }
 
   getHandler(type) {
     return this.getHandlers()?.[type];
@@ -159,6 +233,7 @@ class Configuration extends BaseModel {
     if (enabled) {
       if (handler.enabledByDefault) {
         handler.disabled[entityKey] = handler.disabled[entityKey]
+          /* c8 ignore next */
           .filter((id) => id !== entityId) || [];
       } else {
         handler.enabled[entityKey] = Array
@@ -168,6 +243,7 @@ class Configuration extends BaseModel {
       handler.disabled[entityKey] = Array
         .from(new Set([...(handler.disabled[entityKey] || []), entityId]));
     } else {
+      /* c8 ignore next */
       handler.enabled[entityKey] = handler.enabled[entityKey].filter((id) => id !== entityId) || [];
     }
 
@@ -268,6 +344,7 @@ class Configuration extends BaseModel {
     if (!isNonEmptyObject(queues)) {
       throw new Error('Queues configuration cannot be empty');
     }
+    /* c8 ignore next */
     const existingQueues = this.getQueues() || {};
     const mergedQueues = { ...existingQueues, ...queues };
     this.setQueues(mergedQueues);
@@ -494,7 +571,19 @@ class Configuration extends BaseModel {
   }
 
   async save() {
-    return this.collection.create(sanitizeIdAndAuditFields(this.constructor.name, this.toJSON()));
+    return this.collection.create(sanitizeIdAndAuditFields('Configuration', this.toJSON()));
+  }
+
+  toJSON() {
+    return {
+      handlers: this.handlers,
+      jobs: this.jobs,
+      queues: this.queues,
+      slackRoles: this.slackRoles,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      updatedBy: this.updatedBy,
+    };
   }
 }
 

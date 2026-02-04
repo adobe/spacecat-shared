@@ -744,7 +744,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
               question: 'Old Q?',
               answer: 'Old A.',
             },
-            tokowakaDeployed: 1704884400000,
             transformRules: {
               action: 'appendChild',
               selector: 'main',
@@ -1154,7 +1153,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
     });
   });
 
-  describe('tokowakaDeployed filtering', () => {
+  describe('edgeDeployed filtering', () => {
     it('should always create heading patch even when FAQ already deployed for URL', () => {
       const newSuggestion = {
         getId: () => 'sugg-new-1',
@@ -1319,6 +1318,110 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       expect(patches.length).to.equal(2); // heading + FAQ
       expect(patches[0].suggestionId).to.be.undefined; // heading
       expect(patches[1].suggestionId).to.equal('sugg-new-1'); // FAQ
+    });
+  });
+
+  describe('rollbackPatches', () => {
+    it('should remove FAQ heading when last FAQ suggestion is rolled back', () => {
+      const config = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-faq',
+            // FAQ heading patch (no suggestionId)
+            op: 'appendChild',
+            selector: 'body',
+            value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'FAQs' }] },
+          },
+          {
+            opportunityId: 'opp-faq',
+            suggestionId: 'sugg-1',
+            op: 'appendChild',
+            value: { type: 'element', tagName: 'div' },
+          },
+        ],
+      };
+
+      const result = mapper.rollbackPatches(config, ['sugg-1'], 'opp-faq');
+
+      // Both FAQ item and heading should be removed
+      expect(result.patches).to.have.lengthOf(0);
+      expect(result.removedCount).to.equal(2);
+    });
+
+    it('should keep FAQ heading when other FAQ suggestions remain', () => {
+      const config = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            opportunityId: 'opp-faq',
+            // FAQ heading patch
+            op: 'appendChild',
+            selector: 'body',
+            value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'FAQs' }] },
+          },
+          {
+            opportunityId: 'opp-faq',
+            suggestionId: 'sugg-1',
+            op: 'appendChild',
+            value: { type: 'element', tagName: 'div' },
+          },
+          {
+            opportunityId: 'opp-faq',
+            suggestionId: 'sugg-2',
+            op: 'appendChild',
+            value: { type: 'element', tagName: 'div' },
+          },
+        ],
+      };
+
+      const result = mapper.rollbackPatches(config, ['sugg-1'], 'opp-faq');
+
+      // Only sugg-1 removed, heading and sugg-2 remain
+      expect(result.patches).to.have.lengthOf(2);
+      expect(result.patches[0]).to.not.have.property('suggestionId'); // Heading
+      expect(result.patches[1].suggestionId).to.equal('sugg-2');
+      expect(result.removedCount).to.equal(1);
+    });
+
+    it('should handle multiple URLs independently', () => {
+      // Note: With the new per-URL architecture, each URL has its own config
+      // This test validates that rollback works correctly for a single URL config
+      const config = {
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          { opportunityId: 'opp-faq', op: 'appendChild', value: 'FAQs' },
+          {
+            opportunityId: 'opp-faq',
+            suggestionId: 'sugg-1',
+            op: 'appendChild',
+            value: 'FAQ1',
+          },
+        ],
+      };
+
+      const result = mapper.rollbackPatches(config, ['sugg-1'], 'opp-faq');
+
+      // All patches removed (heading + FAQ item)
+      expect(result.patches).to.have.lengthOf(0);
+      expect(result.removedCount).to.equal(2);
+    });
+
+    it('should handle null/undefined config gracefully', () => {
+      const result1 = mapper.rollbackPatches(null, ['sugg-1'], 'opp-faq');
+      expect(result1).to.be.null;
+
+      const result2 = mapper.rollbackPatches(undefined, ['sugg-1'], 'opp-faq');
+      expect(result2).to.be.undefined;
     });
   });
 });

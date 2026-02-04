@@ -525,6 +525,80 @@ describe('ImsClient', () => {
     });
   });
 
+  describe('getImsAdminOrganizations', () => {
+    let client;
+    const testImsId = '6E14161F62BEB2990A49401A@0b2414d95e6abf580a49403d';
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+    });
+
+    it('throws error when imsId is not provided', async () => {
+      await expect(client.getImsAdminOrganizations())
+        .to.be.rejectedWith('imsId param is required.');
+    });
+
+    it('successfully fetches admin organizations', async () => {
+      const mockAdminOrgs = [
+        {
+          orgRef: { ident: '1234567890ABCDEF12345678', authSrc: 'AdobeOrg' },
+          orgName: 'Example Org',
+          orgType: 'Enterprise',
+          countryCode: 'US',
+        },
+      ];
+
+      // Mock service token endpoint
+      mockImsTokenResponse();
+
+      // Mock admin organizations endpoint
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/admin_organizations/v4')
+        .reply(200, mockAdminOrgs);
+
+      const result = await client.getImsAdminOrganizations(testImsId);
+      expect(result).to.deep.equal(mockAdminOrgs);
+    });
+
+    it('throws error when admin organizations request fails', async () => {
+      // Mock service token endpoint
+      mockImsTokenResponse();
+
+      // Mock failed admin organizations response
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/admin_organizations/v4')
+        .reply(404);
+
+      await expect(client.getImsAdminOrganizations(testImsId))
+        .to.be.rejectedWith('IMS getImsAdminOrganizations request failed with status: 404');
+    });
+
+    it('reuses existing service token if available', async () => {
+      const mockAdminOrgs = [
+        {
+          orgRef: { ident: '1234567890ABCDEF12345678', authSrc: 'AdobeOrg' },
+          orgName: 'Example Org',
+        },
+      ];
+
+      // Set existing service token
+      client.serviceAccessToken = {
+        access_token: 'ZHVtbXktYWNjZXNzLXRva2Vu',
+        expires_in: 86400,
+        token_type: 'bearer',
+      };
+
+      // Mock only admin organizations endpoint (token endpoint should not be called)
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/admin_organizations/v4')
+        .reply(200, mockAdminOrgs);
+
+      const result = await client.getImsAdminOrganizations(testImsId);
+      expect(result).to.deep.equal(mockAdminOrgs);
+      expect(nock.isDone()).to.be.true;
+    });
+  });
+
   describe('getAccountCluster', () => {
     let client;
     const testAccessToken = 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjEyMzQ1IiwidHlwZSI6ImFjY2Vzc190b2tlbiIsImNsaWVudF9pZCI6ImV4YW1wbGVfYXBwIiwidXNlcl9pZCI6Ijk4NzY1NDc4OTBBQkNERUYxMjM0NTY3OEBhYmNkZWYxMjM0NTY3ODkuZSIsImFzIjoiaW1zLW5hMSIsImFhX2lkIjoiMTIzNDU2Nzg5MEFCQ0RFRjEyMzQ1Njc4QGFkb2JlLmNvbSIsImNyZWF0ZWRfYXQiOiIxNzEwMjQ3MDAwMDAwIn0.MRDpxgxSHDj4DmA182hPnjMAnKkly-VUJ_bXpQ-J8EQ';

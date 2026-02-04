@@ -1,0 +1,808 @@
+/*
+ * Copyright 2025 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/* eslint-env mocha */
+
+import { expect } from 'chai';
+import sinon from 'sinon';
+import { fetchHtmlWithWarmup, calculateForwardedHost } from '../../src/utils/custom-html-utils.js';
+
+describe('HTML Utils', () => {
+  describe('fetchHtmlWithWarmup', () => {
+    let fetchStub;
+    let log;
+
+    beforeEach(() => {
+      fetchStub = sinon.stub(global, 'fetch');
+      log = {
+        debug: sinon.stub(),
+        warn: sinon.stub(),
+        error: sinon.stub(),
+        info: sinon.stub(),
+      };
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('should throw error when URL is missing', async () => {
+      try {
+        await fetchHtmlWithWarmup(
+          '',
+          'host',
+          'edge-url',
+          log,
+          false,
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('URL is required for fetching HTML');
+      }
+    });
+
+    it('should throw error when forwardedHost is missing', async () => {
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          '',
+          'edge-url',
+          log,
+          false,
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('Forwarded host is required for fetching HTML');
+      }
+    });
+
+    it('should throw error when tokowakaEdgeUrl is missing', async () => {
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          '',
+          log,
+          false,
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('TOKOWAKA_EDGE_URL is not configured');
+      }
+    });
+
+    it('should successfully fetch HTML without apiKey (optional parameter)', async () => {
+      fetchStub.resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Test HTML without API key</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        null, // apiKey is optional
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Test HTML without API key</html>');
+      expect(fetchStub.callCount).to.equal(2); // warmup + actual
+
+      // Verify that x-edgeoptimize-api-key header is not present
+      const fetchOptions = fetchStub.firstCall.args[1];
+      expect(fetchOptions.headers).to.not.have.property('x-edgeoptimize-api-key');
+    });
+
+    it('should successfully fetch HTML with all required parameters', async () => {
+      fetchStub.resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Test HTML</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Test HTML</html>');
+      expect(fetchStub.callCount).to.equal(2); // warmup + actual
+    });
+
+    it('should drop query parameters from URL when fetching optimized HTML', async () => {
+      fetchStub.resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Optimized HTML</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page?param=value',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        true, // isOptimized
+        { warmupDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Optimized HTML</html>');
+      expect(fetchStub.callCount).to.equal(2); // warmup + actual
+
+      // Verify original query params are dropped and only tokowakaPreview is present
+      const actualUrl = fetchStub.secondCall.args[0];
+      expect(actualUrl).to.not.include('param=value');
+      expect(actualUrl).to.include('?tokowakaPreview=true');
+      expect(actualUrl).to.equal('https://edge.example.com/page?tokowakaPreview=true');
+    });
+
+    it('should return immediately for optimized HTML when no headers present', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call - no headers, should succeed
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => '<html>No headers</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        true, // isOptimized
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>No headers</html>');
+      // Should succeed immediately (warmup + 1 attempt)
+      expect(fetchStub.callCount).to.equal(2);
+    });
+
+    it('should throw error for optimized HTML when proxy present but cache not found after retries', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // All actual calls have proxy but no cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 1</html>',
+      });
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 2</html>',
+      });
+      fetchStub.onCall(3).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 3</html>',
+      });
+
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          'https://edge.example.com',
+          log,
+          true, // isOptimized
+          { warmupDelayMs: 0, maxRetries: 2, retryDelayMs: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to fetch optimized HTML');
+        expect(error.message).to.include('Cache header (x-edgeoptimize-cache) not found after 2 retries');
+      }
+
+      // Should have tried 3 times (initial + 2 retries) plus warmup
+      expect(fetchStub.callCount).to.equal(4);
+    });
+
+    it('should retry for optimized HTML when proxy present until cache found', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First call has only proxy header - should retry
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only</html>',
+      });
+      // Second call has cache header (proxy might still be there) - should succeed
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Cached HTML</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        true, // isOptimized
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Cached HTML</html>');
+      // Should retry when only proxy present (warmup + 2 attempts)
+      expect(fetchStub.callCount).to.equal(3);
+    });
+
+    it('should throw error when HTTP response is not ok', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // Actual call returns 404
+      fetchStub.onCall(1).resolves({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        headers: {
+          get: () => null,
+        },
+      });
+
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          'https://edge.example.com',
+          log,
+          false,
+          { warmupDelayMs: 0, maxRetries: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to fetch original HTML');
+        expect(error.message).to.include('0 retries');
+      }
+    });
+
+    it('should retry and eventually throw error after max retries', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => 'warmup',
+      });
+      // All actual calls fail
+      fetchStub.onCall(1).rejects(new Error('Network error'));
+      fetchStub.onCall(2).rejects(new Error('Network error'));
+      fetchStub.onCall(3).rejects(new Error('Network error'));
+
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          'https://edge.example.com',
+          log,
+          false,
+          { warmupDelayMs: 0, maxRetries: 2, retryDelayMs: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to fetch original HTML');
+        expect(error.message).to.include('Network error');
+      }
+
+      // Should have tried 3 times (initial + 2 retries) plus warmup
+      expect(fetchStub.callCount).to.equal(4);
+    });
+
+    it('should handle zero maxRetries value', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => 'warmup',
+      });
+      // Actual call fails
+      fetchStub.onCall(1).rejects(new Error('Network error'));
+
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          'https://edge.example.com',
+          log,
+          false,
+          { warmupDelayMs: 0, maxRetries: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Network error');
+      }
+
+      // Should have tried only once (no retries) plus warmup
+      expect(fetchStub.callCount).to.equal(2);
+    });
+
+    it('should handle negative maxRetries as edge case', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+
+      try {
+        // With maxRetries: -1, the retry loop won't execute
+        // This tests the defensive 'throw lastError' fallback
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'host',
+          'https://edge.example.com',
+          log,
+          false,
+          { warmupDelayMs: 0, maxRetries: -1 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        // Should throw the lastError from the loop
+        expect(error).to.exist;
+      }
+    });
+
+    it('should return immediately when no edge optimize headers are present', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call - no headers, should succeed immediately
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => '<html>No headers</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>No headers</html>');
+      // Should succeed immediately without retry (warmup + 1 attempt)
+      expect(fetchStub.callCount).to.equal(2);
+    });
+
+    it('should retry when proxy header present without cache until cache is found', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First call has proxy header but no cache - should retry
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only</html>',
+      });
+      // Second call has both headers - should succeed
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => {
+            if (name === 'x-edgeoptimize-cache') return 'HIT';
+            if (name === 'x-edgeoptimize-proxy') return 'true';
+            return null;
+          },
+        },
+        text: async () => '<html>Both headers</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Both headers</html>');
+      // Should retry when only proxy present (warmup + 2 attempts)
+      expect(fetchStub.callCount).to.equal(3);
+    });
+
+    it('should throw error when proxy header present but cache not found after max retries', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // All actual calls have proxy but no cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 1</html>',
+      });
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 2</html>',
+      });
+      fetchStub.onCall(3).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-proxy' ? 'true' : null),
+        },
+        text: async () => '<html>Proxy only 3</html>',
+      });
+
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          'https://edge.example.com',
+          log,
+          false,
+          { warmupDelayMs: 0, maxRetries: 2, retryDelayMs: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to fetch original HTML');
+        expect(error.message).to.include('Cache header (x-edgeoptimize-cache) not found after 2 retries');
+      }
+
+      // Should have tried 3 times (initial + 2 retries) plus warmup
+      expect(fetchStub.callCount).to.equal(4);
+    });
+
+    it('should return immediately on first attempt if cache header is present', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call has cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Cached HTML</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Cached HTML</html>');
+      // Should not retry if cache header found on first attempt
+      expect(fetchStub.callCount).to.equal(2); // warmup + 1 actual
+    });
+
+    it('should return immediately when cache header is present (with or without proxy)', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call has cache header (proxy may or may not be present)
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => {
+            if (name === 'x-edgeoptimize-cache') return 'HIT';
+            if (name === 'x-edgeoptimize-proxy') return 'true';
+            return null;
+          },
+        },
+        text: async () => '<html>Cache header present</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Cache header present</html>');
+      // Should succeed immediately when cache header present (warmup + 1 attempt)
+      expect(fetchStub.callCount).to.equal(2);
+    });
+
+    it('should succeed when only cache header is present (no proxy header)', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call has only cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Cache only HTML</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Cache only HTML</html>');
+      // Should succeed immediately with cache header only (warmup + 1 attempt)
+      expect(fetchStub.callCount).to.equal(2);
+    });
+  });
+
+  describe('calculateForwardedHost', () => {
+    let log;
+
+    beforeEach(() => {
+      log = {
+        debug: sinon.stub(),
+        warn: sinon.stub(),
+        error: sinon.stub(),
+        info: sinon.stub(),
+      };
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('should add www prefix to bare domain', async () => {
+      const result = calculateForwardedHost('https://example.com/page', log);
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should keep www prefix when already present', async () => {
+      const result = calculateForwardedHost('https://www.example.com/page', log);
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should keep subdomain without adding www', async () => {
+      const result = calculateForwardedHost('https://subdomain.example.com/page', log);
+      expect(result).to.equal('subdomain.example.com');
+    });
+
+    it('should keep www.subdomain as is', async () => {
+      const result = calculateForwardedHost('https://www.subdomain.example.com/page', log);
+      expect(result).to.equal('www.subdomain.example.com');
+    });
+
+    it('should add www to bare domain with port', async () => {
+      const result = calculateForwardedHost('https://example.com:8080/page', log);
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should keep www with port', async () => {
+      const result = calculateForwardedHost('https://www.example.com:8080/page', log);
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should handle URL with query parameters', async () => {
+      const result = calculateForwardedHost('https://example.com/page?param=value', log);
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should handle URL with hash fragment', async () => {
+      const result = calculateForwardedHost('https://example.com/page#section', log);
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should handle http protocol', async () => {
+      const result = calculateForwardedHost('http://example.com/page', log);
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should handle deep subdomains', async () => {
+      const result = calculateForwardedHost('https://level1.level2.example.com/page', log);
+      expect(result).to.equal('level1.level2.example.com');
+    });
+
+    it('should throw error for invalid URL', async () => {
+      try {
+        calculateForwardedHost('not-a-valid-url', log);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Error calculating forwarded host from URL');
+        expect(error.message).to.include('not-a-valid-url');
+        expect(log.error).to.have.been.calledOnce;
+      }
+    });
+
+    it('should throw error for empty URL', async () => {
+      try {
+        calculateForwardedHost('', log);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Error calculating forwarded host from URL');
+        expect(log.error).to.have.been.calledOnce;
+      }
+    });
+
+    it('should use console as default logger when not provided', async () => {
+      const result = calculateForwardedHost('https://example.com/page');
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should handle hostname with no dots (edge case)', async () => {
+      // This is an edge case for localhost or single-word hostnames
+      const result = calculateForwardedHost('http://localhost/page', log);
+      // No dots means dotCount = 0, so it won't match dotCount === 1, keeps as is
+      expect(result).to.equal('localhost');
+    });
+  });
+});

@@ -25,8 +25,12 @@ chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('EntityRegistry', () => {
-  const MockModel = class MockModel extends BaseModel {};
-  const MockCollection = class MockCollection extends BaseCollection {};
+  const MockModel = class MockModel extends BaseModel {
+    static ENTITY_NAME = 'MockModel';
+  };
+  const MockCollection = class MockCollection extends BaseCollection {
+    static COLLECTION_NAME = 'MockCollection';
+  };
   const MockSchema = new Schema(
     MockModel,
     MockCollection,
@@ -41,6 +45,7 @@ describe('EntityRegistry', () => {
   );
 
   let electroService;
+  let services;
   let entityRegistry;
   let originalEntities;
 
@@ -63,9 +68,14 @@ describe('EntityRegistry', () => {
       },
     };
 
+    services = {
+      dynamo: electroService,
+      s3: null,
+    };
+
     EntityRegistry.registerEntity(MockSchema, MockCollection);
 
-    entityRegistry = new EntityRegistry(electroService, console);
+    entityRegistry = new EntityRegistry(services, console);
   });
 
   afterEach(() => {
@@ -87,8 +97,10 @@ describe('EntityRegistry', () => {
     const collections = entityRegistry.getCollections();
 
     expect(collections).to.be.an('object');
-    expect(Object.keys(collections)).to.have.lengthOf(1);
+    // 2 collections: MockCollection + ConfigurationCollection (standalone S3-based)
+    expect(Object.keys(collections)).to.have.lengthOf(2);
     expect(collections.Mock).to.be.an.instanceOf(MockCollection);
+    expect(collections.Configuration).to.exist;
   });
 
   it('gets all entities', () => {

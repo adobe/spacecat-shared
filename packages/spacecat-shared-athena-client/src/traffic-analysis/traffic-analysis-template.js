@@ -48,8 +48,10 @@ WITH min_totals AS (
 ),
 raw AS (
     SELECT
+        week,
+        month,
         path,
-        ${pageTypeCase},   
+        ${pageTypeCase},
         trf_type,
         trf_channel,
         trf_platform,
@@ -64,7 +66,7 @@ raw AS (
         clicked,
         engaged,
         latest_scroll,
-        CASE WHEN latest_scroll >= 10000 THEN 1 ELSE 0 END AS engaged_scroll,  
+        CASE WHEN latest_scroll >= 10000 THEN 1 ELSE 0 END AS engaged_scroll,
         lcp,
         cls,
         inp

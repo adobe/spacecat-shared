@@ -168,6 +168,8 @@ describe('AuditModel', () => {
       REDIRECT_CHAINS: 'redirect-chains',
       BROKEN_BACKLINKS: 'broken-backlinks',
       BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+      CONTENT_FRAGMENT_UNUSED: 'content-fragment-unused',
+      CONTENT_FRAGMENT_UNUSED_AUTO_FIX: 'content-fragment-unused-auto-fix',
       EXPERIMENTATION: 'experimentation',
       CONVERSION: 'conversion',
       ORGANIC_KEYWORDS: 'organic-keywords',
@@ -205,6 +207,10 @@ describe('AuditModel', () => {
       CDN_LOGS_REPORT: 'cdn-logs-report',
       LLMO_REFERRAL_TRAFFIC: 'llmo-referral-traffic',
       PAGE_INTENT: 'page-intent',
+      NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
+      TOC: 'toc',
+      WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
+      COMMERCE_PRODUCT_ENRICHMENTS: 'commerce-product-enrichments',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
@@ -336,6 +342,37 @@ describe('AuditModel', () => {
         options: { someOption: 'someValue' },
         processingType: 'someProcessingType',
         maxScrapeAge: 24,
+        auditData: {
+          siteId: 'someSiteId',
+          completionQueueUrl: 'audit-jobs-queue-url',
+          auditContext: { some: 'context' },
+        },
+      });
+    });
+
+    it('formats scrape client payload with traceId when present in context', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+        traceId: '1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e',
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.SCRAPE_CLIENT]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: ['someUrl'],
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+        maxScrapeAge: 24,
+        traceId: '1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e',
         auditData: {
           siteId: 'someSiteId',
           completionQueueUrl: 'audit-jobs-queue-url',

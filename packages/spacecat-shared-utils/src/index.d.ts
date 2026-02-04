@@ -17,6 +17,8 @@ export { AUTHORING_TYPES, DELIVERY_TYPES } from './aem.js';
 
 export { OPPORTUNITY_TYPES } from './constants.js';
 
+export const DEFAULT_CPC_VALUE: number;
+
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
 
@@ -65,6 +67,36 @@ export function sqsWrapper(fn: (message: object, context: object) => Promise<Res
 
 export function sqsEventAdapter(fn: (message: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;
+
+/**
+ * A higher-order function that wraps a given function and enhances logging by appending
+ * a `jobId` and `traceId` to log messages when available.
+ * @param fn - The original function to be wrapped
+ * @returns A wrapped function that enhances logging
+ */
+export function logWrapper(fn: (message: object, context: object) => Promise<Response>):
+  (message: object, context: object) => Promise<Response>;
+
+/**
+ * Instruments an AWS SDK v3 client with X-Ray tracing when running in AWS Lambda.
+ * @param client - The AWS SDK v3 client to instrument
+ * @returns The instrumented client (or original client if not in Lambda)
+ */
+export function instrumentAWSClient<T>(client: T): T;
+
+/**
+ * Extracts the trace ID from the current AWS X-Ray segment.
+ * @returns The trace ID if available, or null if not in AWS Lambda or no segment found
+ */
+export function getTraceId(): string | null;
+
+/**
+ * Adds the x-trace-id header to a headers object if a trace ID is available.
+ * @param headers - The headers object to augment
+ * @param context - The context object that may contain traceId
+ * @returns The headers object with x-trace-id added if available
+ */
+export function addTraceIdHeader(headers?: Record<string, string>, context?: object): Record<string, string>;
 
 /**
  * Prepends 'https://' schema to the URL if it's not already present.
@@ -257,6 +289,35 @@ export function getStoredMetrics(config: object, context: object):
  */
 export function storeMetrics(content: object, config: object, context: object): Promise<string>;
 
+/**
+ * Retrieves an object from S3 by its key and returns its JSON parsed content.
+ * If the object is not JSON, returns the raw body.
+ * If the object is not found, returns null.
+ * @param s3Client - The S3 client
+ * @param bucketName - The name of the S3 bucket
+ * @param key - The key of the S3 object
+ * @param log - A logger instance
+ * @returns The content of the S3 object or null if not found
+ */
+export function getObjectFromKey(
+  s3Client: any,
+  bucketName: string,
+  key: string,
+  log: any
+): Promise<any | null>;
+
+/**
+ * Fetches the organic traffic data for a site from S3 and calculates the CPC value
+ * @param context - Context object
+ * @param context.env - Environment variables
+ * @param context.env.S3_IMPORTER_BUCKET_NAME - S3 importer bucket name
+ * @param context.s3Client - S3 client
+ * @param context.log - Logger
+ * @param siteId - The site ID
+ * @returns CPC value in dollars
+ */
+export function calculateCPCValue(context: object, siteId: string): Promise<number>;
+
 export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;
 
@@ -297,6 +358,8 @@ export function extractUrlsFromOpportunity(opts: {
 }): string[];
 
 export * as llmoConfig from './llmo-config.js';
+export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
 
 export { type detectLocale } from './locale-detect/index.js';
+export { type detectBotBlocker } from './bot-blocker-detect/index.js';

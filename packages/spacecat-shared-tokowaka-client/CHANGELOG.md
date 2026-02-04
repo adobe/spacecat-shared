@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.2...@adobe/spacecat-shared-tokowaka-client-v1.7.3) (2026-02-04)
+
+
+### Bug Fixes
+
+* edge-deploy: update patch lastUpdated to now ([#1315](https://github.com/adobe/spacecat-shared/issues/1315)) ([754be98](https://github.com/adobe/spacecat-shared/commit/754be986ac8ee8aa76a53f142338b214eca30b8c))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.1...@adobe/spacecat-shared-tokowaka-client-v1.7.2) (2026-02-04)
 
 

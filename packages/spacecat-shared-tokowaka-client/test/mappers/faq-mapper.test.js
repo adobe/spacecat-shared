@@ -760,7 +760,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       expect(patches[1].suggestionId).to.equal('sugg-faq-new'); // FAQ
     });
 
-    it('should use correct updatedAt timestamp for each patch', () => {
+    it('should use Date.now() for all patch timestamps', () => {
       const suggestions = [
         {
           getId: () => 'sugg-faq-1',
@@ -798,17 +798,18 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
+      const beforeTime = Date.now();
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
-
-      const expectedTimestamp1 = new Date('2025-01-15T10:00:00.000Z').getTime();
-      const expectedTimestamp2 = new Date('2025-01-15T12:00:00.000Z').getTime();
+      const afterTime = Date.now();
 
       expect(patches.length).to.equal(3); // heading + 2 FAQs
-      // Heading uses the most recent timestamp from suggestions (12:00:00)
-      expect(patches[0].lastUpdated).to.equal(expectedTimestamp2);
-      // FAQ patches use their respective suggestion timestamps
-      expect(patches[1].lastUpdated).to.equal(expectedTimestamp1);
-      expect(patches[2].lastUpdated).to.equal(expectedTimestamp2);
+      // All patches should use Date.now()
+      expect(patches[0].lastUpdated).to.be.at.least(beforeTime);
+      expect(patches[0].lastUpdated).to.be.at.most(afterTime);
+      expect(patches[1].lastUpdated).to.be.at.least(beforeTime);
+      expect(patches[1].lastUpdated).to.be.at.most(afterTime);
+      expect(patches[2].lastUpdated).to.be.at.least(beforeTime);
+      expect(patches[2].lastUpdated).to.be.at.most(afterTime);
     });
 
     it('should use Date.now() when getUpdatedAt returns null', () => {
@@ -1191,20 +1192,23 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       };
 
+      const beforeTime = Date.now();
       const patches = mapper.suggestionsToPatches(
         '/page',
         [newSuggestion],
         'opp-faq-123',
         existingConfig,
       );
+      const afterTime = Date.now();
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(2); // Heading + FAQ (always create heading)
 
-      // First patch: heading with updated timestamp
+      // First patch: heading with Date.now() timestamp
       expect(patches[0].suggestionId).to.be.undefined;
       expect(patches[0].value.tagName).to.equal('h2');
-      expect(patches[0].lastUpdated).to.equal(new Date('2025-01-15T10:00:00.000Z').getTime());
+      expect(patches[0].lastUpdated).to.be.at.least(beforeTime);
+      expect(patches[0].lastUpdated).to.be.at.most(afterTime);
 
       // Second patch: FAQ
       expect(patches[1].suggestionId).to.equal('sugg-new-1');

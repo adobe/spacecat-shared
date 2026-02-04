@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.1...@adobe/spacecat-shared-tokowaka-client-v1.7.2) (2026-02-04)
+
+
+### Bug Fixes
+
+* preview for all using apply Stale ([#1310](https://github.com/adobe/spacecat-shared/issues/1310)) ([ccadd8f](https://github.com/adobe/spacecat-shared/commit/ccadd8f230259c781c33b977fd6214375a563ab9))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.0...@adobe/spacecat-shared-tokowaka-client-v1.7.1) (2026-02-03)
 
 

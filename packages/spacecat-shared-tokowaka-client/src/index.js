@@ -1065,7 +1065,7 @@ class TokowakaClient {
 
     const baseURL = getEffectiveBaseURL(site);
     const targetUrl = new URL(path, baseURL).toString();
-    const edgeConfigEnabled = site?.getConfig()?.getEdgeOptimizeConfig()?.enabled ?? false;
+    const edgeOptimizeConfigEnabled = site?.getConfig()?.getEdgeOptimizeConfig()?.enabled ?? false;
 
     this.log.info(`Checking edge optimize status for ${targetUrl}`);
 
@@ -1094,7 +1094,7 @@ class TokowakaClient {
 
         return {
           edgeOptimizeEnabled,
-          edgeConfigEnabled,
+          edgeOptimizeConfigEnabled,
         };
       } catch (error) {
         attempt += 1;
@@ -1104,7 +1104,7 @@ class TokowakaClient {
           this.log.error(`Failed after ${maxRetries + 1} attempts: ${error.message}`);
           return {
             edgeOptimizeEnabled: false,
-            edgeConfigEnabled,
+            edgeOptimizeConfigEnabled,
           };
         }
 

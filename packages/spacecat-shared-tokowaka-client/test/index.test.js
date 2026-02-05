@@ -3703,7 +3703,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
-          edgeConfigEnabled: false,
+          edgeOptimizeConfigEnabled: false,
         });
         expect(fetchStub).to.have.been.calledOnce;
         expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/');
@@ -3726,7 +3726,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
-          edgeConfigEnabled: false,
+          edgeOptimizeConfigEnabled: false,
         });
         expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/products');
       });
@@ -3744,7 +3744,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: false,
-          edgeConfigEnabled: false,
+          edgeOptimizeConfigEnabled: false,
         });
       });
 
@@ -3765,7 +3765,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
-          edgeConfigEnabled: false,
+          edgeOptimizeConfigEnabled: false,
         });
       });
 
@@ -3825,7 +3825,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: false,
-          edgeConfigEnabled: false,
+          edgeOptimizeConfigEnabled: false,
         });
         expect(fetchStub.callCount).to.equal(4); // Initial + 3 retries
       });
@@ -3852,7 +3852,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
-          edgeConfigEnabled: false,
+          edgeOptimizeConfigEnabled: false,
         });
         expect(fetchStub).to.have.been.calledTwice;
       });
@@ -3881,7 +3881,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
-          edgeConfigEnabled: false,
+          edgeOptimizeConfigEnabled: false,
         });
         expect(fetchStub.callCount).to.equal(3);
       });
@@ -4020,7 +4020,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
-          edgeConfigEnabled: false,
+          edgeOptimizeConfigEnabled: false,
         });
       });
 
@@ -4041,7 +4041,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
-          edgeConfigEnabled: false,
+          edgeOptimizeConfigEnabled: false,
         });
       });
     });

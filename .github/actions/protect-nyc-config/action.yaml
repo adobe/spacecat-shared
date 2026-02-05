@@ -1,0 +1,71 @@
+name: Protect NYC config
+description: Block all edits to .nycrc.json files in root and all packages
+
+runs:
+  using: composite
+  steps:
+    - name: Skip non-PR events
+      if: github.event_name != 'pull_request'
+      shell: bash
+      run: echo "Not a pull_request event; skipping Protect NYC config action."
+
+    - name: Show basic PR info
+      if: github.event_name == 'pull_request'
+      shell: bash
+      run: |
+        echo "PR number: ${{ github.event.number }}"
+        echo "PR author: ${{ github.event.pull_request.user.login }}"
+        echo "Draft: ${{ github.event.pull_request.draft }}"
+
+    - name: Detect .nycrc.json changes
+      if: github.event_name == 'pull_request'
+      id: detect
+      shell: bash
+      env:
+        FILES_API: ${{ github.api_url }}/repos/${{ github.repository }}/pulls/${{ github.event.number }}/files?per_page=100
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        echo "Checking PR #${{ github.event.number }} file list for .nycrc.json changes..."
+        RESPONSE=$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github+json" \
+          "$FILES_API")
+        echo "Files in PR:"
+        echo "$RESPONSE" | jq -r '.[].filename' || echo "Failed to parse response"
+        
+        # Check for any .nycrc.json files (root or in packages)
+        NYCRC_FILES=$(echo "$RESPONSE" | jq -r '.[].filename' | grep -E '\.nycrc(\.json)?$' || true)
+        
+        if [ -n "$NYCRC_FILES" ]; then
+          echo "nycrc-changed=true" >> "$GITHUB_OUTPUT"
+          echo "nycrc-files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$NYCRC_FILES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "✗ .nycrc.json modifications detected in:"
+          echo "$NYCRC_FILES" | sed 's/^/  - /'
+          echo "BLOCKING"
+        else
+          echo "nycrc-changed=false" >> "$GITHUB_OUTPUT"
+          echo "✓ No .nycrc.json modifications detected"
+        fi
+
+    - name: Skip when .nycrc.json unchanged
+      if: github.event_name == 'pull_request' && steps.detect.outputs.nycrc-changed != 'true'
+      shell: bash
+      run: echo "Skipping protection check because no .nycrc.json files were modified."
+
+    - name: Skip check for draft PRs
+      if: github.event_name == 'pull_request' && steps.detect.outputs.nycrc-changed == 'true' && github.event.pull_request.draft == true
+      shell: bash
+      run: echo "PR is in draft state; skipping protection check."
+
+    - name: Block .nycrc.json modifications
+      if: github.event_name == 'pull_request' && steps.detect.outputs.nycrc-changed == 'true' && github.event.pull_request.draft == false
+      shell: bash
+      run: |
+        echo "ERROR: Modifications to .nycrc.json files are not allowed." >&2
+        echo "The following protected files were modified:" >&2
+        echo "${{ steps.detect.outputs.nycrc-files }}" | sed 's/^/  - /' >&2
+        echo "" >&2
+        echo "These files are protected and cannot be changed via pull request." >&2
+        exit 1
+

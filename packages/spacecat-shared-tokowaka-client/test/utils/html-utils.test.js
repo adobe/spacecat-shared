@@ -168,6 +168,62 @@ describe('HTML Utils', () => {
       expect(actualOptions.headers['x-edgeoptimize-preview']).to.equal(1);
     });
 
+    it('should use default warmup delay of 750ms for original HTML', async () => {
+      fetchStub.resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Test HTML</html>',
+      });
+
+      const startTime = Date.now();
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false, // isOptimized = false, should use 750ms default
+        {}, // No warmupDelayMs provided - should use default
+      );
+
+      const elapsed = Date.now() - startTime;
+      expect(html).to.equal('<html>Test HTML</html>');
+      expect(fetchStub.callCount).to.equal(2); // warmup + actual
+      expect(elapsed).to.be.at.least(700); // Should have waited ~750ms
+    });
+
+    it('should use default warmup delay of 0ms for optimized HTML', async () => {
+      fetchStub.resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Optimized HTML</html>',
+      });
+
+      const startTime = Date.now();
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        true, // isOptimized = true, should use 0ms default
+        {}, // No warmupDelayMs provided - should use default
+      );
+
+      const elapsed = Date.now() - startTime;
+      expect(html).to.equal('<html>Optimized HTML</html>');
+      expect(fetchStub.callCount).to.equal(2); // warmup + actual
+      expect(elapsed).to.be.below(700); // Should not have waited (0ms warmup)
+    });
+
     it('should return immediately for optimized HTML when no headers present', async () => {
       // Warmup succeeds
       fetchStub.onCall(0).resolves({

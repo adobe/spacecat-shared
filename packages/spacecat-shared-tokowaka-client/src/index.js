@@ -238,6 +238,7 @@ class TokowakaClient {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
+    const fetchStartTime = Date.now();
     const s3Path = getTokowakaMetaconfigS3Path(url, this.log);
     const bucketName = this.deployBucketName;
 
@@ -251,7 +252,7 @@ class TokowakaClient {
       const bodyContents = await response.Body.transformToString();
       const metaconfig = JSON.parse(bodyContents);
 
-      this.log.debug(`Successfully fetched metaconfig from s3://${bucketName}/${s3Path}`);
+      this.log.debug(`Successfully fetched metaconfig from s3://${bucketName}/${s3Path} in ${Date.now() - fetchStartTime}ms`);
       return metaconfig;
     } catch (error) {
       // If metaconfig doesn't exist (NoSuchKey), return null
@@ -392,6 +393,7 @@ class TokowakaClient {
       throw this.#createError('Metaconfig object is required', HTTP_BAD_REQUEST);
     }
 
+    const uploadStartTime = Date.now();
     const s3Path = getTokowakaMetaconfigS3Path(url, this.log);
     const bucketName = this.deployBucketName;
 
@@ -411,7 +413,7 @@ class TokowakaClient {
       const command = new PutObjectCommand(putObjectParams);
 
       await this.s3Client.send(command);
-      this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path}`);
+      this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path} in ${Date.now() - uploadStartTime}ms`);
 
       // Invalidate CDN cache for the metaconfig (both CloudFront and Fastly)
       this.log.info('Invalidating CDN cache for uploaded metaconfig');
@@ -435,6 +437,7 @@ class TokowakaClient {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
+    const fetchStartTime = Date.now();
     const s3Path = getTokowakaConfigS3Path(url, this.log, isPreview);
     const bucketName = isPreview ? this.previewBucketName : this.deployBucketName;
 
@@ -448,7 +451,7 @@ class TokowakaClient {
       const bodyContents = await response.Body.transformToString();
       const config = JSON.parse(bodyContents);
 
-      this.log.debug(`Successfully fetched existing Tokowaka config from s3://${bucketName}/${s3Path}`);
+      this.log.debug(`Successfully fetched existing Tokowaka config from s3://${bucketName}/${s3Path} in ${Date.now() - fetchStartTime}ms`);
       return config;
     } catch (error) {
       // If config doesn't exist (NoSuchKey), return null
@@ -514,6 +517,7 @@ class TokowakaClient {
     if (!isNonEmptyObject(config)) {
       throw this.#createError('Config object is required', HTTP_BAD_REQUEST);
     }
+    const uploadStartTime = Date.now();
 
     const s3Path = getTokowakaConfigS3Path(url, this.log, isPreview);
     const bucketName = isPreview ? this.previewBucketName : this.deployBucketName;
@@ -527,7 +531,7 @@ class TokowakaClient {
       });
 
       await this.s3Client.send(command);
-      this.log.info(`Successfully uploaded Tokowaka config to s3://${bucketName}/${s3Path}`);
+      this.log.info(`Successfully uploaded Tokowaka config to s3://${bucketName}/${s3Path} in ${Date.now() - uploadStartTime}ms`);
 
       return s3Path;
     } catch (error) {
@@ -917,8 +921,7 @@ class TokowakaClient {
       throw this.#createError('Preview URL not found in suggestion data', HTTP_BAD_REQUEST);
     }
 
-    // Fetch metaconfig and existing config in parallel (both are independent S3 reads)
-    this.log.info(`Fetching metaconfig and existing config in parallel for URL: ${previewUrl}`);
+    // Fetch metaconfig and existing config in parallel
     const [metaconfig, existingConfig] = await Promise.all([
       this.fetchMetaconfig(previewUrl).catch(() => null),
       this.fetchConfig(previewUrl, false),
@@ -927,7 +930,7 @@ class TokowakaClient {
     let apiKey;
     if (metaconfig && Array.isArray(metaconfig.apiKeys) && metaconfig.apiKeys.length > 0) {
       [apiKey] = metaconfig.apiKeys;
-      this.log.info(`Using API key from metaconfig: ${apiKey.substring(0, 8)}...`);
+      this.log.info('Using API key from metaconfig');
     } else {
       this.log.info('Proceeding with preview without API key');
     }

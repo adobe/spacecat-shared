@@ -156,7 +156,7 @@ export async function fetchHtmlWithWarmup(
 
   // Default options
   const {
-    warmupDelayMs = 1000,
+    warmupDelayMs = 0,
     maxRetries = 3,
     retryDelayMs = 1000,
   } = options;
@@ -188,12 +188,13 @@ export async function fetchHtmlWithWarmup(
     // Warmup call (no retry logic for warmup)
     log.info(`[${fetchType}] Making warmup call for ${fetchType} HTML with URL: ${fullUrl}`);
 
+    const warmupStartTime = Date.now();
     const warmupResponse = await fetchWithTimeout(fullUrl, fetchOptions);
 
-    log.debug(`Warmup response status: ${warmupResponse.status} ${warmupResponse.statusText}`);
+    log.debug(`[${fetchType}] Warmup response status: ${warmupResponse.status} ${warmupResponse.statusText}`);
     // Consume the response body to free up the connection
     await warmupResponse.text();
-    log.info(`[${fetchType}] Warmup call completed, waiting ${warmupDelayMs}ms...`);
+    log.info(`[${fetchType}] Warmup call completed in ${Date.now() - warmupStartTime}ms, waiting ${warmupDelayMs}ms...`);
 
     // Wait before actual call
     await sleep(warmupDelayMs);
@@ -212,10 +213,10 @@ export async function fetchHtmlWithWarmup(
     );
 
     const html = await response.text();
-    log.info(`Successfully fetched ${fetchType} HTML (${html.length} bytes) in ${Date.now() - fetchStartTime}ms`);
+    log.info(`[${fetchType}] Successfully fetched ${fetchType} HTML (${html.length} bytes) in ${Date.now() - fetchStartTime}ms`);
     return html;
   } catch (error) {
-    const errorMsg = `Failed to fetch ${fetchType} HTML after ${maxRetries} retries: ${error.message}`;
+    const errorMsg = `[${fetchType}] Failed to fetch ${fetchType} HTML after ${maxRetries} retries: ${error.message}`;
     log.error(errorMsg);
     throw new Error(errorMsg);
   }

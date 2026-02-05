@@ -3769,7 +3769,7 @@ describe('TokowakaClient', () => {
         });
       });
 
-      it('should send correct User-Agent header', async () => {
+      it('should send correct User-Agent and fastly-debug headers', async () => {
         const mockResponse = {
           status: 200,
           headers: new Map(),
@@ -3782,6 +3782,35 @@ describe('TokowakaClient', () => {
 
         const fetchOptions = fetchStub.firstCall.args[1];
         expect(fetchOptions.headers['User-Agent']).to.equal('Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0');
+        expect(fetchOptions.headers['fastly-debug']).to.equal('1');
+      });
+
+      it('should call log.info with target URL', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/products');
+
+        expect(log.info).to.have.been.calledWith('Checking edge optimize status for https://example.com/products');
+      });
+
+      it('should call log.debug for attempt, response status, and edge headers', async () => {
+        const headersMap = new Map([['x-tokowaka-request-id', 'req-1']]);
+        const mockResponse = {
+          status: 200,
+          headers: { get: (key) => headersMap.get(key) || null },
+        };
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(log.debug).to.have.been.calledWith('Attempt 1/4: Checking edge optimize status for https://example.com/');
+        expect(log.debug).to.have.been.calledWith('Response status: 200');
+        expect(log.debug).to.have.been.calledWith('Edge optimize headers found: true');
       });
     });
 
@@ -3828,6 +3857,11 @@ describe('TokowakaClient', () => {
           edgeOptimizeConfigEnabled: false,
         });
         expect(fetchStub.callCount).to.equal(4); // Initial + 3 retries
+        expect(log.error).to.have.been.calledWith('Failed after 4 attempts: Network timeout');
+        expect(log.warn).to.have.been.calledThrice;
+        expect(log.warn).to.have.been.calledWith(sinon.match(/Attempt 1 to fetch failed.*Retrying in 200ms/));
+        expect(log.warn).to.have.been.calledWith(sinon.match(/Attempt 2 to fetch failed.*Retrying in 400ms/));
+        expect(log.warn).to.have.been.calledWith(sinon.match(/Attempt 3 to fetch failed.*Retrying in 800ms/));
       });
 
       it('should succeed on second attempt after first failure', async () => {
@@ -3904,6 +3938,93 @@ describe('TokowakaClient', () => {
         expect(log.warn).to.have.been.calledWith(
           sinon.match(/Attempt 1 to fetch failed.*Connection refused.*Retrying in 200ms/),
         );
+      });
+    });
+
+    describe('edgeOptimizeConfigEnabled', () => {
+      it('should return edgeOptimizeConfigEnabled: true when site config has enabled: true', async () => {
+        const siteWithConfigEnabled = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: true }) }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        const headersMap = new Map([['x-tokowaka-request-id', 'req-id']]);
+        const mockResponse = {
+          status: 200,
+          headers: { get: (key) => headersMap.get(key) || null },
+        };
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(siteWithConfigEnabled, '/');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+          edgeOptimizeConfigEnabled: true,
+        });
+      });
+
+      it('should return edgeOptimizeConfigEnabled: true when retries exhausted but config enabled', async () => {
+        const siteWithConfigEnabled = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: true }) }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        fetchStub.rejects(new Error('DNS failure'));
+        const clock = sinon.useFakeTimers();
+
+        const promise = client.checkEdgeOptimizeStatus(siteWithConfigEnabled, '/');
+        await clock.tickAsync(0);
+        await clock.tickAsync(200);
+        await clock.tickAsync(400);
+        await clock.tickAsync(800);
+
+        const result = await promise;
+        clock.restore();
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: false,
+          edgeOptimizeConfigEnabled: true,
+        });
+      });
+
+      it('should return edgeOptimizeConfigEnabled: false when getConfig returns undefined', async () => {
+        const siteNoConfig = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => undefined,
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(siteNoConfig, '/');
+
+        expect(result.edgeOptimizeConfigEnabled).to.be.false;
+      });
+
+      it('should return edgeOptimizeConfigEnabled: false when getEdgeOptimizeConfig returns undefined', async () => {
+        const siteNoEdgeConfig = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+        fetchStub.resolves(mockResponse);
+
+        const result = await client.checkEdgeOptimizeStatus(siteNoEdgeConfig, '/');
+
+        expect(result.edgeOptimizeConfigEnabled).to.be.false;
       });
     });
 

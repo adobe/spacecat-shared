@@ -3681,7 +3681,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: false }) }),
           getDeliveryType: () => 'aem_edge',
         };
       });
@@ -3703,6 +3703,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          edgeConfigEnabled: false,
         });
         expect(fetchStub).to.have.been.calledOnce;
         expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/');
@@ -3725,6 +3726,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          edgeConfigEnabled: false,
         });
         expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/products');
       });
@@ -3742,6 +3744,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: false,
+          edgeConfigEnabled: false,
         });
       });
 
@@ -3762,6 +3765,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          edgeConfigEnabled: false,
         });
       });
 
@@ -3789,7 +3793,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: false }) }),
           getDeliveryType: () => 'aem_edge',
         };
         clock = sinon.useFakeTimers();
@@ -3799,7 +3803,7 @@ describe('TokowakaClient', () => {
         clock.restore();
       });
 
-      it('should retry 3 times on network error with exponential backoff', async () => {
+      it('should retry 3 times on network error then return edgeOptimizeEnabled: false', async () => {
         const networkError = new Error('Network timeout');
         fetchStub.rejects(networkError);
 
@@ -3817,15 +3821,13 @@ describe('TokowakaClient', () => {
         // Wait for 800ms delay after third failure
         await clock.tickAsync(800);
 
-        try {
-          await promise;
-          expect.fail('Should have thrown error');
-        } catch (error) {
-          expect(error.message).to.include('Failed to check edge optimize status');
-          expect(error.message).to.include('Network timeout');
-          expect(error.status).to.equal(500);
-          expect(fetchStub.callCount).to.equal(4); // Initial + 3 retries
-        }
+        const result = await promise;
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: false,
+          edgeConfigEnabled: false,
+        });
+        expect(fetchStub.callCount).to.equal(4); // Initial + 3 retries
       });
 
       it('should succeed on second attempt after first failure', async () => {
@@ -3850,6 +3852,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          edgeConfigEnabled: false,
         });
         expect(fetchStub).to.have.been.calledTwice;
       });
@@ -3878,6 +3881,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          edgeConfigEnabled: false,
         });
         expect(fetchStub.callCount).to.equal(3);
       });
@@ -3910,7 +3914,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: false }) }),
           getDeliveryType: () => 'aem_edge',
         };
       });
@@ -3947,7 +3951,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com/',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: false }) }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -3968,7 +3972,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: false }) }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -3993,7 +3997,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: false }) }),
           getDeliveryType: () => 'aem_edge',
         };
       });
@@ -4014,7 +4018,10 @@ describe('TokowakaClient', () => {
 
         const result = await client.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result.edgeOptimizeEnabled).to.be.true;
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+          edgeConfigEnabled: false,
+        });
       });
 
       it('should handle 500 error with edge optimize header', async () => {
@@ -4034,6 +4041,7 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          edgeConfigEnabled: false,
         });
       });
     });

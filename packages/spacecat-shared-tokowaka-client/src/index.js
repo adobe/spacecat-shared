@@ -1065,6 +1065,7 @@ class TokowakaClient {
 
     const baseURL = getEffectiveBaseURL(site);
     const targetUrl = new URL(path, baseURL).toString();
+    const edgeConfigEnabled = site?.getConfig()?.getEdgeOptimizeConfig()?.enabled ?? false;
 
     this.log.info(`Checking edge optimize status for ${targetUrl}`);
 
@@ -1093,6 +1094,7 @@ class TokowakaClient {
 
         return {
           edgeOptimizeEnabled,
+          edgeConfigEnabled,
         };
       } catch (error) {
         attempt += 1;
@@ -1100,10 +1102,10 @@ class TokowakaClient {
         if (attempt > maxRetries) {
           // All retries exhausted
           this.log.error(`Failed after ${maxRetries + 1} attempts: ${error.message}`);
-          throw this.#createError(
-            `Failed to check edge optimize status: ${error.message}`,
-            HTTP_INTERNAL_SERVER_ERROR,
-          );
+          return {
+            edgeOptimizeEnabled: false,
+            edgeConfigEnabled,
+          };
         }
 
         // Exponential backoff: 200ms, 400ms, 800ms

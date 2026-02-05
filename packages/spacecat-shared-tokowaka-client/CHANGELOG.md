@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.3...@adobe/spacecat-shared-tokowaka-client-v1.7.4) (2026-02-05)
+
+
+### Bug Fixes
+
+* user agent changes for edge optimize status req ([#1320](https://github.com/adobe/spacecat-shared/issues/1320)) ([b55afc5](https://github.com/adobe/spacecat-shared/commit/b55afc5cdee78e54802ec9967f197ab9a3d057a4))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.7.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.2...@adobe/spacecat-shared-tokowaka-client-v1.7.3) (2026-02-04)
 
 

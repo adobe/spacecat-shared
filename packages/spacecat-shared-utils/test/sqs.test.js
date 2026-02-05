@@ -87,9 +87,12 @@ describe('SQS', () => {
     it('message sending fails with malformed error (missing properties)', async () => {
       const errorSpy = sandbox.spy(context.log, 'error');
 
-      nock('https://sqs.us-east-1.amazonaws.com')
+      // Return an empty JSON object to simulate a malformed error response
+      // The AWS SDK will parse it but type/code will be undefined, message will be 'UnknownError'
+      const scope = nock('https://sqs.us-east-1.amazonaws.com')
         .post('/')
-        .reply(500, 'Internal Server Error');
+        .times(3) // Allow for retries
+        .reply(500, {});
 
       const action = wrap(async (req, ctx) => {
         await ctx.sqs.sendMessage('queue-url', { key: 'value' });
@@ -98,9 +101,11 @@ describe('SQS', () => {
       await expect(action({}, context)).to.be.rejected;
 
       expect(errorSpy).to.have.been.calledWith(
-        sinon.match(/Message send failed\. Type: undefined, Code: undefined, Message: undefined/),
+        sinon.match(/Message send failed\. Type: undefined, Code: undefined, Message:/),
         sinon.match.instanceOf(Error),
       );
+
+      scope.done();
     });
 
     it('initialize and use a new sqs if not initialized before', async () => {
@@ -126,7 +131,7 @@ describe('SQS', () => {
       }).with(sqsWrapper)({}, context);
 
       expect(logSpy).to.have.been.calledWith(
-        sinon.match(new RegExp(`Success, message sent\\. MessageID: ${messageId}, Queue: ${queueUrl}, Type: unknown`)),
+        sinon.match(new RegExp(`Success, message sent\\. Queue: ${queueUrl}, Type: unknown, MessageID: ${messageId}`)),
       );
     });
   });

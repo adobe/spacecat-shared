@@ -98,7 +98,7 @@ class SQS {
       const data = await this.sqsClient.send(msgCommand);
       const queueName = queueUrl?.split('/').pop() || 'unknown';
       const messageType = body.type || 'unknown';
-      this.log.info(`Success, message sent. MessageID: ${data.MessageId}, Queue: ${queueName}, Type: ${messageType}${body.traceId ? `, TraceID: ${body.traceId}` : ''}`);
+      this.log.info(`Success, message sent. Queue: ${queueName}, Type: ${messageType}, MessageID: ${data.MessageId}${body.traceId ? `, TraceID: ${body.traceId}` : ''}`);
     } catch (e) {
       const { type, code, message: msg } = e;
       this.log.error(`Message send failed. Type: ${type}, Code: ${code}, Message: ${msg}`, e);

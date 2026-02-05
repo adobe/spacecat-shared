@@ -1062,7 +1062,7 @@ class TokowakaClient {
         const response = await fetch(targetUrl, {
           method: 'GET',
           headers: {
-            'User-Agent': 'chatgpt-user',
+            'User-Agent': 'Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
             'fastly-debug': '1',
           },
         });

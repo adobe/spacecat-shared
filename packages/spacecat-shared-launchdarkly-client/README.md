@@ -19,7 +19,7 @@ import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 const ldClient = LaunchDarklyClient.createFrom(context);
 
 // Check if flag is enabled for an IMS organization
-const imsOrgId = '855422996904EB9F0A495F9A@AdobeOrg';
+const imsOrgId = '855422996904EB9F0A495F9B@AdobeOrg';
 const isEnabled = await ldClient.isFlagEnabledForIMSOrg('FT_LLMO-2817', imsOrgId);
 
 if (isEnabled) {

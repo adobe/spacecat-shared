@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-launchdarkly-client-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.0.0...@adobe/spacecat-shared-launchdarkly-client-v1.0.1) (2026-02-05)
+
+
+### Bug Fixes
+
+* release ld package ([#1322](https://github.com/adobe/spacecat-shared/issues/1322)) ([84d3b84](https://github.com/adobe/spacecat-shared/commit/84d3b84950e1730875233b70ba3d11051e5898b9))
+
 # @adobe/spacecat-shared-launchdarkly-client-v1.0.0 (2026-02-04)
 
 

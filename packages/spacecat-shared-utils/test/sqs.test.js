@@ -77,15 +77,19 @@ describe('SQS', () => {
 
       await expect(action({}, context)).to.be.rejectedWith(errorResponse.message);
 
-      const errorMessage = `Message sent failed. Type: ${errorResponse.type}, Code: ${errorResponse.code}, Message: ${errorResponse.message}`;
-      expect(errorSpy).to.have.been.calledWith(errorMessage);
+      const errorMessage = `Message send failed. Type: ${errorResponse.type}, Code: ${errorResponse.code}, Message: ${errorResponse.message}`;
+      expect(errorSpy).to.have.been.calledWith(
+        errorMessage,
+        sinon.match.object,
+        sinon.match.instanceOf(Error),
+      );
     });
 
     it('initialize and use a new sqs if not initialized before', async () => {
       const messageId = 'message-id';
       const message = { key: 'value' };
       const queueUrl = 'queue-url';
-      const logSpy = sandbox.spy(context.log, 'debug');
+      const logSpy = sandbox.spy(context.log, 'info');
 
       nock('https://sqs.us-east-1.amazonaws.com')
         .post('/')
@@ -94,7 +98,7 @@ describe('SQS', () => {
           expect(QueueUrl).to.equal(queueUrl);
           expect(JSON.parse(MessageBody).key).to.equal(message.key);
           return {
-            MessageId: 'message-id',
+            MessageId: messageId,
             MD5OfMessageBody: crypto.createHash('md5').update(MessageBody, 'utf-8').digest('hex'),
           };
         });
@@ -103,7 +107,9 @@ describe('SQS', () => {
         await ctx.sqs.sendMessage(queueUrl, message);
       }).with(sqsWrapper)({}, context);
 
-      expect(logSpy).to.have.been.calledWith(`Success, message sent. MessageID: ${messageId}`);
+      expect(logSpy).to.have.been.calledWith(
+        sinon.match(new RegExp(`Success, message sent\\. MessageID: ${messageId}, Queue: ${queueUrl}, Type: unknown`)),
+      );
     });
   });
 

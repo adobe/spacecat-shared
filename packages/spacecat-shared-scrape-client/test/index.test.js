@@ -121,6 +121,7 @@ describe('ScrapeJobController tests', () => {
     getFailedCount: () => 0,
     getRedirectCount: () => 0,
     getCustomHeaders: () => ({}),
+    getAbortInfo: () => null,
   };
 
   beforeEach(() => {
@@ -768,6 +769,32 @@ describe('ScrapeJobController tests', () => {
         expect(jobStatus.baseURL).to.equal('https://www.example.com');
         expect(jobStatus.status).to.equal('RUNNING');
         expect(jobStatus.options).to.deep.equal({});
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should include abortInfo in job details when present', async () => {
+      try {
+        const jobWithAbortInfo = {
+          ...exampleJobStatus,
+          getAbortInfo: () => ({
+            reason: 'bot-protection',
+            details: {
+              blockedUrlsCount: 5,
+              totalUrlsCount: 10,
+              byBlockerType: { cloudflare: 5 },
+              byHttpStatus: { 403: 5 },
+            },
+          }),
+        };
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(jobWithAbortInfo);
+        scrapeJobController = ScrapeClient.createFrom(baseContext);
+        const jobStatus = await scrapeJobController.getScrapeJobStatus(exampleJob.scrapeJobId);
+        expect(jobStatus.abortInfo).to.exist;
+        expect(jobStatus.abortInfo.reason).to.equal('bot-protection');
+        expect(jobStatus.abortInfo.details.blockedUrlsCount).to.equal(5);
+        expect(jobStatus.abortInfo.details.byBlockerType.cloudflare).to.equal(5);
       } catch (err) {
         assert.fail(err);
       }

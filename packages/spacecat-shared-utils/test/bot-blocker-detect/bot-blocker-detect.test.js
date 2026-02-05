@@ -667,6 +667,21 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(0.7);
     });
 
+    it('detects "Verify human interaction" challenge', () => {
+      const html = '<html><body><div>Please verify your human interaction to continue</div></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
     it('detects Akamai challenge page', () => {
       const html = '<html><body>Access Denied by Akamai security policy</body></html>';
       const headers = { 'x-akamai-request-id': 'abc123' };

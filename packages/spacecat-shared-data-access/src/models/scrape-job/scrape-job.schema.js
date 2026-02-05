@@ -98,8 +98,35 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
     type: 'any',
   })
   .addAttribute('abortInfo', {
-    type: 'any',
-    validate: (value) => !value || isObject(value),
+    type: 'map',
+    properties: {
+      reason: { type: 'string' },
+      details: {
+        type: 'map',
+        properties: {
+          blockedUrlsCount: { type: 'number' },
+          totalUrlsCount: { type: 'number' },
+          blockedUrls: {
+            type: 'list',
+            items: {
+              type: 'map',
+              properties: {
+                url: { type: 'string' },
+                blockerType: { type: 'string' },
+                httpStatus: { type: 'number' },
+                confidence: { type: 'number' },
+              },
+            },
+          },
+          blockedUrlsSampled: { type: 'boolean' }, // Flag indicating URL truncation (400KB optimization)
+          byBlockerType: { type: 'any' }, // dynamic keys unavoidable
+          byHttpStatus: { type: 'any' }, // dynamic keys unavoidable
+          auditType: { type: 'string' },
+          siteId: { type: 'string' },
+          siteUrl: { type: 'string' },
+        },
+      },
+    },
   })
   .addAttribute('optEnableJavascript', {
     type: 'string',

@@ -993,6 +993,7 @@ class TokowakaClient {
     let cdnInvalidationResults = null;
 
     try {
+      const fetchAndInvalidateStartTime = Date.now();
       // Fetch original HTML and invalidate CDN cache in parallel to save time
       [originalHtml, cdnInvalidationResults] = await Promise.all([
         fetchHtmlWithWarmup(
@@ -1009,7 +1010,8 @@ class TokowakaClient {
           isPreview: true,
         }),
       ]);
-      this.log.info('Successfully fetched original HTML and invalidated CDN cache');
+      this.log.info('Successfully fetched original HTML and invalidated CDN cache'
+        + ` in ${Date.now() - fetchAndInvalidateStartTime}ms`);
 
       // Step 2: Fetch optimized HTML after CDN invalidation and original fetch complete
       this.log.info('Fetching optimized HTML...');

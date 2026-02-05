@@ -23,7 +23,7 @@ function sleep(ms) {
   });
 }
 
-async function fetchWithTimeout(url, options = {}, timeout = 5000) {
+async function fetchWithTimeout(url, options = {}, timeout = 3000) {
   try {
     return await fetch(url, {
       ...options,

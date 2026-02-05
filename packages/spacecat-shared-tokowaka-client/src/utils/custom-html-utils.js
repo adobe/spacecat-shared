@@ -156,7 +156,7 @@ export async function fetchHtmlWithWarmup(
 
   // Default options
   const {
-    warmupDelayMs = isOptimized ? 0 : 750, // milliseconds
+    warmupDelayMs = isOptimized ? 750 : 0, // milliseconds
     maxRetries = 3,
     retryDelayMs = 1000,
   } = options;

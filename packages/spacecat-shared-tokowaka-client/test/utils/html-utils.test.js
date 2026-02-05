@@ -168,7 +168,7 @@ describe('HTML Utils', () => {
       expect(actualOptions.headers['x-edgeoptimize-preview']).to.equal(1);
     });
 
-    it('should use default warmup delay of 750ms for original HTML', async () => {
+    it('should use default warmup delay of 0ms for original HTML', async () => {
       fetchStub.resolves({
         ok: true,
         status: 200,
@@ -193,10 +193,10 @@ describe('HTML Utils', () => {
       const elapsed = Date.now() - startTime;
       expect(html).to.equal('<html>Test HTML</html>');
       expect(fetchStub.callCount).to.equal(2); // warmup + actual
-      expect(elapsed).to.be.at.least(700); // Should have waited ~750ms
+      expect(elapsed).to.be.below(700); // Should have waited ~750ms
     });
 
-    it('should use default warmup delay of 0ms for optimized HTML', async () => {
+    it('should use default warmup delay of 750ms for optimized HTML', async () => {
       fetchStub.resolves({
         ok: true,
         status: 200,
@@ -221,7 +221,7 @@ describe('HTML Utils', () => {
       const elapsed = Date.now() - startTime;
       expect(html).to.equal('<html>Optimized HTML</html>');
       expect(fetchStub.callCount).to.equal(2); // warmup + actual
-      expect(elapsed).to.be.below(700); // Should not have waited (0ms warmup)
+      expect(elapsed).to.be.at.least(750); // Should not have waited (0ms warmup)
     });
 
     it('should return immediately for optimized HTML when no headers present', async () => {

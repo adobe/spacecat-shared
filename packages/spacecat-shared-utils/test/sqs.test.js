@@ -80,7 +80,25 @@ describe('SQS', () => {
       const errorMessage = `Message send failed. Type: ${errorResponse.type}, Code: ${errorResponse.code}, Message: ${errorResponse.message}`;
       expect(errorSpy).to.have.been.calledWith(
         errorMessage,
-        sinon.match.object,
+        sinon.match.instanceOf(Error),
+      );
+    });
+
+    it('message sending fails with malformed error (missing properties)', async () => {
+      const errorSpy = sandbox.spy(context.log, 'error');
+
+      nock('https://sqs.us-east-1.amazonaws.com')
+        .post('/')
+        .reply(500, 'Internal Server Error');
+
+      const action = wrap(async (req, ctx) => {
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
+      }).with(sqsWrapper);
+
+      await expect(action({}, context)).to.be.rejected;
+
+      expect(errorSpy).to.have.been.calledWith(
+        sinon.match(/Message send failed\. Type: undefined, Code: undefined, Message: undefined/),
         sinon.match.instanceOf(Error),
       );
     });

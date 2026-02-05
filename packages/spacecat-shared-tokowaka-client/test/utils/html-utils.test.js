@@ -160,11 +160,12 @@ describe('HTML Utils', () => {
       expect(html).to.equal('<html>Optimized HTML</html>');
       expect(fetchStub.callCount).to.equal(2); // warmup + actual
 
-      // Verify original query params are dropped and only tokowakaPreview is present
+      // Verify original query params are dropped and preview header is set
       const actualUrl = fetchStub.secondCall.args[0];
+      const actualOptions = fetchStub.secondCall.args[1];
       expect(actualUrl).to.not.include('param=value');
-      expect(actualUrl).to.include('?tokowakaPreview=true');
-      expect(actualUrl).to.equal('https://edge.example.com/page?tokowakaPreview=true');
+      expect(actualUrl).to.equal('https://edge.example.com/page');
+      expect(actualOptions.headers['x-edgeoptimize-preview']).to.equal(true);
     });
 
     it('should return immediately for optimized HTML when no headers present', async () => {
@@ -370,10 +371,15 @@ describe('HTML Utils', () => {
           'https://edge.example.com',
           log,
           false,
-          { warmupDelayMs: 0, maxRetries: 2, retryDelayMs: 0 },
+          {
+            warmupDelayMs: 0,
+            maxRetries: 2,
+            retryDelayMs: 0,
+          },
         );
         expect.fail('Should have thrown error');
       } catch (error) {
+        expect(error.message).to.include('original HTML');
         expect(error.message).to.include('Failed to fetch original HTML');
         expect(error.message).to.include('Network error');
       }
@@ -401,10 +407,11 @@ describe('HTML Utils', () => {
           'https://edge.example.com',
           log,
           false,
-          { warmupDelayMs: 0, maxRetries: 0 },
+          { warmupDelayMs: 0, maxRetries: 0, timeoutMs: 10000 },
         );
         expect.fail('Should have thrown error');
       } catch (error) {
+        expect(error.message).to.include('original HTML');
         expect(error.message).to.include('Network error');
       }
 
@@ -439,6 +446,42 @@ describe('HTML Utils', () => {
       } catch (error) {
         // Should throw the lastError from the loop
         expect(error).to.exist;
+      }
+    });
+
+    it('should handle timeout errors properly', async () => {
+      // Create a timeout error
+      const timeoutError = new Error('The operation was aborted');
+      timeoutError.name = 'TimeoutError';
+
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+
+      // Actual call times out
+      fetchStub.onCall(1).rejects(timeoutError);
+
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          'https://edge.example.com',
+          log,
+          false,
+          { warmupDelayMs: 0, maxRetries: 0, timeoutMs: 100 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to fetch original HTML');
+        expect(error.message).to.include('Request timed out after');
       }
     });
 

@@ -553,6 +553,7 @@ class TokowakaClient {
     providers = this.#getCdnProviders(),
     isPreview = false,
   }) {
+    const invalidationStartTime = Date.now();
     // Convert single provider to array for uniform handling
     const providerList = Array.isArray(providers) ? providers : [providers].filter(Boolean);
 
@@ -596,11 +597,12 @@ class TokowakaClient {
           continue;
         }
 
+        const startTime = Date.now();
         // eslint-disable-next-line no-await-in-loop
         const result = await cdnClient.invalidateCache(pathsToInvalidate);
         this.log.info(
           `CDN cache invalidation completed for ${provider}: `
-          + `${pathsToInvalidate.length} path(s)`,
+          + `${pathsToInvalidate.length} path(s), and took ${Date.now() - startTime}ms`,
         );
         results.push(result);
       } catch (error) {
@@ -612,6 +614,7 @@ class TokowakaClient {
         });
       }
     }
+    this.log.info(`CDN cache invalidation completed in total ${Date.now() - invalidationStartTime}ms`);
     return results;
   }
 
@@ -866,8 +869,10 @@ class TokowakaClient {
    * @param {Object} options - Optional configuration for HTML fetching
    * @returns {Promise<Object>} - Preview result with config and succeeded/failed suggestions
    */
-  async previewSuggestions(site, opportunity, suggestions, options = {}) {
+  async previewSuggestions(site, opportunity, suggestions = [], options = {}) {
     const opportunityType = opportunity.getType();
+    this.log.info(`Previewing ${suggestions.length} suggestions for `
+       + `${opportunityType} opportunity and URL ${site.getBaseURL()}`);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
     if (!mapper) {
       throw this.#createError(
@@ -892,7 +897,7 @@ class TokowakaClient {
       ineligible: ineligibleSuggestions,
     } = filterEligibleSuggestions(suggestions, mapper);
 
-    this.log.debug(
+    this.log.info(
       `Previewing ${eligibleSuggestions.length} eligible suggestions `
       + `(${ineligibleSuggestions.length} ineligible)`,
     );
@@ -912,22 +917,25 @@ class TokowakaClient {
       throw this.#createError('Preview URL not found in suggestion data', HTTP_BAD_REQUEST);
     }
 
-    // Fetch metaconfig to get API key
-    const metaconfig = await this.fetchMetaconfig(previewUrl) || {};
+    // Fetch metaconfig and existing config in parallel (both are independent S3 reads)
+    this.log.info(`Fetching metaconfig and existing config in parallel for URL: ${previewUrl}`);
+    const [metaconfig, existingConfig] = await Promise.all([
+      this.fetchMetaconfig(previewUrl).catch(() => null),
+      this.fetchConfig(previewUrl, false),
+    ]);
 
     let apiKey;
-    if (Array.isArray(metaconfig.apiKeys) && metaconfig.apiKeys.length > 0) {
+    if (metaconfig && Array.isArray(metaconfig.apiKeys) && metaconfig.apiKeys.length > 0) {
       [apiKey] = metaconfig.apiKeys;
+      this.log.info(`Using API key from metaconfig: ${apiKey.substring(0, 8)}...`);
+    } else {
+      this.log.info('Proceeding with preview without API key');
     }
 
     const forwardedHost = calculateForwardedHost(previewUrl, this.log);
 
-    // Fetch existing deployed configuration for this URL from production S3
-    this.log.debug(`Fetching existing deployed Tokowaka config for URL: ${previewUrl}`);
-    const existingConfig = await this.fetchConfig(previewUrl, false);
-
     // Generate configuration with eligible preview suggestions
-    this.log.debug(`Generating preview Tokowaka config for opportunity ${opportunity.getId()}`);
+    this.log.info(`Generating preview Tokowaka config for opportunity ${opportunity.getId()}`);
     const newConfig = this.generateConfig(previewUrl, opportunity, eligibleSuggestions);
 
     if (!newConfig) {
@@ -965,7 +973,7 @@ class TokowakaClient {
       // Merge the existing deployed patches with new preview suggestions
       config = this.mergeConfigs(existingConfig, newConfig);
 
-      this.log.debug(
+      this.log.info(
         `Preview config now has ${config.patches.length} total patches`,
       );
     } else {
@@ -976,28 +984,32 @@ class TokowakaClient {
     this.log.info(`Uploading preview Tokowaka config with ${eligibleSuggestions.length} new suggestions`);
     const s3Path = await this.uploadConfig(previewUrl, config, true);
 
-    // Invalidate CDN cache for all providers in parallel (preview path)
-    const cdnInvalidationResults = await this.invalidateCdnCache({
-      urls: [previewUrl],
-      isPreview: true,
-    });
-
     // Fetch HTML content for preview
     let originalHtml = null;
     let optimizedHtml = null;
+    let cdnInvalidationResults = null;
 
     try {
-      // Fetch original HTML (without preview)
-      originalHtml = await fetchHtmlWithWarmup(
-        previewUrl,
-        apiKey,
-        forwardedHost,
-        edgeUrl,
-        this.log,
-        false,
-        options,
-      );
-      // Then fetch optimized HTML (with preview)
+      // Fetch original HTML and invalidate CDN cache in parallel to save time
+      [originalHtml, cdnInvalidationResults] = await Promise.all([
+        fetchHtmlWithWarmup(
+          previewUrl,
+          apiKey,
+          forwardedHost,
+          edgeUrl,
+          this.log,
+          false,
+          options,
+        ),
+        this.invalidateCdnCache({
+          urls: [previewUrl],
+          isPreview: true,
+        }),
+      ]);
+      this.log.info('Successfully fetched original HTML and invalidated CDN cache');
+
+      // Step 2: Fetch optimized HTML after CDN invalidation and original fetch complete
+      this.log.info('Fetching optimized HTML...');
       optimizedHtml = await fetchHtmlWithWarmup(
         previewUrl,
         apiKey,
@@ -1007,7 +1019,7 @@ class TokowakaClient {
         true,
         options,
       );
-      this.log.info('Successfully fetched both original and optimized HTML for preview');
+      this.log.info('Successfully fetched optimized HTML');
     } catch (error) {
       this.log.error(`Failed to fetch HTML for preview: ${error.message}`);
       throw this.#createError(

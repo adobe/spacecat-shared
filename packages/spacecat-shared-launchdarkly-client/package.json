@@ -1,7 +1,7 @@
 {
-  "name": "@adobe/spacecat-shared-rum-api-client",
-  "version": "2.40.7",
-  "description": "Shared modules of the Spacecat Services - Rum API client",
+  "name": "@adobe/spacecat-shared-launchdarkly-client",
+  "version": "1.0.1",
+  "description": "Shared modules of the Spacecat Services - LaunchDarkly Client",
   "type": "module",
   "engines": {
     "node": ">=22.0.0 <25.0.0",
@@ -10,16 +10,14 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test": "c8 mocha 'test/**/*.test.js'",
+    "test": "c8 mocha --timeout 30000",
     "lint": "eslint .",
-    "clean": "rm -rf package-lock.json node_modules",
-    "run": "node src/test.js"
+    "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
-    "require": "test/setup-env.js",
     "reporter": "mocha-multi-reporters",
     "reporter-options": "configFile=.mocha-multi.json",
-    "spec": "test/*.test.js"
+    "spec": "test/**/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -35,17 +33,14 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.2.3",
-    "@adobe/helix-shared-wrap": "2.0.2",
     "@adobe/helix-universal": "5.4.0",
-    "@adobe/rum-distiller": "1.23.0",
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "aws4": "1.13.2",
-    "urijs": "1.19.11"
+    "@launchdarkly/node-server-sdk": "^9.9.7"
   },
   "devDependencies": {
     "chai": "6.2.1",
     "chai-as-promised": "8.0.2",
+    "esmock": "2.7.3",
     "nock": "14.0.10",
     "sinon": "21.0.0",
     "sinon-chai": "4.0.1",

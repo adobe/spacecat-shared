@@ -42,6 +42,8 @@ import ReportCollection from '../report/report.collection.js';
 import TrialUserCollection from '../trial-user/trial-user.collection.js';
 import TrialUserActivityCollection from '../trial-user-activity/trial-user-activity.collection.js';
 import PageCitabilityCollection from '../page-citability/page-citability.collection.js';
+import SentimentGuidelineCollection from '../sentiment-guideline/sentiment-guideline.collection.js';
+import SentimentTopicCollection from '../sentiment-topic/sentiment-topic.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -71,6 +73,8 @@ import ReportSchema from '../report/report.schema.js';
 import TrialUserSchema from '../trial-user/trial-user.schema.js';
 import TrialUserActivitySchema from '../trial-user-activity/trial-user-activity.schema.js';
 import PageCitabilitySchema from '../page-citability/page-citability.schema.js';
+import SentimentGuidelineSchema from '../sentiment-guideline/sentiment-guideline.schema.js';
+import SentimentTopicSchema from '../sentiment-topic/sentiment-topic.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -179,5 +183,7 @@ EntityRegistry.registerEntity(ReportSchema, ReportCollection);
 EntityRegistry.registerEntity(TrialUserSchema, TrialUserCollection);
 EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollection);
 EntityRegistry.registerEntity(PageCitabilitySchema, PageCitabilityCollection);
+EntityRegistry.registerEntity(SentimentGuidelineSchema, SentimentGuidelineCollection);
+EntityRegistry.registerEntity(SentimentTopicSchema, SentimentTopicCollection);
 
 export default EntityRegistry;

@@ -71,7 +71,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
       const cacheHeader = response.headers.get('x-edgeoptimize-cache');
       const proxyHeader = response.headers.get('x-edgeoptimize-proxy');
 
-      log.info(`[${fetchType}] Headers - cache: ${cacheHeader || 'none'}, proxy: ${proxyHeader || 'none'}, request-id: ${requestId || 'none'}`);
+      log.info(`[${fetchType}] Headers - cache: ${cacheHeader || 'none'}, proxy: ${proxyHeader || 'none'}`);
 
       // Case 1: Cache header present (regardless of proxy) -> Success
       if (cacheHeader) {
@@ -176,7 +176,7 @@ export async function fetchHtmlWithWarmup(
   };
 
   if (isOptimized) {
-    headers['x-edgeoptimize-preview'] = true;
+    headers['x-edgeoptimize-preview'] = 1;
   }
 
   const fetchOptions = {

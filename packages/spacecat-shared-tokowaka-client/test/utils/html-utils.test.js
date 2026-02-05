@@ -165,7 +165,7 @@ describe('HTML Utils', () => {
       const actualOptions = fetchStub.secondCall.args[1];
       expect(actualUrl).to.not.include('param=value');
       expect(actualUrl).to.equal('https://edge.example.com/page');
-      expect(actualOptions.headers['x-edgeoptimize-preview']).to.equal(true);
+      expect(actualOptions.headers['x-edgeoptimize-preview']).to.equal(1);
     });
 
     it('should return immediately for optimized HTML when no headers present', async () => {

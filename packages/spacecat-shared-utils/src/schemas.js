@@ -94,9 +94,10 @@ const deletedPrompt = prompt.extend({
   categoryId: z.uuid().optional(),
 });
 
-const ignoredGscPrompt = z.object({
+const ignoredPrompt = z.object({
   prompt: nonEmptyString,
   region,
+  source: z.union([z.literal('gsc'), z.string()]),
   ...auditFields,
 });
 
@@ -136,8 +137,8 @@ export const llmoConfig = z.object({
     allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
   }).optional(),
-  ignoredGscPrompts: z.object({
-    prompts: z.record(z.uuid(), ignoredGscPrompt).optional(),
+  ignoredPrompts: z.object({
+    prompts: z.record(z.uuid(), ignoredPrompt).optional(),
   }).optional(),
 }).superRefine((value, ctx) => {
   const {

@@ -52,7 +52,7 @@ export function defaultConfig() {
     deleted: {
       prompts: {},
     },
-    ignoredGscPrompts: {
+    ignoredPrompts: {
       prompts: {},
     },
   };

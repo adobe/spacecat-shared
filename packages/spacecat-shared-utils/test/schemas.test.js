@@ -914,19 +914,19 @@ describe('schemas', () => {
       });
     });
 
-    describe('ignoredGscPrompts', () => {
-      const ignoredGscPromptId1 = 'eeee1111-e11b-41d1-a111-111111111111';
-      const ignoredGscPromptId2 = 'eeee2222-e22b-42d2-a222-222222222222';
+    describe('ignoredPrompts', () => {
+      const ignoredPromptId1 = 'eeee1111-e11b-41d1-a111-111111111111';
+      const ignoredPromptId2 = 'eeee2222-e22b-42d2-a222-222222222222';
 
-      it('validates configuration without ignoredGscPrompts (optional field)', () => {
+      it('validates configuration without ignoredPrompts (optional field)', () => {
         const result = llmoConfig.safeParse(baseConfig);
         expect(result.success).true;
       });
 
-      it('validates configuration with empty ignoredGscPrompts record', () => {
+      it('validates configuration with empty ignoredPrompts record', () => {
         const config = {
           ...baseConfig,
-          ignoredGscPrompts: {
+          ignoredPrompts: {
             prompts: {},
           },
         };
@@ -935,30 +935,32 @@ describe('schemas', () => {
         expect(result.success).true;
       });
 
-      it('validates configuration without prompts field in ignoredGscPrompts', () => {
+      it('validates configuration without prompts field in ignoredPrompts', () => {
         const config = {
           ...baseConfig,
-          ignoredGscPrompts: {},
+          ignoredPrompts: {},
         };
 
         const result = llmoConfig.safeParse(config);
         expect(result.success).true;
       });
 
-      it('validates configuration with valid ignored GSC prompts', () => {
+      it('validates configuration with valid ignored prompts', () => {
         const config = {
           ...baseConfig,
-          ignoredGscPrompts: {
+          ignoredPrompts: {
             prompts: {
-              [ignoredGscPromptId1]: {
+              [ignoredPromptId1]: {
                 prompt: 'What are the best tools for free online image vectorization?',
                 region: 'US',
+                source: 'gsc',
                 updatedAt: '2026-02-06T14:30:00.000Z',
                 updatedBy: 'user@adobe.com',
               },
-              [ignoredGscPromptId2]: {
+              [ignoredPromptId2]: {
                 prompt: 'How to convert raster to vector free?',
                 region: 'DE',
+                source: 'gsc',
                 updatedAt: '2026-02-06T14:35:00.000Z',
                 updatedBy: 'user@adobe.com',
               },
@@ -970,15 +972,33 @@ describe('schemas', () => {
         expect(result.success).true;
       });
 
-      it('fails when ignored GSC prompt has empty prompt text', () => {
+      it('validates configuration with custom source', () => {
         const config = {
           ...baseConfig,
-          ignoredGscPrompts: {
+          ignoredPrompts: {
             prompts: {
-              [ignoredGscPromptId1]: {
+              [ignoredPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'US',
+                source: 'custom-source',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails when ignored prompt has empty prompt text', () => {
+        const config = {
+          ...baseConfig,
+          ignoredPrompts: {
+            prompts: {
+              [ignoredPromptId1]: {
                 prompt: '',
                 region: 'US',
-                updatedAt: '2026-02-06T14:30:00.000Z',
+                source: 'gsc',
               },
             },
           },
@@ -988,15 +1008,15 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('fails when ignored GSC prompt has invalid region format', () => {
+      it('fails when ignored prompt has invalid region format', () => {
         const config = {
           ...baseConfig,
-          ignoredGscPrompts: {
+          ignoredPrompts: {
             prompts: {
-              [ignoredGscPromptId1]: {
+              [ignoredPromptId1]: {
                 prompt: 'Test prompt',
                 region: 'USA', // Invalid - must be 2 characters
-                updatedAt: '2026-02-06T14:30:00.000Z',
+                source: 'gsc',
               },
             },
           },
@@ -1006,14 +1026,15 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('validates configuration with ignored GSC prompt without optional fields', () => {
+      it('validates configuration with ignored prompt without optional fields', () => {
         const config = {
           ...baseConfig,
-          ignoredGscPrompts: {
+          ignoredPrompts: {
             prompts: {
-              [ignoredGscPromptId1]: {
+              [ignoredPromptId1]: {
                 prompt: 'Test prompt',
                 region: 'US',
+                source: 'gsc',
                 // updatedBy and updatedAt are optional
               },
             },
@@ -1024,13 +1045,14 @@ describe('schemas', () => {
         expect(result.success).true;
       });
 
-      it('fails when ignored GSC prompt is missing required region', () => {
+      it('fails when ignored prompt is missing required region', () => {
         const config = {
           ...baseConfig,
-          ignoredGscPrompts: {
+          ignoredPrompts: {
             prompts: {
-              [ignoredGscPromptId1]: {
+              [ignoredPromptId1]: {
                 prompt: 'Test prompt',
+                source: 'gsc',
                 // Missing region
               },
             },
@@ -1041,15 +1063,15 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('fails when ignored GSC prompt has invalid UUID key', () => {
+      it('fails when ignored prompt is missing required source', () => {
         const config = {
           ...baseConfig,
-          ignoredGscPrompts: {
+          ignoredPrompts: {
             prompts: {
-              'not-a-uuid': {
+              [ignoredPromptId1]: {
                 prompt: 'Test prompt',
                 region: 'US',
-                updatedAt: '2026-02-06T14:30:00.000Z',
+                // Missing source
               },
             },
           },
@@ -1059,14 +1081,33 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('allows extra properties in ignoredGscPrompts (forward compatibility)', () => {
+      it('fails when ignored prompt has invalid UUID key', () => {
         const config = {
           ...baseConfig,
-          ignoredGscPrompts: {
+          ignoredPrompts: {
             prompts: {
-              [ignoredGscPromptId1]: {
+              'not-a-uuid': {
                 prompt: 'Test prompt',
                 region: 'US',
+                source: 'gsc',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('allows extra properties in ignoredPrompts (forward compatibility)', () => {
+        const config = {
+          ...baseConfig,
+          ignoredPrompts: {
+            prompts: {
+              [ignoredPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'US',
+                source: 'gsc',
               },
             },
             futureField: 'some value', // Extra field for future compatibility

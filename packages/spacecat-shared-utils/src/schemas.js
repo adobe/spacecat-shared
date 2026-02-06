@@ -88,6 +88,7 @@ const topic = z.object({
 const deletedPrompt = prompt.extend({
   topic: nonEmptyString,
   category: nonEmptyString,
+  categoryId: z.uuid().optional(),
 });
 
 export const llmoConfig = z.object({

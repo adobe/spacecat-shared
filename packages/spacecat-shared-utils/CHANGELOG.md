@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.90.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.2...@adobe/spacecat-shared-utils-v1.90.3) (2026-02-06)
+
+
+### Bug Fixes
+
+* add category id in deletedPrompt field ([#1325](https://github.com/adobe/spacecat-shared/issues/1325)) ([8c47acc](https://github.com/adobe/spacecat-shared/commit/8c47accf90c523d4234d2bb50e50072290e59f89))
+
 # [@adobe/spacecat-shared-utils-v1.90.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.1...@adobe/spacecat-shared-utils-v1.90.2) (2026-02-05)
 
 

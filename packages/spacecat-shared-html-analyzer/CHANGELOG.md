@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-html-analyzer-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.3...@adobe/spacecat-shared-html-analyzer-v1.2.4) (2026-02-05)
+
+
+### Bug Fixes
+
+* rcv adding new cookie selectors ([#1323](https://github.com/adobe/spacecat-shared/issues/1323)) ([9c566e6](https://github.com/adobe/spacecat-shared/commit/9c566e6dccac85db2da4915dfa143c6bb7d43f90))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.2...@adobe/spacecat-shared-html-analyzer-v1.2.3) (2026-02-04)
 
 

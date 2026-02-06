@@ -3777,7 +3777,7 @@ describe('TokowakaClient', () => {
         await client.checkEdgeOptimizeStatus(site, '/');
 
         const fetchOptions = fetchStub.firstCall.args[1];
-        expect(fetchOptions.headers['User-Agent']).to.equal('chatgpt-user');
+        expect(fetchOptions.headers['User-Agent']).to.equal('Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0');
       });
     });
 

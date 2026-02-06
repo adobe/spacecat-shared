@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.90.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.1...@adobe/spacecat-shared-utils-v1.90.2) (2026-02-05)
+
+
+### Bug Fixes
+
+* add more logs to simplify tracing issues ([#1321](https://github.com/adobe/spacecat-shared/issues/1321)) ([2e07c68](https://github.com/adobe/spacecat-shared/commit/2e07c680c6bff8c504f81b14376691787697adf2))
+
 # [@adobe/spacecat-shared-utils-v1.90.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.0...@adobe/spacecat-shared-utils-v1.90.1) (2026-01-29)
 
 

@@ -1,14 +1,8 @@
 {
-  "name": "@adobe/spacecat-shared-utils",
-  "version": "1.90.2",
-  "description": "Shared modules of the Spacecat Services - utils",
+  "name": "@adobe/spacecat-shared-launchdarkly-client",
+  "version": "1.0.1",
+  "description": "Shared modules of the Spacecat Services - LaunchDarkly Client",
   "type": "module",
-  "exports": {
-    ".": {
-      "browser": "./src/browser.js",
-      "default": "./src/index.js"
-    }
-  },
   "engines": {
     "node": ">=22.0.0 <25.0.0",
     "npm": ">=10.9.0 <12.0.0"
@@ -16,13 +10,11 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test": "c8 mocha",
+    "test": "c8 mocha --timeout 30000",
     "lint": "eslint .",
-    "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
-    "require": "test/setup-env.js",
     "reporter": "mocha-multi-reporters",
     "reporter-options": "configFile=.mocha-multi.json",
     "spec": "test/**/*.test.js"
@@ -40,30 +32,18 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "@adobe/helix-universal": "5.4.0",
+    "@adobe/spacecat-shared-utils": "1.81.1",
+    "@launchdarkly/node-server-sdk": "^9.9.7"
+  },
   "devDependencies": {
-    "@adobe/helix-shared-wrap": "2.0.2",
-    "@types/validator": "^13.15.2",
     "chai": "6.2.1",
     "chai-as-promised": "8.0.2",
     "esmock": "2.7.3",
-    "husky": "9.1.7",
     "nock": "14.0.10",
     "sinon": "21.0.0",
-    "sinon-chai": "4.0.1"
-  },
-  "dependencies": {
-    "@adobe/fetch": "4.2.3",
-    "@aws-sdk/client-s3": "3.940.0",
-    "@aws-sdk/client-sqs": "3.940.0",
-    "@json2csv/plainjs": "7.0.6",
-    "aws-xray-sdk": "3.12.0",
-    "cheerio": "1.1.2",
-    "date-fns": "4.1.0",
-    "franc-min": "6.2.0",
-    "iso-639-3": "3.0.1",
-    "urijs": "1.19.11",
-    "validator": "^13.15.15",
-    "world-countries": "5.1.0",
-    "zod": "^4.1.11"
+    "sinon-chai": "4.0.1",
+    "typescript": "5.9.3"
   }
 }

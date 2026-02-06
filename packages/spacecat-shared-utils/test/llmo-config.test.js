@@ -74,6 +74,9 @@ describe('llmo-config utilities', () => {
         deleted: {
           prompts: {},
         },
+        ignoredGscPrompts: {
+          prompts: {},
+        },
       });
     });
   });

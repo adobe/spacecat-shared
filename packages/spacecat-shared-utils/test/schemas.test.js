@@ -913,6 +913,171 @@ describe('schemas', () => {
         expect(result.success).true;
       });
     });
+
+    describe('ignoredGscPrompts', () => {
+      const ignoredGscPromptId1 = 'eeee1111-e11b-41d1-a111-111111111111';
+      const ignoredGscPromptId2 = 'eeee2222-e22b-42d2-a222-222222222222';
+
+      it('validates configuration without ignoredGscPrompts (optional field)', () => {
+        const result = llmoConfig.safeParse(baseConfig);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with empty ignoredGscPrompts record', () => {
+        const config = {
+          ...baseConfig,
+          ignoredGscPrompts: {
+            prompts: {},
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates configuration without prompts field in ignoredGscPrompts', () => {
+        const config = {
+          ...baseConfig,
+          ignoredGscPrompts: {},
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with valid ignored GSC prompts', () => {
+        const config = {
+          ...baseConfig,
+          ignoredGscPrompts: {
+            prompts: {
+              [ignoredGscPromptId1]: {
+                prompt: 'What are the best tools for free online image vectorization?',
+                region: 'US',
+                updatedAt: '2026-02-06T14:30:00.000Z',
+                updatedBy: 'user@adobe.com',
+              },
+              [ignoredGscPromptId2]: {
+                prompt: 'How to convert raster to vector free?',
+                region: 'DE',
+                updatedAt: '2026-02-06T14:35:00.000Z',
+                updatedBy: 'user@adobe.com',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails when ignored GSC prompt has empty prompt text', () => {
+        const config = {
+          ...baseConfig,
+          ignoredGscPrompts: {
+            prompts: {
+              [ignoredGscPromptId1]: {
+                prompt: '',
+                region: 'US',
+                updatedAt: '2026-02-06T14:30:00.000Z',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when ignored GSC prompt has invalid region format', () => {
+        const config = {
+          ...baseConfig,
+          ignoredGscPrompts: {
+            prompts: {
+              [ignoredGscPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'USA', // Invalid - must be 2 characters
+                updatedAt: '2026-02-06T14:30:00.000Z',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('validates configuration with ignored GSC prompt without optional fields', () => {
+        const config = {
+          ...baseConfig,
+          ignoredGscPrompts: {
+            prompts: {
+              [ignoredGscPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'US',
+                // updatedBy and updatedAt are optional
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails when ignored GSC prompt is missing required region', () => {
+        const config = {
+          ...baseConfig,
+          ignoredGscPrompts: {
+            prompts: {
+              [ignoredGscPromptId1]: {
+                prompt: 'Test prompt',
+                // Missing region
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when ignored GSC prompt has invalid UUID key', () => {
+        const config = {
+          ...baseConfig,
+          ignoredGscPrompts: {
+            prompts: {
+              'not-a-uuid': {
+                prompt: 'Test prompt',
+                region: 'US',
+                updatedAt: '2026-02-06T14:30:00.000Z',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('allows extra properties in ignoredGscPrompts (forward compatibility)', () => {
+        const config = {
+          ...baseConfig,
+          ignoredGscPrompts: {
+            prompts: {
+              [ignoredGscPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'US',
+              },
+            },
+            futureField: 'some value', // Extra field for future compatibility
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+    });
+
     describe('category origin', () => {
       it('allows category without origin (optional field)', () => {
         const config = {

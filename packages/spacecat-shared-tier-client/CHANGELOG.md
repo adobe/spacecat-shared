@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.10...@adobe/spacecat-shared-tier-client-v1.3.11) (2026-02-06)
+
+
+### Bug Fixes
+
+* adds additional check for dangling enrollments ([#1296](https://github.com/adobe/spacecat-shared/issues/1296)) ([e5a0de3](https://github.com/adobe/spacecat-shared/commit/e5a0de32112dbf81e3da37d7b90a747d993497da))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.9...@adobe/spacecat-shared-tier-client-v1.3.10) (2025-12-05)
 
 

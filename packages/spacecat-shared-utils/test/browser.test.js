@@ -36,8 +36,8 @@ describe('Browser Module', () => {
 
       expect(result).to.have.property('Bucket Name', 'test-bucket');
       expect(result).to.have.property('Domain', 's3.us-east-1.amazonaws.com');
-      expect(result).to.have.property('Access key', 'TESTKEY');
-      expect(result).to.have.property('Secret key', 'testsecret');
+      expect(result).to.have.property('Access Key', 'TESTKEY');
+      expect(result).to.have.property('Secret Key', 'testsecret');
     });
 
     it('should correctly transform a CloudFront payload', () => {

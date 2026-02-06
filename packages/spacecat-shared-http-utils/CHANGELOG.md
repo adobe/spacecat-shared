@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.19.4...@adobe/spacecat-shared-http-utils-v1.20.0) (2026-02-03)
+
+
+### Features
+
+* add check for llmo confling access ([#1298](https://github.com/adobe/spacecat-shared/issues/1298)) ([0c960d4](https://github.com/adobe/spacecat-shared/commit/0c960d42761c979c240a7013d17e8e43f7830abf))
+
 # [@adobe/spacecat-shared-http-utils-v1.19.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.19.3...@adobe/spacecat-shared-http-utils-v1.19.4) (2025-11-30)
 
 

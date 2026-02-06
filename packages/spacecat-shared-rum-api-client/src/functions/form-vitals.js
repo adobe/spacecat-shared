@@ -255,7 +255,8 @@ function handler(bundles) {
 
   globalFormSourceSet.forEach((source) => {
     // counts metrics per each group
-    const match = source.match(/form[#.](\w+)/);
+    // Match form ID/class including CSS escape sequences (e.g., form#\35 57238494 or form#abc)
+    const match = source.match(/form[#.]((?:\\[0-9a-fA-F]{1,6}\s?|\w|-)+)/);
     const formsource = match ? match[1] : 'unknown';
     // groups by url and user agent
     dataChunks.addFacet('urlUserAgents', (bundle) => {

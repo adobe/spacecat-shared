@@ -1,3 +1,59 @@
+# [@adobe/spacecat-shared-data-access-v2.103.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.102.0...@adobe/spacecat-shared-data-access-v2.103.0) (2026-02-04)
+
+
+### Features
+
+* add brand sentiment guidelines ([#1297](https://github.com/adobe/spacecat-shared/issues/1297)) ([93f0a1d](https://github.com/adobe/spacecat-shared/commit/93f0a1dada56c1a3b6c40cff32a4b7be186e82e6))
+
+# [@adobe/spacecat-shared-data-access-v2.102.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.101.0...@adobe/spacecat-shared-data-access-v2.102.0) (2026-02-04)
+
+
+### Features
+
+* add new types for commerce product enrichments ([#1317](https://github.com/adobe/spacecat-shared/issues/1317)) ([14a4f10](https://github.com/adobe/spacecat-shared/commit/14a4f104c06ed800cbaa318e72d0106f5398ca85))
+
+# [@adobe/spacecat-shared-data-access-v2.101.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.2...@adobe/spacecat-shared-data-access-v2.101.0) (2026-02-04)
+
+
+### Features
+
+* update audit destination scrapeClient ([#1313](https://github.com/adobe/spacecat-shared/issues/1313)) ([d050937](https://github.com/adobe/spacecat-shared/commit/d0509370042ec48e8493496ba4b7d52d249c3689))
+
+# [@adobe/spacecat-shared-data-access-v2.100.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.1...@adobe/spacecat-shared-data-access-v2.100.2) (2026-02-03)
+
+
+### Bug Fixes
+
+* opted changed to timestamp ([#1306](https://github.com/adobe/spacecat-shared/issues/1306)) ([24d34dc](https://github.com/adobe/spacecat-shared/commit/24d34dc9353460043441335ddb4f2a4f8b41584f))
+
+# [@adobe/spacecat-shared-data-access-v2.100.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.0...@adobe/spacecat-shared-data-access-v2.100.1) (2026-02-02)
+
+
+### Bug Fixes
+
+* improve suggestion schema documentation ([#1304](https://github.com/adobe/spacecat-shared/issues/1304)) ([8d87f3f](https://github.com/adobe/spacecat-shared/commit/8d87f3f474dae73a0207d51cdf1e1b040befcf89))
+
+# [@adobe/spacecat-shared-data-access-v2.100.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.99.0...@adobe/spacecat-shared-data-access-v2.100.0) (2026-02-02)
+
+
+### Features
+
+* **data-access:** add type-specific data schemas for suggestions [SITES-39183] ([#1289](https://github.com/adobe/spacecat-shared/issues/1289)) ([9824b22](https://github.com/adobe/spacecat-shared/commit/9824b22bc494467849a2ae903ce902ed3f9fde80))
+
+# [@adobe/spacecat-shared-data-access-v2.99.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.98.0...@adobe/spacecat-shared-data-access-v2.99.0) (2026-01-30)
+
+
+### Features
+
+* **configuration:** add QUARTERLY job interval ([#1302](https://github.com/adobe/spacecat-shared/issues/1302)) ([30d3c10](https://github.com/adobe/spacecat-shared/commit/30d3c1006c5f9f3043b103b3a23893664090619f))
+
+# [@adobe/spacecat-shared-data-access-v2.98.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.2...@adobe/spacecat-shared-data-access-v2.98.0) (2026-01-29)
+
+
+### Features
+
+* new flag opted added in edgeoptimizeconfig ([#1294](https://github.com/adobe/spacecat-shared/issues/1294)) ([8386e38](https://github.com/adobe/spacecat-shared/commit/8386e3805e9e67c18e4569428bef7ac5723eb991))
+
 # [@adobe/spacecat-shared-data-access-v2.97.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.1...@adobe/spacecat-shared-data-access-v2.97.2) (2026-01-28)
 
 

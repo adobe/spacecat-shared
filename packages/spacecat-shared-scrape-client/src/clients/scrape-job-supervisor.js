@@ -119,7 +119,7 @@ function ScrapeJobSupervisor(services, config) {
    * @param {object} auditData - Step-Audit specific data
    */
   // eslint-disable-next-line max-len
-  async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders, maxScrapeAge, auditData) {
+  async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders, maxScrapeAge, metaData) {
     log.info(`Starting a new scrape job of baseUrl: ${scrapeJob.getBaseURL()} with ${urls.length}`
       + ' URLs.'
       + `(jobId: ${scrapeJob.getId()})`);
@@ -151,7 +151,7 @@ function ScrapeJobSupervisor(services, config) {
         customHeaders,
         options,
         maxScrapeAge,
-        auditData,
+        metaData,
       };
 
       // eslint-disable-next-line no-await-in-loop
@@ -175,7 +175,7 @@ function ScrapeJobSupervisor(services, config) {
     options,
     customHeaders,
     maxScrapeAge,
-    auditContext,
+    metaData,
   ) {
     const newScrapeJob = await createNewScrapeJob(
       urls,
@@ -195,7 +195,7 @@ function ScrapeJobSupervisor(services, config) {
 
     // Queue all URLs for scrape as a single message. This enables the controller to respond with
     // a job ID ASAP, while the individual URLs are queued up asynchronously by another function.
-    await queueUrlsForScrapeWorker(urls, newScrapeJob, customHeaders, maxScrapeAge, auditContext);
+    await queueUrlsForScrapeWorker(urls, newScrapeJob, customHeaders, maxScrapeAge, metaData);
 
     return newScrapeJob;
   }

@@ -140,5 +140,10 @@ junit
 .DS_Store
 
 .vscode
-.cursor
 xunit.xml
+
+# Cursor
+.cursor/*
+!.cursor/rules/
+!.cursor/commands/
+.cursor/commands/speckit.*

@@ -23,6 +23,20 @@ function sleep(ms) {
   });
 }
 
+async function fetchWithTimeout(url, options = {}, timeout = 3000) {
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(timeout),
+    });
+  } catch (error) {
+    if (error.name === 'TimeoutError') {
+      throw new Error(`Request timed out after ${timeout}ms`);
+    }
+    throw error;
+  }
+}
+
 /**
  * Makes an HTTP request with retry logic for both original and optimized HTML.
  * Header validation logic (same for both):
@@ -40,12 +54,14 @@ function sleep(ms) {
 async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetchType) {
   for (let attempt = 1; attempt <= maxRetries + 1; attempt += 1) {
     try {
-      log.debug(`Retry attempt ${attempt}/${maxRetries} for ${fetchType} HTML`);
+      log.info(`[${fetchType}] Retry attempt ${attempt}/${maxRetries + 1} for ${fetchType} HTML`);
 
       // eslint-disable-next-line no-await-in-loop
-      const response = await fetch(url, options);
+      const response = await fetchWithTimeout(url, options);
 
-      log.debug(`Response status (attempt ${attempt}): ${response.status} ${response.statusText}`);
+      // Log request ID for debugging
+      const requestId = response?.headers?.get('x-edgeoptimize-request-id');
+      log.info(`[${fetchType}] Response status (attempt ${attempt}): ${response.status} ${response.statusText}, x-edgeoptimize-request-id: ${requestId || 'none'}`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -55,35 +71,35 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
       const cacheHeader = response.headers.get('x-edgeoptimize-cache');
       const proxyHeader = response.headers.get('x-edgeoptimize-proxy');
 
-      log.debug(`Headers - cache: ${cacheHeader || 'none'}, proxy: ${proxyHeader || 'none'}`);
+      log.info(`[${fetchType}] Headers - cache: ${cacheHeader || 'none'}, proxy: ${proxyHeader || 'none'}`);
 
       // Case 1: Cache header present (regardless of proxy) -> Success
       if (cacheHeader) {
-        log.debug(`Cache header found (x-edgeoptimize-cache: ${cacheHeader}), stopping retry logic`);
+        log.info(`[${fetchType}] Cache header found (x-edgeoptimize-cache: ${cacheHeader}), stopping retry logic`);
         return response;
       }
 
       // Case 2: No cache header AND no proxy header -> Success (return immediately)
       if (!proxyHeader) {
-        log.debug('No edge optimize headers found, proceeding as successful flow');
+        log.info(`[${fetchType}] No edge optimize headers found, proceeding as successful flow`);
         return response;
       }
 
       // Case 3: Proxy header present BUT no cache header -> Retry until cache found
-      log.debug('Proxy header present without cache header, will retry...');
+      log.info(`[${fetchType}] Proxy header present without cache header, will retry...`);
 
       // If we haven't exhausted retries, continue
       if (attempt < maxRetries + 1) {
-        log.debug(`Waiting ${retryDelayMs}ms before retry...`);
+        log.debug(`[${fetchType}] Waiting ${retryDelayMs}ms before retry...`);
         // eslint-disable-next-line no-await-in-loop
         await sleep(retryDelayMs);
       } else {
         // Last attempt - throw error
-        log.error(`Max retries (${maxRetries}) exhausted. Proxy header present but cache header not found`);
+        log.error(`[${fetchType}] Max retries (${maxRetries}) exhausted. Proxy header present but cache header not found`);
         throw new Error(`Cache header (x-edgeoptimize-cache) not found after ${maxRetries} retries`);
       }
     } catch (error) {
-      log.warn(`Attempt ${attempt} failed for ${fetchType} HTML, error: ${error.message}`);
+      log.warn(`[${fetchType}] Attempt ${attempt} failed for ${fetchType} HTML, error: ${error.message}`);
 
       // If this was the last attempt, throw the error
       if (attempt === maxRetries + 1) {
@@ -91,7 +107,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
       }
 
       // Wait before retrying
-      log.debug(`Waiting ${retryDelayMs}ms before retry...`);
+      log.debug(`[${fetchType}] Waiting ${retryDelayMs}ms before retry...`);
       // eslint-disable-next-line no-await-in-loop
       await sleep(retryDelayMs);
     }
@@ -104,17 +120,17 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
  * Fetches HTML content from edge with warmup call and retry logic
  * Makes an initial warmup call, waits, then makes the actual call with retries
  * @param {string} url - Full URL to fetch
- * @param {string} apiKey - Edge Optimize API key
+ * @param {string} apiKey - Edge Optimize API key (optional)
  * @param {string} forwardedHost - Host to forward in x-forwarded-host header
  * @param {string} edgeUrl - Edge URL
  * @param {boolean} isOptimized - Whether to fetch optimized HTML (with preview param)
  * @param {Object} log - Logger instance
  * @param {Object} options - Additional options
- * @param {number} options.warmupDelayMs - Delay after warmup call (default: 2000ms)
- * @param {number} options.maxRetries - Maximum number of retries for actual call (default: 2)
+ * @param {number} options.warmupDelayMs - Delay after warmup call (default: 1000ms)
+ * @param {number} options.maxRetries - Maximum number of retries for actual call (default: 3)
  * @param {number} options.retryDelayMs - Delay between retries (default: 1000ms)
  * @returns {Promise<string>} - HTML content
- * @throws {Error} - If validation fails or fetch fails after retries
+ * @throws {Error} - If validation fails or fetch fails after retries or timeout
  */
 export async function fetchHtmlWithWarmup(
   url,
@@ -130,10 +146,6 @@ export async function fetchHtmlWithWarmup(
     throw new Error('URL is required for fetching HTML');
   }
 
-  if (!hasText(apiKey)) {
-    throw new Error('Edge Optimize API key is required for fetching HTML');
-  }
-
   if (!hasText(forwardedHost)) {
     throw new Error('Forwarded host is required for fetching HTML');
   }
@@ -144,7 +156,7 @@ export async function fetchHtmlWithWarmup(
 
   // Default options
   const {
-    warmupDelayMs = 2000,
+    warmupDelayMs = isOptimized ? 750 : 0, // milliseconds
     maxRetries = 3,
     retryDelayMs = 1000,
   } = options;
@@ -154,19 +166,17 @@ export async function fetchHtmlWithWarmup(
   // Parse the URL to extract path and construct full URL
   const urlObj = new URL(url);
   const urlPath = urlObj.pathname;
-  let fullUrl = `${edgeUrl}${urlPath}`;
+  const fullUrl = `${edgeUrl}${urlPath}`;
 
   const headers = {
     'x-forwarded-host': forwardedHost,
-    'x-edgeoptimize-api-key': apiKey,
+    ...(apiKey && { 'x-edgeoptimize-api-key': apiKey }),
     'x-edgeoptimize-url': urlPath,
     'Accept-Encoding': 'identity', // Disable compression to avoid content-length: 0 issue
   };
 
   if (isOptimized) {
-    // Add tokowakaPreview param for optimized HTML
-    fullUrl = `${fullUrl}?tokowakaPreview=true`;
-    headers['x-edgeoptimize-url'] = `${urlPath}?tokowakaPreview=true`;
+    headers['x-edgeoptimize-preview'] = 1;
   }
 
   const fetchOptions = {
@@ -176,21 +186,23 @@ export async function fetchHtmlWithWarmup(
 
   try {
     // Warmup call (no retry logic for warmup)
-    log.debug(`Making warmup call for ${fetchType} HTML with URL: ${fullUrl}`);
+    log.info(`[${fetchType}] Making warmup call for ${fetchType} HTML with URL: ${fullUrl}`);
 
-    const warmupResponse = await fetch(fullUrl, fetchOptions);
+    const warmupStartTime = Date.now();
+    const warmupResponse = await fetchWithTimeout(fullUrl, fetchOptions);
 
-    log.debug(`Warmup response status: ${warmupResponse.status} ${warmupResponse.statusText}`);
+    log.debug(`[${fetchType}] Warmup response status: ${warmupResponse.status} ${warmupResponse.statusText}`);
     // Consume the response body to free up the connection
     await warmupResponse.text();
-    log.debug(`Warmup call completed, waiting ${warmupDelayMs}ms...`);
+    log.info(`[${fetchType}] Warmup call completed in ${Date.now() - warmupStartTime}ms, waiting ${warmupDelayMs}ms...`);
 
     // Wait before actual call
     await sleep(warmupDelayMs);
 
     // Actual call with retry logic
-    log.debug(`Making actual call for ${fetchType} HTML (max ${maxRetries} retries) with URL: ${fullUrl}`);
+    log.info(`[${fetchType}] Making actual call for ${fetchType} HTML (max ${maxRetries} retries) with URL: ${fullUrl}`);
 
+    const fetchStartTime = Date.now();
     const response = await fetchWithRetry(
       fullUrl,
       fetchOptions,
@@ -201,10 +213,10 @@ export async function fetchHtmlWithWarmup(
     );
 
     const html = await response.text();
-    log.debug(`Successfully fetched ${fetchType} HTML (${html.length} bytes)`);
+    log.info(`[${fetchType}] Successfully fetched ${fetchType} HTML (${html.length} bytes) in ${Date.now() - fetchStartTime}ms`);
     return html;
   } catch (error) {
-    const errorMsg = `Failed to fetch ${fetchType} HTML after ${maxRetries} retries: ${error.message}`;
+    const errorMsg = `[${fetchType}] Failed to fetch ${fetchType} HTML after ${maxRetries} retries: ${error.message}`;
     log.error(errorMsg);
     throw new Error(errorMsg);
   }

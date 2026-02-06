@@ -39,6 +39,7 @@ describe('Metrics Store', () => {
         info: sinon.stub(),
         error: sinon.stub(),
         debug: sinon.stub(),
+        warn: sinon.stub(),
       },
       s3: {
         s3Client: {
@@ -121,7 +122,7 @@ describe('Metrics Store', () => {
       const metrics = await getStoredMetrics(config, context);
 
       expect(metrics).to.deep.equal([]);
-      expect(context.log.error).to.have.been.calledWith('Failed to retrieve metrics from metrics/testSite/testSource/testMetric.json, error: Test error');
+      expect(context.log.warn).to.have.been.calledWith('Failed to retrieve metrics from metrics/testSite/testSource/testMetric.json, error: Test error');
     });
   });
 

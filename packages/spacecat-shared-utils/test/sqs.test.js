@@ -72,7 +72,7 @@ describe('SQS', () => {
         .reply(400, errorResponse);
 
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
+        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/test-queue', { key: 'value' });
       }).with(sqsWrapper);
 
       await expect(action({}, context)).to.be.rejectedWith(errorResponse.message);
@@ -95,7 +95,7 @@ describe('SQS', () => {
         .reply(500, {});
 
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
+        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/test-queue', { key: 'value' });
       }).with(sqsWrapper);
 
       await expect(action({}, context)).to.be.rejected;
@@ -111,7 +111,7 @@ describe('SQS', () => {
     it('initialize and use a new sqs if not initialized before', async () => {
       const messageId = 'message-id';
       const message = { key: 'value' };
-      const queueUrl = 'queue-url';
+      const queueUrl = 'https://sqs.us-east-1.amazonaws.com/123456789012/test-queue';
       const logSpy = sandbox.spy(context.log, 'info');
 
       nock('https://sqs.us-east-1.amazonaws.com')
@@ -130,8 +130,9 @@ describe('SQS', () => {
         await ctx.sqs.sendMessage(queueUrl, message);
       }).with(sqsWrapper)({}, context);
 
+      const queueName = queueUrl.split('/').pop();
       expect(logSpy).to.have.been.calledWith(
-        sinon.match(new RegExp(`Success, message sent\\. Queue: ${queueUrl}, Type: unknown, MessageID: ${messageId}`)),
+        sinon.match(new RegExp(`Success, message sent\\. Queue: ${queueName}, Type: unknown, MessageID: ${messageId}`)),
       );
     });
   });
@@ -181,8 +182,14 @@ describe('SQS', () => {
     });
 
     it('returns bad request when record is not valid JSON', async () => {
+      const mockLog = {
+        debug: sandbox.stub(),
+        warn: sandbox.stub(),
+        info: sandbox.stub(),
+        error: sandbox.stub(),
+      };
       const ctx = {
-        log: console,
+        log: mockLog,
         invocation: {
           event: {
             Records: [
@@ -200,6 +207,8 @@ describe('SQS', () => {
 
       expect(response.status).to.equal(400);
       expect(response.headers.get('x-error')).to.equal('Event does not contain a valid message body');
+      expect(mockLog.warn).to.have.been.calledOnce;
+      expect(mockLog.warn.firstCall.args[0]).to.equal('Function was not invoked properly, message body is not a valid JSON');
     });
 
     it('should handle a valid context with an event record', async () => {
@@ -251,7 +260,7 @@ describe('SQS', () => {
 
     it('should not include a MessageGroupId when one is not provided', async () => {
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
+        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/test-queue', { key: 'value' });
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -313,7 +322,7 @@ describe('SQS', () => {
 
     it('should include traceId in message when explicitly provided', async () => {
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('queue-url', { key: 'value', traceId: '1-explicit-traceid' });
+        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/test-queue', { key: 'value', traceId: '1-explicit-traceid' });
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -330,7 +339,7 @@ describe('SQS', () => {
       });
 
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
+        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/test-queue', { key: 'value' });
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -409,7 +418,7 @@ describe('SQS', () => {
 
       const action = wrap(async (req, ctx) => {
         // Jobs Dispatcher explicitly opts out of trace propagation
-        await ctx.sqs.sendMessage('queue-url', {
+        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/test-queue', {
           type: 'audit',
           siteId: 'site-001',
           traceId: null, // Explicit opt-out

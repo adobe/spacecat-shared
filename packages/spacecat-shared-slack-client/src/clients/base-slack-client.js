@@ -90,7 +90,9 @@ export default class BaseSlackClient {
   _logDuration(message, startTime) {
     const endTime = process.hrtime.bigint();
     const duration = (endTime - startTime) / BigInt(1e6);
-    this.log.info(`${message}: took ${duration}ms`);
+    if (!this.log) {
+      this.log.info(`${message}: took ${duration}ms`);
+    }
   }
 
   async _apiCall(method, message) {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-scrape-client-v2.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.4.0...@adobe/spacecat-shared-scrape-client-v2.5.0) (2026-02-08)
+
+
+### Features
+
+* Bot press hold detection addition + add abort info to scrapeJob schema ([#1308](https://github.com/adobe/spacecat-shared/issues/1308)) ([4f19f91](https://github.com/adobe/spacecat-shared/commit/4f19f9143435aa283d8b9e57c17dd79873168177))
+
 # [@adobe/spacecat-shared-scrape-client-v2.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.7...@adobe/spacecat-shared-scrape-client-v2.4.0) (2026-02-04)
 
 

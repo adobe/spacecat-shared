@@ -215,4 +215,24 @@ describe('ScrapeJob IT', async () => {
     const removedScrapeJob = await ScrapeJob.findById(sampleScrapeJob.getId());
     expect(removedScrapeJob).to.be.null;
   });
+
+  it('stores and retrieves abortInfo', async () => {
+    const abortInfo = {
+      reason: 'bot-protection',
+      details: {
+        blockedUrlsCount: 5,
+        totalUrlsCount: 10,
+        blockedUrls: [{ url: 'https://example.com/page1', blockerType: 'cloudflare', httpStatus: 403 }],
+        byBlockerType: { cloudflare: 5 },
+        byHttpStatus: { 403: 5 },
+      },
+    };
+
+    const scrapeJob = await ScrapeJob.create({ ...newJobData });
+    scrapeJob.setAbortInfo(abortInfo);
+    await scrapeJob.save();
+
+    const retrieved = await ScrapeJob.findById(scrapeJob.getId());
+    expect(retrieved.getAbortInfo()).to.deep.equal(abortInfo);
+  });
 });

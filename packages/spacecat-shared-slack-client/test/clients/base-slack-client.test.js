@@ -167,8 +167,10 @@ describe('BaseSlackClient', () => {
     });
 
     it('logs an error on Slack API failure', async () => {
-      client.client = webApiClient;
-      mockApi.post('/api/files.uploadV2').reply(500);
+      const errorStub = sinon.stub().rejects(new Error('API call failed'));
+      client.client = {
+        apiCall: errorStub,
+      };
 
       try {
         await client.fileUpload(file);

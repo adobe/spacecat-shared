@@ -53,7 +53,7 @@ describe('SQS', () => {
       context.sqs = instance;
 
       await wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('queue', 'message');
+        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/test-queue', { key: 'value' });
       }).with(sqsWrapper)({}, context);
 
       expect(instance.sendMessage).to.have.been.calledOnce;

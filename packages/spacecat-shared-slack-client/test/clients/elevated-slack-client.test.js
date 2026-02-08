@@ -205,10 +205,10 @@ describe('ElevatedSlackClient', () => {
         await expect(client.createChannel('some-channel', false)).to.eventually.be.rejectedWith(Error);
         await expect(client.createChannel('some-channel', false)).to.eventually.be.rejectedWith(Error);
 
-        expect(mockLog.info.callCount).to.equal(3);
-        expect(mockLog.info.firstCall.calledWithMatch('API call auth.test')).to.be.true;
-        expect(mockLog.info.secondCall.calledWithMatch('API call team.info')).to.be.true;
-        expect(mockLog.info.thirdCall.calledWithMatch('Slack client initialized')).to.be.true;
+        expect(mockLog.debug.callCount).to.equal(3);
+        expect(mockLog.debug.firstCall.calledWithMatch('API call auth.test')).to.be.true;
+        expect(mockLog.debug.secondCall.calledWithMatch('API call team.info')).to.be.true;
+        expect(mockLog.debug.thirdCall.calledWithMatch('Slack client initialized')).to.be.true;
       });
 
       it('logs errors if adding admins to new channel fails', async () => {

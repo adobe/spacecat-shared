@@ -90,8 +90,8 @@ export default class BaseSlackClient {
   _logDuration(message, startTime) {
     const endTime = process.hrtime.bigint();
     const duration = (endTime - startTime) / BigInt(1e6);
-    if (this.log && typeof this.log.info === 'function') {
-      this.log.info(`${message}: took ${duration}ms`);
+    if (this.log && typeof this.log.debug === 'function') {
+      this.log.debug(`${message}: took ${duration}ms`);
     }
   }
 

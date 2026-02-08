@@ -90,18 +90,23 @@ export default class BaseSlackClient {
   _logDuration(message, startTime) {
     const endTime = process.hrtime.bigint();
     const duration = (endTime - startTime) / BigInt(1e6);
-    if (!this.log) {
+    if (this.log && typeof this.log.info === 'function') {
       this.log.info(`${message}: took ${duration}ms`);
     }
   }
 
   async _apiCall(method, message) {
     const startTime = process.hrtime.bigint();
-    const result = await this.client.apiCall(method, message);
-
-    this._logDuration(`API call ${method}`, startTime);
-
-    return result;
+    try {
+      const result = await this.client.apiCall(method, message);
+      this._logDuration(`API call ${method}`, startTime);
+      return result;
+    } catch (error) {
+      if (this.log && typeof this.log.error === 'function') {
+        this.log.error(`API call ${method} failed`, error);
+      }
+      throw error;
+    }
   }
 
   async postMessage(message) {

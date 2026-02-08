@@ -53,7 +53,7 @@ describe('SQS', () => {
       context.sqs = instance;
 
       await wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/test-queue', { key: 'value' });
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
       }).with(sqsWrapper)({}, context);
 
       expect(instance.sendMessage).to.have.been.calledOnce;
@@ -67,12 +67,12 @@ describe('SQS', () => {
       };
       const errorSpy = sandbox.spy(context.log, 'error');
 
-      nock('https://sqs.mock-region-1.mockaws.com')
+      nock('https://sqs.us-east-1.amazonaws.com')
         .post('/')
         .reply(400, errorResponse);
 
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/test-queue', { key: 'value' });
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
       }).with(sqsWrapper);
 
       await expect(action({}, context)).to.be.rejectedWith(errorResponse.message);
@@ -89,13 +89,13 @@ describe('SQS', () => {
 
       // Return an empty JSON object to simulate a malformed error response
       // The AWS SDK will parse it but type/code will be undefined, message will be 'UnknownError'
-      const scope = nock('https://sqs.mock-region-1.mockaws.com')
+      const scope = nock('https://sqs.us-east-1.amazonaws.com')
         .post('/')
         .times(3) // Allow for retries
         .reply(500, {});
 
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/test-queue', { key: 'value' });
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
       }).with(sqsWrapper);
 
       await expect(action({}, context)).to.be.rejected;
@@ -111,10 +111,10 @@ describe('SQS', () => {
     it('initialize and use a new sqs if not initialized before', async () => {
       const messageId = 'message-id';
       const message = { key: 'value' };
-      const queueUrl = 'https://sqs.mock-region-1.mockaws.com/123456789012/test-queue';
+      const queueUrl = 'queue-url';
       const logSpy = sandbox.spy(context.log, 'info');
 
-      nock('https://sqs.mock-region-1.mockaws.com')
+      nock('https://sqs.us-east-1.amazonaws.com')
         .post('/')
         .reply(200, (_, body) => {
           const { MessageBody, QueueUrl } = JSON.parse(body);
@@ -130,7 +130,7 @@ describe('SQS', () => {
         await ctx.sqs.sendMessage(queueUrl, message);
       }).with(sqsWrapper)({}, context);
 
-      const queueName = queueUrl.split('/').pop();
+      const queueName = queueUrl;
       expect(logSpy).to.have.been.calledWith(
         sinon.match(new RegExp(`Success, message sent\\. Queue: ${queueName}, Type: unknown, MessageID: ${messageId}`)),
       );
@@ -260,7 +260,7 @@ describe('SQS', () => {
 
     it('should not include a MessageGroupId when one is not provided', async () => {
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/test-queue', { key: 'value' });
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -274,7 +274,7 @@ describe('SQS', () => {
 
     it('should include a MessageGroupId when the queue is a FIFO queue', async () => {
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/fifo-queue.fifo', { key: 'value' }, 'job-id');
+        await ctx.sqs.sendMessage('fifo-queue.fifo', { key: 'value' }, 'job-id');
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -291,7 +291,7 @@ describe('SQS', () => {
     it('should not include a MessageGroupId when the queue is standard queue', async () => {
       const action = wrap(async (req, ctx) => {
         // Note: no .fifo suffix
-        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/standard-queue', { key: 'value' }, 'job-id');
+        await ctx.sqs.sendMessage('standard-queue', { key: 'value' }, 'job-id');
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -339,7 +339,7 @@ describe('SQS', () => {
       });
 
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/test-queue', { key: 'value' });
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
       }).with(sqsWrapper);
 
       await action({}, context);

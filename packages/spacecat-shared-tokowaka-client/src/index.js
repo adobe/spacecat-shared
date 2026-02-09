@@ -1071,9 +1071,14 @@ class TokowakaClient {
     const maxRetries = 3;
     let attempt = 0;
 
+    const REQUEST_TIMEOUT_MS = 5000;
+
     while (attempt <= maxRetries) {
       try {
         this.log.debug(`Attempt ${attempt + 1}/${maxRetries + 1}: Checking edge optimize status for ${targetUrl}`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
         // eslint-disable-next-line no-await-in-loop
         const response = await fetch(targetUrl, {
@@ -1082,7 +1087,10 @@ class TokowakaClient {
             'User-Agent': 'Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
             'fastly-debug': '1',
           },
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         this.log.debug(`Response status: ${response.status}`);
 
@@ -1095,6 +1103,13 @@ class TokowakaClient {
           edgeOptimizeEnabled,
         };
       } catch (error) {
+        const isTimeout = error?.name === 'AbortError';
+
+        if (isTimeout) {
+          this.log.warn(`Request timed out after ${REQUEST_TIMEOUT_MS}ms for ${targetUrl}, returning edgeOptimizeEnabled: false`);
+          return { edgeOptimizeEnabled: false };
+        }
+
         attempt += 1;
 
         if (attempt > maxRetries) {

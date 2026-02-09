@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.5...@adobe/spacecat-shared-tokowaka-client-v1.7.6) (2026-02-09)
+
+
+### Bug Fixes
+
+* edge-preview api: ignore warmup call failure ([#1327](https://github.com/adobe/spacecat-shared/issues/1327)) ([fbc9f65](https://github.com/adobe/spacecat-shared/commit/fbc9f65bf96e408c878fa3b8b37fbbe29444e08f))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.7.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.4...@adobe/spacecat-shared-tokowaka-client-v1.7.5) (2026-02-05)
 
 

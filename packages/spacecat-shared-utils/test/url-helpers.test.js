@@ -377,6 +377,63 @@ describe('URL Utility Functions', () => {
       const result = await resolveCanonicalUrl('https://example.com/', 'HEAD');
       expect(result).to.equal('https://example.com/');
     });
+
+    it('should handle timeout errors for HEAD requests and retry with GET', async () => {
+      // Simulate a timeout error for HEAD request
+      // The function should catch the error and retry with GET
+      nock('https://example.com')
+        .head('/')
+        .replyWithError('Timeout error');
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.equal('https://example.com/');
+    });
+
+    it('should use 10s timeout for HEAD requests', async () => {
+      // Verify HEAD request completes within timeout
+      nock('https://example.com')
+        .head('/')
+        .reply(200);
+
+      const startTime = Date.now();
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD');
+      const duration = Date.now() - startTime;
+
+      expect(result).to.equal('https://example.com/');
+      expect(duration).to.be.below(11000); // Should complete well before timeout
+    });
+
+    it('should use 20s timeout for GET requests', async () => {
+      // Verify GET request completes within timeout
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const startTime = Date.now();
+      const result = await resolveCanonicalUrl('https://example.com', 'GET');
+      const duration = Date.now() - startTime;
+
+      expect(result).to.equal('https://example.com/');
+      expect(duration).to.be.below(21000); // Should complete well before timeout
+    });
+
+    it('should handle AbortError from timeout and retry with GET for HEAD', async () => {
+      // Simulate AbortError from timeout
+      nock('https://example.com')
+        .head('/')
+        .replyWithError('The operation was aborted');
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD');
+      expect(result).to.equal('https://example.com/');
+    });
   });
 
   describe('urlMatchesFilter', () => {

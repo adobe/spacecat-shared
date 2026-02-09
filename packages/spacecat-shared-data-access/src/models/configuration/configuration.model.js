@@ -423,6 +423,69 @@ class Configuration {
   }
 
   /**
+   * Replaces enabled/disabled lists for a handler.
+   * This method replaces (not merges) the provided arrays.
+   * Only the arrays provided in the data object will be replaced.
+   *
+   * TEMPORARY METHOD: This method was created to support a temporary API endpoint
+   * for cleaning up enabled and disabled lists by removing unnecessary site IDs.
+   * Unlike updateHandlerProperties which merges arrays, this method completely
+   * replaces the specified arrays. This method will be removed once the cleanup
+   * task is completed.
+   *
+   * @param {string} type - The handler type to update
+   * @param {object} data - Object containing enabled/disabled arrays to replace
+   * @param {object} [data.enabled] - Enabled lists to replace
+   * @param {string[]} [data.enabled.sites] - Sites array to replace (if provided)
+   * @param {string[]} [data.enabled.orgs] - Orgs array to replace (if provided)
+   * @param {object} [data.disabled] - Disabled lists to replace
+   * @param {string[]} [data.disabled.sites] - Sites array to replace (if provided)
+   * @param {string[]} [data.disabled.orgs] - Orgs array to replace (if provided)
+   * @throws {Error} If handler not found
+   */
+  /* c8 ignore start - temporary method, no unit tests needed */
+  replaceHandlerEnabledDisabled(type, data) {
+    const handlers = this.getHandlers();
+    if (!handlers[type]) {
+      throw new Error(`Handler "${type}" not found in configuration`);
+    }
+
+    const handler = handlers[type];
+
+    // Initialize enabled/disabled objects if they don't exist
+    if (!isNonEmptyObject(handler.enabled)) {
+      handler.enabled = { orgs: [], sites: [] };
+    }
+    if (!isNonEmptyObject(handler.disabled)) {
+      handler.disabled = { orgs: [], sites: [] };
+    }
+
+    // Replace enabled arrays if provided
+    if (data.enabled !== undefined) {
+      if (data.enabled.sites !== undefined) {
+        handler.enabled.sites = Array.isArray(data.enabled.sites) ? data.enabled.sites : [];
+      }
+      if (data.enabled.orgs !== undefined) {
+        handler.enabled.orgs = Array.isArray(data.enabled.orgs) ? data.enabled.orgs : [];
+      }
+    }
+
+    // Replace disabled arrays if provided
+    if (data.disabled !== undefined) {
+      if (data.disabled.sites !== undefined) {
+        handler.disabled.sites = Array.isArray(data.disabled.sites) ? data.disabled.sites : [];
+      }
+      if (data.disabled.orgs !== undefined) {
+        handler.disabled.orgs = Array.isArray(data.disabled.orgs) ? data.disabled.orgs : [];
+      }
+    }
+
+    handlers[type] = handler;
+    this.setHandlers(handlers);
+  }
+  /* c8 ignore stop */
+
+  /**
    * Updates the configuration by merging changes into existing sections.
    * This is a flexible update method that allows updating one or more sections at once.
    * Changes are merged, not replaced - existing data is preserved.

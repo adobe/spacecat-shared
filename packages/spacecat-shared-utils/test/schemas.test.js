@@ -914,19 +914,19 @@ describe('schemas', () => {
       });
     });
 
-    describe('ignoredPrompts', () => {
+    describe('ignored', () => {
       const ignoredPromptId1 = 'eeee1111-e11b-41d1-a111-111111111111';
       const ignoredPromptId2 = 'eeee2222-e22b-42d2-a222-222222222222';
 
-      it('validates configuration without ignoredPrompts (optional field)', () => {
+      it('validates configuration without ignored (optional field)', () => {
         const result = llmoConfig.safeParse(baseConfig);
         expect(result.success).true;
       });
 
-      it('validates configuration with empty ignoredPrompts record', () => {
+      it('validates configuration with empty ignored record', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {},
           },
         };
@@ -935,10 +935,10 @@ describe('schemas', () => {
         expect(result.success).true;
       });
 
-      it('validates configuration without prompts field in ignoredPrompts', () => {
+      it('validates configuration without prompts field in ignored', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {},
+          ignored: {},
         };
 
         const result = llmoConfig.safeParse(config);
@@ -948,7 +948,7 @@ describe('schemas', () => {
       it('validates configuration with valid ignored prompts', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {
               [ignoredPromptId1]: {
                 prompt: 'What are the best tools for free online image vectorization?',
@@ -975,7 +975,7 @@ describe('schemas', () => {
       it('validates configuration with custom source', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {
               [ignoredPromptId1]: {
                 prompt: 'Test prompt',
@@ -993,7 +993,7 @@ describe('schemas', () => {
       it('fails when ignored prompt has empty prompt text', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {
               [ignoredPromptId1]: {
                 prompt: '',
@@ -1011,7 +1011,7 @@ describe('schemas', () => {
       it('fails when ignored prompt has invalid region format', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {
               [ignoredPromptId1]: {
                 prompt: 'Test prompt',
@@ -1029,7 +1029,7 @@ describe('schemas', () => {
       it('validates configuration with ignored prompt without optional fields', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {
               [ignoredPromptId1]: {
                 prompt: 'Test prompt',
@@ -1048,7 +1048,7 @@ describe('schemas', () => {
       it('fails when ignored prompt is missing required region', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {
               [ignoredPromptId1]: {
                 prompt: 'Test prompt',
@@ -1066,7 +1066,7 @@ describe('schemas', () => {
       it('fails when ignored prompt is missing required source', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {
               [ignoredPromptId1]: {
                 prompt: 'Test prompt',
@@ -1084,7 +1084,7 @@ describe('schemas', () => {
       it('fails when ignored prompt has invalid UUID key', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {
               'not-a-uuid': {
                 prompt: 'Test prompt',
@@ -1099,10 +1099,10 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('allows extra properties in ignoredPrompts (forward compatibility)', () => {
+      it('allows extra properties in ignored (forward compatibility)', () => {
         const config = {
           ...baseConfig,
-          ignoredPrompts: {
+          ignored: {
             prompts: {
               [ignoredPromptId1]: {
                 prompt: 'Test prompt',

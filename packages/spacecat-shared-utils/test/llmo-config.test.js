@@ -74,7 +74,7 @@ describe('llmo-config utilities', () => {
         deleted: {
           prompts: {},
         },
-        ignoredPrompts: {
+        ignored: {
           prompts: {},
         },
       });

@@ -137,7 +137,7 @@ export const llmoConfig = z.object({
     allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
   }).optional(),
-  ignoredPrompts: z.object({
+  ignored: z.object({
     prompts: z.record(z.uuid(), ignoredPrompt).optional(),
   }).optional(),
 }).superRefine((value, ctx) => {

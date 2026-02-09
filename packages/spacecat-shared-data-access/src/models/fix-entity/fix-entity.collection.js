@@ -283,64 +283,58 @@ class FixEntityCollection extends BaseCollection {
   async rollbackFixWithSuggestionUpdates(
     fixEntityId,
     opportunityId,
-    suggestionUpdates = [],
+    newSuggestionStatus = 'SKIPPED',
     options = {},
   ) {
     // Validate inputs
     guardId('fixEntityId', fixEntityId, 'FixEntityCollection');
     guardId('opportunityId', opportunityId, 'FixEntityCollection');
-    guardArray('suggestionUpdates', suggestionUpdates, 'FixEntityCollection', 'any');
-
-    if (suggestionUpdates.length === 0) {
-      throw new ValidationError('At least one suggestion update is required');
-    }
-
-    // Validate each suggestion update
-    for (const update of suggestionUpdates) {
-      guardId('suggestionId', update.suggestionId, 'FixEntityCollection');
-    }
-
-    // Fetch all suggestions first to get their rank values (needed for GSI update)
-    const suggestionEntities = await Promise.all(
-      suggestionUpdates.map((update) => this.electroService.entities.suggestion
-        .get({ suggestionId: update.suggestionId })
-        .go()),
-    );
-
-    // Build enriched update list with rank values
-    const enrichedUpdates = suggestionUpdates.map((update, index) => ({
-      ...update,
-      rank: suggestionEntities[index].data?.rank,
-    }));
+    guardString('newSuggestionStatus', newSuggestionStatus, 'FixEntityCollection');
 
     try {
+      // Fetch all suggestions for the fix entity using facade layer
+      const suggestions = await this.getSuggestionsByFixEntityId(fixEntityId);
+
+      if (!Array.isArray(suggestions) || suggestions.length === 0) {
+        throw new ValidationError('No suggestions found for the fix entity');
+      }
+
+      // Build enriched update list with rank values using find instead of index
+      const enrichedUpdates = suggestions.map((suggestion) => {
+        const suggestionId = suggestion.getId();
+        const rank = suggestion.getRank();
+
+        return {
+          suggestionId,
+          rank,
+        };
+      });
+
       // Perform the transaction with ALL operations atomically
       const transactionResult = await this.electroService.transaction
         .write(({ fixEntity, suggestion }) => {
           const mutations = [];
 
-          // 1. Update the FixEntity status from FAILED to ROLLED_BACK
-          // The condition ensures the fix must be in FAILED status
+          // 1. Update the FixEntity status to ROLLED_BACK
+          // No status check - update regardless of current status (more generic)
           mutations.push(
             fixEntity
               .patch({ fixEntityId })
               .set({ status: 'ROLLED_BACK' })
-              .where(({ status }, { eq }) => eq(status, 'FAILED'))
-              .commit({ response: 'all_old' }),
+              .commit(),
           );
 
-          // 2. Update each Suggestion status from ERROR to SKIPPED
-          // The condition ensures each suggestion must be in ERROR status
+          // 2. Update each Suggestion status to the provided newSuggestionStatus
+          // No status check needed - update regardless of current status
           for (const update of enrichedUpdates) {
             const { suggestionId, rank } = update;
 
             mutations.push(
               suggestion
                 .patch({ suggestionId })
-                .set({ status: 'SKIPPED' })
+                .set({ status: newSuggestionStatus })
                 .composite({ rank }) // Provide rank for GSI key formatting
-                .where(({ status }, { eq }) => eq(status, 'ERROR'))
-                .commit({ response: 'all_old' }),
+                .commit(),
             );
           }
 
@@ -351,22 +345,14 @@ class FixEntityCollection extends BaseCollection {
       // Check if transaction was canceled
       if (transactionResult.canceled) {
         const failedOperations = transactionResult.data
-          .map((item, index) => {
-            if (item.rejected) {
+          .map((transactionItem, index) => {
+            if (transactionItem.rejected) {
               const failedOp = {
                 index,
-                code: item.code,
-                message: item.message,
+                code: transactionItem.code,
+                message: transactionItem.message,
                 item: index === 0 ? 'fixEntity' : 'suggestion',
               };
-
-              // Include actual data from 'all_old' for debugging if available
-              if (item.fixEntityId || item.suggestionId) {
-                failedOp.id = item.fixEntityId || item.suggestionId;
-              }
-              if (item.status) {
-                failedOp.status = item.status;
-              }
 
               return failedOp;
             }
@@ -382,11 +368,24 @@ class FixEntityCollection extends BaseCollection {
         throw new DataAccessError(errorMessage, this);
       }
 
-      this.log.info(`Successfully rolled back fix entity ${fixEntityId} and updated ${suggestionUpdates.length} suggestions atomically`);
+      // Fetch updated entities after successful transaction
+      // DynamoDB transactions don't support returning 'all_new' values, so we need to fetch
+      // the entities separately to get the updated data
+      const [updatedFixEntity, updatedSuggestions] = await Promise.all([
+        this.findById(fixEntityId),
+        this.getSuggestionsByFixEntityId(fixEntityId),
+      ]);
+
+      if (!updatedFixEntity) {
+        throw new DataAccessError(`Fix entity ${fixEntityId} not found after transaction`, this);
+      }
+
+      this.log.info(`Successfully rolled back fix entity ${fixEntityId} and updated ${updatedSuggestions.length} suggestions atomically`);
 
       return {
         canceled: transactionResult.canceled,
-        data: transactionResult.data,
+        fix: updatedFixEntity, // Return model instance
+        suggestions: updatedSuggestions, // Return model instances array
       };
     } catch (error) {
       this.log.error('Failed to rollback fix entity with suggestion updates', error);

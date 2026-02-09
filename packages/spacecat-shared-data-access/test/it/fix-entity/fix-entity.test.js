@@ -411,391 +411,113 @@ describe('FixEntity IT', async () => {
   });
 
   describe('rollbackFixWithSuggestionUpdates', () => {
-    let testFixEntity;
-    let testSuggestion1;
-    let testSuggestion2;
-    const testOpportunityId = 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4';
+    it('successfully rolls back a fix entity and updates all suggestions to SKIPPED', async () => {
+      const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e687';
 
-    beforeEach(async function () {
-      this.timeout(10000);
-
-      // Create a FAILED fix entity for rollback testing
-      testFixEntity = await FixEntity.create({
-        opportunityId: testOpportunityId,
+      // Create a fix entity with FAILED status
+      const fixEntity = await FixEntity.create({
+        opportunityId,
         status: 'FAILED',
         type: 'CONTENT_UPDATE',
         changeDetails: {
-          description: 'Test fix for rollback',
+          description: 'Test rollback fix',
           changes: [{ field: 'title', oldValue: 'Old', newValue: 'New' }],
         },
       });
 
-      // Create suggestions in ERROR status
-      testSuggestion1 = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Test Suggestion 1 for Rollback',
+      // Create suggestions with different statuses
+      const suggestion1 = await Suggestion.create({
+        opportunityId,
+        title: 'Test Suggestion 1',
         description: 'Description for suggestion 1',
         data: { foo: 'bar-1' },
         type: 'CODE_CHANGE',
-        rank: 10,
-        status: 'ERROR',
-      });
-
-      testSuggestion2 = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Test Suggestion 2 for Rollback',
-        description: 'Description for suggestion 2',
-        data: { foo: 'bar-2' },
-        type: 'CODE_CHANGE',
-        rank: 11,
-        status: 'ERROR',
-      });
-    });
-
-    it('successfully rolls back a FAILED fix and updates suggestions from ERROR to SKIPPED', async () => {
-      const suggestionUpdates = [
-        { suggestionId: testSuggestion1.getId() },
-        { suggestionId: testSuggestion2.getId() },
-      ];
-
-      const result = await FixEntity.rollbackFixWithSuggestionUpdates(
-        testFixEntity.getId(),
-        testOpportunityId,
-        suggestionUpdates,
-      );
-
-      expect(result).to.be.an('object');
-      expect(result.canceled).to.be.false;
-      expect(result.data).to.be.an('array');
-
-      // Verify the fix entity was updated to ROLLED_BACK
-      const updatedFix = await FixEntity.findById(testFixEntity.getId());
-      expect(updatedFix.getStatus()).to.equal('ROLLED_BACK');
-
-      // Verify suggestions were updated to SKIPPED
-      const updatedSuggestion1 = await Suggestion.findById(testSuggestion1.getId());
-      const updatedSuggestion2 = await Suggestion.findById(testSuggestion2.getId());
-
-      expect(updatedSuggestion1.getStatus()).to.equal('SKIPPED');
-      expect(updatedSuggestion2.getStatus()).to.equal('SKIPPED');
-    });
-
-    it('rejects with ValidationError when fixEntityId is invalid', async () => {
-      const suggestionUpdates = [{ suggestionId: testSuggestion1.getId() }];
-
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          'invalid-id',
-          testOpportunityId,
-          suggestionUpdates,
-        ),
-      ).to.be.rejectedWith('fixEntityId must be a valid UUID');
-    });
-
-    it('rejects with ValidationError when opportunityId is invalid', async () => {
-      const suggestionUpdates = [{ suggestionId: testSuggestion1.getId() }];
-
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          testFixEntity.getId(),
-          'invalid-id',
-          suggestionUpdates,
-        ),
-      ).to.be.rejectedWith('opportunityId must be a valid UUID');
-    });
-
-    it('rejects with ValidationError when suggestionUpdates is not an array', async () => {
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          testFixEntity.getId(),
-          testOpportunityId,
-          'not-an-array',
-        ),
-      ).to.be.rejectedWith('suggestionUpdates must be an array');
-    });
-
-    it('rejects with ValidationError when suggestionUpdates is empty', async () => {
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          testFixEntity.getId(),
-          testOpportunityId,
-          [],
-        ),
-      ).to.be.rejectedWith('At least one suggestion update is required');
-    });
-
-    it('rejects with ValidationError when suggestionId in update is invalid', async () => {
-      const suggestionUpdates = [
-        { suggestionId: 'invalid-id' },
-      ];
-
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          testFixEntity.getId(),
-          testOpportunityId,
-          suggestionUpdates,
-        ),
-      ).to.be.rejectedWith('suggestionId must be a valid UUID');
-    });
-
-    it('throws DataAccessError when fix entity is not in FAILED status (transaction canceled)', async () => {
-      // Create a fix entity in DEPLOYED status instead of FAILED
-      const deployedFixEntity = await FixEntity.create({
-        opportunityId: testOpportunityId,
-        status: 'DEPLOYED',
-        type: 'CONTENT_UPDATE',
-        changeDetails: {
-          description: 'Test fix in DEPLOYED status',
-          changes: [{ field: 'title', oldValue: 'Old', newValue: 'New' }],
-        },
-      });
-
-      const suggestionUpdates = [{ suggestionId: testSuggestion1.getId() }];
-
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          deployedFixEntity.getId(),
-          testOpportunityId,
-          suggestionUpdates,
-        ),
-      ).to.be.rejectedWith('Transaction canceled');
-    });
-
-    it('throws DataAccessError when suggestion is not in ERROR status (transaction canceled)', async () => {
-      // Create a suggestion in NEW status instead of ERROR
-      const newSuggestion = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Test Suggestion in NEW status',
-        description: 'Description for suggestion',
-        data: { foo: 'bar' },
-        type: 'CODE_CHANGE',
-        rank: 12,
-        status: 'NEW',
-      });
-
-      const suggestionUpdates = [{ suggestionId: newSuggestion.getId() }];
-
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          testFixEntity.getId(),
-          testOpportunityId,
-          suggestionUpdates,
-        ),
-      ).to.be.rejectedWith('Transaction canceled');
-
-      // Verify fix entity was NOT updated
-      const fixAfterFailure = await FixEntity.findById(testFixEntity.getId());
-      expect(fixAfterFailure.getStatus()).to.equal('FAILED');
-
-      // Verify suggestion was NOT updated
-      const suggestionAfterFailure = await Suggestion.findById(newSuggestion.getId());
-      expect(suggestionAfterFailure.getStatus()).to.equal('NEW');
-    });
-
-    it('throws DataAccessError when one suggestion is in wrong status (partial transaction failure)', async () => {
-      // Create one valid suggestion in ERROR status and one in NEW status
-      const validSuggestion = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Valid Suggestion',
-        description: 'In ERROR status',
-        data: { foo: 'valid' },
-        type: 'CODE_CHANGE',
-        rank: 13,
-        status: 'ERROR',
-      });
-
-      const invalidSuggestion = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Invalid Suggestion',
-        description: 'In NEW status',
-        data: { foo: 'invalid' },
-        type: 'CODE_CHANGE',
-        rank: 14,
-        status: 'NEW',
-      });
-
-      const suggestionUpdates = [
-        { suggestionId: validSuggestion.getId() },
-        { suggestionId: invalidSuggestion.getId() },
-      ];
-
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          testFixEntity.getId(),
-          testOpportunityId,
-          suggestionUpdates,
-        ),
-      ).to.be.rejectedWith('Transaction canceled');
-
-      // Verify atomicity: fix entity should NOT be updated
-      const fixAfterFailure = await FixEntity.findById(testFixEntity.getId());
-      expect(fixAfterFailure.getStatus()).to.equal('FAILED');
-
-      // Verify atomicity: valid suggestion should NOT be updated either
-      const validSuggestionAfterFailure = await Suggestion.findById(validSuggestion.getId());
-      expect(validSuggestionAfterFailure.getStatus()).to.equal('ERROR');
-
-      // Verify invalid suggestion remains unchanged
-      const invalidSuggestionAfterFailure = await Suggestion.findById(invalidSuggestion.getId());
-      expect(invalidSuggestionAfterFailure.getStatus()).to.equal('NEW');
-    });
-
-    it('throws DataAccessError when fix entity does not exist (transaction canceled)', async () => {
-      const nonExistentFixId = '00000000-0000-0000-0000-000000000000';
-      const suggestionUpdates = [{ suggestionId: testSuggestion1.getId() }];
-
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          nonExistentFixId,
-          testOpportunityId,
-          suggestionUpdates,
-        ),
-      ).to.be.rejectedWith('Transaction canceled');
-    });
-
-    it('throws error when suggestion does not exist (fails to fetch rank)', async () => {
-      const nonExistentSuggestionId = '00000000-0000-0000-0000-000000000000';
-      const suggestionUpdates = [{ suggestionId: nonExistentSuggestionId }];
-
-      // This will fail during the rank fetching phase, before the transaction
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          testFixEntity.getId(),
-          testOpportunityId,
-          suggestionUpdates,
-        ),
-      ).to.be.rejected;
-
-      // Verify fix entity was NOT updated due to early failure
-      const fixAfterFailure = await FixEntity.findById(testFixEntity.getId());
-      expect(fixAfterFailure.getStatus()).to.equal('FAILED');
-    });
-
-    it('successfully handles multiple suggestions with different ranks', async () => {
-      // Create suggestions with different ranks
-      const suggestion1 = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Suggestion rank 100',
-        description: 'Description',
-        data: { foo: 'bar' },
-        type: 'CODE_CHANGE',
-        rank: 100,
+        rank: 0,
         status: 'ERROR',
       });
 
       const suggestion2 = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Suggestion rank 200',
-        description: 'Description',
-        data: { foo: 'bar' },
+        opportunityId,
+        title: 'Test Suggestion 2',
+        description: 'Description for suggestion 2',
+        data: { foo: 'bar-2' },
         type: 'CODE_CHANGE',
-        rank: 200,
+        rank: 1,
         status: 'ERROR',
       });
 
       const suggestion3 = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Suggestion rank 300',
-        description: 'Description',
-        data: { foo: 'bar' },
+        opportunityId,
+        title: 'Test Suggestion 3',
+        description: 'Description for suggestion 3',
+        data: { foo: 'bar-3' },
         type: 'CODE_CHANGE',
-        rank: 300,
-        status: 'ERROR',
+        rank: 2,
+        status: 'NEW',
       });
 
-      const suggestionUpdates = [
-        { suggestionId: suggestion1.getId() },
-        { suggestionId: suggestion2.getId() },
-        { suggestionId: suggestion3.getId() },
-      ];
-
-      const result = await FixEntity.rollbackFixWithSuggestionUpdates(
-        testFixEntity.getId(),
-        testOpportunityId,
-        suggestionUpdates,
+      // Associate suggestions with fix entity
+      const opportunity = { getId: () => opportunityId };
+      await FixEntity.setSuggestionsForFixEntity(
+        opportunity.getId(),
+        fixEntity,
+        [suggestion1, suggestion2, suggestion3],
       );
 
+      // Rollback the fix entity
+      const result = await FixEntity.rollbackFixWithSuggestionUpdates(
+        fixEntity.getId(),
+        opportunityId,
+        'SKIPPED',
+      );
+
+      // Verify result structure
+      expect(result).to.be.an('object');
       expect(result.canceled).to.be.false;
+      expect(result.fix).to.be.an('object');
+      expect(result.suggestions).to.be.an('array').with.length(3);
 
-      // Verify all suggestions were updated
-      const updatedSuggestion1 = await Suggestion.findById(suggestion1.getId());
-      const updatedSuggestion2 = await Suggestion.findById(suggestion2.getId());
-      const updatedSuggestion3 = await Suggestion.findById(suggestion3.getId());
+      // Verify fix entity was updated (using model methods)
+      expect(result.fix.getId()).to.equal(fixEntity.getId());
+      expect(result.fix.getStatus()).to.equal('ROLLED_BACK');
+      expect(result.fix.getOpportunityId()).to.equal(opportunityId);
 
-      expect(updatedSuggestion1.getStatus()).to.equal('SKIPPED');
-      expect(updatedSuggestion2.getStatus()).to.equal('SKIPPED');
-      expect(updatedSuggestion3.getStatus()).to.equal('SKIPPED');
+      // Verify all suggestions were updated to SKIPPED (using model methods)
+      result.suggestions.forEach((suggestion) => {
+        expect(suggestion.getStatus()).to.equal('SKIPPED');
+        expect([suggestion1.getId(), suggestion2.getId(), suggestion3.getId()])
+          .to.include(suggestion.getId());
+      });
+
+      // Verify in database by fetching again
+      const updatedFixEntity = await FixEntity.findById(fixEntity.getId());
+      expect(updatedFixEntity.getStatus()).to.equal('ROLLED_BACK');
+
+      const updatedSuggestions = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
+      expect(updatedSuggestions).to.have.length(3);
+      updatedSuggestions.forEach((suggestion) => {
+        expect(suggestion.getStatus()).to.equal('SKIPPED');
+      });
     });
 
-    it('maintains transaction atomicity when both fix and suggestions fail conditions', async () => {
-      // Create a fix in PENDING status (not FAILED) and suggestion in NEW status (not ERROR)
-      const wrongStatusFix = await FixEntity.create({
-        opportunityId: testOpportunityId,
-        status: 'PENDING',
+    it('successfully rolls back a fix entity with custom suggestion status', async () => {
+      const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e688';
+
+      // Create a fix entity
+      const fixEntity = await FixEntity.create({
+        opportunityId,
+        status: 'FAILED',
         type: 'CONTENT_UPDATE',
         changeDetails: {
-          description: 'Fix in wrong status',
+          description: 'Test rollback with custom status',
           changes: [{ field: 'title', oldValue: 'Old', newValue: 'New' }],
         },
       });
 
-      const wrongStatusSuggestion = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Suggestion in wrong status',
-        description: 'Description',
-        data: { foo: 'bar' },
-        type: 'CODE_CHANGE',
-        rank: 15,
-        status: 'FIXED',
-      });
-
-      const suggestionUpdates = [{ suggestionId: wrongStatusSuggestion.getId() }];
-
-      await expect(
-        FixEntity.rollbackFixWithSuggestionUpdates(
-          wrongStatusFix.getId(),
-          testOpportunityId,
-          suggestionUpdates,
-        ),
-      ).to.be.rejectedWith('Transaction canceled');
-
-      // Verify neither entity was modified
-      const fixAfter = await FixEntity.findById(wrongStatusFix.getId());
-      const suggestionAfter = await Suggestion.findById(wrongStatusSuggestion.getId());
-
-      expect(fixAfter.getStatus()).to.equal('PENDING');
-      expect(suggestionAfter.getStatus()).to.equal('FIXED');
-    });
-
-    it('returns transaction result with proper structure', async () => {
-      const suggestionUpdates = [
-        { suggestionId: testSuggestion1.getId() },
-      ];
-
-      const result = await FixEntity.rollbackFixWithSuggestionUpdates(
-        testFixEntity.getId(),
-        testOpportunityId,
-        suggestionUpdates,
-      );
-
-      expect(result).to.have.property('canceled');
-      expect(result).to.have.property('data');
-      expect(result.canceled).to.be.false;
-      expect(result.data).to.be.an('array');
-      expect(result.data.length).to.equal(2); // 1 fix + 1 suggestion
-
-      // The transaction succeeded, so verify the entities were actually updated
-      const updatedFix = await FixEntity.findById(testFixEntity.getId());
-      const updatedSuggestion = await Suggestion.findById(testSuggestion1.getId());
-
-      expect(updatedFix.getStatus()).to.equal('ROLLED_BACK');
-      expect(updatedSuggestion.getStatus()).to.equal('SKIPPED');
-    });
-
-    it('handles suggestions with rank value of 0', async () => {
-      const suggestionWithZeroRank = await Suggestion.create({
-        opportunityId: testOpportunityId,
-        title: 'Suggestion with rank 0',
+      // Create a suggestion
+      const suggestion = await Suggestion.create({
+        opportunityId,
+        title: 'Test Suggestion',
         description: 'Description',
         data: { foo: 'bar' },
         type: 'CODE_CHANGE',
@@ -803,18 +525,240 @@ describe('FixEntity IT', async () => {
         status: 'ERROR',
       });
 
-      const suggestionUpdates = [{ suggestionId: suggestionWithZeroRank.getId() }];
-
-      const result = await FixEntity.rollbackFixWithSuggestionUpdates(
-        testFixEntity.getId(),
-        testOpportunityId,
-        suggestionUpdates,
+      // Associate suggestion with fix entity
+      const opportunity = { getId: () => opportunityId };
+      await FixEntity.setSuggestionsForFixEntity(
+        opportunity.getId(),
+        fixEntity,
+        [suggestion],
       );
 
-      expect(result.canceled).to.be.false;
+      // Rollback with custom status 'REJECTED' (valid suggestion status)
+      const result = await FixEntity.rollbackFixWithSuggestionUpdates(
+        fixEntity.getId(),
+        opportunityId,
+        'REJECTED',
+      );
 
-      const updatedSuggestion = await Suggestion.findById(suggestionWithZeroRank.getId());
-      expect(updatedSuggestion.getStatus()).to.equal('SKIPPED');
+      // Verify suggestion was updated to REJECTED (using model methods)
+      expect(result.suggestions).to.have.length(1);
+      expect(result.suggestions[0].getStatus()).to.equal('REJECTED');
+      expect(result.suggestions[0].getId()).to.equal(suggestion.getId());
+
+      // Verify in database
+      const updatedSuggestions = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
+      expect(updatedSuggestions[0].getStatus()).to.equal('REJECTED');
+    });
+
+    it('rolls back fix entity regardless of initial status', async () => {
+      const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e689';
+
+      // Create a fix entity with PENDING status (not FAILED)
+      const fixEntity = await FixEntity.create({
+        opportunityId,
+        status: 'PENDING',
+        type: 'CONTENT_UPDATE',
+        changeDetails: {
+          description: 'Test rollback from PENDING',
+          changes: [{ field: 'title', oldValue: 'Old', newValue: 'New' }],
+        },
+      });
+
+      // Create a suggestion
+      const suggestion = await Suggestion.create({
+        opportunityId,
+        title: 'Test Suggestion',
+        description: 'Description',
+        data: { foo: 'bar' },
+        type: 'CODE_CHANGE',
+        rank: 0,
+        status: 'NEW',
+      });
+
+      // Associate suggestion with fix entity
+      const opportunity = { getId: () => opportunityId };
+      await FixEntity.setSuggestionsForFixEntity(
+        opportunity.getId(),
+        fixEntity,
+        [suggestion],
+      );
+
+      // Rollback should work even though status is not FAILED
+      const result = await FixEntity.rollbackFixWithSuggestionUpdates(
+        fixEntity.getId(),
+        opportunityId,
+        'SKIPPED',
+      );
+
+      // Verify fix entity was updated to ROLLED_BACK (using model method)
+      expect(result.fix.getStatus()).to.equal('ROLLED_BACK');
+
+      // Verify in database
+      const updatedFixEntity = await FixEntity.findById(fixEntity.getId());
+      expect(updatedFixEntity.getStatus()).to.equal('ROLLED_BACK');
+    });
+
+    it('throws ValidationError when fix entity has no suggestions', async () => {
+      const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e690';
+
+      // Create a fix entity without suggestions
+      const fixEntity = await FixEntity.create({
+        opportunityId,
+        status: 'FAILED',
+        type: 'CONTENT_UPDATE',
+        changeDetails: {
+          description: 'Test rollback without suggestions',
+          changes: [{ field: 'title', oldValue: 'Old', newValue: 'New' }],
+        },
+      });
+
+      // Attempt to rollback should fail
+      await expect(
+        FixEntity.rollbackFixWithSuggestionUpdates(
+          fixEntity.getId(),
+          opportunityId,
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith('No suggestions found for the fix entity');
+    });
+
+    it('throws ValidationError when fixEntityId is invalid', async () => {
+      const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e691';
+
+      await expect(
+        FixEntity.rollbackFixWithSuggestionUpdates(
+          'invalid-uuid',
+          opportunityId,
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith('fixEntityId must be a valid UUID');
+    });
+
+    it('throws ValidationError when opportunityId is invalid', async () => {
+      const fixEntityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e692';
+
+      await expect(
+        FixEntity.rollbackFixWithSuggestionUpdates(
+          fixEntityId,
+          'invalid-uuid',
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith('opportunityId must be a valid UUID');
+    });
+
+    it('throws ValidationError when newSuggestionStatus is not a string', async () => {
+      const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e693';
+      const fixEntityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e694';
+
+      await expect(
+        FixEntity.rollbackFixWithSuggestionUpdates(
+          fixEntityId,
+          opportunityId,
+          123, // Invalid: not a string
+        ),
+      ).to.be.rejectedWith('newSuggestionStatus is required');
+    });
+
+    it('handles single suggestion correctly', async () => {
+      const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e695';
+
+      // Create a fix entity
+      const fixEntity = await FixEntity.create({
+        opportunityId,
+        status: 'FAILED',
+        type: 'CONTENT_UPDATE',
+        changeDetails: {
+          description: 'Test rollback with single suggestion',
+          changes: [{ field: 'title', oldValue: 'Old', newValue: 'New' }],
+        },
+      });
+
+      // Create a single suggestion
+      const suggestion = await Suggestion.create({
+        opportunityId,
+        title: 'Single Suggestion',
+        description: 'Description',
+        data: { foo: 'bar' },
+        type: 'CODE_CHANGE',
+        rank: 0,
+        status: 'ERROR',
+      });
+
+      // Associate suggestion with fix entity
+      const opportunity = { getId: () => opportunityId };
+      await FixEntity.setSuggestionsForFixEntity(
+        opportunity.getId(),
+        fixEntity,
+        [suggestion],
+      );
+
+      // Rollback
+      const result = await FixEntity.rollbackFixWithSuggestionUpdates(
+        fixEntity.getId(),
+        opportunityId,
+        'SKIPPED',
+      );
+
+      // Verify result (using model methods)
+      expect(result.suggestions).to.have.length(1);
+      expect(result.suggestions[0].getId()).to.equal(suggestion.getId());
+      expect(result.suggestions[0].getStatus()).to.equal('SKIPPED');
+      expect(result.fix.getStatus()).to.equal('ROLLED_BACK');
+    });
+
+    it('returns model instances (not raw data objects)', async () => {
+      const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e696';
+
+      // Create a fix entity
+      const fixEntity = await FixEntity.create({
+        opportunityId,
+        status: 'FAILED',
+        type: 'CONTENT_UPDATE',
+        changeDetails: {
+          description: 'Test raw data return',
+          changes: [{ field: 'title', oldValue: 'Old', newValue: 'New' }],
+        },
+      });
+
+      // Create a suggestion
+      const suggestion = await Suggestion.create({
+        opportunityId,
+        title: 'Test Suggestion',
+        description: 'Description',
+        data: { foo: 'bar' },
+        type: 'CODE_CHANGE',
+        rank: 0,
+        status: 'ERROR',
+      });
+
+      // Associate suggestion with fix entity
+      const opportunity = { getId: () => opportunityId };
+      await FixEntity.setSuggestionsForFixEntity(
+        opportunity.getId(),
+        fixEntity,
+        [suggestion],
+      );
+
+      // Rollback
+      const result = await FixEntity.rollbackFixWithSuggestionUpdates(
+        fixEntity.getId(),
+        opportunityId,
+        'SKIPPED',
+      );
+
+      // Verify result contains model instances (not raw data objects)
+      // Model instances have methods like getId(), getStatus(), etc.
+      expect(result.fix).to.be.an('object');
+      expect(result.fix).to.have.property('getId'); // Model instance method
+      expect(result.fix).to.have.property('getStatus'); // Model instance method
+      expect(result.fix.getId()).to.be.a('string');
+      expect(result.fix.getStatus()).to.equal('ROLLED_BACK');
+
+      expect(result.suggestions[0]).to.be.an('object');
+      expect(result.suggestions[0]).to.have.property('getId'); // Model instance method
+      expect(result.suggestions[0]).to.have.property('getStatus'); // Model instance method
+      expect(result.suggestions[0].getId()).to.be.a('string');
+      expect(result.suggestions[0].getStatus()).to.equal('SKIPPED');
     });
   });
 });

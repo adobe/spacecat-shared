@@ -731,21 +731,65 @@ describe('FixEntityCollection', () => {
   describe('rollbackFixWithSuggestionUpdates', () => {
     const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
     const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
-    const suggestionUpdates = [
-      { suggestionId: '123e4567-e89b-12d3-a456-426614174010' },
-      { suggestionId: '123e4567-e89b-12d3-a456-426614174011' },
-    ];
+    const suggestionId1 = '123e4567-e89b-12d3-a456-426614174010';
+    const suggestionId2 = '123e4567-e89b-12d3-a456-426614174011';
 
     let mockTransactionWrite;
     let mockTransactionGo;
-    let mockSuggestionGet;
+    let mockGetSuggestionsByFixEntityId;
+    let mockFindById;
     let mockFixEntityPatch;
     let mockSuggestionPatch;
+    let rollbackMockFixEntity;
+    let rollbackMockSuggestions;
 
     beforeEach(() => {
       mockTransactionWrite = stub();
       mockTransactionGo = stub();
-      mockSuggestionGet = stub();
+      mockGetSuggestionsByFixEntityId = stub();
+      mockFindById = stub();
+
+      // Create mock fix entity with record property for rollback tests
+      rollbackMockFixEntity = {
+        getId: () => fixEntityId,
+        record: {
+          fixEntityId,
+          status: 'ROLLED_BACK',
+          opportunityId,
+        },
+      };
+
+      // Create mock suggestion objects with record property for rollback tests
+      rollbackMockSuggestions = [
+        {
+          getId: () => suggestionId1,
+          getRank: () => 10,
+          record: {
+            suggestionId: suggestionId1,
+            status: 'SKIPPED',
+            rank: 10,
+            opportunityId,
+          },
+        },
+        {
+          getId: () => suggestionId2,
+          getRank: () => 11,
+          record: {
+            suggestionId: suggestionId2,
+            status: 'SKIPPED',
+            rank: 11,
+            opportunityId,
+          },
+        },
+      ];
+
+      // Mock findById to return mock fix entity
+      fixEntityCollection.findById = mockFindById;
+      mockFindById.resolves(rollbackMockFixEntity);
+
+      // Mock getSuggestionsByFixEntityId to return mock suggestions
+      fixEntityCollection.getSuggestionsByFixEntityId = mockGetSuggestionsByFixEntityId;
+      mockGetSuggestionsByFixEntityId.resolves(rollbackMockSuggestions);
 
       // Mock entity patches
       mockFixEntityPatch = stub();
@@ -753,12 +797,10 @@ describe('FixEntityCollection', () => {
 
       const mockCommit = stub().returns({});
 
-      const mockFixEntityWhere = stub().returns({ commit: mockCommit });
-      const mockFixEntitySet = stub().returns({ where: mockFixEntityWhere });
+      const mockFixEntitySet = stub().returns({ commit: mockCommit });
       mockFixEntityPatch.returns({ set: mockFixEntitySet });
 
-      const mockSuggestionWhere = stub().returns({ commit: mockCommit });
-      const mockSuggestionComposite = stub().returns({ where: mockSuggestionWhere });
+      const mockSuggestionComposite = stub().returns({ commit: mockCommit });
       const mockSuggestionSet = stub().returns({ composite: mockSuggestionComposite });
       mockSuggestionPatch.returns({ set: mockSuggestionSet });
 
@@ -768,11 +810,11 @@ describe('FixEntityCollection', () => {
           write: mockTransactionWrite,
         },
         entities: {
-          suggestion: {
-            get: mockSuggestionGet,
-          },
           fixEntity: {
             patch: mockFixEntityPatch,
+          },
+          suggestion: {
+            patch: mockSuggestionPatch,
           },
         },
       };
@@ -791,7 +833,7 @@ describe('FixEntityCollection', () => {
         fixEntityCollection.rollbackFixWithSuggestionUpdates(
           'invalid-uuid',
           opportunityId,
-          suggestionUpdates,
+          'SKIPPED',
         ),
       ).to.be.rejectedWith(ValidationError, 'fixEntityId must be a valid UUID');
     });
@@ -801,58 +843,35 @@ describe('FixEntityCollection', () => {
         fixEntityCollection.rollbackFixWithSuggestionUpdates(
           fixEntityId,
           'invalid-uuid',
-          suggestionUpdates,
+          'SKIPPED',
         ),
       ).to.be.rejectedWith(ValidationError, 'opportunityId must be a valid UUID');
     });
 
-    it('should throw validation error when suggestionUpdates is not an array', async () => {
+    it('should throw validation error when newSuggestionStatus is not a string', async () => {
       await expect(
         fixEntityCollection.rollbackFixWithSuggestionUpdates(
           fixEntityId,
           opportunityId,
-          'not-an-array',
+          123,
         ),
-      ).to.be.rejectedWith(ValidationError, 'suggestionUpdates must be an array');
+      ).to.be.rejectedWith(ValidationError, 'newSuggestionStatus is required');
     });
 
-    it('should throw validation error when suggestionUpdates is empty', async () => {
-      await expect(
-        fixEntityCollection.rollbackFixWithSuggestionUpdates(
-          fixEntityId,
-          opportunityId,
-          [],
-        ),
-      ).to.be.rejectedWith(ValidationError, 'At least one suggestion update is required');
-    });
-
-    it('should throw validation error when suggestionId is invalid', async () => {
-      const invalidUpdates = [
-        { suggestionId: 'invalid-uuid' },
-      ];
+    it('should throw ValidationError when fix entity has no suggestions', async () => {
+      mockGetSuggestionsByFixEntityId.resolves([]);
 
       await expect(
         fixEntityCollection.rollbackFixWithSuggestionUpdates(
           fixEntityId,
           opportunityId,
-          invalidUpdates,
+          'SKIPPED',
         ),
-      ).to.be.rejectedWith(ValidationError, 'suggestionId must be a valid UUID');
+      ).to.be.rejectedWith(ValidationError, 'No suggestions found for the fix entity');
     });
 
     it('should successfully rollback fix with suggestions', async () => {
-      // Mock suggestion get calls to return rank values
-      mockSuggestionGet
-        .onFirstCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 0 } }),
-        })
-        .onSecondCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 1 } }),
-        });
-
-      // Mock transaction success
+      // Mock transaction success (no data returned, as DynamoDB transactions don't return data)
       mockTransactionGo.resolves({
         canceled: false,
         data: [],
@@ -861,25 +880,21 @@ describe('FixEntityCollection', () => {
       const result = await fixEntityCollection.rollbackFixWithSuggestionUpdates(
         fixEntityId,
         opportunityId,
-        suggestionUpdates,
+        'SKIPPED',
       );
 
       expect(result.canceled).to.be.false;
+      expect(result.fix).to.equal(rollbackMockFixEntity); // Return model instance
+      expect(result.suggestions).to.deep.equal(rollbackMockSuggestions); // Return model instances
+      // getSuggestionsByFixEntityId is called twice: once before transaction, once after
+      expect(mockGetSuggestionsByFixEntityId).to.have.been.calledTwice;
+      expect(mockGetSuggestionsByFixEntityId).to.have.always.been.calledWith(fixEntityId);
+      expect(mockFindById).to.have.been.calledOnceWith(fixEntityId);
       expect(mockTransactionWrite).to.have.been.calledOnce;
       expect(mockTransactionGo).to.have.been.calledOnce;
     });
 
     it('should pass token option to transaction when provided', async () => {
-      mockSuggestionGet
-        .onFirstCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 0 } }),
-        })
-        .onSecondCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 1 } }),
-        });
-
       mockTransactionGo.resolves({
         canceled: false,
         data: [],
@@ -889,21 +904,17 @@ describe('FixEntityCollection', () => {
       await fixEntityCollection.rollbackFixWithSuggestionUpdates(
         fixEntityId,
         opportunityId,
-        suggestionUpdates,
+        'SKIPPED',
         { token },
       );
 
       expect(mockTransactionGo).to.have.been.calledWith({ token });
+      expect(mockFindById).to.have.been.calledOnceWith(fixEntityId);
     });
 
     it('should handle transaction cancelation with failed operations', async () => {
-      mockSuggestionGet
-        .onFirstCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 0 } }),
-        });
-
       // Mock transaction canceled with failed operations
+      // According to ElectroDB docs, TransactionItem only has: rejected, code, message, item
       mockTransactionGo.resolves({
         canceled: true,
         data: [
@@ -911,11 +922,11 @@ describe('FixEntityCollection', () => {
             rejected: true,
             code: 'ConditionalCheckFailed',
             message: 'The conditional request failed',
-            fixEntityId,
-            status: 'PENDING',
+            item: null,
           },
           {
             rejected: false,
+            item: null,
           },
         ],
       });
@@ -924,7 +935,7 @@ describe('FixEntityCollection', () => {
         fixEntityCollection.rollbackFixWithSuggestionUpdates(
           fixEntityId,
           opportunityId,
-          [{ suggestionId: suggestionUpdates[0].suggestionId }],
+          'SKIPPED',
         ),
       ).to.be.rejectedWith(
         DataAccessError,
@@ -938,12 +949,6 @@ describe('FixEntityCollection', () => {
     });
 
     it('should handle transaction cancelation without detailed failure info', async () => {
-      mockSuggestionGet
-        .onFirstCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 0 } }),
-        });
-
       // Mock transaction canceled without detailed failure info
       mockTransactionGo.resolves({
         canceled: true,
@@ -954,7 +959,7 @@ describe('FixEntityCollection', () => {
         fixEntityCollection.rollbackFixWithSuggestionUpdates(
           fixEntityId,
           opportunityId,
-          [{ suggestionId: suggestionUpdates[0].suggestionId }],
+          'SKIPPED',
         ),
       ).to.be.rejectedWith(
         DataAccessError,
@@ -963,29 +968,20 @@ describe('FixEntityCollection', () => {
     });
 
     it('should include suggestion item type in error message for failed suggestion updates', async () => {
-      mockSuggestionGet
-        .onFirstCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 0 } }),
-        })
-        .onSecondCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 1 } }),
-        });
-
       // Mock transaction canceled with suggestion failure
+      // According to ElectroDB docs, TransactionItem only has: rejected, code, message, item
       mockTransactionGo.resolves({
         canceled: true,
         data: [
           {
             rejected: false,
+            item: null,
           },
           {
             rejected: true,
             code: 'ConditionalCheckFailed',
-            message: 'Suggestion not in ERROR status',
-            suggestionId: suggestionUpdates[0].suggestionId,
-            status: 'FIXED',
+            message: 'Suggestion update failed',
+            item: null,
           },
         ],
       });
@@ -994,7 +990,7 @@ describe('FixEntityCollection', () => {
         fixEntityCollection.rollbackFixWithSuggestionUpdates(
           fixEntityId,
           opportunityId,
-          suggestionUpdates,
+          'SKIPPED',
         ),
       ).to.be.rejectedWith(
         DataAccessError,
@@ -1003,12 +999,6 @@ describe('FixEntityCollection', () => {
     });
 
     it('should handle general errors during transaction', async () => {
-      mockSuggestionGet
-        .onFirstCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 0 } }),
-        });
-
       const testError = new Error('Database connection failed');
       mockTransactionGo.rejects(testError);
 
@@ -1016,7 +1006,7 @@ describe('FixEntityCollection', () => {
         fixEntityCollection.rollbackFixWithSuggestionUpdates(
           fixEntityId,
           opportunityId,
-          [{ suggestionId: suggestionUpdates[0].suggestionId }],
+          'SKIPPED',
         ),
       ).to.be.rejectedWith(DataAccessError, 'Failed to rollback fix entity with suggestion updates');
 
@@ -1026,32 +1016,25 @@ describe('FixEntityCollection', () => {
       );
     });
 
-    it('should handle errors when fetching suggestion ranks', async () => {
-      const fetchError = new Error('Failed to fetch suggestion');
-      mockSuggestionGet.returns({
-        go: stub().rejects(fetchError),
-      });
+    it('should handle errors when fetching suggestions', async () => {
+      const fetchError = new Error('Failed to fetch suggestions');
+      mockGetSuggestionsByFixEntityId.rejects(fetchError);
 
       await expect(
         fixEntityCollection.rollbackFixWithSuggestionUpdates(
           fixEntityId,
           opportunityId,
-          suggestionUpdates,
+          'SKIPPED',
         ),
-      ).to.be.rejectedWith(Error, 'Failed to fetch suggestion');
+      ).to.be.rejectedWith(DataAccessError, 'Failed to rollback fix entity with suggestion updates');
+
+      expect(mockLogger.error).to.have.been.calledWith(
+        sinon.match('Failed to rollback fix entity with suggestion updates'),
+        fetchError,
+      );
     });
 
     it('should create transaction with correct mutation structure', async () => {
-      mockSuggestionGet
-        .onFirstCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 0 } }),
-        })
-        .onSecondCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 1 } }),
-        });
-
       mockTransactionGo.resolves({
         canceled: false,
         data: [],
@@ -1060,26 +1043,17 @@ describe('FixEntityCollection', () => {
       await fixEntityCollection.rollbackFixWithSuggestionUpdates(
         fixEntityId,
         opportunityId,
-        suggestionUpdates,
+        'SKIPPED',
       );
 
       // Verify the transaction write was called with a function
       expect(mockTransactionWrite).to.have.been.calledOnce;
       const transactionFn = mockTransactionWrite.firstCall.args[0];
       expect(transactionFn).to.be.a('function');
+      expect(mockFindById).to.have.been.calledOnceWith(fixEntityId);
     });
 
-    it('should fetch suggestions with correct suggestionIds', async () => {
-      mockSuggestionGet
-        .onFirstCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 0 } }),
-        })
-        .onSecondCall()
-        .returns({
-          go: stub().resolves({ data: { rank: 1 } }),
-        });
-
+    it('should fetch suggestions using getSuggestionsByFixEntityId', async () => {
       mockTransactionGo.resolves({
         canceled: false,
         data: [],
@@ -1088,24 +1062,22 @@ describe('FixEntityCollection', () => {
       await fixEntityCollection.rollbackFixWithSuggestionUpdates(
         fixEntityId,
         opportunityId,
-        suggestionUpdates,
+        'SKIPPED',
       );
 
-      expect(mockSuggestionGet).to.have.been.calledTwice;
-      expect(mockSuggestionGet.firstCall.args[0]).to.deep.equal({
-        suggestionId: suggestionUpdates[0].suggestionId,
-      });
-      expect(mockSuggestionGet.secondCall.args[0]).to.deep.equal({
-        suggestionId: suggestionUpdates[1].suggestionId,
-      });
+      // getSuggestionsByFixEntityId is called twice: once before transaction, once after
+      expect(mockGetSuggestionsByFixEntityId).to.have.been.calledTwice;
+      expect(mockGetSuggestionsByFixEntityId).to.have.always.been.calledWith(fixEntityId);
     });
 
-    it('should handle single suggestion update', async () => {
-      const singleUpdate = [{ suggestionId: suggestionUpdates[0].suggestionId }];
-
-      mockSuggestionGet.returns({
-        go: stub().resolves({ data: { rank: 0 } }),
-      });
+    it('should handle single suggestion', async () => {
+      const singleSuggestion = [rollbackMockSuggestions[0]];
+      // First call (before transaction) returns both, second call (after transaction) returns one
+      mockGetSuggestionsByFixEntityId
+        .onFirstCall()
+        .resolves(rollbackMockSuggestions)
+        .onSecondCall()
+        .resolves(singleSuggestion);
 
       mockTransactionGo.resolves({
         canceled: false,
@@ -1115,18 +1087,15 @@ describe('FixEntityCollection', () => {
       const result = await fixEntityCollection.rollbackFixWithSuggestionUpdates(
         fixEntityId,
         opportunityId,
-        singleUpdate,
+        'SKIPPED',
       );
 
       expect(result.canceled).to.be.false;
-      expect(mockSuggestionGet).to.have.been.calledOnce;
+      expect(result.suggestions).to.have.lengthOf(1);
+      expect(result.suggestions[0]).to.equal(singleSuggestion[0]); // Return model instance
     });
 
     it('should log success when transaction completes', async () => {
-      mockSuggestionGet.returns({
-        go: stub().resolves({ data: { rank: 0 } }),
-      });
-
       mockTransactionGo.resolves({
         canceled: false,
         data: [],
@@ -1135,12 +1104,79 @@ describe('FixEntityCollection', () => {
       await fixEntityCollection.rollbackFixWithSuggestionUpdates(
         fixEntityId,
         opportunityId,
-        [{ suggestionId: suggestionUpdates[0].suggestionId }],
+        'SKIPPED',
       );
 
       expect(mockLogger.info).to.have.been.calledWith(
         sinon.match(/Successfully rolled back fix/),
       );
+    });
+
+    it('should use custom newSuggestionStatus parameter', async () => {
+      // Create mock suggestions with custom status for post-transaction fetch
+      const customStatusSuggestions = [
+        {
+          getId: () => suggestionId1,
+          getStatus: () => 'NEW', // Custom status
+          getRank: () => 10,
+          record: {
+            suggestionId: suggestionId1,
+            status: 'NEW', // Custom status
+            rank: 10,
+            opportunityId,
+          },
+        },
+      ];
+
+      // First call returns original suggestions, second call returns updated ones
+      mockGetSuggestionsByFixEntityId
+        .onFirstCall()
+        .resolves(rollbackMockSuggestions)
+        .onSecondCall()
+        .resolves(customStatusSuggestions);
+
+      mockTransactionGo.resolves({
+        canceled: false,
+        data: [],
+      });
+
+      const result = await fixEntityCollection.rollbackFixWithSuggestionUpdates(
+        fixEntityId,
+        opportunityId,
+        'NEW', // Custom status
+      );
+
+      expect(result.canceled).to.be.false;
+      expect(result.suggestions[0].getStatus()).to.equal('NEW'); // Use model method
+    });
+
+    it('should throw DataAccessError when fix entity is not found after transaction', async () => {
+      // Mock transaction succeeds
+      mockTransactionGo.resolves({
+        canceled: false,
+        data: [],
+      });
+
+      // Mock findById to return null after transaction (entity not found)
+      mockFindById.resolves(null);
+
+      // Mock getSuggestionsByFixEntityId to return suggestions
+      mockGetSuggestionsByFixEntityId.resolves(rollbackMockSuggestions);
+
+      try {
+        await fixEntityCollection.rollbackFixWithSuggestionUpdates(
+          fixEntityId,
+          opportunityId,
+          'SKIPPED',
+        );
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.be.instanceOf(DataAccessError);
+        expect(error.message).to.include(`Fix entity ${fixEntityId} not found after transaction`);
+      }
+
+      // Verify findById was called after transaction
+      expect(mockFindById).to.have.been.calledOnceWith(fixEntityId);
     });
   });
 

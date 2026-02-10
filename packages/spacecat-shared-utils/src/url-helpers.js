@@ -145,7 +145,12 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
   let resp;
 
   try {
-    resp = await fetch(urlString, { headers, method });
+    const timeout = method === 'HEAD' ? 10000 : 20000; // 10s for HEAD, 20s for GET
+    resp = await fetch(urlString, {
+      headers,
+      method,
+      signal: AbortSignal.timeout(timeout),
+    });
 
     if (resp.ok) {
       return ensureHttps(resp.url);

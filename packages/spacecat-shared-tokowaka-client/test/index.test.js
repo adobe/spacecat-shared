@@ -3153,7 +3153,7 @@ describe('TokowakaClient', () => {
           mockSite,
           mockOpportunity,
           mockSuggestions,
-          { warmupDelayMs: 0 },
+          { warmupDelayMs: 0, maxRetries: 0, retryDelayMs: 0 },
         );
         expect.fail('Should have thrown error');
       } catch (error) {

@@ -68,23 +68,36 @@ function setupImsTokenNock() {
     });
 }
 
+/**
+ * Helper: joins execFileSync args into a single string for easy assertion.
+ * execFileSync is called as execFileSync(file, argsArray, options),
+ * so call.args[1] is the git arguments array.
+ */
+function getGitArgs(call) {
+  return call.args[1];
+}
+
+function getGitCmd(call) {
+  return call.args[1].join(' ');
+}
+
 describe('CloudManagerClient', () => {
   let CloudManagerClient;
-  let execSyncStub;
+  let execFileSyncStub;
   let existsSyncStub;
   let rmSyncStub;
   let writeSyncStub;
   let unlinkSyncStub;
 
   beforeEach(async () => {
-    execSyncStub = sinon.stub().returns('');
+    execFileSyncStub = sinon.stub().returns('');
     existsSyncStub = sinon.stub().returns(false);
     rmSyncStub = sinon.stub();
     writeSyncStub = sinon.stub();
     unlinkSyncStub = sinon.stub();
 
     const mod = await esmock('../src/index.js', {
-      child_process: { execSync: execSyncStub },
+      child_process: { execFileSync: execFileSyncStub },
       fs: {
         existsSync: existsSyncStub,
         mkdirSync: sinon.stub(),
@@ -171,15 +184,17 @@ describe('CloudManagerClient', () => {
       const clonePath = await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID);
 
       expect(clonePath).to.equal(EXPECTED_CLONE_PATH);
-      expect(execSyncStub).to.have.been.calledOnce;
+      expect(execFileSyncStub).to.have.been.calledOnce;
 
-      const gitCmd = execSyncStub.firstCall.args[0];
-      expect(gitCmd).to.include('/opt/bin/git');
+      const gitCmd = getGitCmd(execFileSyncStub.firstCall);
       expect(gitCmd).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
       expect(gitCmd).to.include('x-api-key: aso-cm-repo-service');
       expect(gitCmd).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
       expect(gitCmd).to.include(`${TEST_ENV.CM_REPO_URL}/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}.git`);
       expect(gitCmd).to.include(EXPECTED_CLONE_PATH);
+
+      // Verify execFileSync was called with the correct git binary
+      expect(execFileSyncStub.firstCall.args[0]).to.equal('/opt/bin/git');
     });
 
     it('removes existing clone path before cloning', async () => {
@@ -197,7 +212,7 @@ describe('CloudManagerClient', () => {
 
     it('throws on git clone failure', async () => {
       setupImsTokenNock();
-      execSyncStub.throws(new Error('git clone failed'));
+      execFileSyncStub.throws(new Error('git clone failed'));
 
       const client = CloudManagerClient.createFrom(createContext());
 
@@ -211,13 +226,16 @@ describe('CloudManagerClient', () => {
       const client = CloudManagerClient.createFrom(createContext());
       await client.createBranch('/tmp/cm-repo-test', 'main', 'feature/fix');
 
-      expect(execSyncStub).to.have.been.calledTwice;
+      expect(execFileSyncStub).to.have.been.calledTwice;
 
-      const checkoutCmd = execSyncStub.firstCall.args[0];
-      expect(checkoutCmd).to.include('checkout main');
+      const checkoutArgs = getGitArgs(execFileSyncStub.firstCall);
+      expect(checkoutArgs).to.include('checkout');
+      expect(checkoutArgs).to.include('main');
 
-      const branchCmd = execSyncStub.secondCall.args[0];
-      expect(branchCmd).to.include('checkout -b feature/fix');
+      const branchArgs = getGitArgs(execFileSyncStub.secondCall);
+      expect(branchArgs).to.include('checkout');
+      expect(branchArgs).to.include('-b');
+      expect(branchArgs).to.include('feature/fix');
     });
   });
 
@@ -246,9 +264,9 @@ describe('CloudManagerClient', () => {
       expect(writeSyncStub.firstCall.args[1]).to.equal(patchContent);
 
       // Verify git checkout and apply
-      const gitCmds = execSyncStub.getCalls().map((c) => c.args[0]);
-      expect(gitCmds.some((cmd) => cmd.includes('checkout feature/fix'))).to.be.true;
-      expect(gitCmds.some((cmd) => cmd.includes('apply'))).to.be.true;
+      const allGitCmds = execFileSyncStub.getCalls().map((c) => getGitCmd(c));
+      expect(allGitCmds.some((cmd) => cmd.includes('checkout feature/fix'))).to.be.true;
+      expect(allGitCmds.some((cmd) => cmd.includes('apply'))).to.be.true;
 
       // Verify cleanup
       expect(unlinkSyncStub).to.have.been.calledOnce;
@@ -268,7 +286,7 @@ describe('CloudManagerClient', () => {
 
       existsSyncStub.returns(true);
       // Make git apply fail
-      execSyncStub.onSecondCall().throws(new Error('apply failed'));
+      execFileSyncStub.onSecondCall().throws(new Error('apply failed'));
 
       const client = CloudManagerClient.createFrom(createContext());
 
@@ -292,18 +310,18 @@ describe('CloudManagerClient', () => {
         TEST_IMS_ORG_ID,
       );
 
-      const gitCmds = execSyncStub.getCalls().map((c) => c.args[0]);
+      const allGitCmds = execFileSyncStub.getCalls().map((c) => getGitCmd(c));
 
       // Git user config
-      expect(gitCmds.some((cmd) => cmd.includes('config user.name test-bot'))).to.be.true;
-      expect(gitCmds.some((cmd) => cmd.includes('config user.email test-bot@example.com'))).to.be.true;
+      expect(allGitCmds.some((cmd) => cmd.includes('config user.name test-bot'))).to.be.true;
+      expect(allGitCmds.some((cmd) => cmd.includes('config user.email test-bot@example.com'))).to.be.true;
 
       // Stage and commit
-      expect(gitCmds.some((cmd) => cmd.includes('add -A'))).to.be.true;
-      expect(gitCmds.some((cmd) => cmd.includes('commit -m Fix accessibility issue'))).to.be.true;
+      expect(allGitCmds.some((cmd) => cmd.includes('add -A'))).to.be.true;
+      expect(allGitCmds.some((cmd) => cmd.includes('commit -m Fix accessibility issue'))).to.be.true;
 
       // Push with auth
-      const pushCmd = gitCmds.find((cmd) => cmd.includes('push'));
+      const pushCmd = allGitCmds.find((cmd) => cmd.includes('push'));
       expect(pushCmd).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
       expect(pushCmd).to.include('x-api-key: aso-cm-repo-service');
       expect(pushCmd).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);

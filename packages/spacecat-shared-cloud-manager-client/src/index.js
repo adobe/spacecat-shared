@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import {
   existsSync, rmSync, writeFileSync, unlinkSync,
 } from 'fs';
@@ -170,9 +170,8 @@ export default class CloudManagerClient {
    * @returns {string} stdout
    */
   #execGit(args, options = {}) {
-    const cmd = [GIT_BIN, ...args].join(' ');
     try {
-      return execSync(cmd, { encoding: 'utf-8', ...options });
+      return execFileSync(GIT_BIN, args, { encoding: 'utf-8', ...options });
     } catch (error) {
       // Sanitize token from error output
       /* c8 ignore next 2 */

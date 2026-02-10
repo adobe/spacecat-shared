@@ -3901,6 +3901,34 @@ describe('TokowakaClient', () => {
           sinon.match(/Attempt 1 to fetch failed.*Connection refused.*Retrying in 200ms/),
         );
       });
+
+      it('should return edgeOptimizeEnabled: false on request timeout (AbortError) without retrying', async () => {
+        const abortError = new Error('The operation was aborted');
+        abortError.name = 'AbortError';
+        fetchStub.rejects(abortError);
+
+        const result = await client.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
+        expect(fetchStub).to.have.been.calledOnce;
+        expect(log.warn).to.have.been.calledWith(
+          sinon.match(/Request timed out after 5000ms for https:\/\/example.com\/, returning edgeOptimizeEnabled: false/),
+        );
+      });
+
+      it('should pass AbortController signal to fetch for REQUEST_TIMEOUT_MS', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+        fetchStub.resolves(mockResponse);
+
+        await client.checkEdgeOptimizeStatus(site, '/');
+
+        const fetchOptions = fetchStub.firstCall.args[1];
+        expect(fetchOptions.signal).to.be.instanceOf(AbortSignal);
+      });
     });
 
     describe('URL Construction', () => {

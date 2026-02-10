@@ -29,6 +29,16 @@ const CLONE_PATH_PREFIX = '/tmp/cm-repo-';
 const IMS_TOKEN_ENDPOINT = '/ims/token/v4';
 const ASO_CM_REPO_SERVICE_IMS_CLIENT_ID = 'aso-cm-repo-service';
 
+// Lambda layer environment: git and its helpers (git-remote-https) live under /opt.
+// Without these, the dynamic linker can't find shared libraries (libcurl, libexpat, …)
+// and git can't locate its sub-commands (git-remote-https for HTTPS transport).
+const GIT_ENV = {
+  ...process.env,
+  PATH: '/opt/bin:/usr/local/bin:/usr/bin:/bin',
+  GIT_EXEC_PATH: '/opt/libexec/git-core',
+  LD_LIBRARY_PATH: '/opt/lib:/lib64:/usr/lib64',
+};
+
 /**
  * Parses an S3 URI (s3://bucket/key) into bucket and key.
  * @param {string} s3Path - S3 URI
@@ -171,7 +181,7 @@ export default class CloudManagerClient {
    */
   #execGit(args, options = {}) {
     try {
-      return execFileSync(GIT_BIN, args, { encoding: 'utf-8', ...options });
+      return execFileSync(GIT_BIN, args, { encoding: 'utf-8', env: GIT_ENV, ...options });
     } catch (error) {
       // Sanitize token from error output
       /* c8 ignore next 2 */

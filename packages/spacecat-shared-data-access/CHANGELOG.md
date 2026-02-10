@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.105.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.104.0...@adobe/spacecat-shared-data-access-v2.105.0) (2026-02-10)
+
+
+### Features
+
+* **data-access:** add weekly-digest-email job interval ([#1333](https://github.com/adobe/spacecat-shared/issues/1333)) ([e4dd4cb](https://github.com/adobe/spacecat-shared/commit/e4dd4cb97f4f757f14233dd6f3d682e4180bfce9))
+
 # [@adobe/spacecat-shared-data-access-v2.104.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.103.0...@adobe/spacecat-shared-data-access-v2.104.0) (2026-02-08)
 
 

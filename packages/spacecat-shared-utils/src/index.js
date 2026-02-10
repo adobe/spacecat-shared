@@ -55,6 +55,7 @@ export { logWrapper } from './log-wrapper.js';
 export { instrumentAWSClient, getTraceId, addTraceIdHeader } from './xray.js';
 
 export {
+  canonicalizeUrl,
   composeBaseURL,
   composeAuditURL,
   prependSchema,

@@ -11,9 +11,13 @@
  */
 
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { strategyWorkspaceData } from './strategy-schema.js';
+
+export { strategyWorkspaceData };
 
 /**
  * @import { S3Client } from "@aws-sdk/client-s3"
+ * @import { StrategyWorkspaceData } from "./strategy-schema.js"
  */
 
 /**
@@ -34,8 +38,8 @@ export function strategyPath(siteId) {
  * @param {string} [options.version] Optional version ID of the strategy to read.
  *        Defaults to the latest version.
  * @param {string} [options.s3Bucket] Optional S3 bucket name.
- * @returns {Promise<{data: object | null, exists: boolean, version?: string}>} The strategy data,
- *        a flag indicating if it existed, and the version ID if it exists.
+ * @returns {Promise<{data: StrategyWorkspaceData | null, exists: boolean, version?: string}>}
+ *        The strategy data, a flag indicating if it existed, and the version ID if it exists.
  * @throws {Error} If reading the strategy fails for reasons other than it not existing.
  */
 export async function readStrategy(siteId, s3Client, options) {
@@ -64,14 +68,14 @@ export async function readStrategy(siteId, s3Client, options) {
     throw new Error('Strategy body is empty');
   }
   const text = await body.transformToString();
-  const data = JSON.parse(text);
+  const data = strategyWorkspaceData.parse(JSON.parse(text));
   return { data, exists: true, version: res.VersionId || undefined };
 }
 
 /**
  * Writes the strategy JSON for a given site.
  * @param {string} siteId The ID of the site.
- * @param {object} data The data object to write (any valid JSON).
+ * @param {StrategyWorkspaceData} data The strategy data object to write.
  * @param {S3Client} s3Client The S3 client to use for writing the strategy.
  * @param {object} [options]
  * @param {string} [options.s3Bucket] Optional S3 bucket name.

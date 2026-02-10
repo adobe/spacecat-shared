@@ -30,6 +30,37 @@ describe('llmo-strategy utilities', () => {
   const originalBucket = process.env.S3_BUCKET_NAME;
   const siteId = 'test-site-id';
 
+  // Valid strategy workspace data that conforms to the schema
+  const validStrategyData = {
+    opportunities: [
+      {
+        id: 'opp-1',
+        name: 'Improve Page Speed',
+        description: 'Optimize loading times',
+        category: 'performance',
+      },
+    ],
+    strategies: [
+      {
+        id: 'strat-1',
+        name: 'Q1 Optimization',
+        status: 'in_progress',
+        url: '/strategies/q1-optimization',
+        description: 'First quarter optimization strategy',
+        topic: 'Performance',
+        platform: 'chatgpt-paid',
+        createdAt: '2025-01-15T10:00:00Z',
+        opportunities: [
+          {
+            opportunityId: 'opp-1',
+            status: 'in_progress',
+            assignee: 'user@example.com',
+          },
+        ],
+      },
+    ],
+  };
+
   let s3Client;
 
   beforeEach(() => {
@@ -54,15 +85,16 @@ describe('llmo-strategy utilities', () => {
 
   describe('readStrategy', () => {
     it('retrieves and parses the strategy from S3', async () => {
-      const strategyData = { foo: 'bar', nested: { key: 123 } };
       const body = {
-        transformToString: sinon.stub().resolves(JSON.stringify(strategyData)),
+        transformToString: sinon.stub().resolves(JSON.stringify(validStrategyData)),
       };
       s3Client.send.resolves({ Body: body });
 
       const result = await readStrategy(siteId, s3Client);
 
-      expect(result).deep.equals({ data: strategyData, exists: true, version: undefined });
+      expect(result.data).deep.equals(validStrategyData);
+      expect(result.exists).equals(true);
+      expect(result.version).equals(undefined);
       expect(s3Client.send).calledOnce;
       const command = s3Client.send.firstCall.args[0];
       expect(command).instanceOf(GetObjectCommand);
@@ -74,7 +106,7 @@ describe('llmo-strategy utilities', () => {
 
     it('uses provided bucket and version when options are set', async () => {
       const body = {
-        transformToString: sinon.stub().resolves(JSON.stringify({ test: true })),
+        transformToString: sinon.stub().resolves(JSON.stringify(validStrategyData)),
       };
       s3Client.send.resolves({ Body: body });
 
@@ -89,15 +121,16 @@ describe('llmo-strategy utilities', () => {
     });
 
     it('returns version ID when S3 response includes VersionId', async () => {
-      const strategyData = { example: 'data' };
       const body = {
-        transformToString: sinon.stub().resolves(JSON.stringify(strategyData)),
+        transformToString: sinon.stub().resolves(JSON.stringify(validStrategyData)),
       };
       s3Client.send.resolves({ Body: body, VersionId: 'v123' });
 
       const result = await readStrategy(siteId, s3Client);
 
-      expect(result).deep.equals({ data: strategyData, exists: true, version: 'v123' });
+      expect(result.data).deep.equals(validStrategyData);
+      expect(result.exists).equals(true);
+      expect(result.version).equals('v123');
     });
 
     it('returns null data when the file does not exist', async () => {
@@ -135,7 +168,7 @@ describe('llmo-strategy utilities', () => {
       await expect(readStrategy(siteId, s3Client)).rejectedWith('Strategy body is empty');
     });
 
-    it('throws when the S3 object body cannot be parsed', async () => {
+    it('throws when the S3 object body cannot be parsed as JSON', async () => {
       const body = {
         transformToString: sinon.stub().resolves('not valid json'),
       };
@@ -144,23 +177,32 @@ describe('llmo-strategy utilities', () => {
       await expect(readStrategy(siteId, s3Client)).rejectedWith(SyntaxError);
     });
 
-    it('accepts any valid JSON structure without schema validation', async () => {
-      // This should work with any arbitrary structure - no schema validation
-      const arbitraryData = {
+    it('throws when the data does not match the schema', async () => {
+      const invalidData = {
         randomField: 'value',
         numbers: [1, 2, 3],
-        deeply: { nested: { structure: { works: true } } },
-        nullValue: null,
-        booleans: false,
       };
       const body = {
-        transformToString: sinon.stub().resolves(JSON.stringify(arbitraryData)),
+        transformToString: sinon.stub().resolves(JSON.stringify(invalidData)),
+      };
+      s3Client.send.resolves({ Body: body });
+
+      await expect(readStrategy(siteId, s3Client)).to.be.rejected;
+    });
+
+    it('validates data with empty arrays', async () => {
+      const emptyData = {
+        opportunities: [],
+        strategies: [],
+      };
+      const body = {
+        transformToString: sinon.stub().resolves(JSON.stringify(emptyData)),
       };
       s3Client.send.resolves({ Body: body });
 
       const result = await readStrategy(siteId, s3Client);
 
-      expect(result.data).deep.equals(arbitraryData);
+      expect(result.data).deep.equals(emptyData);
       expect(result.exists).equals(true);
     });
   });

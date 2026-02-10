@@ -84,6 +84,8 @@ export default class AuthInfo {
 
   isAdmin() { return this.profile?.is_admin; }
 
+  isReadOnlyAdmin() { return this.profile?.is_readonly_admin; }
+
   isLLMOAdministrator() { return this.profile?.is_llmo_administrator; }
 
   hasOrganization(orgId) {

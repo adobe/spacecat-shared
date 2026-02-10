@@ -37,4 +37,26 @@ describe('AuthInfo', () => {
       expect(authInfo.isLLMOAdministrator()).to.be.false;
     });
   });
+
+  describe('isReadOnlyAdmin', () => {
+    it('should return undefined if profile is not set', () => {
+      const authInfo = new AuthInfo();
+      expect(authInfo.isReadOnlyAdmin()).to.be.undefined;
+    });
+
+    it('should return undefined if is_readonly_admin is not in profile', () => {
+      const authInfo = new AuthInfo().withProfile({});
+      expect(authInfo.isReadOnlyAdmin()).to.be.undefined;
+    });
+
+    it('should return true if is_readonly_admin is true', () => {
+      const authInfo = new AuthInfo().withProfile({ is_readonly_admin: true });
+      expect(authInfo.isReadOnlyAdmin()).to.be.true;
+    });
+
+    it('should return false if is_readonly_admin is false', () => {
+      const authInfo = new AuthInfo().withProfile({ is_readonly_admin: false });
+      expect(authInfo.isReadOnlyAdmin()).to.be.false;
+    });
+  });
 });

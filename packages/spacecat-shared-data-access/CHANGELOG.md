@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.105.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.105.0...@adobe/spacecat-shared-data-access-v2.105.1) (2026-02-11)
+
+
+### Bug Fixes
+
+* **data-access:** support both snake_case and camelCase in BROKEN_BAC… ([#1336](https://github.com/adobe/spacecat-shared/issues/1336)) ([327d934](https://github.com/adobe/spacecat-shared/commit/327d934b7b93506fe397ca92548c4ff111fb26df))
+
 # [@adobe/spacecat-shared-data-access-v2.105.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.104.0...@adobe/spacecat-shared-data-access-v2.105.0) (2026-02-10)
 
 

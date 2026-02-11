@@ -350,17 +350,23 @@ export const DATA_SCHEMAS = {
   },
   [OPPORTUNITY_TYPES.BROKEN_BACKLINKS]: {
     schema: Joi.object({
-      url_from: Joi.string().uri().required(),
-      url_to: Joi.string().uri().required(),
+      // Support both naming conventions (snake_case from Ahrefs, camelCase from internal)
+      url_from: Joi.string().uri().optional(),
+      urlFrom: Joi.string().uri().optional(),
+      url_to: Joi.string().uri().optional(),
+      urlTo: Joi.string().uri().optional(),
       title: Joi.string().optional(),
       traffic_domain: Joi.number().optional(),
       aiRationale: Joi.string().optional(),
       urlsSuggested: Joi.array().items(Joi.string().uri()).optional(),
       aggregationKey: Joi.string().allow(null).optional(),
-    }).unknown(true),
+    })
+      .or('url_from', 'urlFrom') // At least one of these must be present
+      .or('url_to', 'urlTo') // At least one of these must be present
+      .unknown(true),
     projections: {
       minimal: {
-        fields: ['url_from', 'url_to'],
+        fields: ['url_from', 'url_to', 'urlFrom', 'urlTo'],
         transformers: {},
       },
     },

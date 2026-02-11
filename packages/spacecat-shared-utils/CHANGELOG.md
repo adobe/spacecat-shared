@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.93.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.92.0...@adobe/spacecat-shared-utils-v1.93.0) (2026-02-10)
+
+
+### Features
+
+* ignored field in llmo config ([#1326](https://github.com/adobe/spacecat-shared/issues/1326)) ([8a3e707](https://github.com/adobe/spacecat-shared/commit/8a3e70740bb8d08f4dfb946e4141f1526608b574))
+
+# [@adobe/spacecat-shared-utils-v1.92.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.91.0...@adobe/spacecat-shared-utils-v1.92.0) (2026-02-10)
+
+
+### Features
+
+* schema for oppty workspace data ([#1307](https://github.com/adobe/spacecat-shared/issues/1307)) ([49decad](https://github.com/adobe/spacecat-shared/commit/49decada5a0e598628563c8856b77715de549fce))
+
 # [@adobe/spacecat-shared-utils-v1.91.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.3...@adobe/spacecat-shared-utils-v1.91.0) (2026-02-08)
 
 

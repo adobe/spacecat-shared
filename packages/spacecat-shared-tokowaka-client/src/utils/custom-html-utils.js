@@ -187,18 +187,18 @@ export async function fetchHtmlWithWarmup(
   try {
     // Warmup call (no retry logic for warmup)
     log.info(`[${fetchType}] Making warmup call for ${fetchType} HTML with URL: ${fullUrl}`);
-
     const warmupStartTime = Date.now();
     const warmupResponse = await fetchWithTimeout(fullUrl, fetchOptions);
-
     log.debug(`[${fetchType}] Warmup response status: ${warmupResponse.status} ${warmupResponse.statusText}`);
-    // Consume the response body to free up the connection
     await warmupResponse.text();
     log.info(`[${fetchType}] Warmup call completed in ${Date.now() - warmupStartTime}ms, waiting ${warmupDelayMs}ms...`);
+  } catch (warmupError) {
+    log.warn(`[${fetchType}] Warmup call failed (ignored): ${warmupError.message}`);
+  }
 
-    // Wait before actual call
-    await sleep(warmupDelayMs);
+  await sleep(warmupDelayMs);
 
+  try {
     // Actual call with retry logic
     log.info(`[${fetchType}] Making actual call for ${fetchType} HTML (max ${maxRetries} retries) with URL: ${fullUrl}`);
 

@@ -350,7 +350,6 @@ export const DATA_SCHEMAS = {
   },
   [OPPORTUNITY_TYPES.BROKEN_BACKLINKS]: {
     schema: Joi.object({
-      // Support both naming conventions (snake_case from Ahrefs, camelCase from internal)
       url_from: Joi.string().uri().optional(),
       urlFrom: Joi.string().uri().optional(),
       url_to: Joi.string().uri().optional(),

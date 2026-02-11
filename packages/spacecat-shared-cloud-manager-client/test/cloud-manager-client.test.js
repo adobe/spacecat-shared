@@ -69,15 +69,18 @@ function setupImsTokenNock() {
 }
 
 /**
- * Helper: joins execFileSync args into a single string for easy assertion.
- * execFileSync is called as execFileSync(file, argsArray, options),
- * so call.args[1] is the git arguments array.
+ * Helper: extracts the git args array from an execFileSync call.
+ * execFileSync is called as execFileSync(file, args, options),
+ * so call.args[1] is the args array.
  */
 function getGitArgs(call) {
   return call.args[1];
 }
 
-function getGitCmd(call) {
+/**
+ * Helper: joins the git args into a single string for easy substring checks.
+ */
+function getGitArgsStr(call) {
   return call.args[1].join(' ');
 }
 
@@ -186,15 +189,16 @@ describe('CloudManagerClient', () => {
       expect(clonePath).to.equal(EXPECTED_CLONE_PATH);
       expect(execFileSyncStub).to.have.been.calledOnce;
 
-      const gitCmd = getGitCmd(execFileSyncStub.firstCall);
-      expect(gitCmd).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
-      expect(gitCmd).to.include('x-api-key: aso-cm-repo-service');
-      expect(gitCmd).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
-      expect(gitCmd).to.include(`${TEST_ENV.CM_REPO_URL}/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}.git`);
-      expect(gitCmd).to.include(EXPECTED_CLONE_PATH);
-
-      // Verify execFileSync was called with the correct git binary
+      // execFileSync(file, args, options) — file is args[0], args array is args[1]
       expect(execFileSyncStub.firstCall.args[0]).to.equal('/opt/bin/git');
+
+      const gitArgs = getGitArgs(execFileSyncStub.firstCall);
+      const gitArgsStr = getGitArgsStr(execFileSyncStub.firstCall);
+      expect(gitArgsStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
+      expect(gitArgsStr).to.include('x-api-key: aso-cm-repo-service');
+      expect(gitArgsStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
+      expect(gitArgsStr).to.include(`${TEST_ENV.CM_REPO_URL}/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}.git`);
+      expect(gitArgs).to.include(EXPECTED_CLONE_PATH);
     });
 
     it('removes existing clone path before cloning', async () => {
@@ -264,9 +268,9 @@ describe('CloudManagerClient', () => {
       expect(writeSyncStub.firstCall.args[1]).to.equal(patchContent);
 
       // Verify git checkout and apply
-      const allGitCmds = execFileSyncStub.getCalls().map((c) => getGitCmd(c));
-      expect(allGitCmds.some((cmd) => cmd.includes('checkout feature/fix'))).to.be.true;
-      expect(allGitCmds.some((cmd) => cmd.includes('apply'))).to.be.true;
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.includes('checkout') && s.includes('feature/fix'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('apply'))).to.be.true;
 
       // Verify cleanup
       expect(unlinkSyncStub).to.have.been.calledOnce;
@@ -310,21 +314,21 @@ describe('CloudManagerClient', () => {
         TEST_IMS_ORG_ID,
       );
 
-      const allGitCmds = execFileSyncStub.getCalls().map((c) => getGitCmd(c));
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
 
       // Git user config
-      expect(allGitCmds.some((cmd) => cmd.includes('config user.name test-bot'))).to.be.true;
-      expect(allGitCmds.some((cmd) => cmd.includes('config user.email test-bot@example.com'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.name') && s.includes('test-bot'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.email') && s.includes('test-bot@example.com'))).to.be.true;
 
       // Stage and commit
-      expect(allGitCmds.some((cmd) => cmd.includes('add -A'))).to.be.true;
-      expect(allGitCmds.some((cmd) => cmd.includes('commit -m Fix accessibility issue'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('add') && s.includes('-A'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('commit') && s.includes('Fix accessibility issue'))).to.be.true;
 
       // Push with auth
-      const pushCmd = allGitCmds.find((cmd) => cmd.includes('push'));
-      expect(pushCmd).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
-      expect(pushCmd).to.include('x-api-key: aso-cm-repo-service');
-      expect(pushCmd).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
+      const pushArgStr = allGitArgStrs.find((s) => s.includes('push'));
+      expect(pushArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
+      expect(pushArgStr).to.include('x-api-key: aso-cm-repo-service');
+      expect(pushArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
     });
   });
 
@@ -423,9 +427,9 @@ describe('CloudManagerClient', () => {
 
       const prNock = nock(TEST_ENV.CM_API_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`, {
-          base: 'main',
-          head: 'feature/fix',
           title: 'Fix issue',
+          sourceBranch: 'feature/fix',
+          destinationBranch: 'main',
           description: 'Automated fix',
         })
         .reply(201, { id: 'pr-1', status: 'open' });
@@ -436,8 +440,8 @@ describe('CloudManagerClient', () => {
         TEST_REPO_ID,
         TEST_IMS_ORG_ID,
         {
-          base: 'main',
-          head: 'feature/fix',
+          destinationBranch: 'main',
+          sourceBranch: 'feature/fix',
           title: 'Fix issue',
           description: 'Automated fix',
         },
@@ -461,7 +465,10 @@ describe('CloudManagerClient', () => {
         TEST_REPO_ID,
         TEST_IMS_ORG_ID,
         {
-          base: 'main', head: 'fix', title: 'Fix', description: 'desc',
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
         },
       )).to.be.rejectedWith('CM API request to');
     });

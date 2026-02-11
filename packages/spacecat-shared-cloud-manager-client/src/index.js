@@ -14,15 +14,9 @@ import { execFileSync } from 'child_process';
 import {
   existsSync, rmSync, writeFileSync, unlinkSync,
 } from 'fs';
-import { context as h2, h1 } from '@adobe/fetch';
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import archiver from 'archiver';
-
-/* c8 ignore next 3 */
-export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
-  ? h1()
-  : h2();
 
 const GIT_BIN = '/opt/bin/git';
 const CLONE_PATH_PREFIX = '/tmp/cm-repo-';
@@ -37,6 +31,7 @@ const GIT_ENV = {
   PATH: '/opt/bin:/usr/local/bin:/usr/bin:/bin',
   GIT_EXEC_PATH: '/opt/libexec/git-core',
   LD_LIBRARY_PATH: '/opt/lib:/lib64:/usr/lib64',
+  GIT_TERMINAL_PROMPT: '0',
 };
 
 /**
@@ -142,7 +137,7 @@ export default class CloudManagerClient {
 
     const { access_token: accessToken } = await response.json();
     this.accessToken = accessToken;
-    this.log.info('Successfully obtained IMS access token for Cloud Manager');
+    this.log.debug('Successfully obtained IMS access token for Cloud Manager');
 
     return this.accessToken;
   }
@@ -176,7 +171,7 @@ export default class CloudManagerClient {
   /**
    * Executes a git command.
    * @param {string[]} args - Arguments to pass to git
-   * @param {Object} [options] - execSync options
+   * @param {Object} [options] - execFileSync options
    * @returns {string} stdout
    */
   #execGit(args, options = {}) {
@@ -221,8 +216,6 @@ export default class CloudManagerClient {
     return response;
   }
 
-  // --- Git Operations ---
-
   /**
    * Clones a Cloud Manager repository to /tmp.
    * @param {string} programId - CM Program ID
@@ -235,7 +228,7 @@ export default class CloudManagerClient {
 
     // Clean up if path exists from a previous invocation
     if (existsSync(clonePath)) {
-      this.log.info(`Removing existing clone at ${clonePath}`);
+      this.log.debug(`Removing existing clone at ${clonePath}`);
       rmSync(clonePath, { recursive: true, force: true });
     }
 
@@ -243,7 +236,8 @@ export default class CloudManagerClient {
     const repoUrl = this.#getRepoUrl(programId, repositoryId);
 
     this.log.info(`Cloning CM repository: program=${programId}, repo=${repositoryId}`);
-    this.#execGit([...configArgs, 'clone', repoUrl, clonePath]);
+    const fullArgs = [...configArgs, 'clone', repoUrl, clonePath];
+    this.#execGit(fullArgs);
     this.log.info(`Repository cloned to ${clonePath}`);
 
     return clonePath;
@@ -395,14 +389,14 @@ export default class CloudManagerClient {
    * @param {string} repositoryId - CM Repository ID
    * @param {string} imsOrgId - IMS Organization ID
    * @param {Object} options - PR options
-   * @param {string} options.base - Base branch
-   * @param {string} options.head - Head branch
+   * @param {string} options.destinationBranch - Branch to merge into (base)
+   * @param {string} options.sourceBranch - Branch that contains the changes (head).
    * @param {string} options.title - PR title
    * @param {string} options.description - PR description
    * @returns {Promise<Object>}
    */
   async createPullRequest(programId, repositoryId, imsOrgId, {
-    base, head, title, description,
+    destinationBranch, sourceBranch, title, description,
   }) {
     this.log.info(`Creating PR for program=${programId}, repo=${repositoryId}: ${title}`);
     const response = await this.#cmApiFetch(
@@ -411,7 +405,10 @@ export default class CloudManagerClient {
       {
         method: 'POST',
         body: JSON.stringify({
-          base, head, title, description,
+          title,
+          sourceBranch,
+          destinationBranch,
+          description,
         }),
       },
     );

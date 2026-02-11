@@ -159,7 +159,7 @@ describe('Suggestion Projection Utils', () => {
 
     it('has expected URL-related and trend fields', () => {
       expect(FALLBACK_PROJECTION.minimal.fields).to.have.lengthOf(15);
-      expect(FALLBACK_PROJECTION.minimal.fields).to.include('trendData');
+      expect(FALLBACK_PROJECTION.minimal.fields).to.include('suggestionValue');
     });
   });
 });

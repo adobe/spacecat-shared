@@ -267,6 +267,32 @@ describe('strategyWorkspaceData', () => {
       const result = strategyWorkspaceData.safeParse(data);
       expect(result.success).true;
     });
+
+    it('validates strategy with createdBy field', () => {
+      const data = {
+        ...baseWorkspaceData,
+        strategies: [
+          {
+            ...baseWorkspaceData.strategies[0],
+            createdBy: 'owner@example.com',
+          },
+        ],
+      };
+
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].createdBy).equals('owner@example.com');
+      }
+    });
+
+    it('validates strategy without createdBy field (backward compatibility)', () => {
+      const result = strategyWorkspaceData.safeParse(baseWorkspaceData);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].createdBy).to.be.undefined;
+      }
+    });
   });
 
   describe('required fields validation', () => {

@@ -287,14 +287,17 @@ export default class CloudManagerClient {
   }
 
   /**
-   * Downloads a patch from S3 and applies it to the given branch.
+   * Downloads a patch from S3 and applies it to the given branch using git am.
+   * The patch is expected to contain commit metadata (author, date, message),
+   * so git am will create the commit automatically.
    * @param {string} clonePath - Path to the cloned repository
    * @param {string} branch - Branch to apply the patch on
    * @param {string} s3PatchPath - S3 URI of the patch file (s3://bucket/key)
    */
   async applyPatch(clonePath, branch, s3PatchPath) {
     const { bucket, key } = parseS3Path(s3PatchPath);
-    const patchFile = `/tmp/cm-patch-${Date.now()}.diff`;
+    const patchFile = `/tmp/cm-patch-${Date.now()}.patch`;
+    const { gitUsername, gitUserEmail } = this.config;
 
     try {
       // Download patch from S3
@@ -304,10 +307,14 @@ export default class CloudManagerClient {
       const patchContent = await response.Body.transformToString();
       writeFileSync(patchFile, patchContent);
 
-      // Apply patch
+      // Configure committer identity for git am
+      this.#execGit(['config', 'user.name', gitUsername], { cwd: clonePath });
+      this.#execGit(['config', 'user.email', gitUserEmail], { cwd: clonePath });
+
+      // Checkout branch and apply patch with commit
       this.#execGit(['checkout', branch], { cwd: clonePath });
-      this.#execGit(['apply', patchFile], { cwd: clonePath });
-      this.log.info(`Patch applied successfully on branch ${branch}`);
+      this.#execGit(['am', patchFile], { cwd: clonePath });
+      this.log.info(`Patch applied and committed on branch ${branch}`);
     } finally {
       // Clean up temp patch file
       if (existsSync(patchFile)) {
@@ -317,30 +324,19 @@ export default class CloudManagerClient {
   }
 
   /**
-   * Commits all changes and pushes to the remote.
+   * Pushes the current branch to the remote CM repository.
+   * Commits are expected to already exist (e.g. via git am in applyPatch).
    * @param {string} clonePath - Path to the cloned repository
-   * @param {string} message - Commit message
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
    * @param {string} imsOrgId - IMS Organization ID
    */
-  async commitAndPush(clonePath, message, programId, repositoryId, imsOrgId) {
-    const { gitUsername, gitUserEmail } = this.config;
-
-    // Configure git user
-    this.#execGit(['config', 'user.name', gitUsername], { cwd: clonePath });
-    this.#execGit(['config', 'user.email', gitUserEmail], { cwd: clonePath });
-
-    // Stage and commit
-    this.#execGit(['add', '-A'], { cwd: clonePath });
-    this.#execGit(['commit', '-m', message], { cwd: clonePath });
-
-    // Push with auth headers
+  async push(clonePath, programId, repositoryId, imsOrgId) {
     const configArgs = await this.#getGitConfigArgs(imsOrgId);
     const repoUrl = this.#getRepoUrl(programId, repositoryId);
     this.#execGit([...configArgs, 'push', repoUrl], { cwd: clonePath });
 
-    this.log.info('Changes committed and pushed successfully');
+    this.log.info('Changes pushed successfully');
   }
 
   /**

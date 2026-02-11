@@ -244,8 +244,8 @@ describe('CloudManagerClient', () => {
   });
 
   describe('applyPatch', () => {
-    it('downloads patch from S3 and applies it', async () => {
-      const patchContent = 'diff --git a/file.txt b/file.txt\n--- a/file.txt\n+++ b/file.txt\n';
+    it('downloads patch from S3 and applies it with git am', async () => {
+      const patchContent = 'From abc123\nSubject: Fix bug\n\ndiff --git a/file.txt b/file.txt\n';
 
       s3Mock.on(GetObjectCommand).resolves({
         Body: { transformToString: async () => patchContent },
@@ -255,22 +255,24 @@ describe('CloudManagerClient', () => {
       existsSyncStub.returns(true);
 
       const client = CloudManagerClient.createFrom(createContext());
-      await client.applyPatch('/tmp/cm-repo-test', 'feature/fix', 's3://my-bucket/patches/fix.diff');
+      await client.applyPatch('/tmp/cm-repo-test', 'feature/fix', 's3://my-bucket/patches/fix.patch');
 
       // Verify S3 download
       const s3Calls = s3Mock.commandCalls(GetObjectCommand);
       expect(s3Calls).to.have.lengthOf(1);
       expect(s3Calls[0].args[0].input.Bucket).to.equal('my-bucket');
-      expect(s3Calls[0].args[0].input.Key).to.equal('patches/fix.diff');
+      expect(s3Calls[0].args[0].input.Key).to.equal('patches/fix.patch');
 
       // Verify patch file written
       expect(writeSyncStub).to.have.been.calledOnce;
       expect(writeSyncStub.firstCall.args[1]).to.equal(patchContent);
 
-      // Verify git checkout and apply
+      // Verify git user config, checkout, and am
       const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.name') && s.includes('test-bot'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.email') && s.includes('test-bot@example.com'))).to.be.true;
       expect(allGitArgStrs.some((s) => s.includes('checkout') && s.includes('feature/fix'))).to.be.true;
-      expect(allGitArgStrs.some((s) => s.includes('apply'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('am'))).to.be.true;
 
       // Verify cleanup
       expect(unlinkSyncStub).to.have.been.calledOnce;
@@ -289,8 +291,8 @@ describe('CloudManagerClient', () => {
       });
 
       existsSyncStub.returns(true);
-      // Make git apply fail
-      execFileSyncStub.onSecondCall().throws(new Error('apply failed'));
+      // Make a git command after user config fail (4th call: checkout ok, am fails)
+      execFileSyncStub.onCall(3).throws(new Error('am failed'));
 
       const client = CloudManagerClient.createFrom(createContext());
 
@@ -301,31 +303,22 @@ describe('CloudManagerClient', () => {
     });
   });
 
-  describe('commitAndPush', () => {
-    it('configures git user, commits, and pushes with auth', async () => {
+  describe('push', () => {
+    it('pushes to remote with auth headers', async () => {
       setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
-      await client.commitAndPush(
+      await client.push(
         '/tmp/cm-repo-test',
-        'Fix accessibility issue',
         TEST_PROGRAM_ID,
         TEST_REPO_ID,
         TEST_IMS_ORG_ID,
       );
 
-      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(execFileSyncStub).to.have.been.calledOnce;
 
-      // Git user config
-      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.name') && s.includes('test-bot'))).to.be.true;
-      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.email') && s.includes('test-bot@example.com'))).to.be.true;
-
-      // Stage and commit
-      expect(allGitArgStrs.some((s) => s.includes('add') && s.includes('-A'))).to.be.true;
-      expect(allGitArgStrs.some((s) => s.includes('commit') && s.includes('Fix accessibility issue'))).to.be.true;
-
-      // Push with auth
-      const pushArgStr = allGitArgStrs.find((s) => s.includes('push'));
+      const pushArgStr = getGitArgsStr(execFileSyncStub.firstCall);
+      expect(pushArgStr).to.include('push');
       expect(pushArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
       expect(pushArgStr).to.include('x-api-key: aso-cm-repo-service');
       expect(pushArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);

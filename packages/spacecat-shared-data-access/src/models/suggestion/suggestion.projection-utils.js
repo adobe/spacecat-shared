@@ -104,6 +104,7 @@ export const FALLBACK_PROJECTION = {
       'path',
       'sourceUrl',
       'destinationUrl',
+      'trendData', // Web Performance Trends: [{ date, good, needsImprovement, poor }] for header cards
     ],
     transformers: {},
   },

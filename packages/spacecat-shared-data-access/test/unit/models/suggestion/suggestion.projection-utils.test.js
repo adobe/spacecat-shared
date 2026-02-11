@@ -157,8 +157,9 @@ describe('Suggestion Projection Utils', () => {
       expect(fields).to.not.include('issues');
     });
 
-    it('has exactly 14 URL-related fields', () => {
-      expect(FALLBACK_PROJECTION.minimal.fields).to.have.lengthOf(14);
+    it('has expected URL-related and trend fields', () => {
+      expect(FALLBACK_PROJECTION.minimal.fields).to.have.lengthOf(15);
+      expect(FALLBACK_PROJECTION.minimal.fields).to.include('trendData');
     });
   });
 });

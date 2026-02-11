@@ -52,6 +52,9 @@ export function defaultConfig() {
     deleted: {
       prompts: {},
     },
+    ignored: {
+      prompts: {},
+    },
   };
 }
 

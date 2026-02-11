@@ -38,6 +38,11 @@ const nonEmptyString = z.string().min(1);
 
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 
+const auditFields = {
+  updatedBy: z.string().optional(),
+  updatedAt: z.string().optional(),
+};
+
 const prompt = z.object({
   id: z.uuid().optional(),
   prompt: nonEmptyString,
@@ -45,8 +50,7 @@ const prompt = z.object({
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
   source: z.union([z.literal('config'), z.literal('api'), z.string()]),
   status: z.union([z.literal('completed'), z.literal('processing'), z.string()]).optional(),
-  updatedBy: z.string().optional(),
-  updatedAt: z.string().optional(),
+  ...auditFields,
 });
 
 const entity = z.object({
@@ -75,8 +79,7 @@ const category = z.object({
   region: z.union([region, z.array(region)]),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
   urls: z.array(categoryUrl).optional(),
-  updatedBy: z.string().optional(),
-  updatedAt: z.string().optional(),
+  ...auditFields,
 });
 
 const topic = z.object({
@@ -91,6 +94,13 @@ const deletedPrompt = prompt.extend({
   categoryId: z.uuid().optional(),
 });
 
+const ignoredPrompt = z.object({
+  prompt: nonEmptyString,
+  region,
+  source: z.union([z.literal('gsc'), z.string()]),
+  ...auditFields,
+});
+
 export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
   categories: z.record(z.uuid(), category),
@@ -103,8 +113,7 @@ export const llmoConfig = z.object({
         category: z.uuid().optional(),
         region: z.union([region, z.array(region)]).optional(),
         aliasMode: z.union([z.literal('extend'), z.literal('replace')]).optional(),
-        updatedBy: z.string().optional(),
-        updatedAt: z.string().optional(),
+        ...auditFields,
       }),
     ),
   }),
@@ -116,8 +125,7 @@ export const llmoConfig = z.object({
         name: nonEmptyString,
         aliases: z.array(nonEmptyString),
         urls: z.array(z.url().optional()),
-        updatedBy: z.string().optional(),
-        updatedAt: z.string().optional(),
+        ...auditFields,
       }),
     ),
   }),
@@ -128,6 +136,9 @@ export const llmoConfig = z.object({
     bucketName: z.string().optional(),
     allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
+  }).optional(),
+  ignored: z.object({
+    prompts: z.record(z.uuid(), ignoredPrompt).optional(),
   }).optional(),
 }).superRefine((value, ctx) => {
   const {

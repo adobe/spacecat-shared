@@ -89,6 +89,30 @@ function getGitArgsStr(call) {
   return call.args[1].join(' ');
 }
 
+/**
+ * Creates a mock archiver that resolves the zip Promise when finalize() is called.
+ * Used to test zipRepository without hitting the real filesystem.
+ */
+function createMockArchiver() {
+  let dataCb;
+  let endCb;
+  return {
+    on(ev, fn) {
+      if (ev === 'data') dataCb = fn;
+      if (ev === 'end') endCb = fn;
+      if (ev === 'error') { /* this mock never emits error */ }
+      return this;
+    },
+    glob: sinon.stub(),
+    finalize() {
+      setImmediate(() => {
+        if (dataCb) dataCb(Buffer.from('zip-content'));
+        if (endCb) endCb();
+      });
+    },
+  };
+}
+
 describe('CloudManagerClient', () => {
   let CloudManagerClient;
   let execFileSyncStub;
@@ -96,6 +120,7 @@ describe('CloudManagerClient', () => {
   let rmSyncStub;
   let writeSyncStub;
   let unlinkSyncStub;
+  let archiverStub;
 
   beforeEach(async () => {
     execFileSyncStub = sinon.stub().returns('');
@@ -103,6 +128,7 @@ describe('CloudManagerClient', () => {
     rmSyncStub = sinon.stub();
     writeSyncStub = sinon.stub();
     unlinkSyncStub = sinon.stub();
+    archiverStub = sinon.stub().callsFake(createMockArchiver);
 
     const mod = await esmock('../src/index.js', {
       child_process: { execFileSync: execFileSyncStub },
@@ -113,6 +139,7 @@ describe('CloudManagerClient', () => {
         writeFileSync: writeSyncStub,
         unlinkSync: unlinkSyncStub,
       },
+      archiver: archiverStub,
     });
     CloudManagerClient = mod.default;
   });
@@ -279,6 +306,23 @@ describe('CloudManagerClient', () => {
       await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID }))
         .to.be.rejectedWith('Git command failed');
     });
+
+    it('sanitizes Bearer token and credentials in git error output', async () => {
+      setupImsTokenNock();
+      const err = new Error('auth failed');
+      err.stderr = 'fatal: Authorization: Bearer secret-token-123';
+      execFileSyncStub.throws(err);
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+
+      await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID }))
+        .to.be.rejectedWith('Git command failed');
+
+      const logged = context.log.error.firstCall.args[0];
+      expect(logged).to.include('Bearer [REDACTED]');
+      expect(logged).to.not.include('secret-token-123');
+    });
   });
 
   describe('createBranch', () => {
@@ -409,6 +453,45 @@ describe('CloudManagerClient', () => {
 
       await expect(client.zipRepository('/tmp/cm-repo-nonexistent'))
         .to.be.rejectedWith('Clone path does not exist');
+    });
+
+    it('returns zip buffer when clone path exists', async () => {
+      const clonePath = '/tmp/cm-repo-zip-test';
+      existsSyncStub.withArgs(clonePath).returns(true);
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.zipRepository(clonePath);
+
+      expect(Buffer.isBuffer(result)).to.be.true;
+      expect(result.length).to.be.greaterThan(0);
+      expect(result.toString()).to.equal('zip-content');
+      expect(archiverStub).to.have.been.calledOnceWith('zip', { zlib: { level: 9 } });
+      const archive = archiverStub.firstCall.returnValue;
+      expect(archive.glob).to.have.been.calledWith('**/*', { cwd: clonePath, dot: true });
+    });
+
+    it('rejects when archiver emits error', async () => {
+      const clonePath = '/tmp/cm-repo-zip-test';
+      existsSyncStub.withArgs(clonePath).returns(true);
+
+      archiverStub.callsFake(() => {
+        let errCb;
+        return {
+          on(ev, fn) {
+            if (ev === 'error') errCb = fn;
+            return this;
+          },
+          glob() {},
+          finalize() {
+            setImmediate(() => errCb && errCb(new Error('archiver error')));
+          },
+        };
+      });
+
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.zipRepository(clonePath))
+        .to.be.rejectedWith('archiver error');
     });
   });
 

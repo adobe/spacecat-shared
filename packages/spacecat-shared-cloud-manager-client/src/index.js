@@ -212,10 +212,9 @@ export default class CloudManagerClient {
       return execFileSync(GIT_BIN, args, { encoding: 'utf-8', env: GIT_ENV, ...options });
     } catch (error) {
       // Sanitize tokens and credentials from error output
-      /* c8 ignore next 3 */
-      const sanitized = (error.stderr || error.message || '')
-        .replace(/Bearer [^\s"]+/g, 'Bearer [REDACTED]')
-        .replace(/:\/\/[^@]+@/g, '://***@');
+      const sanitized = (error.stderr || error.message)
+        ?.replace(/Bearer [^\s"]+/g, 'Bearer [REDACTED]')
+        ?.replace(/:\/\/[^@]+@/g, '://***@');
       this.log.error(`Git command failed: ${sanitized}`);
       throw new Error(`Git command failed: ${sanitized}`);
     }
@@ -288,7 +287,6 @@ export default class CloudManagerClient {
    * @returns {Promise<Buffer>} ZIP file as a Buffer
    */
   async zipRepository(clonePath) {
-    /* c8 ignore start */
     if (!existsSync(clonePath)) {
       throw new Error(`Clone path does not exist: ${clonePath}`);
     }
@@ -309,7 +307,6 @@ export default class CloudManagerClient {
 
       archive.finalize();
     });
-    /* c8 ignore end */
   }
 
   /**

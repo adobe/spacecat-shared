@@ -89,6 +89,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
       ref: { type: 'string', required: true },
       installationId: { type: 'string', required: false },
       url: { type: 'string', required: true, validate: (value) => isValidUrl(value) },
+      s3StoragePath: { type: 'string', required: false },
     },
   })
   .addAttribute('deliveryType', {

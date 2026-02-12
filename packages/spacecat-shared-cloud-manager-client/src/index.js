@@ -60,7 +60,6 @@ export default class CloudManagerClient {
       ASO_CM_REPO_SERVICE_IMS_CLIENT_ID: clientId,
       ASO_CM_REPO_SERVICE_IMS_CLIENT_SECRET: clientSecret,
       ASO_CM_REPO_SERVICE_IMS_CLIENT_CODE: clientCode,
-      CM_API_URL: cmApiUrl,
       CM_REPO_URL: cmRepoUrl,
       ASO_CODE_AUTOFIX_USERNAME: gitUsername,
       ASO_CODE_AUTOFIX_EMAIL: gitUserEmail,
@@ -76,8 +75,8 @@ export default class CloudManagerClient {
         + ' ASO_CM_REPO_SERVICE_IMS_CLIENT_SECRET, and ASO_CM_REPO_SERVICE_IMS_CLIENT_CODE.');
     }
 
-    if (!hasText(cmApiUrl) || !hasText(cmRepoUrl)) {
-      throw new Error('CloudManagerClient requires CM_API_URL and CM_REPO_URL.');
+    if (!hasText(cmRepoUrl)) {
+      throw new Error('CloudManagerClient requires CM_REPO_URL.');
     }
 
     if (!hasText(gitUsername) || !hasText(gitUserEmail)) {
@@ -89,7 +88,6 @@ export default class CloudManagerClient {
       clientId,
       clientSecret,
       clientCode,
-      cmApiUrl,
       cmRepoUrl,
       gitUsername,
       gitUserEmail,
@@ -184,36 +182,6 @@ export default class CloudManagerClient {
       this.log.error(`Git command failed: ${sanitized}`);
       throw new Error(`Git command failed: ${sanitized}`);
     }
-  }
-
-  /**
-   * Makes an authenticated REST API call to the CM API.
-   * @param {string} path - API path (appended to CM_API_URL)
-   * @param {string} imsOrgId - IMS Organization ID
-   * @param {Object} [options] - Additional fetch options
-   * @returns {Promise<Response>}
-   */
-  async #cmApiFetch(path, imsOrgId, options = {}) {
-    const token = await this.#getAccessToken();
-    const url = `${this.config.cmApiUrl}${path}`;
-
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        'x-api-key': ASO_CM_REPO_SERVICE_IMS_CLIENT_ID,
-        'x-gw-ims-org-id': imsOrgId,
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`CM API request to ${path} failed: ${response.status} - ${errorText}`);
-    }
-
-    return response;
   }
 
   /**
@@ -354,39 +322,14 @@ export default class CloudManagerClient {
     }
   }
 
-  // --- CM REST API Operations ---
-
   /**
-   * Gets the list of repositories for a program.
-   * @param {string} programId - CM Program ID
-   * @param {string} imsOrgId - IMS Organization ID
-   * @returns {Promise<Object>}
-   */
-  async getRepositories(programId, imsOrgId) {
-    this.log.info(`Fetching repositories for program ${programId}`);
-    const response = await this.#cmApiFetch(`/api/program/${programId}/repositories`, imsOrgId);
-    return response.json();
-  }
-
-  /**
-   * Gets the list of tenants for an IMS organization.
-   * @param {string} imsOrgId - IMS Organization ID
-   * @returns {Promise<Object>}
-   */
-  async getTenants(imsOrgId) {
-    this.log.info(`Fetching tenants for IMS org ${imsOrgId}`);
-    const response = await this.#cmApiFetch('/api/tenants', imsOrgId);
-    return response.json();
-  }
-
-  /**
-   * Creates a pull request in a CM repository.
+   * Creates a pull request in a CM repository via the CM Repo REST API.
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
    * @param {string} imsOrgId - IMS Organization ID
    * @param {Object} options - PR options
    * @param {string} options.destinationBranch - Branch to merge into (base)
-   * @param {string} options.sourceBranch - Branch that contains the changes (head).
+   * @param {string} options.sourceBranch - Branch that contains the changes (head)
    * @param {string} options.title - PR title
    * @param {string} options.description - PR description
    * @returns {Promise<Object>}
@@ -394,20 +337,32 @@ export default class CloudManagerClient {
   async createPullRequest(programId, repositoryId, imsOrgId, {
     destinationBranch, sourceBranch, title, description,
   }) {
+    const token = await this.#getAccessToken();
+    const url = `${this.config.cmRepoUrl}/api/program/${programId}/repository/${repositoryId}/pullRequests`;
+
     this.log.info(`Creating PR for program=${programId}, repo=${repositoryId}: ${title}`);
-    const response = await this.#cmApiFetch(
-      `/api/program/${programId}/repository/${repositoryId}/pullRequests`,
-      imsOrgId,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          title,
-          sourceBranch,
-          destinationBranch,
-          description,
-        }),
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'x-api-key': ASO_CM_REPO_SERVICE_IMS_CLIENT_ID,
+        'x-gw-ims-org-id': imsOrgId,
       },
-    );
+      body: JSON.stringify({
+        title,
+        sourceBranch,
+        destinationBranch,
+        description,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Pull request creation failed: ${response.status} - ${errorText}`);
+    }
+
     return response.json();
   }
 }

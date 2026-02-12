@@ -29,7 +29,6 @@ const TEST_ENV = {
   ASO_CM_REPO_SERVICE_IMS_CLIENT_ID: 'test-client-id',
   ASO_CM_REPO_SERVICE_IMS_CLIENT_SECRET: 'test-client-secret',
   ASO_CM_REPO_SERVICE_IMS_CLIENT_CODE: 'test-client-code',
-  CM_API_URL: 'https://cloudmanager.example.com',
   CM_REPO_URL: 'https://cm-repo.example.com',
   ASO_CODE_AUTOFIX_USERNAME: 'test-bot',
   ASO_CODE_AUTOFIX_EMAIL: 'test-bot@example.com',
@@ -130,10 +129,10 @@ describe('CloudManagerClient', () => {
       )).to.throw('CloudManagerClient requires IMS_HOST');
     });
 
-    it('throws when CM_API_URL is missing', () => {
+    it('throws when CM_REPO_URL is missing', () => {
       expect(() => CloudManagerClient.createFrom(
-        createContext({ CM_API_URL: '' }),
-      )).to.throw('CloudManagerClient requires CM_API_URL');
+        createContext({ CM_REPO_URL: '' }),
+      )).to.throw('CloudManagerClient requires CM_REPO_URL');
     });
 
     it('throws when git user config is missing', () => {
@@ -155,16 +154,12 @@ describe('CloudManagerClient', () => {
       const imsNock = setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
-      const repoNock = nock(TEST_ENV.CM_API_URL)
-        .get(`/api/program/${TEST_PROGRAM_ID}/repositories`)
-        .twice()
-        .reply(200, { repositories: [] });
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID);
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID);
 
-      await client.getRepositories(TEST_PROGRAM_ID, TEST_IMS_ORG_ID);
-      await client.getRepositories(TEST_PROGRAM_ID, TEST_IMS_ORG_ID);
-
+      // IMS token should only be fetched once (cached)
       expect(imsNock.isDone()).to.be.true;
-      expect(repoNock.isDone()).to.be.true;
+      expect(execFileSyncStub).to.have.been.calledTwice;
     });
 
     it('throws when IMS token request fails', async () => {
@@ -174,7 +169,7 @@ describe('CloudManagerClient', () => {
 
       const client = CloudManagerClient.createFrom(createContext());
 
-      await expect(client.getRepositories(TEST_PROGRAM_ID, TEST_IMS_ORG_ID))
+      await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID))
         .to.be.rejectedWith('IMS token request failed with status: 401');
     });
   });
@@ -372,53 +367,11 @@ describe('CloudManagerClient', () => {
     });
   });
 
-  describe('getRepositories', () => {
-    it('fetches repositories with correct headers', async () => {
-      setupImsTokenNock();
-
-      const repoNock = nock(TEST_ENV.CM_API_URL, {
-        reqheaders: {
-          authorization: `Bearer ${TEST_TOKEN}`,
-          'x-api-key': 'aso-cm-repo-service',
-          'x-gw-ims-org-id': TEST_IMS_ORG_ID,
-        },
-      })
-        .get(`/api/program/${TEST_PROGRAM_ID}/repositories`)
-        .reply(200, { repositories: [{ id: '1', name: 'repo1' }] });
-
-      const client = CloudManagerClient.createFrom(createContext());
-      const result = await client.getRepositories(TEST_PROGRAM_ID, TEST_IMS_ORG_ID);
-
-      expect(result.repositories).to.have.lengthOf(1);
-      expect(repoNock.isDone()).to.be.true;
-    });
-  });
-
-  describe('getTenants', () => {
-    it('fetches tenants with correct headers', async () => {
-      setupImsTokenNock();
-
-      const tenantsNock = nock(TEST_ENV.CM_API_URL, {
-        reqheaders: {
-          'x-gw-ims-org-id': TEST_IMS_ORG_ID,
-        },
-      })
-        .get('/api/tenants')
-        .reply(200, { tenants: [{ id: 't1', name: 'Tenant 1' }] });
-
-      const client = CloudManagerClient.createFrom(createContext());
-      const result = await client.getTenants(TEST_IMS_ORG_ID);
-
-      expect(result.tenants).to.have.lengthOf(1);
-      expect(tenantsNock.isDone()).to.be.true;
-    });
-  });
-
   describe('createPullRequest', () => {
     it('creates a PR with correct payload', async () => {
       setupImsTokenNock();
 
-      const prNock = nock(TEST_ENV.CM_API_URL)
+      const prNock = nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`, {
           title: 'Fix issue',
           sourceBranch: 'feature/fix',
@@ -447,7 +400,7 @@ describe('CloudManagerClient', () => {
     it('throws on failed PR creation', async () => {
       setupImsTokenNock();
 
-      nock(TEST_ENV.CM_API_URL)
+      nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
         .reply(422, 'Validation failed');
 
@@ -463,7 +416,7 @@ describe('CloudManagerClient', () => {
           title: 'Fix',
           description: 'desc',
         },
-      )).to.be.rejectedWith('CM API request to');
+      )).to.be.rejectedWith('Pull request creation failed');
     });
   });
 });

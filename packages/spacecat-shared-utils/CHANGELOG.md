@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.95.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.94.0...@adobe/spacecat-shared-utils-v1.95.0) (2026-02-12)
+
+
+### Features
+
+* add canonicalizeUrl utility for consistent URL comparison ([#1334](https://github.com/adobe/spacecat-shared/issues/1334)) ([eb15132](https://github.com/adobe/spacecat-shared/commit/eb1513228e5d2e1701211b6aaf36108bd1642d68))
+
+# [@adobe/spacecat-shared-utils-v1.94.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.93.0...@adobe/spacecat-shared-utils-v1.94.0) (2026-02-11)
+
+
+### Features
+
+* store owner of the strategy ([#1339](https://github.com/adobe/spacecat-shared/issues/1339)) ([8d7ea96](https://github.com/adobe/spacecat-shared/commit/8d7ea968315a17a1f614f7cb61e91f997355885b))
+
 # [@adobe/spacecat-shared-utils-v1.93.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.92.0...@adobe/spacecat-shared-utils-v1.93.0) (2026-02-10)
 
 

@@ -40,6 +40,7 @@ class Configuration {
     DAILY: 'daily',
     DAILY_1AM: 'daily-1am',
     WEEKLY: 'weekly',
+    WEEKLY_DIGEST_EMAIL: 'weekly-digest-email', // runs on Tuesday for weekly digest emails (LLMO-2682)
     EARLY_MONDAY: 'early-monday',
     EVERY_SATURDAY: 'every-saturday',
     EVERY_SUNDAY: 'every-sunday',

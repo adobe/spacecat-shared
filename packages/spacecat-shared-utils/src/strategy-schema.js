@@ -76,6 +76,7 @@ const strategy = z.object({
   platform: nonEmptyString,
   opportunities: z.array(strategyOpportunity),
   createdAt: z.string(), // ISO 8601 date string
+  createdBy: z.string().optional(), // Email of strategy creator/owner
   completedAt: z.string().optional(), // ISO 8601 date string
   goalType: strategyGoalType.optional(),
 });

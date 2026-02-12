@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.6...@adobe/spacecat-shared-tokowaka-client-v1.7.7) (2026-02-12)
+
+
+### Bug Fixes
+
+* export forwarded host compute method ([#1338](https://github.com/adobe/spacecat-shared/issues/1338)) ([91e5f5f](https://github.com/adobe/spacecat-shared/commit/91e5f5fb2b5a7d592886caea940a6313fe1c1c8c))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.7.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.5...@adobe/spacecat-shared-tokowaka-client-v1.7.6) (2026-02-09)
 
 

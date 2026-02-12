@@ -148,6 +148,14 @@ export class FastlyKVClient {
 }
 
 /**
+ * Compute the forwarded host for edge optimize (bare domain → www; subdomains unchanged).
+ * @param url - Full base URL (e.g. https://example.com)
+ * @param logger - Optional logger with debug and error methods
+ * @returns Host to use (e.g. www.example.com)
+ */
+export function calculateForwardedHost(url: string, logger?: { debug?: (msg: string) => void; error?: (msg: string) => void }): string;
+
+/**
  * Base class for opportunity mappers
  * Extend this class to create custom mappers for new opportunity types
  */

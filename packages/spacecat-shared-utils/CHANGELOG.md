@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.96.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.95.0...@adobe/spacecat-shared-utils-v1.96.0) (2026-02-12)
+
+
+### Features
+
+* get llmo config v2 ([#1340](https://github.com/adobe/spacecat-shared/issues/1340)) ([6fcbd51](https://github.com/adobe/spacecat-shared/commit/6fcbd51864daca13736d3813097c485e2189cd68))
+
 # [@adobe/spacecat-shared-utils-v1.95.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.94.0...@adobe/spacecat-shared-utils-v1.95.0) (2026-02-12)
 
 

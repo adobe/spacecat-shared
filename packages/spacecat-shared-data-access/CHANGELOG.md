@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.106.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.106.0...@adobe/spacecat-shared-data-access-v2.106.1) (2026-02-12)
+
+
+### Bug Fixes
+
+* enabled removal ([#1343](https://github.com/adobe/spacecat-shared/issues/1343)) ([3508c38](https://github.com/adobe/spacecat-shared/commit/3508c380b20994567ac7a5efc598bdc9cd1559c7))
+
 # [@adobe/spacecat-shared-data-access-v2.106.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.105.1...@adobe/spacecat-shared-data-access-v2.106.0) (2026-02-11)
 
 

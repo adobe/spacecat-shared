@@ -342,7 +342,7 @@ export const configSchema = Joi.object({
     forwardedHost: Joi.string().optional(),
   }).optional(),
   edgeOptimizeConfig: Joi.object({
-    enabled: Joi.boolean().required(),
+    enabled: Joi.boolean().optional(),
     opted: Joi.number().optional(),
   }).optional(),
   contentAiConfig: Joi.object({

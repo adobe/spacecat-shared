@@ -22,6 +22,15 @@ const GIT_BIN = '/opt/bin/git';
 const CLONE_PATH_PREFIX = '/tmp/cm-repo-';
 const IMS_TOKEN_ENDPOINT = '/ims/token/v4';
 const ASO_CM_REPO_SERVICE_IMS_CLIENT_ID = 'aso-cm-repo-service';
+/**
+ * Repository type constants for Cloud Manager integrations.
+ * Standard repos use basic auth; all others (BYOG) use Bearer token extraheaders.
+ */
+export const CM_REPO_TYPE_GITHUB = 'github';
+export const CM_REPO_TYPE_BITBUCKET = 'bitbucket';
+export const CM_REPO_TYPE_GITLAB = 'gitlab';
+export const CM_REPO_TYPE_AZURE_DEVOPS = 'azure_devops';
+export const CM_REPO_TYPE_STANDARD = 'standard';
 
 // Lambda layer environment: git and its helpers (git-remote-https) live under /opt.
 // Without these, the dynamic linker can't find shared libraries (libcurl, libexpat, …)
@@ -61,6 +70,7 @@ export default class CloudManagerClient {
       ASO_CM_REPO_SERVICE_IMS_CLIENT_SECRET: clientSecret,
       ASO_CM_REPO_SERVICE_IMS_CLIENT_CODE: clientCode,
       CM_REPO_URL: cmRepoUrl,
+      CM_STANDARD_REPO_CREDENTIALS: standardRepoCredentialsRaw,
       ASO_CODE_AUTOFIX_USERNAME: gitUsername,
       ASO_CODE_AUTOFIX_EMAIL: gitUserEmail,
     } = context.env;
@@ -83,12 +93,24 @@ export default class CloudManagerClient {
       throw new Error('CloudManagerClient requires ASO_CODE_AUTOFIX_USERNAME and ASO_CODE_AUTOFIX_EMAIL.');
     }
 
+    // Optional: credentials for standard (non-BYOG) CM repos.
+    // JSON object mapping programId to "username:accessToken".
+    let standardRepoCredentials = {};
+    if (hasText(standardRepoCredentialsRaw)) {
+      try {
+        standardRepoCredentials = JSON.parse(standardRepoCredentialsRaw);
+      } catch (e) {
+        throw new Error('CM_STANDARD_REPO_CREDENTIALS must be valid JSON.');
+      }
+    }
+
     return new CloudManagerClient({
       imsHost,
       clientId,
       clientSecret,
       clientCode,
       cmRepoUrl,
+      standardRepoCredentials,
       gitUsername,
       gitUserEmail,
     }, context.s3?.s3Client, log);
@@ -141,6 +163,19 @@ export default class CloudManagerClient {
   }
 
   /**
+   * Looks up basic-auth credentials for a standard (non-BYOG) CM repository.
+   * @param {string} programId - CM Program ID
+   * @returns {string} "username:accessToken"
+   */
+  #getStandardRepoCredentials(programId) {
+    const credentials = this.config.standardRepoCredentials[programId];
+    if (!credentials) {
+      throw new Error(`No standard repo credentials found for programId: ${programId}. Check CM_STANDARD_REPO_CREDENTIALS.`);
+    }
+    return credentials;
+  }
+
+  /**
    * Builds the git -c http.extraheader arguments for CM repo auth.
    * @param {string} imsOrgId - IMS Organization ID
    * @returns {Promise<string[]>} Array of git config args
@@ -176,22 +211,59 @@ export default class CloudManagerClient {
     try {
       return execFileSync(GIT_BIN, args, { encoding: 'utf-8', env: GIT_ENV, ...options });
     } catch (error) {
-      // Sanitize token from error output
-      /* c8 ignore next 2 */
-      const sanitized = (error.stderr || error.message || '').replace(/Bearer [^\s"]+/g, 'Bearer [REDACTED]');
+      // Sanitize tokens and credentials from error output
+      /* c8 ignore next 3 */
+      const sanitized = (error.stderr || error.message || '')
+        .replace(/Bearer [^\s"]+/g, 'Bearer [REDACTED]')
+        .replace(/:\/\/[^@]+@/g, '://***@');
       this.log.error(`Git command failed: ${sanitized}`);
       throw new Error(`Git command failed: ${sanitized}`);
     }
   }
 
   /**
-   * Clones a Cloud Manager repository to /tmp.
+   * Builds authenticated git arguments for a remote command (clone or push).
+   *
+   * For standard repos: returns [command, basicAuthUrl]
+   * For BYOG repos: returns [...configArgs, command, byogRepoUrl]
+   *
+   * @param {string} command - The git command ('clone' or 'push')
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
-   * @param {string} imsOrgId - IMS Organization ID
+   * @param {Object} [options] - Auth options
+   * @param {string} [options.imsOrgId] - IMS Organization ID (required for BYOG)
+   * @param {string} [options.repoType] - Repository type ('standard' or VCS type)
+   * @param {string} [options.repoUrl] - Repository URL (required for standard repos)
+   * @returns {Promise<string[]>} Array of git arguments
+   */
+  async #buildAuthGitArgs(command, programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
+    if (repoType === CM_REPO_TYPE_STANDARD) {
+      const credentials = this.#getStandardRepoCredentials(programId);
+      const urlWithoutProtocol = repoUrl.replace(/^https?:\/\//, '');
+      const authUrl = `https://${credentials}@${urlWithoutProtocol}`;
+      return [command, authUrl];
+    }
+
+    const configArgs = await this.#getGitConfigArgs(imsOrgId);
+    const byogRepoUrl = this.#getRepoUrl(programId, repositoryId);
+    return [...configArgs, command, byogRepoUrl];
+  }
+
+  /**
+   * Clones a Cloud Manager repository to /tmp.
+   *
+   * For BYOG repos: uses Bearer token extraheaders via CM_REPO_URL.
+   * For standard repos: uses basic-auth credentials embedded in the URL.
+   *
+   * @param {string} programId - CM Program ID
+   * @param {string} repositoryId - CM Repository ID
+   * @param {Object} [options] - Clone options
+   * @param {string} [options.imsOrgId] - IMS Organization ID (required for BYOG)
+   * @param {string} [options.repoType] - Repository type ('standard' or VCS type)
+   * @param {string} [options.repoUrl] - Repository URL (required for standard repos)
    * @returns {Promise<string>} The local clone path
    */
-  async clone(programId, repositoryId, imsOrgId) {
+  async clone(programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
     const clonePath = `${CLONE_PATH_PREFIX}${programId}-${repositoryId}`;
 
     // Clean up if path exists from a previous invocation
@@ -200,12 +272,10 @@ export default class CloudManagerClient {
       rmSync(clonePath, { recursive: true, force: true });
     }
 
-    const configArgs = await this.#getGitConfigArgs(imsOrgId);
-    const repoUrl = this.#getRepoUrl(programId, repositoryId);
+    this.log.info(`Cloning CM repository: program=${programId}, repo=${repositoryId}, type=${repoType}`);
 
-    this.log.info(`Cloning CM repository: program=${programId}, repo=${repositoryId}`);
-    const fullArgs = [...configArgs, 'clone', repoUrl, clonePath];
-    this.#execGit(fullArgs);
+    const args = await this.#buildAuthGitArgs('clone', programId, repositoryId, { imsOrgId, repoType, repoUrl });
+    this.#execGit([...args, clonePath]);
     this.log.info(`Repository cloned to ${clonePath}`);
 
     return clonePath;
@@ -294,16 +364,21 @@ export default class CloudManagerClient {
   /**
    * Pushes the current branch to the remote CM repository.
    * Commits are expected to already exist (e.g. via git am in applyPatch).
+   *
+   * For BYOG repos: uses Bearer token extraheaders.
+   * For standard repos: uses basic-auth credentials embedded in the URL.
+   *
    * @param {string} clonePath - Path to the cloned repository
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
-   * @param {string} imsOrgId - IMS Organization ID
+   * @param {Object} [options] - Push options
+   * @param {string} [options.imsOrgId] - IMS Organization ID (required for BYOG)
+   * @param {string} [options.repoType] - Repository type ('standard' or VCS type)
+   * @param {string} [options.repoUrl] - Repository URL (required for standard repos)
    */
-  async push(clonePath, programId, repositoryId, imsOrgId) {
-    const configArgs = await this.#getGitConfigArgs(imsOrgId);
-    const repoUrl = this.#getRepoUrl(programId, repositoryId);
-    this.#execGit([...configArgs, 'push', repoUrl], { cwd: clonePath });
-
+  async push(clonePath, programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
+    const pushArgs = await this.#buildAuthGitArgs('push', programId, repositoryId, { imsOrgId, repoType, repoUrl });
+    this.#execGit(pushArgs, { cwd: clonePath });
     this.log.info('Changes pushed successfully');
   }
 

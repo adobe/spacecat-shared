@@ -34,11 +34,17 @@ const TEST_ENV = {
   ASO_CODE_AUTOFIX_EMAIL: 'test-bot@example.com',
 };
 
+const TEST_STANDARD_CREDENTIALS = JSON.stringify({
+  12345: 'stduser:stdtoken123',
+  99999: 'otheruser:othertoken',
+});
+
 const TEST_TOKEN = 'test-access-token-12345';
 const TEST_IMS_ORG_ID = 'test-ims-org@AdobeOrg';
 const TEST_PROGRAM_ID = '12345';
 const TEST_REPO_ID = '67890';
 const EXPECTED_CLONE_PATH = `/tmp/cm-repo-${TEST_PROGRAM_ID}-${TEST_REPO_ID}`;
+const TEST_STANDARD_REPO_URL = 'https://git.cloudmanager.adobe.com/myorg/myrepo.git';
 
 const s3Mock = mockClient(S3Client);
 
@@ -123,6 +129,13 @@ describe('CloudManagerClient', () => {
       expect(client).to.be.instanceOf(CloudManagerClient);
     });
 
+    it('creates an instance with standard repo credentials', () => {
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+      expect(client).to.be.instanceOf(CloudManagerClient);
+    });
+
     it('throws when IMS env vars are missing', () => {
       expect(() => CloudManagerClient.createFrom(
         createContext({ ASO_CM_REPO_SERVICE_IMS_CLIENT_ID: '' }),
@@ -147,6 +160,12 @@ describe('CloudManagerClient', () => {
       expect(() => CloudManagerClient.createFrom(context))
         .to.throw('CloudManagerClient requires S3 client');
     });
+
+    it('throws when CM_STANDARD_REPO_CREDENTIALS is invalid JSON', () => {
+      expect(() => CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: 'not-valid-json' }),
+      )).to.throw('CM_STANDARD_REPO_CREDENTIALS must be valid JSON');
+    });
   });
 
   describe('IMS token', () => {
@@ -154,8 +173,8 @@ describe('CloudManagerClient', () => {
       const imsNock = setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
-      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID);
-      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID);
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID });
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID });
 
       // IMS token should only be fetched once (cached)
       expect(imsNock.isDone()).to.be.true;
@@ -169,22 +188,25 @@ describe('CloudManagerClient', () => {
 
       const client = CloudManagerClient.createFrom(createContext());
 
-      await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID))
+      await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID }))
         .to.be.rejectedWith('IMS token request failed with status: 401');
     });
   });
 
   describe('clone', () => {
-    it('clones repository with correct git command and headers', async () => {
+    it('clones BYOG repository with correct git command and headers', async () => {
       setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
-      const clonePath = await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID);
+      const clonePath = await client.clone(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID },
+      );
 
       expect(clonePath).to.equal(EXPECTED_CLONE_PATH);
       expect(execFileSyncStub).to.have.been.calledOnce;
 
-      // execFileSync(file, args, options) — file is args[0], args array is args[1]
       expect(execFileSyncStub.firstCall.args[0]).to.equal('/opt/bin/git');
 
       const gitArgs = getGitArgs(execFileSyncStub.firstCall);
@@ -196,12 +218,51 @@ describe('CloudManagerClient', () => {
       expect(gitArgs).to.include(EXPECTED_CLONE_PATH);
     });
 
+    it('clones standard repository with basic auth in URL', async () => {
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+
+      const clonePath = await client.clone(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+      );
+
+      expect(clonePath).to.equal(EXPECTED_CLONE_PATH);
+      expect(execFileSyncStub).to.have.been.calledOnce;
+
+      const gitArgs = getGitArgs(execFileSyncStub.firstCall);
+      const gitArgsStr = getGitArgsStr(execFileSyncStub.firstCall);
+
+      // Should use basic auth URL, not extraheader
+      expect(gitArgs).to.include('clone');
+      expect(gitArgsStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
+      expect(gitArgs).to.include(EXPECTED_CLONE_PATH);
+
+      // Should NOT contain extraheader args
+      expect(gitArgsStr).to.not.include('extraheader');
+      expect(gitArgsStr).to.not.include('Bearer');
+    });
+
+    it('throws when standard credentials not found for programId', async () => {
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+
+      await expect(client.clone(
+        '00000',
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+      )).to.be.rejectedWith('No standard repo credentials found for programId: 00000');
+    });
+
     it('removes existing clone path before cloning', async () => {
       setupImsTokenNock();
       existsSyncStub.withArgs(EXPECTED_CLONE_PATH).returns(true);
 
       const client = CloudManagerClient.createFrom(createContext());
-      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID);
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID });
 
       expect(rmSyncStub).to.have.been.calledWith(
         EXPECTED_CLONE_PATH,
@@ -215,7 +276,7 @@ describe('CloudManagerClient', () => {
 
       const client = CloudManagerClient.createFrom(createContext());
 
-      await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, TEST_IMS_ORG_ID))
+      await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID }))
         .to.be.rejectedWith('Git command failed');
     });
   });
@@ -299,7 +360,7 @@ describe('CloudManagerClient', () => {
   });
 
   describe('push', () => {
-    it('pushes to remote with auth headers', async () => {
+    it('pushes BYOG repo with auth headers', async () => {
       setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
@@ -307,7 +368,7 @@ describe('CloudManagerClient', () => {
         '/tmp/cm-repo-test',
         TEST_PROGRAM_ID,
         TEST_REPO_ID,
-        TEST_IMS_ORG_ID,
+        { imsOrgId: TEST_IMS_ORG_ID },
       );
 
       expect(execFileSyncStub).to.have.been.calledOnce;
@@ -317,6 +378,27 @@ describe('CloudManagerClient', () => {
       expect(pushArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
       expect(pushArgStr).to.include('x-api-key: aso-cm-repo-service');
       expect(pushArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
+    });
+
+    it('pushes standard repo with basic auth in URL', async () => {
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+
+      await client.push(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+      );
+
+      expect(execFileSyncStub).to.have.been.calledOnce;
+
+      const pushArgStr = getGitArgsStr(execFileSyncStub.firstCall);
+      expect(pushArgStr).to.include('push');
+      expect(pushArgStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
+      expect(pushArgStr).to.not.include('extraheader');
+      expect(pushArgStr).to.not.include('Bearer');
     });
   });
 

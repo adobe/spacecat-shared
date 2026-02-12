@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.106.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.105.1...@adobe/spacecat-shared-data-access-v2.106.0) (2026-02-11)
+
+
+### Features
+
+* **data-access:** add suggestionValue to FALLBACK_PROJECTION for reports ([#1337](https://github.com/adobe/spacecat-shared/issues/1337)) ([d17da2b](https://github.com/adobe/spacecat-shared/commit/d17da2b69bbccbf69d2fabe7c3ffd37d8ffb5106))
+
 # [@adobe/spacecat-shared-data-access-v2.105.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.105.0...@adobe/spacecat-shared-data-access-v2.105.1) (2026-02-11)
 
 

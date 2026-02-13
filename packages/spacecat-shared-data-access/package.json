@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
+    "@supabase/postgrest-js": "^1.21.4",
     "@aws-sdk/client-dynamodb": "3.940.0",
     "@aws-sdk/client-s3": "^3.940.0",
     "@aws-sdk/lib-dynamodb": "3.940.0",

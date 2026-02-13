@@ -16,7 +16,6 @@ import {
   isNonEmptyObject,
   isObject,
 } from '@adobe/spacecat-shared-utils';
-
 import { ElectroValidationError } from 'electrodb';
 
 import DataAccessError from '../../errors/data-access.error.js';
@@ -24,10 +23,18 @@ import ValidationError from '../../errors/validation.error.js';
 import { createAccessors } from '../../util/accessor.utils.js';
 import { guardId, guardArray } from '../../util/guards.js';
 import {
-  entityNameToAllPKValue,
-  removeElectroProperties,
-} from '../../util/util.js';
+  applyWhere,
+  createFieldMaps,
+  decodeCursor,
+  DEFAULT_PAGE_SIZE,
+  encodeCursor,
+  entityToTableName,
+  fromDbRecord,
+  toDbField,
+  toDbRecord,
+} from '../../util/postgrest.utils.js';
 import { DATASTORE_TYPE } from '../../util/index.js';
+import { entityNameToAllPKValue, removeElectroProperties } from '../../util/util.js';
 
 function isValidParent(parent, child) {
   if (!hasText(parent.entityName)) {
@@ -35,44 +42,18 @@ function isValidParent(parent, child) {
   }
 
   const foreignKey = `${parent.entityName}Id`;
-
   return child.record?.[foreignKey] === parent.record?.[foreignKey];
 }
 
-/**
- * BaseCollection - A base class for managing collections of entities in the application.
- * This class uses ElectroDB to interact with entities and provides common functionality
- * for data operations.
- *
- * @class BaseCollection
- * @abstract
- */
 class BaseCollection {
-  /**
-   * The collection name for this collection. Must be overridden by subclasses.
-   * This ensures the collection name is explicit and not dependent on class names
-   * which can be mangled by bundlers.
-   * @type {string}
-   */
   static COLLECTION_NAME = undefined;
 
-  /**
-   * The datastore type for this collection. Defaults to DYNAMO.
-   * Override in subclasses to use a different datastore (e.g., S3).
-   * @type {string}
-   */
-  static DATASTORE_TYPE = DATASTORE_TYPE.DYNAMO;
+  static DATASTORE_TYPE = DATASTORE_TYPE.POSTGREST;
 
-  /**
-   * Constructs an instance of BaseCollection.
-   * @constructor
-   * @param {Object} electroService - The ElectroDB service used for managing entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection.
-   * @param {Object} schema - The schema for the entity.
-   * @param {Object} log - A log for capturing logging information.
-   */
-  constructor(electroService, entityRegistry, schema, log) {
-    this.electroService = electroService;
+  constructor(postgrestService, entityRegistry, schema, log) {
+    this.postgrestService = postgrestService;
+    // legacy alias for existing tests and callers
+    this.electroService = postgrestService;
     this.entityRegistry = entityRegistry;
     this.schema = schema;
     this.log = log;
@@ -80,7 +61,9 @@ class BaseCollection {
     this.clazz = this.schema.getModelClass();
     this.entityName = this.schema.getEntityName();
     this.idName = this.schema.getIdName();
-    this.entity = electroService.entities[this.entityName];
+    this.tableName = entityToTableName(this.schema.getModelName());
+    this.fieldMaps = createFieldMaps(this.schema);
+    this.entity = postgrestService?.entities?.[this.entityName];
 
     this.#initializeCollectionMethods();
   }
@@ -94,34 +77,11 @@ class BaseCollection {
     throw error;
   }
 
-  /**
-   * Initialize collection methods for each "by..." index defined in the entity schema.
-   * For each index that starts with "by", we:
-   *  1. Retrieve its composite pk and sk arrays from the schema.
-   *  2. Generate convenience methods for every prefix of the composite keys.
-   *     For example, if the index keys are ['opportunityId', 'status', 'createdAt'],
-   *     we create methods:
-   *       - allByOpportunityId(...) / findByOpportunityId(...)
-   *       - allByOpportunityIdAndStatus(...) / findByOpportunityIdAndStatus(...)
-   *       - allByOpportunityIdAndStatusAndCreatedAt(...) /
-   *            findByOpportunityIdAndStatusAndCreatedAt(...)
-   *
-   * Each generated method calls allByIndexKeys() or findByIndexKeys() with the appropriate keys.
-   *
-   * @private
-   */
   #initializeCollectionMethods() {
     const accessorConfigs = this.schema.toAccessorConfigs(this, this.log);
     createAccessors(accessorConfigs, this.log);
   }
 
-  /**
-   * Creates an instance of a model from a record.
-   * @private
-   * @param {Object} record - The record containing data to create the model instance.
-   * @returns {BaseModel|null} - Returns an instance of the model class if the data is valid,
-   * otherwise null.
-   */
   #createInstance(record) {
     if (!isNonEmptyObject(record)) {
       this.log.warn(`Failed to create instance of [${this.entityName}]: record is empty`);
@@ -129,7 +89,7 @@ class BaseCollection {
     }
     // eslint-disable-next-line new-cap
     return new this.clazz(
-      this.electroService,
+      this.postgrestService,
       this.entityRegistry,
       this.schema,
       record,
@@ -137,34 +97,16 @@ class BaseCollection {
     );
   }
 
-  /**
-   * Creates instances of models from a set of records.
-   * @private
-   * @param {Object} records - The records containing data to create the model instances.
-   * @returns {Array<BaseModel>} - An array of instances of the model class.
-   */
   #createInstances(records) {
-    return records.map((record) => this.#createInstance(record));
+    return records
+      .map((record) => this.#createInstance(record))
+      .filter((instance) => instance !== null);
   }
 
-  /**
-   * Clears the accessor cache for the entity. This method is called when the entity is
-   * updated or removed to ensure that the cache is invalidated.
-   * @private
-   */
   #invalidateCache() {
     this._accessorCache = {};
   }
 
-  /**
-   * Internal on-create handler. This method is called after the create method has successfully
-   * created an entity. It will call the on-create handler defined in the subclass and handles
-   * any errors that occur.
-   * @param {BaseModel} item - The created entity.
-   * @return {Promise<void>}
-   * @async
-   * @private
-   */
   async #onCreate(item) {
     try {
       await this._onCreate(item);
@@ -173,16 +115,6 @@ class BaseCollection {
     }
   }
 
-  /**
-   * Internal on-create-many handler. This method is called after the createMany method has
-   * successfully created entities. It will call the on-create-many handler defined in the
-   * subclass and handles any errors that occur.
-   * @param {Array<BaseModel>} createdItems - The created entities.
-   * @param {{ item: Object, error: ValidationError }[]} errorItems - Items that failed validation.
-   * @return {Promise<void>}
-   * @async
-   * @private
-   */
   async #onCreateMany({ createdItems, errorItems }) {
     try {
       await this._onCreateMany({ createdItems, errorItems });
@@ -191,47 +123,213 @@ class BaseCollection {
     }
   }
 
-  /**
-   * Handler for the create method. This method is
-   * called after the create method has successfully created an entity.
-   * @param {BaseModel} item - The created entity.
-   * @return {Promise<void>}
-   * @async
-   * @protected
-   */
   // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreate(item) {
-    // no-op
+    return undefined;
   }
 
-  /**
-   * Handler for the createMany method. This method is
-   * called after the createMany method has successfully created entities.
-   * @param {Array<BaseModel>} createdItems - The created entities.
-   * @param {{ item: Object, error: ValidationError }[]} errorItems - Items that failed validation.
-   * @return {Promise<void>}
-   * @async
-   * @protected
-   */
   // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreateMany({ createdItems, errorItems }) {
-    // no-op
+    return undefined;
   }
 
-  /**
-   * General method to query entities by index keys. This method is used by other
-   * query methods to perform the actual query operation. It will use the index keys
-   * to find the appropriate index and query the entities. The query result will be
-   * transformed into model instances.
-   *
-   * @private
-   * @async
-   * @param {Object} keys - The index keys to use for the query.
-   * @param {Object} options - Additional options for the query.
-   * @returns {Promise<BaseModel|Array<BaseModel>|null>} - The query result.
-   * @throws {DataAccessError} - Throws an error if the keys are not provided,
-   * if options are invalid or if the query operation fails.
-   */
+  #toDbField(field) {
+    return toDbField(field, this.fieldMaps.toDbMap);
+  }
+
+  #toDbRecord(record) {
+    return toDbRecord(record, this.fieldMaps.toDbMap);
+  }
+
+  #toModelRecord(record) {
+    return fromDbRecord(record, this.fieldMaps.toModelMap);
+  }
+
+  #buildSelect(attributes) {
+    if (!isNonEmptyArray(attributes)) {
+      return '*';
+    }
+    return attributes.map((field) => this.#toDbField(field)).join(',');
+  }
+
+  #getOrderField(indexName, keys) {
+    if (hasText(indexName)) {
+      const indexKeys = this.schema.getIndexKeys(indexName);
+      if (isNonEmptyArray(indexKeys)) {
+        return this.#toDbField(indexKeys[indexKeys.length - 1]);
+      }
+    }
+
+    const keyNames = Object.keys(keys);
+    const defaultSortField = isNonEmptyArray(keyNames)
+      ? keyNames[keyNames.length - 1]
+      : 'updatedAt';
+    return this.#toDbField(defaultSortField);
+  }
+
+  #applyDefaults(record) {
+    const nextRecord = { ...record };
+    const attributes = this.schema.getAttributes();
+    Object.entries(attributes).forEach(([name, attribute]) => {
+      if (nextRecord[name] !== undefined || attribute.default === undefined) {
+        return;
+      }
+
+      nextRecord[name] = typeof attribute.default === 'function'
+        ? attribute.default()
+        : attribute.default;
+    });
+    return nextRecord;
+  }
+
+  applyUpdateWatchers(record, updates) {
+    const nextRecord = { ...record };
+    const nextUpdates = { ...updates };
+    const changedKeys = Object.keys(updates);
+    if (changedKeys.length === 0) {
+      return { record: nextRecord, updates: nextUpdates };
+    }
+
+    const attributes = this.schema.getAttributes();
+    Object.entries(attributes).forEach(([name, attribute]) => {
+      if (typeof attribute.set !== 'function') {
+        return;
+      }
+
+      const { watch } = attribute;
+      const shouldApply = watch === '*'
+        || (Array.isArray(watch) && watch.some((key) => changedKeys.includes(key)));
+
+      if (!shouldApply) {
+        return;
+      }
+
+      const value = attribute.set(nextRecord[name], nextRecord);
+      nextRecord[name] = value;
+      nextUpdates[name] = value;
+    });
+    return { record: nextRecord, updates: nextUpdates };
+  }
+
+  #applySetters(record) {
+    const nextRecord = { ...record };
+    const attributes = this.schema.getAttributes();
+    Object.entries(attributes).forEach(([name, attribute]) => {
+      if (typeof attribute.set !== 'function') {
+        return;
+      }
+
+      const value = attribute.set(nextRecord[name], nextRecord);
+      if (value !== undefined) {
+        nextRecord[name] = value;
+      }
+    });
+    return nextRecord;
+  }
+
+  #validateItem(item) {
+    const attributes = this.schema.getAttributes();
+    const errors = [];
+
+    Object.entries(attributes).forEach(([name, attribute]) => {
+      const value = item[name];
+
+      if (attribute.required && (value === undefined || value === null)) {
+        errors.push(`${name} is required`);
+        return;
+      }
+
+      if (value === undefined || value === null) {
+        return;
+      }
+
+      if (Array.isArray(attribute.type) && !attribute.type.includes(value)) {
+        errors.push(`${name} is invalid`);
+      } else if (attribute.type === 'string' && typeof value !== 'string') {
+        errors.push(`${name} must be a string`);
+      } else if (attribute.type === 'number' && typeof value !== 'number') {
+        errors.push(`${name} must be a number`);
+      } else if (attribute.type === 'boolean' && typeof value !== 'boolean') {
+        errors.push(`${name} must be a boolean`);
+      } else if (attribute.type === 'list' && !Array.isArray(value)) {
+        errors.push(`${name} must be a list`);
+      } else if (attribute.type === 'map' && !isObject(value)) {
+        errors.push(`${name} must be a map`);
+      }
+
+      if (typeof attribute.validate === 'function') {
+        try {
+          const result = attribute.validate(value, item);
+          if (result === false) {
+            errors.push(`${name} failed validation`);
+          }
+        } catch (e) {
+          errors.push(`${name} failed validation`);
+        }
+      }
+    });
+
+    if (errors.length > 0) {
+      throw new ValidationError(errors.join(', '), this);
+    }
+  }
+
+  #prepareItem(item) {
+    let prepared = { ...item };
+    prepared = this.#applyDefaults(prepared);
+    prepared = this.#applySetters(prepared);
+    this.#validateItem(prepared);
+    return prepared;
+  }
+
+  #applyKeyFilters(query, keys) {
+    let filtered = query;
+    Object.entries(keys).forEach(([key, value]) => {
+      filtered = filtered.eq(this.#toDbField(key), value);
+    });
+    return filtered;
+  }
+
+  async #queryPage({
+    keys,
+    options,
+    offset,
+    limit,
+  }) {
+    const select = this.#buildSelect(options.attributes);
+    const indexName = options.index || this.schema.findIndexNameByKeys(keys);
+    const index = this.schema.getIndexByName(indexName);
+    if (options.index && !index) {
+      this.#logAndThrowError(`Failed to query [${this.entityName}]: query proxy [${options.index}] not found`);
+    }
+
+    const orderField = this.#getOrderField(indexName, keys);
+    let query = this.postgrestService
+      .from(this.tableName)
+      .select(select)
+      .order(orderField, { ascending: options.order === 'asc' });
+
+    query = this.#applyKeyFilters(query, keys);
+    if (isObject(options.between)) {
+      const betweenField = this.#toDbField(options.between.attribute);
+      query = query.gte(betweenField, options.between.start).lte(betweenField, options.between.end);
+    }
+    query = applyWhere(query, options.where, this.fieldMaps.toDbMap);
+
+    if (Number.isInteger(limit)) {
+      query = query.range(offset, offset + limit - 1);
+    } else {
+      query = query.range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      this.#logAndThrowError('Failed to query', error);
+    }
+
+    return (data || []).map((record) => this.#toModelRecord(record));
+  }
+
   async #queryByIndexKeys(keys, options = {}) {
     if (!isNonEmptyObject(keys)) {
       return this.#logAndThrowError(`Failed to query [${this.entityName}]: keys are required`);
@@ -241,228 +339,194 @@ class BaseCollection {
       return this.#logAndThrowError(`Failed to query [${this.entityName}]: options must be an object`);
     }
 
-    const indexName = options.index || this.schema.findIndexNameByKeys(keys);
-    const index = this.entity.query[indexName];
-
-    if (!index) {
-      this.#logAndThrowError(`Failed to query [${this.entityName}]: query proxy [${indexName}] not found`);
-    }
-
     try {
-      const queryOptions = {
-        order: options.order || 'desc',
-        ...options.limit && { limit: options.limit },
-        ...options.attributes && { attributes: options.attributes },
-        /* c8 ignore next */
-        ...options.cursor && { cursor: options.cursor },
-      };
-
-      let query = index(keys);
-
-      if (isObject(options.between)) {
-        query = query.between(
-          { [options.between.attribute]: options.between.start },
-          { [options.between.attribute]: options.between.end },
-        );
-      }
-
-      // Apply where clause (FilterExpression) if provided
-      if (typeof options.where === 'function') {
-        query = query.where(options.where);
-      }
-
-      // execute the initial query
-      let result = await query.go(queryOptions);
-      let allData = result.data;
-
-      // Smart pagination behavior:
-      // - fetchAllPages: true → Always paginate through all results
-      // - fetchAllPages: false → Only fetch first page
-      // - undefined → Auto-paginate when no limit specified, respect limits otherwise
-      const shouldFetchAllPages = options.fetchAllPages === true
-                                 || (options.fetchAllPages !== false && !options.limit);
-
-      if (shouldFetchAllPages) {
-        while (result.cursor) {
-          queryOptions.cursor = result.cursor;
-          // eslint-disable-next-line no-await-in-loop
-          result = await query.go(queryOptions);
-          allData = allData.concat(result.data);
+      if (this.entity) {
+        const indexName = options.index || this.schema.findIndexNameByKeys(keys);
+        const index = this.entity.query[indexName];
+        if (!index) {
+          this.#logAndThrowError(`Failed to query [${this.entityName}]: query proxy [${indexName}] not found`);
         }
-      }
 
-      // Return cursor when explicitly requested via returnCursor option
-      const shouldReturnCursor = options.returnCursor === true;
+        const queryOptions = {
+          order: options.order || 'desc',
+          ...options.limit && { limit: options.limit },
+          ...options.attributes && { attributes: options.attributes },
+          ...options.cursor && { cursor: options.cursor },
+        };
 
-      if (options.limit === 1) {
-        return allData.length ? this.#createInstance(allData[0]) : null;
-      } else {
+        let query = index(keys);
+        if (isObject(options.between)) {
+          query = query.between(
+            { [options.between.attribute]: options.between.start },
+            { [options.between.attribute]: options.between.end },
+          );
+        }
+        if (typeof options.where === 'function') {
+          query = query.where(options.where);
+        }
+
+        let result = await query.go(queryOptions);
+        let allData = result.data;
+        const shouldFetchAllPages = options.fetchAllPages === true
+          || (options.fetchAllPages !== false && !options.limit);
+        if (shouldFetchAllPages) {
+          while (result.cursor) {
+            queryOptions.cursor = result.cursor;
+            // eslint-disable-next-line no-await-in-loop
+            result = await query.go(queryOptions);
+            allData = allData.concat(result.data);
+          }
+        }
+
+        if (options.limit === 1) {
+          return allData.length ? this.#createInstance(allData[0]) : null;
+        }
+
         const instances = this.#createInstances(allData);
-        /* c8 ignore next 2 */
-        return shouldReturnCursor
+        return options.returnCursor
           ? { data: instances, cursor: result.cursor || null }
           : instances;
       }
+
+      const shouldFetchAllPages = options.fetchAllPages === true
+                                 || (options.fetchAllPages !== false && !options.limit);
+      const shouldReturnCursor = options.returnCursor === true;
+      const limit = Number.isInteger(options.limit) ? options.limit : undefined;
+
+      let offset = decodeCursor(options.cursor);
+      let allRows = [];
+      let cursor = null;
+
+      if (shouldFetchAllPages) {
+        const pageSize = limit || DEFAULT_PAGE_SIZE;
+        let keepGoing = true;
+
+        while (keepGoing) {
+          // eslint-disable-next-line no-await-in-loop
+          const pageRows = await this.#queryPage({
+            keys,
+            options,
+            offset,
+            limit: pageSize,
+          });
+          allRows = allRows.concat(pageRows);
+          if (pageRows.length < pageSize) {
+            keepGoing = false;
+            cursor = null;
+          } else {
+            offset += pageSize;
+          }
+        }
+      } else {
+        const pageRows = await this.#queryPage({
+          keys,
+          options,
+          offset,
+          limit,
+        });
+        allRows = pageRows;
+        if (limit && pageRows.length === limit) {
+          cursor = encodeCursor(offset + limit);
+        }
+      }
+
+      if (options.limit === 1) {
+        return allRows.length ? this.#createInstance(allRows[0]) : null;
+      }
+
+      const instances = this.#createInstances(allRows);
+      return shouldReturnCursor ? { data: instances, cursor } : instances;
     } catch (error) {
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
       return this.#logAndThrowError('Failed to query', error);
     }
   }
 
-  /**
-   * Finds all entities in the collection. Requires an index named "all" with a partition key
-   * named "pk" with a static value of "ALL_<ENTITYNAME>".
-   * @async
-   * @param {Object} [sortKeys] - The sort keys to use for the query.
-   * @param {Object} [options] - Additional options for the query.
-   * @return {Promise<BaseModel|Array<BaseModel>|null>}
-   */
   async all(sortKeys = {}, options = {}) {
-    const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
+    const keys = this.entity
+      ? { pk: entityNameToAllPKValue(this.entityName), ...sortKeys }
+      : sortKeys;
     return this.#queryByIndexKeys(keys, options);
   }
 
-  /**
-   * Finds entities by a set of index keys. Index keys are used to query entities by
-   * a specific index defined in the entity schema. The index keys must match the
-   * fields defined in the index.
-   * @param {Object} keys - The index keys to use for the query.
-   * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
-   * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of model instances.
-   * @throws {Error} - Throws an error if the index keys are not provided or if the index
-   * is not found.
-   * @async
-   */
   async allByIndexKeys(keys, options = {}) {
     return this.#queryByIndexKeys(keys, options);
   }
 
-  /**
-   * Finds a single entity from the "all" index. Requires an "all" index to be added to the
-   * entity schema via the schema builder.
-   * @async
-   * @param {Object} [sortKeys] - The sort keys to use for the query.
-   * @param {QueryOptions} [options] - Additional options for the query.
-   * Additional options for the query.
-   * @return {Promise<BaseModel|null>}
-   * @throws {DataAccessError} - Throws an error if the sort keys are not provided.
-   */
   async findByAll(sortKeys = {}, options = {}) {
     if (!isObject(sortKeys)) {
       const message = `Failed to find by all [${this.entityName}]: sort keys must be an object`;
       this.log.error(message);
       throw new DataAccessError(message);
     }
-
-    const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
+    const keys = this.entity
+      ? { pk: entityNameToAllPKValue(this.entityName), ...sortKeys }
+      : sortKeys;
     return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
   }
 
-  /**
-   * Finds an entity by its ID. This will only work if the entity's schema
-   * did not override the main table primary key via schema builder.
-   * @async
-   * @param {string} id - The unique identifier of the entity to be found.
-   * @returns {Promise<BaseModel|null>} - A promise that resolves to an instance of
-   * the model if found, otherwise null.
-   * @throws {ValidationError} - Throws an error if the ID is not provided.
-   */
   async findById(id) {
     guardId(this.idName, id, this.entityName);
-
-    const record = await this.entity.get({ [this.idName]: id }).go();
-
-    return this.#createInstance(record?.data);
+    if (this.entity) {
+      const record = await this.entity.get({ [this.idName]: id }).go();
+      return this.#createInstance(record?.data);
+    }
+    return this.findByIndexKeys({ [this.idName]: id });
   }
 
-  /**
-   * Checks if an entity exists by its ID.
-   * @param {string} id - The UUID of the entity to check.
-   * @return {Promise<boolean>} - A promise that resolves to true if the entity exists,
-   * otherwise false.
-   * @throws {ValidationError} - Throws an error if the ID is not provided.
-   */
   async existsById(id) {
     guardId(this.idName, id, this.entityName);
-
-    const record = await this.entity.get({ [this.idName]: id }).go({
-      attributes: [this.idName],
-    });
-
-    return isNonEmptyObject(record?.data);
+    if (this.entity) {
+      const record = await this.entity.get({ [this.idName]: id }).go({
+        attributes: [this.idName],
+      });
+      return isNonEmptyObject(record?.data);
+    }
+    const item = await this.findByIndexKeys(
+      { [this.idName]: id },
+      { attributes: [this.idName] },
+    );
+    return isNonEmptyObject(item);
   }
 
-  /**
-   * Retrieves multiple entities by their IDs in a single batch operation.
-   * This method is more efficient than calling findById multiple times.
-   *
-   * @async
-   * @param {Array<string>} ids - An array of entity IDs to retrieve.
-   * @param {{attributes?: string[]}} [options] - Additional options for the query.
-   * @returns {Promise<{data: Array<BaseModel>, unprocessed: Array<string>}>} - A promise that
-   *   resolves
-   *   to an object containing:
-   *   - data: Array of found model instances
-   *   - unprocessed: Array of IDs that couldn't be processed (due to throttling, etc.)
-   * @throws {DataAccessError} - Throws an error if the IDs are not provided or if the batch
-   *   operation fails.
-   */
   async batchGetByKeys(keys, options = {}) {
     guardArray('keys', keys, this.entityName, 'any');
 
     try {
-      const goOptions = {};
-
-      // Add attributes if specified
-      if (options.attributes !== undefined) {
-        goOptions.attributes = options.attributes;
+      if (this.entity) {
+        const goOptions = {};
+        if (options.attributes !== undefined) {
+          goOptions.attributes = options.attributes;
+        }
+        const result = await this.entity.get(keys).go(goOptions);
+        const data = result.data
+          .map((record) => this.#createInstance(record))
+          .filter((entity) => entity !== null);
+        const unprocessed = result.unprocessed
+          ? result.unprocessed.map((item) => item)
+          : [];
+        return { data, unprocessed };
       }
 
-      const result = await this.entity.get(
-        keys,
-      ).go(goOptions);
-
-      // Process found entities
-      const data = result.data
-        .map((record) => this.#createInstance(record))
-        .filter((entity) => entity !== null);
-
-      // Extract unprocessed keys
-      /* c8 ignore next 3 */
-      const unprocessed = result.unprocessed
-        ? result.unprocessed.map((item) => item)
-        : [];
-
-      return { data, unprocessed };
+      const records = await Promise.all(
+        keys.map((key) => this.findByIndexKeys(key, options)),
+      );
+      return {
+        data: records.filter((record) => record !== null),
+        unprocessed: [],
+      };
     } catch (error) {
       this.log.error(`Failed to batch get by keys [${this.entityName}]`, error);
       throw new DataAccessError('Failed to batch get by keys', this, error);
     }
   }
 
-  /**
-   * Finds a single entity by index keys.
-   * @param {Object} keys - The index keys to use for the query.
-   * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
-   * @returns {Promise<BaseModel|null>} - A promise that resolves to the model instance or null.
-   * @throws {DataAccessError} - Throws an error if retrieving the entity fails.
-   * @async
-   */
   async findByIndexKeys(keys, options = {}) {
     return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
   }
 
-  /**
-   * Creates a new entity in the collection and directly persists it to the database.
-   * There is no need to call the save method (which is for updates only) after creating
-   * the entity.
-   * @async
-   * @param {Object} item - The data for the entity to be created.
-    * @param {Object} [options] - Additional options for the creation process.
-   * @param {boolean} [options.upsert=false] - Whether to perform an upsert operation.
-   * @returns {Promise<BaseModel>} - A promise that resolves to the created model instance.
-   * @throws {DataAccessError} - Throws an error if the data is invalid or if the
-   * creation process fails.
-   */
   async create(item, { upsert = false } = {}) {
     if (!isNonEmptyObject(item)) {
       const message = `Failed to create [${this.entityName}]: data is required`;
@@ -471,59 +535,37 @@ class BaseCollection {
     }
 
     try {
-      const record = upsert
-        ? await this.entity.put(item).go()
-        : await this.entity.create(item).go();
+      if (this.entity) {
+        const record = upsert
+          ? await this.entity.put(item).go()
+          : await this.entity.create(item).go();
+        const instance = this.#createInstance(record.data);
+        this.#invalidateCache();
+        await this.#onCreate(instance);
+        return instance;
+      }
 
-      const instance = this.#createInstance(record.data);
+      const prepared = this.#prepareItem(item);
+      const payload = this.#toDbRecord(prepared);
+      const conflictKey = this.#toDbField(this.idName);
 
+      let query = this.postgrestService.from(this.tableName);
+      query = upsert ? query.upsert(payload, { onConflict: conflictKey }) : query.insert(payload);
+      const { data, error } = await query.select().maybeSingle();
+
+      if (error) {
+        return this.#logAndThrowError('Failed to create', error);
+      }
+
+      const instance = this.#createInstance(this.#toModelRecord(data));
       this.#invalidateCache();
-
       await this.#onCreate(instance);
-
       return instance;
     } catch (error) {
       return this.#logAndThrowError('Failed to create', error);
     }
   }
 
-  /**
-   * Validates and batches items for batch operations.
-   * @private
-   * @param {Array<Object>} items - Items to be validated.
-   * @returns {Object} - An object containing validated items and error items.
-   */
-  #validateItems(items) {
-    const validatedItems = [];
-    const errorItems = [];
-
-    items.forEach((item) => {
-      try {
-        const { Item } = this.entity.put(item).params();
-        validatedItems.push({ ...removeElectroProperties(Item), ...item });
-      } catch (error) {
-        if (error instanceof ElectroValidationError) {
-          errorItems.push({ item, error: new ValidationError('Validation error', this, error) });
-        }
-      }
-    });
-
-    return { validatedItems, errorItems };
-  }
-
-  /**
-   * Creates multiple entities in the collection and directly persists them to the database in
-   * a batch write operation. Batches are written in parallel and are limited to 25 items per batch.
-   *
-   * @async
-   * @param {Array<Object>} newItems - An array of data for the entities to be created.
-   * @param {BaseModel} [parent] - Optional parent entity that these items are associated with.
-   * @return {Promise<{ createdItems: BaseModel[],
-   * errorItems: { item: Object, error: ValidationError }[] }>} - A promise that resolves to
-   * an object containing the created items and any items that failed validation.
-   * @throws {DataAccessError} - Throws an error if the items are not provided or if the
-   * creation process fails.
-   */
   async createMany(newItems, parent = null) {
     if (!isNonEmptyArray(newItems)) {
       const message = `Failed to create many [${this.entityName}]: items must be a non-empty array`;
@@ -532,18 +574,71 @@ class BaseCollection {
     }
 
     try {
-      const { validatedItems, errorItems } = this.#validateItems(newItems);
+      if (this.entity) {
+        const validatedItems = [];
+        const errorItems = [];
+        newItems.forEach((item) => {
+          try {
+            const { Item } = this.entity.put(item).params();
+            validatedItems.push({ ...removeElectroProperties(Item), ...item });
+          } catch (error) {
+            if (error instanceof ElectroValidationError) {
+              errorItems.push({ item, error: new ValidationError('Validation error', this, error) });
+            }
+          }
+        });
+
+        if (validatedItems.length > 0) {
+          const response = await this.entity.put(validatedItems).go();
+          if (isNonEmptyArray(response?.unprocessed)) {
+            this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
+          }
+        }
+
+        const createdItems = this.#createInstances(validatedItems);
+        if (isNonEmptyObject(parent)) {
+          createdItems.forEach((record) => {
+            if (!isValidParent(parent, record)) {
+              this.log.warn(`Failed to associate parent with child [${this.entityName}]: parent is invalid`);
+              return;
+            }
+            // eslint-disable-next-line no-underscore-dangle,no-param-reassign
+            record._accessorCache[`get${parent.schema.getModelName()}`] = parent;
+          });
+        }
+        this.#invalidateCache();
+        await this.#onCreateMany({ createdItems, errorItems });
+        return { createdItems, errorItems };
+      }
+
+      const validatedItems = [];
+      const errorItems = [];
+
+      newItems.forEach((item) => {
+        try {
+          validatedItems.push(this.#prepareItem(item));
+        } catch (error) {
+          if (error instanceof ValidationError) {
+            errorItems.push({ item, error });
+          } else {
+            throw error;
+          }
+        }
+      });
 
       if (validatedItems.length > 0) {
-        const response = await this.entity.put(validatedItems).go();
+        const payload = validatedItems.map((item) => this.#toDbRecord(item));
+        const { error } = await this.postgrestService
+          .from(this.tableName)
+          .insert(payload)
+          .select();
 
-        if (isNonEmptyArray(response?.unprocessed)) {
-          this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
+        if (error) {
+          return this.#logAndThrowError('Failed to create many', error);
         }
       }
 
       const createdItems = this.#createInstances(validatedItems);
-
       if (isNonEmptyObject(parent)) {
         createdItems.forEach((record) => {
           if (!isValidParent(parent, record)) {
@@ -556,26 +651,36 @@ class BaseCollection {
       }
 
       this.#invalidateCache();
-
       await this.#onCreateMany({ createdItems, errorItems });
-
       return { createdItems, errorItems };
     } catch (error) {
       return this.#logAndThrowError('Failed to create many', error);
     }
   }
 
-  /**
-   * Updates a collection of entities in the database using a batch write (put) operation.
-   *
-   * @async
-   * @param {Array<BaseModel>} items - An array of model instances to be updated.
-   * @return {Promise<void>} - A promise that resolves when the update operation is complete.
-   * @throws {DataAccessError} - Throws an error if the items are not provided or if the
-   * update operation fails.
-   *
-   * @protected
-   */
+  async updateByKeys(keys, updates) {
+    if (!isNonEmptyObject(keys) || !isNonEmptyObject(updates)) {
+      throw new DataAccessError(`Failed to update [${this.entityName}]: keys and updates are required`);
+    }
+
+    if (this.entity) {
+      const patch = this.entity.patch(keys);
+      Object.entries(updates).forEach(([key, value]) => {
+        patch.set({ [key]: value });
+      });
+      await patch.go();
+      return;
+    }
+
+    let query = this.postgrestService.from(this.tableName).update(this.#toDbRecord(updates));
+    query = this.#applyKeyFilters(query, keys);
+
+    const { error } = await query.select().maybeSingle();
+    if (error) {
+      throw new DataAccessError('Failed to update entity', this, error);
+    }
+  }
+
   async _saveMany(items) {
     if (!isNonEmptyArray(items)) {
       const message = `Failed to save many [${this.entityName}]: items must be a non-empty array`;
@@ -584,33 +689,38 @@ class BaseCollection {
     }
 
     try {
-      const updates = items.map((item) => item.record);
-      const response = await this.entity.put(updates).go();
-
-      const now = new Date().toISOString();
-      items.forEach((item) => {
-        const { record } = item;
-        record.updatedAt = now;
-      });
-
-      if (isNonEmptyArray(response.unprocessed)) {
-        this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
+      if (this.entity) {
+        const updates = items.map((item) => item.record);
+        const response = await this.entity.put(updates).go();
+        const now = new Date().toISOString();
+        items.forEach((item) => {
+          const { record } = item;
+          record.updatedAt = now;
+        });
+        if (isNonEmptyArray(response.unprocessed)) {
+          this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
+        }
+        this.#invalidateCache();
+        return undefined;
       }
 
-      return this.#invalidateCache();
+      await Promise.all(
+        items.map(async (item) => {
+          const keys = item.generateCompositeKeys
+            ? item.generateCompositeKeys()
+            : { [this.idName]: item.getId() };
+          const { updates } = this.applyUpdateWatchers(item.record, item.record);
+          await this.updateByKeys(keys, updates);
+        }),
+      );
+
+      this.#invalidateCache();
+      return undefined;
     } catch (error) {
       return this.#logAndThrowError('Failed to save many', error);
     }
   }
 
-  /**
-   * Removes all records of this entity based on the provided IDs. This will perform a batch
-   * delete operation. This operation does not remove dependent records.
-   * @param {Array<string>} ids - An array of IDs to remove.
-   * @return {Promise<void>} - A promise that resolves when the removal operation is complete.
-   * @throws {DataAccessError} - Throws an error if the IDs are not provided or if the
-   * removal operation fails.
-   */
   async removeByIds(ids) {
     if (!isNonEmptyArray(ids)) {
       const message = `Failed to remove [${this.entityName}]: ids must be a non-empty array`;
@@ -619,37 +729,28 @@ class BaseCollection {
     }
 
     try {
-      // todo: consider removing dependent records
+      if (this.entity) {
+        await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
+        this.#invalidateCache();
+        return undefined;
+      }
 
-      await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
+      const { error } = await this.postgrestService
+        .from(this.tableName)
+        .delete()
+        .in(this.#toDbField(this.idName), ids);
 
-      return this.#invalidateCache();
+      if (error) {
+        return this.#logAndThrowError('Failed to remove by IDs', error);
+      }
+
+      this.#invalidateCache();
+      return undefined;
     } catch (error) {
       return this.#logAndThrowError('Failed to remove by IDs', error);
     }
   }
 
-  /**
-   * Removes records from the collection using an array of key objects for batch deletion.
-   * This method is particularly useful for junction tables in many-to-many relationships
-   * where you need to remove multiple records based on their composite keys.
-   *
-   * Each key object in the array represents a record to be deleted, identified by its
-   * key attributes (typically partition key + sort key combinations).
-   *
-   * @async
-   * @param {Array<Object>} keys - Array of key objects to match for deletion.
-   *   Each object should contain the key attributes that uniquely identify a record.
-   * @returns {Promise<void>} A promise that resolves when the deletion is complete.
-   *   The method also invalidates the cache after successful deletion.
-   * @throws {DataAccessError} Throws an error if:
-   *   - The keys parameter is not a non-empty array
-   *   - Any key object in the array is empty or invalid
-   *   - The database operation fails
-   *
-   * @since 2.64.1
-   * @memberof BaseCollection
-   */
   async removeByIndexKeys(keys) {
     if (!isNonEmptyArray(keys)) {
       const message = `Failed to remove by index keys [${this.entityName}]: keys must be a non-empty array`;
@@ -666,9 +767,25 @@ class BaseCollection {
     });
 
     try {
-      await this.entity.delete(keys).go();
+      if (this.entity) {
+        await this.entity.delete(keys).go();
+        this.log.info(`Removed ${keys.length} items for [${this.entityName}]`);
+        this.#invalidateCache();
+        return undefined;
+      }
+
+      await Promise.all(keys.map(async (key) => {
+        let query = this.postgrestService.from(this.tableName).delete();
+        query = this.#applyKeyFilters(query, key);
+        const { error } = await query;
+        if (error) {
+          throw error;
+        }
+      }));
+
       this.log.info(`Removed ${keys.length} items for [${this.entityName}]`);
-      return this.#invalidateCache();
+      this.#invalidateCache();
+      return undefined;
     } catch (error) {
       return this.#logAndThrowError('Failed to remove by index keys', error);
     }

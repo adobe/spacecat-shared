@@ -1,0 +1,39 @@
+# Docker Compose for integration testing — PostgreSQL + PostgREST
+name: spacecat-data-access-test
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: spacecat-test-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: spacecat_test
+    ports:
+      - "54320:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./test/it/v3/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+  postgrest:
+    image: postgrest/postgrest:v14.4
+    container_name: spacecat-test-postgrest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://postgrest_authenticator:postgrest@db:5432/spacecat_test
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: postgrest_anon
+      PGRST_DB_EXTRA_SEARCH_PATH: ""
+      PGRST_LOG_LEVEL: warn
+      PGRST_ADMIN_SERVER_PORT: 3001
+    ports:
+      - "3456:3000"
+      - "3457:3001"

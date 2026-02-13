@@ -36,6 +36,7 @@ const DEFAULT_SERVICE_NAME = 'SpaceCat';
  */
 const ID_ATTRIBUTE_DATA = {
   type: 'string',
+  postgrestField: 'id',
   required: true,
   readOnly: true,
   // https://electrodb.dev/en/modeling/attributes/#default

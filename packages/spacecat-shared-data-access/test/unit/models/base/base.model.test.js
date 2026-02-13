@@ -318,6 +318,23 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       await expect(baseModelInstance.remove()).to.be.rejectedWith('The entity Opportunity does not allow removal');
       expect(mockElectroService.entities.opportunity.remove.notCalled).to.be.true;
     });
+
+    it('throws when no remove strategy is available', async () => {
+      baseModelInstance.collection = null;
+      delete mockElectroService.entities.opportunity.remove;
+
+      await expect(baseModelInstance._remove())
+        .to.be.rejectedWith('Failed to remove entity opportunity with ID 12345');
+    });
+
+    it('uses collection removeByIndexKeys strategy when available', async () => {
+      const removeByIndexKeys = stub().resolves();
+      baseModelInstance.collection = { removeByIndexKeys };
+      baseModelInstance.postgrestService.entities.opportunity.remove = undefined;
+
+      await expect(baseModelInstance._remove()).to.eventually.equal(baseModelInstance);
+      expect(removeByIndexKeys).to.have.been.calledOnce;
+    });
   });
 
   describe('save', () => {
@@ -359,6 +376,15 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
         expect(result).to.be.an.instanceOf(BaseModel);
         expect(mockLogger.warn).to.have.been.calledOnceWithExactly('Reciprocal reference not found for Opportunity to Foos');
       });
+    });
+  });
+
+  describe('toJSON', () => {
+    it('returns only schema-defined attributes that exist on record', () => {
+      baseModelInstance.record.notInSchema = 'ignore-me';
+      const result = baseModelInstance.toJSON();
+      expect(result.opportunityId).to.equal(mockRecord.opportunityId);
+      expect(result).to.not.have.property('notInSchema');
     });
   });
 });

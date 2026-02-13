@@ -244,4 +244,39 @@ describe('Patcher', () => {
     expect(() => patcher.patchValue('nickNames', ['name1', 123]))
       .to.throw('Validation failed in mockEntityModel: nickNames must contain items of type string');
   });
+
+  it('saves using collection update strategy when available', async () => {
+    const applyUpdateWatchers = sinon.stub().returns({
+      record: { ...mockRecord, name: 'CollectionUpdated' },
+      updates: { name: 'CollectionUpdated', updatedAt: '2026-01-01T00:00:00.000Z' },
+    });
+    const updateByKeys = sinon.stub().resolves();
+    patcher.collection = { applyUpdateWatchers, updateByKeys };
+
+    patcher.patchValue('name', 'UpdatedName');
+    await patcher.save();
+
+    expect(updateByKeys.calledOnce).to.be.true;
+    expect(mockEntity.patch().go.notCalled).to.be.true;
+  });
+
+  it('throws when no persistence strategy is available', async () => {
+    patcher.patchValue('name', 'UpdatedName');
+    patcher.collection = undefined;
+    patcher.patchRecord = undefined;
+
+    await expect(patcher.save())
+      .to.be.rejectedWith('No persistence strategy available for mockEntityModel');
+  });
+
+  it('uses primary index keys when building legacy patch composite', async () => {
+    patcher.schema.indexes.primary = {
+      pk: { facets: ['testEntityId'] },
+      sk: { facets: ['name'] },
+    };
+    patcher.patchValue('name', 'UpdatedName');
+
+    await patcher.save();
+    expect(mockEntity.patch).to.have.been.called;
+  });
 });

@@ -11,10 +11,16 @@
  */
 
 interface DataAccessConfig {
-  tableNameData: string;
+  postgrestUrl: string;
+  postgrestSchema?: string;
+  postgrestApiKey?: string;
+  postgrestHeaders?: object;
+  s3Bucket?: string;
+  region?: string;
 }
 
 export function createDataAccess(
   config: DataAccessConfig,
   logger: object,
+  client?: object,
 ): object;

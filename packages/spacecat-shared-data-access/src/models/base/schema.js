@@ -167,10 +167,12 @@ class Schema {
       const subKeyNames = sortKeys.slice(0, length);
       const index = Object.values(this.indexes).find((candidate) => {
         const { pk, sk } = candidate;
-        const allKeys = [...(pk?.facets || []), ...(sk?.facets || [])];
+        // ElectroDB uses 'facets' (populated at runtime), raw schema uses 'composite'.
+        const pkKeys = pk?.facets || pk?.composite || [];
+        const skKeys = sk?.facets || sk?.composite || [];
+        const allKeys = [...pkKeys, ...skKeys];
 
         // check if all keys in the index are in the sort keys
-        const pkKeys = Array.isArray(pk?.facets) ? pk.facets : [];
         return pkKeys.every((key) => subKeyNames.includes(key))
           && subKeyNames.every((key) => allKeys.includes(key));
       });
@@ -246,8 +248,11 @@ class Schema {
       return [];
     }
 
-    const pkKeys = Array.isArray(index.pk?.facets) ? index.pk.facets : [];
-    const skKeys = Array.isArray(index.sk?.facets) ? index.sk.facets : [];
+    // ElectroDB uses 'facets' (populated at runtime), raw schema uses 'composite'.
+    const pkFacets = index.pk?.facets || index.pk?.composite;
+    const skFacets = index.sk?.facets || index.sk?.composite;
+    const pkKeys = Array.isArray(pkFacets) ? pkFacets : [];
+    const skKeys = Array.isArray(skFacets) ? skFacets : [];
 
     return [...pkKeys, ...skKeys];
   }

@@ -38,12 +38,18 @@ export default function dataAccessWrapper(fn) {
 
       const {
         DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
+        POSTGREST_URL: postgrestUrl,
+        POSTGREST_SCHEMA: postgrestSchema,
+        POSTGREST_API_KEY: postgrestApiKey,
         S3_CONFIG_BUCKET: s3Bucket,
         AWS_REGION: region,
       } = context.env;
 
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
+        postgrestUrl,
+        postgrestSchema,
+        postgrestApiKey,
         s3Bucket,
         region,
       }, log);

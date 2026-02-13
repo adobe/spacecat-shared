@@ -18,6 +18,7 @@ import { Service } from 'electrodb';
 import { instrumentAWSClient } from '@adobe/spacecat-shared-utils';
 import { EntityRegistry } from '../models/index.js';
 import { registerLogger } from '../util/logger-registry.js';
+import { createPostgresDataAccess } from './postgres/index.js';
 
 export * from '../errors/index.js';
 export * from '../models/index.js';
@@ -109,13 +110,40 @@ const createServices = (electroService, config) => ({
  * @param {DynamoDB} [client] - Optional custom DynamoDB client instance
  * @returns {object} Data access collections for interacting with entities
  */
-export const createDataAccess = (config, log = console, client = undefined) => {
-  registerLogger(log);
-
+const createDynamoDataAccess = (config, log, client) => {
   const rawClient = createRawClient(client);
   const electroService = createElectroService(rawClient, config, log);
   const services = createServices(electroService, config);
   const entityRegistry = new EntityRegistry(services, log);
 
   return entityRegistry.getCollections();
+};
+
+const VALID_BACKENDS = ['dynamodb', 'postgresql'];
+
+/**
+ * Creates a data access layer based on the DATA_ACCESS_BACKEND environment variable.
+ * Defaults to 'dynamodb' when not set.
+ *
+ * @param {object} config - Configuration object
+ * @param {object} log - Logger instance, defaults to console
+ * @param {DynamoDB} [client] - Optional custom DynamoDB client instance (DynamoDB backend only)
+ * @returns {object} Data access collections for interacting with entities
+ */
+export const createDataAccess = (config, log = console, client = undefined) => {
+  registerLogger(log);
+
+  const backend = process.env.DATA_ACCESS_BACKEND || 'dynamodb';
+
+  if (!VALID_BACKENDS.includes(backend)) {
+    throw new Error(
+      `Invalid DATA_ACCESS_BACKEND: "${backend}". Must be "dynamodb" or "postgresql".`,
+    );
+  }
+
+  if (backend === 'postgresql') {
+    return createPostgresDataAccess(config, log);
+  }
+
+  return createDynamoDataAccess(config, log, client);
 };

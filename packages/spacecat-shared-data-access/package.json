@@ -42,6 +42,7 @@
     "@aws-sdk/client-dynamodb": "3.940.0",
     "@aws-sdk/client-s3": "^3.940.0",
     "@aws-sdk/lib-dynamodb": "3.940.0",
+    "@supabase/postgrest-js": "^1.21.4",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.12.0",
     "electrodb": "3.5.0",

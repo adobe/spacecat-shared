@@ -252,11 +252,11 @@ describe('AuditModel', () => {
     it('has all audit step destination configs present in AUDIT_STEP_DESTINATION_CONFIGS', () => {
       const expectedAuditStepDestinationConfigs = {
         [auditStepDestinations.CONTENT_SCRAPER]: {
-          queueUrl: process.env.CONTENT_SCRAPER_QUEUE_URL,
+          getQueueUrl: sinon.match.func,
           formatPayload: sinon.match.func,
         },
         [auditStepDestinations.IMPORT_WORKER]: {
-          queueUrl: process.env.IMPORT_WORKER_QUEUE_URL,
+          getQueueUrl: sinon.match.func,
           formatPayload: sinon.match.func,
         },
         [auditStepDestinations.SCRAPE_CLIENT]: {

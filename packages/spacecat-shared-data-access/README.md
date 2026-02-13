@@ -170,10 +170,44 @@ If you are upgrading from DynamoDB/ElectroDB-based v2:
 
 ## Development
 
+## Local Development
+
+### First-time setup
+
+From the monorepo root:
+
+```bash
+npm install
+```
+
+Optional: verify package tooling from this workspace:
+
+```bash
+cd packages/spacecat-shared-data-access
+node -v
+npm -v
+```
+
+### Day-to-day workflow
+
+1. Create/switch to a feature branch.
+2. Make code changes in `src/` and tests in `test/unit` and `test/it`.
+3. Run unit tests while iterating.
+4. Run integration tests before opening/merging a PR.
+5. Run lint and fix issues.
+
+### Common commands (from `packages/spacecat-shared-data-access`)
+
 ### Run unit tests
 
 ```bash
 npm test
+```
+
+### Run unit tests with debugger
+
+```bash
+npm run test:debug
 ```
 
 ### Run integration tests
@@ -182,21 +216,88 @@ npm test
 npm run test:it
 ```
 
-The integration suite under `test/it` is PostgREST-based and runs via Docker.
-
-Default data-service image:
-- `682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service:v1.7.1`
-
-If needed, override:
+### Run lint
 
 ```bash
-export MYSTICAT_DATA_SERVICE_IMAGE=<image:tag>
+npm run lint
 ```
 
-If you use the default private ECR image, authenticate first:
+### Auto-fix lint issues
 
 ```bash
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 682033462621.dkr.ecr.us-east-1.amazonaws.com
+npm run lint:fix
+```
+
+### Clean local install artifacts
+
+```bash
+npm run clean
+```
+
+The integration suite under `test/it` is PostgREST-based and runs via Docker.
+
+## Integration Tests
+
+Integration tests run a local Postgres + PostgREST stack via Docker Compose and execute
+the mocha suite under `test/it`.
+
+### Prerequisites
+
+- Docker Desktop (or equivalent Docker daemon)
+- AWS CLI configured with credentials that can access the Spacecat Development AWS account
+  ECR repository (only needed when pulling the default private ECR image)
+
+### Default image used by IT harness
+
+- Repository: `682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service`
+- Tag: `v1.7.1` (override via env var)
+
+### Authenticate Docker to ECR
+
+The default image is in a private ECR repo in:
+- **SpaceCat Development (AWS3338)**
+
+If you are setting this up for the first time:
+1. Get AWS credentials for **SpaceCat Development (AWS3338)** from `klam.corp.adobe.com`.
+2. Add them to `~/.aws/credentials` under a profile name you choose.
+3. Use that profile in the ECR login command.
+
+Example `~/.aws/credentials` entry:
+
+```ini
+[spacecat-dev]
+aws_access_key_id = <your-access-key-id>
+aws_secret_access_key = <your-secret-access-key>
+```
+
+Repository:
+
+- `682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service`
+
+Then authenticate Docker to ECR:
+
+```bash
+aws ecr get-login-password --profile spacecat-dev --region us-east-1 \
+  | docker login --username AWS --password-stdin 682033462621.dkr.ecr.us-east-1.amazonaws.com
+```
+
+### Run
+
+```bash
+npm run test:it
+```
+
+### Useful overrides
+
+- `MYSTICAT_DATA_SERVICE_TAG`: override image tag (recommended for version bumps)
+- `MYSTICAT_DATA_SERVICE_REPOSITORY`: override image repository
+- `IT_POSTGREST_PORT`: override exposed PostgREST port (default `3300`)
+- `IT_POSTGRES_PORT`: override exposed Postgres port (default `55432`)
+
+```bash
+export MYSTICAT_DATA_SERVICE_TAG=v1.7.2
+# optional if repository changes
+export MYSTICAT_DATA_SERVICE_REPOSITORY=682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service
 ```
 
 ## TypeScript

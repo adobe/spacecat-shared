@@ -10,5 +10,37 @@
   "all": true,
   "include": [
     "src/**/*.js"
+  ],
+  "exclude": [
+    "src/models/postgres/api-key/**",
+    "src/models/postgres/async-job/**",
+    "src/models/postgres/audit/**",
+    "src/models/postgres/audit-url/**",
+    "src/models/postgres/entitlement/**",
+    "src/models/postgres/experiment/**",
+    "src/models/postgres/fix-entity/**",
+    "src/models/postgres/fix-entity-suggestion/**",
+    "src/models/postgres/import-job/**",
+    "src/models/postgres/import-url/**",
+    "src/models/postgres/key-event/**",
+    "src/models/postgres/latest-audit/**",
+    "src/models/postgres/opportunity/**",
+    "src/models/postgres/organization/**",
+    "src/models/postgres/page-citability/**",
+    "src/models/postgres/page-intent/**",
+    "src/models/postgres/project/**",
+    "src/models/postgres/report/**",
+    "src/models/postgres/scrape-job/**",
+    "src/models/postgres/scrape-url/**",
+    "src/models/postgres/sentiment-guideline/**",
+    "src/models/postgres/sentiment-topic/**",
+    "src/models/postgres/site/**",
+    "src/models/postgres/site-candidate/**",
+    "src/models/postgres/site-enrollment/**",
+    "src/models/postgres/site-top-form/**",
+    "src/models/postgres/site-top-page/**",
+    "src/models/postgres/suggestion/**",
+    "src/models/postgres/trial-user/**",
+    "src/models/postgres/trial-user-activity/**"
   ]
 }

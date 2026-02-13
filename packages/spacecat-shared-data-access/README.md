@@ -1,6 +1,11 @@
-# SpaceCat Shared Data Access
+# Spacecat Shared Data Access
 
-This Node.js module, `spacecat-shared-data-access`, is a data access layer for managing sites and their audits, leveraging Amazon DynamoDB.
+`@adobe/spacecat-shared-data-access` is the shared data-access layer used by Spacecat services.
+
+This package is **v3 Postgres-first**:
+- Primary datastore: **Postgres via PostgREST** (`@supabase/postgrest-js`)
+- Optional secondary datastore: **S3** (for `Configuration`)
+- No ElectroDB/DynamoDB runtime dependency in v3 behavior
 
 ## Installation
 
@@ -8,293 +13,200 @@ This Node.js module, `spacecat-shared-data-access`, is a data access layer for m
 npm install @adobe/spacecat-shared-data-access
 ```
 
+## What You Get
+
+The package provides:
+- `createDataAccess(config, log?, client?)`
+- `dataAccessWrapper(fn)` (default export) for Helix/Lambda style handlers
+- Entity collections/models with stable external API shape for services
+
+## Quick Start
+
+```js
+import { createDataAccess } from '@adobe/spacecat-shared-data-access';
+
+const dataAccess = createDataAccess({
+  postgrestUrl: process.env.POSTGREST_URL,
+  postgrestSchema: process.env.POSTGREST_SCHEMA || 'public',
+  postgrestApiKey: process.env.POSTGREST_API_KEY,
+  // Only needed if you use Configuration entity:
+  s3Bucket: process.env.S3_CONFIG_BUCKET,
+  region: process.env.AWS_REGION,
+}, console);
+
+const site = await dataAccess.Site.findById('0983c6da-0dee-45cc-b897-3f1fed6b460b');
+console.log(site?.getBaseURL());
+```
+
+## Configuration
+
+### `createDataAccess` config
+
+- `postgrestUrl` (required): Base URL of PostgREST server
+- `postgrestSchema` (optional): Postgres schema exposed by PostgREST, default `public`
+- `postgrestApiKey` (optional): Added as `apikey` and `Authorization: Bearer ...`
+- `postgrestHeaders` (optional): Extra headers for PostgREST client
+- `s3Bucket` (optional): Required only for `Configuration` entity
+- `region` (optional): AWS region for S3 client
+
+### Custom PostgREST client
+
+You can inject an already-constructed PostgREST client as third argument:
+
+```js
+import { PostgrestClient } from '@supabase/postgrest-js';
+import { createDataAccess } from '@adobe/spacecat-shared-data-access';
+
+const client = new PostgrestClient(process.env.POSTGREST_URL, { schema: 'public' });
+const dataAccess = createDataAccess({ postgrestUrl: process.env.POSTGREST_URL }, console, client);
+```
+
+## Wrapper Usage
+
+Default export is a wrapper that attaches `context.dataAccess`.
+
+```js
+import wrap from '@adobe/helix-shared-wrap';
+import dataAccessWrapper from '@adobe/spacecat-shared-data-access';
+
+async function run(request, context) {
+  const { dataAccess } = context;
+  const site = await dataAccess.Site.findById(request.params.siteId);
+  return {
+    statusCode: site ? 200 : 404,
+    body: site ? site.toJSON() : { error: 'not found' },
+  };
+}
+
+export const main = wrap(run)
+  .with(dataAccessWrapper);
+```
+
+The wrapper reads from `context.env`:
+- `POSTGREST_URL` (default fallback: `http://localhost:3000`)
+- `POSTGREST_SCHEMA`
+- `POSTGREST_API_KEY`
+- `S3_CONFIG_BUCKET`
+- `AWS_REGION`
+
+## Field Mapping Behavior
+
+Public model API remains camelCase while Postgres/PostgREST tables are snake_case.
+
+Examples:
+- `site.siteId` <-> `sites.id`
+- `site.baseURL` <-> `sites.base_url`
+
+The mapping is handled in the base PostgREST utilities and applied on both read and write paths.
+
 ## Entities
 
-### Sites
-- **id** (String): Unique identifier for a site.
-- **baseURL** (String): Base URL of the site.
-- **imsOrgId** (String): Organization ID associated with the site.
-- **createdAt** (String): Timestamp of creation.
-- **updatedAt** (String): Timestamp of the last update.
-- **GSI1PK** (String): Partition key for the Global Secondary Index.
+Current exported entities include:
+- `ApiKey`
+- `AsyncJob`
+- `Audit`
+- `AuditUrl`
+- `Configuration`
+- `Entitlement`
+- `Experiment`
+- `FixEntity`
+- `FixEntitySuggestion`
+- `ImportJob`
+- `ImportUrl`
+- `KeyEvent`
+- `LatestAudit`
+- `Opportunity`
+- `Organization`
+- `PageCitability`
+- `PageIntent`
+- `Project`
+- `Report`
+- `ScrapeJob`
+- `ScrapeUrl`
+- `SentimentGuideline`
+- `SentimentTopic`
+- `Site`
+- `SiteCandidate`
+- `SiteEnrollment`
+- `SiteTopForm`
+- `SiteTopPage`
+- `Suggestion`
+- `TrialUser`
+- `TrialUserActivity`
 
-### SiteCandidates
-- **baseURL** (String): Base URL of the site candidate.
-- **status** (String): Status of the site candidate (PENDING, IGNORED, APPROVED, ERROR).
-- **createdAt** (String): Timestamp of creation.
-- **updatedAt** (String): Timestamp of the last update.
-- **updatedBy** (String): Slack id of the last person updated the site candidate.
+## V3 Behavior Notes
 
-### Audits
-- **siteId** (String): Identifier of the site being audited.
-- **SK** (String): Sort key, typically a composite of audit type and timestamp.
-- **auditedAt** (String): Timestamp of the audit.
-- **auditResult** (Map): Results of the audit.
-- **auditType** (String): Type of the audit.
-- **expiresAt** (Number): Expiry timestamp of the audit.
-- **fullAuditRef** (String): Reference to the full audit details.
+- `Configuration` remains S3-backed in v3.
+- `KeyEvent` is deprecated in v3 and intentionally throws on access/mutation methods.
+- `LatestAudit` is virtual in v3 and derived from `Audit` queries (no dedicated table required).
 
-### SiteTopPages
-- **siteId** (String): Identifier of the site.
-- **url** (String): URL of the top page.
-- **traffic** (Number): Traffic of the top page.
-- **source** (String): Source of the data.
-- **geo** (String): Geo of the top page.
-- **importedAt** (String): Timestamp of the import.
+## Migrating from V2
 
-### Organization
-- **id** (String): Unique identifier for an organization.
-- **createdAt** (String): Timestamp of creation.
-- **updatedAt** (String): Timestamp of the last update.
+If you are upgrading from DynamoDB/ElectroDB-based v2:
 
-### OrganizationIdentityProvider
-- **id** (String): Unique identifier for the identity provider.
-- **metadata** (Map): Metadata for the identity provider.
-- **provider** (String): Type of identity provider. (IMS, MICROSOFT, GOOGLE)
-- **externalId** (String): External identifier from the provider.
-- **createdAt** (String): Timestamp of creation.
+### What stays the same
 
-### TrialUser
-- **id** (String): Unique identifier for the trial user.
-- **externalUserId** (String): External user identifier.
-- **status** (String): Status of the trial user. (REGISTERED, VERIFIED, BLOCKED, DELETED)
-- **provider** (String): Type of identity provider. (IMS, MICROSOFT, GOOGLE)
-- **lastSeenAt** (String): Timestamp of last activity.
-- **createdAt** (String): Timestamp of creation.
-- **metadata** (Map): Metadata for the trial user.
-- **updatedAt** (String): Timestamp of the last update.
+- You still use `createDataAccess(...)`.
+- You still access collections through `dataAccess.<Entity>` (for example `dataAccess.Site`).
+- Model/collection APIs are intended to stay stable for service callers.
 
-### TrialUserActivity
-- **id** (String): Unique identifier for the trial user activity.
-- **type** (String): Type of activity performed. (SIGN_UP, SIGN_IN, CREATE_SITE, RUN_AUDIT, PROMPT_RUN, DOWNLOAD)
-- **details** (Map): Details of the activity.
-- **createdAt** (String): Timestamp of creation.
-- **productCode** (String): Product code associated with the activity. (LLMO, ASO, etc.)
+### What changes
 
-### Entitlement
-- **id** (String): Unique identifier for the entitlement.
-- **productCode** (String): Product code for the entitlement. (LLMO, ASO, etc.)
-- **tier** (String): Tier level of the entitlement. (FREE_TRIAL, PAID)
-- **status** (String): Status of the entitlement. (ACTIVE, SUSPENDED, ENDED)
-- **createdAt** (String): Timestamp of creation.
-- **updatedAt** (String): Timestamp of the last update.
-- **quotas** (Map): Quota information for the entitlement.
+- Backing store is now Postgres via PostgREST, not DynamoDB/ElectroDB.
+- You must provide `postgrestUrl` (or `POSTGREST_URL` via wrapper env).
+- `Configuration` remains S3-backed (requires `s3Bucket`/`S3_CONFIG_BUCKET` when used).
+- `KeyEvent` is deprecated in v3 and now throws.
+- `LatestAudit` is no longer a dedicated table and is computed from `Audit` queries.
 
-### SiteEnrollment
-- **id** (String): Unique identifier for the site enrollment.
-- **status** (String): Status of the enrollment. (ACTIVE, SUSPENDED, ENDED)
-- **createdAt** (String): Timestamp of creation.
+### Required environment/config updates
 
-### FixEntity
-- **fixEntityId** (String): Unique identifier for the fix entity.
-- **opportunityId** (String): ID of the associated opportunity.
-- **createdAt** (String): Timestamp of creation.
-- **updatedAt** (String): Timestamp of the last update.
-- **type** (String): Type of the fix entity (from Suggestion.TYPES).
-- **status** (String): Status of the fix entity (PENDING, DEPLOYED, PUBLISHED, FAILED, ROLLED_BACK).
-- **executedBy** (String): Who executed the fix.
-- **executedAt** (String): When the fix was executed.
-- **publishedAt** (String): When the fix was published.
-- **changeDetails** (Object): Details of the changes made.
+- Replace old Dynamo-specific configuration with:
+  - `POSTGREST_URL`
+  - optional `POSTGREST_SCHEMA`
+  - optional `POSTGREST_API_KEY`
+- Keep S3 config envs only if using `Configuration`:
+  - `S3_CONFIG_BUCKET`
+  - `AWS_REGION`
 
-### Suggestion
-- **suggestionId** (String): Unique identifier for the suggestion.
-- **opportunityId** (String): ID of the associated opportunity.
-- **updatedAt** (String): Timestamp of the last update.
-- **createdAt** (String): Timestamp of creation.
-- **status** (String): Status of the suggestion (NEW, APPROVED, IN_PROGRESS, SKIPPED, FIXED, ERROR, OUTDATED, PENDING_VALIDATION, REJECTED).
-- **type** (String): Type of the suggestion (CODE_CHANGE, CONTENT_UPDATE, REDIRECT_UPDATE, METADATA_UPDATE, AI_INSIGHTS, CONFIG_UPDATE).
-- **rank** (Number): Rank/priority of the suggestion.
-- **data** (Object): Data payload for the suggestion.
-- **kpiDeltas** (Object): KPI delta information (optional).
+## Development
 
-### FixEntitySuggestion
-- **suggestionId** (String): ID of the associated suggestion (primary partition key).
-- **fixEntityId** (String): ID of the associated fix entity (primary sort key).
-- **opportunityId** (String): ID of the associated opportunity.
-- **fixEntityCreatedAt** (String): Creation timestamp of the fix entity.
-- **fixEntityCreatedDate** (String): Date portion of fixEntityCreatedAt (auto-generated).
-- **createdAt** (String): Timestamp of creation.
-- **updatedAt** (String): Timestamp of the last update.
+### Run unit tests
 
-## DynamoDB Data Model
+```bash
+npm test
+```
 
-The module is designed to work with the following DynamoDB tables:
-
-1. **Sites Table**: Manages site records.
-2. **Audits Table**: Stores audit information for each site.
-3. **Latest Audits Table**: Holds only the latest audit for each site for quick access.
-4. **Site Candidates Table**: Manages site candidates.
-5. **Site Top Pages Table**: Stores top pages for each site.
-
-Each table is designed with scalability and efficient querying in mind, utilizing both key and non-key attributes effectively.
-
-For a detailed schema, refer to `docs/schema.json`. This schema is importable to Amazon NoSQL Workbench and used by the integration tests.
-
-## Integration Testing
-
-The module includes comprehensive integration tests embedding a local DynamoDB server with in-memory storage for testing:
+### Run integration tests
 
 ```bash
 npm run test:it
 ```
 
-These tests create the schema, generate sample data, and test the data access patterns against the local DynamoDB instance.
+The integration suite under `test/it` is PostgREST-based and runs via Docker.
 
-## Data Access API
+Default data-service image:
+- `682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service:v1.7.1`
 
-The module provides the following DAOs:
+If needed, override:
 
-### Site Functions
-- `getSites`
-- `getSitesToAudit`
-- `getSitesWithLatestAudit`
-- `getSiteByBaseURL`
-- `getSiteByBaseURLWithAuditInfo`
-- `getSiteByBaseURLWithAudits`
-- `getSiteByBaseURLWithLatestAudit`
-- `addSite`
-- `updateSite`
-- `removeSite`
-- `findByPreviewURL`
-- `findByExternalOwnerIdAndExternalSiteId`
-
-### Site Candidate Functions
-- `getSiteCandidateByBaseURL`
-- `upsertSiteCandidate`
-- `siteCandidateExists`
-- `updateSiteCandidate`
-
-### Audit Functions
-- `getAuditsForSite`
-- `getAuditForSite`
-- `getLatestAudits`
-- `getLatestAuditForSite`
-- `addAudit`
-
-### Site Top Pages Functions
-- `getTopPagesForSite`
-- `addSiteTopPage`
-
-### FixEntity Functions
-- `getSuggestionsByFixEntityId` - Gets all suggestions associated with a specific FixEntity
-- `setSuggestionsForFixEntity` - Sets suggestions for a FixEntity by managing junction table relationships
-
-### Suggestion Functions
-- `bulkUpdateStatus` - Updates the status of multiple suggestions in bulk
-- `getFixEntitiesBySuggestionId` - Gets all FixEntities associated with a specific Suggestion
-
-### FixEntitySuggestion Functions
-- `allBySuggestionId` - Gets all junction records associated with a specific Suggestion
-- `allByFixEntityId` - Gets all junction records associated with a specific FixEntity
-
-## Integrating Data Access in AWS Lambda Functions
-
-Our `spacecat-shared-data-access` module includes a wrapper that can be easily integrated into AWS Lambda functions using `@adobe/helix-shared-wrap`.
-This integration allows your Lambda functions to access and manipulate data.
-
-### Steps for Integration
-
-1. **Import the Data Access Wrapper**
-
-   Along with other wrappers and utilities, import the `dataAccessWrapper`.
-
-   ```javascript
-   import dataAccessWrapper from '@adobe/spacecat-shared-data-access';
-   ```
-
-2. **Provide Required Environment Variables**
-
-   The `dataAccessWrapper` requires the `DYNAMO_TABLE_NAME_DATA` environment variable to be set via AWS
-   secret assigned to your Lambda function.
-
-   ```javascript
-   const { DYNAMO_TABLE_NAME_DATA } = context.env;
-   ```
-
-3. **Modify Your Lambda Wrapper Script**
-
-   Include `dataAccessWrapper` in the chain of wrappers when defining your Lambda handler.
-
-   ```javascript
-   export const main = wrap(run)
-     .with(sqsEventAdapter)
-     .with(dataAccessWrapper) // Add this line
-     .with(sqs)
-     .with(secrets)
-     .with(helixStatus);
-   ```
-
-4. **Access Data in Your Lambda Function**
-
-   Use the `dataAccess` object from the context to interact with your data layer.
-
-   ```javascript
-   async function run(message, context) {
-     const { dataAccess } = context;
-     
-     // Example: Retrieve all sites
-     const sites = await dataAccess.Site.getSites();
-     // ... more logic ...
-   }
-   ```
-
-### Example
-
-Here's a complete example of a Lambda function utilizing the data access wrapper:
-
-```javascript
-import wrap from '@adobe/helix-shared-wrap';
-import dataAccessWrapper from '@adobe/spacecat-shared-data-access';
-import sqsEventAdapter from './sqsEventAdapter';
-import sqs from './sqs';
-import secrets from '@adobe/helix-shared-secrets';
-import helixStatus from '@adobe/helix-status';
-
-async function run(message, context) {
-  const { dataAccess } = context;
-  try {
-    const sites = await dataAccess.Site.getSites();
-    // Function logic here
-  } catch (error) {
-    // Error handling
-  }
-}
-
-export const main = wrap(run)
-  .with(sqsEventAdapter)
-  .with(dataAccessWrapper)
-  .with(sqs)
-  .with(secrets)
-  .with(helixStatus);
+```bash
+export MYSTICAT_DATA_SERVICE_IMAGE=<image:tag>
 ```
 
-## Contributing
+If you use the default private ECR image, authenticate first:
 
-Contributions to `spacecat-shared-data-access` are welcome. Please adhere to the standard Git workflow and submit pull requests for proposed changes.
+```bash
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 682033462621.dkr.ecr.us-east-1.amazonaws.com
+```
 
-## Local Development and Testing
+## TypeScript
 
-### Testing with Dependent Projects Before Merging
+Type definitions are shipped from:
+- `src/index.d.ts`
+- `src/models/**/index.d.ts`
 
-When making changes to this package, you can test them in dependent projects (like `spacecat-api-service`) before merging using the following approach:
-
-1. Commit and push your changes to a branch in this repository
-2. Get the commit ID of your push
-3. In your dependent project, temporarily modify the package.json dependency:
-
-   ```json
-   // From:
-   "@adobe/spacecat-shared-data-access": "2.13.1",
-   
-   // To:
-   "@adobe/spacecat-shared-data-access": "https://gitpkg.now.sh/adobe/spacecat-shared/packages/spacecat-shared-data-access?YOUR_COMMIT_ID",
-   ```
-
-4. Run `npm install` in your dependent project
-5. Test your changes
-6. Once testing is complete and your PR is merged, update the dependent project to use the released version
+Use the package directly in TS projects; no extra setup required.
 
 ## License
 
-Licensed under the Apache-2.0 License.
+Apache-2.0

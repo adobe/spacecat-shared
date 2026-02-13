@@ -14,7 +14,6 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
@@ -29,9 +28,9 @@ import FixEntitySchema from '../../../../src/models/fix-entity/fix-entity.schema
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const opportunityEntity = new Entity(OpportunitySchema.toElectroDBSchema());
-const suggestionEntity = new Entity(SuggestionSchema.toElectroDBSchema());
-const fixEntity = new Entity(FixEntitySchema.toElectroDBSchema());
+const opportunityEntity = {};
+const suggestionEntity = {};
+const fixEntity = {};
 const MockCollection = class MockCollection extends BaseCollection {};
 
 describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */

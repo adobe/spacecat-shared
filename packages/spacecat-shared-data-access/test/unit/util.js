@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { Entity } from 'electrodb';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { spy, stub } from 'sinon';
 
@@ -23,7 +22,7 @@ export const createElectroMocks = (Model, record) => {
     schema,
     collection: Collection,
   } = EntityRegistry.entities[modelNameToEntityName(Model.name)];
-  const entity = new Entity(schema.toElectroDBSchema());
+  const entity = {};
 
   const mockLogger = {
     debug: spy(),

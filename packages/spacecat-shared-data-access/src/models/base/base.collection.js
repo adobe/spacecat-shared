@@ -16,7 +16,6 @@ import {
   isNonEmptyObject,
   isObject,
 } from '@adobe/spacecat-shared-utils';
-import { ElectroValidationError } from 'electrodb';
 
 import DataAccessError from '../../errors/data-access.error.js';
 import ValidationError from '../../errors/validation.error.js';
@@ -35,6 +34,9 @@ import {
 } from '../../util/postgrest.utils.js';
 import { DATASTORE_TYPE } from '../../util/index.js';
 import { entityNameToAllPKValue, removeElectroProperties } from '../../util/util.js';
+
+const isLegacyValidationError = (error) => error?.name === 'ElectroValidationError'
+  || isNonEmptyArray(error?.fields);
 
 function isValidParent(parent, child) {
   if (!hasText(parent.entityName)) {
@@ -582,7 +584,7 @@ class BaseCollection {
             const { Item } = this.entity.put(item).params();
             validatedItems.push({ ...removeElectroProperties(Item), ...item });
           } catch (error) {
-            if (error instanceof ElectroValidationError) {
+            if (isLegacyValidationError(error)) {
               errorItems.push({ item, error: new ValidationError('Validation error', this, error) });
             }
           }

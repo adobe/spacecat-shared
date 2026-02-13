@@ -40,19 +40,15 @@
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
     "@supabase/postgrest-js": "^1.21.4",
-    "@aws-sdk/client-dynamodb": "3.940.0",
     "@aws-sdk/client-s3": "^3.940.0",
-    "@aws-sdk/lib-dynamodb": "3.940.0",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.12.0",
-    "electrodb": "3.5.0",
     "joi": "18.0.2",
     "pluralize": "8.0.0"
   },
   "devDependencies": {
     "chai": "6.2.1",
     "chai-as-promised": "8.0.2",
-    "dynamo-db-local": "9.6.0",
     "nock": "14.0.10",
     "sinon": "21.0.0",
     "sinon-chai": "4.0.1"

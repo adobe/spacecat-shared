@@ -15,7 +15,6 @@
 // eslint-disable-next-line max-classes-per-file
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { ElectroValidationError } from 'electrodb';
 import sinon, { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
@@ -507,7 +506,9 @@ describe('BaseCollection', () => {
               itemCount += 1;
               return { Item: { ...mockRecord } };
             } else {
-              throw new ElectroValidationError('Validation failed');
+              const error = new Error('Validation failed');
+              error.name = 'ElectroValidationError';
+              throw error;
             }
           },
         },
@@ -521,7 +522,8 @@ describe('BaseCollection', () => {
     });
 
     it('fails creating some items due to ValidationError', async () => {
-      const error = new ElectroValidationError('Validation failed');
+      const error = new Error('Validation failed');
+      error.name = 'ElectroValidationError';
       mockElectroService.entities.mockEntityModel.put.returns(
         { params: () => { throw error; } },
       );
@@ -1406,9 +1408,10 @@ describe('BaseCollection', () => {
       );
     });
 
-    it('should handle ElectroValidationError', async () => {
+    it('should handle validation-style errors from legacy entity path', async () => {
       const keys = [{ someKey: 'test-value' }];
-      const validationError = new ElectroValidationError('Invalid key format');
+      const validationError = new Error('Invalid key format');
+      validationError.name = 'ElectroValidationError';
       mockDeleteQuery.go.rejects(validationError);
 
       await expect(baseCollectionInstance.removeByIndexKeys(keys))

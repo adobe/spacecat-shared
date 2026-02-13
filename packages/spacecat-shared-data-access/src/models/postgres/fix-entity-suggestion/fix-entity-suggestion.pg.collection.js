@@ -11,10 +11,22 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresFixEntitySuggestionModel from './fix-entity-suggestion.pg.model.js';
 import { guardId } from '../../../util/guards.js';
 
 class PostgresFixEntitySuggestionCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'FixEntitySuggestionCollection';
+
+  static MODEL_CLASS = PostgresFixEntitySuggestionModel;
+
+  constructor(postgrestClient, entityRegistry, schema, log) {
+    super(postgrestClient, entityRegistry, schema, log);
+
+    // This is a join table with composite PK (suggestion_id, fix_entity_id) - no 'id' column.
+    // createFieldMaps unconditionally maps idName -> 'id', so remove the phantom mapping.
+    delete this.fieldMaps.toDbMap[this.idName];
+    delete this.fieldMaps.toModelMap.id;
+  }
 
   async allBySuggestionId(suggestionId, options = {}) {
     guardId('suggestionId', suggestionId, 'FixEntitySuggestionCollection');

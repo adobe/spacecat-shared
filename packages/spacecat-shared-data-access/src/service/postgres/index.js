@@ -10,7 +10,70 @@
  * governing permissions and limitations under the License.
  */
 
-// eslint-disable-next-line no-unused-vars
+import { PostgrestClient } from '@supabase/postgrest-js';
+import { S3Client } from '@aws-sdk/client-s3';
+import { instrumentAWSClient } from '@adobe/spacecat-shared-utils';
+
+import PostgresEntityRegistry from './postgres-entity-registry.js';
+
+/**
+ * Creates an S3 service configuration if bucket configuration is provided.
+ * @param {object} config - Configuration object
+ * @returns {{s3Client: S3Client, s3Bucket: string}|null}
+ */
+const createS3Service = (config) => {
+  const { s3Bucket, region } = config;
+
+  if (!s3Bucket) {
+    return null;
+  }
+  /* c8 ignore next 5 -- S3 client creation tested in integration */
+  const options = region ? { region } : {};
+  const s3Client = instrumentAWSClient(new S3Client(options));
+
+  return { s3Client, s3Bucket };
+};
+
+/**
+ * Creates a PostgreSQL data access layer backed by PostgREST.
+ *
+ * @param {object} config - Configuration object
+ * @param {string} config.postgrestUrl - PostgREST base URL
+ * @param {string} [config.postgrestSchema='public'] - PostgREST schema
+ * @param {string} [config.postgrestApiKey] - API key for PostgREST authentication
+ * @param {object} [config.postgrestHeaders] - Additional headers
+ * @param {string} [config.s3Bucket] - S3 bucket for Configuration entity
+ * @param {string} [config.region] - AWS region
+ * @param {object} log - Logger instance
+ * @returns {object} Data access collections
+ */
 export const createPostgresDataAccess = (config, log) => {
-  throw new Error('PostgreSQL backend not yet implemented');
+  const {
+    postgrestUrl,
+    postgrestSchema = 'public',
+    postgrestApiKey,
+    postgrestHeaders = {},
+    s3Bucket,
+    region,
+  } = config;
+
+  if (!postgrestUrl) {
+    throw new Error('postgrestUrl is required for PostgreSQL backend');
+  }
+
+  const headers = {
+    ...postgrestHeaders,
+    ...(postgrestApiKey
+      ? { apikey: postgrestApiKey, Authorization: `Bearer ${postgrestApiKey}` }
+      : {}),
+  };
+
+  const client = new PostgrestClient(postgrestUrl, { schema: postgrestSchema, headers });
+
+  const s3Config = createS3Service({ s3Bucket, region });
+
+  const registryConfig = { s3: s3Config };
+  const entityRegistry = new PostgresEntityRegistry(client, registryConfig, log);
+
+  return entityRegistry.getCollections();
 };

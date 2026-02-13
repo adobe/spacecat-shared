@@ -63,11 +63,16 @@ describe('createDataAccess', () => {
         .to.throw('Invalid DATA_ACCESS_BACKEND: "invalid". Must be "dynamodb" or "postgresql".');
     });
 
-    it('calls createPostgresDataAccess when set to "postgresql"', () => {
+    it('creates postgres data access when set to "postgresql"', () => {
       process.env.DATA_ACCESS_BACKEND = 'postgresql';
-      // The stub currently throws "not yet implemented"
-      expect(() => createDataAccess({ postgrestUrl: 'http://localhost:3000' }, log))
-        .to.throw('PostgreSQL backend not yet implemented');
+      const da = createDataAccess({ postgrestUrl: 'http://localhost:3000' }, log);
+      expect(da).to.be.an('object');
+    });
+
+    it('throws when postgresql backend has no postgrestUrl', () => {
+      process.env.DATA_ACCESS_BACKEND = 'postgresql';
+      expect(() => createDataAccess({}, log))
+        .to.throw('postgrestUrl is required for PostgreSQL backend');
     });
   });
 });

@@ -152,7 +152,7 @@ const applyWhere = (query, whereFn, toDbMap) => {
     return query.contains(expression.field, value);
   }
 
-  return query;
+  throw new Error(`Unsupported where operator: ${expression.type}`);
 };
 
 export {

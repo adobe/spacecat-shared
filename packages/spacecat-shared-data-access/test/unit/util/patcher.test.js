@@ -160,7 +160,8 @@ describe('Patcher', () => {
     await patcher.save();
 
     expect(mockEntity.patch().go.calledOnce).to.be.true;
-    expect(isIsoDate(mockRecord.updatedAt)).to.be.true;
+    expect(mockRecord.updatedAt).to.be.undefined;
+    expect(isIsoDate(patcher.getUpdates().updatedAt.current)).to.be.true;
   });
 
   it('throws error when saving with updates prohibited by schema', async () => {

@@ -44,7 +44,7 @@ describe('EntityRegistry', () => {
     },
   );
 
-  let electroService;
+  let postgrestService;
   let services;
   let entityRegistry;
   let originalEntities;
@@ -53,7 +53,7 @@ describe('EntityRegistry', () => {
     originalEntities = { ...EntityRegistry.entities };
     EntityRegistry.entities = {};
 
-    electroService = {
+    postgrestService = {
       entities: {
         mockModel: {
           model: {
@@ -69,7 +69,7 @@ describe('EntityRegistry', () => {
     };
 
     services = {
-      dynamo: electroService,
+      postgrest: postgrestService,
       s3: null,
     };
 

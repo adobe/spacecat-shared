@@ -53,6 +53,9 @@ class BaseCollection {
   static DATASTORE_TYPE = DATASTORE_TYPE.POSTGREST;
 
   constructor(postgrestService, entityRegistry, schema, log) {
+    if (!postgrestService) {
+      throw new DataAccessError('postgrestService is required');
+    }
     this.postgrestService = postgrestService;
     // legacy alias for existing tests and callers
     this.electroService = postgrestService;
@@ -68,6 +71,46 @@ class BaseCollection {
     this.entity = postgrestService?.entities?.[this.entityName];
 
     this.#initializeCollectionMethods();
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  #resolveBulkKeyField(keys) {
+    if (!isNonEmptyArray(keys)) {
+      return null;
+    }
+
+    const firstKey = keys[0];
+    if (!isNonEmptyObject(firstKey)) {
+      return null;
+    }
+
+    const fields = Object.keys(firstKey);
+    if (fields.length !== 1) {
+      return null;
+    }
+
+    const [field] = fields;
+    const isSingleFieldAcrossAll = keys.every((key) => {
+      if (!isNonEmptyObject(key)) {
+        return false;
+      }
+      const keyFields = Object.keys(key);
+      return keyFields.length === 1 && keyFields[0] === field && key[field] !== undefined;
+    });
+
+    return isSingleFieldAcrossAll ? field : null;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  #isInvalidInputError(error) {
+    let current = error;
+    while (current) {
+      if (current?.code === '22P02') {
+        return true;
+      }
+      current = current.cause;
+    }
+    return false;
   }
 
   #logAndThrowError(message, cause) {
@@ -573,21 +616,34 @@ class BaseCollection {
         return { data, unprocessed };
       }
 
+      const bulkKeyField = this.#resolveBulkKeyField(keys);
+      if (bulkKeyField) {
+        const dbField = this.#toDbField(bulkKeyField);
+        const values = keys.map((key) => key[bulkKeyField]);
+        const select = this.#buildSelect(options.attributes);
+        const { data, error } = await this.postgrestService
+          .from(this.tableName)
+          .select(select)
+          .in(dbField, values);
+
+        if (!error) {
+          return {
+            data: this.#createInstances((data || []).map((record) => this.#toModelRecord(record))),
+            unprocessed: [],
+          };
+        }
+
+        if (!this.#isInvalidInputError(error)) {
+          throw error;
+        }
+      }
+
       const records = await Promise.all(
         keys.map(async (key) => {
           try {
             return await this.findByIndexKeys(key, options);
           } catch (error) {
-            let current = error;
-            let isInvalidInput = false;
-            while (current) {
-              if (current?.code === '22P02') {
-                isInvalidInput = true;
-                break;
-              }
-              current = current.cause;
-            }
-            if (isInvalidInput) {
+            if (this.#isInvalidInputError(error)) {
               return null;
             }
             throw error;
@@ -875,14 +931,27 @@ class BaseCollection {
         return undefined;
       }
 
-      await Promise.all(keys.map(async (key) => {
-        let query = this.postgrestService.from(this.tableName).delete();
-        query = this.#applyKeyFilters(query, key);
-        const { error } = await query;
+      const bulkKeyField = this.#resolveBulkKeyField(keys);
+      if (bulkKeyField) {
+        const dbField = this.#toDbField(bulkKeyField);
+        const values = keys.map((key) => key[bulkKeyField]);
+        const { error } = await this.postgrestService
+          .from(this.tableName)
+          .delete()
+          .in(dbField, values);
         if (error) {
           throw error;
         }
-      }));
+      } else {
+        await Promise.all(keys.map(async (key) => {
+          let query = this.postgrestService.from(this.tableName).delete();
+          query = this.#applyKeyFilters(query, key);
+          const { error } = await query;
+          if (error) {
+            throw error;
+          }
+        }));
+      }
 
       this.log.info(`Removed ${keys.length} items for [${this.entityName}]`);
       this.#invalidateCache();

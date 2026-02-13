@@ -125,6 +125,15 @@ describe('BaseCollection', () => {
     );
   });
 
+  it('throws when postgrestService is missing', () => {
+    expect(() => createInstance(
+      null,
+      mockEntityRegistry,
+      mockIndexes,
+      mockLogger,
+    )).to.throw(DataAccessError, 'postgrestService is required');
+  });
+
   describe('collection methods', () => {
     it('does not create accessors for the primary index', () => {
       mockIndexes = { primary: {} };
@@ -1027,7 +1036,7 @@ describe('BaseCollection', () => {
       await instance.removeByIds(mockIds);
 
       expect(fromStub).to.have.been.calledOnceWithExactly(instance.tableName);
-      expect(inStub).to.have.been.calledOnceWithExactly('id', mockIds);
+      expect(inStub).to.have.been.calledOnceWithExactly('mock_entity_model_id', mockIds);
     });
 
     it('throws when PostgREST removeByIds operation returns an error', async () => {
@@ -1500,6 +1509,32 @@ describe('BaseCollection', () => {
         .to.be.rejectedWith(DataAccessError, 'key must be a non-empty object');
     });
 
+    it('should remove by single-field keys via PostgREST bulk in() query', async () => {
+      const inStub = stub().resolves({ error: null });
+      const fromStub = stub().returns({
+        delete: stub().returns({
+          in: inStub,
+        }),
+      });
+      const postgrestService = { from: fromStub };
+      const instance = createInstance(
+        postgrestService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+      const keys = [
+        { someKey: 'test-value-1' },
+        { someKey: 'test-value-2' },
+      ];
+
+      await instance.removeByIndexKeys(keys);
+
+      expect(fromStub).to.have.been.calledOnceWithExactly(instance.tableName);
+      expect(inStub).to.have.been.calledOnceWithExactly('some_key', ['test-value-1', 'test-value-2']);
+      expect(mockLogger.info).to.have.been.calledWith(`Removed ${keys.length} items for [mockEntityModel]`);
+    });
+
     it('should remove by keys via PostgREST service when entity proxy is unavailable', async () => {
       const query = {
         error: null,
@@ -1589,6 +1624,7 @@ describe('BaseCollection', () => {
         select: stub().returnsThis(),
         order: stub().returnsThis(),
         eq: stub().returnsThis(),
+        in: stub().returnsThis(),
         gte: stub().returnsThis(),
         lte: stub().returnsThis(),
         range: stub().returnsThis(),
@@ -1711,6 +1747,54 @@ describe('BaseCollection', () => {
       ]);
       expect(batch.data).to.have.length(1);
       expect(batch.unprocessed).to.deep.equal([]);
+      expect(query.in).to.have.been.calledOnceWithExactly(
+        'mock_entity_model_id',
+        [
+          'ef39921f-9a02-41db-b491-02c98987d956',
+          'ef39921f-9a02-41db-b491-02c98987d957',
+        ],
+      );
+    });
+
+    it('falls back to per-key batch lookup on invalid bulk input', async () => {
+      const bulkQuery = {
+        select: stub().returnsThis(),
+        in: stub().returnsThis(),
+        then: (onFulfilled, onRejected) => Promise.resolve({
+          data: null,
+          error: { code: '22P02', message: 'invalid input syntax' },
+        }).then(onFulfilled, onRejected),
+      };
+
+      const pageQuery = createPostgrestQuery([
+        { data: [{ some_key: 'id-1', some_other_key: 1 }], error: null },
+        { data: [], error: null },
+      ]);
+
+      const fromStub = stub()
+        .onCall(0)
+        .returns({ select: stub().returns(bulkQuery) })
+        .onCall(1)
+        .returns({ select: stub().returns(pageQuery) })
+        .onCall(2)
+        .returns({ select: stub().returns(pageQuery) });
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const batch = await instance.batchGetByKeys([
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { mockEntityModelId: 'not-a-uuid' },
+      ]);
+
+      expect(batch.data).to.have.length(1);
+      expect(batch.unprocessed).to.deep.equal([]);
+      expect(bulkQuery.in).to.have.been.calledOnce;
     });
 
     it('creates with insert and upsert in PostgREST mode', async () => {

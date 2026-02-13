@@ -231,7 +231,12 @@ describe('postgrest utils', () => {
     expect(applyWhere(query, null, {})).to.equal(query);
     expect(applyWhere(query, () => null, {})).to.equal(query);
     expect(applyWhere(query, () => 'invalid', {})).to.equal(query);
-    expect(applyWhere(query, () => ({ type: 'unknown' }), {})).to.equal(query);
+  });
+
+  it('throws on unsupported where operators', () => {
+    const query = {};
+    expect(() => applyWhere(query, () => ({ type: 'unknown' }), {}))
+      .to.throw('Unsupported where operator: unknown');
   });
 
   it('applies eq where filters', () => {

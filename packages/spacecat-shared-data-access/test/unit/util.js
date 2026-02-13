@@ -63,6 +63,8 @@ export const createElectroMocks = (Model, record) => {
   };
 
   const mockEntityRegistry = {
+    config: {},
+    getEntityNames: () => Object.keys(EntityRegistry.entities).concat('configuration'),
     log: mockLogger,
     getCollection: stub().returns({
       schema: {

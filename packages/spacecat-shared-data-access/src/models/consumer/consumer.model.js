@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
+
 import BaseModel from '../base/base.model.js';
 
 /**
@@ -24,15 +26,24 @@ class Consumer extends BaseModel {
 
   static STATUS = {
     ACTIVE: 'ACTIVE',
-    SUSPEND: 'SUSPEND',
+    SUSPENDED: 'SUSPENDED',
+    REVOKED: 'REVOKED',
   };
 
-  static ISSUER_ID_REGEX = /[a-z0-9]{24}@AdobeOrg/i;
+  /**
+   * Checks whether this consumer has been revoked.
+   * @returns {boolean} - True if the consumer has been revoked.
+   */
+  isRevoked() {
+    return this.getStatus() === Consumer.STATUS.REVOKED
+      || (isIsoDate(this.getRevokedAt()) && new Date(this.getRevokedAt()) <= new Date());
+  }
 
-  static ALLOWED_ISSUER_IDS = {
-    PRODUCTION: '908936ED5D35CC220A495CD4@AdobeOrg',
-    STAGE: '8C6043F15F43B6390A49401A@AdobeOrg',
-  };
+  static CAPABILITIES = ['read', 'write', 'delete'];
+
+  static IMS_ORG_ID_REGEX = /^[a-z0-9]{24}@AdobeOrg$/i;
+
+  static TECHNICAL_ACCOUNT_ID_REGEX = /^[a-z0-9]{24}@techacct\.adobe\.com$/i;
 }
 
 export default Consumer;

@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
+
 import SchemaBuilder from '../base/schema.builder.js';
 import Consumer from './consumer.model.js';
 import ConsumerCollection from './consumer.collection.js';
@@ -24,6 +26,13 @@ const schema = new SchemaBuilder(Consumer, ConsumerCollection)
   .addAttribute('clientId', {
     type: 'string',
     required: true,
+    readOnly: true,
+  })
+  .addAttribute('technicalAccountId', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+    validate: (value) => Consumer.TECHNICAL_ACCOUNT_ID_REGEX.test(value),
   })
   .addAttribute('consumerName', {
     type: 'string',
@@ -40,11 +49,17 @@ const schema = new SchemaBuilder(Consumer, ConsumerCollection)
       type: 'string',
     },
   })
-  .addAttribute('issuerId', {
-    type: Object.values(Consumer.ALLOWED_ISSUER_IDS),
-    required: true,
+  .addAttribute('revokedAt', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
   })
-  .addAllIndex(['issuerId'])
-  .addAllIndex(['clientId']);
+  .addAttribute('imsOrgId', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+    validate: (value) => Consumer.IMS_ORG_ID_REGEX.test(value),
+  })
+  .addAllIndex(['imsOrgId'])
+  .addAllIndex(['clientId', 'imsOrgId']);
 
 export default schema.build();

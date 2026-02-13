@@ -45,17 +45,17 @@ describe('Consumer IT', async () => {
     );
   });
 
-  it('gets all consumers by issuerId', async () => {
+  it('gets all consumers by imsOrgId', async () => {
     const sampleConsumer = sampleData.consumers[0];
-    const issuerId = sampleConsumer.getIssuerId();
+    const imsOrgId = sampleConsumer.getImsOrgId();
 
-    const consumers = await Consumer.allByIssuerId(issuerId);
+    const consumers = await Consumer.allByImsOrgId(imsOrgId);
 
     expect(consumers).to.be.an('array');
     expect(consumers.length).to.be.greaterThan(0);
 
     for (const consumer of consumers) {
-      expect(consumer.getIssuerId()).to.equal(issuerId);
+      expect(consumer.getImsOrgId()).to.equal(imsOrgId);
     }
   });
 
@@ -76,10 +76,11 @@ describe('Consumer IT', async () => {
   it('adds a new consumer', async () => {
     const data = {
       clientId: 'client-new-test',
+      technicalAccountId: 'AABB00112233445566778899@techacct.adobe.com',
       consumerName: 'consumer-new-test',
       status: 'ACTIVE',
-      capabilities: ['read', 'write'],
-      issuerId: '908936ED5D35CC220A495CD4@AdobeOrg',
+      capabilities: ['site:read', 'site:write'],
+      imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
     };
 
     const consumer = await Consumer.create(data);
@@ -89,13 +90,14 @@ describe('Consumer IT', async () => {
     expect(consumer.getConsumerName()).to.equal(data.consumerName);
     expect(consumer.getStatus()).to.equal(data.status);
     expect(consumer.getCapabilities()).to.eql(data.capabilities);
-    expect(consumer.getIssuerId()).to.equal(data.issuerId);
+    expect(consumer.getTechnicalAccountId()).to.equal(data.technicalAccountId);
+    expect(consumer.getImsOrgId()).to.equal(data.imsOrgId);
   });
 
   it('updates the status of a consumer', async () => {
     const consumer = await Consumer.findById(sampleData.consumers[0].getId());
 
-    const newStatus = 'SUSPEND';
+    const newStatus = 'SUSPENDED';
     const expectedConsumer = {
       ...consumer.toJSON(),
       status: newStatus,
@@ -117,7 +119,7 @@ describe('Consumer IT', async () => {
   it('updates the capabilities of a consumer', async () => {
     const consumer = await Consumer.findById(sampleData.consumers[0].getId());
 
-    const newCapabilities = ['read'];
+    const newCapabilities = ['site:read'];
     const expectedConsumer = {
       ...consumer.toJSON(),
       capabilities: newCapabilities,
@@ -146,13 +148,44 @@ describe('Consumer IT', async () => {
     expect(notFound).to.be.null;
   });
 
-  it('validates issuerId format and allowed values', async () => {
+  it('rejects creation with a disallowed imsOrgId', async () => {
+    const disallowedData = {
+      clientId: 'client-disallowed',
+      technicalAccountId: 'CCDD00112233445566778899@techacct.adobe.com',
+      consumerName: 'consumer-disallowed',
+      status: 'ACTIVE',
+      capabilities: ['site:read'],
+      imsOrgId: 'FEDCBA0987654321FEDCBA09@AdobeOrg',
+    };
+
+    await expect(Consumer.create(disallowedData)).to.be.rejectedWith(
+      'is not in the list of allowed IMS Org IDs',
+    );
+  });
+
+  it('rejects creation with invalid capabilities', async () => {
+    const invalidCapData = {
+      clientId: 'client-invalid-cap',
+      technicalAccountId: 'AABB00112233445566778899@techacct.adobe.com',
+      consumerName: 'consumer-invalid-cap',
+      status: 'ACTIVE',
+      capabilities: ['site:read', 'admin', 'bogus:execute'],
+      imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
+    };
+
+    await expect(Consumer.create(invalidCapData)).to.be.rejectedWith(
+      'Invalid capabilities',
+    );
+  });
+
+  it('validates imsOrgId format', async () => {
     const invalidFormatData = {
       clientId: 'client-invalid',
+      technicalAccountId: 'EEFF00112233445566778899@techacct.adobe.com',
       consumerName: 'consumer-invalid',
       status: 'ACTIVE',
-      capabilities: ['read'],
-      issuerId: 'invalid-issuer-id',
+      capabilities: ['site:read'],
+      imsOrgId: 'invalid-issuer-id',
     };
 
     await expect(Consumer.create(invalidFormatData)).to.be.rejected;
@@ -161,10 +194,11 @@ describe('Consumer IT', async () => {
   it('validates status enum values', async () => {
     const invalidStatusData = {
       clientId: 'client-invalid-status',
+      technicalAccountId: 'FF0011223344556677889900@techacct.adobe.com',
       consumerName: 'consumer-invalid-status',
       status: 'INVALID_STATUS',
-      capabilities: ['read'],
-      issuerId: '908936ED5D35CC220A495CD4@AdobeOrg',
+      capabilities: ['site:read'],
+      imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
     };
 
     await expect(Consumer.create(invalidStatusData)).to.be.rejected;

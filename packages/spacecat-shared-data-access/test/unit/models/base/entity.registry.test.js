@@ -75,7 +75,7 @@ describe('EntityRegistry', () => {
 
     EntityRegistry.registerEntity(MockSchema, MockCollection);
 
-    entityRegistry = new EntityRegistry(services, console);
+    entityRegistry = new EntityRegistry(services, {}, console);
   });
 
   afterEach(() => {

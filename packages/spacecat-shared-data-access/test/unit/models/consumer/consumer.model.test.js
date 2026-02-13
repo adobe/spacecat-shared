@@ -58,26 +58,40 @@ describe('ConsumerModel', () => {
     it('has STATUS constants', () => {
       expect(Consumer.STATUS).to.deep.equal({
         ACTIVE: 'ACTIVE',
-        SUSPEND: 'SUSPEND',
+        SUSPENDED: 'SUSPENDED',
+        REVOKED: 'REVOKED',
       });
     });
 
-    it('has ISSUER_ID_REGEX', () => {
-      expect(Consumer.ISSUER_ID_REGEX).to.be.instanceOf(RegExp);
-      expect(Consumer.ISSUER_ID_REGEX.test('908936ED5D35CC220A495CD4@AdobeOrg')).to.be.true;
-      expect(Consumer.ISSUER_ID_REGEX.test('invalid-id')).to.be.false;
+    it('has CAPABILITIES', () => {
+      expect(Consumer.CAPABILITIES).to.deep.equal(['read', 'write', 'delete']);
     });
 
-    it('has ALLOWED_ISSUER_IDS', () => {
-      expect(Consumer.ALLOWED_ISSUER_IDS).to.be.an('object');
-      expect(Consumer.ALLOWED_ISSUER_IDS.PRODUCTION).to.equal('908936ED5D35CC220A495CD4@AdobeOrg');
-      expect(Consumer.ALLOWED_ISSUER_IDS.STAGE).to.equal('8C6043F15F43B6390A49401A@AdobeOrg');
+    it('has TECHNICAL_ACCOUNT_ID_REGEX', () => {
+      expect(Consumer.TECHNICAL_ACCOUNT_ID_REGEX).to.be.instanceOf(RegExp);
+      expect(Consumer.TECHNICAL_ACCOUNT_ID_REGEX.test('09132356697B3F170A495EE8@techacct.adobe.com')).to.be.true;
+      expect(Consumer.TECHNICAL_ACCOUNT_ID_REGEX.test('invalid-id')).to.be.false;
+      expect(Consumer.TECHNICAL_ACCOUNT_ID_REGEX.test('09132356697B3F170A495EE8@AdobeOrg')).to.be.false;
+      expect(Consumer.TECHNICAL_ACCOUNT_ID_REGEX.test('prefix09132356697B3F170A495EE8@techacct.adobe.com')).to.be.false;
+    });
+
+    it('has IMS_ORG_ID_REGEX', () => {
+      expect(Consumer.IMS_ORG_ID_REGEX).to.be.instanceOf(RegExp);
+      expect(Consumer.IMS_ORG_ID_REGEX.test('1234567890ABCDEF12345678@AdobeOrg')).to.be.true;
+      expect(Consumer.IMS_ORG_ID_REGEX.test('invalid-id')).to.be.false;
+      // Test that it doesn't match substrings
+      expect(Consumer.IMS_ORG_ID_REGEX.test('prefix1234567890ABCDEF12345678@AdobeOrg')).to.be.false;
+      expect(Consumer.IMS_ORG_ID_REGEX.test('1234567890ABCDEF12345678@AdobeOrgsuffix')).to.be.false;
     });
   });
 
   describe('getters', () => {
     it('gets clientId', () => {
       expect(instance.getClientId()).to.equal(sampleConsumer.clientId);
+    });
+
+    it('gets technicalAccountId', () => {
+      expect(instance.getTechnicalAccountId()).to.equal(sampleConsumer.technicalAccountId);
     });
 
     it('gets consumerName', () => {
@@ -92,18 +106,38 @@ describe('ConsumerModel', () => {
       expect(instance.getCapabilities()).to.deep.equal(sampleConsumer.capabilities);
     });
 
-    it('gets issuerId', () => {
-      expect(instance.getIssuerId()).to.equal(sampleConsumer.issuerId);
+    it('gets imsOrgId', () => {
+      expect(instance.getImsOrgId()).to.equal(sampleConsumer.imsOrgId);
+    });
+
+    it('gets revokedAt', () => {
+      expect(instance.getRevokedAt()).to.be.undefined;
+    });
+  });
+
+  describe('isRevoked', () => {
+    it('returns false when status is ACTIVE and no revokedAt', () => {
+      expect(instance.isRevoked()).to.be.false;
+    });
+
+    it('returns true when status is REVOKED', () => {
+      instance.record.status = 'REVOKED';
+      expect(instance.isRevoked()).to.be.true;
+    });
+
+    it('returns true when revokedAt is in the past', () => {
+      instance.record.revokedAt = '2020-01-01T00:00:00.000Z';
+      expect(instance.isRevoked()).to.be.true;
+    });
+
+    it('returns false when revokedAt is in the future and status is not REVOKED', () => {
+      instance.record.status = 'ACTIVE';
+      instance.record.revokedAt = '2099-01-01T00:00:00.000Z';
+      expect(instance.isRevoked()).to.be.false;
     });
   });
 
   describe('setters', () => {
-    it('sets clientId', () => {
-      const newClientId = 'new-client-id';
-      const result = instance.setClientId(newClientId);
-      expect(result).to.equal(instance);
-    });
-
     it('sets consumerName', () => {
       const newConsumerName = 'new-consumer-name';
       const result = instance.setConsumerName(newConsumerName);
@@ -111,7 +145,7 @@ describe('ConsumerModel', () => {
     });
 
     it('sets status', () => {
-      const newStatus = 'SUSPEND';
+      const newStatus = 'SUSPENDED';
       const result = instance.setStatus(newStatus);
       expect(result).to.equal(instance);
     });
@@ -122,9 +156,9 @@ describe('ConsumerModel', () => {
       expect(result).to.equal(instance);
     });
 
-    it('sets issuerId', () => {
-      const newIssuerId = '8C6043F15F43B6390A49401A@AdobeOrg';
-      const result = instance.setIssuerId(newIssuerId);
+    it('sets revokedAt', () => {
+      const revokedAt = new Date().toISOString();
+      const result = instance.setRevokedAt(revokedAt);
       expect(result).to.equal(instance);
     });
   });

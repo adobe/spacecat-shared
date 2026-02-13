@@ -12,24 +12,28 @@
 
 import type { BaseCollection, BaseModel } from '../index';
 
-export type ConsumerStatus = 'ACTIVE' | 'SUSPEND';
+export type ConsumerStatus = 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
 
 export interface Consumer extends BaseModel {
   getClientId(): string;
+  getTechnicalAccountId(): string;
   getConsumerName(): string;
   getStatus(): ConsumerStatus;
   getCapabilities(): string[];
-  getIssuerId(): string;
-  setClientId(clientId: string): Consumer;
+  getImsOrgId(): string;
+  getRevokedAt(): string | undefined;
+  isRevoked(): boolean;
   setConsumerName(consumerName: string): Consumer;
   setStatus(status: ConsumerStatus): Consumer;
   setCapabilities(capabilities: string[]): Consumer;
-  setIssuerId(issuerId: string): Consumer;
+  setRevokedAt(revokedAt: string): Consumer;
 }
 
 export interface ConsumerCollection extends BaseCollection<Consumer> {
-  allByIssuerId(issuerId: string): Promise<Consumer[]>;
+  allByImsOrgId(imsOrgId: string): Promise<Consumer[]>;
   allByClientId(clientId: string): Promise<Consumer[]>;
-  findByIssuerId(issuerId: string): Promise<Consumer | null>;
+  allByClientIdAndImsOrgId(clientId: string, imsOrgId: string): Promise<Consumer[]>;
+  findByImsOrgId(imsOrgId: string): Promise<Consumer | null>;
   findByClientId(clientId: string): Promise<Consumer | null>;
+  findByClientIdAndImsOrgId(clientId: string, imsOrgId: string): Promise<Consumer | null>;
 }

@@ -92,10 +92,12 @@ class EntityRegistry {
    * @param {Object} services - Dictionary of services keyed by datastore type.
    * @param {Object} services.dynamo - The ElectroDB service instance for DynamoDB operations.
    * @param {{s3Client: S3Client, s3Bucket: string}|null} [services.s3] - S3 service configuration.
+   * @param {Object} config - Configuration object containing environment-derived settings.
    * @param {Object} log - A logger for capturing and logging information.
    */
-  constructor(services, log) {
+  constructor(services, config, log) {
     this.services = services;
+    this.config = config;
     this.log = log;
     this.collections = new Map();
 
@@ -142,6 +144,14 @@ class EntityRegistry {
       collections[collectionNameToEntityName(key)] = value;
     }
     return collections;
+  }
+
+  /**
+   * Returns the camelCase names of all registered entities (including Configuration).
+   * @returns {string[]} - An array of entity names.
+   */
+  getEntityNames() {
+    return [...Object.keys(this.constructor.entities), 'configuration'];
   }
 
   static getEntities() {

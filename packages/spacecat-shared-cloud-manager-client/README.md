@@ -98,7 +98,8 @@ await client.pull(clonePath, programId, repositoryId, { imsOrgId });
 await client.push(clonePath, programId, repositoryId, { imsOrgId });
 
 // Create PR (BYOG only; uses IMS token)
-const pr = await client.createPullRequest(programId, repositoryId, imsOrgId, {
+const pr = await client.createPullRequest(programId, repositoryId, {
+  imsOrgId,
   sourceBranch: 'feature/fix',
   destinationBranch: 'main',
   title: 'Fix issue',
@@ -145,7 +146,7 @@ await client.push(clonePath, programId, repositoryId, config);
 - **`createBranch(clonePath, baseBranch, newBranch)`** – Create a branch from a base.
 - **`applyPatch(clonePath, branch, s3PatchPath)`** – Download patch from S3 and apply with `git am`.
 - **`cleanup(clonePath)`** – Remove the clone directory.
-- **`createPullRequest(programId, repositoryId, imsOrgId, { sourceBranch, destinationBranch, title, description })`** – Create a PR via the CM Repo API (BYOG only, uses IMS token).
+- **`createPullRequest(programId, repositoryId, config)`** – Create a PR via the CM Repo API (BYOG only, uses IMS token). Config: `{ imsOrgId, sourceBranch, destinationBranch, title, description }`.
 
 ## Exports
 

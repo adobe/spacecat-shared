@@ -12,9 +12,30 @@
 
 import { UniversalContext } from '@adobe/helix-universal';
 
-export interface PullRequestOptions {
-  base: string;
-  head: string;
+export interface CloneConfig {
+  imsOrgId: string;
+  repoType?: string;
+  repoUrl?: string;
+  ref?: string;
+}
+
+export interface PushConfig {
+  imsOrgId: string;
+  repoType?: string;
+  repoUrl?: string;
+  ref: string;
+}
+
+export interface PullConfig {
+  imsOrgId: string;
+  repoType?: string;
+  repoUrl?: string;
+}
+
+export interface PullRequestConfig {
+  imsOrgId: string;
+  destinationBranch: string;
+  sourceBranch: string;
   title: string;
   description: string;
 }
@@ -22,25 +43,18 @@ export interface PullRequestOptions {
 export default class CloudManagerClient {
   static createFrom(context: UniversalContext): CloudManagerClient;
 
-  clone(programId: string, repositoryId: string, imsOrgId: string): Promise<string>;
+  clone(programId: string, repositoryId: string, config: CloneConfig): Promise<string>;
+  push(clonePath: string, programId: string, repositoryId: string, config: PushConfig): Promise<void>;
+  pull(clonePath: string, programId: string, repositoryId: string, config: PullConfig): Promise<void>;
+  checkout(clonePath: string, ref: string): Promise<void>;
+  unzipRepository(zipBuffer: Buffer): Promise<string>;
   zipRepository(clonePath: string): Promise<Buffer>;
   createBranch(clonePath: string, baseBranch: string, newBranch: string): Promise<void>;
   applyPatch(clonePath: string, branch: string, s3PatchPath: string): Promise<void>;
-  commitAndPush(
-    clonePath: string,
-    message: string,
-    programId: string,
-    repositoryId: string,
-    imsOrgId: string,
-  ): Promise<void>;
   cleanup(clonePath: string): Promise<void>;
-
-  getRepositories(programId: string, imsOrgId: string): Promise<object>;
-  getTenants(imsOrgId: string): Promise<object>;
   createPullRequest(
     programId: string,
     repositoryId: string,
-    imsOrgId: string,
-    options: PullRequestOptions,
+    config: PullRequestConfig,
   ): Promise<object>;
 }

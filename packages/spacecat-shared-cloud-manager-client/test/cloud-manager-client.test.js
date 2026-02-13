@@ -742,8 +742,8 @@ describe('CloudManagerClient', () => {
       const result = await client.createPullRequest(
         TEST_PROGRAM_ID,
         TEST_REPO_ID,
-        TEST_IMS_ORG_ID,
         {
+          imsOrgId: TEST_IMS_ORG_ID,
           destinationBranch: 'main',
           sourceBranch: 'feature/fix',
           title: 'Fix issue',
@@ -767,8 +767,8 @@ describe('CloudManagerClient', () => {
       await expect(client.createPullRequest(
         TEST_PROGRAM_ID,
         TEST_REPO_ID,
-        TEST_IMS_ORG_ID,
         {
+          imsOrgId: TEST_IMS_ORG_ID,
           destinationBranch: 'main',
           sourceBranch: 'fix',
           title: 'Fix',

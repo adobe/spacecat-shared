@@ -481,16 +481,16 @@ export default class CloudManagerClient {
    * Creates a pull request in a CM repository via the CM Repo REST API.
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
-   * @param {string} imsOrgId - IMS Organization ID
-   * @param {Object} options - PR options
-   * @param {string} options.destinationBranch - Branch to merge into (base)
-   * @param {string} options.sourceBranch - Branch that contains the changes (head)
-   * @param {string} options.title - PR title
-   * @param {string} options.description - PR description
+   * @param {Object} config - PR configuration
+   * @param {string} config.imsOrgId - IMS Organization ID
+   * @param {string} config.destinationBranch - Branch to merge into (base)
+   * @param {string} config.sourceBranch - Branch that contains the changes (head)
+   * @param {string} config.title - PR title
+   * @param {string} config.description - PR description
    * @returns {Promise<Object>}
    */
-  async createPullRequest(programId, repositoryId, imsOrgId, {
-    destinationBranch, sourceBranch, title, description,
+  async createPullRequest(programId, repositoryId, {
+    imsOrgId, destinationBranch, sourceBranch, title, description,
   }) {
     const token = await this.#getAccessToken();
     const url = `${this.config.cmRepoUrl}/api/program/${programId}/repository/${repositoryId}/pullRequests`;

@@ -74,7 +74,10 @@ class Patcher {
       },
     };
 
-    this.record[propertyName] = value;
+    const hydratedValue = typeof attribute.get === 'function'
+      ? attribute.get(value)
+      : value;
+    this.record[propertyName] = hydratedValue;
     this.updates = { ...this.updates, ...update };
 
     if (this.legacyEntity) {
@@ -154,7 +157,13 @@ class Patcher {
     }
 
     const previousUpdatedAt = this.record.updatedAt;
-    const now = new Date().toISOString();
+    let now = new Date().toISOString();
+    if (typeof previousUpdatedAt === 'string' && previousUpdatedAt === now) {
+      const previousDate = new Date(previousUpdatedAt);
+      if (!Number.isNaN(previousDate.getTime())) {
+        now = new Date(previousDate.getTime() + 1000).toISOString();
+      }
+    }
     this.record.updatedAt = now;
     this.updates.updatedAt = {
       previous: previousUpdatedAt,
@@ -173,11 +182,13 @@ class Patcher {
       const watched = this.collection.applyUpdateWatchers(this.record, updates);
       this.record = watched.record;
       await this.collection.updateByKeys(keys, watched.updates);
+      this.record.updatedAt = previousUpdatedAt;
       return;
     }
 
     if (this.patchRecord && typeof this.patchRecord.go === 'function') {
       await this.patchRecord.go();
+      this.record.updatedAt = previousUpdatedAt;
       return;
     }
 

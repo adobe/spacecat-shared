@@ -89,12 +89,13 @@ class BaseCollection {
       this.log.warn(`Failed to create instance of [${this.entityName}]: record is empty`);
       return null;
     }
+    const hydratedRecord = this.#applyGetters(this.#applyReadDefaults(record));
     // eslint-disable-next-line new-cap
     return new this.clazz(
       this.postgrestService,
       this.entityRegistry,
       this.schema,
-      record,
+      hydratedRecord,
       this.log,
     );
   }
@@ -207,8 +208,18 @@ class BaseCollection {
       }
 
       const value = attribute.set(nextRecord[name], nextRecord);
-      nextRecord[name] = value;
-      nextUpdates[name] = value;
+      let resolvedValue = value;
+      if (name === 'updatedAt' && typeof nextRecord[name] === 'string') {
+        const previous = new Date(nextRecord[name]);
+        const candidate = new Date(resolvedValue);
+        if (!Number.isNaN(previous.getTime())
+          && !Number.isNaN(candidate.getTime())
+          && candidate.getTime() <= previous.getTime()) {
+          resolvedValue = new Date(previous.getTime() + 1000).toISOString();
+        }
+      }
+      nextRecord[name] = resolvedValue;
+      nextUpdates[name] = resolvedValue;
     });
     return { record: nextRecord, updates: nextUpdates };
   }
@@ -224,6 +235,48 @@ class BaseCollection {
       const value = attribute.set(nextRecord[name], nextRecord);
       if (value !== undefined) {
         nextRecord[name] = value;
+      }
+    });
+    return nextRecord;
+  }
+
+  #applyReadDefaults(record) {
+    const nextRecord = { ...record };
+    const attributes = this.schema.getAttributes();
+    Object.entries(attributes).forEach(([name, attribute]) => {
+      if (nextRecord[name] !== undefined || attribute.default === undefined) {
+        return;
+      }
+
+      // Only hydrate defaults for fields intentionally excluded from PostgREST writes.
+      // This preserves projection behavior for normal selected attributes.
+      if (!attribute.postgrestIgnore) {
+        return;
+      }
+
+      nextRecord[name] = typeof attribute.default === 'function'
+        ? attribute.default()
+        : attribute.default;
+    });
+    return nextRecord;
+  }
+
+  #applyGetters(record) {
+    const nextRecord = { ...record };
+    const attributes = this.schema.getAttributes();
+    Object.entries(attributes).forEach(([name, attribute]) => {
+      if (typeof attribute.get !== 'function') {
+        return;
+      }
+
+      if (nextRecord[name] === undefined) {
+        return;
+      }
+
+      try {
+        nextRecord[name] = attribute.get(nextRecord[name], nextRecord);
+      } catch (error) {
+        this.log.warn(`Failed to apply getter for ${name} on [${this.entityName}]`, error);
       }
     });
     return nextRecord;
@@ -266,7 +319,7 @@ class BaseCollection {
             errors.push(`${name} failed validation`);
           }
         } catch (e) {
-          errors.push(`${name} failed validation`);
+          errors.push(e?.message || `${name} failed validation`);
         }
       }
     });
@@ -285,6 +338,10 @@ class BaseCollection {
   }
 
   #applyKeyFilters(query, keys) {
+    if (!isNonEmptyObject(keys)) {
+      return query;
+    }
+
     let filtered = query;
     Object.entries(keys).forEach(([key, value]) => {
       filtered = filtered.eq(this.#toDbField(key), value);
@@ -311,6 +368,10 @@ class BaseCollection {
       .select(select)
       .order(orderField, { ascending: options.order === 'asc' });
 
+    if (this.fieldMaps?.toDbMap?.[this.idName] === 'id') {
+      query = query.order('id', { ascending: false });
+    }
+
     query = this.#applyKeyFilters(query, keys);
     if (isObject(options.between)) {
       const betweenField = this.#toDbField(options.between.attribute);
@@ -333,7 +394,7 @@ class BaseCollection {
   }
 
   async #queryByIndexKeys(keys, options = {}) {
-    if (!isNonEmptyObject(keys)) {
+    if (this.entity && !isNonEmptyObject(keys)) {
       return this.#logAndThrowError(`Failed to query [${this.entityName}]: keys are required`);
     }
 
@@ -513,7 +574,25 @@ class BaseCollection {
       }
 
       const records = await Promise.all(
-        keys.map((key) => this.findByIndexKeys(key, options)),
+        keys.map(async (key) => {
+          try {
+            return await this.findByIndexKeys(key, options);
+          } catch (error) {
+            let current = error;
+            let isInvalidInput = false;
+            while (current) {
+              if (current?.code === '22P02') {
+                isInvalidInput = true;
+                break;
+              }
+              current = current.cause;
+            }
+            if (isInvalidInput) {
+              return null;
+            }
+            throw error;
+          }
+        }),
       );
       return {
         data: records.filter((record) => record !== null),
@@ -630,13 +709,33 @@ class BaseCollection {
 
       if (validatedItems.length > 0) {
         const payload = validatedItems.map((item) => this.#toDbRecord(item));
-        const { error } = await this.postgrestService
+        const { data, error } = await this.postgrestService
           .from(this.tableName)
           .insert(payload)
           .select();
 
         if (error) {
           return this.#logAndThrowError('Failed to create many', error);
+        }
+
+        if (isNonEmptyArray(data)) {
+          const createdItems = this.#createInstances(
+            data.map((record) => this.#toModelRecord(record)),
+          );
+          if (isNonEmptyObject(parent)) {
+            createdItems.forEach((record) => {
+              if (!isValidParent(parent, record)) {
+                this.log.warn(`Failed to associate parent with child [${this.entityName}]: parent is invalid`);
+                return;
+              }
+              // eslint-disable-next-line no-underscore-dangle,no-param-reassign
+              record._accessorCache[`get${parent.schema.getModelName()}`] = parent;
+            });
+          }
+
+          this.#invalidateCache();
+          await this.#onCreateMany({ createdItems, errorItems });
+          return { createdItems, errorItems };
         }
       }
 

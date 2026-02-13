@@ -23,7 +23,6 @@ const sites = [
     isLive: true,
     isSandbox: false,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     config: {
       imports: [
         {
@@ -86,7 +85,6 @@ const sites = [
     isLive: true,
     isSandbox: false,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -127,7 +125,6 @@ const sites = [
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -170,7 +167,6 @@ const sites = [
     isLive: true,
     isSandbox: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -211,7 +207,6 @@ const sites = [
     organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -252,7 +247,6 @@ const sites = [
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -293,7 +287,6 @@ const sites = [
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -334,7 +327,6 @@ const sites = [
     organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -375,7 +367,6 @@ const sites = [
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -416,7 +407,6 @@ const sites = [
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:

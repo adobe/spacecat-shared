@@ -216,6 +216,7 @@ class SchemaBuilder {
 
     this.addAttribute('recordExpiresAt', {
       type: 'number',
+      postgrestIgnore: true,
       required: true,
       readOnly: true,
       default: () => Math.floor(Date.now() / 1000) + ttlInDays * 24 * 60 * 60,

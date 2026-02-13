@@ -10,7 +10,9 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test:it": "mocha --require ./test/it/fixtures.js --spec \"test/it/**/*.test.js\"",
+    "test:it": "npm run test:it:legacy && npm run test:it:postgrest",
+    "test:it:legacy": "IT_SEED_MODE=none mocha --require ./test/it/fixtures.js --spec \"test/it/**/*.test.js\" --ignore \"test/it/postgrest/**/*.test.js\"",
+    "test:it:postgrest": "IT_SEED_MODE=tenant-sql mocha --require ./test/it/fixtures.js --spec \"test/it/postgrest/**/*.test.js\"",
     "test": "c8 mocha --spec \"test/unit/**/*.test.js\"",
     "test:debug": "mocha --inspect-brk --require ./test/setup-env.js --spec \"test/unit/**/*.test.js\"",
     "test:debug:config": "mocha --inspect-brk --require ./test/setup-env.js --spec \"test/unit/models/site/config.test.js\"",

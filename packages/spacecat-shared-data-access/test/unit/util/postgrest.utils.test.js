@@ -89,7 +89,7 @@ describe('postgrest utils', () => {
     });
   });
 
-  it('maps idName to id even when id field is not in schema attributes', () => {
+  it('does not force idName->id mapping when id attribute is missing from schema', () => {
     const schema = {
       getIdName: () => 'siteId',
       getAttributes: () => ({
@@ -100,11 +100,9 @@ describe('postgrest utils', () => {
     const maps = createFieldMaps(schema);
     expect(maps.toDbMap).to.deep.equal({
       baseURL: 'base_url',
-      siteId: 'id',
     });
     expect(maps.toModelMap).to.deep.equal({
       base_url: 'baseURL',
-      id: 'siteId',
     });
   });
 
@@ -128,14 +126,48 @@ describe('postgrest utils', () => {
     });
   });
 
+  it('skips attributes marked as postgrestIgnore', () => {
+    const schema = {
+      getIdName: () => 'asyncJobId',
+      getAttributes: () => ({
+        asyncJobId: {},
+        status: {},
+        recordExpiresAt: { postgrestIgnore: true },
+      }),
+    };
+
+    const maps = createFieldMaps(schema);
+    expect(maps.toDbMap).to.deep.equal({
+      asyncJobId: 'id',
+      status: 'status',
+    });
+    expect(maps.toModelMap).to.deep.equal({
+      id: 'asyncJobId',
+      status: 'status',
+    });
+  });
+
   it('maps real Site schema fields base_url <-> baseURL', () => {
     const maps = createFieldMaps(SiteSchema);
     expect(maps.toDbMap.siteId).to.equal('id');
     expect(maps.toDbMap.baseURL).to.equal('base_url');
+    expect(maps.toDbMap.gitHubURL).to.equal('github_url');
     expect(maps.toModelMap.base_url).to.equal('baseURL');
+    expect(maps.toModelMap.github_url).to.equal('gitHubURL');
 
-    expect(fromDbRecord({ id: 'site-1', base_url: 'https://example.com' }, maps.toModelMap))
-      .to.deep.equal({ siteId: 'site-1', baseURL: 'https://example.com' });
+    expect(fromDbRecord(
+      {
+        id: 'site-1',
+        base_url: 'https://example.com',
+        github_url: 'https://github.com/example/repo',
+      },
+      maps.toModelMap,
+    ))
+      .to.deep.equal({
+        siteId: 'site-1',
+        baseURL: 'https://example.com',
+        gitHubURL: 'https://github.com/example/repo',
+      });
   });
 
   it('maps individual db/model fields and whole records', () => {
@@ -159,6 +191,38 @@ describe('postgrest utils', () => {
     expect(fromDbRecord({ site_id: 's1', audit_type: 'lhs-mobile' }, toModelMap)).to.deep.equal({
       siteId: 's1',
       auditType: 'lhs-mobile',
+    });
+  });
+
+  it('normalizes timestamp-with-offset values and omits nullish scalar fields', () => {
+    const toModelMap = {
+      id: 'trialUserId',
+      last_seen_at: 'lastSeenAt',
+      updated_at: 'updatedAt',
+    };
+
+    expect(fromDbRecord({
+      id: 'tu-1',
+      last_seen_at: '2024-01-15T10:30:00+00:00',
+      updated_at: null,
+    }, toModelMap)).to.deep.equal({
+      trialUserId: 'tu-1',
+      lastSeenAt: '2024-01-15T10:30:00.000Z',
+    });
+  });
+
+  it('drops unknown fields from toDbRecord by default and can include them optionally', () => {
+    const toDbMap = { siteId: 'site_id' };
+    expect(toDbRecord({ siteId: 's1', recordExpiresAt: 123 }, toDbMap)).to.deep.equal({
+      site_id: 's1',
+    });
+    expect(toDbRecord(
+      { siteId: 's1', recordExpiresAt: 123 },
+      toDbMap,
+      { includeUnknown: true },
+    )).to.deep.equal({
+      site_id: 's1',
+      record_expires_at: 123,
     });
   });
 

@@ -97,6 +97,7 @@ class LatestAuditCollection extends BaseCollection {
     }
 
     const latest = LatestAuditCollection.#groupLatest(audits, groupFields);
+    latest.sort((a, b) => a.getAuditedAt().localeCompare(b.getAuditedAt()));
     const limited = Number.isInteger(options.limit) ? latest.slice(0, options.limit) : latest;
 
     return options.returnCursor ? { data: limited, cursor: null } : limited;

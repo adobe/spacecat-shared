@@ -52,13 +52,20 @@ const createFieldMaps = (schema) => {
   const idName = typeof schema.getIdName === 'function' ? schema.getIdName() : undefined;
   Object.keys(attributes).forEach((modelField) => {
     const attribute = attributes[modelField] || {};
+    if (attribute.postgrestIgnore) {
+      return;
+    }
     const dbField = attribute.postgrestField
       || (modelField === idName && modelField !== 'id' ? 'id' : camelToSnake(modelField));
     toDbMap[modelField] = dbField;
     toModelMap[dbField] = modelField;
   });
 
-  if (idName && idName !== 'id') {
+  const idAttribute = idName ? attributes[idName] : undefined;
+  if (idName
+    && idName !== 'id'
+    && idAttribute
+    && !idAttribute.postgrestIgnore) {
     toDbMap[idName] = 'id';
     toModelMap.id = idName;
   }
@@ -70,13 +77,50 @@ const toDbField = (field, map) => map[field] || camelToSnake(field);
 
 const toModelField = (field, map) => map[field] || snakeToCamel(field);
 
-const toDbRecord = (record, toDbMap) => Object.entries(record).reduce((acc, [key, value]) => {
-  acc[toDbField(key, toDbMap)] = value;
-  return acc;
-}, {});
+const toDbRecord = (record, toDbMap, options = {}) => {
+  const { includeUnknown = false } = options;
+  return Object.entries(record).reduce((acc, [key, value]) => {
+    if (Object.prototype.hasOwnProperty.call(toDbMap, key)) {
+      acc[toDbMap[key]] = value;
+      return acc;
+    }
+
+    if (includeUnknown) {
+      acc[toDbField(key, toDbMap)] = value;
+    }
+
+    return acc;
+  }, {});
+};
+
+const looksLikeIsoDateTime = (value) => typeof value === 'string'
+  && /^\d{4}-\d{2}-\d{2}T/.test(value)
+  && /(?:Z|[+-]\d{2}:\d{2})$/.test(value);
+
+const normalizeModelValue = (value) => {
+  if (value === null) {
+    return undefined;
+  }
+
+  if (Array.isArray(value) && value.length === 1 && value[0] === null) {
+    return undefined;
+  }
+
+  if (looksLikeIsoDateTime(value)) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+
+  return value;
+};
 
 const fromDbRecord = (record, toModelMap) => Object.entries(record).reduce((acc, [key, value]) => {
-  acc[toModelField(key, toModelMap)] = value;
+  const normalized = normalizeModelValue(value);
+  if (normalized !== undefined) {
+    acc[toModelField(key, toModelMap)] = normalized;
+  }
   return acc;
 }, {});
 

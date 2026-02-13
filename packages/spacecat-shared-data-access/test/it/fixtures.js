@@ -23,6 +23,7 @@ const TENANT_SEED_DIR = path.resolve(directoryPath, 'seed', 'tenants');
 const IT_POSTGREST_PORT = process.env.IT_POSTGREST_PORT || '3300';
 const POSTGREST_URL = `http://127.0.0.1:${IT_POSTGREST_PORT}`;
 const DBMATE_URL = 'postgres://postgres:postgres@db:5432/mysticat?sslmode=disable';
+const IT_SEED_MODE = process.env.IT_SEED_MODE || 'none';
 
 const run = (cmd, args, options = {}) => new Promise((resolve, reject) => {
   const child = spawn(cmd, args, {
@@ -148,7 +149,11 @@ export async function mochaGlobalSetup() {
   await runCompose(['down', '-v']).catch(() => {});
   await runCompose(['up', '-d', '--wait', 'db']);
   await applyMigrations();
-  await seedTenantData();
+  if (IT_SEED_MODE === 'tenant-sql') {
+    await seedTenantData();
+  } else if (IT_SEED_MODE !== 'none') {
+    throw new Error(`Invalid IT_SEED_MODE: ${IT_SEED_MODE}. Expected one of: none, tenant-sql`);
+  }
   await runCompose(['up', '-d', '--wait', 'data-service']);
   await waitForPostgrest();
 }

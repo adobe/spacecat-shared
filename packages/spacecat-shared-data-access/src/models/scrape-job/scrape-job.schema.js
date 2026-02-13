@@ -130,6 +130,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   })
   .addAttribute('optEnableJavascript', {
     type: 'string',
+    postgrestIgnore: true,
     hidden: true,
     readOnly: true,
     watch: ['options'],
@@ -137,6 +138,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   })
   .addAttribute('optHideConsentBanner', {
     type: 'string',
+    postgrestIgnore: true,
     hidden: true,
     readOnly: true,
     watch: ['options'],

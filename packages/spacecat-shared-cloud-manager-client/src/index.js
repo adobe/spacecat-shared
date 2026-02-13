@@ -12,14 +12,17 @@
 
 import { execFileSync } from 'child_process';
 import {
-  existsSync, rmSync, writeFileSync, unlinkSync,
+  existsSync, mkdtempSync, rmSync, writeFileSync,
 } from 'fs';
+import os from 'os';
+import path from 'path';
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import archiver from 'archiver';
 
 const GIT_BIN = '/opt/bin/git';
-const CLONE_PATH_PREFIX = '/tmp/cm-repo-';
+const CLONE_DIR_PREFIX = 'cm-repo-';
+const PATCH_FILE_PREFIX = 'cm-patch-';
 const IMS_TOKEN_ENDPOINT = '/ims/token/v4';
 const ASO_CM_REPO_SERVICE_IMS_CLIENT_ID = 'aso-cm-repo-service';
 /**
@@ -180,7 +183,7 @@ export default class CloudManagerClient {
    * @param {string} imsOrgId - IMS Organization ID
    * @returns {Promise<string[]>} Array of git config args
    */
-  async #getGitConfigArgs(imsOrgId) {
+  async #getCMRepoServiceCredentials(imsOrgId) {
     const token = await this.#getAccessToken();
     const { cmRepoUrl } = this.config;
 
@@ -229,10 +232,10 @@ export default class CloudManagerClient {
    * @param {string} command - The git command ('clone' or 'push')
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
-   * @param {Object} [options] - Auth options
-   * @param {string} [options.imsOrgId] - IMS Organization ID (required for BYOG)
-   * @param {string} [options.repoType] - Repository type ('standard' or VCS type)
-   * @param {string} [options.repoUrl] - Repository URL (required for standard repos)
+   * @param {Object} config - Repository auth configuration
+   * @param {string} config.imsOrgId - IMS Organization ID
+   * @param {string} config.repoType - Repository type ('standard' or VCS type)
+   * @param {string} config.repoUrl - Repository URL (required for standard repos)
    * @returns {Promise<string[]>} Array of git arguments
    */
   async #buildAuthGitArgs(command, programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
@@ -243,9 +246,9 @@ export default class CloudManagerClient {
       return [command, authUrl];
     }
 
-    const configArgs = await this.#getGitConfigArgs(imsOrgId);
+    const cmRepoServiceCredentials = await this.#getCMRepoServiceCredentials(imsOrgId);
     const byogRepoUrl = this.#getRepoUrl(programId, repositoryId);
-    return [...configArgs, command, byogRepoUrl];
+    return [...cmRepoServiceCredentials, command, byogRepoUrl];
   }
 
   /**
@@ -254,28 +257,47 @@ export default class CloudManagerClient {
    * For BYOG repos: uses Bearer token extraheaders via CM_REPO_URL.
    * For standard repos: uses basic-auth credentials embedded in the URL.
    *
+   * If a ref is provided, the clone will be checked out to that ref after cloning.
+   * Checkout failures are logged but do not cause the clone to fail, so the caller
+   * always gets a usable working copy (on the default branch if checkout fails).
+   *
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
-   * @param {Object} [options] - Clone options
-   * @param {string} [options.imsOrgId] - IMS Organization ID (required for BYOG)
-   * @param {string} [options.repoType] - Repository type ('standard' or VCS type)
-   * @param {string} [options.repoUrl] - Repository URL (required for standard repos)
+   * @param {Object} config - Clone configuration
+   * @param {string} config.imsOrgId - IMS Organization ID
+   * @param {string} config.repoType - Repository type ('standard' or VCS type)
+   * @param {string} config.repoUrl - Repository URL (required for standard repos)
+   * @param {string} [config.ref] - Optional. Git ref to checkout after clone (branch, tag, or SHA)
    * @returns {Promise<string>} The local clone path
    */
-  async clone(programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
-    const clonePath = `${CLONE_PATH_PREFIX}${programId}-${repositoryId}`;
-
-    // Clean up if path exists from a previous invocation
-    if (existsSync(clonePath)) {
-      this.log.debug(`Removing existing clone at ${clonePath}`);
-      rmSync(clonePath, { recursive: true, force: true });
-    }
+  async clone(programId, repositoryId, {
+    imsOrgId, repoType, repoUrl, ref,
+  } = {}) {
+    const clonePath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
 
     this.log.info(`Cloning CM repository: program=${programId}, repo=${repositoryId}, type=${repoType}`);
 
     const args = await this.#buildAuthGitArgs('clone', programId, repositoryId, { imsOrgId, repoType, repoUrl });
     this.#execGit([...args, clonePath]);
     this.log.info(`Repository cloned to ${clonePath}`);
+
+    // For standard repos the clone URL contains basic-auth credentials
+    // (https://user:token@host/...). Strip them from the stored remote
+    // so that `git remote -v` never exposes secrets.
+    if (repoType === CM_REPO_TYPE_STANDARD && hasText(repoUrl)) {
+      this.#execGit(['remote', 'set-url', 'origin', repoUrl], { cwd: clonePath });
+      this.log.debug('Replaced origin URL with credential-free repoUrl');
+    }
+
+    // Checkout the requested ref if provided
+    if (hasText(ref)) {
+      try {
+        this.#execGit(['checkout', ref], { cwd: clonePath });
+        this.log.info(`Checked out ref '${ref}' in ${clonePath}`);
+      } catch (error) {
+        this.log.error(`Failed to checkout ref '${ref}': ${error.message}. Continuing with default branch.`);
+      }
+    }
 
     return clonePath;
   }
@@ -331,7 +353,8 @@ export default class CloudManagerClient {
    */
   async applyPatch(clonePath, branch, s3PatchPath) {
     const { bucket, key } = parseS3Path(s3PatchPath);
-    const patchFile = `/tmp/cm-patch-${Date.now()}.patch`;
+    const patchDir = mkdtempSync(path.join(os.tmpdir(), PATCH_FILE_PREFIX));
+    const patchFile = path.join(patchDir, 'applied.patch');
     const { gitUsername, gitUserEmail } = this.config;
 
     try {
@@ -351,9 +374,9 @@ export default class CloudManagerClient {
       this.#execGit(['am', patchFile], { cwd: clonePath });
       this.log.info(`Patch applied and committed on branch ${branch}`);
     } finally {
-      // Clean up temp patch file
-      if (existsSync(patchFile)) {
-        unlinkSync(patchFile);
+      // Clean up temp patch directory and file
+      if (existsSync(patchDir)) {
+        rmSync(patchDir, { recursive: true, force: true });
       }
     }
   }
@@ -368,10 +391,10 @@ export default class CloudManagerClient {
    * @param {string} clonePath - Path to the cloned repository
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
-   * @param {Object} [options] - Push options
-   * @param {string} [options.imsOrgId] - IMS Organization ID (required for BYOG)
-   * @param {string} [options.repoType] - Repository type ('standard' or VCS type)
-   * @param {string} [options.repoUrl] - Repository URL (required for standard repos)
+   * @param {Object} config - Push configuration
+   * @param {string} config.imsOrgId - IMS Organization ID
+   * @param {string} config.repoType - Repository type ('standard' or VCS type)
+   * @param {string} config.repoUrl - Repository URL (required for standard repos)
    */
   async push(clonePath, programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
     const pushArgs = await this.#buildAuthGitArgs('push', programId, repositoryId, { imsOrgId, repoType, repoUrl });
@@ -380,12 +403,68 @@ export default class CloudManagerClient {
   }
 
   /**
-   * Removes a cloned repository from /tmp.
+   * Pulls the latest changes from the remote CM repository into an existing clone.
+   *
+   * For BYOG repos: uses Bearer token extraheaders.
+   * For standard repos: uses basic-auth credentials embedded in the URL.
+   *
+   * @param {string} clonePath - Path to the cloned repository
+   * @param {string} programId - CM Program ID
+   * @param {string} repositoryId - CM Repository ID
+   * @param {Object} config - Pull configuration
+   * @param {string} config.imsOrgId - IMS Organization ID
+   * @param {string} config.repoType - Repository type ('standard' or VCS type)
+   * @param {string} config.repoUrl - Repository URL (required for standard repos)
+   */
+  async pull(clonePath, programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
+    const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
+    this.#execGit(pullArgs, { cwd: clonePath });
+    this.log.info('Changes pulled successfully');
+  }
+
+  /**
+   * Checks out a specific git ref (branch, tag, or SHA) in an existing repository.
+   *
+   * @param {string} clonePath - Path to the cloned repository
+   * @param {string} ref - Git ref to checkout (branch, tag, or SHA)
+   */
+  async checkout(clonePath, ref) {
+    this.log.info(`Checking out ref '${ref}' in ${clonePath}`);
+    this.#execGit(['checkout', ref], { cwd: clonePath });
+  }
+
+  /**
+   * Extracts a ZIP buffer into a new unique temp directory.
+   * Used to restore a previously-zipped repository from S3
+   * for incremental updates (checkout + pull) instead of a full clone.
+   *
+   * @param {Buffer} zipBuffer - ZIP file content as a Buffer
+   * @returns {Promise<string>} Path to the extracted repository
+   */
+  async unzipRepository(zipBuffer) {
+    const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
+    const zipFile = path.join(extractPath, 'repository.zip');
+
+    try {
+      writeFileSync(zipFile, zipBuffer);
+      execFileSync('unzip', ['-o', '-q', zipFile, '-d', extractPath], { encoding: 'utf-8' });
+      rmSync(zipFile);
+      this.log.info(`Repository extracted to ${extractPath}`);
+      return extractPath;
+    } catch (error) {
+      rmSync(extractPath, { recursive: true, force: true });
+      throw new Error(`Failed to unzip repository: ${error.message}`);
+    }
+  }
+
+  /**
+   * Removes a cloned repository from the temp directory.
    * @param {string} clonePath - Path to remove
    */
   async cleanup(clonePath) {
-    if (!clonePath || !clonePath.startsWith(CLONE_PATH_PREFIX)) {
-      throw new Error(`Invalid clone path for cleanup: ${clonePath}. Must start with ${CLONE_PATH_PREFIX}`);
+    const expectedPrefix = path.join(os.tmpdir(), CLONE_DIR_PREFIX);
+    if (!clonePath || !clonePath.startsWith(expectedPrefix)) {
+      throw new Error(`Invalid clone path for cleanup: ${clonePath}. Must be a cm-repo temp directory.`);
     }
 
     if (existsSync(clonePath)) {

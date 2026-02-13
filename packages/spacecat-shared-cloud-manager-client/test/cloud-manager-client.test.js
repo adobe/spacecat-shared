@@ -12,6 +12,8 @@
 
 /* eslint-env mocha */
 
+import os from 'os';
+import path from 'path';
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
@@ -43,7 +45,7 @@ const TEST_TOKEN = 'test-access-token-12345';
 const TEST_IMS_ORG_ID = 'test-ims-org@AdobeOrg';
 const TEST_PROGRAM_ID = '12345';
 const TEST_REPO_ID = '67890';
-const EXPECTED_CLONE_PATH = `/tmp/cm-repo-${TEST_PROGRAM_ID}-${TEST_REPO_ID}`;
+const EXPECTED_CLONE_PATH = `${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`;
 const TEST_STANDARD_REPO_URL = 'https://git.cloudmanager.adobe.com/myorg/myrepo.git';
 
 const s3Mock = mockClient(S3Client);
@@ -117,27 +119,26 @@ describe('CloudManagerClient', () => {
   let CloudManagerClient;
   let execFileSyncStub;
   let existsSyncStub;
+  let mkdtempSyncStub;
   let rmSyncStub;
   let writeSyncStub;
-  let unlinkSyncStub;
   let archiverStub;
 
   beforeEach(async () => {
     execFileSyncStub = sinon.stub().returns('');
     existsSyncStub = sinon.stub().returns(false);
+    mkdtempSyncStub = sinon.stub().callsFake((prefix) => `${prefix}XXXXXX`);
     rmSyncStub = sinon.stub();
     writeSyncStub = sinon.stub();
-    unlinkSyncStub = sinon.stub();
     archiverStub = sinon.stub().callsFake(createMockArchiver);
 
     const mod = await esmock('../src/index.js', {
       child_process: { execFileSync: execFileSyncStub },
       fs: {
         existsSync: existsSyncStub,
-        mkdirSync: sinon.stub(),
+        mkdtempSync: mkdtempSyncStub,
         rmSync: rmSyncStub,
         writeFileSync: writeSyncStub,
-        unlinkSync: unlinkSyncStub,
       },
       archiver: archiverStub,
     });
@@ -232,6 +233,7 @@ describe('CloudManagerClient', () => {
       );
 
       expect(clonePath).to.equal(EXPECTED_CLONE_PATH);
+      // BYOG: only clone call, no set-url needed (no credentials in URL)
       expect(execFileSyncStub).to.have.been.calledOnce;
 
       expect(execFileSyncStub.firstCall.args[0]).to.equal('/opt/bin/git');
@@ -245,7 +247,7 @@ describe('CloudManagerClient', () => {
       expect(gitArgs).to.include(EXPECTED_CLONE_PATH);
     });
 
-    it('clones standard repository with basic auth in URL', async () => {
+    it('clones standard repository with basic auth and strips credentials from origin', async () => {
       const client = CloudManagerClient.createFrom(
         createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
       );
@@ -257,19 +259,22 @@ describe('CloudManagerClient', () => {
       );
 
       expect(clonePath).to.equal(EXPECTED_CLONE_PATH);
-      expect(execFileSyncStub).to.have.been.calledOnce;
+      // Standard: clone call + set-url call to strip credentials
+      expect(execFileSyncStub).to.have.been.calledTwice;
 
-      const gitArgs = getGitArgs(execFileSyncStub.firstCall);
-      const gitArgsStr = getGitArgsStr(execFileSyncStub.firstCall);
+      // First call: clone with basic auth URL
+      const cloneArgs = getGitArgs(execFileSyncStub.firstCall);
+      const cloneArgsStr = getGitArgsStr(execFileSyncStub.firstCall);
+      expect(cloneArgs).to.include('clone');
+      expect(cloneArgsStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
+      expect(cloneArgs).to.include(EXPECTED_CLONE_PATH);
+      expect(cloneArgsStr).to.not.include('extraheader');
+      expect(cloneArgsStr).to.not.include('Bearer');
 
-      // Should use basic auth URL, not extraheader
-      expect(gitArgs).to.include('clone');
-      expect(gitArgsStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
-      expect(gitArgs).to.include(EXPECTED_CLONE_PATH);
-
-      // Should NOT contain extraheader args
-      expect(gitArgsStr).to.not.include('extraheader');
-      expect(gitArgsStr).to.not.include('Bearer');
+      // Second call: set-url to replace credentials with clean URL
+      const setUrlArgs = getGitArgs(execFileSyncStub.secondCall);
+      expect(setUrlArgs).to.deep.equal(['remote', 'set-url', 'origin', TEST_STANDARD_REPO_URL]);
+      expect(execFileSyncStub.secondCall.args[2]).to.have.property('cwd', EXPECTED_CLONE_PATH);
     });
 
     it('throws when standard credentials not found for programId', async () => {
@@ -284,16 +289,64 @@ describe('CloudManagerClient', () => {
       )).to.be.rejectedWith('No standard repo credentials found for programId: 00000');
     });
 
-    it('removes existing clone path before cloning', async () => {
+    it('creates a unique temp directory via mkdtempSync', async () => {
       setupImsTokenNock();
-      existsSyncStub.withArgs(EXPECTED_CLONE_PATH).returns(true);
-
       const client = CloudManagerClient.createFrom(createContext());
+
       await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID });
 
-      expect(rmSyncStub).to.have.been.calledWith(
-        EXPECTED_CLONE_PATH,
-        { recursive: true, force: true },
+      expect(mkdtempSyncStub).to.have.been.calledOnce;
+      expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-repo-$/);
+    });
+
+    it('checks out ref after clone when ref is provided', async () => {
+      setupImsTokenNock();
+      const client = CloudManagerClient.createFrom(createContext());
+
+      const clonePath = await client.clone(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID, ref: 'release/5.11' },
+      );
+
+      expect(clonePath).to.equal(EXPECTED_CLONE_PATH);
+      // First call: clone, second call: checkout
+      expect(execFileSyncStub).to.have.been.calledTwice;
+
+      const checkoutArgs = getGitArgs(execFileSyncStub.secondCall);
+      expect(checkoutArgs).to.deep.equal(['checkout', 'release/5.11']);
+      expect(execFileSyncStub.secondCall.args[2]).to.have.property('cwd', EXPECTED_CLONE_PATH);
+    });
+
+    it('does not checkout when ref is not provided', async () => {
+      setupImsTokenNock();
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID });
+
+      // Only the clone call, no checkout
+      expect(execFileSyncStub).to.have.been.calledOnce;
+    });
+
+    it('does not fail clone when checkout ref fails', async () => {
+      setupImsTokenNock();
+      // First call (clone) succeeds, second call (checkout) fails
+      execFileSyncStub.onFirstCall().returns('');
+      execFileSyncStub.onSecondCall().throws(new Error('Git command failed: pathspec \'nonexistent\' did not match'));
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+
+      const clonePath = await client.clone(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID, ref: 'nonexistent' },
+      );
+
+      // Clone should still succeed
+      expect(clonePath).to.equal(EXPECTED_CLONE_PATH);
+      expect(context.log.error).to.have.been.calledWith(
+        sinon.match(/Failed to checkout ref 'nonexistent'.*Continuing with default branch/),
       );
     });
 
@@ -374,8 +427,11 @@ describe('CloudManagerClient', () => {
       expect(allGitArgStrs.some((s) => s.includes('checkout') && s.includes('feature/fix'))).to.be.true;
       expect(allGitArgStrs.some((s) => s.includes('am'))).to.be.true;
 
-      // Verify cleanup
-      expect(unlinkSyncStub).to.have.been.calledOnce;
+      // Verify patch temp directory cleanup
+      expect(mkdtempSyncStub).to.have.been.calledOnce;
+      expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-patch-$/);
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
     });
 
     it('throws on invalid S3 path format', async () => {
@@ -385,7 +441,7 @@ describe('CloudManagerClient', () => {
         .to.be.rejectedWith('Invalid S3 path');
     });
 
-    it('cleans up temp patch file even on error', async () => {
+    it('cleans up temp patch directory even on error', async () => {
       s3Mock.on(GetObjectCommand).resolves({
         Body: { transformToString: async () => 'patch content' },
       });
@@ -399,7 +455,8 @@ describe('CloudManagerClient', () => {
       await expect(client.applyPatch('/tmp/cm-repo-test', 'main', 's3://bucket/key'))
         .to.be.rejected;
 
-      expect(unlinkSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
     });
   });
 
@@ -443,6 +500,120 @@ describe('CloudManagerClient', () => {
       expect(pushArgStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
       expect(pushArgStr).to.not.include('extraheader');
       expect(pushArgStr).to.not.include('Bearer');
+    });
+  });
+
+  describe('pull', () => {
+    it('pulls BYOG repo with auth headers', async () => {
+      setupImsTokenNock();
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await client.pull(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID },
+      );
+
+      expect(execFileSyncStub).to.have.been.calledOnce;
+
+      const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
+      expect(pullArgStr).to.include('pull');
+      expect(pullArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
+      expect(pullArgStr).to.include('x-api-key: aso-cm-repo-service');
+      expect(pullArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
+
+      expect(execFileSyncStub.firstCall.args[2]).to.have.property('cwd', '/tmp/cm-repo-test');
+    });
+
+    it('pulls standard repo with basic auth in URL', async () => {
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+
+      await client.pull(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+      );
+
+      expect(execFileSyncStub).to.have.been.calledOnce;
+
+      const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
+      expect(pullArgStr).to.include('pull');
+      expect(pullArgStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
+      expect(pullArgStr).to.not.include('extraheader');
+      expect(pullArgStr).to.not.include('Bearer');
+    });
+  });
+
+  describe('checkout', () => {
+    it('checks out the specified ref in the clone path', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await client.checkout('/tmp/cm-repo-test', 'release/5.11');
+
+      expect(execFileSyncStub).to.have.been.calledOnce;
+      const checkoutArgs = getGitArgs(execFileSyncStub.firstCall);
+      expect(checkoutArgs).to.deep.equal(['checkout', 'release/5.11']);
+      expect(execFileSyncStub.firstCall.args[2]).to.have.property('cwd', '/tmp/cm-repo-test');
+    });
+
+    it('throws when checkout fails', async () => {
+      execFileSyncStub.throws(new Error('Git command failed: pathspec not found'));
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.checkout('/tmp/cm-repo-test', 'nonexistent'))
+        .to.be.rejectedWith('Git command failed');
+    });
+  });
+
+  describe('unzipRepository', () => {
+    it('extracts ZIP buffer to a temp directory', async () => {
+      // execFileSync is called for unzip command (not git)
+      const client = CloudManagerClient.createFrom(createContext());
+      const zipBuffer = Buffer.from('fake-zip-content');
+
+      const extractPath = await client.unzipRepository(zipBuffer);
+
+      // Should have created a temp dir with cm-repo- prefix
+      expect(mkdtempSyncStub).to.have.been.calledOnce;
+      expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-repo-$/);
+
+      // Should have written the ZIP file
+      expect(writeSyncStub).to.have.been.calledOnce;
+      const writtenPath = writeSyncStub.firstCall.args[0];
+      expect(writtenPath).to.include('repository.zip');
+      expect(writeSyncStub.firstCall.args[1]).to.equal(zipBuffer);
+
+      // Should have called unzip via execFileSync (second call after esmock module load)
+      // Note: execFileSyncStub is used for both git and unzip commands
+      expect(execFileSyncStub).to.have.been.calledOnce;
+      expect(execFileSyncStub.firstCall.args[0]).to.equal('unzip');
+      expect(execFileSyncStub.firstCall.args[1]).to.include('-o');
+      expect(execFileSyncStub.firstCall.args[1]).to.include('-q');
+
+      // Should have removed the ZIP file after extraction
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[0]).to.include('repository.zip');
+
+      // Should return the extract path
+      expect(extractPath).to.equal(`${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`);
+    });
+
+    it('cleans up on unzip failure', async () => {
+      // Make execFileSync fail (simulating unzip failure)
+      execFileSyncStub.throws(new Error('unzip: not found'));
+      const client = CloudManagerClient.createFrom(createContext());
+      const zipBuffer = Buffer.from('bad-zip-content');
+
+      await expect(client.unzipRepository(zipBuffer))
+        .to.be.rejectedWith('Failed to unzip repository');
+
+      // Should have cleaned up the extraction directory
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
     });
   });
 
@@ -512,14 +683,14 @@ describe('CloudManagerClient', () => {
       const client = CloudManagerClient.createFrom(createContext());
 
       await expect(client.cleanup('/some/random/path'))
-        .to.be.rejectedWith('Invalid clone path for cleanup');
+        .to.be.rejectedWith('Must be a cm-repo temp directory');
     });
 
     it('throws on null clone path', async () => {
       const client = CloudManagerClient.createFrom(createContext());
 
       await expect(client.cleanup(null))
-        .to.be.rejectedWith('Invalid clone path for cleanup');
+        .to.be.rejectedWith('Must be a cm-repo temp directory');
     });
 
     it('handles non-existent path gracefully', async () => {

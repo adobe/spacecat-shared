@@ -1,6 +1,6 @@
 # Spacecat Shared - Cloud Manager Client
 
-A JavaScript client for Adobe Cloud Manager repository operations. It supports cloning, pushing, applying patches, and creating pull requests for both **BYOG (Bring Your Own Git)** and **standard** Cloud Manager repositories.
+A JavaScript client for Adobe Cloud Manager repository operations. It supports cloning, pulling, pushing, applying patches, and creating pull requests for both **BYOG (Bring Your Own Git)** and **standard** Cloud Manager repositories.
 
 ## Installation
 
@@ -51,9 +51,9 @@ For **standard** (non-BYOG) Cloud Manager repositories, provide credentials via:
 }
 ```
 
-- If `CM_STANDARD_REPO_CREDENTIALS` is omitted or empty, only BYOG repos can be used (clone/push require IMS Bearer token and `imsOrgId`).
+- If `CM_STANDARD_REPO_CREDENTIALS` is omitted or empty, only BYOG repos can be used (clone/pull/push require IMS Bearer token and `imsOrgId`).
 - The value must be valid JSON; invalid JSON throws at `createFrom()`.
-- For a given **programId**, credentials must exist in this map when using `repoType: 'standard'`; otherwise the client throws at clone/push time.
+- For a given **programId**, credentials must exist in this map when using `repoType: 'standard'`; otherwise the client throws at clone/pull/push time.
 
 ## Repository types
 
@@ -62,9 +62,15 @@ The client supports two authentication modes:
 | Type | Auth method | When to use |
 |------|-------------|-------------|
 | **BYOG** (Bring Your Own Git) | IMS Bearer token via `http.extraheader` | GitHub, GitLab, Bitbucket, Azure DevOps (or any `repoType` other than `'standard'`) |
-| **Standard** | Basic auth embedded in the clone/push URL | Cloud Manager “standard” (managed) repos |
+| **Standard** | Basic auth embedded in the clone/pull/push URL | Cloud Manager "standard" (managed) repos |
 
-Use the same type for both `clone` and `push` for a given repo (same `programId`/`repositoryId`).
+Use the same type for `clone`, `pull`, and `push` for a given repo (same `programId`/`repositoryId`).
+
+**Security notes:**
+
+- Clone directories are created via `mkdtempSync` under the OS temp directory, producing unique, unpredictable paths safe from symlink attacks and concurrent-run collisions.
+- For standard repos, after cloning the client runs `git remote set-url origin <repoUrl>` to strip basic-auth credentials from the stored remote, so `git remote -v` never exposes secrets.
+- Patch files are also written into unique temp directories, cleaned up in a `finally` block.
 
 ## Usage
 
@@ -77,8 +83,14 @@ const programId = '12345';
 const repositoryId = '67890';
 const imsOrgId = 'your-ims-org@AdobeOrg';
 
-// Clone
-const clonePath = await client.clone(programId, repositoryId, { imsOrgId });
+// Clone (optionally checkout a specific ref)
+const clonePath = await client.clone(programId, repositoryId, {
+  imsOrgId,
+  ref: 'release/5.11', // optional — checks out this ref after clone
+});
+
+// Pull latest changes
+await client.pull(clonePath, programId, repositoryId, { imsOrgId });
 
 // ... create branch, apply patch, etc. ...
 
@@ -103,32 +115,37 @@ const programId = '12345';
 const repositoryId = '67890';
 const repoUrl = 'https://git.cloudmanager.adobe.com/your-org/your-repo.git';
 
-const cloneOptions = {
+const config = {
   repoType: 'standard',
   repoUrl,
+  ref: 'main', // optional — checks out this ref after clone
 };
 
 // Clone
-const clonePath = await client.clone(programId, repositoryId, cloneOptions);
+const clonePath = await client.clone(programId, repositoryId, config);
+
+// Pull latest changes
+await client.pull(clonePath, programId, repositoryId, config);
 
 // ... create branch, apply patch, etc. ...
 
-// Push (same options)
-await client.push(clonePath, programId, repositoryId, cloneOptions);
+// Push (same config)
+await client.push(clonePath, programId, repositoryId, config);
 ```
 
-*Note*: For Cloud Manager Standard Repositories, pull requests isn't supported, as there's no upstream
+*Note*: For Cloud Manager Standard Repositories, pull requests aren't supported, as there's no upstream.
 
 
 ## API overview
 
-- **`clone(programId, repositoryId, options)`** – Clone repo to `/tmp`. Options: `imsOrgId` (BYOG), or `repoType: 'standard'` and `repoUrl`.
+- **`clone(programId, repositoryId, config)`** – Clone repo to a unique temp directory. Config: `imsOrgId` (BYOG), or `repoType: 'standard'` and `repoUrl`. Optional `ref` to checkout a specific branch/tag after clone (failure to checkout does not fail the clone).
+- **`pull(clonePath, programId, repositoryId, config)`** – Pull latest changes into an existing clone. Same config as `clone` for auth.
+- **`push(clonePath, programId, repositoryId, config)`** – Push current branch. Same config as `clone` for auth.
 - **`zipRepository(clonePath)`** – Zip the clone (including `.git`) and return a Buffer.
 - **`createBranch(clonePath, baseBranch, newBranch)`** – Create a branch from a base.
 - **`applyPatch(clonePath, branch, s3PatchPath)`** – Download patch from S3 and apply with `git am`.
-- **`push(clonePath, programId, repositoryId, options)`** – Push current branch. Same options as `clone` for auth.
 - **`cleanup(clonePath)`** – Remove the clone directory.
-- **`createPullRequest(programId, repositoryId, imsOrgId, { sourceBranch, destinationBranch, title, description })`** – Create a PR via the CM Repo API (uses IMS token).
+- **`createPullRequest(programId, repositoryId, imsOrgId, { sourceBranch, destinationBranch, title, description })`** – Create a PR via the CM Repo API (BYOG only, uses IMS token).
 
 ## Exports
 

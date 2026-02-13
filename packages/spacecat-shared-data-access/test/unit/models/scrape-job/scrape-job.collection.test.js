@@ -91,4 +91,43 @@ describe('ScrapeJobCollection', () => {
       });
     });
   });
+
+  describe('postgrest accessor parity', () => {
+    it('maps opt flag accessor keys to expected snake_case fields', async () => {
+      const query = {
+        select: stub().returnsThis(),
+        order: stub().returnsThis(),
+        eq: stub().returnsThis(),
+        range: stub().returnsThis(),
+        then: (onFulfilled, onRejected) => Promise.resolve({
+          data: [{
+            id: '5f1c80df-e39f-4ea8-8a71-c9b36bcce640',
+            base_url: 'https://example.com',
+            processing_type: 'default',
+            status: 'RUNNING',
+            started_at: '2024-12-06T08:35:24.125Z',
+          }],
+          error: null,
+        }).then(onFulfilled, onRejected),
+      };
+      const from = stub().returns({
+        select: stub().returns(query),
+      });
+
+      instance.entity = undefined;
+      instance.postgrestService = { from };
+
+      await instance.allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+        'https://example.com',
+        'default',
+        'T',
+        'F',
+      );
+
+      expect(query.eq).to.have.been.calledWith('base_url', 'https://example.com');
+      expect(query.eq).to.have.been.calledWith('processing_type', 'default');
+      expect(query.eq).to.have.been.calledWith('opt_enable_javascript', 'T');
+      expect(query.eq).to.have.been.calledWith('opt_hide_consent_banner', 'F');
+    });
+  });
 });

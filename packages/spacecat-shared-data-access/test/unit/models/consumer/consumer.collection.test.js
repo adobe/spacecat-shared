@@ -30,13 +30,11 @@ describe('ConsumerCollection', () => {
   let instance;
   let mockElectroService;
   let mockEntityRegistry;
-  let mockLogger;
 
   beforeEach(() => {
     ({
       mockElectroService,
       mockEntityRegistry,
-      mockLogger,
       collection: instance,
     } = createElectroMocks(Consumer, sampleConsumer));
 
@@ -185,7 +183,7 @@ describe('ConsumerCollection', () => {
       instance.findByClientId.restore();
     });
 
-    it('skips imsOrgId validation and logs warning when no allowed IMS Org IDs configured', async () => {
+    it('throws ValidationError when no allowed IMS Org IDs are configured', async () => {
       mockEntityRegistry.config = { s2sAllowedImsOrgIds: [] };
 
       const item = {
@@ -197,21 +195,14 @@ describe('ConsumerCollection', () => {
         imsOrgId: 'ANYORGID1234567890ABCDEF@AdobeOrg',
       };
 
-      stub(instance, 'findByClientId').resolves(null);
-      mockElectroService.entities.consumer.create.returns({
-        go: () => Promise.resolve({ data: sampleConsumer }),
-      });
-
-      const result = await instance.create(item);
-
-      expect(result).to.not.be.null;
-      expect(mockLogger.warn).to.have.been.calledWith(
-        'No allowed IMS Org IDs configured. Skipping imsOrgId validation.',
+      await expect(instance.create(item)).to.be.rejectedWith(
+        'S2S_ALLOWED_IMS_ORG_IDS is not configured',
       );
-      instance.findByClientId.restore();
+
+      expect(mockElectroService.entities.consumer.create).to.not.have.been.called;
     });
 
-    it('skips imsOrgId validation when s2sAllowedImsOrgIds is undefined', async () => {
+    it('throws ValidationError when s2sAllowedImsOrgIds is undefined', async () => {
       mockEntityRegistry.config = {};
 
       const item = {
@@ -223,18 +214,11 @@ describe('ConsumerCollection', () => {
         imsOrgId: 'ANYORGID1234567890ABCDEF@AdobeOrg',
       };
 
-      stub(instance, 'findByClientId').resolves(null);
-      mockElectroService.entities.consumer.create.returns({
-        go: () => Promise.resolve({ data: sampleConsumer }),
-      });
-
-      const result = await instance.create(item);
-
-      expect(result).to.not.be.null;
-      expect(mockLogger.warn).to.have.been.calledWith(
-        'No allowed IMS Org IDs configured. Skipping imsOrgId validation.',
+      await expect(instance.create(item)).to.be.rejectedWith(
+        'S2S_ALLOWED_IMS_ORG_IDS is not configured',
       );
-      instance.findByClientId.restore();
+
+      expect(mockElectroService.entities.consumer.create).to.not.have.been.called;
     });
   });
 });

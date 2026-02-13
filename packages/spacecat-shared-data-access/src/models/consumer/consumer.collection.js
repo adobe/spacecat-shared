@@ -79,8 +79,10 @@ class ConsumerCollection extends BaseCollection {
     const { s2sAllowedImsOrgIds } = this.entityRegistry.config;
 
     if (!isNonEmptyArray(s2sAllowedImsOrgIds)) {
-      this.log.warn('No allowed IMS Org IDs configured. Skipping imsOrgId validation.');
-      return;
+      throw new ValidationError(
+        'S2S_ALLOWED_IMS_ORG_IDS is not configured. Cannot create a consumer without an allowlist.',
+        this,
+      );
     }
 
     if (!s2sAllowedImsOrgIds.includes(imsOrgId)) {

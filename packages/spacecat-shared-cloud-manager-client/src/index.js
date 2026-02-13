@@ -395,9 +395,13 @@ export default class CloudManagerClient {
    * @param {string} config.imsOrgId - IMS Organization ID
    * @param {string} config.repoType - Repository type ('standard' or VCS type)
    * @param {string} config.repoUrl - Repository URL (required for standard repos)
+   * @param {string} config.ref - Git ref (branch) to push
    */
-  async push(clonePath, programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
+  async push(clonePath, programId, repositoryId, {
+    imsOrgId, repoType, repoUrl, ref,
+  } = {}) {
     const pushArgs = await this.#buildAuthGitArgs('push', programId, repositoryId, { imsOrgId, repoType, repoUrl });
+    pushArgs.push(ref);
     this.#execGit(pushArgs, { cwd: clonePath });
     this.log.info('Changes pushed successfully');
   }

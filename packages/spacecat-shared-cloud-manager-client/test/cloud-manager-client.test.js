@@ -461,7 +461,7 @@ describe('CloudManagerClient', () => {
   });
 
   describe('push', () => {
-    it('pushes BYOG repo with auth headers', async () => {
+    it('pushes BYOG repo with auth headers and ref', async () => {
       setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
@@ -469,19 +469,22 @@ describe('CloudManagerClient', () => {
         '/tmp/cm-repo-test',
         TEST_PROGRAM_ID,
         TEST_REPO_ID,
-        { imsOrgId: TEST_IMS_ORG_ID },
+        { imsOrgId: TEST_IMS_ORG_ID, ref: 'main' },
       );
 
       expect(execFileSyncStub).to.have.been.calledOnce;
 
+      const pushArgs = getGitArgs(execFileSyncStub.firstCall);
       const pushArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pushArgStr).to.include('push');
       expect(pushArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
       expect(pushArgStr).to.include('x-api-key: aso-cm-repo-service');
       expect(pushArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
+      // ref should be the last argument
+      expect(pushArgs[pushArgs.length - 1]).to.equal('main');
     });
 
-    it('pushes standard repo with basic auth in URL', async () => {
+    it('pushes standard repo with basic auth in URL and ref', async () => {
       const client = CloudManagerClient.createFrom(
         createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
       );
@@ -490,16 +493,35 @@ describe('CloudManagerClient', () => {
         '/tmp/cm-repo-test',
         TEST_PROGRAM_ID,
         TEST_REPO_ID,
-        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL, ref: 'main' },
       );
 
       expect(execFileSyncStub).to.have.been.calledOnce;
 
+      const pushArgs = getGitArgs(execFileSyncStub.firstCall);
       const pushArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pushArgStr).to.include('push');
       expect(pushArgStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
       expect(pushArgStr).to.not.include('extraheader');
       expect(pushArgStr).to.not.include('Bearer');
+      expect(pushArgs[pushArgs.length - 1]).to.equal('main');
+    });
+
+    it('pushes a new branch ref', async () => {
+      setupImsTokenNock();
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await client.push(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID, ref: 'aso-test' },
+      );
+
+      expect(execFileSyncStub).to.have.been.calledOnce;
+
+      const pushArgs = getGitArgs(execFileSyncStub.firstCall);
+      expect(pushArgs[pushArgs.length - 1]).to.equal('aso-test');
     });
   });
 

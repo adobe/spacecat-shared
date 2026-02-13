@@ -11,6 +11,7 @@
   "types": "src/index.d.ts",
   "scripts": {
     "test:it": "mocha --require ./test/it/fixtures.js --spec \"test/it/**/*.test.js\"",
+    "test:it:postgres": "DATA_ACCESS_BACKEND=postgresql POSTGREST_URL=http://127.0.0.1:3300 npm run test:it",
     "test": "c8 mocha --spec \"test/unit/**/*.test.js\"",
     "test:debug": "mocha --inspect-brk --require ./test/setup-env.js --spec \"test/unit/**/*.test.js\"",
     "test:debug:config": "mocha --inspect-brk --require ./test/setup-env.js --spec \"test/unit/models/site/config.test.js\"",

@@ -15,6 +15,8 @@ import { spawn } from 'dynamo-db-local';
 
 import { sleep } from '../unit/util.js';
 
+const backend = process.env.DATA_ACCESS_BACKEND || 'dynamodb';
+
 let dynamoDbLocalProcess = null;
 
 async function waitForDynamoDBStartup(url, timeout = 20000, interval = 500) {
@@ -35,6 +37,24 @@ async function waitForDynamoDBStartup(url, timeout = 20000, interval = 500) {
   throw new Error('DynamoDB Local did not start within the expected time');
 }
 
+async function waitForPostgREST(url, timeout = 30000, interval = 1000) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeout) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const response = await fetch(url);
+      if (response.ok) {
+        return;
+      }
+    } catch (error) {
+      console.log('PostgREST not yet ready', error.message);
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(interval);
+  }
+  throw new Error('PostgREST did not start within the expected time');
+}
+
 /**
  * This function is called once before any tests are executed. It is used to start
  * any services that are required for the tests, such as a local DynamoDB instance.
@@ -42,29 +62,36 @@ async function waitForDynamoDBStartup(url, timeout = 20000, interval = 500) {
  * @return {Promise<void>}
  */
 export async function mochaGlobalSetup() {
-  console.log('mochaGlobalSetup');
+  console.log(`mochaGlobalSetup (backend: ${backend})`);
 
-  process.env.AWS_REGION = 'local';
-  process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
-  process.env.AWS_DEFAULT_REGION = 'local';
-  process.env.AWS_ACCESS_KEY_ID = 'dummy';
-  process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
+  if (backend === 'postgresql') {
+    const postgrestUrl = process.env.POSTGREST_URL || 'http://127.0.0.1:3300';
+    console.log(`Waiting for PostgREST at ${postgrestUrl}...`);
+    await waitForPostgREST(postgrestUrl);
+    console.log('PostgREST is ready.');
+  } else {
+    process.env.AWS_REGION = 'local';
+    process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
+    process.env.AWS_DEFAULT_REGION = 'local';
+    process.env.AWS_ACCESS_KEY_ID = 'dummy';
+    process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
 
-  dynamoDbLocalProcess = spawn({
-    detached: true,
-    stdio: 'inherit',
-    port: 8000,
-    sharedDb: true,
-  });
+    dynamoDbLocalProcess = spawn({
+      detached: true,
+      stdio: 'inherit',
+      port: 8000,
+      sharedDb: true,
+    });
 
-  await waitForDynamoDBStartup('http://127.0.0.1:8000');
+    await waitForDynamoDBStartup('http://127.0.0.1:8000');
 
-  process.on('SIGINT', () => {
-    if (dynamoDbLocalProcess) {
-      dynamoDbLocalProcess.kill();
-    }
-    process.exit();
-  });
+    process.on('SIGINT', () => {
+      if (dynamoDbLocalProcess) {
+        dynamoDbLocalProcess.kill();
+      }
+      process.exit();
+    });
+  }
 }
 
 /**
@@ -74,8 +101,13 @@ export async function mochaGlobalSetup() {
  * @return {Promise<void>}
  */
 export async function mochaGlobalTeardown() {
-  console.log('mochaGlobalTeardown');
+  console.log(`mochaGlobalTeardown (backend: ${backend})`);
 
-  dynamoDbLocalProcess.kill();
-  dynamoDbLocalProcess = null;
+  if (backend === 'postgresql') {
+    // Docker Compose lifecycle is managed externally (start/stop outside of tests)
+    console.log('PostgreSQL teardown: no-op (managed externally).');
+  } else {
+    dynamoDbLocalProcess.kill();
+    dynamoDbLocalProcess = null;
+  }
 }

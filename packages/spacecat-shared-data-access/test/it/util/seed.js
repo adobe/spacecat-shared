@@ -15,8 +15,11 @@ import fixtures from '../../fixtures/index.fixtures.js';
 
 import { getDataAccess, getDynamoClients, TEST_DA_CONFIG } from './db.js';
 import { createTablesFromSchema, deleteExistingTables } from './tableOperations.js';
+import { seedPostgresDatabase } from './seed-postgres.js';
 
-const resetDatabase = async () => {
+const backend = process.env.DATA_ACCESS_BACKEND || 'dynamodb';
+
+const resetDynamoDatabase = async () => {
   const { dbClient } = getDynamoClients();
   await deleteExistingTables(dbClient, [
     TEST_DA_CONFIG.tableNameApiKeys,
@@ -40,7 +43,7 @@ const resetDatabase = async () => {
   await createTablesFromSchema(dbClient);
 };
 
-const seedV2Fixtures = async () => {
+const seedDynamoFixtures = async () => {
   const dataAccess = getDataAccess();
   const sampleData = {};
 
@@ -74,7 +77,9 @@ const seedV2Fixtures = async () => {
     sampleData[key] = result.createdItems;
 
     if (result.errorItems.length > 0) {
-      throw new Error(`Error seeding ${key}: ${JSON.stringify(result.errorItems, null, 2)}`);
+      throw new Error(
+        `Error seeding ${key}: ${JSON.stringify(result.errorItems, null, 2)}`,
+      );
     }
 
     console.log(`Successfully seeded ${key}.`);
@@ -83,7 +88,14 @@ const seedV2Fixtures = async () => {
   return sampleData;
 };
 
+const seedDynamoDatabase = async () => {
+  await resetDynamoDatabase();
+  return seedDynamoFixtures();
+};
+
 export const seedDatabase = async () => {
-  await resetDatabase();
-  return seedV2Fixtures();
+  if (backend === 'postgresql') {
+    return seedPostgresDatabase();
+  }
+  return seedDynamoDatabase();
 };

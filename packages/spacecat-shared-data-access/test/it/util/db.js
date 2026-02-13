@@ -15,6 +15,8 @@ import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 import { createDataAccess } from '../../../src/service/index.js';
 
+const backend = process.env.DATA_ACCESS_BACKEND || 'dynamodb';
+
 export const TEST_DA_CONFIG = {
   indexNameAllScrapeJobsByDateRange: 'spacecat-services-all-scrape-jobs-by-date-range',
   indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
@@ -22,12 +24,15 @@ export const TEST_DA_CONFIG = {
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
+  // eslint-disable-next-line max-len
   indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
   indexNameApiKeyByHashedApiKey: 'spacecat-services-api-key-by-hashed-api-key',
+  // eslint-disable-next-line max-len
   indexNameApiKeyByImsUserIdAndImsOrgId: 'spacecat-services-api-key-by-ims-user-id-and-ims-org-id',
+  // eslint-disable-next-line max-len
   indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
   pkAllConfigurations: 'ALL_CONFIGURATIONS',
   pkAllImportJobs: 'ALL_IMPORT_JOBS',
@@ -76,7 +81,21 @@ const getDynamoClients = (config = {}) => {
   return { dbClient, docClient };
 };
 
+const createLogger = () => ({
+  info: () => {},
+  debug: () => {},
+  error: () => {},
+  warn: () => {},
+  trace: () => {},
+});
+
 export const getDataAccess = (config, logger = console) => {
+  if (backend === 'postgresql') {
+    const postgrestUrl = process.env.POSTGREST_URL || 'http://127.0.0.1:3300';
+    return createDataAccess({ postgrestUrl }, createLogger());
+  }
+
+  // DynamoDB path (default)
   // eslint-disable-next-line no-param-reassign
   logger.debug = () => {};
   const { dbClient } = getDynamoClients(config);

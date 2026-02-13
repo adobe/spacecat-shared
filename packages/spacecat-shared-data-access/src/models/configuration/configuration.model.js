@@ -49,6 +49,10 @@ class Configuration {
     FORTNIGHTLY_SUNDAY: 'fortnightly-sunday',
     MONTHLY: 'monthly',
     QUARTERLY: 'quarterly',
+    // Staggered weekly slots for split audits (e.g. geo-brand-presence-free-1..23)
+    ...Object.fromEntries(
+      Array.from({ length: 23 }, (_, i) => [`WEEKLY_SLOT_${i + 1}`, `weekly-slot-${i + 1}`]),
+    ),
   };
 
   static AUDIT_NAME_REGEX = /^[a-z0-9-]+$/;

@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v2.108.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.107.0...@adobe/spacecat-shared-data-access-v2.108.0) (2026-02-13)
+
+
+### Features
+
+* extend weekly-slot intervals from 18 to 23 ([#1345](https://github.com/adobe/spacecat-shared/issues/1345)) ([6f46aef](https://github.com/adobe/spacecat-shared/commit/6f46aef3b9dfaac35c928648201135b1fbe8857b))
+
+# [@adobe/spacecat-shared-data-access-v2.107.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.106.1...@adobe/spacecat-shared-data-access-v2.107.0) (2026-02-12)
+
+
+### Features
+
+* add weekly-slot job intervals for staggered audits ([#1344](https://github.com/adobe/spacecat-shared/issues/1344)) ([5b85f6c](https://github.com/adobe/spacecat-shared/commit/5b85f6c9a98e39756c241d2d96db865a111f151b))
+
+# [@adobe/spacecat-shared-data-access-v2.106.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.106.0...@adobe/spacecat-shared-data-access-v2.106.1) (2026-02-12)
+
+
+### Bug Fixes
+
+* enabled removal ([#1343](https://github.com/adobe/spacecat-shared/issues/1343)) ([3508c38](https://github.com/adobe/spacecat-shared/commit/3508c380b20994567ac7a5efc598bdc9cd1559c7))
+
 # [@adobe/spacecat-shared-data-access-v2.106.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.105.1...@adobe/spacecat-shared-data-access-v2.106.0) (2026-02-11)
 
 

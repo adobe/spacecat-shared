@@ -17,9 +17,9 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { ElectroValidationError } from 'electrodb';
 import ImportJobModel from '../../../src/models/import-job/import-job.model.js';
-import { getDataAccess } from '../util/db.js';
+import { getDataAccess, isPostgres } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
-import { DataAccessError } from '../../../src/index.js';
+import { DataAccessError, ValidationError } from '../../../src/index.js';
 
 use(chaiAsPromised);
 
@@ -94,7 +94,7 @@ describe('ImportJob IT', async () => {
     let importJob = await ImportJob.create(data);
 
     checkImportJob(importJob);
-    expect(importJob.getOptions()).to.equal(data.options);
+    expect(importJob.getOptions()).to.eql(data.options);
 
     data = { ...newJobData, options: { type: 'doc' } };
     importJob = await ImportJob.create(data);
@@ -113,16 +113,24 @@ describe('ImportJob IT', async () => {
     data = { ...newJobData, options: { data: 'not-an-object' } };
     await ImportJob.create(data).catch((err) => {
       expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.cause).to.be.instanceOf(ElectroValidationError);
-      expect(err.cause.message).to.contain('Invalid value for data: not-an-object');
+      if (isPostgres()) {
+        expect(err).to.be.instanceOf(ValidationError);
+      } else {
+        expect(err.cause).to.be.instanceOf(ElectroValidationError);
+        expect(err.cause.message).to.contain('Invalid value for data: not-an-object');
+      }
     });
 
     // test to make sure data is not an empty object
     data = { ...newJobData, options: { data: { } } };
     await ImportJob.create(data).catch((err) => {
       expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.cause).to.be.instanceOf(ElectroValidationError);
-      expect(err.cause.message).to.contain('Invalid value for data');
+      if (isPostgres()) {
+        expect(err).to.be.instanceOf(ValidationError);
+      } else {
+        expect(err.cause).to.be.instanceOf(ElectroValidationError);
+        expect(err.cause.message).to.contain('Invalid value for data');
+      }
     });
   });
 
@@ -131,8 +139,12 @@ describe('ImportJob IT', async () => {
 
     await ImportJob.create(data).catch((err) => {
       expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.cause).to.be.instanceOf(ElectroValidationError);
-      expect(err.cause.message).to.contain('Invalid value for type: invalid');
+      if (isPostgres()) {
+        expect(err).to.be.instanceOf(ValidationError);
+      } else {
+        expect(err.cause).to.be.instanceOf(ElectroValidationError);
+        expect(err.cause.message).to.contain('Invalid value for type: invalid');
+      }
     });
   });
 

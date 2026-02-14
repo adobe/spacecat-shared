@@ -16,9 +16,9 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { ElectroValidationError } from 'electrodb';
 import AsyncJobModel from '../../../src/models/async-job/async-job.model.js';
-import { getDataAccess } from '../util/db.js';
+import { getDataAccess, isPostgres } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
-import { DataAccessError } from '../../../src/index.js';
+import { DataAccessError, ValidationError } from '../../../src/index.js';
 
 use(chaiAsPromised);
 
@@ -84,9 +84,13 @@ describe('AsyncJob IT', async () => {
   it('throws an error when adding a job with invalid status', async () => {
     const data = { ...newJobData, status: 'INVALID_STATUS' };
     await AsyncJob.create(data).catch((err) => {
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.cause).to.be.instanceOf(ElectroValidationError);
-      expect(err.cause.message).to.contain('Invalid value');
+      if (isPostgres()) {
+        expect(err).to.be.instanceOf(ValidationError);
+      } else {
+        expect(err).to.be.instanceOf(DataAccessError);
+        expect(err.cause).to.be.instanceOf(ElectroValidationError);
+        expect(err.cause.message).to.contain('Invalid value');
+      }
     });
   });
 });

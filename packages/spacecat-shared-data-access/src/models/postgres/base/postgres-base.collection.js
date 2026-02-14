@@ -564,9 +564,10 @@ class PostgresBaseCollection extends BaseCollection {
         }
       });
 
+      let insertedRecords = validatedItems;
       if (validatedItems.length > 0) {
         const payload = validatedItems.map((item) => this.#toDbRecord(item));
-        const { error } = await this.postgrestClient
+        const { data, error } = await this.postgrestClient
           .from(this.tableName)
           .insert(payload)
           .select();
@@ -574,9 +575,18 @@ class PostgresBaseCollection extends BaseCollection {
         if (error) {
           return this.#logAndThrowError('Failed to create many', error);
         }
+
+        // Use the DB-returned rows so values normalized by Postgres (e.g.
+        // lowercased UUIDs) are reflected in the model instances.
+        if (isNonEmptyArray(data)) {
+          insertedRecords = data.map((row, i) => ({
+            ...this.#toModelRecord(row),
+            ...this.#getNonDbFields(validatedItems[i]),
+          }));
+        }
       }
 
-      const createdItems = this.#createInstances(validatedItems);
+      const createdItems = this.#createInstances(insertedRecords);
       /* c8 ignore next 10 -- only exercised with real entity hierarchies in Tasks 7-8 */
       if (isNonEmptyObject(parent)) {
         createdItems.forEach((record) => {

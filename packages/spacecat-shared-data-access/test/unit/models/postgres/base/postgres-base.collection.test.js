@@ -379,7 +379,42 @@ describe('PostgresBaseCollection', () => {
   });
 
   describe('updateByKeys', () => {
-    it('updates a record by keys', async () => {
+    it('updates a record by keys and returns the model record', async () => {
+      const chain = client._chain;
+      chain.maybeSingle.returns({
+        then: (resolve) => resolve({
+          data: { id: 'id-1', name: 'Updated', updated_at: '2026-06-01T00:00:00.000Z' },
+          error: null,
+        }),
+      });
+
+      const result = await collection.updateByKeys(
+        { testEntityId: 'id-1' },
+        { name: 'Updated' },
+      );
+
+      expect(chain.update.called).to.be.true;
+      expect(chain.eq.calledWith('id', 'id-1')).to.be.true;
+      expect(result).to.be.an('object');
+      expect(result.testEntityId).to.equal('id-1');
+      expect(result.updatedAt).to.equal('2026-06-01T00:00:00.000Z');
+    });
+
+    it('returns null when PostgREST returns no data', async () => {
+      const chain = client._chain;
+      chain.maybeSingle.returns({
+        then: (resolve) => resolve({ data: null, error: null }),
+      });
+
+      const result = await collection.updateByKeys(
+        { testEntityId: 'id-1' },
+        { name: 'Updated' },
+      );
+
+      expect(result).to.be.null;
+    });
+
+    it('does not inject updated_at into the DB record', async () => {
       const chain = client._chain;
       chain.maybeSingle.returns({
         then: (resolve) => resolve({ data: { id: 'id-1', name: 'Updated' }, error: null }),
@@ -390,8 +425,8 @@ describe('PostgresBaseCollection', () => {
         { name: 'Updated' },
       );
 
-      expect(chain.update.called).to.be.true;
-      expect(chain.eq.calledWith('id', 'id-1')).to.be.true;
+      const updateArg = chain.update.firstCall.args[0];
+      expect(updateArg).to.not.have.property('updated_at');
     });
 
     it('throws when keys or updates are empty', async () => {
@@ -497,10 +532,13 @@ describe('PostgresBaseCollection', () => {
   });
 
   describe('batchGetByKeys', () => {
-    it('fetches multiple records by keys', async () => {
+    it('uses .in() for simple primary key lookups', async () => {
       const chain = client._chain;
       chain.then = (resolve) => resolve({
-        data: [{ id: 'id-1', name: 'One', status: 'active' }],
+        data: [
+          { id: 'id-1', name: 'One', status: 'active' },
+          { id: 'id-2', name: 'Two', status: 'active' },
+        ],
         error: null,
       });
 
@@ -509,8 +547,37 @@ describe('PostgresBaseCollection', () => {
         { testEntityId: 'id-2' },
       ]);
 
+      expect(result.data).to.be.an('array').with.length(2);
+      expect(result.unprocessed).to.be.an('array').that.is.empty;
+      // Should use .in() instead of N separate queries
+      expect(chain.in.calledWith('id', ['id-1', 'id-2'])).to.be.true;
+    });
+
+    it('falls back to individual queries for composite keys', async () => {
+      const chain = client._chain;
+      chain.then = (resolve) => resolve({
+        data: [{ id: 'id-1', name: 'One', status: 'active' }],
+        error: null,
+      });
+
+      const result = await collection.batchGetByKeys([
+        { testEntityId: 'id-1', organizationId: 'org-1' },
+      ]);
+
       expect(result.data).to.be.an('array');
       expect(result.unprocessed).to.be.an('array').that.is.empty;
+    });
+
+    it('propagates .in() errors', async () => {
+      const chain = client._chain;
+      chain.then = (resolve) => resolve({
+        data: null,
+        error: { message: 'in() error' },
+      });
+
+      await expect(collection.batchGetByKeys([
+        { testEntityId: 'id-1' },
+      ])).to.be.rejectedWith('Failed to batch get by keys');
     });
   });
 

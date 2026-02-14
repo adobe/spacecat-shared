@@ -74,5 +74,26 @@ describe('createDataAccess', () => {
       expect(() => createDataAccess({}, log))
         .to.throw('postgrestUrl is required for PostgreSQL backend');
     });
+
+    it('prefers config.dataAccessBackend over process.env', () => {
+      process.env.DATA_ACCESS_BACKEND = 'dynamodb';
+      const da = createDataAccess({
+        dataAccessBackend: 'postgresql',
+        postgrestUrl: 'http://localhost:3000',
+      }, log);
+      expect(da).to.be.an('object');
+    });
+
+    it('falls back to process.env when config.dataAccessBackend is not set', () => {
+      process.env.DATA_ACCESS_BACKEND = 'postgresql';
+      const da = createDataAccess({ postgrestUrl: 'http://localhost:3000' }, log);
+      expect(da).to.be.an('object');
+    });
+
+    it('uses config.dataAccessBackend for validation', () => {
+      delete process.env.DATA_ACCESS_BACKEND;
+      expect(() => createDataAccess({ dataAccessBackend: 'invalid' }, log))
+        .to.throw('Invalid DATA_ACCESS_BACKEND: "invalid". Must be "dynamodb" or "postgresql".');
+    });
   });
 });

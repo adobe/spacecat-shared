@@ -217,6 +217,7 @@ class SchemaBuilder {
       type: 'number',
       required: true,
       readOnly: true,
+      postgrestField: false,
       default: () => Math.floor(Date.now() / 1000) + ttlInDays * 24 * 60 * 60,
       set: () => Math.floor(Date.now() / 1000) + ttlInDays * 24 * 60 * 60,
     });

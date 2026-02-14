@@ -204,6 +204,7 @@ describe('PostgresPatcher', () => {
 
   describe('save', () => {
     it('calls collection.updateByKeys with tracked updates', async () => {
+      mockCollection.updateByKeys.resolves({ testEntityId: 'test-id-1', name: 'Updated Name', updatedAt: '2026-06-01T00:00:00.000Z' });
       patcher.patchValue('name', 'Updated Name');
 
       await patcher.save();
@@ -217,6 +218,20 @@ describe('PostgresPatcher', () => {
       expect(updates.updatedAt).to.be.a('string');
     });
 
+    it('does not mutate record.updatedAt after save', async () => {
+      const originalUpdatedAt = patcher.record.updatedAt;
+      mockCollection.updateByKeys.resolves({
+        testEntityId: 'test-id-1',
+        name: 'Changed',
+        updatedAt: '2026-06-15T12:00:00.000Z',
+      });
+
+      patcher.patchValue('name', 'Changed');
+      await patcher.save();
+
+      expect(patcher.record.updatedAt).to.equal(originalUpdatedAt);
+    });
+
     it('does nothing when no updates', async () => {
       await patcher.save();
 
@@ -224,6 +239,7 @@ describe('PostgresPatcher', () => {
     });
 
     it('updates the updatedAt timestamp', async () => {
+      mockCollection.updateByKeys.resolves();
       patcher.patchValue('name', 'Changed');
 
       await patcher.save();

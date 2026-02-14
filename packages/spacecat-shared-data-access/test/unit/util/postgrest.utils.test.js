@@ -353,10 +353,10 @@ describe('postgrest.utils', () => {
       expect(result).to.equal(query);
     });
 
-    it('returns query for unknown expression type', () => {
+    it('throws for unknown expression type', () => {
       const whereFn = () => ({ type: 'unknown', field: 'x', value: 'y' });
-      const result = applyWhere(query, whereFn, {});
-      expect(result).to.equal(query);
+      expect(() => applyWhere(query, whereFn, {}))
+        .to.throw('Unsupported where operator: "unknown". Supported: eq, contains');
     });
 
     it('uses proxy to map model field names to db field names', () => {

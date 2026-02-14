@@ -494,6 +494,42 @@ class PostgresBaseCollection extends BaseCollection {
     guardArray('keys', keys, this.entityName, 'any');
 
     try {
+      // Optimisation: when every key is a simple primary-key lookup ({ id: '...' }),
+      // use a single PostgREST .in() request instead of N separate HTTP calls.
+      const idField = this.idName;
+      const isSimplePkLookup = keys.every(
+        (key) => isNonEmptyObject(key)
+          && Object.keys(key).length === 1
+          && Object.keys(key)[0] === idField,
+      );
+
+      if (isSimplePkLookup) {
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const ids = keys.map((key) => key[idField]).filter((id) => UUID_RE.test(id));
+
+        // All IDs were invalid UUIDs - nothing can match in a UUID column.
+        if (ids.length === 0) {
+          return { data: [], unprocessed: [] };
+        }
+
+        const select = this.#buildSelect(options.attributes);
+        const { data, error } = await this.postgrestClient
+          .from(this.tableName)
+          .select(select)
+          .in(this.#toDbField(idField), ids);
+
+        if (error) {
+          return this.#logAndThrowError('Failed to batch get by keys', error);
+        }
+
+        const modelRecords = (data || []).map((row) => this.#toModelRecord(row));
+        return {
+          data: this.#createInstances(modelRecords),
+          unprocessed: [],
+        };
+      }
+
+      // Fallback: composite keys or mixed key shapes - fire N separate requests.
       const records = await Promise.all(
         keys.map((key) => this.findByIndexKeys(key, options)),
       );
@@ -583,13 +619,22 @@ class PostgresBaseCollection extends BaseCollection {
         }
 
         // Use the DB-returned rows so values normalized by Postgres (e.g.
-        // lowercased UUIDs) are reflected in the model instances.
-        /* c8 ignore next 6 -- only exercised with real PostgREST in IT tests */
+        // lowercased UUIDs) are reflected in the model instances. Match by
+        // primary key instead of positional index since PostgREST does not
+        // guarantee insertion order in the response.
+        /* c8 ignore next 13 -- only exercised with real PostgREST in IT tests */
         if (isNonEmptyArray(data)) {
-          insertedRecords = data.map((row, i) => ({
-            ...this.#toModelRecord(row),
-            ...this.#getNonDbFields(validatedItems[i]),
-          }));
+          const idField = this.idName;
+          const dbIdField = this.#toDbField(idField);
+          const nonDbByPk = {};
+          validatedItems.forEach((item) => {
+            nonDbByPk[item[idField]] = this.#getNonDbFields(item);
+          });
+          insertedRecords = data.map((row) => {
+            const modelRow = this.#toModelRecord(row);
+            const nonDb = nonDbByPk[modelRow[idField] ?? row[dbIdField]] || {};
+            return { ...modelRow, ...nonDb };
+          });
         }
       }
 
@@ -624,17 +669,16 @@ class PostgresBaseCollection extends BaseCollection {
     }
 
     const dbRecord = this.#toDbRecord(updates);
-    // Always inject a fresh updated_at timestamp so the DB value differs
-    // from any in-memory value set by the patcher (mirrors ElectroDB behavior).
-    dbRecord.updated_at = new Date().toISOString();
 
     let query = this.postgrestClient.from(this.tableName).update(dbRecord);
     query = this.#applyKeyFilters(query, keys);
 
-    const { error } = await query.select().maybeSingle();
+    const { data, error } = await query.select().maybeSingle();
     if (error) {
       throw new DataAccessError('Failed to update entity', this, error);
     }
+
+    return data ? this.#toModelRecord(data) : null;
   }
 
   async _saveMany(items) {

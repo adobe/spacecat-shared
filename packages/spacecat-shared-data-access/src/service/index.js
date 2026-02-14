@@ -133,7 +133,7 @@ const VALID_BACKENDS = ['dynamodb', 'postgresql'];
 export const createDataAccess = (config, log = console, client = undefined) => {
   registerLogger(log);
 
-  const backend = process.env.DATA_ACCESS_BACKEND || 'dynamodb';
+  const backend = config.dataAccessBackend || process.env.DATA_ACCESS_BACKEND || 'dynamodb';
 
   if (!VALID_BACKENDS.includes(backend)) {
     throw new Error(

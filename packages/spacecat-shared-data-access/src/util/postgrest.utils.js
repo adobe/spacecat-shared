@@ -12,6 +12,8 @@
 
 import pluralize from 'pluralize';
 
+import { DataAccessError } from '../errors/index.js';
+
 const DEFAULT_PAGE_SIZE = 1000;
 
 const ENTITY_TABLE_OVERRIDES = {
@@ -45,16 +47,12 @@ const decodeCursor = (cursor) => {
   }
 };
 
-// DynamoDB-only attributes that do not exist in the Postgres schema.
-const DYNAMO_ONLY_FIELDS = new Set(['recordExpiresAt']);
-
 const createFieldMaps = (schema) => {
   const toDbMap = {};
   const toModelMap = {};
   const attributes = schema.getAttributes();
   const idName = typeof schema.getIdName === 'function' ? schema.getIdName() : undefined;
   Object.keys(attributes).forEach((modelField) => {
-    if (DYNAMO_ONLY_FIELDS.has(modelField)) return;
     const attribute = attributes[modelField] || {};
     // postgrestField: false means this attribute has no Postgres column.
     if (attribute.postgrestField === false) return;
@@ -143,7 +141,7 @@ const applyWhere = (query, whereFn, toDbMap) => {
     return query.contains(expression.field, value);
   }
 
-  return query;
+  throw new DataAccessError(`Unsupported where operator: "${expression.type}". Supported: eq, contains`);
 };
 
 export {

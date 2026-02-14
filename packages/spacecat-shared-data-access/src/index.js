@@ -38,6 +38,7 @@ export default function dataAccessWrapper(fn) {
 
       const {
         DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
+        DATA_ACCESS_BACKEND: dataAccessBackend,
         POSTGREST_URL: postgrestUrl,
         POSTGREST_SCHEMA: postgrestSchema,
         POSTGREST_API_KEY: postgrestApiKey,
@@ -47,6 +48,7 @@ export default function dataAccessWrapper(fn) {
 
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
+        dataAccessBackend,
         postgrestUrl,
         postgrestSchema,
         postgrestApiKey,

@@ -43,8 +43,11 @@ describe('Organization IT', async () => {
       const org = sanitizeTimestamps(organizations[i].toJSON());
       const sampleOrg = sanitizeTimestamps(sampleData.organizations[i].toJSON());
 
+      // In v2, sampleOrg.config is raw JSON (ElectroDB createMany does not apply
+      // getters). In Postgres, sampleOrg.config is a Config object (get transformer
+      // is applied uniformly). Normalize by using .state when available.
       const expectedConfig = {
-        ...sampleOrg.config,
+        ...(sampleOrg.config?.state || sampleOrg.config),
       };
       const actualConfig = {
         ...org.config.state,

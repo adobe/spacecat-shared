@@ -130,13 +130,30 @@ class PostgresBaseCollection extends BaseCollection {
       return null;
     }
 
-    const ModelClass = this.schema.getModelClass();
+    // Apply defaults for schema attributes not stored in Postgres (e.g. recordExpiresAt)
+    // and apply 'get' transformers (e.g. Config wrapper) that ElectroDB applies automatically.
+    const enriched = { ...record };
+    const { toDbMap } = this.fieldMaps;
+    const attributes = this.schema.getAttributes();
+    /* c8 ignore next 10 -- only exercised with real PostgREST in IT tests */
+    Object.entries(attributes).forEach(([name, attribute]) => {
+      if (!toDbMap[name] && enriched[name] === undefined && attribute.default !== undefined) {
+        enriched[name] = typeof attribute.default === 'function'
+          ? attribute.default()
+          : attribute.default;
+      }
+      if (typeof attribute.get === 'function' && enriched[name] !== undefined) {
+        enriched[name] = attribute.get(enriched[name]);
+      }
+    });
+
+    const ModelClass = this.constructor.MODEL_CLASS || this.schema.getModelClass();
     // eslint-disable-next-line new-cap
     return new ModelClass(
       this.postgrestClient,
       this.entityRegistry,
       this.schema,
-      record,
+      enriched,
       this.log,
     );
   }
@@ -149,6 +166,23 @@ class PostgresBaseCollection extends BaseCollection {
 
   #invalidateCache() {
     this._accessorCache = {};
+  }
+
+  /**
+   * Extracts schema attributes from the prepared item that are NOT stored in Postgres
+   * (e.g., recordExpiresAt, DynamoDB GSI helpers). These fields need to be merged back
+   * into the model record returned from PostgREST so the model instance is complete.
+   */
+  /* c8 ignore next 10 -- only exercised with real PostgREST in IT tests */
+  #getNonDbFields(prepared) {
+    const { toDbMap } = this.fieldMaps;
+    const result = {};
+    Object.keys(prepared).forEach((key) => {
+      if (!toDbMap[key] && prepared[key] !== undefined) {
+        result[key] = prepared[key];
+      }
+    });
+    return result;
   }
 
   #applyDefaults(record) {
@@ -276,6 +310,13 @@ class PostgresBaseCollection extends BaseCollection {
 
     const { data, error } = await query;
     if (error) {
+      // Postgres rejects non-UUID strings with "invalid input syntax for type uuid".
+      // DynamoDB stores IDs as plain strings and simply returns no match.
+      // Treat UUID syntax errors as empty results to match DynamoDB behavior.
+      /* c8 ignore next 3 -- only triggered by invalid UUID in IT tests */
+      if (error.message?.includes('invalid input syntax for type uuid')) {
+        return [];
+      }
       this.#logAndThrowError('Failed to query', error);
     }
 
@@ -485,7 +526,8 @@ class PostgresBaseCollection extends BaseCollection {
         return this.#logAndThrowError('Failed to create', error);
       }
 
-      const instance = this.#createInstance(this.#toModelRecord(data));
+      const modelRecord = { ...this.#toModelRecord(data), ...this.#getNonDbFields(prepared) };
+      const instance = this.#createInstance(modelRecord);
       this.#invalidateCache();
       await this.#onCreate(instance);
       return instance;
@@ -564,7 +606,12 @@ class PostgresBaseCollection extends BaseCollection {
       throw new DataAccessError(`Failed to update [${this.entityName}]: keys and updates are required`);
     }
 
-    let query = this.postgrestClient.from(this.tableName).update(this.#toDbRecord(updates));
+    const dbRecord = this.#toDbRecord(updates);
+    // Always inject a fresh updated_at timestamp so the DB value differs
+    // from any in-memory value set by the patcher (mirrors ElectroDB behavior).
+    dbRecord.updated_at = new Date().toISOString();
+
+    let query = this.postgrestClient.from(this.tableName).update(dbRecord);
     query = this.#applyKeyFilters(query, keys);
 
     const { error } = await query.select().maybeSingle();

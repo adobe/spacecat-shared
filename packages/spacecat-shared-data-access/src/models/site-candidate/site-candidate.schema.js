@@ -34,6 +34,7 @@ const schema = new SchemaBuilder(SiteCandidate, SiteCandidateCollection)
     type: 'string',
     required: true,
     validate: (value) => isValidUrl(value),
+    postgrestField: 'base_url',
   })
   .addAttribute('hlxConfig', {
     type: 'any',

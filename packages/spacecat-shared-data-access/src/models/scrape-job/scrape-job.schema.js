@@ -38,6 +38,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
     type: 'string',
     required: true,
     validate: (value) => isValidUrl(value),
+    postgrestField: 'base_url',
   })
   .addAttribute('processingType', {
     type: 'string',
@@ -99,6 +100,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   })
   .addAttribute('abortInfo', {
     type: 'map',
+    postgrestField: false, // not yet in Postgres schema
     properties: {
       reason: { type: 'string' },
       details: {
@@ -132,6 +134,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
     type: 'string',
     hidden: true,
     readOnly: true,
+    postgrestField: false, // DynamoDB GSI composite key helper
     watch: ['options'],
     set: (_, { options }) => (options[ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT] ? 'T' : 'F'),
   })
@@ -139,6 +142,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
     type: 'string',
     hidden: true,
     readOnly: true,
+    postgrestField: false, // DynamoDB GSI composite key helper
     watch: ['options'],
     set: (_, { options }) => (options[ScrapeJob.ScrapeOptions.HIDE_CONSENT_BANNER] ? 'T' : 'F'),
   })

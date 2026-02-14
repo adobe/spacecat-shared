@@ -52,6 +52,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     type: 'string',
     required: true,
     validate: (value) => isValidUrl(value),
+    postgrestField: 'base_url',
   })
   .addAttribute('name', {
     type: 'string',
@@ -103,6 +104,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAttribute('gitHubURL', {
     type: 'string',
     validate: (value) => !value || isValidUrl(value),
+    postgrestField: 'github_url',
   })
   .addAttribute('deliveryConfig', {
     type: 'any',

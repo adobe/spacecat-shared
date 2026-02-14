@@ -84,6 +84,7 @@ const schema = new SchemaBuilder(ImportJob, ImportJobCollection)
     type: 'string',
     required: true,
     validate: (value) => isValidUrl(value),
+    postgrestField: 'base_url',
   })
   .addAttribute('duration', {
     type: 'number',

@@ -168,8 +168,10 @@ class Schema {
       const index = Object.values(this.indexes).find((candidate) => {
         const { pk, sk } = candidate;
         // ElectroDB uses 'facets' (populated at runtime), raw schema uses 'composite'.
-        const pkKeys = pk?.facets || pk?.composite || [];
-        const skKeys = sk?.facets || sk?.composite || [];
+        const pkFacets = pk?.facets || pk?.composite;
+        const skFacets = sk?.facets || sk?.composite;
+        const pkKeys = Array.isArray(pkFacets) ? pkFacets : [];
+        const skKeys = Array.isArray(skFacets) ? skFacets : [];
         const allKeys = [...pkKeys, ...skKeys];
 
         // check if all keys in the index are in the sort keys

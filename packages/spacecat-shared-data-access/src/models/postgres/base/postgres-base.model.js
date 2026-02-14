@@ -99,10 +99,6 @@ class PostgresBaseModel extends BaseModel {
 
       return this;
     } catch (error) {
-      /* c8 ignore next 8 -- DataAccessError is already thrown by removeByIndexKeys */
-      if (error instanceof DataAccessError) {
-        throw error;
-      }
       this.log.error('Failed to remove record', error);
       throw new DataAccessError(
         `Failed to remove entity ${this.entityName} with ID ${this.getId()}`,

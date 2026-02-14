@@ -22,7 +22,7 @@ import sinonChai from 'sinon-chai';
 import { ValidationError } from '../../../src/index.js';
 
 import fixtures from '../../fixtures/index.fixtures.js';
-import { getDataAccess } from '../util/db.js';
+import { getDataAccess, isPostgres } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/util.js';
 
@@ -238,7 +238,11 @@ describe('Opportunity IT', async () => {
 
     await expect(opportunity.remove()).to.be.rejectedWith(`Failed to remove entity opportunity with ID ${opportunity.getId()}`);
     expect(suggestions[0]._remove).to.have.been.calledOnce;
-    expect(mockLogger.error).to.have.been.calledWith(`Failed to remove dependent entity suggestion with ID ${suggestions[0].getId()}`);
+    // In DynamoDB mode the mock logger is injected; in Postgres mode a no-op logger
+    // is used internally, so the mock is never called.
+    if (!isPostgres()) {
+      expect(mockLogger.error).to.have.been.calledWith(`Failed to remove dependent entity suggestion with ID ${suggestions[0].getId()}`);
+    }
 
     // make sure the opportunity is still there
     const stillThere = await Opportunity.findById(sampleData.opportunities[1].getId());

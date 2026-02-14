@@ -1061,7 +1061,7 @@ class TokowakaClient {
     }
 
     if (!hasText(path)) {
-      throw this.#createError('Path is required', HTTP_BAD_REQUEST);
+      throw this.#createError('Path is requsss ired', HTTP_BAD_REQUEST);
     }
 
     const baseURL = getEffectiveBaseURL(site);

@@ -13,9 +13,12 @@
 import { hasText, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresSiteTopFormModel from './site-top-form.pg.model.js';
 
 class PostgresSiteTopFormCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'SiteTopFormCollection';
+
+  static MODEL_CLASS = PostgresSiteTopFormModel;
 
   async create(item, options = {}) {
     if (!hasText(item?.url)) {

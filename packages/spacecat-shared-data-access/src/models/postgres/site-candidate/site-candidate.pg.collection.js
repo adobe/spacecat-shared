@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresSiteCandidateModel from './site-candidate.pg.model.js';
 
 class PostgresSiteCandidateCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'SiteCandidateCollection';
+
+  static MODEL_CLASS = PostgresSiteCandidateModel;
 }
 
 export default PostgresSiteCandidateCollection;

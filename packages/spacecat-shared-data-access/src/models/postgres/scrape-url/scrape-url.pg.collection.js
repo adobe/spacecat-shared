@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresScrapeUrlModel from './scrape-url.pg.model.js';
 
 class PostgresScrapeUrlCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'ScrapeUrlCollection';
+
+  static MODEL_CLASS = PostgresScrapeUrlModel;
 
   async allRecentByUrlAndProcessingType(url, processingType, maxAgeInHours = 168) {
     const now = new Date();

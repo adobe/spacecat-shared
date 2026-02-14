@@ -11,6 +11,7 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresAuditModel from './audit.pg.model.js';
 
 /**
  * PostgresAuditCollection - A Postgres-backed collection for Audit entities.
@@ -22,6 +23,8 @@ import PostgresBaseCollection from '../base/postgres-base.collection.js';
  */
 class PostgresAuditCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'AuditCollection';
+
+  static MODEL_CLASS = PostgresAuditModel;
 
   // LatestAudit is derived from audits in v3; no copy table writes.
   // eslint-disable-next-line class-methods-use-this,no-unused-vars

@@ -107,11 +107,13 @@ class PostgresBaseCollection extends BaseCollection {
     return attributes.map((field) => this.#toDbField(field)).join(',');
   }
 
-  #getOrderField(indexName, keys) {
+  #getOrderFields(indexName, keys) {
     if (hasText(indexName)) {
       const indexKeys = this.schema.getIndexKeys(indexName);
       if (isNonEmptyArray(indexKeys)) {
-        return this.#toDbField(indexKeys[indexKeys.length - 1]);
+        // Return all sort key fields in order so that multi-column composite keys
+        // produce the same deterministic ordering as DynamoDB's composite sort key.
+        return indexKeys.map((k) => this.#toDbField(k));
       }
     }
     /* c8 ignore next 5 -- fallback for schemas with empty index keys */
@@ -120,7 +122,7 @@ class PostgresBaseCollection extends BaseCollection {
     const defaultSortField = isNonEmptyArray(keyNames)
       ? keyNames[keyNames.length - 1]
       : 'updatedAt';
-    return this.#toDbField(defaultSortField);
+    return [this.#toDbField(defaultSortField)];
   }
 
   #createInstance(record) {
@@ -292,11 +294,15 @@ class PostgresBaseCollection extends BaseCollection {
       this.#logAndThrowError(`Failed to query [${this.entityName}]: query proxy [${options.index}] not found`);
     }
 
-    const orderField = this.#getOrderField(indexName, keys);
+    const orderFields = this.#getOrderFields(indexName, keys);
+    const ascending = options.order === 'asc';
     let query = this.postgrestClient
       .from(this.tableName)
-      .select(select)
-      .order(orderField, { ascending: options.order === 'asc' });
+      .select(select);
+    // Apply multi-column ordering to match DynamoDB composite sort key behavior.
+    orderFields.forEach((field) => {
+      query = query.order(field, { ascending });
+    });
 
     query = this.#applyKeyFilters(query, keys);
     if (isObject(options.between)) {

@@ -18,6 +18,8 @@ import PostgresSuggestionModel from './suggestion.pg.model.js';
 class PostgresSuggestionCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'SuggestionCollection';
 
+  static MODEL_CLASS = PostgresSuggestionModel;
+
   async bulkUpdateStatus(suggestions, status) {
     if (!Array.isArray(suggestions)) {
       throw new Error('Suggestions must be an array');

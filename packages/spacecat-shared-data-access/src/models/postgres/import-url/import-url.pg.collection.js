@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresImportUrlModel from './import-url.pg.model.js';
 
 class PostgresImportUrlCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'ImportUrlCollection';
+
+  static MODEL_CLASS = PostgresImportUrlModel;
 }
 
 export default PostgresImportUrlCollection;

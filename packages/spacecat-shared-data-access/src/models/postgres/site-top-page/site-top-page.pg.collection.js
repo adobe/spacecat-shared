@@ -13,9 +13,12 @@
 import { hasText, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresSiteTopPageModel from './site-top-page.pg.model.js';
 
 class PostgresSiteTopPageCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'SiteTopPageCollection';
+
+  static MODEL_CLASS = PostgresSiteTopPageModel;
 
   async removeForSiteId(siteId, source, geo) {
     if (!hasText(siteId)) {

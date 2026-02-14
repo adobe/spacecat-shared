@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresEntitlementModel from './entitlement.pg.model.js';
 
 class PostgresEntitlementCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'EntitlementCollection';
+
+  static MODEL_CLASS = PostgresEntitlementModel;
 }
 
 export default PostgresEntitlementCollection;

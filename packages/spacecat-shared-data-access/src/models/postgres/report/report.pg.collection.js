@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresReportModel from './report.pg.model.js';
 
 class PostgresReportCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'ReportCollection';
+
+  static MODEL_CLASS = PostgresReportModel;
 
   async create(item) {
     const report = await super.create(item, { upsert: true });

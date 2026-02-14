@@ -27,6 +27,8 @@ import PostgresSiteModel, { AEM_CS_HOST, getAuthoringType } from './site.pg.mode
 class PostgresSiteCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'SiteCollection';
 
+  static MODEL_CLASS = PostgresSiteModel;
+
   /**
    * Returns all site IDs that are eligible for auditing.
    * @returns {Promise<string[]>} Array of site IDs.
@@ -85,6 +87,72 @@ class PostgresSiteCollection extends PostgresBaseCollection {
     });
 
     return orderedSites;
+  }
+
+  async allByProjectName(projectName) {
+    if (!hasText(projectName)) {
+      throw new DataAccessError('projectName is required', this);
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const project = await projectCollection.findByProjectName(projectName);
+
+    if (!project) {
+      return [];
+    }
+    return this.allByProjectId(project.getId());
+  }
+
+  async allByOrganizationIdAndProjectId(organizationId, projectId) {
+    if (!hasText(organizationId)) {
+      throw new DataAccessError('organizationId is required', this);
+    }
+    if (!hasText(projectId)) {
+      throw new DataAccessError('projectId is required', this);
+    }
+
+    const organizationCollection = this.entityRegistry.getCollection('OrganizationCollection');
+    const organization = await organizationCollection.findById(organizationId);
+
+    if (!organization) {
+      return [];
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const projects = await projectCollection.allByOrganizationId(organizationId);
+    const project = projects.find((p) => p.getId() === projectId);
+
+    if (!project) {
+      return [];
+    }
+
+    return this.allByProjectId(projectId);
+  }
+
+  async allByOrganizationIdAndProjectName(organizationId, projectName) {
+    if (!hasText(organizationId)) {
+      throw new DataAccessError('organizationId is required', this);
+    }
+    if (!hasText(projectName)) {
+      throw new DataAccessError('projectName is required', this);
+    }
+
+    const organizationCollection = this.entityRegistry.getCollection('OrganizationCollection');
+    const organization = await organizationCollection.findById(organizationId);
+
+    if (!organization) {
+      return [];
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const projects = await projectCollection.allByOrganizationId(organizationId);
+    const project = projects.find((p) => p.getProjectName() === projectName);
+
+    if (!project) {
+      return [];
+    }
+
+    return this.allByProjectId(project.getId());
   }
 
   /**

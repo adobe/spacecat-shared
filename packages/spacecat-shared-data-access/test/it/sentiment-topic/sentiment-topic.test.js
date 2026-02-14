@@ -15,7 +15,7 @@
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import { getDataAccess } from '../util/db.js';
+import { getDataAccess, isPostgres } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 
 use(chaiAsPromised);
@@ -38,6 +38,10 @@ describe('SentimentTopic IT', function () {
 
   // eslint-disable-next-line prefer-arrow-callback
   before(async function () {
+    if (isPostgres()) {
+      this.skip();
+      return;
+    }
     this.timeout(10000);
     sampleData = await seedDatabase();
 

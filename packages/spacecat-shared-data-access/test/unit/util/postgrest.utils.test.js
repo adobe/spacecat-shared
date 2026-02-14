@@ -241,9 +241,15 @@ describe('postgrest.utils', () => {
       expect(result).to.deep.equal({ base_url: 'https://x.com', is_live: true });
     });
 
-    it('falls back to camelToSnake for unmapped keys', () => {
+    it('strips keys not present in the field map', () => {
       const result = toDbRecord({ deliveryType: 'aem_edge' }, {});
-      expect(result).to.deep.equal({ delivery_type: 'aem_edge' });
+      expect(result).to.deep.equal({});
+    });
+
+    it('includes mapped keys and strips unmapped keys', () => {
+      const toDbMap = { baseURL: 'base_url' };
+      const result = toDbRecord({ baseURL: 'https://x.com', GSI1PK: 'ALL_SITES' }, toDbMap);
+      expect(result).to.deep.equal({ base_url: 'https://x.com' });
     });
 
     it('handles empty record', () => {
@@ -265,6 +271,31 @@ describe('postgrest.utils', () => {
 
     it('handles empty record', () => {
       expect(fromDbRecord({}, {})).to.deep.equal({});
+    });
+
+    it('strips null values to match DynamoDB behavior', () => {
+      const result = fromDbRecord({ name: 'test', audit_id: null, tags: null }, {});
+      expect(result).to.deep.equal({ name: 'test' });
+    });
+
+    it('strips [null] arrays (empty Postgres arrays) as unset', () => {
+      const result = fromDbRecord({ name: 'test', tags: [null] }, {});
+      expect(result).to.deep.equal({ name: 'test' });
+    });
+
+    it('normalizes +00:00 suffix to Z with milliseconds', () => {
+      const result = fromDbRecord({ created_at: '2024-01-01T00:00:00+00:00' }, {});
+      expect(result).to.deep.equal({ createdAt: '2024-01-01T00:00:00.000Z' });
+    });
+
+    it('normalizes +00:00 with existing milliseconds', () => {
+      const result = fromDbRecord({ created_at: '2024-01-01T00:00:00.125+00:00' }, {});
+      expect(result).to.deep.equal({ createdAt: '2024-01-01T00:00:00.125Z' });
+    });
+
+    it('does not modify non-timestamp strings', () => {
+      const result = fromDbRecord({ name: 'hello world' }, {});
+      expect(result).to.deep.equal({ name: 'hello world' });
     });
   });
 

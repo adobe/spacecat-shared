@@ -13,10 +13,13 @@
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresImportJobModel from './import-job.pg.model.js';
 import { ValidationError } from '../../../errors/index.js';
 
 class PostgresImportJobCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'ImportJobCollection';
+
+  static MODEL_CLASS = PostgresImportJobModel;
 
   async allByDateRange(startDate, endDate) {
     if (!isIsoDate(startDate)) {

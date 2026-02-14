@@ -11,10 +11,13 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresKeyEventModel from './key-event.pg.model.js';
 import DataAccessError from '../../../errors/data-access.error.js';
 
 class PostgresKeyEventCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'KeyEventCollection';
+
+  static MODEL_CLASS = PostgresKeyEventModel;
 
   #throwDeprecated() {
     throw new DataAccessError('KeyEvent is deprecated in data-access v3', this);

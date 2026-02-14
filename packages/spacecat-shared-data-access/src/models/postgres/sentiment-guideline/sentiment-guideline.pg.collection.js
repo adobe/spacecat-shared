@@ -13,9 +13,12 @@
 import { hasText } from '@adobe/spacecat-shared-utils';
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresSentimentGuidelineModel from './sentiment-guideline.pg.model.js';
 
 class PostgresSentimentGuidelineCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'SentimentGuidelineCollection';
+
+  static MODEL_CLASS = PostgresSentimentGuidelineModel;
 
   async findById(siteId, guidelineId) {
     if (!hasText(siteId) || !hasText(guidelineId)) {

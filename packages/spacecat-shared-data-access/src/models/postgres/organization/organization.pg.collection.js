@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresOrganizationModel from './organization.pg.model.js';
 
 class PostgresOrganizationCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'OrganizationCollection';
+
+  static MODEL_CLASS = PostgresOrganizationModel;
 }
 
 export default PostgresOrganizationCollection;

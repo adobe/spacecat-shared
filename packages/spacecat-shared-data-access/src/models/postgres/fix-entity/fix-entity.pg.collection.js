@@ -11,6 +11,7 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresFixEntityModel from './fix-entity.pg.model.js';
 import DataAccessError from '../../../errors/data-access.error.js';
 import ValidationError from '../../../errors/validation.error.js';
 import { guardId, guardArray, guardString } from '../../../util/guards.js';
@@ -18,6 +19,8 @@ import { resolveUpdates } from '../../../util/util.js';
 
 class PostgresFixEntityCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'FixEntityCollection';
+
+  static MODEL_CLASS = PostgresFixEntityModel;
 
   async getSuggestionsByFixEntityId(fixEntityId) {
     guardId('fixEntityId', fixEntityId, 'FixEntityCollection');

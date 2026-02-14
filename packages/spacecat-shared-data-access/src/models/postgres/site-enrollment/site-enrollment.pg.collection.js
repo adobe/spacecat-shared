@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresSiteEnrollmentModel from './site-enrollment.pg.model.js';
 
 class PostgresSiteEnrollmentCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'SiteEnrollmentCollection';
+
+  static MODEL_CLASS = PostgresSiteEnrollmentModel;
 }
 
 export default PostgresSiteEnrollmentCollection;

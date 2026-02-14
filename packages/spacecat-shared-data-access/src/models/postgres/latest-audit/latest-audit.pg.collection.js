@@ -15,6 +15,7 @@ import { isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 import DataAccessError from '../../../errors/data-access.error.js';
 import { guardId, guardString } from '../../../util/guards.js';
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresLatestAuditModel from './latest-audit.pg.model.js';
 
 /**
  * PostgresLatestAuditCollection - A Postgres-backed collection for LatestAudit entities.
@@ -27,6 +28,8 @@ import PostgresBaseCollection from '../base/postgres-base.collection.js';
  */
 class PostgresLatestAuditCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'LatestAuditCollection';
+
+  static MODEL_CLASS = PostgresLatestAuditModel;
 
   // LatestAudit is a virtual view in v3; writes are not supported.
   // eslint-disable-next-line class-methods-use-this
@@ -65,12 +68,17 @@ class PostgresLatestAuditCollection extends PostgresBaseCollection {
    */
   async #allAuditsByKeys(keys, options = {}) {
     const auditCollection = this.entityRegistry.getCollection('AuditCollection');
-    return auditCollection.allByIndexKeys(keys, {
+    const queryOptions = {
       ...options,
       fetchAllPages: true,
       order: 'desc',
       returnCursor: false,
-    });
+    };
+    // Use all() for empty keys (e.g. LatestAudit.all()), allByIndexKeys when filtering.
+    const hasKeys = Object.keys(keys).length > 0;
+    return hasKeys
+      ? auditCollection.allByIndexKeys(keys, queryOptions)
+      : auditCollection.all({}, queryOptions);
   }
 
   async all(sortKeys = {}, options = {}) {
@@ -113,6 +121,15 @@ class PostgresLatestAuditCollection extends PostgresBaseCollection {
     }
 
     const latest = PostgresLatestAuditCollection.#groupLatest(audits, groupFields);
+
+    // Sort by auditType descending to match DynamoDB's sort-key ordering.
+    // DynamoDB returns items sorted by the table's sort key (auditType) in descending order.
+    latest.sort((a, b) => {
+      const typeA = a.record.auditType || '';
+      const typeB = b.record.auditType || '';
+      return typeB.localeCompare(typeA);
+    });
+
     const limited = Number.isInteger(options.limit) ? latest.slice(0, options.limit) : latest;
 
     return options.returnCursor ? { data: limited, cursor: null } : limited;

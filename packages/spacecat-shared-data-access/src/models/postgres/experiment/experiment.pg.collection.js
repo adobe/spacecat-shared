@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresExperimentModel from './experiment.pg.model.js';
 
 class PostgresExperimentCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'ExperimentCollection';
+
+  static MODEL_CLASS = PostgresExperimentModel;
 }
 
 export default PostgresExperimentCollection;

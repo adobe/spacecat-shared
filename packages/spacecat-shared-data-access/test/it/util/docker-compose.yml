@@ -9,20 +9,44 @@ services:
       POSTGRES_DB: mysticat
     ports:
       - "${IT_POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-roles.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 30
 
-  data-service:
-    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v1.7.1}
+  db-schema:
+    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-test}
     depends_on:
       db:
         condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        # Remove dbmate directive and load schema
+        sed '1{/^\\restrict dbmate/d}' /app/db/schema.sql | \
+          PGPASSWORD=postgres psql -h db -U postgres -d mysticat -f -
+        # Grant postgrest_anon access to all tables in public schema
+        PGPASSWORD=postgres psql -h db -U postgres -d mysticat -c "
+          GRANT USAGE ON SCHEMA public TO postgrest_anon;
+          GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO postgrest_anon;
+          GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO postgrest_anon;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public
+            GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO postgrest_anon;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public
+            GRANT USAGE ON SEQUENCES TO postgrest_anon;
+        "
+        echo "Schema loaded and permissions granted."
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    depends_on:
+      db-schema:
+        condition: service_completed_successfully
     environment:
-      LOCAL_DEV: "true"
-      DATABASE_URL: postgres://postgrest_authenticator:postgrest@db:5432/mysticat
+      PGRST_DB_URI: postgres://postgrest_authenticator:postgrest@db:5432/mysticat
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: postgrest_anon
       PGRST_DB_EXTRA_SEARCH_PATH: ""

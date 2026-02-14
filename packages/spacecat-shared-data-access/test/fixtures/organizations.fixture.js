@@ -101,6 +101,11 @@ const organizations = [
           },
       },
   },
+  {
+    organizationId: '5965f86f-9a5c-5b85-a3c0-e785bcbe2534',
+    imsOrgId: '1234567893ABCDEF12345678@AdobeOrg',
+    name: '3-1234Name',
+  },
 ];
 
 export default organizations;

@@ -16,7 +16,7 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
-import { getDataAccess } from '../util/db.js';
+import { getDataAccess, isPostgres } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 
 use(chaiAsPromised);
@@ -62,6 +62,10 @@ describe('Configuration IT', async () => {
   };
 
   before(async function () {
+    if (isPostgres()) {
+      this.skip();
+      return;
+    }
     this.timeout(10000);
     await seedDatabase();
 

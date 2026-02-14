@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresAsyncJobModel from './async-job.pg.model.js';
 
 class PostgresAsyncJobCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'AsyncJobCollection';
+
+  static MODEL_CLASS = PostgresAsyncJobModel;
 }
 
 export default PostgresAsyncJobCollection;

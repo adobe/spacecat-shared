@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresPageIntentModel from './page-intent.pg.model.js';
 
 class PostgresPageIntentCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'PageIntentCollection';
+
+  static MODEL_CLASS = PostgresPageIntentModel;
 }
 
 export default PostgresPageIntentCollection;

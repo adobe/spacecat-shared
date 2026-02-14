@@ -126,6 +126,7 @@ describe('PostgresLatestAuditCollection', () => {
     client = createMockPostgrestClient();
 
     mockAuditCollection = {
+      all: sinon.stub().resolves([]),
       allByIndexKeys: sinon.stub().resolves([]),
       findByIndexKeys: sinon.stub().resolves(null),
     };
@@ -218,7 +219,8 @@ describe('PostgresLatestAuditCollection', () => {
         createMockAuditItem('site-1', 'cwv', '2024-01-02'),
         createMockAuditItem('site-2', 'cwv', '2024-01-03'),
       ];
-      mockAuditCollection.allByIndexKeys.resolves(audits);
+      // Empty keys trigger auditCollection.all() instead of allByIndexKeys()
+      mockAuditCollection.all.resolves(audits);
 
       const result = await collection.findByIndexKeys({});
 

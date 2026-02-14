@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresPageCitabilityModel from './page-citability.pg.model.js';
 
 class PostgresPageCitabilityCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'PageCitabilityCollection';
+
+  static MODEL_CLASS = PostgresPageCitabilityModel;
 }
 
 export default PostgresPageCitabilityCollection;

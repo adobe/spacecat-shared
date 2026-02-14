@@ -13,9 +13,12 @@
 import { hasText } from '@adobe/spacecat-shared-utils';
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresAuditUrlModel from './audit-url.pg.model.js';
 
 class PostgresAuditUrlCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'AuditUrlCollection';
+
+  static MODEL_CLASS = PostgresAuditUrlModel;
 
   static sortAuditUrls(auditUrls, sortBy = 'createdAt', sortOrder = 'asc') {
     if (!auditUrls || auditUrls.length === 0) {

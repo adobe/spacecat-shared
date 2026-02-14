@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresTrialUserActivityModel from './trial-user-activity.pg.model.js';
 
 class PostgresTrialUserActivityCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'TrialUserActivityCollection';
+
+  static MODEL_CLASS = PostgresTrialUserActivityModel;
 }
 
 export default PostgresTrialUserActivityCollection;

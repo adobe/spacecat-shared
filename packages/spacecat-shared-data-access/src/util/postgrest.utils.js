@@ -45,13 +45,19 @@ const decodeCursor = (cursor) => {
   }
 };
 
+// DynamoDB-only attributes that do not exist in the Postgres schema.
+const DYNAMO_ONLY_FIELDS = new Set(['recordExpiresAt']);
+
 const createFieldMaps = (schema) => {
   const toDbMap = {};
   const toModelMap = {};
   const attributes = schema.getAttributes();
   const idName = typeof schema.getIdName === 'function' ? schema.getIdName() : undefined;
   Object.keys(attributes).forEach((modelField) => {
+    if (DYNAMO_ONLY_FIELDS.has(modelField)) return;
     const attribute = attributes[modelField] || {};
+    // postgrestField: false means this attribute has no Postgres column.
+    if (attribute.postgrestField === false) return;
     const dbField = attribute.postgrestField
       || (modelField === idName && modelField !== 'id' ? 'id' : camelToSnake(modelField));
     toDbMap[modelField] = dbField;
@@ -71,12 +77,41 @@ const toDbField = (field, map) => map[field] || camelToSnake(field);
 const toModelField = (field, map) => map[field] || snakeToCamel(field);
 
 const toDbRecord = (record, toDbMap) => Object.entries(record).reduce((acc, [key, value]) => {
-  acc[toDbField(key, toDbMap)] = value;
+  // Only include fields that exist in the schema's field map.
+  // This strips DynamoDB-specific attributes (GSI keys, recordExpiresAt, etc.)
+  // that have no corresponding Postgres column.
+  if (!toDbMap[key]) return acc;
+  acc[toDbMap[key]] = value;
   return acc;
 }, {});
 
+// Postgres returns timestamptz values with '+00:00' suffix and variable fractional-second
+// precision (e.g. '.71' instead of '.710'). Normalize to ISO-8601 with 'Z' suffix and exactly
+// 3-digit milliseconds for DynamoDB compatibility.
+const TIMESTAMP_SUFFIX_RE = /\+00:00$/;
+
+const normalizeValue = (value) => {
+  if (typeof value === 'string' && TIMESTAMP_SUFFIX_RE.test(value)) {
+    let normalized = value.replace(TIMESTAMP_SUFFIX_RE, 'Z');
+    // Normalize fractional seconds to exactly 3 digits.
+    normalized = normalized.replace(/(\d{2}:\d{2}:\d{2})(?:\.(\d{1,6}))?Z$/, (_, time, frac) => {
+      const millis = (frac || '0').slice(0, 3).padEnd(3, '0');
+      return `${time}.${millis}Z`;
+    });
+    return normalized;
+  }
+  return value;
+};
+
 const fromDbRecord = (record, toModelMap) => Object.entries(record).reduce((acc, [key, value]) => {
-  acc[toModelField(key, toModelMap)] = value;
+  // Strip null values to match DynamoDB behavior (DynamoDB omits unset attributes).
+  if (value === null) return acc;
+  const modelKey = toModelField(key, toModelMap);
+  // PostgREST returns {NULL} for empty Postgres arrays -> [null] in JS; treat as unset.
+  if (Array.isArray(value) && value.length === 1 && value[0] === null) {
+    return acc;
+  }
+  acc[modelKey] = normalizeValue(value);
   return acc;
 }, {});
 

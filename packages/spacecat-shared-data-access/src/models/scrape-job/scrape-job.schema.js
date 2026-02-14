@@ -100,7 +100,6 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   })
   .addAttribute('abortInfo', {
     type: 'map',
-    postgrestField: false, // not yet in Postgres schema
     properties: {
       reason: { type: 'string' },
       details: {

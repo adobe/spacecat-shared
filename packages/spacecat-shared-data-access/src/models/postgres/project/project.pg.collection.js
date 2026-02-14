@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresProjectModel from './project.pg.model.js';
 
 class PostgresProjectCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'ProjectCollection';
+
+  static MODEL_CLASS = PostgresProjectModel;
 }
 
 export default PostgresProjectCollection;

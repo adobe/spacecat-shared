@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresOpportunityModel from './opportunity.pg.model.js';
 
 class PostgresOpportunityCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'OpportunityCollection';
+
+  static MODEL_CLASS = PostgresOpportunityModel;
 }
 
 export default PostgresOpportunityCollection;

@@ -14,9 +14,12 @@ import { isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import { ValidationError } from '../../../errors/index.js';
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresScrapeJobModel from './scrape-job.pg.model.js';
 
 class PostgresScrapeJobCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'ScrapeJobCollection';
+
+  static MODEL_CLASS = PostgresScrapeJobModel;
 
   async allByDateRange(startDate, endDate) {
     if (!isIsoDate(startDate)) {

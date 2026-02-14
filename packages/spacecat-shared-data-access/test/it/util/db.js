@@ -102,4 +102,6 @@ export const getDataAccess = (config, logger = console) => {
   return createDataAccess(TEST_DA_CONFIG, logger, dbClient);
 };
 
+export const isPostgres = () => backend === 'postgresql';
+
 export { getDynamoClients };

@@ -11,9 +11,12 @@
  */
 
 import PostgresBaseCollection from '../base/postgres-base.collection.js';
+import PostgresApiKeyModel from './api-key.pg.model.js';
 
 class PostgresApiKeyCollection extends PostgresBaseCollection {
   static COLLECTION_NAME = 'ApiKeyCollection';
+
+  static MODEL_CLASS = PostgresApiKeyModel;
 }
 
 export default PostgresApiKeyCollection;

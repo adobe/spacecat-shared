@@ -578,6 +578,7 @@ class PostgresBaseCollection extends BaseCollection {
 
         // Use the DB-returned rows so values normalized by Postgres (e.g.
         // lowercased UUIDs) are reflected in the model instances.
+        /* c8 ignore next 6 -- only exercised with real PostgREST in IT tests */
         if (isNonEmptyArray(data)) {
           insertedRecords = data.map((row, i) => ({
             ...this.#toModelRecord(row),

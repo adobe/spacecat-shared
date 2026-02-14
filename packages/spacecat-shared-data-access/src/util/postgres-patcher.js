@@ -161,10 +161,13 @@ class PostgresPatcher {
       return;
     }
 
-    // Track updatedAt change
+    // Track updatedAt in the updates map so getUpdates() reports it,
+    // but do NOT set this.record.updatedAt - the actual DB timestamp
+    // is injected by updateByKeys, so re-fetched records will reflect
+    // the real persisted value (matching ElectroDB's DynamoDB behavior
+    // where the watcher generates its own server-side timestamp).
     const previousUpdatedAt = this.record.updatedAt;
     const now = new Date().toISOString();
-    this.record.updatedAt = now;
     this.updates.updatedAt = {
       previous: previousUpdatedAt,
       current: now,
@@ -178,7 +181,6 @@ class PostgresPatcher {
 
     // Apply watchers and persist through the collection
     const watched = this.collection.applyUpdateWatchers(this.record, updates);
-    this.record = watched.record;
     await this.collection.updateByKeys(keys, watched.updates);
   }
 

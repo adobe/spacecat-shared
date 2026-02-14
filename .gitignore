@@ -116,6 +116,9 @@ dist
 # DynamoDB Local files
 .dynamodb/
 
+# Generated SQL seed data
+**/seed-data.sql
+
 # TernJS port file
 .tern-port
 

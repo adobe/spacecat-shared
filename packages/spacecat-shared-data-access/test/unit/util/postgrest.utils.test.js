@@ -24,6 +24,7 @@ import {
   encodeCursor,
   entityToTableName,
   fromDbRecord,
+  isInvalidInputError,
   snakeToCamel,
   toDbField,
   toDbRecord,
@@ -370,6 +371,46 @@ describe('postgrest.utils', () => {
       const whereFn = (attrs, op) => op.eq(attrs.deliveryType, 'aem_edge');
       applyWhere(query, whereFn, {});
       expect(query.eq.calledOnceWith('delivery_type', 'aem_edge')).to.be.true;
+    });
+  });
+
+  describe('isInvalidInputError', () => {
+    it('returns true when error.code is 22P02', () => {
+      const error = new Error('bad input');
+      error.code = '22P02';
+      expect(isInvalidInputError(error)).to.be.true;
+    });
+
+    it('returns true when error.details.code is 22P02', () => {
+      const error = new Error('bad input');
+      error.details = { code: '22P02' };
+      expect(isInvalidInputError(error)).to.be.true;
+    });
+
+    it('returns true when error.message contains 22P02', () => {
+      const error = new Error('invalid input syntax for type uuid (22P02)');
+      expect(isInvalidInputError(error)).to.be.true;
+    });
+
+    it('returns true when cause chain contains 22P02', () => {
+      const root = new Error('root cause');
+      root.code = '22P02';
+      const wrapper = new Error('wrapper', { cause: root });
+      expect(isInvalidInputError(wrapper)).to.be.true;
+    });
+
+    it('returns false for unrelated error', () => {
+      const error = new Error('connection refused');
+      error.code = '08001';
+      expect(isInvalidInputError(error)).to.be.false;
+    });
+
+    it('returns false for null input', () => {
+      expect(isInvalidInputError(null)).to.be.false;
+    });
+
+    it('returns false for undefined input', () => {
+      expect(isInvalidInputError(undefined)).to.be.false;
     });
   });
 });

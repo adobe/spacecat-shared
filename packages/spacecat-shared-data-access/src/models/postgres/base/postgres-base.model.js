@@ -19,6 +19,50 @@ import PostgresPatcher from '../../../util/postgres-patcher.js';
 import Reference from '../../base/reference.js';
 
 /**
+ * Creates a Proxy-based electroService stub for the parent BaseModel constructor.
+ * The parent constructor reads `electroService.entities[entityName]` and passes the
+ * result to the v2 Patcher constructor, which reads `entity.model`. All other entity
+ * property access throws a descriptive DataAccessError. The Patcher created during
+ * super() is immediately replaced by PostgresPatcher.
+ *
+ * @param {string} entityName - The entity name from the schema.
+ * @returns {Proxy} A Proxy that provides `entities[entityName]` for the parent constructor.
+ */
+function createElectroServiceProxy(entityName) {
+  // The v2 Patcher constructor reads entity.model (and stores it).
+  // Provide the minimum needed so it doesn't throw during super().
+  // The Patcher is replaced by PostgresPatcher immediately after.
+  const ALLOWED_ENTITY_PROPS = {
+    model: { schema: { attributes: {} }, indexes: {} },
+  };
+
+  const entityProxy = new Proxy({}, {
+    get(target, prop) {
+      if (typeof prop === 'symbol') return undefined;
+      if (prop in ALLOWED_ENTITY_PROPS) return ALLOWED_ENTITY_PROPS[prop];
+      throw new DataAccessError(
+        `[PostgresBaseModel] Attempted to access entity.${String(prop)} `
+        + `for '${entityName}'. This is an ElectroDB property not available in the Postgres backend. `
+        + 'Ensure the calling method is overridden in PostgresBaseModel.',
+      );
+    },
+  });
+
+  return new Proxy({}, {
+    get(target, prop) {
+      if (typeof prop === 'symbol') return undefined;
+      if (prop === 'entities') {
+        return { [entityName]: entityProxy };
+      }
+      throw new DataAccessError(
+        `[PostgresBaseModel] Attempted to access electroService.${String(prop)} `
+        + `for '${entityName}'. The Postgres backend does not use ElectroDB.`,
+      );
+    },
+  });
+}
+
+/**
  * PostgresBaseModel - A base class for representing individual entities backed
  * by PostgREST. Has the same public API as BaseModel but uses PostgresPatcher
  * for persistence instead of the ElectroDB-based Patcher.
@@ -39,26 +83,12 @@ class PostgresBaseModel extends BaseModel {
    * @param {Object} log - A logger for capturing logging information.
    */
   constructor(postgrestClient, entityRegistry, schema, record, log) {
-    // Wrap the postgrestClient with stubs so the parent BaseModel constructor
-    // doesn't throw when accessing electroService.entities[entityName] and
-    // when the v2 Patcher tries to access entity.model.
-    /* c8 ignore next 7 -- stubs for parent constructor; replaced by PostgresPatcher */
-    const entityStub = {
-      model: { schema: { attributes: {} }, indexes: {} },
-      patch: () => ({
-        set: () => ({ go: async () => {} }),
-        composite: () => ({ go: async () => {} }),
-      }),
-      remove: () => ({ go: async () => {} }),
-    };
-    const wrappedClient = Object.create(postgrestClient, {
-      entities: {
-        value: new Proxy({}, { get: () => entityStub }),
-        writable: true,
-        configurable: true,
-      },
-    });
-    super(wrappedClient, entityRegistry, schema, record, log);
+    // Create a Proxy-based electroService stub for the parent constructor.
+    // The parent reads electroService.entities[entityName] and passes it to the
+    // v2 Patcher (which reads entity.model). All other access throws. The Patcher
+    // is immediately replaced by PostgresPatcher after super().
+    const electroServiceProxy = createElectroServiceProxy(schema.getEntityName());
+    super(electroServiceProxy, entityRegistry, schema, record, log);
 
     this.postgrestClient = postgrestClient;
 

@@ -29,6 +29,7 @@ import {
   encodeCursor,
   entityToTableName,
   fromDbRecord,
+  isInvalidInputError,
   toDbField,
   toDbRecord,
 } from '../../../util/postgrest.utils.js';
@@ -41,6 +42,43 @@ function isValidParent(parent, child) {
 
   const foreignKey = `${parent.entityName}Id`;
   return child.record?.[foreignKey] === parent.record?.[foreignKey];
+}
+
+/**
+ * Creates a Proxy-based electroService stub for the parent BaseCollection constructor.
+ * The parent constructor only reads `electroService.entities[entityName]` and assigns
+ * it to `this.entity`. Since PostgresBaseCollection overrides every method that would
+ * use the ElectroDB entity, accessing any property on the entity Proxy throws a
+ * descriptive DataAccessError - making accidental ElectroDB usage fail fast.
+ *
+ * @param {string} entityName - The entity name from the schema.
+ * @returns {Proxy} A Proxy that provides `entities[entityName]` for the parent constructor
+ *   and throws on any other access.
+ */
+function createElectroServiceProxy(entityName) {
+  const entityProxy = new Proxy({}, {
+    get(target, prop) {
+      if (typeof prop === 'symbol') return undefined;
+      throw new DataAccessError(
+        `[PostgresBaseCollection] Attempted to access entity.${String(prop)} `
+        + `for '${entityName}'. This is an ElectroDB property not available in the Postgres backend. `
+        + 'Ensure the calling method is overridden in PostgresBaseCollection.',
+      );
+    },
+  });
+
+  return new Proxy({}, {
+    get(target, prop) {
+      if (typeof prop === 'symbol') return undefined;
+      if (prop === 'entities') {
+        return { [entityName]: entityProxy };
+      }
+      throw new DataAccessError(
+        `[PostgresBaseCollection] Attempted to access electroService.${String(prop)} `
+        + `for '${entityName}'. The Postgres backend does not use ElectroDB.`,
+      );
+    },
+  });
 }
 
 /**
@@ -63,13 +101,11 @@ class PostgresBaseCollection extends BaseCollection {
    * @param {Object} log - A logger for capturing logging information.
    */
   constructor(postgrestClient, entityRegistry, schema, log) {
-    // Wrap the postgrestClient with an `entities` stub so the parent BaseCollection
-    // constructor doesn't throw when accessing electroService.entities[entityName].
-    // We override all methods, so the ElectroDB code paths are never used.
-    const wrappedClient = Object.create(postgrestClient, {
-      entities: { value: {}, writable: true, configurable: true },
-    });
-    super(wrappedClient, entityRegistry, schema, log);
+    // Create a Proxy-based electroService stub for the parent constructor.
+    // The parent only reads electroService.entities[entityName] and assigns it
+    // to this.entity. All other access throws a descriptive error.
+    const electroServiceProxy = createElectroServiceProxy(schema.getEntityName());
+    super(electroServiceProxy, entityRegistry, schema, log);
 
     this.postgrestClient = postgrestClient;
     this.tableName = entityToTableName(this.schema.getModelName());
@@ -316,11 +352,11 @@ class PostgresBaseCollection extends BaseCollection {
 
     const { data, error } = await query;
     if (error) {
-      // Postgres rejects non-UUID strings with "invalid input syntax for type uuid".
+      // Postgres rejects non-UUID strings with SQLSTATE 22P02 ("invalid input syntax").
       // DynamoDB stores IDs as plain strings and simply returns no match.
-      // Treat UUID syntax errors as empty results to match DynamoDB behavior.
+      // Treat invalid-input errors as empty results to match DynamoDB behavior.
       /* c8 ignore next 3 -- only triggered by invalid UUID in IT tests */
-      if (error.message?.includes('invalid input syntax for type uuid')) {
+      if (isInvalidInputError(error)) {
         return [];
       }
       this.#logAndThrowError('Failed to query', error);

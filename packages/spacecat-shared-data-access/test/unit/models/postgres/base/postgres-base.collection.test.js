@@ -20,6 +20,7 @@ import chaiAsPromised from 'chai-as-promised';
 import PostgresBaseCollection from '../../../../../src/models/postgres/base/postgres-base.collection.js';
 import PostgresBaseModel from '../../../../../src/models/postgres/base/postgres-base.model.js';
 import Schema from '../../../../../src/models/base/schema.js';
+import DataAccessError from '../../../../../src/errors/data-access.error.js';
 
 chaiUse(chaiAsPromised);
 
@@ -532,36 +533,48 @@ describe('PostgresBaseCollection', () => {
   });
 
   describe('batchGetByKeys', () => {
+    const UUID_1 = 'a1b2c3d4-0000-0000-0000-000000000001';
+    const UUID_2 = 'a1b2c3d4-0000-0000-0000-000000000002';
+
     it('uses .in() for simple primary key lookups', async () => {
       const chain = client._chain;
       chain.then = (resolve) => resolve({
         data: [
-          { id: 'id-1', name: 'One', status: 'active' },
-          { id: 'id-2', name: 'Two', status: 'active' },
+          { id: UUID_1, name: 'One', status: 'active' },
+          { id: UUID_2, name: 'Two', status: 'active' },
         ],
         error: null,
       });
 
       const result = await collection.batchGetByKeys([
-        { testEntityId: 'id-1' },
-        { testEntityId: 'id-2' },
+        { testEntityId: UUID_1 },
+        { testEntityId: UUID_2 },
       ]);
 
       expect(result.data).to.be.an('array').with.length(2);
       expect(result.unprocessed).to.be.an('array').that.is.empty;
       // Should use .in() instead of N separate queries
-      expect(chain.in.calledWith('id', ['id-1', 'id-2'])).to.be.true;
+      expect(chain.in.calledWith('id', [UUID_1, UUID_2])).to.be.true;
+    });
+
+    it('returns empty data for non-UUID primary keys', async () => {
+      const result = await collection.batchGetByKeys([
+        { testEntityId: 'not-a-uuid' },
+      ]);
+
+      expect(result.data).to.be.an('array').that.is.empty;
+      expect(result.unprocessed).to.be.an('array').that.is.empty;
     });
 
     it('falls back to individual queries for composite keys', async () => {
       const chain = client._chain;
       chain.then = (resolve) => resolve({
-        data: [{ id: 'id-1', name: 'One', status: 'active' }],
+        data: [{ id: UUID_1, name: 'One', status: 'active' }],
         error: null,
       });
 
       const result = await collection.batchGetByKeys([
-        { testEntityId: 'id-1', organizationId: 'org-1' },
+        { testEntityId: UUID_1, organizationId: 'org-1' },
       ]);
 
       expect(result.data).to.be.an('array');
@@ -576,7 +589,7 @@ describe('PostgresBaseCollection', () => {
       });
 
       await expect(collection.batchGetByKeys([
-        { testEntityId: 'id-1' },
+        { testEntityId: UUID_1 },
       ])).to.be.rejectedWith('Failed to batch get by keys');
     });
   });
@@ -1142,6 +1155,22 @@ describe('PostgresBaseCollection', () => {
     it('options validation for allByIndexKeys', async () => {
       await expect(collection.allByIndexKeys({ organizationId: 'org-1' }, 'invalid'))
         .to.be.rejectedWith('options must be an object');
+    });
+  });
+
+  describe('electroService Proxy traps', () => {
+    it('throws DataAccessError when accessing an un-proxied ElectroDB entity property', () => {
+      expect(() => collection.entity.query)
+        .to.throw(DataAccessError)
+        .with.property('message')
+        .that.includes('entity.query');
+    });
+
+    it('throws DataAccessError when accessing electroService properties other than entities', () => {
+      expect(() => collection.electroService.collections)
+        .to.throw(DataAccessError)
+        .with.property('message')
+        .that.includes('electroService.collections');
     });
   });
 });

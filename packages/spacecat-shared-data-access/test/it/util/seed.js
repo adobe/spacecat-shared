@@ -15,7 +15,8 @@ import fixtures from '../../fixtures/index.fixtures.js';
 
 import { getDataAccess, getDynamoClients, TEST_DA_CONFIG } from './db.js';
 import { createTablesFromSchema, deleteExistingTables } from './tableOperations.js';
-import { seedPostgresDatabase } from './seed-postgres.js';
+import { seedPostgresDatabase, alterSchemaOnce } from './seed-postgres.js';
+import { seedFromSQL } from './seed-postgres-sql.js';
 
 const backend = process.env.DATA_ACCESS_BACKEND || 'dynamodb';
 
@@ -93,8 +94,17 @@ const seedDynamoDatabase = async () => {
   return seedDynamoFixtures();
 };
 
+const seedMode = process.env.IT_SEED_MODE || 'js';
+
 export const seedDatabase = async () => {
   if (backend === 'postgresql') {
+    if (seedMode === 'sql') {
+      // SQL seeding still needs the schema alterations (disable FK triggers,
+      // drop unique constraints) so tests can create records freely.
+      alterSchemaOnce();
+      await seedFromSQL({ log: console });
+      return {};
+    }
     return seedPostgresDatabase();
   }
   return seedDynamoDatabase();

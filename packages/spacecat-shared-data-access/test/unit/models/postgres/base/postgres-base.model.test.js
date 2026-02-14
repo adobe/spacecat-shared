@@ -20,6 +20,7 @@ import chaiAsPromised from 'chai-as-promised';
 import PostgresBaseModel from '../../../../../src/models/postgres/base/postgres-base.model.js';
 import PostgresBaseCollection from '../../../../../src/models/postgres/base/postgres-base.collection.js';
 import Schema from '../../../../../src/models/base/schema.js';
+import DataAccessError from '../../../../../src/errors/data-access.error.js';
 
 chaiUse(chaiAsPromised);
 
@@ -333,6 +334,27 @@ describe('PostgresBaseModel', () => {
       const json = modelNoStatus.toJSON();
 
       expect(json).to.not.have.property('status');
+    });
+  });
+
+  describe('electroService Proxy traps', () => {
+    it('throws DataAccessError when accessing an un-proxied ElectroDB entity property', () => {
+      expect(() => model.entity.query)
+        .to.throw(DataAccessError)
+        .with.property('message')
+        .that.includes('entity.query');
+    });
+
+    it('allows entity.model access (needed by Patcher constructor)', () => {
+      expect(model.entity.model).to.be.an('object');
+      expect(model.entity.model.schema.attributes).to.deep.equal({});
+    });
+
+    it('throws DataAccessError when accessing electroService properties other than entities', () => {
+      expect(() => model.electroService.collections)
+        .to.throw(DataAccessError)
+        .with.property('message')
+        .that.includes('electroService.collections');
     });
   });
 });

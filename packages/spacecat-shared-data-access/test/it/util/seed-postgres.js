@@ -195,7 +195,7 @@ const NON_PK_UNIQUE_CONSTRAINTS = [
 
 let schemaAltered = false;
 
-const alterSchemaOnce = () => {
+export const alterSchemaOnce = () => {
   if (schemaAltered) return;
 
   // Disable FK trigger checks for the entire test run - test fixtures and test code

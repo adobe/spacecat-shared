@@ -144,6 +144,25 @@ const applyWhere = (query, whereFn, toDbMap) => {
   throw new DataAccessError(`Unsupported where operator: "${expression.type}". Supported: eq, contains`);
 };
 
+/**
+ * Checks whether an error (or any error in its cause chain) is a PostgreSQL
+ * "invalid input syntax" error (SQLSTATE 22P02).
+ * @param {Error} error
+ * @returns {boolean}
+ */
+const isInvalidInputError = (error) => {
+  let current = error;
+  const seen = new WeakSet();
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    if (current.code === '22P02') return true;
+    if (current.details?.code === '22P02') return true;
+    if (typeof current.message === 'string' && current.message.includes('22P02')) return true;
+    current = current.cause;
+  }
+  return false;
+};
+
 export {
   DEFAULT_PAGE_SIZE,
   applyWhere,
@@ -153,6 +172,7 @@ export {
   encodeCursor,
   entityToTableName,
   fromDbRecord,
+  isInvalidInputError,
   snakeToCamel,
   toDbField,
   toDbRecord,

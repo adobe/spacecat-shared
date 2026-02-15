@@ -18,7 +18,7 @@ services:
       retries: 30
 
   db-schema:
-    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-test}
+    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v1.8.0}
     depends_on:
       db:
         condition: service_healthy

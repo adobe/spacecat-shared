@@ -54,6 +54,7 @@
     "chai": "6.2.1",
     "chai-as-promised": "8.0.2",
     "dynamo-db-local": "9.6.0",
+    "esmock": "^2.7.3",
     "nock": "14.0.10",
     "sinon": "21.0.0",
     "sinon-chai": "4.0.1"

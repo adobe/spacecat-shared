@@ -13,11 +13,11 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
+import esmock from 'esmock';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import nock from 'nock';
-import GoogleClient from '../src/index.js';
 
 describe('GoogleClient', () => {
   const context = {
@@ -37,6 +37,7 @@ describe('GoogleClient', () => {
   };
 
   let defaultConfig;
+  let GoogleClient;
 
   const baseURL = 'https://example.com/';
   const auditURL = 'www.example.com';
@@ -53,7 +54,19 @@ describe('GoogleClient', () => {
     });
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    GoogleClient = (await esmock('../src/index.js', {
+      '@adobe/spacecat-shared-utils': {
+        composeAuditURL: sinon.stub().resolves(auditURL),
+        isValidUrl: (await import('@adobe/spacecat-shared-utils')).isValidUrl,
+        isArray: (await import('@adobe/spacecat-shared-utils')).isArray,
+        isInteger: (await import('@adobe/spacecat-shared-utils')).isInteger,
+        isValidDate: (await import('@adobe/spacecat-shared-utils')).isValidDate,
+        resolveCustomerSecretsName: (await import('@adobe/spacecat-shared-utils')).resolveCustomerSecretsName,
+        instrumentAWSClient: (await import('@adobe/spacecat-shared-utils')).instrumentAWSClient,
+      },
+    })).default;
+
     oauth2ClientStub = sinon.createStubInstance(OAuth2Client);
     oauth2ClientStub.refreshAccessToken.resolves({
       credentials: {
@@ -152,11 +165,6 @@ describe('GoogleClient', () => {
   });
 
   describe('getOrganicSearchData', () => {
-    beforeEach(() => {
-      nock(baseURL)
-        .get('/')
-        .reply(301, {}, { Location: 'https://www.example.com' });
-    });
     it('should return organic search data for the provided baseURL, startDate, and endDate', async () => {
       stubSecretManager(defaultConfig);
       const testResult = { data: 'testData' };

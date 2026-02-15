@@ -14,9 +14,11 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { createDataAccess } from '../../../src/service/index.js';
+import esmock from 'esmock';
 
 describe('createDataAccess', () => {
+  let createDataAccess;
+
   const log = {
     info: sinon.stub(),
     debug: sinon.stub(),
@@ -26,13 +28,32 @@ describe('createDataAccess', () => {
 
   const savedBackend = process.env.DATA_ACCESS_BACKEND;
 
+  before(async () => {
+    const mockDocumentClient = {
+      send: sinon.stub().resolves({}),
+    };
+
+    ({ createDataAccess } = await esmock('../../../src/service/index.js', {
+      '@aws-sdk/client-dynamodb': {
+        DynamoDB: sinon.stub().returns({}),
+      },
+      '@aws-sdk/lib-dynamodb': {
+        DynamoDBDocument: {
+          from: sinon.stub().returns(mockDocumentClient),
+        },
+      },
+      '@aws-sdk/client-s3': {
+        S3Client: sinon.stub().returns({}),
+      },
+    }));
+  });
+
   afterEach(() => {
     if (savedBackend === undefined) {
       delete process.env.DATA_ACCESS_BACKEND;
     } else {
       process.env.DATA_ACCESS_BACKEND = savedBackend;
     }
-    sinon.restore();
   });
 
   describe('DATA_ACCESS_BACKEND feature flag', () => {

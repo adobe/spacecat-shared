@@ -17,7 +17,9 @@ import sinon from 'sinon';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { createDataAccess } from '../../../src/service/index.js';
 
-describe('createDataAccess', () => {
+describe('createDataAccess', function () {
+  // EntityRegistry initialization loads all model definitions, which can be slow in CI.
+  this.timeout(30000);
   const log = {
     info: sinon.stub(),
     debug: sinon.stub(),

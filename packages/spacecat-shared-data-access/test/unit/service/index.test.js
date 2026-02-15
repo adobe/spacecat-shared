@@ -14,11 +14,10 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import esmock from 'esmock';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import { createDataAccess } from '../../../src/service/index.js';
 
 describe('createDataAccess', () => {
-  let createDataAccess;
-
   const log = {
     info: sinon.stub(),
     debug: sinon.stub(),
@@ -26,27 +25,13 @@ describe('createDataAccess', () => {
     warn: sinon.stub(),
   };
 
+  // Create a mock DynamoDB client to avoid real AWS SDK calls in CI.
+  // Must have config.translateConfig for DynamoDBDocument.from() compatibility.
+  const mockDynamoClient = Object.create(DynamoDB.prototype);
+  mockDynamoClient.config = { translateConfig: {} };
+  mockDynamoClient.send = sinon.stub().resolves({});
+
   const savedBackend = process.env.DATA_ACCESS_BACKEND;
-
-  before(async () => {
-    const mockDocumentClient = {
-      send: sinon.stub().resolves({}),
-    };
-
-    ({ createDataAccess } = await esmock('../../../src/service/index.js', {
-      '@aws-sdk/client-dynamodb': {
-        DynamoDB: sinon.stub().returns({}),
-      },
-      '@aws-sdk/lib-dynamodb': {
-        DynamoDBDocument: {
-          from: sinon.stub().returns(mockDocumentClient),
-        },
-      },
-      '@aws-sdk/client-s3': {
-        S3Client: sinon.stub().returns({}),
-      },
-    }));
-  });
 
   afterEach(() => {
     if (savedBackend === undefined) {
@@ -59,21 +44,21 @@ describe('createDataAccess', () => {
   describe('DATA_ACCESS_BACKEND feature flag', () => {
     it('defaults to dynamodb when DATA_ACCESS_BACKEND is not set', () => {
       delete process.env.DATA_ACCESS_BACKEND;
-      const da = createDataAccess({ tableNameData: 'test-table' }, log);
+      const da = createDataAccess({ tableNameData: 'test-table' }, log, mockDynamoClient);
       expect(da).to.be.an('object');
       expect(da.Site).to.be.an('object');
     });
 
     it('uses dynamodb when explicitly set to "dynamodb"', () => {
       process.env.DATA_ACCESS_BACKEND = 'dynamodb';
-      const da = createDataAccess({ tableNameData: 'test-table' }, log);
+      const da = createDataAccess({ tableNameData: 'test-table' }, log, mockDynamoClient);
       expect(da).to.be.an('object');
       expect(da.Site).to.be.an('object');
     });
 
     it('defaults to dynamodb when DATA_ACCESS_BACKEND is empty string', () => {
       process.env.DATA_ACCESS_BACKEND = '';
-      const da = createDataAccess({ tableNameData: 'test-table' }, log);
+      const da = createDataAccess({ tableNameData: 'test-table' }, log, mockDynamoClient);
       expect(da).to.be.an('object');
       expect(da.Site).to.be.an('object');
     });

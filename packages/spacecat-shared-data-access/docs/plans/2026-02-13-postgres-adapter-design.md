@@ -2,7 +2,7 @@
 
 **JIRA:** SITES-39598
 **Date:** 2026-02-13
-**Status:** Draft
+**Status:** Implemented (PR #1351)
 **Author:** DJ (with brainstorm team)
 
 ## Objective
@@ -69,8 +69,8 @@ Two completely independent code paths. The feature flag is checked once at initi
 
 ```js
 // src/service/index.js
-export function createDataAccess(config, log, client) {
-  const backend = process.env.DATA_ACCESS_BACKEND || 'dynamodb';
+export const createDataAccess = (config, log = console, client = undefined) => {
+  const backend = config.dataAccessBackend || process.env.DATA_ACCESS_BACKEND || 'dynamodb';
 
   if (backend === 'postgresql') {
     return createPostgresDataAccess(config, log);
@@ -81,8 +81,10 @@ export function createDataAccess(config, log, client) {
       `Invalid DATA_ACCESS_BACKEND: "${backend}". Must be "dynamodb" or "postgresql".`
     );
   }
-}
+};
 ```
+
+The backend can be set via `config.dataAccessBackend` (takes priority) or the `DATA_ACCESS_BACKEND` environment variable.
 
 ### Environment Variables
 
@@ -93,48 +95,45 @@ export function createDataAccess(config, log, client) {
 
 **New (PostgreSQL path):**
 - `DATA_ACCESS_BACKEND=postgresql` - Activates PostgreSQL adapter
-- `DATA_SERVICE_URL` - PostgREST base URL (e.g., `https://dql63ofcyt4dr.cloudfront.net`)
-- `DATA_SERVICE_API_KEY` - API key for authentication (optional, for future use)
+- `POSTGREST_URL` - PostgREST base URL (e.g., `http://internal-data-svc-alb.us-east-1.elb.amazonaws.com`)
+- `POSTGREST_API_KEY` - API key for authentication (optional, for future use)
 
 ## Package Structure (new files only)
 
 ```
 src/
   service/
-    index.js                              # Modified: feature flag switch
+    index.js                              # Modified: feature flag switch + config.dataAccessBackend
     postgres/
+      index.js                            # createPostgresDataAccess() - client setup + registry
       postgres-entity-registry.js         # Builds and returns Postgres collections
-      postgres-client.js                  # postgrest-js client setup (base URL, headers, keep-alive)
 
   models/
     postgres/
       base/
         postgres-base.model.js            # Identical public API to BaseModel
         postgres-base.collection.js       # Identical public API to BaseCollection
-        postgres-patcher.js               # Tracks changes, emits PATCH via PostgREST
 
       # One directory per entity (30+ entities):
       site/
         site.pg.model.js                  # Extends PostgresBaseModel, adds domain methods
         site.pg.collection.js             # Extends PostgresBaseCollection, adds query methods
-        site.pg.schema.js                 # Explicit table/column/FK/index mapping
       organization/
         organization.pg.model.js
         organization.pg.collection.js
-        organization.pg.schema.js
       audit/
         audit.pg.model.js
         audit.pg.collection.js
-        audit.pg.schema.js
       ... (all remaining entities follow the same pattern)
-      configuration/
-        configuration.pg.collection.js    # Migrated from S3 to PostgreSQL
 
-  transformers/
-    case-transformer.js                   # camelCase <-> snake_case utilities
-    attribute-transformer.js              # Per-entity attribute mapping using pg.schema
-    response-transformer.js               # PostgREST response -> model-compatible shape
+  util/
+    postgrest.utils.js                    # camelCase <-> snake_case, field maps, cursor encoding
+    postgres-patcher.js                   # Tracks changes, emits PATCH via PostgREST
 ```
+
+> **Note:** Schemas are derived from the existing ElectroDB schema definitions (SchemaBuilder).
+> Each entity reuses its existing schema; `postgrestField` annotations on attributes
+> override the default camelToSnake mapping where needed. No separate `.pg.schema.js` files.
 
 ## Postgres Schema Format
 
@@ -469,21 +468,20 @@ All entities currently in the data access layer:
 
 ## HTTP Client Configuration
 
+Client creation is inline in `src/service/postgres/index.js`:
+
 ```js
-// src/service/postgres/postgres-client.js
 import { PostgrestClient } from '@supabase/postgrest-js';
 
-export function createPostgrestClient(config) {
-  const baseUrl = config.dataServiceUrl || process.env.DATA_SERVICE_URL;
-  const apiKey = config.dataServiceApiKey || process.env.DATA_SERVICE_API_KEY;
+// Inside createPostgresDataAccess(config, log):
+const { postgrestUrl, postgrestSchema = 'public', postgrestApiKey, postgrestHeaders = {} } = config;
 
-  const headers = {};
-  if (apiKey) {
-    headers['Authorization'] = `Bearer ${apiKey}`;
-  }
+const headers = {
+  ...postgrestHeaders,
+  ...(postgrestApiKey ? { apikey: postgrestApiKey, Authorization: `Bearer ${postgrestApiKey}` } : {}),
+};
 
-  return new PostgrestClient(baseUrl, { headers });
-}
+const client = new PostgrestClient(postgrestUrl, { schema: postgrestSchema, headers });
 ```
 
 Future considerations:

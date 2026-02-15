@@ -117,6 +117,123 @@ npm install @adobe/spacecat-shared-data-access
 - **createdAt** (String): Timestamp of creation.
 - **updatedAt** (String): Timestamp of the last update.
 
+## PostgreSQL Backend (PostgREST)
+
+The module supports an alternative PostgreSQL backend via PostgREST. When enabled,
+all entity operations are routed through a PostgREST API instead of DynamoDB.
+
+### Enabling the PostgreSQL Backend
+
+Set two environment variables on your Lambda function (or in `context.env`):
+
+```bash
+DATA_ACCESS_BACKEND=postgresql
+POSTGREST_URL=<url>            # See "Choosing the PostgREST URL" below
+```
+
+Optional variables:
+
+```bash
+POSTGREST_SCHEMA=public        # PostgREST schema (default: public)
+POSTGREST_API_KEY=<key>        # API key for PostgREST authentication (if required)
+```
+
+### Choosing the PostgREST URL
+
+PostgREST runs as an ECS Fargate service (`mysticat-data-service`) behind an ALB
+and CloudFront. There are two access paths with different trade-offs:
+
+#### Option A: ALB URL (recommended for Lambda)
+
+```
+Lambda (private subnet) --> ALB --> ECS PostgREST --> Aurora
+```
+
+VPC-internal, ~2-5ms latency. Requires Lambda to be in the VPC with the correct
+security group (`spacecat-lambda-sg`) and the SG rules from
+[spacecat-infrastructure PR #327](https://github.com/adobe/spacecat-infrastructure/pull/327).
+
+| Environment | POSTGREST_URL |
+|-------------|---------------|
+| Dev | `http://<alb-dns-name>` |
+| Stage | `http://<alb-dns-name>` |
+| Prod | `http://<alb-dns-name>` |
+
+To find the ALB DNS name:
+
+```bash
+# Via Terraform output
+cd spacecat-infrastructure/environments/<env>
+AWS_PROFILE=spacecat-<env> terraform output -raw data_service_alb_dns_name
+
+# Via AWS CLI
+AWS_PROFILE=spacecat-<env> aws elbv2 describe-load-balancers \
+  --names mysticat-data-service-alb \
+  --query 'LoadBalancers[0].DNSName' --output text
+```
+
+The URL will look like: `http://mysticat-data-service-alb-123456789.us-east-1.elb.amazonaws.com`
+
+#### Option B: CloudFront URL (external access)
+
+```
+Lambda --> NAT Gateway --> Internet --> CloudFront --> ALB --> ECS PostgREST --> Aurora
+```
+
+Works without VPC configuration. ~15-50ms latency due to internet roundtrip.
+Protected by WAF IP allowlist - only requests from allowed IPs are accepted.
+
+| Environment | POSTGREST_URL |
+|-------------|---------------|
+| Dev | `https://dql63ofcyt4dr.cloudfront.net` |
+| Stage | `https://d1qa2q01hboz63.cloudfront.net` |
+| Prod | `https://d1xldhzwm6wv00.cloudfront.net` |
+
+To find the CloudFront URL:
+
+```bash
+cd spacecat-infrastructure/environments/<env>
+AWS_PROFILE=spacecat-<env> terraform output -raw data_service_cloudfront_url
+```
+
+#### When to use which
+
+| Scenario | Use |
+|----------|-----|
+| Lambda in VPC with SG rules | ALB URL (Option A) - lowest latency |
+| Lambda not in VPC | CloudFront URL (Option B) - only option |
+| Local development / testing | `http://127.0.0.1:3300` (Docker Compose) |
+| Initial migration rollout | CloudFront URL - works without infra changes |
+
+### Network Prerequisites (for Option A)
+
+Lambda must be deployed with:
+
+1. **VPC configuration**: private subnets + `spacecat-lambda-sg` security group
+2. **Security group rules**: Lambda SG egress to ALB SG on port 80, and ALB SG
+   ingress from Lambda SG on port 80 (see spacecat-infrastructure PR #327)
+
+### Integration Testing
+
+DynamoDB backend (default):
+
+```bash
+npm run test:it
+```
+
+PostgreSQL backend (requires Docker Compose stack running):
+
+```bash
+# Start the stack
+docker compose -f test/it/util/docker-compose.yml up -d
+
+# Run tests
+npm run test:it:postgres
+
+# Stop the stack
+docker compose -f test/it/util/docker-compose.yml down
+```
+
 ## DynamoDB Data Model
 
 The module is designed to work with the following DynamoDB tables:

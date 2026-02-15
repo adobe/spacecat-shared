@@ -32,6 +32,27 @@ describe('createDataAccess', () => {
   mockDynamoClient.send = sinon.stub().resolves({});
 
   const savedBackend = process.env.DATA_ACCESS_BACKEND;
+  const savedRegion = process.env.AWS_REGION;
+  const savedAccessKey = process.env.AWS_ACCESS_KEY_ID;
+  const savedSecretKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+  before(() => {
+    // Set dummy AWS credentials to prevent SDK from trying to reach
+    // EC2 metadata service (169.254.169.254) which times out in CI.
+    process.env.AWS_REGION = process.env.AWS_REGION || 'us-east-1';
+    process.env.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || 'test';
+    process.env.AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || 'test';
+  });
+
+  after(() => {
+    const restore = (key, saved) => {
+      if (saved === undefined) delete process.env[key];
+      else process.env[key] = saved;
+    };
+    restore('AWS_REGION', savedRegion);
+    restore('AWS_ACCESS_KEY_ID', savedAccessKey);
+    restore('AWS_SECRET_ACCESS_KEY', savedSecretKey);
+  });
 
   afterEach(() => {
     if (savedBackend === undefined) {

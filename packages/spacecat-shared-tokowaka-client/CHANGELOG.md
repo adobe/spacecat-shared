@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.7...@adobe/spacecat-shared-tokowaka-client-v1.7.8) (2026-02-16)
+
+
+### Bug Fixes
+
+* timeout added for edge optimize status ([#1329](https://github.com/adobe/spacecat-shared/issues/1329)) ([93ef065](https://github.com/adobe/spacecat-shared/commit/93ef0653840929e9c76b14d370dbfa6db03cb97e))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.7.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.6...@adobe/spacecat-shared-tokowaka-client-v1.7.7) (2026-02-12)
 
 

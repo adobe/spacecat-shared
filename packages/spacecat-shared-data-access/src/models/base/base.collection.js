@@ -198,11 +198,11 @@ class BaseCollection {
     return attributes.map((field) => this.#toDbField(field)).join(',');
   }
 
-  #getOrderField(indexName, keys) {
+  #getOrderFields(indexName, keys) {
     if (hasText(indexName)) {
       const indexKeys = this.schema.getIndexKeys(indexName);
       if (isNonEmptyArray(indexKeys)) {
-        return this.#toDbField(indexKeys[indexKeys.length - 1]);
+        return indexKeys.map((key) => this.#toDbField(key));
       }
     }
 
@@ -210,7 +210,7 @@ class BaseCollection {
     const defaultSortField = isNonEmptyArray(keyNames)
       ? keyNames[keyNames.length - 1]
       : 'updatedAt';
-    return this.#toDbField(defaultSortField);
+    return [this.#toDbField(defaultSortField)];
   }
 
   #applyDefaults(record) {
@@ -405,14 +405,19 @@ class BaseCollection {
       this.#logAndThrowError(`Failed to query [${this.entityName}]: query proxy [${options.index}] not found`);
     }
 
-    const orderField = this.#getOrderField(indexName, keys);
+    const orderFields = this.#getOrderFields(indexName, keys);
+    const ascending = options.order === 'asc';
     let query = this.postgrestService
       .from(this.tableName)
-      .select(select)
-      .order(orderField, { ascending: options.order === 'asc' });
+      .select(select);
 
-    if (this.fieldMaps?.toDbMap?.[this.idName] === 'id') {
-      query = query.order('id', { ascending: false });
+    orderFields.forEach((field) => {
+      query = query.order(field, { ascending });
+    });
+
+    const idField = this.#toDbField(this.idName);
+    if (!orderFields.includes(idField)) {
+      query = query.order(idField, { ascending });
     }
 
     query = this.#applyKeyFilters(query, keys);

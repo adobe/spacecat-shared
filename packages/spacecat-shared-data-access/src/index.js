@@ -14,8 +14,6 @@ import { createDataAccess } from './service/index.js';
 
 export * from './service/index.js';
 
-const POSTGREST_URL = 'http://localhost:3000';
-
 /**
  * Wrapper for data access layer
  * @param {function} fn - The function to wrap
@@ -37,12 +35,16 @@ export default function dataAccessWrapper(fn) {
       const { log } = context;
 
       const {
-        POSTGREST_URL: postgrestUrl = POSTGREST_URL,
+        POSTGREST_URL: postgrestUrl,
         POSTGREST_SCHEMA: postgrestSchema,
         POSTGREST_API_KEY: postgrestApiKey,
         S3_CONFIG_BUCKET: s3Bucket,
         AWS_REGION: region,
       } = context.env;
+
+      if (!postgrestUrl) {
+        throw new Error('POSTGREST_URL is required');
+      }
 
       context.dataAccess = createDataAccess({
         postgrestUrl,

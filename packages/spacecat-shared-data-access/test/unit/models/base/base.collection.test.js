@@ -1672,8 +1672,47 @@ describe('BaseCollection', () => {
       expect(result.data).to.have.length(2);
       expect(result.data[0].record.someKey).to.equal('a');
       expect(result.cursor).to.be.a('string');
-      expect(query.order).to.have.been.calledOnce;
+      expect(query.order.callCount).to.equal(3);
+      expect(query.order.getCall(0)).to.have.been.calledWithExactly('some_key', { ascending: true });
+      expect(query.order.getCall(1)).to.have.been.calledWithExactly('some_other_key', { ascending: true });
+      expect(query.order.getCall(2)).to.have.been.calledWithExactly('mock_entity_model_id', { ascending: true });
       expect(query.range).to.have.been.calledOnceWithExactly(0, 1);
+    });
+
+    it('does not append duplicate id ordering when id is already part of index order', async () => {
+      const query = createPostgrestQuery({
+        data: [{ mock_entity_model_id: 'id-1' }],
+        error: null,
+      });
+      const fromStub = stub().returns({
+        select: stub().returns(query),
+      });
+
+      const indexesWithIdSort = {
+        primary: {
+          index: 'primary',
+          pk: { facets: ['mockEntityModelId'] },
+          sk: { facets: [] },
+        },
+      };
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        indexesWithIdSort,
+        mockLogger,
+        {
+          mockEntityModelId: { type: 'string', required: true },
+        },
+      );
+
+      await instance.allByIndexKeys(
+        { mockEntityModelId: 'id-1' },
+        { fetchAllPages: false, order: 'desc' },
+      );
+
+      expect(query.order.callCount).to.equal(1);
+      expect(query.order.getCall(0)).to.have.been.calledWithExactly('id', { ascending: false });
     });
 
     it('fetches all pages in PostgREST mode', async () => {

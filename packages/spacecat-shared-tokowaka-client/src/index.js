@@ -12,7 +12,7 @@
 
 import crypto from 'crypto';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject, tracingFetch } from '@adobe/spacecat-shared-utils';
 import { v4 as uuidv4 } from 'uuid';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
@@ -1072,17 +1072,20 @@ class TokowakaClient {
     const maxRetries = 3;
     let attempt = 0;
 
+    const REQUEST_TIMEOUT_MS = 5000;
+
     while (attempt <= maxRetries) {
       try {
         this.log.debug(`Attempt ${attempt + 1}/${maxRetries + 1}: Checking edge optimize status for ${targetUrl}`);
 
         // eslint-disable-next-line no-await-in-loop
-        const response = await fetch(targetUrl, {
+        const response = await tracingFetch(targetUrl, {
           method: 'GET',
           headers: {
             'User-Agent': 'Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
             'fastly-debug': '1',
           },
+          timeout: REQUEST_TIMEOUT_MS,
         });
 
         this.log.debug(`Response status: ${response.status}`);
@@ -1096,6 +1099,13 @@ class TokowakaClient {
           edgeOptimizeEnabled,
         };
       } catch (error) {
+        const isTimeout = error?.code === 'ETIMEOUT';
+
+        if (isTimeout) {
+          this.log.warn(`Request timed out after ${REQUEST_TIMEOUT_MS}ms for ${targetUrl}, returning edgeOptimizeEnabled: false`);
+          return { edgeOptimizeEnabled: false };
+        }
+
         attempt += 1;
 
         if (attempt > maxRetries) {

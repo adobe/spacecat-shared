@@ -69,6 +69,18 @@ describe('postgrest utils', () => {
     });
   });
 
+  it('handles nullish attribute definitions when creating field maps', () => {
+    const schema = {
+      getAttributes: () => ({
+        siteId: null,
+      }),
+    };
+
+    const maps = createFieldMaps(schema);
+    expect(maps.toDbMap).to.deep.equal({ siteId: 'site_id' });
+    expect(maps.toModelMap).to.deep.equal({ site_id: 'siteId' });
+  });
+
   it('maps model id field to DB id when schema idName is defined', () => {
     const schema = {
       getIdName: () => 'siteId',
@@ -209,6 +221,11 @@ describe('postgrest utils', () => {
       trialUserId: 'tu-1',
       lastSeenAt: '2024-01-15T10:30:00.000Z',
     });
+  });
+
+  it('omits singleton-null arrays from DB records', () => {
+    const toModelMap = { options: 'options' };
+    expect(fromDbRecord({ options: [null] }, toModelMap)).to.deep.equal({});
   });
 
   it('drops unknown fields from toDbRecord by default and can include them optionally', () => {

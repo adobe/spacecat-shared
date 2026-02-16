@@ -280,4 +280,19 @@ describe('Patcher', () => {
     await patcher.save();
     expect(mockEntity.patch).to.have.been.called;
   });
+
+  it('bumps updatedAt by one second when generated timestamp matches previous value', async () => {
+    const fixedNow = new Date('2026-02-16T12:00:00.000Z');
+    const clock = sinon.useFakeTimers({ now: fixedNow });
+    try {
+      mockRecord.updatedAt = fixedNow.toISOString();
+      patcher.patchValue('name', 'UpdatedName');
+
+      await patcher.save();
+
+      expect(patcher.getUpdates().updatedAt.current).to.equal('2026-02-16T12:00:01.000Z');
+    } finally {
+      clock.restore();
+    }
+  });
 });

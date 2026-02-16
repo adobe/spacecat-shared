@@ -15,8 +15,10 @@
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
+import sinon from 'sinon';
 
 import SiteEnrollment from '../../../../src/models/site-enrollment/site-enrollment.model.js';
+import BaseCollection from '../../../../src/models/base/base.collection.js';
 
 import { createElectroMocks } from '../../util.js';
 
@@ -58,6 +60,36 @@ describe('SiteEnrollmentCollection', () => {
       expect(instance.log).to.equal(mockLogger);
 
       expect(model).to.be.an('object');
+    });
+  });
+
+  describe('create', () => {
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('returns existing enrollment when siteId/entitlementId already exists', async () => {
+      const existing = {
+        getEntitlementId: () => mockRecord.entitlementId,
+      };
+      const allBySiteIdStub = sinon.stub(instance, 'allBySiteId').resolves([existing]);
+      const superCreateStub = sinon.stub(BaseCollection.prototype, 'create').resolves(model);
+
+      const result = await instance.create(mockRecord);
+
+      expect(result).to.equal(existing);
+      expect(allBySiteIdStub).to.have.been.calledOnceWithExactly(mockRecord.siteId);
+      expect(superCreateStub).to.not.have.been.called;
+    });
+
+    it('falls back to BaseCollection.create when no matching enrollment exists', async () => {
+      sinon.stub(instance, 'allBySiteId').resolves([]);
+      const superCreateStub = sinon.stub(BaseCollection.prototype, 'create').resolves(model);
+
+      const result = await instance.create(mockRecord, { upsert: true });
+
+      expect(result).to.equal(model);
+      expect(superCreateStub).to.have.been.calledOnceWithExactly(mockRecord, { upsert: true });
     });
   });
 });

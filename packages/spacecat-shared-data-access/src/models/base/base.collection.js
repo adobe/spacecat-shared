@@ -75,15 +75,9 @@ class BaseCollection {
 
   // eslint-disable-next-line class-methods-use-this
   #resolveBulkKeyField(keys) {
-    if (!isNonEmptyArray(keys)) {
-      return null;
-    }
+    if (!isNonEmptyArray(keys)) return null;
 
-    const firstKey = keys[0];
-    if (!isNonEmptyObject(firstKey)) {
-      return null;
-    }
-
+    const [firstKey] = keys;
     const fields = Object.keys(firstKey);
     if (fields.length !== 1) {
       return null;
@@ -91,9 +85,6 @@ class BaseCollection {
 
     const [field] = fields;
     const isSingleFieldAcrossAll = keys.every((key) => {
-      if (!isNonEmptyObject(key)) {
-        return false;
-      }
       const keyFields = Object.keys(key);
       return keyFields.length === 1 && keyFields[0] === field && key[field] !== undefined;
     });

@@ -415,9 +415,9 @@ class BaseCollection {
       query = query.order(field, { ascending });
     });
 
-    const idField = this.#toDbField(this.idName);
-    if (!orderFields.includes(idField)) {
-      query = query.order(idField, { ascending });
+    const mappedIdField = this.fieldMaps?.toDbMap?.[this.idName];
+    if (hasText(mappedIdField) && !orderFields.includes(mappedIdField)) {
+      query = query.order(mappedIdField, { ascending });
     }
 
     query = this.#applyKeyFilters(query, keys);

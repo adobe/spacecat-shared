@@ -1672,10 +1672,9 @@ describe('BaseCollection', () => {
       expect(result.data).to.have.length(2);
       expect(result.data[0].record.someKey).to.equal('a');
       expect(result.cursor).to.be.a('string');
-      expect(query.order.callCount).to.equal(3);
+      expect(query.order.callCount).to.equal(2);
       expect(query.order.getCall(0)).to.have.been.calledWithExactly('some_key', { ascending: true });
       expect(query.order.getCall(1)).to.have.been.calledWithExactly('some_other_key', { ascending: true });
-      expect(query.order.getCall(2)).to.have.been.calledWithExactly('mock_entity_model_id', { ascending: true });
       expect(query.range).to.have.been.calledOnceWithExactly(0, 1);
     });
 

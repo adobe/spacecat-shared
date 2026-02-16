@@ -13,12 +13,13 @@
 import {
   hasText, isIsoDate, isNonEmptyArray, isObject, isValidUrl, isValidUUID,
 } from '@adobe/spacecat-shared-utils';
+import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
 import { ScrapeJobDto } from './scrapeJobDto.js';
 import ScrapeJobSupervisor from './scrape-job-supervisor.js';
 import { ScrapeUrlDto } from './scrapeUrlDto.js';
 
 const SCRAPE_PROCESSING_TYPE_DEFAULT = 'default';
-const SCRAPE_URL_STATUS_COMPLETE = 'COMPLETE';
+const SCRAPE_URL_STATUS_COMPLETE = MYSTICAT_ENUMS_BY_TYPE.SCRAPE_URL_STATUS.COMPLETE;
 
 export default class ScrapeClient {
   config = null;

@@ -11,11 +11,9 @@
  */
 
 import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
+import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
 
-const ENTITLEMENT_TIERS = {
-  FREE_TRIAL: 'FREE_TRIAL',
-  PAID: 'PAID',
-};
+const ENTITLEMENT_TIERS = MYSTICAT_ENUMS_BY_TYPE.ENTITLEMENT_TIER;
 /**
  * TierClient provides methods to manage entitlements and site enrollments.
  */

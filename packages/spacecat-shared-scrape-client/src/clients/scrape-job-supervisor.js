@@ -11,8 +11,9 @@
  */
 
 import { isValidUrl, isValidUUID, composeBaseURL } from '@adobe/spacecat-shared-utils';
+import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
 
-const SCRAPE_JOB_STATUS_RUNNING = 'RUNNING';
+const SCRAPE_JOB_STATUS_RUNNING = MYSTICAT_ENUMS_BY_TYPE.SCRAPE_JOB_STATUS.RUNNING;
 
 /**
  * Scrape Supervisor provides functionality to start and manage scrape jobs.

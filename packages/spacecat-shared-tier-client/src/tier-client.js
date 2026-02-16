@@ -11,9 +11,6 @@
  */
 
 import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
-import {
-  Entitlement as EntitlementModel,
-} from '@adobe/spacecat-shared-data-access';
 /**
  * TierClient provides methods to manage entitlements and site enrollments.
  */
@@ -89,6 +86,7 @@ class TierClient {
     this.SiteEnrollment = SiteEnrollmentCollection;
     this.Organization = OrganizationCollection;
     this.Site = SiteCollection;
+    this.entitlementTiers = EntitlementCollection?.TIERS || {};
   }
 
   /**
@@ -137,8 +135,8 @@ class TierClient {
    */
   async createEntitlement(tier) {
     try {
-      if (!Object.values(EntitlementModel.TIERS).includes(tier)) {
-        throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(EntitlementModel.TIERS).join(', ')}`);
+      if (!Object.values(this.entitlementTiers).includes(tier)) {
+        throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(this.entitlementTiers).join(', ')}`);
       }
       const orgId = this.organization.getId();
       // Check what already exists
@@ -149,7 +147,7 @@ class TierClient {
         const currentTier = existing.entitlement.getTier();
 
         // If currentTier doesn't match with given tier and is not PAID, update it
-        if (currentTier !== tier && currentTier !== EntitlementModel.TIERS.PAID) {
+        if (currentTier !== tier && currentTier !== this.entitlementTiers.PAID) {
           existing.entitlement.setTier(tier);
           await existing.entitlement.save();
         }
@@ -314,7 +312,7 @@ class TierClient {
   async revokeEntitlement() {
     const existing = await this.checkValidEntitlement();
     if (existing.entitlement) {
-      if (existing.entitlement.getTier() === EntitlementModel.TIERS.PAID) {
+      if (existing.entitlement.getTier() === this.entitlementTiers.PAID) {
         throw new Error('Paid entitlement cannot be revoked');
       }
       await existing.entitlement.remove();

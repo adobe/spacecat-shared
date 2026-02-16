@@ -18,7 +18,11 @@ import {
 import ImsPromiseClient from './clients/ims-promise-client.js';
 
 /**
- * @import {type Site} from "@adobe/spacecat-shared-data-access/src/models/site/index.js"
+ * @typedef {{
+ *   getBaseURL: () => string,
+ *   getAuthoringType: () => string,
+ *   getDeliveryType: () => string
+ * }} Site
  */
 
 /**

@@ -15,54 +15,50 @@
 import { use, expect, assert } from 'chai';
 import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
-import sinon, { stub } from 'sinon';
+import sinon from 'sinon';
 
-import { ScrapeJob, ScrapeUrl } from '@adobe/spacecat-shared-data-access';
-import ScrapeJobSchema from '@adobe/spacecat-shared-data-access/src/models/scrape-job/scrape-job.schema.js';
-import ScrapeUrlSchema from '@adobe/spacecat-shared-data-access/src/models/scrape-url/scrape-url.schema.js';
 import { ScrapeClient } from '../src/index.js';
 import { ScrapeUrlDto } from '../src/clients/scrapeUrlDto.js';
 
 use(sinonChai);
 use(chaiAsPromised);
 
-const createScrapeJob = (data) => (new ScrapeJob(
-  {
-    entities: {
-      scrapeJob: {
-        model: {
-          schema: { attributes: { status: { type: 'string', get: (value) => value } } },
-        },
-        patch: sinon.stub().returns({ go: () => { }, set: () => { } }),
-        remove: sinon.stub().returns({ go: () => { } }),
-      },
-    },
-  },
-  {
-    log: console,
-    getCollection: stub().returns({
-      schema: ScrapeJobSchema,
-      findById: stub(),
-    }),
-  },
-  ScrapeJobSchema,
-  data,
-  console,
-));
+const SCRAPE_URL_STATUS = {
+  COMPLETE: 'COMPLETE',
+  RUNNING: 'RUNNING',
+  PENDING: 'PENDING',
+  REDIRECT: 'REDIRECT',
+  FAILED: 'FAILED',
+};
 
-const createScrapeUrl = (data) => (new ScrapeUrl(
-  { entities: { scrapeUrl: {} } },
-  {
-    log: console,
-    getCollection: stub().returns({
-      schema: ScrapeUrlSchema,
-      findById: stub(),
-    }),
-  },
-  ScrapeUrlSchema,
-  data,
-  console,
-));
+const createScrapeJob = (data) => ({
+  getId: () => data.scrapeJobId || data.id,
+  getBaseURL: () => data.baseURL,
+  getProcessingType: () => data.processingType || 'default',
+  getOptions: () => data.options || {},
+  getStartedAt: () => data.startedAt || null,
+  getEndedAt: () => data.endedAt || null,
+  getDuration: () => data.duration || null,
+  getStatus: () => data.status || null,
+  getUrlCount: () => data.urlCount || 0,
+  getSuccessCount: () => data.successCount || 0,
+  getFailedCount: () => data.failedCount || 0,
+  getRedirectCount: () => data.redirectCount || 0,
+  getCustomHeaders: () => data.customHeaders || {},
+  getAbortInfo: () => data.abortInfo || null,
+});
+
+const createScrapeUrl = (data) => ({
+  getId: () => data.id,
+  getUrl: () => data.url,
+  getProcessingType: () => data.processingType || 'default',
+  getOptions: () => data.options || {},
+  getStatus: () => data.status,
+  getPath: () => data.path,
+  getReason: () => data.reason,
+  getScrapeJobId: () => data.scrapeJobId,
+  getCreatedAt: () => data.createdAt || null,
+});
 
 describe('ScrapeJobController tests', () => {
   let sandbox;
@@ -158,6 +154,9 @@ describe('ScrapeJobController tests', () => {
 
     mockDataAccess = {
       ScrapeJob: {
+        ScrapeProcessingType: { DEFAULT: 'default' },
+        ScrapeUrlStatus: SCRAPE_URL_STATUS,
+        ScrapeJobStatus: { RUNNING: 'RUNNING' },
         allByDateRange: sandbox.stub().resolves([]),
         allByStatus: sandbox.stub().resolves([]),
         create: (data) => createScrapeJob(data),
@@ -596,37 +595,37 @@ describe('ScrapeJobController tests', () => {
         // for all the other properties of a ImportUrl object.
         baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getStatus: () => SCRAPE_URL_STATUS.COMPLETE,
             getPath: () => 'path/to/result1',
             getUrl: () => 'https://example.com/page1',
             getReason: () => null,
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getStatus: () => SCRAPE_URL_STATUS.COMPLETE,
             getPath: () => 'path/to/result2',
             getUrl: () => 'https://example.com/page2',
             getReason: () => null,
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.RUNNING,
+            getStatus: () => SCRAPE_URL_STATUS.RUNNING,
             getPath: () => 'path/to/result3',
             getUrl: () => 'https://example.com/page3',
             getReason: () => null,
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.PENDING,
+            getStatus: () => SCRAPE_URL_STATUS.PENDING,
             getPath: () => 'path/to/result5',
             getUrl: () => 'https://example.com/page5',
             getReason: () => null,
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.REDIRECT,
+            getStatus: () => SCRAPE_URL_STATUS.REDIRECT,
             getPath: () => 'path/to/result6',
             getUrl: () => 'https://example.com/page6',
             getReason: () => null,
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.FAILED,
+            getStatus: () => SCRAPE_URL_STATUS.FAILED,
             getPath: () => 'path/to/result7',
             getUrl: () => 'https://example.com/page7',
             getReason: () => 'An error occurred',
@@ -960,12 +959,12 @@ describe('ScrapeJobController tests', () => {
         baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
         baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getStatus: () => SCRAPE_URL_STATUS.COMPLETE,
             getPath: () => 'path/to/result1',
             getUrl: () => 'https://example.com/page1',
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getStatus: () => SCRAPE_URL_STATUS.COMPLETE,
             getPath: () => 'path/to/result2',
             getUrl: () => 'https://example.com/page2',
           },
@@ -999,22 +998,22 @@ describe('ScrapeJobController tests', () => {
         baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
         baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getStatus: () => SCRAPE_URL_STATUS.COMPLETE,
             getPath: () => 'path/to/result1',
             getUrl: () => 'https://example.com/page1',
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.RUNNING,
+            getStatus: () => SCRAPE_URL_STATUS.RUNNING,
             getPath: () => 'path/to/result2',
             getUrl: () => 'https://example.com/page2',
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.FAILED,
+            getStatus: () => SCRAPE_URL_STATUS.FAILED,
             getPath: () => 'path/to/result3',
             getUrl: () => 'https://example.com/page3',
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.PENDING,
+            getStatus: () => SCRAPE_URL_STATUS.PENDING,
             getPath: () => 'path/to/result4',
             getUrl: () => 'https://example.com/page4',
           },
@@ -1038,12 +1037,12 @@ describe('ScrapeJobController tests', () => {
         baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
         baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.RUNNING,
+            getStatus: () => SCRAPE_URL_STATUS.RUNNING,
             getPath: () => 'path/to/result1',
             getUrl: () => 'https://example.com/page1',
           },
           {
-            getStatus: () => ScrapeJob.ScrapeUrlStatus.FAILED,
+            getStatus: () => SCRAPE_URL_STATUS.FAILED,
             getPath: () => 'path/to/result2',
             getUrl: () => 'https://example.com/page2',
           },

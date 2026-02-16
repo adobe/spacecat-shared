@@ -13,7 +13,6 @@
 import {
   hasText, isIsoDate, isNonEmptyArray, isObject, isValidUrl, isValidUUID,
 } from '@adobe/spacecat-shared-utils';
-import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
 import { ScrapeJobDto } from './scrapeJobDto.js';
 import ScrapeJobSupervisor from './scrape-job-supervisor.js';
 import { ScrapeUrlDto } from './scrapeUrlDto.js';
@@ -185,7 +184,7 @@ export default class ScrapeClient {
         urls,
         options,
         customHeaders,
-        processingType = ScrapeJobModel.ScrapeProcessingType.DEFAULT,
+        processingType = this.config.dataAccess.ScrapeJob.ScrapeProcessingType.DEFAULT,
         maxScrapeAge = 24,
         metaData = {},
       } = data;
@@ -299,7 +298,9 @@ export default class ScrapeClient {
       const { ScrapeUrl } = this.config.dataAccess;
       const scrapeUrls = await ScrapeUrl.allByScrapeJobId(job.getId());
       return scrapeUrls
-        .filter((url) => url.getStatus() === ScrapeJobModel.ScrapeUrlStatus.COMPLETE)
+        .filter((url) => (
+          url.getStatus() === this.config.dataAccess.ScrapeJob.ScrapeUrlStatus.COMPLETE
+        ))
         .reduce((map, url) => map.set(url.getUrl(), url.getPath()), new Map());
     } catch (error) {
       const msgError = `Failed to fetch the scrape job result: ${error.message}`;

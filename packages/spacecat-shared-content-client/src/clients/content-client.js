@@ -20,7 +20,10 @@ const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
 
 /**
- * @import {type Site} from "@adobe/spacecat-shared-data-access/src/models/site/index.js"
+ * @typedef {{
+ *   getBaseURL: () => string,
+ *   getHlxConfig: () => any
+ * }} Site
  * @typedef {Pick<Console, 'debug' | 'info' | 'warn' | 'error'>} Logging
  */
 

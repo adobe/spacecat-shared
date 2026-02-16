@@ -17,7 +17,6 @@ import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 import sinon from 'sinon';
 
-import { Organization, Site } from '@adobe/spacecat-shared-data-access';
 import TierClient from '../src/tier-client.js';
 
 use(chaiAsPromised);
@@ -49,11 +48,7 @@ describe('TierClient', () => {
   };
 
   // Create actual Organization instance for instanceof checks
-  const organizationInstance = Object.create(Organization.prototype);
-  Object.assign(
-    organizationInstance,
-    { entityName: Organization.ENTITY_NAME, ...mockOrganization },
-  );
+  const organizationInstance = { ...mockOrganization };
 
   const mockSite = {
     getId: () => siteId,
@@ -62,11 +57,11 @@ describe('TierClient', () => {
   };
 
   // Create actual Site instance for instanceof checks
-  const siteInstance = Object.create(Site.prototype);
-  Object.assign(siteInstance, { entityName: Site.ENTITY_NAME, ...mockSite });
+  const siteInstance = { ...mockSite };
 
   const mockDataAccess = {
     Entitlement: {
+      TIERS: { FREE_TRIAL: 'FREE_TRIAL', PAID: 'PAID' },
       findByOrganizationIdAndProductCode: sandbox.stub(),
       findById: sandbox.stub(),
       create: sandbox.stub(),
@@ -121,23 +116,18 @@ describe('TierClient', () => {
   });
 
   describe('Static Factory Methods', () => {
-    const testOrganization = Object.create(Organization.prototype);
-    Object.assign(testOrganization, { entityName: Organization.ENTITY_NAME, getId: () => orgId });
+    const testOrganization = { getId: () => orgId };
 
-    const testSite = Object.create(Site.prototype);
-    Object.assign(testSite, {
-      entityName: Site.ENTITY_NAME,
+    const testSite = {
       getId: () => siteId,
       getOrganizationId: () => orgId,
       getOrganization: () => testOrganization,
-    });
+    };
 
-    const testSiteWithOrgRef = Object.create(Site.prototype);
-    Object.assign(testSiteWithOrgRef, {
-      entityName: Site.ENTITY_NAME,
+    const testSiteWithOrgRef = {
       getId: () => siteId,
       getOrganizationId: () => orgId,
-    });
+    };
 
     describe('createForOrg', () => {
       it('should create TierClient for organization', () => {

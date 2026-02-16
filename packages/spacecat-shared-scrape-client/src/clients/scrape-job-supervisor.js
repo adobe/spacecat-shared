@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
 import { isValidUrl, isValidUUID, composeBaseURL } from '@adobe/spacecat-shared-utils';
 
 /**
@@ -57,7 +56,7 @@ function ScrapeJobSupervisor(services, config) {
       processingType,
       options,
       urlCount: urls.length,
-      status: ScrapeJobModel.ScrapeJobStatus.RUNNING,
+      status: dataAccess.ScrapeJob.ScrapeJobStatus.RUNNING,
       customHeaders,
     };
     log.debug(`Creating a new scrape job. Job data: ${JSON.stringify(jobData)}`);

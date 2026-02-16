@@ -69,6 +69,21 @@ const seedV2Fixtures = async () => {
       throw new Error(`Model not found for ${modelName}`);
     }
 
+    // Consumer doesn't support createMany() due to individual validation requirements.
+    // Seed consumers one-by-one using create() instead.
+    if (modelName === 'Consumer') {
+      const createdItems = [];
+      for (const item of data) {
+        // eslint-disable-next-line no-await-in-loop
+        const created = await Model.create(item);
+        createdItems.push(created);
+      }
+      sampleData[key] = createdItems;
+      console.log(`Successfully seeded ${key}.`);
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
     // eslint-disable-next-line no-await-in-loop
     const result = await Model.createMany(data);
     sampleData[key] = result.createdItems;

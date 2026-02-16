@@ -1,3 +1,17 @@
+## [@adobe/spacecat-shared-data-access-v3.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.109.0...@adobe/spacecat-shared-data-access-v3.0.0) (2026-02-16)
+
+### ⚠ BREAKING CHANGES
+
+* **data-access:** data-access v3 migrates from DynamoDB/ElectroDB to Postgres/PostgREST
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+* data access v3 (#1349)
+
+### Features
+
+* data access v3 ([#1349](https://github.com/adobe/spacecat-shared/issues/1349)) ([6db6b79](https://github.com/adobe/spacecat-shared/commit/6db6b79ecb7813acad798a2435fe317cd9d1731c))
+* **data-access:** v3 Postgres/PostgREST migration ([b79725f](https://github.com/adobe/spacecat-shared/commit/b79725f6a53bc0baac14a64acd8105a3eec56d99))
+
 # [@adobe/spacecat-shared-data-access-v2.109.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.108.0...@adobe/spacecat-shared-data-access-v2.109.0) (2026-02-16)
 
 

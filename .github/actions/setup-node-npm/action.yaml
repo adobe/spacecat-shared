@@ -27,12 +27,6 @@ runs:
       run: npm install -g npm@10.9.4
       shell: bash
 
-    - name: Configure GitHub Git URL rewrite
-      run: |
-        git config --global url."https://github.com/".insteadOf ssh://git@github.com/
-        git config --global url."https://github.com/".insteadOf git@github.com:
-      shell: bash
-
     - name: Install dependencies (only if cache miss)
       run: npm ci
       shell: bash

@@ -133,7 +133,6 @@ const seedV2Fixtures = async () => {
 
     for (let i = 0; i < pending.length; i += 1) {
       const [key, data] = pending[i];
-      console.log(`Seeding ${key}...`);
 
       if (!Array.isArray(data) || data.length === 0) {
         console.log(`No data to seed for ${key}.`);
@@ -172,8 +171,6 @@ const seedV2Fixtures = async () => {
         if (result.errorItems.length > 0) {
           throw new Error(`Error seeding ${key}: ${JSON.stringify(result.errorItems, null, 2)}`);
         }
-
-        console.log(`Successfully seeded ${key}.`);
         pending.splice(i, 1);
         i -= 1;
         madeProgress = true;

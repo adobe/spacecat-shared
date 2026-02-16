@@ -12,6 +12,8 @@
 
 import { isValidUrl, isValidUUID, composeBaseURL } from '@adobe/spacecat-shared-utils';
 
+const SCRAPE_JOB_STATUS_RUNNING = 'RUNNING';
+
 /**
  * Scrape Supervisor provides functionality to start and manage scrape jobs.
  * @param {object} services - The services required by the handler.
@@ -56,7 +58,7 @@ function ScrapeJobSupervisor(services, config) {
       processingType,
       options,
       urlCount: urls.length,
-      status: dataAccess.ScrapeJob.ScrapeJobStatus.RUNNING,
+      status: SCRAPE_JOB_STATUS_RUNNING,
       customHeaders,
     };
     log.debug(`Creating a new scrape job. Job data: ${JSON.stringify(jobData)}`);

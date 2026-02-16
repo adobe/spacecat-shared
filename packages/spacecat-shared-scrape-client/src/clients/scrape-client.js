@@ -17,6 +17,9 @@ import { ScrapeJobDto } from './scrapeJobDto.js';
 import ScrapeJobSupervisor from './scrape-job-supervisor.js';
 import { ScrapeUrlDto } from './scrapeUrlDto.js';
 
+const SCRAPE_PROCESSING_TYPE_DEFAULT = 'default';
+const SCRAPE_URL_STATUS_COMPLETE = 'COMPLETE';
+
 export default class ScrapeClient {
   config = null;
 
@@ -184,7 +187,7 @@ export default class ScrapeClient {
         urls,
         options,
         customHeaders,
-        processingType = this.config.dataAccess.ScrapeJob.ScrapeProcessingType.DEFAULT,
+        processingType = SCRAPE_PROCESSING_TYPE_DEFAULT,
         maxScrapeAge = 24,
         metaData = {},
       } = data;
@@ -299,7 +302,7 @@ export default class ScrapeClient {
       const scrapeUrls = await ScrapeUrl.allByScrapeJobId(job.getId());
       return scrapeUrls
         .filter((url) => (
-          url.getStatus() === this.config.dataAccess.ScrapeJob.ScrapeUrlStatus.COMPLETE
+          url.getStatus() === SCRAPE_URL_STATUS_COMPLETE
         ))
         .reduce((map, url) => map.set(url.getUrl(), url.getPath()), new Map());
     } catch (error) {

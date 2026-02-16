@@ -39,6 +39,18 @@ class Consumer extends BaseModel {
       || (isIsoDate(this.getRevokedAt()) && new Date(this.getRevokedAt()) <= new Date());
   }
 
+  /**
+   * Saves the consumer after validating capabilities against the allowlist.
+   * Prevents capability escalation via setCapabilities() + save().
+   * @async
+   * @returns {Promise<Consumer>} - The saved consumer instance.
+   * @throws {ValidationError} - If capabilities are invalid.
+   */
+  async save() {
+    this.collection.validateCapabilities(this.getCapabilities());
+    return super.save();
+  }
+
   static CAPABILITIES = ['read', 'write', 'delete'];
 
   static IMS_ORG_ID_REGEX = /^[a-z0-9]{24}@AdobeOrg$/i;

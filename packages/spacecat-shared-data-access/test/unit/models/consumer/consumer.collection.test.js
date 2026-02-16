@@ -237,4 +237,23 @@ describe('ConsumerCollection', () => {
       expect(mockElectroService.entities.consumer.create).to.not.have.been.called;
     });
   });
+
+  describe('createMany', () => {
+    it('throws an error indicating createMany is not supported', async () => {
+      const items = [
+        {
+          clientId: 'client-1',
+          technicalAccountId: 'AABB00112233445566778899@techacct.adobe.com',
+          consumerName: 'consumer-1',
+          status: 'ACTIVE',
+          capabilities: ['site:read'],
+          imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
+        },
+      ];
+
+      await expect(instance.createMany(items)).to.be.rejectedWith(
+        'createMany is not supported for Consumer. Use create() instead.',
+      );
+    });
+  });
 });

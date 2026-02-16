@@ -137,6 +137,32 @@ describe('ConsumerModel', () => {
     });
   });
 
+  describe('save', () => {
+    it('validates capabilities before saving', async () => {
+      instance.collection.validateCapabilities = stub();
+      instance.patcher = { save: stub().resolves() };
+
+      await instance.save();
+
+      expect(instance.collection.validateCapabilities).to.have.been.calledOnceWith(
+        sampleConsumer.capabilities,
+      );
+      expect(instance.patcher.save).to.have.been.calledOnce;
+    });
+
+    it('rejects save when capabilities are invalid', async () => {
+      instance.collection.validateCapabilities = stub().throws(
+        new Error('Invalid capabilities: [admin:nuke]'),
+      );
+      instance.patcher = { save: stub().resolves() };
+
+      instance.record.capabilities = ['admin:nuke'];
+
+      await expect(instance.save()).to.be.rejectedWith('Invalid capabilities: [admin:nuke]');
+      expect(instance.patcher.save).to.not.have.been.called;
+    });
+  });
+
   describe('setters', () => {
     it('sets consumerName', () => {
       const newConsumerName = 'new-consumer-name';

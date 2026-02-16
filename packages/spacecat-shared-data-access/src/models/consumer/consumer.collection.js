@@ -49,11 +49,11 @@ class ConsumerCollection extends BaseCollection {
 
   /**
    * Validates that all capabilities in the given array are known entity:operation pairs.
+   * Called during both create() and save() to prevent capability escalation.
    * @param {string[]} capabilities - The capabilities to validate.
    * @throws {ValidationError} - Throws if any capability is not recognized.
-   * @private
    */
-  #validateCapabilities(capabilities) {
+  validateCapabilities(capabilities) {
     if (!isNonEmptyArray(capabilities)) {
       return;
     }
@@ -95,6 +95,10 @@ class ConsumerCollection extends BaseCollection {
 
   /**
    * Validates that no existing consumer has the same clientId.
+   * Uses findByClientId() to enforce global uniqueness, which is correct because IMS
+   * client_ids are globally unique per integration in Adobe Developer Console regardless
+   * of the owning org. The composite index ['clientId', 'imsOrgId'] exists for efficient
+   * scoped lookups, not to imply per-org uniqueness.
    * @param {string} clientId - The clientId to check.
    * @throws {ValidationError} - Throws if a consumer with this clientId already exists.
    * @private
@@ -125,9 +129,20 @@ class ConsumerCollection extends BaseCollection {
    */
   async create(item, options = {}) {
     this.#validateImsOrgId(item?.imsOrgId);
-    this.#validateCapabilities(item?.capabilities);
+    this.validateCapabilities(item?.capabilities);
     await this.#validateClientIdUniqueness(item?.clientId);
     return super.create(item, options);
+  }
+
+  /**
+   * Bulk creation is not supported for Consumer entities.
+   * All consumers must be created individually via create() to enforce
+   * imsOrgId allowlist, capability validation, and clientId uniqueness checks.
+   * @throws {Error} Always throws — use create() instead.
+   */
+  // eslint-disable-next-line class-methods-use-this, no-unused-vars
+  async createMany(_items, _parent) {
+    throw new Error('createMany is not supported for Consumer. Use create() instead.');
   }
 }
 

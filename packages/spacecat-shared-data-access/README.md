@@ -1,4 +1,4 @@
-# Spacecat Shared Data Access
+# Spacecat Shared Data Access (v3)
 
 `@adobe/spacecat-shared-data-access` is the shared data-access layer used by Spacecat services.
 

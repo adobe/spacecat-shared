@@ -857,15 +857,36 @@ class BaseCollection {
         return undefined;
       }
 
-      await Promise.all(
-        items.map(async (item) => {
-          const keys = item.generateCompositeKeys
-            ? item.generateCompositeKeys()
-            : { [this.idName]: item.getId() };
-          const { updates } = this.applyUpdateWatchers(item.record, item.record);
-          await this.updateByKeys(keys, updates);
-        }),
-      );
+      const primaryKeyFields = this.schema.getIndexKeys('primary');
+      const conflictFields = (isNonEmptyArray(primaryKeyFields) ? primaryKeyFields : [this.idName])
+        .map((field) => this.#toDbField(field))
+        .join(',');
+      const preparedItems = items.map((item) => {
+        const keys = item.generateCompositeKeys
+          ? item.generateCompositeKeys()
+          : { [this.idName]: item.getId() };
+        const { record, updates } = this.applyUpdateWatchers(item.record, item.record);
+        return {
+          model: item,
+          record,
+          updates,
+          keys,
+        };
+      });
+      for (const preparedItem of preparedItems) {
+        // Keep in-memory model state in sync with persisted values (e.g. watched updatedAt).
+        preparedItem.model.record = preparedItem.record;
+      }
+      const payload = preparedItems
+        .map((preparedItem) => this.#toDbRecord({ ...preparedItem.updates, ...preparedItem.keys }));
+
+      const { error } = await this.postgrestService
+        .from(this.tableName)
+        .upsert(payload, { onConflict: conflictFields });
+
+      if (error) {
+        return this.#logAndThrowError('Failed to save many', error);
+      }
 
       this.#invalidateCache();
       return undefined;

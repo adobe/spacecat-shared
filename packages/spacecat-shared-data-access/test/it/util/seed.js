@@ -83,9 +83,19 @@ const collectErrorDetails = (error) => {
   };
 };
 
-const isMissingDbFieldError = ({ message }) => message.includes('Could not find the')
-  && message.includes('column')
-  && message.includes('schema cache');
+const MISSING_DB_FIELD_CODES = new Set([
+  'PGRST204', // PostgREST schema cache missing column/table metadata
+  '42703', // PostgreSQL undefined_column
+]);
+
+const isMissingDbFieldError = ({ message, codes }) => (
+  Array.isArray(codes) && codes.some((code) => MISSING_DB_FIELD_CODES.has(code))
+)
+  || (
+    message.includes('Could not find the')
+      && message.includes('column')
+      && message.includes('schema cache')
+  );
 
 const isForeignKeyError = ({ message, codes }) => message.includes('violates foreign key constraint')
   || codes.includes('23503');
@@ -262,5 +272,9 @@ const seedV2Fixtures = async () => {
 export const seedDatabase = async () => {
   await resetPostgresDatabase();
   await setPostgresTriggersEnabled(false);
-  return seedV2Fixtures();
+  try {
+    return await seedV2Fixtures();
+  } finally {
+    await setPostgresTriggersEnabled(true);
+  }
 };

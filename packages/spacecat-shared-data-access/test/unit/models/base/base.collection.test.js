@@ -2162,8 +2162,10 @@ describe('BaseCollection', () => {
         select: stub().returns({ maybeSingle }),
       };
       const update = stub().returns(updateQuery);
+      const upsert = stub().resolves({ error: null });
       const fromStub = stub().returns({
         update,
+        upsert,
       });
       const instance = createInstance(
         { from: fromStub },
@@ -2186,7 +2188,55 @@ describe('BaseCollection', () => {
         getId: () => 'b',
       };
       await instance._saveMany([withComposite, withoutComposite]);
-      expect(update.callCount).to.equal(3);
+      expect(update.callCount).to.equal(1);
+      expect(upsert.calledOnce).to.be.true;
+    });
+
+    it('updates in-memory updatedAt for saveMany in PostgREST mode', async () => {
+      const before = '2026-01-01T00:00:00.000Z';
+      const upsert = stub().resolves({ error: null });
+      const attributesWithUpdatedAt = {
+        ...richAttributes,
+        updatedAt: {
+          type: 'string',
+          watch: '*',
+          set: () => new Date().toISOString(),
+        },
+      };
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        attributesWithUpdatedAt,
+      );
+      const model = {
+        record: { someKey: 'a', someOtherKey: 1, updatedAt: before },
+        getId: () => 'a',
+      };
+
+      await instance._saveMany([model]);
+
+      expect(model.record.updatedAt).to.not.equal(before);
+      expect(upsert.calledOnce).to.be.true;
+    });
+
+    it('throws DataAccessError when PostgREST upsert fails in saveMany', async () => {
+      const upsert = stub().resolves({ error: new Error('bulk upsert failed') });
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+      const model = {
+        record: { someKey: 'a', someOtherKey: 1 },
+        getId: () => 'a',
+      };
+
+      await expect(instance._saveMany([model]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to save many');
     });
 
     it('covers PostgREST query edge paths and errors', async () => {

@@ -156,11 +156,13 @@ describe('Patcher', () => {
 
   it('saves the record', async () => {
     patcher.patchValue('name', 'UpdatedName');
+    const previousUpdatedAt = mockRecord.updatedAt;
 
     await patcher.save();
 
     expect(mockEntity.patch().go.calledOnce).to.be.true;
-    expect(mockRecord.updatedAt).to.be.undefined;
+    expect(mockRecord.updatedAt).to.not.equal(previousUpdatedAt);
+    expect(isIsoDate(mockRecord.updatedAt)).to.be.true;
     expect(isIsoDate(patcher.getUpdates().updatedAt.current)).to.be.true;
   });
 

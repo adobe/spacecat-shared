@@ -134,7 +134,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
     hidden: true,
     readOnly: true,
     watch: ['options'],
-    set: (_, { options }) => (options[ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT] ? 'T' : 'F'),
+    set: (_, { options }) => (options?.[ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT] ? 'T' : 'F'),
   })
   .addAttribute('optHideConsentBanner', {
     type: 'string',
@@ -142,7 +142,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
     hidden: true,
     readOnly: true,
     watch: ['options'],
-    set: (_, { options }) => (options[ScrapeJob.ScrapeOptions.HIDE_CONSENT_BANNER] ? 'T' : 'F'),
+    set: (_, { options }) => (options?.[ScrapeJob.ScrapeOptions.HIDE_CONSENT_BANNER] ? 'T' : 'F'),
   })
   // access pattern: get all jobs sorted by startedAt
   .addAllIndex(['startedAt'])

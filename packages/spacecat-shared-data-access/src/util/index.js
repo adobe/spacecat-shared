@@ -25,6 +25,7 @@ export {
 export {
   registerLogger,
   getLogger,
+  resetLoggerRegistry,
 } from './logger-registry.js';
 
 /**

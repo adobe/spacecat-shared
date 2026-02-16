@@ -110,7 +110,7 @@ describe('LatestAuditCollection', () => {
 
     it('returns null when no audits are found for grouped lookup', async () => {
       const auditCollection = {
-        allByIndexKeys: stub().resolves([]),
+        findByIndexKeys: stub().resolves(null),
       };
       mockEntityRegistry.getCollection.withArgs('AuditCollection').returns(auditCollection);
 
@@ -118,18 +118,19 @@ describe('LatestAuditCollection', () => {
       expect(result).to.be.null;
     });
 
-    it('groups and returns latest audit when querying across sites', async () => {
-      const audits = [
-        { getAuditedAt: () => '2025-01-01T00:00:00.000Z', record: { siteId: 'site-1', auditType: 'lhs-mobile' } },
-        { getAuditedAt: () => '2025-01-02T00:00:00.000Z', record: { siteId: 'site-2', auditType: 'lhs-mobile' } },
-      ];
+    it('uses single-record lookup for non-composite keys', async () => {
+      const latestAudit = { getAuditedAt: () => '2025-01-02T00:00:00.000Z', record: { siteId: 'site-2', auditType: 'lhs-mobile' } };
       const auditCollection = {
-        allByIndexKeys: stub().resolves(audits),
+        findByIndexKeys: stub().resolves(latestAudit),
       };
       mockEntityRegistry.getCollection.withArgs('AuditCollection').returns(auditCollection);
 
       const result = await instance.findByIndexKeys({ auditType: 'lhs-mobile' });
-      expect(result).to.equal(audits[0]);
+      expect(result).to.equal(latestAudit);
+      expect(auditCollection.findByIndexKeys).to.have.been.calledOnceWithExactly(
+        { auditType: 'lhs-mobile' },
+        { order: 'desc' },
+      );
     });
   });
 
@@ -168,6 +169,7 @@ describe('LatestAuditCollection', () => {
       const result = await instance.allByIndexKeys({ auditType: 'lhs-mobile' }, { limit: 1, returnCursor: true });
       expect(result.data).to.have.length(1);
       expect(result.cursor).to.equal(null);
+      expect(result.data[0].getAuditedAt()).to.equal('2025-02-02T00:00:00.000Z');
     });
 
     it('groups by auditType when filtering by site only', async () => {
@@ -182,6 +184,38 @@ describe('LatestAuditCollection', () => {
 
       const result = await instance.allByIndexKeys({ siteId: 's1' });
       expect(result).to.have.length(2);
+    });
+
+    it('supports desc order for grouped latest audits', async () => {
+      const audits = [
+        { getAuditedAt: () => '2025-02-01T00:00:00.000Z', record: { siteId: 's1', auditType: 'lhs-mobile' } },
+        { getAuditedAt: () => '2025-02-03T00:00:00.000Z', record: { siteId: 's1', auditType: 'seo' } },
+      ];
+      const auditCollection = {
+        allByIndexKeys: stub().resolves(audits),
+      };
+      mockEntityRegistry.getCollection.withArgs('AuditCollection').returns(auditCollection);
+
+      const result = await instance.allByIndexKeys({ siteId: 's1' }, { order: 'desc' });
+      expect(result).to.have.length(2);
+      expect(result[0].getAuditedAt()).to.equal('2025-02-03T00:00:00.000Z');
+      expect(result[1].getAuditedAt()).to.equal('2025-02-01T00:00:00.000Z');
+    });
+
+    it('defaults to descending order for grouped latest audits', async () => {
+      const audits = [
+        { getAuditedAt: () => '2025-02-01T00:00:00.000Z', record: { siteId: 's1', auditType: 'lhs-mobile' } },
+        { getAuditedAt: () => '2025-02-03T00:00:00.000Z', record: { siteId: 's1', auditType: 'seo' } },
+      ];
+      const auditCollection = {
+        allByIndexKeys: stub().resolves(audits),
+      };
+      mockEntityRegistry.getCollection.withArgs('AuditCollection').returns(auditCollection);
+
+      const result = await instance.allByIndexKeys({ siteId: 's1' });
+      expect(result).to.have.length(2);
+      expect(result[0].getAuditedAt()).to.equal('2025-02-03T00:00:00.000Z');
+      expect(result[1].getAuditedAt()).to.equal('2025-02-01T00:00:00.000Z');
     });
   });
 

@@ -274,4 +274,40 @@ describe('postgrest utils', () => {
     applyWhere(query, (attr, op) => op.contains(attr.tags, ['seo', 'ux']), {});
     sinon.assert.calledOnceWithExactly(query.contains, 'tags', ['seo', 'ux']);
   });
+
+  it('applies additional comparison operators', () => {
+    const query = {
+      neq: sinon.stub().returnsThis(),
+      gt: sinon.stub().returnsThis(),
+      gte: sinon.stub().returnsThis(),
+      lt: sinon.stub().returnsThis(),
+      lte: sinon.stub().returnsThis(),
+      in: sinon.stub().returnsThis(),
+      is: sinon.stub().returnsThis(),
+      like: sinon.stub().returnsThis(),
+      ilike: sinon.stub().returnsThis(),
+    };
+
+    applyWhere(query, (attr, op) => op.ne(attr.status, 'done'), {});
+    applyWhere(query, (attr, op) => op.gt(attr.score, 1), {});
+    applyWhere(query, (attr, op) => op.gte(attr.score, 1), {});
+    applyWhere(query, (attr, op) => op.lt(attr.score, 10), {});
+    applyWhere(query, (attr, op) => op.lte(attr.score, 10), {});
+    applyWhere(query, (attr, op) => op.in(attr.auditType, ['404', 'seo']), {});
+    applyWhere(query, (attr, op) => op.in(attr.auditType, '404'), {});
+    applyWhere(query, (attr, op) => op.is(attr.deletedAt, null), {});
+    applyWhere(query, (attr, op) => op.like(attr.url, 'https://%'), {});
+    applyWhere(query, (attr, op) => op.ilike(attr.url, '%tenant%'), {});
+
+    sinon.assert.calledOnceWithExactly(query.neq, 'status', 'done');
+    sinon.assert.calledOnceWithExactly(query.gt, 'score', 1);
+    sinon.assert.calledOnceWithExactly(query.gte, 'score', 1);
+    sinon.assert.calledOnceWithExactly(query.lt, 'score', 10);
+    sinon.assert.calledOnceWithExactly(query.lte, 'score', 10);
+    sinon.assert.calledWithExactly(query.in.firstCall, 'audit_type', ['404', 'seo']);
+    sinon.assert.calledWithExactly(query.in.secondCall, 'audit_type', ['404']);
+    sinon.assert.calledOnceWithExactly(query.is, 'deleted_at', null);
+    sinon.assert.calledOnceWithExactly(query.like, 'url', 'https://%');
+    sinon.assert.calledOnceWithExactly(query.ilike, 'url', '%tenant%');
+  });
 });

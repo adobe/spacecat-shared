@@ -86,6 +86,8 @@ import SentimentTopicSchema from '../sentiment-topic/sentiment-topic.schema.js';
 class EntityRegistry {
   static entities = {};
 
+  static defaultEntities = {};
+
   /**
    * Constructs an instance of EntityRegistry.
    * @constructor
@@ -164,6 +166,10 @@ class EntityRegistry {
   static registerEntity(schema, collection) {
     this.entities[decapitalize(schema.getEntityName())] = { schema, collection };
   }
+
+  static resetEntities() {
+    this.entities = { ...this.defaultEntities };
+  }
 }
 
 // Register ElectroDB-based entities only (Configuration is handled separately)
@@ -198,5 +204,6 @@ EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollecti
 EntityRegistry.registerEntity(PageCitabilitySchema, PageCitabilityCollection);
 EntityRegistry.registerEntity(SentimentGuidelineSchema, SentimentGuidelineCollection);
 EntityRegistry.registerEntity(SentimentTopicSchema, SentimentTopicCollection);
+EntityRegistry.defaultEntities = { ...EntityRegistry.entities };
 
 export default EntityRegistry;

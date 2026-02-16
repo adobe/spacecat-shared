@@ -73,14 +73,8 @@ class LatestAuditCollection extends BaseCollection {
       return auditCollection.findByIndexKeys(keys, { ...options, order: 'desc' });
     }
 
-    const audits = await this.#allAuditsByKeys(keys, options);
-    if (!isNonEmptyArray(audits)) {
-      return null;
-    }
-
-    const groupFields = keys.siteId ? ['auditType'] : ['siteId', 'auditType'];
-    const latest = LatestAuditCollection.#groupLatest(audits, groupFields);
-    return latest[0] || null;
+    // For single-key lookups, we only need the latest row, not all pages.
+    return auditCollection.findByIndexKeys(keys, { ...options, order: 'desc' });
   }
 
   async allByIndexKeys(keys, options = {}) {
@@ -97,7 +91,11 @@ class LatestAuditCollection extends BaseCollection {
     }
 
     const latest = LatestAuditCollection.#groupLatest(audits, groupFields);
-    latest.sort((a, b) => a.getAuditedAt().localeCompare(b.getAuditedAt()));
+    // Preserve v2 behavior: default order is descending (most recent first).
+    const ascending = options.order === 'asc';
+    latest.sort((a, b) => (ascending
+      ? a.getAuditedAt().localeCompare(b.getAuditedAt())
+      : b.getAuditedAt().localeCompare(a.getAuditedAt())));
     const limited = Number.isInteger(options.limit) ? latest.slice(0, options.limit) : latest;
 
     return options.returnCursor ? { data: limited, cursor: null } : limited;

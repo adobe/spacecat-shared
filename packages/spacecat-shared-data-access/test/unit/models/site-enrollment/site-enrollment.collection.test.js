@@ -72,18 +72,21 @@ describe('SiteEnrollmentCollection', () => {
       const existing = {
         getEntitlementId: () => mockRecord.entitlementId,
       };
-      const allBySiteIdStub = sinon.stub(instance, 'allBySiteId').resolves([existing]);
+      const findByIndexKeysStub = sinon.stub(instance, 'findByIndexKeys').resolves(existing);
       const superCreateStub = sinon.stub(BaseCollection.prototype, 'create').resolves(model);
 
       const result = await instance.create(mockRecord);
 
       expect(result).to.equal(existing);
-      expect(allBySiteIdStub).to.have.been.calledOnceWithExactly(mockRecord.siteId);
+      expect(findByIndexKeysStub).to.have.been.calledOnceWithExactly({
+        siteId: mockRecord.siteId,
+        entitlementId: mockRecord.entitlementId,
+      });
       expect(superCreateStub).to.not.have.been.called;
     });
 
     it('falls back to BaseCollection.create when no matching enrollment exists', async () => {
-      sinon.stub(instance, 'allBySiteId').resolves([]);
+      sinon.stub(instance, 'findByIndexKeys').resolves(null);
       const superCreateStub = sinon.stub(BaseCollection.prototype, 'create').resolves(model);
 
       const result = await instance.create(mockRecord, { upsert: true });

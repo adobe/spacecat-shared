@@ -157,17 +157,17 @@ class Patcher {
     }
 
     const previousUpdatedAt = this.record.updatedAt;
-    let now = new Date().toISOString();
-    if (typeof previousUpdatedAt === 'string' && previousUpdatedAt === now) {
+    let nextUpdatedAt = new Date().toISOString();
+    if (typeof previousUpdatedAt === 'string' && previousUpdatedAt === nextUpdatedAt) {
       const previousDate = new Date(previousUpdatedAt);
       if (!Number.isNaN(previousDate.getTime())) {
-        now = new Date(previousDate.getTime() + 1000).toISOString();
+        nextUpdatedAt = new Date(previousDate.getTime() + 1000).toISOString();
       }
     }
-    this.record.updatedAt = now;
+    this.record.updatedAt = nextUpdatedAt;
     this.updates.updatedAt = {
       previous: previousUpdatedAt,
-      current: now,
+      current: nextUpdatedAt,
     };
 
     const keys = this.#getPrimaryKeyValues();
@@ -182,13 +182,12 @@ class Patcher {
       const watched = this.collection.applyUpdateWatchers(this.record, updates);
       this.record = watched.record;
       await this.collection.updateByKeys(keys, watched.updates);
-      this.record.updatedAt = previousUpdatedAt;
       return;
     }
 
     if (this.patchRecord && typeof this.patchRecord.go === 'function') {
+      this.patchRecord = this.patchRecord.set({ updatedAt: nextUpdatedAt });
       await this.patchRecord.go();
-      this.record.updatedAt = previousUpdatedAt;
       return;
     }
 

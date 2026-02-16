@@ -61,6 +61,34 @@ const KEY_EVENT_DEPRECATED_METHODS = new Set([
   'removeByIndexKeys',
 ]);
 
+const MUTATING_METHOD_PREFIXES = ['create', 'update', 'remove', 'set', 'bulk'];
+const MUTATING_METHODS = new Set([
+  'applyUpdateWatchers',
+  '_saveMany',
+]);
+
+const EXPECTED_MUTATION_ERROR_PATTERNS = [
+  'deprecated in data-access v3',
+  'cannot be created directly',
+  'not supported',
+  'required',
+  'invalid',
+  'must be',
+  'not found',
+  'Failed to create',
+  'Failed to update',
+  'Failed to remove',
+];
+
+const isMutatingMethod = (methodName) => MUTATING_METHOD_PREFIXES
+  .some((prefix) => methodName.startsWith(prefix))
+  || MUTATING_METHODS.has(methodName);
+
+const isExpectedMutationError = (error) => {
+  const message = error?.message || '';
+  return EXPECTED_MUTATION_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
+};
+
 const getArgsForMethod = (entityName, methodName) => {
   switch (methodName) {
     case 'all':
@@ -171,7 +199,17 @@ describe('PostgREST IT - all collections methods coverage', () => {
             // Ensure v3 deprecation remains explicit.
             if (entityName === 'KeyEvent' && KEY_EVENT_DEPRECATED_METHODS.has(methodName)) {
               expect(error.message).to.include('KeyEvent is deprecated in data-access v3');
+              return;
             }
+
+            // For mutating methods, controlled validation/deprecation errors are acceptable.
+            if (isMutatingMethod(methodName)) {
+              expect(isExpectedMutationError(error)).to.equal(true);
+              return;
+            }
+
+            // Read/query paths should not fail in this smoke test.
+            throw error;
           }
         });
       });

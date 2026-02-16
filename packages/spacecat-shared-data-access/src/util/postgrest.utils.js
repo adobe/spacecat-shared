@@ -102,6 +102,8 @@ const normalizeModelValue = (value) => {
     return undefined;
   }
 
+  // PostgREST can return jsonb null scalars as [null] for some projections/aggregations.
+  // We normalize this artifact to "missing" so model payloads match v2 behavior.
   if (Array.isArray(value) && value.length === 1 && value[0] === null) {
     return undefined;
   }
@@ -135,6 +137,15 @@ const applyWhere = (query, whereFn, toDbMap) => {
 
   const op = {
     eq: (field, value) => ({ type: 'eq', field, value }),
+    ne: (field, value) => ({ type: 'ne', field, value }),
+    gt: (field, value) => ({ type: 'gt', field, value }),
+    gte: (field, value) => ({ type: 'gte', field, value }),
+    lt: (field, value) => ({ type: 'lt', field, value }),
+    lte: (field, value) => ({ type: 'lte', field, value }),
+    in: (field, value) => ({ type: 'in', field, value }),
+    is: (field, value) => ({ type: 'is', field, value }),
+    like: (field, value) => ({ type: 'like', field, value }),
+    ilike: (field, value) => ({ type: 'ilike', field, value }),
     contains: (field, value) => ({ type: 'contains', field, value }),
   };
 
@@ -143,16 +154,37 @@ const applyWhere = (query, whereFn, toDbMap) => {
     return query;
   }
 
-  if (expression.type === 'eq') {
-    return query.eq(expression.field, expression.value);
+  switch (expression.type) {
+    case 'eq':
+      return query.eq(expression.field, expression.value);
+    case 'ne':
+      return query.neq(expression.field, expression.value);
+    case 'gt':
+      return query.gt(expression.field, expression.value);
+    case 'gte':
+      return query.gte(expression.field, expression.value);
+    case 'lt':
+      return query.lt(expression.field, expression.value);
+    case 'lte':
+      return query.lte(expression.field, expression.value);
+    case 'in':
+      return query.in(
+        expression.field,
+        Array.isArray(expression.value) ? expression.value : [expression.value],
+      );
+    case 'is':
+      return query.is(expression.field, expression.value);
+    case 'like':
+      return query.like(expression.field, expression.value);
+    case 'ilike':
+      return query.ilike(expression.field, expression.value);
+    case 'contains': {
+      const value = Array.isArray(expression.value) ? expression.value : [expression.value];
+      return query.contains(expression.field, value);
+    }
+    default:
+      throw new Error(`Unsupported where operator: ${expression.type}`);
   }
-
-  if (expression.type === 'contains') {
-    const value = Array.isArray(expression.value) ? expression.value : [expression.value];
-    return query.contains(expression.field, value);
-  }
-
-  throw new Error(`Unsupported where operator: ${expression.type}`);
 };
 
 export {

@@ -24,7 +24,10 @@ class KeyEventCollection extends BaseCollection {
   static COLLECTION_NAME = 'KeyEventCollection';
 
   #throwDeprecated() {
-    throw new DataAccessError('KeyEvent is deprecated in data-access v3', this);
+    throw new DataAccessError(
+      'KeyEvent is deprecated in data-access v3. Use Audit/LatestAudit and related Postgres-backed entities instead.',
+      this,
+    );
   }
 
   async all() { return this.#throwDeprecated(); }

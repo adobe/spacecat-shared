@@ -24,13 +24,11 @@ class SiteEnrollmentCollection extends BaseCollection {
 
   async create(item, options = {}) {
     if (item?.siteId && item?.entitlementId) {
-      const existing = await this.allBySiteId(item.siteId);
-      const match = existing.find(
-        (enrollment) => enrollment.getEntitlementId() === item.entitlementId,
-      );
-      if (match) {
-        return match;
-      }
+      const existing = await this.findByIndexKeys({
+        siteId: item.siteId,
+        entitlementId: item.entitlementId,
+      });
+      if (existing) return existing;
     }
 
     return super.create(item, options);

@@ -17,7 +17,7 @@ services:
 
   data-service:
     platform: ${MYSTICAT_DATA_SERVICE_PLATFORM:-linux/amd64}
-    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v1.8.0}
+    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v1.11.0}
     depends_on:
       db:
         condition: service_healthy

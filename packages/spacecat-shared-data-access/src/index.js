@@ -40,11 +40,15 @@ export default function dataAccessWrapper(fn) {
         POSTGREST_API_KEY: postgrestApiKey,
         S3_CONFIG_BUCKET: s3Bucket,
         AWS_REGION: region,
+        S2S_ALLOWED_IMS_ORG_IDS: s2sAllowedImsOrgIdsRaw,
       } = context.env;
 
       if (!postgrestUrl) {
         throw new Error('POSTGREST_URL is required');
       }
+      const s2sAllowedImsOrgIds = s2sAllowedImsOrgIdsRaw
+        ? s2sAllowedImsOrgIdsRaw.split(',').map((id) => id.trim()).filter(Boolean)
+        : [];
 
       context.dataAccess = createDataAccess({
         postgrestUrl,
@@ -52,6 +56,7 @@ export default function dataAccessWrapper(fn) {
         postgrestApiKey,
         s3Bucket,
         region,
+        s2sAllowedImsOrgIds,
       }, log);
     }
 

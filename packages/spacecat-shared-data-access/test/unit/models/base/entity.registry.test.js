@@ -75,7 +75,7 @@ describe('EntityRegistry', () => {
 
     EntityRegistry.registerEntity(MockSchema, MockCollection);
 
-    entityRegistry = new EntityRegistry(services, console);
+    entityRegistry = new EntityRegistry(services, {}, console);
   });
 
   afterEach(() => {
@@ -101,6 +101,15 @@ describe('EntityRegistry', () => {
     expect(Object.keys(collections)).to.have.lengthOf(2);
     expect(collections.Mock).to.be.an.instanceOf(MockCollection);
     expect(collections.Configuration).to.exist;
+  });
+
+  it('gets all entity names including configuration', () => {
+    const entityNames = entityRegistry.getEntityNames();
+
+    expect(entityNames).to.be.an('array');
+    expect(entityNames).to.include('mockModel');
+    expect(entityNames).to.include('configuration');
+    expect(entityNames).to.have.lengthOf(2);
   });
 
   it('gets all entities', () => {

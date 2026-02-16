@@ -37,6 +37,7 @@ const SEED_PRIORITY = [
   'siteEnrollments',
   'apiKeys',
   'siteCandidates',
+  'consumers',
   'importJobs',
   'importUrls',
   'scrapeJobs',
@@ -161,6 +162,34 @@ const seedV2Fixtures = async () => {
 
       if (!Model) {
         throw new Error(`Model not found for ${modelName}`);
+      }
+
+      if (modelName === 'Consumer') {
+        // Consumer intentionally disables createMany() due to allowlist/capability/clientId checks.
+        // Seed row-by-row and still honor FK deferral logic from this generic seeder.
+        // eslint-disable-next-line no-await-in-loop
+        const { createdItems, unresolvedItems } = await seedItemsOneByOne(Model, key, data);
+        sampleData[key] = [...(sampleData[key] || []), ...createdItems];
+
+        if (unresolvedItems.length === 0) {
+          pending.splice(i, 1);
+          i -= 1;
+          madeProgress = true;
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
+        if (unresolvedItems.length < data.length) {
+          console.log(`Partially seeded ${key}; deferring ${unresolvedItems.length} records.`);
+          pending[i] = [key, unresolvedItems];
+          madeProgress = true;
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
+        console.log(`Deferring ${key} - waiting for dependency tables.`);
+        // eslint-disable-next-line no-continue
+        continue;
       }
 
       try {

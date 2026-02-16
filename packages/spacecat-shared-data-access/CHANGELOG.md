@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.109.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.108.0...@adobe/spacecat-shared-data-access-v2.109.0) (2026-02-16)
+
+
+### Features
+
+* consumer entity to register technical accounts ([#1341](https://github.com/adobe/spacecat-shared/issues/1341)) ([a0572e8](https://github.com/adobe/spacecat-shared/commit/a0572e8f52c95d90b986495a110ec66f58caa77e))
+
 # [@adobe/spacecat-shared-data-access-v2.108.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.107.0...@adobe/spacecat-shared-data-access-v2.108.0) (2026-02-13)
 
 

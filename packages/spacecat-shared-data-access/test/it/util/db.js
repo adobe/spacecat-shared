@@ -20,6 +20,49 @@ const filePath = fileURLToPath(import.meta.url);
 const directoryPath = path.dirname(filePath);
 const REPO_ROOT = path.resolve(directoryPath, '..', '..', '..');
 const COMPOSE_FILE = path.resolve(REPO_ROOT, 'test', 'it', 'postgrest', 'docker-compose.yml');
+export const TEST_DA_CONFIG = {
+  s2sAllowedImsOrgIds: [
+    '1234567890ABCDEF12345678@AdobeOrg',
+    'ABCDEF1234567890ABCDEF12@AdobeOrg',
+  ],
+  indexNameAllScrapeJobsByDateRange: 'spacecat-services-all-scrape-jobs-by-date-range',
+  indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
+  indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
+  indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
+  indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
+  indexNameAllOrganizations: 'spacecat-services-all-organizations',
+  indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id',
+  indexNameAllSites: 'spacecat-services-all-sites',
+  indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
+  indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
+  indexNameApiKeyByHashedApiKey: 'spacecat-services-api-key-by-hashed-api-key',
+  indexNameApiKeyByImsUserIdAndImsOrgId: 'spacecat-services-api-key-by-ims-user-id-and-ims-org-id',
+  indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
+  pkAllConfigurations: 'ALL_CONFIGURATIONS',
+  pkAllImportJobs: 'ALL_IMPORT_JOBS',
+  pkAllScrapeJobs: 'ALL_SCRAPE_JOBS',
+  pkAllLatestAudits: 'ALL_LATEST_AUDITS',
+  pkAllOrganizations: 'ALL_ORGANIZATIONS',
+  pkAllSites: 'ALL_SITES',
+  tableNameApiKeys: 'spacecat-services-api-keys',
+  tableNameAudits: 'spacecat-services-audits',
+  tableNameConfigurations: 'spacecat-services-configurations',
+  tableNameData: 'spacecat-services-data',
+  tableNameExperiments: 'spacecat-services-experiments',
+  tableNameImportJobs: 'spacecat-services-import-jobs',
+  tableNameImportUrls: 'spacecat-services-import-urls',
+  tableNameScrapeJobs: 'spacecat-services-scrape-jobs',
+  tableNameScrapeUrls: 'spacecat-services-scrape-urls',
+  tableNameKeyEvents: 'spacecat-services-key-events',
+  tableNameLatestAudits: 'spacecat-services-latest-audits',
+  tableNameOrganizations: 'spacecat-services-organizations',
+  tableNameSiteCandidates: 'spacecat-services-site-candidates',
+  tableNameSiteTopPages: 'spacecat-services-site-top-pages',
+  tableNameSites: 'spacecat-services-sites',
+  tableNamePageIntents: 'spacecat-services-page-intents',
+  tableNamePageCitabilities: 'spacecat-services-page-citabilities',
+  tableNameSpacecatData: 'spacecat-data',
+};
 
 const run = (cmd, args, options = {}) => new Promise((resolve, reject) => {
   const child = spawn(cmd, args, {
@@ -133,6 +176,10 @@ export const getDataAccess = (config = {}, logger = console) => {
 
   const postgrestUrl = config.postgrestUrl || process.env.POSTGREST_URL || 'http://127.0.0.1:3300';
   const postgrestSchema = config.postgrestSchema || process.env.POSTGREST_SCHEMA || 'public';
+  const s2sAllowedImsOrgIds = config.s2sAllowedImsOrgIds
+    || (process.env.S2S_ALLOWED_IMS_ORG_IDS
+      ? process.env.S2S_ALLOWED_IMS_ORG_IDS.split(',').map((id) => id.trim()).filter(Boolean)
+      : TEST_DA_CONFIG.s2sAllowedImsOrgIds);
 
   return createDataAccess({
     postgrestUrl,
@@ -140,5 +187,6 @@ export const getDataAccess = (config = {}, logger = console) => {
     postgrestApiKey: config.postgrestApiKey || process.env.POSTGREST_API_KEY,
     s3Bucket: config.s3Bucket || process.env.S3_CONFIG_BUCKET,
     region: config.region || process.env.AWS_REGION,
+    s2sAllowedImsOrgIds,
   }, logger);
 };

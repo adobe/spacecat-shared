@@ -250,7 +250,7 @@ the mocha suite under `test/it`.
 ### Default image used by IT harness
 
 - Repository: `682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service`
-- Tag: `v1.8.0` (override via env var)
+- Tag: `v1.11.0` (override via env var)
 
 ### Authenticate Docker to ECR
 
@@ -296,7 +296,7 @@ npm run test:it
 - `IT_POSTGRES_PORT`: override exposed Postgres port (default `55432`)
 
 ```bash
-export MYSTICAT_DATA_SERVICE_TAG=v1.8.0
+export MYSTICAT_DATA_SERVICE_TAG=v1.11.0
 export MYSTICAT_DATA_SERVICE_PLATFORM=linux/amd64
 # optional if repository changes
 export MYSTICAT_DATA_SERVICE_REPOSITORY=682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service

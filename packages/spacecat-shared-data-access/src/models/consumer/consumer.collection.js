@@ -101,7 +101,10 @@ class ConsumerCollection extends BaseCollection {
    */
   async #validateClientIdUniqueness(clientId) {
     if (!hasText(clientId)) {
-      return;
+      throw new ValidationError(
+        'clientId is required to create a consumer',
+        this,
+      );
     }
 
     const existing = await this.findByClientId(clientId);

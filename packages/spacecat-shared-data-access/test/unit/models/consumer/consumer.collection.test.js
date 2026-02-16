@@ -183,6 +183,22 @@ describe('ConsumerCollection', () => {
       instance.findByClientId.restore();
     });
 
+    it('throws ValidationError when clientId is not provided', async () => {
+      const item = {
+        technicalAccountId: 'AABB00112233445566778899@techacct.adobe.com',
+        consumerName: 'consumer-new',
+        status: 'ACTIVE',
+        capabilities: ['site:read'],
+        imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
+      };
+
+      await expect(instance.create(item)).to.be.rejectedWith(
+        'clientId is required to create a consumer',
+      );
+
+      expect(mockElectroService.entities.consumer.create).to.not.have.been.called;
+    });
+
     it('throws ValidationError when no allowed IMS Org IDs are configured', async () => {
       mockEntityRegistry.config = { s2sAllowedImsOrgIds: [] };
 

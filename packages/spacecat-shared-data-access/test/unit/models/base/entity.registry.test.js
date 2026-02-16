@@ -103,6 +103,15 @@ describe('EntityRegistry', () => {
     expect(collections.Configuration).to.exist;
   });
 
+  it('gets all entity names including configuration', () => {
+    const entityNames = entityRegistry.getEntityNames();
+
+    expect(entityNames).to.be.an('array');
+    expect(entityNames).to.include('mockModel');
+    expect(entityNames).to.include('configuration');
+    expect(entityNames).to.have.lengthOf(2);
+  });
+
   it('gets all entities', () => {
     const entities = EntityRegistry.getEntities();
 

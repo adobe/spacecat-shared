@@ -16,6 +16,10 @@ import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { createDataAccess } from '../../../src/service/index.js';
 
 export const TEST_DA_CONFIG = {
+  s2sAllowedImsOrgIds: [
+    '1234567890ABCDEF12345678@AdobeOrg',
+    'ABCDEF1234567890ABCDEF12@AdobeOrg',
+  ],
   indexNameAllScrapeJobsByDateRange: 'spacecat-services-all-scrape-jobs-by-date-range',
   indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
   indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',

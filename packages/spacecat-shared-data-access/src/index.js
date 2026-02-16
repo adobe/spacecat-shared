@@ -40,12 +40,18 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
         S3_CONFIG_BUCKET: s3Bucket,
         AWS_REGION: region,
+        S2S_ALLOWED_IMS_ORG_IDS: s2sAllowedImsOrgIdsRaw,
       } = context.env;
+
+      const s2sAllowedImsOrgIds = s2sAllowedImsOrgIdsRaw
+        ? s2sAllowedImsOrgIdsRaw.split(',').map((id) => id.trim()).filter(Boolean)
+        : [];
 
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
         s3Bucket,
         region,
+        s2sAllowedImsOrgIds,
       }, log);
     }
 

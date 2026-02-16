@@ -18,6 +18,7 @@ import AsyncJobCollection from '../async-job/async-job.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import AuditUrlCollection from '../audit-url/audit-url.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
+import ConsumerCollection from '../consumer/consumer.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
 import EntitlementCollection from '../entitlement/entitlement.collection.js';
 import FixEntityCollection from '../fix-entity/fix-entity.collection.js';
@@ -49,6 +50,7 @@ import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
 import AuditUrlSchema from '../audit-url/audit-url.schema.js';
+import ConsumerSchema from '../consumer/consumer.schema.js';
 import EntitlementSchema from '../entitlement/entitlement.schema.js';
 import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
 import FixEntitySuggestionSchema from '../fix-entity-suggestion/fix-entity-suggestion.schema.js';
@@ -90,10 +92,12 @@ class EntityRegistry {
    * @param {Object} services - Dictionary of services keyed by datastore type.
    * @param {Object} services.dynamo - The ElectroDB service instance for DynamoDB operations.
    * @param {{s3Client: S3Client, s3Bucket: string}|null} [services.s3] - S3 service configuration.
+   * @param {Object} config - Configuration object containing environment-derived settings.
    * @param {Object} log - A logger for capturing and logging information.
    */
-  constructor(services, log) {
+  constructor(services, config, log) {
     this.services = services;
+    this.config = config;
     this.log = log;
     this.collections = new Map();
 
@@ -142,6 +146,14 @@ class EntityRegistry {
     return collections;
   }
 
+  /**
+   * Returns the camelCase names of all registered entities (including Configuration).
+   * @returns {string[]} - An array of entity names.
+   */
+  getEntityNames() {
+    return [...Object.keys(this.constructor.entities), 'configuration'];
+  }
+
   static getEntities() {
     return Object.keys(this.entities).reduce((acc, key) => {
       acc[key] = this.entities[key].schema.toElectroDBSchema();
@@ -159,6 +171,7 @@ EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(AuditUrlSchema, AuditUrlCollection);
+EntityRegistry.registerEntity(ConsumerSchema, ConsumerCollection);
 EntityRegistry.registerEntity(EntitlementSchema, EntitlementCollection);
 EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);
 EntityRegistry.registerEntity(FixEntitySuggestionSchema, FixEntitySuggestionCollection);

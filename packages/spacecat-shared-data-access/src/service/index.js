@@ -115,7 +115,7 @@ export const createDataAccess = (config, log = console, client = undefined) => {
   const rawClient = createRawClient(client);
   const electroService = createElectroService(rawClient, config, log);
   const services = createServices(electroService, config);
-  const entityRegistry = new EntityRegistry(services, log);
+  const entityRegistry = new EntityRegistry(services, config, log);
 
   return entityRegistry.getCollections();
 };

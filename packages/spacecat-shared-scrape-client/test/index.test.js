@@ -154,9 +154,6 @@ describe('ScrapeJobController tests', () => {
 
     mockDataAccess = {
       ScrapeJob: {
-        ScrapeProcessingType: { DEFAULT: 'default' },
-        ScrapeUrlStatus: SCRAPE_URL_STATUS,
-        ScrapeJobStatus: { RUNNING: 'RUNNING' },
         allByDateRange: sandbox.stub().resolves([]),
         allByStatus: sandbox.stub().resolves([]),
         create: (data) => createScrapeJob(data),

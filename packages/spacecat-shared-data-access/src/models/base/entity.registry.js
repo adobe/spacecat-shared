@@ -86,11 +86,13 @@ import SentimentTopicSchema from '../sentiment-topic/sentiment-topic.schema.js';
 class EntityRegistry {
   static entities = {};
 
+  static defaultEntities = {};
+
   /**
    * Constructs an instance of EntityRegistry.
    * @constructor
    * @param {Object} services - Dictionary of services keyed by datastore type.
-   * @param {Object} services.dynamo - The ElectroDB service instance for DynamoDB operations.
+   * @param {Object} services.postgrest - The PostgREST client instance for Postgres operations.
    * @param {{s3Client: S3Client, s3Bucket: string}|null} [services.s3] - S3 service configuration.
    * @param {Object} config - Configuration object containing environment-derived settings.
    * @param {Object} log - A logger for capturing and logging information.
@@ -107,14 +109,14 @@ class EntityRegistry {
   /**
    * Initializes the collections managed by the EntityRegistry.
    * This method creates instances of each collection and stores them in an internal map.
-   * ElectroDB-based collections are initialized with the dynamo service.
+   * PostgREST-based collections are initialized with the postgrest service.
    * Configuration is handled specially as it's a standalone S3-based collection.
    * @private
    */
   #initialize() {
-    // Initialize ElectroDB-based collections
+    // Initialize PostgREST-based collections
     Object.values(EntityRegistry.entities).forEach(({ collection: Collection, schema }) => {
-      const collection = new Collection(this.services.dynamo, this, schema, this.log);
+      const collection = new Collection(this.services.postgrest, this, schema, this.log);
       this.collections.set(Collection.COLLECTION_NAME, collection);
     });
 
@@ -164,6 +166,10 @@ class EntityRegistry {
   static registerEntity(schema, collection) {
     this.entities[decapitalize(schema.getEntityName())] = { schema, collection };
   }
+
+  static resetEntities() {
+    this.entities = { ...this.defaultEntities };
+  }
 }
 
 // Register ElectroDB-based entities only (Configuration is handled separately)
@@ -198,5 +204,6 @@ EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollecti
 EntityRegistry.registerEntity(PageCitabilitySchema, PageCitabilityCollection);
 EntityRegistry.registerEntity(SentimentGuidelineSchema, SentimentGuidelineCollection);
 EntityRegistry.registerEntity(SentimentTopicSchema, SentimentTopicCollection);
+EntityRegistry.defaultEntities = { ...EntityRegistry.entities };
 
 export default EntityRegistry;

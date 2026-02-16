@@ -10,6 +10,14 @@ inputs:
     description: "Whether to upload coverage to Codecov (true/false). Default false."
     required: false
     default: "false"
+  ecr_pull_role_arn:
+    description: "AWS IAM role ARN used to authenticate to private ECR for data-access IT tests."
+    required: false
+    default: ""
+  aws_region:
+    description: "AWS region for ECR authentication."
+    required: false
+    default: "us-east-1"
 
 runs:
   using: "composite"
@@ -25,6 +33,17 @@ runs:
         filters: |
           spacecat-shared:
             - 'packages/spacecat-shared-data-access/**'
+
+    - name: Configure AWS credentials (private ECR pull)
+      if: steps.changes.outputs.spacecat-shared == 'true' && inputs.ecr_pull_role_arn != ''
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.ecr_pull_role_arn }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - name: Login to Amazon ECR
+      if: steps.changes.outputs.spacecat-shared == 'true' && inputs.ecr_pull_role_arn != ''
+      uses: aws-actions/amazon-ecr-login@v2
 
     - name: Run Integration Tests
       if: steps.changes.outputs.spacecat-shared == 'true'

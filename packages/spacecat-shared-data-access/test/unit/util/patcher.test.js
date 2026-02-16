@@ -156,11 +156,14 @@ describe('Patcher', () => {
 
   it('saves the record', async () => {
     patcher.patchValue('name', 'UpdatedName');
+    const previousUpdatedAt = mockRecord.updatedAt;
 
     await patcher.save();
 
     expect(mockEntity.patch().go.calledOnce).to.be.true;
+    expect(mockRecord.updatedAt).to.not.equal(previousUpdatedAt);
     expect(isIsoDate(mockRecord.updatedAt)).to.be.true;
+    expect(isIsoDate(patcher.getUpdates().updatedAt.current)).to.be.true;
   });
 
   it('throws error when saving with updates prohibited by schema', async () => {
@@ -243,5 +246,55 @@ describe('Patcher', () => {
   it('throws error for invalid list attribute items', () => {
     expect(() => patcher.patchValue('nickNames', ['name1', 123]))
       .to.throw('Validation failed in mockEntityModel: nickNames must contain items of type string');
+  });
+
+  it('saves using collection update strategy when available', async () => {
+    const applyUpdateWatchers = sinon.stub().returns({
+      record: { ...mockRecord, name: 'CollectionUpdated' },
+      updates: { name: 'CollectionUpdated', updatedAt: '2026-01-01T00:00:00.000Z' },
+    });
+    const updateByKeys = sinon.stub().resolves();
+    patcher.collection = { applyUpdateWatchers, updateByKeys };
+
+    patcher.patchValue('name', 'UpdatedName');
+    await patcher.save();
+
+    expect(updateByKeys.calledOnce).to.be.true;
+    expect(mockEntity.patch().go.notCalled).to.be.true;
+  });
+
+  it('throws when no persistence strategy is available', async () => {
+    patcher.patchValue('name', 'UpdatedName');
+    patcher.collection = undefined;
+    patcher.patchRecord = undefined;
+
+    await expect(patcher.save())
+      .to.be.rejectedWith('No persistence strategy available for mockEntityModel');
+  });
+
+  it('uses primary index keys when building legacy patch composite', async () => {
+    patcher.schema.indexes.primary = {
+      pk: { facets: ['testEntityId'] },
+      sk: { facets: ['name'] },
+    };
+    patcher.patchValue('name', 'UpdatedName');
+
+    await patcher.save();
+    expect(mockEntity.patch).to.have.been.called;
+  });
+
+  it('bumps updatedAt by one second when generated timestamp matches previous value', async () => {
+    const fixedNow = new Date('2026-02-16T12:00:00.000Z');
+    const clock = sinon.useFakeTimers({ now: fixedNow });
+    try {
+      mockRecord.updatedAt = fixedNow.toISOString();
+      patcher.patchValue('name', 'UpdatedName');
+
+      await patcher.save();
+
+      expect(patcher.getUpdates().updatedAt.current).to.equal('2026-02-16T12:00:01.000Z');
+    } finally {
+      clock.restore();
+    }
   });
 });

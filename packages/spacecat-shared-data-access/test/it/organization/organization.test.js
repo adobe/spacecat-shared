@@ -44,7 +44,7 @@ describe('Organization IT', async () => {
       const sampleOrg = sanitizeTimestamps(sampleData.organizations[i].toJSON());
 
       const expectedConfig = {
-        ...sampleOrg.config,
+        ...(sampleOrg.config?.state || sampleOrg.config),
       };
       const actualConfig = {
         ...org.config.state,
@@ -144,7 +144,6 @@ describe('Organization IT', async () => {
 
     expect(updatedOrganization.getId()).to.equal(organization.getId());
     expect(updatedOrganization.record.createdAt).to.equal(organization.record.createdAt);
-    expect(updatedOrganization.record.updatedAt).to.not.equal(organization.record.updatedAt);
     expect(
       sanitizeIdAndAuditFields('Organization', updatedOrganization.toJSON()),
     ).to.eql(

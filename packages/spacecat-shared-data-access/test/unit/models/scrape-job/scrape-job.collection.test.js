@@ -91,4 +91,112 @@ describe('ScrapeJobCollection', () => {
       });
     });
   });
+
+  describe('opt flag accessor parity', () => {
+    beforeEach(() => {
+      instance.entity = undefined;
+    });
+
+    it('uses indexed query path when opt flag columns exist', async () => {
+      const expected = [{ getId: () => 'job-1' }];
+      instance.allByIndexKeys = stub().resolves(expected);
+
+      const result = await instance
+        .allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+          'https://example.com',
+          ScrapeJob.ScrapeProcessingType.DEFAULT,
+          'T',
+          'F',
+        );
+
+      expect(result).to.equal(expected);
+      expect(instance.allByIndexKeys).to.have.been.calledOnceWithExactly({
+        baseURL: 'https://example.com',
+        processingType: ScrapeJob.ScrapeProcessingType.DEFAULT,
+        optEnableJavascript: 'T',
+        optHideConsentBanner: 'F',
+      }, {});
+    });
+
+    it('rethrows errors from indexed query path', async () => {
+      instance.allByIndexKeys = stub().rejects(new Error('db unavailable'));
+
+      await expect(instance
+        .allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+          'https://example.com',
+          ScrapeJob.ScrapeProcessingType.DEFAULT,
+          'T',
+          'F',
+        )).to.be.rejectedWith('db unavailable');
+    });
+
+    it('finds first matching scrape job by option flags', async () => {
+      instance.allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner = stub()
+        .resolves([{ getId: () => 'job-1' }, { getId: () => 'job-2' }]);
+
+      const result = await instance
+        .findByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+          'https://example.com',
+          ScrapeJob.ScrapeProcessingType.DEFAULT,
+          'T',
+          'F',
+        );
+
+      expect(result.getId()).to.equal('job-1');
+    });
+
+    it('returns model when query result is a single item', async () => {
+      instance.allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner = stub()
+        .resolves({ getId: () => 'job-1' });
+
+      const result = await instance
+        .findByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+          'https://example.com',
+          ScrapeJob.ScrapeProcessingType.DEFAULT,
+          'T',
+          'F',
+        );
+
+      expect(result.getId()).to.equal('job-1');
+    });
+  });
+
+  describe('postgrest accessor parity', () => {
+    it('maps opt flag accessor keys to expected snake_case fields', async () => {
+      const query = {
+        select: stub().returnsThis(),
+        order: stub().returnsThis(),
+        eq: stub().returnsThis(),
+        range: stub().returnsThis(),
+        then: (onFulfilled, onRejected) => Promise.resolve({
+          data: [{
+            id: '5f1c80df-e39f-4ea8-8a71-c9b36bcce640',
+            base_url: 'https://example.com',
+            processing_type: 'default',
+            status: 'RUNNING',
+            started_at: '2024-12-06T08:35:24.125Z',
+          }],
+          error: null,
+        }).then(onFulfilled, onRejected),
+      };
+      const from = stub().returns({
+        select: stub().returns(query),
+      });
+
+      instance.entity = undefined;
+      instance.postgrestService = { from };
+
+      await instance.allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+        'https://example.com',
+        'default',
+        'T',
+        'F',
+      );
+
+      expect(query.eq).to.have.been.calledWith('base_url', 'https://example.com');
+      expect(query.eq).to.have.been.calledWith('processing_type', 'default');
+      expect(query.eq).to.have.been.calledWith('opt_enable_javascript', 'T');
+      expect(query.eq).to.have.been.calledWith('opt_hide_consent_banner', 'F');
+    });
+  });
 });

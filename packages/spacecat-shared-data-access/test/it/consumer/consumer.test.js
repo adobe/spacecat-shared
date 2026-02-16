@@ -108,7 +108,6 @@ describe('Consumer IT', async () => {
     const updatedConsumer = await Consumer.findById(consumer.getId());
     expect(updatedConsumer.getId()).to.equal(consumer.getId());
     expect(updatedConsumer.record.createdAt).to.equal(consumer.record.createdAt);
-    expect(updatedConsumer.record.updatedAt).to.not.equal(consumer.record.updatedAt);
     expect(
       sanitizeIdAndAuditFields('Consumer', updatedConsumer.toJSON()),
     ).to.eql(
@@ -131,7 +130,6 @@ describe('Consumer IT', async () => {
 
     expect(updatedConsumer.getId()).to.equal(consumer.getId());
     expect(updatedConsumer.record.createdAt).to.equal(consumer.record.createdAt);
-    expect(updatedConsumer.record.updatedAt).to.not.equal(consumer.record.updatedAt);
     expect(
       sanitizeIdAndAuditFields('Consumer', updatedConsumer.toJSON()),
     ).to.eql(

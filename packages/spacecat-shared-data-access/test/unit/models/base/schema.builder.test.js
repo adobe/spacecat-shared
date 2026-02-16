@@ -87,6 +87,7 @@ describe('SchemaBuilder', () => {
         mockModelId: {
           default: instance.attributes.mockModelId.default,
           type: 'string',
+          postgrestField: 'id',
           required: true,
           readOnly: true,
           validate: instance.attributes.mockModelId.validate,
@@ -451,6 +452,7 @@ describe('SchemaBuilder', () => {
         attributes: {
           mockModelId: {
             type: 'string',
+            postgrestField: 'id',
             required: true,
             readOnly: true,
             validate: instance.attributes.mockModelId.validate,

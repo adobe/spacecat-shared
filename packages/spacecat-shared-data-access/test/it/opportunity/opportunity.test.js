@@ -148,7 +148,7 @@ describe('Opportunity IT', async () => {
   it('creates a new opportunity', async () => {
     const data = {
       siteId,
-      auditId: crypto.randomUUID(),
+      auditId: sampleData.audits[0].getId(),
       title: 'New Opportunity',
       description: 'Description',
       runbook: 'https://example.com',
@@ -257,7 +257,7 @@ describe('Opportunity IT', async () => {
     const data = [
       {
         siteId,
-        auditId: crypto.randomUUID(),
+        auditId: sampleData.audits[0].getId(),
         title: 'New Opportunity 1',
         description: 'Description',
         runbook: 'https://example.com',
@@ -269,7 +269,7 @@ describe('Opportunity IT', async () => {
       },
       {
         siteId,
-        auditId: crypto.randomUUID(),
+        auditId: sampleData.audits[1].getId(),
         title: 'New Opportunity 2',
         description: 'Description',
         runbook: 'https://example.com',
@@ -306,7 +306,7 @@ describe('Opportunity IT', async () => {
     const data = [
       {
         siteId,
-        auditId: crypto.randomUUID(),
+        auditId: sampleData.audits[0].getId(),
         title: 'New Opportunity 1',
         description: 'Description',
         runbook: 'https://example.com',
@@ -318,7 +318,7 @@ describe('Opportunity IT', async () => {
       },
       {
         siteId,
-        auditId: crypto.randomUUID(),
+        auditId: sampleData.audits[1].getId(),
         title: 'New Opportunity 2',
         description: 'Description',
         runbook: 'https://example.com',
@@ -330,7 +330,7 @@ describe('Opportunity IT', async () => {
       },
       {
         siteId,
-        auditId: crypto.randomUUID(),
+        auditId: sampleData.audits[2].getId(),
         title: 'New Opportunity 3',
         description: 'Description',
         runbook: 'https://example.com',

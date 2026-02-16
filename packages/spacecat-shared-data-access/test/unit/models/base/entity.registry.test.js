@@ -44,7 +44,7 @@ describe('EntityRegistry', () => {
     },
   );
 
-  let electroService;
+  let postgrestService;
   let services;
   let entityRegistry;
   let originalEntities;
@@ -53,7 +53,7 @@ describe('EntityRegistry', () => {
     originalEntities = { ...EntityRegistry.entities };
     EntityRegistry.entities = {};
 
-    electroService = {
+    postgrestService = {
       entities: {
         mockModel: {
           model: {
@@ -69,7 +69,7 @@ describe('EntityRegistry', () => {
     };
 
     services = {
-      dynamo: electroService,
+      postgrest: postgrestService,
       s3: null,
     };
 
@@ -80,6 +80,7 @@ describe('EntityRegistry', () => {
 
   afterEach(() => {
     EntityRegistry.entities = originalEntities;
+    EntityRegistry.defaultEntities = { ...originalEntities };
   });
 
   it('gets collection by collection name', () => {
@@ -132,5 +133,13 @@ describe('EntityRegistry', () => {
         },
       },
     });
+  });
+
+  it('resets entities to default snapshot', () => {
+    EntityRegistry.entities = { another: { schema: MockSchema, collection: MockCollection } };
+
+    EntityRegistry.resetEntities();
+
+    expect(EntityRegistry.entities).to.deep.equal(EntityRegistry.defaultEntities);
   });
 });

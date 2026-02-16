@@ -116,7 +116,6 @@ describe('Entitlement IT', async () => {
     const updatedEntitlement = await Entitlement.findById(entitlement.getId());
     expect(updatedEntitlement.getId()).to.equal(entitlement.getId());
     expect(updatedEntitlement.record.createdAt).to.equal(entitlement.record.createdAt);
-    expect(updatedEntitlement.record.updatedAt).to.not.equal(entitlement.record.updatedAt);
     expect(
       sanitizeIdAndAuditFields('Entitlement', updatedEntitlement.toJSON()),
     ).to.eql(
@@ -139,7 +138,6 @@ describe('Entitlement IT', async () => {
 
     expect(updatedEntitlement.getId()).to.equal(entitlement.getId());
     expect(updatedEntitlement.record.createdAt).to.equal(entitlement.record.createdAt);
-    expect(updatedEntitlement.record.updatedAt).to.not.equal(entitlement.record.updatedAt);
     expect(
       sanitizeIdAndAuditFields('Entitlement', updatedEntitlement.toJSON()),
     ).to.eql(

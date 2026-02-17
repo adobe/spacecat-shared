@@ -37,4 +37,26 @@ describe('AuthInfo', () => {
       expect(authInfo.isLLMOAdministrator()).to.be.false;
     });
   });
+
+  describe('isS2SAdmin', () => {
+    it('should return undefined if profile is not set', () => {
+      const authInfo = new AuthInfo();
+      expect(authInfo.isS2SAdmin()).to.be.undefined;
+    });
+
+    it('should return undefined if is_s2s_admin is not in profile', () => {
+      const authInfo = new AuthInfo().withProfile({});
+      expect(authInfo.isS2SAdmin()).to.be.undefined;
+    });
+
+    it('should return true if is_s2s_admin is true', () => {
+      const authInfo = new AuthInfo().withProfile({ is_s2s_admin: true });
+      expect(authInfo.isS2SAdmin()).to.be.true;
+    });
+
+    it('should return false if is_s2s_admin is false', () => {
+      const authInfo = new AuthInfo().withProfile({ is_s2s_admin: false });
+      expect(authInfo.isS2SAdmin()).to.be.false;
+    });
+  });
 });

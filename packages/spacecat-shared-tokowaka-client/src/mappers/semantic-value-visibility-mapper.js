@@ -82,7 +82,7 @@ export default class SemanticValueVisibilityMapper extends BaseOpportunityMapper
     const data = suggestion.getData();
 
     // Validate required fields
-    if (!data?.semanticHtml) {
+    if (!hasText(data?.semanticHtml)) {
       return { eligible: false, reason: 'semanticHtml is required' };
     }
 

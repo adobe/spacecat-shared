@@ -133,7 +133,7 @@ describe('SemanticValueVisibilityMapper', () => {
       const result = mapper.canDeploy(suggestion);
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'transformRules.action must be insertAfter, insertBefore, or appendChild',
+        reason: 'transformRules.action must be one of: insertAfter, insertBefore, appendChild',
       });
     });
 

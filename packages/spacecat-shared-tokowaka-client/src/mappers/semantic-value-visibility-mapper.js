@@ -95,7 +95,7 @@ export default class SemanticValueVisibilityMapper extends BaseOpportunityMapper
     }
 
     if (!this.validActions.includes(data.transformRules.action)) {
-      return { eligible: false, reason: 'transformRules.action must be insertAfter, insertBefore, or appendChild' };
+      return { eligible: false, reason: `transformRules.action must be one of: ${this.validActions.join(', ')}` };
     }
 
     return { eligible: true };

@@ -526,6 +526,33 @@ export const DATA_SCHEMAS = {
     },
   },
 
+  // consent-banner opportunity type.
+  // Note: The DB stores opportunity type as 'consent-banner', NOT the OPPORTUNITY_TYPES
+  // constant PAID_COOKIE_CONSENT ('paid-cookie-consent'). Using string literal to match DB.
+  'consent-banner': {
+    schema: Joi.object({
+      mobile: Joi.string().allow(null).optional(),
+      desktop: Joi.string().allow(null).optional(),
+      recommendations: Joi.array().items(
+        Joi.object({
+          pageUrl: Joi.string().uri().optional(),
+          id: Joi.string().optional(),
+        }).unknown(true),
+      ).optional(),
+      impact: Joi.object({
+        business: Joi.string().allow(null).optional(),
+        user: Joi.string().allow(null).optional(),
+      }).unknown(true).optional(),
+      aggregationKey: Joi.string().allow(null).optional(),
+    }).unknown(true),
+    projections: {
+      minimal: {
+        fields: ['mobile', 'desktop', 'recommendations', 'impact'],
+        transformers: {},
+      },
+    },
+  },
+
   // ========== SCHEMAS TO BE ADDED ==========
   // TODO: The following opportunity types need schemas to be added.
   // Research actual suggestion data for these types and add schemas following the pattern:
@@ -552,6 +579,5 @@ export const DATA_SCHEMAS = {
   // - SECURITY_PERMISSIONS_REDUNDANT (may use SECURITY_PERMISSIONS schema
   //                                   or need separate schema)
   // - GENERIC_OPPORTUNITY
-  // - PAID_COOKIE_CONSENT
   // - WIKIPEDIA_ANALYSIS
 };

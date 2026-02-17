@@ -29,6 +29,8 @@ jobs:
 
       - name: Setup Node & NPM
         uses: ./.github/actions/setup-node-npm
+        env:
+          MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
 
       - name: Lint, Test, Coverage Upload
         uses: ./.github/actions/lint-test-coverage
@@ -62,8 +64,19 @@ jobs:
       - name: Update NPM
         run: npm install -g npm@10.9.4
 
+      - name: Configure Git auth for private Mysticat types repo
+        if: secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN != ''
+        run: |
+          git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "git@github.com:"
+        env:
+          MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
+
       - name: Install dependencies
         run: npm ci
+        env:
+          MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
 
       - name: Semantic Release
         run: npm run semantic-release

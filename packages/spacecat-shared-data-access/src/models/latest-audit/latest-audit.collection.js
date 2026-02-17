@@ -10,8 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseCollection from '../base/base.collection.js';
+import { isNonEmptyArray } from '@adobe/spacecat-shared-utils';
+import DataAccessError from '../../errors/data-access.error.js';
 import { guardId, guardString } from '../../util/index.js';
+import BaseCollection from '../base/base.collection.js';
 
 /**
  * LatestAuditCollection - A collection class responsible for managing LatestAudit entities.
@@ -23,8 +25,80 @@ import { guardId, guardString } from '../../util/index.js';
 class LatestAuditCollection extends BaseCollection {
   static COLLECTION_NAME = 'LatestAuditCollection';
 
-  async create(item) {
-    return super.create(item, { upsert: true });
+  // LatestAudit is a virtual view in v3; writes are not supported.
+  // eslint-disable-next-line class-methods-use-this
+  async create() {
+    throw new DataAccessError('LatestAudit is derived from Audit in v3 and cannot be created directly', this);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async createMany() {
+    throw new DataAccessError('LatestAudit is derived from Audit in v3 and cannot be created directly', this);
+  }
+
+  static #groupLatest(items, groupFields) {
+    const grouped = new Map();
+    items.forEach((item) => {
+      const key = groupFields.map((field) => item.record[field]).join('#');
+      const existing = grouped.get(key);
+      if (!existing || existing.getAuditedAt() < item.getAuditedAt()) {
+        grouped.set(key, item);
+      }
+    });
+    return [...grouped.values()];
+  }
+
+  async #allAuditsByKeys(keys, options = {}) {
+    const auditCollection = this.entityRegistry.getCollection('AuditCollection');
+    return auditCollection.allByIndexKeys(keys, {
+      ...options,
+      fetchAllPages: true,
+      order: 'desc',
+      returnCursor: false,
+    });
+  }
+
+  async all(sortKeys = {}, options = {}) {
+    return this.allByIndexKeys(sortKeys, options);
+  }
+
+  async findByAll(sortKeys = {}, options = {}) {
+    return this.findByIndexKeys(sortKeys, options);
+  }
+
+  async findByIndexKeys(keys, options = {}) {
+    const auditCollection = this.entityRegistry.getCollection('AuditCollection');
+
+    if (keys.siteId && keys.auditType) {
+      return auditCollection.findByIndexKeys(keys, { ...options, order: 'desc' });
+    }
+
+    // For single-key lookups, we only need the latest row, not all pages.
+    return auditCollection.findByIndexKeys(keys, { ...options, order: 'desc' });
+  }
+
+  async allByIndexKeys(keys, options = {}) {
+    const audits = await this.#allAuditsByKeys(keys, options);
+    if (!isNonEmptyArray(audits)) {
+      return options.returnCursor ? { data: [], cursor: null } : [];
+    }
+
+    let groupFields = ['siteId', 'auditType'];
+    if (keys.siteId && !keys.auditType) {
+      groupFields = ['auditType'];
+    } else if (!keys.siteId && keys.auditType) {
+      groupFields = ['siteId'];
+    }
+
+    const latest = LatestAuditCollection.#groupLatest(audits, groupFields);
+    // Preserve v2 behavior: default order is descending (most recent first).
+    const ascending = options.order === 'asc';
+    latest.sort((a, b) => (ascending
+      ? a.getAuditedAt().localeCompare(b.getAuditedAt())
+      : b.getAuditedAt().localeCompare(a.getAuditedAt())));
+    const limited = Number.isInteger(options.limit) ? latest.slice(0, options.limit) : latest;
+
+    return options.returnCursor ? { data: limited, cursor: null } : limited;
   }
 
   async allByAuditType(auditType) {

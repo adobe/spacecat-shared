@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.1...@adobe/spacecat-shared-google-client-v1.5.2) (2026-02-16)
+
+
+### Bug Fixes
+
+* google client build ([#1353](https://github.com/adobe/spacecat-shared/issues/1353)) ([d896e70](https://github.com/adobe/spacecat-shared/commit/d896e70a21229cbd73cee9b6fa08ced18ed6b690))
+
 # [@adobe/spacecat-shared-google-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.0...@adobe/spacecat-shared-google-client-v1.5.1) (2026-02-04)
 
 

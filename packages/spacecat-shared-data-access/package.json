@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "2.108.0",
+  "version": "3.0.0",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "engines": {
@@ -10,7 +10,9 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test:it": "mocha --require ./test/it/fixtures.js --spec \"test/it/**/*.test.js\"",
+    "test:it": "npm run test:it:legacy && npm run test:it:postgrest",
+    "test:it:legacy": "IT_SEED_MODE=none mocha --require ./test/it/fixtures.js --spec \"test/it/**/*.test.js\" --ignore \"test/it/postgrest/**/*.test.js\"",
+    "test:it:postgrest": "IT_SEED_MODE=tenant-sql mocha --require ./test/it/fixtures.js --spec \"test/it/postgrest/**/*.test.js\"",
     "test": "c8 mocha --spec \"test/unit/**/*.test.js\"",
     "test:debug": "mocha --inspect-brk --require ./test/setup-env.js --spec \"test/unit/**/*.test.js\"",
     "test:debug:config": "mocha --inspect-brk --require ./test/setup-env.js --spec \"test/unit/models/site/config.test.js\"",
@@ -39,19 +41,16 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "@aws-sdk/client-dynamodb": "3.940.0",
+    "@supabase/postgrest-js": "^1.21.4",
     "@aws-sdk/client-s3": "^3.940.0",
-    "@aws-sdk/lib-dynamodb": "3.940.0",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.12.0",
-    "electrodb": "3.5.0",
     "joi": "18.0.2",
     "pluralize": "8.0.0"
   },
   "devDependencies": {
     "chai": "6.2.1",
     "chai-as-promised": "8.0.2",
-    "dynamo-db-local": "9.6.0",
     "nock": "14.0.10",
     "sinon": "21.0.0",
     "sinon-chai": "4.0.1"

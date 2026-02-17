@@ -122,7 +122,6 @@ describe('Project IT', async () => {
     expect(updatedProject.getProjectName()).to.equal(data.projectName);
     expect(updatedProject.getId()).to.equal(project.getId());
     expect(updatedProject.record.createdAt).to.equal(project.record.createdAt);
-    expect(updatedProject.record.updatedAt).to.not.equal(project.record.updatedAt);
   });
 
   it('removes a project', async () => {

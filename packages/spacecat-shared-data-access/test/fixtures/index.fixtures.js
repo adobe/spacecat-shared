@@ -15,6 +15,7 @@ import asyncJobs from './async-jobs.fixture.js';
 import audits from './audits.fixture.js';
 import auditUrls from './audit-urls.fixture.js';
 import configurations from './configurations.fixture.js';
+import consumers from './consumers.fixture.js';
 import experiments from './experiments.fixture.js';
 import importJobs from './import-jobs.fixture.js';
 import importUrls from './import-urls.fixture.js';
@@ -47,6 +48,7 @@ export default {
   audits,
   auditUrls,
   configurations,
+  consumers,
   experiments,
   fixEntities,
   fixEntitySuggestions,

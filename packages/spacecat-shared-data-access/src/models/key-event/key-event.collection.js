@@ -11,6 +11,7 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
+import DataAccessError from '../../errors/data-access.error.js';
 
 /**
  * KeyEventCollection - A collection class responsible for managing KeyEvent entities.
@@ -22,7 +23,28 @@ import BaseCollection from '../base/base.collection.js';
 class KeyEventCollection extends BaseCollection {
   static COLLECTION_NAME = 'KeyEventCollection';
 
-  // add custom methods here
+  #throwDeprecated() {
+    throw new DataAccessError(
+      'KeyEvent is deprecated in data-access v3. Use Audit/LatestAudit and related Postgres-backed entities instead.',
+      this,
+    );
+  }
+
+  async all() { return this.#throwDeprecated(); }
+
+  async allByIndexKeys() { return this.#throwDeprecated(); }
+
+  async findById() { return this.#throwDeprecated(); }
+
+  async findByIndexKeys() { return this.#throwDeprecated(); }
+
+  async create() { return this.#throwDeprecated(); }
+
+  async createMany() { return this.#throwDeprecated(); }
+
+  async removeByIds() { return this.#throwDeprecated(); }
+
+  async removeByIndexKeys() { return this.#throwDeprecated(); }
 }
 
 export default KeyEventCollection;

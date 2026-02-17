@@ -11,9 +11,9 @@
  */
 
 import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
-import {
-  Entitlement as EntitlementModel,
-} from '@adobe/spacecat-shared-data-access';
+import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
+
+const ENTITLEMENT_TIERS = MYSTICAT_ENUMS_BY_TYPE.ENTITLEMENT_TIER;
 /**
  * TierClient provides methods to manage entitlements and site enrollments.
  */
@@ -137,8 +137,8 @@ class TierClient {
    */
   async createEntitlement(tier) {
     try {
-      if (!Object.values(EntitlementModel.TIERS).includes(tier)) {
-        throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(EntitlementModel.TIERS).join(', ')}`);
+      if (!Object.values(ENTITLEMENT_TIERS).includes(tier)) {
+        throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(ENTITLEMENT_TIERS).join(', ')}`);
       }
       const orgId = this.organization.getId();
       // Check what already exists
@@ -149,7 +149,7 @@ class TierClient {
         const currentTier = existing.entitlement.getTier();
 
         // If currentTier doesn't match with given tier and is not PAID, update it
-        if (currentTier !== tier && currentTier !== EntitlementModel.TIERS.PAID) {
+        if (currentTier !== tier && currentTier !== ENTITLEMENT_TIERS.PAID) {
           existing.entitlement.setTier(tier);
           await existing.entitlement.save();
         }
@@ -314,7 +314,7 @@ class TierClient {
   async revokeEntitlement() {
     const existing = await this.checkValidEntitlement();
     if (existing.entitlement) {
-      if (existing.entitlement.getTier() === EntitlementModel.TIERS.PAID) {
+      if (existing.entitlement.getTier() === ENTITLEMENT_TIERS.PAID) {
         throw new Error('Paid entitlement cannot be revoked');
       }
       await existing.entitlement.remove();

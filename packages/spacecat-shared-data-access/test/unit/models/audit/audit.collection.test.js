@@ -61,7 +61,7 @@ describe('AuditCollection', () => {
   });
 
   describe('onCreate', () => {
-    it('creates a LatestAudit entity', async () => {
+    it('does not create a LatestAudit entity in v3', async () => {
       const collection = {
         create: stub().resolves(),
       };
@@ -70,11 +70,10 @@ describe('AuditCollection', () => {
       // eslint-disable-next-line no-underscore-dangle
       await instance._onCreate(model);
 
-      expect(collection.create).to.have.been.calledOnce;
-      expect(collection.create).to.have.been.calledWithExactly(model.toJSON());
+      expect(collection.create).to.not.have.been.called;
     });
 
-    it('creates a LatestAudit entity for each site and auditType', async () => {
+    it('does not create LatestAudit entities on createMany in v3', async () => {
       const collection = {
         createMany: stub().resolves(),
       };
@@ -85,7 +84,7 @@ describe('AuditCollection', () => {
         createdItems: [model, model, model],
       });
 
-      expect(collection.createMany).to.have.been.calledOnce;
+      expect(collection.createMany).to.not.have.been.called;
     });
   });
 });

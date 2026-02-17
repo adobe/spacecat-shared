@@ -44,7 +44,7 @@ describe('EntityRegistry', () => {
     },
   );
 
-  let electroService;
+  let postgrestService;
   let services;
   let entityRegistry;
   let originalEntities;
@@ -53,7 +53,7 @@ describe('EntityRegistry', () => {
     originalEntities = { ...EntityRegistry.entities };
     EntityRegistry.entities = {};
 
-    electroService = {
+    postgrestService = {
       entities: {
         mockModel: {
           model: {
@@ -69,17 +69,18 @@ describe('EntityRegistry', () => {
     };
 
     services = {
-      dynamo: electroService,
+      postgrest: postgrestService,
       s3: null,
     };
 
     EntityRegistry.registerEntity(MockSchema, MockCollection);
 
-    entityRegistry = new EntityRegistry(services, console);
+    entityRegistry = new EntityRegistry(services, {}, console);
   });
 
   afterEach(() => {
     EntityRegistry.entities = originalEntities;
+    EntityRegistry.defaultEntities = { ...originalEntities };
   });
 
   it('gets collection by collection name', () => {
@@ -103,6 +104,15 @@ describe('EntityRegistry', () => {
     expect(collections.Configuration).to.exist;
   });
 
+  it('gets all entity names including configuration', () => {
+    const entityNames = entityRegistry.getEntityNames();
+
+    expect(entityNames).to.be.an('array');
+    expect(entityNames).to.include('mockModel');
+    expect(entityNames).to.include('configuration');
+    expect(entityNames).to.have.lengthOf(2);
+  });
+
   it('gets all entities', () => {
     const entities = EntityRegistry.getEntities();
 
@@ -123,5 +133,13 @@ describe('EntityRegistry', () => {
         },
       },
     });
+  });
+
+  it('resets entities to default snapshot', () => {
+    EntityRegistry.entities = { another: { schema: MockSchema, collection: MockCollection } };
+
+    EntityRegistry.resetEntities();
+
+    expect(EntityRegistry.entities).to.deep.equal(EntityRegistry.defaultEntities);
   });
 });

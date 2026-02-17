@@ -21,6 +21,7 @@ const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
 
 /**
  * @typedef {{
+ *   getId: () => string,
  *   getBaseURL: () => string,
  *   getHlxConfig: () => any
  * }} Site

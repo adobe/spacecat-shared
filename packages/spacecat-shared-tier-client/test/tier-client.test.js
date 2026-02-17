@@ -61,7 +61,6 @@ describe('TierClient', () => {
 
   const mockDataAccess = {
     Entitlement: {
-      TIERS: { FREE_TRIAL: 'FREE_TRIAL', PAID: 'PAID' },
       findByOrganizationIdAndProductCode: sandbox.stub(),
       findById: sandbox.stub(),
       create: sandbox.stub(),

@@ -18,6 +18,7 @@ import { ScrapeJobDto } from './scrapeJobDto.js';
 import ScrapeJobSupervisor from './scrape-job-supervisor.js';
 import { ScrapeUrlDto } from './scrapeUrlDto.js';
 
+// Not a DB enum in mysticat-data-service; keep local canonical default here.
 const SCRAPE_PROCESSING_TYPE_DEFAULT = 'default';
 const SCRAPE_URL_STATUS_COMPLETE = MYSTICAT_ENUMS_BY_TYPE.SCRAPE_URL_STATUS.COMPLETE;
 

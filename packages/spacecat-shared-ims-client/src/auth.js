@@ -22,7 +22,7 @@ import ImsPromiseClient from './clients/ims-promise-client.js';
  *   getBaseURL: () => string,
  *   getAuthoringType: () => string,
  *   getDeliveryType: () => string
- * }} Site
+ * }} SiteLike
  */
 
 /**
@@ -48,7 +48,7 @@ export async function getAccessToken(context, promiseToken) {
 /**
  * Retrieves the page authentication token for a given site.
  *
- * @param {Site} site - The site to retrieve authentication for
+ * @param {SiteLike} site - The site to retrieve authentication for
  * @param {object} context - The context object
  * @param {object} authOptions - The authentication options
  * @returns {Promise<string>} - The authentication token or access token

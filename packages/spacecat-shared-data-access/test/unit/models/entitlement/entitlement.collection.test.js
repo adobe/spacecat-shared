@@ -82,4 +82,22 @@ describe('EntitlementCollection', () => {
       expect(trialUserActivitiesRef.isRemoveDependents()).to.be.false;
     });
   });
+
+  describe('isFreemium', () => {
+    const FREEMIUM_ORGANIZATION_ID = 'ed79490b-4248-4b86-9536-b35e122772f4';
+
+    it('throws if organizationId is not provided', () => {
+      expect(() => instance.isFreemium()).to.throw('organizationId is required');
+      expect(() => instance.isFreemium('')).to.throw('organizationId is required');
+    });
+
+    it('returns true when organizationId is the freemium org', () => {
+      expect(instance.isFreemium(FREEMIUM_ORGANIZATION_ID)).to.be.true;
+    });
+
+    it('returns false for any other organizationId', () => {
+      expect(instance.isFreemium('org-123')).to.be.false;
+      expect(instance.isFreemium('00000000-0000-0000-0000-000000000000')).to.be.false;
+    });
+  });
 });

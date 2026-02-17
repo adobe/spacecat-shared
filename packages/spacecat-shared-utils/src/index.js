@@ -131,3 +131,13 @@ export {
   GRANULARITY_KEY_BUILDERS,
   ISSUE_GRANULARITY_MAP,
 } from './aggregation/aggregation-strategies.js';
+
+export {
+  isSuggestionComplete,
+  isBrokenBacklinksComplete,
+  isCwvComplete,
+  isAltTextComplete,
+  isGranted,
+} from './suggestion-complete.js';
+
+export { TOKEN_GRANT_CONFIG, getTokenGrantConfig } from './token-grant-config.js';

@@ -41,6 +41,7 @@ import PageIntentCollection from '../page-intent/page-intent.collection.js';
 import ReportCollection from '../report/report.collection.js';
 import TrialUserCollection from '../trial-user/trial-user.collection.js';
 import TrialUserActivityCollection from '../trial-user-activity/trial-user-activity.collection.js';
+import TokenCollection from '../token/token.collection.js';
 import PageCitabilityCollection from '../page-citability/page-citability.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
@@ -70,6 +71,7 @@ import PageIntentSchema from '../page-intent/page-intent.schema.js';
 import ReportSchema from '../report/report.schema.js';
 import TrialUserSchema from '../trial-user/trial-user.schema.js';
 import TrialUserActivitySchema from '../trial-user-activity/trial-user-activity.schema.js';
+import TokenSchema from '../token/token.schema.js';
 import PageCitabilitySchema from '../page-citability/page-citability.schema.js';
 
 /**
@@ -178,6 +180,7 @@ EntityRegistry.registerEntity(PageIntentSchema, PageIntentCollection);
 EntityRegistry.registerEntity(ReportSchema, ReportCollection);
 EntityRegistry.registerEntity(TrialUserSchema, TrialUserCollection);
 EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollection);
+EntityRegistry.registerEntity(TokenSchema, TokenCollection);
 EntityRegistry.registerEntity(PageCitabilitySchema, PageCitabilityCollection);
 
 export default EntityRegistry;

@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "@mysticat/data-service-types": "github:adobe/mysticat-data-service#types-ts-v1.11.1"
+    "@mysticat/data-service-types": "git+https://github.com/adobe/mysticat-data-service.git#types-ts-v1.11.1"
   },
   "devDependencies": {
     "c8": "10.1.3",

@@ -28,11 +28,10 @@ runs:
       shell: bash
 
     - name: Configure Git auth for private Mysticat types repo
-      if: env.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN != ''
       run: |
         git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "https://github.com/"
-        git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
-        git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "git@github.com:"
+        git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+        git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "git@github.com:"
       shell: bash
 
     - name: Install dependencies (only if cache miss)

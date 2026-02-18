@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-google-client-v1.5.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.2...@adobe/spacecat-shared-google-client-v1.5.3) (2026-02-18)
+
+### Bug Fixes
+
+* **deps:** update transitive data-access dependencies to v3 ([#1363](https://github.com/adobe/spacecat-shared/issues/1363)) ([c2ae6c1](https://github.com/adobe/spacecat-shared/commit/c2ae6c123053a4799046abeaec78230408400e66))
+
 # [@adobe/spacecat-shared-google-client-v1.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.1...@adobe/spacecat-shared-google-client-v1.5.2) (2026-02-16)
 
 

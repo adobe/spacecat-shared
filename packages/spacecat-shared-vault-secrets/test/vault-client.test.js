@@ -227,4 +227,94 @@ describe('VaultClient', () => {
       expect(result).to.equal(0);
     });
   });
+
+  describe('token lifecycle', () => {
+    let client;
+    let dateStub;
+    const baseTime = 1700000000000;
+
+    beforeEach(async () => {
+      dateStub = sinon.stub(Date, 'now');
+      dateStub.returns(baseTime);
+
+      nock(VAULT_ADDR)
+        .post('/v1/auth/approle/login')
+        .reply(200, {
+          auth: {
+            client_token: 'hvs.lifecycle-token',
+            lease_duration: 3600,
+            renewable: true,
+          },
+        });
+      client = new VaultClient({ vaultAddr: VAULT_ADDR, mountPoint: MOUNT_POINT });
+      await client.authenticate(ROLE_ID, SECRET_ID);
+    });
+
+    afterEach(() => {
+      dateStub.restore();
+    });
+
+    it('renewToken renews token successfully', async () => {
+      const scope = nock(VAULT_ADDR)
+        .post('/v1/auth/token/renew-self')
+        .matchHeader('X-Vault-Token', 'hvs.lifecycle-token')
+        .reply(200, {
+          auth: {
+            client_token: 'hvs.lifecycle-token',
+            lease_duration: 7200,
+            renewable: true,
+          },
+        });
+
+      await client.renewToken();
+
+      expect(client.tokenExpiry).to.equal(baseTime + 7200 * 1000);
+      expect(scope.isDone()).to.equal(true);
+    });
+
+    it('detects expired token', () => {
+      expect(client.isAuthenticated()).to.equal(true);
+
+      dateStub.returns(baseTime + 3601 * 1000);
+      expect(client.isAuthenticated()).to.equal(false);
+    });
+
+    it('isTokenExpiringSoon returns true within 5-min buffer', () => {
+      // Token expires at baseTime + 3600s. Move to 4 minutes before expiry.
+      dateStub.returns(baseTime + (3600 - 240) * 1000);
+      expect(client.isTokenExpiringSoon()).to.equal(true);
+    });
+
+    it('isTokenExpiringSoon returns false when not near expiry', () => {
+      // Token expires at baseTime + 3600s. 30 minutes before expiry.
+      dateStub.returns(baseTime + 1800 * 1000);
+      expect(client.isTokenExpiringSoon()).to.equal(false);
+    });
+
+    it('isTokenExpiringSoon returns false when not authenticated', () => {
+      const unauthClient = new VaultClient({ vaultAddr: VAULT_ADDR, mountPoint: MOUNT_POINT });
+      expect(unauthClient.isTokenExpiringSoon()).to.equal(false);
+    });
+
+    it('handles renewal failure gracefully', async () => {
+      nock(VAULT_ADDR)
+        .post('/v1/auth/token/renew-self')
+        .reply(403, { errors: ['permission denied'] });
+
+      const expiryBefore = client.tokenExpiry;
+      await client.renewToken();
+      expect(client.tokenExpiry).to.equal(expiryBefore);
+      expect(client.isAuthenticated()).to.equal(true);
+    });
+
+    it('handles network error during renewal gracefully', async () => {
+      nock(VAULT_ADDR)
+        .post('/v1/auth/token/renew-self')
+        .replyWithError('connection reset');
+
+      const expiryBefore = client.tokenExpiry;
+      await client.renewToken();
+      expect(client.tokenExpiry).to.equal(expiryBefore);
+    });
+  });
 });

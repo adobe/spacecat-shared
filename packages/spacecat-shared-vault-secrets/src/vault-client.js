@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+const TOKEN_RENEW_BUFFER = 5 * 60 * 1000;
+
 export default class VaultClient {
   #vaultAddr;
 
@@ -107,6 +109,28 @@ export default class VaultClient {
 
     const body = await response.json();
     return body.data.data;
+  }
+
+  isTokenExpiringSoon() {
+    if (!this.isAuthenticated()) return false;
+    return (this.#tokenExpiry - Date.now()) <= TOKEN_RENEW_BUFFER;
+  }
+
+  async renewToken() {
+    try {
+      const response = await fetch(`${this.#vaultAddr}/v1/auth/token/renew-self`, {
+        method: 'POST',
+        headers: { 'X-Vault-Token': this.#token },
+      });
+      if (response.ok) {
+        const body = await response.json();
+        const { auth } = body;
+        this.#tokenExpiry = Date.now() + auth.lease_duration * 1000;
+        this.#tokenRenewable = auth.renewable;
+      }
+    } catch {
+      // Silent failure - renewal is best-effort
+    }
   }
 
   async getLastChangedDate(path) {

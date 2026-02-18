@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.8...@adobe/spacecat-shared-tokowaka-client-v1.8.0) (2026-02-18)
+
+### Features
+
+* **tokowaka-client:** add semantic-value-visibility mapper ([#1348](https://github.com/adobe/spacecat-shared/issues/1348)) ([373f920](https://github.com/adobe/spacecat-shared/commit/373f920dfa9d5da8f2e15e0533d1347a23f45044))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.7.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.7...@adobe/spacecat-shared-tokowaka-client-v1.7.8) (2026-02-16)
 
 

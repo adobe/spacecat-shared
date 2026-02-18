@@ -69,7 +69,6 @@ describe('VaultClient', () => {
       const client = new VaultClient({ vaultAddr: VAULT_ADDR, mountPoint: MOUNT_POINT });
       await client.authenticate(ROLE_ID, SECRET_ID);
 
-      expect(client.token).to.equal('hvs.test-token-123');
       expect(client.tokenRenewable).to.equal(true);
       expect(client.tokenExpiry).to.be.a('number');
       expect(client.isAuthenticated()).to.equal(true);

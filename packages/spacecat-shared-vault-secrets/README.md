@@ -27,8 +27,8 @@ export const main = wrap(run)
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `bootstrap` | string | `/mysticat/vault-bootstrap` | AWS Secrets Manager path for AppRole credentials |
-| `name` | string or function | auto | Custom Vault path or resolver function `(opts, ctx, defaultPath) => path` |
+| `bootstrapPath` | string | `/mysticat/vault-bootstrap` | AWS Secrets Manager path for AppRole credentials |
+| `name` | string or function | auto | Custom Vault path or resolver function `(ctx) => path` |
 | `expiration` | number | 3600000 | Hard cache expiration in ms |
 | `checkDelay` | number | 60000 | Metadata check interval in ms |
 

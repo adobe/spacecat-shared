@@ -69,8 +69,7 @@ export async function loadBootstrapConfig({ bootstrapPath }) {
   }
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to load Vault bootstrap config: ${response.status} ${text}`);
+    throw new Error(`Failed to load Vault bootstrap config: ${response.status}`);
   }
 
   const data = await response.json();

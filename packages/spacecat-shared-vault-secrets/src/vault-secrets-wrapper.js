@@ -21,38 +21,55 @@ let cache = {
   loaded: 0, checked: 0, lastChanged: 0, data: null,
 };
 let vaultClient = null;
+let bootstrapConfig = null;
 let bootstrapEnvironment = null;
+let clientLock = null;
 
 export function reset() {
   cache = {
     loaded: 0, checked: 0, lastChanged: 0, data: null,
   };
   vaultClient = null;
+  bootstrapConfig = null;
   bootstrapEnvironment = null;
+  clientLock = null;
 }
 
 async function ensureClient(opts, log) {
-  if (!vaultClient) {
-    const bootstrapPath = opts.bootstrapPath || DEFAULT_BOOTSTRAP_PATH;
-    const config = await loadBootstrapConfig({ bootstrapPath });
-
-    vaultClient = new VaultClient({
-      vaultAddr: config.vault_addr,
-      mountPoint: config.mount_point,
-    });
-    bootstrapEnvironment = config.environment;
-
-    await vaultClient.authenticate(config.role_id, config.secret_id);
-  } else if (!vaultClient.isAuthenticated()) {
-    const bootstrapPath = opts.bootstrapPath || DEFAULT_BOOTSTRAP_PATH;
-    const config = await loadBootstrapConfig({ bootstrapPath });
-    await vaultClient.authenticate(config.role_id, config.secret_id);
-  } else if (vaultClient.isTokenExpiringSoon()) {
-    await vaultClient.renewToken();
+  if (clientLock) {
+    await clientLock;
+    return;
   }
 
-  if (log) {
-    log.info('Vault client ready');
+  let resolve;
+  clientLock = new Promise((r) => {
+    resolve = r;
+  });
+
+  try {
+    if (!vaultClient) {
+      const bootstrapPath = opts.bootstrapPath || DEFAULT_BOOTSTRAP_PATH;
+      bootstrapConfig = await loadBootstrapConfig({ bootstrapPath });
+
+      vaultClient = new VaultClient({
+        vaultAddr: bootstrapConfig.vault_addr,
+        mountPoint: bootstrapConfig.mount_point,
+      });
+      bootstrapEnvironment = bootstrapConfig.environment;
+
+      await vaultClient.authenticate(bootstrapConfig.role_id, bootstrapConfig.secret_id);
+    } else if (!vaultClient.isAuthenticated()) {
+      await vaultClient.authenticate(bootstrapConfig.role_id, bootstrapConfig.secret_id);
+    } else if (vaultClient.isTokenExpiringSoon()) {
+      await vaultClient.renewToken();
+    }
+
+    if (log) {
+      log.info('Vault client ready');
+    }
+  } finally {
+    clientLock = null;
+    resolve();
   }
 }
 
@@ -102,7 +119,10 @@ export async function loadSecrets(ctx, opts = {}) {
   if (cache.data && !isExpired && (now - cache.checked) >= checkDelay) {
     const lastChanged = await vaultClient.getLastChangedDate(secretPath);
     cache.checked = now;
-    if (lastChanged > cache.lastChanged) {
+    if (cache.lastChanged === 0) {
+      // First metadata check - establish baseline without re-fetching
+      cache.lastChanged = lastChanged;
+    } else if (lastChanged > cache.lastChanged) {
       metadataChanged = true;
     }
   }
@@ -112,7 +132,10 @@ export async function loadSecrets(ctx, opts = {}) {
     cache.data = await vaultClient.readSecret(secretPath);
     cache.loaded = now;
     cache.checked = now;
-    cache.lastChanged = await vaultClient.getLastChangedDate(secretPath);
+    if (metadataChanged) {
+      // We already know the new lastChanged from the metadata check above
+      cache.lastChanged = await vaultClient.getLastChangedDate(secretPath);
+    }
   }
 
   return cache.data;
@@ -130,7 +153,7 @@ export default function vaultSecrets(func, opts = {}) {
       }
       return new Response('', {
         status: 502,
-        headers: { 'x-error': 'failed to load secrets' },
+        headers: { 'x-error': 'error fetching secrets.' },
       });
     }
     return func(request, context);

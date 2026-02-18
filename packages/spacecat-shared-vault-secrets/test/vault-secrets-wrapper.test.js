@@ -131,7 +131,6 @@ describe('vaultSecrets wrapper', () => {
       const bootstrap = mockBootstrap();
       const login = mockAppRoleLogin();
       const read = mockSecretRead();
-      mockMetadataRead();
 
       const ctx = makeContext();
       const innerFn = sinon.stub().resolves(new Response('ok'));
@@ -153,7 +152,6 @@ describe('vaultSecrets wrapper', () => {
       mockBootstrap();
       mockAppRoleLogin();
       mockSecretRead();
-      mockMetadataRead();
 
       const ctx = makeContext();
       const innerFn = sinon.stub().resolves(new Response('ok'));
@@ -177,7 +175,7 @@ describe('vaultSecrets wrapper', () => {
       const response = await wrapped(new Request('https://example.com'), ctx);
 
       expect(response.status).to.equal(502);
-      expect(response.headers.get('x-error')).to.equal('failed to load secrets');
+      expect(response.headers.get('x-error')).to.equal('error fetching secrets.');
       expect(innerFn.called).to.equal(false);
     });
 
@@ -194,6 +192,33 @@ describe('vaultSecrets wrapper', () => {
 
       expect(result).to.deep.equal({});
     });
+
+    it('concurrent calls share a single bootstrap (lock)', async () => {
+      mockBootstrap();
+      mockAppRoleLogin();
+      // Both calls will try to read the secret (lock only protects ensureClient)
+      nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/prod/api-service`)
+        .times(2)
+        .reply(200, {
+          data: {
+            data: testSecrets,
+            metadata: { version: 1, created_time: '2026-01-01T00:00:00Z' },
+          },
+        });
+
+      const ctx1 = makeContext();
+      const ctx2 = makeContext();
+
+      // Both calls start concurrently - only one bootstrap/login should fire
+      const [result1, result2] = await Promise.all([
+        loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH }),
+        loadSecrets(ctx2, { bootstrapPath: BOOTSTRAP_PATH }),
+      ]);
+
+      expect(result1).to.deep.equal(testSecrets);
+      expect(result2).to.deep.equal(testSecrets);
+    });
   });
 
   describe('caching', () => {
@@ -201,7 +226,6 @@ describe('vaultSecrets wrapper', () => {
       mockBootstrap();
       mockAppRoleLogin();
       mockSecretRead();
-      mockMetadataRead();
 
       const ctx1 = makeContext();
       const result1 = await loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH });
@@ -220,7 +244,6 @@ describe('vaultSecrets wrapper', () => {
         mockBootstrap();
         mockAppRoleLogin();
         mockSecretRead();
-        mockMetadataRead();
 
         const ctx1 = makeContext();
         const result1 = await loadSecrets(ctx1, {
@@ -242,7 +265,6 @@ describe('vaultSecrets wrapper', () => {
               metadata: { version: 2, created_time: '2026-01-02T00:00:00Z' },
             },
           });
-        mockMetadataRead('prod/api-service', '2026-01-02T00:00:00Z');
 
         const ctx2 = makeContext();
         const result2 = await loadSecrets(ctx2, {
@@ -262,7 +284,6 @@ describe('vaultSecrets wrapper', () => {
         mockBootstrap();
         mockAppRoleLogin();
         mockSecretRead();
-        mockMetadataRead();
 
         const ctx1 = makeContext();
         await loadSecrets(ctx1, {
@@ -274,7 +295,7 @@ describe('vaultSecrets wrapper', () => {
         // Advance past check delay but not expiration
         clock.tick(1000);
 
-        // Mock metadata - same updated_time means no re-fetch needed
+        // Mock metadata - lastChanged is 0 (initial), same updated_time means no re-fetch
         mockMetadataRead();
 
         const ctx2 = makeContext();
@@ -296,8 +317,6 @@ describe('vaultSecrets wrapper', () => {
         mockBootstrap();
         mockAppRoleLogin();
         mockSecretRead();
-        // Initial load - baseline metadata
-        mockMetadataRead('prod/api-service', '2026-01-01T00:00:00Z');
 
         const ctx1 = makeContext();
         await loadSecrets(ctx1, {
@@ -306,13 +325,23 @@ describe('vaultSecrets wrapper', () => {
           expiration: 60000,
         });
 
-        // Advance past check delay
+        // Phase 1: First metadata check establishes baseline (lastChanged was 0)
         clock.tick(1000);
+        mockMetadataRead('prod/api-service', '2026-01-01T00:00:00Z');
 
-        // Mock metadata with newer updated_time
+        const ctx2 = makeContext();
+        const result2 = await loadSecrets(ctx2, {
+          bootstrapPath: BOOTSTRAP_PATH,
+          checkDelay: 500,
+          expiration: 60000,
+        });
+        // Should return cached data (baseline established, no re-fetch)
+        expect(result2).to.deep.equal(testSecrets);
+
+        // Phase 2: Second metadata check detects actual change
+        clock.tick(1000);
         mockMetadataRead('prod/api-service', '2026-02-01T00:00:00Z');
 
-        // Mock new secret read + metadata for post-refetch baseline
         const updatedSecrets = { ...testSecrets, ROTATED: 'yes' };
         nock(VAULT_ADDR)
           .get(`/v1/${MOUNT_POINT}/data/prod/api-service`)
@@ -324,13 +353,13 @@ describe('vaultSecrets wrapper', () => {
           });
         mockMetadataRead('prod/api-service', '2026-02-01T00:00:00Z');
 
-        const ctx2 = makeContext();
-        const result2 = await loadSecrets(ctx2, {
+        const ctx3 = makeContext();
+        const result3 = await loadSecrets(ctx3, {
           bootstrapPath: BOOTSTRAP_PATH,
           checkDelay: 500,
           expiration: 60000,
         });
-        expect(result2).to.deep.equal(updatedSecrets);
+        expect(result3).to.deep.equal(updatedSecrets);
       } finally {
         clock.restore();
       }
@@ -340,7 +369,6 @@ describe('vaultSecrets wrapper', () => {
       mockBootstrap();
       mockAppRoleLogin();
       mockSecretRead();
-      mockMetadataRead();
 
       const ctx1 = makeContext();
       await loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH });
@@ -351,7 +379,6 @@ describe('vaultSecrets wrapper', () => {
       mockBootstrap();
       mockAppRoleLogin();
       mockSecretRead();
-      mockMetadataRead();
 
       const ctx2 = makeContext();
       const result = await loadSecrets(ctx2, { bootstrapPath: BOOTSTRAP_PATH });
@@ -366,7 +393,6 @@ describe('vaultSecrets wrapper', () => {
 
       // The path should be prod/api-service (from bootstrap env + func.name)
       const read = mockSecretRead('prod/api-service');
-      mockMetadataRead('prod/api-service');
 
       const ctx = makeContext();
       await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
@@ -380,7 +406,6 @@ describe('vaultSecrets wrapper', () => {
 
       const customPath = 'custom/secret/path';
       const read = mockSecretRead(customPath);
-      mockMetadataRead(customPath);
 
       const ctx = makeContext();
       await loadSecrets(ctx, {
@@ -397,7 +422,6 @@ describe('vaultSecrets wrapper', () => {
 
       const customPath = 'string/secret/path';
       const read = mockSecretRead(customPath);
-      mockMetadataRead(customPath);
 
       const ctx = makeContext();
       await loadSecrets(ctx, {
@@ -414,7 +438,6 @@ describe('vaultSecrets wrapper', () => {
 
       // Should fall back to default path
       const read = mockSecretRead('prod/api-service');
-      mockMetadataRead('prod/api-service');
 
       const ctx = makeContext();
       await loadSecrets(ctx, {
@@ -434,7 +457,6 @@ describe('vaultSecrets wrapper', () => {
         mockBootstrap();
         mockAppRoleLogin();
         mockSecretRead();
-        mockMetadataRead();
 
         const ctx1 = makeContext();
         await loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH });
@@ -442,11 +464,9 @@ describe('vaultSecrets wrapper', () => {
         // Advance past token expiry (3600s lease)
         clock.tick(3601 * 1000);
 
-        // Client exists but token expired - needs re-bootstrap + re-auth
-        mockBootstrap();
+        // Client exists but token expired - re-auth with cached bootstrap
         mockAppRoleLogin();
         mockSecretRead();
-        mockMetadataRead();
 
         const ctx2 = makeContext();
         // Use short expiration so cache also expires
@@ -467,7 +487,6 @@ describe('vaultSecrets wrapper', () => {
         mockBootstrap();
         mockAppRoleLogin();
         mockSecretRead();
-        mockMetadataRead();
 
         const ctx1 = makeContext();
         await loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH });
@@ -482,9 +501,8 @@ describe('vaultSecrets wrapper', () => {
             auth: { client_token: 'test-vault-token', lease_duration: 3600, renewable: true },
           });
 
-        // Cache expired, so need new secret read + metadata
+        // Cache expired, so need new secret read
         mockSecretRead();
-        mockMetadataRead();
 
         const ctx2 = makeContext();
         const result = await loadSecrets(ctx2, {
@@ -504,7 +522,6 @@ describe('vaultSecrets wrapper', () => {
         mockBootstrap();
         mockAppRoleLogin();
         mockSecretRead();
-        mockMetadataRead();
 
         const ctx1 = makeContext();
         await loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH });
@@ -522,11 +539,9 @@ describe('vaultSecrets wrapper', () => {
         // Advance past actual expiry
         clock.tick(241 * 1000);
 
-        // Now token expired, needs re-bootstrap + re-auth
-        mockBootstrap();
+        // Now token expired - re-auth with cached bootstrap
         mockAppRoleLogin();
         mockSecretRead();
-        mockMetadataRead();
 
         const ctx2 = makeContext();
         const result = await loadSecrets(ctx2, {

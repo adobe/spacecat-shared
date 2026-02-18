@@ -45,10 +45,6 @@ export default class VaultClient {
     return this.#mountPoint;
   }
 
-  get token() {
-    return this.#token;
-  }
-
   get tokenRenewable() {
     return this.#tokenRenewable;
   }

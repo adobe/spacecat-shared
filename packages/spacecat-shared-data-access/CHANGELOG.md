@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.0.1...@adobe/spacecat-shared-data-access-v3.1.0) (2026-02-18)
+
+### Features
+
+* add methods to manage LLMO tags | LLMO-3058 ([#1362](https://github.com/adobe/spacecat-shared/issues/1362)) ([c678d1a](https://github.com/adobe/spacecat-shared/commit/c678d1ad6e12febeeae6cc60211bb0cbf9f922a4))
+
 ## [@adobe/spacecat-shared-data-access-v3.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.0.0...@adobe/spacecat-shared-data-access-v3.0.1) (2026-02-17)
 
 ### Bug Fixes

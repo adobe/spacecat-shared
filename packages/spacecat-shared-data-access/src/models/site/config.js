@@ -605,6 +605,19 @@ export const Config = (data = {}) => {
     state.llmo.cdnBucketConfig = cdnBucketConfig;
   };
 
+  self.addLlmoTag = (tag) => {
+    state.llmo = state.llmo || {};
+    state.llmo.tags = state.llmo.tags || [];
+    if (!state.llmo.tags.includes(tag)) {
+      state.llmo.tags.push(tag);
+    }
+  };
+
+  self.removeLlmoTag = (tag) => {
+    if (!state.llmo?.tags) return;
+    state.llmo.tags = state.llmo.tags.filter((t) => t !== tag);
+  };
+
   self.updateImports = (imports) => {
     state.imports = imports;
   };

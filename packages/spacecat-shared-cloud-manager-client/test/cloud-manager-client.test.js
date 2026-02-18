@@ -568,6 +568,48 @@ describe('CloudManagerClient', () => {
       expect(pullArgStr).to.not.include('extraheader');
       expect(pullArgStr).to.not.include('Bearer');
     });
+
+    it('checks out ref before pulling when ref is provided', async () => {
+      setupImsTokenNock();
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await client.pull(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID, ref: 'feature/my-branch' },
+      );
+
+      expect(execFileSyncStub).to.have.been.calledTwice;
+
+      // First call: checkout
+      const checkoutArgStr = getGitArgsStr(execFileSyncStub.firstCall);
+      expect(checkoutArgStr).to.include('checkout');
+      expect(checkoutArgStr).to.include('feature/my-branch');
+
+      // Second call: pull
+      const pullArgStr = getGitArgsStr(execFileSyncStub.secondCall);
+      expect(pullArgStr).to.include('pull');
+      expect(pullArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
+    });
+
+    it('skips checkout when ref is not provided', async () => {
+      setupImsTokenNock();
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await client.pull(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID },
+      );
+
+      expect(execFileSyncStub).to.have.been.calledOnce;
+
+      const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
+      expect(pullArgStr).to.include('pull');
+      expect(pullArgStr).to.not.include('checkout');
+    });
   });
 
   describe('checkout', () => {

@@ -2,6 +2,8 @@
 
 A JavaScript client for Adobe Cloud Manager repository operations. It supports cloning, pulling, pushing, checking out refs, zipping/unzipping repositories, applying patches, and creating pull requests for both **BYOG (Bring Your Own Git)** and **standard** Cloud Manager repositories.
 
+The client is **stateless** with respect to repositories — no repo-specific information is stored on the instance. All repository details (`programId`, `repositoryId`, `imsOrgId`, `repoType`, `repoUrl`) are passed per method call. The only instance-level state is the cached IMS service token (shared across all repos) and generic configuration (CM API base URL, S3 client, git committer identity). This means a single `CloudManagerClient` instance can work across multiple repositories, programs, and IMS orgs within the same session.
+
 ## Installation
 
 ```bash
@@ -109,10 +111,10 @@ const clonePath = await client.clone(programId, repositoryId, {
   ref: 'release/5.11', // optional — checks out this ref after clone
 });
 
-// Pull latest changes
-await client.pull(clonePath, programId, repositoryId, { imsOrgId });
+// Pull latest changes (optional ref checks out the branch before pulling)
+await client.pull(clonePath, programId, repositoryId, { imsOrgId, ref: 'main' });
 
-// Checkout a specific ref
+// Checkout a specific ref (standalone, without pull)
 await client.checkout(clonePath, 'main');
 
 // ... create branch, apply patch, etc. ...
@@ -150,8 +152,8 @@ const config = {
 // Clone
 const clonePath = await client.clone(programId, repositoryId, config);
 
-// Pull latest changes
-await client.pull(clonePath, programId, repositoryId, { imsOrgId, repoType: 'standard', repoUrl });
+// Pull latest changes (optional ref checks out the branch before pulling)
+await client.pull(clonePath, programId, repositoryId, { imsOrgId, repoType: 'standard', repoUrl, ref: 'main' });
 
 // ... create branch, apply patch, etc. ...
 
@@ -173,11 +175,11 @@ await client.cleanup(clonePath);
 ## API overview
 
 - **`clone(programId, repositoryId, config)`** – Clone repo to a unique temp directory. Config: `{ imsOrgId, repoType, repoUrl, ref }`. Optional `ref` checks out a specific branch/tag after clone (failure to checkout does not fail the clone).
-- **`pull(clonePath, programId, repositoryId, config)`** – Pull latest changes into an existing clone. Config: `{ imsOrgId, repoType, repoUrl }`.
+- **`pull(clonePath, programId, repositoryId, config)`** – Pull latest changes into an existing clone. Config: `{ imsOrgId, repoType, repoUrl, ref }`. Optional `ref` checks out the branch before pulling.
 - **`push(clonePath, programId, repositoryId, config)`** – Push a ref to the remote. Config: `{ imsOrgId, repoType, repoUrl, ref }`. The `ref` is **required** and specifies the branch to push.
 - **`checkout(clonePath, ref)`** – Checkout a specific git ref (branch, tag, or SHA) in an existing clone. Unlike the optional checkout in `clone()`, this throws on failure.
 - **`zipRepository(clonePath)`** – Zip the clone (including `.git` history) and return a Buffer.
-- **`unzipRepository(zipBuffer)`** – Extract a ZIP buffer to a new temp directory and return the path. Used for incremental updates (restore a previously-zipped repo from S3, then `checkout` + `pull` instead of a full clone). Cleans up on failure.
+- **`unzipRepository(zipBuffer)`** – Extract a ZIP buffer to a new temp directory and return the path. Used for incremental updates (restore a previously-zipped repo from S3, then `pull` with `ref` instead of a full clone). Cleans up on failure.
 - **`createBranch(clonePath, baseBranch, newBranch)`** – Checkout the base branch and create a new branch from it.
 - **`applyPatch(clonePath, branch, s3PatchPath)`** – Download a patch from S3 (`s3://bucket/key` format) and apply it with `git am`. Configures committer identity from `ASO_CODE_AUTOFIX_USERNAME`/`ASO_CODE_AUTOFIX_EMAIL`. Cleans up the temp patch file in a `finally` block.
 - **`cleanup(clonePath)`** – Remove the clone directory. Validates the path starts with the expected temp prefix to prevent accidental deletion.
@@ -188,13 +190,13 @@ await client.cleanup(clonePath);
 Repository type constants (for use when passing `repoType` or checking repo type):
 
 ```js
-import CloudManagerClient, {
-  CM_REPO_TYPE_STANDARD,
-  CM_REPO_TYPE_GITHUB,
-  CM_REPO_TYPE_BITBUCKET,
-  CM_REPO_TYPE_GITLAB,
-  CM_REPO_TYPE_AZURE_DEVOPS,
-} from '@adobe/spacecat-shared-cloud-manager-client';
+import CloudManagerClient, { CM_REPO_TYPE } from '@adobe/spacecat-shared-cloud-manager-client';
+
+// CM_REPO_TYPE.GITHUB      → 'github'
+// CM_REPO_TYPE.BITBUCKET    → 'bitbucket'
+// CM_REPO_TYPE.GITLAB       → 'gitlab'
+// CM_REPO_TYPE.AZURE_DEVOPS → 'azure_devops'
+// CM_REPO_TYPE.STANDARD     → 'standard'
 ```
 
 ## Testing

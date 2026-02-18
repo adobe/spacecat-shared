@@ -12,24 +12,33 @@
 
 import { UniversalContext } from '@adobe/helix-universal';
 
+export declare const CM_REPO_TYPE: Readonly<{
+  GITHUB: 'github';
+  BITBUCKET: 'bitbucket';
+  GITLAB: 'gitlab';
+  AZURE_DEVOPS: 'azure_devops';
+  STANDARD: 'standard';
+}>;
+
 export interface CloneConfig {
   imsOrgId: string;
-  repoType?: string;
-  repoUrl?: string;
+  repoType: string;
+  repoUrl: string;
   ref?: string;
 }
 
 export interface PushConfig {
   imsOrgId: string;
-  repoType?: string;
-  repoUrl?: string;
+  repoType: string;
+  repoUrl: string;
   ref: string;
 }
 
 export interface PullConfig {
   imsOrgId: string;
-  repoType?: string;
-  repoUrl?: string;
+  repoType: string;
+  repoUrl: string;
+  ref?: string;
 }
 
 export interface PullRequestConfig {

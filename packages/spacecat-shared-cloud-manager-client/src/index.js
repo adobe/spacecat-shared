@@ -29,11 +29,13 @@ const ASO_CM_REPO_SERVICE_IMS_CLIENT_ID = 'aso-cm-repo-service';
  * Repository type constants for Cloud Manager integrations.
  * Standard repos use basic auth; all others (BYOG) use Bearer token extraheaders.
  */
-export const CM_REPO_TYPE_GITHUB = 'github';
-export const CM_REPO_TYPE_BITBUCKET = 'bitbucket';
-export const CM_REPO_TYPE_GITLAB = 'gitlab';
-export const CM_REPO_TYPE_AZURE_DEVOPS = 'azure_devops';
-export const CM_REPO_TYPE_STANDARD = 'standard';
+export const CM_REPO_TYPE = Object.freeze({
+  GITHUB: 'github',
+  BITBUCKET: 'bitbucket',
+  GITLAB: 'gitlab',
+  AZURE_DEVOPS: 'azure_devops',
+  STANDARD: 'standard',
+});
 
 // Lambda layer environment: git and its helpers (git-remote-https) live under /opt.
 // Without these, the dynamic linker can't find shared libraries (libcurl, libexpat, …)
@@ -52,11 +54,16 @@ const GIT_ENV = {
  * @returns {{ bucket: string, key: string }}
  */
 function parseS3Path(s3Path) {
-  const match = s3Path.match(/^s3:\/\/([^/]+)\/(.+)$/);
-  if (!match) {
+  let parsed;
+  try {
+    parsed = new URL(s3Path);
+  } catch {
     throw new Error(`Invalid S3 path: ${s3Path}. Expected format: s3://bucket/key`);
   }
-  return { bucket: match[1], key: match[2] };
+  if (parsed.protocol !== 's3:' || !parsed.hostname || !parsed.pathname.slice(1)) {
+    throw new Error(`Invalid S3 path: ${s3Path}. Expected format: s3://bucket/key`);
+  }
+  return { bucket: parsed.hostname, key: parsed.pathname.slice(1) };
 }
 
 export default class CloudManagerClient {
@@ -116,7 +123,7 @@ export default class CloudManagerClient {
       standardRepoCredentials,
       gitUsername,
       gitUserEmail,
-    }, context.s3?.s3Client, log);
+    }, s3Client, log);
   }
 
   constructor(config, s3Client, log = console) {
@@ -239,7 +246,7 @@ export default class CloudManagerClient {
    * @returns {Promise<string[]>} Array of git arguments
    */
   async #buildAuthGitArgs(command, programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
-    if (repoType === CM_REPO_TYPE_STANDARD) {
+    if (repoType === CM_REPO_TYPE.STANDARD) {
       const credentials = this.#getStandardRepoCredentials(programId);
       const urlWithoutProtocol = repoUrl.replace(/^https?:\/\//, '');
       const authUrl = `https://${credentials}@${urlWithoutProtocol}`;
@@ -284,7 +291,7 @@ export default class CloudManagerClient {
     // For standard repos the clone URL contains basic-auth credentials
     // (https://user:token@host/...). Strip them from the stored remote
     // so that `git remote -v` never exposes secrets.
-    if (repoType === CM_REPO_TYPE_STANDARD && hasText(repoUrl)) {
+    if (repoType === CM_REPO_TYPE.STANDARD && hasText(repoUrl)) {
       this.#execGit(['remote', 'set-url', 'origin', repoUrl], { cwd: clonePath });
       this.log.debug('Replaced origin URL with credential-free repoUrl');
     }
@@ -412,6 +419,9 @@ export default class CloudManagerClient {
    * For BYOG repos: uses Bearer token extraheaders.
    * For standard repos: uses basic-auth credentials embedded in the URL.
    *
+   * If a ref is provided, the ref is checked out before pulling so that
+   * the pull updates the correct branch.
+   *
    * @param {string} clonePath - Path to the cloned repository
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
@@ -419,8 +429,15 @@ export default class CloudManagerClient {
    * @param {string} config.imsOrgId - IMS Organization ID
    * @param {string} config.repoType - Repository type ('standard' or VCS type)
    * @param {string} config.repoUrl - Repository URL (required for standard repos)
+   * @param {string} [config.ref] - Optional. Git ref to checkout before pull (branch, tag, or SHA)
    */
-  async pull(clonePath, programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
+  async pull(clonePath, programId, repositoryId, {
+    imsOrgId, repoType, repoUrl, ref,
+  } = {}) {
+    if (hasText(ref)) {
+      this.#execGit(['checkout', ref], { cwd: clonePath });
+      this.log.info(`Checked out ref '${ref}' before pull`);
+    }
     const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
     this.#execGit(pullArgs, { cwd: clonePath });
     this.log.info('Changes pulled successfully');

@@ -83,4 +83,42 @@ export default class VaultClient {
     this.#tokenRenewable = auth.renewable;
     this.#tokenExpiry = Date.now() + auth.lease_duration * 1000;
   }
+
+  async #request(method, path) {
+    if (!this.isAuthenticated()) {
+      throw new Error('Not authenticated');
+    }
+    const url = `${this.#vaultAddr}/v1/${this.#mountPoint}/${path}`;
+    return fetch(url, {
+      method,
+      headers: { 'X-Vault-Token': this.#token },
+    });
+  }
+
+  async readSecret(path) {
+    const response = await this.#request('GET', `data/${path}`);
+
+    if (response.status === 404) {
+      throw new Error(`Secret not found: ${path}`);
+    }
+    if (!response.ok) {
+      throw new Error(`Vault read failed: ${response.status}`);
+    }
+
+    const body = await response.json();
+    return body.data.data;
+  }
+
+  async getLastChangedDate(path) {
+    try {
+      const response = await this.#request('GET', `metadata/${path}`);
+      if (!response.ok) {
+        return 0;
+      }
+      const body = await response.json();
+      return new Date(body.data.updated_time).getTime();
+    } catch {
+      return 0;
+    }
+  }
 }

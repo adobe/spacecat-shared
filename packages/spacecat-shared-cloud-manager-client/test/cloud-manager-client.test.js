@@ -434,11 +434,32 @@ describe('CloudManagerClient', () => {
       expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
     });
 
-    it('throws on invalid S3 path format', async () => {
+    it('throws on invalid S3 path format (non-URL)', async () => {
       const client = CloudManagerClient.createFrom(createContext());
 
       await expect(client.applyPatch('/tmp/cm-repo-test', 'main', 'not-an-s3-path'))
         .to.be.rejectedWith('Invalid S3 path');
+    });
+
+    it('throws when S3 path has wrong protocol (valid URL but not s3:)', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatch('/tmp/cm-repo-test', 'main', 'https://my-bucket/patches/fix.patch'))
+        .to.be.rejectedWith('Invalid S3 path: https://my-bucket/patches/fix.patch. Expected format: s3://bucket/key');
+    });
+
+    it('throws when S3 path has empty bucket (missing hostname)', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatch('/tmp/cm-repo-test', 'main', 's3:///patches/fix.patch'))
+        .to.be.rejectedWith('Invalid S3 path: s3:///patches/fix.patch. Expected format: s3://bucket/key');
+    });
+
+    it('throws when S3 path has empty key (pathname is only slash)', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatch('/tmp/cm-repo-test', 'main', 's3://my-bucket/'))
+        .to.be.rejectedWith('Invalid S3 path: s3://my-bucket/. Expected format: s3://bucket/key');
     });
 
     it('cleans up temp patch directory even on error', async () => {

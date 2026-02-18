@@ -38,6 +38,9 @@ export function reset() {
 async function ensureClient(opts, log) {
   if (clientLock) {
     await clientLock;
+    if (!vaultClient || !vaultClient.isAuthenticated()) {
+      throw new Error('Vault client initialization failed');
+    }
     return;
   }
 
@@ -116,13 +119,14 @@ export async function loadSecrets(ctx, opts = {}) {
 
   // Check metadata if past check delay and not expired
   let metadataChanged = false;
+  let newLastChanged = 0;
   if (cache.data && !isExpired && (now - cache.checked) >= checkDelay) {
-    const lastChanged = await vaultClient.getLastChangedDate(secretPath);
+    newLastChanged = await vaultClient.getLastChangedDate(secretPath);
     cache.checked = now;
     if (cache.lastChanged === 0) {
       // First metadata check - establish baseline without re-fetching
-      cache.lastChanged = lastChanged;
-    } else if (lastChanged > cache.lastChanged) {
+      cache.lastChanged = newLastChanged;
+    } else if (newLastChanged > cache.lastChanged) {
       metadataChanged = true;
     }
   }
@@ -133,8 +137,7 @@ export async function loadSecrets(ctx, opts = {}) {
     cache.loaded = now;
     cache.checked = now;
     if (metadataChanged) {
-      // We already know the new lastChanged from the metadata check above
-      cache.lastChanged = await vaultClient.getLastChangedDate(secretPath);
+      cache.lastChanged = newLastChanged;
     }
   }
 

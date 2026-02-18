@@ -219,6 +219,24 @@ describe('vaultSecrets wrapper', () => {
       expect(result1).to.deep.equal(testSecrets);
       expect(result2).to.deep.equal(testSecrets);
     });
+
+    it('concurrent waiter gets error when bootstrap fails', async () => {
+      nock(AWS_ENDPOINT)
+        .post('/')
+        .replyWithError('connection refused');
+
+      const ctx1 = makeContext();
+      const ctx2 = makeContext();
+
+      const results = await Promise.allSettled([
+        loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH }),
+        loadSecrets(ctx2, { bootstrapPath: BOOTSTRAP_PATH }),
+      ]);
+
+      // Both calls should fail - first from bootstrap error, second from lock check
+      expect(results[0].status).to.equal('rejected');
+      expect(results[1].status).to.equal('rejected');
+    });
   });
 
   describe('caching', () => {
@@ -351,7 +369,6 @@ describe('vaultSecrets wrapper', () => {
               metadata: { version: 2, created_time: '2026-02-01T00:00:00Z' },
             },
           });
-        mockMetadataRead('prod/api-service', '2026-02-01T00:00:00Z');
 
         const ctx3 = makeContext();
         const result3 = await loadSecrets(ctx3, {

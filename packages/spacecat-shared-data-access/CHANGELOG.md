@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.0.0...@adobe/spacecat-shared-data-access-v3.0.1) (2026-02-17)
+
+### Bug Fixes
+
+* add consent-banner to DATA_SCHEMAS for minimal view projection ([#1361](https://github.com/adobe/spacecat-shared/issues/1361)) ([bc1379c](https://github.com/adobe/spacecat-shared/commit/bc1379c6e7eba64c2d7f2b17e1462db0ca798711))
+
 ## [@adobe/spacecat-shared-data-access-v3.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.109.0...@adobe/spacecat-shared-data-access-v3.0.0) (2026-02-16)
 
 ### ⚠ BREAKING CHANGES

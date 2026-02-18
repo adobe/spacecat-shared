@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.20.1...@adobe/spacecat-shared-http-utils-v1.21.0) (2026-02-18)
+
+### Features
+
+* s2s admin claim ([#1360](https://github.com/adobe/spacecat-shared/issues/1360)) ([2749376](https://github.com/adobe/spacecat-shared/commit/274937657d55d406c1bbbfc59ed48ed56b8985ca))
+
 ## [@adobe/spacecat-shared-http-utils-v1.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.20.0...@adobe/spacecat-shared-http-utils-v1.20.1) (2026-02-17)
 
 ### Bug Fixes

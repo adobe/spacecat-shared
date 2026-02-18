@@ -194,6 +194,8 @@ export interface SiteConfig {
   addLlmoCustomerIntent(customerIntentItems: Array<LlmoCustomerIntent>): void;
   removeLlmoCustomerIntent(intentKey: string): void;
   updateLlmoCustomerIntent(intentKey: string, updateData: Partial<LlmoCustomerIntent>): void;
+  addLlmoTag(tag: string): void;
+  removeLlmoTag(tag: string): void;
 }
 
 export interface Site extends BaseModel {

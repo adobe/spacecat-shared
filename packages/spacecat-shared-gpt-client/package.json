@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-gpt-client",
-  "version": "1.6.16",
+  "version": "1.6.17",
   "description": "Shared modules of the Spacecat Services - GPT Client",
   "type": "module",
   "engines": {
@@ -36,7 +36,7 @@
   "dependencies": {
     "@adobe/fetch": "4.2.3",
     "@adobe/helix-universal": "5.4.0",
-    "@adobe/spacecat-shared-ims-client": "1.11.6",
+    "@adobe/spacecat-shared-ims-client": "1.11.10",
     "@adobe/spacecat-shared-utils": "1.81.1"
   },
   "devDependencies": {

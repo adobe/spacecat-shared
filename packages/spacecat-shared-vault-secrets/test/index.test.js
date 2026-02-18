@@ -26,15 +26,12 @@ describe('index exports', () => {
     expect(reset).to.be.a('function');
   });
 
-  it('vaultSecrets stub throws not implemented', () => {
-    expect(() => vaultSecrets()).to.throw('Not implemented');
+  it('vaultSecrets returns a function', () => {
+    const wrapped = vaultSecrets(() => {});
+    expect(wrapped).to.be.a('function');
   });
 
-  it('loadSecrets stub throws not implemented', () => {
-    expect(() => loadSecrets()).to.throw('Not implemented');
-  });
-
-  it('reset stub is a no-op', () => {
+  it('reset is a no-op that does not throw', () => {
     expect(() => reset()).to.not.throw();
   });
 });

@@ -6,48 +6,261 @@ Drop-in replacement for `@adobe/helix-shared-secrets` - same interface, backed b
 
 ## Usage
 
+### As middleware (Universal Functions)
+
 ```js
 import wrap from '@adobe/helix-shared-wrap';
 import vaultSecrets from '@adobe/spacecat-shared-vault-secrets';
+
+async function run(request, context) {
+  // Secrets are available in context.env and process.env
+  const apiKey = context.env.MY_API_KEY;
+  // ...
+}
 
 export const main = wrap(run)
   .with(vaultSecrets)
   .with(helixStatus);
 ```
 
+### Direct API
+
+```js
+import { loadSecrets } from '@adobe/spacecat-shared-vault-secrets';
+
+const secrets = await loadSecrets(context, {
+  name: 'dev/my-service',  // explicit Vault path
+});
+```
+
 ## How It Works
 
-1. On cold start, reads bootstrap config from AWS Secrets Manager (`/mysticat/vault-bootstrap`)
-2. Authenticates to Vault via AppRole (role_id + secret_id from bootstrap)
-3. Reads secrets from `dx_mysticat/{environment}/{service}` (KV V2)
-4. Merges all key-value pairs into `context.env` and `process.env`
-5. Caches secrets with two-tier strategy (1-minute metadata check, 1-hour hard refresh)
+```
+Lambda cold start
+  |
+  +-> AWS Secrets Manager: read /mysticat/vault-bootstrap
+  |     (retrieves AppRole role_id + secret_id)
+  |
+  +-> Vault: POST /v1/auth/approle/login
+  |     (exchanges AppRole creds for a Vault token)
+  |
+  +-> Vault: GET /v1/dx_mysticat/data/{env}/{service-name}
+  |     (reads KV v2 secrets using the token)
+  |
+  +-> Merges all key-value pairs into context.env and process.env
+```
+
+On subsequent invocations (warm Lambda), secrets are served from an in-memory cache with two-tier freshness checks:
+
+- **Metadata check** (every 60s) - queries the Vault metadata endpoint for `updated_time`. If the secret hasn't changed, no full read is performed.
+- **Hard refresh** (every 1h) - unconditionally re-reads the full secret regardless of metadata.
+
+Token renewal is proactive: when the Vault token is within 5 minutes of expiry, a renewal request is attempted before the next secret read.
 
 ## Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `bootstrapPath` | string | `/mysticat/vault-bootstrap` | AWS Secrets Manager path for AppRole credentials |
-| `name` | string or function | auto | Custom Vault path or resolver function `(ctx) => path` |
-| `expiration` | number | 3600000 | Hard cache expiration in ms |
-| `checkDelay` | number | 60000 | Metadata check interval in ms |
+| `bootstrapPath` | string | `/mysticat/vault-bootstrap` | AWS Secrets Manager secret ID for bootstrap config |
+| `name` | string or function | auto | Vault secret path or resolver `(ctx) => path` |
+| `expiration` | number | `3600000` (1h) | Hard cache expiration in ms |
+| `checkDelay` | number | `60000` (1min) | Metadata check interval in ms |
 
-## Bootstrap Config
+### Path Resolution
 
-Each AWS account (dev/stage/prod) must have this secret in AWS Secrets Manager:
+When `name` is not specified, the Vault path defaults to `{environment}/{ctx.func.name}`, where `environment` comes from the bootstrap config and `ctx.func.name` from the Universal Functions context.
 
-**Path:** `/mysticat/vault-bootstrap`
+For example, with `environment: "dev"` and a function named `api-service`, the path resolves to `dev/api-service`, which maps to the full Vault path `dx_mysticat/data/dev/api-service`.
+
+When using a custom `name`, you can pass either a static string or a function:
+
+```js
+// Static path
+.with(vaultSecrets, { name: 'prod/data-service/config' })
+
+// Dynamic path based on context
+.with(vaultSecrets, { name: (ctx) => `${ctx.env.ENV}/my-svc` })
+```
+
+## Setup
+
+### Prerequisites
+
+This package requires three things to be in place before it can load secrets:
+
+1. **A Vault AppRole** with a policy granting read access to your secrets
+2. **A bootstrap secret in AWS Secrets Manager** containing the AppRole credentials
+3. **Network access to Vault** from the Lambda execution environment (VPC required)
+4. **IAM permissions** for the Lambda role to read the bootstrap secret
+
+### 1. Vault AppRole
+
+Each service environment needs a Vault AppRole under the `dx_mysticat` mount. The AppRole provides two credentials:
+
+- **role_id** - stable identifier (like a username), does not change
+- **secret_id** - rotatable credential (like a password), has a TTL
+
+To generate a new secret_id (requires Vault CLI with appropriate permissions):
+
+```bash
+vault write -f auth/approle/role/<approle-name>/secret-id
+```
+
+The AppRole's policy determines which Vault paths the service can read. For example, a policy granting access to `dx_mysticat/data/dev/data-service/*` means secrets must be stored under that path hierarchy.
+
+**Existing AppRoles:**
+
+| Environment | AppRole Name |
+|-------------|-------------|
+| Dev | `dx_mysticat_data_service_dev` |
+| Stage | `dx_mysticat_data_service_stage` |
+| Prod | `dx_mysticat_data_service_prod` |
+
+Contact the CES Vault team (`#ces-vault` on Slack) to create new AppRoles or modify policies.
+
+### 2. Bootstrap Secret (AWS Secrets Manager)
+
+Each AWS account (dev/stage/prod) must have a secret in AWS Secrets Manager containing the AppRole credentials.
+
+**Default path:** `/mysticat/vault-bootstrap`
+
+**Required format:**
 
 ```json
 {
-  "role_id": "<VAULT_APPROLE_ROLE_ID>",
-  "secret_id": "<VAULT_APPROLE_SECRET_ID>",
+  "role_id": "06bcea05-36d8-fada-7b25-52966940d819",
+  "secret_id": "<generated-secret-id>",
   "vault_addr": "https://vault-amer.adobe.net",
   "mount_point": "dx_mysticat",
-  "environment": "prod"
+  "environment": "dev"
 }
 ```
 
+| Field | Description |
+|-------|-------------|
+| `role_id` | Vault AppRole role ID (stable, does not rotate) |
+| `secret_id` | Vault AppRole secret ID (rotatable, has TTL) |
+| `vault_addr` | Vault cluster URL. Use `https://vault-amer.adobe.net` for AMER |
+| `mount_point` | KV v2 mount name in Vault |
+| `environment` | Environment name (`dev`, `stage`, `prod`). Used for default path resolution |
+
+All fields are required. If `environment` is missing, default path resolution will fail.
+
+To create the secret:
+
+```bash
+aws secretsmanager create-secret \
+  --name /mysticat/vault-bootstrap \
+  --secret-string '{"role_id":"...","secret_id":"...","vault_addr":"https://vault-amer.adobe.net","mount_point":"dx_mysticat","environment":"dev"}' \
+  --profile spacecat-dev
+```
+
+To update an existing secret (e.g. after rotating the secret_id):
+
+```bash
+aws secretsmanager put-secret-value \
+  --secret-id /mysticat/vault-bootstrap \
+  --secret-string '{"role_id":"...","secret_id":"<new-secret-id>","vault_addr":"https://vault-amer.adobe.net","mount_point":"dx_mysticat","environment":"dev"}' \
+  --profile spacecat-dev
+```
+
+### 3. VPC Configuration
+
+Lambda functions using this package **must** run inside the SpaceCat VPC. Vault (`vault-amer.adobe.net`) rejects AppRole authentication requests from non-Adobe IP addresses with HTTP 403.
+
+The SpaceCat VPC routes outbound traffic through NAT gateways with Adobe-registered IPs, which Vault accepts.
+
+**Required VPC resources (dev account):**
+
+| Resource | ID |
+|----------|----|
+| VPC | `vpc-0bf03289d46b647c7` (spacecat-vpc) |
+| Private subnets | `subnet-052fec4fa471efefa`, `subnet-07b53318ac4bd7a51` |
+| Security group | `sg-01a3594167b2f9229` (spacecat-lambda-sg) |
+
+When creating or configuring a Lambda function:
+
+```bash
+aws lambda create-function \
+  --function-name my-service \
+  --vpc-config SubnetIds=subnet-052fec4fa471efefa,subnet-07b53318ac4bd7a51,SecurityGroupIds=sg-01a3594167b2f9229 \
+  ...
+```
+
+For Terraform-managed services, add the VPC configuration to the Lambda resource or module.
+
+### 4. IAM Permissions
+
+The Lambda execution role must have `secretsmanager:GetSecretValue` permission on the bootstrap secret ARN.
+
+The existing `spacecat-policy-secrets-ro` policy covers `/helix-deploy/spacecat-services/*` but **does not** currently include `/mysticat/vault-bootstrap`. Until the Terraform-managed policy is updated, either:
+
+- Add an inline policy granting access to `arn:aws:secretsmanager:us-east-1:<account-id>:secret:/mysticat/vault-bootstrap*`
+- Or update `spacecat-policy-secrets-ro` in Terraform to include the bootstrap path
+
+The package reads credentials from the Lambda environment's standard AWS variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`) and signs requests with SigV4 via the `aws4` library. No AWS SDK is required.
+
+## Storing Secrets in Vault
+
+Write secrets to Vault using the CLI:
+
+```bash
+vault kv put dx_mysticat/dev/api-service \
+  DATABASE_URL="postgres://user:pass@host:5432/db" \
+  API_KEY="sk-..." \
+  ANOTHER_SECRET="value"
+```
+
+The path must match what the AppRole policy allows. For the existing `dx_mysticat_data_service_dev` AppRole, secrets must be stored under `dev/data-service/*`.
+
+To verify a secret is readable:
+
+```bash
+vault kv get dx_mysticat/dev/data-service/my-config
+```
+
+## Secret-ID Rotation
+
+Vault AppRole secret_ids have a TTL. Adobe is enforcing a maximum TTL of 100 days (VEP6). When a secret_id expires, all services using that bootstrap config lose access to Vault.
+
+**To rotate:**
+
+1. Generate a new secret_id:
+   ```bash
+   vault write -f auth/approle/role/dx_mysticat_data_service_dev/secret-id
+   ```
+
+2. Update the bootstrap secret in AWS Secrets Manager with the new secret_id.
+
+3. Lambda functions will pick up the new credentials on next cold start (or after cache expiration).
+
+**To verify a secret_id is still valid:**
+
+```bash
+vault write auth/approle/login \
+  role_id="<role-id>" \
+  secret_id="<secret-id>"
+```
+
+A successful response returns a Vault token. A 403 means the secret_id has expired or been revoked.
+
 ## Local Development
 
-On `simulate` runtime (local dev), the wrapper silently returns `{}` and secrets come from `.env` files instead.
+When `ctx.runtime.name` is `simulate` (local dev via `aem up` or similar), the wrapper returns `{}` without contacting Vault or AWS. Secrets should come from `.env` files instead.
+
+## Error Handling
+
+When used as middleware, secret loading failures return an HTTP 502 response with header `x-error: error fetching secrets.` and the wrapped function is not called.
+
+When using `loadSecrets` directly, errors are thrown and must be caught by the caller.
+
+Common failure modes:
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `Missing AWS credentials for Vault bootstrap` | Lambda has no AWS creds in env | Check IAM role is attached |
+| `Failed to load Vault bootstrap config: 400` | IAM policy doesn't allow reading the SM secret | Add SM permission for bootstrap path |
+| `Failed to load Vault bootstrap config: 404` | Bootstrap secret doesn't exist in SM | Create the secret (see Setup) |
+| `Vault authentication failed: 403` | secret_id expired, or Lambda not in VPC | Rotate secret_id; check VPC config |
+| `Vault read failed: 403` | AppRole policy doesn't cover the secret path | Check path matches policy pattern |
+| `Secret not found: <path>` | No secret at the resolved Vault path | Write the secret with `vault kv put` |

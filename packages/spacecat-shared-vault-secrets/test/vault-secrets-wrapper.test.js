@@ -466,6 +466,68 @@ describe('vaultSecrets wrapper', () => {
     });
   });
 
+  describe('bootstrap path resolution', () => {
+    it('auto-resolves bootstrapPath from ctx.func.name when not provided', async () => {
+      // Should use /mysticat/bootstrap/api-service (from ctx.func.name)
+      const bootstrap = nock(AWS_ENDPOINT)
+        .post('/', (body) => {
+          const str = typeof body === 'string' ? body : JSON.stringify(body);
+          return str.includes('/mysticat/bootstrap/api-service');
+        })
+        .reply(200, { SecretString: JSON.stringify(bootstrapConfig) });
+      const login = mockAppRoleLogin();
+      const read = mockSecretRead();
+
+      const ctx = makeContext();
+      // No bootstrapPath option - should auto-resolve
+      const result = await loadSecrets(ctx);
+
+      expect(result).to.deep.equal(testSecrets);
+      expect(bootstrap.isDone()).to.equal(true);
+      expect(login.isDone()).to.equal(true);
+      expect(read.isDone()).to.equal(true);
+    });
+
+    it('explicit bootstrapPath overrides auto-resolution', async () => {
+      const customPath = '/custom/bootstrap/path';
+      const bootstrap = nock(AWS_ENDPOINT)
+        .post('/', (body) => {
+          const str = typeof body === 'string' ? body : JSON.stringify(body);
+          return str.includes(customPath);
+        })
+        .reply(200, { SecretString: JSON.stringify(bootstrapConfig) });
+      const login = mockAppRoleLogin();
+      const read = mockSecretRead();
+
+      const ctx = makeContext();
+      const result = await loadSecrets(ctx, { bootstrapPath: customPath });
+
+      expect(result).to.deep.equal(testSecrets);
+      expect(bootstrap.isDone()).to.equal(true);
+      expect(login.isDone()).to.equal(true);
+      expect(read.isDone()).to.equal(true);
+    });
+
+    it('auto-resolves different service names correctly', async () => {
+      const bootstrap = nock(AWS_ENDPOINT)
+        .post('/', (body) => {
+          const str = typeof body === 'string' ? body : JSON.stringify(body);
+          return str.includes('/mysticat/bootstrap/audit-worker');
+        })
+        .reply(200, { SecretString: JSON.stringify(bootstrapConfig) });
+      const login = mockAppRoleLogin();
+      const read = mockSecretRead('prod/audit-worker');
+
+      const ctx = makeContext({ func: { name: 'audit-worker' } });
+      const result = await loadSecrets(ctx);
+
+      expect(result).to.deep.equal(testSecrets);
+      expect(bootstrap.isDone()).to.equal(true);
+      expect(login.isDone()).to.equal(true);
+      expect(read.isDone()).to.equal(true);
+    });
+  });
+
   describe('token lifecycle', () => {
     it('re-authenticates when token expired', async () => {
       const clock = sinon.useFakeTimers({ now: Date.now(), toFake: ['Date'] });

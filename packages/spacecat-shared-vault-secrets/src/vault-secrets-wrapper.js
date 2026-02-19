@@ -15,7 +15,10 @@ import { loadBootstrapConfig } from './bootstrap.js';
 
 const DEFAULT_EXPIRATION = 60 * 60 * 1000; // 1 hour
 const DEFAULT_CHECK_DELAY = 60 * 1000; // 1 minute
-const DEFAULT_BOOTSTRAP_PATH = '/mysticat/vault-bootstrap';
+function resolveBootstrapPath(ctx, opts) {
+  if (opts.bootstrapPath) return opts.bootstrapPath;
+  return `/mysticat/bootstrap/${ctx.func.name}`;
+}
 
 let cache = {
   loaded: 0, checked: 0, lastChanged: 0, data: null,
@@ -35,7 +38,7 @@ export function reset() {
   clientLock = null;
 }
 
-async function ensureClient(opts, log) {
+async function ensureClient(ctx, opts, log) {
   if (clientLock) {
     await clientLock;
     if (!vaultClient || !vaultClient.isAuthenticated()) {
@@ -51,7 +54,7 @@ async function ensureClient(opts, log) {
 
   try {
     if (!vaultClient) {
-      const bootstrapPath = opts.bootstrapPath || DEFAULT_BOOTSTRAP_PATH;
+      const bootstrapPath = resolveBootstrapPath(ctx, opts);
       bootstrapConfig = await loadBootstrapConfig({ bootstrapPath });
 
       vaultClient = new VaultClient({
@@ -110,7 +113,7 @@ export async function loadSecrets(ctx, opts = {}) {
   const checkDelay = opts.checkDelay ?? DEFAULT_CHECK_DELAY;
   const now = Date.now();
 
-  await ensureClient(opts, ctx.log);
+  await ensureClient(ctx, opts, ctx.log);
 
   const secretPath = resolvePath(opts, ctx, ctx.log);
 

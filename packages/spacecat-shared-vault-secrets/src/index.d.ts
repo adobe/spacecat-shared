@@ -10,8 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
+/**
+ * This module assumes one service identity per process lifetime. All invocations within
+ * a runtime share a single Vault client, bootstrap config, and secret cache.
+ */
 export interface VaultSecretsOptions {
-  /** AWS Secrets Manager path for Vault bootstrap config. Default: '/mysticat/vault-bootstrap' */
+  /** AWS Secrets Manager path for Vault bootstrap config. Default: auto-resolved to '/mysticat/bootstrap/{ctx.func.name}' */
   bootstrapPath?: string;
   /** Custom name resolver: receives the context object, returns a secret path. Or a static path string. */
   name?: string | ((ctx: Record<string, unknown>) => string);

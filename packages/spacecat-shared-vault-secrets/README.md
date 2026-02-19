@@ -57,6 +57,10 @@ On subsequent invocations (warm Lambda), secrets are served from an in-memory ca
 
 Token renewal is proactive: when the Vault token is within 5 minutes of expiry, a renewal request is attempted before the next secret read.
 
+If a Vault AppRole `secret_id` is rotated while a Lambda container is warm, the next re-authentication attempt will fail. When this happens, the wrapper automatically re-fetches the bootstrap config from AWS Secrets Manager and retries authentication with the fresh credentials - no container recycle required.
+
+**Note:** This module assumes one service identity per process lifetime. All invocations within a runtime share a single Vault client, bootstrap config, and secret cache.
+
 ## Options
 
 | Option | Type | Default | Description |

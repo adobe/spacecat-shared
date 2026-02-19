@@ -594,6 +594,83 @@ describe('vaultSecrets wrapper', () => {
       }
     });
 
+    it('re-fetches bootstrap config when re-auth fails (secret_id rotated)', async () => {
+      const clock = sinon.useFakeTimers({ now: Date.now(), toFake: ['Date'] });
+
+      try {
+        mockBootstrap();
+        mockAppRoleLogin();
+        mockSecretRead();
+
+        const ctx1 = makeContext();
+        await loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH });
+
+        // Advance past token expiry
+        clock.tick(3601 * 1000);
+
+        // First re-auth attempt fails (secret_id was rotated)
+        nock(VAULT_ADDR)
+          .post('/v1/auth/approle/login')
+          .reply(403, { errors: ['invalid secret id'] });
+
+        // Wrapper re-fetches bootstrap with new secret_id
+        const rotatedConfig = { ...bootstrapConfig, secret_id: 'rotated-secret-id' };
+        nock(AWS_ENDPOINT)
+          .post('/', (body) => {
+            const str = typeof body === 'string' ? body : JSON.stringify(body);
+            return str.includes(BOOTSTRAP_PATH);
+          })
+          .reply(200, { SecretString: JSON.stringify(rotatedConfig) });
+
+        // Second auth attempt succeeds with fresh creds
+        mockAppRoleLogin();
+        mockSecretRead();
+
+        const ctx2 = makeContext();
+        const result = await loadSecrets(ctx2, {
+          bootstrapPath: BOOTSTRAP_PATH,
+          expiration: 1000,
+        });
+        expect(result).to.deep.equal(testSecrets);
+      } finally {
+        clock.restore();
+      }
+    });
+
+    it('throws when both re-auth and bootstrap re-fetch fail', async () => {
+      const clock = sinon.useFakeTimers({ now: Date.now(), toFake: ['Date'] });
+
+      try {
+        mockBootstrap();
+        mockAppRoleLogin();
+        mockSecretRead();
+
+        const ctx1 = makeContext();
+        await loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH });
+
+        // Advance past token expiry
+        clock.tick(3601 * 1000);
+
+        // First re-auth attempt fails
+        nock(VAULT_ADDR)
+          .post('/v1/auth/approle/login')
+          .reply(403, { errors: ['invalid secret id'] });
+
+        // Bootstrap re-fetch also fails
+        nock(AWS_ENDPOINT)
+          .post('/')
+          .replyWithError('SM unavailable');
+
+        const ctx2 = makeContext();
+        await expect(loadSecrets(ctx2, {
+          bootstrapPath: BOOTSTRAP_PATH,
+          expiration: 1000,
+        })).to.be.rejected;
+      } finally {
+        clock.restore();
+      }
+    });
+
     it('re-authenticates when renewal fails', async () => {
       const clock = sinon.useFakeTimers({ now: Date.now(), toFake: ['Date'] });
 

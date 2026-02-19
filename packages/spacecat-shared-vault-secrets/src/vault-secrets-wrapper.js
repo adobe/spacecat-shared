@@ -38,8 +38,10 @@ export function reset() {
   clientLock = null;
 }
 
-async function ensureClient(ctx, opts, log) {
+async function ensureClient(ctx, opts) {
   if (clientLock) {
+    // One-shot lock: concurrent callers wait here while the first caller
+    // initializes the client. The lock is cleared in the finally block.
     await clientLock;
     if (!vaultClient || !vaultClient.isAuthenticated()) {
       throw new Error('Vault client initialization failed');
@@ -65,13 +67,20 @@ async function ensureClient(ctx, opts, log) {
 
       await vaultClient.authenticate(bootstrapConfig.role_id, bootstrapConfig.secret_id);
     } else if (!vaultClient.isAuthenticated()) {
-      await vaultClient.authenticate(bootstrapConfig.role_id, bootstrapConfig.secret_id);
+      try {
+        await vaultClient.authenticate(bootstrapConfig.role_id, bootstrapConfig.secret_id);
+      } catch {
+        // secret_id may have been rotated - re-fetch bootstrap from SM
+        const bootstrapPath = resolveBootstrapPath(ctx, opts);
+        bootstrapConfig = await loadBootstrapConfig({ bootstrapPath });
+        await vaultClient.authenticate(bootstrapConfig.role_id, bootstrapConfig.secret_id);
+      }
     } else if (vaultClient.isTokenExpiringSoon()) {
       await vaultClient.renewToken();
     }
 
-    if (log) {
-      log.info('Vault client ready');
+    if (ctx.log) {
+      ctx.log.info('Vault client ready');
     }
   } finally {
     clientLock = null;
@@ -113,7 +122,7 @@ export async function loadSecrets(ctx, opts = {}) {
   const checkDelay = opts.checkDelay ?? DEFAULT_CHECK_DELAY;
   const now = Date.now();
 
-  await ensureClient(ctx, opts, ctx.log);
+  await ensureClient(ctx, opts);
 
   const secretPath = resolvePath(opts, ctx, ctx.log);
 
@@ -141,6 +150,8 @@ export async function loadSecrets(ctx, opts = {}) {
     cache.checked = now;
     if (metadataChanged) {
       cache.lastChanged = newLastChanged;
+    } else if (isExpired) {
+      cache.lastChanged = 0;
     }
   }
 

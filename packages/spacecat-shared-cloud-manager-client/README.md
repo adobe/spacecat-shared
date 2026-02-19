@@ -83,16 +83,17 @@ The client supports two authentication modes:
 | Type | Auth method | When to use |
 |------|-------------|-------------|
 | **BYOG** (Bring Your Own Git) | IMS Bearer token via `http.extraheader` | GitHub, GitLab, Bitbucket, Azure DevOps (or any `repoType` other than `'standard'`) |
-| **Standard** | Basic auth embedded in the clone/pull/push URL | Cloud Manager "standard" (managed) repos |
+| **Standard** | Base64 Basic auth via `http.extraheader` | Cloud Manager "standard" (managed) repos |
 
-Use the same type for `clone`, `pull`, and `push` for a given repo (same `programId`/`repositoryId`).
+Both repo types authenticate via `http.extraheader` — no credentials are ever embedded in URLs. Use the same type for `clone`, `pull`, and `push` for a given repo (same `programId`/`repositoryId`).
 
 **Security notes:**
 
 - Clone directories are created via `mkdtempSync` under the OS temp directory, producing unique, unpredictable paths safe from symlink attacks and concurrent-run collisions.
-- For standard repos, after cloning the client runs `git remote set-url origin <repoUrl>` to strip basic-auth credentials from the stored remote, so `git remote -v` never exposes secrets.
 - Patch files are also written into unique temp directories, cleaned up in a `finally` block.
-- Git error output is sanitized before logging — Bearer tokens are replaced with `[REDACTED]` and basic-auth credentials in URLs are masked with `***`.
+- Git error output is sanitized before logging — Bearer tokens, Basic auth headers, `x-api-key`, `x-gw-ims-org-id` values, and basic-auth credentials in URLs are all replaced with `[REDACTED]`. Both `stderr`, `stdout`, and `error.message` are sanitized.
+- All git commands run with a 120-second timeout to prevent hung processes from blocking the Lambda.
+- `GIT_ASKPASS` is explicitly cleared to prevent inherited credential helpers from being invoked.
 
 ## Usage
 

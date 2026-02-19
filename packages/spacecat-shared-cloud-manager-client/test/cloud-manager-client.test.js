@@ -65,14 +65,17 @@ function createContext(envOverrides = {}) {
   };
 }
 
-function setupImsTokenNock() {
-  return nock(`https://${TEST_ENV.IMS_HOST}`)
-    .post('/ims/token/v4')
-    .reply(200, {
-      access_token: TEST_TOKEN,
-      token_type: 'Bearer',
-      expires_in: 86400,
-    });
+const mockImsClient = {
+  getServiceAccessToken: sinon.stub(),
+};
+const createFromStub = sinon.stub().returns(mockImsClient);
+
+function setupImsTokenMock() {
+  mockImsClient.getServiceAccessToken.resolves({
+    access_token: TEST_TOKEN,
+    token_type: 'Bearer',
+    expires_in: 86400,
+  });
 }
 
 /**
@@ -117,21 +120,14 @@ function createMockArchiver() {
 
 describe('CloudManagerClient', () => {
   let CloudManagerClient;
-  let execFileSyncStub;
-  let existsSyncStub;
-  let mkdtempSyncStub;
-  let rmSyncStub;
-  let writeSyncStub;
-  let archiverStub;
+  const execFileSyncStub = sinon.stub();
+  const existsSyncStub = sinon.stub();
+  const mkdtempSyncStub = sinon.stub();
+  const rmSyncStub = sinon.stub();
+  const writeSyncStub = sinon.stub();
+  const archiverStub = sinon.stub();
 
-  beforeEach(async () => {
-    execFileSyncStub = sinon.stub().returns('');
-    existsSyncStub = sinon.stub().returns(false);
-    mkdtempSyncStub = sinon.stub().callsFake((prefix) => `${prefix}XXXXXX`);
-    rmSyncStub = sinon.stub();
-    writeSyncStub = sinon.stub();
-    archiverStub = sinon.stub().callsFake(createMockArchiver);
-
+  before(async () => {
     const mod = await esmock('../src/index.js', {
       child_process: { execFileSync: execFileSyncStub },
       fs: {
@@ -141,12 +137,34 @@ describe('CloudManagerClient', () => {
         writeFileSync: writeSyncStub,
       },
       archiver: archiverStub,
+    }, {
+      '@adobe/spacecat-shared-ims-client': {
+        ImsClient: { createFrom: createFromStub },
+      },
     });
     CloudManagerClient = mod.default;
   });
 
+  beforeEach(() => {
+    execFileSyncStub.reset();
+    execFileSyncStub.returns('');
+    existsSyncStub.reset();
+    existsSyncStub.returns(false);
+    mkdtempSyncStub.reset();
+    mkdtempSyncStub.callsFake((prefix) => `${prefix}XXXXXX`);
+    rmSyncStub.reset();
+    writeSyncStub.reset();
+    archiverStub.reset();
+    archiverStub.callsFake(createMockArchiver);
+    createFromStub.reset();
+    createFromStub.returns(mockImsClient);
+    mockImsClient.getServiceAccessToken.reset();
+    setupImsTokenMock();
+    nock.cleanAll();
+    s3Mock.reset();
+  });
+
   afterEach(() => {
-    sinon.restore();
     nock.cleanAll();
     s3Mock.reset();
   });
@@ -197,33 +215,30 @@ describe('CloudManagerClient', () => {
   });
 
   describe('IMS token', () => {
-    it('fetches and caches token across multiple calls', async () => {
-      const imsNock = setupImsTokenNock();
+    it('delegates token fetching to ImsClient', async () => {
       const client = CloudManagerClient.createFrom(createContext());
 
       await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID });
       await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID });
 
-      // IMS token should only be fetched once (cached)
-      expect(imsNock.isDone()).to.be.true;
+      // ImsClient.getServiceAccessToken called for each BYOG operation
+      // (ImsClient handles caching internally)
+      expect(mockImsClient.getServiceAccessToken).to.have.been.calledTwice;
       expect(execFileSyncStub).to.have.been.calledTwice;
     });
 
-    it('throws when IMS token request fails', async () => {
-      nock(`https://${TEST_ENV.IMS_HOST}`)
-        .post('/ims/token/v4')
-        .reply(401);
+    it('throws when ImsClient token request fails', async () => {
+      mockImsClient.getServiceAccessToken.rejects(new Error('IMS getServiceAccessToken request failed with status: 401'));
 
       const client = CloudManagerClient.createFrom(createContext());
 
       await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID }))
-        .to.be.rejectedWith('IMS token request failed with status: 401');
+        .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 401');
     });
   });
 
   describe('clone', () => {
     it('clones BYOG repository with correct git command and headers', async () => {
-      setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
       const clonePath = await client.clone(
@@ -241,13 +256,13 @@ describe('CloudManagerClient', () => {
       const gitArgs = getGitArgs(execFileSyncStub.firstCall);
       const gitArgsStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(gitArgsStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
-      expect(gitArgsStr).to.include('x-api-key: aso-cm-repo-service');
+      expect(gitArgsStr).to.include('x-api-key: test-client-id');
       expect(gitArgsStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
       expect(gitArgsStr).to.include(`${TEST_ENV.CM_REPO_URL}/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}.git`);
       expect(gitArgs).to.include(EXPECTED_CLONE_PATH);
     });
 
-    it('clones standard repository with basic auth and strips credentials from origin', async () => {
+    it('clones standard repository with Basic auth extraheader', async () => {
       const client = CloudManagerClient.createFrom(
         createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
       );
@@ -259,22 +274,18 @@ describe('CloudManagerClient', () => {
       );
 
       expect(clonePath).to.equal(EXPECTED_CLONE_PATH);
-      // Standard: clone call + set-url call to strip credentials
-      expect(execFileSyncStub).to.have.been.calledTwice;
+      // Standard: single clone call (no set-url needed — credentials are in extraheader, not URL)
+      expect(execFileSyncStub).to.have.been.calledOnce;
 
-      // First call: clone with basic auth URL
       const cloneArgs = getGitArgs(execFileSyncStub.firstCall);
       const cloneArgsStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(cloneArgs).to.include('clone');
-      expect(cloneArgsStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
+      expect(cloneArgsStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
+      expect(cloneArgsStr).to.include(TEST_STANDARD_REPO_URL);
       expect(cloneArgs).to.include(EXPECTED_CLONE_PATH);
-      expect(cloneArgsStr).to.not.include('extraheader');
+      // No credentials in the URL itself
+      expect(cloneArgsStr).to.not.include('stduser:stdtoken123@');
       expect(cloneArgsStr).to.not.include('Bearer');
-
-      // Second call: set-url to replace credentials with clean URL
-      const setUrlArgs = getGitArgs(execFileSyncStub.secondCall);
-      expect(setUrlArgs).to.deep.equal(['remote', 'set-url', 'origin', TEST_STANDARD_REPO_URL]);
-      expect(execFileSyncStub.secondCall.args[2]).to.have.property('cwd', EXPECTED_CLONE_PATH);
     });
 
     it('throws when standard credentials not found for programId', async () => {
@@ -290,7 +301,6 @@ describe('CloudManagerClient', () => {
     });
 
     it('creates a unique temp directory via mkdtempSync', async () => {
-      setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
       await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID });
@@ -300,7 +310,6 @@ describe('CloudManagerClient', () => {
     });
 
     it('checks out ref after clone when ref is provided', async () => {
-      setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
       const clonePath = await client.clone(
@@ -319,7 +328,6 @@ describe('CloudManagerClient', () => {
     });
 
     it('does not checkout when ref is not provided', async () => {
-      setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
       await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID });
@@ -329,7 +337,6 @@ describe('CloudManagerClient', () => {
     });
 
     it('does not fail clone when checkout ref fails', async () => {
-      setupImsTokenNock();
       // First call (clone) succeeds, second call (checkout) fails
       execFileSyncStub.onFirstCall().returns('');
       execFileSyncStub.onSecondCall().throws(new Error('Git command failed: pathspec \'nonexistent\' did not match'));
@@ -350,18 +357,35 @@ describe('CloudManagerClient', () => {
       );
     });
 
-    it('throws on git clone failure', async () => {
-      setupImsTokenNock();
+    it('throws on git clone failure and cleans up temp directory', async () => {
       execFileSyncStub.throws(new Error('git clone failed'));
 
       const client = CloudManagerClient.createFrom(createContext());
 
       await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID }))
         .to.be.rejectedWith('Git command failed');
+
+      expect(rmSyncStub).to.have.been.calledOnceWith(
+        EXPECTED_CLONE_PATH,
+        { recursive: true, force: true },
+      );
+    });
+
+    it('throws a clear message when git command times out', async () => {
+      const err = new Error('SIGTERM');
+      err.killed = true;
+      execFileSyncStub.throws(err);
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+
+      await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID }))
+        .to.be.rejectedWith('Git command timed out after 120s');
+
+      expect(context.log.error.firstCall.args[0]).to.include('timed out after 120s');
     });
 
     it('sanitizes Bearer token and credentials in git error output', async () => {
-      setupImsTokenNock();
       const err = new Error('auth failed');
       err.stderr = 'fatal: Authorization: Bearer secret-token-123';
       execFileSyncStub.throws(err);
@@ -483,7 +507,6 @@ describe('CloudManagerClient', () => {
 
   describe('push', () => {
     it('pushes BYOG repo with auth headers and ref', async () => {
-      setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
       await client.push(
@@ -499,7 +522,7 @@ describe('CloudManagerClient', () => {
       const pushArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pushArgStr).to.include('push');
       expect(pushArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
-      expect(pushArgStr).to.include('x-api-key: aso-cm-repo-service');
+      expect(pushArgStr).to.include('x-api-key: test-client-id');
       expect(pushArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
       // ref should be the last argument
       expect(pushArgs[pushArgs.length - 1]).to.equal('main');
@@ -522,14 +545,14 @@ describe('CloudManagerClient', () => {
       const pushArgs = getGitArgs(execFileSyncStub.firstCall);
       const pushArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pushArgStr).to.include('push');
-      expect(pushArgStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
-      expect(pushArgStr).to.not.include('extraheader');
+      expect(pushArgStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
+      expect(pushArgStr).to.include(TEST_STANDARD_REPO_URL);
+      expect(pushArgStr).to.not.include('stduser:stdtoken123@');
       expect(pushArgStr).to.not.include('Bearer');
       expect(pushArgs[pushArgs.length - 1]).to.equal('main');
     });
 
     it('pushes a new branch ref', async () => {
-      setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
       await client.push(
@@ -548,7 +571,6 @@ describe('CloudManagerClient', () => {
 
   describe('pull', () => {
     it('pulls BYOG repo with auth headers', async () => {
-      setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
       await client.pull(
@@ -563,7 +585,7 @@ describe('CloudManagerClient', () => {
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
       expect(pullArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
-      expect(pullArgStr).to.include('x-api-key: aso-cm-repo-service');
+      expect(pullArgStr).to.include('x-api-key: test-client-id');
       expect(pullArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
 
       expect(execFileSyncStub.firstCall.args[2]).to.have.property('cwd', '/tmp/cm-repo-test');
@@ -585,13 +607,13 @@ describe('CloudManagerClient', () => {
 
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
-      expect(pullArgStr).to.include('https://stduser:stdtoken123@git.cloudmanager.adobe.com/myorg/myrepo.git');
-      expect(pullArgStr).to.not.include('extraheader');
+      expect(pullArgStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
+      expect(pullArgStr).to.include(TEST_STANDARD_REPO_URL);
+      expect(pullArgStr).to.not.include('stduser:stdtoken123@');
       expect(pullArgStr).to.not.include('Bearer');
     });
 
     it('checks out ref before pulling when ref is provided', async () => {
-      setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
       await client.pull(
@@ -615,7 +637,6 @@ describe('CloudManagerClient', () => {
     });
 
     it('skips checkout when ref is not provided', async () => {
-      setupImsTokenNock();
       const client = CloudManagerClient.createFrom(createContext());
 
       await client.pull(
@@ -790,8 +811,6 @@ describe('CloudManagerClient', () => {
 
   describe('createPullRequest', () => {
     it('creates a PR with correct payload', async () => {
-      setupImsTokenNock();
-
       const prNock = nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`, {
           title: 'Fix issue',
@@ -819,8 +838,6 @@ describe('CloudManagerClient', () => {
     });
 
     it('throws on failed PR creation', async () => {
-      setupImsTokenNock();
-
       nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
         .reply(422, 'Validation failed');

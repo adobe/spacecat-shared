@@ -122,7 +122,7 @@ All changes below are in the `spacecat-infrastructure` repo. This repo manages S
 Add `aws_secretsmanager_secret` resources for each service. Terraform creates the empty secret containers; values are populated manually in Phase 2.
 
 ```hcl
-# Per-service bootstrap secrets (13 services)
+# Per-service bootstrap secrets (12 services)
 resource "aws_secretsmanager_secret" "mysticat_bootstrap_api_service" {
   name        = "/mysticat/bootstrap/api-service"
   description = "Vault AppRole bootstrap credentials for api-service"
@@ -192,7 +192,6 @@ Core Lambda services that need AppRoles (based on `/latest` SM secrets):
 | content-scraper | yes | - |
 | import-worker | yes | - |
 | import-job-manager | yes | - |
-| coralogix-feeder | yes | - |
 | task-manager | yes | - |
 | data-service (ECS) | yes (different path) | ~2 |
 
@@ -200,6 +199,7 @@ Secondary services (lower priority, migrate later):
 
 | Service | Notes |
 |---------|-------|
+| coralogix-feeder | Excluded from Vault migration |
 | audit-post-processor | May be deprecated |
 | content-import-worker | May be deprecated |
 | genai | Experimental |
@@ -230,7 +230,7 @@ The existing `data-service` policies and AppRoles remain unchanged.
 **1b. Infrastructure PR (spacecat-infrastructure repo)**
 
 Single PR covering all Terraform changes:
-- Add 13 `aws_secretsmanager_secret` resources for `/mysticat/bootstrap/{service-name}` (empty containers, values populated in Phase 2)
+- Add 12 `aws_secretsmanager_secret` resources for `/mysticat/bootstrap/{service-name}` (empty containers, values populated in Phase 2)
 - Add corresponding outputs for the new secret ARNs
 - Add `/mysticat/bootstrap/*` to three IAM policies: `spacecat-policy-secrets-ro`, `spacecat-policy-secrets-rw`, `spacecat-policy-service-basic`
 - Do NOT update `vault_bootstrap_secret_arn` for data-service yet (Phase 2d)
@@ -245,7 +245,7 @@ Update `vault-secrets-wrapper.js` to auto-resolve `bootstrapPath` from `ctx.func
 # 1. Verify HCL files exist for every core service x env combination
 for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatcher \
            auth-service fulfillment-worker content-processor content-scraper \
-           import-worker import-job-manager coralogix-feeder task-manager; do
+           import-worker import-job-manager task-manager; do
   for env in dev stage prod; do
     test -f "dx_mysticat_${svc//-/_}_${env}.hcl" || echo "MISSING: $svc $env"
   done
@@ -253,12 +253,12 @@ done
 
 # 2. Verify mappings.yaml has APPROLE_ROLE entries for all new roles
 grep -c "APPROLE_ROLE" mappings.yaml
-# Expected: 13 services x 3 envs = 39 new entries (+ 3 existing data-service)
+# Expected: 12 services x 3 envs = 36 new entries (+ 3 existing data-service)
 
 # 3. Verify SM bootstrap secrets exist in all AWS accounts (after Terraform apply)
 for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatcher \
            auth-service fulfillment-worker content-processor content-scraper \
-           import-worker import-job-manager coralogix-feeder task-manager data-service; do
+           import-worker import-job-manager task-manager data-service; do
   for profile in spacecat-dev spacecat-stage spacecat-prod; do
     aws secretsmanager describe-secret \
       --secret-id "/mysticat/bootstrap/$svc" \
@@ -341,7 +341,7 @@ Create `/mysticat/bootstrap/data-service` with the same content as `/mysticat/va
 # 1. Verify every AppRole exists and has a role_id
 for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatcher \
            auth-service fulfillment-worker content-processor content-scraper \
-           import-worker import-job-manager coralogix-feeder task-manager data-service; do
+           import-worker import-job-manager task-manager data-service; do
   for env in dev stage prod; do
     vault read -field=role_id "auth/approle/role/dx_mysticat_${svc//-/_}_${env}/role-id" \
       || echo "FAIL: $svc $env - AppRole not found"
@@ -351,7 +351,7 @@ done
 # 2. Verify every SM bootstrap secret exists and has valid structure
 for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatcher \
            auth-service fulfillment-worker content-processor content-scraper \
-           import-worker import-job-manager coralogix-feeder task-manager data-service; do
+           import-worker import-job-manager task-manager data-service; do
   for profile in spacecat-dev spacecat-stage spacecat-prod; do
     SECRET=$(aws secretsmanager get-secret-value \
       --secret-id "/mysticat/bootstrap/$svc" \
@@ -372,7 +372,7 @@ done
 # 3. Verify AppRole login works for each service (proves secret_id is valid)
 for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatcher \
            auth-service fulfillment-worker content-processor content-scraper \
-           import-worker import-job-manager coralogix-feeder task-manager data-service; do
+           import-worker import-job-manager task-manager data-service; do
   for profile in spacecat-dev spacecat-stage spacecat-prod; do
     SECRET=$(aws secretsmanager get-secret-value \
       --secret-id "/mysticat/bootstrap/$svc" \
@@ -419,7 +419,7 @@ Start with dev, validate, then stage, then prod.
 # 1. Verify secrets exist in Vault for every service x env
 for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatcher \
            auth-service fulfillment-worker content-processor content-scraper \
-           import-worker import-job-manager coralogix-feeder task-manager; do
+           import-worker import-job-manager task-manager; do
   for env in dev stage prod; do
     vault kv get -format=json "dx_mysticat/$env/$svc" > /dev/null 2>&1 \
       && echo "OK: $env/$svc" \
@@ -430,7 +430,7 @@ done
 # 2. Verify key counts match between SM and Vault
 for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatcher \
            auth-service fulfillment-worker content-processor content-scraper \
-           import-worker import-job-manager coralogix-feeder task-manager; do
+           import-worker import-job-manager task-manager; do
   for env_profile in "dev spacecat-dev" "stage spacecat-stage" "prod spacecat-prod"; do
     env=$(echo $env_profile | cut -d' ' -f1)
     profile=$(echo $env_profile | cut -d' ' -f2)
@@ -450,7 +450,7 @@ for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatc
 done
 
 # 3. Verify AppRole-scoped reads work (login as the service, then read its own secrets)
-for svc in api-service coralogix-feeder; do  # Spot-check two services
+for svc in api-service reporting-worker; do  # Spot-check two services
   SECRET=$(aws secretsmanager get-secret-value \
     --secret-id "/mysticat/bootstrap/$svc" \
     --profile spacecat-dev \
@@ -464,16 +464,16 @@ for svc in api-service coralogix-feeder; do  # Spot-check two services
 done
 
 # 4. Verify credential isolation (service A cannot read service B's secrets)
-# Login as coralogix-feeder, try to read api-service secrets (should fail)
+# Login as reporting-worker, try to read api-service secrets (should fail)
 SECRET=$(aws secretsmanager get-secret-value \
-  --secret-id "/mysticat/bootstrap/coralogix-feeder" \
+  --secret-id "/mysticat/bootstrap/reporting-worker" \
   --profile spacecat-dev \
   --query SecretString --output text)
 ROLE_ID=$(echo "$SECRET" | python3 -c "import sys,json; print(json.load(sys.stdin)['role_id'])")
 SEC_ID=$(echo "$SECRET" | python3 -c "import sys,json; print(json.load(sys.stdin)['secret_id'])")
 TOKEN=$(vault write -field=token auth/approle/login role_id="$ROLE_ID" secret_id="$SEC_ID")
 VAULT_TOKEN=$TOKEN vault kv get "dx_mysticat/dev/api-service" > /dev/null 2>&1 \
-  && echo "FAIL: credential isolation broken - coralogix-feeder can read api-service" \
+  && echo "FAIL: credential isolation broken - reporting-worker can read api-service" \
   || echo "OK: credential isolation verified"
 ```
 
@@ -510,7 +510,7 @@ Follow the standard promotion pipeline.
 #### Validation Gate 4: Per-Service (run after each service deployment)
 
 ```bash
-SERVICE="coralogix-feeder"  # Replace for each service
+SERVICE="reporting-worker"  # Replace for each service
 ENV="dev"                    # Run for each environment after deployment
 
 # 1. Verify Lambda is running (not in error state)
@@ -570,7 +570,7 @@ After all services are migrated and stable for at least 1 week:
 for repo in spacecat-api-service spacecat-audit-worker spacecat-reporting-worker \
             spacecat-autofix-worker spacecat-jobs-dispatcher spacecat-auth-service \
             spacecat-fulfillment-worker spacecat-content-processor spacecat-content-scraper \
-            spacecat-import-worker spacecat-import-job-manager spacecat-coralogix-feeder \
+            spacecat-import-worker spacecat-import-job-manager \
             spacecat-task-manager; do
   grep -r "helix-shared-secrets" "../$repo/package.json" 2>/dev/null \
     && echo "FAIL: $repo still depends on helix-shared-secrets"
@@ -584,7 +584,7 @@ grep -r "resolveSecretsName" ../spacecat-shared/packages/spacecat-shared-utils/s
 # 3. Verify all services are healthy (no regressions from cleanup)
 for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatcher \
            auth-service fulfillment-worker content-processor content-scraper \
-           import-worker import-job-manager coralogix-feeder task-manager; do
+           import-worker import-job-manager task-manager; do
   aws logs filter-log-events \
     --log-group-name "/aws/lambda/spacecat-services--${svc}--latest" \
     --start-time $(date -v-1H +%s000) \
@@ -612,12 +612,11 @@ The key safety property: old SM secrets are not deleted until Phase 5, so any se
 
 Start with the simplest, lowest-risk services:
 
-1. **coralogix-feeder** - simple, few secrets, low blast radius
-2. **reporting-worker** - read-only, low blast radius
-3. **jobs-dispatcher** - orchestrator, validates secret loading works for scheduled jobs
-4. **audit-worker** - high volume, validates performance under load
-5. **api-service** - highest traffic, most secrets, last among core services
-6. **data-service** - ECS (different deployment model), migrate last
+1. **reporting-worker** - read-only, low blast radius
+2. **jobs-dispatcher** - orchestrator, validates secret loading works for scheduled jobs
+3. **audit-worker** - high volume, validates performance under load
+4. **api-service** - highest traffic, most secrets, last among core services
+5. **data-service** - ECS (different deployment model), migrate last
 
 ## Open Questions
 

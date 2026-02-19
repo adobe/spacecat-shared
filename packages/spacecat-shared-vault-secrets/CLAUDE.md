@@ -11,7 +11,7 @@ cd packages/spacecat-shared-vault-secrets
 npm test
 ```
 
-51 tests with full HTTP mocking (nock). No external dependencies needed.
+54 tests with full HTTP mocking (nock). No external dependencies needed.
 
 ### Lint
 
@@ -24,12 +24,14 @@ npm run lint
 ### Secret Loading Pipeline
 
 ```
-Lambda/ECS start
-  -> AWS Secrets Manager: read /mysticat/vault-bootstrap (AppRole creds)
+Lambda/ECS start (e.g. api-service)
+  -> AWS Secrets Manager: read /mysticat/bootstrap/api-service (per-service AppRole creds)
   -> Vault: POST /v1/auth/approle/login (get token)
-  -> Vault: GET /v1/dx_mysticat/data/{env}/{service} (read secrets)
+  -> Vault: GET /v1/dx_mysticat/data/{env}/api-service (read secrets)
   -> Merge into ctx.env + process.env
 ```
+
+Bootstrap path auto-resolves from `ctx.func.name` -> `/mysticat/bootstrap/{func.name}`. Override with `bootstrapPath` option.
 
 ### Two-tier Caching
 
@@ -58,25 +60,23 @@ Lambda/ECS start
 
 ### AppRole Details
 
-| Environment | AppRole Name | Policy |
-|-------------|-------------|--------|
-| Dev | `dx_mysticat_data_service_dev` | `dx_mysticat_data_service_dev` |
-| Stage | `dx_mysticat_data_service_stage` | `dx_mysticat_data_service_stage` |
-| Prod | `dx_mysticat_data_service_prod` | `dx_mysticat_data_service_prod` |
+**Naming convention:** `dx_mysticat_{service_name}_{env}`
 
-**role_id** (dev): `06bcea05-36d8-fada-7b25-52966940d819`
+Each core SpaceCat service has its own AppRole per environment. Each policy grants read access to `dx_mysticat/data/{env}/{service-name}/*` and metadata list on the same path.
 
-Each AppRole policy grants read access to `dx_mysticat/data/{env}/data-service/*` and metadata list on the same path.
+Provisioned via PRs to `cst-vault/vault_policies` on git.corp.adobe.com.
+
+**data-service role_id** (dev): `06bcea05-36d8-fada-7b25-52966940d819`
 
 ### Bootstrap Secret (AWS Secrets Manager)
 
-**Path**: `/mysticat/vault-bootstrap`
+**Path convention**: `/mysticat/bootstrap/{service-name}` (auto-resolved from `ctx.func.name`)
 
 **Format**:
 ```json
 {
-  "role_id": "<approle-role-id>",
-  "secret_id": "<approle-secret-id>",
+  "role_id": "<service-specific-approle-role-id>",
+  "secret_id": "<service-specific-secret-id>",
   "vault_addr": "https://vault-amer.adobe.net",
   "mount_point": "dx_mysticat",
   "environment": "dev"
@@ -85,11 +85,13 @@ Each AppRole policy grants read access to `dx_mysticat/data/{env}/data-service/*
 
 The `environment` field is required - it determines the Vault secret path prefix.
 
+Empty secret containers are created via Terraform in `spacecat-infrastructure`.
+
 ### Secret-ID Lifecycle
 
-- Generate: `vault write -f auth/approle/role/dx_mysticat_data_service_dev/secret-id`
+- Generate: `vault write -f auth/approle/role/dx_mysticat_{service_name}_{env}/secret-id`
 - Secret-IDs can expire (Adobe enforcing 100-day max TTL via VEP6)
-- Rotation requires updating the SM bootstrap secret with the new secret_id
+- Rotation requires updating the service's SM bootstrap secret with the new secret_id
 
 ## E2E Validation Procedure
 
@@ -236,7 +238,9 @@ rm -rf dist/
 ### Production Integration Blocklist
 
 Before `vault-secrets` can be used in SpaceCat Lambda services:
-- [ ] Update `spacecat-policy-secrets-ro` in Terraform to include `/mysticat/vault-bootstrap*`
-- [ ] Ensure all environments have valid bootstrap secrets with `environment` field
-- [ ] Plan secret_id rotation strategy (manual or automated via Klam key rotator)
-- [ ] Verify each service's Vault path matches the AppRole policy pattern
+- [x] Update IAM policies in Terraform to include `/mysticat/bootstrap/*` (spacecat-infrastructure PR #336)
+- [x] Create per-service AppRoles via vault_policies PRs
+- [x] Create per-service SM bootstrap secret containers in Terraform (spacecat-infrastructure PR #336)
+- [ ] Populate bootstrap secrets with AppRole credentials (Phase 2)
+- [ ] Copy service secrets from SM to Vault (Phase 3)
+- [ ] Plan secret_id rotation strategy (SITES-40736)

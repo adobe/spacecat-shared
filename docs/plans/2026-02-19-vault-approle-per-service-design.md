@@ -113,15 +113,57 @@ Each service's SM secret at `/mysticat/bootstrap/{service-name}`:
 }
 ```
 
-### IAM Policy
+### Infrastructure Repo Changes (spacecat-infrastructure)
 
-Update `spacecat-policy-secrets-ro` in Terraform to include `/mysticat/bootstrap/*`:
+All changes below are in the `spacecat-infrastructure` repo. This repo manages SM secrets, IAM policies, and ECS config via Terraform.
+
+**1. SM bootstrap secrets** (`modules/secrets_manager/secrets.tf`)
+
+Add `aws_secretsmanager_secret` resources for each service. Terraform creates the empty secret containers; values are populated manually in Phase 2.
+
+```hcl
+# Per-service bootstrap secrets (13 services)
+resource "aws_secretsmanager_secret" "mysticat_bootstrap_api_service" {
+  name        = "/mysticat/bootstrap/api-service"
+  description = "Vault AppRole bootstrap credentials for api-service"
+}
+# ... repeat for all core services
+```
+
+The existing `/mysticat/vault-bootstrap` secret is kept until data-service migration is confirmed stable.
+
+**2. IAM policies** (`modules/iam/policies.tf`)
+
+Three policies need `/mysticat/bootstrap/*` added to their Resource list:
+
+- `spacecat-policy-secrets-ro` (read-only, used by Lambda execution roles)
+- `spacecat-policy-secrets-rw` (read-write, used by CI/CD)
+- `spacecat-policy-service-basic` (basic service policy, also has SM GetSecretValue)
 
 ```hcl
 Resource = [
-  "arn:aws:secretsmanager:us-east-1:${account_id}:secret:/helix-deploy/spacecat-services/*",
-  "arn:aws:secretsmanager:us-east-1:${account_id}:secret:/mysticat/bootstrap/*",
+  "arn:aws:secretsmanager:${var.region}:${var.account_id}:secret:/helix-deploy/spacecat-services/*",
+  "arn:aws:secretsmanager:${var.region}:${var.account_id}:secret:/mysticat/bootstrap/*",
 ]
+```
+
+**3. Data-service IAM** (`modules/mysticat_data_service/iam.tf`)
+
+The `vault_bootstrap_access` policy currently uses `var.vault_bootstrap_secret_arn` pointing to `/mysticat/vault-bootstrap`. After migration, update to point to `/mysticat/bootstrap/data-service`.
+
+```hcl
+# Update variable default or environment-level value
+vault_bootstrap_secret_arn = module.spacecat_secrets.mysticat_bootstrap_data_service_arn
+```
+
+**4. SM secret outputs** (`modules/secrets_manager/outputs.tf`)
+
+Add output ARNs for the new bootstrap secrets so other modules can reference them:
+
+```hcl
+output "mysticat_bootstrap_data_service_arn" {
+  value = aws_secretsmanager_secret.mysticat_bootstrap_data_service.arn
+}
 ```
 
 ### Data-Service Migration
@@ -131,6 +173,7 @@ Resource = [
 - Vault path: unchanged (`{env}/data-service/*`)
 - AppRole: unchanged (`dx_mysticat_data_service_{env}`)
 - `entrypoint.sh`: update the `--secret-id` path from `/mysticat/vault-bootstrap` to `/mysticat/bootstrap/data-service`
+- `spacecat-infrastructure`: update `vault_bootstrap_secret_arn` variable to point to new secret ARN
 
 ## Services in Scope
 
@@ -184,9 +227,13 @@ Files to create per service (3 envs x N services):
 
 The existing `data-service` policies and AppRoles remain unchanged.
 
-**1b. IAM policy update (spacecat-infrastructure repo)**
+**1b. Infrastructure PR (spacecat-infrastructure repo)**
 
-Add `/mysticat/bootstrap/*` to `spacecat-policy-secrets-ro` for all three AWS accounts (dev/stage/prod).
+Single PR covering all Terraform changes:
+- Add 13 `aws_secretsmanager_secret` resources for `/mysticat/bootstrap/{service-name}` (empty containers, values populated in Phase 2)
+- Add corresponding outputs for the new secret ARNs
+- Add `/mysticat/bootstrap/*` to three IAM policies: `spacecat-policy-secrets-ro`, `spacecat-policy-secrets-rw`, `spacecat-policy-service-basic`
+- Do NOT update `vault_bootstrap_secret_arn` for data-service yet (Phase 2d)
 
 **1c. Wrapper update (spacecat-shared repo)**
 
@@ -208,21 +255,48 @@ done
 grep -c "APPROLE_ROLE" mappings.yaml
 # Expected: 13 services x 3 envs = 39 new entries (+ 3 existing data-service)
 
-# 3. Verify IAM policy includes bootstrap path (after Terraform apply)
-aws iam get-policy-version --policy-arn <policy-arn> --version-id <v> --profile spacecat-dev \
-  | grep "/mysticat/bootstrap"
-# Expected: resource ARN includes /mysticat/bootstrap/*
+# 3. Verify SM bootstrap secrets exist in all AWS accounts (after Terraform apply)
+for svc in api-service audit-worker reporting-worker autofix-worker jobs-dispatcher \
+           auth-service fulfillment-worker content-processor content-scraper \
+           import-worker import-job-manager coralogix-feeder task-manager data-service; do
+  for profile in spacecat-dev spacecat-stage spacecat-prod; do
+    aws secretsmanager describe-secret \
+      --secret-id "/mysticat/bootstrap/$svc" \
+      --profile "$profile" > /dev/null 2>&1 \
+      && echo "OK: $svc ($profile)" \
+      || echo "FAIL: $svc ($profile) - SM secret not created"
+  done
+done
 
-# 4. Verify wrapper unit tests pass with new bootstrapPath logic
+# 4. Verify IAM policies include bootstrap path (all three policies)
+for policy_name in spacecat-policy-secrets-ro spacecat-policy-secrets-rw spacecat-policy-service-basic; do
+  POLICY_ARN=$(aws iam list-policies --query "Policies[?PolicyName=='$policy_name'].Arn" \
+    --output text --profile spacecat-dev)
+  VERSION=$(aws iam get-policy --policy-arn "$POLICY_ARN" --profile spacecat-dev \
+    --query "Policy.DefaultVersionId" --output text)
+  aws iam get-policy-version --policy-arn "$POLICY_ARN" --version-id "$VERSION" \
+    --profile spacecat-dev --query "PolicyVersion.Document" --output text \
+    | grep -q "/mysticat/bootstrap" \
+    && echo "OK: $policy_name includes bootstrap path" \
+    || echo "FAIL: $policy_name missing bootstrap path"
+done
+
+# 5. Verify wrapper unit tests pass with new bootstrapPath logic
 cd packages/spacecat-shared-vault-secrets && npm test
 # Expected: all tests pass
 
-# 5. Verify wrapper correctly resolves bootstrap path
+# 6. Verify wrapper correctly resolves bootstrap path
 # Unit test should cover: ctx.func.name = "api-service" -> "/mysticat/bootstrap/api-service"
 # Unit test should cover: explicit bootstrapPath option overrides auto-resolution
+
+# 7. Verify Terraform plan is clean (no unexpected changes)
+cd spacecat-infrastructure/environments/dev && terraform plan -no-color 2>&1 | tail -5
+# Expected: only the expected new resources, no destructive changes
 ```
 
-**Stop condition:** Do not proceed to Phase 2 until the vault_policies PR is merged AND CES automation has provisioned the AppRoles (confirm via `vault read auth/approle/role/dx_mysticat_{service}_{env}/role-id` for at least one new service).
+**Stop condition:** Do not proceed to Phase 2 until:
+- The vault_policies PR is merged AND CES automation has provisioned the AppRoles (confirm via `vault read auth/approle/role/dx_mysticat_{service}_{env}/role-id` for at least one new service)
+- The spacecat-infrastructure PR is merged and applied in all three accounts (SM secrets exist, IAM policies updated)
 
 ### Phase 2: Bootstrap secret provisioning (no service impact)
 
@@ -255,7 +329,11 @@ Create via Terraform first (empty secret containers), then populate values.
 
 **2d. Migrate data-service bootstrap**
 
-Create `/mysticat/bootstrap/data-service` with the same content as `/mysticat/vault-bootstrap`. Update `mysticat-data-service/docker/entrypoint.sh` to read from the new path. Deploy data-service. Then deprecate the old `/mysticat/vault-bootstrap` secret.
+Create `/mysticat/bootstrap/data-service` with the same content as `/mysticat/vault-bootstrap`. Then:
+1. Update `mysticat-data-service/docker/entrypoint.sh` to read from `/mysticat/bootstrap/data-service`
+2. Update `spacecat-infrastructure`: change `vault_bootstrap_secret_arn` to point to the new `/mysticat/bootstrap/data-service` ARN (PR to spacecat-infrastructure)
+3. Deploy data-service
+4. Verify ECS health, then deprecate the old `/mysticat/vault-bootstrap` secret
 
 #### Validation Gate 2: Bootstrap Secrets
 

@@ -22,6 +22,7 @@ describe('userEngagement', () => {
         url: 'https://example.com/page1',
         weight: 100,
         events: [
+          { checkpoint: 'enter' },
           { checkpoint: 'click', timeDelta: 2000 },
         ],
       },
@@ -30,6 +31,7 @@ describe('userEngagement', () => {
         url: 'https://example.com/page1',
         weight: 50,
         events: [
+          { checkpoint: 'enter' },
           // No click event
         ],
       },
@@ -38,6 +40,7 @@ describe('userEngagement', () => {
         url: 'https://example.com/page2',
         weight: 200,
         events: [
+          { checkpoint: 'enter' },
           { checkpoint: 'click', timeDelta: 1200 },
           { checkpoint: 'click', timeDelta: 1500 },
         ],
@@ -54,12 +57,18 @@ describe('userEngagement', () => {
     expect(page2.url).to.equal('https://example.com/page2');
     expect(page2.totalTraffic).to.equal(200);
     expect(page2.engagementPercentage).to.equal(100);
+    expect(page2.totalOrganicTraffic).to.equal(200);
+    expect(page2.engagementTrafficOrganic).to.equal(200);
+    expect(page2.engagementPercentageOrganic).to.equal(100);
 
     // Check page1
     const page1 = result[0];
     expect(page1.url).to.equal('https://example.com/page1');
     expect(page1.totalTraffic).to.equal(150);
     expect(page1.engagementPercentage).to.equal(67);
+    expect(page1.totalOrganicTraffic).to.equal(150);
+    expect(page1.engagementTrafficOrganic).to.equal(100);
+    expect(page1.engagementPercentageOrganic).to.equal(67);
   });
 
   it('handles empty bundles array', () => {
@@ -74,7 +83,7 @@ describe('userEngagement', () => {
         id: 'bundle1',
         url: 'https://example.com/page1',
         weight: 100,
-        events: [],
+        events: [{ checkpoint: 'enter' }],
       },
     ];
 
@@ -87,6 +96,9 @@ describe('userEngagement', () => {
     expect(page.url).to.equal('https://example.com/page1');
     expect(page.totalTraffic).to.equal(100);
     expect(page.engagementPercentage).to.equal(0);
+    expect(page.totalOrganicTraffic).to.equal(100);
+    expect(page.engagementTrafficOrganic).to.equal(0);
+    expect(page.engagementPercentageOrganic).to.equal(0);
   });
 
   it('handles content engagement (viewmedia/viewblock)', () => {
@@ -96,6 +108,7 @@ describe('userEngagement', () => {
         url: 'https://example.com/page1',
         weight: 100,
         events: [
+          { checkpoint: 'enter' },
           { checkpoint: 'viewmedia', timeDelta: 1000 },
           { checkpoint: 'viewmedia', timeDelta: 2000 },
           { checkpoint: 'viewmedia', timeDelta: 3000 },
@@ -113,6 +126,9 @@ describe('userEngagement', () => {
     expect(page.url).to.equal('https://example.com/page1');
     expect(page.totalTraffic).to.equal(100);
     expect(page.engagementPercentage).to.equal(100);
+    expect(page.totalOrganicTraffic).to.equal(100);
+    expect(page.engagementTrafficOrganic).to.equal(100);
+    expect(page.engagementPercentageOrganic).to.equal(100);
   });
 
   it('handles mixed click and content engagement', () => {
@@ -122,6 +138,7 @@ describe('userEngagement', () => {
         url: 'https://example.com/page1',
         weight: 100,
         events: [
+          { checkpoint: 'enter' },
           { checkpoint: 'click', timeDelta: 1000 },
         ],
       },
@@ -130,6 +147,7 @@ describe('userEngagement', () => {
         url: 'https://example.com/page1',
         weight: 50,
         events: [
+          { checkpoint: 'enter' },
           { checkpoint: 'viewmedia', timeDelta: 1000 },
           { checkpoint: 'viewmedia', timeDelta: 2000 },
           { checkpoint: 'viewmedia', timeDelta: 3000 },
@@ -147,9 +165,86 @@ describe('userEngagement', () => {
     expect(page.url).to.equal('https://example.com/page1');
     expect(page.totalTraffic).to.equal(150);
     expect(page.engagementPercentage).to.equal(100);
+    expect(page.totalOrganicTraffic).to.equal(150);
+    expect(page.engagementTrafficOrganic).to.equal(150);
+    expect(page.engagementPercentageOrganic).to.equal(100);
+  });
+
+  it('excludes paid traffic from organic engagement', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        events: [
+          { checkpoint: 'enter' },
+          { checkpoint: 'paid', source: 'cpc', target: 'google' },
+          { checkpoint: 'click', timeDelta: 1000 },
+        ],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page1',
+        weight: 50,
+        events: [
+          { checkpoint: 'enter' },
+          // no acquisition = organic
+          { checkpoint: 'click', timeDelta: 500 },
+        ],
+      },
+    ];
+
+    const result = userEngagement.handler(mockBundles);
+
+    expect(result).to.have.length(1);
+    const page = result[0];
+    expect(page.url).to.equal('https://example.com/page1');
+    expect(page.totalTraffic).to.equal(150);
+    expect(page.engagementTraffic).to.equal(150);
+    expect(page.engagementPercentage).to.equal(100);
+    expect(page.totalOrganicTraffic).to.equal(50);
+    expect(page.engagementTrafficOrganic).to.equal(50);
+    expect(page.engagementPercentageOrganic).to.equal(100);
   });
 
   it('has correct checkpoints', () => {
-    expect(userEngagement.checkpoints).to.deep.equal(['click', 'viewmedia', 'viewblock']);
+    expect(userEngagement.checkpoints).to.deep.equal([
+      'click', 'viewmedia', 'viewblock', 'enter', 'utm', 'paid', 'email',
+    ]);
+  });
+
+  it('ensures organic engagement never exceeds organic traffic', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        events: [
+          { checkpoint: 'enter' },
+          { checkpoint: 'click', timeDelta: 1000 },
+        ],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page1',
+        weight: 200,
+        events: [
+          { checkpoint: 'enter' },
+          { checkpoint: 'paid', source: 'cpc', target: 'google' },
+          { checkpoint: 'click', timeDelta: 500 },
+        ],
+      },
+    ];
+
+    const result = userEngagement.handler(mockBundles);
+
+    expect(result).to.have.length(1);
+    const page = result[0];
+    expect(page.totalTraffic).to.equal(300);
+    expect(page.engagementTraffic).to.equal(300);
+    expect(page.totalOrganicTraffic).to.equal(100);
+    expect(page.engagementTrafficOrganic).to.equal(100);
+    expect(page.engagementTrafficOrganic).to.be.at.most(page.totalOrganicTraffic);
+    expect(page.engagementPercentageOrganic).to.equal(100);
   });
 });

@@ -183,6 +183,53 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Footer');
     });
 
+    it('should remove accessibility widget elements', async () => {
+      const html = `<html><body>
+        <h1>Title</h1>
+        <div id="digiAccess">Accessibility Widget</div>
+        <div id="dAopener">Accessibility Opener</div>
+        <div class="da-opener-123">Accessibility Class Opener</div>
+        <p>Content</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Title');
+      expect(text).to.include('Content');
+      expect(text).to.not.include('Accessibility Widget');
+      expect(text).to.not.include('Accessibility Opener');
+      expect(text).to.not.include('Accessibility Class Opener');
+    });
+
+    it('should remove cookie banner when selector matches and content indicates consent', async () => {
+      const html = `<html><body>
+        <h1>Title</h1>
+        <div id="onetrust-consent-sdk">We use cookies. Manage consent preferences.</div>
+        <p>Content</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Title');
+      expect(text).to.include('Content');
+      expect(text).to.not.include('We use cookies');
+      expect(text).to.not.include('Manage consent preferences');
+    });
+
+    it('should not remove cookie-banner selectors when content does not indicate consent', async () => {
+      const html = `<html><body>
+        <h1>Title</h1>
+        <div id="onetrust-consent-sdk">Just a container with neutral text.</div>
+        <p>Content</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Title');
+      expect(text).to.include('Content');
+      expect(text).to.include('Just a container with neutral text.');
+    });
+
     it('should remove noscript elements by default', async () => {
       const html = '<html><body><h1>Title</h1><noscript>Please enable JavaScript</noscript><p>Content</p></body></html>';
       const text = await stripTagsToText(html);

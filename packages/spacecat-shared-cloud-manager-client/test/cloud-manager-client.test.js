@@ -124,16 +124,21 @@ describe('CloudManagerClient', () => {
   const existsSyncStub = sinon.stub();
   const mkdtempSyncStub = sinon.stub();
   const rmSyncStub = sinon.stub();
+  const statfsSyncStub = sinon.stub();
   const writeSyncStub = sinon.stub();
   const archiverStub = sinon.stub();
 
-  before(async () => {
+  // esmock's initial module resolution can exceed mocha's default 2s timeout
+  // eslint-disable-next-line prefer-arrow-callback
+  before(async function () {
+    this.timeout(5000);
     const mod = await esmock('../src/index.js', {
       child_process: { execFileSync: execFileSyncStub },
       fs: {
         existsSync: existsSyncStub,
         mkdtempSync: mkdtempSyncStub,
         rmSync: rmSyncStub,
+        statfsSync: statfsSyncStub,
         writeFileSync: writeSyncStub,
       },
       archiver: archiverStub,
@@ -153,6 +158,8 @@ describe('CloudManagerClient', () => {
     mkdtempSyncStub.reset();
     mkdtempSyncStub.callsFake((prefix) => `${prefix}XXXXXX`);
     rmSyncStub.reset();
+    statfsSyncStub.reset();
+    statfsSyncStub.returns({ bsize: 4096, blocks: 131072, bfree: 65536 });
     writeSyncStub.reset();
     archiverStub.reset();
     archiverStub.callsFake(createMockArchiver);

@@ -12,7 +12,7 @@
 
 import { execFileSync } from 'child_process';
 import {
-  existsSync, mkdtempSync, rmSync, writeFileSync,
+  existsSync, mkdtempSync, rmSync, statfsSync, writeFileSync,
 } from 'fs';
 import os from 'os';
 import path from 'path';
@@ -146,6 +146,19 @@ export default class CloudManagerClient {
   // --- Private helpers ---
 
   /**
+   * Logs /tmp disk usage (total, used, free) for capacity monitoring.
+   * Uses statfsSync — a single syscall with negligible cost.
+   * @param {string} operation - The operation that just completed (e.g. 'clone', 'pull')
+   */
+  #logTmpDiskUsage(operation) {
+    const { bsize, blocks, bfree } = statfsSync(os.tmpdir());
+    const totalMB = Math.round((bsize * blocks) / (1024 * 1024));
+    const freeMB = Math.round((bsize * bfree) / (1024 * 1024));
+    const usedMB = totalMB - freeMB;
+    this.log.info(`[${operation}] /tmp disk usage: ${usedMB} MB used, ${freeMB} MB free, ${totalMB} MB total`);
+  }
+
+  /**
    * Looks up basic-auth credentials for a standard (non-BYOG) CM repository.
    * @param {string} programId - CM Program ID
    * @returns {string} "username:accessToken"
@@ -277,6 +290,7 @@ export default class CloudManagerClient {
       const args = await this.#buildAuthGitArgs('clone', programId, repositoryId, { imsOrgId, repoType, repoUrl });
       this.#execGit([...args, clonePath]);
       this.log.info(`Repository cloned to ${clonePath}`);
+      this.#logTmpDiskUsage('clone');
 
       // Checkout the requested ref if provided
       if (hasText(ref)) {
@@ -397,6 +411,7 @@ export default class CloudManagerClient {
     pushArgs.push(ref);
     this.#execGit(pushArgs, { cwd: clonePath });
     this.log.info('Changes pushed successfully');
+    this.#logTmpDiskUsage('push');
   }
 
   /**
@@ -427,6 +442,7 @@ export default class CloudManagerClient {
     const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
     this.#execGit(pullArgs, { cwd: clonePath });
     this.log.info('Changes pulled successfully');
+    this.#logTmpDiskUsage('pull');
   }
 
   /**

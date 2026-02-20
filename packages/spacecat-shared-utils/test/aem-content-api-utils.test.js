@@ -15,7 +15,14 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import nock from 'nock';
-import { determineAEMCSPageId, getPageEditUrl, CONTENT_API_PREFIX } from '../src/aem-content-api-utils.js';
+import {
+  determineAEMCSPageId,
+  getPageEditUrl,
+  CONTENT_API_PREFIX,
+  listPageVersions,
+  getPageVersion,
+  restorePageVersion,
+} from '../src/aem-content-api-utils.js';
 
 describe('determineAEMCSPageId', () => {
   let mockLog;
@@ -581,6 +588,130 @@ describe('determineAEMCSPageId', () => {
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true);
     expect(result).to.be.null;
+  });
+});
+
+describe('page versions helpers', () => {
+  let mockLog;
+  const authorURL = 'https://author.example.com';
+  const bearerToken = 'Bearer test-token';
+  const pageId = 'page-123';
+
+  beforeEach(() => {
+    nock.cleanAll();
+    mockLog = {
+      info: sinon.spy(),
+      error: sinon.spy(),
+      warn: sinon.spy(),
+    };
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sinon.restore();
+  });
+
+  describe('listPageVersions', () => {
+    it('should list page versions (no query params)', async () => {
+      const body = { items: [{ id: 'v1' }, { id: 'v2' }] };
+      nock(authorURL, {
+        reqheaders: {
+          authorization: bearerToken,
+        },
+      })
+        .get(`${CONTENT_API_PREFIX}/pages/${pageId}/versions`)
+        .reply(200, body);
+
+      const res = await listPageVersions(authorURL, pageId, bearerToken, {}, mockLog);
+      expect(res).to.deep.equal(body);
+    });
+
+    it('should include cursor and limit query params when provided', async () => {
+      const body = { items: [{ id: 'v3' }], cursor: 'next' };
+      nock(authorURL, {
+        reqheaders: {
+          authorization: bearerToken,
+        },
+      })
+        .get(`${CONTENT_API_PREFIX}/pages/${pageId}/versions`)
+        .query({ cursor: 'abc', limit: '10' })
+        .reply(200, body);
+
+      const res = await listPageVersions(authorURL, pageId, bearerToken, { cursor: 'abc', limit: 10 }, mockLog);
+      expect(res).to.deep.equal(body);
+    });
+
+    it('should throw on non-2xx response', async () => {
+      nock(authorURL)
+        .get(`${CONTENT_API_PREFIX}/pages/${pageId}/versions`)
+        .reply(500, 'nope');
+
+      await expect(listPageVersions(authorURL, pageId, bearerToken, {}, mockLog))
+        .to.be.rejectedWith('Failed to list versions for page');
+    });
+  });
+
+  describe('getPageVersion', () => {
+    it('should return version data and etag', async () => {
+      const versionId = 'ver-1';
+      const body = { id: versionId, label: 'v1' };
+      nock(authorURL, {
+        reqheaders: {
+          authorization: bearerToken,
+        },
+      })
+        .get(`${CONTENT_API_PREFIX}/pages/${pageId}/versions/${versionId}`)
+        .reply(200, body, { ETag: '"etag-123"' });
+
+      const res = await getPageVersion(authorURL, pageId, versionId, bearerToken, mockLog);
+      expect(res).to.deep.equal({ data: body, etag: '"etag-123"' });
+    });
+
+    it('should throw on non-2xx response', async () => {
+      const versionId = 'ver-500';
+      nock(authorURL)
+        .get(`${CONTENT_API_PREFIX}/pages/${pageId}/versions/${versionId}`)
+        .reply(500, 'boom');
+
+      await expect(getPageVersion(authorURL, pageId, versionId, bearerToken, mockLog))
+        .to.be.rejectedWith('Failed to get version');
+    });
+
+    it('should throw when etag header is missing', async () => {
+      const versionId = 'ver-no-etag';
+      nock(authorURL)
+        .get(`${CONTENT_API_PREFIX}/pages/${pageId}/versions/${versionId}`)
+        .reply(200, { id: versionId });
+
+      await expect(getPageVersion(authorURL, pageId, versionId, bearerToken, mockLog))
+        .to.be.rejectedWith('missing ETag');
+    });
+  });
+
+  describe('restorePageVersion', () => {
+    it('should POST restore with If-Match', async () => {
+      const versionId = 'ver-restore';
+      nock(authorURL, {
+        reqheaders: {
+          authorization: bearerToken,
+          'if-match': '"v-etag"',
+        },
+      })
+        .post(`${CONTENT_API_PREFIX}/pages/${pageId}/versions/${versionId}/restore`)
+        .reply(204);
+
+      await restorePageVersion(authorURL, pageId, versionId, bearerToken, '"v-etag"', mockLog);
+    });
+
+    it('should throw on non-2xx response', async () => {
+      const versionId = 'ver-fail';
+      nock(authorURL)
+        .post(`${CONTENT_API_PREFIX}/pages/${pageId}/versions/${versionId}/restore`)
+        .reply(412, 'precondition failed');
+
+      await expect(restorePageVersion(authorURL, pageId, versionId, bearerToken, '"bad"', mockLog))
+        .to.be.rejectedWith('Failed to restore version');
+    });
   });
 });
 

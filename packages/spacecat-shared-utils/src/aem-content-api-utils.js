@@ -122,3 +122,123 @@ export const getPageEditUrl = async (authorURL, bearerToken, pageId) => {
   }
   return null;
 };
+
+/**
+ * List versions for a given page using the AEM Content API.
+ *
+ * @param {string} authorURL
+ * @param {string} pageId
+ * @param {string} bearerToken
+ * @param {{cursor?: string, limit?: number}} [options]
+ * @param {Object} [log]
+ * @returns {Promise<any>} Raw API response body (typically `{ items, cursor? }`)
+ */
+export async function listPageVersions(
+  authorURL,
+  pageId,
+  bearerToken,
+  options = {},
+  log = console,
+) {
+  const { cursor, limit } = options || {};
+  const url = new URL(`${authorURL}${CONTENT_API_PREFIX}/pages/${pageId}/versions`);
+  if (cursor) url.searchParams.set('cursor', cursor);
+  if (limit) url.searchParams.set('limit', String(limit));
+
+  const resp = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      Authorization: bearerToken,
+      Accept: 'application/json',
+      'x-aem-affinity-type': 'api',
+    },
+  });
+
+  if (!resp.ok) {
+    const body = await resp.text();
+    const msg = `Failed to list versions for page ${pageId}. Status: ${resp.status} ${resp.statusText}. Response: ${body}`;
+    log.error(msg);
+    throw new Error(msg);
+  }
+
+  return resp.json();
+}
+
+/**
+ * Get a specific version resource for a page (and its ETag).
+ *
+ * @param {string} authorURL
+ * @param {string} pageId
+ * @param {string} versionId
+ * @param {string} bearerToken
+ * @param {Object} [log]
+ * @returns {Promise<{data: any, etag: string}>}
+ */
+export async function getPageVersion(authorURL, pageId, versionId, bearerToken, log = console) {
+  const url = `${authorURL}${CONTENT_API_PREFIX}/pages/${pageId}/versions/${versionId}`;
+  const resp = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: bearerToken,
+      Accept: 'application/json',
+      'x-aem-affinity-type': 'api',
+    },
+  });
+
+  if (!resp.ok) {
+    const body = await resp.text();
+    const msg = `Failed to get version ${versionId} for page ${pageId}. Status: ${resp.status} ${resp.statusText}. Response: ${body}`;
+    log.error(msg);
+    throw new Error(msg);
+  }
+
+  const etag = resp.headers.get('etag');
+  if (!etag) {
+    const msg = `Version details response missing ETag for page ${pageId} (version ${versionId}).`;
+    log.error(msg);
+    throw new Error(msg);
+  }
+
+  const data = await resp.json();
+  return { data, etag };
+}
+
+/**
+ * Restore a specific page version using the AEM Content API.
+ *
+ * The caller is responsible for choosing the correct ETag value to use in `ifMatchEtag`.
+ *
+ * @param {string} authorURL
+ * @param {string} pageId
+ * @param {string} versionId
+ * @param {string} bearerToken
+ * @param {string} ifMatchEtag
+ * @param {Object} [log]
+ * @returns {Promise<void>}
+ */
+export async function restorePageVersion(
+  authorURL,
+  pageId,
+  versionId,
+  bearerToken,
+  ifMatchEtag,
+  log = console,
+) {
+  const url = `${authorURL}${CONTENT_API_PREFIX}/pages/${pageId}/versions/${versionId}/restore`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: bearerToken,
+      Accept: 'application/json',
+      'If-Match': ifMatchEtag,
+      'x-aem-affinity-type': 'api',
+    },
+  });
+
+  if (!resp.ok) {
+    const body = await resp.text();
+    const msg = `Failed to restore version ${versionId} for page ${pageId}. Status: ${resp.status} ${resp.statusText}. Response: ${body}`;
+    log.error(msg);
+    throw new Error(msg);
+  }
+}

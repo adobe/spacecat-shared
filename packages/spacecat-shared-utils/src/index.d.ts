@@ -371,6 +371,47 @@ export function extractUrlsFromOpportunity(opts: {
   opportunity: any;
 }): string[];
 
+export const CONTENT_API_PREFIX: string;
+
+export function determineAEMCSPageId(
+  pageURL: string,
+  authorURL?: string,
+  bearerToken?: string,
+  preferContentApi?: boolean,
+  log?: any,
+): Promise<string | null>;
+
+export function getPageEditUrl(
+  authorURL: string,
+  bearerToken: string,
+  pageId: string,
+): Promise<string | null>;
+
+export function listPageVersions(
+  authorURL: string,
+  pageId: string,
+  bearerToken: string,
+  options?: { cursor?: string; limit?: number },
+  log?: any,
+): Promise<any>;
+
+export function getPageVersion(
+  authorURL: string,
+  pageId: string,
+  versionId: string,
+  bearerToken: string,
+  log?: any,
+): Promise<{ data: any; etag: string }>;
+
+export function restorePageVersion(
+  authorURL: string,
+  pageId: string,
+  versionId: string,
+  bearerToken: string,
+  ifMatchEtag: string,
+  log?: any,
+): Promise<void>;
+
 export * as llmoConfig from './llmo-config.js';
 export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';

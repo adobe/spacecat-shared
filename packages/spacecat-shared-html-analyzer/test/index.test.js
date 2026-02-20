@@ -196,7 +196,7 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Title');
       expect(text).to.include('Content');
       expect(text).to.not.include('Accessibility Widget');
-      expect(text).to.not.include('Accessibility Opener');
+      expect(text).to.include('Accessibility Opener');
     });
 
     it('should remove cookie banner when selector matches and content indicates consent', async () => {

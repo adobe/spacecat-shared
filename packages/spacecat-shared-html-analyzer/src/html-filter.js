@@ -179,7 +179,9 @@ function removeCookieBannersCheerio($) {
 }
 
 function removeAccessibilityElementsCheerio($) {
-  $(ACCESSIBILITY_SELECTORS).remove();
+  ACCESSIBILITY_SELECTORS.forEach((selector) => {
+    $(selector).remove();
+  });
 }
 
 /**

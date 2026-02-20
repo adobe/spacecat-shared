@@ -1,3 +1,30 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.8...@adobe/spacecat-shared-tokowaka-client-v1.8.0) (2026-02-18)
+
+### Features
+
+* **tokowaka-client:** add semantic-value-visibility mapper ([#1348](https://github.com/adobe/spacecat-shared/issues/1348)) ([373f920](https://github.com/adobe/spacecat-shared/commit/373f920dfa9d5da8f2e15e0533d1347a23f45044))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.7...@adobe/spacecat-shared-tokowaka-client-v1.7.8) (2026-02-16)
+
+
+### Bug Fixes
+
+* timeout added for edge optimize status ([#1329](https://github.com/adobe/spacecat-shared/issues/1329)) ([93ef065](https://github.com/adobe/spacecat-shared/commit/93ef0653840929e9c76b14d370dbfa6db03cb97e))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.6...@adobe/spacecat-shared-tokowaka-client-v1.7.7) (2026-02-12)
+
+
+### Bug Fixes
+
+* export forwarded host compute method ([#1338](https://github.com/adobe/spacecat-shared/issues/1338)) ([91e5f5f](https://github.com/adobe/spacecat-shared/commit/91e5f5fb2b5a7d592886caea940a6313fe1c1c8c))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.5...@adobe/spacecat-shared-tokowaka-client-v1.7.6) (2026-02-09)
+
+
+### Bug Fixes
+
+* edge-preview api: ignore warmup call failure ([#1327](https://github.com/adobe/spacecat-shared/issues/1327)) ([fbc9f65](https://github.com/adobe/spacecat-shared/commit/fbc9f65bf96e408c878fa3b8b37fbbe29444e08f))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.7.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.4...@adobe/spacecat-shared-tokowaka-client-v1.7.5) (2026-02-05)
 
 

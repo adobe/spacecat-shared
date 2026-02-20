@@ -16,6 +16,7 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
+import { seedDatabase } from '../util/seed.js';
 
 use(chaiAsPromised);
 
@@ -54,10 +55,14 @@ function checkPageCitability(pc) {
 }
 
 describe('PageCitability IT', async () => {
+  let sampleData;
   let PageCitability;
+  let siteId;
 
   before(async function () {
     this.timeout(10000);
+    sampleData = await seedDatabase();
+    siteId = sampleData.sites[0].getId();
     const dataAccess = getDataAccess();
     PageCitability = dataAccess.PageCitability;
   });
@@ -65,7 +70,7 @@ describe('PageCitability IT', async () => {
   it('adds a new page readability record', async () => {
     const data = {
       url: 'https://www.example.com/test-page',
-      siteId: '1c86ba81-f3cc-48d8-8b06-1f9ac958e72d',
+      siteId,
       citabilityScore: 0.85,
       contentRatio: 1.25,
       wordDifference: 150,
@@ -89,7 +94,7 @@ describe('PageCitability IT', async () => {
     const testUrl = 'https://www.example.com/findable-page';
     const data = {
       url: testUrl,
-      siteId: '1c86ba81-f3cc-48d8-8b06-1f9ac958e72d',
+      siteId,
       citabilityScore: 0.75,
       contentRatio: 1.15,
       wordDifference: 100,
@@ -113,7 +118,7 @@ describe('PageCitability IT', async () => {
     const testUrl = 'https://www.example.com/updatable-page';
     const data = {
       url: testUrl,
-      siteId: '1c86ba81-f3cc-48d8-8b06-1f9ac958e72d',
+      siteId,
       citabilityScore: 0.60,
       contentRatio: 1.05,
       wordDifference: 50,
@@ -155,7 +160,7 @@ describe('PageCitability IT', async () => {
   it('handles missing stats gracefully', async () => {
     const data = {
       url: 'https://www.example.com/partial-stats',
-      siteId: '1c86ba81-f3cc-48d8-8b06-1f9ac958e72d',
+      siteId,
       citabilityScore: 0.75,
       // contentRatio intentionally missing
       // wordDifference intentionally missing

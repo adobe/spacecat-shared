@@ -23,6 +23,9 @@ import {
   defaultConfig,
   readConfig,
   writeConfig,
+  customerConfigV2Path,
+  readCustomerConfigV2,
+  writeCustomerConfigV2,
 } from '../src/llmo-config.js';
 
 use(sinonChai);
@@ -72,6 +75,9 @@ describe('llmo-config utilities', () => {
           competitors: [],
         },
         deleted: {
+          prompts: {},
+        },
+        ignored: {
           prompts: {},
         },
       });
@@ -195,6 +201,118 @@ describe('llmo-config utilities', () => {
       s3Client.send.resolves({});
 
       await expect(writeConfig(siteId, validConfig, s3Client)).rejectedWith('Failed to get version ID after writing LLMO config');
+    });
+  });
+
+  describe('customerConfigV2Path', () => {
+    it('builds the V2 customer config path', () => {
+      const organizationId = 'test-org-123';
+      expect(customerConfigV2Path(organizationId)).to.equals('customer-config-v2/test-org-123/config.json');
+    });
+  });
+
+  describe('readCustomerConfigV2', () => {
+    const organizationId = 'test-org-456';
+    const validCustomerConfig = { settings: { feature1: true }, limits: { maxUsers: 100 } };
+
+    it('retrieves and parses the customer config from S3', async () => {
+      const body = {
+        transformToString: sinon.stub().resolves(JSON.stringify(validCustomerConfig)),
+      };
+      s3Client.send.resolves({ Body: body });
+
+      const result = await readCustomerConfigV2(organizationId, s3Client);
+
+      expect(result).deep.equals(validCustomerConfig);
+      expect(s3Client.send).calledOnce;
+      const command = s3Client.send.firstCall.args[0];
+      expect(command).instanceOf(GetObjectCommand);
+      expect(command.input.Bucket).equals('default-test-bucket');
+      expect(command.input.Key).equals('customer-config-v2/test-org-456/config.json');
+      expect(body.transformToString).calledOnce;
+    });
+
+    it('uses provided bucket when options are set', async () => {
+      const body = {
+        transformToString: sinon.stub().resolves(JSON.stringify(validCustomerConfig)),
+      };
+      s3Client.send.resolves({ Body: body });
+
+      await readCustomerConfigV2(organizationId, s3Client, {
+        s3Bucket: 'custom-org-bucket',
+      });
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Bucket).equals('custom-org-bucket');
+    });
+
+    it('returns null when the config does not exist (NoSuchKey)', async () => {
+      const error = new Error('Missing key');
+      error.name = 'NoSuchKey';
+      s3Client.send.rejects(error);
+
+      const result = await readCustomerConfigV2(organizationId, s3Client);
+
+      expect(result).to.be.null;
+    });
+
+    it('returns null when the config does not exist (NotFound)', async () => {
+      const error = new Error('Not found');
+      error.name = 'NotFound';
+      s3Client.send.rejects(error);
+
+      const result = await readCustomerConfigV2(organizationId, s3Client);
+
+      expect(result).to.be.null;
+    });
+
+    it('re-throws unexpected S3 errors', async () => {
+      s3Client.send.rejects(new Error('S3 Service Error'));
+
+      await expect(readCustomerConfigV2(organizationId, s3Client)).rejectedWith('S3 Service Error');
+    });
+
+    it('throws when the S3 object body is missing', async () => {
+      s3Client.send.resolves({});
+
+      await expect(readCustomerConfigV2(organizationId, s3Client)).rejectedWith('Customer config V2 body is empty');
+    });
+
+    it('throws when the S3 object body cannot be parsed as JSON', async () => {
+      const body = {
+        transformToString: sinon.stub().resolves('invalid json content'),
+      };
+      s3Client.send.resolves({ Body: body });
+
+      await expect(readCustomerConfigV2(organizationId, s3Client)).rejectedWith(SyntaxError);
+    });
+  });
+
+  describe('writeCustomerConfigV2', () => {
+    const organizationId = 'test-org-789';
+    const customerConfig = { settings: { feature2: false }, limits: { maxProjects: 50 } };
+
+    it('writes the customer config to the default S3 bucket', async () => {
+      s3Client.send.resolves({});
+
+      await writeCustomerConfigV2(organizationId, customerConfig, s3Client);
+
+      expect(s3Client.send).calledOnce;
+      const command = s3Client.send.firstCall.args[0];
+      expect(command).instanceOf(PutObjectCommand);
+      expect(command.input.Bucket).equals('default-test-bucket');
+      expect(command.input.Key).equals('customer-config-v2/test-org-789/config.json');
+      expect(command.input.Body).equals(JSON.stringify(customerConfig, null, 2));
+      expect(command.input.ContentType).equals('application/json');
+    });
+
+    it('writes the customer config to a provided bucket', async () => {
+      s3Client.send.resolves({});
+
+      await writeCustomerConfigV2(organizationId, customerConfig, s3Client, { s3Bucket: 'custom-org-bucket' });
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Bucket).equals('custom-org-bucket');
     });
   });
 });

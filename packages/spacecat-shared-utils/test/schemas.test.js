@@ -913,6 +913,212 @@ describe('schemas', () => {
         expect(result.success).true;
       });
     });
+
+    describe('ignored', () => {
+      const ignoredPromptId1 = 'eeee1111-e11b-41d1-a111-111111111111';
+      const ignoredPromptId2 = 'eeee2222-e22b-42d2-a222-222222222222';
+
+      it('validates configuration without ignored (optional field)', () => {
+        const result = llmoConfig.safeParse(baseConfig);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with empty ignored record', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {},
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates configuration without prompts field in ignored', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {},
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with valid ignored prompts', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {
+              [ignoredPromptId1]: {
+                prompt: 'What are the best tools for free online image vectorization?',
+                region: 'US',
+                source: 'gsc',
+                updatedAt: '2026-02-06T14:30:00.000Z',
+                updatedBy: 'user@adobe.com',
+              },
+              [ignoredPromptId2]: {
+                prompt: 'How to convert raster to vector free?',
+                region: 'DE',
+                source: 'gsc',
+                updatedAt: '2026-02-06T14:35:00.000Z',
+                updatedBy: 'user@adobe.com',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with custom source', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {
+              [ignoredPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'US',
+                source: 'custom-source',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails when ignored prompt has empty prompt text', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {
+              [ignoredPromptId1]: {
+                prompt: '',
+                region: 'US',
+                source: 'gsc',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when ignored prompt has invalid region format', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {
+              [ignoredPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'USA', // Invalid - must be 2 characters
+                source: 'gsc',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('validates configuration with ignored prompt without optional fields', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {
+              [ignoredPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'US',
+                source: 'gsc',
+                // updatedBy and updatedAt are optional
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails when ignored prompt is missing required region', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {
+              [ignoredPromptId1]: {
+                prompt: 'Test prompt',
+                source: 'gsc',
+                // Missing region
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when ignored prompt is missing required source', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {
+              [ignoredPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'US',
+                // Missing source
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when ignored prompt has invalid UUID key', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {
+              'not-a-uuid': {
+                prompt: 'Test prompt',
+                region: 'US',
+                source: 'gsc',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('allows extra properties in ignored (forward compatibility)', () => {
+        const config = {
+          ...baseConfig,
+          ignored: {
+            prompts: {
+              [ignoredPromptId1]: {
+                prompt: 'Test prompt',
+                region: 'US',
+                source: 'gsc',
+              },
+            },
+            futureField: 'some value', // Extra field for future compatibility
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+    });
+
     describe('category origin', () => {
       it('allows category without origin (optional field)', () => {
         const config = {

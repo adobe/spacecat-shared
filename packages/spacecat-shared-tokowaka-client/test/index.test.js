@@ -15,6 +15,7 @@
 import { expect, use } from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import esmock from 'esmock';
 import TokowakaClient from '../src/index.js';
 
 use(sinonChai);
@@ -3153,7 +3154,7 @@ describe('TokowakaClient', () => {
           mockSite,
           mockOpportunity,
           mockSuggestions,
-          { warmupDelayMs: 0 },
+          { warmupDelayMs: 0, maxRetries: 0, retryDelayMs: 0 },
         );
         expect.fail('Should have thrown error');
       } catch (error) {
@@ -3610,20 +3611,45 @@ describe('TokowakaClient', () => {
   });
 
   describe('checkEdgeOptimizeStatus', () => {
-    let fetchStub;
+    let tracingFetchStub;
+    let esmockClient;
 
-    beforeEach(() => {
-      fetchStub = sinon.stub(global, 'fetch');
-    });
+    beforeEach(async () => {
+      tracingFetchStub = sinon.stub();
 
-    afterEach(() => {
-      fetchStub.restore();
+      const MockedTokowakaClient = await esmock('../src/index.js', {
+        '@adobe/spacecat-shared-utils': {
+          hasText: (val) => typeof val === 'string' && val.trim().length > 0,
+          isNonEmptyObject: (val) => val !== null && typeof val === 'object' && Object.keys(val).length > 0,
+          tracingFetch: tracingFetchStub,
+        },
+      });
+
+      const env = {
+        TOKOWAKA_CDN_PROVIDER: 'cloudfront',
+        TOKOWAKA_CDN_CONFIG: JSON.stringify({
+          cloudfront: {
+            distributionId: 'E123456',
+            region: 'us-east-1',
+          },
+        }),
+      };
+
+      esmockClient = new MockedTokowakaClient(
+        {
+          bucketName: 'test-bucket',
+          previewBucketName: 'test-preview-bucket',
+          s3Client: { send: sinon.stub().resolves() },
+          env,
+        },
+        log,
+      );
     });
 
     describe('Input Validation', () => {
       it('should throw error when site is not provided', async () => {
         try {
-          await client.checkEdgeOptimizeStatus(null, '/');
+          await esmockClient.checkEdgeOptimizeStatus(null, '/');
           expect.fail('Should have thrown error');
         } catch (error) {
           expect(error.message).to.include('Site is required');
@@ -3633,7 +3659,7 @@ describe('TokowakaClient', () => {
 
       it('should throw error when site is empty object', async () => {
         try {
-          await client.checkEdgeOptimizeStatus({}, '/');
+          await esmockClient.checkEdgeOptimizeStatus({}, '/');
           expect.fail('Should have thrown error');
         } catch (error) {
           expect(error.message).to.include('Site is required');
@@ -3649,7 +3675,7 @@ describe('TokowakaClient', () => {
         };
 
         try {
-          await client.checkEdgeOptimizeStatus(site, '');
+          await esmockClient.checkEdgeOptimizeStatus(site, '');
           expect.fail('Should have thrown error');
         } catch (error) {
           expect(error.message).to.include('Path is required');
@@ -3666,7 +3692,7 @@ describe('TokowakaClient', () => {
         };
 
         try {
-          await client.checkEdgeOptimizeStatus(site, null);
+          await esmockClient.checkEdgeOptimizeStatus(site, null);
           expect.fail('Should have thrown error');
         } catch (error) {
           expect(error.message).to.include('Path is required');
@@ -3697,15 +3723,15 @@ describe('TokowakaClient', () => {
           },
         };
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        const result = await client.checkEdgeOptimizeStatus(site, '/');
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
         });
-        expect(fetchStub).to.have.been.calledOnce;
-        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/');
+        expect(tracingFetchStub).to.have.been.calledOnce;
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/');
       });
 
       it('should return edgeOptimizeEnabled: true when x-edgeoptimize-request-id header is present', async () => {
@@ -3719,14 +3745,14 @@ describe('TokowakaClient', () => {
           },
         };
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        const result = await client.checkEdgeOptimizeStatus(site, '/products');
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/products');
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
         });
-        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/products');
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/products');
       });
 
       it('should return edgeOptimizeEnabled: false when headers are not present', async () => {
@@ -3736,9 +3762,9 @@ describe('TokowakaClient', () => {
         };
         mockResponse.headers.get = () => null;
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        const result = await client.checkEdgeOptimizeStatus(site, '/');
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: false,
@@ -3756,9 +3782,9 @@ describe('TokowakaClient', () => {
           },
         };
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        const result = await client.checkEdgeOptimizeStatus(site, '/not-found');
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/not-found');
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
@@ -3772,12 +3798,27 @@ describe('TokowakaClient', () => {
         };
         mockResponse.headers.get = () => null;
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        await client.checkEdgeOptimizeStatus(site, '/');
+        await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
-        const fetchOptions = fetchStub.firstCall.args[1];
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
         expect(fetchOptions.headers['User-Agent']).to.equal('Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0');
+      });
+
+      it('should pass timeout option to tracingFetch', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.timeout).to.equal(5000);
       });
     });
 
@@ -3801,9 +3842,9 @@ describe('TokowakaClient', () => {
 
       it('should retry 3 times on network error with exponential backoff', async () => {
         const networkError = new Error('Network timeout');
-        fetchStub.rejects(networkError);
+        tracingFetchStub.rejects(networkError);
 
-        const promise = client.checkEdgeOptimizeStatus(site, '/');
+        const promise = esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         // Wait for first attempt
         await clock.tickAsync(0);
@@ -3824,7 +3865,7 @@ describe('TokowakaClient', () => {
           expect(error.message).to.include('Failed to check edge optimize status');
           expect(error.message).to.include('Network timeout');
           expect(error.status).to.equal(500);
-          expect(fetchStub.callCount).to.equal(4); // Initial + 3 retries
+          expect(tracingFetchStub.callCount).to.equal(4); // Initial + 3 retries
         }
       });
 
@@ -3839,10 +3880,10 @@ describe('TokowakaClient', () => {
           },
         };
 
-        fetchStub.onFirstCall().rejects(new Error('Temporary failure'));
-        fetchStub.onSecondCall().resolves(mockResponse);
+        tracingFetchStub.onFirstCall().rejects(new Error('Temporary failure'));
+        tracingFetchStub.onSecondCall().resolves(mockResponse);
 
-        const promise = client.checkEdgeOptimizeStatus(site, '/');
+        const promise = esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         await clock.tickAsync(200);
 
@@ -3851,7 +3892,7 @@ describe('TokowakaClient', () => {
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
         });
-        expect(fetchStub).to.have.been.calledTwice;
+        expect(tracingFetchStub).to.have.been.calledTwice;
       });
 
       it('should succeed on third attempt after two failures', async () => {
@@ -3865,11 +3906,11 @@ describe('TokowakaClient', () => {
           },
         };
 
-        fetchStub.onFirstCall().rejects(new Error('Failure 1'));
-        fetchStub.onSecondCall().rejects(new Error('Failure 2'));
-        fetchStub.onThirdCall().resolves(mockResponse);
+        tracingFetchStub.onFirstCall().rejects(new Error('Failure 1'));
+        tracingFetchStub.onSecondCall().rejects(new Error('Failure 2'));
+        tracingFetchStub.onThirdCall().resolves(mockResponse);
 
-        const promise = client.checkEdgeOptimizeStatus(site, '/');
+        const promise = esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         await clock.tickAsync(200); // First retry delay
         await clock.tickAsync(400); // Second retry delay
@@ -3879,7 +3920,7 @@ describe('TokowakaClient', () => {
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
         });
-        expect(fetchStub.callCount).to.equal(3);
+        expect(tracingFetchStub.callCount).to.equal(3);
       });
 
       it('should log warnings on retries', async () => {
@@ -3890,15 +3931,29 @@ describe('TokowakaClient', () => {
         };
         mockResponse.headers.get = () => null;
 
-        fetchStub.onFirstCall().rejects(networkError);
-        fetchStub.onSecondCall().resolves(mockResponse);
+        tracingFetchStub.onFirstCall().rejects(networkError);
+        tracingFetchStub.onSecondCall().resolves(mockResponse);
 
-        const promise = client.checkEdgeOptimizeStatus(site, '/');
+        const promise = esmockClient.checkEdgeOptimizeStatus(site, '/');
         await clock.tickAsync(200);
         await promise;
 
         expect(log.warn).to.have.been.calledWith(
           sinon.match(/Attempt 1 to fetch failed.*Connection refused.*Retrying in 200ms/),
+        );
+      });
+
+      it('should return edgeOptimizeEnabled: false on request timeout (ETIMEOUT) without retrying', async () => {
+        const timeoutError = new Error('Request timeout after 5000ms');
+        timeoutError.code = 'ETIMEOUT';
+        tracingFetchStub.rejects(timeoutError);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
+        expect(tracingFetchStub).to.have.been.calledOnce;
+        expect(log.warn).to.have.been.calledWith(
+          sinon.match(/Request timed out after 5000ms for https:\/\/example.com\/, returning edgeOptimizeEnabled: false/),
         );
       });
     });
@@ -3922,11 +3977,11 @@ describe('TokowakaClient', () => {
         };
         mockResponse.headers.get = () => null;
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        await client.checkEdgeOptimizeStatus(site, '/products/chairs');
+        await esmockClient.checkEdgeOptimizeStatus(site, '/products/chairs');
 
-        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/products/chairs');
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/products/chairs');
       });
 
       it('should construct URL correctly with multi-level path', async () => {
@@ -3936,11 +3991,11 @@ describe('TokowakaClient', () => {
         };
         mockResponse.headers.get = () => null;
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        await client.checkEdgeOptimizeStatus(site, '/a/b/c/d');
+        await esmockClient.checkEdgeOptimizeStatus(site, '/a/b/c/d');
 
-        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/a/b/c/d');
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/a/b/c/d');
       });
 
       it('should handle baseURL with trailing slash', async () => {
@@ -3957,11 +4012,11 @@ describe('TokowakaClient', () => {
         };
         mockResponse.headers.get = () => null;
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        await client.checkEdgeOptimizeStatus(site, '/about');
+        await esmockClient.checkEdgeOptimizeStatus(site, '/about');
 
-        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/about');
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/about');
       });
 
       it('should handle baseURL without trailing slash', async () => {
@@ -3978,11 +4033,11 @@ describe('TokowakaClient', () => {
         };
         mockResponse.headers.get = () => null;
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        await client.checkEdgeOptimizeStatus(site, '/about');
+        await esmockClient.checkEdgeOptimizeStatus(site, '/about');
 
-        expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/about');
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/about');
       });
     });
 
@@ -4010,9 +4065,9 @@ describe('TokowakaClient', () => {
           },
         };
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        const result = await client.checkEdgeOptimizeStatus(site, '/');
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         expect(result.edgeOptimizeEnabled).to.be.true;
       });
@@ -4028,9 +4083,9 @@ describe('TokowakaClient', () => {
           },
         };
 
-        fetchStub.resolves(mockResponse);
+        tracingFetchStub.resolves(mockResponse);
 
-        const result = await client.checkEdgeOptimizeStatus(site, '/error');
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/error');
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,

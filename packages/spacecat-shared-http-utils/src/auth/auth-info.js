@@ -86,6 +86,8 @@ export default class AuthInfo {
 
   isLLMOAdministrator() { return this.profile?.is_llmo_administrator; }
 
+  isS2SAdmin() { return this.profile?.is_s2s_admin; }
+
   hasOrganization(orgId) {
     const [id] = orgId.split('@');
     return this.profile?.tenants?.some(

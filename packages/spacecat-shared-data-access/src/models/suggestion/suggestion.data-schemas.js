@@ -350,35 +350,46 @@ export const DATA_SCHEMAS = {
   },
   [OPPORTUNITY_TYPES.BROKEN_BACKLINKS]: {
     schema: Joi.object({
-      url_from: Joi.string().uri().required(),
-      url_to: Joi.string().uri().required(),
+      url_from: Joi.string().uri().optional(),
+      urlFrom: Joi.string().uri().optional(),
+      url_to: Joi.string().uri().optional(),
+      urlTo: Joi.string().uri().optional(),
       title: Joi.string().optional(),
       traffic_domain: Joi.number().optional(),
       aiRationale: Joi.string().optional(),
       urlsSuggested: Joi.array().items(Joi.string().uri()).optional(),
       aggregationKey: Joi.string().allow(null).optional(),
-    }).unknown(true),
+    })
+      .or('url_from', 'urlFrom') // At least one of these must be present
+      .or('url_to', 'urlTo') // At least one of these must be present
+      .unknown(true),
     projections: {
       minimal: {
-        fields: ['url_from', 'url_to'],
+        fields: ['url_from', 'url_to', 'urlFrom', 'urlTo'],
         transformers: {},
       },
     },
   },
   [OPPORTUNITY_TYPES.BROKEN_INTERNAL_LINKS]: {
     schema: Joi.object({
-      urlFrom: Joi.string().uri().required(),
-      urlTo: Joi.string().uri().required(),
+      // Support both naming conventions (snake_case and camelCase)
+      url_from: Joi.string().uri().optional(),
+      urlFrom: Joi.string().uri().optional(),
+      url_to: Joi.string().uri().optional(),
+      urlTo: Joi.string().uri().optional(),
       title: Joi.string().optional(),
       urlsSuggested: Joi.array().items(Joi.string().uri()).optional(),
       aiRationale: Joi.string().optional(),
       trafficDomain: Joi.number().optional(),
       priority: Joi.string().optional(),
       aggregationKey: Joi.string().allow(null).optional(),
-    }).unknown(true),
+    })
+      .or('url_from', 'urlFrom') // At least one of these must be present
+      .or('url_to', 'urlTo') // At least one of these must be present
+      .unknown(true),
     projections: {
       minimal: {
-        fields: ['urlFrom', 'urlTo'],
+        fields: ['url_from', 'url_to', 'urlFrom', 'urlTo'],
         transformers: {},
       },
     },
@@ -515,6 +526,33 @@ export const DATA_SCHEMAS = {
     },
   },
 
+  // consent-banner opportunity type.
+  // Note: The DB stores opportunity type as 'consent-banner', NOT the OPPORTUNITY_TYPES
+  // constant PAID_COOKIE_CONSENT ('paid-cookie-consent'). Using string literal to match DB.
+  'consent-banner': {
+    schema: Joi.object({
+      mobile: Joi.string().allow(null).optional(),
+      desktop: Joi.string().allow(null).optional(),
+      recommendations: Joi.array().items(
+        Joi.object({
+          pageUrl: Joi.string().uri().optional(),
+          id: Joi.string().optional(),
+        }).unknown(true),
+      ).optional(),
+      impact: Joi.object({
+        business: Joi.string().allow(null).optional(),
+        user: Joi.string().allow(null).optional(),
+      }).unknown(true).optional(),
+      aggregationKey: Joi.string().allow(null).optional(),
+    }).unknown(true),
+    projections: {
+      minimal: {
+        fields: ['mobile', 'desktop', 'recommendations', 'impact'],
+        transformers: {},
+      },
+    },
+  },
+
   // ========== SCHEMAS TO BE ADDED ==========
   // TODO: The following opportunity types need schemas to be added.
   // Research actual suggestion data for these types and add schemas following the pattern:
@@ -541,6 +579,5 @@ export const DATA_SCHEMAS = {
   // - SECURITY_PERMISSIONS_REDUNDANT (may use SECURITY_PERMISSIONS schema
   //                                   or need separate schema)
   // - GENERIC_OPPORTUNITY
-  // - PAID_COOKIE_CONSENT
   // - WIKIPEDIA_ANALYSIS
 };

@@ -130,17 +130,19 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   })
   .addAttribute('optEnableJavascript', {
     type: 'string',
+    postgrestIgnore: true,
     hidden: true,
     readOnly: true,
     watch: ['options'],
-    set: (_, { options }) => (options[ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT] ? 'T' : 'F'),
+    set: (_, { options }) => (options?.[ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT] ? 'T' : 'F'),
   })
   .addAttribute('optHideConsentBanner', {
     type: 'string',
+    postgrestIgnore: true,
     hidden: true,
     readOnly: true,
     watch: ['options'],
-    set: (_, { options }) => (options[ScrapeJob.ScrapeOptions.HIDE_CONSENT_BANNER] ? 'T' : 'F'),
+    set: (_, { options }) => (options?.[ScrapeJob.ScrapeOptions.HIDE_CONSENT_BANNER] ? 'T' : 'F'),
   })
   // access pattern: get all jobs sorted by startedAt
   .addAllIndex(['startedAt'])

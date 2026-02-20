@@ -10,8 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
 import { isValidUrl, isValidUUID, composeBaseURL } from '@adobe/spacecat-shared-utils';
+import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
+
+const SCRAPE_JOB_STATUS_RUNNING = MYSTICAT_ENUMS_BY_TYPE.SCRAPE_JOB_STATUS.RUNNING;
 
 /**
  * Scrape Supervisor provides functionality to start and manage scrape jobs.
@@ -57,7 +59,7 @@ function ScrapeJobSupervisor(services, config) {
       processingType,
       options,
       urlCount: urls.length,
-      status: ScrapeJobModel.ScrapeJobStatus.RUNNING,
+      status: SCRAPE_JOB_STATUS_RUNNING,
       customHeaders,
     };
     log.debug(`Creating a new scrape job. Job data: ${JSON.stringify(jobData)}`);

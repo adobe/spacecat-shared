@@ -20,80 +20,28 @@ import { seedDatabase } from '../util/seed.js';
 
 use(chaiAsPromised);
 
-function checkKeyEvent(keyEvent) {
-  expect(keyEvent).to.be.an('object');
-  expect(keyEvent.getId()).to.be.a('string');
-  expect(keyEvent.getCreatedAt()).to.be.a('string');
-  expect(keyEvent.getUpdatedAt()).to.be.a('string');
-  expect(keyEvent.getSiteId()).to.be.a('string');
-  expect(keyEvent.getName()).to.be.a('string');
-  expect(keyEvent.getType()).to.be.a('string');
-  expect(keyEvent.getTime()).to.be.a('string');
-}
-
 describe('KeyEvent IT', async () => {
-  let sampleData;
   let KeyEvent;
-  let Site;
 
   before(async function () {
     this.timeout(10000);
-    sampleData = await seedDatabase();
+    await seedDatabase();
 
     const dataAccess = getDataAccess();
     KeyEvent = dataAccess.KeyEvent;
-    Site = dataAccess.Site;
   });
 
-  it('gets all key events for a site', async () => {
-    const site = sampleData.sites[1];
-
-    const keyEvents = await KeyEvent.allBySiteId(site.getId());
-
-    expect(keyEvents).to.be.an('array');
-    expect(keyEvents.length).to.equal(10);
-
-    keyEvents.forEach((keyEvent) => {
-      expect(keyEvent.getSiteId()).to.equal(site.getId());
-      checkKeyEvent(keyEvent);
-    });
+  it('throws deprecated error when querying key events', async () => {
+    await expect(KeyEvent.allBySiteId('dummy-site-id'))
+      .to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
   });
 
-  it('adds a new key event for a site', async () => {
-    const site = sampleData.sites[1];
-    const keyEvent = await KeyEvent.create({
-      siteId: site.getId(),
-      name: 'keyEventName',
+  it('throws deprecated error when creating key events', async () => {
+    await expect(KeyEvent.create({
+      siteId: 'dummy-site-id',
+      name: 'deprecated-key-event',
       type: 'PERFORMANCE',
       time: '2024-12-06T08:35:24.125Z',
-    });
-
-    checkKeyEvent(keyEvent);
-
-    expect(keyEvent.getSiteId()).to.equal(site.getId());
-
-    const siteWithKeyEvent = await Site.findById(site.getId());
-
-    const keyEvents = await siteWithKeyEvent.getKeyEvents();
-    expect(keyEvents).to.be.an('array');
-    expect(keyEvents.length).to.equal(11);
-
-    const lastKeyEvent = keyEvents[0];
-    checkKeyEvent(lastKeyEvent);
-    expect(lastKeyEvent.getId()).to.equal(keyEvent.getId());
-  });
-
-  it('removes a key event', async () => {
-    const site = sampleData.sites[1];
-    const keyEvents = await site.getKeyEvents();
-    const keyEvent = keyEvents[0];
-
-    await keyEvent.remove();
-
-    const siteWithKeyEvent = await Site.findById(site.getId());
-
-    const updatedKeyEvents = await siteWithKeyEvent.getKeyEvents();
-    expect(updatedKeyEvents).to.be.an('array');
-    expect(updatedKeyEvents.length).to.equal(keyEvents.length - 1);
+    })).to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
   });
 });

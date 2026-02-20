@@ -42,6 +42,44 @@ class ScrapeJobCollection extends BaseCollection {
       },
     });
   }
+
+  async allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+    baseURL,
+    processingType,
+    optEnableJavascript,
+    optHideConsentBanner,
+    options = {},
+  ) {
+    const keys = {
+      baseURL,
+      processingType,
+      optEnableJavascript,
+      optHideConsentBanner,
+    };
+
+    return this.allByIndexKeys(keys, options);
+  }
+
+  async findByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+    baseURL,
+    processingType,
+    optEnableJavascript,
+    optHideConsentBanner,
+    options = {},
+  ) {
+    const jobs = await this
+      .allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+        baseURL,
+        processingType,
+        optEnableJavascript,
+        optHideConsentBanner,
+        { ...options, limit: options.limit || 1 },
+      );
+    if (Array.isArray(jobs)) {
+      return jobs[0] || null;
+    }
+    return jobs || null;
+  }
 }
 
 export default ScrapeJobCollection;

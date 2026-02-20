@@ -2614,4 +2614,64 @@ describe('Config Tests', () => {
       });
     });
   });
+
+  describe('addLlmoTag', () => {
+    it('should add a new tag', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test' } });
+      config.addLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['opportunitiesReviewed']);
+    });
+
+    it('should not add a duplicate tag', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['existing'] } });
+      config.addLlmoTag('existing');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['existing']);
+    });
+
+    it('should append to existing tags', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['fullyOnboarded'] } });
+      config.addLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['fullyOnboarded', 'opportunitiesReviewed']);
+    });
+
+    it('should initialize llmo and tags when not present', () => {
+      const config = Config();
+      config.addLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['opportunitiesReviewed']);
+    });
+  });
+
+  describe('removeLlmoTag', () => {
+    it('should remove an existing tag', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['fullyOnboarded', 'opportunitiesReviewed'] } });
+      config.removeLlmoTag('fullyOnboarded');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['opportunitiesReviewed']);
+    });
+
+    it('should do nothing if the tag does not exist', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['fullyOnboarded'] } });
+      config.removeLlmoTag('nonExistent');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['fullyOnboarded']);
+    });
+
+    it('should do nothing if tags are not initialized', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test' } });
+      config.removeLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.be.undefined;
+    });
+
+    it('should do nothing if llmo is not initialized', () => {
+      const config = Config();
+      config.removeLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig).to.be.undefined;
+    });
+  });
 });

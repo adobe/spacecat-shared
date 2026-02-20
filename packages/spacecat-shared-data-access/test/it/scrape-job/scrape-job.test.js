@@ -201,6 +201,33 @@ describe('ScrapeJob IT', async () => {
     expect(scrapeJobs[0].getId()).to.equal(sampleData.scrapeJobs[0].getId());
   });
 
+  it('gets all scrape jobs by baseURL, processing type and option flags', async () => {
+    const scrapeJobs = await ScrapeJob
+      .allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+        'https://example-2.com/cars',
+        ScrapeJobModel.ScrapeProcessingType.DEFAULT,
+        'T',
+        'F',
+      );
+
+    expect(scrapeJobs).to.be.an('array');
+    expect(scrapeJobs.length).to.equal(1);
+    expect(scrapeJobs[0].getId()).to.equal(sampleData.scrapeJobs[0].getId());
+  });
+
+  it('finds a scrape job by baseURL, processing type and option flags', async () => {
+    const scrapeJob = await ScrapeJob
+      .findByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+        'https://example-2.com/cars',
+        ScrapeJobModel.ScrapeProcessingType.DEFAULT,
+        'T',
+        'F',
+      );
+
+    checkScrapeJob(scrapeJob);
+    expect(scrapeJob.getId()).to.equal(sampleData.scrapeJobs[0].getId());
+  });
+
   it('removes a scrape job', async () => {
     const sampleScrapeJob = sampleData.scrapeJobs[0];
     const scrapeJob = await ScrapeJob.findById(sampleScrapeJob.getId());

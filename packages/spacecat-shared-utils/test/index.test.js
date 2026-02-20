@@ -27,6 +27,7 @@ describe('Index Exports', () => {
     'buildKey',
     'buildSuggestionKey',
     'calculateCPCValue',
+    'canonicalizeUrl',
     'composeAuditURL',
     'composeBaseURL',
     'dateAfterDays',

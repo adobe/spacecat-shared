@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-utils-v1.96.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.0...@adobe/spacecat-shared-utils-v1.96.1) (2026-02-13)
+
+
+### Bug Fixes
+
+* Change aggregation levels for several accessibility issue types ([#1347](https://github.com/adobe/spacecat-shared/issues/1347)) ([f07d153](https://github.com/adobe/spacecat-shared/commit/f07d15372c385efce972ac1044b69a4819f39d0e))
+
+# [@adobe/spacecat-shared-utils-v1.96.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.95.0...@adobe/spacecat-shared-utils-v1.96.0) (2026-02-12)
+
+
+### Features
+
+* get llmo config v2 ([#1340](https://github.com/adobe/spacecat-shared/issues/1340)) ([6fcbd51](https://github.com/adobe/spacecat-shared/commit/6fcbd51864daca13736d3813097c485e2189cd68))
+
+# [@adobe/spacecat-shared-utils-v1.95.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.94.0...@adobe/spacecat-shared-utils-v1.95.0) (2026-02-12)
+
+
+### Features
+
+* add canonicalizeUrl utility for consistent URL comparison ([#1334](https://github.com/adobe/spacecat-shared/issues/1334)) ([eb15132](https://github.com/adobe/spacecat-shared/commit/eb1513228e5d2e1701211b6aaf36108bd1642d68))
+
+# [@adobe/spacecat-shared-utils-v1.94.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.93.0...@adobe/spacecat-shared-utils-v1.94.0) (2026-02-11)
+
+
+### Features
+
+* store owner of the strategy ([#1339](https://github.com/adobe/spacecat-shared/issues/1339)) ([8d7ea96](https://github.com/adobe/spacecat-shared/commit/8d7ea968315a17a1f614f7cb61e91f997355885b))
+
+# [@adobe/spacecat-shared-utils-v1.93.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.92.0...@adobe/spacecat-shared-utils-v1.93.0) (2026-02-10)
+
+
+### Features
+
+* ignored field in llmo config ([#1326](https://github.com/adobe/spacecat-shared/issues/1326)) ([8a3e707](https://github.com/adobe/spacecat-shared/commit/8a3e70740bb8d08f4dfb946e4141f1526608b574))
+
+# [@adobe/spacecat-shared-utils-v1.92.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.91.0...@adobe/spacecat-shared-utils-v1.92.0) (2026-02-10)
+
+
+### Features
+
+* schema for oppty workspace data ([#1307](https://github.com/adobe/spacecat-shared/issues/1307)) ([49decad](https://github.com/adobe/spacecat-shared/commit/49decada5a0e598628563c8856b77715de549fce))
+
 # [@adobe/spacecat-shared-utils-v1.91.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.3...@adobe/spacecat-shared-utils-v1.91.0) (2026-02-08)
 
 

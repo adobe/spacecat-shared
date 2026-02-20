@@ -10,10 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { DynamoDB } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import { S3Client } from '@aws-sdk/client-s3';
-import { Service } from 'electrodb';
+import { PostgrestClient } from '@supabase/postgrest-js';
 
 import { instrumentAWSClient } from '@adobe/spacecat-shared-utils';
 import { EntityRegistry } from '../models/index.js';
@@ -23,47 +21,31 @@ export * from '../errors/index.js';
 export * from '../models/index.js';
 export * from '../util/index.js';
 
-let defaultDynamoDBClient;
-const documentClientCache = new WeakMap();
-
-const createRawClient = (client = undefined) => {
-  const rawClient = client || (() => {
-    if (!defaultDynamoDBClient) {
-      defaultDynamoDBClient = new DynamoDB();
-    }
-    return defaultDynamoDBClient;
-  })();
-
-  let documentClient = documentClientCache.get(rawClient);
-  if (!documentClient) {
-    documentClient = DynamoDBDocument.from(instrumentAWSClient(rawClient), {
-      marshallOptions: {
-        convertEmptyValues: true,
-        removeUndefinedValues: true,
-      },
-    });
-    documentClientCache.set(rawClient, documentClient);
+const createPostgrestService = (config, client = undefined) => {
+  if (client) {
+    return client;
   }
 
-  return documentClient;
-};
+  const {
+    postgrestUrl,
+    postgrestSchema = 'public',
+    postgrestApiKey,
+    postgrestHeaders = {},
+  } = config;
 
-const createElectroService = (client, config, log) => {
-  const { tableNameData: table } = config;
-  /* c8 ignore start */
-  const logger = (event) => {
-    log.debug(JSON.stringify(event, null, 4));
+  if (!postgrestUrl) {
+    throw new Error('postgrestUrl is required to create data access');
+  }
+
+  const headers = {
+    ...postgrestHeaders,
+    ...postgrestApiKey ? { apikey: postgrestApiKey, Authorization: `Bearer ${postgrestApiKey}` } : {},
   };
-  /* c8 ignore end */
 
-  return new Service(
-    EntityRegistry.getEntities(),
-    {
-      client,
-      table,
-      logger,
-    },
-  );
+  return new PostgrestClient(postgrestUrl, {
+    schema: postgrestSchema,
+    headers,
+  });
 };
 
 /**
@@ -91,31 +73,30 @@ const createS3Service = (config) => {
  * Creates a services dictionary containing all datastore services.
  * Each collection can declare which service it needs via its DATASTORE_TYPE.
  *
- * @param {object} electroService - The ElectroDB service for DynamoDB operations
+ * @param {PostgrestClient} postgrestService - PostgREST client
  * @param {object} config - Configuration object
- * @returns {object} Services dictionary with dynamo and s3 services
+ * @returns {object} Services dictionary with postgrest and s3 services
  */
-const createServices = (electroService, config) => ({
-  dynamo: electroService,
+const createServices = (postgrestService, config) => ({
+  postgrest: postgrestService,
   s3: createS3Service(config),
 });
 
 /**
- * Creates a data access layer for interacting with DynamoDB using ElectroDB.
+ * Creates a data access layer for interacting with Postgres via PostgREST.
  *
- * @param {{tableNameData: string, s3Bucket?: string, region?: string}} config - Configuration
- *   object containing table name and optional S3 configuration
+ * @param {{postgrestUrl: string, postgrestSchema?: string, postgrestApiKey?: string,
+ * postgrestHeaders?: object, s3Bucket?: string, region?: string}} config - Configuration object
  * @param {object} log - Logger instance, defaults to console
- * @param {DynamoDB} [client] - Optional custom DynamoDB client instance
+ * @param {PostgrestClient} [client] - Optional custom Postgrest client instance
  * @returns {object} Data access collections for interacting with entities
  */
 export const createDataAccess = (config, log = console, client = undefined) => {
   registerLogger(log);
 
-  const rawClient = createRawClient(client);
-  const electroService = createElectroService(rawClient, config, log);
-  const services = createServices(electroService, config);
-  const entityRegistry = new EntityRegistry(services, log);
+  const postgrestService = createPostgrestService(config, client);
+  const services = createServices(postgrestService, config);
+  const entityRegistry = new EntityRegistry(services, config, log);
 
   return entityRegistry.getCollections();
 };

@@ -126,6 +126,8 @@ describe('CloudManagerClient', () => {
   const rmSyncStub = sinon.stub();
   const statfsSyncStub = sinon.stub();
   const writeSyncStub = sinon.stub();
+  const admZipExtractStub = sinon.stub();
+  const AdmZipStub = sinon.stub().returns({ extractAllTo: admZipExtractStub });
   const archiverStub = sinon.stub();
 
   // esmock's initial module resolution can exceed mocha's default 2s timeout
@@ -141,6 +143,7 @@ describe('CloudManagerClient', () => {
         statfsSync: statfsSyncStub,
         writeFileSync: writeSyncStub,
       },
+      'adm-zip': { default: AdmZipStub },
       archiver: archiverStub,
     }, {
       '@adobe/spacecat-shared-ims-client': {
@@ -161,6 +164,9 @@ describe('CloudManagerClient', () => {
     statfsSyncStub.reset();
     statfsSyncStub.returns({ bsize: 4096, blocks: 131072, bfree: 65536 });
     writeSyncStub.reset();
+    admZipExtractStub.reset();
+    AdmZipStub.reset();
+    AdmZipStub.returns({ extractAllTo: admZipExtractStub });
     archiverStub.reset();
     archiverStub.callsFake(createMockArchiver);
     createFromStub.reset();
@@ -428,7 +434,7 @@ describe('CloudManagerClient', () => {
   });
 
   describe('applyPatch', () => {
-    it('downloads patch from S3 and applies it with git am', async () => {
+    it('applies mail-message patch with git am when content starts with "From "', async () => {
       const patchContent = 'From abc123\nSubject: Fix bug\n\ndiff --git a/file.txt b/file.txt\n';
 
       s3Mock.on(GetObjectCommand).resolves({
@@ -451,18 +457,82 @@ describe('CloudManagerClient', () => {
       expect(writeSyncStub).to.have.been.calledOnce;
       expect(writeSyncStub.firstCall.args[1]).to.equal(patchContent);
 
-      // Verify git user config, checkout, and am
+      // Verify git user config, checkout, and am (no apply/add/commit)
       const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
       expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.name') && s.includes('test-bot'))).to.be.true;
       expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.email') && s.includes('test-bot@example.com'))).to.be.true;
       expect(allGitArgStrs.some((s) => s.includes('checkout') && s.includes('feature/fix'))).to.be.true;
-      expect(allGitArgStrs.some((s) => s.includes('am'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.startsWith('am '))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.startsWith('apply '))).to.be.false;
 
       // Verify patch temp directory cleanup
       expect(mkdtempSyncStub).to.have.been.calledOnce;
       expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-patch-$/);
       expect(rmSyncStub).to.have.been.calledOnce;
       expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
+    });
+
+    it('logs warning when commitMessage is provided with a mail-message patch', async () => {
+      const patchContent = 'From abc123\nSubject: Fix bug\n\ndiff --git a/file.txt b/file.txt\n';
+
+      s3Mock.on(GetObjectCommand).resolves({
+        Body: { transformToString: async () => patchContent },
+      });
+
+      existsSyncStub.returns(true);
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+      await client.applyPatch('/tmp/cm-repo-test', 'feature/fix', 's3://my-bucket/patches/fix.patch', {
+        commitMessage: 'This should be ignored',
+      });
+
+      // Verify git am is used (not apply)
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.startsWith('am '))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.startsWith('apply '))).to.be.false;
+
+      // Verify warning was logged
+      expect(context.log.warn).to.have.been.calledOnceWith(
+        'commitMessage is ignored for mail-message patches; git am uses the embedded commit message',
+      );
+    });
+
+    it('applies plain diff with git apply, add, and commit when content starts with "diff "', async () => {
+      const patchContent = 'diff --git a/file.txt b/file.txt\nindex abc..def 100644\n--- a/file.txt\n+++ b/file.txt\n@@ -1 +1 @@\n-old\n+new\n';
+
+      s3Mock.on(GetObjectCommand).resolves({
+        Body: { transformToString: async () => patchContent },
+      });
+
+      existsSyncStub.returns(true);
+
+      const client = CloudManagerClient.createFrom(createContext());
+      await client.applyPatch('/tmp/cm-repo-test', 'feature/fix', 's3://my-bucket/patches/fix.patch', {
+        commitMessage: 'Apply agent suggestion',
+      });
+
+      // Verify git apply, add -A, and commit (no am)
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.includes('apply'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('add') && s.includes('-A'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('commit') && s.includes('-m') && s.includes('Apply agent suggestion'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.startsWith('am '))).to.be.false;
+    });
+
+    it('throws when plain diff patch is applied without commitMessage', async () => {
+      const patchContent = 'diff --git a/file.txt b/file.txt\n--- a/file.txt\n+++ b/file.txt\n';
+
+      s3Mock.on(GetObjectCommand).resolves({
+        Body: { transformToString: async () => patchContent },
+      });
+
+      existsSyncStub.returns(true);
+
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatch('/tmp/cm-repo-test', 'main', 's3://bucket/patches/fix.patch'))
+        .to.be.rejectedWith('commitMessage is required when applying a plain diff patch');
     });
 
     it('throws on invalid S3 path format (non-URL)', async () => {
@@ -494,8 +564,9 @@ describe('CloudManagerClient', () => {
     });
 
     it('cleans up temp patch directory even on error', async () => {
+      const patchContent = 'From abc123\nSubject: test\n\ndiff --git a/f b/f\n';
       s3Mock.on(GetObjectCommand).resolves({
-        Body: { transformToString: async () => 'patch content' },
+        Body: { transformToString: async () => patchContent },
       });
 
       existsSyncStub.returns(true);
@@ -684,7 +755,6 @@ describe('CloudManagerClient', () => {
 
   describe('unzipRepository', () => {
     it('extracts ZIP buffer to a temp directory', async () => {
-      // execFileSync is called for unzip command (not git)
       const client = CloudManagerClient.createFrom(createContext());
       const zipBuffer = Buffer.from('fake-zip-content');
 
@@ -694,30 +764,22 @@ describe('CloudManagerClient', () => {
       expect(mkdtempSyncStub).to.have.been.calledOnce;
       expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-repo-$/);
 
-      // Should have written the ZIP file
-      expect(writeSyncStub).to.have.been.calledOnce;
-      const writtenPath = writeSyncStub.firstCall.args[0];
-      expect(writtenPath).to.include('repository.zip');
-      expect(writeSyncStub.firstCall.args[1]).to.equal(zipBuffer);
+      // Should have constructed AdmZip with the buffer and extracted
+      expect(AdmZipStub).to.have.been.calledOnceWith(zipBuffer);
+      expect(admZipExtractStub).to.have.been.calledOnceWith(
+        `${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`,
+        true,
+      );
 
-      // Should have called unzip via execFileSync (second call after esmock module load)
-      // Note: execFileSyncStub is used for both git and unzip commands
-      expect(execFileSyncStub).to.have.been.calledOnce;
-      expect(execFileSyncStub.firstCall.args[0]).to.equal('unzip');
-      expect(execFileSyncStub.firstCall.args[1]).to.include('-o');
-      expect(execFileSyncStub.firstCall.args[1]).to.include('-q');
-
-      // Should have removed the ZIP file after extraction
-      expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[0]).to.include('repository.zip');
+      // Should not write a temp zip file (adm-zip works directly with buffer)
+      expect(writeSyncStub).to.not.have.been.called;
 
       // Should return the extract path
       expect(extractPath).to.equal(`${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`);
     });
 
     it('cleans up on unzip failure', async () => {
-      // Make execFileSync fail (simulating unzip failure)
-      execFileSyncStub.throws(new Error('unzip: not found'));
+      admZipExtractStub.throws(new Error('Invalid or unsupported zip format'));
       const client = CloudManagerClient.createFrom(createContext());
       const zipBuffer = Buffer.from('bad-zip-content');
 

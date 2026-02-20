@@ -19,6 +19,7 @@ import path from 'path';
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import AdmZip from 'adm-zip';
 import archiver from 'archiver';
 
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
@@ -351,14 +352,21 @@ export default class CloudManagerClient {
   }
 
   /**
-   * Downloads a patch from S3 and applies it to the given branch using git am.
-   * The patch is expected to contain commit metadata (author, date, message),
-   * so git am will create the commit automatically.
+   * Downloads a patch from S3 and applies it to the given branch.
+   * Supports two patch formats, detected automatically from the content:
+   * - Mail-message format (starts with "From "): applied via git am, which
+   *   creates the commit using embedded metadata (author, date, message).
+   * - Plain diff format (starts with "diff "): applied via git apply, then
+   *   staged and committed. A commitMessage option is required for this flow.
    * @param {string} clonePath - Path to the cloned repository
    * @param {string} branch - Branch to apply the patch on
    * @param {string} s3PatchPath - S3 URI of the patch file (s3://bucket/key)
+   * @param {object} [options] - Optional settings
+   * @param {string} [options.commitMessage] - Commit message for plain diff patches. Required
+   *   when the patch is a plain diff. Ignored for mail-message patches (git am uses the
+   *   embedded commit message); a warning is logged if provided with a mail-message patch.
    */
-  async applyPatch(clonePath, branch, s3PatchPath) {
+  async applyPatch(clonePath, branch, s3PatchPath, options = {}) {
     const { bucket, key } = parseS3Path(s3PatchPath);
     const patchDir = mkdtempSync(path.join(os.tmpdir(), PATCH_FILE_PREFIX));
     const patchFile = path.join(patchDir, 'applied.patch');
@@ -372,13 +380,33 @@ export default class CloudManagerClient {
       const patchContent = await response.Body.transformToString();
       writeFileSync(patchFile, patchContent);
 
-      // Configure committer identity for git am
+      // Configure committer identity
       this.#execGit(['config', 'user.name', gitUsername], { cwd: clonePath });
       this.#execGit(['config', 'user.email', gitUserEmail], { cwd: clonePath });
 
-      // Checkout branch and apply patch with commit
+      // Checkout branch
       this.#execGit(['checkout', branch], { cwd: clonePath });
-      this.#execGit(['am', patchFile], { cwd: clonePath });
+
+      // Detect format from content and apply accordingly
+      const isMailMessage = patchContent.startsWith('From ');
+      const { commitMessage } = options;
+
+      if (isMailMessage) {
+        // Mail-message format: git am creates the commit using embedded metadata
+        if (commitMessage) {
+          this.log.warn('commitMessage is ignored for mail-message patches; git am uses the embedded commit message');
+        }
+        this.#execGit(['am', patchFile], { cwd: clonePath });
+      } else {
+        // Plain diff format: apply, stage, and commit
+        if (!commitMessage) {
+          throw new Error('commitMessage is required when applying a plain diff patch');
+        }
+        this.#execGit(['apply', patchFile], { cwd: clonePath });
+        this.#execGit(['add', '-A'], { cwd: clonePath });
+        this.#execGit(['commit', '-m', commitMessage], { cwd: clonePath });
+      }
+
       this.log.info(`Patch applied and committed on branch ${branch}`);
     } finally {
       // Clean up temp patch directory and file
@@ -390,7 +418,7 @@ export default class CloudManagerClient {
 
   /**
    * Pushes the current branch to the remote CM repository.
-   * Commits are expected to already exist (e.g. via git am in applyPatch).
+   * Commits are expected to already exist (e.g. via applyPatch).
    *
    * For BYOG repos: uses Bearer token + API key + IMS org ID via extraheader.
    * For standard repos: uses Basic auth via extraheader.
@@ -466,12 +494,10 @@ export default class CloudManagerClient {
    */
   async unzipRepository(zipBuffer) {
     const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
-    const zipFile = path.join(extractPath, 'repository.zip');
 
     try {
-      writeFileSync(zipFile, zipBuffer);
-      execFileSync('unzip', ['-o', '-q', zipFile, '-d', extractPath], { encoding: 'utf-8', timeout: GIT_OPERATION_TIMEOUT_MS });
-      rmSync(zipFile);
+      const zip = new AdmZip(zipBuffer);
+      zip.extractAllTo(extractPath, true);
       this.log.info(`Repository extracted to ${extractPath}`);
       return extractPath;
     } catch (error) {

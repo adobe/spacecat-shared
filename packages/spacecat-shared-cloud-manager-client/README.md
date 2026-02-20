@@ -118,7 +118,16 @@ await client.pull(clonePath, programId, repositoryId, { imsOrgId, ref: 'main' })
 // Checkout a specific ref (standalone, without pull)
 await client.checkout(clonePath, 'main');
 
-// ... create branch, apply patch, etc. ...
+// Create a branch and apply a patch
+await client.createBranch(clonePath, 'main', 'feature/fix');
+
+// Apply a mail-message patch (git am — commit message is embedded in the patch)
+await client.applyPatch(clonePath, 'feature/fix', 's3://bucket/patches/fix.patch');
+
+// Apply a plain diff patch (git apply — commitMessage is required)
+await client.applyPatch(clonePath, 'feature/fix', 's3://bucket/patches/fix.diff', {
+  commitMessage: 'Apply agent suggestion: fix accessibility issue',
+});
 
 // Push (ref is required — specifies the branch to push)
 await client.push(clonePath, programId, repositoryId, { imsOrgId, ref: 'feature/fix' });
@@ -156,11 +165,15 @@ const clonePath = await client.clone(programId, repositoryId, config);
 // Pull latest changes (optional ref checks out the branch before pulling)
 await client.pull(clonePath, programId, repositoryId, { imsOrgId, repoType: 'standard', repoUrl, ref: 'main' });
 
-// ... create branch, apply patch, etc. ...
+// Create a branch and apply a patch
+await client.createBranch(clonePath, 'main', 'feature/fix');
+await client.applyPatch(clonePath, 'feature/fix', 's3://bucket/patches/fix.patch', {
+  commitMessage: 'Apply agent suggestion',
+});
 
 // Push (ref is required — specifies the branch to push)
 await client.push(clonePath, programId, repositoryId, {
-  imsOrgId, repoType: 'standard', repoUrl, ref: 'main',
+  imsOrgId, repoType: 'standard', repoUrl, ref: 'feature/fix',
 });
 
 // Zip the repository (includes .git history)
@@ -182,7 +195,7 @@ await client.cleanup(clonePath);
 - **`zipRepository(clonePath)`** – Zip the clone (including `.git` history) and return a Buffer.
 - **`unzipRepository(zipBuffer)`** – Extract a ZIP buffer to a new temp directory and return the path. Used for incremental updates (restore a previously-zipped repo from S3, then `pull` with `ref` instead of a full clone). Cleans up on failure.
 - **`createBranch(clonePath, baseBranch, newBranch)`** – Checkout the base branch and create a new branch from it.
-- **`applyPatch(clonePath, branch, s3PatchPath)`** – Download a patch from S3 (`s3://bucket/key` format) and apply it with `git am`. Configures committer identity from `ASO_CODE_AUTOFIX_USERNAME`/`ASO_CODE_AUTOFIX_EMAIL`. Cleans up the temp patch file in a `finally` block.
+- **`applyPatch(clonePath, branch, s3PatchPath, options?)`** – Download a patch from S3 (`s3://bucket/key` format) and apply it. The patch format is detected automatically from the content, not the file extension. Mail-message patches (content starts with `From `) are applied with `git am`, which creates the commit using the embedded metadata. Plain diffs (content starts with `diff `) are applied with `git apply`, staged with `git add -A`, and committed — `options.commitMessage` is required for this flow. If `commitMessage` is provided with a mail-message patch, it is ignored and a warning is logged. Configures committer identity from `ASO_CODE_AUTOFIX_USERNAME`/`ASO_CODE_AUTOFIX_EMAIL`. Cleans up the temp patch file in a `finally` block.
 - **`cleanup(clonePath)`** – Remove the clone directory. Validates the path starts with the expected temp prefix to prevent accidental deletion.
 - **`createPullRequest(programId, repositoryId, config)`** – Create a PR via the CM Repo API (BYOG only, uses IMS token). Config: `{ imsOrgId, sourceBranch, destinationBranch, title, description }`.
 

@@ -59,7 +59,12 @@ export default class CloudManagerClient {
   unzipRepository(zipBuffer: Buffer): Promise<string>;
   zipRepository(clonePath: string): Promise<Buffer>;
   createBranch(clonePath: string, baseBranch: string, newBranch: string): Promise<void>;
-  applyPatch(clonePath: string, branch: string, s3PatchPath: string): Promise<void>;
+  applyPatch(
+    clonePath: string,
+    branch: string,
+    s3PatchPath: string,
+    options?: { commitMessage?: string },
+  ): Promise<void>;
   cleanup(clonePath: string): Promise<void>;
   createPullRequest(
     programId: string,

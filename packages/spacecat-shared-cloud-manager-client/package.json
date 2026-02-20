@@ -38,6 +38,7 @@
     "@adobe/spacecat-shared-ims-client": "1.11.6",
     "@adobe/spacecat-shared-utils": "1.81.1",
     "@aws-sdk/client-s3": "3.940.0",
+    "adm-zip": "0.5.16",
     "archiver": "7.0.1"
   },
   "devDependencies": {

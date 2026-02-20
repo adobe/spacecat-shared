@@ -82,6 +82,10 @@ const COOKIE_BANNER_ARIA_SELECTORS = [
   '[aria-describedby*="privacy" i]',
 ];
 
+const ACCESSIBILITY_SELECTORS = [
+  '#digiAccess', '#dAopener', '[class*="da-opener-"]',
+];
+
 /**
  * Validates if an element is likely a cookie banner based on text content
  * Optimized: Set lookup + early exit for common keywords (3x faster)
@@ -118,6 +122,13 @@ function removeCookieBanners(element) {
         el.remove();
       }
     });
+  });
+}
+
+function removeAccessibilityElements(element) {
+  const elements = element.querySelectorAll(ACCESSIBILITY_SELECTORS);
+  elements.forEach((el) => {
+    el.remove();
   });
 }
 
@@ -165,6 +176,10 @@ function removeCookieBannersCheerio($) {
       }
     });
   });
+}
+
+function removeAccessibilityElementsCheerio($) {
+  $(ACCESSIBILITY_SELECTORS).remove();
 }
 
 /**
@@ -249,6 +264,9 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNosc
   // Remove consent banners with intelligent detection
   removeCookieBanners(documentElement);
 
+  // Remove accessibility elements
+  removeAccessibilityElements(documentElement);
+
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {
     filterNavigationAndFooterBrowser(documentElement);
@@ -324,6 +342,9 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
 
   // Remove cookie banners with comprehensive detection
   removeCookieBannersCheerio($);
+
+  // Remove accessibility elements
+  removeAccessibilityElementsCheerio($);
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {

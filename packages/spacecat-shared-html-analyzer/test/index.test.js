@@ -188,7 +188,6 @@ describe('HTML Visibility Analyzer', () => {
         <h1>Title</h1>
         <div id="digiAccess">Accessibility Widget</div>
         <div id="dAopener">Accessibility Opener</div>
-        <div class="da-opener-123">Accessibility Class Opener</div>
         <p>Content</p>
       </body></html>`;
 
@@ -198,7 +197,6 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Content');
       expect(text).to.not.include('Accessibility Widget');
       expect(text).to.not.include('Accessibility Opener');
-      expect(text).to.not.include('Accessibility Class Opener');
     });
 
     it('should remove cookie banner when selector matches and content indicates consent', async () => {

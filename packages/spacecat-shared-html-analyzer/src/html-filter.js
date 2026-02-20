@@ -83,7 +83,7 @@ const COOKIE_BANNER_ARIA_SELECTORS = [
 ];
 
 const ACCESSIBILITY_SELECTORS = [
-  '#digiAccess', '#dAopener', '[class*="da-opener-"]',
+  '#digiAccess', '#dAopener',
 ];
 
 /**

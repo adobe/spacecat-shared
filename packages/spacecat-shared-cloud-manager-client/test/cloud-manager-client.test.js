@@ -94,30 +94,6 @@ function getGitArgsStr(call) {
   return call.args[1].join(' ');
 }
 
-/**
- * Creates a mock archiver that resolves the zip Promise when finalize() is called.
- * Used to test zipRepository without hitting the real filesystem.
- */
-function createMockArchiver() {
-  let dataCb;
-  let endCb;
-  return {
-    on(ev, fn) {
-      if (ev === 'data') dataCb = fn;
-      if (ev === 'end') endCb = fn;
-      if (ev === 'error') { /* this mock never emits error */ }
-      return this;
-    },
-    glob: sinon.stub(),
-    finalize() {
-      setImmediate(() => {
-        if (dataCb) dataCb(Buffer.from('zip-content'));
-        if (endCb) endCb();
-      });
-    },
-  };
-}
-
 describe('CloudManagerClient', () => {
   let CloudManagerClient;
   const execFileSyncStub = sinon.stub();
@@ -127,8 +103,13 @@ describe('CloudManagerClient', () => {
   const statfsSyncStub = sinon.stub();
   const writeSyncStub = sinon.stub();
   const admZipExtractStub = sinon.stub();
-  const AdmZipStub = sinon.stub().returns({ extractAllTo: admZipExtractStub });
-  const archiverStub = sinon.stub();
+  const admZipAddLocalFolderStub = sinon.stub();
+  const admZipToBufferStub = sinon.stub().returns(Buffer.from('zip-content'));
+  const AdmZipStub = sinon.stub().returns({
+    extractAllTo: admZipExtractStub,
+    addLocalFolder: admZipAddLocalFolderStub,
+    toBuffer: admZipToBufferStub,
+  });
 
   // esmock's initial module resolution can exceed mocha's default 2s timeout
   // eslint-disable-next-line prefer-arrow-callback
@@ -144,7 +125,6 @@ describe('CloudManagerClient', () => {
         writeFileSync: writeSyncStub,
       },
       'adm-zip': { default: AdmZipStub },
-      archiver: archiverStub,
     }, {
       '@adobe/spacecat-shared-ims-client': {
         ImsClient: { createFrom: createFromStub },
@@ -165,10 +145,15 @@ describe('CloudManagerClient', () => {
     statfsSyncStub.returns({ bsize: 4096, blocks: 131072, bfree: 65536 });
     writeSyncStub.reset();
     admZipExtractStub.reset();
+    admZipAddLocalFolderStub.reset();
+    admZipToBufferStub.reset();
+    admZipToBufferStub.returns(Buffer.from('zip-content'));
     AdmZipStub.reset();
-    AdmZipStub.returns({ extractAllTo: admZipExtractStub });
-    archiverStub.reset();
-    archiverStub.callsFake(createMockArchiver);
+    AdmZipStub.returns({
+      extractAllTo: admZipExtractStub,
+      addLocalFolder: admZipAddLocalFolderStub,
+      toBuffer: admZipToBufferStub,
+    });
     createFromStub.reset();
     createFromStub.returns(mockImsClient);
     mockImsClient.getServiceAccessToken.reset();
@@ -809,35 +794,23 @@ describe('CloudManagerClient', () => {
       const result = await client.zipRepository(clonePath);
 
       expect(Buffer.isBuffer(result)).to.be.true;
-      expect(result.length).to.be.greaterThan(0);
       expect(result.toString()).to.equal('zip-content');
-      expect(archiverStub).to.have.been.calledOnceWith('zip', { zlib: { level: 9 } });
-      const archive = archiverStub.firstCall.returnValue;
-      expect(archive.glob).to.have.been.calledWith('**/*', { cwd: clonePath, dot: true });
+
+      // AdmZip constructed with no args (empty archive), then folder added
+      expect(AdmZipStub).to.have.been.calledOnceWith();
+      expect(admZipAddLocalFolderStub).to.have.been.calledOnceWith(clonePath);
+      expect(admZipToBufferStub).to.have.been.calledOnce;
     });
 
-    it('rejects when archiver emits error', async () => {
+    it('throws when addLocalFolder fails', async () => {
       const clonePath = '/tmp/cm-repo-zip-test';
       existsSyncStub.withArgs(clonePath).returns(true);
-
-      archiverStub.callsFake(() => {
-        let errCb;
-        return {
-          on(ev, fn) {
-            if (ev === 'error') errCb = fn;
-            return this;
-          },
-          glob() {},
-          finalize() {
-            setImmediate(() => errCb && errCb(new Error('archiver error')));
-          },
-        };
-      });
+      admZipAddLocalFolderStub.throws(new Error('failed to read directory'));
 
       const client = CloudManagerClient.createFrom(createContext());
 
       await expect(client.zipRepository(clonePath))
-        .to.be.rejectedWith('archiver error');
+        .to.be.rejectedWith('failed to read directory');
     });
   });
 

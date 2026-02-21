@@ -20,7 +20,6 @@ import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import AdmZip from 'adm-zip';
-import archiver from 'archiver';
 
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
@@ -322,21 +321,9 @@ export default class CloudManagerClient {
     }
 
     this.log.info(`Zipping repository at ${clonePath}`);
-    return new Promise((resolve, reject) => {
-      const chunks = [];
-      const archive = archiver('zip', { zlib: { level: 9 } });
-
-      archive.on('data', (chunk) => chunks.push(chunk));
-      archive.on('end', () => resolve(Buffer.concat(chunks)));
-      archive.on('error', (err) => reject(err));
-
-      archive.glob('**/*', {
-        cwd: clonePath,
-        dot: true,
-      });
-
-      archive.finalize();
-    });
+    const zip = new AdmZip();
+    zip.addLocalFolder(clonePath);
+    return zip.toBuffer();
   }
 
   /**

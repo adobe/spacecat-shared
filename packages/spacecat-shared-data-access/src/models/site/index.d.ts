@@ -41,6 +41,7 @@ export interface CodeConfig {
   ref: string;
   installationId?: string;
   url: string;
+  s3StoragePath?: string;
 }
 
 export type IMPORT_TYPES = {

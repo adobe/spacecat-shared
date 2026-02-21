@@ -504,6 +504,34 @@ describe('SiteModel', () => {
       instance.setCode(codeData);
       expect(instance.getCode()).to.deep.equal(codeData);
     });
+
+    it('stores and retrieves s3StoragePath', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+        s3StoragePath: 'code/site-123/github/adobe/spacecat/main/repository.zip',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().s3StoragePath).to.equal('code/site-123/github/adobe/spacecat/main/repository.zip');
+    });
+
+    it('updates s3StoragePath on existing code config', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().s3StoragePath).to.be.undefined;
+
+      instance.setCode({ ...instance.getCode(), s3StoragePath: 'code/site-123/github/adobe/spacecat/main/repository.zip' });
+      expect(instance.getCode().s3StoragePath).to.equal('code/site-123/github/adobe/spacecat/main/repository.zip');
+    });
   });
 
   describe('localization fields', () => {

@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
 import BaseCollection from '../base/base.collection.js';
 
 /**
@@ -22,7 +24,31 @@ import BaseCollection from '../base/base.collection.js';
 class EntitlementCollection extends BaseCollection {
   static COLLECTION_NAME = 'EntitlementCollection';
 
-  // add custom methods here
+  /** Organization ID treated as freemium for token/plan logic. */
+  static FREEMIUM_ORGANIZATION_ID = 'ed79490b-4248-4b86-9536-b35e122772f4';
+
+  /**
+   * Returns whether the organization is on the freemium plan.
+   *
+   * @param {string} organizationId - Organization ID (UUID).
+   * @returns {boolean} True if the organization is the designated freemium org, false otherwise.
+   */
+  isFreemium(organizationId) {
+    return this.constructor.isFreemium(organizationId);
+  }
+
+  /**
+   * Returns whether the organization is on the freemium plan (static implementation).
+   *
+   * @param {string} organizationId - Organization ID (UUID).
+   * @returns {boolean} True if the organization is the designated freemium org, false otherwise.
+   */
+  static isFreemium(organizationId) {
+    if (!hasText(organizationId)) {
+      throw new Error('organizationId is required');
+    }
+    return organizationId === EntitlementCollection.FREEMIUM_ORGANIZATION_ID;
+  }
 }
 
 export default EntitlementCollection;

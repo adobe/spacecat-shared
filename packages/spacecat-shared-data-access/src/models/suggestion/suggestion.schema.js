@@ -49,6 +49,15 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
     type: Object.values(Suggestion.STATUSES),
     required: true,
     default: Suggestion.STATUSES.NEW,
+  })
+  .addAttribute('grants', {
+    type: 'map',
+    required: false,
+    properties: {
+      cycle: { type: 'string' },
+      tokenId: { type: 'string' },
+      grantedAt: { type: 'string' },
+    },
   });
 
 export default schema.build();

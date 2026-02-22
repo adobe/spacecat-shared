@@ -241,6 +241,162 @@ class FixEntityCollection extends BaseCollection {
       throw new DataAccessError('Failed to get all fixes with suggestions by created date', this, error);
     }
   }
+
+  /**
+   * Rolls back a failed FixEntity and updates associated Suggestions atomically using
+   * ElectroDB's transact write. This ensures all operations succeed or fail together.
+   *
+   * This method:
+   * 1. Updates the FixEntity status from FAILED to ROLLED_BACK (with condition check)
+   * 2. Updates all specified Suggestions from ERROR to SKIPPED status
+   *
+   * If any operation fails (e.g., fix is not in FAILED status, or a suggestion is not
+   * in ERROR status), the entire transaction is rolled back.
+   *
+   * @async
+   * @param {string} fixEntityId - The ID of the FixEntity to roll back.
+   * @param {string} opportunityId - The ID of the opportunity (required for partition key).
+   * @param {Array<Object>} suggestionUpdates - Array of objects containing suggestion update info.
+   * @param {string} suggestionUpdates[].suggestionId - The ID of the suggestion to update.
+   * @param {string} suggestionUpdates[].opportunityId - The opportunity ID for the suggestion.
+   * @param {Object} [options] - Optional settings for the transaction.
+   * @param {string} [options.token] - ClientRequestToken for idempotent operations
+   *   (valid for 10 minutes).
+   * @returns {Promise<Object>} - A promise that resolves to an object containing:
+   *   - canceled: boolean indicating if the transaction was canceled
+   *   - data: array of transaction item results
+   *   - updatedCount: number of suggestions updated
+   * @throws {ValidationError} - Throws an error if validation fails.
+   * @throws {DataAccessError} - Throws an error if the transaction fails.
+   *
+   * @example
+   * const result = await fixEntityCollection.rollbackFixWithSuggestionUpdates(
+   *   'fix-123',
+   *   'opp-456',
+   *   [
+   *     { suggestionId: 'sugg-1', opportunityId: 'opp-456' },
+   *     { suggestionId: 'sugg-2', opportunityId: 'opp-456' },
+   *   ],
+   *   { token: 'rollback-fix-123-2024-01-15' }
+   * );
+   */
+  async rollbackFixWithSuggestionUpdates(
+    fixEntityId,
+    opportunityId,
+    newSuggestionStatus = 'SKIPPED',
+    options = {},
+  ) {
+    // Validate inputs
+    guardId('fixEntityId', fixEntityId, 'FixEntityCollection');
+    guardId('opportunityId', opportunityId, 'FixEntityCollection');
+    guardString('newSuggestionStatus', newSuggestionStatus, 'FixEntityCollection');
+
+    try {
+      // Fetch all suggestions for the fix entity using facade layer
+      const suggestions = await this.getSuggestionsByFixEntityId(fixEntityId);
+
+      if (!Array.isArray(suggestions) || suggestions.length === 0) {
+        throw new ValidationError('No suggestions found for the fix entity');
+      }
+
+      // Build enriched update list with rank values using find instead of index
+      const enrichedUpdates = suggestions.map((suggestion) => {
+        const suggestionId = suggestion.getId();
+        const rank = suggestion.getRank();
+
+        return {
+          suggestionId,
+          rank,
+        };
+      });
+
+      // Perform the transaction with ALL operations atomically
+      const transactionResult = await this.electroService.transaction
+        .write(({ fixEntity, suggestion }) => {
+          const mutations = [];
+
+          // 1. Update the FixEntity status to ROLLED_BACK
+          // No status check - update regardless of current status (more generic)
+          mutations.push(
+            fixEntity
+              .patch({ fixEntityId })
+              .set({ status: 'ROLLED_BACK' })
+              .commit(),
+          );
+
+          // 2. Update each Suggestion status to the provided newSuggestionStatus
+          // No status check needed - update regardless of current status
+          for (const update of enrichedUpdates) {
+            const { suggestionId, rank } = update;
+
+            mutations.push(
+              suggestion
+                .patch({ suggestionId })
+                .set({ status: newSuggestionStatus })
+                .composite({ rank }) // Provide rank for GSI key formatting
+                .commit(),
+            );
+          }
+
+          return mutations;
+        })
+        .go(options.token ? { token: options.token } : {});
+
+      // Check if transaction was canceled
+      if (transactionResult.canceled) {
+        const failedOperations = transactionResult.data
+          .map((transactionItem, index) => {
+            if (transactionItem.rejected) {
+              const failedOp = {
+                index,
+                code: transactionItem.code,
+                message: transactionItem.message,
+                item: index === 0 ? 'fixEntity' : 'suggestion',
+              };
+
+              return failedOp;
+            }
+            return null;
+          })
+          .filter(Boolean);
+
+        const errorMessage = failedOperations.length > 0
+          ? `Transaction canceled: ${failedOperations.map((op) => `${op.item}: ${op.code} - ${op.message}`).join('; ')}`
+          : 'Transaction canceled: condition check failed';
+
+        this.log.error('Rollback transaction was canceled', { failedOperations });
+        throw new DataAccessError(errorMessage, this);
+      }
+
+      // Fetch updated entities after successful transaction
+      // DynamoDB transactions don't support returning 'all_new' values, so we need to fetch
+      // the entities separately to get the updated data
+      const [updatedFixEntity, updatedSuggestions] = await Promise.all([
+        this.findById(fixEntityId),
+        this.getSuggestionsByFixEntityId(fixEntityId),
+      ]);
+
+      if (!updatedFixEntity) {
+        throw new DataAccessError(`Fix entity ${fixEntityId} not found after transaction`, this);
+      }
+
+      this.log.info(`Successfully rolled back fix entity ${fixEntityId} and updated ${updatedSuggestions.length} suggestions atomically`);
+
+      return {
+        canceled: transactionResult.canceled,
+        fix: updatedFixEntity, // Return model instance
+        suggestions: updatedSuggestions, // Return model instances array
+      };
+    } catch (error) {
+      this.log.error('Failed to rollback fix entity with suggestion updates', error);
+
+      if (error instanceof DataAccessError || error instanceof ValidationError) {
+        throw error;
+      }
+
+      throw new DataAccessError('Failed to rollback fix entity with suggestion updates', this, error);
+    }
+  }
 }
 
 export default FixEntityCollection;

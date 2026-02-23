@@ -318,6 +318,11 @@ class TokowakaClient {
       patches: {},
     };
 
+    const hasPrerender = isNonEmptyObject(options?.prerender);
+    if (hasPrerender) {
+      metaconfig.prerender = options.prerender;
+    }
+
     const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 

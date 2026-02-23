@@ -432,24 +432,28 @@ class Configuration {
    * This method replaces (not merges) the provided arrays.
    * Only the arrays provided in the data object will be replaced.
    *
-   * TEMPORARY METHOD: This method was created to support a temporary API endpoint
-   * for cleaning up enabled and disabled lists by removing unnecessary site IDs.
-   * Unlike updateHandlerProperties which merges arrays, this method completely
-   * replaces the specified arrays. This method will be removed once the cleanup
-   * task is completed.
+   * TEMPORARY: This method was created to support a temporary API endpoint for
+   * cleaning up enabled and disabled lists (SITES-40312). It will be removed once the cleanup
+   * task is completed. SITES-40878 is the ticket to remove this temporary endpoint.
    *
+   * @deprecated Temporary method for cleanup. See SITES-40312. Will be removed (SITES-40878).
    * @param {string} type - The handler type to update
    * @param {object} data - Object containing enabled/disabled arrays to replace
-   * @param {object} [data.enabled] - Enabled lists to replace
-   * @param {string[]} [data.enabled.sites] - Sites array to replace (if provided)
-   * @param {string[]} [data.enabled.orgs] - Orgs array to replace (if provided)
-   * @param {object} [data.disabled] - Disabled lists to replace
-   * @param {string[]} [data.disabled.sites] - Sites array to replace (if provided)
-   * @param {string[]} [data.disabled.orgs] - Orgs array to replace (if provided)
-   * @throws {Error} If handler not found
+   * @param {object} [data.enabled] - Enabled lists to replace (use null-safe check)
+   * @param {string[]} [data.enabled.sites] - Sites array to replace (if provided, must be array)
+   * @param {string[]} [data.enabled.orgs] - Orgs array to replace (if provided, must be array)
+   * @param {object} [data.disabled] - Disabled lists to replace (use null-safe check)
+   * @param {string[]} [data.disabled.sites] - Sites array to replace (if provided, must be array)
+   * @param {string[]} [data.disabled.orgs] - Orgs array to replace (if provided, must be array)
+   * @throws {Error} If data is empty, handler not found, or non-array value provided for sites/orgs
    */
-  /* c8 ignore start - temporary method, no unit tests needed */
   replaceHandlerEnabledDisabled(type, data) {
+    if (!isNonEmptyObject(data)) {
+      throw new Error('Data cannot be empty');
+    }
+
+    this.log.warn('replaceHandlerEnabledDisabled invoked (temporary method - see SITES-40312)');
+
     const handlers = this.getHandlers();
     if (!handlers[type]) {
       throw new Error(`Handler "${type}" not found in configuration`);
@@ -465,30 +469,41 @@ class Configuration {
       handler.disabled = { orgs: [], sites: [] };
     }
 
-    // Replace enabled arrays if provided
-    if (data.enabled !== undefined) {
+    // Replace enabled arrays if provided (use != null to catch both null and undefined)
+    if (data.enabled != null) {
       if (data.enabled.sites !== undefined) {
-        handler.enabled.sites = Array.isArray(data.enabled.sites) ? data.enabled.sites : [];
+        if (!Array.isArray(data.enabled.sites)) {
+          throw new Error('enabled.sites must be an array');
+        }
+        handler.enabled.sites = data.enabled.sites;
       }
       if (data.enabled.orgs !== undefined) {
-        handler.enabled.orgs = Array.isArray(data.enabled.orgs) ? data.enabled.orgs : [];
+        if (!Array.isArray(data.enabled.orgs)) {
+          throw new Error('enabled.orgs must be an array');
+        }
+        handler.enabled.orgs = data.enabled.orgs;
       }
     }
 
-    // Replace disabled arrays if provided
-    if (data.disabled !== undefined) {
+    // Replace disabled arrays if provided (use != null to catch both null and undefined)
+    if (data.disabled != null) {
       if (data.disabled.sites !== undefined) {
-        handler.disabled.sites = Array.isArray(data.disabled.sites) ? data.disabled.sites : [];
+        if (!Array.isArray(data.disabled.sites)) {
+          throw new Error('disabled.sites must be an array');
+        }
+        handler.disabled.sites = data.disabled.sites;
       }
       if (data.disabled.orgs !== undefined) {
-        handler.disabled.orgs = Array.isArray(data.disabled.orgs) ? data.disabled.orgs : [];
+        if (!Array.isArray(data.disabled.orgs)) {
+          throw new Error('disabled.orgs must be an array');
+        }
+        handler.disabled.orgs = data.disabled.orgs;
       }
     }
 
     handlers[type] = handler;
     this.setHandlers(handlers);
   }
-  /* c8 ignore stop */
 
   /**
    * Updates the configuration by merging changes into existing sections.

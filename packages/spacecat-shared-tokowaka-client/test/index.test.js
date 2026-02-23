@@ -649,6 +649,72 @@ describe('TokowakaClient', () => {
       const uploadCommand = s3Client.send.secondCall.args[0];
       expect(uploadCommand.input.Metadata).to.be.undefined;
     });
+
+    it('should include prerender in metaconfig when options.prerender is non-empty object', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const prerenderConfig = { enabled: true, paths: ['/products/*'] };
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId, { prerender: prerenderConfig });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal(prerenderConfig);
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should NOT include prerender when options.prerender is empty object', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId, { prerender: {} });
+
+      expect(result).to.not.have.property('prerender');
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body).to.not.have.property('prerender');
+    });
+
+    it('should NOT include prerender when options.prerender is undefined', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId, {});
+
+      expect(result).to.not.have.property('prerender');
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body).to.not.have.property('prerender');
+    });
+
+    it('should NOT include prerender when options is not provided', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId);
+
+      expect(result).to.not.have.property('prerender');
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body).to.not.have.property('prerender');
+    });
   });
 
   describe('updateMetaconfig', () => {

@@ -2592,6 +2592,102 @@ describe('Config Tests', () => {
       expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
       expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
     });
+
+    it('creates a Config with edgeOptimizeConfig including stagingDomains', () => {
+      const stagingDomains = [
+        { domain: 'staging.example.com', id: 'staging-id-1' },
+        { domain: 'preview.example.com', id: 'preview-id-2' },
+      ];
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+      expect(config.getEdgeOptimizeConfig().stagingDomains).to.deep.equal(stagingDomains);
+      expect(config.getEdgeOptimizeConfig().stagingDomains[0].domain).to.equal('staging.example.com');
+      expect(config.getEdgeOptimizeConfig().stagingDomains[0].id).to.equal('staging-id-1');
+    });
+
+    it('should be able to update edgeOptimizeConfig with stagingDomains', () => {
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      });
+
+      const newConfig = {
+        enabled: true,
+        stagingDomains: [
+          { domain: 'staging.site.com', id: 'staging-123' },
+        ],
+      };
+      config.updateEdgeOptimizeConfig(newConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
+      expect(config.getEdgeOptimizeConfig().stagingDomains[0].domain).to.equal('staging.site.com');
+      expect(config.getEdgeOptimizeConfig().stagingDomains[0].id).to.equal('staging-123');
+    });
+
+    it('includes stagingDomains in toDynamoItem conversion', () => {
+      const stagingDomains = [
+        { domain: 'staging.example.com', id: 'id-1' },
+      ];
+      const data = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains,
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.edgeOptimizeConfig.stagingDomains).to.deep.equal(stagingDomains);
+    });
+
+    it('should preserve provided data if stagingDomains item is missing domain', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains: [
+            { id: 'id-1' }, // missing required domain
+          ],
+        },
+      };
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
+    it('should preserve provided data if stagingDomains item is missing id', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains: [
+            { domain: 'staging.example.com' }, // missing required id
+          ],
+        },
+      };
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
+    it('validates edgeOptimizeConfig with valid stagingDomains', () => {
+      const config = {
+        slack: {},
+        handlers: {},
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains: [
+            { domain: 'staging.example.com', id: 'staging-1' },
+            { domain: 'preview.example.com', id: 'preview-2' },
+          ],
+        },
+      };
+      const validated = validateConfiguration(config);
+      expect(validated.edgeOptimizeConfig.stagingDomains)
+        .to.deep.equal(config.edgeOptimizeConfig.stagingDomains);
+    });
   });
 
   describe('LLMO Well Known Tags', () => {

@@ -98,6 +98,7 @@ describe('CloudManagerClient', () => {
   let CloudManagerClient;
   const execFileSyncStub = sinon.stub();
   const existsSyncStub = sinon.stub();
+  const mkdirSyncStub = sinon.stub();
   const mkdtempSyncStub = sinon.stub();
   const rmSyncStub = sinon.stub();
   const statfsSyncStub = sinon.stub();
@@ -119,6 +120,7 @@ describe('CloudManagerClient', () => {
       child_process: { execFileSync: execFileSyncStub },
       fs: {
         existsSync: existsSyncStub,
+        mkdirSync: mkdirSyncStub,
         mkdtempSync: mkdtempSyncStub,
         rmSync: rmSyncStub,
         statfsSync: statfsSyncStub,
@@ -138,6 +140,7 @@ describe('CloudManagerClient', () => {
     execFileSyncStub.returns('');
     existsSyncStub.reset();
     existsSyncStub.returns(false);
+    mkdirSyncStub.reset();
     mkdtempSyncStub.reset();
     mkdtempSyncStub.callsFake((prefix) => `${prefix}XXXXXX`);
     rmSyncStub.reset();
@@ -565,6 +568,182 @@ describe('CloudManagerClient', () => {
 
       expect(rmSyncStub).to.have.been.calledOnce;
       expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
+    });
+  });
+
+  describe('applyPatchContent', () => {
+    it('applies plain diff patch content with git apply, add, and commit', async () => {
+      const patchContent = 'diff --git a/file.txt b/file.txt\nindex abc..def 100644\n--- a/file.txt\n+++ b/file.txt\n@@ -1 +1 @@\n-old\n+new\n';
+
+      existsSyncStub.returns(true);
+
+      const client = CloudManagerClient.createFrom(createContext());
+      await client.applyPatchContent('/tmp/cm-repo-test', 'feature/fix', patchContent, 'Fix the bug');
+
+      // Verify patch file written to temp directory
+      expect(mkdtempSyncStub).to.have.been.calledOnce;
+      expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-patch-$/);
+      expect(writeSyncStub).to.have.been.calledOnce;
+      expect(writeSyncStub.firstCall.args[1]).to.equal(patchContent);
+
+      // Verify git commands: config, config, checkout, apply, add, commit
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.name') && s.includes('test-bot'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.email') && s.includes('test-bot@example.com'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('checkout') && s.includes('feature/fix'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('apply'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('add') && s.includes('-A'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('commit') && s.includes('-m') && s.includes('Fix the bug'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.startsWith('am '))).to.be.false;
+
+      // Verify temp directory cleanup
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
+    });
+
+    it('applies mail-message patch with git am (commitMessage ignored)', async () => {
+      const patchContent = 'From abc123\nSubject: Fix bug\n\ndiff --git a/file.txt b/file.txt\n';
+
+      existsSyncStub.returns(true);
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+      await client.applyPatchContent('/tmp/cm-repo-test', 'feature/fix', patchContent, 'This is ignored');
+
+      // Verify git am is used, not apply
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.startsWith('am '))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('apply'))).to.be.false;
+      expect(allGitArgStrs.some((s) => s.includes('commit'))).to.be.false;
+
+      // Verify log message mentions commitMessage ignored
+      expect(context.log.info).to.have.been.calledWith(
+        sinon.match(/commitMessage ignored/),
+      );
+    });
+
+    it('throws when commitMessage is not provided', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatchContent('/tmp/cm-repo-test', 'main', 'diff content'))
+        .to.be.rejectedWith('commitMessage is required for applyPatchContent');
+    });
+
+    it('cleans up temp patch directory even on error', async () => {
+      existsSyncStub.returns(true);
+      // Make checkout fail (3rd git call: config, config, checkout)
+      execFileSyncStub.onCall(2).throws(new Error('checkout failed'));
+
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatchContent('/tmp/cm-repo-test', 'bad-branch', 'diff content', 'msg'))
+        .to.be.rejected;
+
+      // Temp directory should still be cleaned up
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
+    });
+
+    it('skips cleanup when temp directory does not exist', async () => {
+      existsSyncStub.returns(false);
+      // Make checkout fail
+      execFileSyncStub.onCall(2).throws(new Error('checkout failed'));
+
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatchContent('/tmp/cm-repo-test', 'bad-branch', 'diff content', 'msg'))
+        .to.be.rejected;
+
+      // rmSync should NOT be called since existsSync returned false
+      expect(rmSyncStub).to.not.have.been.called;
+    });
+  });
+
+  describe('applyFiles', () => {
+    it('writes files and commits on the specified branch', async () => {
+      // existsSync returns true for directories (no mkdirSync needed)
+      existsSyncStub.returns(true);
+
+      const files = [
+        { path: 'src/main.js', content: 'console.log("hello");' },
+        { path: 'README.md', content: '# Hello' },
+      ];
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+      await client.applyFiles('/tmp/cm-repo-test', 'feature/fix', files, 'Add files');
+
+      // Verify git commands: config, config, checkout, add, commit
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.name') && s.includes('test-bot'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.email') && s.includes('test-bot@example.com'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('checkout') && s.includes('feature/fix'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('add') && s.includes('-A'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('commit') && s.includes('-m') && s.includes('Add files'))).to.be.true;
+
+      // Verify files written
+      expect(writeSyncStub).to.have.been.calledTwice;
+      expect(writeSyncStub.firstCall.args[0]).to.equal(path.join('/tmp/cm-repo-test', 'src/main.js'));
+      expect(writeSyncStub.firstCall.args[1]).to.equal('console.log("hello");');
+      expect(writeSyncStub.secondCall.args[0]).to.equal(path.join('/tmp/cm-repo-test', 'README.md'));
+      expect(writeSyncStub.secondCall.args[1]).to.equal('# Hello');
+
+      // No mkdirSync needed since directories exist
+      expect(mkdirSyncStub).to.not.have.been.called;
+
+      // Verify log message
+      expect(context.log.info).to.have.been.calledWith('2 file(s) applied and committed on branch feature/fix');
+    });
+
+    it('creates parent directories when they do not exist', async () => {
+      // existsSync returns false for directories
+      existsSyncStub.returns(false);
+
+      const files = [
+        { path: 'deep/nested/dir/file.js', content: 'export default {};' },
+      ];
+
+      const client = CloudManagerClient.createFrom(createContext());
+      await client.applyFiles('/tmp/cm-repo-test', 'main', files, 'Add nested file');
+
+      // Verify mkdirSync was called with recursive: true
+      expect(mkdirSyncStub).to.have.been.calledOnce;
+      expect(mkdirSyncStub.firstCall.args[0]).to.equal(
+        path.dirname(path.join('/tmp/cm-repo-test', 'deep/nested/dir/file.js')),
+      );
+      expect(mkdirSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true });
+
+      // Verify file written
+      expect(writeSyncStub).to.have.been.calledOnce;
+      expect(writeSyncStub.firstCall.args[0]).to.equal(path.join('/tmp/cm-repo-test', 'deep/nested/dir/file.js'));
+    });
+
+    it('throws when commitMessage is not provided', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyFiles('/tmp/cm-repo-test', 'main', [{ path: 'f.js', content: 'x' }]))
+        .to.be.rejectedWith('commitMessage is required for applyFiles');
+    });
+
+    it('throws when files is empty', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyFiles('/tmp/cm-repo-test', 'main', [], 'msg'))
+        .to.be.rejectedWith('files must be a non-empty array of {path, content} objects');
+    });
+
+    it('throws when files is not an array', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyFiles('/tmp/cm-repo-test', 'main', 'not-an-array', 'msg'))
+        .to.be.rejectedWith('files must be a non-empty array of {path, content} objects');
+    });
+
+    it('throws when files is null', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyFiles('/tmp/cm-repo-test', 'main', null, 'msg'))
+        .to.be.rejectedWith('files must be a non-empty array of {path, content} objects');
     });
   });
 

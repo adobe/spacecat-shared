@@ -49,6 +49,9 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
     type: Object.values(Suggestion.STATUSES),
     required: true,
     default: Suggestion.STATUSES.NEW,
+  })
+  .addAttribute('statusMessage', {
+    type: 'string',
   });
 
 export default schema.build();

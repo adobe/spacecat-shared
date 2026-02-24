@@ -133,6 +133,17 @@ describe('SuggestionModel', () => {
     });
   });
 
+  describe('getStatusMessage and setStatusMessage', () => {
+    it('returns undefined when no status message is set', () => {
+      expect(instance.getStatusMessage()).to.be.undefined;
+    });
+
+    it('sets and gets the status message', () => {
+      instance.setStatusMessage('Not relevant for our use case');
+      expect(instance.getStatusMessage()).to.equal('Not relevant for our use case');
+    });
+  });
+
   describe('getKpiDeltas and setKpiDeltas', () => {
     it('returns the KPI deltas for the suggestion', () => {
       expect(instance.getKpiDeltas()).to.deep.equal({ conversionRate: 0.05 });

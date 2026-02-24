@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.8.0...@adobe/spacecat-shared-tokowaka-client-v1.9.0) (2026-02-24)
+
+### Features
+
+* **AGENTCOM-266:** add commerce page enrichment mapper for tokowaka edge deployment ([#1369](https://github.com/adobe/spacecat-shared/issues/1369)) ([357f2f4](https://github.com/adobe/spacecat-shared/commit/357f2f44cd8da19272a7638b55870873388840c9))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.8...@adobe/spacecat-shared-tokowaka-client-v1.8.0) (2026-02-18)
 
 ### Features

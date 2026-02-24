@@ -66,6 +66,9 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addAttribute('tags', {
     type: 'set',
     items: 'string',
+  })
+  .addAttribute('statusMessage', {
+    type: 'string',
   });
 
 export default schema.build();

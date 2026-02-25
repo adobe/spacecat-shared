@@ -943,6 +943,19 @@ describe('Config Tests', () => {
         expect(imports).to.have.length(1);
         expect(imports[0].sources).to.deep.equal(['google']);
       });
+
+      it('enables cwv-trends-daily import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-trends-daily');
+
+        const importConfig = config.getImportConfig('cwv-trends-daily');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-trends-daily',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
     });
 
     describe('disableImport method', () => {
@@ -1132,6 +1145,12 @@ describe('Config Tests', () => {
             sources: ['rum'],
             enabled: true,
           },
+          {
+            type: 'cwv-trends-daily',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
         ],
         fetchConfig: {
           headers: {
@@ -1185,7 +1204,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]');
+            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]. "imports[0].type" must be [cwv-trends-daily]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -1340,6 +1359,17 @@ describe('Config Tests', () => {
                   key: 'type',
                 },
               },
+            {
+              message: '"imports[0].type" must be [cwv-trends-daily]',
+              path: ['imports', 0, 'type'],
+              type: 'any.only',
+              context: {
+                valids: ['cwv-trends-daily'],
+                label: 'imports[0].type',
+                value: 'organic-keywords',
+                key: 'type',
+              },
+            },
             ]);
           return true;
         });

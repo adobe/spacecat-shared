@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.96.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.2...@adobe/spacecat-shared-utils-v1.96.3) (2026-02-25)
+
+### Bug Fixes
+
+* revert breaking aggregation granularity changes from v1.96.1 ([#1378](https://github.com/adobe/spacecat-shared/issues/1378)) ([fbc00f4](https://github.com/adobe/spacecat-shared/commit/fbc00f4d282bd2753e46377ac8ead2c45ab79416)), closes [#1376](https://github.com/adobe/spacecat-shared/issues/1376)
+
 ## [@adobe/spacecat-shared-utils-v1.96.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.1...@adobe/spacecat-shared-utils-v1.96.2) (2026-02-25)
 
 ### Bug Fixes

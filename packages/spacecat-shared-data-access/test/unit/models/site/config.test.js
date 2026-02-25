@@ -1359,17 +1359,17 @@ describe('Config Tests', () => {
                   key: 'type',
                 },
               },
-            {
-              message: '"imports[0].type" must be [cwv-trends-daily]',
-              path: ['imports', 0, 'type'],
-              type: 'any.only',
-              context: {
-                valids: ['cwv-trends-daily'],
-                label: 'imports[0].type',
-                value: 'organic-keywords',
-                key: 'type',
+              {
+                message: '"imports[0].type" must be [cwv-trends-daily]',
+                path: ['imports', 0, 'type'],
+                type: 'any.only',
+                context: {
+                  valids: ['cwv-trends-daily'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
               },
-            },
             ]);
           return true;
         });

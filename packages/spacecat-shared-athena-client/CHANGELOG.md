@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-athena-client-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.2...@adobe/spacecat-shared-athena-client-v1.9.3) (2026-02-25)
+
+### Bug Fixes
+
+* temporal series month/week wrap-around and add year to query pipeline ([#1376](https://github.com/adobe/spacecat-shared/issues/1376)) ([b15cfd7](https://github.com/adobe/spacecat-shared/commit/b15cfd705809612c4ad69bbdc09d87c06687dcb6))
+
 # [@adobe/spacecat-shared-athena-client-v1.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.1...@adobe/spacecat-shared-athena-client-v1.9.2) (2026-01-19)
 
 

@@ -225,7 +225,7 @@ export function getTemporalCondition({
         let currentYear = year;
         if (currentWeek < 1) {
           currentYear -= 1;
-          currentWeek = has53CalendarWeeks(currentYear) ? 53 : 52;
+          currentWeek += has53CalendarWeeks(currentYear) ? 53 : 52;
         }
         log?.info(`[getTemporalCondition] currentWeek: ${currentWeek}, currentYear: ${currentYear}`);
         conditions.push(getWeekInfo(currentWeek, currentYear).temporalCondition);
@@ -233,7 +233,7 @@ export function getTemporalCondition({
         let currentMonth = month - i;
         let currentYear = year;
         if (currentMonth < 1) {
-          currentMonth = 12;
+          currentMonth += 12;
           currentYear -= 1;
         }
         log?.info(`[getTemporalCondition] currentMonth: ${currentMonth}, currentYear: ${currentYear}`);

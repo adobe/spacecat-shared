@@ -35,7 +35,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.82.1",
+    "@adobe/spacecat-shared-utils": "1.96.2",
     "@aws-sdk/client-athena": "3.940.0"
   },
   "devDependencies": {

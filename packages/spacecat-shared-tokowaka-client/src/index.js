@@ -318,9 +318,10 @@ class TokowakaClient {
       patches: {},
     };
 
-    const hasPrerender = isNonEmptyObject(options?.prerender);
-    if (hasPrerender) {
-      metaconfig.prerender = options.prerender;
+    // Handle staging domain with automatic prerender configuration
+    const isStageDomain = metadata.isStageDomain === true;
+    if (isStageDomain) {
+      metaconfig.prerender = { allowList: ['/*'] };
     }
 
     const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
@@ -361,10 +362,14 @@ class TokowakaClient {
       ?? existingMetaconfig.forceFail
       ?? false;
 
-    const hasPrerender = isNonEmptyObject(options.prerender)
+    // Handle staging domain with automatic prerender configuration
+    const isStageDomain = metadata.isStageDomain === true;
+    const hasPrerender = isStageDomain
+      || isNonEmptyObject(options.prerender)
       || isNonEmptyObject(existingMetaconfig.prerender);
-    const prerender = options.prerender
-      ?? existingMetaconfig.prerender;
+    const prerender = isStageDomain
+      ? { allowList: ['/*'] }
+      : (options.prerender ?? existingMetaconfig.prerender);
 
     const metaconfig = {
       ...existingMetaconfig,

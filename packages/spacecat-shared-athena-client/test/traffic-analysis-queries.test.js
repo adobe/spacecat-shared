@@ -677,6 +677,7 @@ describe('Traffic Analysis Queries', () => {
 
       // Verify all columns in raw CTE
       const rawColumns = [
+        'year',
         'week',
         'month',
         'path',
@@ -1041,6 +1042,7 @@ describe('Traffic Analysis Queries', () => {
 
       // Verify all columns in raw CTE
       const rawColumns = [
+        'year',
         'week',
         'month',
         'path',

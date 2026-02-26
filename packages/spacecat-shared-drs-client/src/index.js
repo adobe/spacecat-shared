@@ -77,10 +77,10 @@ export default class DrsClient {
   constructor({ apiBaseUrl, apiKey }, log = console) {
     this.log = log;
     if (!isValidUrl(apiBaseUrl)) {
-      throw this.#createError(`Invalid DRS API Base URL: ${apiBaseUrl}`, HTTP_BAD_REQUEST);
+      throw this.#createError('Invalid or missing DRS API Base URL', HTTP_BAD_REQUEST);
     }
     if (!hasText(apiKey)) {
-      throw this.#createError(`Invalid DRS API Key: ${apiKey}`, HTTP_BAD_REQUEST);
+      throw this.#createError('Invalid or missing DRS API Key', HTTP_BAD_REQUEST);
     }
     this.apiBaseUrl = apiBaseUrl;
     this.apiKey = apiKey;

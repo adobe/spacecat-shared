@@ -126,19 +126,19 @@ describe('DrsClient', () => {
 
   describe('constructor', () => {
     it('throws error when API base URL is missing', () => {
-      expect(() => new DrsClient({ apiKey: API_KEY })).to.throw('Invalid DRS API Base URL: undefined');
+      expect(() => new DrsClient({ apiKey: API_KEY })).to.throw('Invalid or missing DRS API Base URL');
     });
 
     it('throws error when API base URL is invalid', () => {
-      expect(() => new DrsClient({ apiBaseUrl: 'not-a-url', apiKey: API_KEY })).to.throw('Invalid DRS API Base URL: not-a-url');
+      expect(() => new DrsClient({ apiBaseUrl: 'not-a-url', apiKey: API_KEY })).to.throw('Invalid or missing DRS API Base URL');
     });
 
     it('throws error when API key is missing', () => {
-      expect(() => new DrsClient({ apiBaseUrl: API_BASE_URL })).to.throw('Invalid DRS API Key: undefined');
+      expect(() => new DrsClient({ apiBaseUrl: API_BASE_URL })).to.throw('Invalid or missing DRS API Key');
     });
 
     it('throws error when API key is empty', () => {
-      expect(() => new DrsClient({ apiBaseUrl: API_BASE_URL, apiKey: '' })).to.throw('Invalid DRS API Key: ');
+      expect(() => new DrsClient({ apiBaseUrl: API_BASE_URL, apiKey: '' })).to.throw('Invalid or missing DRS API Key');
     });
 
     it('creates client with valid config', () => {
@@ -193,7 +193,7 @@ describe('DrsClient', () => {
         log,
       };
 
-      expect(() => DrsClient.createFrom(context)).to.throw('Invalid DRS API Base URL: undefined');
+      expect(() => DrsClient.createFrom(context)).to.throw('Invalid or missing DRS API Base URL');
     });
 
     it('throws when DRS_API_KEY is missing from env', () => {
@@ -202,7 +202,7 @@ describe('DrsClient', () => {
         log,
       };
 
-      expect(() => DrsClient.createFrom(context)).to.throw('Invalid DRS API Key: undefined');
+      expect(() => DrsClient.createFrom(context)).to.throw('Invalid or missing DRS API Key');
     });
   });
 

@@ -242,10 +242,19 @@ export default class DrsClient {
 
   /**
    * Looks up previously retrieved URLs in the DRS data store.
-   * @param {Object} requestBody - Lookup request body
-   * @returns {Promise<Object>} Lookup results
+   * Each URL in the response will have a status of 'available', 'scraping',
+   * or 'not_found'. Available URLs include a presigned S3 URL for download.
+   * @param {string[]} urls - Non-empty array of URLs to look up
+   * @returns {Promise<Object>} Lookup results with per-URL status and summary
    */
-  async lookupUrls(requestBody) {
-    return this.#sendRequest('POST', '/url-lookup', requestBody);
+  async lookupUrls(urls) {
+    if (!isArray(urls) || urls.length === 0) {
+      throw this.#createError(
+        'URLs must be a non-empty array',
+        HTTP_BAD_REQUEST,
+      );
+    }
+
+    return this.#sendRequest('POST', '/url-lookup', { urls });
   }
 }

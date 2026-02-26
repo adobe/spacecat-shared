@@ -102,8 +102,31 @@ const jobStatusFailedResponse = {
 
 const lookupUrlsResponse = {
   results: [
-    { url: 'https://www.youtube.com/watch?v=abc123', s3_path: 's3://bucket/path' },
+    {
+      url: 'https://www.reddit.com/r/technology/comments/abc123/post_title/',
+      status: 'available',
+      scraped_at: '2026-02-15T10:30:00Z',
+      presigned_url: 'https://drs-dev-results.s3.amazonaws.com/result.ndjson?signed=true',
+      expires_in: 3600,
+    },
+    {
+      url: 'https://www.reddit.com/r/webdev/comments/def456/another_post/',
+      status: 'scraping',
+      job_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      message: 'Scraping in progress, try again later',
+    },
+    {
+      url: 'https://www.reddit.com/r/design/comments/ghi789/missing_post/',
+      status: 'not_found',
+      message: 'No data found. Submit a scraping job via POST /jobs',
+    },
   ],
+  summary: {
+    total: 3,
+    available: 1,
+    scraping: 1,
+    not_found: 1,
+  },
 };
 
 describe('DrsClient', () => {
@@ -125,19 +148,13 @@ describe('DrsClient', () => {
   });
 
   describe('constructor', () => {
-    it('throws error when API base URL is missing', () => {
+    it('throws error for missing or invalid API base URL', () => {
       expect(() => new DrsClient({ apiKey: API_KEY })).to.throw('Invalid or missing DRS API Base URL');
-    });
-
-    it('throws error when API base URL is invalid', () => {
       expect(() => new DrsClient({ apiBaseUrl: 'not-a-url', apiKey: API_KEY })).to.throw('Invalid or missing DRS API Base URL');
     });
 
-    it('throws error when API key is missing', () => {
+    it('throws error for missing or empty API key', () => {
       expect(() => new DrsClient({ apiBaseUrl: API_BASE_URL })).to.throw('Invalid or missing DRS API Key');
-    });
-
-    it('throws error when API key is empty', () => {
       expect(() => new DrsClient({ apiBaseUrl: API_BASE_URL, apiKey: '' })).to.throw('Invalid or missing DRS API Key');
     });
 
@@ -369,24 +386,30 @@ describe('DrsClient', () => {
   });
 
   describe('getJobStatus', () => {
-    it('returns job status for a queued job', async () => {
+    it('returns job status for non-terminal states', async () => {
       nock(API_BASE_URL)
         .get('/jobs/job-123')
         .query({ include_result_url: 'true' })
         .reply(200, jobStatusQueuedResponse);
 
-      const result = await client.getJobStatus('job-123');
-      expect(result).to.deep.equal(jobStatusQueuedResponse);
-    });
+      const queued = await client.getJobStatus('job-123');
+      expect(queued).to.deep.equal(jobStatusQueuedResponse);
 
-    it('returns job status for a running job', async () => {
       nock(API_BASE_URL)
         .get('/jobs/job-123')
         .query({ include_result_url: 'true' })
         .reply(200, jobStatusRunningResponse);
 
-      const result = await client.getJobStatus('job-123');
-      expect(result).to.deep.equal(jobStatusRunningResponse);
+      const running = await client.getJobStatus('job-123');
+      expect(running).to.deep.equal(jobStatusRunningResponse);
+
+      nock(API_BASE_URL)
+        .get('/jobs/job-123')
+        .query({ include_result_url: 'true' })
+        .reply(200, jobStatusFailedResponse);
+
+      const failed = await client.getJobStatus('job-123');
+      expect(failed.status).to.equal('FAILED');
     });
 
     it('returns job status with result for a completed job', async () => {
@@ -401,21 +424,8 @@ describe('DrsClient', () => {
       expect(result.result_url).to.equal('https://s3.amazonaws.com/presigned-url');
     });
 
-    it('returns job status for a failed job', async () => {
-      nock(API_BASE_URL)
-        .get('/jobs/job-123')
-        .query({ include_result_url: 'true' })
-        .reply(200, jobStatusFailedResponse);
-
-      const result = await client.getJobStatus('job-123');
-      expect(result.status).to.equal('FAILED');
-    });
-
-    it('throws error when job ID is missing', async () => {
+    it('throws error when job ID is missing or empty', async () => {
       await expect(client.getJobStatus('')).to.be.rejectedWith('Job ID is required');
-    });
-
-    it('throws error when job ID is undefined', async () => {
       await expect(client.getJobStatus()).to.be.rejectedWith('Job ID is required');
     });
 
@@ -519,17 +529,39 @@ describe('DrsClient', () => {
   });
 
   describe('lookupUrls', () => {
-    it('sends lookup request successfully', async () => {
-      const requestBody = {
-        urls: ['https://www.youtube.com/watch?v=abc123'],
-      };
+    const lookupUrls = [
+      'https://www.reddit.com/r/technology/comments/abc123/post_title/',
+      'https://www.reddit.com/r/webdev/comments/def456/another_post/',
+      'https://www.reddit.com/r/design/comments/ghi789/missing_post/',
+    ];
 
+    it('looks up multiple URLs with mixed statuses', async () => {
       nock(API_BASE_URL)
-        .post('/url-lookup', requestBody)
+        .post('/url-lookup', { urls: lookupUrls })
         .reply(200, lookupUrlsResponse);
 
-      const result = await client.lookupUrls(requestBody);
+      const urlsLength = lookupUrls.length;
+      const result = await client.lookupUrls(lookupUrls);
       expect(result).to.deep.equal(lookupUrlsResponse);
+      expect(result.results).to.have.lengthOf(urlsLength);
+      expect(result.summary.total).to.equal(urlsLength);
+
+      const [available, scraping, notFound] = result.results;
+      expect(available.status).to.equal('available');
+      expect(available.presigned_url).to.be.a('string');
+      expect(available.expires_in).to.equal(3600);
+      expect(scraping.status).to.equal('scraping');
+      expect(scraping.job_id).to.be.a('string');
+      expect(notFound.status).to.equal('not_found');
+      expect(notFound.message).to.be.a('string');
+    });
+
+    it('throws error for invalid urls input', async () => {
+      const msg = 'URLs must be a non-empty array';
+      await expect(client.lookupUrls('not-an-array')).to.be.rejectedWith(msg);
+      await expect(client.lookupUrls([])).to.be.rejectedWith(msg);
+      await expect(client.lookupUrls(null)).to.be.rejectedWith(msg);
+      await expect(client.lookupUrls(undefined)).to.be.rejectedWith(msg);
     });
 
     it('throws error when API returns an error', async () => {
@@ -537,17 +569,8 @@ describe('DrsClient', () => {
         .post('/url-lookup')
         .reply(400, { message: 'Bad Request' });
 
-      await expect(client.lookupUrls({ urls: [] }))
+      await expect(client.lookupUrls(['https://example.com']))
         .to.be.rejectedWith('DRS API request to /url-lookup failed with status: 400 - Bad Request');
-    });
-
-    it('sends request without body when called with undefined', async () => {
-      nock(API_BASE_URL)
-        .post('/url-lookup')
-        .reply(200, lookupUrlsResponse);
-
-      const result = await client.lookupUrls(undefined);
-      expect(result).to.deep.equal(lookupUrlsResponse);
     });
   });
 });

@@ -93,6 +93,30 @@ export interface PollOptions {
   maxTimeoutMs?: number;
 }
 
+export type LookupUrlStatus = 'available' | 'scraping' | 'not_found';
+
+export interface LookupUrlResult {
+  url: string;
+  status: LookupUrlStatus;
+  scraped_at?: string;
+  presigned_url?: string;
+  expires_in?: number;
+  job_id?: string;
+  message?: string;
+}
+
+export interface LookupUrlsSummary {
+  total: number;
+  available: number;
+  scraping: number;
+  not_found: number;
+}
+
+export interface LookupUrlsResponse {
+  results: LookupUrlResult[];
+  summary: LookupUrlsSummary;
+}
+
 export default class DrsClient {
   static createFrom(context: UniversalContext): DrsClient;
 
@@ -104,5 +128,5 @@ export default class DrsClient {
 
   pollJobStatus(jobId: string, options?: PollOptions): Promise<JobStatusResponse>;
 
-  lookupUrls(requestBody: object): Promise<object>;
+  lookupUrls(urls: string[]): Promise<LookupUrlsResponse>;
 }

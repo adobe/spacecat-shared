@@ -344,10 +344,6 @@ export const configSchema = Joi.object({
   edgeOptimizeConfig: Joi.object({
     enabled: Joi.boolean().optional(),
     opted: Joi.number().optional(),
-    stagingDomains: Joi.array().items(Joi.object({
-      domain: Joi.string().required(),
-      id: Joi.string().required(),
-    })).optional(),
   }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.9.0...@adobe/spacecat-shared-tokowaka-client-v1.10.0) (2026-02-26)
+
+### Features
+
+* LLMO-2805 Stage config addition api changes ([#1370](https://github.com/adobe/spacecat-shared/issues/1370)) ([0789f4a](https://github.com/adobe/spacecat-shared/commit/0789f4af95433b733c86638a79c184850804dba9))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.8.0...@adobe/spacecat-shared-tokowaka-client-v1.9.0) (2026-02-24)
 
 ### Features

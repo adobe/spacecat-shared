@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.3.0...@adobe/spacecat-shared-data-access-v3.4.0) (2026-02-26)
+
+### Features
+
+* register commerce-product-enrichments-yearly audit type ([#1381](https://github.com/adobe/spacecat-shared/issues/1381)) ([6d2990f](https://github.com/adobe/spacecat-shared/commit/6d2990f691d3c9837772d092efb72cd7069a8024))
+
 ## [@adobe/spacecat-shared-data-access-v3.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.2.0...@adobe/spacecat-shared-data-access-v3.3.0) (2026-02-26)
 
 ### Features

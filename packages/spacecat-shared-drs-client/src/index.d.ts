@@ -88,11 +88,6 @@ export interface JobStatusResponse {
   result_url_expires_in?: number;
 }
 
-export interface PollOptions {
-  pollIntervalMs?: number;
-  maxTimeoutMs?: number;
-}
-
 export type LookupUrlStatus = 'available' | 'scraping' | 'not_found';
 
 export interface LookupUrlResult {
@@ -125,8 +120,6 @@ export default class DrsClient {
   submitJob(request: JobRequest): Promise<JobSubmitResponse>;
 
   getJobStatus(jobId: string): Promise<JobStatusResponse>;
-
-  pollJobStatus(jobId: string, options?: PollOptions): Promise<JobStatusResponse>;
 
   lookupUrls(urls: string[]): Promise<LookupUrlsResponse>;
 }

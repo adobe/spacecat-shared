@@ -1,7 +1,7 @@
 # Spacecat Shared - DRS Client
 
 A JavaScript client for the DRS (Data Retrieval Service) API, part of the SpaceCat Shared library.
-It allows you to submit data retrieval jobs to DRS, poll for their completion, look up previously
+It allows you to submit data retrieval jobs to DRS, check job status, look up previously
 retrieved URLs, and download results via presigned S3 URLs.
 
 ## Installation
@@ -80,16 +80,6 @@ if (status.status === 'COMPLETED') {
   console.log(status.result_url); // presigned S3 download URL
   console.log(status.result_url_expires_in); // URL expiry in seconds
 }
-```
-
-### Polling for Job Completion
-
-```js
-const result = await client.pollJobStatus('job-123', {
-  pollIntervalMs: 15000, // default: 15s
-  maxTimeoutMs: 600000,  // default: 10min
-});
-console.log(result.status); // 'COMPLETED' or 'FAILED'
 ```
 
 ### Looking Up URLs

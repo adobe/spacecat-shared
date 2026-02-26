@@ -17,9 +17,6 @@ import {
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 
-const DEFAULT_POLL_INTERVAL_MS = 15000;
-const DEFAULT_MAX_TIMEOUT_MS = 600000;
-
 export const VALID_DATASET_IDS = Object.freeze([
   'youtube_videos',
   'youtube_comments',
@@ -35,15 +32,9 @@ export const JOB_STATUSES = Object.freeze({
   FAILED: 'FAILED',
 });
 
-const TERMINAL_STATUSES = new Set([JOB_STATUSES.COMPLETED, JOB_STATUSES.FAILED]);
-
-const delay = (ms) => new Promise((resolve) => {
-  setTimeout(resolve, ms);
-});
-
 /**
  * Client for the Data Retrieval Service (DRS) API.
- * Provides methods to submit data retrieval jobs, poll for completion,
+ * Provides methods to submit data retrieval jobs, check job status,
  * and look up previously retrieved URLs.
  */
 export default class DrsClient {
@@ -196,48 +187,6 @@ export default class DrsClient {
     }
 
     return this.#sendRequest('GET', `/jobs/${jobId}?include_result_url=true`);
-  }
-
-  /**
-   * Polls a DRS job until it reaches a terminal status (COMPLETED or FAILED)
-   * or the timeout is exceeded.
-   * @param {string} jobId - The job identifier
-   * @param {Object} [options] - Polling options
-   * @param {number} [options.pollIntervalMs=15000] - Interval between polls in milliseconds
-   * @param {number} [options.maxTimeoutMs=600000] - Maximum time to poll before timing out
-   * @returns {Promise<Object>} Final job status response
-   */
-  async pollJobStatus(
-    jobId,
-    { pollIntervalMs = DEFAULT_POLL_INTERVAL_MS, maxTimeoutMs = DEFAULT_MAX_TIMEOUT_MS } = {},
-  ) {
-    if (!hasText(jobId)) {
-      throw this.#createError('Job ID is required', HTTP_BAD_REQUEST);
-    }
-
-    const startTime = Date.now();
-
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      // eslint-disable-next-line no-await-in-loop
-      const status = await this.getJobStatus(jobId);
-
-      if (TERMINAL_STATUSES.has(status.status)) {
-        return status;
-      }
-
-      const elapsed = Date.now() - startTime;
-      if (elapsed + pollIntervalMs > maxTimeoutMs) {
-        throw this.#createError(
-          `Polling for job ${jobId} timed out after ${maxTimeoutMs}ms. Last status: ${status.status}`,
-          HTTP_INTERNAL_SERVER_ERROR,
-        );
-      }
-
-      this.log.info(`Job ${jobId} status: ${status.status}. Polling again in ${pollIntervalMs}ms...`);
-      // eslint-disable-next-line no-await-in-loop
-      await delay(pollIntervalMs);
-    }
   }
 
   /**

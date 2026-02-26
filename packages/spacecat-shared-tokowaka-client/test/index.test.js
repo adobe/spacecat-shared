@@ -649,6 +649,56 @@ describe('TokowakaClient', () => {
       const uploadCommand = s3Client.send.secondCall.args[0];
       expect(uploadCommand.input.Metadata).to.be.undefined;
     });
+
+    it('should NOT include prerender when isStageDomain is not true in metadata', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId);
+
+      expect(result).to.not.have.property('prerender');
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body).to.not.have.property('prerender');
+    });
+
+    it('should set prerender with allowList when isStageDomain is true in metadata', async () => {
+      const siteId = 'site-123';
+      const url = 'https://staging.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId, {}, { isStageDomain: true });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal({ allowList: ['/*'] });
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body.prerender).to.deep.equal({ allowList: ['/*'] });
+      expect(uploadCommand.input.Metadata).to.deep.equal({ isStageDomain: 'true' });
+    });
+
+    it('should NOT set prerender when isStageDomain is false in metadata', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId, {}, { isStageDomain: false });
+
+      expect(result).to.not.have.property('prerender');
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body).to.not.have.property('prerender');
+    });
   });
 
   describe('updateMetaconfig', () => {
@@ -661,11 +711,12 @@ describe('TokowakaClient', () => {
     };
 
     beforeEach(() => {
-      // Mock fetchMetaconfig to return existing config
+      // Mock fetchMetaconfig to return existing config with metadata
       s3Client.send.onFirstCall().resolves({
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfig)),
         },
+        Metadata: {},
       });
       // Mock uploadMetaconfig S3 upload
       s3Client.send.onSecondCall().resolves();
@@ -1430,6 +1481,84 @@ describe('TokowakaClient', () => {
       // Second call is the uploadMetaconfig
       const uploadCommand = s3Client.send.secondCall.args[0];
       expect(uploadCommand.input.Metadata).to.be.undefined;
+    });
+
+    it('should set prerender with allowList when isStageDomain is true in metadata', async () => {
+      const siteId = 'site-456';
+      const url = 'https://staging.example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, {}, { isStageDomain: true });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal({ allowList: ['/*'] });
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body.prerender).to.deep.equal({ allowList: ['/*'] });
+      expect(uploadCommand.input.Metadata).to.deep.equal({ isStageDomain: 'true' });
+    });
+
+    it('should override existing prerender when isStageDomain is true in metadata', async () => {
+      const siteId = 'site-456';
+      const url = 'https://staging.example.com';
+      const existingMetaconfigWithPrerender = {
+        ...existingMetaconfig,
+        prerender: { allowList: ['/old-path/*'] },
+      };
+
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfigWithPrerender)),
+        },
+        Metadata: {},
+      });
+
+      const result = await client.updateMetaconfig(url, siteId, {}, { isStageDomain: true });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal({ allowList: ['/*'] });
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body.prerender).to.deep.equal({ allowList: ['/*'] });
+    });
+
+    it('should preserve existing prerender when isStageDomain is not in metadata', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+      const existingMetaconfigWithPrerender = {
+        ...existingMetaconfig,
+        prerender: { allowList: ['/path/*'] },
+      };
+
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfigWithPrerender)),
+        },
+        Metadata: {},
+      });
+
+      const result = await client.updateMetaconfig(url, siteId, {});
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal({ allowList: ['/path/*'] });
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body.prerender).to.deep.equal({ allowList: ['/path/*'] });
+    });
+
+    it('should NOT set prerender when isStageDomain is false in metadata', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, {}, { isStageDomain: false });
+
+      expect(result).to.not.have.property('prerender');
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body).to.not.have.property('prerender');
     });
   });
 

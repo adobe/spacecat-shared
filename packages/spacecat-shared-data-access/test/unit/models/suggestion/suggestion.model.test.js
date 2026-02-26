@@ -133,14 +133,34 @@ describe('SuggestionModel', () => {
     });
   });
 
-  describe('getStatusMessage and setStatusMessage', () => {
-    it('returns undefined when no status message is set', () => {
-      expect(instance.getStatusMessage()).to.be.undefined;
+  describe('SKIP_REASONS', () => {
+    it('has SKIP_REASONS enum', () => {
+      expect(Suggestion.SKIP_REASONS).to.be.an('object');
+      expect(Suggestion.SKIP_REASONS.ALREADY_IMPLEMENTED).to.equal('already_implemented');
+      expect(Suggestion.SKIP_REASONS.TOO_RISKY).to.equal('too_risky');
+      expect(Suggestion.SKIP_REASONS.OTHER).to.equal('other');
+    });
+  });
+
+  describe('getSkipReason and setSkipReason', () => {
+    it('returns undefined when no skip reason is set', () => {
+      expect(instance.getSkipReason()).to.be.undefined;
     });
 
-    it('sets and gets the status message', () => {
-      instance.setStatusMessage('Not relevant for our use case');
-      expect(instance.getStatusMessage()).to.equal('Not relevant for our use case');
+    it('sets and gets the skip reason', () => {
+      instance.setSkipReason('too_risky');
+      expect(instance.getSkipReason()).to.equal('too_risky');
+    });
+  });
+
+  describe('getSkipDetail and setSkipDetail', () => {
+    it('returns undefined when no skip detail is set', () => {
+      expect(instance.getSkipDetail()).to.be.undefined;
+    });
+
+    it('sets and gets the skip detail', () => {
+      instance.setSkipDetail('Not relevant for our use case');
+      expect(instance.getSkipDetail()).to.equal('Not relevant for our use case');
     });
   });
 

@@ -50,8 +50,14 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
     required: true,
     default: Suggestion.STATUSES.NEW,
   })
-  .addAttribute('statusMessage', {
+  .addAttribute('skipReason', {
+    type: Object.values(Suggestion.SKIP_REASONS),
+    postgrestField: 'skip_reason',
+  })
+  .addAttribute('skipDetail', {
     type: 'string',
+    postgrestField: 'skip_detail',
+    validate: (value) => !value || (typeof value === 'string' && value.length <= 500),
   });
 
 export default schema.build();

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.2.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.4...@adobe/spacecat-shared-html-analyzer-v1.2.5) (2026-02-23)
+
+### Bug Fixes
+
+* filtering out digit access related accessibility divs ([#1366](https://github.com/adobe/spacecat-shared/issues/1366)) ([3ad20a5](https://github.com/adobe/spacecat-shared/commit/3ad20a582f6a9d7ec21050fd56afcbeb16a6f096))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.3...@adobe/spacecat-shared-html-analyzer-v1.2.4) (2026-02-05)
 
 

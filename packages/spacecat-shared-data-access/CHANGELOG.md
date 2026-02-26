@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.2.0...@adobe/spacecat-shared-data-access-v3.3.0) (2026-02-26)
+
+### Features
+
+* **data-access:** add yearly job interval ([#1380](https://github.com/adobe/spacecat-shared/issues/1380)) ([422f301](https://github.com/adobe/spacecat-shared/commit/422f301bd6d8e3f4565b0790c39adf511855da69))
+
 ## [@adobe/spacecat-shared-data-access-v3.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.1.0...@adobe/spacecat-shared-data-access-v3.2.0) (2026-02-21)
 
 ### Features

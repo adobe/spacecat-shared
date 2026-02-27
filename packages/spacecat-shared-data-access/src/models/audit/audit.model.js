@@ -44,6 +44,8 @@ class Audit extends BaseModel {
     CONTENT_FRAGMENT_UNUSED: 'content-fragment-unused',
     CONTENT_FRAGMENT_UNUSED_AUTO_FIX: 'content-fragment-unused-auto-fix',
     EXPERIMENTATION: 'experimentation',
+    CONTENT_FRAGMENT_404: 'content-fragment-404',
+    CONTENT_FRAGMENT_404_AUTO_SUGGEST: 'content-fragment-404-auto-suggest',
     CONVERSION: 'conversion',
     ORGANIC_KEYWORDS: 'organic-keywords',
     ORGANIC_TRAFFIC: 'organic-traffic',

@@ -113,6 +113,38 @@ describe('CDN Helper Functions', () => {
         // Should use empty string as prefix
         expect(result.Path).to.equal('%Y/%m/%d/%H/');
       });
+
+      it('should transform payload for byocdn-fastly with iam_role authMethod', () => {
+        const iamRolePayload = {
+          ...mockPayload,
+          logSource: 'byocdn-fastly',
+          authMethod: 'iam_role',
+          roleArn: 'arn:aws:iam::123456789012:role/FastlyCDNRole',
+        };
+        delete iamRolePayload.accessKey;
+        delete iamRolePayload.secretKey;
+
+        const result = prettifyLogForwardingConfig(iamRolePayload);
+
+        expect(result).to.deep.equal({
+          'Bucket Name': 'cdn-logs-adobe-dev',
+          Domain: 's3.us-east-1.amazonaws.com',
+          Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-fastly/%Y/%m/%d/%H/',
+          'Timestamp Format': '%Y-%m-%dT%H:%M:%S.000',
+          Placement: 'Format Version Default',
+          'Log format': FASTLY_LOG_FORMAT,
+          'Access method': 'IAM Role',
+          'Role ARN': 'arn:aws:iam::123456789012:role/FastlyCDNRole',
+          Period: 300,
+          'Log line format': 'Blank',
+          Compression: 'Gzip',
+          'Redundancy level': 'Standard',
+          ACL: 'None',
+          'Server side encryption': 'None',
+          'Maximum bytes': 0,
+          HelpUrl: 'https://www.fastly.com/documentation/guides/integrations/logging-endpoints/log-streaming-amazon-s3/',
+        });
+      });
     });
 
     describe('other CDN types', () => {
@@ -373,6 +405,15 @@ describe('CDN Helper Functions', () => {
         delete payloadWithoutSecretKey.secretKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutSecretKey)).to.throw(
           'secretKey or currentSecretKey is required in payload',
+        );
+      });
+
+      it('should throw error when roleArn is missing for byocdn-fastly with iam_role authMethod', () => {
+        const payloadWithoutRoleArn = { ...mockPayload, authMethod: 'iam_role' };
+        delete payloadWithoutRoleArn.accessKey;
+        delete payloadWithoutRoleArn.secretKey;
+        expect(() => prettifyLogForwardingConfig(payloadWithoutRoleArn)).to.throw(
+          'roleArn is required in payload when authMethod is iam_role',
         );
       });
 

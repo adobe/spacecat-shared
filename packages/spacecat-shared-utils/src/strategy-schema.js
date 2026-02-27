@@ -64,6 +64,7 @@ const strategyOpportunity = z.object({
 });
 
 const strategyPromptSelection = z.object({
+  id: z.uuid().optional(),
   prompt: nonEmptyString,
   regions: z.array(z.string()),
 });
@@ -78,6 +79,7 @@ const strategy = z.object({
   url: z.string(),
   description: z.string(),
   topic: z.string(),
+  topicId: z.uuid().optional(),
   selectedPrompts: z.array(strategyPromptSelection).optional(),
   platform: nonEmptyString.optional(),
   opportunities: z.array(strategyOpportunity),

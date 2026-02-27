@@ -2562,6 +2562,36 @@ describe('Config Tests', () => {
       const dynamoItem = Config.toDynamoItem(data);
       expect(dynamoItem.edgeOptimizeConfig).to.deep.equal(data.getEdgeOptimizeConfig());
     });
+
+    it('should be able to create edgeOptimizeConfig with opted field', () => {
+      const optedTimestamp = new Date('2024-01-15T10:30:00Z').getTime();
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+          opted: optedTimestamp,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+      expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
+    });
+
+    it('should be able to update edgeOptimizeConfig with opted field', () => {
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: false,
+        },
+      });
+
+      const optedTimestamp = new Date('2024-01-20T14:45:00Z').getTime();
+      const newConfig = {
+        enabled: true,
+        opted: optedTimestamp,
+      };
+      config.updateEdgeOptimizeConfig(newConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
+      expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
+    });
   });
 
   describe('LLMO Well Known Tags', () => {
@@ -2582,6 +2612,66 @@ describe('Config Tests', () => {
         product: 'The Product',
         topic: 'A Topic',
       });
+    });
+  });
+
+  describe('addLlmoTag', () => {
+    it('should add a new tag', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test' } });
+      config.addLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['opportunitiesReviewed']);
+    });
+
+    it('should not add a duplicate tag', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['existing'] } });
+      config.addLlmoTag('existing');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['existing']);
+    });
+
+    it('should append to existing tags', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['fullyOnboarded'] } });
+      config.addLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['fullyOnboarded', 'opportunitiesReviewed']);
+    });
+
+    it('should initialize llmo and tags when not present', () => {
+      const config = Config();
+      config.addLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['opportunitiesReviewed']);
+    });
+  });
+
+  describe('removeLlmoTag', () => {
+    it('should remove an existing tag', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['fullyOnboarded', 'opportunitiesReviewed'] } });
+      config.removeLlmoTag('fullyOnboarded');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['opportunitiesReviewed']);
+    });
+
+    it('should do nothing if the tag does not exist', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['fullyOnboarded'] } });
+      config.removeLlmoTag('nonExistent');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['fullyOnboarded']);
+    });
+
+    it('should do nothing if tags are not initialized', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test' } });
+      config.removeLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.be.undefined;
+    });
+
+    it('should do nothing if llmo is not initialized', () => {
+      const config = Config();
+      config.removeLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig).to.be.undefined;
     });
   });
 });

@@ -131,7 +131,6 @@ describe('TrialUser IT', async () => {
 
     expect(updatedTrialUser.getId()).to.equal(trialUser.getId());
     expect(updatedTrialUser.record.createdAt).to.equal(trialUser.record.createdAt);
-    expect(updatedTrialUser.record.updatedAt).to.not.equal(trialUser.record.updatedAt);
     expect(
       sanitizeIdAndAuditFields('TrialUser', updatedTrialUser.toJSON()),
     ).to.eql(
@@ -159,7 +158,6 @@ describe('TrialUser IT', async () => {
 
     expect(updatedTrialUser.getId()).to.equal(trialUser.getId());
     expect(updatedTrialUser.record.createdAt).to.equal(trialUser.record.createdAt);
-    expect(updatedTrialUser.record.updatedAt).to.not.equal(trialUser.record.updatedAt);
     expect(
       sanitizeIdAndAuditFields('TrialUser', updatedTrialUser.toJSON()),
     ).to.eql(

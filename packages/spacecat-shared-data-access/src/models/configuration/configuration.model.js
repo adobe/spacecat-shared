@@ -40,6 +40,7 @@ class Configuration {
     DAILY: 'daily',
     DAILY_1AM: 'daily-1am',
     WEEKLY: 'weekly',
+    WEEKLY_DIGEST_EMAIL: 'weekly-digest-email', // runs on Tuesday for weekly digest emails (LLMO-2682)
     EARLY_MONDAY: 'early-monday',
     EVERY_SATURDAY: 'every-saturday',
     EVERY_SUNDAY: 'every-sunday',
@@ -47,6 +48,12 @@ class Configuration {
     FORTNIGHTLY_SATURDAY: 'fortnightly-saturday',
     FORTNIGHTLY_SUNDAY: 'fortnightly-sunday',
     MONTHLY: 'monthly',
+    QUARTERLY: 'quarterly',
+    YEARLY: 'yearly',
+    // Staggered weekly slots for split audits (e.g. geo-brand-presence-free-1..23)
+    ...Object.fromEntries(
+      Array.from({ length: 23 }, (_, i) => [`WEEKLY_SLOT_${i + 1}`, `weekly-slot-${i + 1}`]),
+    ),
   };
 
   static AUDIT_NAME_REGEX = /^[a-z0-9-]+$/;

@@ -342,7 +342,8 @@ export const configSchema = Joi.object({
     forwardedHost: Joi.string().optional(),
   }).optional(),
   edgeOptimizeConfig: Joi.object({
-    enabled: Joi.boolean().required(),
+    enabled: Joi.boolean().optional(),
+    opted: Joi.number().optional(),
   }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -602,6 +603,19 @@ export const Config = (data = {}) => {
   self.updateLlmoCdnBucketConfig = (cdnBucketConfig) => {
     state.llmo = state.llmo || {};
     state.llmo.cdnBucketConfig = cdnBucketConfig;
+  };
+
+  self.addLlmoTag = (tag) => {
+    state.llmo = state.llmo || {};
+    state.llmo.tags = state.llmo.tags || [];
+    if (!state.llmo.tags.includes(tag)) {
+      state.llmo.tags.push(tag);
+    }
+  };
+
+  self.removeLlmoTag = (tag) => {
+    if (!state.llmo?.tags) return;
+    state.llmo.tags = state.llmo.tags.filter((t) => t !== tag);
   };
 
   self.updateImports = (imports) => {

@@ -14,7 +14,6 @@
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { ElectroValidationError } from 'electrodb';
 import AsyncJobModel from '../../../src/models/async-job/async-job.model.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
@@ -85,8 +84,8 @@ describe('AsyncJob IT', async () => {
     const data = { ...newJobData, status: 'INVALID_STATUS' };
     await AsyncJob.create(data).catch((err) => {
       expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.cause).to.be.instanceOf(ElectroValidationError);
-      expect(err.cause.message).to.contain('Invalid value');
+      expect(err.cause).to.exist;
+      expect(err.cause.message).to.match(/status is invalid|Invalid value/);
     });
   });
 });

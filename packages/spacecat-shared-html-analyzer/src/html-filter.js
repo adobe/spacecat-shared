@@ -30,8 +30,6 @@ const NAVIGATION_FOOTER_SELECTOR = [
   // Header/footer classes
   '.header', '.site-header', '.page-header', '.top-header', '.header-wrapper',
   '.footer', '.site-footer', '.page-footer', '.bottom-footer', '.footer-wrapper',
-  // Breadcrumb navigation
-  '.breadcrumb', '.breadcrumbs',
   // Common ID selectors
   '#nav', '#navigation', '#navbar', '#header', '#footer', '#menu', '#main-menu',
   '#site-header', '#site-footer', '#page-header', '#page-footer',
@@ -61,6 +59,7 @@ const COOKIE_BANNER_CLASS_SELECTORS = [
   '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
   '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
   '[class*="syrenis-cookie"]',
+  '.tc-privacy-wrapper',
 ];
 
 const COOKIE_BANNER_ID_SELECTORS = [
@@ -69,6 +68,7 @@ const COOKIE_BANNER_ID_SELECTORS = [
   '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar', '#cookiemgmt',
   '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
   '#onetrust-consent-sdk', '#onetrust-banner-sdk',
+  '#tc-privacy-wrapper',
 ];
 
 const COOKIE_BANNER_ARIA_SELECTORS = [
@@ -80,6 +80,10 @@ const COOKIE_BANNER_ARIA_SELECTORS = [
   '[role="alertdialog"][aria-label*="privacy" i]',
   '[aria-describedby*="cookie" i]',
   '[aria-describedby*="privacy" i]',
+];
+
+const ACCESSIBILITY_SELECTORS = [
+  '#digiAccess',
 ];
 
 /**
@@ -118,6 +122,13 @@ function removeCookieBanners(element) {
         el.remove();
       }
     });
+  });
+}
+
+function removeAccessibilityElements(element) {
+  const elements = element.querySelectorAll(ACCESSIBILITY_SELECTORS);
+  elements.forEach((el) => {
+    el.remove();
   });
 }
 
@@ -164,6 +175,12 @@ function removeCookieBannersCheerio($) {
         $element.remove();
       }
     });
+  });
+}
+
+function removeAccessibilityElementsCheerio($) {
+  ACCESSIBILITY_SELECTORS.forEach((selector) => {
+    $(selector).remove();
   });
 }
 
@@ -249,6 +266,9 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNosc
   // Remove consent banners with intelligent detection
   removeCookieBanners(documentElement);
 
+  // Remove accessibility elements
+  removeAccessibilityElements(documentElement);
+
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {
     filterNavigationAndFooterBrowser(documentElement);
@@ -324,6 +344,9 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
 
   // Remove cookie banners with comprehensive detection
   removeCookieBannersCheerio($);
+
+  // Remove accessibility elements
+  removeAccessibilityElementsCheerio($);
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {

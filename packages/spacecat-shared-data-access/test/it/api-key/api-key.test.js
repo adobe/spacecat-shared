@@ -107,7 +107,7 @@ describe('ApiKey IT', async () => {
     const data = {
       name: 'Updated API Key',
       expiresAt: '2024-12-06T08:35:24.125Z',
-      hashedApiKey: '1234',
+      hashedApiKey: 'updated-key-1234',
       imsOrgId: '1234@AdobeOrg',
       imsUserId: '1234',
       scopes: [

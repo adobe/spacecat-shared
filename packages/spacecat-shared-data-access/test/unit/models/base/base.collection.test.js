@@ -15,7 +15,6 @@
 // eslint-disable-next-line max-classes-per-file
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { ElectroValidationError } from 'electrodb';
 import sinon, { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
@@ -34,24 +33,24 @@ const MockCollection = class MockEntityCollection extends BaseCollection {
   static COLLECTION_NAME = 'MockEntityCollection';
 };
 
-const createSchema = (service, indexes) => new Schema(
+const createSchema = (service, indexes, attributes = {
+  someKey: { type: 'string' },
+  someOtherKey: { type: 'number' },
+}) => new Schema(
   MockModel,
   MockCollection,
   {
     serviceName: 'service',
     schemaVersion: 1,
-    attributes: {
-      someKey: { type: 'string' },
-      someOtherKey: { type: 'number' },
-    },
+    attributes,
     indexes,
     references: [],
     options: { allowRemove: true, allowUpdates: true },
   },
 );
 
-const createInstance = (service, registry, indexes, log) => {
-  const schema = createSchema(service, indexes);
+const createInstance = (service, registry, indexes, log, attributes) => {
+  const schema = createSchema(service, indexes, attributes);
   return new BaseCollection(
     service,
     registry,
@@ -124,6 +123,15 @@ describe('BaseCollection', () => {
       mockIndexes,
       mockLogger,
     );
+  });
+
+  it('throws when postgrestService is missing', () => {
+    expect(() => createInstance(
+      null,
+      mockEntityRegistry,
+      mockIndexes,
+      mockLogger,
+    )).to.throw(DataAccessError, 'postgrestService is required');
   });
 
   describe('collection methods', () => {
@@ -507,7 +515,9 @@ describe('BaseCollection', () => {
               itemCount += 1;
               return { Item: { ...mockRecord } };
             } else {
-              throw new ElectroValidationError('Validation failed');
+              const error = new Error('Validation failed');
+              error.name = 'ElectroValidationError';
+              throw error;
             }
           },
         },
@@ -521,7 +531,8 @@ describe('BaseCollection', () => {
     });
 
     it('fails creating some items due to ValidationError', async () => {
-      const error = new ElectroValidationError('Validation failed');
+      const error = new Error('Validation failed');
+      error.name = 'ElectroValidationError';
       mockElectroService.entities.mockEntityModel.put.returns(
         { params: () => { throw error; } },
       );
@@ -1007,6 +1018,43 @@ describe('BaseCollection', () => {
           { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
         ]);
     });
+
+    it('removes entities successfully via PostgREST service when entity proxy is unavailable', async () => {
+      const inStub = stub().resolves({ error: null });
+      const deleteStub = stub().returns({ in: inStub });
+      const fromStub = stub().returns({ delete: deleteStub });
+      const postgrestService = { from: fromStub };
+
+      const instance = createInstance(
+        postgrestService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      const mockIds = ['ef39921f-9a02-41db-b491-02c98987d956', 'ef39921f-9a02-41db-b491-02c98987d957'];
+      await instance.removeByIds(mockIds);
+
+      expect(fromStub).to.have.been.calledOnceWithExactly(instance.tableName);
+      expect(inStub).to.have.been.calledOnceWithExactly('mock_entity_model_id', mockIds);
+    });
+
+    it('throws when PostgREST removeByIds operation returns an error', async () => {
+      const inStub = stub().resolves({ error: new Error('delete failed') });
+      const deleteStub = stub().returns({ in: inStub });
+      const fromStub = stub().returns({ delete: deleteStub });
+      const postgrestService = { from: fromStub };
+
+      const instance = createInstance(
+        postgrestService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      await expect(instance.removeByIds(['ef39921f-9a02-41db-b491-02c98987d956']))
+        .to.be.rejectedWith(DataAccessError, 'Failed to remove by IDs');
+    });
   });
 
   describe('batchGetByKeys', () => {
@@ -1369,9 +1417,10 @@ describe('BaseCollection', () => {
       );
     });
 
-    it('should handle ElectroValidationError', async () => {
+    it('should handle validation-style errors from legacy entity path', async () => {
       const keys = [{ someKey: 'test-value' }];
-      const validationError = new ElectroValidationError('Invalid key format');
+      const validationError = new Error('Invalid key format');
+      validationError.name = 'ElectroValidationError';
       mockDeleteQuery.go.rejects(validationError);
 
       await expect(baseCollectionInstance.removeByIndexKeys(keys))
@@ -1458,6 +1507,969 @@ describe('BaseCollection', () => {
 
       await expect(baseCollectionInstance.removeByIndexKeys(keys))
         .to.be.rejectedWith(DataAccessError, 'key must be a non-empty object');
+    });
+
+    it('should remove by single-field keys via PostgREST bulk in() query', async () => {
+      const inStub = stub().resolves({ error: null });
+      const fromStub = stub().returns({
+        delete: stub().returns({
+          in: inStub,
+        }),
+      });
+      const postgrestService = { from: fromStub };
+      const instance = createInstance(
+        postgrestService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+      const keys = [
+        { someKey: 'test-value-1' },
+        { someKey: 'test-value-2' },
+      ];
+
+      await instance.removeByIndexKeys(keys);
+
+      expect(fromStub).to.have.been.calledOnceWithExactly(instance.tableName);
+      expect(inStub).to.have.been.calledOnceWithExactly('some_key', ['test-value-1', 'test-value-2']);
+      expect(mockLogger.info).to.have.been.calledWith(`Removed ${keys.length} items for [mockEntityModel]`);
+    });
+
+    it('should remove by keys via PostgREST service when entity proxy is unavailable', async () => {
+      const query = {
+        error: null,
+        eq: stub().callsFake(() => query),
+      };
+      const fromStub = stub().returns({
+        delete: stub().returns(query),
+      });
+      const postgrestService = { from: fromStub };
+      const instance = createInstance(
+        postgrestService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+      const keys = [{ someKey: 'test-value', someOtherKey: 42 }];
+
+      await instance.removeByIndexKeys(keys);
+
+      expect(fromStub).to.have.been.calledOnceWithExactly(instance.tableName);
+      expect(query.eq).to.have.been.calledWith('some_key', 'test-value');
+      expect(query.eq).to.have.been.calledWith('some_other_key', 42);
+      expect(mockLogger.info).to.have.been.calledWith(`Removed ${keys.length} items for [mockEntityModel]`);
+    });
+
+    it('should throw when PostgREST removeByIndexKeys returns an error', async () => {
+      const query = {
+        error: new Error('delete failed'),
+        eq: stub().callsFake(() => query),
+      };
+      const fromStub = stub().returns({
+        delete: stub().returns(query),
+      });
+      const postgrestService = { from: fromStub };
+      const instance = createInstance(
+        postgrestService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      await expect(instance.removeByIndexKeys([{ someKey: 'test-value' }]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to remove by index keys');
+    });
+
+    it('should throw when PostgREST bulk delete returns an error payload', async () => {
+      const inStub = stub().resolves({ error: new Error('bulk delete failed') });
+      const fromStub = stub().returns({
+        delete: stub().returns({
+          in: inStub,
+        }),
+      });
+      const postgrestService = { from: fromStub };
+      const instance = createInstance(
+        postgrestService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      await expect(instance.removeByIndexKeys([{ someKey: 'test-value' }]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to remove by index keys');
+      expect(inStub).to.have.been.calledOnceWithExactly('some_key', ['test-value']);
+    });
+
+    it('should throw when PostgREST per-key delete query returns an error payload', async () => {
+      const query = {
+        eq: stub().callsFake(() => query),
+        then: (resolve) => resolve({ error: new Error('per-key delete failed') }),
+      };
+      const fromStub = stub().returns({
+        delete: stub().returns(query),
+      });
+      const postgrestService = { from: fromStub };
+      const instance = createInstance(
+        postgrestService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      await expect(instance.removeByIndexKeys([{ someKey: 'a', someOtherKey: 1 }]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to remove by index keys');
+      expect(query.eq).to.have.been.calledWith('some_key', 'a');
+      expect(query.eq).to.have.been.calledWith('some_other_key', 1);
+    });
+  });
+
+  describe('postgrest mode', () => {
+    const richAttributes = {
+      someKey: { type: 'string', required: true },
+      someOtherKey: { type: 'number', default: 7 },
+      isActive: { type: 'boolean', default: false },
+      tags: { type: 'list', default: () => ['default'] },
+      metadata: { type: 'map', default: () => ({ source: 'unit' }) },
+      mode: { type: ['A', 'B'], default: 'A' },
+      computed: { type: 'string', set: (_, record) => `${record.someKey}-computed` },
+      watchedValue: {
+        type: 'number',
+        watch: ['someOtherKey'],
+        set: (value) => (value || 0) + 1,
+      },
+      watchedAll: {
+        type: 'string',
+        watch: '*',
+        set: (_, record) => `${record.someKey}-${record.someOtherKey}`,
+      },
+      validateFalse: { type: 'string', validate: () => false },
+      validateThrows: { type: 'string', validate: () => { throw new Error('validation throws'); } },
+    };
+
+    const richIndexes = {
+      primary: {
+        index: 'primary',
+        pk: { facets: ['someKey'] },
+        sk: { facets: ['someOtherKey'] },
+      },
+      bySomeKey: {
+        index: 'bySomeKey',
+        pk: { facets: ['someKey'] },
+        sk: { facets: ['someOtherKey'] },
+      },
+      all: { index: 'all', indexType: 'all' },
+    };
+
+    const createPostgrestQuery = (responses) => {
+      const queue = Array.isArray(responses) ? [...responses] : [responses];
+      const query = {
+        select: stub().returnsThis(),
+        order: stub().returnsThis(),
+        eq: stub().returnsThis(),
+        in: stub().returnsThis(),
+        gte: stub().returnsThis(),
+        lte: stub().returnsThis(),
+        range: stub().returnsThis(),
+        contains: stub().returnsThis(),
+        then: (onFulfilled, onRejected) => Promise
+          .resolve(queue.shift() || { data: [], error: null })
+          .then(onFulfilled, onRejected),
+      };
+      return query;
+    };
+
+    it('queries PostgREST with filters and returns cursor payload', async () => {
+      const query = createPostgrestQuery({
+        data: [
+          { some_key: 'a', some_other_key: 1, computed: 'a-computed' },
+          { some_key: 'a', some_other_key: 2, computed: 'a-computed' },
+        ],
+        error: null,
+      });
+      const fromStub = stub().returns({
+        select: stub().returns(query),
+      });
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const result = await instance.allByIndexKeys(
+        { someKey: 'a', someOtherKey: 1 },
+        {
+          attributes: ['someKey'],
+          between: { attribute: 'someOtherKey', start: 1, end: 2 },
+          where: (attr, op) => op.eq(attr.someKey, 'a'),
+          order: 'asc',
+          limit: 2,
+          returnCursor: true,
+          fetchAllPages: false,
+        },
+      );
+
+      expect(result.data).to.have.length(2);
+      expect(result.data[0].record.someKey).to.equal('a');
+      expect(result.cursor).to.be.a('string');
+      expect(query.order.callCount).to.equal(2);
+      expect(query.order.getCall(0)).to.have.been.calledWithExactly('some_key', { ascending: true });
+      expect(query.order.getCall(1)).to.have.been.calledWithExactly('some_other_key', { ascending: true });
+      expect(query.range).to.have.been.calledOnceWithExactly(0, 1);
+    });
+
+    it('applies model getters on DB records and warns on getter failures', async () => {
+      const query = createPostgrestQuery({
+        data: [{ some_key: 'abc', throwing_get: 'x' }],
+        error: null,
+      });
+      const fromStub = stub().returns({
+        select: stub().returns(query),
+      });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        {
+          someKey: {
+            type: 'string',
+            get: (value) => value.toUpperCase(),
+          },
+          throwingGet: {
+            type: 'string',
+            get: () => {
+              throw new Error('getter failed');
+            },
+          },
+        },
+      );
+
+      const result = await instance.allByIndexKeys({ someKey: 'abc' }, { fetchAllPages: false });
+      expect(result).to.have.length(1);
+      expect(result[0].record.someKey).to.equal('ABC');
+      expect(result[0].record.throwingGet).to.equal('x');
+      expect(mockLogger.warn).to.have.been.calledWithMatch(
+        'Failed to apply getter for throwingGet on [mockEntityModel]',
+      );
+    });
+
+    it('skips getter invocation when mapped value is undefined', async () => {
+      const maybeGet = stub().returns('SHOULD_NOT_BE_USED');
+      const query = createPostgrestQuery({
+        data: [{ some_key: 'abc' }],
+        error: null,
+      });
+      const fromStub = stub().returns({
+        select: stub().returns(query),
+      });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        {
+          someKey: { type: 'string' },
+          optionalValue: {
+            type: 'string',
+            get: maybeGet,
+          },
+        },
+      );
+
+      const result = await instance.allByIndexKeys({ someKey: 'abc' }, { fetchAllPages: false });
+      expect(result).to.have.length(1);
+      expect(result[0].record.optionalValue).to.be.undefined;
+      expect(maybeGet.called).to.equal(false);
+    });
+
+    it('queries all PostgREST rows without key filters when sort keys are omitted', async () => {
+      const query = createPostgrestQuery({
+        data: [{ some_key: 'a', some_other_key: 1 }],
+        error: null,
+      });
+      const fromStub = stub().returns({
+        select: stub().returns(query),
+      });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const result = await instance.all(undefined, { fetchAllPages: false });
+      expect(result).to.have.length(1);
+      expect(query.eq.callCount).to.equal(0);
+    });
+
+    it('does not append duplicate id ordering when id is already part of index order', async () => {
+      const query = createPostgrestQuery({
+        data: [{ mock_entity_model_id: 'id-1' }],
+        error: null,
+      });
+      const fromStub = stub().returns({
+        select: stub().returns(query),
+      });
+
+      const indexesWithIdSort = {
+        primary: {
+          index: 'primary',
+          pk: { facets: ['mockEntityModelId'] },
+          sk: { facets: [] },
+        },
+      };
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        indexesWithIdSort,
+        mockLogger,
+        {
+          mockEntityModelId: { type: 'string', required: true },
+        },
+      );
+
+      await instance.allByIndexKeys(
+        { mockEntityModelId: 'id-1' },
+        { fetchAllPages: false, order: 'desc' },
+      );
+
+      expect(query.order.callCount).to.equal(1);
+      expect(query.order.getCall(0)).to.have.been.calledWithExactly('id', { ascending: false });
+    });
+
+    it('fetches all pages in PostgREST mode', async () => {
+      const query = createPostgrestQuery([
+        {
+          data: [
+            { some_key: 'a', some_other_key: 1 },
+            { some_key: 'a', some_other_key: 2 },
+          ],
+          error: null,
+        },
+        {
+          data: [
+            { some_key: 'a', some_other_key: 3 },
+            { some_key: 'a', some_other_key: 4 },
+          ],
+          error: null,
+        },
+        { data: [], error: null },
+      ]);
+      const fromStub = stub().returns({
+        select: stub().returns(query),
+      });
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const result = await instance.allByIndexKeys(
+        { someKey: 'a' },
+        { fetchAllPages: true, limit: 2, returnCursor: true },
+      );
+
+      expect(result.data).to.have.length(4);
+      expect(result.cursor).to.equal(null);
+      expect(query.range).to.have.callCount(3);
+    });
+
+    it('uses PostgREST path for findById, existsById and batchGetByKeys', async () => {
+      const query = createPostgrestQuery([
+        { data: [{ some_key: 'id-1', some_other_key: 1 }], error: null },
+        { data: [{ some_key: 'id-1', some_other_key: 1 }], error: null },
+        { data: [{ some_key: 'id-1', some_other_key: 1 }], error: null },
+        { data: [], error: null },
+      ]);
+      const fromStub = stub().returns({
+        select: stub().returns(query),
+      });
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const found = await instance.findById('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(found).to.not.be.null;
+
+      const exists = await instance.existsById('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(exists).to.equal(true);
+
+      const batch = await instance.batchGetByKeys([
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ]);
+      expect(batch.data).to.have.length(1);
+      expect(batch.unprocessed).to.deep.equal([]);
+      expect(query.in).to.have.been.calledOnceWithExactly(
+        'mock_entity_model_id',
+        [
+          'ef39921f-9a02-41db-b491-02c98987d956',
+          'ef39921f-9a02-41db-b491-02c98987d957',
+        ],
+      );
+    });
+
+    it('throws on non-invalid bulk errors in PostgREST batchGetByKeys', async () => {
+      const bulkQuery = {
+        select: stub().returnsThis(),
+        in: stub().returnsThis(),
+        then: (onFulfilled, onRejected) => Promise.resolve({
+          data: null,
+          error: { code: 'XX000', message: 'db exploded' },
+        }).then(onFulfilled, onRejected),
+      };
+      const fromStub = stub().returns({ select: stub().returns(bulkQuery) });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      await expect(instance.batchGetByKeys([
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+      ])).to.be.rejectedWith(DataAccessError, 'Failed to batch get by keys');
+    });
+
+    it('falls back to per-key batch lookup on invalid bulk input', async () => {
+      const bulkQuery = {
+        select: stub().returnsThis(),
+        in: stub().returnsThis(),
+        then: (onFulfilled, onRejected) => Promise.resolve({
+          data: null,
+          error: { code: '22P02', message: 'invalid input syntax' },
+        }).then(onFulfilled, onRejected),
+      };
+
+      const pageQuery = createPostgrestQuery([
+        { data: [{ some_key: 'id-1', some_other_key: 1 }], error: null },
+        { data: [], error: null },
+      ]);
+
+      const fromStub = stub()
+        .onCall(0)
+        .returns({ select: stub().returns(bulkQuery) })
+        .onCall(1)
+        .returns({ select: stub().returns(pageQuery) })
+        .onCall(2)
+        .returns({ select: stub().returns(pageQuery) });
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const batch = await instance.batchGetByKeys([
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { mockEntityModelId: 'not-a-uuid' },
+      ]);
+
+      expect(batch.data).to.have.length(1);
+      expect(batch.unprocessed).to.deep.equal([]);
+      expect(bulkQuery.in).to.have.been.calledOnce;
+    });
+
+    it('ignores invalid-input per-key lookup errors in batch fallback', async () => {
+      const fromStub = stub().returns({
+        select: stub().returns(createPostgrestQuery({ data: null, error: { code: '22P02' } })),
+      });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+      const findByIndexKeysStub = sinon.stub(instance, 'findByIndexKeys');
+      findByIndexKeysStub
+        .onFirstCall()
+        .rejects(new DataAccessError('invalid input', instance, { code: '22P02' }))
+        .onSecondCall()
+        .resolves({ record: { someKey: 'ok' } });
+
+      const result = await instance.batchGetByKeys([
+        { someKey: 'bad', someOtherKey: 1 },
+        { someKey: 'ok', someOtherKey: 2 },
+      ]);
+
+      expect(result.data).to.have.length(1);
+      expect(result.data[0].record.someKey).to.equal('ok');
+      expect(result.unprocessed).to.deep.equal([]);
+    });
+
+    it('propagates non-invalid per-key lookup errors in batch fallback', async () => {
+      const fromStub = stub().returns({
+        select: stub().returns(createPostgrestQuery({ data: null, error: { code: '22P02' } })),
+      });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+      sinon.stub(instance, 'findByIndexKeys').rejects(new Error('unexpected lookup failure'));
+
+      await expect(instance.batchGetByKeys([{ someKey: 'x', someOtherKey: 1 }]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to batch get by keys');
+    });
+
+    it('creates with insert and upsert in PostgREST mode', async () => {
+      const maybeSingle = stub()
+        .onFirstCall()
+        .resolves({ data: { some_key: 'a', some_other_key: 7 }, error: null })
+        .onSecondCall()
+        .resolves({ data: { some_key: 'b', some_other_key: 9 }, error: null });
+      const select = stub().returns({ maybeSingle });
+      const insert = stub().returns({ select });
+      const upsert = stub().returns({ select });
+      const fromStub = stub().returns({
+        insert,
+        upsert,
+      });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const created = await instance.create({ someKey: 'a' });
+      expect(created.record.someOtherKey).to.equal(7);
+      expect(insert).to.have.been.calledOnce;
+
+      const upserted = await instance.create(
+        { someKey: 'b', someOtherKey: 9 },
+        { upsert: true },
+      );
+      expect(upserted.record.someKey).to.equal('b');
+      expect(upsert).to.have.been.calledOnce;
+    });
+
+    it('validates create payload errors for PostgREST mode', async () => {
+      const fromStub = stub().returns({
+        insert: stub().returns({
+          select: stub().returns({
+            maybeSingle: stub().resolves({ data: {}, error: null }),
+          }),
+        }),
+      });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const invalidCases = [
+        {},
+        { someKey: 1 },
+        { someKey: 'x', someOtherKey: 'bad' },
+        { someKey: 'x', isActive: 'bad' },
+        { someKey: 'x', tags: 'bad' },
+        { someKey: 'x', metadata: 'bad' },
+        { someKey: 'x', mode: 'C' },
+        { someKey: 'x', validateFalse: 'v' },
+        { someKey: 'x', validateThrows: 'v' },
+      ];
+
+      await Promise.all(invalidCases.map(async (item) => {
+        await expect(instance.create(item)).to.be.rejectedWith(DataAccessError);
+      }));
+    });
+
+    it('creates many in PostgREST mode with validation split', async () => {
+      const select = stub().resolves({ error: null });
+      const insert = stub().returns({ select });
+      const fromStub = stub().returns({ insert });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const result = await instance.createMany([
+        { someKey: 'valid-1' },
+        { someKey: 123 },
+      ]);
+
+      expect(result.createdItems).to.have.length(1);
+      expect(result.errorItems).to.have.length(1);
+      expect(select).to.have.been.calledOnce;
+    });
+
+    it('associates parent on PostgREST createMany rows and warns on invalid parent links', async () => {
+      const select = stub().resolves({
+        data: [
+          { mock_entity_model_id: 'parent-1', some_key: 'valid', some_other_key: 1 },
+          { mock_entity_model_id: 'parent-2', some_key: 'invalid', some_other_key: 2 },
+        ],
+        error: null,
+      });
+      const insert = stub().returns({ select });
+      const fromStub = stub().returns({ insert });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+      const parent = {
+        entityName: 'mockEntityModel',
+        record: { mockEntityModelId: 'parent-1' },
+        schema: { getModelName: () => 'MockEntityModel' },
+      };
+
+      const result = await instance.createMany([
+        { someKey: 'valid', someOtherKey: 1 },
+        { someKey: 'invalid', someOtherKey: 2 },
+      ], parent);
+
+      expect(result.createdItems).to.have.length(2);
+      expect(result.createdItems[0]._accessorCache.getMockEntityModel).to.equal(parent);
+      expect(result.createdItems[1]._accessorCache.getMockEntityModel).to.be.undefined;
+      expect(mockLogger.warn).to.have.been.calledWith(
+        'Failed to associate parent with child [mockEntityModel]: parent is invalid',
+      );
+    });
+
+    it('updates by keys and saveMany in PostgREST mode', async () => {
+      const maybeSingle = stub().resolves({ data: { some_key: 'a' }, error: null });
+      const updateQuery = {
+        eq: stub().returnsThis(),
+        select: stub().returns({ maybeSingle }),
+      };
+      const update = stub().returns(updateQuery);
+      const upsert = stub().resolves({ error: null });
+      const fromStub = stub().returns({
+        update,
+        upsert,
+      });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      await instance.updateByKeys({ someKey: 'a' }, { someOtherKey: 3 });
+      expect(update).to.have.been.calledOnce;
+      expect(updateQuery.eq).to.have.been.calledWith('some_key', 'a');
+
+      const withComposite = {
+        record: { someKey: 'a', someOtherKey: 3 },
+        generateCompositeKeys: () => ({ someKey: 'a', someOtherKey: 3 }),
+      };
+      const withoutComposite = {
+        record: { someKey: 'b', someOtherKey: 4 },
+        getId: () => 'b',
+      };
+      await instance._saveMany([withComposite, withoutComposite]);
+      expect(update.callCount).to.equal(1);
+      expect(upsert.calledOnce).to.be.true;
+    });
+
+    it('updates in-memory updatedAt for saveMany in PostgREST mode', async () => {
+      const before = '2026-01-01T00:00:00.000Z';
+      const upsert = stub().resolves({ error: null });
+      const attributesWithUpdatedAt = {
+        ...richAttributes,
+        updatedAt: {
+          type: 'string',
+          watch: '*',
+          set: () => new Date().toISOString(),
+        },
+      };
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        attributesWithUpdatedAt,
+      );
+      const model = {
+        record: { someKey: 'a', someOtherKey: 1, updatedAt: before },
+        getId: () => 'a',
+      };
+
+      await instance._saveMany([model]);
+
+      expect(model.record.updatedAt).to.not.equal(before);
+      expect(upsert.calledOnce).to.be.true;
+    });
+
+    it('throws DataAccessError when PostgREST upsert fails in saveMany', async () => {
+      const upsert = stub().resolves({ error: new Error('bulk upsert failed') });
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+      const model = {
+        record: { someKey: 'a', someOtherKey: 1 },
+        getId: () => 'a',
+      };
+
+      await expect(instance._saveMany([model]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to save many');
+    });
+
+    it('covers PostgREST query edge paths and errors', async () => {
+      const goodQuery = createPostgrestQuery({
+        data: [{ some_key: 'a', some_other_key: 1 }],
+        error: null,
+      });
+      const errorQuery = createPostgrestQuery({ data: null, error: new Error('query failed') });
+
+      const fromStub = stub()
+        .onFirstCall().returns({ select: stub().returns(goodQuery) })
+        .onSecondCall()
+        .returns({ select: stub().returns(errorQuery) })
+        .onThirdCall()
+        .returns({ select: stub().returns(goodQuery) });
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      await expect(
+        instance.allByIndexKeys({ someKey: 'a' }, { index: 'missing-index', fetchAllPages: false }),
+      ).to.be.rejectedWith(DataAccessError, 'query proxy [missing-index] not found');
+
+      await expect(
+        instance.allByIndexKeys({ someKey: 'a' }, { fetchAllPages: false }),
+      ).to.eventually.have.length(1);
+
+      await expect(
+        instance.allByIndexKeys({ someKey: 'a' }, { fetchAllPages: false }),
+      ).to.be.rejectedWith(DataAccessError, 'Failed to query');
+    });
+
+    it('handles create and createMany PostgREST failure paths', async () => {
+      const instance = createInstance(
+        {
+          from: stub().returns({
+            insert: stub().returns({
+              select: stub().returns({
+                maybeSingle: stub().resolves({ data: null, error: new Error('create failed') }),
+              }),
+            }),
+          }),
+        },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      await expect(instance.create({ someKey: 'a' }))
+        .to.be.rejectedWith(DataAccessError, 'Failed to create');
+
+      const throwingAttributes = {
+        ...richAttributes,
+        throwingSet: {
+          type: 'string',
+          set: () => { throw new Error('setter failed'); },
+        },
+      };
+
+      const instanceWithThrowingSetter = createInstance(
+        {
+          from: stub().returns({
+            insert: stub().returns({
+              select: stub().resolves({ error: null }),
+            }),
+          }),
+        },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        throwingAttributes,
+      );
+
+      await expect(instanceWithThrowingSetter.createMany([{ someKey: 'a', throwingSet: 'x' }]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to create many');
+
+      const instanceWithInsertError = createInstance(
+        {
+          from: stub().returns({
+            insert: stub().returns({
+              select: stub().resolves({ error: new Error('insert failed') }),
+            }),
+          }),
+        },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      await expect(instanceWithInsertError.createMany([{ someKey: 'a' }]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to create many');
+    });
+
+    it('covers createMany parent association branches', async () => {
+      const select = stub().resolves({ error: null });
+      const insert = stub().returns({ select });
+      const instance = createInstance(
+        { from: stub().returns({ insert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const validParent = {
+        entityName: 'mockEntityModel',
+        record: { mockEntityModelId: 'valid-parent-id' },
+        schema: { getModelName: () => 'MockEntityModel' },
+      };
+      const invalidParent = {
+        entityName: 'mockEntityModel',
+        record: { mockEntityModelId: 'different-parent-id' },
+        schema: { getModelName: () => 'MockEntityModel' },
+      };
+
+      const payload = [{ someKey: 'a', mockEntityModelId: 'valid-parent-id' }];
+      const valid = await instance.createMany(payload, validParent);
+      const invalid = await instance.createMany(payload, invalidParent);
+
+      expect(valid.createdItems[0]._accessorCache.getMockEntityModel).to.equal(validParent);
+      expect(invalid.createdItems[0]._accessorCache.getMockEntityModel).to.not.equal(invalidParent);
+    });
+
+    it('covers updateByKeys entity path and error branches', async () => {
+      const patch = {
+        set: stub().returnsThis(),
+        go: stub().resolves(),
+      };
+      const instanceWithEntity = createInstance(
+        {
+          entities: {
+            mockEntityModel: {
+              patch: stub().returns(patch),
+            },
+          },
+        },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      await instanceWithEntity.updateByKeys({ someKey: 'a' }, { someOtherKey: 1 });
+      expect(patch.set).to.have.been.calledOnceWithExactly({ someOtherKey: 1 });
+      expect(patch.go).to.have.been.calledOnce;
+
+      await expect(instanceWithEntity.updateByKeys(null, { someOtherKey: 1 }))
+        .to.be.rejectedWith(DataAccessError, 'keys and updates are required');
+
+      const instanceWithError = createInstance(
+        {
+          from: stub().returns({
+            update: stub().returns({
+              eq: stub().returnsThis(),
+              select: stub().returns({
+                maybeSingle: stub().resolves({ error: new Error('update failed') }),
+              }),
+            }),
+          }),
+        },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      await expect(instanceWithError.updateByKeys({ someKey: 'a' }, { someOtherKey: 2 }))
+        .to.be.rejectedWith(DataAccessError, 'Failed to update entity');
+    });
+
+    it('covers applyUpdateWatchers empty-update branch', () => {
+      const instance = createInstance(
+        { from: stub() },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const result = instance.applyUpdateWatchers({ someKey: 'a' }, {});
+      expect(result).to.deep.equal({ record: { someKey: 'a' }, updates: {} });
+    });
+
+    it('bumps watched updatedAt when watcher output is not newer', () => {
+      const instance = createInstance(
+        { from: stub() },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        {
+          someKey: { type: 'string' },
+          updatedAt: {
+            type: 'string',
+            watch: '*',
+            set: () => '2026-01-01T00:00:00.000Z',
+          },
+        },
+      );
+
+      const result = instance.applyUpdateWatchers(
+        { someKey: 'a', updatedAt: '2026-01-01T00:00:00.000Z' },
+        { someKey: 'b' },
+      );
+      expect(result.record.updatedAt).to.equal('2026-01-01T00:00:01.000Z');
+      expect(result.updates.updatedAt).to.equal('2026-01-01T00:00:01.000Z');
+    });
+
+    it('covers required-field validation branch with non-empty payload', async () => {
+      const instance = createInstance(
+        {
+          from: stub().returns({
+            insert: stub().returns({
+              select: stub().returns({
+                maybeSingle: stub().resolves({ data: {}, error: null }),
+              }),
+            }),
+          }),
+        },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      await expect(instance.create({ someOtherKey: 1 }))
+        .to.be.rejectedWith(DataAccessError, 'Failed to create');
     });
   });
 });

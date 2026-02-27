@@ -1,3 +1,92 @@
+## [@adobe/spacecat-shared-utils-v1.96.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.2...@adobe/spacecat-shared-utils-v1.96.3) (2026-02-25)
+
+### Bug Fixes
+
+* revert breaking aggregation granularity changes from v1.96.1 ([#1378](https://github.com/adobe/spacecat-shared/issues/1378)) ([fbc00f4](https://github.com/adobe/spacecat-shared/commit/fbc00f4d282bd2753e46377ac8ead2c45ab79416)), closes [#1376](https://github.com/adobe/spacecat-shared/issues/1376)
+
+## [@adobe/spacecat-shared-utils-v1.96.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.1...@adobe/spacecat-shared-utils-v1.96.2) (2026-02-25)
+
+### Bug Fixes
+
+* temporal series month/week wrap-around and add year to query pipeline ([#1376](https://github.com/adobe/spacecat-shared/issues/1376)) ([b15cfd7](https://github.com/adobe/spacecat-shared/commit/b15cfd705809612c4ad69bbdc09d87c06687dcb6))
+
+# [@adobe/spacecat-shared-utils-v1.96.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.0...@adobe/spacecat-shared-utils-v1.96.1) (2026-02-13)
+
+
+### Bug Fixes
+
+* Change aggregation levels for several accessibility issue types ([#1347](https://github.com/adobe/spacecat-shared/issues/1347)) ([f07d153](https://github.com/adobe/spacecat-shared/commit/f07d15372c385efce972ac1044b69a4819f39d0e))
+
+# [@adobe/spacecat-shared-utils-v1.96.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.95.0...@adobe/spacecat-shared-utils-v1.96.0) (2026-02-12)
+
+
+### Features
+
+* get llmo config v2 ([#1340](https://github.com/adobe/spacecat-shared/issues/1340)) ([6fcbd51](https://github.com/adobe/spacecat-shared/commit/6fcbd51864daca13736d3813097c485e2189cd68))
+
+# [@adobe/spacecat-shared-utils-v1.95.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.94.0...@adobe/spacecat-shared-utils-v1.95.0) (2026-02-12)
+
+
+### Features
+
+* add canonicalizeUrl utility for consistent URL comparison ([#1334](https://github.com/adobe/spacecat-shared/issues/1334)) ([eb15132](https://github.com/adobe/spacecat-shared/commit/eb1513228e5d2e1701211b6aaf36108bd1642d68))
+
+# [@adobe/spacecat-shared-utils-v1.94.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.93.0...@adobe/spacecat-shared-utils-v1.94.0) (2026-02-11)
+
+
+### Features
+
+* store owner of the strategy ([#1339](https://github.com/adobe/spacecat-shared/issues/1339)) ([8d7ea96](https://github.com/adobe/spacecat-shared/commit/8d7ea968315a17a1f614f7cb61e91f997355885b))
+
+# [@adobe/spacecat-shared-utils-v1.93.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.92.0...@adobe/spacecat-shared-utils-v1.93.0) (2026-02-10)
+
+
+### Features
+
+* ignored field in llmo config ([#1326](https://github.com/adobe/spacecat-shared/issues/1326)) ([8a3e707](https://github.com/adobe/spacecat-shared/commit/8a3e70740bb8d08f4dfb946e4141f1526608b574))
+
+# [@adobe/spacecat-shared-utils-v1.92.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.91.0...@adobe/spacecat-shared-utils-v1.92.0) (2026-02-10)
+
+
+### Features
+
+* schema for oppty workspace data ([#1307](https://github.com/adobe/spacecat-shared/issues/1307)) ([49decad](https://github.com/adobe/spacecat-shared/commit/49decada5a0e598628563c8856b77715de549fce))
+
+# [@adobe/spacecat-shared-utils-v1.91.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.3...@adobe/spacecat-shared-utils-v1.91.0) (2026-02-08)
+
+
+### Features
+
+* Bot press hold detection addition + add abort info to scrapeJob schema ([#1308](https://github.com/adobe/spacecat-shared/issues/1308)) ([4f19f91](https://github.com/adobe/spacecat-shared/commit/4f19f9143435aa283d8b9e57c17dd79873168177))
+
+# [@adobe/spacecat-shared-utils-v1.90.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.2...@adobe/spacecat-shared-utils-v1.90.3) (2026-02-06)
+
+
+### Bug Fixes
+
+* add category id in deletedPrompt field ([#1325](https://github.com/adobe/spacecat-shared/issues/1325)) ([8c47acc](https://github.com/adobe/spacecat-shared/commit/8c47accf90c523d4234d2bb50e50072290e59f89))
+
+# [@adobe/spacecat-shared-utils-v1.90.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.1...@adobe/spacecat-shared-utils-v1.90.2) (2026-02-05)
+
+
+### Bug Fixes
+
+* add more logs to simplify tracing issues ([#1321](https://github.com/adobe/spacecat-shared/issues/1321)) ([2e07c68](https://github.com/adobe/spacecat-shared/commit/2e07c680c6bff8c504f81b14376691787697adf2))
+
+# [@adobe/spacecat-shared-utils-v1.90.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.90.0...@adobe/spacecat-shared-utils-v1.90.1) (2026-01-29)
+
+
+### Bug Fixes
+
+* log warn instead of error if metrics missing ([#1286](https://github.com/adobe/spacecat-shared/issues/1286)) ([e823a7d](https://github.com/adobe/spacecat-shared/commit/e823a7da4ce76c60f3256517f91532d71830f49d))
+
+# [@adobe/spacecat-shared-utils-v1.90.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.89.1...@adobe/spacecat-shared-utils-v1.90.0) (2026-01-29)
+
+
+### Features
+
+* LLMO-1534 Pretty format old and new log forwarding credentials ([#1290](https://github.com/adobe/spacecat-shared/issues/1290)) ([df84629](https://github.com/adobe/spacecat-shared/commit/df84629c1a49e81b43e352eb4b8b542b9eb3085e))
+
 # [@adobe/spacecat-shared-utils-v1.89.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.89.0...@adobe/spacecat-shared-utils-v1.89.1) (2026-01-26)
 
 

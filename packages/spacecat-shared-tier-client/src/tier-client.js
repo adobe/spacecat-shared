@@ -11,9 +11,9 @@
  */
 
 import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
-import {
-  Entitlement as EntitlementModel,
-} from '@adobe/spacecat-shared-data-access';
+import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
+
+const ENTITLEMENT_TIERS = MYSTICAT_ENUMS_BY_TYPE.ENTITLEMENT_TIER;
 /**
  * TierClient provides methods to manage entitlements and site enrollments.
  */
@@ -137,8 +137,8 @@ class TierClient {
    */
   async createEntitlement(tier) {
     try {
-      if (!Object.values(EntitlementModel.TIERS).includes(tier)) {
-        throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(EntitlementModel.TIERS).join(', ')}`);
+      if (!Object.values(ENTITLEMENT_TIERS).includes(tier)) {
+        throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(ENTITLEMENT_TIERS).join(', ')}`);
       }
       const orgId = this.organization.getId();
       // Check what already exists
@@ -149,7 +149,7 @@ class TierClient {
         const currentTier = existing.entitlement.getTier();
 
         // If currentTier doesn't match with given tier and is not PAID, update it
-        if (currentTier !== tier && currentTier !== EntitlementModel.TIERS.PAID) {
+        if (currentTier !== tier && currentTier !== ENTITLEMENT_TIERS.PAID) {
           existing.entitlement.setTier(tier);
           await existing.entitlement.save();
         }
@@ -220,6 +220,7 @@ class TierClient {
    * Gets all enrollments based on context, filtered by productCode.
    * - If site is provided: returns site enrollment for the entitlement matching productCode
    * - If org-only: returns all site enrollments for the entitlement matching productCode
+   * - Filters out enrollments where the site's orgId doesn't match the entitlement's orgId
    * @returns {Promise<object>} Object with entitlement and enrollments array.
    */
   async getAllEnrollment() {
@@ -234,16 +235,41 @@ class TierClient {
 
       const allEnrollments = await this.SiteEnrollment.allByEntitlementId(entitlement.getId());
 
+      if (allEnrollments.length === 0) {
+        return { entitlement, enrollments: [] };
+      }
+
+      // Fetch all sites using batchGetByKeys
+      const siteKeys = allEnrollments.map((enrollment) => ({ siteId: enrollment.getSiteId() }));
+      const sitesResult = await this.Site.batchGetByKeys(siteKeys);
+      const sitesMap = new Map(sitesResult.data.map((site) => [site.getId(), site]));
+
+      // Filter enrollments where site's orgId matches the entitlement's orgId
+      const validEnrollments = [];
+
+      for (const enrollment of allEnrollments) {
+        const site = sitesMap.get(enrollment.getSiteId());
+        if (!site) {
+          // Site not found, log warning and skip
+          this.log.warn(`Site not found for enrollment ${enrollment.getId()} with siteId ${enrollment.getSiteId()}`);
+        } else {
+          const siteOrgId = site.getOrganizationId();
+          if (siteOrgId === orgId) {
+            validEnrollments.push(enrollment);
+          }
+        }
+      }
+
       if (this.site) {
         // Return site enrollments matching the entitlement and site
         const siteId = this.site.getId();
-        const matchingEnrollments = allEnrollments.filter(
+        const matchingEnrollments = validEnrollments.filter(
           (se) => se.getSiteId() === siteId,
         );
         return { entitlement, enrollments: matchingEnrollments };
       } else {
-        // Return all enrollments for the entitlement
-        return { entitlement, enrollments: allEnrollments };
+        // Return all valid enrollments for the entitlement
+        return { entitlement, enrollments: validEnrollments };
       }
     } catch (error) {
       this.log.error(`Error getting all enrollments: ${error.message}`);
@@ -288,7 +314,7 @@ class TierClient {
   async revokeEntitlement() {
     const existing = await this.checkValidEntitlement();
     if (existing.entitlement) {
-      if (existing.entitlement.getTier() === EntitlementModel.TIERS.PAID) {
+      if (existing.entitlement.getTier() === ENTITLEMENT_TIERS.PAID) {
         throw new Error('Paid entitlement cannot be revoked');
       }
       await existing.entitlement.remove();

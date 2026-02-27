@@ -1,3 +1,98 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.9.0...@adobe/spacecat-shared-tokowaka-client-v1.10.0) (2026-02-26)
+
+### Features
+
+* LLMO-2805 Stage config addition api changes ([#1370](https://github.com/adobe/spacecat-shared/issues/1370)) ([0789f4a](https://github.com/adobe/spacecat-shared/commit/0789f4af95433b733c86638a79c184850804dba9))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.8.0...@adobe/spacecat-shared-tokowaka-client-v1.9.0) (2026-02-24)
+
+### Features
+
+* **AGENTCOM-266:** add commerce page enrichment mapper for tokowaka edge deployment ([#1369](https://github.com/adobe/spacecat-shared/issues/1369)) ([357f2f4](https://github.com/adobe/spacecat-shared/commit/357f2f44cd8da19272a7638b55870873388840c9))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.8...@adobe/spacecat-shared-tokowaka-client-v1.8.0) (2026-02-18)
+
+### Features
+
+* **tokowaka-client:** add semantic-value-visibility mapper ([#1348](https://github.com/adobe/spacecat-shared/issues/1348)) ([373f920](https://github.com/adobe/spacecat-shared/commit/373f920dfa9d5da8f2e15e0533d1347a23f45044))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.7...@adobe/spacecat-shared-tokowaka-client-v1.7.8) (2026-02-16)
+
+
+### Bug Fixes
+
+* timeout added for edge optimize status ([#1329](https://github.com/adobe/spacecat-shared/issues/1329)) ([93ef065](https://github.com/adobe/spacecat-shared/commit/93ef0653840929e9c76b14d370dbfa6db03cb97e))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.6...@adobe/spacecat-shared-tokowaka-client-v1.7.7) (2026-02-12)
+
+
+### Bug Fixes
+
+* export forwarded host compute method ([#1338](https://github.com/adobe/spacecat-shared/issues/1338)) ([91e5f5f](https://github.com/adobe/spacecat-shared/commit/91e5f5fb2b5a7d592886caea940a6313fe1c1c8c))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.5...@adobe/spacecat-shared-tokowaka-client-v1.7.6) (2026-02-09)
+
+
+### Bug Fixes
+
+* edge-preview api: ignore warmup call failure ([#1327](https://github.com/adobe/spacecat-shared/issues/1327)) ([fbc9f65](https://github.com/adobe/spacecat-shared/commit/fbc9f65bf96e408c878fa3b8b37fbbe29444e08f))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.4...@adobe/spacecat-shared-tokowaka-client-v1.7.5) (2026-02-05)
+
+
+### Bug Fixes
+
+* optimize edge-preview API ([#1319](https://github.com/adobe/spacecat-shared/issues/1319)) ([7f13b66](https://github.com/adobe/spacecat-shared/commit/7f13b666bd234a246a530e0f387feac143792b36))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.3...@adobe/spacecat-shared-tokowaka-client-v1.7.4) (2026-02-05)
+
+
+### Bug Fixes
+
+* user agent changes for edge optimize status req ([#1320](https://github.com/adobe/spacecat-shared/issues/1320)) ([b55afc5](https://github.com/adobe/spacecat-shared/commit/b55afc5cdee78e54802ec9967f197ab9a3d057a4))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.2...@adobe/spacecat-shared-tokowaka-client-v1.7.3) (2026-02-04)
+
+
+### Bug Fixes
+
+* edge-deploy: update patch lastUpdated to now ([#1315](https://github.com/adobe/spacecat-shared/issues/1315)) ([754be98](https://github.com/adobe/spacecat-shared/commit/754be986ac8ee8aa76a53f142338b214eca30b8c))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.1...@adobe/spacecat-shared-tokowaka-client-v1.7.2) (2026-02-04)
+
+
+### Bug Fixes
+
+* preview for all using apply Stale ([#1310](https://github.com/adobe/spacecat-shared/issues/1310)) ([ccadd8f](https://github.com/adobe/spacecat-shared/commit/ccadd8f230259c781c33b977fd6214375a563ab9))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.0...@adobe/spacecat-shared-tokowaka-client-v1.7.1) (2026-02-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency mdast-util-to-hast to v13 [security] ([#1201](https://github.com/adobe/spacecat-shared/issues/1201)) ([3678e25](https://github.com/adobe/spacecat-shared/commit/3678e254ea25d393a64260b14599bb02309e1fb8)), closes [#x20](https://github.com/adobe/spacecat-shared/issues/x20)
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.6.1...@adobe/spacecat-shared-tokowaka-client-v1.7.0) (2026-02-02)
+
+
+### Features
+
+* edge optimize status api addition ([#1292](https://github.com/adobe/spacecat-shared/issues/1292)) ([f2c89be](https://github.com/adobe/spacecat-shared/commit/f2c89be3fb4fb2580a13a3a3f7517ce92cf1ce69))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.6.0...@adobe/spacecat-shared-tokowaka-client-v1.6.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* api key now optional for edge-preview ([#1299](https://github.com/adobe/spacecat-shared/issues/1299)) ([76eb046](https://github.com/adobe/spacecat-shared/commit/76eb04640dab752a83909a51827abde1e41fc57e))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.8...@adobe/spacecat-shared-tokowaka-client-v1.6.0) (2026-01-29)
+
+
+### Features
+
+* new flag opted added in edgeoptimizeconfig ([#1294](https://github.com/adobe/spacecat-shared/issues/1294)) ([8386e38](https://github.com/adobe/spacecat-shared/commit/8386e3805e9e67c18e4569428bef7ac5723eb991))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.5.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.5.7...@adobe/spacecat-shared-tokowaka-client-v1.5.8) (2026-01-27)
 
 

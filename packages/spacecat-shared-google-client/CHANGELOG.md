@@ -1,3 +1,37 @@
+## [@adobe/spacecat-shared-google-client-v1.5.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.2...@adobe/spacecat-shared-google-client-v1.5.3) (2026-02-18)
+
+### Bug Fixes
+
+* **deps:** update transitive data-access dependencies to v3 ([#1363](https://github.com/adobe/spacecat-shared/issues/1363)) ([c2ae6c1](https://github.com/adobe/spacecat-shared/commit/c2ae6c123053a4799046abeaec78230408400e66))
+
+# [@adobe/spacecat-shared-google-client-v1.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.1...@adobe/spacecat-shared-google-client-v1.5.2) (2026-02-16)
+
+
+### Bug Fixes
+
+* google client build ([#1353](https://github.com/adobe/spacecat-shared/issues/1353)) ([d896e70](https://github.com/adobe/spacecat-shared/commit/d896e70a21229cbd73cee9b6fa08ced18ed6b690))
+
+# [@adobe/spacecat-shared-google-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.0...@adobe/spacecat-shared-google-client-v1.5.1) (2026-02-04)
+
+
+### Bug Fixes
+
+* llmo auth client ([#1312](https://github.com/adobe/spacecat-shared/issues/1312)) ([8662248](https://github.com/adobe/spacecat-shared/commit/8662248d6a1987b95d8f3c09fff8621d9bf16215))
+
+# [@adobe/spacecat-shared-google-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.63...@adobe/spacecat-shared-google-client-v1.5.0) (2026-02-03)
+
+
+### Features
+
+* **google-client:** support separate OAuth client for LLMO UI ([#1311](https://github.com/adobe/spacecat-shared/issues/1311)) ([656d9e8](https://github.com/adobe/spacecat-shared/commit/656d9e8a8c7c6c2e0ce563f369aa4b1bcd629828))
+
+# [@adobe/spacecat-shared-google-client-v1.4.63](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.62...@adobe/spacecat-shared-google-client-v1.4.63) (2026-01-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.4.0 ([#1295](https://github.com/adobe/spacecat-shared/issues/1295)) ([5c1595b](https://github.com/adobe/spacecat-shared/commit/5c1595bd7cba9b7053da867b8f46e302f8683eba))
+
 # [@adobe/spacecat-shared-google-client-v1.4.62](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.61...@adobe/spacecat-shared-google-client-v1.4.62) (2025-11-28)
 
 

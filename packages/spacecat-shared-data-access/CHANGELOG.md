@@ -1,3 +1,166 @@
+## [@adobe/spacecat-shared-data-access-v3.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.3.0...@adobe/spacecat-shared-data-access-v3.4.0) (2026-02-26)
+
+### Features
+
+* register commerce-product-enrichments-yearly audit type ([#1381](https://github.com/adobe/spacecat-shared/issues/1381)) ([6d2990f](https://github.com/adobe/spacecat-shared/commit/6d2990f691d3c9837772d092efb72cd7069a8024))
+
+## [@adobe/spacecat-shared-data-access-v3.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.2.0...@adobe/spacecat-shared-data-access-v3.3.0) (2026-02-26)
+
+### Features
+
+* **data-access:** add yearly job interval ([#1380](https://github.com/adobe/spacecat-shared/issues/1380)) ([422f301](https://github.com/adobe/spacecat-shared/commit/422f301bd6d8e3f4565b0790c39adf511855da69))
+
+## [@adobe/spacecat-shared-data-access-v3.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.1.0...@adobe/spacecat-shared-data-access-v3.2.0) (2026-02-21)
+
+### Features
+
+* cloud manager client ([#1335](https://github.com/adobe/spacecat-shared/issues/1335)) ([2e4b013](https://github.com/adobe/spacecat-shared/commit/2e4b01359641706d633c16907b8292334581ce39))
+
+## [@adobe/spacecat-shared-data-access-v3.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.0.1...@adobe/spacecat-shared-data-access-v3.1.0) (2026-02-18)
+
+### Features
+
+* add methods to manage LLMO tags | LLMO-3058 ([#1362](https://github.com/adobe/spacecat-shared/issues/1362)) ([c678d1a](https://github.com/adobe/spacecat-shared/commit/c678d1ad6e12febeeae6cc60211bb0cbf9f922a4))
+
+## [@adobe/spacecat-shared-data-access-v3.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.0.0...@adobe/spacecat-shared-data-access-v3.0.1) (2026-02-17)
+
+### Bug Fixes
+
+* add consent-banner to DATA_SCHEMAS for minimal view projection ([#1361](https://github.com/adobe/spacecat-shared/issues/1361)) ([bc1379c](https://github.com/adobe/spacecat-shared/commit/bc1379c6e7eba64c2d7f2b17e1462db0ca798711))
+
+## [@adobe/spacecat-shared-data-access-v3.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.109.0...@adobe/spacecat-shared-data-access-v3.0.0) (2026-02-16)
+
+### ⚠ BREAKING CHANGES
+
+* **data-access:** data-access v3 migrates from DynamoDB/ElectroDB to Postgres/PostgREST
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+* data access v3 (#1349)
+
+### Features
+
+* data access v3 ([#1349](https://github.com/adobe/spacecat-shared/issues/1349)) ([6db6b79](https://github.com/adobe/spacecat-shared/commit/6db6b79ecb7813acad798a2435fe317cd9d1731c))
+* **data-access:** v3 Postgres/PostgREST migration ([b79725f](https://github.com/adobe/spacecat-shared/commit/b79725f6a53bc0baac14a64acd8105a3eec56d99))
+
+# [@adobe/spacecat-shared-data-access-v2.109.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.108.0...@adobe/spacecat-shared-data-access-v2.109.0) (2026-02-16)
+
+
+### Features
+
+* consumer entity to register technical accounts ([#1341](https://github.com/adobe/spacecat-shared/issues/1341)) ([a0572e8](https://github.com/adobe/spacecat-shared/commit/a0572e8f52c95d90b986495a110ec66f58caa77e))
+
+# [@adobe/spacecat-shared-data-access-v2.108.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.107.0...@adobe/spacecat-shared-data-access-v2.108.0) (2026-02-13)
+
+
+### Features
+
+* extend weekly-slot intervals from 18 to 23 ([#1345](https://github.com/adobe/spacecat-shared/issues/1345)) ([6f46aef](https://github.com/adobe/spacecat-shared/commit/6f46aef3b9dfaac35c928648201135b1fbe8857b))
+
+# [@adobe/spacecat-shared-data-access-v2.107.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.106.1...@adobe/spacecat-shared-data-access-v2.107.0) (2026-02-12)
+
+
+### Features
+
+* add weekly-slot job intervals for staggered audits ([#1344](https://github.com/adobe/spacecat-shared/issues/1344)) ([5b85f6c](https://github.com/adobe/spacecat-shared/commit/5b85f6c9a98e39756c241d2d96db865a111f151b))
+
+# [@adobe/spacecat-shared-data-access-v2.106.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.106.0...@adobe/spacecat-shared-data-access-v2.106.1) (2026-02-12)
+
+
+### Bug Fixes
+
+* enabled removal ([#1343](https://github.com/adobe/spacecat-shared/issues/1343)) ([3508c38](https://github.com/adobe/spacecat-shared/commit/3508c380b20994567ac7a5efc598bdc9cd1559c7))
+
+# [@adobe/spacecat-shared-data-access-v2.106.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.105.1...@adobe/spacecat-shared-data-access-v2.106.0) (2026-02-11)
+
+
+### Features
+
+* **data-access:** add suggestionValue to FALLBACK_PROJECTION for reports ([#1337](https://github.com/adobe/spacecat-shared/issues/1337)) ([d17da2b](https://github.com/adobe/spacecat-shared/commit/d17da2b69bbccbf69d2fabe7c3ffd37d8ffb5106))
+
+# [@adobe/spacecat-shared-data-access-v2.105.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.105.0...@adobe/spacecat-shared-data-access-v2.105.1) (2026-02-11)
+
+
+### Bug Fixes
+
+* **data-access:** support both snake_case and camelCase in BROKEN_BAC… ([#1336](https://github.com/adobe/spacecat-shared/issues/1336)) ([327d934](https://github.com/adobe/spacecat-shared/commit/327d934b7b93506fe397ca92548c4ff111fb26df))
+
+# [@adobe/spacecat-shared-data-access-v2.105.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.104.0...@adobe/spacecat-shared-data-access-v2.105.0) (2026-02-10)
+
+
+### Features
+
+* **data-access:** add weekly-digest-email job interval ([#1333](https://github.com/adobe/spacecat-shared/issues/1333)) ([e4dd4cb](https://github.com/adobe/spacecat-shared/commit/e4dd4cb97f4f757f14233dd6f3d682e4180bfce9))
+
+# [@adobe/spacecat-shared-data-access-v2.104.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.103.0...@adobe/spacecat-shared-data-access-v2.104.0) (2026-02-08)
+
+
+### Features
+
+* Bot press hold detection addition + add abort info to scrapeJob schema ([#1308](https://github.com/adobe/spacecat-shared/issues/1308)) ([4f19f91](https://github.com/adobe/spacecat-shared/commit/4f19f9143435aa283d8b9e57c17dd79873168177))
+
+# [@adobe/spacecat-shared-data-access-v2.103.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.102.0...@adobe/spacecat-shared-data-access-v2.103.0) (2026-02-04)
+
+
+### Features
+
+* add brand sentiment guidelines ([#1297](https://github.com/adobe/spacecat-shared/issues/1297)) ([93f0a1d](https://github.com/adobe/spacecat-shared/commit/93f0a1dada56c1a3b6c40cff32a4b7be186e82e6))
+
+# [@adobe/spacecat-shared-data-access-v2.102.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.101.0...@adobe/spacecat-shared-data-access-v2.102.0) (2026-02-04)
+
+
+### Features
+
+* add new types for commerce product enrichments ([#1317](https://github.com/adobe/spacecat-shared/issues/1317)) ([14a4f10](https://github.com/adobe/spacecat-shared/commit/14a4f104c06ed800cbaa318e72d0106f5398ca85))
+
+# [@adobe/spacecat-shared-data-access-v2.101.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.2...@adobe/spacecat-shared-data-access-v2.101.0) (2026-02-04)
+
+
+### Features
+
+* update audit destination scrapeClient ([#1313](https://github.com/adobe/spacecat-shared/issues/1313)) ([d050937](https://github.com/adobe/spacecat-shared/commit/d0509370042ec48e8493496ba4b7d52d249c3689))
+
+# [@adobe/spacecat-shared-data-access-v2.100.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.1...@adobe/spacecat-shared-data-access-v2.100.2) (2026-02-03)
+
+
+### Bug Fixes
+
+* opted changed to timestamp ([#1306](https://github.com/adobe/spacecat-shared/issues/1306)) ([24d34dc](https://github.com/adobe/spacecat-shared/commit/24d34dc9353460043441335ddb4f2a4f8b41584f))
+
+# [@adobe/spacecat-shared-data-access-v2.100.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.100.0...@adobe/spacecat-shared-data-access-v2.100.1) (2026-02-02)
+
+
+### Bug Fixes
+
+* improve suggestion schema documentation ([#1304](https://github.com/adobe/spacecat-shared/issues/1304)) ([8d87f3f](https://github.com/adobe/spacecat-shared/commit/8d87f3f474dae73a0207d51cdf1e1b040befcf89))
+
+# [@adobe/spacecat-shared-data-access-v2.100.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.99.0...@adobe/spacecat-shared-data-access-v2.100.0) (2026-02-02)
+
+
+### Features
+
+* **data-access:** add type-specific data schemas for suggestions [SITES-39183] ([#1289](https://github.com/adobe/spacecat-shared/issues/1289)) ([9824b22](https://github.com/adobe/spacecat-shared/commit/9824b22bc494467849a2ae903ce902ed3f9fde80))
+
+# [@adobe/spacecat-shared-data-access-v2.99.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.98.0...@adobe/spacecat-shared-data-access-v2.99.0) (2026-01-30)
+
+
+### Features
+
+* **configuration:** add QUARTERLY job interval ([#1302](https://github.com/adobe/spacecat-shared/issues/1302)) ([30d3c10](https://github.com/adobe/spacecat-shared/commit/30d3c1006c5f9f3043b103b3a23893664090619f))
+
+# [@adobe/spacecat-shared-data-access-v2.98.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.2...@adobe/spacecat-shared-data-access-v2.98.0) (2026-01-29)
+
+
+### Features
+
+* new flag opted added in edgeoptimizeconfig ([#1294](https://github.com/adobe/spacecat-shared/issues/1294)) ([8386e38](https://github.com/adobe/spacecat-shared/commit/8386e3805e9e67c18e4569428bef7ac5723eb991))
+
+# [@adobe/spacecat-shared-data-access-v2.97.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.1...@adobe/spacecat-shared-data-access-v2.97.2) (2026-01-28)
+
+
+### Bug Fixes
+
+* page-citability adding new field in schema ([#1293](https://github.com/adobe/spacecat-shared/issues/1293)) ([9b4728e](https://github.com/adobe/spacecat-shared/commit/9b4728e1e97c8c4f80c2c9ccd011cc14195f5214))
+
 # [@adobe/spacecat-shared-data-access-v2.97.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.97.0...@adobe/spacecat-shared-data-access-v2.97.1) (2026-01-23)
 
 

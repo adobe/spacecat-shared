@@ -1,3 +1,23 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.2.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.4...@adobe/spacecat-shared-html-analyzer-v1.2.5) (2026-02-23)
+
+### Bug Fixes
+
+* filtering out digit access related accessibility divs ([#1366](https://github.com/adobe/spacecat-shared/issues/1366)) ([3ad20a5](https://github.com/adobe/spacecat-shared/commit/3ad20a582f6a9d7ec21050fd56afcbeb16a6f096))
+
+# [@adobe/spacecat-shared-html-analyzer-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.3...@adobe/spacecat-shared-html-analyzer-v1.2.4) (2026-02-05)
+
+
+### Bug Fixes
+
+* rcv adding new cookie selectors ([#1323](https://github.com/adobe/spacecat-shared/issues/1323)) ([9c566e6](https://github.com/adobe/spacecat-shared/commit/9c566e6dccac85db2da4915dfa143c6bb7d43f90))
+
+# [@adobe/spacecat-shared-html-analyzer-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.2...@adobe/spacecat-shared-html-analyzer-v1.2.3) (2026-02-04)
+
+
+### Bug Fixes
+
+* updated selectors for nav-footer to not exclude the breadcrumbs ([#1309](https://github.com/adobe/spacecat-shared/issues/1309)) ([2c9246c](https://github.com/adobe/spacecat-shared/commit/2c9246c295ab90ab8e2bae39fd5d11d71bba6546))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.1...@adobe/spacecat-shared-html-analyzer-v1.2.2) (2026-01-22)
 
 

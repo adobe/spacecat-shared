@@ -41,6 +41,7 @@ export interface CodeConfig {
   ref: string;
   installationId?: string;
   url: string;
+  s3StoragePath?: string;
 }
 
 export type IMPORT_TYPES = {
@@ -194,6 +195,8 @@ export interface SiteConfig {
   addLlmoCustomerIntent(customerIntentItems: Array<LlmoCustomerIntent>): void;
   removeLlmoCustomerIntent(intentKey: string): void;
   updateLlmoCustomerIntent(intentKey: string, updateData: Partial<LlmoCustomerIntent>): void;
+  addLlmoTag(tag: string): void;
+  removeLlmoTag(tag: string): void;
 }
 
 export interface Site extends BaseModel {

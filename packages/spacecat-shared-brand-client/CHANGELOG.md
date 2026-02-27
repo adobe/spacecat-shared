@@ -1,3 +1,16 @@
+## [@adobe/spacecat-shared-brand-client-v1.1.36](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.35...@adobe/spacecat-shared-brand-client-v1.1.36) (2026-02-18)
+
+### Bug Fixes
+
+* **deps:** update transitive data-access dependencies to v3 ([#1363](https://github.com/adobe/spacecat-shared/issues/1363)) ([c2ae6c1](https://github.com/adobe/spacecat-shared/commit/c2ae6c123053a4799046abeaec78230408400e66))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.35](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.34...@adobe/spacecat-shared-brand-client-v1.1.35) (2026-01-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.4.0 ([#1295](https://github.com/adobe/spacecat-shared/issues/1295)) ([5c1595b](https://github.com/adobe/spacecat-shared/commit/5c1595bd7cba9b7053da867b8f46e302f8683eba))
+
 # [@adobe/spacecat-shared-brand-client-v1.1.34](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.33...@adobe/spacecat-shared-brand-client-v1.1.34) (2025-11-28)
 
 

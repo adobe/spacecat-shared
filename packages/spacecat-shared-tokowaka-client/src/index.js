@@ -12,7 +12,7 @@
 
 import crypto from 'crypto';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject, tracingFetch } from '@adobe/spacecat-shared-utils';
 import { v4 as uuidv4 } from 'uuid';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
@@ -28,6 +28,7 @@ import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
 
 export { FastlyKVClient } from './fastly-kv-client.js';
+export { calculateForwardedHost } from './utils/custom-html-utils.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -229,15 +230,18 @@ class TokowakaClient {
   }
 
   /**
-   * Fetches domain-level metaconfig from S3
+   * Internal method to fetch domain-level metaconfig from S3 with metadata
    * @param {string} url - Full URL (used to extract domain)
-   * @returns {Promise<Object|null>} - Metaconfig object or null if not found
+   * @returns {Promise<Object|null>} - Object with metaconfig and s3Metadata,
+   *   or null if not found
+   * @private
    */
-  async fetchMetaconfig(url) {
+  async #fetchMetaconfigWithMetadata(url) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
+    const fetchStartTime = Date.now();
     const s3Path = getTokowakaMetaconfigS3Path(url, this.log);
     const bucketName = this.deployBucketName;
 
@@ -251,8 +255,12 @@ class TokowakaClient {
       const bodyContents = await response.Body.transformToString();
       const metaconfig = JSON.parse(bodyContents);
 
-      this.log.debug(`Successfully fetched metaconfig from s3://${bucketName}/${s3Path}`);
-      return metaconfig;
+      this.log.debug(`Successfully fetched metaconfig from s3://${bucketName}/${s3Path} in ${Date.now() - fetchStartTime}ms`);
+
+      return {
+        metaconfig,
+        s3Metadata: response.Metadata || {},
+      };
     } catch (error) {
       // If metaconfig doesn't exist (NoSuchKey), return null
       if (error.name === 'NoSuchKey' || error.Code === 'NoSuchKey') {
@@ -264,6 +272,16 @@ class TokowakaClient {
       this.log.error(`Failed to fetch metaconfig from S3: ${error.message}`, error);
       throw this.#createError(`S3 fetch failed: ${error.message}`, HTTP_INTERNAL_SERVER_ERROR);
     }
+  }
+
+  /**
+   * Fetches domain-level metaconfig from S3
+   * @param {string} url - Full URL (used to extract domain)
+   * @returns {Promise<Object|null>} - Metaconfig object or null if not found
+   */
+  async fetchMetaconfig(url) {
+    const result = await this.#fetchMetaconfigWithMetadata(url);
+    return result?.metaconfig ?? null;
   }
 
   /**
@@ -287,10 +305,16 @@ class TokowakaClient {
    * @param {string} url - Full URL (used to extract domain)
    * @param {string} siteId - Site ID
    * @param {Object} options - Optional configuration
-   * @param {boolean} options.enhancements - Whether to enable enhancements (default: true)
+   * @param {boolean} options.enhancements - Whether to enable enhancements
+   *   (default: true)
+   * @param {Object} metadata - Optional S3 user-defined metadata for
+   *   audit trail and behavior flags
+   * @param {string} metadata.lastModifiedBy - User who modified the config
+   * @param {boolean} metadata.isStageDomain - Whether this is a staging
+   *   domain (enables wildcard prerender)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
-  async createMetaconfig(url, siteId, options = {}) {
+  async createMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -316,8 +340,19 @@ class TokowakaClient {
       patches: {},
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig);
+    // Handle staging domain with automatic prerender configuration
+    const isStageDomain = metadata.isStageDomain === true;
+    if (isStageDomain) {
+      metaconfig.prerender = { allowList: ['/*'] };
+    }
 
+    // Persist isStageDomain in S3 metadata for future updates
+    const s3Metadata = {
+      ...metadata,
+      ...(isStageDomain && { isStageDomain: 'true' }),
+    };
+
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, s3Metadata);
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;
@@ -329,17 +364,23 @@ class TokowakaClient {
    * @param {string} url - Full URL (used to extract domain)
    * @param {string} siteId - Site ID
    * @param {Object} options - Optional configuration
+   * @param {Object} metadata - Optional S3 user-defined metadata for
+   *   audit trail and behavior flags
+   * @param {string} metadata.lastModifiedBy - User who modified the config
+   * @param {boolean} metadata.isStageDomain - Whether this is a staging
+   *   domain (enables wildcard prerender)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
-  async updateMetaconfig(url, siteId, options = {}) {
+  async updateMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
-    const existingMetaconfig = await this.fetchMetaconfig(url);
-    if (!existingMetaconfig) {
+    const raw = await this.#fetchMetaconfigWithMetadata(url);
+    if (!raw?.metaconfig) {
       throw this.#createError('Metaconfig does not exist for this URL', HTTP_BAD_REQUEST);
     }
+    const { metaconfig: existingMetaconfig, s3Metadata: existingS3Metadata } = raw;
 
     if (!hasText(siteId)) {
       throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
@@ -355,10 +396,17 @@ class TokowakaClient {
       ?? existingMetaconfig.forceFail
       ?? false;
 
-    const hasPrerender = isNonEmptyObject(options.prerender)
+    // Handle staging domain: check from metadata or from existing S3 metadata (S3 lowercases keys)
+    const isStageDomain = metadata.isStageDomain === true
+      || existingS3Metadata.isstagedomain === 'true';
+
+    const hasPrerender = isStageDomain
+      || isNonEmptyObject(options.prerender)
       || isNonEmptyObject(existingMetaconfig.prerender);
-    const prerender = options.prerender
-      ?? existingMetaconfig.prerender;
+
+    const prerender = isStageDomain
+      ? { allowList: ['/*'] }
+      : (options.prerender ?? existingMetaconfig.prerender);
 
     const metaconfig = {
       ...existingMetaconfig,
@@ -371,9 +419,14 @@ class TokowakaClient {
       ...(hasPrerender && { prerender }),
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig);
+    // Persist isStageDomain in S3 metadata for future updates
+    const s3Metadata = {
+      ...metadata,
+      ...(isStageDomain && { isStageDomain: 'true' }),
+    };
 
-    this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
+    const uploadedPath = await this.uploadMetaconfig(url, metaconfig, s3Metadata);
+    this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${uploadedPath}`);
 
     return metaconfig;
   }
@@ -382,9 +435,10 @@ class TokowakaClient {
    * Uploads domain-level metaconfig to S3
    * @param {string} url - Full URL (used to extract domain)
    * @param {Object} metaconfig - Metaconfig object (siteId, apiKeys, prerender)
+   * @param {Object} metadata - Optional S3 user-defined metadata (key-value pairs)
    * @returns {Promise<string>} - S3 key of uploaded metaconfig
-   */
-  async uploadMetaconfig(url, metaconfig) {
+  */
+  async uploadMetaconfig(url, metaconfig, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -393,19 +447,27 @@ class TokowakaClient {
       throw this.#createError('Metaconfig object is required', HTTP_BAD_REQUEST);
     }
 
+    const uploadStartTime = Date.now();
     const s3Path = getTokowakaMetaconfigS3Path(url, this.log);
     const bucketName = this.deployBucketName;
 
     try {
-      const command = new PutObjectCommand({
+      const putObjectParams = {
         Bucket: bucketName,
         Key: s3Path,
         Body: JSON.stringify(metaconfig, null, 2),
         ContentType: 'application/json',
-      });
+      };
+
+      // Add user-defined metadata if provided
+      if (isNonEmptyObject(metadata)) {
+        putObjectParams.Metadata = metadata;
+      }
+
+      const command = new PutObjectCommand(putObjectParams);
 
       await this.s3Client.send(command);
-      this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path}`);
+      this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path} in ${Date.now() - uploadStartTime}ms`);
 
       // Invalidate CDN cache for the metaconfig (both CloudFront and Fastly)
       this.log.info('Invalidating CDN cache for uploaded metaconfig');
@@ -429,6 +491,7 @@ class TokowakaClient {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
+    const fetchStartTime = Date.now();
     const s3Path = getTokowakaConfigS3Path(url, this.log, isPreview);
     const bucketName = isPreview ? this.previewBucketName : this.deployBucketName;
 
@@ -442,7 +505,7 @@ class TokowakaClient {
       const bodyContents = await response.Body.transformToString();
       const config = JSON.parse(bodyContents);
 
-      this.log.debug(`Successfully fetched existing Tokowaka config from s3://${bucketName}/${s3Path}`);
+      this.log.debug(`Successfully fetched existing Tokowaka config from s3://${bucketName}/${s3Path} in ${Date.now() - fetchStartTime}ms`);
       return config;
     } catch (error) {
       // If config doesn't exist (NoSuchKey), return null
@@ -508,6 +571,7 @@ class TokowakaClient {
     if (!isNonEmptyObject(config)) {
       throw this.#createError('Config object is required', HTTP_BAD_REQUEST);
     }
+    const uploadStartTime = Date.now();
 
     const s3Path = getTokowakaConfigS3Path(url, this.log, isPreview);
     const bucketName = isPreview ? this.previewBucketName : this.deployBucketName;
@@ -521,7 +585,7 @@ class TokowakaClient {
       });
 
       await this.s3Client.send(command);
-      this.log.info(`Successfully uploaded Tokowaka config to s3://${bucketName}/${s3Path}`);
+      this.log.info(`Successfully uploaded Tokowaka config to s3://${bucketName}/${s3Path} in ${Date.now() - uploadStartTime}ms`);
 
       return s3Path;
     } catch (error) {
@@ -547,6 +611,7 @@ class TokowakaClient {
     providers = this.#getCdnProviders(),
     isPreview = false,
   }) {
+    const invalidationStartTime = Date.now();
     // Convert single provider to array for uniform handling
     const providerList = Array.isArray(providers) ? providers : [providers].filter(Boolean);
 
@@ -590,11 +655,12 @@ class TokowakaClient {
           continue;
         }
 
+        const startTime = Date.now();
         // eslint-disable-next-line no-await-in-loop
         const result = await cdnClient.invalidateCache(pathsToInvalidate);
         this.log.info(
           `CDN cache invalidation completed for ${provider}: `
-          + `${pathsToInvalidate.length} path(s)`,
+          + `${pathsToInvalidate.length} path(s), and took ${Date.now() - startTime}ms`,
         );
         results.push(result);
       } catch (error) {
@@ -606,6 +672,7 @@ class TokowakaClient {
         });
       }
     }
+    this.log.info(`CDN cache invalidation completed in total ${Date.now() - invalidationStartTime}ms`);
     return results;
   }
 
@@ -860,8 +927,10 @@ class TokowakaClient {
    * @param {Object} options - Optional configuration for HTML fetching
    * @returns {Promise<Object>} - Preview result with config and succeeded/failed suggestions
    */
-  async previewSuggestions(site, opportunity, suggestions, options = {}) {
+  async previewSuggestions(site, opportunity, suggestions = [], options = {}) {
     const opportunityType = opportunity.getType();
+    this.log.info(`Previewing ${suggestions.length} suggestions for `
+       + `${opportunityType} opportunity and URL ${site.getBaseURL()}`);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
     if (!mapper) {
       throw this.#createError(
@@ -886,7 +955,7 @@ class TokowakaClient {
       ineligible: ineligibleSuggestions,
     } = filterEligibleSuggestions(suggestions, mapper);
 
-    this.log.debug(
+    this.log.info(
       `Previewing ${eligibleSuggestions.length} eligible suggestions `
       + `(${ineligibleSuggestions.length} ineligible)`,
     );
@@ -906,35 +975,24 @@ class TokowakaClient {
       throw this.#createError('Preview URL not found in suggestion data', HTTP_BAD_REQUEST);
     }
 
-    // Fetch metaconfig to get API key
-    const metaconfig = await this.fetchMetaconfig(previewUrl);
+    // Fetch metaconfig and existing config in parallel
+    const [metaconfig, existingConfig] = await Promise.all([
+      this.fetchMetaconfig(previewUrl).catch(() => null),
+      this.fetchConfig(previewUrl, false),
+    ]);
 
-    if (!metaconfig) {
-      throw this.#createError(
-        'No domain-level metaconfig found. '
-        + 'A domain-level metaconfig needs to be created first before previewing suggestions.',
-        HTTP_INTERNAL_SERVER_ERROR,
-      );
+    let apiKey;
+    if (metaconfig && Array.isArray(metaconfig.apiKeys) && metaconfig.apiKeys.length > 0) {
+      [apiKey] = metaconfig.apiKeys;
+      this.log.info('Using API key from metaconfig');
+    } else {
+      this.log.info('Proceeding with preview without API key');
     }
 
-    const { apiKeys } = metaconfig;
-    if (!Array.isArray(apiKeys) || apiKeys.length === 0 || !hasText(apiKeys[0])) {
-      throw this.#createError(
-        'Metaconfig does not have valid API keys configured. '
-        + 'Please ensure the metaconfig has at least one API key.',
-        HTTP_INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    const apiKey = apiKeys[0];
     const forwardedHost = calculateForwardedHost(previewUrl, this.log);
 
-    // Fetch existing deployed configuration for this URL from production S3
-    this.log.debug(`Fetching existing deployed Tokowaka config for URL: ${previewUrl}`);
-    const existingConfig = await this.fetchConfig(previewUrl, false);
-
     // Generate configuration with eligible preview suggestions
-    this.log.debug(`Generating preview Tokowaka config for opportunity ${opportunity.getId()}`);
+    this.log.info(`Generating preview Tokowaka config for opportunity ${opportunity.getId()}`);
     const newConfig = this.generateConfig(previewUrl, opportunity, eligibleSuggestions);
 
     if (!newConfig) {
@@ -956,6 +1014,12 @@ class TokowakaClient {
       };
     }
 
+    // preview for all: never drop stale suggestions that are being previewed
+    newConfig.patches = newConfig.patches.map((patch) => ({
+      ...patch,
+      applyStale: true,
+    }));
+
     // Merge with existing deployed config to include already-deployed patches for this URL
     let config = newConfig;
     if (existingConfig && existingConfig.patches?.length > 0) {
@@ -966,7 +1030,7 @@ class TokowakaClient {
       // Merge the existing deployed patches with new preview suggestions
       config = this.mergeConfigs(existingConfig, newConfig);
 
-      this.log.debug(
+      this.log.info(
         `Preview config now has ${config.patches.length} total patches`,
       );
     } else {
@@ -977,28 +1041,34 @@ class TokowakaClient {
     this.log.info(`Uploading preview Tokowaka config with ${eligibleSuggestions.length} new suggestions`);
     const s3Path = await this.uploadConfig(previewUrl, config, true);
 
-    // Invalidate CDN cache for all providers in parallel (preview path)
-    const cdnInvalidationResults = await this.invalidateCdnCache({
-      urls: [previewUrl],
-      isPreview: true,
-    });
-
     // Fetch HTML content for preview
     let originalHtml = null;
     let optimizedHtml = null;
+    let cdnInvalidationResults = null;
 
     try {
-      // Fetch original HTML (without preview)
-      originalHtml = await fetchHtmlWithWarmup(
-        previewUrl,
-        apiKey,
-        forwardedHost,
-        edgeUrl,
-        this.log,
-        false,
-        options,
-      );
-      // Then fetch optimized HTML (with preview)
+      const fetchAndInvalidateStartTime = Date.now();
+      // Fetch original HTML and invalidate CDN cache in parallel to save time
+      [originalHtml, cdnInvalidationResults] = await Promise.all([
+        fetchHtmlWithWarmup(
+          previewUrl,
+          apiKey,
+          forwardedHost,
+          edgeUrl,
+          this.log,
+          false,
+          options,
+        ),
+        this.invalidateCdnCache({
+          urls: [previewUrl],
+          isPreview: true,
+        }),
+      ]);
+      this.log.info('Successfully fetched original HTML and invalidated CDN cache'
+        + ` in ${Date.now() - fetchAndInvalidateStartTime}ms`);
+
+      // Step 2: Fetch optimized HTML after CDN invalidation and original fetch complete
+      this.log.info('Fetching optimized HTML...');
       optimizedHtml = await fetchHtmlWithWarmup(
         previewUrl,
         apiKey,
@@ -1008,7 +1078,7 @@ class TokowakaClient {
         true,
         options,
       );
-      this.log.info('Successfully fetched both original and optimized HTML for preview');
+      this.log.info('Successfully fetched optimized HTML');
     } catch (error) {
       this.log.error(`Failed to fetch HTML for preview: ${error.message}`);
       throw this.#createError(
@@ -1029,6 +1099,95 @@ class TokowakaClient {
         optimizedHtml,
       },
     };
+  }
+
+  /**
+   * Checks if Edge Optimize is enabled for a specific page path
+   * Follows one level of redirect and retries on failures
+   * @param {Object} site - Site entity
+   * @param {string} path - Path to check (e.g., '/products/chair')
+   * @returns {Promise<Object>} - Status result with edgeOptimizeEnabled flag
+   */
+  async checkEdgeOptimizeStatus(site, path) {
+    if (!isNonEmptyObject(site)) {
+      throw this.#createError('Site is required', HTTP_BAD_REQUEST);
+    }
+
+    if (!hasText(path)) {
+      throw this.#createError('Path is required', HTTP_BAD_REQUEST);
+    }
+
+    const baseURL = getEffectiveBaseURL(site);
+    const targetUrl = new URL(path, baseURL).toString();
+
+    this.log.info(`Checking edge optimize status for ${targetUrl}`);
+
+    const maxRetries = 3;
+    let attempt = 0;
+
+    const REQUEST_TIMEOUT_MS = 5000;
+
+    while (attempt <= maxRetries) {
+      try {
+        this.log.debug(`Attempt ${attempt + 1}/${maxRetries + 1}: Checking edge optimize status for ${targetUrl}`);
+
+        // eslint-disable-next-line no-await-in-loop
+        const response = await tracingFetch(targetUrl, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
+            'fastly-debug': '1',
+          },
+          timeout: REQUEST_TIMEOUT_MS,
+        });
+
+        this.log.debug(`Response status: ${response.status}`);
+
+        const edgeOptimizeEnabled = response.headers.get('x-tokowaka-request-id') !== null
+          || response.headers.get('x-edgeoptimize-request-id') !== null;
+
+        this.log.debug(`Edge optimize headers found: ${edgeOptimizeEnabled}`);
+
+        return {
+          edgeOptimizeEnabled,
+        };
+      } catch (error) {
+        const isTimeout = error?.code === 'ETIMEOUT';
+
+        if (isTimeout) {
+          this.log.warn(`Request timed out after ${REQUEST_TIMEOUT_MS}ms for ${targetUrl}, returning edgeOptimizeEnabled: false`);
+          return { edgeOptimizeEnabled: false };
+        }
+
+        attempt += 1;
+
+        if (attempt > maxRetries) {
+          // All retries exhausted
+          this.log.error(`Failed after ${maxRetries + 1} attempts: ${error.message}`);
+          throw this.#createError(
+            `Failed to check edge optimize status: ${error.message}`,
+            HTTP_INTERNAL_SERVER_ERROR,
+          );
+        }
+
+        // Exponential backoff: 200ms, 400ms, 800ms
+        const delay = 100 * (2 ** attempt);
+        this.log.warn(
+          `Attempt ${attempt} to fetch failed: ${error.message}. Retrying in ${delay}ms...`,
+        );
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((res) => {
+          setTimeout(res, delay);
+        });
+      }
+    }
+    /* c8 ignore start */
+    // This should never be reached, but needed for consistent-return
+    throw this.#createError(
+      'Failed to check edge optimize status after all retries',
+      HTTP_INTERNAL_SERVER_ERROR,
+    );
+    /* c8 ignore stop */
   }
 }
 

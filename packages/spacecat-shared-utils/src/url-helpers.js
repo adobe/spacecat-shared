@@ -145,7 +145,12 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
   let resp;
 
   try {
-    resp = await fetch(urlString, { headers, method });
+    const timeout = method === 'HEAD' ? 10000 : 20000; // 10s for HEAD, 20s for GET
+    resp = await fetch(urlString, {
+      headers,
+      method,
+      signal: AbortSignal.timeout(timeout),
+    });
 
     if (resp.ok) {
       return ensureHttps(resp.url);
@@ -311,6 +316,40 @@ async function wwwUrlResolver(site, rumApiClient, log) {
   const fallback = hostname.startsWith('www.') ? hostname : `www.${hostname}`;
   log.debug(`Fallback to ${fallback} for URL resolution for ${baseURL}`);
   return fallback;
+}
+
+/**
+ * Canonicalizes a URL by removing protocol, www prefix, and trailing slash
+ * for comparison and matching purposes.
+ * Optionally strips query parameters and fragments.
+ * @param {string} url - URL to canonicalize
+ * @param {object} options - Canonicalization options
+ * @param {boolean} options.stripQuery - Whether to strip query parameters and fragments
+ * @returns {string} Canonicalized URL
+ */
+export function canonicalizeUrl(url, { stripQuery = false } = {}) {
+  if (!url || typeof url !== 'string') {
+    return '';
+  }
+
+  let canonicalized = url
+    .toLowerCase() // Case insensitive
+    .trim()
+    .replace(/^https?:\/\//, '') // Remove protocol
+    .replace(/^www\d*\./, '') // Remove www, www2, www3, etc.
+    .replace(/\/$/, ''); // Remove trailing slash
+
+  // Optionally strip query parameters and fragments
+  if (stripQuery) {
+    const queryIndex = canonicalized.search(/[?#]/);
+    if (queryIndex !== -1) {
+      canonicalized = canonicalized.substring(0, queryIndex);
+    }
+    // Remove any trailing slash that may have been revealed
+    canonicalized = canonicalized.replace(/\/$/, '');
+  }
+
+  return canonicalized;
 }
 
 export {

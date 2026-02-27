@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-scrape-client",
-  "version": "2.3.6",
+  "version": "2.5.1",
   "description": "Shared modules of the Spacecat Services - Scrape Client",
   "type": "module",
   "engines": {
@@ -35,9 +35,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/helix-universal": "5.3.0",
-    "@adobe/spacecat-shared-data-access": "2.88.7",
-    "@adobe/spacecat-shared-utils": "1.81.1"
+    "@adobe/helix-universal": "5.4.0",
+    "@adobe/spacecat-shared-utils": "1.81.1",
+    "@mysticat/data-service-types": "git+https://github.com/adobe/mysticat-data-service.git#types-ts-v1.11.1"
   },
   "devDependencies": {
     "chai": "6.2.1",

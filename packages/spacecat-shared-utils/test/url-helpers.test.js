@@ -16,6 +16,7 @@ import { expect } from 'chai';
 import nock from 'nock';
 import sinon from 'sinon';
 import {
+  canonicalizeUrl,
   composeAuditURL,
   composeBaseURL,
   prependSchema,
@@ -375,6 +376,63 @@ describe('URL Utility Functions', () => {
         .reply(200); // Success for the GET fallback
 
       const result = await resolveCanonicalUrl('https://example.com/', 'HEAD');
+      expect(result).to.equal('https://example.com/');
+    });
+
+    it('should handle timeout errors for HEAD requests and retry with GET', async () => {
+      // Simulate a timeout error for HEAD request
+      // The function should catch the error and retry with GET
+      nock('https://example.com')
+        .head('/')
+        .replyWithError('Timeout error');
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.equal('https://example.com/');
+    });
+
+    it('should use 10s timeout for HEAD requests', async () => {
+      // Verify HEAD request completes within timeout
+      nock('https://example.com')
+        .head('/')
+        .reply(200);
+
+      const startTime = Date.now();
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD');
+      const duration = Date.now() - startTime;
+
+      expect(result).to.equal('https://example.com/');
+      expect(duration).to.be.below(11000); // Should complete well before timeout
+    });
+
+    it('should use 20s timeout for GET requests', async () => {
+      // Verify GET request completes within timeout
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const startTime = Date.now();
+      const result = await resolveCanonicalUrl('https://example.com', 'GET');
+      const duration = Date.now() - startTime;
+
+      expect(result).to.equal('https://example.com/');
+      expect(duration).to.be.below(21000); // Should complete well before timeout
+    });
+
+    it('should handle AbortError from timeout and retry with GET for HEAD', async () => {
+      // Simulate AbortError from timeout
+      nock('https://example.com')
+        .head('/')
+        .replyWithError('The operation was aborted');
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD');
       expect(result).to.equal('https://example.com/');
     });
   });
@@ -809,6 +867,67 @@ describe('URL Utility Functions', () => {
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
       expect(result).to.equal('www.example.com');
+    });
+  });
+
+  describe('canonicalizeUrl', () => {
+    it('removes protocol and converts to lowercase', () => {
+      expect(canonicalizeUrl('HTTPS://Example.com/Page')).to.equal('example.com/page');
+      expect(canonicalizeUrl('http://EXAMPLE.COM/Path')).to.equal('example.com/path');
+    });
+
+    it('removes www prefixes', () => {
+      expect(canonicalizeUrl('https://www.example.com/path')).to.equal('example.com/path');
+      expect(canonicalizeUrl('https://www2.example.com/path')).to.equal('example.com/path');
+      expect(canonicalizeUrl('https://www123.example.com/path')).to.equal('example.com/path');
+    });
+
+    it('removes trailing slashes', () => {
+      expect(canonicalizeUrl('https://example.com/path/')).to.equal('example.com/path');
+      expect(canonicalizeUrl('https://example.com/')).to.equal('example.com');
+      expect(canonicalizeUrl('https://example.com/path/subpath/')).to.equal('example.com/path/subpath');
+    });
+
+    it('handles combined variations', () => {
+      expect(canonicalizeUrl('HTTPS://WWW.Example.COM/Path/')).to.equal('example.com/path');
+      expect(canonicalizeUrl('http://www2.EXAMPLE.com/PAGE/SubPage/')).to.equal('example.com/page/subpage');
+    });
+
+    it('strips query parameters when stripQuery is true', () => {
+      expect(canonicalizeUrl('https://example.com/path?param=value', { stripQuery: true }))
+        .to.equal('example.com/path');
+      expect(canonicalizeUrl('https://example.com/path#anchor', { stripQuery: true }))
+        .to.equal('example.com/path');
+      expect(canonicalizeUrl('https://example.com/path?a=b&c=d#hash', { stripQuery: true }))
+        .to.equal('example.com/path');
+      expect(canonicalizeUrl('https://www2.google.com/?query=hello&params=world', { stripQuery: true }))
+        .to.equal('google.com');
+      expect(canonicalizeUrl('https://example.com/?param=value', { stripQuery: true }))
+        .to.equal('example.com');
+    });
+
+    it('preserves query parameters by default', () => {
+      expect(canonicalizeUrl('https://example.com/path?param=value'))
+        .to.equal('example.com/path?param=value');
+      expect(canonicalizeUrl('https://example.com/path#anchor'))
+        .to.equal('example.com/path#anchor');
+    });
+
+    it('handles empty and invalid inputs', () => {
+      expect(canonicalizeUrl('')).to.equal('');
+      expect(canonicalizeUrl(null)).to.equal('');
+      expect(canonicalizeUrl(undefined)).to.equal('');
+      expect(canonicalizeUrl(123)).to.equal('');
+    });
+
+    it('trims whitespace', () => {
+      expect(canonicalizeUrl('  https://example.com/path  ')).to.equal('example.com/path');
+      expect(canonicalizeUrl('\t\nhttps://example.com/path\n\t')).to.equal('example.com/path');
+    });
+
+    it('handles URLs without protocol', () => {
+      expect(canonicalizeUrl('example.com/path')).to.equal('example.com/path');
+      expect(canonicalizeUrl('www.example.com/path')).to.equal('example.com/path');
     });
   });
 });

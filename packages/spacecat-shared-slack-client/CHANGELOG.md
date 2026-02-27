@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-slack-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.5.33...@adobe/spacecat-shared-slack-client-v1.6.0) (2026-02-08)
+
+
+### Features
+
+* Bot press hold detection addition + add abort info to scrapeJob schema ([#1308](https://github.com/adobe/spacecat-shared/issues/1308)) ([4f19f91](https://github.com/adobe/spacecat-shared/commit/4f19f9143435aa283d8b9e57c17dd79873168177))
+
+# [@adobe/spacecat-shared-slack-client-v1.5.33](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.5.32...@adobe/spacecat-shared-slack-client-v1.5.33) (2026-01-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.4.0 ([#1295](https://github.com/adobe/spacecat-shared/issues/1295)) ([5c1595b](https://github.com/adobe/spacecat-shared/commit/5c1595bd7cba9b7053da867b8f46e302f8683eba))
+
 # [@adobe/spacecat-shared-slack-client-v1.5.32](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.5.31...@adobe/spacecat-shared-slack-client-v1.5.32) (2025-11-28)
 
 

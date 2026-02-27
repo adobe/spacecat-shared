@@ -63,6 +63,11 @@ const strategyOpportunity = z.object({
   completedAt: z.string().optional(), // ISO 8601 date string
 });
 
+const strategyPromptSelection = z.object({
+  prompt: nonEmptyString,
+  regions: z.array(z.string()),
+});
+
 /**
  * Strategy containing references to opportunities
  */
@@ -73,7 +78,8 @@ const strategy = z.object({
   url: z.string(),
   description: z.string(),
   topic: z.string(),
-  platform: nonEmptyString,
+  selectedPrompts: z.array(strategyPromptSelection).optional(),
+  platform: z.string().optional(),
   opportunities: z.array(strategyOpportunity),
   createdAt: z.string(), // ISO 8601 date string
   createdBy: z.string().optional(), // Email of strategy creator/owner

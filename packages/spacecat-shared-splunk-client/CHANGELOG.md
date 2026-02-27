@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-splunk-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.30...@adobe/spacecat-shared-splunk-client-v1.1.0) (2026-02-27)
+
+### Features
+
+* add slack for redirects ([#1365](https://github.com/adobe/spacecat-shared/issues/1365)) ([7b8176e](https://github.com/adobe/spacecat-shared/commit/7b8176ec7e6788b60da7b76f8924c71f4ef0b26a))
+
 # [@adobe/spacecat-shared-splunk-client-v1.0.30](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.29...@adobe/spacecat-shared-splunk-client-v1.0.30) (2026-01-29)
 
 

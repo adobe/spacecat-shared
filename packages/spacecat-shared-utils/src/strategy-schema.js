@@ -79,7 +79,7 @@ const strategy = z.object({
   description: z.string(),
   topic: z.string(),
   selectedPrompts: z.array(strategyPromptSelection).optional(),
-  platform: z.string().optional(),
+  platform: nonEmptyString.optional(),
   opportunities: z.array(strategyOpportunity),
   createdAt: z.string(), // ISO 8601 date string
   createdBy: z.string().optional(), // Email of strategy creator/owner

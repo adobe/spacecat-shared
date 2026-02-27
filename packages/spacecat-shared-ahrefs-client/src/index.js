@@ -133,6 +133,8 @@ export default class AhrefsAPIClient {
         'url_from',
         'url_to',
         'traffic_domain',
+        'anchor',
+        'domain_rating_source',
       ].join(','),
       limit: getLimit(limit, 100),
       mode: 'prefix',

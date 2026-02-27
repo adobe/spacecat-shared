@@ -1,0 +1,17 @@
+{
+  "BROKEN_BACKLINK": {
+    "tokensPerCycle": 10,
+    "cycle": "monthly",
+    "cycleFormat": "YYYY-MM"
+  },
+  "CWV": {
+    "tokensPerCycle": 5,
+    "cycle": "monthly",
+    "cycleFormat": "YYYY-MM"
+  },
+  "ALT_TEXT": {
+    "tokensPerCycle": 20,
+    "cycle": "monthly",
+    "cycleFormat": "YYYY-MM"
+  }
+}

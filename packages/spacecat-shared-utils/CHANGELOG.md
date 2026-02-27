@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.98.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.97.0...@adobe/spacecat-shared-utils-v1.98.0) (2026-02-27)
+
+### Features
+
+* LLMO-3231 byocdn-fastly default auth method is iam role ([#1384](https://github.com/adobe/spacecat-shared/issues/1384)) ([446dd15](https://github.com/adobe/spacecat-shared/commit/446dd1540040c48181ef9a50093fced93fe92034))
+
 ## [@adobe/spacecat-shared-utils-v1.97.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.3...@adobe/spacecat-shared-utils-v1.97.0) (2026-02-27)
 
 ### Features

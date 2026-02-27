@@ -80,6 +80,8 @@ export default class AuthInfo {
 
   getReason() { return this.reason; }
 
+  getPromiseToken() { return this.profile?.promise_token; }
+
   isAuthenticated() { return this.authenticated; }
 
   isAdmin() { return this.profile?.is_admin; }

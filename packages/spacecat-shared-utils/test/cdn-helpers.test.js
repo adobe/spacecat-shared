@@ -152,6 +152,7 @@ describe('CDN Helper Functions', () => {
       it('should handle byocdn-cloudflare without ownership token', () => {
         const result = prettifyLogForwardingConfig({ ...mockPayload, logSource: 'byocdn-cloudflare' });
         expect(result).to.deep.equal({
+          Dataset: 'HTTP Requests (zone-scoped)',
           'Bucket Name': 'cdn-logs-adobe-dev',
           Region: 'us-east-1',
           Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-fastly/',

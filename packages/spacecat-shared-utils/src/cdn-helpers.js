@@ -105,6 +105,7 @@ const CDN_TRANSFORMATIONS = {
     HelpUrl: 'https://techdocs.akamai.com/datastream2/docs/stream-amazon-s3',
   }),
   'byocdn-cloudflare': (payload) => ({
+    Dataset: 'HTTP Requests (zone-scoped)',
     'Bucket Name': payload.bucketName,
     Region: payload.region,
     Path: `${payload.allowedPaths?.[0] || ''}`,

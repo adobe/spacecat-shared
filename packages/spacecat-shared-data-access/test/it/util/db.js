@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
 import { createDataAccess } from '../../../src/service/index.js';
+import { POSTGREST_WRITER_JWT } from './postgrest-jwt.js';
 
 const filePath = fileURLToPath(import.meta.url);
 const directoryPath = path.dirname(filePath);
@@ -184,7 +185,9 @@ export const getDataAccess = (config = {}, logger = console) => {
   return createDataAccess({
     postgrestUrl,
     postgrestSchema,
-    postgrestApiKey: config.postgrestApiKey || process.env.POSTGREST_API_KEY,
+    postgrestApiKey: config.postgrestApiKey
+      || process.env.POSTGREST_API_KEY
+      || POSTGREST_WRITER_JWT,
     s3Bucket: config.s3Bucket || process.env.S3_CONFIG_BUCKET,
     region: config.region || process.env.AWS_REGION,
     s2sAllowedImsOrgIds,

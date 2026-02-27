@@ -17,7 +17,7 @@ services:
 
   data-service:
     platform: ${MYSTICAT_DATA_SERVICE_PLATFORM:-linux/amd64}
-    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v1.11.0}
+    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v1.13.0}
     depends_on:
       db:
         condition: service_healthy
@@ -27,6 +27,7 @@ services:
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: postgrest_anon
       PGRST_DB_EXTRA_SEARCH_PATH: ""
+      PGRST_JWT_SECRET: local-dev-jwt-secret-for-postgrest-only
       PGRST_OPENAPI_SERVER_PROXY_URI: http://localhost:${IT_POSTGREST_PORT:-3300}
     ports:
       - "${IT_POSTGREST_PORT:-3300}:3000"

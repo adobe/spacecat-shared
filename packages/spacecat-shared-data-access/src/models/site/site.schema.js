@@ -17,6 +17,7 @@ import {
   isNonEmptyObject,
   isObject,
   isValidUrl,
+  isValidBaseUrl,
 } from '@adobe/spacecat-shared-utils';
 
 import { Config, DEFAULT_CONFIG, validateConfiguration } from './config.js';
@@ -51,7 +52,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
-    validate: (value) => isValidUrl(value),
+    validate: (value) => isValidBaseUrl(value),
   })
   .addAttribute('name', {
     type: 'string',

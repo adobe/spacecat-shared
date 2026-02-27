@@ -65,6 +65,18 @@ export default class CloudManagerClient {
     s3PatchPath: string,
     options?: { commitMessage?: string },
   ): Promise<void>;
+  applyPatchContent(
+    clonePath: string,
+    branch: string,
+    patchContent: string,
+    commitMessage: string,
+  ): Promise<void>;
+  applyFiles(
+    clonePath: string,
+    branch: string,
+    files: Array<{ path: string; content: string }>,
+    commitMessage: string,
+  ): Promise<void>;
   cleanup(clonePath: string): Promise<void>;
   createPullRequest(
     programId: string,

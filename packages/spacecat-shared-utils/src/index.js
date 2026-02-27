@@ -83,6 +83,12 @@ export { s3Wrapper, getObjectFromKey } from './s3.js';
 
 export { OPPORTUNITY_TYPES, DEFAULT_CPC_VALUE } from './constants.js';
 
+export {
+  OPPORTUNITY_TAG_MAPPINGS,
+  getTagsForOpportunityType,
+  mergeTagsWithHardcodedTags,
+} from './tag-mappings.js';
+
 export { fetch } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';
 export {

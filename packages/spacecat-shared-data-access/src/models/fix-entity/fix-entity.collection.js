@@ -9,6 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
 import ValidationError from '../../errors/validation.error.js';
@@ -239,6 +240,172 @@ class FixEntityCollection extends BaseCollection {
     } catch (error) {
       this.log.error('Failed to get all fixes with suggestions by created date', error);
       throw new DataAccessError('Failed to get all fixes with suggestions by created date', this, error);
+    }
+  }
+
+  /**
+   * Creates a FixEntity and updates associated Suggestions in a single atomic transaction.
+   * This method uses ElectroDB's transact write to ensure all operations succeed or fail together.
+   *
+   * Use case: When creating a fix, you want to simultaneously:
+   * 1. Create the FixEntity record
+   * 2. Update the status of all related Suggestions (e.g., mark them as FIXED)
+   * 3. Create FixEntitySuggestion junction records to link them
+   *
+   * @async
+   * @param {Object} fixEntityData - The data for creating the FixEntity.
+   * @param {string} fixEntityData.opportunityId - The ID of the opportunity.
+   * @param {string} fixEntityData.type - The type of fix (from Suggestion.TYPES).
+   * @param {Object} fixEntityData.changeDetails - Details of the changes made.
+   * @param {string} [fixEntityData.executedBy] - Who executed the fix.
+   * @param {string} [fixEntityData.executedAt] - When the fix was executed.
+   * @param {string} [fixEntityData.publishedAt] - When the fix was published.
+   * @param {string} [fixEntityData.status] - Status of the fix (defaults to PENDING).
+   * @param {string} [fixEntityData.origin] - Origin of the fix (defaults to SPACECAT).
+   * @param {Array<Object>} suggestionUpdates - Array of objects containing suggestion update info.
+   * @param {string} suggestionUpdates[].suggestionId - The ID of the suggestion to update.
+   * @param {string} suggestionUpdates[].opportunityId - The opportunity ID for the suggestion.
+   * @param {string} [suggestionUpdates[].status] - The new status for the suggestion
+   *   (defaults to 'FIXED').
+   * @param {Object} [options] - Optional settings for the transaction.
+   * @param {string} [options.token] - ClientRequestToken for idempotent operations
+   *   (valid for 10 minutes).
+   * @returns {Promise<Object>} - A promise that resolves to an object containing:
+   *   - canceled: boolean indicating if the transaction was canceled
+   *   - data: array of transaction item results
+   *   - fixEntity: the created FixEntity (if successful)
+   * @throws {DataAccessError} - Throws an error if validation fails or transaction fails.
+   *
+   * @example
+   * const result = await fixEntityCollection.createFixEntityWithSuggestionUpdates(
+   *   {
+   *     opportunityId: 'opp-123',
+   *     type: 'CODE_CHANGE',
+   *     changeDetails: { file: 'index.js', lines: [10, 20] },
+   *     executedBy: 'user-456',
+   *     executedAt: '2024-01-15T10:00:00Z',
+   *   },
+   *   [
+   *     { suggestionId: 'sugg-1', opportunityId: 'opp-123', status: 'FIXED' },
+   *     { suggestionId: 'sugg-2', opportunityId: 'opp-123', status: 'FIXED' },
+   *   ],
+   *   { token: 'fix-opp-123-2024-01-15' }
+   * );
+   */
+  async createFixEntityWithSuggestionUpdates(fixEntityData, suggestionUpdates = [], options = {}) {
+    // Validate inputs
+    if (!fixEntityData || typeof fixEntityData !== 'object') {
+      throw new ValidationError('fixEntityData is required and must be an object');
+    }
+
+    guardId('opportunityId', fixEntityData.opportunityId, 'FixEntityCollection');
+    guardArray('suggestionUpdates', suggestionUpdates, 'FixEntityCollection', 'any');
+
+    if (suggestionUpdates.length === 0) {
+      throw new ValidationError('At least one suggestion update is required');
+    }
+
+    // Validate each suggestion update
+    for (const update of suggestionUpdates) {
+      guardId('suggestionId', update.suggestionId, 'FixEntityCollection');
+      guardId('opportunityId', update.opportunityId, 'FixEntityCollection');
+    }
+
+    try {
+      // Pre-generate the fixEntityId so we can use it in the transaction
+      const { fixEntityId } = fixEntityData;
+      const fixEntityCreatedAt = fixEntityData.executedAt || new Date().toISOString();
+
+      // Add the ID to the fix entity data
+      const fixEntityDataWithId = {
+        ...fixEntityData,
+        fixEntityId,
+      };
+
+      // Perform the transaction with ALL operations atomically
+      const transactionResult = await this.electroService.transaction
+        .write(({ FixEntity, Suggestion, FixEntitySuggestion }) => {
+          const mutations = [];
+
+          // 1. Create the FixEntity with pre-generated ID
+          mutations.push(
+            FixEntity
+              .create(fixEntityDataWithId)
+              .commit({ response: 'all_old' }),
+          );
+
+          // 2. Update each Suggestion status
+          for (const update of suggestionUpdates) {
+            const { suggestionId, opportunityId, status = 'FIXED' } = update;
+
+            mutations.push(
+              Suggestion
+                .patch({ suggestionId, opportunityId })
+                .set({ status })
+                .commit({ response: 'all_old' }),
+            );
+          }
+
+          // 3. Create FixEntitySuggestion junction records IN THE SAME TRANSACTION
+          // This ensures atomicity - if any operation fails, everything rolls back
+          for (const update of suggestionUpdates) {
+            mutations.push(
+              FixEntitySuggestion
+                .create({
+                  opportunityId: update.opportunityId,
+                  fixEntityCreatedAt,
+                  fixEntityId,
+                  suggestionId: update.suggestionId,
+                })
+                .commit({ response: 'all_old' }),
+            );
+          }
+
+          return mutations;
+        })
+        .go(options.token ? { token: options.token } : {});
+
+      // Check if transaction was canceled
+      if (transactionResult.canceled) {
+        const failedOperations = transactionResult.data
+          .filter((item) => item.rejected)
+          .map((item, index) => ({
+            index,
+            code: item.code,
+            message: item.message,
+          }));
+
+        this.log.error('Transaction was canceled', { failedOperations });
+        throw new DataAccessError(
+          `Transaction canceled: ${failedOperations.map((op) => `${op.code} - ${op.message}`).join('; ')}`,
+          this,
+        );
+      }
+
+      // Fetch the created fix entity to return it
+      let createdFixEntity = null;
+      const fixEntityItem = transactionResult.data[0];
+
+      if (!fixEntityItem.rejected) {
+        // Fetch by the generated ID
+        createdFixEntity = await this.findById(fixEntityId);
+      }
+
+      this.log.info(`Successfully created fix entity and updated ${suggestionUpdates.length} suggestions atomically`);
+
+      return {
+        canceled: transactionResult.canceled,
+        data: transactionResult.data,
+        fixEntity: createdFixEntity,
+      };
+    } catch (error) {
+      this.log.error('Failed to create fix entity with suggestion updates', error);
+
+      if (error instanceof DataAccessError || error instanceof ValidationError) {
+        throw error;
+      }
+
+      throw new DataAccessError('Failed to create fix entity with suggestion updates', this, error);
     }
   }
 }

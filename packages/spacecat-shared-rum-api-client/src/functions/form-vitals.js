@@ -14,7 +14,10 @@ import { DataChunks, facets } from '@adobe/rum-distiller';
 import trafficAcquisition from './traffic-acquisition.js';
 import { DELIMITER, generateKey, loadBundles } from '../utils.js';
 
-const METRICS = ['formview', 'formengagement', 'formsubmit'];
+const FORMVIEW = 'formview';
+const FORMENGAGEMENT = 'formengagement';
+const FORMSUBMIT = 'formsubmit';
+const METRICS = [FORMVIEW, FORMENGAGEMENT, FORMSUBMIT];
 const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia', 'experiment'];
 const KEYWORDS_TO_FILTER = ['search'];
 
@@ -33,10 +36,6 @@ function filterEvents(bundles) {
   return bundles.map((bundle) => ({
     ...bundle,
     events: bundle.events.filter((event) => {
-      if (!CHECKPOINTS.includes(event.checkpoint)) {
-        return false;
-      }
-
       if (event.checkpoint === 'navigate' || event.checkpoint === 'experiment') {
         return true;
       }
@@ -64,7 +63,7 @@ function isFormSource(source, eventSource) {
 
 const metricFns = {
   formview: (source) => (bundle) => {
-    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock' && isFormSource(source, e.source));
+    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock' && source === e.source);
     return formView ? bundle.weight : 0;
   },
   formengagement: (source) => (bundle) => {
@@ -72,7 +71,7 @@ const metricFns = {
     return formClick ? bundle.weight : 0;
   },
   formsubmit: (source) => (bundle) => {
-    const formSubmit = bundle.events.find((e) => e.checkpoint === 'formsubmit' && isFormSource(source, e.source));
+    const formSubmit = bundle.events.find((e) => e.checkpoint === 'formsubmit' && source === e.source);
     return formSubmit ? bundle.weight : 0;
   },
 };
@@ -265,7 +264,9 @@ function handler(bundles) {
       return generateKey(bundle.url, deviceType);
     });
 
-    METRICS.forEach((metric) => dataChunks.addSeries(metric, metricFns[metric](formsource)));
+    [FORMVIEW, FORMSUBMIT]
+      .forEach((metric) => dataChunks.addSeries(metric, metricFns[metric](source)));
+    dataChunks.addSeries(FORMENGAGEMENT, metricFns.formengagement(formsource));
     // aggregates metrics per group (url and user agent)
     dataChunks.facets.urlUserAgents.reduce((acc, { value, metrics, weight }) => {
       const [url, userAgent] = value.split(DELIMITER);

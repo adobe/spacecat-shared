@@ -1,0 +1,111 @@
+{
+  "evaluation": {
+    "architecture_and_design": {
+      "team_integration_score": 2,
+      "reasoning": "The repository has multiple AI context files that were updated within the last 30 days, placing it solidly at Score 2. There is a detailed .github/copilot-instructions.md (updated 2026-02-05, 406 lines) that documents coding conventions, schema patterns, data access patterns, breaking-change rules, and repo-specific architectural invariants. Two package-level CLAUDE.md files exist: one for spacecat-shared-google-client (docs/CLAUDE.md, updated 2026-02-05) with architecture diagrams, environment variable tables, and usage examples; and one for spacecat-shared-vault-secrets (CLAUDE.md, updated 2026-02-20) with a detailed architecture diagram, E2E validation runbook, and findings from a live validation. A design document was added recently at docs/plans/2026-02-19-vault-approle-per-service-design.md (updated 2026-02-21), representing AI-assisted architectural planning. A .cursor/commands/ directory contains 10 shared AI commands including speckit.constitution.md for managing a project constitution. The repository falls short of Score 3 because there are no living context files (no active_context.md, tech_debt.md, or product_evolution.md) that are auto-updated by CI/CD. The .specify/ directory referenced by the speckit commands does not exist in the repository, so spec-driven development is defined in the tooling but not yet fully instantiated. AI does not yet review architecture changes against ADRs automatically.",
+      "evidence": [
+        ".github/copilot-instructions.md - 406-line comprehensive AI review guide updated 2026-02-05, covering schema/model integrity, breaking changes, data access patterns, HTTP utilities, TypeScript definitions, security, coverage, and linting rules",
+        "packages/spacecat-shared-google-client/docs/CLAUDE.md - Package-level AI context file with architecture diagram, env vars, usage examples, OAuth flow, and common tasks (updated 2026-02-05)",
+        "packages/spacecat-shared-vault-secrets/CLAUDE.md - Detailed architecture doc with secret loading pipeline, two-tier caching, E2E validation procedure, and findings from live validation (updated 2026-02-20)",
+        "docs/plans/2026-02-19-vault-approle-per-service-design.md - Design document for per-service Vault AppRole migration with diagrams, path conventions, wrapper changes, and HCL policy examples (updated 2026-02-21)",
+        ".cursor/commands/speckit.constitution.md - Command for managing a project constitution with versioning, amendment governance, and cross-artifact propagation",
+        ".cursor/commands/ directory with 10 shared AI commands: branch-review, speckit.analyze, speckit.checklist, speckit.clarify, speckit.constitution, speckit.implement, speckit.plan, speckit.specify, speckit.tasks, speckit.taskstoissues",
+        "No AGENTS.md file present in the repository",
+        "No active_context.md, tech_debt.md, or product_evolution.md found",
+        ".specify/ directory referenced by speckit commands does not exist - spec-driven workflow is defined but not yet operationally active in this repo"
+      ],
+      "recommendations": [
+        "Create a root-level context_summary.md (or active_context.md) and update it after each significant feature or architectural decision",
+        "Instantiate the .specify/ directory structure that the speckit commands depend on to make spec-driven development operational",
+        "Add a tech_debt.md to track known technical debt items, ideally updated via CI/CD or a regular process",
+        "Expand the CLAUDE.md/context coverage to more packages (currently only 2 of 23 packages have AI context files)",
+        "Consider adding CI/CD steps that auto-update architecture context when models or schemas change"
+      ]
+    },
+    "development_and_coding": {
+      "team_integration_score": 2,
+      "reasoning": "The repository has a well-developed set of shared AI commands in .cursor/commands/ (updated January-February 2026), indicating team-level AI workflow integration. The 10 speckit commands represent a sophisticated spec-driven development workflow covering: feature specification (speckit.specify), clarification (speckit.clarify), technical planning (speckit.plan), task generation (speckit.tasks), implementation execution (speckit.implement), consistency analysis (speckit.analyze), checklist generation (speckit.checklist), and constitution management (speckit.constitution). The branch-review.md command explicitly ties AI review to the copilot-instructions.md standards. The .gitignore deliberately excludes speckit.* commands from version control (.cursor/commands/speckit.*) but keeps the branch-review.md, indicating active team use. The repository does not reach Score 3 because the .specify/ directory is absent (spec-driven development is defined but not active in this repo), there are no metrics on AI impact, and there is no evidence of >75% AI usage as a default tool across the team. The workflow tooling exists but is not yet fully deployed.",
+      "evidence": [
+        ".cursor/commands/ directory with 10 shared AI workflow commands updated Jan-Feb 2026",
+        "speckit.specify.md - Full spec generation workflow with branch management, quality validation, and clarification loops",
+        "speckit.plan.md - Technical planning with research phase, data model generation, API contracts, and agent context update",
+        "speckit.implement.md - Phase-by-phase TDD implementation following checklist gates",
+        "speckit.tasks.md - Dependency-ordered task generation organized by user story with parallel execution markers",
+        "speckit.analyze.md - Cross-artifact consistency analysis referencing spec.md, plan.md, tasks.md",
+        "speckit.checklist.md - Requirements quality checklist generator ('unit tests for requirements')",
+        "speckit.constitution.md - Project constitution management with versioning and cross-artifact propagation",
+        "branch-review.md - Cursor command to review branches against copilot-instructions.md standards",
+        ".gitignore contains '.cursor/commands/speckit.*' (excluded from git) but '.cursor/commands/' is included, suggesting branch-review.md is shared while speckit commands are user-local",
+        "No .specify/ directory present - the full spec-driven workflow is defined but not instantiated in this repo",
+        "No metrics or dashboards tracking AI adoption rates or productivity impact",
+        "CLAUDE.md files exist in 2 of 23 packages - coverage is sparse"
+      ],
+      "recommendations": [
+        "Remove the speckit.* exclusion from .gitignore and commit the speckit commands to the repository so all team members share the same workflow tooling",
+        "Initialize the .specify/ directory structure to make speckit commands operational in this repo",
+        "Create a root-level CLAUDE.md or similar file with repository-wide coding conventions, architecture overview, and project context to supplement the copilot-instructions.md",
+        "Add CLAUDE.md context files to the remaining 21 packages that currently lack them",
+        "Track and document AI adoption metrics such as PRs using AI-assisted spec workflows vs. manual approaches"
+      ]
+    },
+    "testing_and_quality": {
+      "team_integration_score": 2,
+      "reasoning": "The repository demonstrates strong, systematic testing practices that exceed basic conventions and show clear team-level testing standards, but lacks the formal TESTING.md document that would push it to Score 2+. The copilot-instructions.md contains a detailed testing section (sections 3.5 and 9) documenting required testing patterns, integration test structure, coverage expectations, and canonical test examples. Testing standards are enforced: 100% line/statement coverage and 97% branch coverage via nycrc.json in every package. The data-access package has 286 test files split between unit (test/unit/) and integration (test/it/) tests covering 35 entities. The copilot-instructions.md declares 'If behavior changes but tests do not → Critical', embedding test requirements into the AI review workflow. Integration tests run against local DynamoDB in CI/CD (lint-test-coverage action). The codeql.yml workflow provides automated security scanning. The speckit.implement.md command enforces TDD by design. Score 3 is not reached because there is no standalone TESTING.md, no mutation testing, no property-based testing, and no evidence of AI-generated tests in the CI pipeline.",
+      "evidence": [
+        "286 total test files in the repository across all packages",
+        "test/unit/ and test/it/ split in spacecat-shared-data-access with 35 entity integration test directories",
+        ".nycrc.json in every package enforcing 100% lines/statements and 97% branch coverage",
+        "copilot-instructions.md sections 3.5 and 9 detail required test patterns, integration test structure (test/it/<entity>/<entity>.test.js), fixtures, and canonical test examples",
+        "lint-test-coverage GitHub Action runs integration tests against local DynamoDB ECR image when spacecat-shared-data-access changes",
+        "Docker Compose test setup in docker-compose.test.yml for integration testing",
+        "codeql.yml workflow for automated security scanning with 'security-and-quality' queries",
+        "copilot-instructions.md explicitly marks 'If new entity lacks integration tests → Critical'",
+        "speckit.implement.md enforces TDD: 'Tests before code: If you need to write tests for contracts, entities, and integration scenarios'",
+        "speckit.checklist.md provides requirements quality validation approach",
+        "No TESTING.md file found in the repository",
+        "No mutation testing tools (stryker, mutant) found",
+        "No property-based testing tools found",
+        "No AI-specific test generation step in CI/CD pipeline"
+      ],
+      "recommendations": [
+        "Create a TESTING.md at the repository root documenting the testing philosophy, unit vs. integration test split, mocking conventions, fixture patterns, coverage requirements, and how to run tests locally",
+        "Document the AI-assisted test generation workflow (the speckit.implement.md TDD approach) explicitly in TESTING.md",
+        "Consider adding mutation testing for the most critical packages (spacecat-shared-data-access, spacecat-shared-utils)",
+        "Explore property-based testing for validation functions in spacecat-shared-utils",
+        "Add a CI/CD step that explicitly validates test coverage trends over time and flags regressions"
+      ]
+    },
+    "code_review": {
+      "team_integration_score": 2,
+      "reasoning": "The repository uses GitHub Copilot for code review via the .github/copilot-instructions.md file (406 lines, updated 2026-02-05), which configures GitHub Copilot's PR review behavior. This is a substantive Score 2 signal: the copilot-instructions.md acts as a Copilot code reviewer configuration with detailed severity levels (Critical/Major/Minor), specific checks for schema integrity, breaking API changes, data access patterns, HTTP utility patterns, TypeScript definitions, security, and linting. The branch-review.md Cursor command in .cursor/commands/ provides AI-assisted local branch review that references the copilot-instructions.md, creating a pre-PR AI review workflow. The PR template is minimal (2 checkboxes), but the copilot-instructions.md supplements it heavily. The semver-check.yaml workflow auto-comments semantic release status on PRs. CODEOWNERS gates the critical data-access package. CodeQL runs on PRs to main for security analysis. Score 3 is not reached because there are no custom compliance rules beyond what copilot-instructions.md provides, no impact analysis predicting affected downstream services, no continuous quality scanning beyond CI, and no evidence of AI as the automated first-pass reviewer in the GitHub workflow (vs. the instructions being a human-readable guide that Copilot follows when invoked).",
+      "evidence": [
+        ".github/copilot-instructions.md - 406-line GitHub Copilot PR review configuration covering: review goals, severity levels (Critical/Major/Minor), bug/regression scan, schema/model integrity, breaking changes, shared utility usage, required tests, monorepo patterns, HTTP utilities, data access patterns, client implementations, TypeScript definitions, performance, security, documentation, linting, and coverage",
+        ".cursor/commands/branch-review.md - AI command that invokes branch review against copilot-instructions.md and cursor rules before PRs",
+        ".github/pull_request_template.md - Minimal PR template with 2 checkboxes for issue linking",
+        ".github/workflows/semver-check.yaml - Auto-comments semantic release status on non-main branch pushes",
+        ".github/workflows/codeql.yml - CodeQL security and quality analysis on PRs to main",
+        ".github/CODEOWNERS - Gates spacecat-shared-data-access changes requiring approval from @ekremney @solaris007",
+        "Commit f53c0db8 (2026-02-02): 'chore: add cursor command to review branch according to copilot-instructions and applicable cursor rules' - shows deliberate team-level adoption",
+        ".idea/copilot.data.migration.*.xml files - Evidence of GitHub Copilot agent/chat usage for data migration tasks in IntelliJ",
+        "No CodeRabbit, Danger.js, or other automated AI review bot found",
+        "No custom GitHub Actions performing AI-driven impact analysis",
+        "No evidence of automated first-pass AI review triggering on every PR push"
+      ],
+      "recommendations": [
+        "Configure GitHub Copilot review to automatically trigger on every PR (if using Copilot Enterprise) rather than relying on manual invocation",
+        "Expand the PR template to include AI-assisted sections: auto-generated summary, impact analysis checklist, and links to relevant test patterns",
+        "Add a GitHub Action that generates an automated PR summary using an AI API call on PR creation",
+        "Consider adding Danger.js or a custom action to enforce the copilot-instructions.md rules programmatically (e.g., fail if integration tests are missing for new data-access entities)",
+        "Add downstream impact analysis: a CI step that identifies which consuming services may be affected by changes to public APIs in this shared library"
+      ]
+    },
+    "overall_summary": "spacecat-shared is an actively maintained Adobe monorepo (23 packages, 286 test files, 168 commits in the last 30 days) that has made deliberate and recent investments in AI-assisted development practices. The repository is solidly at an intermediate AI maturity level across all four SDLC phases. Its strongest asset is the copilot-instructions.md file - a comprehensive, recently-updated (2026-02-05) AI review guide that covers schema integrity, breaking changes, data access patterns, testing requirements, and security checks with clear severity levels. This file serves double duty as both a Copilot PR reviewer configuration and an architectural reference. The .cursor/commands/ directory contains a sophisticated 10-command speckit workflow for spec-driven development (specification, clarification, planning, task generation, implementation, analysis, and constitution management), though the .specify/ infrastructure these commands depend on is not yet instantiated in this repo. Testing practices are mature with 100% coverage enforcement, unit+integration test splits, and mandatory integration tests for data-access entities enforced via copilot-instructions.md, but lack a formal TESTING.md and advanced techniques. Package-level CLAUDE.md files exist for 2 of 23 packages with recent, substantive content. The main gaps preventing advancement to 'advanced' are: absence of living context files auto-updated by CI/CD, the speckit workflow not being fully operational in this repo, no TESTING.md, no automated first-pass AI PR review triggering on every push, and no AI impact analysis or productivity metrics."
+  },
+  "overall_maturity": "intermediate",
+  "repo_info": {
+    "owner": "adobe",
+    "name": "spacecat-shared",
+    "url": "https://github.com/adobe/spacecat-shared",
+    "evaluated_at": "2026-02-27T00:00:00Z"
+  }
+}

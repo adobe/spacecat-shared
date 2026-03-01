@@ -380,8 +380,9 @@ class BaseCollection {
     Object.entries(keys).forEach(([key, value]) => {
       const dbField = this.#toDbField(key);
       const attr = this.schema.getAttribute(key);
-      if (attr?.caseInsensitive) {
-        filtered = filtered.ilike(dbField, value);
+      if (attr?.caseInsensitive && typeof value === 'string') {
+        const escaped = value.replace(/[%_]/g, '\\$&');
+        filtered = filtered.ilike(dbField, escaped);
       } else {
         filtered = filtered.eq(dbField, value);
       }

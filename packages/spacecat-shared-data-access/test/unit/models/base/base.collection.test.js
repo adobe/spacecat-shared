@@ -1836,6 +1836,35 @@ describe('BaseCollection', () => {
       expect(query.eq).to.have.been.calledOnceWith('some_other_key', 1);
     });
 
+    it('escapes ILIKE wildcards in caseInsensitive key values', async () => {
+      const query = createPostgrestQuery({
+        data: [{ some_key: 'my_site%20test' }],
+        error: null,
+      });
+      query.ilike = stub().returnsThis();
+      const fromStub = stub().returns({
+        select: stub().returns(query),
+      });
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        {
+          someKey: { type: 'string', caseInsensitive: true },
+          someOtherKey: { type: 'number' },
+        },
+      );
+
+      await instance.allByIndexKeys(
+        { someKey: 'my_site%20test' },
+        { fetchAllPages: false },
+      );
+
+      expect(query.ilike).to.have.been.calledOnceWith('some_key', 'my\\_site\\%20test');
+    });
+
     it('does not append duplicate id ordering when id is already part of index order', async () => {
       const query = createPostgrestQuery({
         data: [{ mock_entity_model_id: 'id-1' }],

@@ -617,20 +617,36 @@ class BaseCollection {
         const dbField = this.#toDbField(bulkKeyField);
         const values = keys.map((key) => key[bulkKeyField]);
         const select = this.#buildSelect(options.attributes);
-        const { data, error } = await this.postgrestService
-          .from(this.tableName)
-          .select(select)
-          .in(dbField, values);
 
-        if (!error) {
-          return {
-            data: this.#createInstances((data || []).map((record) => this.#toModelRecord(record))),
-            unprocessed: [],
-          };
+        // Chunk values to avoid 414 URI Too Large from PostgREST GET URLs.
+        // Each UUID is ~36 chars; 50 × 36 ≈ 1,800 chars, well under the 8KB URL limit.
+        const CHUNK_SIZE = 50;
+        const allData = [];
+        let hadInvalidInput = false;
+
+        for (let i = 0; i < values.length; i += CHUNK_SIZE) {
+          const chunk = values.slice(i, i + CHUNK_SIZE);
+          // eslint-disable-next-line no-await-in-loop
+          const { data, error } = await this.postgrestService
+            .from(this.tableName)
+            .select(select)
+            .in(dbField, chunk);
+
+          if (error) {
+            if (!this.#isInvalidInputError(error)) {
+              throw error;
+            }
+            hadInvalidInput = true;
+            break;
+          }
+          allData.push(...(data || []));
         }
 
-        if (!this.#isInvalidInputError(error)) {
-          throw error;
+        if (!hadInvalidInput) {
+          return {
+            data: this.#createInstances(allData.map((record) => this.#toModelRecord(record))),
+            unprocessed: [],
+          };
         }
       }
 

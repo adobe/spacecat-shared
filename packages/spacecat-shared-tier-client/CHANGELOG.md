@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tier-client-v1.3.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.12...@adobe/spacecat-shared-tier-client-v1.3.13) (2026-03-01)
+
+### Bug Fixes
+
+* **tier-client:** avoid 414 URI Too Large on orgs with many enrollments ([#1390](https://github.com/adobe/spacecat-shared/issues/1390)) ([2e9de5e](https://github.com/adobe/spacecat-shared/commit/2e9de5e685c2a25801d4d50ad7317773ee706ef0))
+
 ## [@adobe/spacecat-shared-tier-client-v1.3.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.11...@adobe/spacecat-shared-tier-client-v1.3.12) (2026-02-17)
 
 ### Bug Fixes

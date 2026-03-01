@@ -239,10 +239,40 @@ class TierClient {
         return { entitlement, enrollments: [] };
       }
 
-      // Fetch all sites using batchGetByKeys
+      // When a specific site is provided, skip batch fetch entirely.
+      // Just filter enrollments by site ID and verify org ownership with a single lookup.
+      if (this.site) {
+        const targetSiteId = this.site.getId();
+        const matchingEnrollments = allEnrollments.filter(
+          (se) => se.getSiteId() === targetSiteId,
+        );
+
+        if (matchingEnrollments.length === 0) {
+          return { entitlement, enrollments: [] };
+        }
+
+        const site = await this.Site.findById(targetSiteId);
+        if (!site || site.getOrganizationId() !== orgId) {
+          return { entitlement, enrollments: [] };
+        }
+
+        return { entitlement, enrollments: matchingEnrollments };
+      }
+
+      // Org-only path: fetch sites in chunks to avoid 414 URI Too Large.
+      // PostgREST uses GET with ?id=in.(...) which has URL length limits.
+      const CHUNK_SIZE = 50;
       const siteKeys = allEnrollments.map((enrollment) => ({ siteId: enrollment.getSiteId() }));
-      const sitesResult = await this.Site.batchGetByKeys(siteKeys);
-      const sitesMap = new Map(sitesResult.data.map((site) => [site.getId(), site]));
+      const sitesMap = new Map();
+
+      for (let i = 0; i < siteKeys.length; i += CHUNK_SIZE) {
+        const chunk = siteKeys.slice(i, i + CHUNK_SIZE);
+        // eslint-disable-next-line no-await-in-loop
+        const sitesResult = await this.Site.batchGetByKeys(chunk);
+        for (const site of sitesResult.data) {
+          sitesMap.set(site.getId(), site);
+        }
+      }
 
       // Filter enrollments where site's orgId matches the entitlement's orgId
       const validEnrollments = [];
@@ -250,27 +280,13 @@ class TierClient {
       for (const enrollment of allEnrollments) {
         const site = sitesMap.get(enrollment.getSiteId());
         if (!site) {
-          // Site not found, log warning and skip
           this.log.warn(`Site not found for enrollment ${enrollment.getId()} with siteId ${enrollment.getSiteId()}`);
-        } else {
-          const siteOrgId = site.getOrganizationId();
-          if (siteOrgId === orgId) {
-            validEnrollments.push(enrollment);
-          }
+        } else if (site.getOrganizationId() === orgId) {
+          validEnrollments.push(enrollment);
         }
       }
 
-      if (this.site) {
-        // Return site enrollments matching the entitlement and site
-        const siteId = this.site.getId();
-        const matchingEnrollments = validEnrollments.filter(
-          (se) => se.getSiteId() === siteId,
-        );
-        return { entitlement, enrollments: matchingEnrollments };
-      } else {
-        // Return all valid enrollments for the entitlement
-        return { entitlement, enrollments: validEnrollments };
-      }
+      return { entitlement, enrollments: validEnrollments };
     } catch (error) {
       this.log.error(`Error getting all enrollments: ${error.message}`);
       throw error;
@@ -279,28 +295,51 @@ class TierClient {
 
   /**
    * Gets the first enrollment and its site, filtered by productCode.
-   * - If site is provided: returns site enrollment for the entitlement matching productCode
-   * - If org-only: returns first site enrollment for the entitlement matching productCode
+   * - If site is provided: finds matching enrollment and returns this.site directly
+   * - If org-only: iterates enrollments, fetches sites one at a time, returns first org match
    * @returns {Promise<object>} Object with entitlement, enrollment, and site.
    */
   async getFirstEnrollment() {
     try {
-      const { entitlement, enrollments } = await this.getAllEnrollment();
+      const orgId = this.organization.getId();
+      const entitlement = await this.Entitlement
+        .findByOrganizationIdAndProductCode(orgId, this.productCode);
 
-      if (!entitlement || !enrollments?.length) {
+      if (!entitlement) {
         return { entitlement: null, enrollment: null, site: null };
       }
 
-      const firstEnrollment = enrollments[0];
-      const enrollmentSiteId = firstEnrollment.getSiteId();
-      const site = await this.Site.findById(enrollmentSiteId);
+      const allEnrollments = await this.SiteEnrollment.allByEntitlementId(entitlement.getId());
 
-      if (!site) {
-        this.log.warn(`Site not found for enrollment ${firstEnrollment.getId()} with site ID ${enrollmentSiteId}`);
-        return { entitlement, enrollment: firstEnrollment, site: null };
+      if (!allEnrollments || allEnrollments.length === 0) {
+        return { entitlement: null, enrollment: null, site: null };
       }
 
-      return { entitlement, enrollment: firstEnrollment, site };
+      // When a specific site is set, find its enrollment in memory — no fetch needed.
+      if (this.site) {
+        const targetSiteId = this.site.getId();
+        const matchingEnrollment = allEnrollments.find(
+          (se) => se.getSiteId() === targetSiteId,
+        );
+        if (matchingEnrollment) {
+          return { entitlement, enrollment: matchingEnrollment, site: this.site };
+        }
+        return { entitlement: null, enrollment: null, site: null };
+      }
+
+      // Org-only: iterate enrollments, fetch site one at a time, return first org match.
+      // This avoids batch-fetching all sites (which causes 414 on large sets).
+      for (const enrollment of allEnrollments) {
+        // eslint-disable-next-line no-await-in-loop
+        const site = await this.Site.findById(enrollment.getSiteId());
+        if (!site) {
+          this.log.warn(`Site not found for enrollment ${enrollment.getId()} with siteId ${enrollment.getSiteId()}`);
+        } else if (site.getOrganizationId() === orgId) {
+          return { entitlement, enrollment, site };
+        }
+      }
+
+      return { entitlement: null, enrollment: null, site: null };
     } catch (error) {
       this.log.error(`Error getting first enrollment: ${error.message}`);
       throw error;

@@ -134,11 +134,87 @@ Current exported entities include:
 - `TrialUser`
 - `TrialUserActivity`
 
+## Architecture
+
+```
+Lambda / ECS service
+  -> @adobe/spacecat-shared-data-access (this package)
+       -> @supabase/postgrest-js
+            -> mysticat-data-service (PostgREST + Aurora PostgreSQL)
+                 https://github.com/adobe/mysticat-data-service
+```
+
+**v2 (retired):** ElectroDB -> DynamoDB (direct, schema-in-code)
+**v3 (current):** PostgREST client -> [mysticat-data-service](https://github.com/adobe/mysticat-data-service) (schema-in-database)
+
+The database schema (tables, indexes, enums, grants) lives in **mysticat-data-service** as dbmate migrations.
+This package provides the JavaScript model/collection layer that maps camelCase entities to the snake_case PostgREST API.
+
 ## V3 Behavior Notes
 
 - `Configuration` remains S3-backed in v3.
 - `KeyEvent` is deprecated in v3 and intentionally throws on access/mutation methods.
 - `LatestAudit` is virtual in v3 and derived from `Audit` queries (no dedicated table required).
+
+## Changing Entities
+
+Adding or modifying an entity now requires changes in **two repositories**:
+
+### 1. Database schema — [mysticat-data-service](https://github.com/adobe/mysticat-data-service)
+
+Create a dbmate migration for the schema change (table, columns, indexes, grants, enums):
+
+```bash
+# In mysticat-data-service
+make migrate-new name=add_foo_column_to_sites
+# Edit db/migrations/YYYYMMDDHHMMSS_add_foo_column_to_sites.sql
+make migrate
+docker compose -f docker/docker-compose.yml restart postgrest
+make test
+```
+
+See the [mysticat-data-service CLAUDE.md](https://github.com/adobe/mysticat-data-service/blob/main/CLAUDE.md) for migration conventions (required grants, indexes, comments, etc.).
+
+### 2. Model/collection layer — this package
+
+Update the entity schema, model, and/or collection in `src/models/<entity>/`:
+
+| File | What to change |
+|------|---------------|
+| `<entity>.schema.js` | Add/modify attributes, references, indexes |
+| `<entity>.model.js` | Add business logic methods |
+| `<entity>.collection.js` | Add custom query methods |
+
+**Adding a new attribute example:**
+
+```js
+// In <entity>.schema.js, add to the SchemaBuilder chain:
+.addAttribute('myNewField', {
+  type: 'string',
+  required: false,
+  // Optional: custom DB column name (default: camelToSnake)
+  // postgrestField: 'custom_column_name',
+})
+```
+
+This automatically generates `getMyNewField()` and `setMyNewField()` on the model.
+
+**Adding a new entity:** Create 4 files following the pattern in any existing entity folder:
+- `<entity>.schema.js` — SchemaBuilder definition
+- `<entity>.model.js` — extends `BaseModel`
+- `<entity>.collection.js` — extends `BaseCollection`
+- `index.js` — re-exports model, collection, schema
+
+Then register the entity in `src/models/index.js`.
+
+### 3. Integration test the full stack
+
+```bash
+# In this package — runs PostgREST in Docker
+npm run test:it
+```
+
+Integration tests pull the `mysticat-data-service` Docker image from ECR, so new schema changes must be published as a new image tag first (or test against a local PostgREST).
 
 ## Migrating from V2
 
@@ -154,6 +230,7 @@ If you are upgrading from DynamoDB/ElectroDB-based v2:
 
 - Backing store is now Postgres via PostgREST, not DynamoDB/ElectroDB.
 - You must provide `postgrestUrl` (or `POSTGREST_URL` via wrapper env).
+- Schema changes now go through [mysticat-data-service](https://github.com/adobe/mysticat-data-service) migrations, not code.
 - `Configuration` remains S3-backed (requires `s3Bucket`/`S3_CONFIG_BUCKET` when used).
 - `KeyEvent` is deprecated in v3 and now throws.
 - `LatestAudit` is no longer a dedicated table and is computed from `Audit` queries.

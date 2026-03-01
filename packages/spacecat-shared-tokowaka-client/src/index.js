@@ -230,11 +230,13 @@ class TokowakaClient {
   }
 
   /**
-   * Fetches domain-level metaconfig from S3
+   * Internal method to fetch domain-level metaconfig from S3 with metadata
    * @param {string} url - Full URL (used to extract domain)
-   * @returns {Promise<Object|null>} - Metaconfig object or null if not found
+   * @returns {Promise<Object|null>} - Object with metaconfig and s3Metadata,
+   *   or null if not found
+   * @private
    */
-  async fetchMetaconfig(url) {
+  async #fetchMetaconfigWithMetadata(url) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -254,7 +256,11 @@ class TokowakaClient {
       const metaconfig = JSON.parse(bodyContents);
 
       this.log.debug(`Successfully fetched metaconfig from s3://${bucketName}/${s3Path} in ${Date.now() - fetchStartTime}ms`);
-      return metaconfig;
+
+      return {
+        metaconfig,
+        s3Metadata: response.Metadata || {},
+      };
     } catch (error) {
       // If metaconfig doesn't exist (NoSuchKey), return null
       if (error.name === 'NoSuchKey' || error.Code === 'NoSuchKey') {
@@ -266,6 +272,16 @@ class TokowakaClient {
       this.log.error(`Failed to fetch metaconfig from S3: ${error.message}`, error);
       throw this.#createError(`S3 fetch failed: ${error.message}`, HTTP_INTERNAL_SERVER_ERROR);
     }
+  }
+
+  /**
+   * Fetches domain-level metaconfig from S3
+   * @param {string} url - Full URL (used to extract domain)
+   * @returns {Promise<Object|null>} - Metaconfig object or null if not found
+   */
+  async fetchMetaconfig(url) {
+    const result = await this.#fetchMetaconfigWithMetadata(url);
+    return result?.metaconfig ?? null;
   }
 
   /**
@@ -289,7 +305,13 @@ class TokowakaClient {
    * @param {string} url - Full URL (used to extract domain)
    * @param {string} siteId - Site ID
    * @param {Object} options - Optional configuration
-   * @param {boolean} options.enhancements - Whether to enable enhancements (default: true)
+   * @param {boolean} options.enhancements - Whether to enable enhancements
+   *   (default: true)
+   * @param {Object} metadata - Optional S3 user-defined metadata for
+   *   audit trail and behavior flags
+   * @param {string} metadata.lastModifiedBy - User who modified the config
+   * @param {boolean} metadata.isStageDomain - Whether this is a staging
+   *   domain (enables wildcard prerender)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
   async createMetaconfig(url, siteId, options = {}, metadata = {}) {
@@ -318,7 +340,19 @@ class TokowakaClient {
       patches: {},
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
+    // Handle staging domain with automatic prerender configuration
+    const isStageDomain = metadata.isStageDomain === true;
+    if (isStageDomain) {
+      metaconfig.prerender = { allowList: ['/*'] };
+    }
+
+    // Persist isStageDomain in S3 metadata for future updates
+    const s3Metadata = {
+      ...metadata,
+      ...(isStageDomain && { isStageDomain: 'true' }),
+    };
+
+    const s3Path = await this.uploadMetaconfig(url, metaconfig, s3Metadata);
     this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
 
     return metaconfig;
@@ -330,6 +364,11 @@ class TokowakaClient {
    * @param {string} url - Full URL (used to extract domain)
    * @param {string} siteId - Site ID
    * @param {Object} options - Optional configuration
+   * @param {Object} metadata - Optional S3 user-defined metadata for
+   *   audit trail and behavior flags
+   * @param {string} metadata.lastModifiedBy - User who modified the config
+   * @param {boolean} metadata.isStageDomain - Whether this is a staging
+   *   domain (enables wildcard prerender)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
    */
   async updateMetaconfig(url, siteId, options = {}, metadata = {}) {
@@ -337,10 +376,11 @@ class TokowakaClient {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
-    const existingMetaconfig = await this.fetchMetaconfig(url);
-    if (!existingMetaconfig) {
+    const raw = await this.#fetchMetaconfigWithMetadata(url);
+    if (!raw?.metaconfig) {
       throw this.#createError('Metaconfig does not exist for this URL', HTTP_BAD_REQUEST);
     }
+    const { metaconfig: existingMetaconfig, s3Metadata: existingS3Metadata } = raw;
 
     if (!hasText(siteId)) {
       throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
@@ -356,10 +396,17 @@ class TokowakaClient {
       ?? existingMetaconfig.forceFail
       ?? false;
 
-    const hasPrerender = isNonEmptyObject(options.prerender)
+    // Handle staging domain: check from metadata or from existing S3 metadata (S3 lowercases keys)
+    const isStageDomain = metadata.isStageDomain === true
+      || existingS3Metadata.isstagedomain === 'true';
+
+    const hasPrerender = isStageDomain
+      || isNonEmptyObject(options.prerender)
       || isNonEmptyObject(existingMetaconfig.prerender);
-    const prerender = options.prerender
-      ?? existingMetaconfig.prerender;
+
+    const prerender = isStageDomain
+      ? { allowList: ['/*'] }
+      : (options.prerender ?? existingMetaconfig.prerender);
 
     const metaconfig = {
       ...existingMetaconfig,
@@ -372,8 +419,14 @@ class TokowakaClient {
       ...(hasPrerender && { prerender }),
     };
 
-    const s3Path = await this.uploadMetaconfig(url, metaconfig, metadata);
-    this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
+    // Persist isStageDomain in S3 metadata for future updates
+    const s3Metadata = {
+      ...metadata,
+      ...(isStageDomain && { isStageDomain: 'true' }),
+    };
+
+    const uploadedPath = await this.uploadMetaconfig(url, metaconfig, s3Metadata);
+    this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${uploadedPath}`);
 
     return metaconfig;
   }

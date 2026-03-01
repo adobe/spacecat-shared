@@ -1922,6 +1922,57 @@ describe('BaseCollection', () => {
       );
     });
 
+    it('chunks PostgREST batchGetByKeys into groups of 50 to avoid 414', async () => {
+      // Generate 120 keys (should produce 3 chunks: 50 + 50 + 20)
+      const keys = Array.from({ length: 120 }, (_, i) => ({
+        mockEntityModelId: `ef39921f-9a02-41db-b491-${String(i).padStart(12, '0')}`,
+      }));
+
+      const chunkResponses = [
+        { data: [{ some_key: 'chunk-1', some_other_key: 1 }], error: null },
+        { data: [{ some_key: 'chunk-2', some_other_key: 2 }], error: null },
+        { data: [{ some_key: 'chunk-3', some_other_key: 3 }], error: null },
+      ];
+
+      const inCalls = [];
+      let chunkIdx = 0;
+
+      const fromStub = stub().callsFake(() => ({
+        select: stub().callsFake(() => {
+          const idx = chunkIdx;
+          chunkIdx += 1;
+          const query = {
+            in: stub().callsFake((_field, vals) => {
+              inCalls.push(vals);
+              return query;
+            }),
+            then: (onFulfilled, onRejected) => Promise
+              .resolve(chunkResponses[idx] || { data: [], error: null })
+              .then(onFulfilled, onRejected),
+          };
+          return query;
+        }),
+      }));
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const batch = await instance.batchGetByKeys(keys);
+
+      expect(batch.data).to.have.length(3);
+      expect(batch.unprocessed).to.deep.equal([]);
+      // Should have made 3 chunked calls
+      expect(inCalls).to.have.length(3);
+      expect(inCalls[0]).to.have.length(50);
+      expect(inCalls[1]).to.have.length(50);
+      expect(inCalls[2]).to.have.length(20);
+    });
+
     it('throws on non-invalid bulk errors in PostgREST batchGetByKeys', async () => {
       const bulkQuery = {
         select: stub().returnsThis(),

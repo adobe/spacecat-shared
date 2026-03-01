@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.4.0...@adobe/spacecat-shared-data-access-v3.4.1) (2026-03-01)
+
+### Bug Fixes
+
+* **data-access:** chunk batchGetByKeys to avoid 414 URI Too Large ([#1391](https://github.com/adobe/spacecat-shared/issues/1391)) ([25b0c0d](https://github.com/adobe/spacecat-shared/commit/25b0c0dab34b4e8e8b5fef9f4033cbcc698652f5)), closes [#1390](https://github.com/adobe/spacecat-shared/issues/1390)
+
 ## [@adobe/spacecat-shared-data-access-v3.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.3.0...@adobe/spacecat-shared-data-access-v3.4.0) (2026-02-26)
 
 ### Features

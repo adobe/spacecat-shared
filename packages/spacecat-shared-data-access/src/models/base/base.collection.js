@@ -378,7 +378,13 @@ class BaseCollection {
 
     let filtered = query;
     Object.entries(keys).forEach(([key, value]) => {
-      filtered = filtered.eq(this.#toDbField(key), value);
+      const dbField = this.#toDbField(key);
+      const attr = this.schema.getAttribute(key);
+      if (attr?.caseInsensitive) {
+        filtered = filtered.ilike(dbField, value);
+      } else {
+        filtered = filtered.eq(dbField, value);
+      }
     });
     return filtered;
   }

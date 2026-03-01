@@ -51,6 +51,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
+    caseInsensitive: true,
     validate: (value) => isValidUrl(value),
   })
   .addAttribute('name', {

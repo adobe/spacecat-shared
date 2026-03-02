@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.4.2...@adobe/spacecat-shared-data-access-v3.5.0) (2026-03-02)
+
+### Features
+
+* **data-access:** auto-normalize enum values in PostgREST query filters ([#1392](https://github.com/adobe/spacecat-shared/issues/1392)) ([f44d0d2](https://github.com/adobe/spacecat-shared/commit/f44d0d257b0d47a719f592da13e91b2b01d89454))
+
 ## [@adobe/spacecat-shared-data-access-v3.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.4.1...@adobe/spacecat-shared-data-access-v3.4.2) (2026-03-02)
 
 ### Bug Fixes

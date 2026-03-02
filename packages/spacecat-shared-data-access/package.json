@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "@supabase/postgrest-js": "^1.21.4",
+    "@supabase/postgrest-js": "^2.0.0",
     "@aws-sdk/client-s3": "^3.940.0",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.12.0",

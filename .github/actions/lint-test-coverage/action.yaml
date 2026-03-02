@@ -36,7 +36,7 @@ runs:
 
     - name: Configure AWS credentials (private ECR pull)
       if: steps.changes.outputs.spacecat-shared == 'true' && inputs.ecr_pull_role_arn != ''
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v6
       with:
         role-to-assume: ${{ inputs.ecr_pull_role_arn }}
         aws-region: ${{ inputs.aws_region }}

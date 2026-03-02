@@ -21,7 +21,8 @@ Lambda/ECS service
 | File | Purpose |
 |------|---------|
 | `src/index.js` | Default export: `dataAccessWrapper(fn)` for Helix/Lambda handlers |
-| `src/service/index.js` | `createDataAccess(config, log?, client?)` factory |
+| `src/service/index.js` | `createDataAccess(config, log?, client?)` factory — returns entity collections + `services.postgrestClient` |
+| `src/service/index.d.ts` | `DataAccess` and `DataAccessServices` type definitions |
 | `src/models/base/schema.builder.js` | DSL for defining entity schemas (attributes, references, indexes) |
 | `src/models/base/base.model.js` | Base entity class (auto-generated getters/setters, save, remove) |
 | `src/models/base/base.collection.js` | Base collection class (findById, all, query, count) |
@@ -151,6 +152,22 @@ npm run test:it
 - Tests in `test/unit/models/<entity>/`
 - PostgREST calls are stubbed via sinon
 - Each entity model and collection has its own test file
+
+## Direct PostgREST Queries
+
+`dataAccess.services.postgrestClient` exposes the raw `@supabase/postgrest-js` `PostgrestClient` for querying tables that don't have entity models (e.g. analytics views, reporting tables):
+
+```js
+const { postgrestClient } = context.dataAccess.services;
+
+const { data, error } = await postgrestClient
+  .from('brand_presence_executions')
+  .select('*')
+  .eq('site_id', siteId)
+  .limit(100);
+```
+
+This is the same client instance used internally by entity collections — same URL, auth, and schema.
 
 ## Common Patterns
 

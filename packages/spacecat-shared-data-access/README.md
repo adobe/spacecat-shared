@@ -16,9 +16,10 @@ npm install @adobe/spacecat-shared-data-access
 ## What You Get
 
 The package provides:
-- `createDataAccess(config, log?, client?)`
+- `createDataAccess(config, log?, client?)` — returns entity collections + `services.postgrestClient`
 - `dataAccessWrapper(fn)` (default export) for Helix/Lambda style handlers
 - Entity collections/models with stable external API shape for services
+- `services.postgrestClient` for direct PostgREST queries against non-entity tables
 
 ## Quick Start
 
@@ -88,6 +89,29 @@ The wrapper reads from `context.env`:
 - `POSTGREST_API_KEY`
 - `S3_CONFIG_BUCKET`
 - `AWS_REGION`
+
+## Direct PostgREST Queries
+
+For querying PostgREST tables that are not modeled as entities (e.g. analytics views, reporting tables), the `postgrestClient` is available under `dataAccess.services`:
+
+```js
+const { Site } = dataAccess;                             // entity collections
+const { postgrestClient } = dataAccess.services;         // raw PostgREST client
+
+// Use entity collections as usual
+const site = await Site.findById(siteId);
+
+// Direct queries against non-entity tables
+const { data, error } = await postgrestClient
+  .from('brand_presence_executions')
+  .select('execution_date, visibility_score, sentiment')
+  .eq('site_id', siteId)
+  .gte('execution_date', '2025-01-01')
+  .order('execution_date', { ascending: false })
+  .limit(100);
+```
+
+This is the same `@supabase/postgrest-js` `PostgrestClient` instance used internally by the entity collections. Full IDE autocomplete is available for the query builder chain.
 
 ## Field Mapping Behavior
 
@@ -383,7 +407,10 @@ export MYSTICAT_DATA_SERVICE_REPOSITORY=682033462621.dkr.ecr.us-east-1.amazonaws
 
 Type definitions are shipped from:
 - `src/index.d.ts`
-- `src/models/**/index.d.ts`
+- `src/service/index.d.ts` — `DataAccess` and `DataAccessServices` interfaces
+- `src/models/**/index.d.ts` — per-entity collection and model interfaces
+
+The `DataAccess` interface provides full typing for all entity collections and `services.postgrestClient` (typed as `PostgrestClient` from `@supabase/postgrest-js`).
 
 Use the package directly in TS projects; no extra setup required.
 

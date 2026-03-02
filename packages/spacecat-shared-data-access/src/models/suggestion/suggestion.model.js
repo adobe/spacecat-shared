@@ -46,13 +46,12 @@ class Suggestion extends BaseModel {
     CONFIG_UPDATE: 'CONFIG_UPDATE',
   };
 
-  /** Predefined categories for skip reason. Maps to PostgreSQL skip_reason. */
+  /** Predefined categories for skip reasons. */
   static SKIP_REASONS = {
-    ALREADY_IMPLEMENTED: 'already_implemented',
-    INACCURATE_OR_INCOMPLETE: 'inaccurate_or_incomplete',
-    TOO_RISKY: 'too_risky',
-    NO_REASON: 'no_reason',
-    OTHER: 'other',
+    ALREADY_IMPLEMENTED: 'ALREADY_IMPLEMENTED',
+    INACCURATE_OR_INCOMPLETE: 'INACCURATE_OR_INCOMPLETE',
+    TOO_RISKY: 'TOO_RISKY',
+    OTHER: 'OTHER',
   };
 
   // Import schemas from external file for maintainability

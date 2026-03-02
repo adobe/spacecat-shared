@@ -14,50 +14,18 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
 
-const SCHEMA_ORG_DIRECT_FIELDS = {
-  sku: 'sku',
-  name: 'name',
-  material: 'material',
-  category: 'category',
-  color_family: 'color',
-  'pdp.description_plain': 'description',
-};
-
 const EXCLUDED_FIELDS = new Set([
   'rationale',
 ]);
 
-function toJsonLd(enrichmentData) {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-  };
-
-  const additionalProperties = [];
-
+function filterEnrichmentData(enrichmentData) {
+  const filtered = {};
   for (const [key, value] of Object.entries(enrichmentData)) {
     if (!EXCLUDED_FIELDS.has(key) && value != null) {
-      if (key === 'brand' && typeof value === 'string') {
-        jsonLd.brand = { '@type': 'Brand', name: value };
-      } else if (key === 'facts.facets.category_path' && Array.isArray(value)) {
-        jsonLd.category = value.join(' > ');
-      } else if (SCHEMA_ORG_DIRECT_FIELDS[key]) {
-        jsonLd[SCHEMA_ORG_DIRECT_FIELDS[key]] = value;
-      } else {
-        additionalProperties.push({
-          '@type': 'PropertyValue',
-          name: key,
-          value,
-        });
-      }
+      filtered[key] = value;
     }
   }
-
-  if (additionalProperties.length > 0) {
-    jsonLd.additionalProperty = additionalProperties;
-  }
-
-  return jsonLd;
+  return filtered;
 }
 
 export default class CommercePageEnrichmentMapper extends BaseOpportunityMapper {
@@ -108,18 +76,17 @@ export default class CommercePageEnrichmentMapper extends BaseOpportunityMapper 
 
       const data = suggestion.getData();
       const enrichmentData = JSON.parse(data.patchValue);
-
-      const jsonLd = toJsonLd(enrichmentData);
+      const value = filterEnrichmentData(enrichmentData);
 
       patches.push({
         ...this.createBasePatch(suggestion, opportunityId),
         op: 'appendChild',
         selector: 'head',
-        value: jsonLd,
+        value,
         valueFormat: 'json',
         target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
         tag: 'script',
-        attrs: { type: 'application/ld+json' },
+        attrs: { type: 'application/json' },
       });
     });
 

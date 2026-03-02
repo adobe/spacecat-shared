@@ -120,6 +120,20 @@ describe('Suggestion IT', async () => {
     });
   });
 
+  it('normalizes enum case when querying by status', async () => {
+    const oppId = sampleData.opportunities[0].getId();
+
+    const lowercase = await Suggestion.allByOpportunityIdAndStatus(oppId, 'new');
+    const mixedCase = await Suggestion.allByOpportunityIdAndStatus(oppId, 'New');
+    const uppercase = await Suggestion.allByOpportunityIdAndStatus(oppId, 'NEW');
+
+    expect(lowercase).to.have.length(uppercase.length);
+    expect(mixedCase).to.have.length(uppercase.length);
+
+    lowercase.forEach((s) => expect(s.getStatus()).to.equal('NEW'));
+    mixedCase.forEach((s) => expect(s.getStatus()).to.equal('NEW'));
+  });
+
   it('updates one suggestion by id', async () => {
     // retrieve the suggestion by ID
     const suggestion = await Suggestion.findById(sampleData.suggestions[0].getId());

@@ -90,6 +90,19 @@ describe('Opportunity IT', async () => {
     expect(opportunities).to.be.an('array').with.length(2);
   });
 
+  it('normalizes enum case when querying opportunities by status', async () => {
+    const lowercase = await Opportunity.allBySiteIdAndStatus(siteId, 'new');
+    const mixedCase = await Opportunity.allBySiteIdAndStatus(siteId, 'New');
+    const uppercase = await Opportunity.allBySiteIdAndStatus(siteId, 'NEW');
+
+    expect(lowercase).to.have.length(uppercase.length);
+    expect(mixedCase).to.have.length(uppercase.length);
+    expect(lowercase).to.have.length(2);
+
+    lowercase.forEach((o) => expect(o.getStatus()).to.equal('NEW'));
+    mixedCase.forEach((o) => expect(o.getStatus()).to.equal('NEW'));
+  });
+
   it('partially updates one opportunity by id', async () => {
     // retrieve the opportunity by ID
     const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());

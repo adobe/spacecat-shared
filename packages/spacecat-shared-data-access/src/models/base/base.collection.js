@@ -92,6 +92,14 @@ class BaseCollection {
     return isSingleFieldAcrossAll ? field : null;
   }
 
+  #normalizeEnumValue(key, value) {
+    if (typeof value !== 'string') return value;
+    const attr = this.schema.getAttribute(key);
+    if (!Array.isArray(attr?.type)) return value;
+    const match = attr.type.find((v) => v.toLowerCase() === value.toLowerCase());
+    return match ?? value;
+  }
+
   // eslint-disable-next-line class-methods-use-this
   #isInvalidInputError(error) {
     let current = error;
@@ -378,7 +386,7 @@ class BaseCollection {
 
     let filtered = query;
     Object.entries(keys).forEach(([key, value]) => {
-      filtered = filtered.eq(this.#toDbField(key), value);
+      filtered = filtered.eq(this.#toDbField(key), this.#normalizeEnumValue(key, value));
     });
     return filtered;
   }
@@ -615,7 +623,9 @@ class BaseCollection {
       const bulkKeyField = this.#resolveBulkKeyField(keys);
       if (bulkKeyField) {
         const dbField = this.#toDbField(bulkKeyField);
-        const values = keys.map((key) => key[bulkKeyField]);
+        const values = keys.map(
+          (key) => this.#normalizeEnumValue(bulkKeyField, key[bulkKeyField]),
+        );
         const select = this.#buildSelect(options.attributes);
 
         // Chunk values to avoid 414 URI Too Large from PostgREST GET URLs.
@@ -967,7 +977,9 @@ class BaseCollection {
       const bulkKeyField = this.#resolveBulkKeyField(keys);
       if (bulkKeyField) {
         const dbField = this.#toDbField(bulkKeyField);
-        const values = keys.map((key) => key[bulkKeyField]);
+        const values = keys.map(
+          (key) => this.#normalizeEnumValue(bulkKeyField, key[bulkKeyField]),
+        );
         const { error } = await this.postgrestService
           .from(this.tableName)
           .delete()

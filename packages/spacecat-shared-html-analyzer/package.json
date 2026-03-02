@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-html-analyzer",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Analyze HTML content visibility for AI crawlers and citations - compare static HTML vs fully rendered content",
   "type": "module",
   "engines": {

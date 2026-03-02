@@ -98,5 +98,10 @@ export const createDataAccess = (config, log = console, client = undefined) => {
   const services = createServices(postgrestService, config);
   const entityRegistry = new EntityRegistry(services, config, log);
 
-  return entityRegistry.getCollections();
+  return {
+    ...entityRegistry.getCollections(),
+    services: {
+      postgrestClient: postgrestService,
+    },
+  };
 };

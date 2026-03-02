@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-content-client-v1.8.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.15...@adobe/spacecat-shared-content-client-v1.8.16) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
 ## [@adobe/spacecat-shared-content-client-v1.8.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.14...@adobe/spacecat-shared-content-client-v1.8.15) (2026-02-17)
 
 ### Bug Fixes

@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: 'false'
 
@@ -54,14 +54,14 @@ jobs:
       MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: 'false'
 
       - name: Set up Node.js 22 (temporary - for bootstrap)
         uses: actions/setup-node@v6
         with:
-          node-version: '22.22.0'
+          node-version: '24.14.0'
 
       - name: Update NPM
         run: npm install -g npm@10.9.4

@@ -129,10 +129,10 @@ describe('DrsClient', () => {
           expect(body.provider_id).to.equal('prompt_generation_base_url');
           expect(body.source).to.equal('onboarding');
           expect(body.parameters.base_url).to.equal('https://example.com');
-          expect(body.parameters.brand_name).to.equal('Example');
+          expect(body.parameters.brand).to.equal('Example');
           expect(body.parameters.audience).to.equal('consumers');
           expect(body.parameters.region).to.equal('US');
-          expect(body.parameters.num_prompts).to.equal(42);
+          expect(body.parameters.num_prompts).to.equal(50);
           expect(body.parameters.metadata.site_id).to.equal('site-1');
           expect(body.parameters.metadata.imsOrgId).to.equal('org-1');
           return true;

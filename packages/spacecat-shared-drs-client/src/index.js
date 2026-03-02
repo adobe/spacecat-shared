@@ -28,7 +28,7 @@ export default class DrsClient {
   }
 
   constructor({ apiBaseUrl, apiKey }, log = console) {
-    this.apiBaseUrl = apiBaseUrl?.replace(/\/+$/, '');
+    this.apiBaseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/+$/, '') : undefined;
     this.apiKey = apiKey;
     this.log = log;
   }
@@ -91,7 +91,7 @@ export default class DrsClient {
    * @param {string} params.brandName - Brand name
    * @param {string} params.audience - Target audience
    * @param {string} [params.region='US'] - Region
-   * @param {number} [params.numPrompts=42] - Number of prompts
+   * @param {number} [params.numPrompts=50] - Number of prompts
    * @param {string} [params.source='onboarding'] - Job source
    * @param {string} params.siteId - SpaceCat site ID
    * @param {string} params.imsOrgId - IMS organization ID
@@ -102,7 +102,7 @@ export default class DrsClient {
     brandName,
     audience,
     region = 'US',
-    numPrompts = 42,
+    numPrompts = 50,
     source = 'onboarding',
     siteId,
     imsOrgId,
@@ -116,7 +116,7 @@ export default class DrsClient {
       source,
       parameters: {
         base_url: baseUrl,
-        brand_name: brandName,
+        brand: brandName,
         audience,
         region,
         num_prompts: numPrompts,

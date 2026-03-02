@@ -92,7 +92,6 @@ class BaseCollection {
     return isSingleFieldAcrossAll ? field : null;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   #normalizeEnumValue(key, value) {
     if (typeof value !== 'string') return value;
     const attr = this.schema.getAttribute(key);
@@ -978,7 +977,9 @@ class BaseCollection {
       const bulkKeyField = this.#resolveBulkKeyField(keys);
       if (bulkKeyField) {
         const dbField = this.#toDbField(bulkKeyField);
-        const values = keys.map((key) => key[bulkKeyField]);
+        const values = keys.map(
+          (key) => this.#normalizeEnumValue(bulkKeyField, key[bulkKeyField]),
+        );
         const { error } = await this.postgrestService
           .from(this.tableName)
           .delete()

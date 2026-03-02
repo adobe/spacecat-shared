@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.99.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.98.1...@adobe/spacecat-shared-utils-v1.99.0) (2026-03-02)
+
+### Features
+
+* extend strategy schema to store prompts under strategy ([#1386](https://github.com/adobe/spacecat-shared/issues/1386)) ([4e29cc5](https://github.com/adobe/spacecat-shared/commit/4e29cc5a24141e224b366c50948b8dce00d49afd))
+
 ## [@adobe/spacecat-shared-utils-v1.98.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.98.0...@adobe/spacecat-shared-utils-v1.98.1) (2026-03-02)
 
 ### Bug Fixes

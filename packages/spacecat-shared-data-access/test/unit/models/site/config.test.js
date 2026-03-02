@@ -956,6 +956,19 @@ describe('Config Tests', () => {
           enabled: true,
         });
       });
+
+      it('enables cwv-trends-onboard import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-trends-onboard');
+
+        const importConfig = config.getImportConfig('cwv-trends-onboard');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-trends-onboard',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
     });
 
     describe('disableImport method', () => {

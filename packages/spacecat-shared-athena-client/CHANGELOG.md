@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-athena-client-v1.9.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.4...@adobe/spacecat-shared-athena-client-v1.9.5) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-athena-client-v1.9.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.3...@adobe/spacecat-shared-athena-client-v1.9.4) (2026-02-25)
+
+### Bug Fixes
+
+* bump athena-client utils dep to 1.96.3 ([#1379](https://github.com/adobe/spacecat-shared/issues/1379)) ([03fe3e9](https://github.com/adobe/spacecat-shared/commit/03fe3e97df64dbb49dd31d0169742567ab45d5a8)), closes [#1376](https://github.com/adobe/spacecat-shared/issues/1376) [#1378](https://github.com/adobe/spacecat-shared/issues/1378)
+
 ## [@adobe/spacecat-shared-athena-client-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.2...@adobe/spacecat-shared-athena-client-v1.9.3) (2026-02-25)
 
 ### Bug Fixes

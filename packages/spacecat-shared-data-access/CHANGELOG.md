@@ -1,3 +1,39 @@
+## [@adobe/spacecat-shared-data-access-v3.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.5.0...@adobe/spacecat-shared-data-access-v3.6.0) (2026-03-02)
+
+### Features
+
+* **data-access:** expose postgrestClient for direct PostgREST queries ([#1396](https://github.com/adobe/spacecat-shared/issues/1396)) ([307711c](https://github.com/adobe/spacecat-shared/commit/307711cfed7a3f2fc15f17afe31a48b21213a8e4))
+
+## [@adobe/spacecat-shared-data-access-v3.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.4.2...@adobe/spacecat-shared-data-access-v3.5.0) (2026-03-02)
+
+### Features
+
+* **data-access:** auto-normalize enum values in PostgREST query filters ([#1392](https://github.com/adobe/spacecat-shared/issues/1392)) ([f44d0d2](https://github.com/adobe/spacecat-shared/commit/f44d0d257b0d47a719f592da13e91b2b01d89454))
+
+## [@adobe/spacecat-shared-data-access-v3.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.4.1...@adobe/spacecat-shared-data-access-v3.4.2) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-data-access-v3.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.4.0...@adobe/spacecat-shared-data-access-v3.4.1) (2026-03-01)
+
+### Bug Fixes
+
+* **data-access:** chunk batchGetByKeys to avoid 414 URI Too Large ([#1391](https://github.com/adobe/spacecat-shared/issues/1391)) ([25b0c0d](https://github.com/adobe/spacecat-shared/commit/25b0c0dab34b4e8e8b5fef9f4033cbcc698652f5)), closes [#1390](https://github.com/adobe/spacecat-shared/issues/1390)
+
+## [@adobe/spacecat-shared-data-access-v3.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.3.0...@adobe/spacecat-shared-data-access-v3.4.0) (2026-02-26)
+
+### Features
+
+* register commerce-product-enrichments-yearly audit type ([#1381](https://github.com/adobe/spacecat-shared/issues/1381)) ([6d2990f](https://github.com/adobe/spacecat-shared/commit/6d2990f691d3c9837772d092efb72cd7069a8024))
+
+## [@adobe/spacecat-shared-data-access-v3.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.2.0...@adobe/spacecat-shared-data-access-v3.3.0) (2026-02-26)
+
+### Features
+
+* **data-access:** add yearly job interval ([#1380](https://github.com/adobe/spacecat-shared/issues/1380)) ([422f301](https://github.com/adobe/spacecat-shared/commit/422f301bd6d8e3f4565b0790c39adf511855da69))
+
 ## [@adobe/spacecat-shared-data-access-v3.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.1.0...@adobe/spacecat-shared-data-access-v3.2.0) (2026-02-21)
 
 ### Features

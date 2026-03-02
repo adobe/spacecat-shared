@@ -22,6 +22,8 @@ describe('service/index', () => {
     const dataAccess = createDataAccess({}, console, client);
 
     expect(dataAccess).to.be.an('object');
+    expect(dataAccess.services).to.be.an('object');
+    expect(dataAccess.services.postgrestClient).to.equal(client);
   });
 
   it('throws when postgrestUrl is missing and no client is provided', () => {
@@ -40,6 +42,9 @@ describe('service/index', () => {
     }, console);
 
     expect(dataAccess).to.be.an('object');
+    expect(dataAccess.services).to.be.an('object');
+    expect(dataAccess.services.postgrestClient).to.be.an('object');
+    expect(dataAccess.services.postgrestClient).to.have.property('from').that.is.a('function');
   });
 
   it('creates data access with optional S3 config', () => {

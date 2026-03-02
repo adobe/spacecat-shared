@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-utils-v1.99.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.98.1...@adobe/spacecat-shared-utils-v1.99.0) (2026-03-02)
+
+### Features
+
+* extend strategy schema to store prompts under strategy ([#1386](https://github.com/adobe/spacecat-shared/issues/1386)) ([4e29cc5](https://github.com/adobe/spacecat-shared/commit/4e29cc5a24141e224b366c50948b8dce00d49afd))
+
+## [@adobe/spacecat-shared-utils-v1.98.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.98.0...@adobe/spacecat-shared-utils-v1.98.1) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-utils-v1.98.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.97.0...@adobe/spacecat-shared-utils-v1.98.0) (2026-02-27)
+
+### Features
+
+* LLMO-3231 byocdn-fastly default auth method is iam role ([#1384](https://github.com/adobe/spacecat-shared/issues/1384)) ([446dd15](https://github.com/adobe/spacecat-shared/commit/446dd1540040c48181ef9a50093fced93fe92034))
+
+## [@adobe/spacecat-shared-utils-v1.97.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.3...@adobe/spacecat-shared-utils-v1.97.0) (2026-02-27)
+
+### Features
+
+* add dataset info for cloudflare ([#1383](https://github.com/adobe/spacecat-shared/issues/1383)) ([5ee3bbf](https://github.com/adobe/spacecat-shared/commit/5ee3bbf22188300e9e34f96cf786a0db993484ac))
+
+## [@adobe/spacecat-shared-utils-v1.96.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.2...@adobe/spacecat-shared-utils-v1.96.3) (2026-02-25)
+
+### Bug Fixes
+
+* revert breaking aggregation granularity changes from v1.96.1 ([#1378](https://github.com/adobe/spacecat-shared/issues/1378)) ([fbc00f4](https://github.com/adobe/spacecat-shared/commit/fbc00f4d282bd2753e46377ac8ead2c45ab79416)), closes [#1376](https://github.com/adobe/spacecat-shared/issues/1376)
+
 ## [@adobe/spacecat-shared-utils-v1.96.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.1...@adobe/spacecat-shared-utils-v1.96.2) (2026-02-25)
 
 ### Bug Fixes

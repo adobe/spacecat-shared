@@ -139,8 +139,9 @@ describe('SuggestionModel', () => {
       expect(Suggestion.SKIP_REASONS.ALREADY_IMPLEMENTED).to.equal('ALREADY_IMPLEMENTED');
       expect(Suggestion.SKIP_REASONS.INACCURATE_OR_INCOMPLETE).to.equal('INACCURATE_OR_INCOMPLETE');
       expect(Suggestion.SKIP_REASONS.TOO_RISKY).to.equal('TOO_RISKY');
+      expect(Suggestion.SKIP_REASONS.NO_REASON).to.equal('NO_REASON');
       expect(Suggestion.SKIP_REASONS.OTHER).to.equal('OTHER');
-      expect(Object.keys(Suggestion.SKIP_REASONS)).to.have.lengthOf(4);
+      expect(Object.keys(Suggestion.SKIP_REASONS)).to.have.lengthOf(5);
     });
   });
 

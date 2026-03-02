@@ -60,3 +60,19 @@ export function formatNumberToK(num) {
 export function isBrowser() {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
 }
+
+/**
+ * Get global object in a cross-platform way
+ * @returns {Object} Global object
+ */
+export function getGlobalObject() {
+  // eslint-disable-next-line no-undef
+  if (typeof globalThis !== 'undefined') return globalThis;
+  // eslint-disable-next-line no-undef
+  if (typeof self !== 'undefined') return self;
+  // eslint-disable-next-line no-undef
+  if (typeof window !== 'undefined') return window;
+  // eslint-disable-next-line no-undef
+  if (typeof global !== 'undefined') return global;
+  return {};
+}

@@ -20,30 +20,18 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class AuditCollection extends BaseCollection {
-  // create a copy of the audit as a LatestAudit entity
+  static COLLECTION_NAME = 'AuditCollection';
+
+  // LatestAudit is derived from audits in v3; no copy table writes.
+  // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreate(item) {
-    const collection = this.entityRegistry.getCollection('LatestAuditCollection');
-    await collection.create(item.toJSON());
+    // no-op
   }
 
-  // of the created audits, find the latest per site and auditType
-  // and create a LatestAudit copy for each
+  // LatestAudit is derived from audits in v3; no copy table writes.
+  // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreateMany(items) {
-    const collection = this.entityRegistry.getCollection('LatestAuditCollection');
-    const latestAudits = items.createdItems.reduce((acc, audit) => {
-      const siteId = audit.getSiteId();
-      const auditType = audit.getAuditType();
-      const auditedAt = audit.getAuditedAt();
-      const key = `${siteId}-${auditType}`;
-
-      if (!acc[key] || acc[key].getAuditedAt() < auditedAt) {
-        acc[key] = audit;
-      }
-
-      return acc;
-    }, {});
-
-    await collection.createMany(Object.values(latestAudits).map((audit) => audit.toJSON()));
+    // no-op
   }
 }
 

@@ -1,3 +1,72 @@
+## [@adobe/spacecat-shared-ahrefs-client-v1.10.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.5...@adobe/spacecat-shared-ahrefs-client-v1.10.6) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.4...@adobe/spacecat-shared-ahrefs-client-v1.10.5) (2026-01-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.4.0 ([#1295](https://github.com/adobe/spacecat-shared/issues/1295)) ([5c1595b](https://github.com/adobe/spacecat-shared/commit/5c1595bd7cba9b7053da867b8f46e302f8683eba))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.3...@adobe/spacecat-shared-ahrefs-client-v1.10.4) (2026-01-20)
+
+
+### Bug Fixes
+
+* getPaidPages was missing parameter mode ([#1271](https://github.com/adobe/spacecat-shared/issues/1271)) ([09e597f](https://github.com/adobe/spacecat-shared/commit/09e597ff7ede8f9c9752dc1b35cd81539a48019a))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.2...@adobe/spacecat-shared-ahrefs-client-v1.10.3) (2025-11-28)
+
+
+### Bug Fixes
+
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.1...@adobe/spacecat-shared-ahrefs-client-v1.10.2) (2025-11-27)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.0...@adobe/spacecat-shared-ahrefs-client-v1.10.1) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.13...@adobe/spacecat-shared-ahrefs-client-v1.10.0) (2025-11-13)
+
+
+### Features
+
+* (ahref) add endpoints with paid data ([#1119](https://github.com/adobe/spacecat-shared/issues/1119)) ([cc2abb0](https://github.com/adobe/spacecat-shared/commit/cc2abb058a5686fffb1040a2243452160330b086))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.9.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.12...@adobe/spacecat-shared-ahrefs-client-v1.9.13) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.9.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.11...@adobe/spacecat-shared-ahrefs-client-v1.9.12) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.9.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.10...@adobe/spacecat-shared-ahrefs-client-v1.9.11) (2025-10-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.9.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.9...@adobe/spacecat-shared-ahrefs-client-v1.9.10) (2025-09-25)
 
 

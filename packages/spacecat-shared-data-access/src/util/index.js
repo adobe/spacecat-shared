@@ -25,4 +25,15 @@ export {
 export {
   registerLogger,
   getLogger,
+  resetLoggerRegistry,
 } from './logger-registry.js';
+
+/**
+ * Datastore types that collections can use to declare their storage backend.
+ * @readonly
+ * @enum {string}
+ */
+export const DATASTORE_TYPE = Object.freeze({
+  POSTGREST: 'postgrest',
+  S3: 's3',
+});

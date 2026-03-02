@@ -11,6 +11,13 @@
  */
 
 import { Request, RequestOptions, Response } from '@adobe/fetch';
+import type { ISOCalendarWeek } from './calendar-week-helper.js';
+
+export { AUTHORING_TYPES, DELIVERY_TYPES } from './aem.js';
+
+export { OPPORTUNITY_TYPES } from './constants.js';
+
+export const DEFAULT_CPC_VALUE: number;
 
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
@@ -62,46 +69,90 @@ export function sqsEventAdapter(fn: (message: object, context: object) => Promis
   (request: object, context: object) => Promise<Response>;
 
 /**
+ * A higher-order function that wraps a given function and enhances logging by appending
+ * a `jobId` and `traceId` to log messages when available.
+ * @param fn - The original function to be wrapped
+ * @returns A wrapped function that enhances logging
+ */
+export function logWrapper(fn: (message: object, context: object) => Promise<Response>):
+  (message: object, context: object) => Promise<Response>;
+
+/**
+ * Instruments an AWS SDK v3 client with X-Ray tracing when running in AWS Lambda.
+ * @param client - The AWS SDK v3 client to instrument
+ * @returns The instrumented client (or original client if not in Lambda)
+ */
+export function instrumentAWSClient<T>(client: T): T;
+
+/**
+ * Extracts the trace ID from the current AWS X-Ray segment.
+ * @returns The trace ID if available, or null if not in AWS Lambda or no segment found
+ */
+export function getTraceId(): string | null;
+
+/**
+ * Adds the x-trace-id header to a headers object if a trace ID is available.
+ * @param headers - The headers object to augment
+ * @param context - The context object that may contain traceId
+ * @returns The headers object with x-trace-id added if available
+ */
+export function addTraceIdHeader(headers?: Record<string, string>, context?: object): Record<string, string>;
+
+/**
  * Prepends 'https://' schema to the URL if it's not already present.
  * @param url - The URL to modify.
  * @returns The URL with 'https://' schema prepended.
  */
-declare function prependSchema(url: string): string;
+export declare function prependSchema(url: string): string;
 
 /**
  * Strips the port number from the end of the URL.
  * @param url - The URL to modify.
  * @returns The URL with the port removed.
  */
-declare function stripPort(url: string): string;
+export declare function stripPort(url: string): string;
 
 /**
  * Strips the trailing dot from the end of the URL.
  * @param url - The URL to modify.
  * @returns The URL with the trailing dot removed.
  */
-declare function stripTrailingDot(url: string): string;
+export declare function stripTrailingDot(url: string): string;
 
 /**
  * Strips the trailing slash from the end of the URL.
  * @param url - The URL to modify.
  * @returns The URL with the trailing slash removed.
  */
-declare function stripTrailingSlash(url: string): string;
+export declare function stripTrailingSlash(url: string): string;
 
 /**
  * Strips 'www.' from the beginning of the URL if present.
  * @param url - The URL to modify.
  * @returns The URL with 'www.' removed.
  */
-declare function stripWWW(url: string): string;
+export declare function stripWWW(url: string): string;
+
+/**
+ * Canonicalizes a URL by removing protocol, www prefix, and trailing slash
+ * for comparison and matching purposes.
+ * Optionally strips query parameters and fragments.
+ * @param url - URL to canonicalize
+ * @param options - Canonicalization options
+ * @param options.stripQuery - Whether to strip query parameters and fragments
+ * @returns Canonicalized URL
+ */
+export declare function canonicalizeUrl(
+  url: string,
+  options?: { stripQuery?: boolean }
+): string;
 
 /**
  * Composes a base URL by applying a series of transformations to the given domain.
  * @param domain - The domain to compose the base URL from.
  * @returns The composed base URL.
  */
-declare function composeBaseURL(domain: string): string;
+export declare function composeBaseURL(domain: string): string;
 
 /**
  * Composes an audit URL by applying a series of transformations to the given url.
@@ -109,7 +160,7 @@ declare function composeBaseURL(domain: string): string;
  * @param {string} [userAgent] - Optional user agent to use in the audit URL.
  * @returns a promise that resolves the composed audit URL.
  */
-declare function composeAuditURL(url: string, userAgent?: string): Promise<string>;
+export declare function composeAuditURL(url: string, userAgent?: string): Promise<string>;
 
 /**
  * Resolves the name of the secret based on the function version.
@@ -118,7 +169,7 @@ declare function composeAuditURL(url: string, userAgent?: string): Promise<strin
  * @param {string} defaultPath - The default path for the secret.
  * @returns {string} - The resolved secret name.
  */
-declare function resolveSecretsName(opts: object, ctx: object, defaultPath: string): string;
+export declare function resolveSecretsName(opts: object, ctx: object, defaultPath: string): string;
 
 /**
  * Resolves the name of the customer secrets based on the baseURL.
@@ -126,7 +177,7 @@ declare function resolveSecretsName(opts: object, ctx: object, defaultPath: stri
  * @param {Object} ctx - The context object containing the function version.
  * @returns {string} - The resolved secret name.
  */
-declare function resolveCustomerSecretsName(baseURL: string, ctx: object): string;
+export declare function resolveCustomerSecretsName(baseURL: string, ctx: object): string;
 
 /**
  * Retrieves the RUM domain key for the specified base URL from the customer secrets.
@@ -136,7 +187,7 @@ declare function resolveCustomerSecretsName(baseURL: string, ctx: object): strin
  * @returns {Promise<string>} - A promise that resolves to the RUM domain key.
  * @throws {Error} Throws an error if no domain key is found for the specified base URL.
  */
-declare function getRUMDomainKey(baseURL: string, ctx: object): Promise<string>;
+export declare function getRUMDomainKey(baseURL: string, ctx: object): Promise<string>;
 
 /**
  * Generates a CSV file from the provided JSON data.
@@ -148,7 +199,7 @@ declare function getRUMDomainKey(baseURL: string, ctx: object): Promise<string>;
  * @param {Object[]} data - An array of JSON objects to be converted into CSV format.
  * @returns {Buffer} A Buffer containing the CSV formatted data, encoded in UTF-8.
  */
-declare function generateCSVFile(data: object[]): Buffer;
+export declare function generateCSVFile(data: object[]): Buffer;
 
 /**
  * Replaces placeholders in the prompt content with their corresponding values.
@@ -157,7 +208,7 @@ declare function generateCSVFile(data: object[]): Buffer;
  * @param {Object} placeholders - The placeholders and their values.
  * @returns {string} - The content with placeholders replaced.
  */
-declare function replacePlaceholders(content: string, placeholders: object): string;
+export declare function replacePlaceholders(content: string, placeholders: object): string;
 
 /**
  * Function to support reading static file
@@ -167,8 +218,8 @@ declare function replacePlaceholders(content: string, placeholders: object): str
  * @param {String} filename - The path of the prompt file.
  * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content.
  */
-declare function getStaticContent(placeholders: object, filename: string):
-    Promise<string | null>;
+export declare function getStaticContent(placeholders: object, filename: string):
+  Promise<string | null>;
 
 /**
  * Reads the content of a prompt file asynchronously and replaces any placeholders
@@ -180,7 +231,7 @@ declare function getStaticContent(placeholders: object, filename: string):
  * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content,
  * or null if an error occurs.
  */
-declare function getPrompt(placeholders: object, filename: string, log: object):
+export declare function getPrompt(placeholders: object, filename: string, log: object):
   Promise<string | null>;
 
 /**
@@ -193,7 +244,7 @@ declare function getPrompt(placeholders: object, filename: string, log: object):
  * @returns {Promise<string|null>} - A promise that resolves to a string with the query content,
  * or null if an error occurs.
  */
-declare function getQuery(placeholders: object, filename: string, log: object):
+export declare function getQuery(placeholders: object, filename: string, log: object):
   Promise<string | null>;
 
 /**
@@ -201,7 +252,7 @@ declare function getQuery(placeholders: object, filename: string, log: object):
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-form-view-low-form-conversion metrics.
  */
-declare function getHighFormViewsLowConversionMetrics(formVitals: object[]):
+export declare function getHighFormViewsLowConversionMetrics(formVitals: object[]):
   object[];
 
 /**
@@ -209,7 +260,7 @@ declare function getHighFormViewsLowConversionMetrics(formVitals: object[]):
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-page-view-low-form-view metrics.
  */
-declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[]):
+export declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[]):
   object[];
 
 /**
@@ -217,7 +268,7 @@ declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[]):
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-page-view-low-form-ctr metrics.
  */
-declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[]):
+export declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[]):
   object[];
 
 /**
@@ -252,6 +303,35 @@ export function getStoredMetrics(config: object, context: object):
  */
 export function storeMetrics(content: object, config: object, context: object): Promise<string>;
 
+/**
+ * Retrieves an object from S3 by its key and returns its JSON parsed content.
+ * If the object is not JSON, returns the raw body.
+ * If the object is not found, returns null.
+ * @param s3Client - The S3 client
+ * @param bucketName - The name of the S3 bucket
+ * @param key - The key of the S3 object
+ * @param log - A logger instance
+ * @returns The content of the S3 object or null if not found
+ */
+export function getObjectFromKey(
+  s3Client: any,
+  bucketName: string,
+  key: string,
+  log: any
+): Promise<any | null>;
+
+/**
+ * Fetches the organic traffic data for a site from S3 and calculates the CPC value
+ * @param context - Context object
+ * @param context.env - Environment variables
+ * @param context.env.S3_IMPORTER_BUCKET_NAME - S3 importer bucket name
+ * @param context.s3Client - S3 client
+ * @param context.log - Logger
+ * @param siteId - The site ID
+ * @returns CPC value in dollars
+ */
+export function calculateCPCValue(context: object, siteId: string): Promise<number>;
+
 export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;
 
@@ -261,7 +341,39 @@ export function tracingFetch(url: string | Request, options?: RequestOptions): P
 
 export const SPACECAT_USER_AGENT: string;
 
-export function retrievePageAuthentication(site: object, context: object): Promise<string>;
+export function prettifyLogForwardingConfig(payload: object): object;
+
+export function isoCalendarWeek(date: Date): ISOCalendarWeek;
+
+export function isoCalendarWeekSunday(date: Date): Date;
+
+export function isoCalendarWeekMonday(date: Date): Date;
+
+/**
+ * Extracts URLs from a suggestion based on the opportunity type.
+ * @param opts - Options object
+ * @param opts.opportunity - The opportunity object
+ * @param opts.suggestion - The suggestion object
+ * @returns A promise that resolves to an array of extracted URLs
+ */
+export function extractUrlsFromSuggestion(opts: {
+  opportunity: any;
+  suggestion: any;
+}): Promise<string[]>;
+
+/**
+ * Extracts URLs from an opportunity based on the opportunity type.
+ * @param opts - Options object
+ * @param opts.opportunity - The opportunity object
+ * @returns An array of extracted URLs
+ */
+export function extractUrlsFromOpportunity(opts: {
+  opportunity: any;
+}): string[];
 
 export * as llmoConfig from './llmo-config.js';
+export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
+
+export { type detectLocale } from './locale-detect/index.js';
+export { type detectBotBlocker } from './bot-blocker-detect/index.js';

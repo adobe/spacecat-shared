@@ -25,8 +25,12 @@ chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('SchemaBuilder', () => {
-  const MockModel = class MockModel extends BaseModel {};
-  const MockCollection = class MockCollection extends BaseCollection {};
+  const MockModel = class MockModel extends BaseModel {
+    static ENTITY_NAME = 'MockModel';
+  };
+  const MockCollection = class MockCollection extends BaseCollection {
+    static COLLECTION_NAME = 'MockCollection';
+  };
 
   let instance;
 
@@ -58,6 +62,20 @@ describe('SchemaBuilder', () => {
         .to.throw(SchemaBuilderError, 'schemaVersion is required and must be a positive integer.');
     });
 
+    it('throws error if model class entity name is not defined', () => {
+      const InvalidModel = class InvalidModel extends BaseModel {};
+
+      expect(() => new SchemaBuilder(InvalidModel, MockCollection))
+        .to.throw(SchemaBuilderError, 'Model class InvalidModel must define a static ENTITY_NAME property.');
+    });
+
+    it('throws error if collection class service name is not defined', () => {
+      const InvalidCollection = class InvalidCollection extends BaseCollection {};
+
+      expect(() => new SchemaBuilder(MockModel, InvalidCollection))
+        .to.throw(SchemaBuilderError, 'Collection class InvalidCollection must define a static COLLECTION_NAME property.');
+    });
+
     it('successfully creates an instance', () => {
       expect(instance).to.be.an.instanceOf(SchemaBuilder);
       expect(instance.entityName).to.equal('MockModel');
@@ -69,6 +87,7 @@ describe('SchemaBuilder', () => {
         mockModelId: {
           default: instance.attributes.mockModelId.default,
           type: 'string',
+          postgrestField: 'id',
           required: true,
           readOnly: true,
           validate: instance.attributes.mockModelId.validate,
@@ -433,6 +452,7 @@ describe('SchemaBuilder', () => {
         attributes: {
           mockModelId: {
             type: 'string',
+            postgrestField: 'id',
             required: true,
             readOnly: true,
             validate: instance.attributes.mockModelId.validate,
@@ -484,7 +504,7 @@ describe('SchemaBuilder', () => {
           'spacecat-data-gsi1pk-gsi1sk': {
             index: 'spacecat-data-gsi1pk-gsi1sk',
             indexType: 'all',
-            pk: { field: 'gsi1pk', template: 'ALL_MOCKMODELS' },
+            pk: { field: 'gsi1pk', template: 'all_mockmodels' },
             sk: { field: 'gsi1sk', composite: ['baseURL'] },
           },
           'spacecat-data-gsi2pk-gsi2sk': {

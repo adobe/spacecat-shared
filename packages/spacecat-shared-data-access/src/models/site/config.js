@@ -10,7 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import crypto from 'crypto';
 import Joi from 'joi';
+
 import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
@@ -22,11 +25,14 @@ export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS_QUESTIONS: 'organic-keywords-questions',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
+  AHREF_PAID_PAGES: 'ahref-paid-pages',
   ALL_TRAFFIC: 'all-traffic',
   CWV_DAILY: 'cwv-daily',
   CWV_WEEKLY: 'cwv-weekly',
   TRAFFIC_ANALYSIS: 'traffic-analysis',
   TOP_FORMS: 'top-forms',
+  CODE: 'code',
+  USER_ENGAGEMENT: 'user-engagement',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -132,6 +138,13 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
   }),
+  [IMPORT_TYPES.AHREF_PAID_PAGES]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.AHREF_PAID_PAGES).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(2000)
+      .optional(),
+  }),
   [IMPORT_TYPES.CWV_DAILY]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.CWV_DAILY).required(),
     ...IMPORT_BASE_KEYS,
@@ -151,6 +164,10 @@ export const IMPORT_TYPE_SCHEMAS = {
     ...IMPORT_BASE_KEYS,
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
+  }),
+  [IMPORT_TYPES.USER_ENGAGEMENT]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.USER_ENGAGEMENT).required(),
+    ...IMPORT_BASE_KEYS,
   }),
 };
 
@@ -204,6 +221,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     enabled: true,
     geo: 'global',
   },
+  'ahref-paid-pages': {
+    type: 'ahref-paid-pages',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
   'cwv-daily': {
     type: 'cwv-daily',
     destinations: ['default'],
@@ -228,6 +251,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['rum'],
     enabled: true,
   },
+  'user-engagement': {
+    type: 'user-engagement',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
 };
 
 export const configSchema = Joi.object({
@@ -243,6 +272,21 @@ export const configSchema = Joi.object({
     brandId: Joi.string().required(),
     userId: Joi.string().required(),
   }).optional(),
+  brandProfile: Joi.object({
+    // functional metadata
+    version: Joi.number().integer().min(0),
+    updatedAt: Joi.string().isoDate(),
+    contentHash: Joi.string(),
+    // generic top-level content containers (non-strict)
+    discovery: Joi.any(),
+    clustering: Joi.any(),
+    competitive_context: Joi.any(),
+    main_profile: Joi.any(),
+    sub_brands: Joi.any(),
+    confidence_score: Joi.any(),
+    pages_considered: Joi.any(),
+    diversity_assessment: Joi.any(),
+  }).unknown(true).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
@@ -293,12 +337,21 @@ export const configSchema = Joi.object({
     ).optional(),
     outputLocation: Joi.string().required(),
   }).optional(),
+  tokowakaConfig: Joi.object({
+    apiKey: Joi.string().optional(),
+    forwardedHost: Joi.string().optional(),
+  }).optional(),
+  edgeOptimizeConfig: Joi.object({
+    enabled: Joi.boolean().optional(),
+    opted: Joi.number().optional(),
+  }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),
+    autofixExcludedURLs: Joi.array().items(Joi.string()),
     manualOverwrites: Joi.array().items(Joi.object({
       brokenTargetURL: Joi.string().optional(),
       targetURL: Joi.string().optional(),
@@ -378,6 +431,7 @@ export const Config = (data = {}) => {
   self.getHandlers = () => state.handlers;
   self.getImports = () => state.imports;
   self.getExcludedURLs = (type) => state?.handlers?.[type]?.excludedURLs;
+  self.getAutofixExcludedURLs = (type) => state?.handlers?.[type]?.autofixExcludedURLs;
   self.getManualOverwrites = (type) => state?.handlers?.[type]?.manualOverwrites;
   self.getFixedURLs = (type) => state?.handlers?.[type]?.fixedURLs;
   self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
@@ -385,6 +439,7 @@ export const Config = (data = {}) => {
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
+  self.getBrandProfile = () => state?.brandProfile;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
   self.getLlmoConfig = () => state?.llmo;
   self.getLlmoDataFolder = () => state?.llmo?.dataFolder;
@@ -398,7 +453,8 @@ export const Config = (data = {}) => {
   };
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
-
+  self.getTokowakaConfig = () => state?.tokowakaConfig;
+  self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
@@ -549,6 +605,19 @@ export const Config = (data = {}) => {
     state.llmo.cdnBucketConfig = cdnBucketConfig;
   };
 
+  self.addLlmoTag = (tag) => {
+    state.llmo = state.llmo || {};
+    state.llmo.tags = state.llmo.tags || [];
+    if (!state.llmo.tags.includes(tag)) {
+      state.llmo.tags.push(tag);
+    }
+  };
+
+  self.removeLlmoTag = (tag) => {
+    if (!state.llmo?.tags) return;
+    state.llmo.tags = state.llmo.tags.filter((t) => t !== tag);
+  };
+
   self.updateImports = (imports) => {
     state.imports = imports;
   };
@@ -564,6 +633,12 @@ export const Config = (data = {}) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = state.handlers[type] || {};
     state.handlers[type].excludedURLs = excludedURLs;
+  };
+
+  self.updateAutofixExcludedURLs = (type, autofixExcludedURLs) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].autofixExcludedURLs = autofixExcludedURLs;
   };
 
   self.updateManualOverwrites = (type, manualOverwrites) => {
@@ -598,6 +673,48 @@ export const Config = (data = {}) => {
 
   self.updateBrandConfig = (brandConfig) => {
     state.brandConfig = brandConfig;
+  };
+
+  /**
+   * Updates the top-level brandProfile with versioning and content hashing.
+   * Version is incremented only if the meaningful content changes.
+   * @param {object} newProfile
+   */
+  self.updateBrandProfile = (newProfile = {}) => {
+    const prior = state.brandProfile || {};
+    // compute hash over all content except functional fields
+    const stripFunctional = (p) => {
+      if (!isNonEmptyObject(p)) return {};
+      const {
+        /* eslint-disable no-unused-vars */
+        version, updatedAt, contentHash, ...rest
+      } = p;
+      return rest;
+    };
+    const meaningful = stripFunctional(newProfile);
+    const contentHash = crypto.createHash('sha256')
+      .update(JSON.stringify(meaningful))
+      .digest('hex');
+
+    if (prior?.contentHash === contentHash) {
+      state.brandProfile = {
+        ...prior,
+        ...newProfile,
+        contentHash: prior.contentHash,
+        version: prior.version,
+        updatedAt: prior.updatedAt,
+      };
+      return;
+    }
+
+    const version = (prior?.version || 0) + 1;
+    state.brandProfile = {
+      ...prior,
+      ...meaningful,
+      version,
+      contentHash,
+      updatedAt: new Date().toISOString(),
+    };
   };
 
   self.enableImport = (type, config = {}) => {
@@ -645,6 +762,14 @@ export const Config = (data = {}) => {
     state.cdnLogsConfig = cdnLogsConfig;
   };
 
+  self.updateTokowakaConfig = (tokowakaConfig) => {
+    state.tokowakaConfig = tokowakaConfig;
+  };
+
+  self.updateEdgeOptimizeConfig = (edgeOptimizeConfig) => {
+    state.edgeOptimizeConfig = edgeOptimizeConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -657,6 +782,9 @@ Config.toDynamoItem = (config) => ({
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
+  brandProfile: config.getBrandProfile(),
   cdnLogsConfig: config.getCdnLogsConfig(),
   llmo: config.getLlmoConfig(),
+  tokowakaConfig: config.getTokowakaConfig(),
+  edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
 });

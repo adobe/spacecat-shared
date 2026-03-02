@@ -16,7 +16,7 @@ import type {
 
 export type EntitlementStatus = 'ACTIVE' | 'SUSPENDED' | 'ENDED';
 export type EntitlementTier = 'FREE_TRIAL' | 'PAID';
-export type EntitlementProductCode = 'LLMO' | 'ASO';
+export type EntitlementProductCode = 'LLMO' | 'ASO' | 'ACO';
 
 export interface Entitlement extends BaseModel {
   getProductCode(): EntitlementProductCode;

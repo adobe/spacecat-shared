@@ -10,7 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import { isArray, isObject, isBoolean } from '@adobe/spacecat-shared-utils';
+import {
+  isArray,
+  isObject,
+  isBoolean,
+  isNumber,
+} from '@adobe/spacecat-shared-utils';
 
 import { ValidationError } from '../../errors/index.js';
 import BaseModel from '../base/base.model.js';
@@ -23,6 +28,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Audit extends BaseModel {
+  static ENTITY_NAME = 'Audit';
+
   static AUDIT_TYPES = {
     APEX: 'apex',
     CWV: 'cwv',
@@ -34,6 +41,8 @@ class Audit extends BaseModel {
     REDIRECT_CHAINS: 'redirect-chains',
     BROKEN_BACKLINKS: 'broken-backlinks',
     BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+    CONTENT_FRAGMENT_UNUSED: 'content-fragment-unused',
+    CONTENT_FRAGMENT_UNUSED_AUTO_FIX: 'content-fragment-unused-auto-fix',
     EXPERIMENTATION: 'experimentation',
     CONVERSION: 'conversion',
     ORGANIC_KEYWORDS: 'organic-keywords',
@@ -53,6 +62,7 @@ class Audit extends BaseModel {
     SECURITY_CSP: 'security-csp',
     SECURITY_VULNERABILITIES: 'security-vulnerabilities',
     SECURITY_PERMISSIONS: 'security-permissions',
+    SECURITY_REDUNDANT: 'security-permissions-redundant',
     PAID: 'paid',
     HREFLANG: 'hreflang',
     HEADINGS: 'headings',
@@ -61,6 +71,22 @@ class Audit extends BaseModel {
     READABILITY: 'readability',
     PRERENDER: 'prerender',
     PRODUCT_METATAGS: 'product-metatags',
+    PRODUCT_METATAGS_AUTO_SUGGEST: 'product-metatags-auto-suggest',
+    PRODUCT_METATAGS_AUTO_FIX: 'product-metatags-auto-fix',
+    SUMMARIZATION: 'summarization',
+    PAGE_TYPE_DETECTION: 'page-type-detection',
+    FAQS: 'faqs',
+    CDN_LOGS_ANALYSIS: 'cdn-logs-analysis',
+    CDN_LOGS_REPORT: 'cdn-logs-report',
+    LLMO_REFERRAL_TRAFFIC: 'llmo-referral-traffic',
+    PAGE_INTENT: 'page-intent',
+    NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
+    TOC: 'toc',
+    WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
+    COMMERCE_PRODUCT_ENRICHMENTS: 'commerce-product-enrichments',
+    COMMERCE_PRODUCT_ENRICHMENTS_YEARLY: 'commerce-product-enrichments-yearly',
+    COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',
+    COMMERCE_PRODUCT_CATALOG_ENRICHMENT: 'commerce-product-catalog-enrichment',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
@@ -172,17 +198,30 @@ class Audit extends BaseModel {
        * @param context - The context object.
        * @returns {object} - The formatted payload for the scrape client.
        */
-      formatPayload: (stepResult, auditContext, context) => ({
-        urls: stepResult.urls.map((urlObj) => urlObj.url),
-        processingType: stepResult.processingType || 'default',
-        options: stepResult.options || {},
-        maxScrapeAge: stepResult.maxScrapeAge || 24,
-        auditData: {
-          siteId: stepResult.siteId,
-          completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
-          auditContext,
-        },
-      }),
+      formatPayload: (stepResult, auditContext, context) => {
+        const payload = {
+          urls: stepResult.urls.map((urlObj) => urlObj.url),
+          processingType: stepResult.processingType || 'default',
+          options: stepResult.options || {},
+          maxScrapeAge: isNumber(stepResult.maxScrapeAge) ? stepResult.maxScrapeAge : 24,
+          metaData: {
+            auditData: {
+              siteId: stepResult.siteId,
+              completionQueueUrl:
+                stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL || '',
+              auditContext,
+            },
+          },
+        };
+
+        // Propagate traceId for cross-worker tracing continuity
+        // This allows the scrape client to maintain the same trace across multiple workers
+        if (context.traceId) {
+          payload.traceId = context.traceId;
+        }
+
+        return payload;
+      },
     },
   };
 

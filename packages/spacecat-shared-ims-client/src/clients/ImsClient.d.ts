@@ -72,4 +72,12 @@ export class ImsClient {
    * @throws {Error} If the request fails.
    */
   validateAccessToken(imsAccessToken: string): Promise<boolean>;
+
+  /**
+   * Fetches the account cluster data from IMS.
+   * @param {string} accessToken A valid IMS user access token
+   * @returns {Promise<object>} The account cluster data
+   * @throws {Error} If the request fails
+   */
+  getAccountCluster(accessToken: string): Promise<object>;
 }

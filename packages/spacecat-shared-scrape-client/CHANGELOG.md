@@ -1,3 +1,120 @@
+## [@adobe/spacecat-shared-scrape-client-v2.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.5.1...@adobe/spacecat-shared-scrape-client-v2.5.2) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-scrape-client-v2.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.5.0...@adobe/spacecat-shared-scrape-client-v2.5.1) (2026-02-17)
+
+### Bug Fixes
+
+* **data-access:** decouple shared packages for v2/v3 alias wrapper rollout ([#1355](https://github.com/adobe/spacecat-shared/issues/1355)) ([ba48df7](https://github.com/adobe/spacecat-shared/commit/ba48df710e0030c1cb3ef4f90661cff1b548d42f))
+
+# [@adobe/spacecat-shared-scrape-client-v2.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.4.0...@adobe/spacecat-shared-scrape-client-v2.5.0) (2026-02-08)
+
+
+### Features
+
+* Bot press hold detection addition + add abort info to scrapeJob schema ([#1308](https://github.com/adobe/spacecat-shared/issues/1308)) ([4f19f91](https://github.com/adobe/spacecat-shared/commit/4f19f9143435aa283d8b9e57c17dd79873168177))
+
+# [@adobe/spacecat-shared-scrape-client-v2.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.7...@adobe/spacecat-shared-scrape-client-v2.4.0) (2026-02-04)
+
+
+### Features
+
+* scrape client slack message ([#1314](https://github.com/adobe/spacecat-shared/issues/1314)) ([bcf2e83](https://github.com/adobe/spacecat-shared/commit/bcf2e8369743c97a3cd1f4d512a69f0f5abedd6b))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.6...@adobe/spacecat-shared-scrape-client-v2.3.7) (2026-01-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.4.0 ([#1295](https://github.com/adobe/spacecat-shared/issues/1295)) ([5c1595b](https://github.com/adobe/spacecat-shared/commit/5c1595bd7cba9b7053da867b8f46e302f8683eba))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.5...@adobe/spacecat-shared-scrape-client-v2.3.6) (2025-11-30)
+
+
+### Bug Fixes
+
+* update data-access ([#1196](https://github.com/adobe/spacecat-shared/issues/1196)) ([c9461e7](https://github.com/adobe/spacecat-shared/commit/c9461e7c25634014088320d2faaf7839f164845c))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.4...@adobe/spacecat-shared-scrape-client-v2.3.5) (2025-11-28)
+
+
+### Bug Fixes
+
+* update deps ([#1187](https://github.com/adobe/spacecat-shared/issues/1187)) ([8632e20](https://github.com/adobe/spacecat-shared/commit/8632e2049e6061018c26399b8db702fd72e65620))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.3...@adobe/spacecat-shared-scrape-client-v2.3.4) (2025-11-28)
+
+
+### Bug Fixes
+
+* revert release to node 24 ([#1183](https://github.com/adobe/spacecat-shared/issues/1183)) ([e662259](https://github.com/adobe/spacecat-shared/commit/e66225930c1f56fbc6e8898d37d06f777e6ee356)), closes [#1182](https://github.com/adobe/spacecat-shared/issues/1182)
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.2...@adobe/spacecat-shared-scrape-client-v2.3.3) (2025-11-28)
+
+
+### Bug Fixes
+
+* update to node 24 ([#1179](https://github.com/adobe/spacecat-shared/issues/1179)) ([0e60c0a](https://github.com/adobe/spacecat-shared/commit/0e60c0ab791b47662d07822f7c93009a8f7048fd))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.1...@adobe/spacecat-shared-scrape-client-v2.3.2) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.0...@adobe/spacecat-shared-scrape-client-v2.3.1) (2025-11-07)
+
+
+### Bug Fixes
+
+* **ScrapeClient:** change baseUrl composing ([#1101](https://github.com/adobe/spacecat-shared/issues/1101)) ([1347bf3](https://github.com/adobe/spacecat-shared/commit/1347bf3e65b04f0ac24701e64eb360a85b7cb4e2))
+
+# [@adobe/spacecat-shared-scrape-client-v2.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.2.2...@adobe/spacecat-shared-scrape-client-v2.3.0) (2025-11-05)
+
+
+### Features
+
+* **scrapeClient:** change baseUrl composing to match sites ([#1089](https://github.com/adobe/spacecat-shared/issues/1089)) ([0ffe0af](https://github.com/adobe/spacecat-shared/commit/0ffe0af0c0ca7fc2fe537d0fb735743c0079a9c4))
+
+# [@adobe/spacecat-shared-scrape-client-v2.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.2.1...@adobe/spacecat-shared-scrape-client-v2.2.2) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
+# [@adobe/spacecat-shared-scrape-client-v2.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.2.0...@adobe/spacecat-shared-scrape-client-v2.2.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* **scrapeClient:** fix a typo in scrapeUrlDto ([#1073](https://github.com/adobe/spacecat-shared/issues/1073)) ([3dbb653](https://github.com/adobe/spacecat-shared/commit/3dbb6530615042ae71d12d5e87588e75b8033455))
+
+# [@adobe/spacecat-shared-scrape-client-v2.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.7...@adobe/spacecat-shared-scrape-client-v2.2.0) (2025-10-29)
+
+
+### Features
+
+* scrape url access pattern ([#1059](https://github.com/adobe/spacecat-shared/issues/1059)) ([26facf6](https://github.com/adobe/spacecat-shared/commit/26facf63dfae4908ed88221f16266910205e2473))
+
+# [@adobe/spacecat-shared-scrape-client-v2.1.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.6...@adobe/spacecat-shared-scrape-client-v2.1.7) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-scrape-client-v2.1.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.5...@adobe/spacecat-shared-scrape-client-v2.1.6) (2025-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
 # [@adobe/spacecat-shared-scrape-client-v2.1.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.4...@adobe/spacecat-shared-scrape-client-v2.1.5) (2025-09-25)
 
 

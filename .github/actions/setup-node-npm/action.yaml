@@ -5,9 +5,9 @@ runs:
   using: "composite"
   steps:
     - name: Set up Node
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@v6
       with:
-        node-version: 22.19
+        node-version-file: '.nvmrc'
 
     - name: Get npm cache directory
       id: npm-cache-dir
@@ -24,7 +24,14 @@ runs:
           ${{ runner.os }}-node-
 
     - name: Update NPM (only if cache miss)
-      run: npm install -g npm@10.9.2
+      run: npm install -g npm@10.9.4
+      shell: bash
+
+    - name: Configure Git auth for private Mysticat types repo
+      run: |
+        git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "https://github.com/"
+        git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+        git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "git@github.com:"
       shell: bash
 
     - name: Install dependencies (only if cache miss)

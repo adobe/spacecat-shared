@@ -41,8 +41,23 @@ export {
 } from './analyzer.js';
 
 export {
+  htmlToMarkdown,
+  markdownToHtml,
+  htmlToMarkdownToHtml,
+} from './markdown-converter.js';
+
+export {
+  diffDOMBlocks,
+  createMarkdownTableDiff,
+  getAddedMarkdownBlocks,
+  generateMarkdownDiff,
+  htmlToRenderedMarkdown,
+} from './markdown-diff.js';
+
+export {
   hashDJB2,
   pct,
   formatNumberToK,
   isBrowser,
+  getGlobalObject,
 } from './utils.js';

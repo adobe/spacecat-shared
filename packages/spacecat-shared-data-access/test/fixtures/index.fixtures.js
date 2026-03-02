@@ -13,7 +13,9 @@
 import apiKeys from './api-keys.fixtures.js';
 import asyncJobs from './async-jobs.fixture.js';
 import audits from './audits.fixture.js';
+import auditUrls from './audit-urls.fixture.js';
 import configurations from './configurations.fixture.js';
+import consumers from './consumers.fixture.js';
 import experiments from './experiments.fixture.js';
 import importJobs from './import-jobs.fixture.js';
 import importUrls from './import-urls.fixture.js';
@@ -22,31 +24,40 @@ import scrapeUrls from './scrape-urls.fixture.js';
 import keyEvents from './key-events.fixture.js';
 import opportunities from './opportunities.fixture.js';
 import organizations from './organizations.fixture.js';
+import projects from './projects.fixture.js';
 import siteCandidates from './site-candidates.fixture.js';
 import siteTopForms from './site-top-forms.fixture.js';
 import siteTopPages from './site-top-pages.fixture.js';
 import sites from './sites.fixture.js';
 import suggestions from './suggestions.fixture.js';
 import fixEntities from './fix-entity.fixture.js';
+import fixEntitySuggestions from './fix-entity-suggestions.fixture.js';
 import pageIntents from './page-intents.fixture.js';
 import reports from './reports.fixture.js';
 import entitlements from './entitlements.fixture.js';
 import trialUsers from './trial-users.fixture.js';
 import trialUserActivities from './trial-user-activities.fixture.js';
 import siteEnrollments from './site-enrollments.fixture.js';
+import pageCitabilities from './page-citabilities.fixture.js';
+import sentimentTopics from './sentiment-topics.fixture.js';
+import sentimentGuidelines from './sentiment-guidelines.fixture.js';
 
 export default {
   apiKeys,
   asyncJobs,
   audits,
+  auditUrls,
   configurations,
+  consumers,
   experiments,
   fixEntities,
+  fixEntitySuggestions,
   importJobs,
   importUrls,
   keyEvents,
   opportunities,
   organizations,
+  projects,
   siteCandidates,
   siteTopForms,
   siteTopPages,
@@ -60,4 +71,7 @@ export default {
   trialUsers,
   trialUserActivities,
   siteEnrollments,
+  pageCitabilities,
+  sentimentTopics,
+  sentimentGuidelines,
 };

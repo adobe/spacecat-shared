@@ -11,12 +11,9 @@
  */
 
 import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
-import {
-  Site,
-  Entitlement as EntitlementModel,
-  Organization,
-} from '@adobe/spacecat-shared-data-access';
+import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
 
+const ENTITLEMENT_TIERS = MYSTICAT_ENUMS_BY_TYPE.ENTITLEMENT_TIER;
 /**
  * TierClient provides methods to manage entitlements and site enrollments.
  */
@@ -29,9 +26,6 @@ class TierClient {
    * @returns {TierClient} TierClient instance for organization operations.
    */
   static createForOrg(context, organization, productCode) {
-    if (!(organization instanceof Organization)) {
-      throw new Error('Entity must be an instance of Organization');
-    }
     if (!hasText(productCode)) {
       throw new Error('Product code is required');
     }
@@ -49,9 +43,6 @@ class TierClient {
    * @returns {TierClient} TierClient instance for site operations.
    */
   static async createForSite(context, site, productCode) {
-    if (!(site instanceof Site)) {
-      throw new Error('Entity must be an instance of Site');
-    }
     if (!hasText(productCode)) {
       throw new Error('Product code is required');
     }
@@ -60,6 +51,9 @@ class TierClient {
     }
     const organizationId = await site.getOrganizationId();
     const organization = await context.dataAccess.Organization.findById(organizationId);
+    if (!organization) {
+      throw new Error(`[TierClient] Organization not found for organizationId: ${organizationId}`);
+    }
     return new TierClient(context, organization, site, productCode);
   }
 
@@ -143,8 +137,8 @@ class TierClient {
    */
   async createEntitlement(tier) {
     try {
-      if (!Object.values(EntitlementModel.TIERS).includes(tier)) {
-        throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(EntitlementModel.TIERS).join(', ')}`);
+      if (!Object.values(ENTITLEMENT_TIERS).includes(tier)) {
+        throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(ENTITLEMENT_TIERS).join(', ')}`);
       }
       const orgId = this.organization.getId();
       // Check what already exists
@@ -154,8 +148,8 @@ class TierClient {
       if (existing.entitlement) {
         const currentTier = existing.entitlement.getTier();
 
-        // If tier doesn't match, update it
-        if (currentTier !== tier) {
+        // If currentTier doesn't match with given tier and is not PAID, update it
+        if (currentTier !== tier && currentTier !== ENTITLEMENT_TIERS.PAID) {
           existing.entitlement.setTier(tier);
           await existing.entitlement.save();
         }
@@ -206,6 +200,178 @@ class TierClient {
     } catch (error) {
       this.log.error(`Error creating/updating entitlement: ${error.message}`);
       throw error;
+    }
+  }
+
+  /**
+   * Revokes site enrollment for the current site.
+   * @returns {Promise<object>} HTTP response object.
+   */
+  async revokeSiteEnrollment() {
+    const existing = await this.checkValidEntitlement();
+    if (existing.siteEnrollment) {
+      await existing.siteEnrollment.remove();
+    } else {
+      throw new Error('Site enrollment not found');
+    }
+  }
+
+  /**
+   * Gets all enrollments based on context, filtered by productCode.
+   * - If site is provided: returns site enrollment for the entitlement matching productCode
+   * - If org-only: returns all site enrollments for the entitlement matching productCode
+   * - Filters out enrollments where the site's orgId doesn't match the entitlement's orgId
+   * @returns {Promise<object>} Object with entitlement and enrollments array.
+   */
+  async getAllEnrollment() {
+    try {
+      const orgId = this.organization.getId();
+      const entitlement = await this.Entitlement
+        .findByOrganizationIdAndProductCode(orgId, this.productCode);
+
+      if (!entitlement) {
+        return { entitlement: null, enrollments: [] };
+      }
+
+      const allEnrollments = await this.SiteEnrollment.allByEntitlementId(entitlement.getId());
+
+      if (allEnrollments.length === 0) {
+        return { entitlement, enrollments: [] };
+      }
+
+      // When a specific site is provided, skip batch fetch entirely.
+      // Just filter enrollments by site ID and verify org ownership with a single lookup.
+      if (this.site) {
+        const targetSiteId = this.site.getId();
+        const matchingEnrollments = allEnrollments.filter(
+          (se) => se.getSiteId() === targetSiteId,
+        );
+
+        if (matchingEnrollments.length === 0) {
+          return { entitlement, enrollments: [] };
+        }
+
+        const site = await this.Site.findById(targetSiteId);
+        if (!site || site.getOrganizationId() !== orgId) {
+          return { entitlement, enrollments: [] };
+        }
+
+        return { entitlement, enrollments: matchingEnrollments };
+      }
+
+      // Org-only path: fetch sites in chunks to avoid 414 URI Too Large.
+      // PostgREST uses GET with ?id=in.(...) which has URL length limits.
+      const CHUNK_SIZE = 50;
+      const siteKeys = allEnrollments.map((enrollment) => ({ siteId: enrollment.getSiteId() }));
+      const sitesMap = new Map();
+
+      for (let i = 0; i < siteKeys.length; i += CHUNK_SIZE) {
+        const chunk = siteKeys.slice(i, i + CHUNK_SIZE);
+        // eslint-disable-next-line no-await-in-loop
+        const sitesResult = await this.Site.batchGetByKeys(chunk);
+        for (const site of sitesResult.data) {
+          sitesMap.set(site.getId(), site);
+        }
+      }
+
+      // Filter enrollments where site's orgId matches the entitlement's orgId
+      const validEnrollments = [];
+
+      for (const enrollment of allEnrollments) {
+        const site = sitesMap.get(enrollment.getSiteId());
+        if (!site) {
+          this.log.warn(`Site not found for enrollment ${enrollment.getId()} with siteId ${enrollment.getSiteId()}`);
+        } else if (site.getOrganizationId() === orgId) {
+          validEnrollments.push(enrollment);
+        }
+      }
+
+      return { entitlement, enrollments: validEnrollments };
+    } catch (error) {
+      this.log.error(`Error getting all enrollments: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the first enrollment and its site, filtered by productCode.
+   * - If site is provided: finds matching enrollment and returns this.site directly
+   * - If org-only: iterates enrollments, fetches sites one at a time, returns first org match
+   * @returns {Promise<object>} Object with entitlement, enrollment, and site.
+   */
+  async getFirstEnrollment() {
+    try {
+      const orgId = this.organization.getId();
+      const entitlement = await this.Entitlement
+        .findByOrganizationIdAndProductCode(orgId, this.productCode);
+
+      if (!entitlement) {
+        return { entitlement: null, enrollment: null, site: null };
+      }
+
+      const allEnrollments = await this.SiteEnrollment.allByEntitlementId(entitlement.getId());
+
+      if (!allEnrollments || allEnrollments.length === 0) {
+        return { entitlement: null, enrollment: null, site: null };
+      }
+
+      // When a specific site is set, find its enrollment in memory — no fetch needed.
+      if (this.site) {
+        const targetSiteId = this.site.getId();
+        const matchingEnrollment = allEnrollments.find(
+          (se) => se.getSiteId() === targetSiteId,
+        );
+        if (matchingEnrollment) {
+          return { entitlement, enrollment: matchingEnrollment, site: this.site };
+        }
+        return { entitlement: null, enrollment: null, site: null };
+      }
+
+      // Org-only: iterate enrollments, fetch site one at a time, return first org match.
+      // This avoids batch-fetching all sites (which causes 414 on large sets).
+      for (const enrollment of allEnrollments) {
+        // eslint-disable-next-line no-await-in-loop
+        const site = await this.Site.findById(enrollment.getSiteId());
+        if (!site) {
+          this.log.warn(`Site not found for enrollment ${enrollment.getId()} with siteId ${enrollment.getSiteId()}`);
+        } else if (site.getOrganizationId() === orgId) {
+          return { entitlement, enrollment, site };
+        }
+      }
+
+      return { entitlement: null, enrollment: null, site: null };
+    } catch (error) {
+      this.log.error(`Error getting first enrollment: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Revokes entitlement for the current organization.
+   * @returns {Promise<object>} HTTP response object.
+   */
+  async revokeEntitlement() {
+    const existing = await this.checkValidEntitlement();
+    if (existing.entitlement) {
+      if (existing.entitlement.getTier() === ENTITLEMENT_TIERS.PAID) {
+        throw new Error('Paid entitlement cannot be revoked');
+      }
+      await existing.entitlement.remove();
+    } else {
+      throw new Error('Entitlement not found');
+    }
+  }
+
+  /**
+   * Revokes PAID/FREE entitlement for the current organization.
+   * @returns {Promise<object>} HTTP response object.
+   */
+  async revokePaidEntitlement() {
+    const existing = await this.checkValidEntitlement();
+    if (existing.entitlement) {
+      await existing.entitlement.remove();
+    } else {
+      throw new Error('Entitlement not found');
     }
   }
 }

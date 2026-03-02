@@ -11,6 +11,8 @@
  */
 
 import { context as h2, h1 } from '@adobe/fetch';
+import URI from 'urijs';
+import { hasText, isValidUrl } from './functions.js';
 import { SPACECAT_USER_AGENT } from './tracing-fetch.js';
 
 /* c8 ignore next 3 */
@@ -143,7 +145,12 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
   let resp;
 
   try {
-    resp = await fetch(urlString, { headers, method });
+    const timeout = method === 'HEAD' ? 10000 : 20000; // 10s for HEAD, 20s for GET
+    resp = await fetch(urlString, {
+      headers,
+      method,
+      signal: AbortSignal.timeout(timeout),
+    });
 
     if (resp.ok) {
       return ensureHttps(resp.url);
@@ -240,6 +247,111 @@ function urlMatchesFilter(url, filterUrls) {
   }
 }
 
+/**
+ * Checks if a URL has a subdomain other than 'www'.
+ * @param {string} baseUrl - The URL to check.
+ * @returns {boolean} - True if the URL has a non-www subdomain, false otherwise.
+ * @throws {Error} - If the baseURL cannot be parsed.
+ */
+function hasNonWWWSubdomain(baseUrl) {
+  try {
+    const uri = new URI(baseUrl);
+    return hasText(uri.domain()) && hasText(uri.subdomain()) && uri.subdomain() !== 'www';
+  } catch {
+    throw new Error(`Cannot parse baseURL: ${baseUrl}`);
+  }
+}
+
+/**
+ * Toggles the www subdomain in a given hostname.
+ * @param {string} hostname - The hostname to toggle the www subdomain in.
+ * @returns {string} - The hostname with the www subdomain toggled.
+ */
+function toggleWWWHostname(hostname) {
+  if (hasNonWWWSubdomain(`https://${hostname}`)) return hostname;
+  return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
+}
+
+/**
+ * Resolves the correct URL for a site by checking RUM data availability.
+ * Tries www-toggled version first, then falls back to original.
+ * @param {object} site - The site object with getBaseURL() and getConfig() methods.
+ * @param {object} rumApiClient - The RUM API client instance with retrieveDomainkey method.
+ * @param {object} log - Logger instance with debug() and error() methods.
+ * @returns {Promise<string>} - The resolved hostname without protocol.
+ */
+async function wwwUrlResolver(site, rumApiClient, log) {
+  const overrideBaseURL = site.getConfig()?.getFetchConfig()?.overrideBaseURL;
+  if (isValidUrl(overrideBaseURL)) {
+    return overrideBaseURL.replace(/^https?:\/\//, '');
+  }
+
+  const baseURL = site.getBaseURL();
+  const uri = new URI(baseURL);
+  const hostname = uri.hostname();
+  const subdomain = uri.subdomain();
+
+  if (hasText(subdomain) && subdomain !== 'www') {
+    log.debug(`Resolved URL ${hostname} since ${baseURL} contains subdomain`);
+    return hostname;
+  }
+
+  try {
+    const wwwToggledHostname = toggleWWWHostname(hostname);
+    await rumApiClient.retrieveDomainkey(wwwToggledHostname);
+    log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
+    return wwwToggledHostname;
+  } catch (e) {
+    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+  }
+
+  try {
+    await rumApiClient.retrieveDomainkey(hostname);
+    log.debug(`Resolved URL ${hostname} for ${baseURL} using RUM API Client`);
+    return hostname;
+  } catch (e) {
+    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+  }
+
+  const fallback = hostname.startsWith('www.') ? hostname : `www.${hostname}`;
+  log.debug(`Fallback to ${fallback} for URL resolution for ${baseURL}`);
+  return fallback;
+}
+
+/**
+ * Canonicalizes a URL by removing protocol, www prefix, and trailing slash
+ * for comparison and matching purposes.
+ * Optionally strips query parameters and fragments.
+ * @param {string} url - URL to canonicalize
+ * @param {object} options - Canonicalization options
+ * @param {boolean} options.stripQuery - Whether to strip query parameters and fragments
+ * @returns {string} Canonicalized URL
+ */
+export function canonicalizeUrl(url, { stripQuery = false } = {}) {
+  if (!url || typeof url !== 'string') {
+    return '';
+  }
+
+  let canonicalized = url
+    .toLowerCase() // Case insensitive
+    .trim()
+    .replace(/^https?:\/\//, '') // Remove protocol
+    .replace(/^www\d*\./, '') // Remove www, www2, www3, etc.
+    .replace(/\/$/, ''); // Remove trailing slash
+
+  // Optionally strip query parameters and fragments
+  if (stripQuery) {
+    const queryIndex = canonicalized.search(/[?#]/);
+    if (queryIndex !== -1) {
+      canonicalized = canonicalized.substring(0, queryIndex);
+    }
+    // Remove any trailing slash that may have been revealed
+    canonicalized = canonicalized.replace(/\/$/, '');
+  }
+
+  return canonicalized;
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,
@@ -252,4 +364,7 @@ export {
   stripTrailingSlash,
   stripWWW,
   urlMatchesFilter,
+  hasNonWWWSubdomain,
+  toggleWWWHostname,
+  wwwUrlResolver,
 };

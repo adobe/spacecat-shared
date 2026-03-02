@@ -20,7 +20,9 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class ScrapeUrl extends BaseModel {
-  static SCRAPE_URL_EXPIRES_IN_DAYS = 14;
+  static ENTITY_NAME = 'ScrapeUrl';
+
+  static SCRAPE_URL_EXPIRES_IN_DAYS = 120;
 
   // add your custom methods or overrides here
 }

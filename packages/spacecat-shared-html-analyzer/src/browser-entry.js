@@ -32,10 +32,18 @@ import {
   countLines,
   diffTokens,
   generateDiffReport,
+  htmlToMarkdown,
+  markdownToHtml,
+  htmlToMarkdownToHtml,
+  diffDOMBlocks,
+  createMarkdownTableDiff,
+  generateMarkdownDiff,
+  htmlToRenderedMarkdown,
   hashDJB2,
   pct,
   formatNumberToK,
   isBrowser,
+  getGlobalObject,
 } from './index.js';
 
 // Create global object for Chrome extension
@@ -60,30 +68,32 @@ const HTMLAnalyzer = {
   diffTokens,
   generateDiffReport,
 
+  // Markdown conversion functions
+  htmlToMarkdown,
+  markdownToHtml,
+  htmlToMarkdownToHtml,
+
+  // Markdown diff functions
+  diffDOMBlocks,
+  createMarkdownTableDiff,
+  generateMarkdownDiff,
+  htmlToRenderedMarkdown,
+
   // Utility functions
   hashDJB2,
   pct,
   formatNumberToK,
   isBrowser,
 
-  // Version info
-  version: '1.0.0',
+  // Version info (replaced during build from package.json)
+  version: '__PACKAGE_VERSION__',
   buildFor: 'chrome-extension',
 };
 
 // Make available globally for Chrome extension script tags
 // This needs to be executed immediately when the bundle loads
-/* eslint-env browser */
-/* global window, self */
 (function setGlobal() {
-  // Determine the global object (works in browser, Node.js, Web Workers)
-  const globalObject = (function getGlobalObject() {
-    if (typeof window !== 'undefined') return window;
-    if (typeof globalThis !== 'undefined') return globalThis;
-    if (typeof self !== 'undefined') return self;
-    return this || {};
-  }());
-
+  const globalObject = getGlobalObject();
   // Assign to global scope
   globalObject.HTMLAnalyzer = HTMLAnalyzer;
 }());

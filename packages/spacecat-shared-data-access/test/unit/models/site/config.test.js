@@ -14,12 +14,98 @@
 
 import { expect } from 'chai';
 
-import { Config, validateConfiguration } from '../../../../src/models/site/config.js';
+import {
+  Config, validateConfiguration,
+} from '../../../../src/models/site/config.js';
 import { registerLogger } from '../../../../src/util/logger-registry.js';
 
 describe('Config Tests', () => {
   beforeEach(() => {
     registerLogger(null);
+  });
+
+  describe('Brand Profile', () => {
+    it('creates a Config with brandProfile (generic top-level content)', () => {
+      const data = {
+        brandProfile: {
+          discovery: { pages_analyzed: 150 },
+          clustering: { voice_clusters: [] },
+          competitive_context: { industry: 'software' },
+          main_profile: { id: 'main', communication_style: 'Specific style' },
+          sub_brands: [],
+          confidence_score: 0.9,
+          pages_considered: 150,
+          diversity_assessment: 'Diverse content sample',
+        },
+      };
+      const config = Config(data);
+      expect(config.getBrandProfile()).to.deep.equal(data.brandProfile);
+    });
+
+    it('updateBrandProfile sets version, updatedAt, contentHash and persists content', () => {
+      const config = Config();
+      expect(config.getBrandProfile()).to.be.undefined;
+
+      const payload = {
+        discovery: { pages_analyzed: 10 },
+        main_profile: { id: 'main', communication_style: 'Detailed' },
+      };
+      config.updateBrandProfile(payload);
+
+      const bp = config.getBrandProfile();
+      expect(bp).to.exist;
+      expect(bp.version).to.equal(1);
+      expect(typeof bp.updatedAt).to.equal('string');
+      expect(Date.parse(bp.updatedAt)).to.be.a('number');
+      expect(bp.contentHash).to.be.a('string').that.is.not.empty;
+      expect(bp.discovery).to.deep.equal({ pages_analyzed: 10 });
+      expect(bp.main_profile).to.deep.equal({ id: 'main', communication_style: 'Detailed' });
+    });
+
+    it('does not bump version when meaningful content is unchanged', () => {
+      const config = Config();
+      const first = {
+        competitive_context: { industry: 'software' },
+      };
+      config.updateBrandProfile(first);
+      const afterFirst = config.getBrandProfile();
+      expect(afterFirst.version).to.equal(1);
+
+      // Provide same content but with functional fields altered in input (which should be ignored)
+      const second = {
+        ...first,
+        version: 999,
+        updatedAt: '2020-01-01T00:00:00.000Z',
+        contentHash: 'bogus',
+      };
+      config.updateBrandProfile(second);
+      const afterSecond = config.getBrandProfile();
+      expect(afterSecond.version).to.equal(1); // unchanged
+      expect(afterSecond.contentHash).to.equal(afterFirst.contentHash);
+    });
+
+    it('bumps version when meaningful content changes', () => {
+      const config = Config();
+      config.updateBrandProfile({ main_profile: { id: 'main', communication_style: 'A' } });
+      const afterFirst = config.getBrandProfile();
+      expect(afterFirst.version).to.equal(1);
+
+      // Change meaningful field
+      config.updateBrandProfile({ main_profile: { id: 'main', communication_style: 'B' } });
+      const afterSecond = config.getBrandProfile();
+      expect(afterSecond.version).to.equal(2);
+      expect(afterSecond.contentHash).to.not.equal(afterFirst.contentHash);
+    });
+
+    it('includes brandProfile in toDynamoItem conversion', () => {
+      const config = Config();
+      config.updateBrandProfile({
+        discovery: { pages_analyzed: 3 },
+        main_profile: { id: 'main', communication_style: 'C' },
+      });
+      const item = Config.toDynamoItem(config);
+      expect(item.brandProfile).to.deep.equal(config.getBrandProfile());
+    });
   });
 
   describe('Config Creation', () => {
@@ -305,6 +391,25 @@ describe('Config Tests', () => {
       expect(excludedURLs).to.deep.equal(['url1', 'url2']);
     });
 
+    it('correctly updates the autofix excluded URLs', () => {
+      const config = Config();
+      config.updateAutofixExcludedURLs('meta-tags', [
+        'https://www.example.com/page1',
+        'https://www.example.com/page2',
+      ]);
+
+      const autofixExcludedURLs = config.getAutofixExcludedURLs('meta-tags');
+      expect(autofixExcludedURLs).to.deep.equal([
+        'https://www.example.com/page1',
+        'https://www.example.com/page2',
+      ]);
+    });
+
+    it('returns undefined for autofix excluded URLs when handler is not present', () => {
+      const config = Config();
+      expect(config.getAutofixExcludedURLs('non-existent-handler')).to.be.undefined;
+    });
+
     it('correctly updates the manual overrides', () => {
       const config = Config();
       const manualOverwrites = [
@@ -367,6 +472,7 @@ describe('Config Tests', () => {
       expect(config.getSlackMentions('404')).to.be.undefined;
       expect(config.getHandlerConfig('404')).to.be.undefined;
       expect(config.getExcludedURLs('404')).to.be.undefined;
+      expect(config.getAutofixExcludedURLs('404')).to.be.undefined;
       expect(config.getManualOverwrites('404')).to.be.undefined;
       expect(config.getFixedURLs('404')).to.be.undefined;
       expect(config.getIncludedURLs('404')).to.be.undefined;
@@ -1079,7 +1185,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]');
+            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -1173,6 +1279,16 @@ describe('Config Tests', () => {
                   key: 'type',
                 },
               }, {
+                message: '"imports[0].type" must be [ahref-paid-pages]',
+                path: ['imports', 0, 'type'],
+                type: 'any.only',
+                context: {
+                  valids: ['ahref-paid-pages'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              }, {
                 message: '"imports[0].type" must be [cwv-daily]',
                 path: ['imports', 0, 'type'],
                 type: 'any.only',
@@ -1208,6 +1324,17 @@ describe('Config Tests', () => {
                 type: 'any.only',
                 context: {
                   valids: ['top-forms'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [user-engagement]',
+                path: ['imports', 0, 'type'],
+                type: 'any.only',
+                context: {
+                  valids: ['user-engagement'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',
@@ -2299,6 +2426,174 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('Tokowaka Config', () => {
+    it('creates a Config with tokowakaConfig property', () => {
+      const data = {
+        tokowakaConfig: {
+          apiKey: 'test-api-key',
+        },
+      };
+      const config = Config(data);
+      expect(config.getTokowakaConfig()).to.deep.equal(data.tokowakaConfig);
+    });
+
+    it('has undefined tokowakaConfig in default config', () => {
+      const config = Config();
+      expect(config.getTokowakaConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for tokowakaConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getTokowakaConfig()).to.be.undefined;
+    });
+
+    it('should preserve provided data if tokowakaConfig is invalid', () => {
+      const data = {
+        tokowakaConfig: {
+          // missing required apiKey
+        },
+      };
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.be.undefined;
+      expect(config.getTokowakaConfig()).to.deep.equal({});
+    });
+
+    it('should be able to update tokowakaConfig', () => {
+      const data = {
+        tokowakaConfig: {
+          apiKey: 'initial-api-key',
+        },
+      };
+      const config = Config({});
+      config.updateTokowakaConfig(data.tokowakaConfig);
+      expect(config.getTokowakaConfig()).to.deep.equal(data.tokowakaConfig);
+    });
+
+    it('should be able to update tokowakaConfig with different apiKey', () => {
+      const config = Config({
+        tokowakaConfig: {
+          apiKey: 'old-api-key',
+        },
+      });
+
+      const newConfig = {
+        apiKey: 'new-api-key',
+      };
+      config.updateTokowakaConfig(newConfig);
+      expect(config.getTokowakaConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes tokowakaConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        tokowakaConfig: {
+          apiKey: 'test-api-key',
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.tokowakaConfig).to.deep.equal(data.getTokowakaConfig());
+    });
+  });
+
+  describe('Edge Optimize Config', () => {
+    it('creates a Config with edgeOptimizeConfig property', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
+    it('has undefined edgeOptimizeConfig in default config', () => {
+      const config = Config();
+      expect(config.getEdgeOptimizeConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for edgeOptimizeConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getEdgeOptimizeConfig()).to.be.undefined;
+    });
+
+    it('should preserve provided data if edgeOptimizeConfig is invalid', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          // missing required enabled
+        },
+      };
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.be.undefined;
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal({});
+    });
+
+    it('should be able to update edgeOptimizeConfig', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      };
+      const config = Config({});
+      config.updateEdgeOptimizeConfig(data.edgeOptimizeConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
+    it('should be able to update edgeOptimizeConfig with different enabled', () => {
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      });
+
+      const newConfig = {
+        enabled: false,
+      };
+      config.updateEdgeOptimizeConfig(newConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes edgeOptimizeConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.edgeOptimizeConfig).to.deep.equal(data.getEdgeOptimizeConfig());
+    });
+
+    it('should be able to create edgeOptimizeConfig with opted field', () => {
+      const optedTimestamp = new Date('2024-01-15T10:30:00Z').getTime();
+      const data = {
+        edgeOptimizeConfig: {
+          enabled: true,
+          opted: optedTimestamp,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+      expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
+    });
+
+    it('should be able to update edgeOptimizeConfig with opted field', () => {
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: false,
+        },
+      });
+
+      const optedTimestamp = new Date('2024-01-20T14:45:00Z').getTime();
+      const newConfig = {
+        enabled: true,
+        opted: optedTimestamp,
+      };
+      config.updateEdgeOptimizeConfig(newConfig);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
+      expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
+    });
+  });
+
   describe('LLMO Well Known Tags', () => {
     const { extractWellKnownTags } = Config();
 
@@ -2317,6 +2612,66 @@ describe('Config Tests', () => {
         product: 'The Product',
         topic: 'A Topic',
       });
+    });
+  });
+
+  describe('addLlmoTag', () => {
+    it('should add a new tag', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test' } });
+      config.addLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['opportunitiesReviewed']);
+    });
+
+    it('should not add a duplicate tag', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['existing'] } });
+      config.addLlmoTag('existing');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['existing']);
+    });
+
+    it('should append to existing tags', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['fullyOnboarded'] } });
+      config.addLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['fullyOnboarded', 'opportunitiesReviewed']);
+    });
+
+    it('should initialize llmo and tags when not present', () => {
+      const config = Config();
+      config.addLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['opportunitiesReviewed']);
+    });
+  });
+
+  describe('removeLlmoTag', () => {
+    it('should remove an existing tag', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['fullyOnboarded', 'opportunitiesReviewed'] } });
+      config.removeLlmoTag('fullyOnboarded');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['opportunitiesReviewed']);
+    });
+
+    it('should do nothing if the tag does not exist', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test', tags: ['fullyOnboarded'] } });
+      config.removeLlmoTag('nonExistent');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.deep.equal(['fullyOnboarded']);
+    });
+
+    it('should do nothing if tags are not initialized', () => {
+      const config = Config({ llmo: { dataFolder: 'test', brand: 'test' } });
+      config.removeLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.tags).to.be.undefined;
+    });
+
+    it('should do nothing if llmo is not initialized', () => {
+      const config = Config();
+      config.removeLlmoTag('opportunitiesReviewed');
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig).to.be.undefined;
     });
   });
 });

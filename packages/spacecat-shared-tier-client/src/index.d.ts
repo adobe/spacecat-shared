@@ -44,8 +44,9 @@ export declare class TierClient {
   
   checkValidEntitlement(): Promise<TierClientResult>;
   createEntitlement(tier: string): Promise<TierClientResult>;
+  revokeSiteEnrollment(): Promise<object>;
   
   static createForOrg(context: TierClientContext, organization: Organization, productCode: string): TierClient;
-  static createForSite(context: TierClientContext, site: Site, productCode: string): TierClient;
+  static createForSite(context: TierClientContext, site: Site, productCode: string): Promise<TierClient>;
 }
 export { TierClient as default };

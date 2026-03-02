@@ -40,17 +40,25 @@ import Reference from './reference.js';
  */
 class BaseModel {
   /**
+   * The entity name for this model. Must be overridden by subclasses.
+   * This ensures the entity name is explicit and not dependent on class names
+   * which can be mangled by bundlers.
+   * @type {string}
+   */
+  static ENTITY_NAME = undefined;
+
+  /**
    * Constructs an instance of BaseModel.
    * @constructor
-   * @param {Object} electroService - The ElectroDB service used for managing entities.
+   * @param {Object} postgrestService - The PostgREST client used for managing entities.
    * @param {EntityRegistry} entityRegistry - The registry holding entities, their schema
    * and collection.
    * @param {Schema} schema - The schema for the entity.
    * @param {Object} record - The initial data for the entity instance.
    * @param {Object} log - A log for capturing logging information.
    */
-  constructor(electroService, entityRegistry, schema, record, log) {
-    this.electroService = electroService;
+  constructor(postgrestService, entityRegistry, schema, record, log) {
+    this.postgrestService = postgrestService;
     this.entityRegistry = entityRegistry;
     this.schema = schema;
     this.record = record;
@@ -60,9 +68,8 @@ class BaseModel {
     this.idName = entityNameToIdName(this.entityName);
 
     this.collection = entityRegistry.getCollection(schema.getCollectionName());
-    this.entity = electroService.entities[this.entityName];
 
-    this.patcher = new Patcher(this.entity, this.schema, this.record);
+    this.patcher = new Patcher(this.collection, this.schema, this.record);
 
     this._accessorCache = {};
 
@@ -241,6 +248,12 @@ class BaseModel {
     return this._remove();
   }
 
+  generateCompositeKeys() {
+    return {
+      [this.idName]: this.getId(),
+    };
+  }
+
   /**
    * Internal remove method that removes the current entity from the database and its dependents.
    * This method does not check if the schema allows removal in order to be able to remove
@@ -269,7 +282,15 @@ class BaseModel {
 
       await Promise.all(removePromises);
 
-      await this.entity.remove({ [this.idName]: this.getId() }).go();
+      if (this.collection && typeof this.collection.removeByIndexKeys === 'function') {
+        await this.collection.removeByIndexKeys([this.generateCompositeKeys()]);
+      } else if (this.postgrestService?.entities?.[this.entityName]?.remove) {
+        await this.postgrestService.entities[this.entityName]
+          .remove(this.generateCompositeKeys())
+          .go();
+      } else {
+        throw new DataAccessError(`No remove strategy available for ${this.entityName}`, this);
+      }
 
       this.#invalidateCache();
 

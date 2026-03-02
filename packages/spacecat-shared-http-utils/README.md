@@ -3,6 +3,8 @@
 A set of TypeScript functions for creating HTTP responses with standardized formats, and classes for dealing with
 authenticating HTTP requests.
 
+> **v1.19.0**: Added trace ID extraction from HTTP headers for distributed tracing support.
+
 ## Table of Contents
 
 - [Introduction](#introduction)

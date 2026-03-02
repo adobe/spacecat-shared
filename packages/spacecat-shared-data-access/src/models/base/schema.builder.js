@@ -36,6 +36,7 @@ const DEFAULT_SERVICE_NAME = 'SpaceCat';
  */
 const ID_ATTRIBUTE_DATA = {
   type: 'string',
+  postgrestField: 'id',
   required: true,
   readOnly: true,
   // https://electrodb.dev/en/modeling/attributes/#default
@@ -111,10 +112,18 @@ class SchemaBuilder {
       throw new SchemaBuilderError(this, 'schemaVersion is required and must be a positive integer.');
     }
 
+    if (!hasText(modelClass.ENTITY_NAME)) {
+      throw new SchemaBuilderError(this, `Model class ${modelClass.name} must define a static ENTITY_NAME property.`);
+    }
+
+    if (!hasText(collectionClass.COLLECTION_NAME)) {
+      throw new SchemaBuilderError(this, `Collection class ${collectionClass.name} must define a static COLLECTION_NAME property.`);
+    }
+
     this.modelClass = modelClass;
     this.collectionClass = collectionClass;
     this.schemaVersion = schemaVersion;
-    this.entityName = modelClass.name;
+    this.entityName = modelClass.ENTITY_NAME;
     this.serviceName = DEFAULT_SERVICE_NAME;
 
     this.idName = entityNameToIdName(this.entityName);
@@ -207,10 +216,11 @@ class SchemaBuilder {
 
     this.addAttribute('recordExpiresAt', {
       type: 'number',
+      postgrestIgnore: true,
       required: true,
       readOnly: true,
-      default: () => Date.now() + ttlInDays * 24 * 60 * 60 * 1000,
-      set: () => Date.now() + ttlInDays * 24 * 60 * 60 * 1000,
+      default: () => Math.floor(Date.now() / 1000) + ttlInDays * 24 * 60 * 60,
+      set: () => Math.floor(Date.now() / 1000) + ttlInDays * 24 * 60 * 60,
     });
 
     return this;

@@ -261,6 +261,16 @@ export {
   getTrafficAnalysisQueryPlaceholders,
   buildPageTypeCase,
   getTrafficAnalysisQueryPlaceholdersFilled,
+  getTop3PagesWithTrafficLostTemplate,
+  getTrafficTypeAnalysisTemplate,
 } from './traffic-analysis/queries.js';
 export { TrafficDataResponseDto } from './traffic-analysis/traffic-data-base-response.js';
 export { TrafficDataWithCWVDto } from './traffic-analysis/traffic-data-with-cwv.js';
+
+export {
+  getPreviousPeriod,
+  getPTASummaryQuery,
+  getPTASummaryWithTrendQuery,
+  PTASummaryResponseDto,
+  PTASummaryWithTrendResponseDto,
+} from './pta2/queries.js';

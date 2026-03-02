@@ -11,8 +11,17 @@
  */
 
 import type { ImsClient, ImsPromiseClient } from './clients';
+interface SiteLike {
+  getBaseURL(): string;
+  getAuthoringType(): string;
+  getDeliveryType(): string;
+}
 
 export {
   ImsClient,
   ImsPromiseClient,
 };
+
+export declare function getAccessToken(context: object, promiseToken: string): Promise<object>;
+
+export declare function retrievePageAuthentication(site: SiteLike, context: object, authOptions: object = {}): Promise<string>;

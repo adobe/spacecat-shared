@@ -12,6 +12,7 @@
 
 import { hasText, isInteger } from '@adobe/spacecat-shared-utils';
 import pluralize from 'pluralize';
+import { guardArray } from './guards.js';
 
 const capitalize = (str) => (hasText(str) ? str[0].toUpperCase() + str.slice(1) : '');
 
@@ -34,7 +35,7 @@ const referenceToBaseMethodName = (reference) => {
   return `get${baseName}`;
 };
 
-const entityNameToAllPKValue = (entityName) => `ALL_${pluralize.plural(entityName.toUpperCase())}`;
+const entityNameToAllPKValue = (entityName) => `all_${pluralize.plural(entityName.toLowerCase())}`;
 
 const idNameToEntityName = (idName) => {
   let result = idName;
@@ -94,6 +95,19 @@ const zeroPad = (num, length) => {
     : '0'.repeat(length - str.length) + str;
 };
 
+const resolveUpdates = (existingItems, newItems) => {
+  guardArray('existingItems', existingItems, 'resolveUpdates');
+  guardArray('newItems', newItems, 'resolveUpdates');
+
+  // Deduplicate new items
+  const dedupedNew = [...new Set(newItems)];
+
+  const toDelete = existingItems.filter((item) => !dedupedNew.includes(item));
+  const toCreate = dedupedNew.filter((item) => !existingItems.includes(item));
+
+  return { toDelete, toCreate };
+};
+
 export {
   capitalize,
   classExtends,
@@ -113,4 +127,5 @@ export {
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,
   zeroPad,
+  resolveUpdates,
 };

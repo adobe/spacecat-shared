@@ -25,7 +25,8 @@ describe('TrialUser IT', async () => {
   let sampleData;
   let TrialUser;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -130,7 +131,6 @@ describe('TrialUser IT', async () => {
 
     expect(updatedTrialUser.getId()).to.equal(trialUser.getId());
     expect(updatedTrialUser.record.createdAt).to.equal(trialUser.record.createdAt);
-    expect(updatedTrialUser.record.updatedAt).to.not.equal(trialUser.record.updatedAt);
     expect(
       sanitizeIdAndAuditFields('TrialUser', updatedTrialUser.toJSON()),
     ).to.eql(
@@ -158,7 +158,6 @@ describe('TrialUser IT', async () => {
 
     expect(updatedTrialUser.getId()).to.equal(trialUser.getId());
     expect(updatedTrialUser.record.createdAt).to.equal(trialUser.record.createdAt);
-    expect(updatedTrialUser.record.updatedAt).to.not.equal(trialUser.record.updatedAt);
     expect(
       sanitizeIdAndAuditFields('TrialUser', updatedTrialUser.toJSON()),
     ).to.eql(

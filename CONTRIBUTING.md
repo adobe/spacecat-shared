@@ -53,7 +53,7 @@ You can fix some of the issues automatically by running `npx eslint . --fix`.
 
 This project uses a structured commit changelog format that should be used for every commit. Use `npm run commit` instead of your usual `git commit` to generate commit messages using a wizard.
 
-```bash
+```bash 
 # either add all changed files
 $ git add -A
 # or selectively add files

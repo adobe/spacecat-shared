@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Entitlement extends BaseModel {
+  static ENTITY_NAME = 'Entitlement';
+
   static TIERS = {
     FREE_TRIAL: 'FREE_TRIAL',
     PAID: 'PAID',
@@ -28,6 +30,7 @@ class Entitlement extends BaseModel {
   static PRODUCT_CODES = {
     LLMO: 'LLMO',
     ASO: 'ASO',
+    ACO: 'ACO',
   };
 
   // add your custom methods or overrides here

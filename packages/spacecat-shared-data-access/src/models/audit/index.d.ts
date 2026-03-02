@@ -20,6 +20,7 @@ export interface Audit extends BaseModel {
   getAuditResult(): object | [];
   getAuditType(): string;
   getFullAuditRef(): string;
+  getInvocationId(): string;
   getIsError(): boolean;
   getIsLive(): boolean;
   getLatestAudit(): Promise<LatestAudit | null>;

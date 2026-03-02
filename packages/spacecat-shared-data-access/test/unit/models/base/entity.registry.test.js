@@ -25,8 +25,12 @@ chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('EntityRegistry', () => {
-  const MockModel = class MockModel extends BaseModel {};
-  const MockCollection = class MockCollection extends BaseCollection {};
+  const MockModel = class MockModel extends BaseModel {
+    static ENTITY_NAME = 'MockModel';
+  };
+  const MockCollection = class MockCollection extends BaseCollection {
+    static COLLECTION_NAME = 'MockCollection';
+  };
   const MockSchema = new Schema(
     MockModel,
     MockCollection,
@@ -40,7 +44,8 @@ describe('EntityRegistry', () => {
     },
   );
 
-  let electroService;
+  let postgrestService;
+  let services;
   let entityRegistry;
   let originalEntities;
 
@@ -48,7 +53,7 @@ describe('EntityRegistry', () => {
     originalEntities = { ...EntityRegistry.entities };
     EntityRegistry.entities = {};
 
-    electroService = {
+    postgrestService = {
       entities: {
         mockModel: {
           model: {
@@ -63,13 +68,19 @@ describe('EntityRegistry', () => {
       },
     };
 
+    services = {
+      postgrest: postgrestService,
+      s3: null,
+    };
+
     EntityRegistry.registerEntity(MockSchema, MockCollection);
 
-    entityRegistry = new EntityRegistry(electroService, console);
+    entityRegistry = new EntityRegistry(services, {}, console);
   });
 
   afterEach(() => {
     EntityRegistry.entities = originalEntities;
+    EntityRegistry.defaultEntities = { ...originalEntities };
   });
 
   it('gets collection by collection name', () => {
@@ -87,8 +98,19 @@ describe('EntityRegistry', () => {
     const collections = entityRegistry.getCollections();
 
     expect(collections).to.be.an('object');
-    expect(Object.keys(collections)).to.have.lengthOf(1);
+    // 2 collections: MockCollection + ConfigurationCollection (standalone S3-based)
+    expect(Object.keys(collections)).to.have.lengthOf(2);
     expect(collections.Mock).to.be.an.instanceOf(MockCollection);
+    expect(collections.Configuration).to.exist;
+  });
+
+  it('gets all entity names including configuration', () => {
+    const entityNames = entityRegistry.getEntityNames();
+
+    expect(entityNames).to.be.an('array');
+    expect(entityNames).to.include('mockModel');
+    expect(entityNames).to.include('configuration');
+    expect(entityNames).to.have.lengthOf(2);
   });
 
   it('gets all entities', () => {
@@ -111,5 +133,13 @@ describe('EntityRegistry', () => {
         },
       },
     });
+  });
+
+  it('resets entities to default snapshot', () => {
+    EntityRegistry.entities = { another: { schema: MockSchema, collection: MockCollection } };
+
+    EntityRegistry.resetEntities();
+
+    expect(EntityRegistry.entities).to.deep.equal(EntityRegistry.defaultEntities);
   });
 });

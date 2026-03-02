@@ -38,20 +38,82 @@ const nonEmptyString = z.string().min(1);
 
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 
-const entity = z.union([
-  z.object({ type: z.literal('category'), name: nonEmptyString, region: z.union([region, z.array(region)]) }),
-  z.object({ type: z.literal('topic'), name: nonEmptyString }),
-  z.object({ type: nonEmptyString }),
-]);
+const auditFields = {
+  updatedBy: z.string().optional(),
+  updatedAt: z.string().optional(),
+};
+
+const prompt = z.object({
+  id: z.uuid().optional(),
+  prompt: nonEmptyString,
+  regions: z.array(region),
+  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
+  source: z.union([z.literal('config'), z.literal('api'), z.string()]),
+  status: z.union([z.literal('completed'), z.literal('processing'), z.string()]).optional(),
+  ...auditFields,
+});
+
+const entity = z.object({
+  type: nonEmptyString,
+  name: nonEmptyString,
+});
+
+const categoryUrl = z.object({
+  value: nonEmptyString,
+  type: z.union([z.literal('prefix'), z.literal('url')]),
+}).superRefine((data, ctx) => {
+  // Validate URL format only for type 'url'
+  if (data.type === 'url') {
+    if (!URL.canParse(data.value)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['value'],
+        message: 'Invalid URL format',
+      });
+    }
+  }
+});
+
+const category = z.object({
+  name: nonEmptyString,
+  region: z.union([region, z.array(region)]),
+  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
+  urls: z.array(categoryUrl).optional(),
+  ...auditFields,
+});
+
+const topic = z.object({
+  name: nonEmptyString,
+  prompts: z.array(prompt).min(1),
+  category: z.union([z.uuid(), nonEmptyString]),
+});
+
+const deletedPrompt = prompt.extend({
+  topic: nonEmptyString,
+  category: nonEmptyString,
+  categoryId: z.uuid().optional(),
+});
+
+const ignoredPrompt = z.object({
+  prompt: nonEmptyString,
+  region,
+  source: z.union([z.literal('gsc'), z.string()]),
+  ...auditFields,
+});
 
 export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
+  categories: z.record(z.uuid(), category),
+  topics: z.record(z.uuid(), topic),
+  aiTopics: z.record(z.uuid(), topic).optional(),
   brands: z.object({
     aliases: z.array(
       z.object({
         aliases: z.array(nonEmptyString),
-        category: z.uuid(),
-        region: z.union([region, z.array(region)]),
+        category: z.uuid().optional(),
+        region: z.union([region, z.array(region)]).optional(),
+        aliasMode: z.union([z.literal('extend'), z.literal('replace')]).optional(),
+        ...auditFields,
       }),
     ),
   }),
@@ -63,63 +125,114 @@ export const llmoConfig = z.object({
         name: nonEmptyString,
         aliases: z.array(nonEmptyString),
         urls: z.array(z.url().optional()),
+        ...auditFields,
       }),
     ),
   }),
+  deleted: z.object({
+    prompts: z.record(z.uuid(), deletedPrompt).optional(),
+  }).optional(),
+  cdnBucketConfig: z.object({
+    bucketName: z.string().optional(),
+    allowedPaths: z.array(z.string()).optional(),
+    cdnProvider: z.string(),
+  }).optional(),
+  ignored: z.object({
+    prompts: z.record(z.uuid(), ignoredPrompt).optional(),
+  }).optional(),
 }).superRefine((value, ctx) => {
-  const { entities, brands, competitors } = value;
+  const {
+    categories, topics, brands, competitors,
+  } = value;
 
   brands.aliases.forEach((alias, index) => {
-    ensureEntityType(entities, ctx, alias.category, 'category', ['brands', 'aliases', index, 'category'], 'category');
-    ensureRegionCompatibility(entities, ctx, alias.category, alias.region, ['brands', 'aliases', index, 'region'], 'brand alias');
+    // Ensure category and region are both provided or both omitted
+    if (alias.category && !alias.region) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['brands', 'aliases', index, 'region'],
+        message: 'region is required when category is provided',
+      });
+    } else if (!alias.category && alias.region) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['brands', 'aliases', index, 'category'],
+        message: 'category is required when region is provided',
+      });
+    } else if (alias.category && alias.region) {
+      ensureCategoryExists(categories, ctx, alias.category, ['brands', 'aliases', index, 'category']);
+      ensureRegionCompatibility(categories, ctx, alias.category, alias.region, ['brands', 'aliases', index, 'region'], 'brand alias');
+    }
   });
 
   competitors.competitors.forEach((competitor, index) => {
-    ensureEntityType(entities, ctx, competitor.category, 'category', ['competitors', 'competitors', index, 'category'], 'category');
-    ensureRegionCompatibility(entities, ctx, competitor.category, competitor.region, ['competitors', 'competitors', index, 'region'], 'competitor');
+    ensureCategoryExists(categories, ctx, competitor.category, ['competitors', 'competitors', index, 'category']);
+    ensureRegionCompatibility(categories, ctx, competitor.category, competitor.region, ['competitors', 'competitors', index, 'region'], 'competitor');
   });
+
+  // Validate topic prompts regions against their category
+  validateTopicPromptRegions(categories, ctx, topics, 'topics');
+
+  // Validate aiTopics prompts regions against their category
+  if (value.aiTopics) {
+    validateTopicPromptRegions(categories, ctx, value.aiTopics, 'aiTopics');
+  }
 });
 
 /**
-   * @param {LLMOConfig['entities']} entities
+ * @param {LLMOConfig['categories']} categories
+ * @param {z.RefinementCtx} ctx
+ * @param {Record<string, z.infer<typeof topic>>} topics
+ * @param {string} topicsKey - The key name in the path (e.g., 'topics' or 'aiTopics')
+ */
+function validateTopicPromptRegions(categories, ctx, topics, topicsKey) {
+  Object.entries(topics).forEach(([topicId, topicEntity]) => {
+    if (topicEntity.prompts && topicEntity.category) {
+      // If category is a UUID, validate against the referenced category entity
+      if (topicEntity.category.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        topicEntity.prompts.forEach((promptItem, promptIndex) => {
+          ensureRegionCompatibility(
+            categories,
+            ctx,
+            topicEntity.category,
+            promptItem.regions,
+            [topicsKey, topicId, 'prompts', promptIndex, 'regions'],
+            `${topicsKey} prompt`,
+          );
+        });
+      }
+    }
+  });
+}
+
+/**
+   * @param {LLMOConfig['categories']} categories
    * @param {z.RefinementCtx} ctx
    * @param {string} id
-   * @param {string} expectedType
    * @param {Array<number | string>} path
-   * @param {string} refLabel
-   */
-function ensureEntityType(entities, ctx, id, expectedType, path, refLabel) {
-  const entityValue = entities[id];
-  if (!entityValue) {
+      */
+function ensureCategoryExists(categories, ctx, id, path) {
+  if (!categories[id]) {
     ctx.addIssue({
       code: 'custom',
       path,
-      message: `Unknown ${refLabel} entity: ${id}`,
-    });
-    return;
-  }
-
-  if (entityValue.type !== expectedType) {
-    ctx.addIssue({
-      code: 'custom',
-      path,
-      message: `Entity ${id} referenced as ${refLabel} must have type "${expectedType}" but was "${entityValue.type}"`,
+      message: `Category ${id} does not exist`,
     });
   }
 }
 
 /**
- * @param {LLMOConfig['entities']} entities
+ * @param {LLMOConfig['categories']} categories
  * @param {z.RefinementCtx} ctx
  * @param {string} categoryId
  * @param {string | string[]} itemRegion
  * @param {Array<number | string>} path
  * @param {string} itemLabel
  */
-function ensureRegionCompatibility(entities, ctx, categoryId, itemRegion, path, itemLabel) {
-  const categoryEntity = entities[categoryId];
+function ensureRegionCompatibility(categories, ctx, categoryId, itemRegion, path, itemLabel) {
+  const categoryEntity = categories[categoryId];
   if (!categoryEntity) {
-    // Category validation is handled by ensureEntityType
+    // Category validation is handled by ensureCategoryExists
     return;
   }
 

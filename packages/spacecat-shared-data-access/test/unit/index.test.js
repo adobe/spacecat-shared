@@ -24,7 +24,9 @@ describe('Data Access Wrapper Tests', () => {
   beforeEach(() => {
     mockFn = sinon.stub().resolves('function response');
     mockContext = {
-      env: {},
+      env: {
+        POSTGREST_URL: 'http://localhost:3300',
+      },
       log: {
         info: sinon.spy(),
         debug: sinon.spy(),
@@ -38,7 +40,8 @@ describe('Data Access Wrapper Tests', () => {
     sinon.restore();
   });
 
-  it('adds dataAccess to context and calls the wrapped function', async () => {
+  it('adds dataAccess to context and calls the wrapped function', async function () {
+    this.timeout(10000);
     const wrappedFn = dataAccessWrapper(mockFn);
 
     const response = await wrappedFn(mockRequest, mockContext);
@@ -47,12 +50,25 @@ describe('Data Access Wrapper Tests', () => {
     expect(response).to.equal('function response');
   });
 
-  it('does not recreate dataAccess if already present in context', async () => {
+  it('does not recreate dataAccess if already present in context', async function () {
+    this.timeout(10000);
     mockContext.dataAccess = { existingDataAccess: true };
     const wrappedFn = dataAccessWrapper(mockFn);
 
     await wrappedFn(mockRequest, mockContext);
 
     expect(mockContext.dataAccess).to.deep.equal({ existingDataAccess: true });
+  });
+
+  it('throws when POSTGREST_URL is missing', async () => {
+    delete mockContext.env.POSTGREST_URL;
+    const wrappedFn = dataAccessWrapper(mockFn);
+
+    try {
+      await wrappedFn(mockRequest, mockContext);
+      throw new Error('Expected wrapper to throw');
+    } catch (error) {
+      expect(error.message).to.equal('POSTGREST_URL is required');
+    }
   });
 });

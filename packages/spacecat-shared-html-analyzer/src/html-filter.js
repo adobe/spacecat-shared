@@ -30,8 +30,6 @@ const NAVIGATION_FOOTER_SELECTOR = [
   // Header/footer classes
   '.header', '.site-header', '.page-header', '.top-header', '.header-wrapper',
   '.footer', '.site-footer', '.page-footer', '.bottom-footer', '.footer-wrapper',
-  // Breadcrumb navigation
-  '.breadcrumb', '.breadcrumbs',
   // Common ID selectors
   '#nav', '#navigation', '#navbar', '#header', '#footer', '#menu', '#main-menu',
   '#site-header', '#site-footer', '#page-header', '#page-footer',
@@ -51,6 +49,42 @@ const COOKIE_KEYWORDS = new Set([
   'data protection', 'privacy policy', 'cookie settings',
   'accept all', 'reject all', 'manage preferences',
 ]);
+
+const COOKIE_BANNER_CLASS_SELECTORS = [
+  '.cc-banner', '.cc-grower', '.consent-banner', '.cookie-banner',
+  '.privacy-banner', '.gdpr-banner', '.cookie-consent', '.privacy-consent',
+  '.cookie-notice', '.privacy-notice', '.cookie-policy', '.privacy-policy',
+  '.cookie-bar', '.privacy-bar', '.consent-bar', '.gdpr-bar',
+  '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
+  '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
+  '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
+  '[class*="syrenis-cookie"]',
+  '.tc-privacy-wrapper',
+];
+
+const COOKIE_BANNER_ID_SELECTORS = [
+  '#cookie-banner', '#privacy-banner', '#consent-banner', '#gdpr-banner',
+  '#cookie-notice', '#privacy-notice', '#cookie-consent', '#privacy-consent',
+  '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar', '#cookiemgmt',
+  '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
+  '#onetrust-consent-sdk', '#onetrust-banner-sdk',
+  '#tc-privacy-wrapper',
+];
+
+const COOKIE_BANNER_ARIA_SELECTORS = [
+  '[role="dialog"][aria-label="Consent Banner"]',
+  '[role="dialog"][aria-label*="cookie" i]',
+  '[role="dialog"][aria-label*="privacy" i]',
+  '[role="dialog"][aria-label*="consent" i]',
+  '[role="alertdialog"][aria-label*="cookie" i]',
+  '[role="alertdialog"][aria-label*="privacy" i]',
+  '[aria-describedby*="cookie" i]',
+  '[aria-describedby*="privacy" i]',
+];
+
+const ACCESSIBILITY_SELECTORS = [
+  '#digiAccess',
+];
 
 /**
  * Validates if an element is likely a cookie banner based on text content
@@ -73,35 +107,12 @@ function isCookieBannerElement(element) {
  * Uses multiple strategies to identify genuine cookie consent banners
  */
 function removeCookieBanners(element) {
-  const classBasedSelectors = [
-    '.cc-banner', '.cc-grower', '.consent-banner', '.cookie-banner',
-    '.privacy-banner', '.gdpr-banner', '.cookie-consent', '.privacy-consent',
-    '.cookie-notice', '.privacy-notice', '.cookie-policy', '.privacy-policy',
-    '.cookie-bar', '.privacy-bar', '.consent-bar', '.gdpr-bar',
-    '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
-    '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
-    '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
-  ];
-
-  const idBasedSelectors = [
-    '#cookie-banner', '#privacy-banner', '#consent-banner', '#gdpr-banner',
-    '#cookie-notice', '#privacy-notice', '#cookie-consent', '#privacy-consent',
-    '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar',
-    '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
-  ];
-
-  const ariaSelectors = [
-    '[role="dialog"][aria-label*="cookie" i]',
-    '[role="dialog"][aria-label*="privacy" i]',
-    '[role="dialog"][aria-label*="consent" i]',
-    '[role="alertdialog"][aria-label*="cookie" i]',
-    '[role="alertdialog"][aria-label*="privacy" i]',
-    '[aria-describedby*="cookie" i]',
-    '[aria-describedby*="privacy" i]',
-  ];
-
   // Combine all selectors
-  const allSelectors = [...classBasedSelectors, ...idBasedSelectors, ...ariaSelectors];
+  const allSelectors = [
+    ...COOKIE_BANNER_CLASS_SELECTORS,
+    ...COOKIE_BANNER_ID_SELECTORS,
+    ...COOKIE_BANNER_ARIA_SELECTORS,
+  ];
 
   // Apply class/ID/ARIA based detection with text validation
   allSelectors.forEach((selector) => {
@@ -111,6 +122,13 @@ function removeCookieBanners(element) {
         el.remove();
       }
     });
+  });
+}
+
+function removeAccessibilityElements(element) {
+  const elements = element.querySelectorAll(ACCESSIBILITY_SELECTORS);
+  elements.forEach((el) => {
+    el.remove();
   });
 }
 
@@ -132,35 +150,12 @@ export function filterNavigationAndFooterBrowser(element) {
  * @param {CheerioAPI} $ - Cheerio instance
  */
 function removeCookieBannersCheerio($) {
-  const classBasedSelectors = [
-    '.cc-banner', '.cc-grower', '.consent-banner', '.cookie-banner',
-    '.privacy-banner', '.gdpr-banner', '.cookie-consent', '.privacy-consent',
-    '.cookie-notice', '.privacy-notice', '.cookie-policy', '.privacy-policy',
-    '.cookie-bar', '.privacy-bar', '.consent-bar', '.gdpr-bar',
-    '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
-    '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
-    '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
-  ];
-
-  const idBasedSelectors = [
-    '#cookie-banner', '#privacy-banner', '#consent-banner', '#gdpr-banner',
-    '#cookie-notice', '#privacy-notice', '#cookie-consent', '#privacy-consent',
-    '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar',
-    '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
-  ];
-
-  const ariaSelectors = [
-    '[role="dialog"][aria-label*="cookie" i]',
-    '[role="dialog"][aria-label*="privacy" i]',
-    '[role="dialog"][aria-label*="consent" i]',
-    '[role="alertdialog"][aria-label*="cookie" i]',
-    '[role="alertdialog"][aria-label*="privacy" i]',
-    '[aria-describedby*="cookie" i]',
-    '[aria-describedby*="privacy" i]',
-  ];
-
   // Combine all selectors for efficient removal
-  const allSelectors = [...classBasedSelectors, ...idBasedSelectors, ...ariaSelectors];
+  const allSelectors = [
+    ...COOKIE_BANNER_CLASS_SELECTORS,
+    ...COOKIE_BANNER_ID_SELECTORS,
+    ...COOKIE_BANNER_ARIA_SELECTORS,
+  ];
 
   // Apply class/ID/ARIA based detection with text validation
   allSelectors.forEach((selector) => {
@@ -183,6 +178,12 @@ function removeCookieBannersCheerio($) {
   });
 }
 
+function removeAccessibilityElementsCheerio($) {
+  ACCESSIBILITY_SELECTORS.forEach((selector) => {
+    $(selector).remove();
+  });
+}
+
 /**
  * Remove navigation and footer elements (Node.js environment)
  * Optimized: single cheerio query instead of 35 separate queries (35x performance improvement)
@@ -198,34 +199,85 @@ function filterNavigationAndFooterCheerio($) {
  * @param {string} htmlContent - Raw HTML content
  * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
  * @param {boolean} returnText - Whether to return text only
+ * @param {boolean} includeNoscript - Whether to include noscript elements (false excludes them)
  * @returns {string} Filtered content
  */
-function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
+function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNoscript) {
   const parser = new DOMParser(); // eslint-disable-line no-undef
   const doc = parser.parseFromString(htmlContent, 'text/html');
 
-  // Get the body element, if it doesn't exist, use the entire document
-  const bodyElement = doc.body || doc.documentElement;
+  // Process the entire document to capture JSON-LD in both head and body
+  const documentElement = doc.documentElement || doc;
 
-  // Always remove script, style, noscript, template elements
-  bodyElement.querySelectorAll('script,style,noscript,template').forEach((n) => n.remove());
+  // Remove script elements except JSON-LD, also remove style, template
+  documentElement.querySelectorAll('script').forEach((n) => {
+    // Preserve JSON-LD structured data scripts by converting them to code blocks
+    if (n.type === 'application/ld+json') {
+      const jsonContent = n.textContent || n.innerText || '';
+      if (jsonContent.trim()) {
+        try {
+          // Parse and re-stringify JSON to ensure consistent formatting
+          // Handle both single and double quoted JSON
+          const cleanJsonContent = jsonContent.trim();
+          // Try to fix common JSON issues like single quotes
+          const startsValid = cleanJsonContent.startsWith('{')
+            || cleanJsonContent.startsWith('[');
+          const endsValid = cleanJsonContent.endsWith('}')
+            || cleanJsonContent.endsWith(']');
+
+          if (!startsValid || !endsValid) {
+            throw new Error('Not valid JSON structure');
+          }
+
+          const parsedJson = JSON.parse(cleanJsonContent);
+          const formattedJson = JSON.stringify(parsedJson, null, 2);
+
+          // Create a pre/code block to preserve JSON-LD for markdown conversion
+          const codeBlock = document.createElement('pre'); // eslint-disable-line no-undef
+          const code = document.createElement('code'); // eslint-disable-line no-undef
+          code.className = 'ld-json';
+          code.textContent = formattedJson;
+          codeBlock.appendChild(code);
+          n.parentNode.insertBefore(codeBlock, n);
+        } catch (e) {
+          // If JSON parsing fails, fall back to original content
+          const codeBlock = document.createElement('pre'); // eslint-disable-line no-undef
+          const code = document.createElement('code'); // eslint-disable-line no-undef
+          code.className = 'ld-json';
+          code.textContent = jsonContent.trim();
+          codeBlock.appendChild(code);
+          n.parentNode.insertBefore(codeBlock, n);
+        }
+      }
+    }
+    n.remove();
+  });
+
+  if (includeNoscript) {
+    documentElement.querySelectorAll('style,template').forEach((n) => n.remove());
+  } else {
+    documentElement.querySelectorAll('noscript,style,template').forEach((n) => n.remove());
+  }
 
   // Remove all media elements (images, videos, audio, etc.) to keep only text
-  bodyElement.querySelectorAll('img,video,audio,picture,svg,canvas,embed,object,iframe')
-    .forEach((n) => n.remove());
+  const mediaSelector = 'img,video,audio,picture,svg,canvas,embed,object,iframe';
+  documentElement.querySelectorAll(mediaSelector).forEach((n) => n.remove());
 
   // Remove consent banners with intelligent detection
-  removeCookieBanners(bodyElement);
+  removeCookieBanners(documentElement);
+
+  // Remove accessibility elements
+  removeAccessibilityElements(documentElement);
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {
-    filterNavigationAndFooterBrowser(bodyElement);
+    filterNavigationAndFooterBrowser(documentElement);
   }
 
   if (returnText) {
-    return (bodyElement && bodyElement.textContent) ? bodyElement.textContent : '';
+    return (documentElement && documentElement.textContent) ? documentElement.textContent : '';
   }
-  return bodyElement.outerHTML;
+  return documentElement.outerHTML;
 }
 
 /**
@@ -233,9 +285,10 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
  * @param {string} htmlContent - Raw HTML content
  * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
  * @param {boolean} returnText - Whether to return text only
+ * @param {boolean} includeNoscript - Whether to include noscript elements (false excludes them)
  * @returns {Promise<string>} Filtered content
  */
-async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
+async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeNoscript) {
   let cheerio;
   try {
     cheerio = await import('cheerio');
@@ -245,14 +298,55 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
 
   const $ = cheerio.load(htmlContent);
 
-  // Always remove script, style, noscript, template tags
-  $('script, style, noscript, template').remove();
+  // Remove script except JSON-LD structured data, also remove style, noscript, template
+  $('script').each(function processScript() {
+    // Preserve JSON-LD structured data scripts by converting them to code blocks
+    if ($(this).attr('type') === 'application/ld+json') {
+      const jsonContent = $(this).text().trim();
+      if (jsonContent) {
+        try {
+          // Parse and re-stringify JSON to ensure consistent formatting
+          // Handle both single and double quoted JSON
+          const cleanJsonContent = jsonContent;
+          const startsValid = cleanJsonContent.startsWith('{')
+            || cleanJsonContent.startsWith('[');
+          const endsValid = cleanJsonContent.endsWith('}')
+            || cleanJsonContent.endsWith(']');
+
+          if (!startsValid || !endsValid) {
+            throw new Error('Not valid JSON structure');
+          }
+
+          const parsedJson = JSON.parse(cleanJsonContent);
+          const formattedJson = JSON.stringify(parsedJson, null, 2);
+          const codeBlock = `<pre><code class="ld-json">${formattedJson}</code></pre>`;
+          $(this).before(codeBlock);
+        } catch (e) {
+          // If JSON parsing fails, fall back to original content
+          const codeBlock = `<pre><code class="ld-json">${jsonContent}</code></pre>`;
+          $(this).before(codeBlock);
+        }
+      }
+      $(this).remove();
+    } else {
+      $(this).remove();
+    }
+  });
+
+  if (includeNoscript) {
+    $('style, template').remove();
+  } else {
+    $('style, noscript, template').remove();
+  }
 
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   $('img, video, audio, picture, svg, canvas, embed, object, iframe').remove();
 
   // Remove cookie banners with comprehensive detection
   removeCookieBannersCheerio($);
+
+  // Remove accessibility elements
+  removeAccessibilityElementsCheerio($);
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {
@@ -271,45 +365,54 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
 /**
  * Filter HTML content by removing unwanted elements
  * @param {string} htmlContent - Raw HTML content
- * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
- * @param {boolean} returnText - Whether to return text only (true) or filtered HTML (false)
+ * @param {boolean} [ignoreNavFooter=true] - Whether to remove navigation/footer elements
+ * @param {boolean} [returnText=true] - Whether to return text only (true) or filtered HTML (false)
+ * @param {boolean} [includeNoscript=false] - Whether to include noscript elements
  * @returns {string|Promise<string>} Filtered content (sync in browser, async in Node.js)
  */
-export function filterHtmlContent(htmlContent, ignoreNavFooter = true, returnText = true) {
+export function filterHtmlContent(
+  htmlContent,
+  ignoreNavFooter = true,
+  returnText = true,
+  includeNoscript = false,
+) {
   if (!htmlContent) return '';
 
   // Browser environment (DOMParser) - works in Chrome extensions too - SYNCHRONOUS
   if (isBrowser()) {
-    return filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText);
+    return filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNoscript);
   }
 
   // Node.js environment (cheerio) - dynamic import to avoid bundling issues - ASYNCHRONOUS
-  return filterHtmlNode(htmlContent, ignoreNavFooter, returnText);
+  return filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeNoscript);
 }
 
 /**
  * Strip HTML tags and return plain text
+ *
  * @param {string} htmlContent - Raw HTML content
- * @param {boolean} ignoreNavFooter - Whether to remove navigation/footer elements
+ * @param {boolean} [ignoreNavFooter=true] - Whether to remove navigation/footer elements
+ * @param {boolean} [includeNoscript=false] - Whether to include noscript elements
  * @returns {string|Promise<string>} Plain text content (sync in browser, async in Node.js)
  */
-export function stripTagsToText(htmlContent, ignoreNavFooter = true) {
-  return filterHtmlContent(htmlContent, ignoreNavFooter, true);
+export function stripTagsToText(htmlContent, ignoreNavFooter = true, includeNoscript = false) {
+  return filterHtmlContent(htmlContent, ignoreNavFooter, true, includeNoscript);
 }
 
 /**
  * Extract word count from HTML content
  * @param {string} htmlContent - Raw HTML content
- * @param {boolean} ignoreNavFooter - Whether to ignore navigation/footer
+ * @param {boolean} [ignoreNavFooter=true] - Whether to ignore navigation/footer
+ * @param {boolean} [includeNoscript=false] - Whether to include noscript elements
  * @returns {Object|Promise<Object>} Object with word_count property
  *   (sync in browser, async in Node.js)
  */
-export function extractWordCount(htmlContent, ignoreNavFooter = true) {
+export function extractWordCount(htmlContent, ignoreNavFooter = true, includeNoscript = false) {
   if (!htmlContent) {
     return { word_count: 0 };
   }
 
-  const textContent = stripTagsToText(htmlContent, ignoreNavFooter);
+  const textContent = stripTagsToText(htmlContent, ignoreNavFooter, includeNoscript);
 
   // Handle both sync (browser) and async (Node.js) cases
   if (textContent && typeof textContent.then === 'function') {

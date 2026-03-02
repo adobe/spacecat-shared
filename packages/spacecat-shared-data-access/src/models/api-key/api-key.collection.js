@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ApiKeyCollection extends BaseCollection {
+  static COLLECTION_NAME = 'ApiKeyCollection';
+
   // add custom methods here
 }
 

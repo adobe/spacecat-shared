@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getObjectFromKey } from './s3.js';
+import { DEFAULT_CPC_VALUE } from './constants.js';
 
 function createFilePath({ siteId, source, metric }) {
   if (!siteId) {
@@ -49,7 +51,7 @@ export async function getStoredMetrics(config, context) {
 
     return metrics;
   } catch (e) {
-    log.error(`Failed to retrieve metrics from ${filePath}, error: ${e.message}`);
+    log.warn(`Failed to retrieve metrics from ${filePath}, error: ${e.message}`);
     return [];
   }
 }
@@ -78,5 +80,63 @@ export async function storeMetrics(content, config, context) {
   } catch (e) {
     log.error(`Failed to upload metrics to ${filePath}, error: ${e.message}`);
     throw new Error(`Failed to upload metrics to ${filePath}, error: ${e.message}`);
+  }
+}
+
+/**
+ * Fetches the organic traffic data for a site from S3 and calculate the CPC value as per
+ * https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=AEMSites&title=Success+Studio+Projected+Business+Impact+Metrics#SuccessStudioProjectedBusinessImpactMetrics-IdentifyingCPCvalueforadomain
+ * @param context
+ * @param siteId
+ * @returns {object} Object containing either { success: true, value: number } on success
+ * or { success: false, reason: string, value: number } on failure
+ */
+export async function calculateCPCValue(context, siteId) {
+  if (!context?.env?.S3_IMPORTER_BUCKET_NAME) {
+    throw new Error('S3 importer bucket name is required');
+  }
+  if (!context.s3Client) {
+    throw new Error('S3 client is required');
+  }
+  if (!context.log) {
+    throw new Error('Logger is required');
+  }
+  if (!siteId) {
+    throw new Error('SiteId is required');
+  }
+  const { s3Client, log } = context;
+  const bucketName = context.env.S3_IMPORTER_BUCKET_NAME;
+  const key = `metrics/${siteId}/ahrefs/organic-traffic.json`;
+  try {
+    const organicTrafficData = await getObjectFromKey(s3Client, bucketName, key, log);
+    if (!Array.isArray(organicTrafficData) || organicTrafficData.length === 0) {
+      log.warn(`Organic traffic data not available for ${siteId}. Using Default CPC value.`);
+      return {
+        success: false,
+        reason: 'Organic traffic data not available',
+        value: DEFAULT_CPC_VALUE,
+      };
+    }
+    const lastTraffic = organicTrafficData.at(-1);
+    if (!lastTraffic.cost || !lastTraffic.value) {
+      log.warn(`Invalid organic traffic data present for ${siteId} - cost:${lastTraffic.cost} value:${lastTraffic.value}, Using Default CPC value.`);
+      return {
+        success: false,
+        reason: 'Invalid organic traffic data',
+        value: DEFAULT_CPC_VALUE,
+      };
+    }
+    // dividing by 100 for cents to dollar conversion
+    return {
+      success: true,
+      value: lastTraffic.cost / lastTraffic.value / 100,
+    };
+  } catch (err) {
+    log.error(`Error fetching organic traffic data for site ${siteId}. Using Default CPC value.`, err);
+    return {
+      success: false,
+      reason: 'Error fetching organic traffic data',
+      value: DEFAULT_CPC_VALUE,
+    };
   }
 }

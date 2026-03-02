@@ -20,6 +20,8 @@ export default defineConfig([
     '.idea/*',
     'coverage/*',
     'docs/*',
+    '**/vendor/**',
+    '**/dist/**',
     '**/.releaserc.cjs',
     '**/test/fixtures/**',
   ]),

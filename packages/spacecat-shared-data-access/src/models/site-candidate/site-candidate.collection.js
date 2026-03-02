@@ -21,6 +21,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class SiteCandidateCollection extends BaseCollection {
+  static COLLECTION_NAME = 'SiteCandidateCollection';
+
   // add custom methods here
 }
 

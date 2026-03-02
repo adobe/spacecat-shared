@@ -14,7 +14,6 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
@@ -29,9 +28,9 @@ import FixEntitySchema from '../../../../src/models/fix-entity/fix-entity.schema
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const opportunityEntity = new Entity(OpportunitySchema.toElectroDBSchema());
-const suggestionEntity = new Entity(SuggestionSchema.toElectroDBSchema());
-const fixEntity = new Entity(FixEntitySchema.toElectroDBSchema());
+const opportunityEntity = {};
+const suggestionEntity = {};
+const fixEntity = {};
 const MockCollection = class MockCollection extends BaseCollection {};
 
 describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
@@ -207,6 +206,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
 
       mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(collectionMethods);
       mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(collectionMethods);
+      mockEntityRegistry.getCollection.withArgs('FixEntitySuggestionCollection').returns(collectionMethods);
       mockEntityRegistry.getCollection.withArgs('SomeModelCollection').returns(collectionMethods);
       mockElectroService.entities.opportunity.remove.returns({ go: () => Promise.resolve() });
     });
@@ -223,16 +223,23 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
     });
 
     it('removes record with dependents', async () => {
-      const reference = Reference.fromJSON({
+      const hasOneReference = Reference.fromJSON({
         type: Reference.TYPES.HAS_ONE,
         target: 'SomeModel',
+        options: { removeDependents: true },
+      });
+
+      const hasManyReference = Reference.fromJSON({
+        type: Reference.TYPES.HAS_MANY,
+        target: 'Suggestions',
         options: { removeDependents: true },
       });
 
       baseModelInstance.getSomeModel = stub().resolves(dependent);
       baseModelInstance.getSuggestions = stub().resolves(dependents);
 
-      schema.references.push(reference);
+      // Clear existing references and add the ones we're testing
+      schema.references = [hasOneReference, hasManyReference];
 
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
 
@@ -241,6 +248,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       // dependents remove: 3 = has_many, 1 = has_one
       expect(dependent._remove).to.have.callCount(4);
       expect(baseModelInstance.getSomeModel).to.have.been.calledOnce;
+      expect(baseModelInstance.getSuggestions).to.have.been.calledOnce;
       expect(mockLogger.error).to.not.have.been.called;
     });
 
@@ -309,6 +317,23 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       await expect(baseModelInstance.remove()).to.be.rejectedWith('The entity Opportunity does not allow removal');
       expect(mockElectroService.entities.opportunity.remove.notCalled).to.be.true;
     });
+
+    it('throws when no remove strategy is available', async () => {
+      baseModelInstance.collection = null;
+      delete mockElectroService.entities.opportunity.remove;
+
+      await expect(baseModelInstance._remove())
+        .to.be.rejectedWith('Failed to remove entity opportunity with ID 12345');
+    });
+
+    it('uses collection removeByIndexKeys strategy when available', async () => {
+      const removeByIndexKeys = stub().resolves();
+      baseModelInstance.collection = { removeByIndexKeys };
+      baseModelInstance.postgrestService.entities.opportunity.remove = undefined;
+
+      await expect(baseModelInstance._remove()).to.eventually.equal(baseModelInstance);
+      expect(removeByIndexKeys).to.have.been.calledOnce;
+    });
   });
 
   describe('save', () => {
@@ -350,6 +375,15 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
         expect(result).to.be.an.instanceOf(BaseModel);
         expect(mockLogger.warn).to.have.been.calledOnceWithExactly('Reciprocal reference not found for Opportunity to Foos');
       });
+    });
+  });
+
+  describe('toJSON', () => {
+    it('returns only schema-defined attributes that exist on record', () => {
+      baseModelInstance.record.notInSchema = 'ignore-me';
+      const result = baseModelInstance.toJSON();
+      expect(result.opportunityId).to.equal(mockRecord.opportunityId);
+      expect(result).to.not.have.property('notInSchema');
     });
   });
 });

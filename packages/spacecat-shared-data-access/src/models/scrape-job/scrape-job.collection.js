@@ -23,6 +23,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ScrapeJobCollection extends BaseCollection {
+  static COLLECTION_NAME = 'ScrapeJobCollection';
+
   async allByDateRange(startDate, endDate) {
     if (!isIsoDate(startDate)) {
       throw new ValidationError(`Invalid start date: ${startDate}`);
@@ -39,6 +41,44 @@ class ScrapeJobCollection extends BaseCollection {
         end: endDate,
       },
     });
+  }
+
+  async allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+    baseURL,
+    processingType,
+    optEnableJavascript,
+    optHideConsentBanner,
+    options = {},
+  ) {
+    const keys = {
+      baseURL,
+      processingType,
+      optEnableJavascript,
+      optHideConsentBanner,
+    };
+
+    return this.allByIndexKeys(keys, options);
+  }
+
+  async findByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+    baseURL,
+    processingType,
+    optEnableJavascript,
+    optHideConsentBanner,
+    options = {},
+  ) {
+    const jobs = await this
+      .allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+        baseURL,
+        processingType,
+        optEnableJavascript,
+        optHideConsentBanner,
+        { ...options, limit: options.limit || 1 },
+      );
+    if (Array.isArray(jobs)) {
+      return jobs[0] || null;
+    }
+    return jobs || null;
   }
 }
 

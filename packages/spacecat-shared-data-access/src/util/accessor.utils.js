@@ -10,13 +10,23 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isNonEmptyObject, isNumber } from '@adobe/spacecat-shared-utils';
+import {
+  hasText, isBoolean, isNonEmptyObject, isNumber,
+} from '@adobe/spacecat-shared-utils';
 
 import ValidationError from '../errors/validation.error.js';
 
 function validateValue(context, keyName, value) {
   const { type } = context.schema.getAttribute(keyName);
-  const validator = type === 'number' ? isNumber : hasText;
+
+  let validator;
+  if (type === 'number') {
+    validator = isNumber;
+  } else if (type === 'boolean') {
+    validator = isBoolean;
+  } else {
+    validator = hasText;
+  }
 
   if (!validator(value)) {
     throw new ValidationError(`${keyName} is required`);

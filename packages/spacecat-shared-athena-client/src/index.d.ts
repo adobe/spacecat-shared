@@ -82,3 +82,50 @@ export declare class AWSAthenaClient {
 }
 
 export type Context = Parameters<typeof AWSAthenaClient.fromContext>[0];
+
+// PTA2 Query Types
+export interface PTAQueryParams {
+  siteId: string;
+  tableName: string;
+  week?: number;
+  month?: number;
+  year: number;
+}
+
+export interface PTASummaryData {
+  pageviews: number;
+  click_rate: number;
+  engagement_rate: number;
+  bounce_rate: number;
+}
+
+export interface PTATrendData {
+  pageviews: number;
+  click_rate: number;
+  engagement_rate: number;
+  bounce_rate: number;
+  trends: {
+    pageviews: number | null;
+    click_rate: number | null;
+    engagement_rate: number | null;
+    bounce_rate: number | null;
+  } | null;
+}
+
+export declare function getPreviousPeriod(params: {
+  week?: number;
+  month?: number;
+  year: number;
+}): { week?: number; month?: number; year: number };
+
+export declare function getPTASummaryQuery(params: PTAQueryParams): string;
+
+export declare function getPTASummaryWithTrendQuery(params: PTAQueryParams): string;
+
+export declare const PTASummaryResponseDto: {
+  toJSON: (data: Record<string, unknown>) => PTASummaryData;
+};
+
+export declare const PTASummaryWithTrendResponseDto: {
+  toJSON: (data: Array<Record<string, unknown>>) => PTATrendData;
+};

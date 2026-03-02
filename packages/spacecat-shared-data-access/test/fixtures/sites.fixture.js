@@ -19,10 +19,10 @@ const sites = [
     authoringType: 'cs/crosswalk',
     gitHubURL: 'https://github.com/org-0/test-repo',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
+    projectId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     isLive: true,
     isSandbox: false,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     config: {
       imports: [
         {
@@ -66,6 +66,13 @@ const sites = [
       slack: {
         channel: 'some-channel',
       },
+      // minimal brandProfile seed to validate read-paths
+      brandProfile: {
+        discovery: { pages_analyzed: 1 },
+        main_profile: { id: 'main', communication_style: 'Fixture seed' },
+        confidence_score: 0.5,
+        pages_considered: 1,
+      },
     },
   },
   {
@@ -74,10 +81,10 @@ const sites = [
     deliveryType: 'aem_cs',
     gitHubURL: 'https://github.com/org-1/test-repo',
     organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
+    projectId: '6ba7b811-9dad-11d1-80b4-00c04fd430c8',
     isLive: true,
     isSandbox: false,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -118,7 +125,6 @@ const sites = [
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -157,10 +163,10 @@ const sites = [
     deliveryType: 'aem_cs',
     gitHubURL: 'https://github.com/org-3/test-repo',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
+    projectId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
     isLive: true,
     isSandbox: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -201,7 +207,6 @@ const sites = [
     organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -242,7 +247,6 @@ const sites = [
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -283,7 +287,6 @@ const sites = [
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -324,7 +327,6 @@ const sites = [
     organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -365,7 +367,6 @@ const sites = [
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:
@@ -406,7 +407,6 @@ const sites = [
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
-    GSI1PK: 'ALL_SITES',
     createdAt: '2024-11-29T07:45:55.952Z',
     updatedAt: '2024-11-29T07:45:55.952Z',
     config:

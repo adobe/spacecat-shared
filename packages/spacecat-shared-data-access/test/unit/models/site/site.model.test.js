@@ -394,4 +394,189 @@ describe('SiteModel', () => {
       expect(() => instance.setpageTypes(missingPattern)).to.throw();
     });
   });
+
+  describe('code attribute', () => {
+    it('gets code returns undefined', () => {
+      expect(instance.getCode()).to.be.undefined;
+    });
+
+    it('sets code with valid data', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('sets code with partial data', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().type).to.equal('github');
+      expect(instance.getCode().owner).to.equal('adobe');
+    });
+
+    it('updates existing code data', () => {
+      const initialCode = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(initialCode);
+
+      const updatedCode = {
+        ...initialCode,
+        ref: 'develop',
+        url: 'https://github.com/adobe/spacecat/tree/develop',
+      };
+      instance.setCode(updatedCode);
+      expect(instance.getCode()).to.deep.equal(updatedCode);
+    });
+
+    it('clears code when set to empty object', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      instance.setCode({});
+      expect(instance.getCode()).to.deep.equal({});
+    });
+
+    it('handles code with special characters in owner/repo', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe-inc',
+        repo: 'spacecat-v2.0',
+        ref: 'feature/new-feature',
+        url: 'https://github.com/adobe-inc/spacecat-v2.0',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('handles code with different ref types', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'v1.2.3', // tag
+        url: 'https://github.com/adobe/spacecat/tree/v1.2.3',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().ref).to.equal('v1.2.3');
+    });
+
+    it('handles code with different URL formats', () => {
+      const codeData = {
+        type: 'bitbucket',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://bitbucket.org/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('handles code with gitlab URL format', () => {
+      const codeData = {
+        type: 'gitlab',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://gitlab.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('stores and retrieves s3StoragePath', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+        s3StoragePath: 'code/site-123/github/adobe/spacecat/main/repository.zip',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().s3StoragePath).to.equal('code/site-123/github/adobe/spacecat/main/repository.zip');
+    });
+
+    it('updates s3StoragePath on existing code config', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().s3StoragePath).to.be.undefined;
+
+      instance.setCode({ ...instance.getCode(), s3StoragePath: 'code/site-123/github/adobe/spacecat/main/repository.zip' });
+      expect(instance.getCode().s3StoragePath).to.equal('code/site-123/github/adobe/spacecat/main/repository.zip');
+    });
+  });
+
+  describe('localization fields', () => {
+    describe('primaryLocale', () => {
+      it('gets primaryLocale', () => {
+        expect(instance.getIsPrimaryLocale()).to.equal(undefined);
+      });
+
+      it('sets primaryLocale', () => {
+        instance.setIsPrimaryLocale(false);
+        expect(instance.getIsPrimaryLocale()).to.equal(false);
+      });
+    });
+
+    describe('language', () => {
+      it('gets language', () => {
+        expect(instance.getLanguage()).to.equal(undefined);
+      });
+
+      it('sets language (ISO 639-1)', () => {
+        instance.setLanguage('en');
+        expect(instance.getLanguage()).to.equal('en');
+      });
+    });
+
+    describe('region', () => {
+      it('gets region', () => {
+        expect(instance.getRegion()).to.equal(undefined);
+      });
+
+      it('sets region', () => {
+        instance.setRegion('US');
+        expect(instance.getRegion()).to.equal('US');
+      });
+    });
+
+    describe('projectId', () => {
+      it('gets projectId', () => {
+        expect(instance.getProjectId()).to.equal('f47ac10b-58cc-4372-a567-0e02b2c3d479');
+      });
+
+      it('sets projectId', () => {
+        instance.setProjectId('1e9c6f94-f226-41f3-9005-4bb766765ac2');
+        expect(instance.getProjectId()).to.equal('1e9c6f94-f226-41f3-9005-4bb766765ac2');
+      });
+    });
+  });
 });

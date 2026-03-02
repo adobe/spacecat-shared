@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class TrialUser extends BaseModel {
+  static ENTITY_NAME = 'TrialUser';
+
   /**
    * Trial user status types.
    * Any change to this object needs to be reflected in the index.d.ts file as well.

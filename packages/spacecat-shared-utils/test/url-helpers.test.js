@@ -14,7 +14,9 @@
 
 import { expect } from 'chai';
 import nock from 'nock';
+import sinon from 'sinon';
 import {
+  canonicalizeUrl,
   composeAuditURL,
   composeBaseURL,
   prependSchema,
@@ -26,6 +28,9 @@ import {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  hasNonWWWSubdomain,
+  toggleWWWHostname,
+  wwwUrlResolver,
 } from '../src/url-helpers.js';
 
 describe('URL Utility Functions', () => {
@@ -373,6 +378,63 @@ describe('URL Utility Functions', () => {
       const result = await resolveCanonicalUrl('https://example.com/', 'HEAD');
       expect(result).to.equal('https://example.com/');
     });
+
+    it('should handle timeout errors for HEAD requests and retry with GET', async () => {
+      // Simulate a timeout error for HEAD request
+      // The function should catch the error and retry with GET
+      nock('https://example.com')
+        .head('/')
+        .replyWithError('Timeout error');
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.equal('https://example.com/');
+    });
+
+    it('should use 10s timeout for HEAD requests', async () => {
+      // Verify HEAD request completes within timeout
+      nock('https://example.com')
+        .head('/')
+        .reply(200);
+
+      const startTime = Date.now();
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD');
+      const duration = Date.now() - startTime;
+
+      expect(result).to.equal('https://example.com/');
+      expect(duration).to.be.below(11000); // Should complete well before timeout
+    });
+
+    it('should use 20s timeout for GET requests', async () => {
+      // Verify GET request completes within timeout
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const startTime = Date.now();
+      const result = await resolveCanonicalUrl('https://example.com', 'GET');
+      const duration = Date.now() - startTime;
+
+      expect(result).to.equal('https://example.com/');
+      expect(duration).to.be.below(21000); // Should complete well before timeout
+    });
+
+    it('should handle AbortError from timeout and retry with GET for HEAD', async () => {
+      // Simulate AbortError from timeout
+      nock('https://example.com')
+        .head('/')
+        .replyWithError('The operation was aborted');
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD');
+      expect(result).to.equal('https://example.com/');
+    });
   });
 
   describe('urlMatchesFilter', () => {
@@ -540,6 +602,332 @@ describe('URL Utility Functions', () => {
     it('should handle filter URL that causes prependSchema to fail', () => {
       const filterUrls = ['[invalid-filter-url]', 'example.com/path'];
       expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+  });
+
+  describe('hasNonWWWSubdomain', () => {
+    it('should return true for URLs with non-www subdomains', () => {
+      expect(hasNonWWWSubdomain('https://subdomain.domain.com')).to.equal(true);
+      expect(hasNonWWWSubdomain('https://blog.example.com')).to.equal(true);
+      expect(hasNonWWWSubdomain('https://sub.domain.museum')).to.equal(true);
+      expect(hasNonWWWSubdomain('https://sub.domain.com/path?query=123')).to.equal(true);
+    });
+
+    it('should return false for URLs without subdomains or with www subdomain', () => {
+      expect(hasNonWWWSubdomain('https://www.example.com/path/')).to.equal(false);
+      expect(hasNonWWWSubdomain('https://www.site.com')).to.equal(false);
+      expect(hasNonWWWSubdomain('https://domain.com')).to.equal(false);
+      expect(hasNonWWWSubdomain('https://example.co.uk')).to.equal(false);
+      expect(hasNonWWWSubdomain('https://example.com.tr')).to.equal(false);
+    });
+
+    it('should handle URLs without scheme', () => {
+      // URI library may parse URLs without scheme differently
+      // 'blog.example.com' without scheme might be treated as a path, not hostname
+      expect(hasNonWWWSubdomain('blog.example.com')).to.equal(false);
+      expect(hasNonWWWSubdomain('www.example.com')).to.equal(false);
+      expect(hasNonWWWSubdomain('example.com')).to.equal(false);
+    });
+
+    it('should throw error for invalid URLs', () => {
+      // Test with various invalid inputs that might cause URI to throw
+      expect(() => hasNonWWWSubdomain(null)).to.throw('Cannot parse baseURL');
+    });
+
+    it('should handle complex TLDs correctly', () => {
+      expect(hasNonWWWSubdomain('https://blog.example.co.uk')).to.equal(true);
+      expect(hasNonWWWSubdomain('https://www.example.co.uk')).to.equal(false);
+      expect(hasNonWWWSubdomain('https://example.co.uk')).to.equal(false);
+    });
+  });
+
+  describe('toggleWWWHostname', () => {
+    it('should add www to non-www hostname', () => {
+      expect(toggleWWWHostname('example.com')).to.equal('www.example.com');
+      expect(toggleWWWHostname('domain.org')).to.equal('www.domain.org');
+    });
+
+    it('should remove www from www hostname', () => {
+      expect(toggleWWWHostname('www.example.com')).to.equal('example.com');
+      expect(toggleWWWHostname('www.domain.org')).to.equal('domain.org');
+    });
+
+    it('should not toggle hostnames with non-www subdomains', () => {
+      expect(toggleWWWHostname('blog.example.com')).to.equal('blog.example.com');
+      expect(toggleWWWHostname('subdomain.domain.org')).to.equal('subdomain.domain.org');
+    });
+  });
+
+  describe('wwwUrlResolver', () => {
+    let sandbox;
+    let log;
+    let site;
+    let rumApiClient;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+
+      rumApiClient = {
+        retrieveDomainkey: sandbox.stub(),
+      };
+
+      log = {
+        debug: sandbox.stub(),
+        error: sandbox.stub(),
+      };
+
+      site = {
+        getBaseURL: sandbox.stub(),
+        getConfig: sandbox.stub().returns({
+          getFetchConfig: sandbox.stub().returns({}),
+        }),
+      };
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should return overrideBaseURL when configured with https', async () => {
+      site.getConfig.returns({
+        getFetchConfig: () => ({
+          overrideBaseURL: 'https://override.example.com',
+        }),
+      });
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('override.example.com');
+      expect(rumApiClient.retrieveDomainkey).not.to.have.been.called;
+    });
+
+    it('should return overrideBaseURL when configured with http', async () => {
+      site.getConfig.returns({
+        getFetchConfig: () => ({
+          overrideBaseURL: 'http://override.example.com',
+        }),
+      });
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('override.example.com');
+      expect(rumApiClient.retrieveDomainkey).not.to.have.been.called;
+    });
+
+    it('should not use overrideBaseURL when it does not have http/https scheme', async () => {
+      site.getConfig.returns({
+        getFetchConfig: () => ({
+          overrideBaseURL: 'override.example.com',
+        }),
+      });
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.called;
+    });
+
+    it('should return hostname directly for non-www subdomains', async () => {
+      site.getBaseURL.returns('https://blog.example.com');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('blog.example.com');
+      expect(log.debug).to.have.been.calledWith('Resolved URL blog.example.com since https://blog.example.com contains subdomain');
+      expect(rumApiClient.retrieveDomainkey).not.to.have.been.called;
+    });
+
+    it('should check RUM for www subdomain (not return early)', async () => {
+      site.getBaseURL.returns('https://www.example.com');
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('example.com');
+    });
+
+    it('should check RUM for no subdomain (not return early)', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('www.example.com');
+    });
+
+    it('should prioritize www-toggled version (www added) when it has RUM data', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('www.example.com');
+      expect(log.debug).to.have.been.calledWith('Resolved URL www.example.com for https://example.com using RUM API Client');
+    });
+
+    it('should prioritize www-toggled version (www removed) when it has RUM data', async () => {
+      site.getBaseURL.returns('https://www.example.com');
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('example.com');
+      expect(log.debug).to.have.been.calledWith('Resolved URL example.com for https://www.example.com using RUM API Client');
+    });
+
+    it('should fall back to original hostname when www-toggled has no RUM data', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').rejects(new Error('No domain key'));
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('www.example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('example.com');
+      expect(log.debug).to.have.been.calledWith('Resolved URL example.com for https://example.com using RUM API Client');
+    });
+
+    it('should fall back to www version when both RUM checks fail', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.rejects(new Error('No domain key'));
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(log.debug).to.have.been.calledWith('Fallback to www.example.com for URL resolution for https://example.com');
+      expect(log.error).to.have.been.calledTwice;
+    });
+
+    it('should fall back to www version for www hostname when both RUM checks fail', async () => {
+      site.getBaseURL.returns('https://www.example.com');
+      rumApiClient.retrieveDomainkey.rejects(new Error('No domain key'));
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(log.debug).to.have.been.calledWith('Fallback to www.example.com for URL resolution for https://www.example.com');
+    });
+
+    it('should log errors for both failed RUM attempts', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.rejects(new Error('API error'));
+
+      await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: API error');
+      expect(log.error).to.have.been.calledTwice;
+    });
+
+    it('should handle different error messages in first and second RUM attempts', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').rejects(new Error('First error'));
+      rumApiClient.retrieveDomainkey.withArgs('example.com').rejects(new Error('Second error'));
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: First error');
+      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: Second error');
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should fallback to non-www when hostname already has www and both RUM checks fail', async () => {
+      site.getBaseURL.returns('https://www.example.org');
+      rumApiClient.retrieveDomainkey.rejects(new Error('No domain key'));
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.org');
+      expect(log.debug).to.have.been.calledWith('Fallback to www.example.org for URL resolution for https://www.example.org');
+    });
+
+    it('should handle getFetchConfig returning null', async () => {
+      site.getConfig.returns({
+        getFetchConfig: () => null,
+      });
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should handle getConfig returning null', async () => {
+      site.getConfig.returns(null);
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+    });
+  });
+
+  describe('canonicalizeUrl', () => {
+    it('removes protocol and converts to lowercase', () => {
+      expect(canonicalizeUrl('HTTPS://Example.com/Page')).to.equal('example.com/page');
+      expect(canonicalizeUrl('http://EXAMPLE.COM/Path')).to.equal('example.com/path');
+    });
+
+    it('removes www prefixes', () => {
+      expect(canonicalizeUrl('https://www.example.com/path')).to.equal('example.com/path');
+      expect(canonicalizeUrl('https://www2.example.com/path')).to.equal('example.com/path');
+      expect(canonicalizeUrl('https://www123.example.com/path')).to.equal('example.com/path');
+    });
+
+    it('removes trailing slashes', () => {
+      expect(canonicalizeUrl('https://example.com/path/')).to.equal('example.com/path');
+      expect(canonicalizeUrl('https://example.com/')).to.equal('example.com');
+      expect(canonicalizeUrl('https://example.com/path/subpath/')).to.equal('example.com/path/subpath');
+    });
+
+    it('handles combined variations', () => {
+      expect(canonicalizeUrl('HTTPS://WWW.Example.COM/Path/')).to.equal('example.com/path');
+      expect(canonicalizeUrl('http://www2.EXAMPLE.com/PAGE/SubPage/')).to.equal('example.com/page/subpage');
+    });
+
+    it('strips query parameters when stripQuery is true', () => {
+      expect(canonicalizeUrl('https://example.com/path?param=value', { stripQuery: true }))
+        .to.equal('example.com/path');
+      expect(canonicalizeUrl('https://example.com/path#anchor', { stripQuery: true }))
+        .to.equal('example.com/path');
+      expect(canonicalizeUrl('https://example.com/path?a=b&c=d#hash', { stripQuery: true }))
+        .to.equal('example.com/path');
+      expect(canonicalizeUrl('https://www2.google.com/?query=hello&params=world', { stripQuery: true }))
+        .to.equal('google.com');
+      expect(canonicalizeUrl('https://example.com/?param=value', { stripQuery: true }))
+        .to.equal('example.com');
+    });
+
+    it('preserves query parameters by default', () => {
+      expect(canonicalizeUrl('https://example.com/path?param=value'))
+        .to.equal('example.com/path?param=value');
+      expect(canonicalizeUrl('https://example.com/path#anchor'))
+        .to.equal('example.com/path#anchor');
+    });
+
+    it('handles empty and invalid inputs', () => {
+      expect(canonicalizeUrl('')).to.equal('');
+      expect(canonicalizeUrl(null)).to.equal('');
+      expect(canonicalizeUrl(undefined)).to.equal('');
+      expect(canonicalizeUrl(123)).to.equal('');
+    });
+
+    it('trims whitespace', () => {
+      expect(canonicalizeUrl('  https://example.com/path  ')).to.equal('example.com/path');
+      expect(canonicalizeUrl('\t\nhttps://example.com/path\n\t')).to.equal('example.com/path');
+    });
+
+    it('handles URLs without protocol', () => {
+      expect(canonicalizeUrl('example.com/path')).to.equal('example.com/path');
+      expect(canonicalizeUrl('www.example.com/path')).to.equal('example.com/path');
     });
   });
 });

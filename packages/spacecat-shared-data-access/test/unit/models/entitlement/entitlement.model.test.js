@@ -102,4 +102,29 @@ describe('EntitlementModel', () => {
       expect(instance.getQuotas()).to.deep.equal(newQuotas);
     });
   });
+
+  describe('remove', () => {
+    it('removes entitlement and its dependent site enrollments', async () => { /* eslint-disable no-underscore-dangle */
+      const mockSiteEnrollment1 = {
+        getId: () => 'enrollment-1',
+        _remove: stub().resolves(),
+      };
+      const mockSiteEnrollment2 = {
+        getId: () => 'enrollment-2',
+        _remove: stub().resolves(),
+      };
+
+      const mockSiteEnrollments = [mockSiteEnrollment1, mockSiteEnrollment2];
+      instance.getSiteEnrollments = stub().resolves(mockSiteEnrollments);
+
+      mockElectroService.entities.entitlement.remove = stub().returns({ go: stub().resolves() });
+
+      await instance.remove();
+
+      expect(instance.getSiteEnrollments).to.have.been.calledOnce;
+      expect(mockSiteEnrollment1._remove).to.have.been.calledOnce;
+      expect(mockSiteEnrollment2._remove).to.have.been.calledOnce;
+      expect(mockElectroService.entities.entitlement.remove).to.have.been.calledOnce;
+    });
+  });
 });

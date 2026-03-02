@@ -15,6 +15,7 @@ const fixEntities = [
     opportunityId: '742c49a7-d61f-4c62-9f7c-3207f520ed1e',
     status: 'PENDING',
     type: 'CONTENT_UPDATE',
+    origin: 'spacecat',
     changeDetails: {
       description: 'Fixes a broken internal link issue',
       changes: [
@@ -29,6 +30,7 @@ const fixEntities = [
     opportunityId: 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4',
     status: 'DEPLOYED',
     type: 'REDIRECT_UPDATE',
+    origin: 'aso',
     changeDetails: {
       description: 'Adds a new feature to the dashboard',
       changes: [
@@ -48,6 +50,54 @@ const fixEntities = [
       changes: [
         {
           field: 'description', oldValue: 'Welcome!', newValue: 'Hello World!', page: 'homepage',
+        },
+      ],
+    },
+    executedBy: 'developer789',
+    executedAt: '2025-02-09T23:21:55.834Z',
+    publishedAt: '2025-03-09T23:21:55.834Z',
+  },
+  {
+    opportunityId: 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4',
+    status: 'ROLLED_BACK',
+    type: 'METADATA_UPDATE',
+    changeDetails: {
+      description: 'Updates content for the details page',
+      changes: [
+        {
+          field: 'description', oldValue: 'Hello World!', newValue: 'Welcome!', page: 'details',
+        },
+      ],
+    },
+    executedBy: 'developer789',
+    executedAt: '2025-02-09T23:21:55.834Z',
+    publishedAt: '2025-03-09T23:21:55.834Z',
+  },
+  {
+    opportunityId: 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4',
+    status: 'FAILED',
+    type: 'METADATA_UPDATE',
+    changeDetails: {
+      description: 'Updates content for the listing page',
+      changes: [
+        {
+          field: 'description', oldValue: 'Hello World!', newValue: 'Welcome!', page: 'listing',
+        },
+      ],
+    },
+    executedBy: 'developer789',
+    executedAt: '2025-02-09T23:21:55.834Z',
+    publishedAt: '2025-03-09T23:21:55.834Z',
+  },
+  {
+    opportunityId: 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4',
+    status: 'FAILED',
+    type: 'METADATA_UPDATE',
+    changeDetails: {
+      description: 'Updates content for the reports page',
+      changes: [
+        {
+          field: 'description', oldValue: 'Hello World!', newValue: 'Welcome!', page: 'report',
         },
       ],
     },

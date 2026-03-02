@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class KeyEvent extends BaseModel {
+  static ENTITY_NAME = 'KeyEvent';
+
   static KEY_EVENT_TYPES = {
     PERFORMANCE: 'PERFORMANCE',
     SEO: 'SEO',

@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ImportUrlCollection extends BaseCollection {
+  static COLLECTION_NAME = 'ImportUrlCollection';
+
   // add custom methods here
 }
 

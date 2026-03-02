@@ -39,6 +39,7 @@ describe('AuditModel', () => {
       isLive: true,
       isError: false,
       siteId: 'site12345',
+      invocationId: 'someInvocation12345',
     };
 
     ({
@@ -104,6 +105,12 @@ describe('AuditModel', () => {
     });
   });
 
+  describe('invocationId', () => {
+    it('gets invocationId', () => {
+      expect(instance.getInvocationId()).to.equal('someInvocation12345');
+    });
+  });
+
   describe('getScores', () => {
     it('returns the scores from the audit result', () => {
       mockRecord.auditResult = { scores: { foo: 'bar' } };
@@ -161,6 +168,8 @@ describe('AuditModel', () => {
       REDIRECT_CHAINS: 'redirect-chains',
       BROKEN_BACKLINKS: 'broken-backlinks',
       BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+      CONTENT_FRAGMENT_UNUSED: 'content-fragment-unused',
+      CONTENT_FRAGMENT_UNUSED_AUTO_FIX: 'content-fragment-unused-auto-fix',
       EXPERIMENTATION: 'experimentation',
       CONVERSION: 'conversion',
       ORGANIC_KEYWORDS: 'organic-keywords',
@@ -180,6 +189,7 @@ describe('AuditModel', () => {
       SECURITY_CSP: 'security-csp',
       SECURITY_VULNERABILITIES: 'security-vulnerabilities',
       SECURITY_PERMISSIONS: 'security-permissions',
+      SECURITY_REDUNDANT: 'security-permissions-redundant',
       PAID: 'paid',
       HREFLANG: 'hreflang',
       HEADINGS: 'headings',
@@ -188,11 +198,26 @@ describe('AuditModel', () => {
       READABILITY: 'readability',
       PRERENDER: 'prerender',
       PRODUCT_METATAGS: 'product-metatags',
+      PRODUCT_METATAGS_AUTO_SUGGEST: 'product-metatags-auto-suggest',
+      PRODUCT_METATAGS_AUTO_FIX: 'product-metatags-auto-fix',
+      SUMMARIZATION: 'summarization',
+      PAGE_TYPE_DETECTION: 'page-type-detection',
+      FAQS: 'faqs',
+      CDN_LOGS_ANALYSIS: 'cdn-logs-analysis',
+      CDN_LOGS_REPORT: 'cdn-logs-report',
+      LLMO_REFERRAL_TRAFFIC: 'llmo-referral-traffic',
+      PAGE_INTENT: 'page-intent',
+      NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
+      TOC: 'toc',
+      WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
+      COMMERCE_PRODUCT_ENRICHMENTS: 'commerce-product-enrichments',
+      COMMERCE_PRODUCT_ENRICHMENTS_YEARLY: 'commerce-product-enrichments-yearly',
+      COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',
+      COMMERCE_PRODUCT_CATALOG_ENRICHMENT: 'commerce-product-catalog-enrichment',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(37);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {
@@ -320,10 +345,45 @@ describe('AuditModel', () => {
         options: { someOption: 'someValue' },
         processingType: 'someProcessingType',
         maxScrapeAge: 24,
-        auditData: {
-          siteId: 'someSiteId',
-          completionQueueUrl: 'audit-jobs-queue-url',
-          auditContext: { some: 'context' },
+        metaData: {
+          auditData: {
+            siteId: 'someSiteId',
+            completionQueueUrl: 'audit-jobs-queue-url',
+            auditContext: { some: 'context' },
+          },
+        },
+      });
+    });
+
+    it('formats scrape client payload with traceId when present in context', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+        traceId: '1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e',
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.SCRAPE_CLIENT]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: ['someUrl'],
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+        maxScrapeAge: 24,
+        traceId: '1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e',
+        metaData: {
+          auditData: {
+            siteId: 'someSiteId',
+            completionQueueUrl: 'audit-jobs-queue-url',
+            auditContext: { some: 'context' },
+          },
         },
       });
     });

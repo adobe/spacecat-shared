@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class AsyncJob extends BaseModel {
+  static ENTITY_NAME = 'AsyncJob';
+
   /**
    * Async Job Status types.
    * Any changes to this object needs to be reflected in the index.d.ts file as well.

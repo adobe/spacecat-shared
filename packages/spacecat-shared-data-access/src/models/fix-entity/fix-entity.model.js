@@ -19,6 +19,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class FixEntity extends BaseModel {
+  static ENTITY_NAME = 'FixEntity';
+
   static DEFAULT_UPDATED_BY = 'spacecat';
 
   static STATUSES = {
@@ -28,6 +30,20 @@ class FixEntity extends BaseModel {
     FAILED: 'FAILED', // failed to apply the fix
     ROLLED_BACK: 'ROLLED_BACK', // the fix has been rolled_back
   };
+
+  // reporting is a new origin which is used
+  // to denote the fix entities created by the reporting team
+  static ORIGINS = {
+    SPACECAT: 'spacecat',
+    ASO: 'aso',
+    REPORTING: 'reporting',
+  };
+
+  async getSuggestions() {
+    const fixEntityCollection = this.entityRegistry.getCollection('FixEntityCollection');
+    return fixEntityCollection
+      .getSuggestionsByFixEntityId(this.getId());
+  }
 }
 
 export default FixEntity;

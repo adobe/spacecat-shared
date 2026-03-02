@@ -1,0 +1,677 @@
+{
+  "discovery":
+  {
+    "url_structure":
+    {
+      "main_sections":
+      [
+        "/",
+        "/creativecloud",
+        "/acrobat",
+        "/documentcloud",
+        "/express",
+        "/products",
+        "/about-adobe",
+        "/careers",
+        "/investor-relations",
+        "/legal",
+        "[https://business.adobe.com](https://business.adobe.com)",
+        "[https://developer.adobe.com](https://developer.adobe.com)",
+        "[https://experienceleague.adobe.com](https://experienceleague.adobe.com)",
+        "[https://helpx.adobe.com](https://helpx.adobe.com)",
+        "[https://blog.adobe.com](https://blog.adobe.com)",
+        "/diversity",
+        "/corporate-responsibility"
+      ],
+      "content_types":
+      [
+        "marketing",
+        "product",
+        "pricing",
+        "blog",
+        "docs",
+        "api-reference",
+        "tutorials",
+        "support",
+        "security",
+        "careers",
+        "investors",
+        "legal"
+      ],
+      "audience_segments":
+      [
+        "consumer/individual",
+        "students/education",
+        "teams",
+        "small business",
+        "enterprise B2B",
+        "developers",
+        "admins"
+      ],
+      "voice_variations_detected": "Consumer marketing uses aspirational, creativity-first language. Enterprise uses ROI, scale, trust, and integration language. Docs/support are procedural and directive. Corporate pages are mission-led and formal."
+    },
+    "pages_analyzed": 66,
+    "coverage_assessment": "Sampled core B2C product marketing and pricing pages under /creativecloud and /acrobat (DE and EN variants), B2B product and pricing pages on business.adobe.com, developer portal API and console docs, Experience League enterprise documentation, Help Center and PSIRT, legal terms and enterprise licensing, careers, investor relations, corporate responsibility and diversity, and official blog articles spanning creativity and security. Evidence includes recent B2B positioning, developer API references, help workflows, and legal/compliance statements."
+  },
+  "clustering":
+  {
+    "voice_clusters":
+    [
+      {
+        "cluster_id": "main",
+        "url_patterns":
+        [
+          "/",
+          "/creativecloud*",
+          "/acrobat*",
+          "/express*",
+          "/products*",
+          "/about-adobe*"
+        ],
+        "page_count": 20,
+        "consistency": 0.9,
+        "description": "Consumer-focused creative and document marketing voice centered on empowerment, ease, and inspiration."
+      },
+      {
+        "cluster_id": "enterprise",
+        "url_patterns":
+        [
+          "[https://business.adobe.com/](https://business.adobe.com/)*"
+        ],
+        "page_count": 22,
+        "consistency": 0.88,
+        "description": "B2B/enterprise solutions voice focused on outcomes, scalability, security, and integration with decision-maker framing."
+      },
+      {
+        "cluster_id": "developers_docs",
+        "url_patterns":
+        [
+          "[https://developer.adobe.com/](https://developer.adobe.com/)*",
+          "[https://experienceleague.adobe.com/](https://experienceleague.adobe.com/)*"
+        ],
+        "page_count": 14,
+        "consistency": 0.92,
+        "description": "Technical reference and tutorial voice with precise, task-oriented guidance and API-specific terminology."
+      },
+      {
+        "cluster_id": "support_legal_corporate",
+        "url_patterns":
+        [
+          "[https://helpx.adobe.com/](https://helpx.adobe.com/)*",
+          "/legal/*",
+          "/investor-relations/*",
+          "/careers/*",
+          "/corporate-responsibility*",
+          "/diversity*"
+        ],
+        "page_count": 10,
+        "consistency": 0.86,
+        "description": "Service, compliance, and corporate voice with formal tone, obligations, and process clarity."
+      }
+    ],
+    "sub_brand_rationale": "Created sub-brands for Enterprise and Developers/Docs due to deliberate audience segmentation, consistent vocabulary, and scope. Support/Legal/Corporate grouped for completeness but not treated as market-facing sub-brands."
+  },
+  "competitive_context":
+  {
+    "industry": "Creative software and digital experience platforms",
+    "industry_characteristics": "Two-track market voice: B2C creativity and productivity language for individuals; B2B CXM language emphasizing scale, data, personalization, security, and ROI. Developer materials are terse, versioned, and example-led.",
+    "similar_brands":
+    [
+      {
+        "name": "Salesforce (Marketing Cloud)",
+        "similarity": "Outcome-led enterprise messaging around personalization at scale, integrations, and trust/compliance."
+      },
+      {
+        "name": "Microsoft (Surface/365 + Power Platform)",
+        "similarity": "Productivity framing for individuals and enterprises; trust and security emphasis."
+      },
+      {
+        "name": "Canva",
+        "similarity": "Accessible creativity and speed-to-output for non-experts; inspirational B2C tone."
+      }
+    ],
+    "contrasting_brands":
+    [
+      {
+        "name": "Mailchimp",
+        "contrast": "Conversational, playful SMB tone; fewer enterprise-scale claims."
+      },
+      {
+        "name": "Serif Affinity",
+        "contrast": "One-time-purchase, craft-first product voice; minimal enterprise narrative."
+      },
+      {
+        "name": "Oracle CX",
+        "contrast": "Highly technical and procurement-heavy tone; less creative positioning."
+      }
+    ],
+    "positioning": "Bridges creative tools, document workflows, and enterprise CXM under one umbrella. Leads with creativity for individuals and with ROI and scale for enterprises.",
+    "differentiation": "Unique span from creator apps to enterprise CXM and data platform; strong trust/compliance narrative; recurring ‘Creativity for All’ mission anchoring both segments.",
+    "evolution": "Voice has shifted from desktop app-centric to cloud, AI-first, and cross-cloud integration. Enterprise language increasingly highlights real-time profiles, personalization, and governance."
+  },
+  "main_profile":
+  {
+    "id": "main",
+    "tone_attributes":
+    {
+      "primary":
+      [
+        "empowering",
+        "optimistic",
+        "clear",
+        "benefit-led",
+        "confident"
+      ],
+      "avoid":
+      [
+        "snarky",
+        "irreverent",
+        "overly technical without context",
+        "negative",
+        "sarcastic"
+      ]
+    },
+    "language_patterns":
+    {
+      "preferred":
+      [
+        "you-centric imperatives",
+        "benefit-first headlines",
+        "short action verbs",
+        "AI-assisted creativity framing",
+        "quick-start prompts"
+      ],
+      "avoid":
+      [
+        "deep procurement jargon",
+        "overlong conditional clauses",
+        "overuse of internal product codenames",
+        "dense compliance language"
+      ]
+    },
+    "communication_style": "Lead with outcomes and inspiration, then enumerate concrete tools and steps. Frequent CTA pairs like “Free trial” and “Buy now.” Uses crisp headers and scannable lists. Highlights AI as a speed and quality multiplier while keeping user control in focus.",
+    "target_audience": "Individual creators, students, freelancers, small teams evaluating creative or PDF tools.",
+    "formality_level":
+    {
+      "score": 0.55,
+      "label": "professional-casual",
+      "description": "Friendly retail tone with precise product nouns. Short sentences and direct CTAs. Minimal jargon compared to enterprise."
+    },
+    "vocabulary":
+    {
+      "score": 0.55,
+      "label": "accessible-technical",
+      "word_complexity": "Simple verbs and concrete feature names. Technical nouns appear but are explained or linked.",
+      "signature_phrases":
+      [
+        "Creativity for All",
+        "Changing the world through digital experiences",
+        "Get started",
+        "Create faster with AI",
+        "All apps in one plan",
+        "Free trial",
+        "Bring your ideas to life"
+      ],
+      "industry_terms_usage": "Mentions of generative AI, templates, assets, credits, and cloud documents appear with plain-language gloss."
+    },
+    "emotional_tone":
+    {
+      "score": 0.75,
+      "label": "warm-enthusiastic",
+      "description": "Positive, future-facing, and inclusive. Frames creativity as accessible and impactful."
+    },
+    "use_of_humor":
+    {
+      "score": 0.2,
+      "label": "rare-subtle",
+      "examples":
+      []
+    },
+    "brand_personality":
+    {
+      "archetype": "Creator-Innovator hybrid",
+      "description": "Values imagination supported by advanced tools. Blends artistry and engineering.",
+      "traits":
+      [
+        "inventive",
+        "helpful",
+        "polished",
+        "inclusive",
+        "ambitious"
+      ]
+    },
+    "brand_values":
+    {
+      "core_values":
+      [
+        {
+          "name": "Creativity access",
+          "score": 0.95,
+          "evidence": "Mission and programs labeled “Creativity for All.” ([Adobe][1])"
+        },
+        {
+          "name": "Trust & security",
+          "score": 0.9,
+          "evidence": "Trust Center, PSIRT, and compliance content across legal and security blogs. ([Adobe][2])"
+        },
+        {
+          "name": "Innovation at scale",
+          "score": 0.85,
+          "evidence": "Cross-cloud AI features and claims about real-time personalization and platform unification. ([Adobe for Business][3])"
+        }
+      ]
+    },
+    "editorial_guidelines":
+    {
+      "dos":
+      [
+        "Lead with user benefits before features.",
+        "Use direct CTAs (“Free trial”, “Buy now”).",
+        "Explain technical terms briefly and link to details.",
+        "Highlight AI as an accelerator, not a replacement.",
+        "Use inclusive, global language and examples."
+      ],
+      "donts":
+      [
+        "Do not open with procurement or compliance detail.",
+        "Do not use insider acronyms without expansion.",
+        "Do not overpromise outcomes without tool context.",
+        "Do not minimize learning curves; provide tutorials.",
+        "Do not mix developer error codes into marketing copy."
+      ]
+    },
+    "example_text":
+    {
+      "good_examples":
+      [
+        {
+          "text": "Changing the world through personalized digital experiences.",
+          "why_good": "Mission-led, concise, and inclusive framing. ([Adobe][4])"
+        },
+        {
+          "text": "Generate images, video, and audio with leading AI models.",
+          "why_good": "Benefit-first and concrete about AI capability. ([Adobe][5])"
+        },
+        {
+          "text": "Get started with over 20 apps, templates, and tutorials.",
+          "why_good": "Direct CTA with clear value stack. ([Adobe][6])"
+        }
+      ],
+      "bad_examples":
+      [
+        {
+          "text": "Our SKU tiering utilizes heterogenous microservices to operationalize ideation.",
+          "why_bad": "Jargon-heavy, unclear benefit, not consumer-friendly."
+        },
+        {
+          "text": "Buy now or miss out forever on creativity.",
+          "why_bad": "Manipulative urgency and exclusionary framing."
+        },
+        {
+          "text": "We guarantee professional results instantly with zero effort.",
+          "why_bad": "Overpromise; ignores learning and user agency."
+        }
+      ]
+    },
+    "sample_size": 66,
+    "confidence_score": 0.78
+  },
+  "sub_brands":
+  [
+    {
+      "id": "enterprise",
+      "name": "Adobe for Business / Experience Cloud",
+      "context": "Enterprise marketing and solution pages addressing CMOs, CIOs, product and data leaders. Focus on Experience Cloud, Experience Platform, Acrobat for business, and integrations.",
+      "url_patterns":
+      [
+        "[https://business.adobe.com/](https://business.adobe.com/)*"
+      ],
+      "page_count": 22,
+      "consistency_score": 0.88,
+      "distinction_rationale": "Deliberate B2B voice shift: ROI, scale, compliance, integration, and decision-maker language across product, pricing, and event pages.",
+      "profile":
+      {
+        "id": "enterprise",
+        "tone_attributes":
+        {
+          "primary":
+          [
+            "authoritative",
+            "outcome-driven",
+            "data-informed",
+            "trust-centric",
+            "scalable"
+          ],
+          "avoid":
+          [
+            "playful",
+            "overly casual",
+            "consumer hobby framing",
+            "feature-dump without business tie-in"
+          ]
+        },
+        "language_patterns":
+        {
+          "preferred":
+          [
+            "quantified outcomes",
+            "deployment/integration verbs",
+            "security/compliance mentions",
+            "references to teams and organizations",
+            "platform language"
+          ],
+          "avoid":
+          [
+            "purely inspirational art-first framing",
+            "consumer-only CTAs",
+            "jokes or colloquialisms"
+          ]
+        },
+        "communication_style": "Start with business challenges and KPIs, then map to capabilities and proofs. Cite scale, real-time data, and interoperability. Include compliance and governance notes. Use customer logos and event content as social proof.",
+        "target_audience": "Enterprise decision-makers and practitioners in marketing, data, product, IT, and operations.",
+        "formality_level":
+        {
+          "score": 0.75,
+          "label": "formal-professional",
+          "description": "Dense nouns, platform terms, and explicit ROI framing. Minimal idiom. Numbers and qualifiers appear frequently."
+        },
+        "vocabulary":
+        {
+          "score": 0.7,
+          "label": "business-technical",
+          "word_complexity": "Higher noun density: ‘real-time profiles’, ‘activation’, ‘orchestration’, ‘governance’, ‘composability’.",
+          "signature_phrases":
+          [
+            "personalization at scale",
+            "real-time profiles",
+            "trusted by global brands",
+            "enterprise-grade security",
+            "reduce costs and accelerate growth",
+            "orchestrate end-to-end journeys"
+          ],
+          "industry_terms_usage": "Uses CDP, identity graph, activation, governance, and zero/first-party data with assumed literacy."
+        },
+        "emotional_tone":
+        {
+          "score": 0.45,
+          "label": "confident-pragmatic",
+          "description": "Controlled enthusiasm. Emphasis on certainty, risk reduction, and operational efficiency."
+        },
+        "use_of_humor":
+        {
+          "score": 0.05,
+          "label": "none",
+          "examples":
+          []
+        },
+        "brand_personality":
+        {
+          "archetype": "Architect",
+          "description": "Designs reliable systems that scale across teams and geographies.",
+          "traits":
+          [
+            "methodical",
+            "credible",
+            "security-minded",
+            "metrics-driven",
+            "integration-led"
+          ]
+        },
+        "brand_values":
+        {
+          "core_values":
+          [
+            {
+              "name": "Business impact",
+              "score": 0.92,
+              "evidence": "Pricing, product pages, and Summit content highlight measurable outcomes and scale. ([Adobe for Business][7])"
+            },
+            {
+              "name": "Security & compliance",
+              "score": 0.9,
+              "evidence": "Trust Center and regulatory pages linked from enterprise terms. ([Adobe][2])"
+            },
+            {
+              "name": "Interoperability",
+              "score": 0.85,
+              "evidence": "Experience Platform positioned as shared, composable foundation. ([Adobe for Business][3])"
+            }
+          ]
+        },
+        "editorial_guidelines":
+        {
+          "dos":
+          [
+            "Quantify outcomes where possible.",
+            "Name integrations and data flows plainly.",
+            "Surface security, privacy, and governance.",
+            "Highlight customer proof and analyst validation.",
+            "Tie features to roles and workflows."
+          ],
+          "donts":
+          [
+            "Do not use casual consumer language.",
+            "Do not bury implementation detail when it affects risk.",
+            "Do not lead with UI flourish over outcomes.",
+            "Do not omit regional compliance mentions when relevant.",
+            "Do not assume marketing-only readers; include IT implications."
+          ]
+        },
+        "example_text":
+        {
+          "good_examples":
+          [
+            {
+              "text": "Deliver personalized experiences at scale with real-time profiles ready for activation.",
+              "why_good": "Concise promise with scale and capability. ([Adobe for Business][7])"
+            },
+            {
+              "text": "A secure, single system of truth powers data-driven decisions and real-time orchestration.",
+              "why_good": "Platform language plus outcomes. ([Adobe for Business][3])"
+            },
+            {
+              "text": "Adobe Acrobat Sign transforms e-signatures with an accessibility-first recipient experience.",
+              "why_good": "Outcome plus differentiator and accessibility. ([Experience League][8])"
+            }
+          ],
+          "bad_examples":
+          [
+            {
+              "text": "Make cool stuff with vibes — for enterprises!",
+              "why_bad": "Consumer slang; no business value."
+            },
+            {
+              "text": "Our CDP is neat and kind of speedy sometimes.",
+              "why_bad": "Vague, unquantified, undermines confidence."
+            },
+            {
+              "text": "Trust us; details later.",
+              "why_bad": "Avoids compliance and proof, unacceptable for B2B buyers."
+            }
+          ]
+        },
+        "sample_size": 22,
+        "confidence_score": 0.82
+      }
+    },
+    {
+      "id": "developers_docs",
+      "name": "Adobe Developers & Experience League",
+      "context": "Developer portal APIs, SDKs, and enterprise documentation for implementers, admins, and technical practitioners.",
+      "url_patterns":
+      [
+        "[https://developer.adobe.com/](https://developer.adobe.com/)*",
+        "[https://experienceleague.adobe.com/*](https://experienceleague.adobe.com/*)"
+      ],
+      "page_count": 14,
+      "consistency_score": 0.92,
+      "distinction_rationale": "Highly structured, imperative, example-led language with precise nouns and versioning. Separate from marketing voice.",
+      "profile":
+      {
+        "id": "developers_docs",
+        "tone_attributes":
+        {
+          "primary":
+          [
+            "precise",
+            "instructive",
+            "task-oriented",
+            "unambiguous",
+            "complete"
+          ],
+          "avoid":
+          [
+            "marketing superlatives",
+            "metaphor-heavy prose",
+            "unbounded claims"
+          ]
+        },
+        "language_patterns":
+        {
+          "preferred":
+          [
+            "second-person imperatives",
+            "code-first examples",
+            "prerequisites and caveats",
+            "status and webhook patterns",
+            "error and auth terms"
+          ],
+          "avoid":
+          [
+            "emotion-led benefits",
+            "sales CTAs in flow",
+            "dense paragraph without steps"
+          ]
+        },
+        "communication_style": "Overview → prerequisites → step-by-step → examples → references. Links to related SDKs and Postman collections. Consistent anchor navigation and tables.",
+        "target_audience": "Developers, solution architects, admins, data engineers, and technical marketers implementing Adobe services.",
+        "formality_level":
+        {
+          "score": 0.7,
+          "label": "formal-technical",
+          "description": "Precise modals, consistent nomenclature, and explicit constraints."
+        },
+        "vocabulary":
+        {
+          "score": 0.75,
+          "label": "technical",
+          "word_complexity": "Uses API, endpoint, auth, scopes, CRUD, webhook, payload, rate limit, and Postman.",
+          "signature_phrases":
+          [
+            "Start building today",
+            "Use the API to perform CRUD operations",
+            "Authenticate with Adobe Developer Console",
+            "Receive job completion notifications via webhook",
+            "View API reference",
+            "See release notes"
+          ],
+          "industry_terms_usage": "API and platform terms used exactly as defined; links to schema and OpenAPI specs."
+        },
+        "emotional_tone":
+        {
+          "score": 0.2,
+          "label": "neutral-informational",
+          "description": "Minimal affect. Focus on correctness and completeness."
+        },
+        "use_of_humor":
+        {
+          "score": 0.0,
+          "label": "none",
+          "examples":
+          []
+        },
+        "brand_personality":
+        {
+          "archetype": "Engineer",
+          "description": "Clarity, control, and reproducibility.",
+          "traits":
+          [
+            "systematic",
+            "accurate",
+            "transparent",
+            "modular",
+            "pragmatic"
+          ]
+        },
+        "brand_values":
+        {
+          "core_values":
+          [
+            {
+              "name": "Clarity",
+              "score": 0.9,
+              "evidence": "High-level overviews with links to detailed references. ([Adobe Developer][9])"
+            },
+            {
+              "name": "Completeness",
+              "score": 0.87,
+              "evidence": "OpenAPI specs, SDKs, and Postman collections. ([Adobe Developer][10])"
+            },
+            {
+              "name": "Productivity",
+              "score": 0.82,
+              "evidence": "Aggregated API catalog and filterable listings. ([Adobe Developer][11])"
+            }
+          ]
+        },
+        "editorial_guidelines":
+        {
+          "dos":
+          [
+            "Use consistent terminology with linked definitions.",
+            "Provide working examples and sample payloads.",
+            "State prerequisites and auth flows up front.",
+            "Document limits and error handling.",
+            "Cross-link to tutorials and release notes."
+          ],
+          "donts":
+          [
+            "Do not embed sales content in procedural steps.",
+            "Do not use ambiguous verbs like ‘handle’ without specifics.",
+            "Do not omit pagination and rate-limit behavior.",
+            "Do not assume prior product context; link it.",
+            "Do not hide breaking changes."
+          ]
+        },
+        "example_text":
+        {
+          "good_examples":
+          [
+            {
+              "text": "Using Platform APIs, you can programmatically perform CRUD operations against data.",
+              "why_good": "Clear capability statement using standard terms. ([Adobe Developer][9])"
+            },
+            {
+              "text": "Start building today. Explore the APIs offered by products and view documentation.",
+              "why_good": "Direct imperative and navigation clarity. ([Adobe Developer][11])"
+            },
+            {
+              "text": "Receive job completion notifications through Webhook instead of polling.",
+              "why_good": "Offers a best-practice alternative with exact term. ([Adobe Developer][12])"
+            }
+          ],
+          "bad_examples":
+          [
+            {
+              "text": "Our APIs are magical and will just work.",
+              "why_bad": "Non-technical and untestable claim."
+            },
+            {
+              "text": "Do stuff with data somehow.",
+              "why_bad": "Vague verb and missing detail."
+            },
+            {
+              "text": "Click everywhere until it behaves.",
+              "why_bad": "Unprofessional and not actionable."
+            }
+          ]
+        },
+        "sample_size": 14,
+        "confidence_score": 0.84
+      }
+    }
+  ],
+  "confidence_score": 0.79,
+  "pages_considered": 66,
+  "diversity_assessment": "Mix of B2C creative and document pages, multi-region variants (DE, JP), enterprise solution and pricing, developer APIs and Experience League docs, help and PSIRT, legal terms, corporate responsibility and diversity, careers and investor relations. Sources spanned product, platform, security, and corporate communications."
+}

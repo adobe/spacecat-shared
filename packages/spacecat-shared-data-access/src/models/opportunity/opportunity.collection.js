@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class OpportunityCollection extends BaseCollection {
+  static COLLECTION_NAME = 'OpportunityCollection';
+
   // add custom methods here
 }
 

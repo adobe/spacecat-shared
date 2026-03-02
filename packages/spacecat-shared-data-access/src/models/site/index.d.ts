@@ -19,6 +19,7 @@ import type {
   LatestAudit,
   Opportunity,
   Organization,
+  Project,
   SiteCandidate,
   SiteEnrollment,
   SiteTopPage,
@@ -33,10 +34,21 @@ export interface HlxConfig {
   };
 }
 
+export interface CodeConfig {
+  type: string;
+  owner: string;
+  repo: string;
+  ref: string;
+  installationId?: string;
+  url: string;
+  s3StoragePath?: string;
+}
+
 export type IMPORT_TYPES = {
   readonly ORGANIC_KEYWORDS: 'organic-keywords';
   readonly ORGANIC_TRAFFIC: 'organic-traffic';
   readonly TOP_PAGES: 'top-pages';
+  readonly AHREF_PAID_PAGES: 'ahref-paid-pages';
   readonly TOP_FORMS: 'top-forms';
 };
 
@@ -49,7 +61,7 @@ export type IMPORT_SOURCES = {
   readonly GSC: 'google';
 };
 
-export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages' | 'top-forms';
+export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages' | 'top-forms' | 'ahref-paid-pages' ;
 export type ImportDestination = 'default';
 export type ImportSource = 'ahrefs' | 'google';
 
@@ -98,6 +110,7 @@ export interface SiteConfig {
     handlers?: Record<string, {
       mentions?: Record<string, string[]>;
       excludedURLs?: string[];
+      autofixExcludedURLs?: string[];
       manualOverwrites?: Array<{
         brokenTargetURL?: string;
         targetURL?: string;
@@ -145,6 +158,7 @@ export interface SiteConfig {
   getHandlerConfig(type: string): object;
   getSlackMentions(type: string): string[] | undefined;
   getExcludedURLs(type: string): string[] | undefined;
+  getAutofixExcludedURLs(type: string): string[] | undefined;
   getManualOverwrites(type: string):
     Array<{ brokenTargetURL?: string; targetURL?: string }> | undefined;
   getFixedURLs(type: string): Array<{ brokenTargetURL?: string; targetURL?: string }> | undefined;
@@ -181,6 +195,8 @@ export interface SiteConfig {
   addLlmoCustomerIntent(customerIntentItems: Array<LlmoCustomerIntent>): void;
   removeLlmoCustomerIntent(intentKey: string): void;
   updateLlmoCustomerIntent(intentKey: string, updateData: Partial<LlmoCustomerIntent>): void;
+  addLlmoTag(tag: string): void;
+  removeLlmoTag(tag: string): void;
 }
 
 export interface Site extends BaseModel {
@@ -200,6 +216,7 @@ export interface Site extends BaseModel {
   ): Promise<Experiment[]>;
   getGitHubURL(): string;
   getHlxConfig(): HlxConfig;
+  getCode(): CodeConfig;
   getDeliveryConfig(): object;
   getIsLive(): boolean;
   getIsSandbox(): boolean;
@@ -214,6 +231,11 @@ export interface Site extends BaseModel {
   getOpportunitiesByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<Opportunity[]>;
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
+  getProject(): Promise<Project>;
+  getProjectId(): string;
+  getIsPrimaryLocale(): boolean;
+  getLanguage(): string;
+  getRegion(): string;
   getSiteCandidates(): Promise<SiteCandidate[]>;
   getSiteEnrollments(): Promise<SiteEnrollment[]>;
   getSiteTopPages(): Promise<SiteTopPage[]>;
@@ -229,23 +251,33 @@ export interface Site extends BaseModel {
   setAuthoringType(authoringType: string): Site;
   setGitHubURL(gitHubURL: string): Site;
   setHlxConfig(hlxConfig: HlxConfig): Site;
+  setCode(code: CodeConfig): Site;
   setDeliveryConfig(deliveryConfig: object): Site;
   setIsLive(isLive: boolean): Site;
   setIsSandbox(isSandbox: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
+  setProjectId(projectId: string): Site;
+  setIsPrimaryLocale(primaryLocale: boolean): Site;
+  setLanguage(language: string): Site;
+  setRegion(region: string): Site;
   toggleLive(): Site;
 }
 
-export interface SiteCollection extends BaseCollection<Organization> {
+export interface SiteCollection extends BaseCollection<Site> {
   allByBaseURL(baseURL: string): Promise<Site[]>;
   allByDeliveryType(deliveryType: string): Promise<Site[]>;
   allByOrganizationId(organizationId: string): Promise<Site[]>;
+  allByProjectId(projectId: string): Promise<Site[]>;
+  allByProjectName(projectName: string): Promise<Site[]>;
+  allByOrganizationIdAndProjectId(organizationId: string, projectId: string): Promise<Site[]>;
+  allByOrganizationIdAndProjectName(organizationId: string, projectName: string): Promise<Site[]>;
   allSitesToAudit(): Promise<string[]>;
   allWithLatestAudit(auditType: string, order?: string, deliveryType?: string): Promise<Site[]>;
   findByBaseURL(baseURL: string): Promise<Site | null>;
   findByDeliveryType(deliveryType: string): Promise<Site | null>;
   findByOrganizationId(organizationId: string): Promise<Site | null>;
+  findByProjectId(projectId: string): Promise<Site | null>;
   findByPreviewURL(previewURL: string): Promise<Site | null>;
   findByExternalOwnerIdAndExternalSiteId(
     externalOwnerId: string, externalSiteId: string

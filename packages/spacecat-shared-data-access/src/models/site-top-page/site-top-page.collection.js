@@ -22,6 +22,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class SiteTopPageCollection extends BaseCollection {
+  static COLLECTION_NAME = 'SiteTopPageCollection';
+
   async removeForSiteId(siteId, source, geo) {
     if (!hasText(siteId)) {
       throw new Error('SiteId is required');

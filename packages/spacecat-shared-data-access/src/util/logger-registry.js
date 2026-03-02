@@ -29,6 +29,10 @@ class LoggerRegistry {
   getLogger() {
     return this.#logger || console;
   }
+
+  reset() {
+    this.#logger = null;
+  }
 }
 
 /**
@@ -47,4 +51,12 @@ export function registerLogger(logger) {
  */
 export function getLogger() {
   return LoggerRegistry.getInstance().getLogger();
+}
+
+/**
+ * Resets the registered logger to default console logger.
+ * Primarily intended for test isolation.
+ */
+export function resetLoggerRegistry() {
+  LoggerRegistry.getInstance().reset();
 }

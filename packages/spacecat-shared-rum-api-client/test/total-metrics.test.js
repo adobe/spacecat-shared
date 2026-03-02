@@ -17,10 +17,64 @@ import bundlesForUrls from './fixtures/bundles.json' with { type: 'json' };
 describe('Total Metrics Queries', () => {
   it('crunches CWV data', async () => {
     const result = totalMetrics.handler(bundlesForUrls.rumBundles);
-    expect(result).to.deep.equal({
-      totalCTR: 0.2027468663384768,
-      totalClicks: 4901,
-      totalPageViews: 24173,
-    });
+    expect(result).to.have.property('totalCTR', 0.2027468663384768);
+    expect(result).to.have.property('totalClicks', 4901);
+    expect(result).to.have.property('totalPageViews', 24173);
+    expect(result).to.have.property('totalLCP');
+    expect(result).to.have.property('totalEngagement');
+    expect(result.totalEngagement).to.be.a('number');
+  });
+
+  it('calculates engagement metrics correctly', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        events: [
+          { checkpoint: 'click', timeDelta: 2000 },
+        ],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page1',
+        weight: 100,
+        events: [],
+      },
+    ];
+
+    const result = totalMetrics.handler(mockBundles);
+    expect(result).to.have.property('totalEngagement', 100);
+    expect(result).to.have.property('totalPageViews', 200);
+  });
+
+  it('calculates engagement with content engagement', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        events: [
+          { checkpoint: 'viewmedia', timeDelta: 1000 },
+          { checkpoint: 'viewmedia', timeDelta: 2000 },
+          { checkpoint: 'viewmedia', timeDelta: 3000 },
+          { checkpoint: 'viewmedia', timeDelta: 4000 },
+        ],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page2',
+        weight: 100,
+        events: [],
+      },
+    ];
+
+    const result = totalMetrics.handler(mockBundles);
+    expect(result).to.have.property('totalEngagement', 100);
+  });
+
+  it('handles zero page views for engagement', () => {
+    const result = totalMetrics.handler([]);
+    expect(result).to.have.property('totalEngagement', 0);
   });
 });

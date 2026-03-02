@@ -20,7 +20,19 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class SiteEnrollmentCollection extends BaseCollection {
-  // add your custom collection methods here
+  static COLLECTION_NAME = 'SiteEnrollmentCollection';
+
+  async create(item, options = {}) {
+    if (item?.siteId && item?.entitlementId) {
+      const existing = await this.findByIndexKeys({
+        siteId: item.siteId,
+        entitlementId: item.entitlementId,
+      });
+      if (existing) return existing;
+    }
+
+    return super.create(item, options);
+  }
 }
 
 export default SiteEnrollmentCollection;

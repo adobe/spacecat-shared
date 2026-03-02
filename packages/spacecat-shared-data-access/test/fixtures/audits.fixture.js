@@ -26,6 +26,7 @@ const audits = [
     isLive: true,
     fullAuditRef: 's3://audit-results/49a5a731-e2f2-41ef-bc5d-bda818c0afa2.json',
     auditId: '3fe5ca60-4850-431c-97b3-f88a80f07e9b',
+    invocationId: 'some-invocation-id-1',
   },
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
@@ -42,6 +43,7 @@ const audits = [
     isLive: true,
     fullAuditRef: 's3://audit-results/d86ff424-76a5-45aa-8bae-817415056802.json',
     auditId: '48656b02-62cb-46c0-b271-ee99c940e89e',
+    invocationId: 'some-invocation-id-2',
   },
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
@@ -58,6 +60,7 @@ const audits = [
     isLive: true,
     fullAuditRef: 's3://audit-results/ace35131-98c8-4578-8bc9-06537f1cffb4.json',
     auditId: '5bc610a9-bc59-48d8-937e-4808ade2ecb1',
+    invocationId: 'some-invocation-id-3',
   },
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
@@ -74,6 +77,7 @@ const audits = [
     isLive: true,
     fullAuditRef: 's3://audit-results/4f861df7-d074-472b-8df8-b96e8c132145.json',
     auditId: '62cc5af2-935f-47dd-b60e-87307f39c475',
+    invocationId: 'some-invocation-id-4',
   },
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
@@ -90,6 +94,7 @@ const audits = [
     isLive: true,
     fullAuditRef: 's3://audit-results/80284b70-0e3c-49f8-b470-8c073f002b7d.json',
     auditId: '82250098-ca65-4bef-ada9-71c30102b334',
+    invocationId: 'some-invocation-id-5',
   },
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',

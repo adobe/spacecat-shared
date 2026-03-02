@@ -22,6 +22,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class SiteTopFormCollection extends BaseCollection {
+  static COLLECTION_NAME = 'SiteTopFormCollection';
+
   /**
    * Override create method to validate URL presence and handle optional formSource
    * @param {Object} item - The data for the entity to be created

@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class SiteCandidate extends BaseModel {
+  static ENTITY_NAME = 'SiteCandidate';
+
   static DEFAULT_UPDATED_BY = 'spacecat';
 
   static SITE_CANDIDATE_SOURCES = {

@@ -19,3 +19,5 @@ export {
   ImsPromiseClient,
   imsClientWrapper,
 };
+
+export { getAccessToken, retrievePageAuthentication } from './auth.js';

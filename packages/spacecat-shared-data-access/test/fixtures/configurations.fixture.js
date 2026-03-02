@@ -12,7 +12,8 @@
 
 const configurations = [
   {
-    configurationId: '3c29b306-5075-4a2d-a965-730d0e565e7f',
+    // Note: configurationId is now the S3 VersionId, passed separately to the model constructor
+    versionId: '3c29b306-5075-4a2d-a965-730d0e565e7f',
     jobs: [
       {
         group: 'audits',
@@ -53,18 +54,22 @@ const configurations = [
     handlers: {
       404: {
         enabledByDefault: true,
+        productCodes: ['ASO'],
       },
       'rum-ingest': {
         enabledByDefault: false,
+        productCodes: ['ASO'],
         enabled: {
           sites: ['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe'],
         },
       },
       'organic-keywords': {
         enabledByDefault: false,
+        productCodes: ['ASO'],
       },
       cwv: {
         enabledByDefault: true,
+        productCodes: ['ASO'],
         disabled: {
           sites: [
             '5d6d4439-6659-46c2-b646-92d110fa5a52',
@@ -83,6 +88,7 @@ const configurations = [
       },
       sitemap: {
         enabledByDefault: true,
+        productCodes: ['ASO'],
         enabled: {
           sites: [],
           orgs: [],
@@ -94,6 +100,7 @@ const configurations = [
       },
       'lhs-mobile': {
         enabledByDefault: false,
+        productCodes: ['ASO'],
         enabled: {
           sites: ['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe'],
           orgs: ['757ceb98-05c8-4e07-bb23-bc722115b2b0'],
@@ -111,10 +118,9 @@ const configurations = [
         'S03CR0FDC2V',
       ],
     },
-    version: 2,
   },
   {
-    configurationId: 'a76a5b01-d065-4349-a28f-f1beaf96aee6',
+    versionId: 'a76a5b01-d065-4349-a28f-f1beaf96aee6',
     jobs: [
       {
         group: 'audits',
@@ -131,7 +137,6 @@ const configurations = [
       audits: 'sqs://.../spacecat-services-audit-jobs',
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
-    version: 1,
   },
 ];
 

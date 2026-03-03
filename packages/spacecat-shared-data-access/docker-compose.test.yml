@@ -22,7 +22,7 @@ services:
       retries: 10
 
   postgrest:
-    image: postgrest/postgrest:v14.4
+    image: postgrest/postgrest:v14.5
     container_name: spacecat-test-postgrest
     depends_on:
       db:

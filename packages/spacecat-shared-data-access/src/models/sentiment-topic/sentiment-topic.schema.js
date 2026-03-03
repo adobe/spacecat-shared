@@ -65,6 +65,7 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     type: 'number',
     required: false,
     default: 0,
+    postgrestIgnore: true,
   })
   .addAttribute('enabled', {
     type: 'boolean',

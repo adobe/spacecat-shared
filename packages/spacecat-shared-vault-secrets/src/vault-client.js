@@ -107,6 +107,20 @@ export default class VaultClient {
     return body.data.data;
   }
 
+  async tryReadSecret(path) {
+    const response = await this.#request('GET', `data/${path}`);
+
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error(`Vault read failed: ${response.status}`);
+    }
+
+    const body = await response.json();
+    return body.data.data;
+  }
+
   isTokenExpiringSoon() {
     if (!this.isAuthenticated()) return false;
     return (this.#tokenExpiry - Date.now()) <= TOKEN_RENEW_BUFFER;

@@ -2592,6 +2592,41 @@ describe('Config Tests', () => {
       expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
       expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
     });
+
+    it('should be able to create and update edgeOptimizeConfig with stagingDomains', () => {
+      const stagingDomains = [
+        { domain: 'staging.lovesac.com', id: 'site-uuid-1' },
+        { domain: 'stage1.lovesac.com', id: 'site-uuid-2' },
+      ];
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains,
+        },
+      });
+      expect(config.getEdgeOptimizeConfig().stagingDomains).to.deep.equal(stagingDomains);
+
+      const updatedStagingDomains = [
+        { domain: 'staging.lovesac.com', id: 'site-uuid-1' },
+      ];
+      config.updateEdgeOptimizeConfig({
+        enabled: true,
+        stagingDomains: updatedStagingDomains,
+      });
+      expect(config.getEdgeOptimizeConfig().stagingDomains).to.deep.equal(updatedStagingDomains);
+    });
+
+    it('includes stagingDomains in toDynamoItem edgeOptimizeConfig', () => {
+      const stagingDomains = [{ domain: 'staging.example.com', id: 'stage-site-id' }];
+      const data = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains,
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.edgeOptimizeConfig.stagingDomains).to.deep.equal(stagingDomains);
+    });
   });
 
   describe('LLMO Well Known Tags', () => {

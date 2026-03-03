@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.6.0...@adobe/spacecat-shared-data-access-v3.6.1) (2026-03-03)
+
+### Bug Fixes
+
+* stage changes wrt to spacecat-shared ([#1394](https://github.com/adobe/spacecat-shared/issues/1394)) ([7145fb0](https://github.com/adobe/spacecat-shared/commit/7145fb037e5b809d4552889c291b6f8688655b88))
+
 ## [@adobe/spacecat-shared-data-access-v3.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.5.0...@adobe/spacecat-shared-data-access-v3.6.0) (2026-03-02)
 
 ### Features

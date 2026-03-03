@@ -104,21 +104,29 @@ class BaseCollection {
   #isInvalidInputError(error) {
     let current = error;
     while (current) {
-      if (current?.code === '22P02') {
-        return true;
-      }
+      if (current?.code === '22P02') return true;
       current = current.cause;
     }
     return false;
   }
 
   #logAndThrowError(message, cause) {
-    const error = new DataAccessError(message, this, cause);
-    this.log.error(`Base Collection Error [${this.entityName}]`, error);
-    if (isNonEmptyArray(error.cause?.fields)) {
-      this.log.error(`Validation errors: ${JSON.stringify(error.cause.fields)}`);
+    const parts = [message];
+    if (cause?.code) parts.push(`[${cause.code}] ${cause.message}`);
+    if (cause?.details) parts.push(cause.details);
+    if (cause?.hint) parts.push(`hint: ${cause.hint}`);
+
+    this.log.error(`[${this.entityName}] ${parts.join(' - ')}`);
+
+    if (isNonEmptyArray(cause?.fields)) {
+      this.log.error(`Validation errors: ${JSON.stringify(cause.fields)}`);
     }
-    throw error;
+
+    throw new DataAccessError(
+      message,
+      { entityName: this.entityName, tableName: this.tableName },
+      cause,
+    );
   }
 
   #initializeCollectionMethods() {
@@ -601,6 +609,7 @@ class BaseCollection {
     return isNonEmptyObject(item);
   }
 
+  // eslint-disable-next-line consistent-return
   async batchGetByKeys(keys, options = {}) {
     guardArray('keys', keys, this.entityName, 'any');
 
@@ -677,8 +686,11 @@ class BaseCollection {
         unprocessed: [],
       };
     } catch (error) {
-      this.log.error(`Failed to batch get by keys [${this.entityName}]`, error);
-      throw new DataAccessError('Failed to batch get by keys', this, error);
+      /* c8 ignore next 3 -- re-throw guard for already-wrapped errors */
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
+      this.#logAndThrowError('Failed to batch get by keys', error);
     }
   }
 
@@ -856,7 +868,7 @@ class BaseCollection {
 
     const { error } = await query.select().maybeSingle();
     if (error) {
-      throw new DataAccessError('Failed to update entity', this, error);
+      this.#logAndThrowError('Failed to update entity', error);
     }
   }
 

@@ -61,6 +61,11 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     required: true,
     default: [],
   })
+  .addAttribute('timesCited', {
+    type: 'number',
+    required: false,
+    default: 0,
+  })
   .addAttribute('enabled', {
     type: 'boolean',
     required: true,

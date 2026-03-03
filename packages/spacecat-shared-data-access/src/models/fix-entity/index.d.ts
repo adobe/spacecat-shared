@@ -40,4 +40,5 @@ export interface FixEntityCollection extends BaseCollection<FixEntity> {
   findByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<FixEntity | null>;
   getSuggestionsByFixEntityId(fixEntityId: string): Promise<{data: Array<Suggestion>, unprocessed: Array<string>}>;
   setSuggestionsForFixEntity(opportunityId: string, fixEntity: FixEntity, suggestions: Array<Suggestion>): Promise<{createdItems: Array<FixEntitySuggestion>, errorItems: Array<FixEntitySuggestion>, removedCount: number}>;
+  rollbackFixWithSuggestionUpdates(fixEntityId: string, opportunityId: string, newSuggestionStatus?: string, options?: {token?: string}): Promise<{canceled: boolean, fix: FixEntity, suggestions: Array<Suggestion>}>;
 }

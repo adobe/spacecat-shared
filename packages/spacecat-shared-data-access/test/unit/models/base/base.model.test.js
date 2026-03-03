@@ -386,4 +386,141 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       expect(result).to.not.have.property('notInSchema');
     });
   });
+
+  describe('S2S capability enforcement', () => {
+    let savedReferences;
+
+    beforeEach(() => {
+      OpportunitySchema.options.allowRemove = true;
+      savedReferences = [...OpportunitySchema.references];
+      OpportunitySchema.references = [];
+    });
+
+    afterEach(() => {
+      OpportunitySchema.references = savedReferences;
+    });
+
+    it('allows remove when s2sCtx is empty (end-user)', async () => {
+      mockEntityRegistry.s2sCtx = {};
+      const instance = new BaseModel(
+        mockElectroService,
+        mockEntityRegistry,
+        OpportunitySchema,
+        mockRecord,
+        mockLogger,
+      );
+      await expect(instance.remove()).to.eventually.equal(instance);
+    });
+
+    it('allows remove when S2S consumer has write capability', async () => {
+      mockEntityRegistry.s2sCtx = {
+        clientId: 'test-client',
+        capabilities: ['opportunity:write'],
+        scopedOrgId: 'org1',
+      };
+      const instance = new BaseModel(
+        mockElectroService,
+        mockEntityRegistry,
+        OpportunitySchema,
+        mockRecord,
+        mockLogger,
+      );
+      await expect(instance.remove()).to.eventually.equal(instance);
+    });
+
+    it('blocks remove when S2S consumer lacks write capability', async () => {
+      mockEntityRegistry.s2sCtx = {
+        clientId: 'test-client',
+        capabilities: ['opportunity:read'],
+        scopedOrgId: 'org1',
+      };
+      const instance = new BaseModel(
+        mockElectroService,
+        mockEntityRegistry,
+        OpportunitySchema,
+        mockRecord,
+        mockLogger,
+      );
+      await expect(instance.remove())
+        .to.be.rejectedWith('Forbidden: S2S consumer is missing required capability: opportunity:write');
+    });
+
+    it('allows getter when S2S consumer has read capability', () => {
+      mockEntityRegistry.s2sCtx = {
+        clientId: 'test-client',
+        capabilities: ['opportunity:read'],
+        scopedOrgId: 'org1',
+      };
+      const instance = new BaseModel(
+        mockElectroService,
+        mockEntityRegistry,
+        OpportunitySchema,
+        mockRecord,
+        mockLogger,
+      );
+      expect(instance.getOpportunityId()).to.equal('12345');
+    });
+
+    it('blocks getter when S2S consumer lacks read capability', () => {
+      mockEntityRegistry.s2sCtx = {
+        clientId: 'test-client',
+        capabilities: ['opportunity:write'],
+        scopedOrgId: 'org1',
+      };
+      const instance = new BaseModel(
+        mockElectroService,
+        mockEntityRegistry,
+        OpportunitySchema,
+        mockRecord,
+        mockLogger,
+      );
+      expect(() => instance.getOpportunityId())
+        .to.throw('Forbidden: S2S consumer is missing required capability: opportunity:read');
+    });
+
+    it('allows setter when S2S consumer has write capability', () => {
+      mockEntityRegistry.s2sCtx = {
+        clientId: 'test-client',
+        capabilities: ['opportunity:write'],
+        scopedOrgId: 'org1',
+      };
+      const instance = new BaseModel(
+        mockElectroService,
+        mockEntityRegistry,
+        OpportunitySchema,
+        mockRecord,
+        mockLogger,
+      );
+
+      const setterName = Object.getOwnPropertyNames(instance)
+        .find((name) => name.startsWith('set') && name !== 'setOpportunityId');
+
+      if (setterName) {
+        expect(() => instance[setterName]('new-value')).to.not.throw();
+      }
+    });
+
+    it('blocks setter when S2S consumer lacks write capability', () => {
+      mockEntityRegistry.s2sCtx = {
+        clientId: 'test-client',
+        capabilities: ['opportunity:read'],
+        scopedOrgId: 'org1',
+      };
+      const instance = new BaseModel(
+        mockElectroService,
+        mockEntityRegistry,
+        OpportunitySchema,
+        mockRecord,
+        mockLogger,
+      );
+
+      const setterName = Object.getOwnPropertyNames(instance)
+        .find((name) => name.startsWith('set') && name !== 'setOpportunityId');
+
+      if (setterName) {
+        expect(() => instance[setterName]('new-value'))
+          .to.throw('Forbidden: S2S consumer is missing required capability: opportunity:write');
+      }
+    });
+  });
 });

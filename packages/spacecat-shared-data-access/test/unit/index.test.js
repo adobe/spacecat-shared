@@ -71,4 +71,62 @@ describe('Data Access Wrapper Tests', () => {
       expect(error.message).to.equal('POSTGREST_URL is required');
     }
   });
+
+  it('throws when S2S consumer is detected but s2sCtx is missing', async function () {
+    this.timeout(10000);
+    mockContext.attributes = {
+      authInfo: { isS2SConsumer: () => true },
+    };
+    const wrappedFn = dataAccessWrapper(mockFn);
+
+    try {
+      await wrappedFn(mockRequest, mockContext);
+      throw new Error('Expected wrapper to throw');
+    } catch (error) {
+      expect(error.message).to.equal(
+        'S2S consumer detected but s2sCtx is missing — s2sAuthWrapper may not be configured',
+      );
+    }
+  });
+
+  it('proceeds when S2S consumer has a populated s2sCtx', async function () {
+    this.timeout(10000);
+    mockContext.attributes = {
+      authInfo: { isS2SConsumer: () => true },
+    };
+    mockContext.s2sCtx = {
+      clientId: 'test-client',
+      capabilities: ['site:read'],
+      scopedOrgId: 'org1',
+    };
+    const wrappedFn = dataAccessWrapper(mockFn);
+
+    const response = await wrappedFn(mockRequest, mockContext);
+
+    expect(response).to.equal('function response');
+    expect(mockFn.calledOnce).to.be.true;
+  });
+
+  it('proceeds when authInfo is not an S2S consumer (end-user)', async function () {
+    this.timeout(10000);
+    mockContext.attributes = {
+      authInfo: { isS2SConsumer: () => false },
+    };
+    const wrappedFn = dataAccessWrapper(mockFn);
+
+    const response = await wrappedFn(mockRequest, mockContext);
+
+    expect(response).to.equal('function response');
+    expect(mockFn.calledOnce).to.be.true;
+  });
+
+  it('proceeds when authInfo is absent', async function () {
+    this.timeout(10000);
+    const wrappedFn = dataAccessWrapper(mockFn);
+
+    const response = await wrappedFn(mockRequest, mockContext);
+
+    expect(response).to.equal('function response');
+    expect(mockFn.calledOnce).to.be.true;
+  });
 });

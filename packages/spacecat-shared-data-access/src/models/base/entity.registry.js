@@ -100,6 +100,7 @@ class EntityRegistry {
   constructor(services, config, log) {
     this.services = services;
     this.config = config;
+    this.s2sCtx = config.s2sCtx || {};
     this.log = log;
     this.collections = new Map();
 

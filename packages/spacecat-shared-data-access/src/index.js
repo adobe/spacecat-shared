@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+
 import { createDataAccess } from './service/index.js';
 
 export * from './service/index.js';
@@ -50,6 +52,13 @@ export default function dataAccessWrapper(fn) {
         ? s2sAllowedImsOrgIdsRaw.split(',').map((id) => id.trim()).filter(Boolean)
         : [];
 
+      const s2sCtx = context.s2sCtx || {};
+      const isS2SConsumer = context.attributes?.authInfo?.isS2SConsumer?.();
+
+      if (isS2SConsumer && !isNonEmptyObject(s2sCtx)) {
+        throw new Error('S2S consumer detected but s2sCtx is missing — s2sAuthWrapper may not be configured');
+      }
+
       context.dataAccess = createDataAccess({
         postgrestUrl,
         postgrestSchema,
@@ -57,6 +66,7 @@ export default function dataAccessWrapper(fn) {
         s3Bucket,
         region,
         s2sAllowedImsOrgIds,
+        s2sCtx,
       }, log);
     }
 

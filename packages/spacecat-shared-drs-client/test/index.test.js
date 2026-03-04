@@ -64,6 +64,20 @@ describe('DrsClient', () => {
       expect(client).to.equal(cachedClient);
     });
 
+    it('caches newly created client on context', () => {
+      const context = {
+        env: { DRS_API_URL, DRS_API_KEY },
+        log,
+      };
+      expect(context.drsClient).to.be.undefined;
+      const client = DrsClient.createFrom(context);
+      expect(context.drsClient).to.equal(client);
+
+      // Second call returns the same cached instance
+      const client2 = DrsClient.createFrom(context);
+      expect(client2).to.equal(client);
+    });
+
     it('uses console as default logger', () => {
       const context = {
         env: { DRS_API_URL, DRS_API_KEY },

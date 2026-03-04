@@ -24,11 +24,18 @@ export default class DrsClient {
 
     if (context.drsClient) return context.drsClient;
 
-    return new DrsClient({ apiBaseUrl, apiKey }, log);
+    const client = new DrsClient({ apiBaseUrl, apiKey }, log);
+    context.drsClient = client;
+    return client;
   }
 
   constructor({ apiBaseUrl, apiKey }, log = console) {
-    this.apiBaseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/+$/, '') : undefined;
+    // Strip trailing slashes without regex (CodeQL flags /\/+$/ as polynomial)
+    let url = apiBaseUrl;
+    if (url) {
+      while (url.endsWith('/')) url = url.slice(0, -1);
+    }
+    this.apiBaseUrl = url || undefined;
     this.apiKey = apiKey;
     this.log = log;
   }
@@ -80,7 +87,7 @@ export default class DrsClient {
   async submitJob(params) {
     this.log.info('Submitting DRS job', { providerId: params.provider_id });
     const result = await this.#request('POST', '/jobs', params);
-    this.log.info(`DRS job submitted: ${result.job_id}`, { jobId: result.job_id });
+    this.log.info(`DRS job submitted: ${result?.job_id}`, { jobId: result?.job_id });
     return result;
   }
 
@@ -120,7 +127,7 @@ export default class DrsClient {
         audience,
         region,
         num_prompts: numPrompts,
-        model: 'gpt-5-nano',
+        model: 'gpt-5-nano', // DRS default model for prompt generation
         metadata: {
           site_id: siteId,
           imsOrgId,

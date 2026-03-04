@@ -22,8 +22,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adobe/spacecat-shared.git"
+    "url": "https://github.com/adobe/spacecat-shared.git",
+    "directory": "packages/spacecat-shared-drs-client"
   },
+  "bugs": {
+    "url": "https://github.com/adobe/spacecat-shared/issues"
+  },
+  "homepage": "https://github.com/adobe/spacecat-shared/tree/main/packages/spacecat-shared-drs-client#readme",
   "author": "",
   "license": "Apache-2.0",
   "publishConfig": {

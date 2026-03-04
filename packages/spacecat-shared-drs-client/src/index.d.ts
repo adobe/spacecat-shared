@@ -42,7 +42,7 @@ declare class DrsClient {
   isConfigured(): boolean;
   submitJob(params: Record<string, unknown>): Promise<DrsJobResult>;
   submitPromptGenerationJob(params: PromptGenerationParams): Promise<DrsJobResult>;
-  triggerBrandDetection(siteId: string, options?: BrandDetectionOptions): Promise<unknown>;
+  triggerBrandDetection(siteId: string, options?: BrandDetectionOptions): Promise<Record<string, unknown> | null>;
   getJob(jobId: string): Promise<Record<string, unknown>>;
 }
 

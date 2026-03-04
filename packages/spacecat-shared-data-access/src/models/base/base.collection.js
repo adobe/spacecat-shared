@@ -555,7 +555,7 @@ class BaseCollection {
       const instances = this.#createInstances(allRows);
       return shouldReturnCursor ? { data: instances, cursor } : instances;
     } catch (error) {
-      if (error instanceof DataAccessError) {
+      if (error.constructor === DataAccessError) {
         throw error;
       }
       return this.#logAndThrowError('Failed to query', error);
@@ -686,8 +686,8 @@ class BaseCollection {
         unprocessed: [],
       };
     } catch (error) {
-      /* c8 ignore next 3 -- re-throw guard for already-wrapped errors */
-      if (error instanceof DataAccessError) {
+      /* c8 ignore next 3 -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) {
         throw error;
       }
       this.#logAndThrowError('Failed to batch get by keys', error);
@@ -733,8 +733,8 @@ class BaseCollection {
       await this.#onCreate(instance);
       return instance;
     } catch (error) {
-      /* c8 ignore next -- re-throw guard */
-      if (error instanceof DataAccessError) throw error;
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to create', error);
     }
   }
@@ -847,8 +847,8 @@ class BaseCollection {
       await this.#onCreateMany({ createdItems, errorItems });
       return { createdItems, errorItems };
     } catch (error) {
-      /* c8 ignore next -- re-throw guard */
-      if (error instanceof DataAccessError) throw error;
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to create many', error);
     }
   }
@@ -933,8 +933,8 @@ class BaseCollection {
       this.#invalidateCache();
       return undefined;
     } catch (error) {
-      /* c8 ignore next -- re-throw guard */
-      if (error instanceof DataAccessError) throw error;
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to save many', error);
     }
   }
@@ -965,8 +965,8 @@ class BaseCollection {
       this.#invalidateCache();
       return undefined;
     } catch (error) {
-      /* c8 ignore next -- re-throw guard */
-      if (error instanceof DataAccessError) throw error;
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to remove by IDs', error);
     }
   }

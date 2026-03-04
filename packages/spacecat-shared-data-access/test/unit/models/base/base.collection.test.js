@@ -1191,7 +1191,9 @@ describe('BaseCollection', () => {
       });
 
       await expect(baseCollectionInstance.batchGetByKeys(keys)).to.be.rejectedWith(DataAccessError);
-      expect(mockLogger.error).to.have.been.calledWith('Failed to batch get by keys [mockEntityModel]', error);
+      expect(mockLogger.error).to.have.been.calledWith(
+        sinon.match('[mockEntityModel] Failed to batch get by keys'),
+      );
     });
 
     it('should handle null records in results', async () => {
@@ -1410,10 +1412,9 @@ describe('BaseCollection', () => {
       await expect(baseCollectionInstance.removeByIndexKeys(keys))
         .to.be.rejectedWith(DataAccessError, 'Failed to remove by index keys');
 
-      // The error logging uses the format "Base Collection Error [entityName]"
+      // The error logging surfaces the error message with entity context
       expect(mockLogger.error).to.have.been.calledWith(
-        'Base Collection Error [mockEntityModel]',
-        sinon.match.instanceOf(DataAccessError),
+        sinon.match('[mockEntityModel] Failed to remove by index keys'),
       );
     });
 

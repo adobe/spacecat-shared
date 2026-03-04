@@ -61,6 +61,20 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     required: true,
     default: [],
   })
+  .addAttribute('citations', {
+    type: 'list',
+    required: false,
+    default: [],
+    postgrestIgnore: true,
+    items: {
+      type: 'map',
+      properties: {
+        url: { type: 'string', required: true },
+        timesCited: { type: 'number', required: true },
+        category: { type: 'string', required: false },
+      },
+    },
+  })
   .addAttribute('enabled', {
     type: 'boolean',
     required: true,

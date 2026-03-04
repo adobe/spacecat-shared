@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.6.2...@adobe/spacecat-shared-data-access-v3.7.0) (2026-03-04)
+
+### Features
+
+* **data-access:** add timesCited attribute to SentimentTopic schema ([#1399](https://github.com/adobe/spacecat-shared/issues/1399)) ([03cae03](https://github.com/adobe/spacecat-shared/commit/03cae0375a1c44e23d33b65f28002b5b22b975c1))
+
 ## [@adobe/spacecat-shared-data-access-v3.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.6.1...@adobe/spacecat-shared-data-access-v3.6.2) (2026-03-04)
 
 ### Bug Fixes

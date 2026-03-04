@@ -11,6 +11,7 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
+import DataAccessError from '../../errors/data-access.error.js';
 import { DEFAULT_PAGE_SIZE } from '../../util/postgrest.utils.js';
 
 /**
@@ -25,15 +26,20 @@ class EntitlementCollection extends BaseCollection {
 
   /**
    * Finds all entitlements for a given product code with their parent organization
-   * data embedded via PostgREST resource embedding. This avoids N+1 queries when
-   * you need both entitlement and organization data.
+   * data embedded via PostgREST resource embedding (INNER JOIN). This avoids N+1
+   * queries when you need both entitlement and organization data.
+   *
+   * Returns plain objects, not model instances, since the result combines fields
+   * from two entities. Callers should access properties directly
+   * (e.g., `result.entitlement.tier`), not via getter methods.
    *
    * @param {string} productCode - Product code to filter by (e.g., 'LLMO').
-   * @returns {Promise<Array<{entitlement: object, organization: object}>>}
+   * @returns {Promise<Array<{entitlement: {id: string, productCode: string, tier: string},
+   *   organization: {id: string, name: string, imsOrgId: string}}>>}
    */
   async allByProductCodeWithOrganization(productCode) {
     if (!productCode) {
-      throw new Error('productCode is required');
+      throw new DataAccessError('productCode is required', { entityName: 'Entitlement', tableName: 'entitlements' });
     }
 
     const allResults = [];
@@ -44,14 +50,18 @@ class EntitlementCollection extends BaseCollection {
       // eslint-disable-next-line no-await-in-loop
       const { data, error } = await this.postgrestService
         .from('entitlements')
-        .select('id, product_code, tier, organization_id, organizations!inner(id, name, ims_org_id)')
+        .select('id, product_code, tier, organizations!inner(id, name, ims_org_id)')
         .eq('product_code', productCode)
         .not('organizations.ims_org_id', 'is', null)
         .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
 
       if (error) {
-        this.log.error('[EntitlementCollection] Failed to query entitlements with organizations', error);
-        throw new Error(`Failed to query entitlements with organizations: ${error.message}`);
+        this.log.error(`[Entitlement] Failed to query entitlements with organizations - ${error.message}`, error);
+        throw new DataAccessError(
+          'Failed to query entitlements with organizations',
+          { entityName: 'Entitlement', tableName: 'entitlements' },
+          error,
+        );
       }
 
       if (!data || data.length === 0) {
@@ -69,11 +79,11 @@ class EntitlementCollection extends BaseCollection {
         productCode: row.product_code,
         tier: row.tier,
       },
-      organization: row.organizations ? {
+      organization: {
         id: row.organizations.id,
         name: row.organizations.name,
         imsOrgId: row.organizations.ims_org_id,
-      } : null,
+      },
     }));
   }
 }

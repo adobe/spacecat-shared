@@ -17,7 +17,9 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 
+import DataAccessError from '../../../../src/errors/data-access.error.js';
 import Entitlement from '../../../../src/models/entitlement/entitlement.model.js';
+import { DEFAULT_PAGE_SIZE } from '../../../../src/util/postgrest.utils.js';
 
 import { createElectroMocks } from '../../util.js';
 
@@ -105,14 +107,12 @@ describe('EntitlementCollection', () => {
             id: 'ent-1',
             product_code: 'LLMO',
             tier: 'PAID',
-            organization_id: 'org-1',
             organizations: { id: 'org-1', name: 'Acme Corp', ims_org_id: 'acme@AdobeOrg' },
           },
           {
             id: 'ent-2',
             product_code: 'LLMO',
             tier: 'FREE_TRIAL',
-            organization_id: 'org-2',
             organizations: { id: 'org-2', name: 'Beta Inc', ims_org_id: 'beta@AdobeOrg' },
           },
         ],
@@ -148,48 +148,33 @@ describe('EntitlementCollection', () => {
       expect(results).to.deep.equal([]);
     });
 
-    it('throws when productCode is missing', async () => {
+    it('throws DataAccessError when productCode is missing', async () => {
       await expect(instance.allByProductCodeWithOrganization(null))
-        .to.be.rejectedWith('productCode is required');
+        .to.be.rejectedWith(DataAccessError, 'productCode is required');
       await expect(instance.allByProductCodeWithOrganization(''))
-        .to.be.rejectedWith('productCode is required');
+        .to.be.rejectedWith(DataAccessError, 'productCode is required');
     });
 
-    it('handles organization being null', async () => {
-      setupPostgrestChain({
-        data: [{
-          id: 'ent-1', product_code: 'LLMO', tier: 'PAID', organization_id: 'org-1', organizations: null,
-        }],
-        error: null,
-      });
-
-      const results = await instance.allByProductCodeWithOrganization('LLMO');
-
-      expect(results[0].organization).to.be.null;
-    });
-
-    it('throws on PostgREST error', async () => {
+    it('throws DataAccessError on PostgREST error', async () => {
       setupPostgrestChain({ data: null, error: { message: 'connection refused' } });
 
       await expect(instance.allByProductCodeWithOrganization('LLMO'))
-        .to.be.rejectedWith('Failed to query entitlements with organizations: connection refused');
+        .to.be.rejectedWith(DataAccessError, 'Failed to query entitlements with organizations');
       expect(mockLogger.error).to.have.been.called;
     });
 
     it('paginates when results exceed page size', async () => {
-      const page1 = Array.from({ length: 1000 }, (_, i) => ({
+      const page1 = Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
         id: `ent-${i}`,
         product_code: 'LLMO',
         tier: 'PAID',
-        organization_id: `org-${i}`,
         organizations: { id: `org-${i}`, name: `Org ${i}`, ims_org_id: `org${i}@AdobeOrg` },
       }));
       const page2 = [{
-        id: 'ent-1000',
+        id: `ent-${DEFAULT_PAGE_SIZE}`,
         product_code: 'LLMO',
         tier: 'FREE_TRIAL',
-        organization_id: 'org-1000',
-        organizations: { id: 'org-1000', name: 'Org 1000', ims_org_id: 'org1000@AdobeOrg' },
+        organizations: { id: `org-${DEFAULT_PAGE_SIZE}`, name: `Org ${DEFAULT_PAGE_SIZE}`, ims_org_id: `org${DEFAULT_PAGE_SIZE}@AdobeOrg` },
       }];
 
       rangeStub = sinon.stub();
@@ -202,10 +187,11 @@ describe('EntitlementCollection', () => {
 
       const results = await instance.allByProductCodeWithOrganization('LLMO');
 
-      expect(results).to.have.lengthOf(1001);
+      expect(results).to.have.lengthOf(DEFAULT_PAGE_SIZE + 1);
       expect(rangeStub).to.have.been.calledTwice;
-      expect(rangeStub.firstCall.args).to.deep.equal([0, 999]);
-      expect(rangeStub.secondCall.args).to.deep.equal([1000, 1999]);
+      expect(rangeStub.firstCall.args).to.deep.equal([0, DEFAULT_PAGE_SIZE - 1]);
+      expect(rangeStub.secondCall.args)
+        .to.deep.equal([DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE * 2 - 1]);
     });
   });
 });

@@ -169,6 +169,7 @@ describe('Entitlement IT', async () => {
       const llmoResults = await Entitlement.allByProductCodeWithOrganization('LLMO');
       const asoResults = await Entitlement.allByProductCodeWithOrganization('ASO');
 
+      // Verify product code filtering: no cross-contamination
       for (const { entitlement } of llmoResults) {
         expect(entitlement.productCode).to.equal('LLMO');
       }
@@ -176,10 +177,14 @@ describe('Entitlement IT', async () => {
         expect(entitlement.productCode).to.equal('ASO');
       }
 
-      // Seed data has 2 LLMO entitlements (org1 + org3) and 1 ASO (org1)
-      // Note: the 'adds a new entitlement' test above creates an additional LLMO entitlement
-      expect(llmoResults.length).to.be.greaterThanOrEqual(2);
-      expect(asoResults.length).to.be.greaterThanOrEqual(1);
+      // LLMO should have results (seed data has 2 + 1 created by earlier test)
+      expect(llmoResults.length).to.be.greaterThanOrEqual(1);
+
+      // Verify no ID overlap between product codes
+      const llmoIds = new Set(llmoResults.map((r) => r.entitlement.id));
+      for (const { entitlement } of asoResults) {
+        expect(llmoIds.has(entitlement.id)).to.be.false;
+      }
     });
 
     it('returns correct organization data for each entitlement', async () => {

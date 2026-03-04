@@ -2695,7 +2695,7 @@ describe('BaseCollection', () => {
       );
 
       await expect(instance.create({ someOtherKey: 1 }))
-        .to.be.rejectedWith(DataAccessError, 'Failed to create');
+        .to.be.rejectedWith(DataAccessError, 'someKey is required');
     });
   });
 });

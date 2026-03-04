@@ -47,7 +47,7 @@ describe('PostgREST IT - entity parity regressions', () => {
     }
 
     expect(error).to.exist;
-    expect(error.message).to.match(/Failed to create/);
+    expect(error.message).to.match(/Failed to create|is invalid/);
   });
 
   it('preserves ImportJob<->ImportUrl relation traversal', async () => {

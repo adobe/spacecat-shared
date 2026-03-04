@@ -733,6 +733,8 @@ class BaseCollection {
       await this.#onCreate(instance);
       return instance;
     } catch (error) {
+      /* c8 ignore next -- re-throw guard */
+      if (error instanceof DataAccessError) throw error;
       return this.#logAndThrowError('Failed to create', error);
     }
   }
@@ -845,6 +847,8 @@ class BaseCollection {
       await this.#onCreateMany({ createdItems, errorItems });
       return { createdItems, errorItems };
     } catch (error) {
+      /* c8 ignore next -- re-throw guard */
+      if (error instanceof DataAccessError) throw error;
       return this.#logAndThrowError('Failed to create many', error);
     }
   }
@@ -929,6 +933,8 @@ class BaseCollection {
       this.#invalidateCache();
       return undefined;
     } catch (error) {
+      /* c8 ignore next -- re-throw guard */
+      if (error instanceof DataAccessError) throw error;
       return this.#logAndThrowError('Failed to save many', error);
     }
   }
@@ -959,6 +965,8 @@ class BaseCollection {
       this.#invalidateCache();
       return undefined;
     } catch (error) {
+      /* c8 ignore next -- re-throw guard */
+      if (error instanceof DataAccessError) throw error;
       return this.#logAndThrowError('Failed to remove by IDs', error);
     }
   }

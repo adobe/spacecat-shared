@@ -1,6 +1,6 @@
 # Spacecat Shared - Cloud Manager Client
 
-A JavaScript client for Adobe Cloud Manager repository operations. It supports cloning, pulling, pushing, checking out refs, zipping/unzipping repositories, applying patches, and creating pull requests for both **BYOG (Bring Your Own Git)** and **standard** Cloud Manager repositories.
+A JavaScript client for Adobe Cloud Manager repository operations. It supports cloning, pulling, pushing, checking out refs, zipping/unzipping repositories, applying patches (from S3 or in-memory strings), writing files directly, and creating pull requests for both **BYOG (Bring Your Own Git)** and **standard** Cloud Manager repositories.
 
 The client is **stateless** with respect to repositories — no repo-specific information is stored on the instance. All repository details (`programId`, `repositoryId`, `imsOrgId`, `repoType`, `repoUrl`) are passed per method call. The only instance-level state is the cached IMS service token (shared across all repos) and generic configuration (CM API base URL, S3 client, git committer identity). This means a single `CloudManagerClient` instance can work across multiple repositories, programs, and IMS orgs within the same session.
 
@@ -94,6 +94,7 @@ Both repo types authenticate via `http.extraheader` — no credentials are ever 
 - Git error output is sanitized before logging — Bearer tokens, Basic auth headers, `x-api-key`, `x-gw-ims-org-id` values, and basic-auth credentials in URLs are all replaced with `[REDACTED]`. Both `stderr`, `stdout`, and `error.message` are sanitized.
 - All git commands run with a 120-second timeout to prevent hung processes from blocking the Lambda.
 - `GIT_ASKPASS` is explicitly cleared to prevent inherited credential helpers from being invoked.
+- All apply methods (`applyPatch`, `applyPatchContent`, `applyFiles`) share a single internal orchestration path that configures git identity, checks out the branch, applies changes, and optionally stages + commits. Patch format detection (mail-message vs plain diff) is also centralized.
 
 ## Usage
 
@@ -128,6 +129,15 @@ await client.applyPatch(clonePath, 'feature/fix', 's3://bucket/patches/fix.patch
 await client.applyPatch(clonePath, 'feature/fix', 's3://bucket/patches/fix.diff', {
   commitMessage: 'Apply agent suggestion: fix accessibility issue',
 });
+
+// Apply a patch from an in-memory string (no S3 download)
+await client.applyPatchContent(clonePath, 'feature/fix', patchString, 'fix: apply suggestion');
+
+// Write files directly and commit
+await client.applyFiles(clonePath, 'feature/fix', [
+  { path: 'src/main.js', content: 'updated content' },
+  { path: 'src/utils/helper.js', content: 'new helper' },
+], 'fix: update accessibility assets');
 
 // Push (ref is required — specifies the branch to push)
 await client.push(clonePath, programId, repositoryId, { imsOrgId, ref: 'feature/fix' });
@@ -195,7 +205,9 @@ await client.cleanup(clonePath);
 - **`zipRepository(clonePath)`** – Zip the clone (including `.git` history) and return a Buffer.
 - **`unzipRepository(zipBuffer)`** – Extract a ZIP buffer to a new temp directory and return the path. Used for incremental updates (restore a previously-zipped repo from S3, then `pull` with `ref` instead of a full clone). Cleans up on failure.
 - **`createBranch(clonePath, baseBranch, newBranch)`** – Checkout the base branch and create a new branch from it.
-- **`applyPatch(clonePath, branch, s3PatchPath, options?)`** – Download a patch from S3 (`s3://bucket/key` format) and apply it. The patch format is detected automatically from the content, not the file extension. Mail-message patches (content starts with `From `) are applied with `git am`, which creates the commit using the embedded metadata. Plain diffs (content starts with `diff `) are applied with `git apply`, staged with `git add -A`, and committed — `options.commitMessage` is required for this flow. If `commitMessage` is provided with a mail-message patch, it is ignored and a warning is logged. Configures committer identity from `ASO_CODE_AUTOFIX_USERNAME`/`ASO_CODE_AUTOFIX_EMAIL`. Cleans up the temp patch file in a `finally` block.
+- **`applyPatch(clonePath, branch, s3PatchPath, options?)`** – Download a patch from S3 (`s3://bucket/key` format) and apply it. The patch format is detected automatically from the content. Mail-message patches (starting with `From `) are applied with `git am` (auto-commits using embedded metadata). Plain diffs are applied with `git apply` then staged and committed — `options.commitMessage` is required for this flow. If `commitMessage` is provided with a mail-message patch, it is ignored and a warning is logged. Cleans up the temp patch file in a `finally` block.
+- **`applyPatchContent(clonePath, branch, patchContent, commitMessage)`** – Same as `applyPatch`, but takes the patch content as an in-memory string instead of downloading from S3. Useful when the patch is already available (e.g. from suggestion data). The `commitMessage` parameter is required; for mail-message patches it is ignored (logged as info).
+- **`applyFiles(clonePath, branch, files, commitMessage)`** – Write files to the clone directory and commit the changes. `files` is an array of `{ path, content }` objects where `path` is relative to the repo root. Parent directories are created automatically. Changes are staged with `git add -A` and committed.
 - **`cleanup(clonePath)`** – Remove the clone directory. Validates the path starts with the expected temp prefix to prevent accidental deletion.
 - **`createPullRequest(programId, repositoryId, config)`** – Create a PR via the CM Repo API (BYOG only, uses IMS token). Config: `{ imsOrgId, sourceBranch, destinationBranch, title, description }`.
 

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.6.1...@adobe/spacecat-shared-data-access-v3.6.2) (2026-03-04)
+
+### Bug Fixes
+
+* **data-access:** surface PG error details in logs ([#1401](https://github.com/adobe/spacecat-shared/issues/1401)) ([ddd3041](https://github.com/adobe/spacecat-shared/commit/ddd3041322a1468ee911f49f06c240a6697b8e66))
+
 ## [@adobe/spacecat-shared-data-access-v3.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.6.0...@adobe/spacecat-shared-data-access-v3.6.1) (2026-03-03)
 
 ### Bug Fixes

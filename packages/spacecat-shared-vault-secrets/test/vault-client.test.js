@@ -181,6 +181,53 @@ describe('VaultClient', () => {
     });
   });
 
+  describe('tryReadSecret', () => {
+    let client;
+
+    beforeEach(async () => {
+      nock(VAULT_ADDR)
+        .post('/v1/auth/approle/login')
+        .reply(200, {
+          auth: { client_token: 'hvs.try-token', lease_duration: 3600, renewable: true },
+        });
+      client = new VaultClient({ vaultAddr: VAULT_ADDR, mountPoint: MOUNT_POINT });
+      await client.authenticate(ROLE_ID, SECRET_ID);
+    });
+
+    it('returns secret data on 200', async () => {
+      nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/my/secret/path`)
+        .matchHeader('X-Vault-Token', 'hvs.try-token')
+        .reply(200, {
+          data: {
+            data: { key: 'value' },
+            metadata: { version: 1 },
+          },
+        });
+
+      const result = await client.tryReadSecret('my/secret/path');
+      expect(result).to.deep.equal({ key: 'value' });
+    });
+
+    it('returns null on 404', async () => {
+      nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/missing/path`)
+        .reply(404, { errors: [] });
+
+      const result = await client.tryReadSecret('missing/path');
+      expect(result).to.equal(null);
+    });
+
+    it('throws on non-404 error (e.g., 403)', async () => {
+      nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/forbidden/path`)
+        .reply(403, { errors: ['permission denied'] });
+
+      await expect(client.tryReadSecret('forbidden/path'))
+        .to.be.rejectedWith('Vault read failed: 403');
+    });
+  });
+
   describe('getLastChangedDate', () => {
     let client;
 

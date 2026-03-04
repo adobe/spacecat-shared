@@ -52,7 +52,6 @@ class EntitlementCollection extends BaseCollection {
         .from('entitlements')
         .select('id, product_code, tier, organizations!inner(id, name, ims_org_id)')
         .eq('product_code', productCode)
-        .not('organizations.ims_org_id', 'is', null)
         .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
 
       if (error) {

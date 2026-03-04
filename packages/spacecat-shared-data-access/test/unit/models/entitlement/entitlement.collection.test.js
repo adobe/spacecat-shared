@@ -91,12 +91,11 @@ describe('EntitlementCollection', () => {
 
     function setupPostgrestChain(result) {
       rangeStub = sinon.stub().resolves(result);
-      const notStub = sinon.stub().returns({ range: rangeStub });
-      const eqStub = sinon.stub().returns({ not: notStub });
+      const eqStub = sinon.stub().returns({ range: rangeStub });
       const selectStub = sinon.stub().returns({ eq: eqStub });
       instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
       return {
-        selectStub, eqStub, notStub, rangeStub,
+        selectStub, eqStub, rangeStub,
       };
     }
 
@@ -180,8 +179,7 @@ describe('EntitlementCollection', () => {
       rangeStub = sinon.stub();
       rangeStub.onFirstCall().resolves({ data: page1, error: null });
       rangeStub.onSecondCall().resolves({ data: page2, error: null });
-      const notStub = sinon.stub().returns({ range: rangeStub });
-      const eqStub = sinon.stub().returns({ not: notStub });
+      const eqStub = sinon.stub().returns({ range: rangeStub });
       const selectStub = sinon.stub().returns({ eq: eqStub });
       instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
 

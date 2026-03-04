@@ -6,7 +6,9 @@
 
 ## Thesis
 
-**All of TierClient's complexity was DynamoDB workarounds.** Now that we're on PostgreSQL (via PostgREST), every TierClient method can be replaced by a single collection method using PostgREST resource embedding (JOINs). The package should be fully retired — not partially — because none of the patterns it encapsulates are necessary with a relational database.
+**All of TierClient's complexity was DynamoDB workarounds.** Now that we're on PostgreSQL (via PostgREST), every TierClient method can be replaced by a collection method using PostgREST resource embedding (JOINs). The package should be fully retired — not partially — because none of the patterns it encapsulates are necessary with a relational database.
+
+**Important distinction:** Some TierClient methods are individually inefficient (e.g., `getAllEnrollment` chunking, `getFirstEnrollment` iterating). Others are perfectly fine per-invocation but get called in N+1 patterns by consumers (e.g., `checkValidEntitlement` is 1-2 queries — the problem is `orgs2.js` calling it ~928 times in a loop). The retirement addresses both: replacing inefficient methods with JOINs, and giving consumers bulk-query alternatives so N+1 loops aren't needed.
 
 ## Background
 
@@ -30,28 +32,45 @@ sites.organization_id         → organizations(id)
 
 ### 1. `checkValidEntitlement()` — 13 call sites
 
-**Current implementation:** Two sequential queries — `Entitlement.findByOrganizationIdAndProductCode()`, then optionally `SiteEnrollment.allBySiteId()` filtered in JS by entitlement ID.
+**Current implementation:** Two sequential queries — `Entitlement.findByOrganizationIdAndProductCode()`, then optionally `SiteEnrollment.allBySiteId()` filtered in JS by entitlement ID. The method itself is efficient (1-2 queries per call). The N+1 problem occurs when consumers call it in a loop (e.g., `orgs2.js` calling it ~928 times via `Promise.all`).
 
-**PostgREST replacement:**
+**PostgREST replacement — two variants:**
+
+Org-only (most callers):
 ```javascript
-// EntitlementCollection.findValidForOrganization(orgId, productCode, siteId?)
+// EntitlementCollection.findValidForOrganization(orgId, productCode)
 const { data } = await this.postgrestService
   .from('entitlements')
-  .select('*, site_enrollments(*)')
+  .select('*')
   .eq('organization_id', orgId)
   .eq('product_code', productCode)
   .maybeSingle();
 ```
-One query. Site enrollment filtering moves to a `.eq('site_enrollments.site_id', siteId)` clause when needed.
+
+With site enrollment check (when `siteId` is needed):
+```javascript
+// EntitlementCollection.findValidForSite(orgId, productCode, siteId)
+const { data } = await this.postgrestService
+  .from('entitlements')
+  .select('*, site_enrollments!inner(*)')
+  .eq('organization_id', orgId)
+  .eq('product_code', productCode)
+  .eq('site_enrollments.site_id', siteId)
+  .maybeSingle();
+```
+
+The site-enrollment embedding is only included when a caller actually needs it, avoiding unnecessary JOINs for the majority of call sites that only check org-level entitlement.
 
 **Callers:**
-| Repo | Files |
-|---|---|
-| spacecat-auth-service | `login.js`, `orgs.js`, `orgs2.js`, `s2s-login.js`, `access-control-util.js`, `promise.js` |
-| spacecat-api-service | `support/utils.js`, `access-control-util.js`, `slack/commands/get-entitlement-site.js`, `slack/commands/get-entitlement-imsorg.js`, `slack/commands/run-audit.js` |
-| spacecat-import-worker | `import-helper.js` |
+| Repo | Files | Variant |
+|---|---|---|
+| spacecat-auth-service | `login.js`, `orgs.js`, `orgs2.js`, `s2s-login.js`, `promise.js` | org-only |
+| spacecat-auth-service | `access-control-util.js` | both (site + org) |
+| spacecat-api-service | `support/utils.js`, `slack/commands/get-entitlement-site.js`, `slack/commands/run-audit.js` | with-site |
+| spacecat-api-service | `access-control-util.js`, `slack/commands/get-entitlement-imsorg.js` | org-only |
+| spacecat-import-worker | `import-helper.js` | with-site |
 
-**Migration effort:** Low. Callers replace `TierClient.createFor*(…).checkValidEntitlement()` with `Entitlement.findValidForOrganization(orgId, productCode, siteId?)`. Return shape stays the same.
+**Migration effort:** Low. Callers replace `TierClient.createFor*(…).checkValidEntitlement()` with the appropriate variant. Return shape stays the same.
 
 ---
 
@@ -62,7 +81,7 @@ One query. Site enrollment filtering moves to a `.eq('site_enrollments.site_id',
 2. If site is provided and no enrollment exists, create one
 3. New entitlements get hardcoded quotas: `{ llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 }`
 
-**Why this looked complex:** The "don't downgrade PAID" guard and the two-entity creation (entitlement + enrollment) made this seem like business logic that needed a dedicated client. In practice, it's a simple conditional upsert.
+**Business logic note:** The "don't downgrade PAID" guard and hardcoded quotas (`llmo_trial_prompts: 200`) are product-specific business rules. There's a valid question about whether these belong in the data layer (`EntitlementCollection`) or in a thin service layer in consumer repos. Our recommendation: keep them in the collection. The PAID guard is a data integrity constraint (prevent invalid state transitions), and the default quotas are a creation default — both are closer to the data than to any specific consumer's workflow. If product-specific rules grow more complex in the future, they can be extracted then.
 
 **PostgREST replacement:**
 ```javascript
@@ -103,7 +122,7 @@ async createOrUpdateWithEnrollment(orgId, productCode, tier, siteId) {
 - **Site path:** Fetch all enrollments, filter by `targetSiteId`, verify org ownership with `Site.findById()`
 - **Org path:** Fetch all enrollments, extract site IDs, batch-fetch sites in chunks of 50 via `batchGetByKeys()`, filter by organization ID match
 
-The chunking exists because DynamoDB's `BatchGetItem` limit (and later PostgREST URL length) couldn't handle 900+ site IDs in one request.
+The chunking (`CHUNK_SIZE = 50`, lines 264-275 of tier-client.js, added in [PR #1390](https://github.com/adobe/spacecat-shared/pull/1390)) exists because PostgREST uses `GET` with `?id=in.(...)` query params, and large site ID lists hit the 414 URI Too Large limit. A defense-in-depth fix was also added to `BaseCollection.batchGetByKeys()` itself ([PR #1391](https://github.com/adobe/spacecat-shared/pull/1391)). Both were post-migration band-aids — the underlying problem is that the client fetches enrollment IDs, then has to turn around and batch-fetch the related sites because there's no JOIN.
 
 **PostgREST replacement:**
 ```javascript
@@ -250,6 +269,8 @@ For each consumer repo:
 Order: `spacecat-auth-service` → `spacecat-api-service` → `spacecat-fulfillment-worker` → `spacecat-import-worker`
 
 (Auth-service first because it's the one hitting production errors today.)
+
+**Migration note — plain objects vs model instances:** Some new collection methods (like `allByProductCodeWithOrganization` in PR #1402) return plain objects rather than model instances, since they combine fields from multiple entities via JOINs. Callers migrating from TierClient will need to switch from getter methods (`entitlement.getId()`, `entitlement.getTier()`) to direct property access (`entitlement.id`, `entitlement.tier`). Methods that return single-entity results (like `findValidForOrganization`) will continue to return model instances.
 
 ### Phase 3: Archive `spacecat-shared-tier-client`
 

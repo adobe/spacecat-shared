@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.7.0...@adobe/spacecat-shared-data-access-v3.8.0) (2026-03-05)
+
+### Features
+
+* **data-access:** add bulk entitlement query with organization embedding ([#1402](https://github.com/adobe/spacecat-shared/issues/1402)) ([588cfce](https://github.com/adobe/spacecat-shared/commit/588cfce8e1b4e81a55c3fbca4c7491368196b558))
+
 ## [@adobe/spacecat-shared-data-access-v3.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.6.2...@adobe/spacecat-shared-data-access-v3.7.0) (2026-03-04)
 
 ### Features

@@ -92,25 +92,41 @@ class BaseCollection {
     return isSingleFieldAcrossAll ? field : null;
   }
 
+  #normalizeEnumValue(key, value) {
+    if (typeof value !== 'string') return value;
+    const attr = this.schema.getAttribute(key);
+    if (!Array.isArray(attr?.type)) return value;
+    const match = attr.type.find((v) => v.toLowerCase() === value.toLowerCase());
+    return match ?? value;
+  }
+
   // eslint-disable-next-line class-methods-use-this
   #isInvalidInputError(error) {
     let current = error;
     while (current) {
-      if (current?.code === '22P02') {
-        return true;
-      }
+      if (current?.code === '22P02') return true;
       current = current.cause;
     }
     return false;
   }
 
   #logAndThrowError(message, cause) {
-    const error = new DataAccessError(message, this, cause);
-    this.log.error(`Base Collection Error [${this.entityName}]`, error);
-    if (isNonEmptyArray(error.cause?.fields)) {
-      this.log.error(`Validation errors: ${JSON.stringify(error.cause.fields)}`);
+    const parts = [message];
+    if (cause?.code) parts.push(`[${cause.code}] ${cause.message}`);
+    if (cause?.details) parts.push(cause.details);
+    if (cause?.hint) parts.push(`hint: ${cause.hint}`);
+
+    this.log.error(`[${this.entityName}] ${parts.join(' - ')}`);
+
+    if (isNonEmptyArray(cause?.fields)) {
+      this.log.error(`Validation errors: ${JSON.stringify(cause.fields)}`);
     }
-    throw error;
+
+    throw new DataAccessError(
+      message,
+      { entityName: this.entityName, tableName: this.tableName },
+      cause,
+    );
   }
 
   #initializeCollectionMethods() {
@@ -378,7 +394,7 @@ class BaseCollection {
 
     let filtered = query;
     Object.entries(keys).forEach(([key, value]) => {
-      filtered = filtered.eq(this.#toDbField(key), value);
+      filtered = filtered.eq(this.#toDbField(key), this.#normalizeEnumValue(key, value));
     });
     return filtered;
   }
@@ -539,7 +555,7 @@ class BaseCollection {
       const instances = this.#createInstances(allRows);
       return shouldReturnCursor ? { data: instances, cursor } : instances;
     } catch (error) {
-      if (error instanceof DataAccessError) {
+      if (error.constructor === DataAccessError) {
         throw error;
       }
       return this.#logAndThrowError('Failed to query', error);
@@ -593,6 +609,7 @@ class BaseCollection {
     return isNonEmptyObject(item);
   }
 
+  // eslint-disable-next-line consistent-return
   async batchGetByKeys(keys, options = {}) {
     guardArray('keys', keys, this.entityName, 'any');
 
@@ -615,7 +632,9 @@ class BaseCollection {
       const bulkKeyField = this.#resolveBulkKeyField(keys);
       if (bulkKeyField) {
         const dbField = this.#toDbField(bulkKeyField);
-        const values = keys.map((key) => key[bulkKeyField]);
+        const values = keys.map(
+          (key) => this.#normalizeEnumValue(bulkKeyField, key[bulkKeyField]),
+        );
         const select = this.#buildSelect(options.attributes);
 
         // Chunk values to avoid 414 URI Too Large from PostgREST GET URLs.
@@ -667,8 +686,11 @@ class BaseCollection {
         unprocessed: [],
       };
     } catch (error) {
-      this.log.error(`Failed to batch get by keys [${this.entityName}]`, error);
-      throw new DataAccessError('Failed to batch get by keys', this, error);
+      /* c8 ignore next 3 -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
+      this.#logAndThrowError('Failed to batch get by keys', error);
     }
   }
 
@@ -711,6 +733,8 @@ class BaseCollection {
       await this.#onCreate(instance);
       return instance;
     } catch (error) {
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to create', error);
     }
   }
@@ -823,6 +847,8 @@ class BaseCollection {
       await this.#onCreateMany({ createdItems, errorItems });
       return { createdItems, errorItems };
     } catch (error) {
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to create many', error);
     }
   }
@@ -846,7 +872,7 @@ class BaseCollection {
 
     const { error } = await query.select().maybeSingle();
     if (error) {
-      throw new DataAccessError('Failed to update entity', this, error);
+      this.#logAndThrowError('Failed to update entity', error);
     }
   }
 
@@ -907,6 +933,8 @@ class BaseCollection {
       this.#invalidateCache();
       return undefined;
     } catch (error) {
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to save many', error);
     }
   }
@@ -937,6 +965,8 @@ class BaseCollection {
       this.#invalidateCache();
       return undefined;
     } catch (error) {
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to remove by IDs', error);
     }
   }
@@ -967,7 +997,9 @@ class BaseCollection {
       const bulkKeyField = this.#resolveBulkKeyField(keys);
       if (bulkKeyField) {
         const dbField = this.#toDbField(bulkKeyField);
-        const values = keys.map((key) => key[bulkKeyField]);
+        const values = keys.map(
+          (key) => this.#normalizeEnumValue(bulkKeyField, key[bulkKeyField]),
+        );
         const { error } = await this.postgrestService
           .from(this.tableName)
           .delete()

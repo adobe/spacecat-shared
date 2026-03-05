@@ -1191,7 +1191,9 @@ describe('BaseCollection', () => {
       });
 
       await expect(baseCollectionInstance.batchGetByKeys(keys)).to.be.rejectedWith(DataAccessError);
-      expect(mockLogger.error).to.have.been.calledWith('Failed to batch get by keys [mockEntityModel]', error);
+      expect(mockLogger.error).to.have.been.calledWith(
+        sinon.match('[mockEntityModel] Failed to batch get by keys'),
+      );
     });
 
     it('should handle null records in results', async () => {
@@ -1410,10 +1412,9 @@ describe('BaseCollection', () => {
       await expect(baseCollectionInstance.removeByIndexKeys(keys))
         .to.be.rejectedWith(DataAccessError, 'Failed to remove by index keys');
 
-      // The error logging uses the format "Base Collection Error [entityName]"
+      // The error logging surfaces the error message with entity context
       expect(mockLogger.error).to.have.been.calledWith(
-        'Base Collection Error [mockEntityModel]',
-        sinon.match.instanceOf(DataAccessError),
+        sinon.match('[mockEntityModel] Failed to remove by index keys'),
       );
     });
 
@@ -2500,6 +2501,180 @@ describe('BaseCollection', () => {
       );
       expect(result.record.updatedAt).to.equal('2026-01-01T00:00:01.000Z');
       expect(result.updates.updatedAt).to.equal('2026-01-01T00:00:01.000Z');
+    });
+
+    describe('enum value normalization', () => {
+      const enumAttributes = {
+        someKey: { type: 'string', required: true },
+        someOtherKey: { type: 'number' },
+        status: { type: ['NEW', 'APPROVED', 'IN_PROGRESS'] },
+      };
+
+      const enumIndexes = {
+        primary: {
+          index: 'primary',
+          pk: { facets: ['someKey'] },
+          sk: { facets: [] },
+        },
+        byStatus: {
+          index: 'byStatus',
+          pk: { composite: ['someKey'] },
+          sk: { composite: ['status'] },
+        },
+      };
+
+      it('normalizes lowercase enum values to the correct case in key filters', async () => {
+        const query = createPostgrestQuery({
+          data: [{ some_key: 'a', status: 'NEW' }],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 'a', status: 'new' });
+
+        expect(query.eq).to.have.been.calledWith('status', 'NEW');
+      });
+
+      it('normalizes mixed-case enum values to the correct case', async () => {
+        const query = createPostgrestQuery({
+          data: [],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 'a', status: 'In_Progress' });
+
+        expect(query.eq).to.have.been.calledWith('status', 'IN_PROGRESS');
+      });
+
+      it('passes through non-enum string values unchanged', async () => {
+        const query = createPostgrestQuery({
+          data: [],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 'MyValue' });
+
+        expect(query.eq).to.have.been.calledWith('some_key', 'MyValue');
+      });
+
+      it('passes through non-string values unchanged', async () => {
+        const numAttributes = {
+          someKey: { type: 'number', required: true },
+        };
+        const numIndexes = {
+          primary: { pk: { facets: ['someKey'] }, sk: { facets: [] } },
+          bySomeKey: { index: 'bySomeKey', pk: { composite: ['someKey'] }, sk: { composite: [] } },
+        };
+
+        const query = createPostgrestQuery({
+          data: [],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          numIndexes,
+          mockLogger,
+          numAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 42 });
+
+        expect(query.eq).to.have.been.calledWith('some_key', 42);
+      });
+
+      it('passes through unrecognized enum values unchanged', async () => {
+        const query = createPostgrestQuery({
+          data: [],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 'a', status: 'UNKNOWN_VALUE' });
+
+        expect(query.eq).to.have.been.calledWith('status', 'UNKNOWN_VALUE');
+      });
+
+      it('normalizes enum values in batchGetByKeys bulk .in() path', async () => {
+        const inCalls = [];
+        const fromStub = stub().callsFake(() => ({
+          select: stub().callsFake(() => {
+            const query = {
+              in: stub().callsFake((_field, vals) => {
+                inCalls.push({ field: _field, values: vals });
+                return query;
+              }),
+              then: (onFulfilled, onRejected) => Promise
+                .resolve({ data: [], error: null })
+                .then(onFulfilled, onRejected),
+            };
+            return query;
+          }),
+        }));
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.batchGetByKeys([
+          { status: 'new' },
+          { status: 'approved' },
+          { status: 'in_progress' },
+        ]);
+
+        expect(inCalls).to.have.length(1);
+        expect(inCalls[0].values).to.deep.equal(['NEW', 'APPROVED', 'IN_PROGRESS']);
+      });
     });
 
     it('covers required-field validation branch with non-empty payload', async () => {

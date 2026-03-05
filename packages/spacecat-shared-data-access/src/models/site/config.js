@@ -46,6 +46,7 @@ export const IMPORT_SOURCES = {
 };
 
 const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
+const AWS_REGION_PATTERN = /^[a-z]{2}(?:-[a-z]+)+-\d+$/i;
 const LLMO_TAG = Joi.alternatives()
   .try(
     // Tag market, product, topic like this: "market: ch", "product: firefly", "topic: copyright"
@@ -324,6 +325,7 @@ export const configSchema = Joi.object({
       bucketName: Joi.string().optional(),
       orgId: Joi.string().optional(),
       cdnProvider: Joi.string().optional(),
+      region: Joi.string().pattern(AWS_REGION_PATTERN).optional(),
     }).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
@@ -344,6 +346,12 @@ export const configSchema = Joi.object({
   edgeOptimizeConfig: Joi.object({
     enabled: Joi.boolean().optional(),
     opted: Joi.number().optional(),
+    stagingDomains: Joi.array().items(
+      Joi.object({
+        domain: Joi.string().required(),
+        id: Joi.string().required(),
+      }),
+    ).optional(),
   }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),

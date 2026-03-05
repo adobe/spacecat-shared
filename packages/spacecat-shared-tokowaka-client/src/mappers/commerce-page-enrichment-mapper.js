@@ -18,14 +18,69 @@ const EXCLUDED_FIELDS = new Set([
   'rationale',
 ]);
 
-function filterEnrichmentData(enrichmentData) {
-  const filtered = {};
-  for (const [key, value] of Object.entries(enrichmentData)) {
-    if (!EXCLUDED_FIELDS.has(key) && value != null) {
-      filtered[key] = value;
+// Enrichment fields that map to schema.org Product top-level properties.
+// Each entry: schemaKey → [enrichment field names in priority order]
+const TOP_LEVEL_MAPPINGS = {
+  sku: ['sku'],
+  name: ['name'],
+  material: ['material'],
+  keywords: ['keywords'],
+  color: ['color', 'variants.color'],
+  size: ['size', 'variants.size'],
+  description: ['description', 'pdp.description_plain', 'human_readable_summary'],
+  category: ['category', 'facts.facets.category_path'],
+};
+
+function toSchemaOrgProduct(enrichmentData) {
+  const product = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+  };
+  const consumed = new Set();
+
+  // Map top-level schema.org Product fields
+  for (const [schemaKey, sourceKeys] of Object.entries(TOP_LEVEL_MAPPINGS)) {
+    for (const key of sourceKeys) {
+      if (key in enrichmentData && enrichmentData[key] != null) {
+        consumed.add(key);
+        let value = enrichmentData[key];
+
+        if (schemaKey === 'category' && Array.isArray(value)) {
+          value = value.join(' > ');
+        }
+
+        product[schemaKey] = value;
+        break;
+      }
     }
   }
-  return filtered;
+
+  // Brand: wrap string in Brand object, pass objects through
+  if ('brand' in enrichmentData && enrichmentData.brand != null) {
+    consumed.add('brand');
+    const brandValue = enrichmentData.brand;
+    product.brand = typeof brandValue === 'object'
+      ? brandValue
+      : { '@type': 'Brand', name: brandValue };
+  }
+
+  // Everything else → additionalProperty as PropertyValue
+  const additionalProperties = [];
+  for (const [key, value] of Object.entries(enrichmentData)) {
+    if (!consumed.has(key) && !EXCLUDED_FIELDS.has(key) && value != null) {
+      additionalProperties.push({
+        '@type': 'PropertyValue',
+        name: key,
+        value,
+      });
+    }
+  }
+
+  if (additionalProperties.length > 0) {
+    product.additionalProperty = additionalProperties;
+  }
+
+  return product;
 }
 
 export default class CommercePageEnrichmentMapper extends BaseOpportunityMapper {
@@ -76,7 +131,7 @@ export default class CommercePageEnrichmentMapper extends BaseOpportunityMapper 
 
       const data = suggestion.getData();
       const enrichmentData = JSON.parse(data.patchValue);
-      const value = filterEnrichmentData(enrichmentData);
+      const value = toSchemaOrgProduct(enrichmentData);
 
       patches.push({
         ...this.createBasePatch(suggestion, opportunityId),
@@ -86,7 +141,7 @@ export default class CommercePageEnrichmentMapper extends BaseOpportunityMapper 
         valueFormat: 'json',
         target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
         tag: 'script',
-        attrs: { type: 'application/json' },
+        attrs: { type: 'application/ld+json' },
       });
     });
 

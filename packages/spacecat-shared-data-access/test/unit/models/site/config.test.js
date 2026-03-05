@@ -1483,6 +1483,44 @@ describe('Config Tests', () => {
       expect(validated).to.deep.equal(config);
     });
 
+    it('validates optional llmo cdnBucketConfig region with aws-style format', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/tmp/data',
+          brand: 'testBrand',
+          cdnBucketConfig: {
+            bucketName: 'test-bucket',
+            cdnProvider: 'aws',
+            region: 'us-east-1',
+          },
+        },
+      };
+
+      const validated = validateConfiguration(config);
+      expect(validated).to.deep.equal(config);
+    });
+
+    it('throws error for invalid llmo cdnBucketConfig region format', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/tmp/data',
+          brand: 'testBrand',
+          cdnBucketConfig: {
+            bucketName: 'test-bucket',
+            cdnProvider: 'aws',
+            region: 'us_east_1',
+          },
+        },
+      };
+
+      expect(() => validateConfiguration(config))
+        .to.throw().and.satisfy((error) => {
+          expect(error.message).to.include('Configuration validation error');
+          expect(error.message).to.include('"llmo.cdnBucketConfig.region" with value "us_east_1" fails to match the required pattern');
+          return true;
+        });
+    });
+
     it('throws error for missing required import fields', () => {
       const config = {
         imports: [

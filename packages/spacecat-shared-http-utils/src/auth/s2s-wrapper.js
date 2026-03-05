@@ -114,7 +114,6 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
 
       context.s2sCtx = {
         clientId: payload.client_id,
-        capabilities,
         scopedOrgId: tenants[0]?.id,
       };
     } catch (e) {

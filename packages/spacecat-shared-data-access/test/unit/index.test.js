@@ -14,7 +14,7 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import dataAccessWrapper from '../../src/index.js';
+import dataAccessWrapper, { resolveS2SCapabilities } from '../../src/index.js';
 
 describe('Data Access Wrapper Tests', () => {
   let mockFn;
@@ -89,24 +89,6 @@ describe('Data Access Wrapper Tests', () => {
     }
   });
 
-  it('proceeds when S2S consumer has a populated s2sCtx', async function () {
-    this.timeout(10000);
-    mockContext.attributes = {
-      authInfo: { isS2SConsumer: () => true },
-    };
-    mockContext.s2sCtx = {
-      clientId: 'test-client',
-      capabilities: ['site:read'],
-      scopedOrgId: 'org1',
-    };
-    const wrappedFn = dataAccessWrapper(mockFn);
-
-    const response = await wrappedFn(mockRequest, mockContext);
-
-    expect(response).to.equal('function response');
-    expect(mockFn.calledOnce).to.be.true;
-  });
-
   it('proceeds when authInfo is not an S2S consumer (end-user)', async function () {
     this.timeout(10000);
     mockContext.attributes = {
@@ -128,5 +110,86 @@ describe('Data Access Wrapper Tests', () => {
 
     expect(response).to.equal('function response');
     expect(mockFn.calledOnce).to.be.true;
+  });
+});
+
+describe('resolveS2SCapabilities', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('returns capabilities for an active consumer', async () => {
+    const mockDataAccess = {
+      Consumer: {
+        findByClientId: sinon.stub().resolves({
+          isRevoked: () => false,
+          getStatus: () => 'ACTIVE',
+          getCapabilities: () => ['site:read', 'site:write'],
+        }),
+      },
+    };
+
+    const caps = await resolveS2SCapabilities(mockDataAccess, 'test-client');
+
+    expect(mockDataAccess.Consumer.findByClientId.calledOnceWith('test-client')).to.be.true;
+    expect(caps).to.deep.equal(['site:read', 'site:write']);
+  });
+
+  it('throws when consumer is revoked', async () => {
+    const mockDataAccess = {
+      Consumer: {
+        findByClientId: sinon.stub().resolves({
+          isRevoked: () => true,
+          getCapabilities: () => ['site:read'],
+        }),
+      },
+    };
+
+    try {
+      await resolveS2SCapabilities(mockDataAccess, 'revoked-client');
+      throw new Error('Expected to throw');
+    } catch (error) {
+      expect(error.message).to.equal(
+        'S2S consumer with clientId "revoked-client" is not active',
+      );
+    }
+  });
+
+  it('throws when consumer is suspended', async () => {
+    const mockDataAccess = {
+      Consumer: {
+        findByClientId: sinon.stub().resolves({
+          isRevoked: () => false,
+          getStatus: () => 'SUSPENDED',
+          getCapabilities: () => ['site:read'],
+        }),
+      },
+    };
+
+    try {
+      await resolveS2SCapabilities(mockDataAccess, 'suspended-client');
+      throw new Error('Expected to throw');
+    } catch (error) {
+      expect(error.message).to.equal(
+        'S2S consumer with clientId "suspended-client" is not active',
+      );
+    }
+  });
+
+  it('throws when consumer is not found in DB', async () => {
+    const mockDataAccess = {
+      Consumer: {
+        findByClientId: sinon.stub().resolves(null),
+      },
+    };
+
+    try {
+      await resolveS2SCapabilities(mockDataAccess, 'unknown-client');
+      throw new Error('Expected to throw');
+    } catch (error) {
+      expect(error.message).to.equal(
+        'S2S consumer with clientId "unknown-client" is not active',
+      );
+    }
   });
 });

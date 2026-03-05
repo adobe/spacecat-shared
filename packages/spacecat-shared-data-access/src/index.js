@@ -10,11 +10,27 @@
  * governing permissions and limitations under the License.
  */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
+import Consumer from './models/consumer/consumer.model.js';
 import { createDataAccess } from './service/index.js';
 
 export * from './service/index.js';
+
+/**
+ * Resolves S2S consumer capabilities from source of truth.
+ * @param {object} dataAccess - The data access layer
+ * @param {string} clientId - The S2S consumer client ID
+ * @returns {Promise<Array>} - The consumer's capabilities
+ * @throws {Error} if consumer is not found, revoked, or suspended
+ */
+export async function resolveS2SCapabilities(dataAccess, clientId) {
+  const consumer = await dataAccess.Consumer.findByClientId(clientId);
+  if (!consumer || consumer.isRevoked?.() || consumer.getStatus?.() === Consumer.STATUS.SUSPENDED) {
+    throw new Error(`S2S consumer with clientId "${clientId}" is not active`);
+  }
+  return consumer.getCapabilities();
+}
 
 /**
  * Wrapper for data access layer
@@ -68,6 +84,10 @@ export default function dataAccessWrapper(fn) {
         s2sAllowedImsOrgIds,
         s2sCtx,
       }, log);
+
+      if (hasText(s2sCtx.clientId)) {
+        s2sCtx.capabilities = await resolveS2SCapabilities(context.dataAccess, s2sCtx.clientId);
+      }
     }
 
     return fn(request, context);

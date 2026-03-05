@@ -195,7 +195,6 @@ describe('s2sAuthWrapper', () => {
       expect(handler.calledOnce).to.be.true;
       expect(context.s2sCtx).to.deep.equal({
         clientId: 'test-client-123',
-        capabilities: ['site:read'],
         scopedOrgId: 'org1',
       });
     });
@@ -342,7 +341,6 @@ describe('s2sAuthWrapper', () => {
       expect(handler.calledOnce).to.be.true;
       expect(context.s2sCtx).to.deep.equal({
         clientId: 'multi-tenant-client',
-        capabilities: ['site:read', 'opportunity:write'],
         scopedOrgId: 'org1',
       });
     });

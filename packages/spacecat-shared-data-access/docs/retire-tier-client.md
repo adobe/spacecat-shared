@@ -251,13 +251,13 @@ Add the following to `EntitlementCollection`:
 - `findValidForOrganization(orgId, productCode, siteId?)`
 - `createOrUpdateWithEnrollment(orgId, productCode, tier, siteId?)`
 - `revokeByOrganization(orgId, productCode)`
-- `allByProductCodeWithOrganization(productCode)` — already done in [PR #1402](https://github.com/adobe/spacecat-shared/pull/1402)
+- `allByProductCodeWithOrganization(productCode)` — shipped in [PR #1402](https://github.com/adobe/spacecat-shared/pull/1402), released in `@adobe/spacecat-shared-data-access@3.8.0`
 
 Add the following to `SiteEnrollmentCollection`:
 - `allWithDetailsByOrganization(orgId, productCode, siteId?)`
 - `revokeBySiteAndEntitlement(siteId, entitlementId)`
 
-Release a new `@adobe/spacecat-shared-data-access` version.
+Release a new `@adobe/spacecat-shared-data-access` version (remaining methods).
 
 ### Phase 2: Migrate callers (per repo)
 

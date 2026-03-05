@@ -17,7 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
-import DrsClient from '../src/index.js';
+import DrsClient, { SCRAPE_DATASET_IDS } from '../src/index.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -230,6 +230,211 @@ describe('DrsClient', () => {
       expect(result.job_id).to.equal('job-123');
       expect(result.status).to.equal('COMPLETED');
       scope.done();
+    });
+  });
+
+  describe('SCRAPE_DATASET_IDS', () => {
+    it('exports all expected dataset IDs', () => {
+      expect(SCRAPE_DATASET_IDS).to.deep.equal({
+        YOUTUBE_VIDEOS: 'youtube_videos',
+        YOUTUBE_COMMENTS: 'youtube_comments',
+        REDDIT_POSTS: 'reddit_posts',
+        REDDIT_COMMENTS: 'reddit_comments',
+        WIKIPEDIA: 'wikipedia',
+      });
+    });
+
+    it('is frozen', () => {
+      expect(Object.isFrozen(SCRAPE_DATASET_IDS)).to.be.true;
+    });
+  });
+
+  describe('submitScrapeJob', () => {
+    let client;
+
+    beforeEach(() => {
+      client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+    });
+
+    it('submits a scrape job with defaults (priority HIGH)', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.provider_id).to.equal('brightdata');
+          expect(body.priority).to.equal('HIGH');
+          expect(body.parameters.dataset_id).to.equal(SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS);
+          expect(body.parameters.site_id).to.equal('site-1');
+          expect(body.parameters.urls).to.deep.equal(['https://youtube.com/watch?v=abc']);
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-1' });
+
+      const result = await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: ['https://youtube.com/watch?v=abc'],
+      });
+
+      expect(result.job_id).to.equal('scrape-1');
+      expect(log.info).to.have.been.calledWith(
+        `Submitting DRS scrape job for dataset ${SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS}`,
+        { datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS, siteId: 'site-1', urlCount: 1 },
+      );
+      scope.done();
+    });
+
+    it('accepts LOW priority', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => body.priority === 'LOW')
+        .reply(200, { job_id: 'scrape-2' });
+
+      const result = await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_POSTS,
+        siteId: 'site-2',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+        priority: 'LOW',
+      });
+
+      expect(result.job_id).to.equal('scrape-2');
+      scope.done();
+    });
+
+    it('handles multiple URLs', async () => {
+      const urls = [
+        'https://youtube.com/watch?v=1',
+        'https://youtube.com/watch?v=2',
+        'https://youtube.com/watch?v=3',
+      ];
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters.urls).to.deep.equal(urls);
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-3' });
+
+      await client.submitScrapeJob({ datasetId: SCRAPE_DATASET_IDS.YOUTUBE_COMMENTS, siteId: 'site-3', urls });
+      scope.done();
+    });
+
+    it('accepts all valid dataset IDs', async () => {
+      for (const value of Object.values(SCRAPE_DATASET_IDS)) {
+        const scope = nock(DRS_API_URL)
+          .post('/jobs', (body) => body.parameters.dataset_id === value)
+          .reply(200, { job_id: `job-${value}` });
+
+        // eslint-disable-next-line no-await-in-loop
+        const result = await client.submitScrapeJob({
+          datasetId: value, siteId: 'site-x', urls: ['https://example.com'],
+        });
+
+        expect(result.job_id).to.equal(`job-${value}`);
+        scope.done();
+      }
+    });
+
+    it('throws on invalid datasetId', async () => {
+      await expect(client.submitScrapeJob({
+        datasetId: 'invalid_dataset', siteId: 'site-1', urls: ['https://example.com'],
+      })).to.be.rejectedWith('Invalid dataset_id "invalid_dataset". Must be one of:');
+    });
+
+    it('throws when urls is not a non-empty array', async () => {
+      const params = { datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS, siteId: 'site-1' };
+      await expect(client.submitScrapeJob({ ...params, urls: 'https://example.com' }))
+        .to.be.rejectedWith('urls must be a non-empty array of strings');
+      await expect(client.submitScrapeJob({ ...params, urls: [] }))
+        .to.be.rejectedWith('urls must be a non-empty array of strings');
+    });
+
+    it('throws when siteId is missing or empty', async () => {
+      const params = { datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS, urls: ['https://example.com'] };
+      await expect(client.submitScrapeJob(params))
+        .to.be.rejectedWith('siteId is required');
+      await expect(client.submitScrapeJob({ ...params, siteId: '' }))
+        .to.be.rejectedWith('siteId is required');
+    });
+  });
+
+  describe('lookupScrapeResults', () => {
+    let client;
+
+    beforeEach(() => {
+      client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+    });
+
+    it('looks up scrape results with correct payload', async () => {
+      const urls = [
+        'https://youtube.com/watch?v=abc',
+        'https://youtube.com/watch?v=def',
+        'https://youtube.com/watch?v=ghi',
+      ];
+      const responseBody = {
+        results: [
+          {
+            url: urls[0], status: 'available', scraped_at: '2026-02-15T10:30:00Z', presigned_url: 'https://s3.amazonaws.com/results.ndjson?signed', expires_in: 3600,
+          },
+          {
+            url: urls[1], status: 'scraping', job_id: 'job-abc', message: 'Scraping in progress, try again later',
+          },
+          {
+            url: urls[2], status: 'not_found', message: 'No data found. Submit a scraping job via POST /jobs',
+          },
+        ],
+        summary: {
+          total: 3, available: 1, scraping: 1, not_found: 1,
+        },
+      };
+      const scope = nock(DRS_API_URL)
+        .post('/url-lookup', (body) => {
+          expect(body.dataset_id).to.equal(SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS);
+          expect(body.site_id).to.equal('site-1');
+          expect(body.urls).to.deep.equal(urls);
+          return true;
+        })
+        .reply(200, responseBody);
+
+      const result = await client.lookupScrapeResults({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls,
+      });
+
+      expect(result).to.deep.equal(responseBody);
+      expect(result.results).to.have.lengthOf(3);
+      expect(result.results[0].status).to.equal('available');
+      expect(result.results[0].presigned_url).to.be.a('string');
+      expect(result.results[1].status).to.equal('scraping');
+      expect(result.results[1].job_id).to.equal('job-abc');
+      expect(result.results[2].status).to.equal('not_found');
+      expect(result.summary).to.deep.equal({
+        total: 3, available: 1, scraping: 1, not_found: 1,
+      });
+      expect(log.info).to.have.been.calledWith(
+        `Looking up scrape results for dataset ${SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS}`,
+        { datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS, siteId: 'site-1', urlCount: 3 },
+      );
+      scope.done();
+    });
+
+    it('throws on invalid datasetId', async () => {
+      await expect(client.lookupScrapeResults({
+        datasetId: 'bad', siteId: 'site-1', urls: ['https://example.com'],
+      })).to.be.rejectedWith('Invalid dataset_id "bad". Must be one of:');
+    });
+
+    it('throws when urls is not a non-empty array', async () => {
+      const params = { datasetId: SCRAPE_DATASET_IDS.WIKIPEDIA, siteId: 'site-1' };
+      await expect(client.lookupScrapeResults({ ...params, urls: 'https://example.com' }))
+        .to.be.rejectedWith('urls must be a non-empty array of strings');
+      await expect(client.lookupScrapeResults({ ...params, urls: [] }))
+        .to.be.rejectedWith('urls must be a non-empty array of strings');
+    });
+
+    it('throws when siteId is missing or empty', async () => {
+      const params = { datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS, urls: ['https://example.com'] };
+      await expect(client.lookupScrapeResults(params))
+        .to.be.rejectedWith('siteId is required');
+      await expect(client.lookupScrapeResults({ ...params, siteId: '' }))
+        .to.be.rejectedWith('siteId is required');
     });
   });
 

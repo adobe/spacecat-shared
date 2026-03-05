@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.100.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.99.0...@adobe/spacecat-shared-utils-v1.100.0) (2026-03-05)
+
+### Features
+
+* add optional aws region to cdn bucket config ([#1404](https://github.com/adobe/spacecat-shared/issues/1404)) ([76a7051](https://github.com/adobe/spacecat-shared/commit/76a7051f465d0d43cb03875fcc77b3ff174c4317))
+
 ## [@adobe/spacecat-shared-utils-v1.99.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.98.1...@adobe/spacecat-shared-utils-v1.99.0) (2026-03-02)
 
 ### Features

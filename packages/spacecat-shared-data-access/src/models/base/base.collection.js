@@ -20,7 +20,6 @@ import {
 import DataAccessError from '../../errors/data-access.error.js';
 import ValidationError from '../../errors/validation.error.js';
 import { createAccessors } from '../../util/accessor.utils.js';
-import { ensureCapability } from '../../util/auth.js';
 import { guardId, guardArray } from '../../util/guards.js';
 import {
   applyWhere,
@@ -70,7 +69,6 @@ class BaseCollection {
     this.tableName = entityToTableName(this.schema.getModelName());
     this.fieldMaps = createFieldMaps(this.schema);
     this.entity = postgrestService?.entities?.[this.entityName];
-    this.s2sCtx = entityRegistry.s2sCtx;
 
     this.#initializeCollectionMethods();
   }
@@ -728,8 +726,6 @@ class BaseCollection {
   }
 
   async createMany(newItems, parent = null) {
-    ensureCapability(this.s2sCtx, `${this.entityName}:write`);
-
     if (!isNonEmptyArray(newItems)) {
       const message = `Failed to create many [${this.entityName}]: items must be a non-empty array`;
       this.log.error(message);

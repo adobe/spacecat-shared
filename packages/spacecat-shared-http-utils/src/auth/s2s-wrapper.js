@@ -88,7 +88,6 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
 
       if (!payload.is_s2s_consumer) {
         log.debug('[s2s] Token is not an S2S consumer token, passing through');
-        context.s2sCtx = {};
         return fn(request, context);
       }
 
@@ -111,11 +110,6 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
           return new Response('Forbidden', { status: 403 });
         }
       }
-
-      context.s2sCtx = {
-        clientId: payload.client_id,
-        scopedOrgId: tenants[0]?.id,
-      };
     } catch (e) {
       log.error(`[s2s] Authentication failed: ${e.message}`);
       return new Response('Unauthorized', { status: 401 });

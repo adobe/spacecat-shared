@@ -14,7 +14,6 @@ import { isNonEmptyArray, isNonEmptyObject } from '@adobe/spacecat-shared-utils'
 
 import { DataAccessError } from '../../errors/index.js';
 import { createAccessors } from '../../util/accessor.utils.js';
-import { ensureCapability } from '../../util/auth.js';
 import Patcher from '../../util/patcher.js';
 import {
   capitalize,
@@ -67,7 +66,6 @@ class BaseModel {
 
     this.entityName = schema.getEntityName();
     this.idName = entityNameToIdName(this.entityName);
-    this.s2sCtx = entityRegistry.s2sCtx;
 
     this.collection = entityRegistry.getCollection(schema.getCollectionName());
 
@@ -121,10 +119,7 @@ class BaseModel {
         .some((ref) => ref.getTarget() === idNameToEntityName(name));
 
       if (!this[getterMethodName] || name === this.idName) {
-        this[getterMethodName] = () => {
-          ensureCapability(this.s2sCtx, `${this.entityName}:read`);
-          return this.record[name];
-        };
+        this[getterMethodName] = () => this.record[name];
       }
 
       if (this.schema.allowsUpdates()) {
@@ -132,7 +127,6 @@ class BaseModel {
 
         if (!this[setterMethodName] && !attr.readOnly) {
           this[setterMethodName] = (value) => {
-            ensureCapability(this.s2sCtx, `${this.entityName}:write`);
             this.patcher.patchValue(name, value, isReference);
             return this;
           };
@@ -247,8 +241,6 @@ class BaseModel {
    * or if the removal operation fails.
    */
   async remove() {
-    ensureCapability(this.s2sCtx, `${this.entityName}:write`);
-
     if (!this.schema.allowsRemove()) {
       throw new DataAccessError(`The entity ${this.schema.getModelName()} does not allow removal`);
     }

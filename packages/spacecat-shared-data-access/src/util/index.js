@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-export { ensureCapability } from './auth.js';
-
 export {
   guardAny,
   guardArray,

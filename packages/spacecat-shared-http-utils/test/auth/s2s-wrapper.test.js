@@ -143,7 +143,6 @@ describe('s2sAuthWrapper', () => {
 
     expect(result).to.deep.equal({ status: 200 });
     expect(handler.calledOnce).to.be.true;
-    expect(context.s2sCtx).to.deep.equal({});
   });
 
   it('passes through when is_s2s_consumer claim is absent', async () => {
@@ -154,7 +153,6 @@ describe('s2sAuthWrapper', () => {
 
     expect(result).to.deep.equal({ status: 200 });
     expect(handler.calledOnce).to.be.true;
-    expect(context.s2sCtx).to.deep.equal({});
   });
 
   it('returns 403 when S2S consumer token has no tenants', async () => {
@@ -184,7 +182,6 @@ describe('s2sAuthWrapper', () => {
     it('matches a static route and checks the capability', async () => {
       const token = await createToken(createTokenPayload({
         is_s2s_consumer: true,
-        client_id: 'test-client-123',
         tenants: [{ id: 'org1', capabilities: ['site:read'] }],
       }));
       context.pathInfo = { method: 'GET', suffix: '/sites', headers: { authorization: `Bearer ${token}` } };
@@ -193,10 +190,6 @@ describe('s2sAuthWrapper', () => {
 
       expect(result).to.deep.equal({ status: 200 });
       expect(handler.calledOnce).to.be.true;
-      expect(context.s2sCtx).to.deep.equal({
-        clientId: 'test-client-123',
-        scopedOrgId: 'org1',
-      });
     });
 
     it('matches a dynamic route with params', async () => {
@@ -323,7 +316,6 @@ describe('s2sAuthWrapper', () => {
     it('collects capabilities across multiple tenants', async () => {
       const token = await createToken(createTokenPayload({
         is_s2s_consumer: true,
-        client_id: 'multi-tenant-client',
         tenants: [
           { id: 'org1', capabilities: ['site:read'] },
           { id: 'org2', capabilities: ['opportunity:write'] },
@@ -339,10 +331,6 @@ describe('s2sAuthWrapper', () => {
 
       expect(result).to.deep.equal({ status: 200 });
       expect(handler.calledOnce).to.be.true;
-      expect(context.s2sCtx).to.deep.equal({
-        clientId: 'multi-tenant-client',
-        scopedOrgId: 'org1',
-      });
     });
   });
 

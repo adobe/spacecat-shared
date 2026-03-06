@@ -12,6 +12,16 @@
 
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 
+export const SCRAPE_DATASET_IDS = Object.freeze({
+  YOUTUBE_VIDEOS: 'youtube_videos',
+  YOUTUBE_COMMENTS: 'youtube_comments',
+  REDDIT_POSTS: 'reddit_posts',
+  REDDIT_COMMENTS: 'reddit_comments',
+  WIKIPEDIA: 'wikipedia',
+});
+
+const VALID_SCRAPE_DATASET_IDS = new Set(Object.values(SCRAPE_DATASET_IDS));
+
 export default class DrsClient {
   /**
    * Creates a DrsClient from a universal context object.
@@ -136,6 +146,72 @@ export default class DrsClient {
           region,
         },
       },
+    });
+  }
+
+  /**
+   * Submits a scrape job to DRS via the Bright Data provider.
+   * @param {object} params
+   * @param {string} params.datasetId - One of SCRAPE_DATASET_IDS values
+   * @param {string} params.siteId - SpaceCat site ID
+   * @param {string[]} params.urls - URLs to scrape
+   * @param {string} [params.priority='HIGH'] - Job priority (HIGH or LOW)
+   * @returns {Promise<object>} Job result with job_id
+   */
+  async submitScrapeJob({
+    datasetId,
+    siteId,
+    urls,
+    priority = 'HIGH',
+  }) {
+    if (!VALID_SCRAPE_DATASET_IDS.has(datasetId)) {
+      throw new Error(`Invalid dataset_id "${datasetId}". Must be one of: ${[...VALID_SCRAPE_DATASET_IDS].join(', ')}`);
+    }
+    if (!Array.isArray(urls) || urls.length === 0) {
+      throw new Error('urls must be a non-empty array of strings');
+    }
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+
+    this.log.info(`Submitting DRS scrape job for dataset ${datasetId}`, { datasetId, siteId, urlCount: urls.length });
+
+    return this.submitJob({
+      provider_id: 'brightdata',
+      priority,
+      parameters: {
+        dataset_id: datasetId,
+        site_id: siteId,
+        urls,
+      },
+    });
+  }
+
+  /**
+   * Looks up scraping results for an array of URLs.
+   * @param {object} params
+   * @param {string} params.datasetId - One of SCRAPE_DATASET_IDS values
+   * @param {string} params.siteId - SpaceCat site ID
+   * @param {string[]} params.urls - URLs to look up
+   * @returns {Promise<object>} Lookup results
+   */
+  async lookupScrapeResults({ datasetId, siteId, urls }) {
+    if (!VALID_SCRAPE_DATASET_IDS.has(datasetId)) {
+      throw new Error(`Invalid dataset_id "${datasetId}". Must be one of: ${[...VALID_SCRAPE_DATASET_IDS].join(', ')}`);
+    }
+    if (!Array.isArray(urls) || urls.length === 0) {
+      throw new Error('urls must be a non-empty array of strings');
+    }
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+
+    this.log.info(`Looking up scrape results for dataset ${datasetId}`, { datasetId, siteId, urlCount: urls.length });
+
+    return this.#request('POST', '/url-lookup', {
+      dataset_id: datasetId,
+      site_id: siteId,
+      urls,
     });
   }
 

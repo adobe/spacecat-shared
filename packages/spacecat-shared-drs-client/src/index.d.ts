@@ -26,6 +26,45 @@ interface PromptGenerationParams {
   imsOrgId: string;
 }
 
+export type ScrapeDatasetId = typeof SCRAPE_DATASET_IDS[keyof typeof SCRAPE_DATASET_IDS];
+
+interface ScrapeJobParams {
+  datasetId: ScrapeDatasetId;
+  siteId: string;
+  urls: string[];
+  priority?: 'HIGH' | 'LOW';
+}
+
+interface ScrapeLookupParams {
+  datasetId: ScrapeDatasetId;
+  siteId: string;
+  urls: string[];
+}
+
+export type ScrapeLookupStatus = 'available' | 'scraping' | 'not_found';
+
+export interface ScrapeLookupResult {
+  url: string;
+  status: ScrapeLookupStatus;
+  scraped_at?: string;
+  presigned_url?: string;
+  expires_in?: number;
+  job_id?: string;
+  message?: string;
+}
+
+export interface ScrapeLookupSummary {
+  total: number;
+  available: number;
+  scraping: number;
+  not_found: number;
+}
+
+export interface ScrapeLookupResponse {
+  results: ScrapeLookupResult[];
+  summary: ScrapeLookupSummary;
+}
+
 interface BrandDetectionOptions {
   batchId?: string;
   priority?: string;
@@ -42,8 +81,18 @@ declare class DrsClient {
   isConfigured(): boolean;
   submitJob(params: Record<string, unknown>): Promise<DrsJobResult>;
   submitPromptGenerationJob(params: PromptGenerationParams): Promise<DrsJobResult>;
+  submitScrapeJob(params: ScrapeJobParams): Promise<DrsJobResult>;
+  lookupScrapeResults(params: ScrapeLookupParams): Promise<ScrapeLookupResponse | null>;
   triggerBrandDetection(siteId: string, options?: BrandDetectionOptions): Promise<Record<string, unknown> | null>;
   getJob(jobId: string): Promise<Record<string, unknown>>;
 }
+
+export declare const SCRAPE_DATASET_IDS: Readonly<{
+  YOUTUBE_VIDEOS: 'youtube_videos';
+  YOUTUBE_COMMENTS: 'youtube_comments';
+  REDDIT_POSTS: 'reddit_posts';
+  REDDIT_COMMENTS: 'reddit_comments';
+  WIKIPEDIA: 'wikipedia';
+}>;
 
 export default DrsClient;

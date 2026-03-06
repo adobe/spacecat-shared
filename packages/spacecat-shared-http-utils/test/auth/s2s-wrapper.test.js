@@ -55,6 +55,19 @@ const routeCapabilities = {
   'GET /sites/:siteId/opportunities/:opportunityId': 'opportunity:read',
 };
 
+const createMockConsumer = (overrides = {}) => ({
+  isRevoked: () => false,
+  getStatus: () => 'ACTIVE',
+  getCapabilities: () => ['site:read', 'site:write'],
+  ...overrides,
+});
+
+const createMockDataAccess = (consumer) => ({
+  Consumer: {
+    findByClientId: sinon.stub().resolves(consumer),
+  },
+});
+
 describe('s2sAuthWrapper', () => {
   let logStub;
   let handler;
@@ -71,6 +84,7 @@ describe('s2sAuthWrapper', () => {
       env: { AUTH_PUBLIC_KEY_B64: publicKeyB64 },
       log: logStub,
       pathInfo: { method: 'GET', suffix: '/sites', headers: {} },
+      dataAccess: createMockDataAccess(createMockConsumer()),
     };
   });
 
@@ -119,7 +133,8 @@ describe('s2sAuthWrapper', () => {
     const clock = sinon.useFakeTimers();
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
-      tenants: [{ id: 'org1', capabilities: ['site:read'] }],
+      client_id: 'test-client',
+      tenants: [{ id: 'org1' }],
     }), 0);
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
     clock.tick(6000);
@@ -135,7 +150,6 @@ describe('s2sAuthWrapper', () => {
   it('passes through when token is not an S2S consumer (end-user token)', async () => {
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: false,
-      tenants: [{ id: 'org1', capabilities: ['site:read'] }],
     }));
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
@@ -155,35 +169,108 @@ describe('s2sAuthWrapper', () => {
     expect(handler.calledOnce).to.be.true;
   });
 
-  it('returns 403 when S2S consumer token has no tenants', async () => {
+  it('returns 403 when S2S consumer token is missing client_id', async () => {
     const token = await createToken(createTokenPayload({ is_s2s_consumer: true }));
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
     const result = await wrapped({}, context);
 
     expect(result.status).to.equal(403);
+    expect(logStub.error.calledWithMatch('missing client_id')).to.be.true;
     expect(handler.called).to.be.false;
   });
 
-  it('returns 403 when S2S consumer token has tenants with empty capabilities', async () => {
+  it('returns 500 when dataAccess is not available', async () => {
+    delete context.dataAccess;
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
-      tenants: [{ id: 'org1', capabilities: [] }],
+      client_id: 'test-client',
+    }));
+    context.pathInfo.headers = { authorization: `Bearer ${token}` };
+    const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
+    const result = await wrapped({}, context);
+
+    expect(result.status).to.equal(500);
+    expect(logStub.error.calledWithMatch('dataAccess not available')).to.be.true;
+    expect(handler.called).to.be.false;
+  });
+
+  it('returns 403 when consumer is not found in DB', async () => {
+    context.dataAccess = createMockDataAccess(null);
+    const token = await createToken(createTokenPayload({
+      is_s2s_consumer: true,
+      client_id: 'unknown-client',
     }));
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
     const result = await wrapped({}, context);
 
     expect(result.status).to.equal(403);
+    expect(logStub.error.calledWithMatch('not found')).to.be.true;
+    expect(handler.called).to.be.false;
+  });
+
+  it('returns 403 when consumer is revoked', async () => {
+    context.dataAccess = createMockDataAccess(createMockConsumer({ isRevoked: () => true }));
+    const token = await createToken(createTokenPayload({
+      is_s2s_consumer: true,
+      client_id: 'revoked-client',
+    }));
+    context.pathInfo.headers = { authorization: `Bearer ${token}` };
+    const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
+    const result = await wrapped({}, context);
+
+    expect(result.status).to.equal(403);
+    expect(logStub.error.calledWithMatch('is revoked')).to.be.true;
+    expect(handler.called).to.be.false;
+  });
+
+  it('returns 403 when consumer is suspended', async () => {
+    context.dataAccess = createMockDataAccess(
+      createMockConsumer({ getStatus: () => 'SUSPENDED' }),
+    );
+    const token = await createToken(createTokenPayload({
+      is_s2s_consumer: true,
+      client_id: 'suspended-client',
+    }));
+    context.pathInfo.headers = { authorization: `Bearer ${token}` };
+    const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
+    const result = await wrapped({}, context);
+
+    expect(result.status).to.equal(403);
+    expect(logStub.error.calledWithMatch('is suspended')).to.be.true;
+    expect(handler.called).to.be.false;
+  });
+
+  it('returns 403 when consumer has no capabilities', async () => {
+    context.dataAccess = createMockDataAccess(
+      createMockConsumer({ getCapabilities: () => [] }),
+    );
+    const token = await createToken(createTokenPayload({
+      is_s2s_consumer: true,
+      client_id: 'no-caps-client',
+    }));
+    context.pathInfo.headers = { authorization: `Bearer ${token}` };
+    const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
+    const result = await wrapped({}, context);
+
+    expect(result.status).to.equal(403);
+    expect(logStub.error.calledWithMatch('has no capabilities')).to.be.true;
     expect(handler.called).to.be.false;
   });
 
   describe('route-based capability resolution', () => {
+    const s2sTokenPayload = {
+      is_s2s_consumer: true,
+      client_id: 'test-client',
+      tenants: [{ id: 'org1' }],
+    };
+
     it('matches a static route and checks the capability', async () => {
-      const token = await createToken(createTokenPayload({
-        is_s2s_consumer: true,
-        tenants: [{ id: 'org1', capabilities: ['site:read'] }],
-      }));
+      context.dataAccess = createMockDataAccess(
+        createMockConsumer({ getCapabilities: () => ['site:read'] }),
+      );
+      const token = await createToken(createTokenPayload(s2sTokenPayload));
       context.pathInfo = { method: 'GET', suffix: '/sites', headers: { authorization: `Bearer ${token}` } };
       const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
@@ -193,10 +280,10 @@ describe('s2sAuthWrapper', () => {
     });
 
     it('matches a dynamic route with params', async () => {
-      const token = await createToken(createTokenPayload({
-        is_s2s_consumer: true,
-        tenants: [{ id: 'org1', capabilities: ['opportunity:read'] }],
-      }));
+      context.dataAccess = createMockDataAccess(
+        createMockConsumer({ getCapabilities: () => ['opportunity:read'] }),
+      );
+      const token = await createToken(createTokenPayload(s2sTokenPayload));
       context.pathInfo = {
         method: 'GET',
         suffix: '/sites/abc-123/opportunities/def-456',
@@ -209,11 +296,11 @@ describe('s2sAuthWrapper', () => {
       expect(handler.calledOnce).to.be.true;
     });
 
-    it('returns 403 when token lacks the capability for the matched route', async () => {
-      const token = await createToken(createTokenPayload({
-        is_s2s_consumer: true,
-        tenants: [{ id: 'org1', capabilities: ['site:read'] }],
-      }));
+    it('returns 403 when consumer lacks the capability for the matched route', async () => {
+      context.dataAccess = createMockDataAccess(
+        createMockConsumer({ getCapabilities: () => ['site:read'] }),
+      );
+      const token = await createToken(createTokenPayload(s2sTokenPayload));
       context.pathInfo = {
         method: 'POST',
         suffix: '/sites/abc-123/opportunities',
@@ -228,10 +315,7 @@ describe('s2sAuthWrapper', () => {
     });
 
     it('returns 401 when route is not in the capabilities map', async () => {
-      const token = await createToken(createTokenPayload({
-        is_s2s_consumer: true,
-        tenants: [{ id: 'org1', capabilities: ['site:read'] }],
-      }));
+      const token = await createToken(createTokenPayload(s2sTokenPayload));
       context.pathInfo = {
         method: 'GET',
         suffix: '/unknown/route',
@@ -246,10 +330,7 @@ describe('s2sAuthWrapper', () => {
     });
 
     it('passes through when no routeCapabilities is provided', async () => {
-      const token = await createToken(createTokenPayload({
-        is_s2s_consumer: true,
-        tenants: [{ id: 'org1', capabilities: ['anything'] }],
-      }));
+      const token = await createToken(createTokenPayload(s2sTokenPayload));
       context.pathInfo = {
         method: 'GET',
         suffix: '/sites',
@@ -263,10 +344,7 @@ describe('s2sAuthWrapper', () => {
     });
 
     it('returns 401 when pathInfo is missing method or suffix', async () => {
-      const token = await createToken(createTokenPayload({
-        is_s2s_consumer: true,
-        tenants: [{ id: 'org1', capabilities: ['site:read'] }],
-      }));
+      const token = await createToken(createTokenPayload(s2sTokenPayload));
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
       const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
@@ -276,10 +354,7 @@ describe('s2sAuthWrapper', () => {
     });
 
     it('handles malformed route keys without a space separator', async () => {
-      const token = await createToken(createTokenPayload({
-        is_s2s_consumer: true,
-        tenants: [{ id: 'org1', capabilities: ['site:read'] }],
-      }));
+      const token = await createToken(createTokenPayload(s2sTokenPayload));
       context.pathInfo = {
         method: 'GET',
         suffix: '/malformed',
@@ -292,52 +367,13 @@ describe('s2sAuthWrapper', () => {
       expect(result.status).to.equal(401);
       expect(handler.called).to.be.false;
     });
-
-    it('handles tenants without a capabilities property', async () => {
-      const token = await createToken(createTokenPayload({
-        is_s2s_consumer: true,
-        tenants: [
-          { id: 'org1' },
-          { id: 'org2', capabilities: ['site:read'] },
-        ],
-      }));
-      context.pathInfo = {
-        method: 'GET',
-        suffix: '/sites',
-        headers: { authorization: `Bearer ${token}` },
-      };
-      const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
-      const result = await wrapped({}, context);
-
-      expect(result).to.deep.equal({ status: 200 });
-      expect(handler.calledOnce).to.be.true;
-    });
-
-    it('collects capabilities across multiple tenants', async () => {
-      const token = await createToken(createTokenPayload({
-        is_s2s_consumer: true,
-        tenants: [
-          { id: 'org1', capabilities: ['site:read'] },
-          { id: 'org2', capabilities: ['opportunity:write'] },
-        ],
-      }));
-      context.pathInfo = {
-        method: 'POST',
-        suffix: '/sites/abc-123/opportunities',
-        headers: { authorization: `Bearer ${token}` },
-      };
-      const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
-      const result = await wrapped({}, context);
-
-      expect(result).to.deep.equal({ status: 200 });
-      expect(handler.calledOnce).to.be.true;
-    });
   });
 
   it('caches the public key across invocations', async () => {
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
-      tenants: [{ id: 'org1', capabilities: ['site:read'] }],
+      client_id: 'test-client',
+      tenants: [{ id: 'org1' }],
     }));
     context.pathInfo = { method: 'GET', suffix: '/sites', headers: { authorization: `Bearer ${token}` } };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });

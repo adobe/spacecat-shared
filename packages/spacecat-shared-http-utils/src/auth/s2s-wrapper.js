@@ -16,6 +16,8 @@ import { hasText, isNonEmptyArray, isObject } from '@adobe/spacecat-shared-utils
 import { getBearerToken } from './handlers/utils/bearer.js';
 import { loadPublicKey, validateToken } from './handlers/utils/token.js';
 
+const CONSUMER_STATUS_SUSPENDED = 'SUSPENDED';
+
 /**
  * Matches pre-split request segments against a route pattern with :param segments.
  * e.g. ['sites', 'abc-123', 'audits'] matches 'GET /sites/:siteId/audits'
@@ -56,11 +58,14 @@ function resolveCapability(context, routeCapabilities) {
 /**
  * S2S consumer auth wrapper for the helix-shared-wrap `.with()` chain.
  * Validates a JWT bearer token and, when the token carries the
- * {@code is_s2s_consumer} claim, resolves the required capability for the
- * current route from the provided {@code routeCapabilities} map and verifies
- * the caller holds that capability in {@code tenants[].capabilities}.
+ * {@code is_s2s_consumer} claim, fetches the consumer from the database to
+ * verify status (active, not revoked/suspended) and resolves capabilities
+ * from the source of truth rather than relying on (potentially stale) token claims.
  *
  * Non-S2S tokens (end-user) pass through untouched.
+ *
+ * Requires {@code context.dataAccess} to be available (i.e. {@code dataAccessWrapper}
+ * must run before this wrapper in the `.with()` chain).
  *
  * @param {Function} fn - The handler to wrap.
  * @param {{ routeCapabilities: Object<string, string> }} opts - Map of route
@@ -91,11 +96,37 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
         return fn(request, context);
       }
 
-      const tenants = payload.tenants || [];
-      const capabilities = tenants.flatMap((tenant) => tenant.capabilities || []);
+      const clientId = payload.client_id;
+      if (!hasText(clientId)) {
+        log.error('[s2s] S2S consumer token is missing client_id');
+        return new Response('Forbidden', { status: 403 });
+      }
 
+      const { dataAccess } = context;
+      if (!dataAccess?.Consumer) {
+        log.error('[s2s] dataAccess not available — ensure dataAccessWrapper runs before s2sAuthWrapper');
+        return new Response('Internal Server Error', { status: 500 });
+      }
+
+      const consumer = await dataAccess.Consumer.findByClientId(clientId);
+      if (!consumer) {
+        log.error(`[s2s] Consumer with clientId "${clientId}" not found`);
+        return new Response('Forbidden', { status: 403 });
+      }
+
+      if (consumer.isRevoked()) {
+        log.error(`[s2s] Consumer with clientId "${clientId}" is revoked`);
+        return new Response('Forbidden', { status: 403 });
+      }
+
+      if (consumer.getStatus() === CONSUMER_STATUS_SUSPENDED) {
+        log.error(`[s2s] Consumer with clientId "${clientId}" is suspended`);
+        return new Response('Forbidden', { status: 403 });
+      }
+
+      const capabilities = consumer.getCapabilities() || [];
       if (!isNonEmptyArray(capabilities)) {
-        log.debug('[s2s] S2S consumer token has no capabilities');
+        log.error(`[s2s] Consumer with clientId "${clientId}" has no capabilities`);
         return new Response('Forbidden', { status: 403 });
       }
 
@@ -106,7 +137,7 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
           return new Response('Unauthorized', { status: 401 });
         }
         if (!capabilities.includes(requiredCapability)) {
-          log.error(`[s2s] Token is missing required capability: ${requiredCapability}`);
+          log.error(`[s2s] Consumer "${clientId}" is missing required capability: ${requiredCapability}`);
           return new Response('Forbidden', { status: 403 });
         }
       }

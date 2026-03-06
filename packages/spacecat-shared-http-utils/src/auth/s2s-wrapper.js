@@ -16,8 +16,6 @@ import { hasText, isNonEmptyArray, isObject } from '@adobe/spacecat-shared-utils
 import { getBearerToken } from './handlers/utils/bearer.js';
 import { loadPublicKey, validateToken } from './handlers/utils/token.js';
 
-const CONSUMER_STATUS_SUSPENDED = 'SUSPENDED';
-
 /**
  * Matches pre-split request segments against a route pattern with :param segments.
  * e.g. ['sites', 'abc-123', 'audits'] matches 'GET /sites/:siteId/audits'
@@ -73,6 +71,10 @@ function resolveCapability(context, routeCapabilities) {
  * @returns {Function} A wrapped handler.
  */
 export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
+  if (isObject(routeCapabilities) && Object.keys(routeCapabilities).length === 0) {
+    throw new Error('s2sAuthWrapper: routeCapabilities must not be an empty object — this would silently deny all S2S requests');
+  }
+
   let publicKey;
 
   return async (request, context) => {
@@ -85,8 +87,8 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
 
       const token = getBearerToken(context);
       if (!hasText(token)) {
-        log.debug('[s2s] No bearer token provided');
-        return new Response('Unauthorized', { status: 401 });
+        log.debug('[s2s] No bearer token, passing through');
+        return fn(request, context);
       }
 
       const payload = await validateToken(token, publicKey);
@@ -98,7 +100,7 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
 
       const clientId = payload.client_id;
       if (!hasText(clientId)) {
-        log.error('[s2s] S2S consumer token is missing client_id');
+        log.warn('[s2s] S2S consumer token is missing client_id');
         return new Response('Forbidden', { status: 403 });
       }
 
@@ -108,39 +110,46 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
         return new Response('Internal Server Error', { status: 500 });
       }
 
-      const consumer = await dataAccess.Consumer.findByClientId(clientId);
+      const orgId = payload.org;
+      if (!hasText(orgId)) {
+        log.warn('[s2s] S2S consumer token is missing org_id');
+        return new Response('Forbidden', { status: 403 });
+      }
+
+      const consumer = await dataAccess.Consumer.findByClientIdAndImsOrgId(clientId, orgId);
       if (!consumer) {
-        log.error(`[s2s] Consumer with clientId "${clientId}" not found`);
+        log.warn(`[s2s] Consumer with clientId "${clientId}" not found`);
         return new Response('Forbidden', { status: 403 });
       }
 
       if (consumer.isRevoked()) {
-        log.error(`[s2s] Consumer with clientId "${clientId}" is revoked`);
+        log.warn(`[s2s] Consumer with clientId "${clientId}" is revoked`);
         return new Response('Forbidden', { status: 403 });
       }
 
-      if (consumer.getStatus() === CONSUMER_STATUS_SUSPENDED) {
-        log.error(`[s2s] Consumer with clientId "${clientId}" is suspended`);
+      if (consumer.getStatus() !== 'ACTIVE') {
+        log.warn(`[s2s] Consumer "${clientId}" is not active (status: ${consumer.getStatus()})`);
         return new Response('Forbidden', { status: 403 });
       }
 
       const capabilities = consumer.getCapabilities() || [];
       if (!isNonEmptyArray(capabilities)) {
-        log.error(`[s2s] Consumer with clientId "${clientId}" has no capabilities`);
+        log.warn(`[s2s] Consumer with clientId "${clientId}" has no capabilities`);
         return new Response('Forbidden', { status: 403 });
       }
 
       if (isObject(routeCapabilities)) {
         const requiredCapability = resolveCapability(context, routeCapabilities);
         if (!hasText(requiredCapability)) {
-          log.error(`[s2s] Route ${context.pathInfo?.method} ${context.pathInfo?.suffix} is not allowed for S2S consumers`);
-          return new Response('Unauthorized', { status: 401 });
+          log.warn(`[s2s] Route ${context.pathInfo?.method} ${context.pathInfo?.suffix} is not allowed for S2S consumers`);
+          return new Response('Forbidden', { status: 403 });
         }
         if (!capabilities.includes(requiredCapability)) {
-          log.error(`[s2s] Consumer "${clientId}" is missing required capability: ${requiredCapability}`);
+          log.warn(`[s2s] Consumer "${clientId}" is missing required capability: ${requiredCapability}`);
           return new Response('Forbidden', { status: 403 });
         }
       }
+      context.s2sConsumer = consumer;
     } catch (e) {
       log.error(`[s2s] Authentication failed: ${e.message}`);
       return new Response('Unauthorized', { status: 401 });

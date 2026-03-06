@@ -64,7 +64,7 @@ const createMockConsumer = (overrides = {}) => ({
 
 const createMockDataAccess = (consumer) => ({
   Consumer: {
-    findByClientId: sinon.stub().resolves(consumer),
+    findByClientIdAndImsOrgId: sinon.stub().resolves(consumer),
   },
 });
 
@@ -77,6 +77,7 @@ describe('s2sAuthWrapper', () => {
     logStub = {
       debug: sinon.stub(),
       info: sinon.stub(),
+      warn: sinon.stub(),
       error: sinon.stub(),
     };
     handler = sinon.stub().resolves({ status: 200 });
@@ -92,12 +93,17 @@ describe('s2sAuthWrapper', () => {
     sinon.restore();
   });
 
-  it('returns 401 when no bearer token is provided', async () => {
+  it('throws at creation time when routeCapabilities is an empty object', () => {
+    expect(() => s2sAuthWrapper(handler, { routeCapabilities: {} }))
+      .to.throw('routeCapabilities must not be an empty object');
+  });
+
+  it('passes through when no bearer token is provided', async () => {
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
     const result = await wrapped({}, context);
 
-    expect(result.status).to.equal(401);
-    expect(handler.called).to.be.false;
+    expect(result).to.deep.equal({ status: 200 });
+    expect(handler.calledOnce).to.be.true;
   });
 
   it('returns 401 when public key is not configured', async () => {
@@ -134,6 +140,7 @@ describe('s2sAuthWrapper', () => {
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
       client_id: 'test-client',
+      org: 'test-org',
       tenants: [{ id: 'org1' }],
     }), 0);
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
@@ -176,7 +183,21 @@ describe('s2sAuthWrapper', () => {
     const result = await wrapped({}, context);
 
     expect(result.status).to.equal(403);
-    expect(logStub.error.calledWithMatch('missing client_id')).to.be.true;
+    expect(logStub.warn.calledWithMatch('missing client_id')).to.be.true;
+    expect(handler.called).to.be.false;
+  });
+
+  it('returns 403 when S2S consumer token is missing org_id', async () => {
+    const token = await createToken(createTokenPayload({
+      is_s2s_consumer: true,
+      client_id: 'test-client',
+    }));
+    context.pathInfo.headers = { authorization: `Bearer ${token}` };
+    const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
+    const result = await wrapped({}, context);
+
+    expect(result.status).to.equal(403);
+    expect(logStub.warn.calledWithMatch('missing org_id')).to.be.true;
     expect(handler.called).to.be.false;
   });
 
@@ -200,13 +221,14 @@ describe('s2sAuthWrapper', () => {
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
       client_id: 'unknown-client',
+      org: 'test-org',
     }));
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
     const result = await wrapped({}, context);
 
     expect(result.status).to.equal(403);
-    expect(logStub.error.calledWithMatch('not found')).to.be.true;
+    expect(logStub.warn.calledWithMatch('not found')).to.be.true;
     expect(handler.called).to.be.false;
   });
 
@@ -215,13 +237,14 @@ describe('s2sAuthWrapper', () => {
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
       client_id: 'revoked-client',
+      org: 'test-org',
     }));
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
     const result = await wrapped({}, context);
 
     expect(result.status).to.equal(403);
-    expect(logStub.error.calledWithMatch('is revoked')).to.be.true;
+    expect(logStub.warn.calledWithMatch('is revoked')).to.be.true;
     expect(handler.called).to.be.false;
   });
 
@@ -232,13 +255,14 @@ describe('s2sAuthWrapper', () => {
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
       client_id: 'suspended-client',
+      org: 'test-org',
     }));
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
     const result = await wrapped({}, context);
 
     expect(result.status).to.equal(403);
-    expect(logStub.error.calledWithMatch('is suspended')).to.be.true;
+    expect(logStub.warn.calledWithMatch('not active')).to.be.true;
     expect(handler.called).to.be.false;
   });
 
@@ -249,13 +273,14 @@ describe('s2sAuthWrapper', () => {
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
       client_id: 'no-caps-client',
+      org: 'test-org',
     }));
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
     const result = await wrapped({}, context);
 
     expect(result.status).to.equal(403);
-    expect(logStub.error.calledWithMatch('has no capabilities')).to.be.true;
+    expect(logStub.warn.calledWithMatch('has no capabilities')).to.be.true;
     expect(handler.called).to.be.false;
   });
 
@@ -263,6 +288,7 @@ describe('s2sAuthWrapper', () => {
     const s2sTokenPayload = {
       is_s2s_consumer: true,
       client_id: 'test-client',
+      org: 'test-org',
       tenants: [{ id: 'org1' }],
     };
 
@@ -310,11 +336,11 @@ describe('s2sAuthWrapper', () => {
       const result = await wrapped({}, context);
 
       expect(result.status).to.equal(403);
-      expect(logStub.error.calledWithMatch('missing required capability: opportunity:write')).to.be.true;
+      expect(logStub.warn.calledWithMatch('missing required capability: opportunity:write')).to.be.true;
       expect(handler.called).to.be.false;
     });
 
-    it('returns 401 when route is not in the capabilities map', async () => {
+    it('returns 403 when route is not in the capabilities map', async () => {
       const token = await createToken(createTokenPayload(s2sTokenPayload));
       context.pathInfo = {
         method: 'GET',
@@ -324,8 +350,8 @@ describe('s2sAuthWrapper', () => {
       const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
 
-      expect(result.status).to.equal(401);
-      expect(logStub.error.calledWithMatch('not allowed for S2S consumers')).to.be.true;
+      expect(result.status).to.equal(403);
+      expect(logStub.warn.calledWithMatch('not allowed for S2S consumers')).to.be.true;
       expect(handler.called).to.be.false;
     });
 
@@ -343,13 +369,13 @@ describe('s2sAuthWrapper', () => {
       expect(handler.calledOnce).to.be.true;
     });
 
-    it('returns 401 when pathInfo is missing method or suffix', async () => {
+    it('returns 403 when pathInfo is missing method or suffix', async () => {
       const token = await createToken(createTokenPayload(s2sTokenPayload));
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
       const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
 
-      expect(result.status).to.equal(401);
+      expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
     });
 
@@ -364,7 +390,7 @@ describe('s2sAuthWrapper', () => {
       const wrapped = s2sAuthWrapper(handler, { routeCapabilities: malformedRouteCapabilities });
       const result = await wrapped({}, context);
 
-      expect(result.status).to.equal(401);
+      expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
     });
   });
@@ -373,6 +399,7 @@ describe('s2sAuthWrapper', () => {
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
       client_id: 'test-client',
+      org: 'test-org',
       tenants: [{ id: 'org1' }],
     }));
     context.pathInfo = { method: 'GET', suffix: '/sites', headers: { authorization: `Bearer ${token}` } };

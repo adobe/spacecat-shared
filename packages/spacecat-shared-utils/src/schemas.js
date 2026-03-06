@@ -37,6 +37,7 @@ import * as z from 'zod';
 const nonEmptyString = z.string().min(1);
 
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
+const awsRegion = z.string().regex(/^[a-z]{2}(?:-[a-z]+)+-\d+$/i);
 
 const auditFields = {
   updatedBy: z.string().optional(),
@@ -136,6 +137,7 @@ export const llmoConfig = z.object({
     bucketName: z.string().optional(),
     allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
+    region: awsRegion.optional(),
   }).optional(),
   ignored: z.object({
     prompts: z.record(z.uuid(), ignoredPrompt).optional(),

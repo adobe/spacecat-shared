@@ -91,7 +91,13 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
         return fn(request, context);
       }
 
-      const payload = await validateToken(token, publicKey);
+      let payload;
+      try {
+        payload = await validateToken(token, publicKey);
+      } catch (e) {
+        log.debug(`[s2s] Token is not a valid S2S token, passing through: ${e.message}`);
+        return fn(request, context);
+      }
 
       if (!payload.is_s2s_consumer) {
         log.debug('[s2s] Token is not an S2S consumer token, passing through');

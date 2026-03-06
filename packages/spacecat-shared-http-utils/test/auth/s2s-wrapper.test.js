@@ -116,26 +116,26 @@ describe('s2sAuthWrapper', () => {
     expect(handler.called).to.be.false;
   });
 
-  it('returns 401 when the token is invalid', async () => {
+  it('passes through when the token is invalid', async () => {
     context.pathInfo.headers = { authorization: 'Bearer invalid-token' };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
     const result = await wrapped({}, context);
 
-    expect(result.status).to.equal(401);
-    expect(handler.called).to.be.false;
+    expect(result).to.deep.equal({ status: 200 });
+    expect(handler.calledOnce).to.be.true;
   });
 
-  it('returns 401 when the token has wrong issuer', async () => {
+  it('passes through when the token has wrong issuer', async () => {
     const token = await createToken(createTokenPayload({ iss: 'wrong-issuer' }));
     context.pathInfo.headers = { authorization: `Bearer ${token}` };
     const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
     const result = await wrapped({}, context);
 
-    expect(result.status).to.equal(401);
-    expect(handler.called).to.be.false;
+    expect(result).to.deep.equal({ status: 200 });
+    expect(handler.calledOnce).to.be.true;
   });
 
-  it('returns 401 when the token is expired', async () => {
+  it('passes through when the token is expired', async () => {
     const clock = sinon.useFakeTimers();
     const token = await createToken(createTokenPayload({
       is_s2s_consumer: true,
@@ -150,8 +150,8 @@ describe('s2sAuthWrapper', () => {
     const result = await wrapped({}, context);
     clock.restore();
 
-    expect(result.status).to.equal(401);
-    expect(handler.called).to.be.false;
+    expect(result).to.deep.equal({ status: 200 });
+    expect(handler.calledOnce).to.be.true;
   });
 
   it('passes through when token is not an S2S consumer (end-user token)', async () => {

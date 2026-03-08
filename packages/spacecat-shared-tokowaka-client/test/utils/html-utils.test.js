@@ -197,7 +197,6 @@ describe('HTML Utils', () => {
     });
 
     it('should use default warmup delay of 750ms for optimized HTML', async () => {
-      // Reset stub so per-call behavior from other tests (e.g. onCall(0)...onCall(n)) does not leak
       fetchStub.reset();
       fetchStub.resolves({
         ok: true,

@@ -156,6 +156,17 @@ class Schema {
     return result;
   }
 
+  // Internal helper: v3 schemas use `composite` keys (legacy Electro used `facets`).
+  static #getKeyParts(indexPart) {
+    if (Array.isArray(indexPart?.composite)) {
+      return indexPart.composite;
+    }
+    if (Array.isArray(indexPart?.facets)) {
+      return indexPart.facets;
+    }
+    return [];
+  }
+
   getIndexByName(indexName) {
     return this.indexes[indexName];
   }
@@ -167,10 +178,10 @@ class Schema {
       const subKeyNames = sortKeys.slice(0, length);
       const index = Object.values(this.indexes).find((candidate) => {
         const { pk, sk } = candidate;
-        const allKeys = [...(pk?.facets || []), ...(sk?.facets || [])];
+        const allKeys = [...Schema.#getKeyParts(pk), ...Schema.#getKeyParts(sk)];
 
         // check if all keys in the index are in the sort keys
-        const pkKeys = Array.isArray(pk?.facets) ? pk.facets : [];
+        const pkKeys = Schema.#getKeyParts(pk);
         return pkKeys.every((key) => subKeyNames.includes(key))
           && subKeyNames.every((key) => allKeys.includes(key));
       });
@@ -246,8 +257,8 @@ class Schema {
       return [];
     }
 
-    const pkKeys = Array.isArray(index.pk?.facets) ? index.pk.facets : [];
-    const skKeys = Array.isArray(index.sk?.facets) ? index.sk.facets : [];
+    const pkKeys = Schema.#getKeyParts(index.pk);
+    const skKeys = Schema.#getKeyParts(index.sk);
 
     return [...pkKeys, ...skKeys];
   }

@@ -46,6 +46,7 @@ export const IMPORT_SOURCES = {
 };
 
 const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
+const AWS_REGION_PATTERN = /^[a-z]{2}(?:-[a-z]+)+-\d+$/i;
 const LLMO_TAG = Joi.alternatives()
   .try(
     // Tag market, product, topic like this: "market: ch", "product: firefly", "topic: copyright"
@@ -324,6 +325,7 @@ export const configSchema = Joi.object({
       bucketName: Joi.string().optional(),
       orgId: Joi.string().optional(),
       cdnProvider: Joi.string().optional(),
+      region: Joi.string().pattern(AWS_REGION_PATTERN).optional(),
     }).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
@@ -342,7 +344,14 @@ export const configSchema = Joi.object({
     forwardedHost: Joi.string().optional(),
   }).optional(),
   edgeOptimizeConfig: Joi.object({
-    enabled: Joi.boolean().required(),
+    enabled: Joi.boolean().optional(),
+    opted: Joi.number().optional(),
+    stagingDomains: Joi.array().items(
+      Joi.object({
+        domain: Joi.string().required(),
+        id: Joi.string().required(),
+      }),
+    ).optional(),
   }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -602,6 +611,19 @@ export const Config = (data = {}) => {
   self.updateLlmoCdnBucketConfig = (cdnBucketConfig) => {
     state.llmo = state.llmo || {};
     state.llmo.cdnBucketConfig = cdnBucketConfig;
+  };
+
+  self.addLlmoTag = (tag) => {
+    state.llmo = state.llmo || {};
+    state.llmo.tags = state.llmo.tags || [];
+    if (!state.llmo.tags.includes(tag)) {
+      state.llmo.tags.push(tag);
+    }
+  };
+
+  self.removeLlmoTag = (tag) => {
+    if (!state.llmo?.tags) return;
+    state.llmo.tags = state.llmo.tags.filter((t) => t !== tag);
   };
 
   self.updateImports = (imports) => {

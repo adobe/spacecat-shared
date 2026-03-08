@@ -18,6 +18,7 @@ import AsyncJobCollection from '../async-job/async-job.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import AuditUrlCollection from '../audit-url/audit-url.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
+import ConsumerCollection from '../consumer/consumer.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
 import EntitlementCollection from '../entitlement/entitlement.collection.js';
 import FixEntityCollection from '../fix-entity/fix-entity.collection.js';
@@ -43,11 +44,14 @@ import TrialUserCollection from '../trial-user/trial-user.collection.js';
 import TrialUserActivityCollection from '../trial-user-activity/trial-user-activity.collection.js';
 import TokenCollection from '../token/token.collection.js';
 import PageCitabilityCollection from '../page-citability/page-citability.collection.js';
+import SentimentGuidelineCollection from '../sentiment-guideline/sentiment-guideline.collection.js';
+import SentimentTopicCollection from '../sentiment-topic/sentiment-topic.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
 import AuditUrlSchema from '../audit-url/audit-url.schema.js';
+import ConsumerSchema from '../consumer/consumer.schema.js';
 import EntitlementSchema from '../entitlement/entitlement.schema.js';
 import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
 import FixEntitySuggestionSchema from '../fix-entity-suggestion/fix-entity-suggestion.schema.js';
@@ -73,6 +77,8 @@ import TrialUserSchema from '../trial-user/trial-user.schema.js';
 import TrialUserActivitySchema from '../trial-user-activity/trial-user-activity.schema.js';
 import TokenSchema from '../token/token.schema.js';
 import PageCitabilitySchema from '../page-citability/page-citability.schema.js';
+import SentimentGuidelineSchema from '../sentiment-guideline/sentiment-guideline.schema.js';
+import SentimentTopicSchema from '../sentiment-topic/sentiment-topic.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -82,16 +88,20 @@ import PageCitabilitySchema from '../page-citability/page-citability.schema.js';
 class EntityRegistry {
   static entities = {};
 
+  static defaultEntities = {};
+
   /**
    * Constructs an instance of EntityRegistry.
    * @constructor
    * @param {Object} services - Dictionary of services keyed by datastore type.
-   * @param {Object} services.dynamo - The ElectroDB service instance for DynamoDB operations.
+   * @param {Object} services.postgrest - The PostgREST client instance for Postgres operations.
    * @param {{s3Client: S3Client, s3Bucket: string}|null} [services.s3] - S3 service configuration.
+   * @param {Object} config - Configuration object containing environment-derived settings.
    * @param {Object} log - A logger for capturing and logging information.
    */
-  constructor(services, log) {
+  constructor(services, config, log) {
     this.services = services;
+    this.config = config;
     this.log = log;
     this.collections = new Map();
 
@@ -101,14 +111,14 @@ class EntityRegistry {
   /**
    * Initializes the collections managed by the EntityRegistry.
    * This method creates instances of each collection and stores them in an internal map.
-   * ElectroDB-based collections are initialized with the dynamo service.
+   * PostgREST-based collections are initialized with the postgrest service.
    * Configuration is handled specially as it's a standalone S3-based collection.
    * @private
    */
   #initialize() {
-    // Initialize ElectroDB-based collections
+    // Initialize PostgREST-based collections
     Object.values(EntityRegistry.entities).forEach(({ collection: Collection, schema }) => {
-      const collection = new Collection(this.services.dynamo, this, schema, this.log);
+      const collection = new Collection(this.services.postgrest, this, schema, this.log);
       this.collections.set(Collection.COLLECTION_NAME, collection);
     });
 
@@ -140,6 +150,14 @@ class EntityRegistry {
     return collections;
   }
 
+  /**
+   * Returns the camelCase names of all registered entities (including Configuration).
+   * @returns {string[]} - An array of entity names.
+   */
+  getEntityNames() {
+    return [...Object.keys(this.constructor.entities), 'configuration'];
+  }
+
   static getEntities() {
     return Object.keys(this.entities).reduce((acc, key) => {
       acc[key] = this.entities[key].schema.toElectroDBSchema();
@@ -150,6 +168,10 @@ class EntityRegistry {
   static registerEntity(schema, collection) {
     this.entities[decapitalize(schema.getEntityName())] = { schema, collection };
   }
+
+  static resetEntities() {
+    this.entities = { ...this.defaultEntities };
+  }
 }
 
 // Register ElectroDB-based entities only (Configuration is handled separately)
@@ -157,6 +179,7 @@ EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(AuditUrlSchema, AuditUrlCollection);
+EntityRegistry.registerEntity(ConsumerSchema, ConsumerCollection);
 EntityRegistry.registerEntity(EntitlementSchema, EntitlementCollection);
 EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);
 EntityRegistry.registerEntity(FixEntitySuggestionSchema, FixEntitySuggestionCollection);
@@ -182,5 +205,8 @@ EntityRegistry.registerEntity(TrialUserSchema, TrialUserCollection);
 EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollection);
 EntityRegistry.registerEntity(TokenSchema, TokenCollection);
 EntityRegistry.registerEntity(PageCitabilitySchema, PageCitabilityCollection);
+EntityRegistry.registerEntity(SentimentGuidelineSchema, SentimentGuidelineCollection);
+EntityRegistry.registerEntity(SentimentTopicSchema, SentimentTopicCollection);
+EntityRegistry.defaultEntities = { ...EntityRegistry.entities };
 
 export default EntityRegistry;

@@ -1,3 +1,22 @@
+## [@adobe/spacecat-shared-ims-client-v1.11.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.10...@adobe/spacecat-shared-ims-client-v1.11.11) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-ims-client-v1.11.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.9...@adobe/spacecat-shared-ims-client-v1.11.10) (2026-02-17)
+
+### Bug Fixes
+
+* **data-access:** decouple shared packages for v2/v3 alias wrapper rollout ([#1355](https://github.com/adobe/spacecat-shared/issues/1355)) ([ba48df7](https://github.com/adobe/spacecat-shared/commit/ba48df710e0030c1cb3ef4f90661cff1b548d42f))
+
+# [@adobe/spacecat-shared-ims-client-v1.11.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.8...@adobe/spacecat-shared-ims-client-v1.11.9) (2026-01-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.4.0 ([#1295](https://github.com/adobe/spacecat-shared/issues/1295)) ([5c1595b](https://github.com/adobe/spacecat-shared/commit/5c1595bd7cba9b7053da867b8f46e302f8683eba))
+
 # [@adobe/spacecat-shared-ims-client-v1.11.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.7...@adobe/spacecat-shared-ims-client-v1.11.8) (2026-01-08)
 
 

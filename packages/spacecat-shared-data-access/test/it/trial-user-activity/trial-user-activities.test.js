@@ -120,9 +120,9 @@ describe('TrialUserActivity IT', async () => {
 
   it('adds a new trialUserActivity', async () => {
     const data = {
-      trialUserId: 'c7faffcc-cc68-4f66-9020-fa71b67cce6d',
-      entitlementId: '3fe5ca60-4850-431c-97b3-f88a80f07e9b',
-      siteId: '48656b02-62cb-46c0-b271-ee99c940e89e',
+      trialUserId: sampleData.trialUsers[0].getId(),
+      entitlementId: sampleData.entitlements[0].getId(),
+      siteId: sampleData.sites[0].getId(),
       type: 'PROMPT_RUN',
       details: {
         promptType: 'seo_optimization',

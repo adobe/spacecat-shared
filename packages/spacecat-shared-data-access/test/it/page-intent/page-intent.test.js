@@ -66,7 +66,7 @@ describe('PageIntent IT', async () => {
   it('adds a new page intent', async () => {
     const data = {
       url: 'https://www.example.com/new-page',
-      siteId: '1c86ba81-f3cc-48d8-8b06-1f9ac958e72d',
+      siteId: sampleData.sites[0].getId(),
       pageIntent: 'INFORMATIONAL',
       topic: 'example-topic',
     };
@@ -84,7 +84,7 @@ describe('PageIntent IT', async () => {
     const sample = sampleData.pageIntents[0];
     const updates = {
       url: 'https://www.updated.com/page',
-      siteId: '45508663-a89b-44ea-9a89-a216f8086212',
+      siteId: sampleData.sites[1].getId(),
       pageIntent: 'TRANSACTIONAL',
       topic: 'updated-topic',
       updatedBy: 'test-user',

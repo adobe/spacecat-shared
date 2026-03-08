@@ -17,6 +17,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import nock from 'nock';
+import esmock from 'esmock';
 import GoogleClient from '../src/index.js';
 
 describe('GoogleClient', () => {
@@ -152,11 +153,16 @@ describe('GoogleClient', () => {
   });
 
   describe('getOrganicSearchData', () => {
-    beforeEach(() => {
-      nock(baseURL)
-        .get('/')
-        .reply(301, {}, { Location: 'https://www.example.com' });
+    let MockedGoogleClient;
+
+    before(async () => {
+      MockedGoogleClient = (await esmock('../src/index.js', {
+        '@adobe/spacecat-shared-utils': {
+          composeAuditURL: async () => auditURL,
+        },
+      })).default;
     });
+
     it('should return organic search data for the provided baseURL, startDate, and endDate', async () => {
       stubSecretManager(defaultConfig);
       const testResult = { data: 'testData' };
@@ -167,7 +173,7 @@ describe('GoogleClient', () => {
         },
       });
 
-      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const googleClient = await MockedGoogleClient.createFrom(context, baseURL);
       const expectedRequest = {
         siteUrl: baseURL,
         requestBody: {
@@ -206,7 +212,7 @@ describe('GoogleClient', () => {
         },
       });
 
-      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const googleClient = await MockedGoogleClient.createFrom(context, baseURL);
       const expectedRequest = {
         siteUrl: baseURL,
         requestBody: {
@@ -242,7 +248,7 @@ describe('GoogleClient', () => {
         },
       });
 
-      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const googleClient = await MockedGoogleClient.createFrom(context, baseURL);
 
       try {
         await googleClient.getOrganicSearchData(startDate, endDate);

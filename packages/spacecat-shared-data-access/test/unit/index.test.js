@@ -24,7 +24,9 @@ describe('Data Access Wrapper Tests', () => {
   beforeEach(() => {
     mockFn = sinon.stub().resolves('function response');
     mockContext = {
-      env: {},
+      env: {
+        POSTGREST_URL: 'http://localhost:3300',
+      },
       log: {
         info: sinon.spy(),
         debug: sinon.spy(),
@@ -56,5 +58,17 @@ describe('Data Access Wrapper Tests', () => {
     await wrappedFn(mockRequest, mockContext);
 
     expect(mockContext.dataAccess).to.deep.equal({ existingDataAccess: true });
+  });
+
+  it('throws when POSTGREST_URL is missing', async () => {
+    delete mockContext.env.POSTGREST_URL;
+    const wrappedFn = dataAccessWrapper(mockFn);
+
+    try {
+      await wrappedFn(mockRequest, mockContext);
+      throw new Error('Expected wrapper to throw');
+    } catch (error) {
+      expect(error.message).to.equal('POSTGREST_URL is required');
+    }
   });
 });

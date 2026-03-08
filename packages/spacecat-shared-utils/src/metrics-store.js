@@ -51,7 +51,7 @@ export async function getStoredMetrics(config, context) {
 
     return metrics;
   } catch (e) {
-    log.error(`Failed to retrieve metrics from ${filePath}, error: ${e.message}`);
+    log.warn(`Failed to retrieve metrics from ${filePath}, error: ${e.message}`);
     return [];
   }
 }

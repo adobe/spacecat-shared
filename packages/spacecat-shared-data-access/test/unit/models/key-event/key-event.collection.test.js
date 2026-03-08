@@ -58,4 +58,17 @@ describe('KeyEventCollection', () => {
       expect(model).to.be.an('object');
     });
   });
+
+  describe('deprecated behavior', () => {
+    it('throws deprecation errors on all collection operations', async () => {
+      await expect(instance.all()).to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
+      await expect(instance.allByIndexKeys({})).to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
+      await expect(instance.findById('id')).to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
+      await expect(instance.findByIndexKeys({})).to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
+      await expect(instance.create({})).to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
+      await expect(instance.createMany([{}])).to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
+      await expect(instance.removeByIds(['id'])).to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
+      await expect(instance.removeByIndexKeys([{ keyEventId: 'id' }])).to.be.rejectedWith('KeyEvent is deprecated in data-access v3');
+    });
+  });
 });

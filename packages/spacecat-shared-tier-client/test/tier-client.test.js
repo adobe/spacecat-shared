@@ -17,7 +17,6 @@ import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 import sinon from 'sinon';
 
-import { Organization, Site } from '@adobe/spacecat-shared-data-access';
 import TierClient from '../src/tier-client.js';
 
 use(chaiAsPromised);
@@ -49,11 +48,7 @@ describe('TierClient', () => {
   };
 
   // Create actual Organization instance for instanceof checks
-  const organizationInstance = Object.create(Organization.prototype);
-  Object.assign(
-    organizationInstance,
-    { entityName: Organization.ENTITY_NAME, ...mockOrganization },
-  );
+  const organizationInstance = { ...mockOrganization };
 
   const mockSite = {
     getId: () => siteId,
@@ -62,8 +57,7 @@ describe('TierClient', () => {
   };
 
   // Create actual Site instance for instanceof checks
-  const siteInstance = Object.create(Site.prototype);
-  Object.assign(siteInstance, { entityName: Site.ENTITY_NAME, ...mockSite });
+  const siteInstance = { ...mockSite };
 
   const mockDataAccess = {
     Entitlement: {
@@ -80,6 +74,7 @@ describe('TierClient', () => {
     },
     Site: {
       findById: sandbox.stub(),
+      batchGetByKeys: sandbox.stub(),
     },
   };
 
@@ -120,23 +115,18 @@ describe('TierClient', () => {
   });
 
   describe('Static Factory Methods', () => {
-    const testOrganization = Object.create(Organization.prototype);
-    Object.assign(testOrganization, { entityName: Organization.ENTITY_NAME, getId: () => orgId });
+    const testOrganization = { getId: () => orgId };
 
-    const testSite = Object.create(Site.prototype);
-    Object.assign(testSite, {
-      entityName: Site.ENTITY_NAME,
+    const testSite = {
       getId: () => siteId,
       getOrganizationId: () => orgId,
       getOrganization: () => testOrganization,
-    });
+    };
 
-    const testSiteWithOrgRef = Object.create(Site.prototype);
-    Object.assign(testSiteWithOrgRef, {
-      entityName: Site.ENTITY_NAME,
+    const testSiteWithOrgRef = {
       getId: () => siteId,
       getOrganizationId: () => orgId,
-    });
+    };
 
     describe('createForOrg', () => {
       it('should create TierClient for organization', () => {
@@ -726,11 +716,25 @@ describe('TierClient', () => {
         getEntitlementId: () => 'entitlement-123',
       };
 
+      const mockSiteForEnrollment1 = {
+        getId: () => siteId,
+        getOrganizationId: () => orgId,
+      };
+
+      const mockSiteForEnrollment2 = {
+        getId: () => '789-site-id',
+        getOrganizationId: () => orgId,
+      };
+
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([
         mockSiteEnrollment,
         mockEnrollment2,
       ]);
+      mockDataAccess.Site.batchGetByKeys.resolves({
+        data: [mockSiteForEnrollment1, mockSiteForEnrollment2],
+        unprocessed: [],
+      });
 
       const result = await tierClientWithoutSite.getAllEnrollment();
 
@@ -742,6 +746,10 @@ describe('TierClient', () => {
         .to.have.been.calledWith(orgId, productCode);
       expect(mockDataAccess.SiteEnrollment.allByEntitlementId)
         .to.have.been.calledWith('entitlement-123');
+      expect(mockDataAccess.Site.batchGetByKeys).to.have.been.calledWith([
+        { siteId },
+        { siteId: '789-site-id' },
+      ]);
     });
 
     it('should return filtered enrollments when site is provided', async () => {
@@ -751,11 +759,17 @@ describe('TierClient', () => {
         getEntitlementId: () => 'entitlement-123',
       };
 
+      const mockSiteForEnrollment1 = {
+        getId: () => siteId,
+        getOrganizationId: () => orgId,
+      };
+
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([
         mockSiteEnrollment,
         mockEnrollment2,
       ]);
+      mockDataAccess.Site.findById.resolves(mockSiteForEnrollment1);
 
       const result = await tierClient.getAllEnrollment();
 
@@ -763,8 +777,8 @@ describe('TierClient', () => {
         entitlement: mockEntitlement,
         enrollments: [mockSiteEnrollment],
       });
-      expect(mockDataAccess.SiteEnrollment.allByEntitlementId)
-        .to.have.been.calledWith('entitlement-123');
+      expect(mockDataAccess.Site.batchGetByKeys).to.not.have.been.called;
+      expect(mockDataAccess.Site.findById).to.have.been.calledWith(siteId);
     });
 
     it('should return null entitlement and empty enrollments when no entitlement exists', async () => {
@@ -798,6 +812,38 @@ describe('TierClient', () => {
       expect(mockContext.log.error).to.have.been.calledWith('Error getting all enrollments: Database error');
     });
 
+    it('should return empty enrollments when site has no matching enrollments', async () => {
+      const nonMatchingEnrollment = {
+        getId: () => 'enrollment-999',
+        getSiteId: () => 'other-site-id',
+        getEntitlementId: () => 'entitlement-123',
+      };
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([nonMatchingEnrollment]);
+
+      const result = await tierClient.getAllEnrollment();
+
+      expect(result).to.deep.equal({ entitlement: mockEntitlement, enrollments: [] });
+      expect(mockDataAccess.Site.findById).to.not.have.been.called;
+    });
+
+    it('should return empty enrollments when site org does not match', async () => {
+      const wrongOrgSite = {
+        getId: () => siteId,
+        getOrganizationId: () => 'wrong-org-id',
+      };
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([mockSiteEnrollment]);
+      mockDataAccess.Site.findById.resolves(wrongOrgSite);
+
+      const result = await tierClient.getAllEnrollment();
+
+      expect(result).to.deep.equal({ entitlement: mockEntitlement, enrollments: [] });
+      expect(mockDataAccess.Site.findById).to.have.been.calledWith(siteId);
+    });
+
     it('should filter out enrollments not matching site ID', async () => {
       const mockEnrollment2 = {
         getId: () => 'enrollment-456',
@@ -811,17 +857,89 @@ describe('TierClient', () => {
         getEntitlementId: () => 'entitlement-123',
       };
 
+      const mockSiteForEnrollment1 = {
+        getId: () => siteId,
+        getOrganizationId: () => orgId,
+      };
+
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([
         mockSiteEnrollment,
         mockEnrollment2,
         mockEnrollment3,
       ]);
+      mockDataAccess.Site.findById.resolves(mockSiteForEnrollment1);
 
       const result = await tierClient.getAllEnrollment();
 
       expect(result.enrollments).to.have.lengthOf(2);
       expect(result.enrollments).to.deep.equal([mockSiteEnrollment, mockEnrollment3]);
+      expect(mockDataAccess.Site.batchGetByKeys).to.not.have.been.called;
+      expect(mockDataAccess.Site.findById).to.have.been.calledWith(siteId);
+    });
+
+    it('should filter out enrollments with mismatching orgId', async () => {
+      const tierClientWithoutSite = new TierClient(
+        mockContext,
+        organizationInstance,
+        null,
+        productCode,
+      );
+
+      const mismatchingOrgId = 'different-org-id';
+      const mockEnrollment2 = {
+        getId: () => 'enrollment-456',
+        getSiteId: () => 'site-with-wrong-org',
+        getEntitlementId: () => 'entitlement-123',
+      };
+
+      const mockSiteForEnrollment1 = {
+        getId: () => siteId,
+        getOrganizationId: () => orgId,
+      };
+
+      const mockSiteForEnrollment2 = {
+        getId: () => 'site-with-wrong-org',
+        getOrganizationId: () => mismatchingOrgId,
+      };
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([
+        mockSiteEnrollment,
+        mockEnrollment2,
+      ]);
+      mockDataAccess.Site.batchGetByKeys.resolves({
+        data: [mockSiteForEnrollment1, mockSiteForEnrollment2],
+        unprocessed: [],
+      });
+
+      const result = await tierClientWithoutSite.getAllEnrollment();
+
+      expect(result.enrollments).to.have.lengthOf(1);
+      expect(result.enrollments[0].getId()).to.equal('enrollment-123');
+    });
+
+    it('should log warning when site not found for enrollment', async () => {
+      const tierClientWithoutSite = new TierClient(
+        mockContext,
+        organizationInstance,
+        null,
+        productCode,
+      );
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([mockSiteEnrollment]);
+      mockDataAccess.Site.batchGetByKeys.resolves({
+        data: [],
+        unprocessed: [],
+      });
+
+      const result = await tierClientWithoutSite.getAllEnrollment();
+
+      expect(result.enrollments).to.have.lengthOf(0);
+      expect(mockContext.log.warn).to.have.been.calledWith(
+        `Site not found for enrollment ${mockSiteEnrollment.getId()} with siteId ${siteId}`,
+      );
     });
   });
 
@@ -834,6 +952,7 @@ describe('TierClient', () => {
       const mockSiteObject = {
         getId: () => siteId,
         getName: () => 'Test Site',
+        getOrganizationId: () => orgId,
       };
 
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
@@ -855,12 +974,14 @@ describe('TierClient', () => {
         site: mockSiteObject,
       });
       expect(mockDataAccess.Site.findById).to.have.been.calledWith(siteId);
+      expect(mockDataAccess.Site.batchGetByKeys).to.not.have.been.called;
     });
 
     it('should return first enrollment when multiple exist', async () => {
       const mockSiteObject = {
         getId: () => siteId,
         getName: () => 'Test Site',
+        getOrganizationId: () => orgId,
       };
 
       const mockEnrollment2 = {
@@ -886,7 +1007,9 @@ describe('TierClient', () => {
       const result = await tierClientWithoutSite.getFirstEnrollment();
 
       expect(result.enrollment).to.equal(mockSiteEnrollment);
-      expect(mockDataAccess.Site.findById).to.have.been.calledWith(siteId);
+      expect(result.site).to.equal(mockSiteObject);
+      expect(mockDataAccess.Site.findById).to.have.been.calledOnceWith(siteId);
+      expect(mockDataAccess.Site.batchGetByKeys).to.not.have.been.called;
     });
 
     it('should return nulls when no entitlement exists', async () => {
@@ -916,7 +1039,7 @@ describe('TierClient', () => {
       expect(mockDataAccess.Site.findById).to.not.have.been.called;
     });
 
-    it('should return null site when site not found in database', async () => {
+    it('should skip enrollment when site not found and return nulls', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([mockSiteEnrollment]);
       mockDataAccess.Site.findById.resolves(null);
@@ -931,12 +1054,12 @@ describe('TierClient', () => {
       const result = await tierClientWithoutSite.getFirstEnrollment();
 
       expect(result).to.deep.equal({
-        entitlement: mockEntitlement,
-        enrollment: mockSiteEnrollment,
+        entitlement: null,
+        enrollment: null,
         site: null,
       });
       expect(mockContext.log.warn).to.have.been.calledWith(
-        `Site not found for enrollment ${mockSiteEnrollment.getId()} with site ID ${siteId}`,
+        `Site not found for enrollment ${mockSiteEnrollment.getId()} with siteId ${siteId}`,
       );
     });
 
@@ -948,30 +1071,96 @@ describe('TierClient', () => {
     });
 
     it('should work with site-specific client', async () => {
-      const mockSiteObject = {
-        getId: () => siteId,
-        getName: () => 'Test Site',
-      };
-
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([mockSiteEnrollment]);
-      mockDataAccess.Site.findById.resolves(mockSiteObject);
 
       const result = await tierClient.getFirstEnrollment();
 
       expect(result).to.deep.equal({
         entitlement: mockEntitlement,
         enrollment: mockSiteEnrollment,
-        site: mockSiteObject,
+        site: siteInstance,
       });
+      expect(mockDataAccess.Site.findById).to.not.have.been.called;
+      expect(mockDataAccess.Site.batchGetByKeys).to.not.have.been.called;
     });
 
-    it('should handle error when fetching site', async () => {
+    it('should handle error when fetching site via findById', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([mockSiteEnrollment]);
       mockDataAccess.Site.findById.rejects(new Error('Site fetch error'));
 
-      await expect(tierClient.getFirstEnrollment()).to.be.rejectedWith('Site fetch error');
+      const tierClientWithoutSite = new TierClient(
+        mockContext,
+        organizationInstance,
+        null,
+        productCode,
+      );
+
+      await expect(tierClientWithoutSite.getFirstEnrollment()).to.be.rejectedWith('Site fetch error');
+      expect(mockDataAccess.Site.batchGetByKeys).to.not.have.been.called;
+    });
+
+    it('should return nulls when site-specific client has no matching enrollment', async () => {
+      const nonMatchingEnrollment = {
+        getId: () => 'enrollment-999',
+        getSiteId: () => 'other-site-id',
+        getEntitlementId: () => 'entitlement-123',
+      };
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([nonMatchingEnrollment]);
+
+      const result = await tierClient.getFirstEnrollment();
+
+      expect(result).to.deep.equal({
+        entitlement: null,
+        enrollment: null,
+        site: null,
+      });
+      expect(mockDataAccess.Site.findById).to.not.have.been.called;
+    });
+
+    it('should skip enrollments with mismatching orgId and return first match', async () => {
+      const wrongOrgSite = {
+        getId: () => siteId,
+        getOrganizationId: () => 'wrong-org-id',
+      };
+
+      const correctSite = {
+        getId: () => 'correct-site-id',
+        getOrganizationId: () => orgId,
+      };
+
+      const enrollment2 = {
+        getId: () => 'enrollment-456',
+        getSiteId: () => 'correct-site-id',
+        getEntitlementId: () => 'entitlement-123',
+      };
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([
+        mockSiteEnrollment,
+        enrollment2,
+      ]);
+      mockDataAccess.Site.findById.onFirstCall().resolves(wrongOrgSite);
+      mockDataAccess.Site.findById.onSecondCall().resolves(correctSite);
+
+      const tierClientWithoutSite = new TierClient(
+        mockContext,
+        organizationInstance,
+        null,
+        productCode,
+      );
+
+      const result = await tierClientWithoutSite.getFirstEnrollment();
+
+      expect(result).to.deep.equal({
+        entitlement: mockEntitlement,
+        enrollment: enrollment2,
+        site: correctSite,
+      });
+      expect(mockDataAccess.Site.findById).to.have.been.calledTwice;
     });
   });
 });

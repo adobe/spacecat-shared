@@ -289,7 +289,7 @@ describe('ReadabilityMapper', () => {
       expect(patch.lastUpdated).to.be.a('number');
     });
 
-    it('should create patch with updatedAt timestamp', () => {
+    it('should create patch with Date.now() timestamp', () => {
       const suggestion = {
         getId: () => 'sugg-456',
         getUpdatedAt: () => '2025-09-20T06:21:12.584Z',
@@ -304,11 +304,15 @@ describe('ReadabilityMapper', () => {
         }),
       };
 
+      const beforeTime = Date.now();
       const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-456');
+      const afterTime = Date.now();
+
       expect(patches.length).to.equal(1);
       const patch = patches[0];
 
-      expect(patch.lastUpdated).to.equal(new Date('2025-09-20T06:21:12.584Z').getTime());
+      expect(patch.lastUpdated).to.be.at.least(beforeTime);
+      expect(patch.lastUpdated).to.be.at.most(afterTime);
     });
 
     it('should use default target when not specified', () => {

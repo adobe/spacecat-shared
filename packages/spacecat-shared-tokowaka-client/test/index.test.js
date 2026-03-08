@@ -15,6 +15,7 @@
 import { expect, use } from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import esmock from 'esmock';
 import TokowakaClient from '../src/index.js';
 
 use(sinonChai);
@@ -454,6 +455,43 @@ describe('TokowakaClient', () => {
         expect(error.status).to.equal(500);
       }
     });
+
+    it('should upload metaconfig with user-defined metadata when provided', async () => {
+      const metaconfig = {
+        siteId: 'site-123',
+        prerender: true,
+      };
+      const metadata = {
+        'last-modified-by': 'john@example.com',
+        'created-by': 'admin',
+      };
+
+      const s3Path = await client.uploadMetaconfig('https://example.com/page1', metaconfig, metadata);
+
+      expect(s3Path).to.equal('opportunities/example.com/config');
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Bucket).to.equal('test-bucket');
+      expect(command.input.Key).to.equal('opportunities/example.com/config');
+      expect(command.input.ContentType).to.equal('application/json');
+      expect(JSON.parse(command.input.Body)).to.deep.equal(metaconfig);
+      expect(command.input.Metadata).to.deep.equal(metadata);
+    });
+
+    it('should upload metaconfig without Metadata field when metadata is empty object', async () => {
+      const metaconfig = {
+        siteId: 'site-123',
+        prerender: true,
+      };
+
+      const s3Path = await client.uploadMetaconfig('https://example.com/page1', metaconfig, {});
+
+      expect(s3Path).to.equal('opportunities/example.com/config');
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Bucket).to.equal('test-bucket');
+      expect(command.input.Metadata).to.be.undefined;
+    });
   });
 
   describe('createMetaconfig', () => {
@@ -567,6 +605,100 @@ describe('TokowakaClient', () => {
       const command = s3Client.send.firstCall.args[0];
       expect(command.input.Key).to.equal('opportunities/example.com/config');
     });
+
+    it('should include user-defined metadata when metadata is provided', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      await client.createMetaconfig(url, siteId, {}, { 'last-modified-by': 'john@example.com' });
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.deep.equal({
+        'last-modified-by': 'john@example.com',
+      });
+    });
+
+    it('should not include metadata when metadata is empty object', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      await client.createMetaconfig(url, siteId, {}, {});
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.be.undefined;
+    });
+
+    it('should not include metadata when metadata is not provided', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      await client.createMetaconfig(url, siteId);
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.be.undefined;
+    });
+
+    it('should NOT include prerender when isStageDomain is not true in metadata', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId);
+
+      expect(result).to.not.have.property('prerender');
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body).to.not.have.property('prerender');
+    });
+
+    it('should set prerender with allowList when isStageDomain is true in metadata', async () => {
+      const siteId = 'site-123';
+      const url = 'https://staging.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId, {}, { isStageDomain: true });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal({ allowList: ['/*'] });
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body.prerender).to.deep.equal({ allowList: ['/*'] });
+      expect(uploadCommand.input.Metadata).to.deep.equal({ isStageDomain: 'true' });
+    });
+
+    it('should NOT set prerender when isStageDomain is false in metadata', async () => {
+      const siteId = 'site-123';
+      const url = 'https://www.example.com/page1';
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.onFirstCall().rejects(noSuchKeyError);
+
+      const result = await client.createMetaconfig(url, siteId, {}, { isStageDomain: false });
+
+      expect(result).to.not.have.property('prerender');
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body).to.not.have.property('prerender');
+    });
   });
 
   describe('updateMetaconfig', () => {
@@ -579,11 +711,12 @@ describe('TokowakaClient', () => {
     };
 
     beforeEach(() => {
-      // Mock fetchMetaconfig to return existing config
+      // Mock fetchMetaconfig to return existing config with metadata
       s3Client.send.onFirstCall().resolves({
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfig)),
         },
+        Metadata: {},
       });
       // Mock uploadMetaconfig S3 upload
       s3Client.send.onSecondCall().resolves();
@@ -1307,6 +1440,125 @@ describe('TokowakaClient', () => {
 
       expect(result).to.have.property('prerender');
       expect(result.prerender).to.deep.equal(prerenderConfig);
+    });
+
+    it('should include user-defined metadata when metadata is provided', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+
+      await client.updateMetaconfig(url, siteId, {
+        tokowakaEnabled: true,
+      }, { 'last-modified-by': 'jane@example.com' });
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.deep.equal({
+        'last-modified-by': 'jane@example.com',
+      });
+    });
+
+    it('should not include metadata when metadata is empty object', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+
+      await client.updateMetaconfig(url, siteId, {
+        tokowakaEnabled: true,
+      }, {});
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.be.undefined;
+    });
+
+    it('should not include metadata when metadata is not provided', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+
+      await client.updateMetaconfig(url, siteId, {
+        tokowakaEnabled: true,
+      });
+
+      // Second call is the uploadMetaconfig
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      expect(uploadCommand.input.Metadata).to.be.undefined;
+    });
+
+    it('should set prerender with allowList when isStageDomain is true in metadata', async () => {
+      const siteId = 'site-456';
+      const url = 'https://staging.example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, {}, { isStageDomain: true });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal({ allowList: ['/*'] });
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body.prerender).to.deep.equal({ allowList: ['/*'] });
+      expect(uploadCommand.input.Metadata).to.deep.equal({ isStageDomain: 'true' });
+    });
+
+    it('should override existing prerender when isStageDomain is true in metadata', async () => {
+      const siteId = 'site-456';
+      const url = 'https://staging.example.com';
+      const existingMetaconfigWithPrerender = {
+        ...existingMetaconfig,
+        prerender: { allowList: ['/old-path/*'] },
+      };
+
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfigWithPrerender)),
+        },
+        Metadata: {},
+      });
+
+      const result = await client.updateMetaconfig(url, siteId, {}, { isStageDomain: true });
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal({ allowList: ['/*'] });
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body.prerender).to.deep.equal({ allowList: ['/*'] });
+    });
+
+    it('should preserve existing prerender when isStageDomain is not in metadata', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+      const existingMetaconfigWithPrerender = {
+        ...existingMetaconfig,
+        prerender: { allowList: ['/path/*'] },
+      };
+
+      s3Client.send.onFirstCall().resolves({
+        Body: {
+          transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfigWithPrerender)),
+        },
+        Metadata: {},
+      });
+
+      const result = await client.updateMetaconfig(url, siteId, {});
+
+      expect(result).to.have.property('prerender');
+      expect(result.prerender).to.deep.equal({ allowList: ['/path/*'] });
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body.prerender).to.deep.equal({ allowList: ['/path/*'] });
+    });
+
+    it('should NOT set prerender when isStageDomain is false in metadata', async () => {
+      const siteId = 'site-456';
+      const url = 'https://www.example.com';
+
+      const result = await client.updateMetaconfig(url, siteId, {}, { isStageDomain: false });
+
+      expect(result).to.not.have.property('prerender');
+
+      const uploadCommand = s3Client.send.secondCall.args[0];
+      const body = JSON.parse(uploadCommand.input.Body);
+      expect(body).to.not.have.property('prerender');
     });
   });
 
@@ -2749,6 +3001,51 @@ describe('TokowakaClient', () => {
       expect(s3Client.send).to.have.been.calledOnce;
     });
 
+    it('should set applyStale to true for all preview patches', async () => {
+      // Create a scenario with existing deployed patches
+      client.fetchConfig.resolves({
+        url: 'https://example.com/page1',
+        version: '1.0',
+        forceFail: false,
+        prerender: true,
+        patches: [
+          {
+            op: 'replace',
+            selector: 'h3',
+            value: 'Existing Heading',
+            opportunityId: 'opp-999',
+            suggestionId: 'sugg-999',
+            prerenderRequired: true,
+            lastUpdated: 1234567890,
+          },
+        ],
+      });
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.config).to.exist;
+      expect(result.config.patches).to.have.length(3); // 2 new + 1 existing
+
+      // Verify that all new preview patches have applyStale: true
+      const newPatches = result.config.patches.filter(
+        (p) => p.suggestionId === 'sugg-1' || p.suggestionId === 'sugg-2',
+      );
+      expect(newPatches).to.have.length(2);
+      newPatches.forEach((patch) => {
+        expect(patch.applyStale).to.equal(true);
+      });
+
+      // Existing patch should not have applyStale field
+      const existingPatch = result.config.patches.find((p) => p.suggestionId === 'sugg-999');
+      expect(existingPatch).to.exist;
+      expect(existingPatch.applyStale).to.be.undefined;
+    });
+
     it('should preview prerender-only suggestions with no patches', async () => {
       // Update fetchConfig to return existing config with deployed patches
       client.fetchConfig.resolves({
@@ -2819,61 +3116,70 @@ describe('TokowakaClient', () => {
       }
     });
 
-    it('should throw error if metaconfig does not exist', async () => {
+    it('should preview suggestions successfully without metaconfig (optional)', async () => {
+      // Override the stub from beforeEach to return null
       client.fetchMetaconfig.resolves(null);
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('No domain-level metaconfig found');
-        expect(error.status).to.equal(500);
-      }
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.config).to.exist;
+      expect(result.html).to.exist;
+      expect(result.html.originalHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(result.html.optimizedHtml).to.equal('<html><body>Test HTML</body></html>');
+
+      // Verify fetch was called without API key (undefined)
+      expect(fetchStub.callCount).to.equal(4); // 2 warmup + 2 actual (original + optimized)
     });
 
-    it('should throw error if metaconfig does not have apiKeys', async () => {
+    it('should preview suggestions successfully without apiKeys in metaconfig (optional)', async () => {
+      // Override the stub from beforeEach
       client.fetchMetaconfig.resolves({
         siteId: 'site-123',
-        // apiKeys missing
+        // apiKeys missing - should work without it
       });
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
-        expect(error.status).to.equal(500);
-      }
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.config).to.exist;
+      expect(result.html).to.exist;
+      expect(result.html.originalHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(result.html.optimizedHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(fetchStub.callCount).to.equal(4);
     });
 
-    it('should throw error if metaconfig has empty apiKeys array', async () => {
+    it('should preview suggestions successfully with empty apiKeys array (optional)', async () => {
+      // Override the stub from beforeEach
       client.fetchMetaconfig.resolves({
         siteId: 'site-123',
         apiKeys: [],
       });
 
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
-        expect(error.status).to.equal(500);
-      }
-    });
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
 
-    it('should throw error if metaconfig apiKeys first value is empty', async () => {
-      client.fetchMetaconfig.resolves({
-        siteId: 'site-123',
-        apiKeys: ['', 'test-api-key-2'],
-      });
-
-      try {
-        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
-        expect.fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).to.include('Metaconfig does not have valid API keys configured');
-        expect(error.status).to.equal(500);
-      }
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.config).to.exist;
+      expect(result.html).to.exist;
+      expect(fetchStub.callCount).to.equal(4);
     });
 
     it('should throw error for unsupported opportunity type', async () => {
@@ -2977,7 +3283,7 @@ describe('TokowakaClient', () => {
           mockSite,
           mockOpportunity,
           mockSuggestions,
-          { warmupDelayMs: 0 },
+          { warmupDelayMs: 0, maxRetries: 0, retryDelayMs: 0 },
         );
         expect.fail('Should have thrown error');
       } catch (error) {
@@ -3430,6 +3736,490 @@ describe('TokowakaClient', () => {
 
       // Restore
       client.env.TOKOWAKA_CDN_PROVIDER = originalProvider;
+    });
+  });
+
+  describe('checkEdgeOptimizeStatus', () => {
+    let tracingFetchStub;
+    let esmockClient;
+
+    beforeEach(async () => {
+      tracingFetchStub = sinon.stub();
+
+      const MockedTokowakaClient = await esmock('../src/index.js', {
+        '@adobe/spacecat-shared-utils': {
+          hasText: (val) => typeof val === 'string' && val.trim().length > 0,
+          isNonEmptyObject: (val) => val !== null && typeof val === 'object' && Object.keys(val).length > 0,
+          tracingFetch: tracingFetchStub,
+        },
+      });
+
+      const env = {
+        TOKOWAKA_CDN_PROVIDER: 'cloudfront',
+        TOKOWAKA_CDN_CONFIG: JSON.stringify({
+          cloudfront: {
+            distributionId: 'E123456',
+            region: 'us-east-1',
+          },
+        }),
+      };
+
+      esmockClient = new MockedTokowakaClient(
+        {
+          bucketName: 'test-bucket',
+          previewBucketName: 'test-preview-bucket',
+          s3Client: { send: sinon.stub().resolves() },
+          env,
+        },
+        log,
+      );
+    });
+
+    describe('Input Validation', () => {
+      it('should throw error when site is not provided', async () => {
+        try {
+          await esmockClient.checkEdgeOptimizeStatus(null, '/');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Site is required');
+          expect(error.status).to.equal(400);
+        }
+      });
+
+      it('should throw error when site is empty object', async () => {
+        try {
+          await esmockClient.checkEdgeOptimizeStatus({}, '/');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Site is required');
+        }
+      });
+
+      it('should throw error when path is not provided', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        try {
+          await esmockClient.checkEdgeOptimizeStatus(site, '');
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Path is required');
+          expect(error.status).to.equal(400);
+        }
+      });
+
+      it('should throw error when path is null', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        try {
+          await esmockClient.checkEdgeOptimizeStatus(site, null);
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Path is required');
+        }
+      });
+    });
+
+    describe('Direct Response (No Redirect)', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should return edgeOptimizeEnabled: true when x-tokowaka-request-id header is present', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+        expect(tracingFetchStub).to.have.been.calledOnce;
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/');
+      });
+
+      it('should return edgeOptimizeEnabled: true when x-edgeoptimize-request-id header is present', async () => {
+        const headersMap = new Map([
+          ['x-edgeoptimize-request-id', 'xyz789'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/products');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/products');
+      });
+
+      it('should return edgeOptimizeEnabled: false when headers are not present', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: false,
+        });
+      });
+
+      it('should work with 404 status and edge optimize enabled', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+        ]);
+        const mockResponse = {
+          status: 404,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/not-found');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+      });
+
+      it('should send correct User-Agent header', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['User-Agent']).to.equal('Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0');
+      });
+
+      it('should pass timeout option to tracingFetch', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.timeout).to.equal(5000);
+      });
+    });
+
+    describe('Retry Logic', () => {
+      let site;
+      let clock;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+        clock = sinon.useFakeTimers();
+      });
+
+      afterEach(() => {
+        clock.restore();
+      });
+
+      it('should retry 3 times on network error with exponential backoff', async () => {
+        const networkError = new Error('Network timeout');
+        tracingFetchStub.rejects(networkError);
+
+        const promise = esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        // Wait for first attempt
+        await clock.tickAsync(0);
+
+        // Wait for 200ms delay after first failure
+        await clock.tickAsync(200);
+
+        // Wait for 400ms delay after second failure
+        await clock.tickAsync(400);
+
+        // Wait for 800ms delay after third failure
+        await clock.tickAsync(800);
+
+        try {
+          await promise;
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Failed to check edge optimize status');
+          expect(error.message).to.include('Network timeout');
+          expect(error.status).to.equal(500);
+          expect(tracingFetchStub.callCount).to.equal(4); // Initial + 3 retries
+        }
+      });
+
+      it('should succeed on second attempt after first failure', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        tracingFetchStub.onFirstCall().rejects(new Error('Temporary failure'));
+        tracingFetchStub.onSecondCall().resolves(mockResponse);
+
+        const promise = esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        await clock.tickAsync(200);
+
+        const result = await promise;
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+        expect(tracingFetchStub).to.have.been.calledTwice;
+      });
+
+      it('should succeed on third attempt after two failures', async () => {
+        const headersMap = new Map([
+          ['x-edgeoptimize-request-id', 'xyz789'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        tracingFetchStub.onFirstCall().rejects(new Error('Failure 1'));
+        tracingFetchStub.onSecondCall().rejects(new Error('Failure 2'));
+        tracingFetchStub.onThirdCall().resolves(mockResponse);
+
+        const promise = esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        await clock.tickAsync(200); // First retry delay
+        await clock.tickAsync(400); // Second retry delay
+
+        const result = await promise;
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+        expect(tracingFetchStub.callCount).to.equal(3);
+      });
+
+      it('should log warnings on retries', async () => {
+        const networkError = new Error('Connection refused');
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.onFirstCall().rejects(networkError);
+        tracingFetchStub.onSecondCall().resolves(mockResponse);
+
+        const promise = esmockClient.checkEdgeOptimizeStatus(site, '/');
+        await clock.tickAsync(200);
+        await promise;
+
+        expect(log.warn).to.have.been.calledWith(
+          sinon.match(/Attempt 1 to fetch failed.*Connection refused.*Retrying in 200ms/),
+        );
+      });
+
+      it('should return edgeOptimizeEnabled: false on request timeout (ETIMEOUT) without retrying', async () => {
+        const timeoutError = new Error('Request timeout after 5000ms');
+        timeoutError.code = 'ETIMEOUT';
+        tracingFetchStub.rejects(timeoutError);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
+        expect(tracingFetchStub).to.have.been.calledOnce;
+        expect(log.warn).to.have.been.calledWith(
+          sinon.match(/Request timed out after 5000ms for https:\/\/example.com\/, returning edgeOptimizeEnabled: false/),
+        );
+      });
+    });
+
+    describe('URL Construction', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should construct URL correctly with simple path', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(site, '/products/chairs');
+
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/products/chairs');
+      });
+
+      it('should construct URL correctly with multi-level path', async () => {
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(site, '/a/b/c/d');
+
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/a/b/c/d');
+      });
+
+      it('should handle baseURL with trailing slash', async () => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com/',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(site, '/about');
+
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/about');
+      });
+
+      it('should handle baseURL without trailing slash', async () => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(site, '/about');
+
+        expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/about');
+      });
+    });
+
+    describe('Edge Cases', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({}),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('should handle both headers present', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+          ['x-edgeoptimize-request-id', 'xyz789'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result.edgeOptimizeEnabled).to.be.true;
+      });
+
+      it('should handle 500 error with edge optimize header', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+        ]);
+        const mockResponse = {
+          status: 500,
+          headers: {
+            get: (key) => headersMap.get(key) || null,
+          },
+        };
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/error');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+        });
+      });
     });
   });
 });

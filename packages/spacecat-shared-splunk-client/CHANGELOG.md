@@ -1,3 +1,22 @@
+## [@adobe/spacecat-shared-splunk-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.1.0...@adobe/spacecat-shared-splunk-client-v1.1.1) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-splunk-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.30...@adobe/spacecat-shared-splunk-client-v1.1.0) (2026-02-27)
+
+### Features
+
+* add slack for redirects ([#1365](https://github.com/adobe/spacecat-shared/issues/1365)) ([7b8176e](https://github.com/adobe/spacecat-shared/commit/7b8176ec7e6788b60da7b76f8924c71f4ef0b26a))
+
+# [@adobe/spacecat-shared-splunk-client-v1.0.30](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.29...@adobe/spacecat-shared-splunk-client-v1.0.30) (2026-01-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.4.0 ([#1295](https://github.com/adobe/spacecat-shared/issues/1295)) ([5c1595b](https://github.com/adobe/spacecat-shared/commit/5c1595bd7cba9b7053da867b8f46e302f8683eba))
+
 # [@adobe/spacecat-shared-splunk-client-v1.0.29](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.28...@adobe/spacecat-shared-splunk-client-v1.0.29) (2025-11-28)
 
 

@@ -54,6 +54,10 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
     type: 'any',
     validate: (value) => !value || isObject(value),
   })
-  .addAllIndex(['emailId']);
+  .addAllIndex(['emailId'])
+  .addIndex(
+    { composite: ['organizationId'] },
+    { composite: ['updatedAt'] },
+  );
 
 export default schema.build();

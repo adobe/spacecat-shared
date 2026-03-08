@@ -241,19 +241,20 @@ describe('FixEntity IT', async () => {
     });
   });
   it('gets suggestions for a fix entity', async () => {
-    const fixEntity = sampleData.fixEntities[0];
+    const fixEntity = await FixEntity.findById(sampleData.fixEntities[1].getId());
 
-    // First, set up some suggestions for this fix entity
-    const suggestionsToSet = [
-      sampleData.suggestions[0],
-      sampleData.suggestions[1],
-    ];
+    const suggestionsForOpportunity = await Suggestion.allByOpportunityId(
+      fixEntity.getOpportunityId(),
+    );
+    const suggestionsToSet = suggestionsForOpportunity.slice(0, 2);
 
-    const opportunity = {
-      getId: () => fixEntity.getOpportunityId(),
-    };
+    expect(suggestionsToSet).to.have.length(2);
 
-    await FixEntity.setSuggestionsForFixEntity(opportunity.getId(), fixEntity, suggestionsToSet);
+    await FixEntity.setSuggestionsForFixEntity(
+      fixEntity.getOpportunityId(),
+      fixEntity,
+      suggestionsToSet,
+    );
 
     // Test the model method
     const suggestions = await fixEntity.getSuggestions();

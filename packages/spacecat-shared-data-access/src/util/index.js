@@ -25,6 +25,7 @@ export {
 export {
   registerLogger,
   getLogger,
+  resetLoggerRegistry,
 } from './logger-registry.js';
 
 /**
@@ -33,6 +34,6 @@ export {
  * @enum {string}
  */
 export const DATASTORE_TYPE = Object.freeze({
-  DYNAMO: 'dynamo',
+  POSTGREST: 'postgrest',
   S3: 's3',
 });

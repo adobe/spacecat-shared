@@ -52,6 +52,9 @@ export function defaultConfig() {
     deleted: {
       prompts: {},
     },
+    ignored: {
+      prompts: {},
+    },
   };
 }
 
@@ -121,4 +124,68 @@ export async function writeConfig(siteId, config, s3Client, options) {
     throw new Error('Failed to get version ID after writing LLMO config');
   }
   return { version: res.VersionId };
+}
+
+/**
+ * Gets the S3 path for a V2 customer configuration.
+ * @param {string} organizationId The SpaceCat organization ID.
+ * @returns {string} The S3 key path for the V2 customer config.
+ */
+export function customerConfigV2Path(organizationId) {
+  return `customer-config-v2/${organizationId}/config.json`;
+}
+
+/**
+ * Reads the V2 customer configuration for an organization from S3.
+ * @param {string} organizationId The SpaceCat organization ID.
+ * @param {S3Client} s3Client The S3 client to use for reading the configuration.
+ * @param {object} [options]
+ * @param {string} [options.s3Bucket] Optional S3 bucket name.
+ * @returns {Promise<object|null>} The configuration object or null if not found.
+ * @throws {Error} If reading the configuration fails for reasons other than it not existing.
+ */
+export async function readCustomerConfigV2(organizationId, s3Client, options) {
+  const s3Bucket = options?.s3Bucket || process.env.S3_BUCKET_NAME;
+
+  const getObjectCommand = new GetObjectCommand({
+    Bucket: s3Bucket,
+    Key: customerConfigV2Path(organizationId),
+  });
+
+  try {
+    const res = await s3Client.send(getObjectCommand);
+    const body = res.Body;
+    if (!body) {
+      throw new Error('Customer config V2 body is empty');
+    }
+    const text = await body.transformToString();
+    return JSON.parse(text);
+  } catch (e) {
+    if (e.name === 'NoSuchKey' || e.name === 'NotFound') {
+      return null;
+    }
+    throw e;
+  }
+}
+
+/**
+ * Writes the V2 customer configuration for an organization to S3.
+ * @param {string} organizationId The SpaceCat organization ID.
+ * @param {object} config The customer configuration object to write.
+ * @param {S3Client} s3Client The S3 client to use for writing the configuration.
+ * @param {object} [options]
+ * @param {string} [options.s3Bucket] Optional S3 bucket name.
+ * @returns {Promise<void>}
+ */
+export async function writeCustomerConfigV2(organizationId, config, s3Client, options) {
+  const s3Bucket = options?.s3Bucket || process.env.S3_BUCKET_NAME;
+
+  const putObjectCommand = new PutObjectCommand({
+    Bucket: s3Bucket,
+    Key: customerConfigV2Path(organizationId),
+    Body: JSON.stringify(config, null, 2),
+    ContentType: 'application/json',
+  });
+
+  await s3Client.send(putObjectCommand);
 }

@@ -85,18 +85,23 @@ describe('LatestAudit IT', async () => {
 
   it('gets all latest audits for a site', async () => {
     const site = sampleData.sites[1];
+    const allAuditsForSite = await Audit.allBySiteId(site.getId());
 
     const audits = await LatestAudit.allBySiteId(site.getId());
 
     expect(audits).to.be.an('array');
     // cwv & lhs
     expect(audits.length).to.equal(2);
-    expect(audits[0].getAuditedAt()).to.equal(sampleData.audits[4].getAuditedAt());
-    expect(audits[1].getAuditedAt()).to.equal(sampleData.audits[9].getAuditedAt());
 
     audits.forEach((audit) => {
       expect(audit.getSiteId()).to.equal(site.getId());
       checkAudit(audit);
+      const latestAuditedAtForType = allAuditsForSite
+        .filter((siteAudit) => siteAudit.getAuditType() === audit.getAuditType())
+        .map((siteAudit) => siteAudit.getAuditedAt())
+        .sort()
+        .at(-1);
+      expect(audit.getAuditedAt()).to.equal(latestAuditedAtForType);
     });
   });
 
@@ -130,14 +135,14 @@ describe('LatestAudit IT', async () => {
   it('gets latest audit of type lhs-mobile for a site', async () => {
     const auditType = 'lhs-mobile';
     const site = sampleData.sites[1];
-    const audits = await site.getLatestAudits();
     const audit = await site.getLatestAuditByAuditType(auditType);
+    const latestByType = await LatestAudit.findById(site.getId(), auditType);
 
     checkAudit(audit);
 
     expect(audit.getSiteId()).to.equal(site.getId());
     expect(audit.getAuditType()).to.equal(auditType);
-    expect(audit.getAuditedAt()).to.equal(audits[0].getAuditedAt());
+    expect(audit.getAuditedAt()).to.equal(latestByType.getAuditedAt());
   });
 
   it('returns null for non-existing audit', async () => {

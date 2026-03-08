@@ -14,8 +14,6 @@ import { createDataAccess } from './service/index.js';
 
 export * from './service/index.js';
 
-const TABLE_NAME_DATA = 'spacecat-services-data';
-
 /**
  * Wrapper for data access layer
  * @param {function} fn - The function to wrap
@@ -25,7 +23,7 @@ export default function dataAccessWrapper(fn) {
   /**
    * Wrapper for data access layer. This wrapper will create a data access layer if it is not
    * already created. It requires the context to have a log object. It will also use the
-   * DYNAMO_TABLE_NAME_DATA environment variable to create the data access layer.
+   * POSTGREST_URL environment variable to create the data access layer.
    * Optionally, it will use the ENV and AWS_REGION environment variables
    *
    * @param {object} request - The request object
@@ -37,15 +35,28 @@ export default function dataAccessWrapper(fn) {
       const { log } = context;
 
       const {
-        DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
+        POSTGREST_URL: postgrestUrl,
+        POSTGREST_SCHEMA: postgrestSchema,
+        POSTGREST_API_KEY: postgrestApiKey,
         S3_CONFIG_BUCKET: s3Bucket,
         AWS_REGION: region,
+        S2S_ALLOWED_IMS_ORG_IDS: s2sAllowedImsOrgIdsRaw,
       } = context.env;
 
+      if (!postgrestUrl) {
+        throw new Error('POSTGREST_URL is required');
+      }
+      const s2sAllowedImsOrgIds = s2sAllowedImsOrgIdsRaw
+        ? s2sAllowedImsOrgIdsRaw.split(',').map((id) => id.trim()).filter(Boolean)
+        : [];
+
       context.dataAccess = createDataAccess({
-        tableNameData: DYNAMO_TABLE_NAME_DATA,
+        postgrestUrl,
+        postgrestSchema,
+        postgrestApiKey,
         s3Bucket,
         region,
+        s2sAllowedImsOrgIds,
       }, log);
     }
 

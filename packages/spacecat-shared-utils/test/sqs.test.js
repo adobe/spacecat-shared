@@ -53,7 +53,7 @@ describe('SQS', () => {
       context.sqs = instance;
 
       await wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('queue', 'message');
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
       }).with(sqsWrapper)({}, context);
 
       expect(instance.sendMessage).to.have.been.calledOnce;
@@ -77,15 +77,42 @@ describe('SQS', () => {
 
       await expect(action({}, context)).to.be.rejectedWith(errorResponse.message);
 
-      const errorMessage = `Message sent failed. Type: ${errorResponse.type}, Code: ${errorResponse.code}, Message: ${errorResponse.message}`;
-      expect(errorSpy).to.have.been.calledWith(errorMessage);
+      const errorMessage = `Message send failed. Type: ${errorResponse.type}, Code: ${errorResponse.code}, Message: ${errorResponse.message}`;
+      expect(errorSpy).to.have.been.calledWith(
+        errorMessage,
+        sinon.match.instanceOf(Error),
+      );
+    });
+
+    it('message sending fails with malformed error (missing properties)', async () => {
+      const errorSpy = sandbox.spy(context.log, 'error');
+
+      // Return an empty JSON object to simulate a malformed error response
+      // The AWS SDK will parse it but type/code will be undefined, message will be 'UnknownError'
+      const scope = nock('https://sqs.us-east-1.amazonaws.com')
+        .post('/')
+        .times(3) // Allow for retries
+        .reply(500, {});
+
+      const action = wrap(async (req, ctx) => {
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
+      }).with(sqsWrapper);
+
+      await expect(action({}, context)).to.be.rejected;
+
+      expect(errorSpy).to.have.been.calledWith(
+        sinon.match(/Message send failed\. Type: undefined, Code: undefined, Message:/),
+        sinon.match.instanceOf(Error),
+      );
+
+      scope.done();
     });
 
     it('initialize and use a new sqs if not initialized before', async () => {
       const messageId = 'message-id';
       const message = { key: 'value' };
       const queueUrl = 'queue-url';
-      const logSpy = sandbox.spy(context.log, 'debug');
+      const logSpy = sandbox.spy(context.log, 'info');
 
       nock('https://sqs.us-east-1.amazonaws.com')
         .post('/')
@@ -94,7 +121,7 @@ describe('SQS', () => {
           expect(QueueUrl).to.equal(queueUrl);
           expect(JSON.parse(MessageBody).key).to.equal(message.key);
           return {
-            MessageId: 'message-id',
+            MessageId: messageId,
             MD5OfMessageBody: crypto.createHash('md5').update(MessageBody, 'utf-8').digest('hex'),
           };
         });
@@ -103,7 +130,10 @@ describe('SQS', () => {
         await ctx.sqs.sendMessage(queueUrl, message);
       }).with(sqsWrapper)({}, context);
 
-      expect(logSpy).to.have.been.calledWith(`Success, message sent. MessageID: ${messageId}`);
+      const queueName = queueUrl;
+      expect(logSpy).to.have.been.calledWith(
+        sinon.match(new RegExp(`Success, message sent\\. Queue: ${queueName}, Type: unknown, MessageID: ${messageId}`)),
+      );
     });
   });
 
@@ -152,8 +182,14 @@ describe('SQS', () => {
     });
 
     it('returns bad request when record is not valid JSON', async () => {
+      const mockLog = {
+        debug: sandbox.stub(),
+        warn: sandbox.stub(),
+        info: sandbox.stub(),
+        error: sandbox.stub(),
+      };
       const ctx = {
-        log: console,
+        log: mockLog,
         invocation: {
           event: {
             Records: [
@@ -171,6 +207,8 @@ describe('SQS', () => {
 
       expect(response.status).to.equal(400);
       expect(response.headers.get('x-error')).to.equal('Event does not contain a valid message body');
+      expect(mockLog.warn).to.have.been.calledOnce;
+      expect(mockLog.warn.firstCall.args[0]).to.equal('Function was not invoked properly, message body is not a valid JSON');
     });
 
     it('should handle a valid context with an event record', async () => {
@@ -236,7 +274,7 @@ describe('SQS', () => {
 
     it('should include a MessageGroupId when the queue is a FIFO queue', async () => {
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/fifo-queue.fifo', { key: 'value' }, 'job-id');
+        await ctx.sqs.sendMessage('fifo-queue.fifo', { key: 'value' }, 'job-id');
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -253,7 +291,7 @@ describe('SQS', () => {
     it('should not include a MessageGroupId when the queue is standard queue', async () => {
       const action = wrap(async (req, ctx) => {
         // Note: no .fifo suffix
-        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/standard-queue', { key: 'value' }, 'job-id');
+        await ctx.sqs.sendMessage('standard-queue', { key: 'value' }, 'job-id');
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -284,7 +322,7 @@ describe('SQS', () => {
 
     it('should include traceId in message when explicitly provided', async () => {
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('queue-url', { key: 'value', traceId: '1-explicit-traceid' });
+        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/test-queue', { key: 'value', traceId: '1-explicit-traceid' });
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -380,7 +418,7 @@ describe('SQS', () => {
 
       const action = wrap(async (req, ctx) => {
         // Jobs Dispatcher explicitly opts out of trace propagation
-        await ctx.sqs.sendMessage('queue-url', {
+        await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/test-queue', {
           type: 'audit',
           siteId: 'site-001',
           traceId: null, // Explicit opt-out

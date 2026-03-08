@@ -1,3 +1,22 @@
+## [@adobe/spacecat-shared-gpt-client-v1.6.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.17...@adobe/spacecat-shared-gpt-client-v1.6.18) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-gpt-client-v1.6.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.16...@adobe/spacecat-shared-gpt-client-v1.6.17) (2026-02-18)
+
+### Bug Fixes
+
+* **deps:** update transitive data-access dependencies to v3 ([#1363](https://github.com/adobe/spacecat-shared/issues/1363)) ([c2ae6c1](https://github.com/adobe/spacecat-shared/commit/c2ae6c123053a4799046abeaec78230408400e66))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.15...@adobe/spacecat-shared-gpt-client-v1.6.16) (2026-01-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.4.0 ([#1295](https://github.com/adobe/spacecat-shared/issues/1295)) ([5c1595b](https://github.com/adobe/spacecat-shared/commit/5c1595bd7cba9b7053da867b8f46e302f8683eba))
+
 # [@adobe/spacecat-shared-gpt-client-v1.6.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.14...@adobe/spacecat-shared-gpt-client-v1.6.15) (2025-12-08)
 
 

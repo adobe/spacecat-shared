@@ -134,6 +134,20 @@ export declare function stripTrailingSlash(url: string): string;
 export declare function stripWWW(url: string): string;
 
 /**
+ * Canonicalizes a URL by removing protocol, www prefix, and trailing slash
+ * for comparison and matching purposes.
+ * Optionally strips query parameters and fragments.
+ * @param url - URL to canonicalize
+ * @param options - Canonicalization options
+ * @param options.stripQuery - Whether to strip query parameters and fragments
+ * @returns Canonicalized URL
+ */
+export declare function canonicalizeUrl(
+  url: string,
+  options?: { stripQuery?: boolean }
+): string;
+
+/**
  * Composes a base URL by applying a series of transformations to the given domain.
  * @param domain - The domain to compose the base URL from.
  * @returns The composed base URL.

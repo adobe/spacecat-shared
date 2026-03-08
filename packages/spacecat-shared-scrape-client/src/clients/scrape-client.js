@@ -13,10 +13,14 @@
 import {
   hasText, isIsoDate, isNonEmptyArray, isObject, isValidUrl, isValidUUID,
 } from '@adobe/spacecat-shared-utils';
-import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
+import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
 import { ScrapeJobDto } from './scrapeJobDto.js';
 import ScrapeJobSupervisor from './scrape-job-supervisor.js';
 import { ScrapeUrlDto } from './scrapeUrlDto.js';
+
+// Not a DB enum in mysticat-data-service; keep local canonical default here.
+const SCRAPE_PROCESSING_TYPE_DEFAULT = 'default';
+const SCRAPE_URL_STATUS_COMPLETE = MYSTICAT_ENUMS_BY_TYPE.SCRAPE_URL_STATUS.COMPLETE;
 
 export default class ScrapeClient {
   config = null;
@@ -185,9 +189,9 @@ export default class ScrapeClient {
         urls,
         options,
         customHeaders,
-        processingType = ScrapeJobModel.ScrapeProcessingType.DEFAULT,
+        processingType = SCRAPE_PROCESSING_TYPE_DEFAULT,
         maxScrapeAge = 24,
-        auditData = {},
+        metaData = {},
       } = data;
 
       this.config.log.debug(`Creating a new scrape job with ${urls.length} URLs.`);
@@ -205,7 +209,7 @@ export default class ScrapeClient {
         mergedOptions,
         customHeaders,
         maxScrapeAge,
-        auditData,
+        metaData,
       );
       return ScrapeJobDto.toJSON(job);
     } catch (error) {
@@ -299,7 +303,9 @@ export default class ScrapeClient {
       const { ScrapeUrl } = this.config.dataAccess;
       const scrapeUrls = await ScrapeUrl.allByScrapeJobId(job.getId());
       return scrapeUrls
-        .filter((url) => url.getStatus() === ScrapeJobModel.ScrapeUrlStatus.COMPLETE)
+        .filter((url) => (
+          url.getStatus() === SCRAPE_URL_STATUS_COMPLETE
+        ))
         .reduce((map, url) => map.set(url.getUrl(), url.getPath()), new Map());
     } catch (error) {
       const msgError = `Failed to fetch the scrape job result: ${error.message}`;

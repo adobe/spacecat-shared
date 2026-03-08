@@ -113,6 +113,24 @@ describe('FixEntitySuggestionModel', () => {
     });
   });
 
+  describe('getId', () => {
+    it('returns synthetic composite id when explicit id is missing', () => {
+      const id = instance.getId();
+      expect(id).to.equal(`${mockRecord.suggestionId}#${mockRecord.fixEntityId}`);
+    });
+
+    it('returns explicit id when present', () => {
+      instance.record.fixEntitySuggestionId = 'fes-123';
+      expect(instance.getId()).to.equal('fes-123');
+    });
+
+    it('returns undefined when composite parts are missing', () => {
+      instance.record.suggestionId = undefined;
+      instance.record.fixEntityId = undefined;
+      expect(instance.getId()).to.be.undefined;
+    });
+  });
+
   describe('fixEntityCreatedAt methods', () => {
     it('should get fixEntityCreatedAt value', () => {
       const result = instance.getFixEntityCreatedAt();

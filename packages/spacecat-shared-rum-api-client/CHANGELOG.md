@@ -1,3 +1,23 @@
+## [@adobe/spacecat-shared-rum-api-client-v2.40.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.7...@adobe/spacecat-shared-rum-api-client-v2.40.8) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.40.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.6...@adobe/spacecat-shared-rum-api-client-v2.40.7) (2026-02-05)
+
+
+### Bug Fixes
+
+* handle CSS-escaped form IDs in form vitals extraction ([#1272](https://github.com/adobe/spacecat-shared/issues/1272)) ([12d1c06](https://github.com/adobe/spacecat-shared/commit/12d1c061493fc1a1cae4801a0a558b15a58f8a5e))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.40.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.5...@adobe/spacecat-shared-rum-api-client-v2.40.6) (2026-01-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.4.0 ([#1295](https://github.com/adobe/spacecat-shared/issues/1295)) ([5c1595b](https://github.com/adobe/spacecat-shared/commit/5c1595bd7cba9b7053da867b8f46e302f8683eba))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.40.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.4...@adobe/spacecat-shared-rum-api-client-v2.40.5) (2026-01-28)
 
 

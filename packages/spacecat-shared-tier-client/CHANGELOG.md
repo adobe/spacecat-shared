@@ -1,3 +1,28 @@
+## [@adobe/spacecat-shared-tier-client-v1.3.14](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.13...@adobe/spacecat-shared-tier-client-v1.3.14) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-tier-client-v1.3.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.12...@adobe/spacecat-shared-tier-client-v1.3.13) (2026-03-01)
+
+### Bug Fixes
+
+* **tier-client:** avoid 414 URI Too Large on orgs with many enrollments ([#1390](https://github.com/adobe/spacecat-shared/issues/1390)) ([2e9de5e](https://github.com/adobe/spacecat-shared/commit/2e9de5e685c2a25801d4d50ad7317773ee706ef0))
+
+## [@adobe/spacecat-shared-tier-client-v1.3.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.11...@adobe/spacecat-shared-tier-client-v1.3.12) (2026-02-17)
+
+### Bug Fixes
+
+* **data-access:** decouple shared packages for v2/v3 alias wrapper rollout ([#1355](https://github.com/adobe/spacecat-shared/issues/1355)) ([ba48df7](https://github.com/adobe/spacecat-shared/commit/ba48df710e0030c1cb3ef4f90661cff1b548d42f))
+
+# [@adobe/spacecat-shared-tier-client-v1.3.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.10...@adobe/spacecat-shared-tier-client-v1.3.11) (2026-02-06)
+
+
+### Bug Fixes
+
+* adds additional check for dangling enrollments ([#1296](https://github.com/adobe/spacecat-shared/issues/1296)) ([e5a0de3](https://github.com/adobe/spacecat-shared/commit/e5a0de32112dbf81e3da37d7b90a747d993497da))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.9...@adobe/spacecat-shared-tier-client-v1.3.10) (2025-12-05)
 
 

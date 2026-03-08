@@ -53,7 +53,7 @@ describe('BaseOpportunityMapper', () => {
   });
 
   describe('createBasePatch', () => {
-    it('should use getUpdatedAt method when available', () => {
+    it('should use Date.now() for lastUpdated', () => {
       // Create a concrete subclass for testing
       class TestMapper extends BaseOpportunityMapper {
         getOpportunityType() { return 'test'; }
@@ -71,11 +71,14 @@ describe('BaseOpportunityMapper', () => {
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
       };
 
+      const beforeTime = Date.now();
       const patch = testMapper.createBasePatch(suggestion, 'opp-456');
+      const afterTime = Date.now();
 
       expect(patch.suggestionId).to.equal('test-123');
       expect(patch.opportunityId).to.equal('opp-456');
-      expect(patch.lastUpdated).to.equal(new Date('2025-01-15T10:00:00.000Z').getTime());
+      expect(patch.lastUpdated).to.be.at.least(beforeTime);
+      expect(patch.lastUpdated).to.be.at.most(afterTime);
       expect(patch.prerenderRequired).to.be.true;
     });
 

@@ -25,6 +25,21 @@ class FixEntitySuggestion extends BaseModel {
 
   static DEFAULT_UPDATED_BY = 'spacecat';
 
+  getId() {
+    const id = super.getId();
+    if (id) {
+      return id;
+    }
+
+    const suggestionId = this.getSuggestionId();
+    const fixEntityId = this.getFixEntityId();
+    if (suggestionId && fixEntityId) {
+      return `${suggestionId}#${fixEntityId}`;
+    }
+
+    return undefined;
+  }
+
   /**
    * Generates the composite keys for the FixEntitySuggestion model.
    * @returns {Object} - The composite keys.

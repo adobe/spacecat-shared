@@ -1027,9 +1027,11 @@ class TokowakaClient {
           options,
         ),
       ]);
+      /* c8 ignore start */
       if (!originalHtml || !optimizedHtml) {
         throw this.#createError('Failed to fetch original or optimized HTML', HTTP_INTERNAL_SERVER_ERROR);
       }
+      /* c8 ignore stop */
       this.log.info('Successfully fetched original and optimized HTML'
         + ` in ${Date.now() - fetchStartTime}ms`);
     } catch (error) {

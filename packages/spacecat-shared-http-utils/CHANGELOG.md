@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-http-utils-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.22.0...@adobe/spacecat-shared-http-utils-v1.22.1) (2026-03-07)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1410](https://github.com/adobe/spacecat-shared/issues/1410)) ([e5b5634](https://github.com/adobe/spacecat-shared/commit/e5b5634f788a8f440ef49218c0b2fa1ccb42fb8a))
+
+## [@adobe/spacecat-shared-http-utils-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.21.1...@adobe/spacecat-shared-http-utils-v1.22.0) (2026-03-06)
+
+### Features
+
+* new S2s auth wrapper to perform AuthZ ([#1407](https://github.com/adobe/spacecat-shared/issues/1407)) ([e2567f8](https://github.com/adobe/spacecat-shared/commit/e2567f8e8ae2eb9f9f8f7992468340fada7aee2c))
+
+## [@adobe/spacecat-shared-http-utils-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.21.0...@adobe/spacecat-shared-http-utils-v1.21.1) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
 ## [@adobe/spacecat-shared-http-utils-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.20.1...@adobe/spacecat-shared-http-utils-v1.21.0) (2026-02-18)
 
 ### Features

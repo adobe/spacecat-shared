@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.10.1...@adobe/spacecat-shared-tokowaka-client-v1.10.2) (2026-03-07)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1410](https://github.com/adobe/spacecat-shared/issues/1410)) ([e5b5634](https://github.com/adobe/spacecat-shared/commit/e5b5634f788a8f440ef49218c0b2fa1ccb42fb8a))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.10.0...@adobe/spacecat-shared-tokowaka-client-v1.10.1) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.9.0...@adobe/spacecat-shared-tokowaka-client-v1.10.0) (2026-02-26)
+
+### Features
+
+* LLMO-2805 Stage config addition api changes ([#1370](https://github.com/adobe/spacecat-shared/issues/1370)) ([0789f4a](https://github.com/adobe/spacecat-shared/commit/0789f4af95433b733c86638a79c184850804dba9))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.8.0...@adobe/spacecat-shared-tokowaka-client-v1.9.0) (2026-02-24)
+
+### Features
+
+* **AGENTCOM-266:** add commerce page enrichment mapper for tokowaka edge deployment ([#1369](https://github.com/adobe/spacecat-shared/issues/1369)) ([357f2f4](https://github.com/adobe/spacecat-shared/commit/357f2f44cd8da19272a7638b55870873388840c9))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.7.8...@adobe/spacecat-shared-tokowaka-client-v1.8.0) (2026-02-18)
 
 ### Features

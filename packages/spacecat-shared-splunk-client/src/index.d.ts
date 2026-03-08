@@ -22,6 +22,14 @@ export interface SplunkAPIOptions {
   mode: string;
   output: string;
 }
+export type SplunkLoginResult =
+  | { sessionId: string; cookie: string }
+  | { error: unknown };
+
+export interface SplunkOneshotResponse {
+  results?: Array<Record<string, unknown>>;
+  [key: string]: unknown;
+}
 
 export default class SplunkAPIClient {
   /**
@@ -45,7 +53,13 @@ export default class SplunkAPIClient {
    * @param password
    */
   login(username?: string, password?: string):
-    Promise<{ result: object }>;
+    Promise<SplunkLoginResult>;
+
+  /**
+   * Execute an ad-hoc Splunk oneshot search.
+   * Throws on error.
+   */
+  oneshotSearch(searchString: string): Promise<SplunkOneshotResponse>;
 
   /**
    * Asynchronous method to check for Not Found errors
@@ -56,5 +70,8 @@ export default class SplunkAPIClient {
    * @param password
    */
   getNotFounds(minutes?: number, username?: string, password?: string):
-    Promise<{ result: object }>;
+    Promise<
+      | { results: Array<Record<string, unknown>> }
+      | { error: unknown }
+    >;
 }

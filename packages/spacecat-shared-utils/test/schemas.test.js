@@ -1332,6 +1332,36 @@ describe('schemas', () => {
         const result = llmoConfig.safeParse(config);
         expect(result.success).true;
       });
+
+      it('validates configuration with aws-style region in cdn bucket config', () => {
+        const config = {
+          ...baseConfig,
+          cdnBucketConfig: {
+            bucketName: 'test',
+            allowedPaths: ['test'],
+            cdnProvider: 'test',
+            region: 'us-east-1',
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails configuration with invalid aws-style region in cdn bucket config', () => {
+        const config = {
+          ...baseConfig,
+          cdnBucketConfig: {
+            bucketName: 'test',
+            allowedPaths: ['test'],
+            cdnProvider: 'test',
+            region: 'us_east_1',
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
     });
 
     describe('prompt status', () => {

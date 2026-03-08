@@ -84,6 +84,7 @@ class Audit extends BaseModel {
     TOC: 'toc',
     WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
     COMMERCE_PRODUCT_ENRICHMENTS: 'commerce-product-enrichments',
+    COMMERCE_PRODUCT_ENRICHMENTS_YEARLY: 'commerce-product-enrichments-yearly',
     COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',
     COMMERCE_PRODUCT_CATALOG_ENRICHMENT: 'commerce-product-catalog-enrichment',
   };

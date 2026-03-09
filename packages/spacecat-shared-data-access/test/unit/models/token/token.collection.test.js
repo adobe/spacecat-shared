@@ -103,16 +103,31 @@ describe('TokenCollection', () => {
       const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv');
 
       expect(result).to.equal(model);
+      const config = getTokenGrantConfig('monthly_suggestion_cwv');
       expect(instance.create).to.have.been.calledOnceWith(
         {
           siteId: 'site-1',
           tokenType: 'monthly_suggestion_cwv',
           cycle: expectedCycle,
-          total: 5,
+          total: config.tokensPerCycle,
           used: 0,
         },
         { upsert: true },
       );
+    });
+
+    it('returns null when not found and createIfNotFound is false', async () => {
+      instance.findByIndexKeys = stub().resolves(null);
+      instance.create = stub();
+
+      const result = await instance.findBySiteIdAndTokenType(
+        'site-1',
+        'monthly_suggestion_cwv',
+        false,
+      );
+
+      expect(result).to.be.null;
+      expect(instance.create).to.not.have.been.called;
     });
 
     it('throws when no token grant config for tokenType', async function () {

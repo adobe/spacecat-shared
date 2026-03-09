@@ -371,34 +371,6 @@ export function extractUrlsFromOpportunity(opts: {
   opportunity: any;
 }): string[];
 
-/**
- * Returns whether a suggestion is complete (status NEW and type-specific data valid).
- * @param suggestion - Suggestion model or plain object with status/getStatus, data/getData.
- * @param opportunityType - Opportunity type (e.g. OPPORTUNITY_TYPES.BROKEN_BACKLINKS, CWV, ALT_TEXT).
- * @returns True if the suggestion is complete.
- */
-export function isSuggestionComplete(suggestion: object | null | undefined, opportunityType: string): boolean;
-
-/**
- * Returns true if broken-backlinks suggestion data has required fields (url_to, url_from).
- */
-export function isBrokenBacklinksComplete(data: object): boolean;
-
-/**
- * Returns true if CWV suggestion data has required fields (url for type 'url', pattern for type 'group').
- */
-export function isCwvComplete(data: object): boolean;
-
-/**
- * Returns true if alt-text suggestion data has required fields (recommendations with pageUrl).
- */
-export function isAltTextComplete(data: object): boolean;
-
-/**
- * Returns true if the suggestion has a valid grant (grants attribute present with cycle, tokenId, grantedAt).
- */
-export function isGranted(suggestion: object | null | undefined): boolean;
-
 /** Token grant entry: tokens per cycle and grant cycle (e.g. monthly, YYYY-MM). */
 export interface TokenGrantEntry {
   tokensPerCycle: number;

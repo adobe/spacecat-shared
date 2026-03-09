@@ -29,15 +29,18 @@ class TokenCollection extends BaseCollection {
   /**
    * Finds a Token for the current cycle by siteId and tokenType. The cycle is
    * derived from the token-grant-config's cycleFormat. If no token exists for
-   * the current cycle, creates one using the configured limits.
+   * the current cycle and createIfNotFound is true, creates one using the
+   * configured limits.
    *
    * @param {string} siteId - Site ID (UUID).
    * @param {string} tokenType - Token type (e.g. monthly_suggestion_cwv,
    *   monthly_suggestion_broken_backlinks).
-   * @returns {Promise<import('./token.model.js').default>} Token instance
-   *   (existing or newly created).
+   * @param {boolean} [createIfNotFound=true] - If true, create a token when none
+   *   exists; if false, return null when none exists.
+   * @returns {Promise<import('./token.model.js').default|null>} Token instance
+   *   (existing or newly created), or null when createIfNotFound is false.
    */
-  async findBySiteIdAndTokenType(siteId, tokenType) {
+  async findBySiteIdAndTokenType(siteId, tokenType, createIfNotFound = true) {
     if (!hasText(siteId) || !hasText(tokenType)) {
       throw new DataAccessError('TokenCollection.findBySiteIdAndTokenType: siteId and tokenType are required');
     }
@@ -49,6 +52,9 @@ class TokenCollection extends BaseCollection {
     const existing = await this.findByIndexKeys({ siteId, tokenType, cycle }, { limit: 1 });
     if (existing) {
       return existing;
+    }
+    if (!createIfNotFound) {
+      return null;
     }
     return this.create(
       {

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "3.10.0",
+  "version": "3.10.1",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "engines": {
@@ -52,7 +52,7 @@
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
     "nock": "14.0.11",
-    "sinon": "21.0.1",
+    "sinon": "21.0.2",
     "sinon-chai": "4.0.1"
   }
 }

@@ -141,4 +141,4 @@ export {
   isGranted,
 } from './suggestion-complete.js';
 
-export { TOKEN_GRANT_CONFIG, getTokenGrantConfig } from './token-grant-config.js';
+export { TOKEN_GRANT_CONFIG, getTokenGrantConfig, getCurrentCycle } from './token-grant-config.js';

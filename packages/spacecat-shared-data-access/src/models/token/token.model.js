@@ -24,11 +24,13 @@ class Token extends BaseModel {
 
   /**
    * Token types (opportunity types) that can have separate limits.
+   * Values match Postgres token_type (e.g. monthly_suggestion_cwv,
+   * monthly_suggestion_broken_backlinks).
    */
   static TOKEN_TYPES = {
-    BROKEN_BACKLINK: 'BROKEN_BACKLINK',
-    CWV: 'CWV',
-    ALT_TEXT: 'ALT_TEXT',
+    MONTHLY_SUGGESTION_CWV: 'monthly_suggestion_cwv',
+    MONTHLY_SUGGESTION_BROKEN_BACKLINKS: 'monthly_suggestion_broken_backlinks',
+    MONTHLY_SUGGESTION_ALT_TEXT: 'monthly_suggestion_alt_text',
   };
 
   /**
@@ -42,15 +44,15 @@ class Token extends BaseModel {
   }
 
   /**
-   * Generates the composite keys for the Token model.
-   * Required for ElectroDB operations with composite primary key (siteId + tokenType + cycle).
-   * @returns {Object} - The composite keys.
+   * Generates the composite keys for the Token model (PostgREST composite PK).
+   * Used by base collection for upsert/saveMany onConflict.
+   * @returns {{ siteId: string, tokenType: string, cycle: string }}
    */
   generateCompositeKeys() {
     return {
-      siteId: this.getSiteId(),
-      tokenType: this.getTokenType(),
-      cycle: this.getCycle(),
+      siteId: this.getSiteId?.() ?? this.record?.siteId,
+      tokenType: this.getTokenType?.() ?? this.record?.tokenType,
+      cycle: this.getCycle?.() ?? this.record?.cycle,
     };
   }
 }

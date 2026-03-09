@@ -53,6 +53,7 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
   .addAttribute('grants', {
     type: 'map',
     required: false,
+    readOnly: true,
     properties: {
       cycle: { type: 'string' },
       tokenId: { type: 'string' },

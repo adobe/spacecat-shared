@@ -718,7 +718,10 @@ class BaseCollection {
 
       const prepared = this.#prepareItem(item);
       const payload = this.#toDbRecord(prepared);
-      const conflictKey = this.#toDbField(this.idName);
+      const primaryKeyFields = this.schema.getIndexKeys('primary');
+      const conflictKey = (isNonEmptyArray(primaryKeyFields) ? primaryKeyFields : [this.idName])
+        .map((field) => this.#toDbField(field))
+        .join(',');
 
       let query = this.postgrestService.from(this.tableName);
       query = upsert ? query.upsert(payload, { onConflict: conflictKey }) : query.insert(payload);

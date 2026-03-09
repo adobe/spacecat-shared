@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import { isIsoDate, isValidUUID } from '@adobe/spacecat-shared-utils';
+import { getTokenGrantConfig, isIsoDate, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
@@ -29,6 +29,7 @@ describe('Suggestion IT', async () => {
   let sampleData;
   let Suggestion;
   let FixEntitySuggestion;
+  let Token;
 
   before(async function () {
     this.timeout(10000);
@@ -37,6 +38,7 @@ describe('Suggestion IT', async () => {
     const dataAccess = getDataAccess();
     Suggestion = dataAccess.Suggestion;
     FixEntitySuggestion = dataAccess.FixEntitySuggestion;
+    Token = dataAccess.Token;
   });
 
   it('finds one suggestion by id', async () => {
@@ -318,5 +320,88 @@ describe('Suggestion IT', async () => {
     await expect(
       Suggestion.getFixEntitiesBySuggestionId(invalidId),
     ).to.be.rejectedWith('Validation failed');
+  });
+
+  describe('grantSuggestion', () => {
+    const siteId = '5d6d4439-6659-46c2-b646-92d110fa5a52';
+    const tokenType = 'monthly_suggestion_cwv';
+
+    it('grants a suggestion and consumes a token', async () => {
+      const suggestionId = sampleData.suggestions[6].getId();
+
+      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const usedBefore = tokenBefore.getUsed();
+
+      const result = await Suggestion.grantSuggestion([suggestionId], siteId, tokenType);
+
+      expect(result).to.have.property('granted', true);
+
+      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      expect(tokenAfter.getUsed()).to.equal(usedBefore + 1);
+    });
+
+    it('grants multiple suggestions in one call', async () => {
+      const ids = [
+        sampleData.suggestions[1].getId(),
+        sampleData.suggestions[2].getId(),
+      ];
+
+      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const usedBefore = tokenBefore.getUsed();
+
+      const result = await Suggestion.grantSuggestion(ids, siteId, tokenType);
+
+      expect(result).to.have.property('granted', true);
+
+      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      expect(tokenAfter.getUsed()).to.equal(usedBefore + 2);
+    });
+
+    it('returns no_tokens when quota is exhausted', async () => {
+      const config = getTokenGrantConfig(tokenType);
+      const token = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const remaining = token.getRemaining();
+
+      if (remaining > 0) {
+        const ids = sampleData.suggestions
+          .slice(3, 3 + remaining)
+          .map((s) => s.getId());
+        await Suggestion.grantSuggestion(ids, siteId, tokenType);
+      }
+
+      const exhaustedToken = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      expect(exhaustedToken.getRemaining()).to.equal(0);
+      expect(exhaustedToken.getUsed()).to.equal(config.tokensPerCycle);
+
+      const extraId = sampleData.suggestions[sampleData.suggestions.length - 1].getId();
+      const result = await Suggestion.grantSuggestion([extraId], siteId, tokenType);
+
+      expect(result).to.have.property('granted', false);
+      expect(result).to.have.property('reason', 'no_tokens');
+    });
+
+    it('throws when suggestionIds is not an array', async () => {
+      await expect(
+        Suggestion.grantSuggestion('not-an-array', siteId, tokenType),
+      ).to.be.rejectedWith(/suggestionIds must be an array/);
+    });
+
+    it('throws when suggestionIds contains empty strings', async () => {
+      await expect(
+        Suggestion.grantSuggestion([''], siteId, tokenType),
+      ).to.be.rejectedWith(/suggestionIds must be an array of non-empty strings/);
+    });
+
+    it('throws when siteId is missing', async () => {
+      await expect(
+        Suggestion.grantSuggestion(['some-id'], '', tokenType),
+      ).to.be.rejectedWith(/siteId is required/);
+    });
+
+    it('throws when tokenType is missing', async () => {
+      await expect(
+        Suggestion.grantSuggestion(['some-id'], siteId, ''),
+      ).to.be.rejectedWith(/tokenType is required/);
+    });
   });
 });

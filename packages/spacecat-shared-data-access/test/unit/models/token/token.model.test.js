@@ -30,7 +30,7 @@ describe('TokenModel', () => {
     mockRecord = {
       tokenId: 'tok-12345',
       siteId: 'site-12345',
-      tokenType: 'BROKEN_BACKLINK',
+      tokenType: 'monthly_suggestion_broken_backlinks',
       cycle: '2025-02',
       total: 3,
       used: 1,
@@ -58,8 +58,10 @@ describe('TokenModel', () => {
   });
 
   describe('TOKEN_TYPES', () => {
-    it('defines BROKEN_BACKLINK token type', () => {
-      expect(Token.TOKEN_TYPES.BROKEN_BACKLINK).to.equal('BROKEN_BACKLINK');
+    it('defines monthly suggestion types matching Postgres token_type enum', () => {
+      expect(Token.TOKEN_TYPES.MONTHLY_SUGGESTION_CWV).to.equal('monthly_suggestion_cwv');
+      expect(Token.TOKEN_TYPES.MONTHLY_SUGGESTION_BROKEN_BACKLINKS).to.equal('monthly_suggestion_broken_backlinks');
+      expect(Token.TOKEN_TYPES.MONTHLY_SUGGESTION_ALT_TEXT).to.equal('monthly_suggestion_alt_text');
     });
   });
 
@@ -86,17 +88,32 @@ describe('TokenModel', () => {
   });
 
   describe('generateCompositeKeys', () => {
-    it('returns siteId, tokenType, and cycle', () => {
+    it('returns siteId, tokenType, and cycle from getters or record', () => {
       instance.getSiteId = () => 'site-12345';
-      instance.getTokenType = () => 'BROKEN_BACKLINK';
+      instance.getTokenType = () => 'monthly_suggestion_cwv';
       instance.getCycle = () => '2025-02';
 
       const keys = instance.generateCompositeKeys();
 
       expect(keys).to.deep.equal({
         siteId: 'site-12345',
-        tokenType: 'BROKEN_BACKLINK',
+        tokenType: 'monthly_suggestion_cwv',
         cycle: '2025-02',
+      });
+    });
+
+    it('falls back to record when getters missing', () => {
+      instance.getSiteId = undefined;
+      instance.getTokenType = undefined;
+      instance.getCycle = undefined;
+      instance.record = { siteId: 'site-1', tokenType: 'monthly_suggestion_cwv', cycle: '2025-01' };
+
+      const keys = instance.generateCompositeKeys();
+
+      expect(keys).to.deep.equal({
+        siteId: 'site-1',
+        tokenType: 'monthly_suggestion_cwv',
+        cycle: '2025-01',
       });
     });
   });

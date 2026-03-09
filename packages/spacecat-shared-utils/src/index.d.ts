@@ -411,9 +411,15 @@ export const TOKEN_GRANT_CONFIG: Record<string, TokenGrantEntry>;
 
 /**
  * Returns the grant config for a token type (tokensPerCycle, cycle, cycleFormat).
- * @param tokenType - One of BROKEN_BACKLINK, CWV, ALT_TEXT.
+ * @param tokenType - One of Token.TOKEN_TYPES values (e.g. monthly_suggestion_cwv, monthly_suggestion_broken_backlinks, monthly_suggestion_alt_text).
  */
 export function getTokenGrantConfig(tokenType: string): TokenGrantEntry | undefined;
+
+/**
+ * Computes the current cycle string for a given cycleFormat using UTC time.
+ * Supported placeholders: YYYY (4-digit year), MM (zero-padded month).
+ */
+export function getCurrentCycle(cycleFormat: string): string;
 
 export * as llmoConfig from './llmo-config.js';
 export * as llmoStrategy from './llmo-strategy.js';

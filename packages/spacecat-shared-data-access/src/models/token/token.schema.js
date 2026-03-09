@@ -10,32 +10,50 @@
  * governing permissions and limitations under the License.
  */
 
+import { isValidUUID } from '@adobe/spacecat-shared-utils';
+
 import SchemaBuilder from '../base/schema.builder.js';
 import Token from './token.model.js';
 import TokenCollection from './token.collection.js';
 
 /*
  * Token entity: per-site, per-tokenType (opportunity type), per-cycle token allocation.
- * PK = #<siteId>#<tokenType>, SK = #<cycle>
- * Data access: findById(siteId, tokenType, cycle), allBySiteIdAndTokenType(siteId, tokenType)
+ * Postgres table: tokens with composite PK (site_id, token_type, cycle).
+ * Data access: findBySiteIdAndTokenType(siteId, tokenType).
+ * Consume: handled by grant_suggestion_consume_token RPC via SuggestionCollection.
  */
 
 const schema = new SchemaBuilder(Token, TokenCollection)
   .withPrimaryPartitionKeys(['siteId', 'tokenType'])
   .withPrimarySortKeys(['cycle'])
   .withUpsertable(true)
-  .addReference('belongs_to', 'Site', ['tokenType', 'cycle'])
+  .addAttribute('tokenId', {
+    type: 'string',
+    required: false,
+    readOnly: true,
+    postgrestField: 'token_id',
+  })
+  .addAttribute('siteId', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+    validate: (value) => isValidUUID(value),
+    postgrestField: 'site_id',
+  })
   .addAttribute('tokenType', {
     type: 'string',
     required: true,
+    postgrestField: 'token_type',
   })
   .addAttribute('cycle', {
     type: 'string',
     required: true,
+    readOnly: true,
   })
   .addAttribute('total', {
     type: 'number',
     required: true,
+    readOnly: true,
   })
   .addAttribute('used', {
     type: 'number',

@@ -18,6 +18,7 @@ import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import Token from '../../../../src/models/token/token.model.js';
+import TokenCollection from '../../../../src/models/token/token.collection.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -34,7 +35,7 @@ describe('TokenCollection', () => {
   const mockRecord = {
     tokenId: 'tok-12345',
     siteId: 'site-12345',
-    tokenType: 'BROKEN_BACKLINK',
+    tokenType: 'monthly_suggestion_broken_backlinks',
     cycle: '2025-02',
     total: 3,
     used: 1,
@@ -45,16 +46,18 @@ describe('TokenCollection', () => {
       mockElectroService,
       mockEntityRegistry,
       mockLogger,
-      collection: instance,
       model,
       schema,
     } = createElectroMocks(Token, mockRecord));
+    // Use PostgREST path: clear entities then create collection so this.entity is undefined
+    mockElectroService.entities = {};
+    instance = new TokenCollection(mockElectroService, mockEntityRegistry, schema, mockLogger);
   });
 
   describe('constructor', () => {
     it('initializes the TokenCollection instance correctly', () => {
       expect(instance).to.be.an('object');
-      expect(instance.electroService).to.equal(mockElectroService);
+      expect(instance.postgrestService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);
       expect(instance.schema).to.equal(schema);
       expect(instance.log).to.equal(mockLogger);
@@ -62,108 +65,100 @@ describe('TokenCollection', () => {
     });
   });
 
-  describe('findById', () => {
-    it('throws if siteId is not provided', async () => {
-      await expect(instance.findById(undefined, 'BROKEN_BACKLINK', '2025-02'))
-        .to.be.rejectedWith(/siteId|required/);
+  describe('findBySiteIdAndTokenType', () => {
+    let expectedCycle;
+
+    before(async () => {
+      const { getTokenGrantConfig } = await import('@adobe/spacecat-shared-utils');
+      expectedCycle = getTokenGrantConfig('monthly_suggestion_cwv').currentCycle;
     });
 
-    it('throws if tokenType is not provided', async () => {
-      await expect(instance.findById('site-12345', '', '2025-02'))
-        .to.be.rejectedWith(/tokenType|required/);
-    });
-
-    it('throws if cycle is not provided', async () => {
-      await expect(instance.findById('site-12345', 'BROKEN_BACKLINK', ''))
-        .to.be.rejectedWith(/cycle|required/);
-    });
-
-    it('returns the token when found', async () => {
+    it('returns existing token when found', async () => {
       instance.findByIndexKeys = stub().resolves(model);
 
-      const result = await instance.findById('site-12345', 'BROKEN_BACKLINK', '2025-02');
+      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv');
 
       expect(result).to.equal(model);
       expect(instance.findByIndexKeys).to.have.been.calledOnceWith(
-        {
-          siteId: 'site-12345',
-          tokenType: 'BROKEN_BACKLINK',
-          cycle: '2025-02',
-        },
+        { siteId: 'site-1', tokenType: 'monthly_suggestion_cwv', cycle: expectedCycle },
         { limit: 1 },
       );
     });
 
-    it('returns null when not found', async () => {
-      instance.findByIndexKeys = stub().resolves(null);
-
-      const result = await instance.findById('site-12345', 'BROKEN_BACKLINK', '2025-02');
-
-      expect(result).to.be.null;
-      expect(instance.findByIndexKeys).to.have.been.calledOnceWith(
-        { siteId: 'site-12345', tokenType: 'BROKEN_BACKLINK', cycle: '2025-02' },
-        { limit: 1 },
-      );
-    });
-  });
-
-  describe('allBySiteIdAndTokenType', () => {
-    it('throws if siteId is not provided', async () => {
-      await expect(instance.allBySiteIdAndTokenType(undefined, 'BROKEN_BACKLINK'))
+    it('throws if siteId or tokenType is missing', async () => {
+      await expect(instance.findBySiteIdAndTokenType(undefined, 'monthly_suggestion_cwv'))
         .to.be.rejectedWith(/siteId|required/);
-    });
-
-    it('throws if tokenType is not provided', async () => {
-      await expect(instance.allBySiteIdAndTokenType('site-12345', ''))
+      await expect(instance.findBySiteIdAndTokenType('site-1', ''))
         .to.be.rejectedWith(/tokenType|required/);
     });
 
-    it('returns array of tokens from allByIndexKeys', async () => {
-      const tokens = [model];
-      instance.allByIndexKeys = stub().resolves(tokens);
+    it('creates token from config when not found and returns it', async function () {
+      const { getTokenGrantConfig } = await import('@adobe/spacecat-shared-utils');
+      if (typeof getTokenGrantConfig !== 'function') {
+        this.skip();
+      }
+      instance.findByIndexKeys = stub().resolves(null);
+      instance.create = stub().resolves(model);
 
-      const result = await instance.allBySiteIdAndTokenType('site-12345', 'BROKEN_BACKLINK');
+      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv');
 
-      expect(result).to.deep.equal(tokens);
-      expect(instance.allByIndexKeys).to.have.been.calledOnceWith(
-        { siteId: 'site-12345', tokenType: 'BROKEN_BACKLINK' },
-        {},
+      expect(result).to.equal(model);
+      expect(instance.create).to.have.been.calledOnceWith(
+        {
+          siteId: 'site-1',
+          tokenType: 'monthly_suggestion_cwv',
+          cycle: expectedCycle,
+          total: 5,
+          used: 0,
+        },
+        { upsert: true },
       );
     });
 
-    it('returns empty array when allByIndexKeys returns non-array', async () => {
-      instance.allByIndexKeys = stub().resolves(null);
+    it('throws when no token grant config for tokenType', async function () {
+      const { getTokenGrantConfig } = await import('@adobe/spacecat-shared-utils');
+      if (typeof getTokenGrantConfig !== 'function') {
+        this.skip();
+      }
 
-      const result = await instance.allBySiteIdAndTokenType('site-12345', 'BROKEN_BACKLINK');
-
-      expect(result).to.deep.equal([]);
+      await expect(
+        instance.findBySiteIdAndTokenType('site-1', 'unknown_token_type'),
+      ).to.be.rejectedWith(/no token grant config for tokenType: unknown_token_type/);
     });
   });
 
   describe('create', () => {
-    it('throws if siteId, tokenType, or cycle is missing', async () => {
-      await expect(instance.create({ tokenType: 'BROKEN_BACKLINK', cycle: '2025-02' }))
-        .to.be.rejectedWith('siteId, tokenType, and cycle are required');
-      await expect(instance.create({ siteId: 'site-1', cycle: '2025-02' }))
-        .to.be.rejectedWith('siteId, tokenType, and cycle are required');
-      await expect(instance.create({ siteId: 'site-1', tokenType: 'BROKEN_BACKLINK' }))
-        .to.be.rejectedWith('siteId, tokenType, and cycle are required');
-    });
-
-    it('creates a token with upsert when all required fields provided', async () => {
+    it('creates a token via PostgREST when all required fields provided', async () => {
       const item = {
         siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
-        tokenType: 'BROKEN_BACKLINK',
+        tokenType: 'monthly_suggestion_cwv',
         cycle: '2025-02',
         total: 3,
         used: 0,
       };
+      const dbRow = {
+        site_id: item.siteId,
+        token_type: item.tokenType,
+        cycle: item.cycle,
+        total: item.total,
+        used: item.used,
+        created_at: '2025-02-01T00:00:00.000Z',
+        updated_at: '2025-02-01T00:00:00.000Z',
+      };
+      const chain = {};
+      chain.insert = stub().returns(chain);
+      chain.upsert = stub().returns(chain);
+      chain.select = stub().returns(chain);
+      chain.maybeSingle = stub().resolves({ data: dbRow, error: null });
+      mockElectroService.from = stub().returns(chain);
+
       const result = await instance.create(item);
 
       expect(result).to.be.an('object');
       expect(result.record.siteId).to.equal(item.siteId);
       expect(result.record.tokenType).to.equal(item.tokenType);
       expect(result.record.cycle).to.equal(item.cycle);
+      expect(mockElectroService.from).to.have.been.calledWith('tokens');
     });
   });
 });

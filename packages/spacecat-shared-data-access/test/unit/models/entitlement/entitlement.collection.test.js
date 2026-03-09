@@ -19,7 +19,6 @@ import sinonChai from 'sinon-chai';
 
 import DataAccessError from '../../../../src/errors/data-access.error.js';
 import Entitlement from '../../../../src/models/entitlement/entitlement.model.js';
-import { DEFAULT_PAGE_SIZE } from '../../../../src/util/postgrest.utils.js';
 
 import { createElectroMocks } from '../../util.js';
 
@@ -87,15 +86,13 @@ describe('EntitlementCollection', () => {
   });
 
   describe('allByProductCodeWithOrganization', () => {
-    let rangeStub;
-
     function setupPostgrestChain(result) {
-      rangeStub = sinon.stub().resolves(result);
-      const eqStub = sinon.stub().returns({ range: rangeStub });
+      const orderStub = sinon.stub().resolves(result);
+      const eqStub = sinon.stub().returns({ order: orderStub });
       const selectStub = sinon.stub().returns({ eq: eqStub });
       instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
       return {
-        selectStub, eqStub, rangeStub,
+        selectStub, eqStub, orderStub,
       };
     }
 
@@ -160,36 +157,6 @@ describe('EntitlementCollection', () => {
       await expect(instance.allByProductCodeWithOrganization('LLMO'))
         .to.be.rejectedWith(DataAccessError, 'Failed to query entitlements with organizations');
       expect(mockLogger.error).to.have.been.called;
-    });
-
-    it('paginates when results exceed page size', async () => {
-      const page1 = Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
-        id: `ent-${i}`,
-        product_code: 'LLMO',
-        tier: 'PAID',
-        organizations: { id: `org-${i}`, name: `Org ${i}`, ims_org_id: `org${i}@AdobeOrg` },
-      }));
-      const page2 = [{
-        id: `ent-${DEFAULT_PAGE_SIZE}`,
-        product_code: 'LLMO',
-        tier: 'FREE_TRIAL',
-        organizations: { id: `org-${DEFAULT_PAGE_SIZE}`, name: `Org ${DEFAULT_PAGE_SIZE}`, ims_org_id: `org${DEFAULT_PAGE_SIZE}@AdobeOrg` },
-      }];
-
-      rangeStub = sinon.stub();
-      rangeStub.onFirstCall().resolves({ data: page1, error: null });
-      rangeStub.onSecondCall().resolves({ data: page2, error: null });
-      const eqStub = sinon.stub().returns({ range: rangeStub });
-      const selectStub = sinon.stub().returns({ eq: eqStub });
-      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
-
-      const results = await instance.allByProductCodeWithOrganization('LLMO');
-
-      expect(results).to.have.lengthOf(DEFAULT_PAGE_SIZE + 1);
-      expect(rangeStub).to.have.been.calledTwice;
-      expect(rangeStub.firstCall.args).to.deep.equal([0, DEFAULT_PAGE_SIZE - 1]);
-      expect(rangeStub.secondCall.args)
-        .to.deep.equal([DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE * 2 - 1]);
     });
   });
 });

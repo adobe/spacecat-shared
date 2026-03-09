@@ -12,7 +12,6 @@
 
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
-import { DEFAULT_PAGE_SIZE } from '../../util/postgrest.utils.js';
 
 /**
  * EntitlementCollection - A collection class responsible for managing Entitlement entities.
@@ -42,37 +41,26 @@ class EntitlementCollection extends BaseCollection {
       throw new DataAccessError('productCode is required', { entityName: 'Entitlement', tableName: 'entitlements' });
     }
 
-    const allResults = [];
-    let offset = 0;
-    let keepGoing = true;
+    const { data, error } = await this.postgrestService
+      .from('entitlements')
+      .select('id, product_code, tier, organizations!inner(id, name, ims_org_id)')
+      .eq('product_code', productCode)
+      .order('id');
 
-    while (keepGoing) {
-      // eslint-disable-next-line no-await-in-loop
-      const { data, error } = await this.postgrestService
-        .from('entitlements')
-        .select('id, product_code, tier, organizations!inner(id, name, ims_org_id)')
-        .eq('product_code', productCode)
-        .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
-
-      if (error) {
-        this.log.error(`[Entitlement] Failed to query entitlements with organizations - ${error.message}`, error);
-        throw new DataAccessError(
-          'Failed to query entitlements with organizations',
-          { entityName: 'Entitlement', tableName: 'entitlements' },
-          error,
-        );
-      }
-
-      if (!data || data.length === 0) {
-        keepGoing = false;
-      } else {
-        allResults.push(...data);
-        keepGoing = data.length >= DEFAULT_PAGE_SIZE;
-        offset += DEFAULT_PAGE_SIZE;
-      }
+    if (error) {
+      this.log.error(`[Entitlement] Failed to query entitlements with organizations - ${error.message}`, error);
+      throw new DataAccessError(
+        'Failed to query entitlements with organizations',
+        { entityName: 'Entitlement', tableName: 'entitlements' },
+        error,
+      );
     }
 
-    return allResults.map((row) => ({
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    return data.map((row) => ({
       entitlement: {
         id: row.id,
         productCode: row.product_code,

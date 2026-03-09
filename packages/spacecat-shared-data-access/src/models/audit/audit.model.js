@@ -83,6 +83,8 @@ class Audit extends BaseModel {
     NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
     TOC: 'toc',
     WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
+    REDDIT_ANALYSIS: 'reddit-analysis',
+    YOUTUBE_ANALYSIS: 'youtube-analysis',
     COMMERCE_PRODUCT_ENRICHMENTS: 'commerce-product-enrichments',
     COMMERCE_PRODUCT_ENRICHMENTS_YEARLY: 'commerce-product-enrichments-yearly',
     COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',

@@ -286,6 +286,19 @@ describe('CloudManagerClient', () => {
       expect(cloneArgsStr).to.not.include('Bearer');
     });
 
+    it('includes --recurse-submodules in the clone arguments', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await client.clone(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID },
+      );
+
+      const gitArgs = getGitArgs(execFileSyncStub.firstCall);
+      expect(gitArgs).to.include('--recurse-submodules');
+    });
+
     it('throws when standard credentials not found for programId', async () => {
       const client = CloudManagerClient.createFrom(
         createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),

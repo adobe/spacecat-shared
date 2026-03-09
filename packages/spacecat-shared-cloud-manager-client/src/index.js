@@ -288,7 +288,7 @@ export default class CloudManagerClient {
       this.log.info(`Cloning CM repository: program=${programId}, repo=${repositoryId}, type=${repoType}`);
 
       const args = await this.#buildAuthGitArgs('clone', programId, repositoryId, { imsOrgId, repoType, repoUrl });
-      this.#execGit([...args, clonePath]);
+      this.#execGit([...args, '--recurse-submodules', clonePath]);
       this.log.info(`Repository cloned to ${clonePath}`);
       this.#logTmpDiskUsage('clone');
 

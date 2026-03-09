@@ -161,8 +161,8 @@ export async function fetchHtmlWithWarmup(
   // Default options
   const {
     warmupDelayMs = isOptimized ? 750 : 0, // milliseconds
-    maxRetries = 5,
-    retryDelayMs = 1000,
+    maxRetries = 8,
+    retryDelayMs = 1500,
   } = options;
 
   const fetchType = isOptimized ? OPTIMIZED_FETCH_TYPE : ORIGINAL_FETCH_TYPE;

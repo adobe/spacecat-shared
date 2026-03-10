@@ -156,6 +156,7 @@ export default class DrsClient {
    * @param {string} params.siteId - SpaceCat site ID
    * @param {string[]} params.urls - URLs to scrape
    * @param {string} [params.priority='HIGH'] - Job priority (HIGH or LOW)
+   * @param {number} [params.daysBack] - Number of days back to scrape (reddit_comments only)
    * @returns {Promise<object>} Job result with job_id
    */
   async submitScrapeJob({
@@ -163,6 +164,7 @@ export default class DrsClient {
     siteId,
     urls,
     priority = 'HIGH',
+    daysBack,
   }) {
     if (!VALID_SCRAPE_DATASET_IDS.has(datasetId)) {
       throw new Error(`Invalid dataset_id "${datasetId}". Must be one of: ${[...VALID_SCRAPE_DATASET_IDS].join(', ')}`);
@@ -173,17 +175,25 @@ export default class DrsClient {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
     }
+    if (daysBack !== undefined && datasetId !== SCRAPE_DATASET_IDS.REDDIT_COMMENTS) {
+      throw new Error('daysBack is only supported for reddit_comments dataset');
+    }
 
     this.log.info(`Submitting DRS scrape job for dataset ${datasetId}`, { datasetId, siteId, urlCount: urls.length });
+
+    const parameters = {
+      dataset_id: datasetId,
+      site_id: siteId,
+      urls,
+    };
+    if (daysBack !== undefined) {
+      parameters.days_back = daysBack;
+    }
 
     return this.submitJob({
       provider_id: 'brightdata',
       priority,
-      parameters: {
-        dataset_id: datasetId,
-        site_id: siteId,
-        urls,
-      },
+      parameters,
     });
   }
 

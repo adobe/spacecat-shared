@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.1.1...@adobe/spacecat-shared-drs-client-v1.2.0) (2026-03-09)
+
+
+### Features
+
+* add parameter for reddit_comments dataset ([#1409](https://github.com/adobe/spacecat-shared/issues/1409)) ([bbfb117](https://github.com/adobe/spacecat-shared/commit/bbfb117fab7decb216c94346c913665a5c0610f9))
+
 # [@adobe/spacecat-shared-drs-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.1.0...@adobe/spacecat-shared-drs-client-v1.1.1) (2026-03-07)
 
 

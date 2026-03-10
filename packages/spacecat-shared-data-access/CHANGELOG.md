@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.12.1...@adobe/spacecat-shared-data-access-v3.13.0) (2026-03-10)
+
+### Features
+
+* add related-urls audit type ([#1422](https://github.com/adobe/spacecat-shared/issues/1422)) ([3826f3f](https://github.com/adobe/spacecat-shared/commit/3826f3f6fbb030314f825d8523352c329f3c0fcf))
+
 ## [@adobe/spacecat-shared-data-access-v3.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.12.0...@adobe/spacecat-shared-data-access-v3.12.1) (2026-03-10)
 
 ### Bug Fixes

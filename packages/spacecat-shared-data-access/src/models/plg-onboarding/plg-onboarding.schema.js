@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { isIsoDate, isObject } from '@adobe/spacecat-shared-utils';
+import {
+  isIsoDate, isObject, isValidUrl, isValidUUID,
+} from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
 import PlgOnboarding from './plg-onboarding.model.js';
 import PlgOnboardingCollection from './plg-onboarding.collection.js';
@@ -25,6 +27,8 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
   .addAttribute('imsOrgId', {
     type: 'string',
     required: true,
+    readOnly: true,
+    validate: (value) => /^[a-z0-9]{24}@AdobeOrg$/i.test(value),
   })
   .addAttribute('domain', {
     type: 'string',
@@ -33,6 +37,7 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
+    validate: (value) => isValidUrl(value),
   })
   .addAttribute('status', {
     type: Object.values(PlgOnboarding.STATUSES),
@@ -41,10 +46,12 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
   .addAttribute('siteId', {
     type: 'string',
     required: false,
+    validate: (value) => !value || isValidUUID(value),
   })
   .addAttribute('organizationId', {
     type: 'string',
     required: false,
+    validate: (value) => !value || isValidUUID(value),
   })
   .addAttribute('steps', {
     type: 'any',

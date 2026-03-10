@@ -69,7 +69,7 @@ describe('PlgOnboardingModel', () => {
         IN_PROGRESS: 'IN_PROGRESS',
         ONBOARDED: 'ONBOARDED',
         ERROR: 'ERROR',
-        WAITING_FOR_IP_ALLOWLISTING: 'WAITING_FOR_IP_WHITELISTING',
+        WAITING_FOR_IP_ALLOWLISTING: 'WAITING_FOR_IP_ALLOWLISTING',
         WAITLISTED: 'WAITLISTED',
       });
     });
@@ -194,11 +194,6 @@ describe('PlgOnboardingModel', () => {
     it('sets baseURL', () => {
       instance.setBaseURL('https://www.new-example.com');
       expect(instance.getBaseURL()).to.equal('https://www.new-example.com');
-    });
-
-    it('sets imsOrgId', () => {
-      instance.setImsOrgId('NEW123@AdobeOrg');
-      expect(instance.getImsOrgId()).to.equal('NEW123@AdobeOrg');
     });
   });
 });

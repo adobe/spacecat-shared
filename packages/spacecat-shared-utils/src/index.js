@@ -132,3 +132,5 @@ export {
   GRANULARITY_KEY_BUILDERS,
   ISSUE_GRANULARITY_MAP,
 } from './aggregation/aggregation-strategies.js';
+
+export { TOKEN_GRANT_CONFIG, getTokenGrantConfig, getCurrentCycle } from './token-grant-config.js';

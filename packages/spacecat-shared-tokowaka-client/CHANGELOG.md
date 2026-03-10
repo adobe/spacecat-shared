@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.10.2...@adobe/spacecat-shared-tokowaka-client-v1.11.0) (2026-03-10)
+
+### Features
+
+* **tokowaka-client:** add HTML-to-HAST converter to generic mapper ([#1416](https://github.com/adobe/spacecat-shared/issues/1416)) ([510ce3b](https://github.com/adobe/spacecat-shared/commit/510ce3b267d0b68011b677e8e493a56aaaeebb87))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.10.1...@adobe/spacecat-shared-tokowaka-client-v1.10.2) (2026-03-07)
 
 ### Bug Fixes

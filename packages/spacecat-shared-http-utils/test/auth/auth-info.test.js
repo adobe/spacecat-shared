@@ -59,4 +59,26 @@ describe('AuthInfo', () => {
       expect(authInfo.isS2SAdmin()).to.be.false;
     });
   });
+
+  describe('isS2SConsumer', () => {
+    it('should return undefined if profile is not set', () => {
+      const authInfo = new AuthInfo();
+      expect(authInfo.isS2SConsumer()).to.be.undefined;
+    });
+
+    it('should return undefined if is_s2s_consumer is not in profile', () => {
+      const authInfo = new AuthInfo().withProfile({});
+      expect(authInfo.isS2SConsumer()).to.be.undefined;
+    });
+
+    it('should return true if is_s2s_consumer is true', () => {
+      const authInfo = new AuthInfo().withProfile({ is_s2s_consumer: true });
+      expect(authInfo.isS2SConsumer()).to.be.true;
+    });
+
+    it('should return false if is_s2s_consumer is false', () => {
+      const authInfo = new AuthInfo().withProfile({ is_s2s_consumer: false });
+      expect(authInfo.isS2SConsumer()).to.be.false;
+    });
+  });
 });

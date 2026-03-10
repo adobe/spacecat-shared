@@ -1,3 +1,81 @@
+## [@adobe/spacecat-shared-data-access-v3.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.13.0...@adobe/spacecat-shared-data-access-v3.14.0) (2026-03-10)
+
+### Features
+
+* enable HTTP connection reuse for PostgrestClient and VaultClient ([#1423](https://github.com/adobe/spacecat-shared/issues/1423)) ([ff92207](https://github.com/adobe/spacecat-shared/commit/ff922075a7e4d035c663d33b8b16ebe1c4dce2c6))
+
+## [@adobe/spacecat-shared-data-access-v3.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.12.1...@adobe/spacecat-shared-data-access-v3.13.0) (2026-03-10)
+
+### Features
+
+* add related-urls audit type ([#1422](https://github.com/adobe/spacecat-shared/issues/1422)) ([3826f3f](https://github.com/adobe/spacecat-shared/commit/3826f3f6fbb030314f825d8523352c329f3c0fcf))
+
+## [@adobe/spacecat-shared-data-access-v3.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.12.0...@adobe/spacecat-shared-data-access-v3.12.1) (2026-03-10)
+
+### Bug Fixes
+
+* add orderby to entitlement org query  ([#1415](https://github.com/adobe/spacecat-shared/issues/1415)) ([6a38d39](https://github.com/adobe/spacecat-shared/commit/6a38d39dbbe55c078a65fb8de213bac28156beda))
+
+## [@adobe/spacecat-shared-data-access-v3.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.11.0...@adobe/spacecat-shared-data-access-v3.12.0) (2026-03-10)
+
+### Features
+
+* **data-access:** restructure SentimentTopic - move subPrompts into … ([#1419](https://github.com/adobe/spacecat-shared/issues/1419)) ([1b8a73e](https://github.com/adobe/spacecat-shared/commit/1b8a73edfa1f897a7490319c187b10ccd157800a))
+
+## [@adobe/spacecat-shared-data-access-v3.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.10.1...@adobe/spacecat-shared-data-access-v3.11.0) (2026-03-09)
+
+### Features
+
+* add offsite-handler types ([#1408](https://github.com/adobe/spacecat-shared/issues/1408)) ([e8fb96a](https://github.com/adobe/spacecat-shared/commit/e8fb96a0fbf714f1e6bba4910724c085f4adc847))
+
+## [@adobe/spacecat-shared-data-access-v3.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.10.0...@adobe/spacecat-shared-data-access-v3.10.1) (2026-03-07)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1410](https://github.com/adobe/spacecat-shared/issues/1410)) ([e5b5634](https://github.com/adobe/spacecat-shared/commit/e5b5634f788a8f440ef49218c0b2fa1ccb42fb8a))
+
+## [@adobe/spacecat-shared-data-access-v3.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.9.0...@adobe/spacecat-shared-data-access-v3.10.0) (2026-03-06)
+
+### Features
+
+* add skipReason and skipDetail attributes to Suggestion ([#1372](https://github.com/adobe/spacecat-shared/issues/1372)) ([1069556](https://github.com/adobe/spacecat-shared/commit/1069556b6b01bebdf215395fec34c317c290b7c0))
+
+## [@adobe/spacecat-shared-data-access-v3.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.8.0...@adobe/spacecat-shared-data-access-v3.9.0) (2026-03-05)
+
+### Features
+
+* add optional aws region to cdn bucket config ([#1404](https://github.com/adobe/spacecat-shared/issues/1404)) ([76a7051](https://github.com/adobe/spacecat-shared/commit/76a7051f465d0d43cb03875fcc77b3ff174c4317))
+
+## [@adobe/spacecat-shared-data-access-v3.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.7.0...@adobe/spacecat-shared-data-access-v3.8.0) (2026-03-05)
+
+### Features
+
+* **data-access:** add bulk entitlement query with organization embedding ([#1402](https://github.com/adobe/spacecat-shared/issues/1402)) ([588cfce](https://github.com/adobe/spacecat-shared/commit/588cfce8e1b4e81a55c3fbca4c7491368196b558))
+
+## [@adobe/spacecat-shared-data-access-v3.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.6.2...@adobe/spacecat-shared-data-access-v3.7.0) (2026-03-04)
+
+### Features
+
+* **data-access:** add timesCited attribute to SentimentTopic schema ([#1399](https://github.com/adobe/spacecat-shared/issues/1399)) ([03cae03](https://github.com/adobe/spacecat-shared/commit/03cae0375a1c44e23d33b65f28002b5b22b975c1))
+
+## [@adobe/spacecat-shared-data-access-v3.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.6.1...@adobe/spacecat-shared-data-access-v3.6.2) (2026-03-04)
+
+### Bug Fixes
+
+* **data-access:** surface PG error details in logs ([#1401](https://github.com/adobe/spacecat-shared/issues/1401)) ([ddd3041](https://github.com/adobe/spacecat-shared/commit/ddd3041322a1468ee911f49f06c240a6697b8e66))
+
+## [@adobe/spacecat-shared-data-access-v3.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.6.0...@adobe/spacecat-shared-data-access-v3.6.1) (2026-03-03)
+
+### Bug Fixes
+
+* stage changes wrt to spacecat-shared ([#1394](https://github.com/adobe/spacecat-shared/issues/1394)) ([7145fb0](https://github.com/adobe/spacecat-shared/commit/7145fb037e5b809d4552889c291b6f8688655b88))
+
+## [@adobe/spacecat-shared-data-access-v3.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.5.0...@adobe/spacecat-shared-data-access-v3.6.0) (2026-03-02)
+
+### Features
+
+* **data-access:** expose postgrestClient for direct PostgREST queries ([#1396](https://github.com/adobe/spacecat-shared/issues/1396)) ([307711c](https://github.com/adobe/spacecat-shared/commit/307711cfed7a3f2fc15f17afe31a48b21213a8e4))
+
 ## [@adobe/spacecat-shared-data-access-v3.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.4.2...@adobe/spacecat-shared-data-access-v3.5.0) (2026-03-02)
 
 ### Features

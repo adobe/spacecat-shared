@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-ims-client-v1.11.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.11...@adobe/spacecat-shared-ims-client-v1.11.12) (2026-03-07)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1410](https://github.com/adobe/spacecat-shared/issues/1410)) ([e5b5634](https://github.com/adobe/spacecat-shared/commit/e5b5634f788a8f440ef49218c0b2fa1ccb42fb8a))
+
 ## [@adobe/spacecat-shared-ims-client-v1.11.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.10...@adobe/spacecat-shared-ims-client-v1.11.11) (2026-03-02)
 
 ### Bug Fixes

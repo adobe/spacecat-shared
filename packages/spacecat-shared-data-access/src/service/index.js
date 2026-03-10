@@ -12,10 +12,39 @@
 
 import { S3Client } from '@aws-sdk/client-s3';
 import { PostgrestClient } from '@supabase/postgrest-js';
+import { h1NoCache, keepAliveNoCache } from '@adobe/fetch';
 
 import { instrumentAWSClient } from '@adobe/spacecat-shared-utils';
 import { EntityRegistry } from '../models/index.js';
 import { registerLogger } from '../util/logger-registry.js';
+
+// Create a dedicated fetch context for PostgREST with:
+// - keepAlive: true for HTTP/1.1 connection reuse (the default h2() context sets keepAlive: false
+//   for h1 on Node 19+, which defeats connection reuse for plain HTTP targets like our ALB)
+// - maxCacheSize: 0 to disable HTTP response caching (PostgREST GET responses are cacheable
+//   by default, which could cause stale reads after writes within the same Lambda invocation)
+// h1NoCache() in tests for nock compat; keepAliveNoCache() in prod for connection reuse.
+const fetchContext = process.env.HELIX_FETCH_FORCE_HTTP1
+  ? h1NoCache() : keepAliveNoCache();
+const { fetch: postgrestFetch } = fetchContext;
+
+/**
+ * Creates a fetch wrapper that converts native (WHATWG) Headers instances to plain objects.
+ * @adobe/fetch's Headers class doesn't recognize native Headers instances (instanceof check
+ * fails), causing all headers to be silently dropped. @supabase/postgrest-js passes native
+ * Headers objects, so we convert them to plain objects for compatibility.
+ *
+ * @param {Function} fetchFn - The underlying fetch function to wrap
+ * @returns {Function} A wrapped fetch function with Headers compatibility
+ */
+export const createFetchCompat = (fetchFn) => (url, opts) => {
+  if (opts?.headers instanceof Headers) {
+    return fetchFn(url, { ...opts, headers: Object.fromEntries(opts.headers.entries()) });
+  }
+  return fetchFn(url, opts);
+};
+
+const fetch = createFetchCompat(postgrestFetch);
 
 export * from '../errors/index.js';
 export * from '../models/index.js';
@@ -45,6 +74,7 @@ const createPostgrestService = (config, client = undefined) => {
   return new PostgrestClient(postgrestUrl, {
     schema: postgrestSchema,
     headers,
+    fetch,
   });
 };
 

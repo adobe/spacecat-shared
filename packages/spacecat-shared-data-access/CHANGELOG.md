@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.12.0...@adobe/spacecat-shared-data-access-v3.12.1) (2026-03-10)
+
+### Bug Fixes
+
+* add orderby to entitlement org query  ([#1415](https://github.com/adobe/spacecat-shared/issues/1415)) ([6a38d39](https://github.com/adobe/spacecat-shared/commit/6a38d39dbbe55c078a65fb8de213bac28156beda))
+
 ## [@adobe/spacecat-shared-data-access-v3.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.11.0...@adobe/spacecat-shared-data-access-v3.12.0) (2026-03-10)
 
 ### Features

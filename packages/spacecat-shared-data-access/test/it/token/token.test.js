@@ -23,11 +23,12 @@ import { seedDatabase } from '../util/seed.js';
 use(chaiAsPromised);
 
 describe('Token IT', () => {
+  let sampleData;
   let Token;
 
   before(async function () {
     this.timeout(10000);
-    await seedDatabase();
+    sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
     Token = dataAccess.Token;
@@ -87,6 +88,97 @@ describe('Token IT', () => {
       await expect(
         Token.findBySiteIdAndTokenType(siteId, ''),
       ).to.be.rejectedWith(/required/);
+    });
+  });
+
+  describe('grantEntities', () => {
+    const siteId = '5d6d4439-6659-46c2-b646-92d110fa5a52';
+    const tokenType = 'monthly_suggestion_cwv';
+
+    it('grants an entity and consumes a token', async () => {
+      const suggestion = sampleData.suggestions[6];
+      const entityId = suggestion.getId();
+      const parentId = suggestion.getOpportunityId();
+
+      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const usedBefore = tokenBefore.getUsed();
+
+      const result = await Token.grantEntities([entityId], parentId, siteId, tokenType);
+
+      expect(result).to.have.property('granted', true);
+
+      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      expect(tokenAfter.getUsed()).to.equal(usedBefore + 1);
+    });
+
+    it('grants multiple entities in one call', async () => {
+      const s1 = sampleData.suggestions[1];
+      const s2 = sampleData.suggestions[2];
+      const ids = [s1.getId(), s2.getId()];
+      const parentId = s1.getOpportunityId();
+
+      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const usedBefore = tokenBefore.getUsed();
+
+      const result = await Token.grantEntities(ids, parentId, siteId, tokenType);
+
+      expect(result).to.have.property('granted', true);
+
+      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      expect(tokenAfter.getUsed()).to.equal(usedBefore + 2);
+    });
+
+    it('returns no_tokens when quota is exhausted', async () => {
+      const config = getTokenGrantConfig(tokenType);
+      const token = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const remaining = token.getRemaining();
+
+      if (remaining > 0) {
+        const slice = sampleData.suggestions.slice(3, 3 + remaining);
+        const ids = slice.map((s) => s.getId());
+        const parentId = slice[0].getOpportunityId();
+        await Token.grantEntities(ids, parentId, siteId, tokenType);
+      }
+
+      const exhaustedToken = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      expect(exhaustedToken.getRemaining()).to.equal(0);
+      expect(exhaustedToken.getUsed()).to.equal(config.tokensPerCycle);
+
+      const lastSuggestion = sampleData.suggestions[sampleData.suggestions.length - 1];
+      const extraId = lastSuggestion.getId();
+      const parentId = lastSuggestion.getOpportunityId();
+      const result = await Token.grantEntities([extraId], parentId, siteId, tokenType);
+
+      expect(result).to.have.property('granted', false);
+      expect(result).to.have.property('reason', 'no_tokens');
+    });
+
+    it('throws when entityIds is not an array', async () => {
+      const parentId = sampleData.suggestions[0].getOpportunityId();
+      await expect(
+        Token.grantEntities('not-an-array', parentId, siteId, tokenType),
+      ).to.be.rejectedWith(/entityIds must be an array/);
+    });
+
+    it('throws when entityIds contains empty strings', async () => {
+      const parentId = sampleData.suggestions[0].getOpportunityId();
+      await expect(
+        Token.grantEntities([''], parentId, siteId, tokenType),
+      ).to.be.rejectedWith(/entityIds must be an array of non-empty strings/);
+    });
+
+    it('throws when siteId is missing', async () => {
+      const parentId = sampleData.suggestions[0].getOpportunityId();
+      await expect(
+        Token.grantEntities(['some-id'], parentId, '', tokenType),
+      ).to.be.rejectedWith(/siteId is required/);
+    });
+
+    it('throws when tokenType is missing', async () => {
+      const parentId = sampleData.suggestions[0].getOpportunityId();
+      await expect(
+        Token.grantEntities(['some-id'], parentId, siteId, ''),
+      ).to.be.rejectedWith(/tokenType is required/);
     });
   });
 });

@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
 import Suggestion from './suggestion.model.js';
@@ -25,6 +23,9 @@ import { guardId } from '../../util/guards.js';
  * This collection provides methods to:
  * - Update the status of multiple suggestions in bulk
  * - Retrieve FixEntities associated with a specific Suggestion
+ *
+ * Granting suggestions (token consumption) is handled by
+ * {@link TokenCollection#grantEntities}.
  *
  * @class SuggestionCollection
  * @extends BaseCollection
@@ -60,59 +61,6 @@ class SuggestionCollection extends BaseCollection {
     await this._saveMany(suggestions);
 
     return suggestions;
-  }
-
-  /**
-   * Grants one or more suggestions by consuming a token for the given token type.
-   * Resolves the current cycle token via TokenCollection.findBySiteIdAndTokenType
-   * (which auto-creates if missing), checks remaining quota, then calls the
-   * grant_suggestion_consume_token RPC to atomically consume and update suggestions.
-   *
-   * @async
-   * @param {string[]} suggestionIds - One or more suggestion IDs to grant.
-   * @param {string} siteId - The site ID that owns the token allocation.
-   * @param {string} tokenType - Token type (e.g. 'monthly_suggestion_cwv').
-   * @returns {Promise<{ granted: boolean, reason?: string }>}
-   * @throws {DataAccessError} - On missing inputs or RPC failure.
-   */
-  async grantSuggestion(suggestionIds, siteId, tokenType) {
-    if (!Array.isArray(suggestionIds) || suggestionIds.some((id) => !hasText(id))) {
-      throw new DataAccessError('grantSuggestion: suggestionIds must be an array of non-empty strings', this);
-    }
-    if (!hasText(siteId)) {
-      throw new DataAccessError('grantSuggestion: siteId is required', this);
-    }
-    if (!hasText(tokenType)) {
-      throw new DataAccessError('grantSuggestion: tokenType is required', this);
-    }
-
-    const tokenCollection = this.entityRegistry.getCollection('TokenCollection');
-    const token = await tokenCollection.findBySiteIdAndTokenType(siteId, tokenType);
-
-    if (token.getRemaining() < suggestionIds.length) {
-      return { granted: false, reason: 'no_tokens' };
-    }
-
-    const cycle = token.getCycle();
-
-    const { data, error } = await this.postgrestService.rpc('grant_suggestion_consume_token', {
-      p_suggestion_ids: suggestionIds,
-      p_site_id: siteId,
-      p_token_type: tokenType,
-      p_cycle: cycle,
-    });
-
-    if (error) {
-      this.log.error('grantSuggestion: RPC failed', error);
-      throw new DataAccessError('Failed to grant suggestions (grant_suggestion_consume_token)', this, error);
-    }
-
-    const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
-    if (!row || !row.granted) {
-      return { granted: false, reason: row?.reason || 'rpc_no_result' };
-    }
-
-    return { granted: true };
   }
 
   /**

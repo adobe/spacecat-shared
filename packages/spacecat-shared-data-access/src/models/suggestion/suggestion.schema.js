@@ -50,16 +50,6 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
     required: true,
     default: Suggestion.STATUSES.NEW,
   })
-  .addAttribute('grants', {
-    type: 'map',
-    required: false,
-    readOnly: true,
-    properties: {
-      cycle: { type: 'string' },
-      tokenId: { type: 'string' },
-      grantedAt: { type: 'string' },
-    },
-  })
   .addAttribute('skipReason', {
     type: Object.values(Suggestion.SKIP_REASONS),
   })

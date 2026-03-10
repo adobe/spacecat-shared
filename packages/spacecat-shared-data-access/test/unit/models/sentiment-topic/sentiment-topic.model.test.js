@@ -32,7 +32,6 @@ describe('SentimentTopicModel', () => {
       siteId: 'site-12345',
       name: 'BMW XM Latest',
       description: 'Track sentiment around the BMW XM luxury SUV',
-      subPrompts: ['What about hybrid performance?', 'Interior quality?'],
       enabled: true,
       createdAt: '2026-01-21T12:00:00.000Z',
       createdBy: 'user@example.com',
@@ -49,67 +48,6 @@ describe('SentimentTopicModel', () => {
     it('initializes the SentimentTopic instance correctly', () => {
       expect(instance).to.be.an('object');
       expect(instance.record).to.deep.equal(mockRecord);
-    });
-  });
-
-  describe('addSubPrompt', () => {
-    it('adds sub-prompt to the list', () => {
-      instance.addSubPrompt('New question about pricing?');
-      expect(instance.getSubPrompts()).to.include('New question about pricing?');
-    });
-
-    it('allows duplicate sub-prompts (list behavior)', () => {
-      const originalLength = instance.getSubPrompts().length;
-      instance.addSubPrompt('What about hybrid performance?'); // Already exists
-      expect(instance.getSubPrompts().length).to.equal(originalLength + 1);
-    });
-
-    it('returns the instance for method chaining', () => {
-      const result = instance.addSubPrompt('New prompt');
-      expect(result).to.equal(instance);
-    });
-
-    it('works with direct property access', () => {
-      const plainObj = Object.create(SentimentTopic.prototype);
-      plainObj.subPrompts = [];
-      plainObj.addSubPrompt('First prompt');
-      expect(plainObj.subPrompts).to.deep.equal(['First prompt']);
-    });
-  });
-
-  describe('removeSubPrompt', () => {
-    it('removes sub-prompt when present', () => {
-      instance.removeSubPrompt('What about hybrid performance?');
-      expect(instance.getSubPrompts()).to.not.include('What about hybrid performance?');
-    });
-
-    it('does nothing if sub-prompt is not in the list', () => {
-      const originalLength = instance.getSubPrompts().length;
-      instance.removeSubPrompt('Non-existent prompt');
-      expect(instance.getSubPrompts().length).to.equal(originalLength);
-    });
-
-    it('returns the instance for method chaining', () => {
-      const result = instance.removeSubPrompt('What about hybrid performance?');
-      expect(result).to.equal(instance);
-    });
-
-    it('works with direct property access', () => {
-      const plainObj = Object.create(SentimentTopic.prototype);
-      plainObj.subPrompts = ['Prompt 1', 'Prompt 2'];
-      plainObj.removeSubPrompt('Prompt 1');
-      expect(plainObj.subPrompts).to.deep.equal(['Prompt 2']);
-    });
-  });
-
-  describe('method chaining', () => {
-    it('allows chaining multiple methods', () => {
-      instance
-        .addSubPrompt('New prompt')
-        .removeSubPrompt('Interior quality?');
-
-      expect(instance.getSubPrompts()).to.include('New prompt');
-      expect(instance.getSubPrompts()).to.not.include('Interior quality?');
     });
   });
 

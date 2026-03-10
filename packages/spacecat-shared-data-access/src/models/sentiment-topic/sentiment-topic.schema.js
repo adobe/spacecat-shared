@@ -55,13 +55,7 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     type: 'string',
     required: false,
   })
-  .addAttribute('subPrompts', {
-    type: 'list',
-    items: { type: 'string' },
-    required: true,
-    default: [],
-  })
-  .addAttribute('citations', {
+  .addAttribute('urls', {
     type: 'list',
     required: false,
     default: [],
@@ -72,6 +66,12 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
         url: { type: 'string', required: true },
         timesCited: { type: 'number', required: true },
         category: { type: 'string', required: false },
+        subPrompts: {
+          type: 'list',
+          items: { type: 'string' },
+          required: false,
+          default: [],
+        },
       },
     },
   })

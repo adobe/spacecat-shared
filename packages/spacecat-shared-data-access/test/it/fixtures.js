@@ -155,6 +155,9 @@ export async function mochaGlobalSetup() {
     throw new Error(`Invalid IT_SEED_MODE: ${IT_SEED_MODE}. Expected one of: none, tenant-sql`);
   }
   await runCompose(['up', '-d', '--wait', 'data-service']);
+  // Restart data-service so PostgREST reloads its schema cache and sees new tables/columns
+  // from migrations (e.g. tokens.id). Same pattern as mysticat-data-service tests/conftest.py.
+  await runCompose(['restart', 'data-service']);
   await waitForPostgrest();
 }
 

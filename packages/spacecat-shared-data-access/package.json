@@ -40,7 +40,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.81.1",
+    "@adobe/spacecat-shared-utils": "https://gist.githubusercontent.com/sandsinh/40ebf34d5a83568c9f2571d9eca6cc54/raw/e4a5f2fb260b1466fadbbd9f09631da21b582f46/adobe-spacecat-shared-utils-1.100.1.tgz",
     "@supabase/postgrest-js": "^1.21.4",
     "@aws-sdk/client-s3": "^3.940.0",
     "@types/joi": "17.2.3",

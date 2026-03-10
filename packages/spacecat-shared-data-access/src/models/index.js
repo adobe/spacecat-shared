@@ -40,6 +40,7 @@ export * from './page-intent/index.js';
 export * from './report/index.js';
 export * from './trial-user/index.js';
 export * from './trial-user-activity/index.js';
+export * from './token/index.js';
 export * from './page-citability/index.js';
 export * from './sentiment-guideline/index.js';
 export * from './sentiment-topic/index.js';

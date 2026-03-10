@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.13.0...@adobe/spacecat-shared-data-access-v3.14.0) (2026-03-10)
+
+### Features
+
+* enable HTTP connection reuse for PostgrestClient and VaultClient ([#1423](https://github.com/adobe/spacecat-shared/issues/1423)) ([ff92207](https://github.com/adobe/spacecat-shared/commit/ff922075a7e4d035c663d33b8b16ebe1c4dce2c6))
+
 ## [@adobe/spacecat-shared-data-access-v3.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.12.1...@adobe/spacecat-shared-data-access-v3.13.0) (2026-03-10)
 
 ### Features

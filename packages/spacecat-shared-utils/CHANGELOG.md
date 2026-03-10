@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.101.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.100.1...@adobe/spacecat-shared-utils-v1.101.0) (2026-03-10)
+
+### Features
+
+* **utils:** export resetFetchContext and clearFetchCache ([#1421](https://github.com/adobe/spacecat-shared/issues/1421)) ([0e05bd8](https://github.com/adobe/spacecat-shared/commit/0e05bd865c92fe4f4bbfffb29575faa15e8d93b3))
+
 ## [@adobe/spacecat-shared-utils-v1.100.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.100.0...@adobe/spacecat-shared-utils-v1.100.1) (2026-03-07)
 
 ### Bug Fixes

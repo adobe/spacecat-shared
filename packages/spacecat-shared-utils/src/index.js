@@ -83,7 +83,7 @@ export { s3Wrapper, getObjectFromKey } from './s3.js';
 
 export { OPPORTUNITY_TYPES, DEFAULT_CPC_VALUE } from './constants.js';
 
-export { fetch } from './adobe-fetch.js';
+export { fetch, resetFetchContext, clearFetchCache } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';
 export {
   getHighFormViewsLowConversionMetrics,

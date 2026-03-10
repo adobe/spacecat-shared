@@ -214,6 +214,70 @@ const liveSites = await dataAccess.Site.all(
 | `S3_CONFIG_BUCKET` | No | Only for `Configuration` entity |
 | `AWS_REGION` | No | Only for `Configuration` entity |
 
+## Site Config: Import Types
+
+Site configuration lives in `src/models/site/config.js` and defines the available import types, their validation schemas, and default configs. This is one of the most frequently changed files in the package.
+
+### Adding a New Import Type
+
+Update three locations in `src/models/site/config.js`:
+
+**1. Add the constant to `IMPORT_TYPES`:**
+
+```js
+export const IMPORT_TYPES = {
+  // ... existing types
+  MY_NEW_IMPORT: 'my-new-import',
+};
+```
+
+**2. Add the Joi validation schema to `IMPORT_TYPE_SCHEMAS`:**
+
+```js
+export const IMPORT_TYPE_SCHEMAS = {
+  // ... existing schemas
+  [IMPORT_TYPES.MY_NEW_IMPORT]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.MY_NEW_IMPORT).required(),
+    ...IMPORT_BASE_KEYS,
+    // Add optional type-specific fields here (e.g., geo, limit, year, week)
+  }),
+};
+```
+
+`IMPORT_BASE_KEYS` includes `enabled`, `destinations`, and `sources`. Only add extra fields if the import type needs them.
+
+**3. Add the default config to `DEFAULT_IMPORT_CONFIGS`:**
+
+```js
+export const DEFAULT_IMPORT_CONFIGS = {
+  // ... existing defaults
+  'my-new-import': {
+    type: 'my-new-import',
+    destinations: ['default'],
+    sources: ['rum'],   // or 'ahrefs', 'google'
+    enabled: true,
+  },
+};
+```
+
+### Test Updates
+
+In `test/unit/models/site/config.test.js`, add:
+
+1. **Enable import test** — verify `config.enableImport('my-new-import')` produces the expected default config
+2. **Validation error string** — the long `.to.equal(...)` assertion for invalid import type errors must include the new type
+3. **Validation error details** — the `.to.eql([...])` array of expected error detail objects must include the new type
+
+### Available Sources
+
+| Source | Constant | Used by |
+|--------|----------|---------|
+| `'ahrefs'` | `IMPORT_SOURCES.AHREFS` | Keyword, traffic, backlink imports |
+| `'google'` | `IMPORT_SOURCES.GSC` | Google Search Console imports |
+| `'rum'` | `IMPORT_SOURCES.RUM` | RUM/CWV/engagement imports |
+
+---
+
 ## Special Entities
 
 - **Configuration**: S3-backed (not PostgREST). Requires `S3_CONFIG_BUCKET`.

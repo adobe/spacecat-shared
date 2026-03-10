@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { fetch } from '@adobe/spacecat-shared-utils';
+
 const TOKEN_RENEW_BUFFER = 5 * 60 * 1000;
 
 export default class VaultClient {

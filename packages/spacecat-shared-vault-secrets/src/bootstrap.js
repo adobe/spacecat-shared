@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { fetch } from '@adobe/spacecat-shared-utils';
 import aws4 from 'aws4';
 
 /**

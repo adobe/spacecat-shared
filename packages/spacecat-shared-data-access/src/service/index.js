@@ -13,7 +13,7 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { PostgrestClient } from '@supabase/postgrest-js';
 
-import { instrumentAWSClient } from '@adobe/spacecat-shared-utils';
+import { fetch, instrumentAWSClient } from '@adobe/spacecat-shared-utils';
 import { EntityRegistry } from '../models/index.js';
 import { registerLogger } from '../util/logger-registry.js';
 
@@ -45,6 +45,7 @@ const createPostgrestService = (config, client = undefined) => {
   return new PostgrestClient(postgrestUrl, {
     schema: postgrestSchema,
     headers,
+    fetch,
   });
 };
 

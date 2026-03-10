@@ -181,6 +181,7 @@ describe('AuditModel', () => {
       LLM_ERROR_PAGES: 'llm-error-pages',
       COSTS: 'costs',
       STRUCTURED_DATA: 'structured-data',
+      RELATED_URLS: 'related-urls',
       STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
       FORMS_OPPORTUNITIES: 'forms-opportunities',
       SITE_DETECTION: 'site-detection',

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.11.0...@adobe/spacecat-shared-data-access-v3.12.0) (2026-03-10)
+
+### Features
+
+* **data-access:** restructure SentimentTopic - move subPrompts into … ([#1419](https://github.com/adobe/spacecat-shared/issues/1419)) ([1b8a73e](https://github.com/adobe/spacecat-shared/commit/1b8a73edfa1f897a7490319c187b10ccd157800a))
+
 ## [@adobe/spacecat-shared-data-access-v3.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.10.1...@adobe/spacecat-shared-data-access-v3.11.0) (2026-03-09)
 
 ### Features

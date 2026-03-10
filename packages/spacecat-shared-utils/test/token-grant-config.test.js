@@ -70,7 +70,7 @@ describe('getCurrentCycle', () => {
 describe('getTokenGrantConfig', () => {
   it('returns config with currentCycle for a known token type', () => {
     const config = getTokenGrantConfig('monthly_suggestion_cwv');
-    expect(config).to.have.property('tokensPerCycle', 5);
+    expect(config).to.have.property('tokensPerCycle', 3);
     expect(config).to.have.property('cycle', 'monthly');
     expect(config).to.have.property('cycleFormat', 'YYYY-MM');
     expect(config).to.have.property('currentCycle').that.is.a('string');
@@ -78,9 +78,9 @@ describe('getTokenGrantConfig', () => {
   });
 
   it('returns correct tokensPerCycle for each token type', () => {
-    expect(getTokenGrantConfig('monthly_suggestion_cwv').tokensPerCycle).to.equal(5);
-    expect(getTokenGrantConfig('monthly_suggestion_broken_backlinks').tokensPerCycle).to.equal(10);
-    expect(getTokenGrantConfig('monthly_suggestion_alt_text').tokensPerCycle).to.equal(20);
+    expect(getTokenGrantConfig('monthly_suggestion_cwv').tokensPerCycle).to.equal(3);
+    expect(getTokenGrantConfig('monthly_suggestion_broken_backlinks').tokensPerCycle).to.equal(3);
+    expect(getTokenGrantConfig('monthly_suggestion_alt_text').tokensPerCycle).to.equal(3);
   });
 
   it('returns undefined for an unknown token type', () => {
@@ -95,6 +95,6 @@ describe('getTokenGrantConfig', () => {
     const config = getTokenGrantConfig('monthly_suggestion_cwv');
     config.tokensPerCycle = 999;
     const fresh = getTokenGrantConfig('monthly_suggestion_cwv');
-    expect(fresh.tokensPerCycle).to.equal(5);
+    expect(fresh.tokensPerCycle).to.equal(3);
   });
 });

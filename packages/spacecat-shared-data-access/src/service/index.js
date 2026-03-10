@@ -13,9 +13,27 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { PostgrestClient } from '@supabase/postgrest-js';
 
-import { fetch, instrumentAWSClient } from '@adobe/spacecat-shared-utils';
+import { fetch as adobeFetch, instrumentAWSClient } from '@adobe/spacecat-shared-utils';
 import { EntityRegistry } from '../models/index.js';
 import { registerLogger } from '../util/logger-registry.js';
+
+/**
+ * Creates a fetch wrapper that converts native (WHATWG) Headers instances to plain objects.
+ * @adobe/fetch's Headers class doesn't recognize native Headers instances (instanceof check
+ * fails), causing all headers to be silently dropped. @supabase/postgrest-js passes native
+ * Headers objects, so we convert them to plain objects for compatibility.
+ *
+ * @param {Function} fetchFn - The underlying fetch function to wrap
+ * @returns {Function} A wrapped fetch function with Headers compatibility
+ */
+export const createFetchCompat = (fetchFn) => (url, opts) => {
+  if (opts?.headers && typeof opts.headers.entries === 'function') {
+    return fetchFn(url, { ...opts, headers: Object.fromEntries(opts.headers.entries()) });
+  }
+  return fetchFn(url, opts);
+};
+
+const fetch = createFetchCompat(adobeFetch);
 
 export * from '../errors/index.js';
 export * from '../models/index.js';

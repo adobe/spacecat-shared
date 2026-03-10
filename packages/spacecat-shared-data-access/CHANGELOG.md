@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-data-access-v3.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.10.1...@adobe/spacecat-shared-data-access-v3.11.0) (2026-03-09)
+
+### Features
+
+* add offsite-handler types ([#1408](https://github.com/adobe/spacecat-shared/issues/1408)) ([e8fb96a](https://github.com/adobe/spacecat-shared/commit/e8fb96a0fbf714f1e6bba4910724c085f4adc847))
+
+## [@adobe/spacecat-shared-data-access-v3.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.10.0...@adobe/spacecat-shared-data-access-v3.10.1) (2026-03-07)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1410](https://github.com/adobe/spacecat-shared/issues/1410)) ([e5b5634](https://github.com/adobe/spacecat-shared/commit/e5b5634f788a8f440ef49218c0b2fa1ccb42fb8a))
+
+## [@adobe/spacecat-shared-data-access-v3.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.9.0...@adobe/spacecat-shared-data-access-v3.10.0) (2026-03-06)
+
+### Features
+
+* add skipReason and skipDetail attributes to Suggestion ([#1372](https://github.com/adobe/spacecat-shared/issues/1372)) ([1069556](https://github.com/adobe/spacecat-shared/commit/1069556b6b01bebdf215395fec34c317c290b7c0))
+
 ## [@adobe/spacecat-shared-data-access-v3.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.8.0...@adobe/spacecat-shared-data-access-v3.9.0) (2026-03-05)
 
 ### Features

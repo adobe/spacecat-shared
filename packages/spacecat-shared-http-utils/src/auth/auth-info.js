@@ -88,6 +88,8 @@ export default class AuthInfo {
 
   isS2SAdmin() { return this.profile?.is_s2s_admin; }
 
+  isS2SConsumer() { return this.profile?.is_s2s_consumer; }
+
   hasOrganization(orgId) {
     const [id] = orgId.split('@');
     return this.profile?.tenants?.some(

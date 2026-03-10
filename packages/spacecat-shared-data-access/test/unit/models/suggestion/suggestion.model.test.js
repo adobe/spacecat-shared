@@ -133,6 +133,50 @@ describe('SuggestionModel', () => {
     });
   });
 
+  describe('SKIP_REASONS', () => {
+    it('has SKIP_REASONS enum with all values', () => {
+      expect(Suggestion.SKIP_REASONS).to.be.an('object');
+      expect(Suggestion.SKIP_REASONS.ALREADY_IMPLEMENTED).to.equal('ALREADY_IMPLEMENTED');
+      expect(Suggestion.SKIP_REASONS.INACCURATE_OR_INCOMPLETE).to.equal('INACCURATE_OR_INCOMPLETE');
+      expect(Suggestion.SKIP_REASONS.TOO_RISKY).to.equal('TOO_RISKY');
+      expect(Suggestion.SKIP_REASONS.NO_REASON).to.equal('NO_REASON');
+      expect(Suggestion.SKIP_REASONS.OTHER).to.equal('OTHER');
+      expect(Object.keys(Suggestion.SKIP_REASONS)).to.have.lengthOf(5);
+    });
+  });
+
+  describe('getSkipReason and setSkipReason', () => {
+    it('returns undefined when no skip reason is set', () => {
+      expect(instance.getSkipReason()).to.be.undefined;
+    });
+
+    it('sets and gets the skip reason', () => {
+      instance.setSkipReason('TOO_RISKY');
+      expect(instance.getSkipReason()).to.equal('TOO_RISKY');
+    });
+
+    it('returns null when skip reason is set to null', () => {
+      instance.setSkipReason(null);
+      expect(instance.getSkipReason()).to.be.null;
+    });
+  });
+
+  describe('getSkipDetail and setSkipDetail', () => {
+    it('returns undefined when no skip detail is set', () => {
+      expect(instance.getSkipDetail()).to.be.undefined;
+    });
+
+    it('sets and gets the skip detail', () => {
+      instance.setSkipDetail('Not relevant for our use case');
+      expect(instance.getSkipDetail()).to.equal('Not relevant for our use case');
+    });
+
+    it('returns null when skip detail is set to null', () => {
+      instance.setSkipDetail(null);
+      expect(instance.getSkipDetail()).to.be.null;
+    });
+  });
+
   describe('getKpiDeltas and setKpiDeltas', () => {
     it('returns the KPI deltas for the suggestion', () => {
       expect(instance.getKpiDeltas()).to.deep.equal({ conversionRate: 0.05 });

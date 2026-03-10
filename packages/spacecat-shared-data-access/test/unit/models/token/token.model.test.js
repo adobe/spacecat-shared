@@ -86,35 +86,4 @@ describe('TokenModel', () => {
       expect(instance.getRemaining()).to.equal(6);
     });
   });
-
-  describe('generateCompositeKeys', () => {
-    it('returns siteId, tokenType, and cycle from getters or record', () => {
-      instance.getSiteId = () => 'site-12345';
-      instance.getTokenType = () => 'monthly_suggestion_cwv';
-      instance.getCycle = () => '2025-02';
-
-      const keys = instance.generateCompositeKeys();
-
-      expect(keys).to.deep.equal({
-        siteId: 'site-12345',
-        tokenType: 'monthly_suggestion_cwv',
-        cycle: '2025-02',
-      });
-    });
-
-    it('falls back to record when getters missing', () => {
-      instance.getSiteId = undefined;
-      instance.getTokenType = undefined;
-      instance.getCycle = undefined;
-      instance.record = { siteId: 'site-1', tokenType: 'monthly_suggestion_cwv', cycle: '2025-01' };
-
-      const keys = instance.generateCompositeKeys();
-
-      expect(keys).to.deep.equal({
-        siteId: 'site-1',
-        tokenType: 'monthly_suggestion_cwv',
-        cycle: '2025-01',
-      });
-    });
-  });
 });

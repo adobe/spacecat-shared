@@ -18,15 +18,26 @@ import tokenSchema from '../../../../src/models/token/token.schema.js';
 
 describe('Token Schema', () => {
   describe('tokenId attribute', () => {
-    it('should have tokenId as optional, readOnly, with postgrestField', () => {
+    it('should have tokenId as required, readOnly, auto-generated, with postgrestField id', () => {
       const attributes = tokenSchema.getAttributes();
       const tokenIdAttr = attributes.tokenId;
 
       expect(tokenIdAttr).to.exist;
-      expect(tokenIdAttr.required).to.be.false;
+      expect(tokenIdAttr.required).to.be.true;
       expect(tokenIdAttr.readOnly).to.be.true;
       expect(tokenIdAttr.type).to.equal('string');
-      expect(tokenIdAttr.postgrestField).to.equal('token_id');
+      expect(tokenIdAttr.postgrestField).to.equal('id');
+      expect(tokenIdAttr.default).to.be.a('function');
+      expect(tokenIdAttr.validate).to.be.a('function');
+    });
+
+    it('should generate a valid UUID as default', () => {
+      const attributes = tokenSchema.getAttributes();
+      const tokenIdAttr = attributes.tokenId;
+
+      const value = tokenIdAttr.default();
+      expect(tokenIdAttr.validate(value)).to.be.true;
+      expect(value).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     });
   });
 

@@ -42,19 +42,6 @@ class Token extends BaseModel {
     const used = this.getUsed?.() ?? this.used ?? 0;
     return Math.max(0, total - used);
   }
-
-  /**
-   * Generates the composite keys for the Token model (PostgREST composite PK).
-   * Used by base collection for upsert/saveMany onConflict.
-   * @returns {{ siteId: string, tokenType: string, cycle: string }}
-   */
-  generateCompositeKeys() {
-    return {
-      siteId: this.getSiteId?.() ?? this.record?.siteId,
-      tokenType: this.getTokenType?.() ?? this.record?.tokenType,
-      cycle: this.getCycle?.() ?? this.record?.cycle,
-    };
-  }
 }
 
 export default Token;

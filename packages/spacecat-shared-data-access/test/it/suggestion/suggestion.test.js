@@ -403,5 +403,22 @@ describe('Suggestion IT', async () => {
         Suggestion.grantSuggestion(['some-id'], siteId, ''),
       ).to.be.rejectedWith(/tokenType is required/);
     });
+
+    it('sets granted suggestion grants.tokenId to the token id', async () => {
+      const token = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_broken_backlinks');
+      const tokenId = token.getId();
+
+      // Use a suggestion not yet granted in this describe (e.g. [3])
+      const suggestionId = sampleData.suggestions[3].getId();
+      const result = await Suggestion.grantSuggestion([suggestionId], siteId, 'monthly_suggestion_broken_backlinks');
+      expect(result).to.have.property('granted', true);
+
+      const suggestion = await Suggestion.findById(suggestionId);
+      const grants = suggestion.getGrants();
+      console.log('grants', grants);
+      console.log('tokenId', tokenId);
+      expect(grants).to.be.an('object');
+      expect(grants.tokenId).to.equal(tokenId);
+    });
   });
 });

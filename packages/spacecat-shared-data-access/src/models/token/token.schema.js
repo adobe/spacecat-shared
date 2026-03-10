@@ -18,21 +18,13 @@ import TokenCollection from './token.collection.js';
 
 /*
  * Token entity: per-site, per-tokenType (opportunity type), per-cycle token allocation.
- * Postgres table: tokens with composite PK (site_id, token_type, cycle).
+ * Postgres table: tokens with primary key id, unique (site_id, token_type, cycle).
  * Data access: findBySiteIdAndTokenType(siteId, tokenType).
  * Consume: handled by grant_suggestion_consume_token RPC via SuggestionCollection.
  */
 
 const schema = new SchemaBuilder(Token, TokenCollection)
-  .withPrimaryPartitionKeys(['siteId', 'tokenType'])
-  .withPrimarySortKeys(['cycle'])
-  .withUpsertable(true)
-  .addAttribute('tokenId', {
-    type: 'string',
-    required: false,
-    readOnly: true,
-    postgrestField: 'token_id',
-  })
+  .addIndex({ composite: ['siteId', 'tokenType'] }, { composite: ['cycle'] })
   .addAttribute('siteId', {
     type: 'string',
     required: true,

@@ -38,7 +38,7 @@ const { fetch: postgrestFetch } = fetchContext;
  * @returns {Function} A wrapped fetch function with Headers compatibility
  */
 export const createFetchCompat = (fetchFn) => (url, opts) => {
-  if (opts?.headers && typeof opts.headers.entries === 'function') {
+  if (opts?.headers instanceof Headers) {
     return fetchFn(url, { ...opts, headers: Object.fromEntries(opts.headers.entries()) });
   }
   return fetchFn(url, opts);

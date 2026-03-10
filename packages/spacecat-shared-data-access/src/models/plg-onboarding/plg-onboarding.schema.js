@@ -33,6 +33,8 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
   .addAttribute('domain', {
     type: 'string',
     required: true,
+    readOnly: true,
+    validate: (value) => /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i.test(value) && value.length <= 253,
   })
   .addAttribute('baseURL', {
     type: 'string',
@@ -42,6 +44,7 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
   .addAttribute('status', {
     type: Object.values(PlgOnboarding.STATUSES),
     required: true,
+    default: PlgOnboarding.STATUSES.IN_PROGRESS,
   })
   .addAttribute('siteId', {
     type: 'string',
@@ -54,16 +57,25 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
     validate: (value) => !value || isValidUUID(value),
   })
   .addAttribute('steps', {
-    type: 'any',
-    validate: (value) => !value || isObject(value),
+    type: 'map',
+    properties: {
+      orgCreated: { type: 'boolean' },
+      siteCreated: { type: 'boolean' },
+      entitlementCreated: { type: 'boolean' },
+      cdnSetup: { type: 'boolean' },
+    },
   })
   .addAttribute('error', {
     type: 'any',
     validate: (value) => !value || isObject(value),
   })
   .addAttribute('botBlocker', {
-    type: 'any',
-    validate: (value) => !value || isObject(value),
+    type: 'map',
+    properties: {
+      type: { type: 'string' },
+      ipsToAllowlist: { type: 'any' },
+      userAgent: { type: 'string' },
+    },
   })
   .addAttribute('waitlistReason', {
     type: 'string',

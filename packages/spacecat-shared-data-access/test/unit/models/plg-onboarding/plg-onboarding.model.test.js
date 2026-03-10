@@ -186,11 +186,6 @@ describe('PlgOnboardingModel', () => {
       expect(instance.getCompletedAt()).to.equal('2026-03-09T15:00:00.000Z');
     });
 
-    it('sets domain', () => {
-      instance.setDomain('new-example.com');
-      expect(instance.getDomain()).to.equal('new-example.com');
-    });
-
     it('sets baseURL', () => {
       instance.setBaseURL('https://www.new-example.com');
       expect(instance.getBaseURL()).to.equal('https://www.new-example.com');

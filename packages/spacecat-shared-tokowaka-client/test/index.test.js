@@ -3932,7 +3932,9 @@ describe('TokowakaClient', () => {
         await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         const fetchOptions = tracingFetchStub.firstCall.args[1];
-        expect(fetchOptions.headers['User-Agent']).to.equal('Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0');
+        const userAgent = fetchOptions.headers['User-Agent'];
+        expect(userAgent).to.include('Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0');
+        expect(userAgent).to.include('Mozilla/5.0');
       });
 
       it('should pass timeout option to tracingFetch', async () => {

@@ -282,7 +282,7 @@ describe('Suggestion IT', async () => {
   });
 
   it('saveMany with chunkSize splits into multiple batches', async () => {
-    const opportunity = sampleData.opportunities[0];
+    const opportunity = sampleData.opportunities[1];
     const suggestions = await Suggestion.allByOpportunityId(opportunity.getId());
     expect(suggestions.length).to.be.greaterThan(1);
 

@@ -15,7 +15,7 @@
 // eslint-disable-next-line max-classes-per-file
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import sinon, { spy, stub } from 'sinon';
+import sinon, { match, spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import BaseCollection from '../../../../src/models/base/base.collection.js';
@@ -657,6 +657,87 @@ describe('BaseCollection', () => {
 
       // 30 items / default chunkSize 25 = 2 calls (25, 5)
       expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(2);
+    });
+
+    it('treats chunkSize 0 as 1 to avoid infinite loop', async () => {
+      const items = Array.from({ length: 3 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 0 });
+
+      // chunkSize 0 -> effectiveChunkSize 1 -> 3 calls
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(3);
+    });
+
+    it('treats negative chunkSize as 1', async () => {
+      const items = Array.from({ length: 2 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: -5 });
+
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(2);
+    });
+
+    it('floors fractional chunkSize', async () => {
+      const items = Array.from({ length: 5 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 2.9 });
+
+      // floor(2.9) = 2 -> 5/2 = 3 calls (2, 2, 1)
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(3);
+    });
+
+    it('logs when chunking into multiple batches', async () => {
+      const items = Array.from({ length: 5 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 2 });
+
+      expect(mockLogger.info).to.have.been.calledWith(
+        '[mockEntityModel] saveMany: saving 5 items in 3 chunks of 2',
+      );
+    });
+
+    it('does not log when all items fit in one chunk', async () => {
+      const items = Array.from({ length: 2 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 10 });
+
+      expect(mockLogger.info).not.to.have.been.calledWith(
+        match.string.and(match((s) => s.includes('saveMany'))),
+      );
     });
 
     it('propagates errors from _saveMany', async () => {

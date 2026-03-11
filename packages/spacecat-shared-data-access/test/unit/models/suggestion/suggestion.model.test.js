@@ -194,8 +194,20 @@ describe('SuggestionModel', () => {
             pageviews: 11620,
             organic: 2400,
             metrics: [
-              { deviceType: 'mobile', pageviews: 6200, lcp: 2701, cls: 0.001, ttfb: 682 },
-              { deviceType: 'desktop', pageviews: 3600, lcp: null, cls: null, ttfb: null },
+              {
+                deviceType: 'mobile',
+                pageviews: 6200,
+                lcp: 2701,
+                cls: 0.001,
+                ttfb: 682,
+              },
+              {
+                deviceType: 'desktop',
+                pageviews: 3600,
+                lcp: null,
+                cls: null,
+                ttfb: null,
+              },
             ],
             issues: [],
           };

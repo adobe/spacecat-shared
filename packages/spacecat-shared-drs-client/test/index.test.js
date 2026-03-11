@@ -236,10 +236,11 @@ describe('DrsClient', () => {
   describe('SCRAPE_DATASET_IDS', () => {
     it('exports all expected dataset IDs', () => {
       expect(SCRAPE_DATASET_IDS).to.deep.equal({
-        YOUTUBE_VIDEOS: 'youtube_videos',
-        YOUTUBE_COMMENTS: 'youtube_comments',
-        REDDIT_POSTS: 'reddit_posts',
         REDDIT_COMMENTS: 'reddit_comments',
+        REDDIT_POSTS: 'reddit_posts',
+        TOP_CITED: 'topCited',
+        YOUTUBE_COMMENTS: 'youtube_comments',
+        YOUTUBE_VIDEOS: 'youtube_videos',
         WIKIPEDIA: 'wikipedia',
       });
     });

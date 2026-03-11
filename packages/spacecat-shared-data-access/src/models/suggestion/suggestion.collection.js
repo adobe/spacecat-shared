@@ -24,9 +24,6 @@ import { guardId } from '../../util/guards.js';
  * - Update the status of multiple suggestions in bulk
  * - Retrieve FixEntities associated with a specific Suggestion
  *
- * Granting suggestions (token consumption) is handled by
- * {@link TokenCollection#grantEntities}.
- *
  * @class SuggestionCollection
  * @extends BaseCollection
  */

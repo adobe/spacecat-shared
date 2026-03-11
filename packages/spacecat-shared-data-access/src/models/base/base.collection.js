@@ -422,12 +422,8 @@ class BaseCollection {
       query = query.order(field, { ascending });
     });
 
-    // Only order by id when the query keys include id (e.g. findById). Skip when querying
-    // by a composite index that does not include id (e.g. Token by siteId/tokenType/cycle),
-    // so we do not require the table to have an id column for those queries.
     const mappedIdField = this.fieldMaps?.toDbMap?.[this.idName];
-    const keysIncludeId = keys && keys[this.idName] !== undefined;
-    if (hasText(mappedIdField) && !orderFields.includes(mappedIdField) && keysIncludeId) {
+    if (hasText(mappedIdField) && !orderFields.includes(mappedIdField)) {
       query = query.order(mappedIdField, { ascending });
     }
 

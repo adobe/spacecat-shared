@@ -105,16 +105,13 @@ describe('TokenCollection', () => {
 
       expect(result).to.equal(model);
       const config = getTokenGrantConfig('monthly_suggestion_cwv');
-      expect(instance.create).to.have.been.calledOnceWith(
-        {
-          siteId: 'site-1',
-          tokenType: 'monthly_suggestion_cwv',
-          cycle: expectedCycle,
-          total: config.tokensPerCycle,
-          used: 0,
-        },
-        { upsert: true },
-      );
+      expect(instance.create).to.have.been.calledOnceWith({
+        siteId: 'site-1',
+        tokenType: 'monthly_suggestion_cwv',
+        cycle: expectedCycle,
+        total: config.tokensPerCycle,
+        used: 0,
+      });
     });
 
     it('returns null when not found and createIfNotFound is false', async () => {

@@ -65,8 +65,7 @@ const createFieldMaps = (schema) => {
   if (idName
     && idName !== 'id'
     && idAttribute
-    && !idAttribute.postgrestIgnore
-    && !idAttribute.postgrestField) {
+    && !idAttribute.postgrestIgnore) {
     toDbMap[idName] = 'id';
     toModelMap.id = idName;
   }

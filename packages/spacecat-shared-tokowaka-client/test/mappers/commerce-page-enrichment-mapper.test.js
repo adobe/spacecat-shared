@@ -194,7 +194,7 @@ describe('CommercePageEnrichmentMapper', () => {
       };
     }
 
-    it('should produce a JSON-LD patch appended to head', () => {
+    it('should produce a key:value patch appended to head', () => {
       const suggestion = makeSuggestion({
         patchValue: JSON.stringify({
           sku: 'HT5695',
@@ -219,14 +219,14 @@ describe('CommercePageEnrichmentMapper', () => {
       expect(patch.valueFormat).to.equal('json');
       expect(patch.target).to.equal('ai-bots');
       expect(patch.tag).to.equal('script');
-      expect(patch.attrs).to.deep.equal({ type: 'application/ld+json' });
+      expect(patch.attrs).to.deep.equal({ type: 'application/json' });
       expect(patch.opportunityId).to.equal(opportunityId);
       expect(patch.suggestionId).to.equal(suggestionId);
       expect(patch.prerenderRequired).to.be.true;
       expect(patch.lastUpdated).to.be.a('number');
     });
 
-    it('should produce valid schema.org Product JSON-LD', () => {
+    it('should pass through enrichment data as-is', () => {
       const suggestion = makeSuggestion({
         patchValue: JSON.stringify({
           sku: 'HT5695',
@@ -246,45 +246,14 @@ describe('CommercePageEnrichmentMapper', () => {
         opportunityId,
       );
 
-      const jsonLd = patches[0].value;
-      expect(jsonLd['@context']).to.equal('https://schema.org');
-      expect(jsonLd['@type']).to.equal('Product');
-      expect(jsonLd.sku).to.equal('HT5695');
-      expect(jsonLd.name).to.equal('Seat Cover Set');
-      expect(jsonLd.brand).to.deep.equal({ '@type': 'Brand', name: 'Lovesac' });
-      expect(jsonLd.description).to.equal('A great product.');
-      expect(jsonLd.material).to.equal('100% polyester chenille');
-      expect(jsonLd.category).to.equal('Home > Sactionals > Covers');
-      expect(jsonLd.color).to.equal('Blue');
-    });
-
-    it('should map unmapped fields to additionalProperty', () => {
-      const suggestion = makeSuggestion({
-        patchValue: JSON.stringify({
-          sku: 'HT5695',
-          'pdp.feature_bullets': ['Bullet 1', 'Bullet 2'],
-          'facts.attributes.fabric_care': 'Machine washable',
-          audience_tags: ['homeowners', 'families'],
-        }),
-        url: 'https://www.lovesac.com/products/seat-cover-set',
-      });
-
-      const patches = mapper.suggestionsToPatches(
-        '/products/seat-cover-set',
-        [suggestion],
-        opportunityId,
-      );
-
-      const jsonLd = patches[0].value;
-      expect(jsonLd.additionalProperty).to.be.an('array');
-
-      const bulletsProp = jsonLd.additionalProperty.find((p) => p.name === 'pdp.feature_bullets');
-      expect(bulletsProp).to.exist;
-      expect(bulletsProp.value).to.deep.equal(['Bullet 1', 'Bullet 2']);
-
-      const careProp = jsonLd.additionalProperty.find((p) => p.name === 'facts.attributes.fabric_care');
-      expect(careProp).to.exist;
-      expect(careProp.value).to.equal('Machine washable');
+      const { value } = patches[0];
+      expect(value.sku).to.equal('HT5695');
+      expect(value.name).to.equal('Seat Cover Set');
+      expect(value.brand).to.equal('Lovesac');
+      expect(value['pdp.description_plain']).to.equal('A great product.');
+      expect(value.material).to.equal('100% polyester chenille');
+      expect(value['facts.facets.category_path']).to.deep.equal(['Home', 'Sactionals', 'Covers']);
+      expect(value.color_family).to.equal('Blue');
     });
 
     it('should handle minimal enrichment data (only sku)', () => {
@@ -300,33 +269,32 @@ describe('CommercePageEnrichmentMapper', () => {
       );
 
       expect(patches).to.have.length(1);
-      const jsonLd = patches[0].value;
-      expect(jsonLd['@context']).to.equal('https://schema.org');
-      expect(jsonLd['@type']).to.equal('Product');
-      expect(jsonLd.sku).to.equal('MINIMAL');
+      expect(patches[0].value).to.deep.equal({ sku: 'MINIMAL' });
     });
 
-    it('should handle rich enrichment data with all field types', () => {
+    it('should preserve all enrichment fields without transformation', () => {
+      const enrichment = {
+        sku: '4Seats5Sides',
+        name: '4 Seats + 5 Sides Sactional',
+        category: 'Sectional / Modular Sofa',
+        brand: 'Lovesac',
+        'pdp.description_plain': 'A modular sofa configuration.',
+        'pdp.feature_bullets': ['Includes 4 Seats', 'StealthTech eligible'],
+        'facts.facets.category_path': ['Furniture', 'Sectionals', 'Sactionals'],
+        'facts.variants.summary': ['Multiple fabric options'],
+        material: 'Corded Velvet',
+        dimensions_or_capacity: '35" W x 29" D',
+        care_instructions: ['Machine washable'],
+        color_family: 'Grey',
+        audience_tags: ['homeowners'],
+        use_context: ['living room'],
+        style_tags: ['modern'],
+        keyword_synonyms: ['modular couch'],
+        persona_phrases: ['for families'],
+      };
+
       const suggestion = makeSuggestion({
-        patchValue: JSON.stringify({
-          sku: '4Seats5Sides',
-          name: '4 Seats + 5 Sides Sactional',
-          category: 'Sectional / Modular Sofa',
-          brand: 'Lovesac',
-          'pdp.description_plain': 'A modular sofa configuration.',
-          'pdp.feature_bullets': ['Includes 4 Seats', 'StealthTech eligible'],
-          'facts.facets.category_path': ['Furniture', 'Sectionals', 'Sactionals'],
-          'facts.variants.summary': ['Multiple fabric options'],
-          material: 'Corded Velvet',
-          dimensions_or_capacity: '35" W x 29" D',
-          care_instructions: ['Machine washable'],
-          color_family: 'Grey',
-          audience_tags: ['homeowners'],
-          use_context: ['living room'],
-          style_tags: ['modern'],
-          keyword_synonyms: ['modular couch'],
-          persona_phrases: ['for families'],
-        }),
+        patchValue: JSON.stringify(enrichment),
         url: 'https://www.lovesac.com/products/4-seats-5-sides',
       });
 
@@ -337,16 +305,7 @@ describe('CommercePageEnrichmentMapper', () => {
       );
 
       expect(patches).to.have.length(1);
-      const jsonLd = patches[0].value;
-      expect(jsonLd.sku).to.equal('4Seats5Sides');
-      expect(jsonLd.name).to.equal('4 Seats + 5 Sides Sactional');
-      expect(jsonLd.category).to.equal('Furniture > Sectionals > Sactionals');
-      expect(jsonLd.brand).to.deep.equal({ '@type': 'Brand', name: 'Lovesac' });
-      expect(jsonLd.description).to.equal('A modular sofa configuration.');
-      expect(jsonLd.material).to.equal('Corded Velvet');
-      expect(jsonLd.color).to.equal('Grey');
-      expect(jsonLd.additionalProperty).to.be.an('array');
-      expect(jsonLd.additionalProperty.length).to.be.greaterThan(0);
+      expect(patches[0].value).to.deep.equal(enrichment);
     });
 
     it('should skip ineligible suggestions and log warning', () => {
@@ -393,7 +352,7 @@ describe('CommercePageEnrichmentMapper', () => {
       expect(patches[1].suggestionId).to.equal('id-2');
     });
 
-    it('should not include rationale field in JSON-LD output', () => {
+    it('should exclude rationale field from output', () => {
       const suggestion = makeSuggestion({
         patchValue: JSON.stringify({
           sku: 'HT5695',
@@ -408,17 +367,16 @@ describe('CommercePageEnrichmentMapper', () => {
         opportunityId,
       );
 
-      const jsonLd = patches[0].value;
-      expect(jsonLd.rationale).to.be.undefined;
-      const rationaleProp = (jsonLd.additionalProperty || []).find((p) => p.name === 'rationale');
-      expect(rationaleProp).to.be.undefined;
+      expect(patches[0].value.rationale).to.be.undefined;
+      expect(patches[0].value.sku).to.equal('HT5695');
     });
 
-    it('should join category_path array with > separator', () => {
+    it('should exclude null values from output', () => {
       const suggestion = makeSuggestion({
         patchValue: JSON.stringify({
           sku: 'TEST',
-          'facts.facets.category_path': ['Home', 'Furniture', 'Sofas'],
+          name: null,
+          brand: 'Lovesac',
         }),
         url: 'https://example.com/page',
       });
@@ -429,25 +387,7 @@ describe('CommercePageEnrichmentMapper', () => {
         opportunityId,
       );
 
-      expect(patches[0].value.category).to.equal('Home > Furniture > Sofas');
-    });
-
-    it('should use category field directly when facts.facets.category_path is absent', () => {
-      const suggestion = makeSuggestion({
-        patchValue: JSON.stringify({
-          sku: 'TEST',
-          category: 'Sectional / Modular Sofa',
-        }),
-        url: 'https://example.com/page',
-      });
-
-      const patches = mapper.suggestionsToPatches(
-        '/page',
-        [suggestion],
-        opportunityId,
-      );
-
-      expect(patches[0].value.category).to.equal('Sectional / Modular Sofa');
+      expect(patches[0].value).to.deep.equal({ sku: 'TEST', brand: 'Lovesac' });
     });
   });
 });

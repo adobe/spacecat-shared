@@ -1423,6 +1423,44 @@ describe('Config Tests', () => {
       expect(validated).to.deep.equal(config);
     });
 
+    it('validates optional llmo cdnBucketConfig region with aws-style format', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/tmp/data',
+          brand: 'testBrand',
+          cdnBucketConfig: {
+            bucketName: 'test-bucket',
+            cdnProvider: 'aws',
+            region: 'us-east-1',
+          },
+        },
+      };
+
+      const validated = validateConfiguration(config);
+      expect(validated).to.deep.equal(config);
+    });
+
+    it('throws error for invalid llmo cdnBucketConfig region format', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/tmp/data',
+          brand: 'testBrand',
+          cdnBucketConfig: {
+            bucketName: 'test-bucket',
+            cdnProvider: 'aws',
+            region: 'us_east_1',
+          },
+        },
+      };
+
+      expect(() => validateConfiguration(config))
+        .to.throw().and.satisfy((error) => {
+          expect(error.message).to.include('Configuration validation error');
+          expect(error.message).to.include('"llmo.cdnBucketConfig.region" with value "us_east_1" fails to match the required pattern');
+          return true;
+        });
+    });
+
     it('throws error for missing required import fields', () => {
       const config = {
         imports: [
@@ -2591,6 +2629,41 @@ describe('Config Tests', () => {
       config.updateEdgeOptimizeConfig(newConfig);
       expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
       expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
+    });
+
+    it('should be able to create and update edgeOptimizeConfig with stagingDomains', () => {
+      const stagingDomains = [
+        { domain: 'staging.lovesac.com', id: 'site-uuid-1' },
+        { domain: 'stage1.lovesac.com', id: 'site-uuid-2' },
+      ];
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains,
+        },
+      });
+      expect(config.getEdgeOptimizeConfig().stagingDomains).to.deep.equal(stagingDomains);
+
+      const updatedStagingDomains = [
+        { domain: 'staging.lovesac.com', id: 'site-uuid-1' },
+      ];
+      config.updateEdgeOptimizeConfig({
+        enabled: true,
+        stagingDomains: updatedStagingDomains,
+      });
+      expect(config.getEdgeOptimizeConfig().stagingDomains).to.deep.equal(updatedStagingDomains);
+    });
+
+    it('includes stagingDomains in toDynamoItem edgeOptimizeConfig', () => {
+      const stagingDomains = [{ domain: 'staging.example.com', id: 'stage-site-id' }];
+      const data = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains,
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.edgeOptimizeConfig.stagingDomains).to.deep.equal(stagingDomains);
     });
   });
 

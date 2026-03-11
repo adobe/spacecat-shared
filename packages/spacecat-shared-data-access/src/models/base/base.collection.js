@@ -876,6 +876,29 @@ class BaseCollection {
     }
   }
 
+  /**
+   * Saves multiple model instances to the database in chunked batches.
+   * Each chunk is persisted via a single PostgREST upsert call, avoiding
+   * the thundering-herd problem caused by N concurrent individual saves.
+   *
+   * @param {BaseModel[]} items - Model instances with in-memory mutations to persist.
+   * @param {Object} [options] - Options.
+   * @param {number} [options.chunkSize=25] - Max items per upsert request.
+   *   Keep low for entities with large payloads (e.g. Suggestion.data JSONB).
+   * @returns {Promise<void>}
+   */
+  async saveMany(items, { chunkSize = 25 } = {}) {
+    if (!isNonEmptyArray(items)) {
+      return;
+    }
+
+    for (let i = 0; i < items.length; i += chunkSize) {
+      const chunk = items.slice(i, i + chunkSize);
+      // eslint-disable-next-line no-await-in-loop
+      await this._saveMany(chunk);
+    }
+  }
+
   async _saveMany(items) {
     if (!isNonEmptyArray(items)) {
       const message = `Failed to save many [${this.entityName}]: items must be a non-empty array`;

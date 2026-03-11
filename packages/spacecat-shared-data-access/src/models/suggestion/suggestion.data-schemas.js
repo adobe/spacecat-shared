@@ -245,6 +245,8 @@ export const DATA_SCHEMAS = {
         }).unknown(true),
       ).required(),
       jiraLink: Joi.string().uri().allow(null).optional(),
+      isCodeChangeAvailable: Joi.boolean().optional(),
+      patchContent: Joi.string().optional(),
       aggregationKey: Joi.string().optional(),
     }).unknown(true),
     projections: {

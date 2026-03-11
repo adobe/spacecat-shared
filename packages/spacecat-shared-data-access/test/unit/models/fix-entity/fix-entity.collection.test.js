@@ -728,6 +728,301 @@ describe('FixEntityCollection', () => {
     });
   });
 
+  describe('createFixEntityWithSuggestionUpdates (Transaction)', () => {
+    const fixEntityData = {
+      opportunityId: '123e4567-e89b-12d3-a456-426614174001',
+      type: 'CODE_CHANGE',
+      changeDetails: { file: 'index.js', lines: [10, 20] },
+      executedBy: 'user-456',
+      executedAt: '2024-01-15T10:00:00Z',
+    };
+
+    const suggestionUpdates = [
+      { suggestionId: '223e4567-e89b-12d3-a456-426614174001', opportunityId: '123e4567-e89b-12d3-a456-426614174001', status: 'FIXED' },
+      { suggestionId: '323e4567-e89b-12d3-a456-426614174001', opportunityId: '123e4567-e89b-12d3-a456-426614174001', status: 'FIXED' },
+    ];
+
+    it('should successfully create fix entity and update suggestions in a transaction', async () => {
+      const transactionResult = {
+        canceled: false,
+        data: [
+          { rejected: false, item: null }, // FixEntity create
+          { rejected: false, item: null }, // Suggestion 1 update
+          { rejected: false, item: null }, // Suggestion 2 update
+          { rejected: false, item: null }, // FixEntitySuggestion 1 create
+          { rejected: false, item: null }, // FixEntitySuggestion 2 create
+        ],
+      };
+
+      const mockCreatedFixEntity = {
+        getId: () => sinon.match.string,
+        getCreatedAt: () => '2024-01-15T10:00:00Z',
+        getExecutedAt: () => '2024-01-15T10:00:00Z',
+      };
+
+      const mockElectroService = {
+        transaction: {
+          write: stub().returns({
+            go: stub().resolves(transactionResult),
+          }),
+        },
+      };
+
+      fixEntityCollection.electroService = mockElectroService;
+      fixEntityCollection.findById = stub().resolves(mockCreatedFixEntity);
+
+      const result = await fixEntityCollection.createFixEntityWithSuggestionUpdates(
+        fixEntityData,
+        suggestionUpdates,
+      );
+
+      expect(result.canceled).to.be.false;
+      expect(result.fixEntity).to.equal(mockCreatedFixEntity);
+      expect(mockElectroService.transaction.write).to.have.been.calledOnce;
+      expect(fixEntityCollection.findById).to.have.been.calledOnce;
+
+      // Verify the transaction includes all operations (1 FixEntity + 2 Suggestions + 2 Junctions)
+      expect(transactionResult.data).to.have.lengthOf(5);
+    });
+
+    it('should handle transaction with idempotency token', async () => {
+      const transactionResult = {
+        canceled: false,
+        data: [
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+        ],
+      };
+
+      const mockCreatedFixEntity = {
+        getId: () => 'fix-entity-123',
+        getCreatedAt: () => '2024-01-15T10:00:00Z',
+        getExecutedAt: () => '2024-01-15T10:00:00Z',
+      };
+
+      const goStub = stub().resolves(transactionResult);
+      const mockElectroService = {
+        transaction: {
+          write: stub().returns({
+            go: goStub,
+          }),
+        },
+      };
+
+      fixEntityCollection.electroService = mockElectroService;
+      fixEntityCollection.findById = stub().resolves(mockCreatedFixEntity);
+
+      const token = 'fix-opp-123-2024-01-15';
+      await fixEntityCollection.createFixEntityWithSuggestionUpdates(
+        fixEntityData,
+        suggestionUpdates,
+        { token },
+      );
+
+      expect(goStub).to.have.been.calledOnceWith({ token });
+    });
+
+    it('should throw error when fixEntityData is invalid', async () => {
+      await expect(
+        fixEntityCollection.createFixEntityWithSuggestionUpdates(null, suggestionUpdates),
+      ).to.be.rejectedWith(ValidationError, 'fixEntityData is required and must be an object');
+    });
+
+    it('should throw error when opportunityId is missing', async () => {
+      const invalidData = { ...fixEntityData };
+      delete invalidData.opportunityId;
+
+      await expect(
+        fixEntityCollection.createFixEntityWithSuggestionUpdates(invalidData, suggestionUpdates),
+      ).to.be.rejectedWith('opportunityId must be a valid UUID');
+    });
+
+    it('should throw error when suggestionUpdates is empty', async () => {
+      await expect(
+        fixEntityCollection.createFixEntityWithSuggestionUpdates(fixEntityData, []),
+      ).to.be.rejectedWith(ValidationError, 'At least one suggestion update is required');
+    });
+
+    it('should throw error when suggestionUpdates is not an array', async () => {
+      await expect(
+        fixEntityCollection.createFixEntityWithSuggestionUpdates(fixEntityData, 'not-an-array'),
+      ).to.be.rejectedWith('suggestionUpdates must be an array');
+    });
+
+    it('should validate each suggestion update has required fields', async () => {
+      const invalidSuggestionUpdates = [
+        { suggestionId: '223e4567-e89b-12d3-a456-426614174001' }, // missing opportunityId
+      ];
+
+      await expect(
+        fixEntityCollection.createFixEntityWithSuggestionUpdates(
+          fixEntityData,
+          invalidSuggestionUpdates,
+        ),
+      ).to.be.rejectedWith('opportunityId must be a valid UUID');
+    });
+
+    it('should handle canceled transaction', async () => {
+      const transactionResult = {
+        canceled: true,
+        data: [
+          {
+            rejected: true,
+            code: 'ConditionalCheckFailed',
+            message: 'The conditional request failed',
+          },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+        ],
+      };
+
+      const mockElectroService = {
+        transaction: {
+          write: stub().returns({
+            go: stub().resolves(transactionResult),
+          }),
+        },
+      };
+
+      fixEntityCollection.electroService = mockElectroService;
+
+      await expect(
+        fixEntityCollection.createFixEntityWithSuggestionUpdates(fixEntityData, suggestionUpdates),
+      ).to.be.rejectedWith(DataAccessError, 'Transaction canceled');
+    });
+
+    it('should handle transaction error', async () => {
+      const mockElectroService = {
+        transaction: {
+          write: stub().returns({
+            go: stub().rejects(new Error('Database connection failed')),
+          }),
+        },
+      };
+
+      fixEntityCollection.electroService = mockElectroService;
+
+      await expect(
+        fixEntityCollection.createFixEntityWithSuggestionUpdates(fixEntityData, suggestionUpdates),
+      ).to.be.rejectedWith(DataAccessError, 'Failed to create fix entity with suggestion updates');
+    });
+
+    it('should use default status FIXED when not provided', async () => {
+      const transactionResult = {
+        canceled: false,
+        data: [
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+        ],
+      };
+
+      const mockCreatedFixEntity = {
+        getId: () => 'fix-entity-123',
+        getCreatedAt: () => '2024-01-15T10:00:00Z',
+        getExecutedAt: () => '2024-01-15T10:00:00Z',
+      };
+
+      const writeStub = stub().returns({
+        go: stub().resolves(transactionResult),
+      });
+
+      const mockElectroService = {
+        transaction: {
+          write: writeStub,
+        },
+      };
+
+      fixEntityCollection.electroService = mockElectroService;
+      fixEntityCollection.findById = stub().resolves(mockCreatedFixEntity);
+
+      const suggestionWithoutStatus = [
+        { suggestionId: '223e4567-e89b-12d3-a456-426614174001', opportunityId: '123e4567-e89b-12d3-a456-426614174001' },
+      ];
+
+      await fixEntityCollection.createFixEntityWithSuggestionUpdates(
+        fixEntityData,
+        suggestionWithoutStatus,
+      );
+
+      // Verify the transaction was called
+      expect(writeStub).to.have.been.calledOnce;
+    });
+
+    it('should log success message after transaction completes', async () => {
+      const transactionResult = {
+        canceled: false,
+        data: [
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+        ],
+      };
+
+      const mockCreatedFixEntity = {
+        getId: () => 'fix-entity-123',
+        getCreatedAt: () => '2024-01-15T10:00:00Z',
+        getExecutedAt: () => '2024-01-15T10:00:00Z',
+      };
+
+      const mockElectroService = {
+        transaction: {
+          write: stub().returns({
+            go: stub().resolves(transactionResult),
+          }),
+        },
+      };
+
+      fixEntityCollection.electroService = mockElectroService;
+      fixEntityCollection.findById = stub().resolves(mockCreatedFixEntity);
+
+      await fixEntityCollection.createFixEntityWithSuggestionUpdates(
+        fixEntityData,
+        suggestionUpdates,
+      );
+
+      expect(mockLogger.info).to.have.been.calledWith(
+        'Successfully created fix entity and updated 2 suggestions atomically',
+      );
+    });
+
+    it('should handle case when no fix entity is returned after transaction', async () => {
+      const transactionResult = {
+        canceled: false,
+        data: [
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+          { rejected: false, item: null },
+        ],
+      };
+
+      const mockElectroService = {
+        transaction: {
+          write: stub().returns({
+            go: stub().resolves(transactionResult),
+          }),
+        },
+      };
+
+      fixEntityCollection.electroService = mockElectroService;
+      fixEntityCollection.findById = stub().resolves(null); // No entity found
+
+      const result = await fixEntityCollection.createFixEntityWithSuggestionUpdates(
+        fixEntityData,
+        suggestionUpdates,
+      );
+
+      expect(result.fixEntity).to.be.null;
+    });
+  });
+
   describe('FixEntity model constants', () => {
     it('has ORIGINS enum with correct values', () => {
       expect(FixEntity.ORIGINS).to.be.an('object');

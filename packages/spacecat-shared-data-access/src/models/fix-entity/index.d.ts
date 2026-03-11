@@ -33,6 +33,29 @@ export interface FixEntity extends BaseModel {
   getType(): string;
 }
 
+export interface SuggestionUpdate {
+  suggestionId: string;
+  opportunityId: string;
+  status?: string;
+}
+
+export interface TransactionItem<T> {
+  item: T | null;
+  rejected: boolean;
+  code?: string;
+  message?: string;
+}
+
+export interface TransactionOptions {
+  token?: string;
+}
+
+export interface CreateFixEntityWithSuggestionUpdatesResult {
+  canceled: boolean;
+  data: TransactionItem<any>[];
+  fixEntity: FixEntity | null;
+}
+
 export interface FixEntityCollection extends BaseCollection<FixEntity> {
   allByOpportunityId(opportunityId: string): Promise<FixEntity[]>;
   allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<FixEntity[]>;
@@ -40,4 +63,9 @@ export interface FixEntityCollection extends BaseCollection<FixEntity> {
   findByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<FixEntity | null>;
   getSuggestionsByFixEntityId(fixEntityId: string): Promise<{data: Array<Suggestion>, unprocessed: Array<string>}>;
   setSuggestionsForFixEntity(opportunityId: string, fixEntity: FixEntity, suggestions: Array<Suggestion>): Promise<{createdItems: Array<FixEntitySuggestion>, errorItems: Array<FixEntitySuggestion>, removedCount: number}>;
+  createFixEntityWithSuggestionUpdates(
+    fixEntityData: Partial<FixEntity> & { opportunityId: string; type: string; changeDetails: object },
+    suggestionUpdates: SuggestionUpdate[],
+    options?: TransactionOptions
+  ): Promise<CreateFixEntityWithSuggestionUpdatesResult>;
 }

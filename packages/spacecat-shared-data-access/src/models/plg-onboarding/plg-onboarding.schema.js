@@ -34,11 +34,12 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
     type: 'string',
     required: true,
     readOnly: true,
-    validate: (value) => /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i.test(value) && value.length <= 253,
+    validate: (value) => /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/.test(value) && value.length <= 253,
   })
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
+    readOnly: true,
     validate: (value) => isValidUrl(value),
   })
   .addAttribute('status', {
@@ -59,10 +60,13 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
   .addAttribute('steps', {
     type: 'map',
     properties: {
-      orgCreated: { type: 'boolean' },
+      orgResolved: { type: 'boolean' },
+      rumVerified: { type: 'boolean' },
       siteCreated: { type: 'boolean' },
+      siteResolved: { type: 'boolean' },
+      configUpdated: { type: 'boolean' },
+      auditsEnabled: { type: 'boolean' },
       entitlementCreated: { type: 'boolean' },
-      cdnSetup: { type: 'boolean' },
     },
   })
   .addAttribute('error', {
@@ -73,7 +77,7 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
     type: 'map',
     properties: {
       type: { type: 'string' },
-      ipsToAllowlist: { type: 'any' },
+      ipsToAllowlist: { type: 'list', items: { type: 'string' } },
       userAgent: { type: 'string' },
     },
   })

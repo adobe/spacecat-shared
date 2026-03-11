@@ -31,7 +31,6 @@ export interface PlgOnboarding extends BaseModel {
   getBotBlocker(): object | null;
   getWaitlistReason(): string | null;
   getCompletedAt(): string | null;
-  setBaseURL(baseURL: string): PlgOnboarding;
   setStatus(status: PlgOnboardingStatus): PlgOnboarding;
   setSiteId(siteId: string): PlgOnboarding;
   setOrganizationId(organizationId: string): PlgOnboarding;

@@ -29,13 +29,13 @@ describe('PlgOnboardingModel', () => {
   beforeEach(() => {
     mockRecord = {
       plgOnboardingId: 'e0491f53-0688-40f7-a443-7d585d79b471',
-      imsOrgId: 'ABC123@AdobeOrg',
+      imsOrgId: '1234567890abcdef12345678@AdobeOrg',
       domain: 'example.com',
       baseURL: 'https://www.example.com',
       status: 'IN_PROGRESS',
       siteId: null,
-      organizationId: 'org-uuid-1',
-      steps: { orgCreated: true, siteCreated: false },
+      organizationId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      steps: { orgResolved: true, siteCreated: false },
       error: null,
       botBlocker: null,
       waitlistReason: null,
@@ -81,7 +81,7 @@ describe('PlgOnboardingModel', () => {
     });
 
     it('gets imsOrgId', () => {
-      expect(instance.getImsOrgId()).to.equal('ABC123@AdobeOrg');
+      expect(instance.getImsOrgId()).to.equal('1234567890abcdef12345678@AdobeOrg');
     });
 
     it('gets domain', () => {
@@ -101,12 +101,12 @@ describe('PlgOnboardingModel', () => {
     });
 
     it('gets organizationId', () => {
-      expect(instance.getOrganizationId()).to.equal('org-uuid-1');
+      expect(instance.getOrganizationId()).to.equal('a1b2c3d4-e5f6-7890-abcd-ef1234567890');
     });
 
     it('gets steps', () => {
       expect(instance.getSteps()).to.deep.equal({
-        orgCreated: true,
+        orgResolved: true,
         siteCreated: false,
       });
     });
@@ -135,18 +135,18 @@ describe('PlgOnboardingModel', () => {
     });
 
     it('sets siteId', () => {
-      instance.setSiteId('site-uuid-1');
-      expect(instance.getSiteId()).to.equal('site-uuid-1');
+      instance.setSiteId('b2c3d4e5-f6a7-8901-bcde-f12345678901');
+      expect(instance.getSiteId()).to.equal('b2c3d4e5-f6a7-8901-bcde-f12345678901');
     });
 
     it('sets organizationId', () => {
-      instance.setOrganizationId('org-uuid-2');
-      expect(instance.getOrganizationId()).to.equal('org-uuid-2');
+      instance.setOrganizationId('c3d4e5f6-a7b8-9012-cdef-123456789012');
+      expect(instance.getOrganizationId()).to.equal('c3d4e5f6-a7b8-9012-cdef-123456789012');
     });
 
     it('sets steps', () => {
       const newSteps = {
-        orgCreated: true,
+        orgResolved: true,
         siteCreated: true,
         entitlementCreated: true,
       };
@@ -184,11 +184,6 @@ describe('PlgOnboardingModel', () => {
     it('sets completedAt', () => {
       instance.setCompletedAt('2026-03-09T15:00:00.000Z');
       expect(instance.getCompletedAt()).to.equal('2026-03-09T15:00:00.000Z');
-    });
-
-    it('sets baseURL', () => {
-      instance.setBaseURL('https://www.new-example.com');
-      expect(instance.getBaseURL()).to.equal('https://www.new-example.com');
     });
   });
 });

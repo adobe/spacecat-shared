@@ -32,7 +32,7 @@ describe('PlgOnboardingCollection', () => {
 
   const mockRecord = {
     plgOnboardingId: 'e0491f53-0688-40f7-a443-7d585d79b471',
-    imsOrgId: 'ABC123@AdobeOrg',
+    imsOrgId: '1234567890abcdef12345678@AdobeOrg',
     domain: 'example.com',
     baseURL: 'https://www.example.com',
     status: 'IN_PROGRESS',

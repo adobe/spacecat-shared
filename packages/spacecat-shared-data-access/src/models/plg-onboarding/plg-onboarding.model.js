@@ -22,6 +22,10 @@ import BaseModel from '../base/base.model.js';
 class PlgOnboarding extends BaseModel {
   static ENTITY_NAME = 'PlgOnboarding';
 
+  static IMS_ORG_ID_PATTERN = /^[a-z0-9]{24}@AdobeOrg$/i;
+
+  static DOMAIN_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
+
   static STATUSES = {
     IN_PROGRESS: 'IN_PROGRESS',
     ONBOARDED: 'ONBOARDED',

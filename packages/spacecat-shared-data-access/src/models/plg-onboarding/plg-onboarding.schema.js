@@ -28,13 +28,13 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
     type: 'string',
     required: true,
     readOnly: true,
-    validate: (value) => /^[a-z0-9]{24}@AdobeOrg$/i.test(value),
+    validate: (value) => PlgOnboarding.IMS_ORG_ID_PATTERN.test(value),
   })
   .addAttribute('domain', {
     type: 'string',
     required: true,
     readOnly: true,
-    validate: (value) => /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/.test(value) && value.length <= 253,
+    validate: (value) => PlgOnboarding.DOMAIN_PATTERN.test(value) && value.length <= 253,
   })
   .addAttribute('baseURL', {
     type: 'string',

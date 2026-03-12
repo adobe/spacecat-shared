@@ -33,6 +33,8 @@ export const IMPORT_TYPES = {
   TOP_FORMS: 'top-forms',
   CODE: 'code',
   USER_ENGAGEMENT: 'user-engagement',
+  CWV_TRENDS_DAILY: 'cwv-trends-daily',
+  CWV_TRENDS_ONBOARD: 'cwv-trends-onboard',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -170,6 +172,14 @@ export const IMPORT_TYPE_SCHEMAS = {
     type: Joi.string().valid(IMPORT_TYPES.USER_ENGAGEMENT).required(),
     ...IMPORT_BASE_KEYS,
   }),
+  [IMPORT_TYPES.CWV_TRENDS_DAILY]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.CWV_TRENDS_DAILY).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
+  [IMPORT_TYPES.CWV_TRENDS_ONBOARD]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.CWV_TRENDS_ONBOARD).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
@@ -254,6 +264,18 @@ export const DEFAULT_IMPORT_CONFIGS = {
   },
   'user-engagement': {
     type: 'user-engagement',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
+  'cwv-trends-daily': {
+    type: 'cwv-trends-daily',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
+  'cwv-trends-onboard': {
+    type: 'cwv-trends-onboard',
     destinations: ['default'],
     sources: ['rum'],
     enabled: true,

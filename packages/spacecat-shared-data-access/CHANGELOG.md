@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.15.1...@adobe/spacecat-shared-data-access-v3.16.0) (2026-03-12)
+
+### Features
+
+* Added cwv-trends-daily import type ([#1375](https://github.com/adobe/spacecat-shared/issues/1375)) ([14148bb](https://github.com/adobe/spacecat-shared/commit/14148bbcdebc330ad0e4fea2534779c14f3ab30d))
+
 ## [@adobe/spacecat-shared-data-access-v3.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.15.0...@adobe/spacecat-shared-data-access-v3.15.1) (2026-03-11)
 
 ### Bug Fixes

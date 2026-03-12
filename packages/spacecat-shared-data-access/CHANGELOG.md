@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.17.0...@adobe/spacecat-shared-data-access-v3.18.0) (2026-03-12)
+
+### Features
+
+* **data-access:** add saveMany() to BaseCollection for chunked bulk upsert ([#1428](https://github.com/adobe/spacecat-shared/issues/1428)) ([802bfec](https://github.com/adobe/spacecat-shared/commit/802bfecb21981e577fc1e72b38c24002edcd8bb1))
+
 ## [@adobe/spacecat-shared-data-access-v3.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.16.0...@adobe/spacecat-shared-data-access-v3.17.0) (2026-03-12)
 
 ### Features

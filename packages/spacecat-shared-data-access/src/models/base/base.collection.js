@@ -898,7 +898,7 @@ class BaseCollection {
       return;
     }
 
-    const effectiveChunkSize = Math.max(1, Math.floor(chunkSize));
+    const effectiveChunkSize = Math.max(1, Math.floor(chunkSize)) || 25;
     const totalChunks = Math.ceil(items.length / effectiveChunkSize);
 
     if (totalChunks > 1) {
@@ -906,9 +906,15 @@ class BaseCollection {
     }
 
     for (let i = 0; i < items.length; i += effectiveChunkSize) {
+      const chunkIndex = Math.floor(i / effectiveChunkSize) + 1;
       const chunk = items.slice(i, i + effectiveChunkSize);
-      // eslint-disable-next-line no-await-in-loop
-      await this._saveMany(chunk);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await this._saveMany(chunk);
+      } catch (error) {
+        this.log.error(`[${this.entityName}] saveMany: chunk ${chunkIndex}/${totalChunks} failed — ${i} of ${items.length} items already persisted`);
+        throw error;
+      }
     }
   }
 

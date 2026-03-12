@@ -740,6 +740,63 @@ describe('BaseCollection', () => {
       );
     });
 
+    it('falls back to default chunkSize of 25 when NaN', async () => {
+      const items = Array.from({ length: 30 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: NaN });
+
+      // NaN -> fallback 25 -> 30/25 = 2 calls
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(2);
+    });
+
+    it('falls back to default chunkSize of 25 when Infinity', async () => {
+      const items = Array.from({ length: 30 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: Infinity });
+
+      // Infinity -> floor = Infinity -> max(1, Infinity) = Infinity
+      // || 25 does not trigger (Infinity is truthy), single call
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(1);
+    });
+
+    it('logs partial progress before re-throwing chunk error', async () => {
+      const putStub = stub();
+      putStub.onFirstCall().returns({ go: () => [] });
+      putStub.onSecondCall().returns({
+        go: () => Promise.reject(new Error('chunk failed')),
+      });
+      mockElectroService.entities.mockEntityModel.put = putStub;
+
+      const items = Array.from({ length: 4 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+
+      await expect(baseCollectionInstance.saveMany(items, { chunkSize: 2 }))
+        .to.be.rejectedWith(DataAccessError);
+
+      expect(mockLogger.error).to.have.been.calledWith(
+        '[mockEntityModel] saveMany: chunk 2/2 failed — 2 of 4 items already persisted',
+      );
+    });
+
     it('propagates errors from _saveMany', async () => {
       const { schema } = baseCollectionInstance;
       const rec = { ...mockRecord };

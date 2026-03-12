@@ -62,7 +62,7 @@ export interface BatchGetOptions {
 export interface BaseCollection<T extends BaseModel> {
   _onCreate(item: T): void;
   _onCreateMany(items: MultiStatusCreateResult<T>): void;
-  _saveMany(items: T[]): Promise<T[]>;
+  _saveMany(items: T[]): Promise<void>;
   saveMany(items: T[], options?: { chunkSize?: number }): Promise<void>;
   all(sortKeys?: object, options?: QueryOptions): Promise<T[] | PaginatedResult<T>>;
   allByIndexKeys(keys: object, options?: QueryOptions): Promise<T[] | PaginatedResult<T>>;

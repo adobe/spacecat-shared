@@ -56,6 +56,11 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
   .addAttribute('skipDetail', {
     type: 'string',
     validate: (value) => !value || (isString(value) && value.length <= 500),
+  })
+  .addAttribute('suggestionKey', {
+    type: 'string',
+    required: false,
+    postgrestField: 'suggestion_key',
   });
 
 export default schema.build();

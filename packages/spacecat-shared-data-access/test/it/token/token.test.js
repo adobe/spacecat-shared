@@ -25,6 +25,7 @@ use(chaiAsPromised);
 describe('Token IT', () => {
   let sampleData;
   let Token;
+  let Suggestion;
 
   before(async function () {
     this.timeout(10000);
@@ -32,6 +33,7 @@ describe('Token IT', () => {
 
     const dataAccess = getDataAccess();
     Token = dataAccess.Token;
+    Suggestion = dataAccess.Suggestion;
   });
 
   describe('findBySiteIdAndTokenType', () => {
@@ -91,93 +93,84 @@ describe('Token IT', () => {
     });
   });
 
-  describe('grantEntities', () => {
+  describe('grantSuggestions', () => {
     const siteId = '5d6d4439-6659-46c2-b646-92d110fa5a52';
     const tokenType = 'monthly_suggestion_cwv';
 
-    it('grants an entity and consumes a token', async () => {
+    it('grants a suggestion and consumes a token', async () => {
       const suggestion = sampleData.suggestions[6];
-      const entityId = suggestion.getId();
-      const parentId = suggestion.getOpportunityId();
+      const suggestionId = suggestion.getId();
 
       const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType);
       const usedBefore = tokenBefore.getUsed();
 
-      const result = await Token.grantEntities([entityId], parentId, siteId, tokenType);
+      const result = await Suggestion.grantSuggestions([suggestionId], siteId, tokenType);
 
-      expect(result).to.have.property('granted', true);
+      expect(result).to.have.property('success', true);
+      expect(result).to.have.property('grantedSuggestions').that.is.an('array');
 
       const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType);
       expect(tokenAfter.getUsed()).to.equal(usedBefore + 1);
     });
 
-    it('grants multiple entities in one call', async () => {
+    it('grants multiple suggestions in one call', async () => {
       const s1 = sampleData.suggestions[1];
       const s2 = sampleData.suggestions[2];
       const ids = [s1.getId(), s2.getId()];
-      const parentId = s1.getOpportunityId();
 
       const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType);
       const usedBefore = tokenBefore.getUsed();
 
-      const result = await Token.grantEntities(ids, parentId, siteId, tokenType);
+      const result = await Suggestion.grantSuggestions(ids, siteId, tokenType);
 
-      expect(result).to.have.property('granted', true);
+      expect(result).to.have.property('success', true);
 
       const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType);
-      expect(tokenAfter.getUsed()).to.equal(usedBefore + 2);
+      expect(tokenAfter.getUsed()).to.equal(usedBefore + 1);
     });
 
     it('returns no_tokens when quota is exhausted', async () => {
-      const config = getTokenGrantConfig(tokenType);
-      const token = await Token.findBySiteIdAndTokenType(siteId, tokenType);
-      const remaining = token.getRemaining();
+      const { tokensPerCycle } = getTokenGrantConfig(tokenType);
 
-      if (remaining > 0) {
-        const slice = sampleData.suggestions.slice(3, 3 + remaining);
-        const ids = slice.map((s) => s.getId());
-        const parentId = slice[0].getOpportunityId();
-        await Token.grantEntities(ids, parentId, siteId, tokenType);
+      // Exhaust quota: each grantSuggestions call consumes one token regardless of list size
+      for (let i = 0; i < tokensPerCycle; i += 1) {
+        const suggestion = sampleData.suggestions[i % sampleData.suggestions.length];
+        // eslint-disable-next-line no-await-in-loop -- sequential: each call consumes one token
+        await Suggestion.grantSuggestions([suggestion.getId()], siteId, tokenType);
       }
 
       const exhaustedToken = await Token.findBySiteIdAndTokenType(siteId, tokenType);
       expect(exhaustedToken.getRemaining()).to.equal(0);
-      expect(exhaustedToken.getUsed()).to.equal(config.tokensPerCycle);
+      expect(exhaustedToken.getUsed()).to.equal(tokensPerCycle);
 
       const lastSuggestion = sampleData.suggestions[sampleData.suggestions.length - 1];
-      const extraId = lastSuggestion.getId();
-      const parentId = lastSuggestion.getOpportunityId();
-      const result = await Token.grantEntities([extraId], parentId, siteId, tokenType);
+      const result = await Suggestion.grantSuggestions([lastSuggestion.getId()], siteId, tokenType);
 
-      expect(result).to.have.property('granted', false);
+      expect(result).to.have.property('success', false);
       expect(result).to.have.property('reason', 'no_tokens');
     });
 
-    it('throws when entityIds is not an array', async () => {
-      const parentId = sampleData.suggestions[0].getOpportunityId();
+    it('throws when suggestionIds is not an array', async () => {
       await expect(
-        Token.grantEntities('not-an-array', parentId, siteId, tokenType),
-      ).to.be.rejectedWith(/entityIds must be an array/);
+        Suggestion.grantSuggestions('not-an-array', siteId, tokenType),
+      ).to.be.rejectedWith(/suggestionIds must be an array/);
     });
 
-    it('throws when entityIds contains empty strings', async () => {
-      const parentId = sampleData.suggestions[0].getOpportunityId();
+    it('throws when suggestionIds contains empty strings', async () => {
       await expect(
-        Token.grantEntities([''], parentId, siteId, tokenType),
-      ).to.be.rejectedWith(/entityIds must be an array of non-empty strings/);
+        Suggestion.grantSuggestions([''], siteId, tokenType),
+      ).to.be.rejectedWith(/suggestionIds must be an array of non-empty strings/);
     });
 
     it('throws when siteId is missing', async () => {
-      const parentId = sampleData.suggestions[0].getOpportunityId();
       await expect(
-        Token.grantEntities(['some-id'], parentId, '', tokenType),
+        Suggestion.grantSuggestions(['some-id'], '', tokenType),
       ).to.be.rejectedWith(/siteId is required/);
     });
 
     it('throws when tokenType is missing', async () => {
-      const parentId = sampleData.suggestions[0].getOpportunityId();
       await expect(
-        Token.grantEntities(['some-id'], parentId, siteId, ''),
+        Suggestion.grantSuggestions(['some-id'], siteId, ''),
       ).to.be.rejectedWith(/tokenType is required/);
     });
   });

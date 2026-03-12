@@ -19,7 +19,6 @@ import sinonChai from 'sinon-chai';
 
 import Token from '../../../../src/models/token/token.model.js';
 import TokenCollection from '../../../../src/models/token/token.collection.js';
-import DataAccessError from '../../../../src/errors/data-access.error.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -172,122 +171,6 @@ describe('TokenCollection', () => {
       expect(result.record.tokenType).to.equal(item.tokenType);
       expect(result.record.cycle).to.equal(item.cycle);
       expect(mockElectroService.from).to.have.been.calledWith('tokens');
-    });
-  });
-
-  describe('grantEntities', () => {
-    const siteId = 'site-001';
-    const parentId = 'parent-001';
-    const tokenType = 'monthly_suggestion_cwv';
-    const entityIds = ['ent-1', 'ent-2'];
-
-    let mockToken;
-
-    beforeEach(() => {
-      mockToken = {
-        getRemaining: stub(),
-        getCycle: stub().returns('2025-03'),
-      };
-      instance.findBySiteIdAndTokenType = stub().resolves(mockToken);
-      mockElectroService.rpc = stub();
-    });
-
-    it('grants entities when tokens are available and RPC succeeds', async () => {
-      mockToken.getRemaining.returns(5);
-      mockElectroService.rpc.resolves({
-        data: [{ granted: true }],
-        error: null,
-      });
-
-      const result = await instance.grantEntities(entityIds, parentId, siteId, tokenType);
-
-      expect(result).to.deep.equal({ granted: true });
-      expect(instance.findBySiteIdAndTokenType)
-        .to.have.been.calledOnceWith(siteId, tokenType);
-      expect(mockElectroService.rpc).to.have.been.calledOnceWith(
-        'grant_consume_token',
-        {
-          p_entity_ids: entityIds,
-          p_parent_id: parentId,
-          p_site_id: siteId,
-          p_token_type: tokenType,
-          p_cycle: '2025-03',
-        },
-      );
-    });
-
-    it('returns no_tokens when remaining tokens are insufficient', async () => {
-      mockToken.getRemaining.returns(1);
-
-      const result = await instance.grantEntities(entityIds, parentId, siteId, tokenType);
-
-      expect(result).to.deep.equal({ granted: false, reason: 'no_tokens' });
-      expect(mockElectroService.rpc).to.not.have.been.called;
-    });
-
-    it('throws DataAccessError when RPC returns an error', async () => {
-      mockToken.getRemaining.returns(5);
-      const rpcError = { message: 'rpc failure' };
-      mockElectroService.rpc.resolves({ data: null, error: rpcError });
-
-      await expect(instance.grantEntities(entityIds, parentId, siteId, tokenType))
-        .to.be.rejectedWith(DataAccessError, 'Failed to grant entities (grant_consume_token)');
-      expect(mockLogger.error).to.have.been.calledWith('grantEntities: RPC failed', rpcError);
-    });
-
-    it('returns granted false with reason when RPC returns empty data', async () => {
-      mockToken.getRemaining.returns(5);
-      mockElectroService.rpc.resolves({ data: [], error: null });
-
-      const result = await instance.grantEntities(entityIds, parentId, siteId, tokenType);
-
-      expect(result).to.deep.equal({ granted: false, reason: 'rpc_no_result' });
-    });
-
-    it('returns granted false with reason from RPC row', async () => {
-      mockToken.getRemaining.returns(5);
-      mockElectroService.rpc.resolves({
-        data: [{ granted: false, reason: 'concurrent_update' }],
-        error: null,
-      });
-
-      const result = await instance.grantEntities(entityIds, parentId, siteId, tokenType);
-
-      expect(result).to.deep.equal({ granted: false, reason: 'concurrent_update' });
-    });
-
-    it('returns rpc_no_result when data is null', async () => {
-      mockToken.getRemaining.returns(5);
-      mockElectroService.rpc.resolves({ data: null, error: null });
-
-      const result = await instance.grantEntities(entityIds, parentId, siteId, tokenType);
-
-      expect(result).to.deep.equal({ granted: false, reason: 'rpc_no_result' });
-    });
-
-    it('throws DataAccessError when entityIds is not an array', async () => {
-      await expect(instance.grantEntities('not-an-array', parentId, siteId, tokenType))
-        .to.be.rejectedWith(DataAccessError, 'entityIds must be an array of non-empty strings');
-    });
-
-    it('throws DataAccessError when entityIds contains empty strings', async () => {
-      await expect(instance.grantEntities(['ent-1', ''], parentId, siteId, tokenType))
-        .to.be.rejectedWith(DataAccessError, 'entityIds must be an array of non-empty strings');
-    });
-
-    it('throws DataAccessError when parentId is missing', async () => {
-      await expect(instance.grantEntities(entityIds, '', siteId, tokenType))
-        .to.be.rejectedWith(DataAccessError, 'parentId is required');
-    });
-
-    it('throws DataAccessError when siteId is missing', async () => {
-      await expect(instance.grantEntities(entityIds, parentId, '', tokenType))
-        .to.be.rejectedWith(DataAccessError, 'siteId is required');
-    });
-
-    it('throws DataAccessError when tokenType is missing', async () => {
-      await expect(instance.grantEntities(entityIds, parentId, siteId, ''))
-        .to.be.rejectedWith(DataAccessError, 'tokenType is required');
     });
   });
 });

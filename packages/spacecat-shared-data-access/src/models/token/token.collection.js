@@ -17,8 +17,7 @@ import DataAccessError from '../../errors/data-access.error.js';
 
 /**
  * TokenCollection - Manages Token entities (per-site, per-tokenType, per-cycle).
- * Uses PostgREST table `tokens`. Token consumption is handled atomically by
- * the `grant_consume_token` RPC via {@link TokenCollection#grantEntities}.
+ * Uses PostgREST table `tokens`.
  *
  * @class TokenCollection
  * @extends BaseCollection
@@ -63,63 +62,6 @@ class TokenCollection extends BaseCollection {
       total: config.tokensPerCycle,
       used: 0,
     });
-  }
-
-  /**
-   * Grants one or more entities by consuming a token for the given token type.
-   * Resolves the current cycle token via {@link TokenCollection#findBySiteIdAndTokenType}
-   * (which auto-creates if missing), checks remaining quota, then calls the
-   * grant_consume_token RPC to atomically consume and insert grants.
-   *
-   * @async
-   * @param {string[]} entityIds - One or more entity IDs to grant (e.g. suggestion IDs).
-   * @param {string} parentId - Parent ID (e.g. opportunity id) the entities belong to.
-   * @param {string} siteId - The site ID that owns the token allocation.
-   * @param {string} tokenType - Token type (e.g. 'monthly_suggestion_cwv').
-   * @returns {Promise<{ granted: boolean, reason?: string }>}
-   * @throws {DataAccessError} - On missing inputs or RPC failure.
-   */
-  async grantEntities(entityIds, parentId, siteId, tokenType) {
-    if (!Array.isArray(entityIds) || entityIds.some((id) => !hasText(id))) {
-      throw new DataAccessError('grantEntities: entityIds must be an array of non-empty strings', this);
-    }
-    if (!hasText(parentId)) {
-      throw new DataAccessError('grantEntities: parentId is required', this);
-    }
-    if (!hasText(siteId)) {
-      throw new DataAccessError('grantEntities: siteId is required', this);
-    }
-    if (!hasText(tokenType)) {
-      throw new DataAccessError('grantEntities: tokenType is required', this);
-    }
-
-    const token = await this.findBySiteIdAndTokenType(siteId, tokenType);
-
-    if (token.getRemaining() < entityIds.length) {
-      return { granted: false, reason: 'no_tokens' };
-    }
-
-    const cycle = token.getCycle();
-
-    const { data, error } = await this.postgrestService.rpc('grant_consume_token', {
-      p_entity_ids: entityIds,
-      p_parent_id: parentId,
-      p_site_id: siteId,
-      p_token_type: tokenType,
-      p_cycle: cycle,
-    });
-
-    if (error) {
-      this.log.error('grantEntities: RPC failed', error);
-      throw new DataAccessError('Failed to grant entities (grant_consume_token)', this, error);
-    }
-
-    const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
-    if (!row || !row.granted) {
-      return { granted: false, reason: row?.reason || 'rpc_no_result' };
-    }
-
-    return { granted: true };
   }
 }
 

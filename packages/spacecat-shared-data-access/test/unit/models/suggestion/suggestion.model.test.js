@@ -35,6 +35,7 @@ describe('SuggestionModel', () => {
       expect(Suggestion.STATUSES.ERROR).to.equal('ERROR');
       expect(Suggestion.STATUSES.OUTDATED).to.equal('OUTDATED');
       expect(Suggestion.STATUSES.PENDING_VALIDATION).to.equal('PENDING_VALIDATION');
+      expect(Suggestion.STATUSES.REJECTED).to.equal('REJECTED');
     });
   });
 
@@ -174,6 +175,22 @@ describe('SuggestionModel', () => {
     it('returns null when skip detail is set to null', () => {
       instance.setSkipDetail(null);
       expect(instance.getSkipDetail()).to.be.null;
+    });
+  });
+
+  describe('getSuggestionKey and setSuggestionKey', () => {
+    it('returns undefined when no suggestion key is set', () => {
+      expect(instance.getSuggestionKey()).to.be.undefined;
+    });
+
+    it('sets and gets the suggestion key', () => {
+      instance.setSuggestionKey('page:page-A:broken-link-1');
+      expect(instance.getSuggestionKey()).to.equal('page:page-A:broken-link-1');
+    });
+
+    it('returns null when suggestion key is set to null', () => {
+      instance.setSuggestionKey(null);
+      expect(instance.getSuggestionKey()).to.be.null;
     });
   });
 

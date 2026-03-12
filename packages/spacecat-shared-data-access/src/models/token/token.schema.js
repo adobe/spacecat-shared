@@ -20,7 +20,8 @@ import TokenCollection from './token.collection.js';
  * Token entity: per-site, per-tokenType (opportunity type), per-cycle token allocation.
  * Postgres table: tokens with primary key id, unique (site_id, token_type, cycle).
  * Data access: findBySiteIdAndTokenType(siteId, tokenType).
- * Consume: handled by grant_consume_token RPC via TokenCollection.grantEntities().
+ * Consume: one token per grant_suggestions call (whole list of IDs)
+ * via SuggestionCollection.grantSuggestions().
  */
 
 const schema = new SchemaBuilder(Token, TokenCollection)

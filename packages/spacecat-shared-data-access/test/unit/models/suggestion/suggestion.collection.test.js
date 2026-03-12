@@ -18,6 +18,7 @@ import sinonChai from 'sinon-chai';
 import { stub, restore } from 'sinon';
 
 import Suggestion from '../../../../src/models/suggestion/suggestion.model.js';
+import SuggestionCollection from '../../../../src/models/suggestion/suggestion.collection.js';
 import DataAccessError from '../../../../src/errors/data-access.error.js';
 
 import { createElectroMocks } from '../../util.js';
@@ -188,6 +189,159 @@ describe('SuggestionCollection', () => {
       await expect(instance.getFixEntitiesBySuggestionId(suggestionId))
         .to.be.rejectedWith(DataAccessError);
       expect(mockLogger.error).to.have.been.calledWith('Failed to get fix entities for suggestion', error);
+    });
+  });
+
+  describe('grantSuggestions', () => {
+    const siteId = 'site-001';
+    const tokenType = 'monthly_suggestion_cwv';
+    const suggestionIds = ['sugg-1', 'sugg-2'];
+
+    let postgrestInstance;
+    let mockToken;
+    let mockTokenCollection;
+
+    beforeEach(() => {
+      mockElectroService.entities = {};
+      postgrestInstance = new SuggestionCollection(
+        mockElectroService,
+        mockEntityRegistry,
+        schema,
+        mockLogger,
+      );
+
+      mockToken = {
+        getRemaining: stub(),
+        getCycle: stub().returns('2025-03'),
+      };
+      mockTokenCollection = {
+        findBySiteIdAndTokenType: stub().resolves(mockToken),
+      };
+      mockEntityRegistry.getCollection
+        .withArgs('TokenCollection')
+        .returns(mockTokenCollection);
+      mockElectroService.rpc = stub();
+    });
+
+    it('grants suggestions when tokens are available and RPC succeeds', async () => {
+      const grantedSuggestions = [
+        { suggestion_id: 'sugg-1', grant: { token_id: 'tok-1', granted_at: '2025-03-01T00:00:00.000Z' } },
+        { suggestion_id: 'sugg-2', grant: { token_id: 'tok-1', granted_at: '2025-03-01T00:00:00.000Z' } },
+      ];
+      mockToken.getRemaining.returns(5);
+      mockElectroService.rpc.resolves({
+        data: [{ success: true, reason: null, granted_suggestions: grantedSuggestions }],
+        error: null,
+      });
+
+      const result = await postgrestInstance.grantSuggestions(suggestionIds, siteId, tokenType);
+
+      expect(result).to.deep.equal({ success: true, grantedSuggestions });
+      expect(mockTokenCollection.findBySiteIdAndTokenType)
+        .to.have.been.calledOnceWith(siteId, tokenType);
+      expect(mockElectroService.rpc).to.have.been.calledOnceWith(
+        'grant_suggestions',
+        {
+          p_suggestion_ids: suggestionIds,
+          p_site_id: siteId,
+          p_token_type: tokenType,
+          p_cycle: '2025-03',
+        },
+      );
+    });
+
+    it('grants multiple suggestions with one token (one token consumed per call for whole list)', async () => {
+      const grantedSuggestions = [
+        { suggestion_id: 'sugg-1', grant: { token_id: 'tok-1', granted_at: '2025-03-01T00:00:00.000Z' } },
+        { suggestion_id: 'sugg-2', grant: { token_id: 'tok-1', granted_at: '2025-03-01T00:00:00.000Z' } },
+      ];
+      mockToken.getRemaining.returns(1);
+      mockElectroService.rpc.resolves({
+        data: [{ success: true, reason: null, granted_suggestions: grantedSuggestions }],
+        error: null,
+      });
+
+      const result = await postgrestInstance.grantSuggestions(suggestionIds, siteId, tokenType);
+
+      expect(result).to.deep.equal({ success: true, grantedSuggestions });
+      expect(mockElectroService.rpc).to.have.been.calledOnceWith(
+        'grant_suggestions',
+        {
+          p_suggestion_ids: suggestionIds,
+          p_site_id: siteId,
+          p_token_type: tokenType,
+          p_cycle: '2025-03',
+        },
+      );
+    });
+
+    it('returns no_tokens when no tokens remain (one token consumed per call for whole list)', async () => {
+      mockToken.getRemaining.returns(0);
+
+      const result = await postgrestInstance.grantSuggestions(suggestionIds, siteId, tokenType);
+
+      expect(result).to.deep.equal({ success: false, reason: 'no_tokens' });
+      expect(mockElectroService.rpc).to.not.have.been.called;
+    });
+
+    it('throws DataAccessError when RPC returns an error', async () => {
+      mockToken.getRemaining.returns(5);
+      const rpcError = { message: 'rpc failure' };
+      mockElectroService.rpc.resolves({ data: null, error: rpcError });
+
+      await expect(postgrestInstance.grantSuggestions(suggestionIds, siteId, tokenType))
+        .to.be.rejectedWith(DataAccessError, 'Failed to grant suggestions (grant_suggestions)');
+      expect(mockLogger.error).to.have.been.calledWith('grantSuggestions: RPC failed', rpcError);
+    });
+
+    it('returns success false with reason when RPC returns empty data', async () => {
+      mockToken.getRemaining.returns(5);
+      mockElectroService.rpc.resolves({ data: [], error: null });
+
+      const result = await postgrestInstance.grantSuggestions(suggestionIds, siteId, tokenType);
+
+      expect(result).to.deep.equal({ success: false, reason: 'rpc_no_result' });
+    });
+
+    it('returns success false with reason from RPC row', async () => {
+      mockToken.getRemaining.returns(5);
+      mockElectroService.rpc.resolves({
+        data: [{ success: false, reason: 'no_eligible_suggestions' }],
+        error: null,
+      });
+
+      const result = await postgrestInstance.grantSuggestions(suggestionIds, siteId, tokenType);
+
+      expect(result).to.deep.equal({ success: false, reason: 'no_eligible_suggestions' });
+    });
+
+    it('returns rpc_no_result when data is null', async () => {
+      mockToken.getRemaining.returns(5);
+      mockElectroService.rpc.resolves({ data: null, error: null });
+
+      const result = await postgrestInstance.grantSuggestions(suggestionIds, siteId, tokenType);
+
+      expect(result).to.deep.equal({ success: false, reason: 'rpc_no_result' });
+    });
+
+    it('throws DataAccessError when suggestionIds is not an array', async () => {
+      await expect(postgrestInstance.grantSuggestions('not-an-array', siteId, tokenType))
+        .to.be.rejectedWith(DataAccessError, 'suggestionIds must be an array of non-empty strings');
+    });
+
+    it('throws DataAccessError when suggestionIds contains empty strings', async () => {
+      await expect(postgrestInstance.grantSuggestions(['sugg-1', ''], siteId, tokenType))
+        .to.be.rejectedWith(DataAccessError, 'suggestionIds must be an array of non-empty strings');
+    });
+
+    it('throws DataAccessError when siteId is missing', async () => {
+      await expect(postgrestInstance.grantSuggestions(suggestionIds, '', tokenType))
+        .to.be.rejectedWith(DataAccessError, 'siteId is required');
+    });
+
+    it('throws DataAccessError when tokenType is missing', async () => {
+      await expect(postgrestInstance.grantSuggestions(suggestionIds, siteId, ''))
+        .to.be.rejectedWith(DataAccessError, 'tokenType is required');
     });
   });
 });

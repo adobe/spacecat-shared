@@ -18,7 +18,7 @@ import {
   isNonEmptyObject,
   isNumber,
   isObject,
-  isValidUrl,
+  isValidBaseUrl,
 } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
@@ -83,7 +83,7 @@ const schema = new SchemaBuilder(ImportJob, ImportJobCollection)
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
-    validate: (value) => isValidUrl(value),
+    validate: (value) => isValidBaseUrl(value),
   })
   .addAttribute('duration', {
     type: 'number',

@@ -16,6 +16,9 @@ import BaseCollection from '../base/base.collection.js';
  * PlgOnboardingCollection - A collection class responsible for managing
  * PlgOnboarding entities.
  *
+ * Note: allByStatus and allByBaseURL return cross-tenant results
+ * intended for internal/admin use only.
+ *
  * @class PlgOnboardingCollection
  * @extends BaseCollection
  */

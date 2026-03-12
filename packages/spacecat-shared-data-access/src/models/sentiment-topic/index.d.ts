@@ -16,11 +16,18 @@ import type { BaseCollection, BaseModel, Site } from '../index';
  * SentimentTopic entity representing a topic for sentiment analysis.
  * Composite primary key: siteId (PK) + topicId (SK)
  */
+export interface SentimentTopicUrl {
+  url: string;
+  timesCited: number;
+  category?: string;
+  subPrompts?: string[];
+}
+
 export interface SentimentTopic extends BaseModel {
   getTopicId(): string;
   getName(): string;
   getDescription(): string | undefined;
-  getSubPrompts(): string[];
+  getUrls(): SentimentTopicUrl[];
   getEnabled(): boolean;
   getCreatedAt(): string;
   getCreatedBy(): string;
@@ -31,12 +38,9 @@ export interface SentimentTopic extends BaseModel {
 
   setName(name: string): SentimentTopic;
   setDescription(description: string): SentimentTopic;
-  setSubPrompts(subPrompts: string[]): SentimentTopic;
+  setUrls(urls: SentimentTopicUrl[]): SentimentTopic;
   setEnabled(enabled: boolean): SentimentTopic;
   setUpdatedBy(updatedBy: string): SentimentTopic;
-
-  addSubPrompt(prompt: string): SentimentTopic;
-  removeSubPrompt(prompt: string): SentimentTopic;
 }
 
 export interface SentimentTopicCollection extends BaseCollection<SentimentTopic> {

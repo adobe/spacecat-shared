@@ -236,10 +236,11 @@ describe('DrsClient', () => {
   describe('SCRAPE_DATASET_IDS', () => {
     it('exports all expected dataset IDs', () => {
       expect(SCRAPE_DATASET_IDS).to.deep.equal({
-        YOUTUBE_VIDEOS: 'youtube_videos',
-        YOUTUBE_COMMENTS: 'youtube_comments',
-        REDDIT_POSTS: 'reddit_posts',
         REDDIT_COMMENTS: 'reddit_comments',
+        REDDIT_POSTS: 'reddit_posts',
+        TOP_CITED: 'topCited',
+        YOUTUBE_COMMENTS: 'youtube_comments',
+        YOUTUBE_VIDEOS: 'youtube_videos',
         WIKIPEDIA: 'wikipedia',
       });
     });
@@ -351,6 +352,52 @@ describe('DrsClient', () => {
         .to.be.rejectedWith('siteId is required');
       await expect(client.submitScrapeJob({ ...params, siteId: '' }))
         .to.be.rejectedWith('siteId is required');
+    });
+
+    it('includes days_back for reddit_comments', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters.days_back).to.equal(30);
+          expect(body.parameters.dataset_id).to.equal(SCRAPE_DATASET_IDS.REDDIT_COMMENTS);
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-days' });
+
+      const result = await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+        daysBack: 30,
+      });
+
+      expect(result.job_id).to.equal('scrape-days');
+      scope.done();
+    });
+
+    it('omits days_back when not provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters).to.not.have.property('days_back');
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-no-days' });
+
+      await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+      });
+
+      scope.done();
+    });
+
+    it('throws when daysBack is used with a non-reddit_comments dataset', async () => {
+      await expect(client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: ['https://youtube.com/watch?v=abc'],
+        daysBack: 7,
+      })).to.be.rejectedWith('daysBack is only supported for reddit_comments dataset');
     });
   });
 

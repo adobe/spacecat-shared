@@ -1135,7 +1135,7 @@ class TokowakaClient {
         const response = await tracingFetch(targetUrl, {
           method: 'GET',
           headers: {
-            'User-Agent': 'Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
             'fastly-debug': '1',
           },
           timeout: REQUEST_TIMEOUT_MS,

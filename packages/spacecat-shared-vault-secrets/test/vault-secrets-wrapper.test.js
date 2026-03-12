@@ -124,6 +124,7 @@ describe('vaultSecrets wrapper', () => {
     Object.keys(testSecrets).forEach((key) => {
       delete process.env[key];
     });
+    delete process.env.NEW_KEY;
   });
 
   describe('middleware wrapper', () => {

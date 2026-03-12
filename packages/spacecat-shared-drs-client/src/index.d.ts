@@ -33,6 +33,7 @@ interface ScrapeJobParams {
   siteId: string;
   urls: string[];
   priority?: 'HIGH' | 'LOW';
+  daysBack?: number;
 }
 
 interface ScrapeLookupParams {

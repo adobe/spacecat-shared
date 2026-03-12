@@ -179,7 +179,6 @@ This package provides the JavaScript model/collection layer that maps camelCase 
 - `Configuration` remains S3-backed in v3.
 - `KeyEvent` is deprecated in v3 and intentionally throws on access/mutation methods.
 - `LatestAudit` is virtual in v3 and derived from `Audit` queries (no dedicated table required).
-- **Token / Suggestion:** `Suggestion.grantSuggestions(suggestionIds, siteId, tokenType)` consumes **one token per call** for the entire list of suggestion IDs (RPC `grant_suggestions`).
 
 ## Changing Entities
 

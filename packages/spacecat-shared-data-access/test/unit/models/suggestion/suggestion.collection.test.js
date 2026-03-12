@@ -192,6 +192,92 @@ describe('SuggestionCollection', () => {
     });
   });
 
+  describe('partitionByGranted', () => {
+    it('returns granted and notGranted suggestions for the given suggestions', async () => {
+      const sugg1 = { getId: () => 'sugg-1', name: 'a' };
+      const sugg2 = { getId: () => 'sugg-2', name: 'b' };
+      const sugg3 = { getId: () => 'sugg-3', name: 'c' };
+      const suggestions = [sugg1, sugg2, sugg3];
+      const grantData = [
+        { suggestion_id: 'sugg-1' },
+        { suggestion_id: 'sugg-3' },
+      ];
+      const inStub = stub().resolves({ data: grantData, error: null });
+      const fromStub = stub().returns({
+        select: stub().returns({ in: inStub }),
+      });
+      instance.postgrestService = { from: fromStub };
+
+      const result = await instance.partitionByGranted(suggestions);
+
+      expect(result.granted).to.deep.equal([sugg1, sugg3]);
+      expect(result.notGranted).to.deep.equal([sugg2]);
+      expect(fromStub).to.have.been.calledOnceWith('suggestion_grants');
+      expect(inStub).to.have.been.calledOnceWith('suggestion_id', ['sugg-1', 'sugg-2', 'sugg-3']);
+    });
+
+    it('accepts plain objects with id property', async () => {
+      const sugg1 = { id: 'sugg-1' };
+      const sugg2 = { id: 'sugg-2' };
+      const inStub = stub().resolves({ data: [{ suggestion_id: 'sugg-1' }], error: null });
+      instance.postgrestService = {
+        from: stub().returns({
+          select: stub().returns({ in: inStub }),
+        }),
+      };
+
+      const result = await instance.partitionByGranted([sugg1, sugg2]);
+
+      expect(result.granted).to.deep.equal([sugg1]);
+      expect(result.notGranted).to.deep.equal([sugg2]);
+    });
+
+    it('returns empty arrays when suggestions is empty', async () => {
+      const result = await instance.partitionByGranted([]);
+
+      expect(result).to.deep.equal({ granted: [], notGranted: [] });
+    });
+
+    it('deduplicates by id and filters out suggestions without valid id', async () => {
+      const sugg1 = { getId: () => 'sugg-1' };
+      const sugg2 = { getId: () => 'sugg-2' };
+      const inStub = stub().resolves({ data: [{ suggestion_id: 'sugg-1' }], error: null });
+      instance.postgrestService = {
+        from: stub().returns({
+          select: stub().returns({ in: inStub }),
+        }),
+      };
+
+      const result = await instance.partitionByGranted([sugg1, sugg1, { getId: () => '' }, sugg2]);
+
+      expect(result.granted).to.deep.equal([sugg1]);
+      expect(result.notGranted).to.deep.equal([sugg2]);
+      expect(inStub).to.have.been.calledWith('suggestion_id', ['sugg-1', 'sugg-2']);
+    });
+
+    it('throws DataAccessError when suggestions is not an array', async () => {
+      await expect(instance.partitionByGranted(null))
+        .to.be.rejectedWith(DataAccessError, 'partitionByGranted: suggestions must be an array');
+      await expect(instance.partitionByGranted('sugg-1'))
+        .to.be.rejectedWith(DataAccessError, 'partitionByGranted: suggestions must be an array');
+    });
+
+    it('throws DataAccessError when query fails', async () => {
+      const queryError = { message: 'db error' };
+      instance.postgrestService = {
+        from: stub().returns({
+          select: stub().returns({
+            in: stub().resolves({ data: null, error: queryError }),
+          }),
+        }),
+      };
+
+      await expect(instance.partitionByGranted([{ getId: () => 'sugg-1' }]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to partition suggestions by granted status');
+      expect(mockLogger.error).to.have.been.calledWith('partitionByGranted: query failed', queryError);
+    });
+  });
+
   describe('grantSuggestions', () => {
     const siteId = 'site-001';
     const tokenType = 'monthly_suggestion_cwv';

@@ -319,4 +319,77 @@ describe('Suggestion IT', async () => {
       Suggestion.getFixEntitiesBySuggestionId(invalidId),
     ).to.be.rejectedWith('Validation failed');
   });
+
+  describe('partitionByGranted', () => {
+    // DB must have tokens, suggestion_grants, grant_suggestions RPC
+    // Use site 1 so token pool is independent of token.test.js (site 0)
+    const siteId = '78fec9c7-2141-4600-b7b1-ea5c78752b91'; // fixtures.sites[1]
+    const tokenType = 'monthly_suggestion_cwv';
+
+    /** One suggestion granted in before(); shared by tests that need a granted suggestion */
+    let preGrantedSuggestion;
+    before(async function () {
+      this.timeout(10000);
+      expect(sampleData.suggestions.length).to.be.at.least(6);
+      const { Token } = getDataAccess();
+      await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
+      [, , , , preGrantedSuggestion] = sampleData.suggestions;
+      const grantResult = await Suggestion.grantSuggestions(
+        [preGrantedSuggestion.getId()],
+        siteId,
+        tokenType,
+      );
+      const reason = grantResult.reason ?? 'unknown';
+      expect(
+        grantResult.success,
+        `grantSuggestions should succeed (tokens + suggestion_grants). reason=${reason}`,
+      ).to.be.true;
+    });
+
+    it('partitions suggestions into granted and notGranted', async () => {
+      const notGrantedSuggestion = sampleData.suggestions[5];
+
+      const suggestions = [preGrantedSuggestion, notGrantedSuggestion];
+      const result = await Suggestion.partitionByGranted(suggestions);
+
+      expect(result.granted).to.be.an('array').with.length(1);
+      expect(result.notGranted).to.be.an('array').with.length(1);
+      expect(result.granted[0].getId()).to.equal(preGrantedSuggestion.getId());
+      expect(result.notGranted[0].getId()).to.equal(notGrantedSuggestion.getId());
+    });
+
+    it('returns disjoint granted and notGranted that cover all input suggestions', async () => {
+      const suggestions = sampleData.suggestions.slice(0, 3);
+      const result = await Suggestion.partitionByGranted(suggestions);
+
+      expect(result.granted).to.be.an('array');
+      expect(result.notGranted).to.be.an('array');
+      expect(result.granted.length + result.notGranted.length).to.equal(suggestions.length);
+      const resultIds = [...result.granted, ...result.notGranted].map((s) => s.getId()).sort();
+      const inputIds = suggestions.map((s) => s.getId()).sort();
+      expect(resultIds).to.deep.equal(inputIds);
+    });
+
+    it('returns empty arrays when given empty suggestions', async () => {
+      const result = await Suggestion.partitionByGranted([]);
+
+      expect(result).to.deep.equal({ granted: [], notGranted: [] });
+    });
+
+    it('accepts plain objects with id', async () => {
+      const plainGranted = { id: preGrantedSuggestion.getId() };
+      const plainNotGranted = { id: sampleData.suggestions[0].getId() };
+      const result = await Suggestion.partitionByGranted([plainGranted, plainNotGranted]);
+
+      expect(result.granted).to.deep.equal([plainGranted]);
+      expect(result.notGranted).to.deep.equal([plainNotGranted]);
+    });
+
+    it('throws when suggestions is not an array', async () => {
+      await expect(Suggestion.partitionByGranted(null))
+        .to.be.rejectedWith(/suggestions must be an array/);
+      await expect(Suggestion.partitionByGranted('sugg-1'))
+        .to.be.rejectedWith(/suggestions must be an array/);
+    });
+  });
 });

@@ -42,7 +42,7 @@ describe('Token IT', () => {
 
     it('auto-creates a token for the current cycle when none exists', async () => {
       const config = getTokenGrantConfig(tokenType);
-      const token = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const token = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
 
       expect(token).to.be.an('object');
       expect(token.getSiteId()).to.equal(siteId);
@@ -54,8 +54,8 @@ describe('Token IT', () => {
     });
 
     it('returns the existing token on subsequent calls', async () => {
-      const first = await Token.findBySiteIdAndTokenType(siteId, tokenType);
-      const second = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const first = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
+      const second = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
 
       expect(second.getSiteId()).to.equal(first.getSiteId());
       expect(second.getTokenType()).to.equal(first.getTokenType());
@@ -65,8 +65,8 @@ describe('Token IT', () => {
     });
 
     it('creates separate tokens for different token types', async () => {
-      const cwvToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_cwv');
-      const bbToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_broken_backlinks');
+      const cwvToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_cwv', true);
+      const bbToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_broken_backlinks', true);
 
       expect(cwvToken.getTokenType()).to.equal('monthly_suggestion_cwv');
       expect(bbToken.getTokenType()).to.equal('monthly_suggestion_broken_backlinks');
@@ -101,7 +101,7 @@ describe('Token IT', () => {
       const suggestion = sampleData.suggestions[6];
       const suggestionId = suggestion.getId();
 
-      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
       const usedBefore = tokenBefore.getUsed();
 
       const result = await Suggestion.grantSuggestions([suggestionId], siteId, tokenType);
@@ -109,7 +109,7 @@ describe('Token IT', () => {
       expect(result).to.have.property('success', true);
       expect(result).to.have.property('grantedSuggestions').that.is.an('array');
 
-      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
       expect(tokenAfter.getUsed()).to.equal(usedBefore + 1);
     });
 
@@ -118,14 +118,14 @@ describe('Token IT', () => {
       const s2 = sampleData.suggestions[2];
       const ids = [s1.getId(), s2.getId()];
 
-      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
       const usedBefore = tokenBefore.getUsed();
 
       const result = await Suggestion.grantSuggestions(ids, siteId, tokenType);
 
       expect(result).to.have.property('success', true);
 
-      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
       expect(tokenAfter.getUsed()).to.equal(usedBefore + 1);
     });
 
@@ -139,7 +139,7 @@ describe('Token IT', () => {
         await Suggestion.grantSuggestions([suggestion.getId()], siteId, tokenType);
       }
 
-      const exhaustedToken = await Token.findBySiteIdAndTokenType(siteId, tokenType);
+      const exhaustedToken = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
       expect(exhaustedToken.getRemaining()).to.equal(0);
       expect(exhaustedToken.getUsed()).to.equal(tokensPerCycle);
 

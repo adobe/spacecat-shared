@@ -92,7 +92,7 @@ describe('TokenCollection', () => {
         .to.be.rejectedWith(/tokenType|required/);
     });
 
-    it('creates token from config when not found and returns it', async function () {
+    it('creates token from config when not found and createIfNotFound is true', async function () {
       const { getTokenGrantConfig } = await import('@adobe/spacecat-shared-utils');
       if (typeof getTokenGrantConfig !== 'function') {
         this.skip();
@@ -100,7 +100,7 @@ describe('TokenCollection', () => {
       instance.findByIndexKeys = stub().resolves(null);
       instance.create = stub().resolves(model);
 
-      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv');
+      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', true);
 
       expect(result).to.equal(model);
       const config = getTokenGrantConfig('monthly_suggestion_cwv');
@@ -117,11 +117,7 @@ describe('TokenCollection', () => {
       instance.findByIndexKeys = stub().resolves(null);
       instance.create = stub();
 
-      const result = await instance.findBySiteIdAndTokenType(
-        'site-1',
-        'monthly_suggestion_cwv',
-        false,
-      );
+      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv');
 
       expect(result).to.be.null;
       expect(instance.create).to.not.have.been.called;

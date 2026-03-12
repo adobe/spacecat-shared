@@ -97,6 +97,58 @@ class SuggestionCollection extends BaseCollection {
   }
 
   /**
+   * Partitions suggestions into those that are granted and those that are not.
+   * A suggestion is considered granted if it has at least one row in suggestion_grants.
+   *
+   * @async
+   * @param {Suggestion[]} suggestions - Instances or objects with getId() or id to check.
+   * @returns {Promise<{ granted: Suggestion[], notGranted: Suggestion[] }>}
+   * @throws {DataAccessError} - On invalid input or query failure.
+   */
+  async partitionByGranted(suggestions) {
+    if (!Array.isArray(suggestions)) {
+      throw new DataAccessError('partitionByGranted: suggestions must be an array', this);
+    }
+
+    const getSuggestionId = (s) => (typeof s?.getId === 'function' ? s.getId() : s?.id);
+    const withId = suggestions.filter((s) => hasText(getSuggestionId(s)));
+    const seen = new Set();
+    const deduped = withId.filter((s) => {
+      const id = getSuggestionId(s);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+    const ids = deduped.map(getSuggestionId);
+
+    if (ids.length === 0) {
+      return { granted: [], notGranted: [] };
+    }
+
+    try {
+      const { data, error } = await this.postgrestService
+        .from('suggestion_grants')
+        .select('suggestion_id')
+        .in('suggestion_id', ids);
+
+      if (error) {
+        this.log.error('partitionByGranted: query failed', error);
+        throw new DataAccessError('Failed to partition suggestions by granted status', this, error);
+      }
+
+      const grantedIdSet = new Set((data || []).map((row) => row.suggestion_id));
+      const granted = deduped.filter((s) => grantedIdSet.has(getSuggestionId(s)));
+      const notGranted = deduped.filter((s) => !grantedIdSet.has(getSuggestionId(s)));
+
+      return { granted, notGranted };
+    } catch (err) {
+      if (err instanceof DataAccessError) throw err;
+      this.log.error('partitionByGranted failed', err);
+      throw new DataAccessError('Failed to partition suggestions by granted status', this, err);
+    }
+  }
+
+  /**
    * Grants one or more suggestions by consuming a single token for the given token type.
    * Resolves the current cycle token via TokenCollection#findBySiteIdAndTokenType
    * (which auto-creates if missing), checks that at least one token remains, then calls the
@@ -122,7 +174,7 @@ class SuggestionCollection extends BaseCollection {
     }
 
     const tokenCollection = this.entityRegistry.getCollection('TokenCollection');
-    const token = await tokenCollection.findBySiteIdAndTokenType(siteId, tokenType, false);
+    const token = await tokenCollection.findBySiteIdAndTokenType(siteId, tokenType);
 
     if (!token || token.getRemaining() < 1) {
       return { success: false, reason: 'no_tokens' };

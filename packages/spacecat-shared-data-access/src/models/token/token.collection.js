@@ -34,12 +34,12 @@ class TokenCollection extends BaseCollection {
    * @param {string} siteId - Site ID (UUID).
    * @param {string} tokenType - Token type (e.g. monthly_suggestion_cwv,
    *   monthly_suggestion_broken_backlinks).
-   * @param {boolean} [createIfNotFound=true] - If true, create a token when none
+   * @param {boolean} [createIfNotFound=false] - If true, create a token when none
    *   exists; if false, return null when none exists.
    * @returns {Promise<import('./token.model.js').default|null>} Token instance
-   *   (existing or newly created), or null when createIfNotFound is false.
+   *   (existing or newly created), or null when none exists and createIfNotFound is false.
    */
-  async findBySiteIdAndTokenType(siteId, tokenType, createIfNotFound = true) {
+  async findBySiteIdAndTokenType(siteId, tokenType, createIfNotFound = false) {
     if (!hasText(siteId) || !hasText(tokenType)) {
       throw new DataAccessError('TokenCollection.findBySiteIdAndTokenType: siteId and tokenType are required');
     }

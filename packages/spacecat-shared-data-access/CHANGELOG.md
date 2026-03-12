@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.16.0...@adobe/spacecat-shared-data-access-v3.17.0) (2026-03-12)
+
+### Features
+
+* **data-access:** add cross-tenant query documentation for PlgOnboarding ([#1432](https://github.com/adobe/spacecat-shared/issues/1432)) ([d16c1ea](https://github.com/adobe/spacecat-shared/commit/d16c1ea95dff54ce801cd80e4177c3de853886c5))
+
 ## [@adobe/spacecat-shared-data-access-v3.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.15.1...@adobe/spacecat-shared-data-access-v3.16.0) (2026-03-12)
 
 ### Features

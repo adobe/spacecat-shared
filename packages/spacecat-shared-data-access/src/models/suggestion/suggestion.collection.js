@@ -102,7 +102,7 @@ class SuggestionCollection extends BaseCollection {
    *
    * @async
    * @param {Suggestion[]} suggestions - Instances or objects with getId() or id to check.
-   * @returns {Promise<{ granted: Suggestion[], notGranted: Suggestion[] }>}
+   * @returns {Promise<{ granted: Suggestion[], notGranted: Suggestion[], grantIds: string[] }>}
    * @throws {DataAccessError} - On invalid input or query failure.
    */
   async partitionByGranted(suggestions) {
@@ -122,13 +122,13 @@ class SuggestionCollection extends BaseCollection {
     const ids = deduped.map(getSuggestionId);
 
     if (ids.length === 0) {
-      return { granted: [], notGranted: [] };
+      return { granted: [], notGranted: [], grantIds: [] };
     }
 
     try {
       const { data, error } = await this.postgrestService
         .from('suggestion_grants')
-        .select('suggestion_id')
+        .select('suggestion_id,grant_id')
         .in('suggestion_id', ids);
 
       if (error) {
@@ -136,11 +136,13 @@ class SuggestionCollection extends BaseCollection {
         throw new DataAccessError('Failed to partition suggestions by granted status', this, error);
       }
 
-      const grantedIdSet = new Set((data || []).map((row) => row.suggestion_id));
+      const rows = data || [];
+      const grantedIdSet = new Set(rows.map((row) => row.suggestion_id));
+      const grantIdSet = new Set(rows.map((row) => row.grant_id).filter(Boolean));
       const granted = deduped.filter((s) => grantedIdSet.has(getSuggestionId(s)));
       const notGranted = deduped.filter((s) => !grantedIdSet.has(getSuggestionId(s)));
 
-      return { granted, notGranted };
+      return { granted, notGranted, grantIds: [...grantIdSet] };
     } catch (err) {
       if (err instanceof DataAccessError) throw err;
       this.log.error('partitionByGranted failed', err);

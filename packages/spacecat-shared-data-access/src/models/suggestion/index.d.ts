@@ -34,5 +34,5 @@ export interface SuggestionCollection extends BaseCollection<Suggestion> {
   findByOpportunityId(opportunityId: string, options?: QueryOptions): Promise<Suggestion | null>;
   findByOpportunityIdAndStatus(opportunityId: string, status: string, options?: QueryOptions): Promise<Suggestion | null>;
   getFixEntitiesBySuggestionId(suggestionId: string): Promise<{data: Array<FixEntity>, unprocessed: Array<string>}>;
-  partitionByGranted(suggestions: Array<Suggestion | { id?: string; getId?(): string }>): Promise<{ granted: Suggestion[]; notGranted: Suggestion[] }>;
+  partitionByGranted(suggestions: Array<Suggestion | { id?: string; getId?(): string }>): Promise<{ granted: Suggestion[]; notGranted: Suggestion[]; grantIds: string[] }>;
 }

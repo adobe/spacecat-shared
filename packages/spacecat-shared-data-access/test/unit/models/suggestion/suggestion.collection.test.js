@@ -193,14 +193,16 @@ describe('SuggestionCollection', () => {
   });
 
   describe('partitionByGranted', () => {
-    it('returns granted and notGranted suggestions for the given suggestions', async () => {
+    it('returns granted, notGranted, and unique grantIds for the given suggestions', async () => {
       const sugg1 = { getId: () => 'sugg-1', name: 'a' };
       const sugg2 = { getId: () => 'sugg-2', name: 'b' };
       const sugg3 = { getId: () => 'sugg-3', name: 'c' };
       const suggestions = [sugg1, sugg2, sugg3];
+      const grantIdA = 'grant-uuid-a';
+      const grantIdB = 'grant-uuid-b';
       const grantData = [
-        { suggestion_id: 'sugg-1' },
-        { suggestion_id: 'sugg-3' },
+        { suggestion_id: 'sugg-1', grant_id: grantIdA },
+        { suggestion_id: 'sugg-3', grant_id: grantIdB },
       ];
       const inStub = stub().resolves({ data: grantData, error: null });
       const fromStub = stub().returns({
@@ -212,14 +214,41 @@ describe('SuggestionCollection', () => {
 
       expect(result.granted).to.deep.equal([sugg1, sugg3]);
       expect(result.notGranted).to.deep.equal([sugg2]);
+      expect(result.grantIds).to.have.members([grantIdA, grantIdB]);
+      expect(result.grantIds).to.have.lengthOf(2);
       expect(fromStub).to.have.been.calledOnceWith('suggestion_grants');
       expect(inStub).to.have.been.calledOnceWith('suggestion_id', ['sugg-1', 'sugg-2', 'sugg-3']);
+    });
+
+    it('returns unique grantIds when multiple suggestions share the same grant_id', async () => {
+      const sugg1 = { getId: () => 'sugg-1' };
+      const sugg2 = { getId: () => 'sugg-2' };
+      const sharedGrantId = 'grant-shared';
+      const grantData = [
+        { suggestion_id: 'sugg-1', grant_id: sharedGrantId },
+        { suggestion_id: 'sugg-2', grant_id: sharedGrantId },
+      ];
+      const inStub = stub().resolves({ data: grantData, error: null });
+      instance.postgrestService = {
+        from: stub().returns({
+          select: stub().returns({ in: inStub }),
+        }),
+      };
+
+      const result = await instance.partitionByGranted([sugg1, sugg2]);
+
+      expect(result.granted).to.have.lengthOf(2);
+      expect(result.grantIds).to.deep.equal([sharedGrantId]);
     });
 
     it('accepts plain objects with id property', async () => {
       const sugg1 = { id: 'sugg-1' };
       const sugg2 = { id: 'sugg-2' };
-      const inStub = stub().resolves({ data: [{ suggestion_id: 'sugg-1' }], error: null });
+      const grantId = 'grant-uuid-1';
+      const inStub = stub().resolves({
+        data: [{ suggestion_id: 'sugg-1', grant_id: grantId }],
+        error: null,
+      });
       instance.postgrestService = {
         from: stub().returns({
           select: stub().returns({ in: inStub }),
@@ -230,18 +259,23 @@ describe('SuggestionCollection', () => {
 
       expect(result.granted).to.deep.equal([sugg1]);
       expect(result.notGranted).to.deep.equal([sugg2]);
+      expect(result.grantIds).to.deep.equal([grantId]);
     });
 
-    it('returns empty arrays when suggestions is empty', async () => {
+    it('returns empty arrays and grantIds when suggestions is empty', async () => {
       const result = await instance.partitionByGranted([]);
 
-      expect(result).to.deep.equal({ granted: [], notGranted: [] });
+      expect(result).to.deep.equal({ granted: [], notGranted: [], grantIds: [] });
     });
 
     it('deduplicates by id and filters out suggestions without valid id', async () => {
       const sugg1 = { getId: () => 'sugg-1' };
       const sugg2 = { getId: () => 'sugg-2' };
-      const inStub = stub().resolves({ data: [{ suggestion_id: 'sugg-1' }], error: null });
+      const grantId = 'grant-uuid-x';
+      const inStub = stub().resolves({
+        data: [{ suggestion_id: 'sugg-1', grant_id: grantId }],
+        error: null,
+      });
       instance.postgrestService = {
         from: stub().returns({
           select: stub().returns({ in: inStub }),
@@ -252,6 +286,7 @@ describe('SuggestionCollection', () => {
 
       expect(result.granted).to.deep.equal([sugg1]);
       expect(result.notGranted).to.deep.equal([sugg2]);
+      expect(result.grantIds).to.deep.equal([grantId]);
       expect(inStub).to.have.been.calledWith('suggestion_id', ['sugg-1', 'sugg-2']);
     });
 

@@ -346,7 +346,7 @@ describe('Suggestion IT', async () => {
       ).to.be.true;
     });
 
-    it('partitions suggestions into granted and notGranted', async () => {
+    it('partitions suggestions into granted and notGranted and returns unique grantIds', async () => {
       const notGrantedSuggestion = sampleData.suggestions[5];
 
       const suggestions = [preGrantedSuggestion, notGrantedSuggestion];
@@ -356,6 +356,8 @@ describe('Suggestion IT', async () => {
       expect(result.notGranted).to.be.an('array').with.length(1);
       expect(result.granted[0].getId()).to.equal(preGrantedSuggestion.getId());
       expect(result.notGranted[0].getId()).to.equal(notGrantedSuggestion.getId());
+      expect(result.grantIds).to.be.an('array').with.length(1);
+      expect(result.grantIds[0]).to.match(/^[0-9a-f-]{36}$/i);
     });
 
     it('returns disjoint granted and notGranted that cover all input suggestions', async () => {
@@ -373,7 +375,7 @@ describe('Suggestion IT', async () => {
     it('returns empty arrays when given empty suggestions', async () => {
       const result = await Suggestion.partitionByGranted([]);
 
-      expect(result).to.deep.equal({ granted: [], notGranted: [] });
+      expect(result).to.deep.equal({ granted: [], notGranted: [], grantIds: [] });
     });
 
     it('accepts plain objects with id', async () => {

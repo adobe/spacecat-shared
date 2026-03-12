@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.2.0...@adobe/spacecat-shared-drs-client-v1.3.0) (2026-03-11)
+
+
+### Features
+
+* add datatset id for top cited URLs to DRS client ([#1429](https://github.com/adobe/spacecat-shared/issues/1429)) ([5de23ab](https://github.com/adobe/spacecat-shared/commit/5de23aba2a281a9209264280e1808352bfc62cc1))
+
 # [@adobe/spacecat-shared-drs-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.1.1...@adobe/spacecat-shared-drs-client-v1.2.0) (2026-03-09)
 
 

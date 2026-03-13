@@ -311,6 +311,21 @@ describe('SuggestionCollection', () => {
         .to.be.rejectedWith(DataAccessError, 'Failed to partition suggestions by granted status');
       expect(mockLogger.error).to.have.been.calledWith('partitionByGranted: query failed', queryError);
     });
+
+    it('logs and rethrows as DataAccessError when postgrest chain rejects with non-DataAccessError', async () => {
+      const networkError = new Error('network failure');
+      instance.postgrestService = {
+        from: stub().returns({
+          select: stub().returns({
+            in: stub().rejects(networkError),
+          }),
+        }),
+      };
+
+      await expect(instance.partitionByGranted([{ getId: () => 'sugg-1' }]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to partition suggestions by granted status');
+      expect(mockLogger.error).to.have.been.calledWith('partitionByGranted failed', networkError);
+    });
   });
 
   describe('grantSuggestions', () => {

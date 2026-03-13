@@ -125,6 +125,10 @@ function resolvePath(opts, ctx, log) {
 }
 
 export async function loadSecrets(ctx, opts = {}) {
+  if (process.env.VAULT_SECRETS_DISABLED === 'true') {
+    return {};
+  }
+
   if (ctx.runtime && ctx.runtime.name === 'simulate') {
     return {};
   }

@@ -10,28 +10,62 @@
  * governing permissions and limitations under the License.
  */
 
+const TOKEN_TYPE_PREFIX = 'grant_';
+
 /**
- * Token grant configuration: tokens per cycle and grant cycle per token type.
- * Keys match Token.TOKEN_TYPES (e.g. monthly_suggestion_cwv,
- * monthly_suggestion_broken_backlinks). Use getTokenGrantConfig(tokenType)
- * for a single entry or TOKEN_GRANT_CONFIG for the full map.
+ * Converts an opportunity name to its corresponding token type key.
+ * Replaces hyphens with underscores and prepends the grant prefix.
+ * @param {string} opportunityName - e.g. "broken-backlinks".
+ * @returns {string} e.g. "grant_broken_backlinks".
+ */
+export function getTokenTypeForOpportunity(opportunityName) {
+  return `${TOKEN_TYPE_PREFIX}${opportunityName.replace(/-/g, '_')}`;
+}
+
+/**
+ * Per-opportunity grant configuration. Keys are opportunity names
+ * (matching OPPORTUNITY_TYPES values). Token type keys are derived
+ * automatically via getTokenTypeForOpportunity().
+ */
+const OPPORTUNITY_GRANT_CONFIG = Object.freeze({
+  cwv: Object.freeze({
+    tokensPerCycle: 3,
+    cycle: 'monthly',
+    cycleFormat: 'YYYY-MM',
+  }),
+  'broken-backlinks': Object.freeze({
+    tokensPerCycle: 3,
+    cycle: 'monthly',
+    cycleFormat: 'YYYY-MM',
+  }),
+  'alt-text': Object.freeze({
+    tokensPerCycle: 3,
+    cycle: 'monthly',
+    cycleFormat: 'YYYY-MM',
+  }),
+});
+
+export { OPPORTUNITY_GRANT_CONFIG };
+
+/**
+ * Cumulative token grant configuration keyed by token type.
+ * Includes entries generated from OPPORTUNITY_GRANT_CONFIG plus
+ * any standalone (non-opportunity) token types added below.
+ *
+ * NOTE: For limited use cases this config lives here in code.
+ * When the number of token types grows or needs to be managed
+ * dynamically, consider migrating to a dedicated database table
+ * (e.g. token_grant_configs) in mysticat-data-service.
  */
 const TOKEN_GRANT_CONFIG = Object.freeze({
-  monthly_suggestion_cwv: Object.freeze({
-    tokensPerCycle: 3,
-    cycle: 'monthly',
-    cycleFormat: 'YYYY-MM',
-  }),
-  monthly_suggestion_broken_backlinks: Object.freeze({
-    tokensPerCycle: 3,
-    cycle: 'monthly',
-    cycleFormat: 'YYYY-MM',
-  }),
-  monthly_suggestion_alt_text: Object.freeze({
-    tokensPerCycle: 3,
-    cycle: 'monthly',
-    cycleFormat: 'YYYY-MM',
-  }),
+  // Auto-generated from OPPORTUNITY_GRANT_CONFIG
+  ...Object.fromEntries(
+    Object.entries(OPPORTUNITY_GRANT_CONFIG).map(
+      ([name, cfg]) => [getTokenTypeForOpportunity(name), cfg],
+    ),
+  ),
+  // Add standalone (non-opportunity) token types here, e.g.:
+  // some_standalone_type: Object.freeze({ ... }),
 });
 
 export { TOKEN_GRANT_CONFIG };
@@ -50,14 +84,32 @@ export function getCurrentCycle(cycleFormat) {
 }
 
 /**
- * Returns the grant config for a token type, including the computed current cycle.
- * @param {string} tokenType - One of Token.TOKEN_TYPES (e.g. monthly_suggestion_cwv,
- *   monthly_suggestion_broken_backlinks, monthly_suggestion_alt_text).
- * @returns {{ tokensPerCycle: number, cycle: string, cycleFormat: string,
- *   currentCycle: string }|undefined}
+ * Returns the grant config for a token type, including the
+ * computed current cycle.
+ * @param {string} tokenType - e.g. "grant_cwv".
+ * @returns {{ tokensPerCycle: number, cycle: string,
+ *   cycleFormat: string, currentCycle: string }|undefined}
  */
 export function getTokenGrantConfig(tokenType) {
   const entry = TOKEN_GRANT_CONFIG[tokenType];
   if (!entry) return undefined;
   return { ...entry, currentCycle: getCurrentCycle(entry.cycleFormat) };
+}
+
+/**
+ * Returns the grant config for an opportunity name, including
+ * the computed current cycle and the derived token type.
+ * @param {string} opportunityName - e.g. "broken-backlinks".
+ * @returns {{ tokensPerCycle: number, cycle: string,
+ *   cycleFormat: string, currentCycle: string,
+ *   tokenType: string }|undefined}
+ */
+export function getTokenGrantConfigByOpportunity(opportunityName) {
+  const entry = OPPORTUNITY_GRANT_CONFIG[opportunityName];
+  if (!entry) return undefined;
+  return {
+    ...entry,
+    currentCycle: getCurrentCycle(entry.cycleFormat),
+    tokenType: getTokenTypeForOpportunity(opportunityName),
+  };
 }

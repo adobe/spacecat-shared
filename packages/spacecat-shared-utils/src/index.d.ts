@@ -378,17 +378,40 @@ export interface TokenGrantEntry {
   cycleFormat: string;
 }
 
-/** Map of tokenType to grant config (tokensPerCycle, cycle, cycleFormat). */
+/** Per-opportunity grant config keyed by opportunity name. */
+export const OPPORTUNITY_GRANT_CONFIG: Record<string, TokenGrantEntry>;
+
+/** Cumulative token grant config keyed by token type. */
 export const TOKEN_GRANT_CONFIG: Record<string, TokenGrantEntry>;
 
 /**
- * Returns the grant config for a token type (tokensPerCycle, cycle, cycleFormat).
- * @param tokenType - One of Token.TOKEN_TYPES values (e.g. monthly_suggestion_cwv, monthly_suggestion_broken_backlinks, monthly_suggestion_alt_text).
+ * Converts an opportunity name to its token type key.
+ * @param opportunityName - e.g. "broken-backlinks".
+ * @returns e.g. "grant_broken_backlinks".
  */
-export function getTokenGrantConfig(tokenType: string): TokenGrantEntry | undefined;
+export function getTokenTypeForOpportunity(
+  opportunityName: string
+): string;
 
 /**
- * Computes the current cycle string for a given cycleFormat using UTC time.
+ * Returns the grant config for a token type.
+ * @param tokenType - e.g. "grant_cwv".
+ */
+export function getTokenGrantConfig(
+  tokenType: string
+): (TokenGrantEntry & { currentCycle: string }) | undefined;
+
+/**
+ * Returns the grant config for an opportunity name.
+ * @param opportunityName - e.g. "broken-backlinks".
+ */
+export function getTokenGrantConfigByOpportunity(
+  opportunityName: string
+): (TokenGrantEntry & { currentCycle: string; tokenType: string }) | undefined;
+
+/**
+ * Computes the current cycle string for a given cycleFormat
+ * using UTC time.
  * Supported placeholders: YYYY (4-digit year), MM (zero-padded month).
  */
 export function getCurrentCycle(cycleFormat: string): string;

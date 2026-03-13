@@ -228,6 +228,62 @@ describe('SuggestionModel', () => {
           Suggestion.validateData({ anything: 'goes' }, 'unknown-type');
         }).to.not.throw();
       });
+
+      // Verification: CWV suggestion data (suggestion.data object only) vs DATA_SCHEMAS['cwv']
+      describe('CWV opportunity type', () => {
+        it('passes when url-type has type, url (uri), metrics, and issues', () => {
+          const suggestionData = {
+            type: 'url',
+            url: 'https://www.example.com/page',
+            pageviews: 11620,
+            organic: 2400,
+            metrics: [
+              {
+                deviceType: 'mobile',
+                pageviews: 6200,
+                lcp: 2701,
+                cls: 0.001,
+                ttfb: 682,
+              },
+              {
+                deviceType: 'desktop',
+                pageviews: 3600,
+                lcp: null,
+                cls: null,
+                ttfb: null,
+              },
+            ],
+            issues: [],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+        });
+
+        it('fails when issues is missing (schema requires issues array)', () => {
+          const suggestionData = {
+            type: 'url',
+            url: 'https://www.example.com/page',
+            pageviews: 11620,
+            metrics: [{ deviceType: 'mobile', lcp: 2701 }],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+        });
+
+        it('fails when group-type has pattern but no url (schema requires url)', () => {
+          const suggestionData = {
+            type: 'group',
+            name: 'Some pages',
+            pattern: 'https://www.aem.live/home/*',
+            pageviews: 9620,
+            organic: 1900,
+            metrics: [
+              { deviceType: 'desktop', lcp: 2099, cls: 0.011 },
+              { deviceType: 'mobile', lcp: 2454, cls: 0.27 },
+            ],
+            issues: [],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+        });
+      });
     });
   });
 });

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.19.0...@adobe/spacecat-shared-data-access-v3.20.0) (2026-03-13)
+
+### Features
+
+* add OFFSITE_BRAND_PRESENCE audit type ([#1437](https://github.com/adobe/spacecat-shared/issues/1437)) ([5ffe54e](https://github.com/adobe/spacecat-shared/commit/5ffe54e740a4645b881c905fb6f1c2d2c47e556e))
+
 ## [@adobe/spacecat-shared-data-access-v3.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.18.0...@adobe/spacecat-shared-data-access-v3.19.0) (2026-03-13)
 
 ### Features

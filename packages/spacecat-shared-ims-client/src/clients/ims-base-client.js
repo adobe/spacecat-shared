@@ -17,6 +17,12 @@ import {
 import { createFormData } from '../utils.js';
 
 export default class ImsBaseClient {
+  // Retry at most 2 times (3 total attempts) to avoid flooding IMS with requests.
+  static #MAX_RETRIES = 2;
+
+  // Base delay in ms; doubles each attempt: 1 000 ms → 2 000 ms.
+  static #RETRY_BASE_DELAY_MS = 1000;
+
   /**
    * Creates a new Ims client
    *
@@ -27,6 +33,19 @@ export default class ImsBaseClient {
   constructor(config, log) {
     this.config = config;
     this.log = log;
+    // Exposed as an instance property so tests can override it without fake timers.
+    this.retryBaseDelayMs = ImsBaseClient.#RETRY_BASE_DELAY_MS;
+  }
+
+  static #isRetryableStatus(status) {
+    // Retry on server errors and rate limiting; never on client errors.
+    return status === 429 || status >= 500;
+  }
+
+  static #sleep(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
   }
 
   /**
@@ -83,6 +102,7 @@ export default class ImsBaseClient {
    * @param {Object} [options.headers] - Optional additional headers to include
    * @returns {Promise<Response>} - The fetch response
    */
+  // eslint-disable-next-line consistent-return
   async imsApiCall(
     endpoint,
     queryString = {},
@@ -90,26 +110,63 @@ export default class ImsBaseClient {
     options = {},
   ) {
     const startTime = process.hrtime.bigint();
+    const maxAttempts = ImsBaseClient.#MAX_RETRIES + 1;
 
     const headers = await this.#prepareImsRequestHeaders(options);
+    const url = createUrl(`https://${this.config.imsHost}${endpoint}`, queryString);
+    const fetchOptions = {
+      ...(isObject(body) ? { method: 'POST' } : { method: 'GET' }),
+      headers,
+      ...(isObject(body) ? { body: createFormData(body) } : {}),
+    };
 
-    try {
-      const response = await tracingFetch(
-        createUrl(`https://${this.config.imsHost}${endpoint}`, queryString),
-        {
-          ...(isObject(body) ? { method: 'POST' } : { method: 'GET' }),
-          headers,
-          ...(isObject(body) ? { body: createFormData(body) } : {}),
-        },
-      );
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const response = await tracingFetch(url, fetchOptions);
 
-      const callerName = new Error().stack.split('\n')[2].trim().split(' ')[1];
-      this.#logDuration(`IMS ${callerName} request`, startTime);
+        const shouldRetry = ImsBaseClient.#isRetryableStatus(response.status)
+          && attempt < ImsBaseClient.#MAX_RETRIES;
+        if (shouldRetry) {
+          const delay = this.retryBaseDelayMs * (2 ** attempt);
+          this.log.warn(
+            `IMS ${endpoint} request returned status ${response.status} `
+            + `(attempt ${attempt + 1}/${maxAttempts}). `
+            + `Retrying in ${delay}ms...`,
+          );
+          // eslint-disable-next-line no-await-in-loop
+          await ImsBaseClient.#sleep(delay);
+          continue; // eslint-disable-line no-continue
+        }
 
-      return response;
-    } catch (error) {
-      this.log.error('Error while fetching data from IMS API: ', error.message);
-      throw error;
+        const callerName = new Error().stack.split('\n')[2].trim().split(' ')[1];
+        this.#logDuration(`IMS ${callerName} request`, startTime);
+
+        if (attempt > 0) {
+          this.log.info(
+            `IMS ${endpoint} request succeeded on attempt ${attempt + 1}/${maxAttempts} `
+            + `(used ${attempt} ${attempt === 1 ? 'retry' : 'retries'}).`,
+          );
+        }
+
+        return response;
+      } catch (error) {
+        if (attempt < ImsBaseClient.#MAX_RETRIES) {
+          const delay = this.retryBaseDelayMs * (2 ** attempt);
+          this.log.warn(
+            `IMS ${endpoint} request failed with network error `
+            + `(attempt ${attempt + 1}/${maxAttempts}): ${error.message}. `
+            + `Retrying in ${delay}ms...`,
+          );
+          // eslint-disable-next-line no-await-in-loop
+          await ImsBaseClient.#sleep(delay);
+        } else {
+          this.log.error(
+            `IMS ${endpoint} request failed after ${maxAttempts} attempts: ${error.message}`,
+          );
+          throw error;
+        }
+      }
     }
   }
 }

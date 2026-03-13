@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@adobe/fetch": "^4.2.3",
-    "@adobe/spacecat-shared-utils": "1.101.0",
+    "@adobe/spacecat-shared-utils": "https://gist.githubusercontent.com/sandsinh/40ebf34d5a83568c9f2571d9eca6cc54/raw/dd75eb8b13ba2555d7cde87df25c0ccfbd8085bc/adobe-spacecat-shared-utils-1.102.0.tgz",
     "@supabase/postgrest-js": "^1.21.4",
     "@aws-sdk/client-s3": "^3.940.0",
     "@types/joi": "17.2.3",

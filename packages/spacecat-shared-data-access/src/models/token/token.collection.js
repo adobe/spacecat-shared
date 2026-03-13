@@ -28,18 +28,21 @@ class TokenCollection extends BaseCollection {
   /**
    * Finds a Token for the current cycle by siteId and tokenType. The cycle is
    * derived from the token-grant-config's cycleFormat. If no token exists for
-   * the current cycle and createIfNotFound is true, creates one using the
-   * configured limits.
+   * the current cycle and options.createIfNotFound is true, creates one. The
+   * token total is the minimum of options.total (if supplied) and the config
+   * tokensPerCycle, clamped to at least 1.
    *
    * @param {string} siteId - Site ID (UUID).
    * @param {string} tokenType - Token type (e.g. monthly_suggestion_cwv,
    *   monthly_suggestion_broken_backlinks).
-   * @param {boolean} [createIfNotFound=false] - If true, create a token when none
-   *   exists; if false, return null when none exists.
+   * @param {Object} [options={}] - Options.
+   * @param {boolean} [options.createIfNotFound=false] - If true, create a token when none exists.
+   * @param {number} [options.total] - Optional supplied total;
+   *   actual total is min(options.total, config.tokensPerCycle), at least 1.
    * @returns {Promise<import('./token.model.js').default|null>} Token instance
    *   (existing or newly created), or null when none exists and createIfNotFound is false.
    */
-  async findBySiteIdAndTokenType(siteId, tokenType, createIfNotFound = false) {
+  async findBySiteIdAndTokenType(siteId, tokenType, options = {}) {
     if (!hasText(siteId) || !hasText(tokenType)) {
       throw new DataAccessError('TokenCollection.findBySiteIdAndTokenType: siteId and tokenType are required');
     }
@@ -49,17 +52,17 @@ class TokenCollection extends BaseCollection {
     }
     const { currentCycle: cycle } = config;
     const existing = await this.findByIndexKeys({ siteId, tokenType, cycle }, { limit: 1 });
-    if (existing) {
-      return existing;
+    if (existing || options.createIfNotFound !== true) {
+      return existing || null;
     }
-    if (!createIfNotFound) {
-      return null;
-    }
+    const total = options.total != null
+      ? Math.max(1, Math.min(Number(options.total), config.tokensPerCycle))
+      : config.tokensPerCycle;
     return this.create({
       siteId,
       tokenType,
       cycle,
-      total: config.tokensPerCycle,
+      total,
       used: 0,
     });
   }

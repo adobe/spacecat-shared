@@ -36,13 +36,16 @@ describe('Token IT', () => {
     Suggestion = dataAccess.Suggestion;
   });
 
+  const createOpts = { createIfNotFound: true };
+
   describe('findBySiteIdAndTokenType', () => {
-    const siteId = '5d6d4439-6659-46c2-b646-92d110fa5a52'; // fixtures.sites[0].siteId
+    // fixtures.sites[0].siteId
+    const siteId = '5d6d4439-6659-46c2-b646-92d110fa5a52';
     const tokenType = 'monthly_suggestion_cwv';
 
     it('auto-creates a token for the current cycle when none exists', async () => {
       const config = getTokenGrantConfig(tokenType);
-      const token = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
+      const token = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
 
       expect(token).to.be.an('object');
       expect(token.getSiteId()).to.equal(siteId);
@@ -54,8 +57,8 @@ describe('Token IT', () => {
     });
 
     it('returns the existing token on subsequent calls', async () => {
-      const first = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
-      const second = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
+      const first = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
+      const second = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
 
       expect(second.getSiteId()).to.equal(first.getSiteId());
       expect(second.getTokenType()).to.equal(first.getTokenType());
@@ -65,8 +68,8 @@ describe('Token IT', () => {
     });
 
     it('creates separate tokens for different token types', async () => {
-      const cwvToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_cwv', true);
-      const bbToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_broken_backlinks', true);
+      const cwvToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_cwv', createOpts);
+      const bbToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_broken_backlinks', createOpts);
 
       expect(cwvToken.getTokenType()).to.equal('monthly_suggestion_cwv');
       expect(bbToken.getTokenType()).to.equal('monthly_suggestion_broken_backlinks');
@@ -101,7 +104,7 @@ describe('Token IT', () => {
       const suggestion = sampleData.suggestions[6];
       const suggestionId = suggestion.getId();
 
-      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
+      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
       const usedBefore = tokenBefore.getUsed();
 
       const result = await Suggestion.grantSuggestions([suggestionId], siteId, tokenType);
@@ -109,7 +112,7 @@ describe('Token IT', () => {
       expect(result).to.have.property('success', true);
       expect(result).to.have.property('grantedSuggestions').that.is.an('array');
 
-      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
+      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
       expect(tokenAfter.getUsed()).to.equal(usedBefore + 1);
     });
 
@@ -118,14 +121,14 @@ describe('Token IT', () => {
       const s2 = sampleData.suggestions[2];
       const ids = [s1.getId(), s2.getId()];
 
-      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
+      const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
       const usedBefore = tokenBefore.getUsed();
 
       const result = await Suggestion.grantSuggestions(ids, siteId, tokenType);
 
       expect(result).to.have.property('success', true);
 
-      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
+      const tokenAfter = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
       expect(tokenAfter.getUsed()).to.equal(usedBefore + 1);
     });
 
@@ -139,7 +142,7 @@ describe('Token IT', () => {
         await Suggestion.grantSuggestions([suggestion.getId()], siteId, tokenType);
       }
 
-      const exhaustedToken = await Token.findBySiteIdAndTokenType(siteId, tokenType, true);
+      const exhaustedToken = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
       expect(exhaustedToken.getRemaining()).to.equal(0);
       expect(exhaustedToken.getUsed()).to.equal(tokensPerCycle);
 

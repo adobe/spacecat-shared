@@ -100,7 +100,7 @@ describe('TokenCollection', () => {
       instance.findByIndexKeys = stub().resolves(null);
       instance.create = stub().resolves(model);
 
-      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', true);
+      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', { createIfNotFound: true });
 
       expect(result).to.equal(model);
       const config = getTokenGrantConfig('monthly_suggestion_cwv');
@@ -111,6 +111,53 @@ describe('TokenCollection', () => {
         total: config.tokensPerCycle,
         used: 0,
       });
+    });
+
+    it('creates token with min(supplied total, config.tokensPerCycle) when options.total provided', async function () {
+      const { getTokenGrantConfig } = await import('@adobe/spacecat-shared-utils');
+      if (typeof getTokenGrantConfig !== 'function') {
+        this.skip();
+      }
+      instance.findByIndexKeys = stub().resolves(null);
+      instance.create = stub().resolves(model);
+      const config = getTokenGrantConfig('monthly_suggestion_cwv');
+      const maxFromConfig = config.tokensPerCycle;
+
+      await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', {
+        createIfNotFound: true,
+        total: 2,
+      });
+
+      expect(instance.create).to.have.been.calledOnceWith({
+        siteId: 'site-1',
+        tokenType: 'monthly_suggestion_cwv',
+        cycle: expectedCycle,
+        total: Math.min(2, maxFromConfig),
+        used: 0,
+      });
+    });
+
+    it('clamps options.total to at least 1 and at most config.tokensPerCycle', async function () {
+      const { getTokenGrantConfig } = await import('@adobe/spacecat-shared-utils');
+      if (typeof getTokenGrantConfig !== 'function') {
+        this.skip();
+      }
+      instance.findByIndexKeys = stub().resolves(null);
+      instance.create = stub().resolves(model);
+      const config = getTokenGrantConfig('monthly_suggestion_cwv');
+
+      await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', {
+        createIfNotFound: true,
+        total: 0,
+      });
+      expect(instance.create).to.have.been.calledWithMatch({ total: 1 });
+
+      instance.create = stub().resolves(model);
+      await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', {
+        createIfNotFound: true,
+        total: config.tokensPerCycle + 10,
+      });
+      expect(instance.create).to.have.been.calledWithMatch({ total: config.tokensPerCycle });
     });
 
     it('returns null when not found and createIfNotFound is false', async () => {

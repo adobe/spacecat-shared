@@ -21,7 +21,7 @@ import TokenCollection from './token.collection.js';
  * Postgres table: tokens with primary key id, unique (site_id, token_type, cycle).
  * Data access: findBySiteIdAndTokenType(siteId, tokenType).
  * Consume: one token per grant_suggestions call (whole list of IDs)
- * via SuggestionCollection.grantSuggestions().
+ * via SuggestionGrantCollection.grantSuggestions().
  */
 
 const schema = new SchemaBuilder(Token, TokenCollection)

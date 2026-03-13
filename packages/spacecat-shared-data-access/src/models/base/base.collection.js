@@ -876,6 +876,48 @@ class BaseCollection {
     }
   }
 
+  /**
+   * Saves multiple model instances to the database in chunked batches.
+   * Each chunk is persisted via a single PostgREST upsert call, avoiding
+   * the thundering-herd problem caused by N concurrent individual saves.
+   *
+   * Chunks are processed sequentially. If a chunk fails, the error is
+   * propagated immediately — chunks already persisted are NOT rolled back.
+   * Callers must account for partial saves on failure.
+   *
+   * @param {BaseModel[]} items - Model instances with in-memory mutations to persist.
+   * @param {Object} [options] - Options.
+   * @param {number} [options.chunkSize=25] - Max items per upsert request.
+   *   Keep low for entities with large payloads (e.g. Suggestion.data JSONB).
+   * @returns {Promise<void>}
+   * @throws {DataAccessError} If any chunk fails. Previously completed chunks
+   *   are already persisted — callers must account for partial saves.
+   */
+  async saveMany(items, { chunkSize = 25 } = {}) {
+    if (!isNonEmptyArray(items)) {
+      return;
+    }
+
+    const effectiveChunkSize = Math.max(1, Math.floor(chunkSize)) || 25;
+    const totalChunks = Math.ceil(items.length / effectiveChunkSize);
+
+    if (totalChunks > 1) {
+      this.log.info(`[${this.entityName}] saveMany: saving ${items.length} items in ${totalChunks} chunks of ${effectiveChunkSize}`);
+    }
+
+    for (let i = 0; i < items.length; i += effectiveChunkSize) {
+      const chunkIndex = Math.floor(i / effectiveChunkSize) + 1;
+      const chunk = items.slice(i, i + effectiveChunkSize);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await this._saveMany(chunk);
+      } catch (error) {
+        this.log.error(`[${this.entityName}] saveMany: chunk ${chunkIndex}/${totalChunks} failed — ${i} of ${items.length} items already persisted`);
+        throw error;
+      }
+    }
+  }
+
   async _saveMany(items) {
     if (!isNonEmptyArray(items)) {
       const message = `Failed to save many [${this.entityName}]: items must be a non-empty array`;

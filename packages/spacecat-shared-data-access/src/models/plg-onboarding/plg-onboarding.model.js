@@ -13,26 +13,27 @@
 import BaseModel from '../base/base.model.js';
 
 /**
- * SentimentTopic - A class representing a sentiment analysis topic.
- * Topics define what to analyze (e.g., "BMW XM Latest", "2026 Corvette Stingray").
+ * PlgOnboarding - A class representing a PLG onboarding entity.
+ * Tracks the self-service onboarding lifecycle for ASO customers.
  *
- * @class SentimentTopic
+ * @class PlgOnboarding
  * @extends BaseModel
  */
-class SentimentTopic extends BaseModel {
-  static ENTITY_NAME = 'SentimentTopic';
+class PlgOnboarding extends BaseModel {
+  static ENTITY_NAME = 'PlgOnboarding';
 
-  /**
-   * Generates the composite keys for remove/update operations.
-   * Required for entities with composite primary keys.
-   * @returns {Object} - The composite keys (siteId + topicId).
-   */
-  generateCompositeKeys() {
-    return {
-      siteId: this.getSiteId(),
-      topicId: this.getTopicId(),
-    };
-  }
+  static IMS_ORG_ID_PATTERN = /^[a-z0-9]{24}@AdobeOrg$/i;
+
+  static DOMAIN_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
+
+  static STATUSES = {
+    PRE_ONBOARDING: 'PRE_ONBOARDING',
+    IN_PROGRESS: 'IN_PROGRESS',
+    ONBOARDED: 'ONBOARDED',
+    ERROR: 'ERROR',
+    WAITING_FOR_IP_ALLOWLISTING: 'WAITING_FOR_IP_ALLOWLISTING',
+    WAITLISTED: 'WAITLISTED',
+  };
 }
 
-export default SentimentTopic;
+export default PlgOnboarding;

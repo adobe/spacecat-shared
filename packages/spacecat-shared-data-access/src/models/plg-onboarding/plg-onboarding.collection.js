@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,24 +10,20 @@
  * governing permissions and limitations under the License.
  */
 
-// eslint-disable-next-line import/no-cycle
-import Site from './site.model.js';
-import SiteCollection from './site.collection.js';
+import BaseCollection from '../base/base.collection.js';
 
-export {
-  Site,
-  SiteCollection,
-};
+/**
+ * PlgOnboardingCollection - A collection class responsible for managing
+ * PlgOnboarding entities.
+ *
+ * Note: allByStatus and allByBaseURL return cross-tenant results
+ * intended for internal/admin use only.
+ *
+ * @class PlgOnboardingCollection
+ * @extends BaseCollection
+ */
+class PlgOnboardingCollection extends BaseCollection {
+  static COLLECTION_NAME = 'PlgOnboardingCollection';
+}
 
-export {
-  Config,
-  configSchema,
-  validateConfiguration,
-  extractWellKnownTags,
-  IMPORT_TYPES,
-  IMPORT_DESTINATIONS,
-  IMPORT_SOURCES,
-  IMPORT_TYPE_SCHEMAS,
-  DEFAULT_IMPORT_CONFIGS,
-  DEFAULT_CONFIG,
-} from './config.js';
+export default PlgOnboardingCollection;

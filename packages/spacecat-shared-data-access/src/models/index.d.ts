@@ -29,6 +29,7 @@ export type * from './opportunity';
 export type * from './organization';
 export type * from './page-citability';
 export type * from './page-intent';
+export type * from './plg-onboarding';
 export type * from './project';
 export type * from './report';
 export type * from './scrape-job';

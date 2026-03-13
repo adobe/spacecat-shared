@@ -13,10 +13,11 @@
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 
 export const SCRAPE_DATASET_IDS = Object.freeze({
-  YOUTUBE_VIDEOS: 'youtube_videos',
-  YOUTUBE_COMMENTS: 'youtube_comments',
-  REDDIT_POSTS: 'reddit_posts',
   REDDIT_COMMENTS: 'reddit_comments',
+  REDDIT_POSTS: 'reddit_posts',
+  TOP_CITED: 'topCited',
+  YOUTUBE_COMMENTS: 'youtube_comments',
+  YOUTUBE_VIDEOS: 'youtube_videos',
   WIKIPEDIA: 'wikipedia',
 });
 

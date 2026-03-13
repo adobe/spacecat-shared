@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.11.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.11.0...@adobe/spacecat-shared-tokowaka-client-v1.11.1) (2026-03-10)
+
+### Bug Fixes
+
+* UA change for edge optimize status api ([#1418](https://github.com/adobe/spacecat-shared/issues/1418)) ([43b14b5](https://github.com/adobe/spacecat-shared/commit/43b14b5ae26346fef73bbe501dee0ed0b08874e8))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.10.2...@adobe/spacecat-shared-tokowaka-client-v1.11.0) (2026-03-10)
 
 ### Features

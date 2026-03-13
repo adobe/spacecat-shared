@@ -241,6 +241,92 @@ class FixEntityCollection extends BaseCollection {
       throw new DataAccessError('Failed to get all fixes with suggestions by created date', this, error);
     }
   }
+
+  /**
+   * Updates a FixEntity and its linked Suggestions atomically.
+   * Uses a single RPC (rpc_update_fix_and_suggestions_status) so all updates
+   * succeed or fail together in one database transaction.
+   *
+   * This method:
+   * 1. Validates that the fix entity has at least one suggestion
+   * 2. Calls the database RPC to set fix_entities.status and suggestions.status
+   * 3. Fetches and returns the updated fix entity and suggestions
+   *
+   * @async
+   * @param {string} fixEntityId - The ID of the FixEntity to update.
+   * @param {string} opportunityId - The ID of the opportunity (validation/logging).
+   * @param {string} [newSuggestionStatus='SKIPPED'] - Status for all linked suggestions.
+   * @param {string} [newFixEntityStatus] - Status to set on the fix entity (default: ROLLED_BACK).
+   * @param {Object} [_] - Optional settings (reserved for future use).
+   * @returns {Promise<Object>} - { fix, suggestions }
+   * @throws {ValidationError} - If no suggestions found for the fix entity.
+   * @throws {DataAccessError} - If the RPC or fetch fails.
+   */
+  async updateFixAndSuggestionsStatus(
+    fixEntityId,
+    opportunityId,
+    newSuggestionStatus = 'SKIPPED',
+    newFixEntityStatus = 'ROLLED_BACK',
+    _ = {},
+  ) {
+    guardId('fixEntityId', fixEntityId, 'FixEntityCollection');
+    guardId('opportunityId', opportunityId, 'FixEntityCollection');
+    guardString('newSuggestionStatus', newSuggestionStatus, 'FixEntityCollection');
+    guardString('newFixEntityStatus', newFixEntityStatus, 'FixEntityCollection');
+
+    try {
+      const suggestions = await this.getSuggestionsByFixEntityId(fixEntityId);
+
+      if (!Array.isArray(suggestions) || suggestions.length === 0) {
+        throw new ValidationError('No suggestions found for the fix entity');
+      }
+
+      const { data: rpcResult, error: rpcError } = await this.postgrestService.rpc(
+        'rpc_update_fix_and_suggestions_status',
+        {
+          p_fix_entity_id: fixEntityId,
+          p_fix_entity_status: newFixEntityStatus,
+          p_new_suggestion_status: newSuggestionStatus,
+        },
+      );
+
+      if (rpcError) {
+        this.log.error('Update fix and suggestions RPC failed', { rpcError, fixEntityId });
+        throw new DataAccessError(
+          rpcError.message || 'Failed to update fix entity and suggestions',
+          this,
+          rpcError,
+        );
+      }
+
+      const [updatedFixEntity, updatedSuggestions] = await Promise.all([
+        this.findById(fixEntityId),
+        this.getSuggestionsByFixEntityId(fixEntityId),
+      ]);
+
+      if (!updatedFixEntity) {
+        throw new DataAccessError(`Fix entity ${fixEntityId} not found after update`, this);
+      }
+
+      this.log.info(
+        `Updated fix entity ${fixEntityId} to ${newFixEntityStatus} and ${updatedSuggestions.length} suggestions`,
+        rpcResult ? { rpcResult } : {},
+      );
+
+      return {
+        fix: updatedFixEntity,
+        suggestions: updatedSuggestions,
+      };
+    } catch (error) {
+      this.log.error('Failed to update fix entity and suggestions', error);
+
+      if (error instanceof DataAccessError || error instanceof ValidationError) {
+        throw error;
+      }
+
+      throw new DataAccessError('Failed to update fix entity and suggestions', this, error);
+    }
+  }
 }
 
 export default FixEntityCollection;

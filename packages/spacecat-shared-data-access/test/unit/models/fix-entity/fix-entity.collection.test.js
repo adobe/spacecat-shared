@@ -728,6 +728,341 @@ describe('FixEntityCollection', () => {
     });
   });
 
+  describe('updateFixAndSuggestionsStatus', () => {
+    const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
+    const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+    const suggestionId1 = '123e4567-e89b-12d3-a456-426614174010';
+    const suggestionId2 = '123e4567-e89b-12d3-a456-426614174011';
+
+    let mockRpc;
+    let mockGetSuggestionsByFixEntityId;
+    let mockFindById;
+    let rollbackMockFixEntity;
+    let rollbackMockSuggestions;
+
+    beforeEach(() => {
+      mockRpc = stub().resolves({
+        data: { fix_entity_updated: true, suggestions_updated: 2 },
+        error: null,
+      });
+      fixEntityCollection.postgrestService = { rpc: mockRpc };
+
+      mockGetSuggestionsByFixEntityId = stub();
+      mockFindById = stub();
+      fixEntityCollection.getSuggestionsByFixEntityId = mockGetSuggestionsByFixEntityId;
+      fixEntityCollection.findById = mockFindById;
+
+      rollbackMockFixEntity = {
+        getId: () => fixEntityId,
+        record: {
+          fixEntityId,
+          status: 'ROLLED_BACK',
+          opportunityId,
+        },
+      };
+
+      rollbackMockSuggestions = [
+        {
+          getId: () => suggestionId1,
+          getStatus: () => 'SKIPPED',
+          getRank: () => 10,
+          record: {
+            suggestionId: suggestionId1,
+            status: 'SKIPPED',
+            rank: 10,
+            opportunityId,
+          },
+        },
+        {
+          getId: () => suggestionId2,
+          getStatus: () => 'SKIPPED',
+          getRank: () => 11,
+          record: {
+            suggestionId: suggestionId2,
+            status: 'SKIPPED',
+            rank: 11,
+            opportunityId,
+          },
+        },
+      ];
+
+      mockFindById.resolves(rollbackMockFixEntity);
+      mockGetSuggestionsByFixEntityId.resolves(rollbackMockSuggestions);
+    });
+
+    it('should throw validation error when fixEntityId is invalid', async () => {
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          'invalid-uuid',
+          opportunityId,
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith(ValidationError, 'fixEntityId must be a valid UUID');
+    });
+
+    it('should throw validation error when opportunityId is invalid', async () => {
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          fixEntityId,
+          'invalid-uuid',
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith(ValidationError, 'opportunityId must be a valid UUID');
+    });
+
+    it('should throw validation error when newSuggestionStatus is not a string', async () => {
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          fixEntityId,
+          opportunityId,
+          123,
+        ),
+      ).to.be.rejectedWith(ValidationError, 'newSuggestionStatus is required');
+    });
+
+    it('should throw validation error when newFixEntityStatus is not a string', async () => {
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          fixEntityId,
+          opportunityId,
+          'SKIPPED',
+          123,
+        ),
+      ).to.be.rejectedWith(ValidationError, 'newFixEntityStatus is required');
+    });
+
+    it('should throw ValidationError when fix entity has no suggestions', async () => {
+      mockGetSuggestionsByFixEntityId.resolves([]);
+
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          fixEntityId,
+          opportunityId,
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith(ValidationError, 'No suggestions found for the fix entity');
+    });
+
+    it('should call RPC and return updated fix and suggestions', async () => {
+      const result = await fixEntityCollection.updateFixAndSuggestionsStatus(
+        fixEntityId,
+        opportunityId,
+        'SKIPPED',
+      );
+
+      expect(result.fix).to.equal(rollbackMockFixEntity);
+      expect(result.suggestions).to.deep.equal(rollbackMockSuggestions);
+
+      expect(mockRpc).to.have.been.calledOnceWith(
+        'rpc_update_fix_and_suggestions_status',
+        {
+          p_fix_entity_id: fixEntityId,
+          p_fix_entity_status: 'ROLLED_BACK',
+          p_new_suggestion_status: 'SKIPPED',
+        },
+      );
+      expect(mockGetSuggestionsByFixEntityId).to.have.been.calledTwice;
+      expect(mockGetSuggestionsByFixEntityId).to.have.always.been.calledWith(fixEntityId);
+      expect(mockFindById).to.have.been.calledOnceWith(fixEntityId);
+    });
+
+    it('should pass custom newFixEntityStatus and newSuggestionStatus to RPC', async () => {
+      await fixEntityCollection.updateFixAndSuggestionsStatus(
+        fixEntityId,
+        opportunityId,
+        'FIXED',
+        'DEPLOYED',
+      );
+
+      expect(mockRpc).to.have.been.calledOnceWith(
+        'rpc_update_fix_and_suggestions_status',
+        {
+          p_fix_entity_id: fixEntityId,
+          p_fix_entity_status: 'DEPLOYED',
+          p_new_suggestion_status: 'FIXED',
+        },
+      );
+    });
+
+    it('should accept optional fifth parameter (reserved options) without error', async () => {
+      await fixEntityCollection.updateFixAndSuggestionsStatus(
+        fixEntityId,
+        opportunityId,
+        'SKIPPED',
+        'ROLLED_BACK',
+        { token: 'test-token-123' },
+      );
+
+      expect(mockRpc).to.have.been.calledOnce;
+    });
+
+    it('should throw DataAccessError when RPC returns error', async () => {
+      mockRpc.resolves({
+        data: null,
+        error: { message: 'fix_entity not found' },
+      });
+
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          fixEntityId,
+          opportunityId,
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith(DataAccessError, 'fix_entity not found');
+
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Update fix and suggestions RPC failed',
+        sinon.match.object,
+      );
+    });
+
+    it('should throw DataAccessError when RPC error has no message', async () => {
+      mockRpc.resolves({
+        data: null,
+        error: {},
+      });
+
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          fixEntityId,
+          opportunityId,
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith(DataAccessError, 'Failed to update fix entity and suggestions');
+    });
+
+    it('should fetch suggestions using getSuggestionsByFixEntityId before and after RPC', async () => {
+      await fixEntityCollection.updateFixAndSuggestionsStatus(
+        fixEntityId,
+        opportunityId,
+        'SKIPPED',
+      );
+
+      expect(mockGetSuggestionsByFixEntityId).to.have.been.calledTwice;
+      expect(mockGetSuggestionsByFixEntityId).to.have.always.been.calledWith(fixEntityId);
+    });
+
+    it('should handle errors when fetching suggestions before RPC', async () => {
+      const fetchError = new Error('Failed to fetch suggestions');
+      mockGetSuggestionsByFixEntityId.rejects(fetchError);
+
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          fixEntityId,
+          opportunityId,
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith(DataAccessError, 'Failed to update fix entity and suggestions');
+
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Failed to update fix entity and suggestions',
+        fetchError,
+      );
+    });
+
+    it('should handle errors when RPC throws', async () => {
+      const rpcError = new Error('Network error');
+      mockRpc.rejects(rpcError);
+
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          fixEntityId,
+          opportunityId,
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith(DataAccessError, 'Failed to update fix entity and suggestions');
+
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Failed to update fix entity and suggestions',
+        rpcError,
+      );
+    });
+
+    it('should handle single suggestion', async () => {
+      const singleSuggestion = [rollbackMockSuggestions[0]];
+      mockGetSuggestionsByFixEntityId
+        .onFirstCall()
+        .resolves(rollbackMockSuggestions)
+        .onSecondCall()
+        .resolves(singleSuggestion);
+
+      mockRpc.resolves({
+        data: { fix_entity_updated: true, suggestions_updated: 1 },
+        error: null,
+      });
+
+      const result = await fixEntityCollection.updateFixAndSuggestionsStatus(
+        fixEntityId,
+        opportunityId,
+        'SKIPPED',
+      );
+
+      expect(result.suggestions).to.have.lengthOf(1);
+      expect(result.suggestions[0]).to.equal(singleSuggestion[0]);
+    });
+
+    it('should log success when RPC completes', async () => {
+      await fixEntityCollection.updateFixAndSuggestionsStatus(
+        fixEntityId,
+        opportunityId,
+        'SKIPPED',
+      );
+
+      expect(mockLogger.info).to.have.been.calledWith(
+        sinon.match(/Updated fix entity/),
+        sinon.match.object,
+      );
+    });
+
+    it('should use custom newSuggestionStatus parameter', async () => {
+      const customStatusSuggestions = [
+        {
+          getId: () => suggestionId1,
+          getStatus: () => 'NEW',
+          getRank: () => 10,
+          record: {
+            suggestionId: suggestionId1,
+            status: 'NEW',
+            rank: 10,
+            opportunityId,
+          },
+        },
+      ];
+
+      mockGetSuggestionsByFixEntityId
+        .onFirstCall()
+        .resolves(rollbackMockSuggestions)
+        .onSecondCall()
+        .resolves(customStatusSuggestions);
+
+      const result = await fixEntityCollection.updateFixAndSuggestionsStatus(
+        fixEntityId,
+        opportunityId,
+        'NEW',
+      );
+
+      expect(result.suggestions[0].getStatus()).to.equal('NEW');
+    });
+
+    it('should throw DataAccessError when fix entity is not found after RPC', async () => {
+      mockFindById.resolves(null);
+      mockGetSuggestionsByFixEntityId.resolves(rollbackMockSuggestions);
+
+      await expect(
+        fixEntityCollection.updateFixAndSuggestionsStatus(
+          fixEntityId,
+          opportunityId,
+          'SKIPPED',
+        ),
+      ).to.be.rejectedWith(
+        DataAccessError,
+        `Fix entity ${fixEntityId} not found after update`,
+      );
+
+      expect(mockFindById).to.have.been.calledOnceWith(fixEntityId);
+    });
+  });
+
   describe('FixEntity model constants', () => {
     it('has ORIGINS enum with correct values', () => {
       expect(FixEntity.ORIGINS).to.be.an('object');

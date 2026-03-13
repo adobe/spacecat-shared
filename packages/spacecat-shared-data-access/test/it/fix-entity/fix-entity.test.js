@@ -38,7 +38,7 @@ function checkFixEntity(fixEntity) {
   expect(fixEntity.getOrigin()).to.be.a('string');
 }
 
-describe('FixEntity IT', async () => {
+describe('FixEntity IT', () => {
   let FixEntity;
   let Suggestion;
   let sampleData;

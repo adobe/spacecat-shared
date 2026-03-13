@@ -39,7 +39,7 @@
     "@mysticat/data-service-types": "git+https://github.com/adobe/mysticat-data-service.git#types-ts-v1.11.1"
   },
   "devDependencies": {
-    "c8": "10.1.3",
+    "c8": "11.0.0",
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
     "mocha": "11.7.5",

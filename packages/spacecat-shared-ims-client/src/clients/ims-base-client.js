@@ -102,7 +102,6 @@ export default class ImsBaseClient {
    * @param {Object} [options.headers] - Optional additional headers to include
    * @returns {Promise<Response>} - The fetch response
    */
-  // eslint-disable-next-line consistent-return
   async imsApiCall(
     endpoint,
     queryString = {},
@@ -111,6 +110,7 @@ export default class ImsBaseClient {
   ) {
     const startTime = process.hrtime.bigint();
     const maxAttempts = ImsBaseClient.#MAX_RETRIES + 1;
+    const callerName = new Error().stack.split('\n')[2].trim().split(' ')[1];
 
     const headers = await this.#prepareImsRequestHeaders(options);
     const url = createUrl(`https://${this.config.imsHost}${endpoint}`, queryString);
@@ -128,18 +128,26 @@ export default class ImsBaseClient {
         const shouldRetry = ImsBaseClient.#isRetryableStatus(response.status)
           && attempt < ImsBaseClient.#MAX_RETRIES;
         if (shouldRetry) {
-          const delay = this.retryBaseDelayMs * (2 ** attempt);
+          const baseDelay = this.retryBaseDelayMs * (2 ** attempt);
+          // Respect Retry-After header (value in seconds) for 429 rate-limit responses
+          const retryAfterHeader = response.headers.get('Retry-After');
+          const retryAfterMs = retryAfterHeader ? parseInt(retryAfterHeader, 10) * 1000 : 0;
+          // ±20% jitter to spread retries and avoid thundering herd
+          const jitter = 0.8 + Math.random() * 0.4;
+          const delay = Math.round(Math.max(baseDelay, retryAfterMs) * jitter);
           this.log.warn(
             `IMS ${endpoint} request returned status ${response.status} `
             + `(attempt ${attempt + 1}/${maxAttempts}). `
             + `Retrying in ${delay}ms...`,
           );
+          // Drain the response body to avoid socket leaks before discarding the response
+          // eslint-disable-next-line no-await-in-loop
+          await response.body?.cancel?.();
           // eslint-disable-next-line no-await-in-loop
           await ImsBaseClient.#sleep(delay);
           continue; // eslint-disable-line no-continue
         }
 
-        const callerName = new Error().stack.split('\n')[2].trim().split(' ')[1];
         this.#logDuration(`IMS ${callerName} request`, startTime);
 
         if (attempt > 0) {
@@ -152,7 +160,10 @@ export default class ImsBaseClient {
         return response;
       } catch (error) {
         if (attempt < ImsBaseClient.#MAX_RETRIES) {
-          const delay = this.retryBaseDelayMs * (2 ** attempt);
+          const baseDelay = this.retryBaseDelayMs * (2 ** attempt);
+          // ±20% jitter to spread retries and avoid thundering herd
+          const jitter = 0.8 + Math.random() * 0.4;
+          const delay = Math.round(baseDelay * jitter);
           this.log.warn(
             `IMS ${endpoint} request failed with network error `
             + `(attempt ${attempt + 1}/${maxAttempts}): ${error.message}. `
@@ -168,5 +179,7 @@ export default class ImsBaseClient {
         }
       }
     }
+    /* c8 ignore next */
+    throw new Error('imsApiCall: retry loop exited unexpectedly');
   }
 }

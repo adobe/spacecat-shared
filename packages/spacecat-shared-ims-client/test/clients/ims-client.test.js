@@ -801,6 +801,21 @@ describe('ImsClient', () => {
       expect(warnSpy.firstCall.args[0]).to.include('attempt 1/3');
     });
 
+    it('respects Retry-After header on 429 response', async () => {
+      // Retry-After: 0 keeps the test instant while still exercising the header path
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .reply(429, '', { 'Retry-After': '0' }) // attempt 1: rate limited with header
+        .get('/ims/organizations/v6')
+        .reply(200, []); // attempt 2: success
+
+      const result = await client.getImsUserOrganizations('some-token');
+
+      expect(result).to.deep.equal([]);
+      expect(warnSpy.calledOnce).to.be.true;
+      expect(warnSpy.firstCall.args[0]).to.include('429');
+    });
+
     it('retries on network error and succeeds on third attempt', async () => {
       nock(`https://${DUMMY_HOST}`)
         .get('/ims/organizations/v6')

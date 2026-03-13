@@ -27,6 +27,7 @@ class PlgOnboarding extends BaseModel {
   static DOMAIN_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
 
   static STATUSES = {
+    PRE_ONBOARDING: 'PRE_ONBOARDING',
     IN_PROGRESS: 'IN_PROGRESS',
     ONBOARDED: 'ONBOARDED',
     ERROR: 'ERROR',

@@ -13,6 +13,7 @@
 import type { BaseCollection, BaseModel } from '../index';
 
 export type PlgOnboardingStatus =
+  | 'PRE_ONBOARDING'
   | 'IN_PROGRESS'
   | 'ONBOARDED'
   | 'ERROR'

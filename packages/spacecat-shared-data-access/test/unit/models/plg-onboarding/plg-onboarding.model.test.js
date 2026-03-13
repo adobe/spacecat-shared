@@ -66,6 +66,7 @@ describe('PlgOnboardingModel', () => {
   describe('STATUSES', () => {
     it('defines all expected statuses', () => {
       expect(PlgOnboarding.STATUSES).to.deep.equal({
+        PRE_ONBOARDING: 'PRE_ONBOARDING',
         IN_PROGRESS: 'IN_PROGRESS',
         ONBOARDED: 'ONBOARDED',
         ERROR: 'ERROR',

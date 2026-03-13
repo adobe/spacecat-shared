@@ -217,6 +217,7 @@ describe('AuditModel', () => {
       COMMERCE_PRODUCT_ENRICHMENTS_YEARLY: 'commerce-product-enrichments-yearly',
       COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',
       COMMERCE_PRODUCT_CATALOG_ENRICHMENT: 'commerce-product-catalog-enrichment',
+      CWV_TRENDS_AUDIT: 'cwv-trends-audit',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

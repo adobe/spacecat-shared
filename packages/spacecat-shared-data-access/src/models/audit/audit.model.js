@@ -90,6 +90,7 @@ class Audit extends BaseModel {
     COMMERCE_PRODUCT_ENRICHMENTS_YEARLY: 'commerce-product-enrichments-yearly',
     COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',
     COMMERCE_PRODUCT_CATALOG_ENRICHMENT: 'commerce-product-catalog-enrichment',
+    CWV_TRENDS_AUDIT: 'cwv-trends-audit',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

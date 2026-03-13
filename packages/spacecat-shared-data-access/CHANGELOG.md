@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.18.0...@adobe/spacecat-shared-data-access-v3.19.0) (2026-03-13)
+
+### Features
+
+* **data-access:** add PRE_ONBOARDING status to PlgOnboarding entity ([#1433](https://github.com/adobe/spacecat-shared/issues/1433)) ([69b35d7](https://github.com/adobe/spacecat-shared/commit/69b35d77c5f0b2c67ed153227f60198527e530d4))
+
 ## [@adobe/spacecat-shared-data-access-v3.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.17.0...@adobe/spacecat-shared-data-access-v3.18.0) (2026-03-12)
 
 ### Features

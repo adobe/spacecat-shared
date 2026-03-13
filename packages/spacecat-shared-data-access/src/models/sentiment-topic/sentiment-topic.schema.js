@@ -59,7 +59,6 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     type: 'list',
     required: false,
     default: [],
-    postgrestIgnore: true,
     items: {
       type: 'map',
       properties: {

@@ -105,6 +105,7 @@ describe('SentimentTopic IT', function () {
     expect(topic.getSiteId()).to.equal(data.siteId);
     expect(topic.getName()).to.equal(data.name);
     expect(topic.getDescription()).to.equal(data.description);
+    expect(topic.getUrls()).to.deep.equal(urls);
     expect(topic.getEnabled()).to.equal(data.enabled);
     expect(topic.getCreatedBy()).to.equal(data.createdBy);
   });
@@ -121,6 +122,7 @@ describe('SentimentTopic IT', function () {
 
     checkSentimentTopic(topic);
     expect(topic.getEnabled()).to.equal(true);
+    expect(topic.getUrls()).to.deep.equal([]);
   });
 
   it('updates a sentiment topic', async () => {

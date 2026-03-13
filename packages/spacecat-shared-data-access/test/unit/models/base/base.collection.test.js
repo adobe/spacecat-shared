@@ -15,7 +15,7 @@
 // eslint-disable-next-line max-classes-per-file
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import sinon, { spy, stub } from 'sinon';
+import sinon, { match, spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import BaseCollection from '../../../../src/models/base/base.collection.js';
@@ -599,6 +599,216 @@ describe('BaseCollection', () => {
 
       expect(onCreateMany).to.have.been.calledOnce;
       expect(mockLogger.error).to.have.been.calledOnceWith('On-create-many handler failed');
+    });
+  });
+
+  describe('saveMany', () => {
+    it('does nothing when items is null', async () => {
+      const result = await baseCollectionInstance.saveMany(null);
+      expect(result).to.be.undefined;
+    });
+
+    it('does nothing when items is an empty array', async () => {
+      const result = await baseCollectionInstance.saveMany([]);
+      expect(result).to.be.undefined;
+    });
+
+    it('delegates to _saveMany for a small batch', async () => {
+      const { schema } = baseCollectionInstance;
+      const rec = { ...mockRecord };
+      const mockModelInstances = [
+        new MockModel(mockElectroService, mockEntityRegistry, schema, rec, mockLogger),
+        new MockModel(mockElectroService, mockEntityRegistry, schema, rec, mockLogger),
+      ];
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(mockModelInstances);
+
+      expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+    });
+
+    it('chunks items when exceeding chunkSize', async () => {
+      const items = Array.from({ length: 5 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 2 });
+
+      // 5 items / chunkSize 2 = 3 calls (2, 2, 1)
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(3);
+    });
+
+    it('uses default chunkSize of 25', async () => {
+      const items = Array.from({ length: 30 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items);
+
+      // 30 items / default chunkSize 25 = 2 calls (25, 5)
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(2);
+    });
+
+    it('treats chunkSize 0 as 1 to avoid infinite loop', async () => {
+      const items = Array.from({ length: 3 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 0 });
+
+      // chunkSize 0 -> effectiveChunkSize 1 -> 3 calls
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(3);
+    });
+
+    it('treats negative chunkSize as 1', async () => {
+      const items = Array.from({ length: 2 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: -5 });
+
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(2);
+    });
+
+    it('floors fractional chunkSize', async () => {
+      const items = Array.from({ length: 5 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 2.9 });
+
+      // floor(2.9) = 2 -> 5/2 = 3 calls (2, 2, 1)
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(3);
+    });
+
+    it('logs when chunking into multiple batches', async () => {
+      const items = Array.from({ length: 5 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 2 });
+
+      expect(mockLogger.info).to.have.been.calledWith(
+        '[mockEntityModel] saveMany: saving 5 items in 3 chunks of 2',
+      );
+    });
+
+    it('does not log when all items fit in one chunk', async () => {
+      const items = Array.from({ length: 2 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 10 });
+
+      expect(mockLogger.info).not.to.have.been.calledWith(
+        match.string.and(match((s) => s.includes('saveMany'))),
+      );
+    });
+
+    it('falls back to default chunkSize of 25 when NaN', async () => {
+      const items = Array.from({ length: 30 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: NaN });
+
+      // NaN -> fallback 25 -> 30/25 = 2 calls
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(2);
+    });
+
+    it('falls back to default chunkSize of 25 when Infinity', async () => {
+      const items = Array.from({ length: 30 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: Infinity });
+
+      // Infinity -> floor = Infinity -> max(1, Infinity) = Infinity
+      // || 25 does not trigger (Infinity is truthy), single call
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(1);
+    });
+
+    it('logs partial progress before re-throwing chunk error', async () => {
+      const putStub = stub();
+      putStub.onFirstCall().returns({ go: () => [] });
+      putStub.onSecondCall().returns({
+        go: () => Promise.reject(new Error('chunk failed')),
+      });
+      mockElectroService.entities.mockEntityModel.put = putStub;
+
+      const items = Array.from({ length: 4 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+
+      await expect(baseCollectionInstance.saveMany(items, { chunkSize: 2 }))
+        .to.be.rejectedWith(DataAccessError);
+
+      expect(mockLogger.error).to.have.been.calledWith(
+        '[mockEntityModel] saveMany: chunk 2/2 failed — 2 of 4 items already persisted',
+      );
+    });
+
+    it('propagates errors from _saveMany', async () => {
+      const { schema } = baseCollectionInstance;
+      const rec = { ...mockRecord };
+      const items = [
+        new MockModel(mockElectroService, mockEntityRegistry, schema, rec, mockLogger),
+      ];
+      mockElectroService.entities.mockEntityModel.put.returns({
+        go: () => Promise.reject(new Error('upsert failed')),
+      });
+
+      await expect(baseCollectionInstance.saveMany(items))
+        .to.be.rejectedWith(DataAccessError, 'Failed to save many');
     });
   });
 
@@ -2271,6 +2481,73 @@ describe('BaseCollection', () => {
 
       expect(model.record.updatedAt).to.not.equal(before);
       expect(upsert.calledOnce).to.be.true;
+    });
+
+    it('saveMany chunks items in PostgREST mode', async () => {
+      const upsert = stub().resolves({ error: null });
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const items = Array.from({ length: 7 }, (_, i) => ({
+        record: { someKey: `k${i}`, someOtherKey: i },
+        getId: () => `k${i}`,
+      }));
+
+      await instance.saveMany(items, { chunkSize: 3 });
+
+      // 7 items / chunkSize 3 = 3 calls (3, 3, 1)
+      expect(upsert.callCount).to.equal(3);
+    });
+
+    it('saveMany handles single chunk in PostgREST mode', async () => {
+      const upsert = stub().resolves({ error: null });
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const items = [
+        { record: { someKey: 'a', someOtherKey: 1 }, getId: () => 'a' },
+        { record: { someKey: 'b', someOtherKey: 2 }, getId: () => 'b' },
+      ];
+
+      await instance.saveMany(items);
+
+      expect(upsert.calledOnce).to.be.true;
+    });
+
+    it('saveMany stops on first chunk error in PostgREST mode', async () => {
+      const upsert = stub();
+      upsert.onFirstCall()
+        .resolves({ error: null });
+      upsert.onSecondCall()
+        .resolves({ error: new Error('chunk 2 failed') });
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const items = Array.from({ length: 4 }, (_, i) => ({
+        record: { someKey: `k${i}`, someOtherKey: i },
+        getId: () => `k${i}`,
+      }));
+
+      await expect(instance.saveMany(items, { chunkSize: 2 }))
+        .to.be.rejectedWith(DataAccessError, 'Failed to save many');
+
+      // First chunk succeeded, second failed — no third call
+      expect(upsert.callCount).to.equal(2);
     });
 
     it('throws DataAccessError when PostgREST upsert fails in saveMany', async () => {

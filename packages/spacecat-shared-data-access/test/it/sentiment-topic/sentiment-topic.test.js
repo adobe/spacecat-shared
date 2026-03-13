@@ -25,7 +25,6 @@ function checkSentimentTopic(topic) {
   expect(topic.getSiteId()).to.be.a('string');
   expect(topic.getTopicId()).to.be.a('string');
   expect(topic.getName()).to.be.a('string');
-  expect(topic.getSubPrompts()).to.be.an('array');
   expect(topic.getEnabled()).to.be.a('boolean');
   expect(topic.getCreatedAt()).to.be.a('string');
   expect(topic.getCreatedBy()).to.be.a('string');
@@ -83,11 +82,19 @@ describe('SentimentTopic IT', function () {
 
   it('creates a new sentiment topic', async () => {
     const site = sampleData.sites[0];
+    const urls = [
+      {
+        url: 'https://example.com/page1',
+        timesCited: 3,
+        category: 'tech',
+        subPrompts: ['prompt1'],
+      },
+    ];
     const data = {
       siteId: site.getId(),
       name: 'New Topic',
       description: 'A new test topic',
-      subPrompts: ['prompt1', 'prompt2'],
+      urls,
       enabled: true,
       createdBy: 'test@example.com',
     };
@@ -98,7 +105,7 @@ describe('SentimentTopic IT', function () {
     expect(topic.getSiteId()).to.equal(data.siteId);
     expect(topic.getName()).to.equal(data.name);
     expect(topic.getDescription()).to.equal(data.description);
-    expect(topic.getSubPrompts()).to.deep.equal(data.subPrompts);
+    expect(topic.getUrls()).to.deep.equal(urls);
     expect(topic.getEnabled()).to.equal(data.enabled);
     expect(topic.getCreatedBy()).to.equal(data.createdBy);
   });
@@ -114,8 +121,8 @@ describe('SentimentTopic IT', function () {
     const topic = await SentimentTopic.create(data);
 
     checkSentimentTopic(topic);
-    expect(topic.getEnabled()).to.equal(true); // Default
-    expect(topic.getSubPrompts()).to.deep.equal([]); // Default
+    expect(topic.getEnabled()).to.equal(true);
+    expect(topic.getUrls()).to.deep.equal([]);
   });
 
   it('updates a sentiment topic', async () => {
@@ -153,31 +160,6 @@ describe('SentimentTopic IT', function () {
   });
 
   describe('Custom Methods', () => {
-    it('adds a sub-prompt', async () => {
-      const site = sampleData.sites[0];
-      const topicId = sampleData.sentimentTopics[0].getTopicId();
-      const topic = await SentimentTopic.findById(site.getId(), topicId);
-      const originalLength = topic.getSubPrompts().length;
-
-      topic.addSubPrompt('New sub-prompt');
-
-      expect(topic.getSubPrompts()).to.include('New sub-prompt');
-      expect(topic.getSubPrompts().length).to.equal(originalLength + 1);
-    });
-
-    it('removes a sub-prompt', async () => {
-      const site = sampleData.sites[0];
-      const topicId = sampleData.sentimentTopics[0].getTopicId();
-      const topic = await SentimentTopic.findById(site.getId(), topicId);
-
-      // Ensure there's a prompt to remove
-      const promptToRemove = topic.getSubPrompts()[0];
-      if (promptToRemove) {
-        topic.removeSubPrompt(promptToRemove);
-        expect(topic.getSubPrompts()).to.not.include(promptToRemove);
-      }
-    });
-
     it('toggles enabled state', async () => {
       const site = sampleData.sites[0];
       const topicId = sampleData.sentimentTopics[0].getTopicId();

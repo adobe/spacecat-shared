@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-vault-secrets",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Shared modules of the Spacecat Services - Vault secrets wrapper",
   "type": "module",
   "engines": {
@@ -15,6 +15,7 @@
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
+    "require": "test/setup-env.js",
     "reporter": "mocha-multi-reporters",
     "reporter-options": "configFile=.mocha-multi.json",
     "spec": "test/**/*.test.js"
@@ -32,6 +33,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@adobe/fetch": "^4.2.3",
     "aws4": "1.13.2"
   },
   "devDependencies": {

@@ -36,7 +36,6 @@ describe('SentimentTopicCollection', () => {
     siteId: 'site-12345',
     name: 'BMW XM Latest',
     description: 'Track sentiment around the BMW XM luxury SUV',
-    subPrompts: ['What about performance?'],
     enabled: true,
   };
 

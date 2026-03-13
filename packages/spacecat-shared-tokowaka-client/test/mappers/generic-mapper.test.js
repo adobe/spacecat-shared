@@ -12,8 +12,17 @@
 
 /* eslint-env mocha */
 
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { expect } from 'chai';
 import GenericMapper from '../../src/mappers/generic-mapper.js';
+
+const filename = fileURLToPath(import.meta.url);
+const fixturesPath = join(dirname(filename), '../fixtures/semantic-value-visibility');
+const carahsoftFixture = JSON.parse(
+  readFileSync(join(fixturesPath, 'Carahsoft.json'), 'utf8'),
+);
 
 describe('GenericMapper', () => {
   let mapper;
@@ -766,6 +775,62 @@ describe('GenericMapper', () => {
       const patch = patches[0];
 
       expect(patch.attrs).to.be.undefined;
+    });
+
+    it('should convert HTML patchValue to HAST when format is html', () => {
+      const suggestion = {
+        getId: () => 'sugg-html',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          transformRules: {
+            action: 'insertAfter',
+            selector: 'img[src="test.jpg"]',
+          },
+          patchValue: '<section data-llm-context="image"><h2>Title</h2><p>Description</p></section>',
+          format: 'html',
+          url: 'https://example.com/page',
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-html');
+
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch.valueFormat).to.equal('hast');
+      expect(patch.value).to.be.an('object');
+      expect(patch.value.type).to.equal('root');
+      const section = patch.value.children.find((c) => c.tagName === 'section');
+      expect(section).to.exist;
+      expect(section.properties.dataLlmContext).to.equal('image');
+      const h2 = section.children.find((c) => c.tagName === 'h2');
+      expect(h2).to.exist;
+    });
+
+    it('should convert HTML to HAST using real fixture data', () => {
+      const fixtureData = carahsoftFixture.suggestions[0].data;
+      const suggestion = {
+        getId: () => 'sugg-fixture',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          transformRules: fixtureData.transformRules,
+          patchValue: fixtureData.semanticHtml,
+          format: 'html',
+          url: carahsoftFixture.url,
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches('/', [suggestion], 'opp-fixture');
+
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
+
+      expect(patch.valueFormat).to.equal('hast');
+      expect(patch.value.type).to.equal('root');
+      const section = patch.value.children.find((c) => c.tagName === 'section');
+      expect(section).to.exist;
+      expect(section.properties.dataLlmContext).to.equal('image');
+      expect(section.properties.dataLlmShadow).to.equal('image-text');
     });
 
     it('should not include UI-only fields in patch', () => {

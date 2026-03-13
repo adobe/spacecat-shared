@@ -244,6 +244,67 @@ describe('Suggestion IT', async () => {
     });
   });
 
+  it('saves many suggestions in bulk via saveMany', async () => {
+    // Use suggestions from the second opportunity to avoid conflicts with prior tests
+    const opportunity = sampleData.opportunities[2];
+    const suggestions = await Suggestion.allByOpportunityId(opportunity.getId());
+    expect(suggestions.length).to.be.greaterThan(0);
+
+    const originalStatuses = suggestions.map((s) => s.getStatus());
+    const originalUpdatedAts = suggestions.map((s) => s.getUpdatedAt());
+
+    // Mutate each suggestion in memory
+    suggestions.forEach((suggestion) => {
+      suggestion.setData({ ...suggestion.getData(), bulkSaveTest: true });
+      suggestion.setUpdatedBy('saveMany-it');
+    });
+
+    // Bulk save all at once
+    await Suggestion.saveMany(suggestions);
+
+    // Verify persistence: re-fetch from DB
+    const updatedSuggestions = await Promise.all(
+      suggestions.map((s) => Suggestion.findById(s.getId())),
+    );
+
+    updatedSuggestions.forEach((suggestion, index) => {
+      // data mutation persisted
+      expect(suggestion.getData()).to.have.property('bulkSaveTest', true);
+      // updatedBy persisted
+      expect(suggestion.getUpdatedBy()).to.equal('saveMany-it');
+      // status unchanged (we didn't change it)
+      expect(suggestion.getStatus()).to.equal(originalStatuses[index]);
+      // updatedAt advanced
+      expect(new Date(suggestion.getUpdatedAt())).to.be.greaterThan(
+        new Date(originalUpdatedAts[index]),
+      );
+    });
+  });
+
+  it('saveMany with chunkSize splits into multiple batches', async () => {
+    const opportunity = sampleData.opportunities[1];
+    const suggestions = await Suggestion.allByOpportunityId(opportunity.getId());
+    expect(suggestions.length).to.be.greaterThan(1);
+
+    // Mutate in memory
+    suggestions.forEach((suggestion) => {
+      suggestion.setData({ ...suggestion.getData(), chunkTest: true });
+      suggestion.setUpdatedBy('chunk-it');
+    });
+
+    // Use chunkSize=1 to force multiple batches
+    await Suggestion.saveMany(suggestions, { chunkSize: 1 });
+
+    // Verify all persisted
+    const updated = await Promise.all(
+      suggestions.map((s) => Suggestion.findById(s.getId())),
+    );
+    updated.forEach((suggestion) => {
+      expect(suggestion.getData()).to.have.property('chunkTest', true);
+      expect(suggestion.getUpdatedBy()).to.equal('chunk-it');
+    });
+  });
+
   it('throws an error when adding a suggestion with invalid opportunity id', async () => {
     const data = [
       {

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.20.1...@adobe/spacecat-shared-data-access-v3.21.0) (2026-03-16)
+
+### Features
+
+* **CWV:** add jiraLink to CWV suggestion schema and fix metric validation ([#1425](https://github.com/adobe/spacecat-shared/issues/1425)) ([d0429e0](https://github.com/adobe/spacecat-shared/commit/d0429e0e1b09348f31d5bfd21675b560bfb004e8))
+
 ## [@adobe/spacecat-shared-data-access-v3.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.20.0...@adobe/spacecat-shared-data-access-v3.20.1) (2026-03-13)
 
 ### Bug Fixes

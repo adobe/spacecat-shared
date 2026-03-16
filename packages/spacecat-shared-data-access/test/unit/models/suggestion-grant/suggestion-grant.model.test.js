@@ -33,7 +33,7 @@ describe('SuggestionGrantModel', () => {
       grantId: 'grant-id-1',
       siteId: 'site-uuid-1',
       tokenId: 'token-uuid-1',
-      tokenType: 'monthly_suggestion_cwv',
+      tokenType: 'grant_cwv',
       createdAt: '2025-03-01T00:00:00.000Z',
       grantedAt: '2025-03-01T00:00:00.000Z',
       updatedAt: '2025-03-01T00:00:00.000Z',

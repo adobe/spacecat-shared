@@ -385,7 +385,7 @@ describe('Suggestion IT', async () => {
     // DB must have tokens, suggestion_grants, grant_suggestions RPC
     // Use site 1 so token pool is independent of token.test.js (site 0)
     const siteId = '78fec9c7-2141-4600-b7b1-ea5c78752b91'; // fixtures.sites[1]
-    const tokenType = 'monthly_suggestion_cwv';
+    const tokenType = 'grant_cwv';
 
     /** One suggestion granted in before(); shared by tests that need a granted suggestion */
     let preGrantedSuggestion;

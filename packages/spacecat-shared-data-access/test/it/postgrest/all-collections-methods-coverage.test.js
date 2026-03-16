@@ -193,7 +193,7 @@ const getValueForField = (fieldName) => {
     case 'geo':
       return 'global';
     case 'tokenType':
-      return 'monthly_suggestion_cwv';
+      return 'grant_cwv';
     default:
       return GENERIC_UUID;
   }
@@ -247,7 +247,7 @@ const getArgsForMethod = (entityName, methodName) => {
         return [[{ suggestionId: GENERIC_UUID, fixEntityId: GENERIC_UUID }]];
       }
       if (entityName === 'Token') {
-        return [[{ siteId: GENERIC_UUID, tokenType: 'monthly_suggestion_cwv', cycle: '2026-03' }]];
+        return [[{ siteId: GENERIC_UUID, tokenType: 'grant_cwv', cycle: '2026-03' }]];
       }
       return [[{ id: GENERIC_UUID }]];
     case 'create':

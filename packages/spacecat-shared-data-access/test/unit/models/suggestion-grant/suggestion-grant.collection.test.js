@@ -38,7 +38,7 @@ describe('SuggestionGrantCollection', () => {
     grantId: 'grant-id-1',
     siteId: 'site-uuid-1',
     tokenId: 'token-uuid-1',
-    tokenType: 'monthly_suggestion_cwv',
+    tokenType: 'grant_cwv',
     grantedAt: '2025-03-01T00:00:00.000Z',
   };
 
@@ -244,7 +244,7 @@ describe('SuggestionGrantCollection', () => {
 
   describe('grantSuggestions', () => {
     const siteId = 'site-001';
-    const tokenType = 'monthly_suggestion_cwv';
+    const tokenType = 'grant_cwv';
     const suggestionIds = ['sugg-1', 'sugg-2'];
 
     let mockToken;
@@ -384,7 +384,7 @@ describe('SuggestionGrantCollection', () => {
     it('calls postgrest rpc with grant_suggestions and correct params', async () => {
       const suggestionIds = ['sugg-1', 'sugg-2'];
       const siteId = 'site-1';
-      const tokenType = 'monthly_suggestion_cwv';
+      const tokenType = 'grant_cwv';
       const cycle = '2025-03';
       const rpcStub = stub().resolves({ data: [{ success: true }], error: null });
       instance.postgrestService = { rpc: rpcStub };
@@ -406,7 +406,7 @@ describe('SuggestionGrantCollection', () => {
       const result = await instance.invokeGrantSuggestionsRpc(
         ['sugg-1'],
         'site-1',
-        'monthly_suggestion_cwv',
+        'grant_cwv',
         '2025-03',
       );
 

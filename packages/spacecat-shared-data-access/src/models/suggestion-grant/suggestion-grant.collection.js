@@ -131,7 +131,7 @@ class SuggestionGrantCollection extends BaseCollection {
    * @async
    * @param {string[]} suggestionIds - Suggestion IDs to grant (one token consumed for the list).
    * @param {string} siteId - The site ID that owns the token allocation.
-   * @param {string} tokenType - Token type (e.g. 'monthly_suggestion_cwv').
+   * @param {string} tokenType - Token type (e.g. 'grant_cwv').
    * @returns {Promise<{ success: boolean, reason?: string, grantedSuggestions?: Array }>}
    * @throws {DataAccessError} - On missing inputs or RPC failure.
    */

@@ -178,22 +178,6 @@ describe('SuggestionModel', () => {
     });
   });
 
-  describe('getSuggestionKey and setSuggestionKey', () => {
-    it('returns undefined when no suggestion key is set', () => {
-      expect(instance.getSuggestionKey()).to.be.undefined;
-    });
-
-    it('sets and gets the suggestion key', () => {
-      instance.setSuggestionKey('page:page-A:broken-link-1');
-      expect(instance.getSuggestionKey()).to.equal('page:page-A:broken-link-1');
-    });
-
-    it('returns null when suggestion key is set to null', () => {
-      instance.setSuggestionKey(null);
-      expect(instance.getSuggestionKey()).to.be.null;
-    });
-  });
-
   describe('getKpiDeltas and setKpiDeltas', () => {
     it('returns the KPI deltas for the suggestion', () => {
       expect(instance.getKpiDeltas()).to.deep.equal({ conversionRate: 0.05 });

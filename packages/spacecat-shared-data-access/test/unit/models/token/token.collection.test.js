@@ -35,7 +35,7 @@ describe('TokenCollection', () => {
   const mockRecord = {
     tokenId: 'tok-12345',
     siteId: 'site-12345',
-    tokenType: 'monthly_suggestion_broken_backlinks',
+    tokenType: 'grant_broken_backlinks',
     cycle: '2025-02',
     total: 3,
     used: 1,
@@ -70,23 +70,23 @@ describe('TokenCollection', () => {
 
     before(async () => {
       const { getTokenGrantConfig } = await import('@adobe/spacecat-shared-utils');
-      expectedCycle = getTokenGrantConfig('monthly_suggestion_cwv').currentCycle;
+      expectedCycle = getTokenGrantConfig('grant_cwv').currentCycle;
     });
 
     it('returns existing token when found', async () => {
       instance.findByIndexKeys = stub().resolves(model);
 
-      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv');
+      const result = await instance.findBySiteIdAndTokenType('site-1', 'grant_cwv');
 
       expect(result).to.equal(model);
       expect(instance.findByIndexKeys).to.have.been.calledOnceWith(
-        { siteId: 'site-1', tokenType: 'monthly_suggestion_cwv', cycle: expectedCycle },
+        { siteId: 'site-1', tokenType: 'grant_cwv', cycle: expectedCycle },
         { limit: 1 },
       );
     });
 
     it('throws if siteId or tokenType is missing', async () => {
-      await expect(instance.findBySiteIdAndTokenType(undefined, 'monthly_suggestion_cwv'))
+      await expect(instance.findBySiteIdAndTokenType(undefined, 'grant_cwv'))
         .to.be.rejectedWith(/siteId|required/);
       await expect(instance.findBySiteIdAndTokenType('site-1', ''))
         .to.be.rejectedWith(/tokenType|required/);
@@ -100,13 +100,13 @@ describe('TokenCollection', () => {
       instance.findByIndexKeys = stub().resolves(null);
       instance.create = stub().resolves(model);
 
-      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', { createIfNotFound: true });
+      const result = await instance.findBySiteIdAndTokenType('site-1', 'grant_cwv', { createIfNotFound: true });
 
       expect(result).to.equal(model);
-      const config = getTokenGrantConfig('monthly_suggestion_cwv');
+      const config = getTokenGrantConfig('grant_cwv');
       expect(instance.create).to.have.been.calledOnceWith({
         siteId: 'site-1',
-        tokenType: 'monthly_suggestion_cwv',
+        tokenType: 'grant_cwv',
         cycle: expectedCycle,
         total: config.tokensPerCycle,
         used: 0,
@@ -120,17 +120,17 @@ describe('TokenCollection', () => {
       }
       instance.findByIndexKeys = stub().resolves(null);
       instance.create = stub().resolves(model);
-      const config = getTokenGrantConfig('monthly_suggestion_cwv');
+      const config = getTokenGrantConfig('grant_cwv');
       const maxFromConfig = config.tokensPerCycle;
 
-      await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', {
+      await instance.findBySiteIdAndTokenType('site-1', 'grant_cwv', {
         createIfNotFound: true,
         total: 2,
       });
 
       expect(instance.create).to.have.been.calledOnceWith({
         siteId: 'site-1',
-        tokenType: 'monthly_suggestion_cwv',
+        tokenType: 'grant_cwv',
         cycle: expectedCycle,
         total: Math.min(2, maxFromConfig),
         used: 0,
@@ -144,16 +144,16 @@ describe('TokenCollection', () => {
       }
       instance.findByIndexKeys = stub().resolves(null);
       instance.create = stub().resolves(model);
-      const config = getTokenGrantConfig('monthly_suggestion_cwv');
+      const config = getTokenGrantConfig('grant_cwv');
 
-      await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', {
+      await instance.findBySiteIdAndTokenType('site-1', 'grant_cwv', {
         createIfNotFound: true,
         total: 0,
       });
       expect(instance.create).to.have.been.calledWithMatch({ total: 1 });
 
       instance.create = stub().resolves(model);
-      await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv', {
+      await instance.findBySiteIdAndTokenType('site-1', 'grant_cwv', {
         createIfNotFound: true,
         total: config.tokensPerCycle + 10,
       });
@@ -164,7 +164,7 @@ describe('TokenCollection', () => {
       instance.findByIndexKeys = stub().resolves(null);
       instance.create = stub();
 
-      const result = await instance.findBySiteIdAndTokenType('site-1', 'monthly_suggestion_cwv');
+      const result = await instance.findBySiteIdAndTokenType('site-1', 'grant_cwv');
 
       expect(result).to.be.null;
       expect(instance.create).to.not.have.been.called;
@@ -186,7 +186,7 @@ describe('TokenCollection', () => {
     it('creates a token via PostgREST when all required fields provided', async () => {
       const item = {
         siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
-        tokenType: 'monthly_suggestion_cwv',
+        tokenType: 'grant_cwv',
         cycle: '2025-02',
         total: 3,
         used: 0,

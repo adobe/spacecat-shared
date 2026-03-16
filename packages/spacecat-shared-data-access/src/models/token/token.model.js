@@ -23,17 +23,6 @@ class Token extends BaseModel {
   static ENTITY_NAME = 'Token';
 
   /**
-   * Token types (opportunity types) that can have separate limits.
-   * Values match Postgres token_type (e.g. monthly_suggestion_cwv,
-   * monthly_suggestion_broken_backlinks).
-   */
-  static TOKEN_TYPES = {
-    MONTHLY_SUGGESTION_CWV: 'monthly_suggestion_cwv',
-    MONTHLY_SUGGESTION_BROKEN_BACKLINKS: 'monthly_suggestion_broken_backlinks',
-    MONTHLY_SUGGESTION_ALT_TEXT: 'monthly_suggestion_alt_text',
-  };
-
-  /**
    * Returns the number of tokens remaining in this cycle (total - used).
    * @returns {number}
    */

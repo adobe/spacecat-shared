@@ -30,7 +30,7 @@ describe('TokenModel', () => {
     mockRecord = {
       tokenId: 'tok-12345',
       siteId: 'site-12345',
-      tokenType: 'monthly_suggestion_broken_backlinks',
+      tokenType: 'grant_broken_backlinks',
       cycle: '2025-02',
       total: 3,
       used: 1,
@@ -54,14 +54,6 @@ describe('TokenModel', () => {
   describe('ENTITY_NAME', () => {
     it('has ENTITY_NAME Token', () => {
       expect(Token.ENTITY_NAME).to.equal('Token');
-    });
-  });
-
-  describe('TOKEN_TYPES', () => {
-    it('defines monthly suggestion types matching Postgres token_type enum', () => {
-      expect(Token.TOKEN_TYPES.MONTHLY_SUGGESTION_CWV).to.equal('monthly_suggestion_cwv');
-      expect(Token.TOKEN_TYPES.MONTHLY_SUGGESTION_BROKEN_BACKLINKS).to.equal('monthly_suggestion_broken_backlinks');
-      expect(Token.TOKEN_TYPES.MONTHLY_SUGGESTION_ALT_TEXT).to.equal('monthly_suggestion_alt_text');
     });
   });
 

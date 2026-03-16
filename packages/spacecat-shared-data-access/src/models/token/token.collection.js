@@ -33,8 +33,8 @@ class TokenCollection extends BaseCollection {
    * tokensPerCycle, clamped to at least 1.
    *
    * @param {string} siteId - Site ID (UUID).
-   * @param {string} tokenType - Token type (e.g. monthly_suggestion_cwv,
-   *   monthly_suggestion_broken_backlinks).
+   * @param {string} tokenType - Token type (e.g. grant_cwv,
+   *   grant_broken_backlinks).
    * @param {Object} [options={}] - Options.
    * @param {boolean} [options.createIfNotFound=false] - If true, create a token when none exists.
    * @param {number} [options.total] - Optional supplied total;

@@ -41,7 +41,7 @@ describe('Token IT', () => {
   describe('findBySiteIdAndTokenType', () => {
     // fixtures.sites[0].siteId
     const siteId = '5d6d4439-6659-46c2-b646-92d110fa5a52';
-    const tokenType = 'monthly_suggestion_cwv';
+    const tokenType = 'grant_cwv';
 
     it('auto-creates a token for the current cycle when none exists', async () => {
       const config = getTokenGrantConfig(tokenType);
@@ -68,11 +68,11 @@ describe('Token IT', () => {
     });
 
     it('creates separate tokens for different token types', async () => {
-      const cwvToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_cwv', createOpts);
-      const bbToken = await Token.findBySiteIdAndTokenType(siteId, 'monthly_suggestion_broken_backlinks', createOpts);
+      const cwvToken = await Token.findBySiteIdAndTokenType(siteId, 'grant_cwv', createOpts);
+      const bbToken = await Token.findBySiteIdAndTokenType(siteId, 'grant_broken_backlinks', createOpts);
 
-      expect(cwvToken.getTokenType()).to.equal('monthly_suggestion_cwv');
-      expect(bbToken.getTokenType()).to.equal('monthly_suggestion_broken_backlinks');
+      expect(cwvToken.getTokenType()).to.equal('grant_cwv');
+      expect(bbToken.getTokenType()).to.equal('grant_broken_backlinks');
       expect(cwvToken.getTotal()).to.equal(3);
       expect(bbToken.getTotal()).to.equal(3);
     });
@@ -98,7 +98,7 @@ describe('Token IT', () => {
 
   describe('grantSuggestions', () => {
     const siteId = '5d6d4439-6659-46c2-b646-92d110fa5a52';
-    const tokenType = 'monthly_suggestion_cwv';
+    const tokenType = 'grant_cwv';
 
     it('grants a suggestion and consumes a token', async () => {
       const suggestion = sampleData.suggestions[6];

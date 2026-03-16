@@ -26,20 +26,27 @@ describe('ImsPromiseClient', () => {
   const DUMMY_HOST = 'ims.example.com';
   let mockLog;
   let sandbox;
-  let mockContext;
+  let mockConsumerContext;
+  let mockEmitterContext;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     mockLog = sinon.mock(console);
-    mockContext = {
+    mockConsumerContext = {
+      log: mockLog.object,
+      env: {
+        IMS_HOST: DUMMY_HOST,
+        IMS_PROMISE_CONSUMER_CLIENT_ID: 'consumerClientIdExample',
+        IMS_PROMISE_CONSUMER_CLIENT_SECRET: 'consumerClientSecretExample',
+      },
+    };
+    mockEmitterContext = {
       log: mockLog.object,
       env: {
         IMS_HOST: DUMMY_HOST,
         IMS_PROMISE_EMITTER_CLIENT_ID: 'emitterClientIdExample',
         IMS_PROMISE_EMITTER_CLIENT_SECRET: 'emitterClientSecretExample',
         IMS_PROMISE_EMITTER_DEFINITION_ID: 'promiseDefinitionIdExample',
-        IMS_PROMISE_CONSUMER_CLIENT_ID: 'consumerClientIdExample',
-        IMS_PROMISE_CONSUMER_CLIENT_SECRET: 'consumerClientSecretExample',
       },
     };
   });
@@ -51,7 +58,7 @@ describe('ImsPromiseClient', () => {
 
   describe('constructor and createFrom', () => {
     it('throws errors for missing configuration using createFrom', () => {
-      const expectedError = 'Context param must include properties: imsHost, clientId, and clientSecret and for CONSUMER type also promiseDefinitionId.';
+      const expectedError = 'Context param must include properties: imsHost, clientId, and clientSecret and for EMITTER type also promiseDefinitionId.';
       expect(() => ImsPromiseClient.createFrom({
         env: {},
         log: console,
@@ -96,7 +103,7 @@ describe('ImsPromiseClient', () => {
 
     beforeEach(() => {
       emitterClient = ImsPromiseClient.createFrom(
-        mockContext,
+        mockEmitterContext,
         ImsPromiseClient.CLIENT_TYPE.EMITTER,
       );
 
@@ -136,7 +143,7 @@ describe('ImsPromiseClient', () => {
 
     it('should fail for consumer client type', async () => {
       const consumerClient = ImsPromiseClient.createFrom(
-        mockContext,
+        mockConsumerContext,
         ImsPromiseClient.CLIENT_TYPE.CONSUMER,
       );
       await expect(consumerClient.getPromiseToken(testAccessToken)).to.be.rejectedWith('Consumer type does not support getPromiseToken method.');
@@ -152,11 +159,11 @@ describe('ImsPromiseClient', () => {
     });
 
     it('should succeed for a valid token with encryption', async () => {
-      mockContext.env.AUTOFIX_CRYPT_SECRET = 'secret';
-      mockContext.env.AUTOFIX_CRYPT_SALT = 'salt';
+      mockEmitterContext.env.AUTOFIX_CRYPT_SECRET = 'secret';
+      mockEmitterContext.env.AUTOFIX_CRYPT_SALT = 'salt';
 
       const emitterClientWithEncryption = ImsPromiseClient.createFrom(
-        mockContext,
+        mockEmitterContext,
         ImsPromiseClient.CLIENT_TYPE.EMITTER,
       );
 
@@ -174,7 +181,7 @@ describe('ImsPromiseClient', () => {
 
     beforeEach(() => {
       consumerClient = ImsPromiseClient.createFrom(
-        mockContext,
+        mockConsumerContext,
         ImsPromiseClient.CLIENT_TYPE.CONSUMER,
       );
 
@@ -217,7 +224,7 @@ describe('ImsPromiseClient', () => {
 
     it('should fail for consumer client type', async () => {
       const emitterClient = ImsPromiseClient.createFrom(
-        mockContext,
+        mockEmitterContext,
         ImsPromiseClient.CLIENT_TYPE.EMITTER,
       );
       await expect(emitterClient.exchangeToken(testToken)).to.be.rejectedWith('Emitter type does not support exchangeToken method.');
@@ -233,17 +240,17 @@ describe('ImsPromiseClient', () => {
     });
 
     it('should succeed for a valid token with encryption', async () => {
-      mockContext.env.AUTOFIX_CRYPT_SECRET = 'secret';
-      mockContext.env.AUTOFIX_CRYPT_SALT = 'salt';
+      mockConsumerContext.env.AUTOFIX_CRYPT_SECRET = 'secret';
+      mockConsumerContext.env.AUTOFIX_CRYPT_SALT = 'salt';
 
       const consumerClientWithEncryption = ImsPromiseClient.createFrom(
-        mockContext,
+        mockConsumerContext,
         ImsPromiseClient.CLIENT_TYPE.CONSUMER,
       );
 
       const encryptedTestToken = await encrypt({
-        secret: mockContext.env.AUTOFIX_CRYPT_SECRET,
-        salt: mockContext.env.AUTOFIX_CRYPT_SALT,
+        secret: mockConsumerContext.env.AUTOFIX_CRYPT_SECRET,
+        salt: mockConsumerContext.env.AUTOFIX_CRYPT_SALT,
       }, testToken);
 
       const result = await consumerClientWithEncryption.exchangeToken(encryptedTestToken, true);
@@ -262,7 +269,7 @@ describe('ImsPromiseClient', () => {
 
     beforeEach(() => {
       consumerClient = ImsPromiseClient.createFrom(
-        mockContext,
+        mockConsumerContext,
         ImsPromiseClient.CLIENT_TYPE.CONSUMER,
       );
 
@@ -298,17 +305,17 @@ describe('ImsPromiseClient', () => {
     });
 
     it('should succeed for a valid token with encryption', async () => {
-      mockContext.env.AUTOFIX_CRYPT_SECRET = 'secret';
-      mockContext.env.AUTOFIX_CRYPT_SALT = 'salt';
+      mockConsumerContext.env.AUTOFIX_CRYPT_SECRET = 'secret';
+      mockConsumerContext.env.AUTOFIX_CRYPT_SALT = 'salt';
 
       const clientWithEncryption = ImsPromiseClient.createFrom(
-        mockContext,
+        mockConsumerContext,
         ImsPromiseClient.CLIENT_TYPE.CONSUMER,
       );
 
       const encryptedTestToken = await encrypt({
-        secret: mockContext.env.AUTOFIX_CRYPT_SECRET,
-        salt: mockContext.env.AUTOFIX_CRYPT_SALT,
+        secret: mockConsumerContext.env.AUTOFIX_CRYPT_SECRET,
+        salt: mockConsumerContext.env.AUTOFIX_CRYPT_SALT,
       }, testToken);
 
       const result = clientWithEncryption.invalidatePromiseToken(encryptedTestToken, true);

@@ -885,6 +885,126 @@ describe('ConfigurationModel', () => {
     });
   });
 
+  describe('replaceHandlerEnabledDisabled', () => {
+    it('replaces enabled.sites and enabled.orgs', () => {
+      instance.replaceHandlerEnabledDisabled('404', {
+        enabled: { sites: ['site-a', 'site-b'], orgs: ['org-x'] },
+      });
+
+      const handler = instance.getHandler('404');
+      expect(handler.enabled.sites).to.deep.equal(['site-a', 'site-b']);
+      expect(handler.enabled.orgs).to.deep.equal(['org-x']);
+    });
+
+    it('initializes handler.enabled when handler has no enabled object', () => {
+      // Use a handler that has no enabled (addHandler does not add enabled/disabled)
+      instance.addHandler('no-enabled-handler', { enabledByDefault: false });
+      instance.replaceHandlerEnabledDisabled('no-enabled-handler', { enabled: { sites: [], orgs: [] } });
+
+      const handler = instance.getHandler('no-enabled-handler');
+      expect(handler.enabled).to.deep.equal({ sites: [], orgs: [] });
+    });
+
+    it('replaces disabled.sites and disabled.orgs', () => {
+      instance.replaceHandlerEnabledDisabled('cwv', {
+        disabled: { sites: ['site-1'], orgs: ['org-1', 'org-2'] },
+      });
+
+      const handler = instance.getHandler('cwv');
+      expect(handler.disabled.sites).to.deep.equal(['site-1']);
+      expect(handler.disabled.orgs).to.deep.equal(['org-1', 'org-2']);
+    });
+
+    it('initializes handler.disabled when handler has no disabled object', () => {
+      // Use a handler that has no disabled (addHandler does not add enabled/disabled)
+      instance.addHandler('no-disabled-handler', { enabledByDefault: true });
+      instance.replaceHandlerEnabledDisabled('no-disabled-handler', { disabled: { sites: [], orgs: [] } });
+
+      const handler = instance.getHandler('no-disabled-handler');
+      expect(handler.disabled).to.deep.equal({ sites: [], orgs: [] });
+    });
+
+    it('initializes handler.disabled when handler has empty disabled object', () => {
+      instance.addHandler('empty-disabled-handler', { enabledByDefault: true, disabled: {} });
+      instance.replaceHandlerEnabledDisabled('empty-disabled-handler', { disabled: { sites: ['a'], orgs: [] } });
+      const handler = instance.getHandler('empty-disabled-handler');
+      expect(handler.disabled).to.deep.equal({ sites: ['a'], orgs: [] });
+    });
+
+    it('replaces only provided arrays (partial update)', () => {
+      const before = instance.getHandler('404');
+      instance.replaceHandlerEnabledDisabled('404', {
+        enabled: { sites: ['only-sites'] },
+      });
+
+      const handler = instance.getHandler('404');
+      expect(handler.enabled.sites).to.deep.equal(['only-sites']);
+      expect(handler.enabled.orgs).to.deep.equal(before.enabled.orgs);
+    });
+
+    it('allows empty arrays', () => {
+      instance.replaceHandlerEnabledDisabled('404', {
+        enabled: { sites: [], orgs: [] },
+        disabled: { sites: [], orgs: [] },
+      });
+
+      const handler = instance.getHandler('404');
+      expect(handler.enabled.sites).to.deep.equal([]);
+      expect(handler.enabled.orgs).to.deep.equal([]);
+      expect(handler.disabled.sites).to.deep.equal([]);
+      expect(handler.disabled.orgs).to.deep.equal([]);
+    });
+
+    it('does not throw when data.enabled is null', () => {
+      const before = JSON.parse(JSON.stringify(instance.getHandler('404')));
+      expect(() => instance.replaceHandlerEnabledDisabled('404', { enabled: null, disabled: { sites: [] } })).not.to.throw();
+      expect(instance.getHandler('404').enabled).to.deep.equal(before.enabled);
+      expect(instance.getHandler('404').disabled.sites).to.deep.equal([]);
+    });
+
+    it('throws when data is null', () => {
+      expect(() => instance.replaceHandlerEnabledDisabled('404', null)).to.throw(Error, 'Data cannot be empty');
+    });
+
+    it('throws when data is undefined', () => {
+      expect(() => instance.replaceHandlerEnabledDisabled('404', undefined)).to.throw(Error, 'Data cannot be empty');
+    });
+
+    it('throws when data is empty object', () => {
+      expect(() => instance.replaceHandlerEnabledDisabled('404', {})).to.throw(Error, 'Data cannot be empty');
+    });
+
+    it('throws when data.enabled.sites is not an array', () => {
+      expect(() => instance.replaceHandlerEnabledDisabled('404', { enabled: { sites: 'site-id' } }))
+        .to.throw(Error, 'enabled.sites must be an array');
+    });
+
+    it('throws when data.enabled.orgs is not an array', () => {
+      expect(() => instance.replaceHandlerEnabledDisabled('404', { enabled: { orgs: 'org-id' } }))
+        .to.throw(Error, 'enabled.orgs must be an array');
+    });
+
+    it('throws when data.disabled.sites is not an array', () => {
+      expect(() => instance.replaceHandlerEnabledDisabled('404', { disabled: { sites: 'site-id' } }))
+        .to.throw(Error, 'disabled.sites must be an array');
+    });
+
+    it('throws when data.disabled.orgs is not an array', () => {
+      expect(() => instance.replaceHandlerEnabledDisabled('404', { disabled: { orgs: 123 } }))
+        .to.throw(Error, 'disabled.orgs must be an array');
+    });
+
+    it('throws when handler not found', () => {
+      expect(() => instance.replaceHandlerEnabledDisabled('non-existent', { enabled: { sites: [] } }))
+        .to.throw(Error, 'Handler "non-existent" not found in configuration');
+    });
+
+    it('calls log.warn once at start', () => {
+      instance.replaceHandlerEnabledDisabled('404', { enabled: { sites: [] } });
+      expect(mockLogger.warn).to.have.been.calledOnceWith('replaceHandlerEnabledDisabled invoked (temporary method - see SITES-40312)');
+    });
+  });
+
   describe('save', () => {
     it('saves the configuration', async () => {
       instance.collection = {

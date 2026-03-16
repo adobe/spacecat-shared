@@ -15,6 +15,7 @@ export * from './async-job/index.js';
 export * from './audit/index.js';
 export * from './audit-url/index.js';
 export * from './base/index.js';
+export * from './blackboard-fact/index.js';
 export * from './configuration/index.js';
 export * from './consumer/index.js';
 export * from './entitlement/index.js';

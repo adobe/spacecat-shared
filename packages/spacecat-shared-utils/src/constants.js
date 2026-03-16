@@ -14,6 +14,7 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
   // Core Audit Types
   ACCESSIBILITY: 'accessibility',
   ALT_TEXT: 'alt-text',
+  IMAGE_OPTIMIZATION: 'image-optimization',
   BROKEN_BACKLINKS: 'broken-backlinks',
   BROKEN_INTERNAL_LINKS: 'broken-internal-links',
   CANONICAL: 'canonical',

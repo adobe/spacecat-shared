@@ -534,7 +534,8 @@ describe('Optimization Utils', () => {
 
       const result = filterBundles(testBundles, opts);
 
-      expect(result).to.deep.equal(testBundles);
+      // Should return empty array when URLs is empty
+      expect(result).to.deep.equal([]);
     });
 
     it('should handle null options', () => {

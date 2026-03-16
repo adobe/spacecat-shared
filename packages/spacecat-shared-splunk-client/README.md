@@ -22,7 +22,7 @@ npm install @adobe/spacecat-shared-splunk-client
 import SplunkAPIClient, { fetch } from '@adobe/spacecat-shared-splunk-client';
 
 const config = {
-  apiBaseUrl: 'SPLUNK_API_BASE_URL>',
+  apiBaseUrl: 'SPLUNK_API_BASE_URL',
   apiUser: 'SPLUNK_API_USER',
   apiPass: 'SPLUNK_API_PASS',
 };

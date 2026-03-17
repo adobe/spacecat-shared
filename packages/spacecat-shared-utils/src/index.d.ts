@@ -371,10 +371,9 @@ export function extractUrlsFromOpportunity(opts: {
   opportunity: any;
 }): string[];
 
-/** Token grant entry: tokens per cycle and grant cycle (e.g. monthly, YYYY-MM). */
+/** Token grant entry: tokens per cycle and cycle format (e.g. YYYY-MM). */
 export interface TokenGrantEntry {
   tokensPerCycle: number;
-  cycle: string;
   cycleFormat: string;
 }
 

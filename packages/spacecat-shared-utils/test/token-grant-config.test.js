@@ -13,6 +13,7 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
+import sinon from 'sinon';
 
 import {
   TOKEN_GRANT_CONFIG,
@@ -37,10 +38,9 @@ describe('OPPORTUNITY_GRANT_CONFIG', () => {
     );
   });
 
-  it('each entry has tokensPerCycle, cycle, and cycleFormat', () => {
+  it('each entry has tokensPerCycle and cycleFormat', () => {
     for (const entry of Object.values(OPPORTUNITY_GRANT_CONFIG)) {
       expect(entry).to.have.property('tokensPerCycle').that.is.a('number');
-      expect(entry).to.have.property('cycle').that.is.a('string');
       expect(entry).to.have.property('cycleFormat').that.is.a('string');
     }
   });
@@ -70,33 +70,35 @@ describe('TOKEN_GRANT_CONFIG', () => {
     );
   });
 
-  it('each entry has tokensPerCycle, cycle, and cycleFormat', () => {
+  it('each entry has tokensPerCycle and cycleFormat', () => {
     for (const entry of Object.values(TOKEN_GRANT_CONFIG)) {
       expect(entry).to.have.property('tokensPerCycle').that.is.a('number');
-      expect(entry).to.have.property('cycle').that.is.a('string');
       expect(entry).to.have.property('cycleFormat').that.is.a('string');
     }
   });
 });
 
 describe('getCurrentCycle', () => {
+  let clock;
+
+  // 2026-03-15T12:00:00Z
+  beforeEach(() => {
+    clock = sinon.useFakeTimers(new Date('2026-03-15T12:00:00Z'));
+  });
+  afterEach(() => {
+    clock.restore();
+  });
+
   it('formats YYYY-MM using UTC date', () => {
-    const result = getCurrentCycle('YYYY-MM');
-    const now = new Date();
-    const expected = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-    expect(result).to.equal(expected);
+    expect(getCurrentCycle('YYYY-MM')).to.equal('2026-03');
   });
 
   it('formats YYYY alone', () => {
-    const result = getCurrentCycle('YYYY');
-    expect(result).to.equal(String(new Date().getUTCFullYear()));
+    expect(getCurrentCycle('YYYY')).to.equal('2026');
   });
 
   it('formats MM alone with zero-padding', () => {
-    const result = getCurrentCycle('MM');
-    const expected = String(new Date().getUTCMonth() + 1)
-      .padStart(2, '0');
-    expect(result).to.equal(expected);
+    expect(getCurrentCycle('MM')).to.equal('03');
   });
 
   it('returns the format string unchanged when no placeholders match', () => {
@@ -105,13 +107,20 @@ describe('getCurrentCycle', () => {
 });
 
 describe('getTokenGrantConfig', () => {
+  let clock;
+
+  beforeEach(() => {
+    clock = sinon.useFakeTimers(new Date('2026-03-15T12:00:00Z'));
+  });
+  afterEach(() => {
+    clock.restore();
+  });
+
   it('returns config with currentCycle for a known token type', () => {
     const config = getTokenGrantConfig('grant_cwv');
     expect(config).to.have.property('tokensPerCycle', 3);
-    expect(config).to.have.property('cycle', 'monthly');
     expect(config).to.have.property('cycleFormat', 'YYYY-MM');
-    expect(config).to.have.property('currentCycle').that.is.a('string');
-    expect(config.currentCycle).to.equal(getCurrentCycle('YYYY-MM'));
+    expect(config).to.have.property('currentCycle', '2026-03');
   });
 
   it('returns correct tokensPerCycle for each token type', () => {
@@ -140,12 +149,20 @@ describe('getTokenGrantConfig', () => {
 });
 
 describe('getTokenGrantConfigByOpportunity', () => {
+  let clock;
+
+  beforeEach(() => {
+    clock = sinon.useFakeTimers(new Date('2026-03-15T12:00:00Z'));
+  });
+  afterEach(() => {
+    clock.restore();
+  });
+
   it('returns config with currentCycle and tokenType', () => {
     const config = getTokenGrantConfigByOpportunity('cwv');
     expect(config).to.have.property('tokensPerCycle', 3);
-    expect(config).to.have.property('cycle', 'monthly');
     expect(config).to.have.property('cycleFormat', 'YYYY-MM');
-    expect(config).to.have.property('currentCycle').that.is.a('string');
+    expect(config).to.have.property('currentCycle', '2026-03');
     expect(config).to.have.property('tokenType', 'grant_cwv');
   });
 

@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from './functions.js';
+
 const TOKEN_TYPE_PREFIX = 'grant_';
 
 /**
@@ -30,17 +32,14 @@ export function getTokenTypeForOpportunity(opportunityName) {
 const OPPORTUNITY_GRANT_CONFIG = Object.freeze({
   cwv: Object.freeze({
     tokensPerCycle: 3,
-    cycle: 'monthly',
     cycleFormat: 'YYYY-MM',
   }),
   'broken-backlinks': Object.freeze({
     tokensPerCycle: 3,
-    cycle: 'monthly',
     cycleFormat: 'YYYY-MM',
   }),
   'alt-text': Object.freeze({
     tokensPerCycle: 3,
-    cycle: 'monthly',
     cycleFormat: 'YYYY-MM',
   }),
 });
@@ -87,10 +86,11 @@ export function getCurrentCycle(cycleFormat) {
  * Returns the grant config for a token type, including the
  * computed current cycle.
  * @param {string} tokenType - e.g. "grant_cwv".
- * @returns {{ tokensPerCycle: number, cycle: string,
+ * @returns {{ tokensPerCycle: number,
  *   cycleFormat: string, currentCycle: string }|undefined}
  */
 export function getTokenGrantConfig(tokenType) {
+  if (!hasText(tokenType)) return undefined;
   const entry = TOKEN_GRANT_CONFIG[tokenType];
   if (!entry) return undefined;
   return { ...entry, currentCycle: getCurrentCycle(entry.cycleFormat) };
@@ -105,11 +105,9 @@ export function getTokenGrantConfig(tokenType) {
  *   tokenType: string }|undefined}
  */
 export function getTokenGrantConfigByOpportunity(opportunityName) {
-  const entry = OPPORTUNITY_GRANT_CONFIG[opportunityName];
-  if (!entry) return undefined;
-  return {
-    ...entry,
-    currentCycle: getCurrentCycle(entry.cycleFormat),
-    tokenType: getTokenTypeForOpportunity(opportunityName),
-  };
+  if (!hasText(opportunityName)) return undefined;
+  const tokenType = getTokenTypeForOpportunity(opportunityName);
+  const config = getTokenGrantConfig(tokenType);
+  if (!config) return undefined;
+  return { ...config, tokenType };
 }

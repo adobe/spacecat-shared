@@ -366,7 +366,12 @@ export const configSchema = Joi.object({
     forwardedHost: Joi.string().optional(),
   }).optional(),
   edgeOptimizeConfig: Joi.object({
-    enabled: Joi.boolean().optional(),
+    enabled: Joi.alternatives()
+      .try(
+        Joi.boolean(),
+        Joi.number(),
+      )
+      .optional(),
     opted: Joi.number().optional(),
     stagingDomains: Joi.array().items(
       Joi.object({

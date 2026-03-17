@@ -12,6 +12,18 @@
 
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 
+export const EXPERIMENT_PHASES = Object.freeze({
+  PRE: 'pre',
+  POST: 'post',
+});
+
+const VALID_EXPERIMENT_PHASES = new Set(Object.values(EXPERIMENT_PHASES));
+const DEFAULT_EXPERIMENT_PLATFORMS = ['chatgpt_free', 'perplexity', 'gemini', 'copilot', 'aimode'];
+const PRE_PHASE_CRON_EXPRESSION = '0 * * * *';
+const POST_PHASE_CRON_EXPRESSION = '0 0 * * *';
+const PRE_PHASE_EXPIRY_MS = 10 * 60 * 60 * 1000; // 10 hours
+const POST_PHASE_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+
 export const SCRAPE_DATASET_IDS = Object.freeze({
   REDDIT_COMMENTS: 'reddit_comments',
   REDDIT_POSTS: 'reddit_posts',
@@ -237,6 +249,203 @@ export default class DrsClient {
   async triggerBrandDetection(siteId, options = {}) {
     this.log.info(`Triggering DRS brand detection for site ${siteId}`, options);
     return this.#request('POST', `/sites/${siteId}/brand-detection`, options);
+  }
+
+  /**
+   * Submits an experiment to DRS for brand presence pre/post analysis.
+   * @param {object} params
+   * @param {string} params.siteId - SpaceCat site ID
+   * @param {string} params.experimentId - Unique experiment identifier (links pre and post phases)
+   * @param {string} params.experimentPhase - 'pre' or 'post'
+   * @param {string[]} [params.experimentationUrls] - URLs to filter prompts by
+   * @param {string[]} [params.platforms] - LLM platforms to query
+   * @param {number} [params.intervalMinutes] - Minutes between runs
+   * @param {number} [params.durationHours] - Total duration in hours
+   * @param {object} [params.metadata] - Additional metadata
+   * @returns {Promise<object>} Experiment submission result
+   */
+  async submitExperiment({
+    siteId,
+    experimentId,
+    experimentPhase,
+    experimentationUrls,
+    platforms,
+    intervalMinutes = 60,
+    durationHours = 10,
+    metadata,
+  }) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!hasText(experimentId)) {
+      throw new Error('experimentId is required');
+    }
+    if (!VALID_EXPERIMENT_PHASES.has(experimentPhase)) {
+      throw new Error(`experimentPhase must be one of: ${[...VALID_EXPERIMENT_PHASES].join(', ')}`);
+    }
+
+    this.log.info(`Submitting DRS experiment for site ${siteId}`, {
+      experimentId, experimentPhase, urlCount: experimentationUrls?.length,
+    });
+
+    const body = {
+      site_id: siteId,
+      experiment_id: experimentId,
+      experiment_phase: experimentPhase,
+      interval_minutes: intervalMinutes,
+      duration_hours: durationHours,
+    };
+
+    if (Array.isArray(experimentationUrls) && experimentationUrls.length > 0) {
+      body.experimentation_urls = experimentationUrls;
+    }
+    if (Array.isArray(platforms) && platforms.length > 0) {
+      body.platforms = platforms;
+    }
+    if (metadata) {
+      body.metadata = metadata;
+    }
+
+    const result = await this.#request('POST', '/experiments', body);
+    this.log.info(`DRS experiment submitted: ${result?.experiment_id}`, {
+      experimentId: result?.experiment_id,
+      experimentBatchId: result?.experiment_batch_id,
+    });
+    return result;
+  }
+
+  /**
+   * Gets the status of an experiment from DRS.
+   * @param {string} experimentId - The experiment identifier
+   * @param {string} [phase] - Optional phase filter ('pre' or 'post')
+   * @returns {Promise<object>} Experiment status with per-phase progress
+   */
+  async getExperimentStatus(experimentId, phase) {
+    if (!hasText(experimentId)) {
+      throw new Error('experimentId is required');
+    }
+    if (phase && !VALID_EXPERIMENT_PHASES.has(phase)) {
+      throw new Error(`phase must be one of: ${[...VALID_EXPERIMENT_PHASES].join(', ')}`);
+    }
+
+    const queryString = phase ? `?phase=${phase}` : '';
+    this.log.info(`Getting DRS experiment status for ${experimentId}`, { experimentId, phase });
+
+    return this.#request('GET', `/experiments/${experimentId}${queryString}`);
+  }
+
+  /**
+   * Creates an experiment schedule in DRS and optionally triggers it immediately.
+   * Uses the schedules API instead of legacy experiments API.
+   * @param {object} params
+   * @param {string} params.siteId - SpaceCat site ID
+   * @param {string} params.experimentId - Unique experiment identifier
+   * @param {string} params.experimentPhase - 'pre' or 'post'
+   * @param {string[]} [params.experimentationUrls] - URLs to filter prompts by
+   * @param {string[]} [params.platforms] - LLM platforms to query
+   * @param {object} [params.metadata] - Additional metadata
+   * @param {boolean} [params.triggerImmediately=true] - Trigger job right after schedule creation
+   * @returns {Promise<object>} Schedule creation response
+   */
+  async createExperimentSchedule({
+    siteId,
+    experimentId,
+    experimentPhase,
+    experimentationUrls,
+    platforms,
+    metadata,
+    triggerImmediately,
+  }) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!hasText(experimentId)) {
+      throw new Error('experimentId is required');
+    }
+    if (!VALID_EXPERIMENT_PHASES.has(experimentPhase)) {
+      throw new Error(`experimentPhase must be one of: ${[...VALID_EXPERIMENT_PHASES].join(', ')}`);
+    }
+
+    const phaseConfig = experimentPhase === EXPERIMENT_PHASES.PRE
+      ? {
+        cronExpression: PRE_PHASE_CRON_EXPRESSION,
+        expiresInMs: PRE_PHASE_EXPIRY_MS,
+        triggerImmediatelyDefault: true,
+      }
+      : {
+        cronExpression: POST_PHASE_CRON_EXPRESSION,
+        expiresInMs: POST_PHASE_EXPIRY_MS,
+        triggerImmediatelyDefault: false,
+      };
+
+    const expiresAt = new Date(Date.now() + phaseConfig.expiresInMs).toISOString();
+    const selectedPlatforms = Array.isArray(platforms) && platforms.length > 0
+      ? platforms
+      : DEFAULT_EXPERIMENT_PLATFORMS;
+    const shouldTriggerImmediately = typeof triggerImmediately === 'boolean'
+      ? triggerImmediately
+      : phaseConfig.triggerImmediatelyDefault;
+
+    const body = {
+      site_id: siteId,
+      frequency: 'cron',
+      cron_expression: phaseConfig.cronExpression,
+      expires_at: expiresAt,
+      trigger_immediately: shouldTriggerImmediately,
+      description: `SpaceCat edge deploy ${experimentPhase} experiment ${experimentId}`,
+      job_config: {
+        cadence: 'experiment',
+        provider_ids: ['brightdata'],
+        provider_parameters: {
+          brightdata: {
+            dataset_id: selectedPlatforms.join(','),
+          },
+        },
+        priority: 'HIGH',
+        metadata: {
+          experiment_id: experimentId,
+          experiment_phase: experimentPhase,
+          ...(metadata || {}),
+        },
+      },
+    };
+
+    if (Array.isArray(experimentationUrls) && experimentationUrls.length > 0) {
+      body.job_config.experimentation_urls = experimentationUrls;
+    }
+
+    this.log.info(`Creating DRS experiment schedule for site ${siteId}`, {
+      experimentId,
+      experimentPhase,
+      urlCount: experimentationUrls?.length || 0,
+      triggerImmediately: shouldTriggerImmediately,
+    });
+
+    const result = await this.#request('POST', '/schedules', body);
+    this.log.info('DRS experiment schedule created', {
+      scheduleId: result?.schedule?.schedule_id || result?.schedule_id,
+      experimentId,
+      experimentPhase,
+    });
+    return result;
+  }
+
+  /**
+   * Gets schedule details with jobs summary from DRS.
+   * @param {string} siteId - SpaceCat site ID
+   * @param {string} scheduleId - DRS schedule ID
+   * @returns {Promise<object>} Schedule + jobs summary payload
+   */
+  async getScheduleStatus(siteId, scheduleId) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!hasText(scheduleId)) {
+      throw new Error('scheduleId is required');
+    }
+
+    this.log.info('Getting DRS schedule status', { siteId, scheduleId });
+    return this.#request('GET', `/schedules/${siteId}/${scheduleId}?include_jobs=true`);
   }
 
   /**

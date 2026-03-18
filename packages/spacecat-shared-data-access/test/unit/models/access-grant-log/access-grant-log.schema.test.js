@@ -16,6 +16,15 @@ import { expect } from 'chai';
 import accessGrantLogSchema from '../../../../src/models/access-grant-log/access-grant-log.schema.js';
 
 describe('AccessGrantLog Schema', () => {
+  describe('schema constraints', () => {
+    it('does not allow updates', () => {
+      expect(accessGrantLogSchema.allowsUpdates()).to.be.false;
+    });
+
+    it('does not allow removal', () => {
+      expect(accessGrantLogSchema.allowsRemove()).to.be.false;
+    });
+  });
   describe('siteId attribute', () => {
     it('should be required with UUID validation', () => {
       const attributes = accessGrantLogSchema.getAttributes();
@@ -34,6 +43,27 @@ describe('AccessGrantLog Schema', () => {
     it('should reject an invalid UUID', () => {
       const attributes = accessGrantLogSchema.getAttributes();
       expect(attributes.siteId.validate('not-a-uuid')).to.be.false;
+    });
+  });
+
+  describe('targetOrganizationId attribute', () => {
+    it('should be required with UUID validation', () => {
+      const attributes = accessGrantLogSchema.getAttributes();
+      const attr = attributes.targetOrganizationId;
+
+      expect(attr).to.exist;
+      expect(attr.required).to.be.true;
+      expect(attr.validate).to.be.a('function');
+    });
+
+    it('should accept a valid UUID', () => {
+      const attributes = accessGrantLogSchema.getAttributes();
+      expect(attributes.targetOrganizationId.validate('4854e75e-894b-4a74-92bf-d674abad1423')).to.be.true;
+    });
+
+    it('should reject an invalid UUID', () => {
+      const attributes = accessGrantLogSchema.getAttributes();
+      expect(attributes.targetOrganizationId.validate('not-a-uuid')).to.be.false;
     });
   });
 
@@ -83,12 +113,13 @@ describe('AccessGrantLog Schema', () => {
   });
 
   describe('role attribute', () => {
-    it('should be required string', () => {
+    it('should be required with DELEGATION_ROLES enum', () => {
       const attributes = accessGrantLogSchema.getAttributes();
       const attr = attributes.role;
 
       expect(attr).to.exist;
       expect(attr.required).to.be.true;
+      expect(attr.type).to.deep.equal(['collaborator', 'agency', 'viewer']);
     });
   });
 

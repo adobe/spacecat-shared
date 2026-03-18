@@ -34,6 +34,7 @@ describe('AccessGrantLogCollection', () => {
   const mockRecord = {
     siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
     organizationId: '3fe5ca60-4850-431c-97b3-f88a80f07e9b',
+    targetOrganizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     productCode: 'LLMO',
     action: 'grant',
     role: 'agency',

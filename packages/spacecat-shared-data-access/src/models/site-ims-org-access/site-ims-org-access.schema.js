@@ -25,15 +25,21 @@ const schema = new SchemaBuilder(SiteImsOrgAccess, SiteImsOrgAccessCollection)
   // belongs_to uses the referenced model name as the FK column prefix (organization_id).
   // We already have belongs_to Organization for the delegate org, so a second belongs_to
   // would conflict. addAttribute with UUID validation achieves the same FK semantics
-  // without the naming collision.
+  // without the naming collision. readOnly: true prevents the setter from being generated
+  // since the target org is part of the grant's identity — a different target means a
+  // different grant.
   .addAttribute('targetOrganizationId', {
     type: 'string',
     required: true,
+    readOnly: true,
     validate: (v) => isValidUUID(v),
   })
+  // organizationId (delegate org, from belongs_to) and siteId are also part of the grant's
+  // identity and are readOnly by virtue of their belongs_to FK nature.
   .addAttribute('productCode', {
     type: Object.values(Entitlement.PRODUCT_CODES),
     required: true,
+    readOnly: true,
   })
   .addAttribute('role', {
     type: Object.values(SiteImsOrgAccess.DELEGATION_ROLES),
@@ -50,6 +56,8 @@ const schema = new SchemaBuilder(SiteImsOrgAccess, SiteImsOrgAccessCollection)
     required: false,
     validate: (v) => !v || isIsoDate(v),
   })
-  .addAllIndex(['organizationId']);
+  .addAllIndex(['organizationId'])
+  // Index for "show all delegations granted to org Z across all sites" admin query
+  .addAllIndex(['targetOrganizationId']);
 
 export default schema.build();

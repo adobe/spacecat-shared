@@ -20,14 +20,15 @@ export interface SiteImsOrgAccess extends BaseModel {
   getSite(): Promise<Site>;
   getOrganization(): Promise<Organization>;
   getSiteId(): string;
+  /** organizationId is the delegate org receiving access (read-only, part of grant identity). */
   getOrganizationId(): string;
+  /** targetOrganizationId is the site-owning org (read-only, part of grant identity). */
   getTargetOrganizationId(): string;
+  /** productCode is read-only; changing scope requires a new grant. */
   getProductCode(): EntitlementProductCode;
   getRole(): SiteImsOrgAccessRole;
   getGrantedBy(): string | null;
   getExpiresAt(): string | null;
-  setTargetOrganizationId(id: string): SiteImsOrgAccess;
-  setProductCode(productCode: EntitlementProductCode): SiteImsOrgAccess;
   setRole(role: SiteImsOrgAccessRole): SiteImsOrgAccess;
   setGrantedBy(grantedBy: string): SiteImsOrgAccess;
   setExpiresAt(expiresAt: string): SiteImsOrgAccess;
@@ -37,7 +38,9 @@ export interface SiteImsOrgAccessCollection extends
     BaseCollection<SiteImsOrgAccess> {
   allBySiteId(siteId: string): Promise<SiteImsOrgAccess[]>;
   allByOrganizationId(organizationId: string): Promise<SiteImsOrgAccess[]>;
+  allByTargetOrganizationId(targetOrganizationId: string): Promise<SiteImsOrgAccess[]>;
 
   findBySiteId(siteId: string): Promise<SiteImsOrgAccess | null>;
   findByOrganizationId(organizationId: string): Promise<SiteImsOrgAccess | null>;
+  findByTargetOrganizationId(targetOrganizationId: string): Promise<SiteImsOrgAccess | null>;
 }

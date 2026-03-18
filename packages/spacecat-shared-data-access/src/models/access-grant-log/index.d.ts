@@ -15,19 +15,23 @@ import type {
 } from '../index';
 
 export type AccessGrantAction = 'grant' | 'revoke';
+export type AccessGrantRole = 'collaborator' | 'agency' | 'viewer';
 
 export interface AccessGrantLog extends BaseModel {
   getSiteId(): string;
   getOrganizationId(): string;
+  getTargetOrganizationId(): string;
   getProductCode(): EntitlementProductCode;
   getAction(): AccessGrantAction;
-  getRole(): string;
+  getRole(): AccessGrantRole;
   getPerformedBy(): string;
 }
 
 export interface AccessGrantLogCollection extends
     BaseCollection<AccessGrantLog> {
   allByOrganizationId(organizationId: string): Promise<AccessGrantLog[]>;
+  allBySiteId(siteId: string): Promise<AccessGrantLog[]>;
 
   findByOrganizationId(organizationId: string): Promise<AccessGrantLog | null>;
+  findBySiteId(siteId: string): Promise<AccessGrantLog | null>;
 }

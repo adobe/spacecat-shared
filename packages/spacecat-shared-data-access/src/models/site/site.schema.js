@@ -43,6 +43,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addReference('has_many', 'Opportunities')
   .addReference('has_many', 'SiteCandidates')
   .addReference('has_many', 'SiteEnrollments')
+  // TODO(Phase 2 audit gap): removeDependents silently removes all SiteImsOrgAccess records on
+  // site deletion without writing AccessGrantLog 'revoke' entries. Anyone auditing "why did
+  // agency X lose access to site Y" will find nothing in the log. Add a model-level pre-remove
+  // hook that writes revoke audit entries before this ships to production.
   .addReference('has_many', 'SiteImsOrgAccesses', [], { removeDependents: true })
   .addReference('has_many', 'SiteTopForms')
   .addReference('has_many', 'SiteTopPages')

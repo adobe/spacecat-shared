@@ -83,6 +83,27 @@ describe('AuthInfo', () => {
   });
 
   describe('getDelegatedTenant', () => {
+    it('should return undefined when imsOrgId is null', () => {
+      const authInfo = new AuthInfo().withProfile({
+        delegated_tenants: [{ id: 'ABC123', productCode: 'LLMO' }],
+      });
+      expect(authInfo.getDelegatedTenant(null)).to.be.undefined;
+    });
+
+    it('should return undefined when imsOrgId is undefined', () => {
+      const authInfo = new AuthInfo().withProfile({
+        delegated_tenants: [{ id: 'ABC123', productCode: 'LLMO' }],
+      });
+      expect(authInfo.getDelegatedTenant(undefined)).to.be.undefined;
+    });
+
+    it('should return undefined when imsOrgId is empty string', () => {
+      const authInfo = new AuthInfo().withProfile({
+        delegated_tenants: [{ id: 'ABC123', productCode: 'LLMO' }],
+      });
+      expect(authInfo.getDelegatedTenant('')).to.be.undefined;
+    });
+
     it('should return undefined if profile is not set', () => {
       const authInfo = new AuthInfo();
       expect(authInfo.getDelegatedTenant('ABC123@AdobeOrg')).to.be.undefined;
@@ -103,20 +124,20 @@ describe('AuthInfo', () => {
     it('should find matching tenant by imsOrgId stripping @AdobeOrg', () => {
       const dt = { id: 'ABC123', productCode: 'LLMO' };
       const authInfo = new AuthInfo().withProfile({ delegated_tenants: [dt] });
-      expect(authInfo.getDelegatedTenant('ABC123@AdobeOrg')).to.equal(dt);
+      expect(authInfo.getDelegatedTenant('ABC123@AdobeOrg')).to.deep.equal(dt);
     });
 
     it('should find matching tenant by bare imsOrgId', () => {
       const dt = { id: 'ABC123', productCode: 'LLMO' };
       const authInfo = new AuthInfo().withProfile({ delegated_tenants: [dt] });
-      expect(authInfo.getDelegatedTenant('ABC123')).to.equal(dt);
+      expect(authInfo.getDelegatedTenant('ABC123')).to.deep.equal(dt);
     });
 
     it('should filter by productCode when provided', () => {
       const dt1 = { id: 'ABC123', productCode: 'LLMO' };
       const dt2 = { id: 'ABC123', productCode: 'ASO' };
       const authInfo = new AuthInfo().withProfile({ delegated_tenants: [dt1, dt2] });
-      expect(authInfo.getDelegatedTenant('ABC123', 'ASO')).to.equal(dt2);
+      expect(authInfo.getDelegatedTenant('ABC123', 'ASO')).to.deep.equal(dt2);
     });
 
     it('should return undefined when productCode does not match', () => {
@@ -128,7 +149,15 @@ describe('AuthInfo', () => {
     it('should match without productCode filter', () => {
       const dt = { id: 'ABC123', productCode: 'LLMO' };
       const authInfo = new AuthInfo().withProfile({ delegated_tenants: [dt] });
-      expect(authInfo.getDelegatedTenant('ABC123')).to.equal(dt);
+      expect(authInfo.getDelegatedTenant('ABC123')).to.deep.equal(dt);
+    });
+
+    it('should return a shallow copy, not the original reference', () => {
+      const dt = { id: 'ABC123', productCode: 'LLMO' };
+      const authInfo = new AuthInfo().withProfile({ delegated_tenants: [dt] });
+      const result = authInfo.getDelegatedTenant('ABC123');
+      expect(result).to.deep.equal(dt);
+      expect(result).to.not.equal(dt);
     });
   });
 
@@ -166,6 +195,13 @@ describe('AuthInfo', () => {
         tenants: [{ id: 'T1' }, { id: 'T2' }, { id: 'T3' }],
       });
       expect(authInfo.getTenantIds()).to.deep.equal(['T1', 'T2', 'T3']);
+    });
+
+    it('should filter out tenant objects without an id', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'T1' }, {}, { id: 'T3' }],
+      });
+      expect(authInfo.getTenantIds()).to.deep.equal(['T1', 'T3']);
     });
   });
 });

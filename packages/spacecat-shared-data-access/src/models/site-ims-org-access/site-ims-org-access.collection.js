@@ -11,6 +11,7 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
+import DataAccessError from '../../errors/data-access.error.js';
 
 /**
  * SiteImsOrgAccessCollection - Collection of cross-org delegation grants.
@@ -28,6 +29,11 @@ class SiteImsOrgAccessCollection extends BaseCollection {
    * Idempotent create: if a grant already exists for (siteId, organizationId, productCode),
    * return the existing record. Otherwise, enforce the 50-delegate-per-site limit and create.
    * Follows the SiteEnrollment pattern (site-enrollment.collection.js:25-32).
+   *
+   * Note: the findByIndexKeys + allBySiteId + super.create sequence is not atomic. Concurrent
+   * requests can both pass the idempotency check (creating duplicates) or both pass the limit
+   * check (exceeding it). A DB-level unique constraint on (siteId, organizationId, productCode)
+   * is the authoritative guard against duplicates.
    */
   async create(item, options = {}) {
     if (item?.siteId && item?.organizationId && item?.productCode) {
@@ -36,22 +42,30 @@ class SiteImsOrgAccessCollection extends BaseCollection {
         organizationId: item.organizationId,
         productCode: item.productCode,
       });
-      if (existing) return existing;
+      if (existing) {
+        this.log.info(`[SiteImsOrgAccess] Idempotent create: returning existing grant for site=${item.siteId} org=${item.organizationId} product=${item.productCode}`);
+        return existing;
+      }
     }
 
-    // Enforce 50-delegate-per-site limit
+    // Enforce 50-active-delegate-per-site limit; expired grants do not count.
     if (item?.siteId) {
-      const existingGrants = await this.allBySiteId(item.siteId);
-      if (existingGrants.length >= SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE) {
-        const err = new Error(
-          `Cannot add delegate: site already has ${existingGrants.length}/${SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE} delegates`,
-        );
+      const allGrants = await this.allBySiteId(item.siteId);
+      const activeGrants = allGrants.filter(
+        (g) => !g.getExpiresAt() || new Date(g.getExpiresAt()) > new Date(),
+      );
+      if (activeGrants.length >= SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE) {
+        const message = `Cannot add delegate: site already has ${activeGrants.length}/${SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE} active delegates`;
+        this.log.warn(`[SiteImsOrgAccess] Delegate limit reached for site=${item.siteId}`);
+        const err = new DataAccessError(message);
         err.status = 409;
         throw err;
       }
     }
 
-    return super.create(item, options);
+    const created = await super.create(item, options);
+    this.log.info(`[SiteImsOrgAccess] New grant created: id=${created.getId()} site=${item.siteId} org=${item.organizationId} product=${item.productCode}`);
+    return created;
   }
 }
 

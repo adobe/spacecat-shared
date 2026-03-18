@@ -12,6 +12,7 @@
 
 import { isValidUUID } from '@adobe/spacecat-shared-utils';
 import { Entitlement } from '../entitlement/index.js';
+import SiteImsOrgAccess from '../site-ims-org-access/site-ims-org-access.model.js';
 import SchemaBuilder from '../base/schema.builder.js';
 import AccessGrantLog from './access-grant-log.model.js';
 import AccessGrantLogCollection from './access-grant-log.collection.js';
@@ -21,14 +22,19 @@ const PERFORMED_BY_PATTERN = /^(ims:\S+|slack:\S+|system)$/;
 const schema = new SchemaBuilder(AccessGrantLog, AccessGrantLogCollection)
   .allowUpdates(false)
   .allowRemove(false)
-  // siteId and organizationId are plain addAttribute (not belongs_to) because the
-  // DB columns are TEXT, not FK. Audit logs must preserve UUIDs after entity deletion.
+  // siteId, organizationId, and targetOrganizationId are plain addAttribute (not belongs_to)
+  // because the DB columns are TEXT, not FK. Audit logs must preserve UUIDs after entity deletion.
   .addAttribute('siteId', {
     type: 'string',
     required: true,
     validate: (v) => isValidUUID(v),
   })
   .addAttribute('organizationId', {
+    type: 'string',
+    required: true,
+    validate: (v) => isValidUUID(v),
+  })
+  .addAttribute('targetOrganizationId', {
     type: 'string',
     required: true,
     validate: (v) => isValidUUID(v),
@@ -42,7 +48,7 @@ const schema = new SchemaBuilder(AccessGrantLog, AccessGrantLogCollection)
     required: true,
   })
   .addAttribute('role', {
-    type: 'string',
+    type: Object.values(SiteImsOrgAccess.DELEGATION_ROLES),
     required: true,
   })
   .addAttribute('performedBy', {
@@ -50,6 +56,7 @@ const schema = new SchemaBuilder(AccessGrantLog, AccessGrantLogCollection)
     required: true,
     validate: (v) => PERFORMED_BY_PATTERN.test(v),
   })
-  .addAllIndex(['organizationId']);
+  .addAllIndex(['organizationId'])
+  .addAllIndex(['siteId']);
 
 export default schema.build();

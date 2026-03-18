@@ -20,6 +20,7 @@ import sinon from 'sinon';
 import SiteImsOrgAccess from '../../../../src/models/site-ims-org-access/site-ims-org-access.model.js';
 import SiteImsOrgAccessCollection from '../../../../src/models/site-ims-org-access/site-ims-org-access.collection.js';
 import BaseCollection from '../../../../src/models/base/base.collection.js';
+import DataAccessError from '../../../../src/errors/data-access.error.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -97,7 +98,7 @@ describe('SiteImsOrgAccessCollection', () => {
       expect(superCreateStub).to.not.have.been.called;
     });
 
-    it('creates new grant when no matching grant exists and under limit', async () => {
+    it('creates new grant when no matching grant exists and under the active limit', async () => {
       sinon.stub(instance, 'findByIndexKeys').resolves(null);
       sinon.stub(instance, 'allBySiteId').resolves([]);
       const superCreateStub = sinon.stub(BaseCollection.prototype, 'create').resolves(model);
@@ -108,13 +109,42 @@ describe('SiteImsOrgAccessCollection', () => {
       expect(superCreateStub).to.have.been.calledOnceWithExactly(mockRecord, { upsert: true });
     });
 
-    it('throws 409 when site has reached the delegate limit', async () => {
+    it('throws a DataAccessError with status 409 when the active-delegate limit is reached', async () => {
       sinon.stub(instance, 'findByIndexKeys').resolves(null);
-      const fiftyGrants = Array.from({ length: 50 }, (_, i) => ({ id: `grant-${i}` }));
+      // All 50 grants are active (no expiresAt)
+      const fiftyGrants = Array.from({ length: 50 }, (_, i) => ({
+        id: `grant-${i}`,
+        getExpiresAt: () => null,
+      }));
       sinon.stub(instance, 'allBySiteId').resolves(fiftyGrants);
 
-      await expect(instance.create(mockRecord))
-        .to.be.rejectedWith('Cannot add delegate: site already has 50/50 delegates');
+      let caught;
+      try {
+        await instance.create(mockRecord);
+      } catch (err) {
+        caught = err;
+      }
+
+      expect(caught).to.be.an.instanceof(DataAccessError);
+      expect(caught.message).to.include('Cannot add delegate');
+      expect(caught.status).to.equal(409);
+    });
+
+    it('does not count expired grants toward the delegate limit', async () => {
+      sinon.stub(instance, 'findByIndexKeys').resolves(null);
+      // 49 active + 1 expired = 50 total, but only 49 active
+      const grants = Array.from({ length: 49 }, (_, i) => ({
+        id: `grant-${i}`,
+        getExpiresAt: () => null,
+      }));
+      grants.push({ id: 'expired-grant', getExpiresAt: () => '2020-01-01T00:00:00.000Z' });
+      sinon.stub(instance, 'allBySiteId').resolves(grants);
+      const superCreateStub = sinon.stub(BaseCollection.prototype, 'create').resolves(model);
+
+      const result = await instance.create(mockRecord);
+
+      expect(result).to.equal(model);
+      expect(superCreateStub).to.have.been.calledOnce;
     });
 
     it('skips idempotency check when key fields are missing', async () => {

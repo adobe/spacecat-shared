@@ -16,6 +16,8 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import { sanitizeTimestamps } from '../../../src/util/util.js';
+import DataAccessError from '../../../src/errors/data-access.error.js';
+import SiteImsOrgAccessCollection from '../../../src/models/site-ims-org-access/site-ims-org-access.collection.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 
@@ -106,6 +108,38 @@ describe('SiteImsOrgAccess IT', async () => {
     const result = await SiteImsOrgAccess.create(data);
 
     expect(result.getId()).to.equal(sample.getId());
+  });
+
+  it('rejects create with DataAccessError when the active-delegate limit is reached', async () => {
+    const siteId = sampleData.siteImsOrgAccesses[0].getSiteId();
+    // Determine current count so we can cap at exactly that many
+    const existing = await SiteImsOrgAccess.allBySiteId(siteId);
+    const originalMax = SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE;
+    SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE = existing.length;
+
+    try {
+      const data = {
+        siteId,
+        organizationId: sampleData.organizations[1].getId(),
+        targetOrganizationId: sampleData.organizations[0].getId(),
+        productCode: 'ASO',
+        role: 'viewer',
+        updatedBy: 'system',
+      };
+
+      let caught;
+      try {
+        await SiteImsOrgAccess.create(data);
+      } catch (err) {
+        caught = err;
+      }
+
+      expect(caught).to.be.instanceof(DataAccessError);
+      expect(caught.status).to.equal(409);
+      expect(caught.message).to.include('Cannot add delegate');
+    } finally {
+      SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE = originalMax;
+    }
   });
 
   it('updates a site ims org access', async () => {

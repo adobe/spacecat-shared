@@ -1,3 +1,39 @@
+## [@adobe/spacecat-shared-data-access-v3.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.21.0...@adobe/spacecat-shared-data-access-v3.22.0) (2026-03-17)
+
+### Features
+
+* support boolean and timestamp for edgeOptimizeConfig.enabled ([#1441](https://github.com/adobe/spacecat-shared/issues/1441)) ([2fb173d](https://github.com/adobe/spacecat-shared/commit/2fb173da507df98c0a64977f90181ec501492c88))
+
+## [@adobe/spacecat-shared-data-access-v3.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.20.1...@adobe/spacecat-shared-data-access-v3.21.0) (2026-03-16)
+
+### Features
+
+* **CWV:** add jiraLink to CWV suggestion schema and fix metric validation ([#1425](https://github.com/adobe/spacecat-shared/issues/1425)) ([d0429e0](https://github.com/adobe/spacecat-shared/commit/d0429e0e1b09348f31d5bfd21675b560bfb004e8))
+
+## [@adobe/spacecat-shared-data-access-v3.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.20.0...@adobe/spacecat-shared-data-access-v3.20.1) (2026-03-13)
+
+### Bug Fixes
+
+* **data-access:** supabase/postgrest-js major dependency bump to v2 ([#1439](https://github.com/adobe/spacecat-shared/issues/1439)) ([29ca15b](https://github.com/adobe/spacecat-shared/commit/29ca15b7e23c95af43a14536e6e4917d423ec71e))
+
+## [@adobe/spacecat-shared-data-access-v3.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.19.0...@adobe/spacecat-shared-data-access-v3.20.0) (2026-03-13)
+
+### Features
+
+* add OFFSITE_BRAND_PRESENCE audit type ([#1437](https://github.com/adobe/spacecat-shared/issues/1437)) ([5ffe54e](https://github.com/adobe/spacecat-shared/commit/5ffe54e740a4645b881c905fb6f1c2d2c47e556e))
+
+## [@adobe/spacecat-shared-data-access-v3.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.18.0...@adobe/spacecat-shared-data-access-v3.19.0) (2026-03-13)
+
+### Features
+
+* **data-access:** add PRE_ONBOARDING status to PlgOnboarding entity ([#1433](https://github.com/adobe/spacecat-shared/issues/1433)) ([69b35d7](https://github.com/adobe/spacecat-shared/commit/69b35d77c5f0b2c67ed153227f60198527e530d4))
+
+## [@adobe/spacecat-shared-data-access-v3.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.17.0...@adobe/spacecat-shared-data-access-v3.18.0) (2026-03-12)
+
+### Features
+
+* **data-access:** add saveMany() to BaseCollection for chunked bulk upsert ([#1428](https://github.com/adobe/spacecat-shared/issues/1428)) ([802bfec](https://github.com/adobe/spacecat-shared/commit/802bfecb21981e577fc1e72b38c24002edcd8bb1))
+
 ## [@adobe/spacecat-shared-data-access-v3.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.16.0...@adobe/spacecat-shared-data-access-v3.17.0) (2026-03-12)
 
 ### Features

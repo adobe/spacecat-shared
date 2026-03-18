@@ -95,7 +95,7 @@ const isMissingDbFieldError = ({ message, codes }) => (
 )
   || (
     message.includes('Could not find the')
-      && message.includes('column')
+      && (message.includes('column') || message.includes('table'))
       && message.includes('schema cache')
   );
 

@@ -108,7 +108,7 @@ export const llmoConfig = z.object({
   categories: z.record(z.uuid(), category),
   topics: z.record(z.uuid(), topic),
   aiTopics: z.record(z.uuid(), topic).optional(),
-  // experimentationTopics: z.record(z.uuid(), topic).optional(),
+  experimentationTopics: z.record(z.uuid(), topic).optional(),
   brands: z.object({
     aliases: z.array(
       z.object({

@@ -188,6 +188,53 @@ describe('SuggestionModel', () => {
     });
   });
 
+  describe('getAutofixPrecheckStatus and setAutofixPrecheckStatus', () => {
+    it('returns undefined when no precheck status is set', () => {
+      expect(instance.getAutofixPrecheckStatus()).to.be.undefined;
+    });
+
+    it('sets and gets the autofix precheck status', () => {
+      const precheckStatus = {
+        fixable: true,
+        pageUrl: 'https://example.com/page',
+        pageCheckResult: { fixable: true, pageId: 'abc123' },
+        checkedAt: '2026-03-18T15:30:00.000Z',
+      };
+      instance.setAutofixPrecheckStatus(precheckStatus);
+      expect(instance.getAutofixPrecheckStatus()).to.deep.equal(precheckStatus);
+    });
+
+    it('sets precheck status with unfixable result', () => {
+      const precheckStatus = {
+        fixable: false,
+        pageUrl: 'https://example.com/page',
+        reason: 'IMAGE_NOT_IN_TREE',
+        reasonDetail: 'Image not found in content tree',
+        pageCheckResult: { fixable: false, reason: 'IMAGE_NOT_IN_TREE' },
+        checkedAt: '2026-03-18T15:30:00.000Z',
+      };
+      instance.setAutofixPrecheckStatus(precheckStatus);
+      expect(instance.getAutofixPrecheckStatus()).to.deep.equal(precheckStatus);
+    });
+
+    it('sets precheck status with precheckOnly flag', () => {
+      const precheckStatus = {
+        fixable: true,
+        pageUrl: 'https://example.com/page',
+        pageCheckResult: { fixable: true },
+        checkedAt: '2026-03-18T15:30:00.000Z',
+        precheckOnly: true,
+      };
+      instance.setAutofixPrecheckStatus(precheckStatus);
+      expect(instance.getAutofixPrecheckStatus()).to.deep.equal(precheckStatus);
+    });
+
+    it('returns null when precheck status is set to null', () => {
+      instance.setAutofixPrecheckStatus(null);
+      expect(instance.getAutofixPrecheckStatus()).to.be.null;
+    });
+  });
+
   describe('Static Methods', () => {
     describe('getProjection', () => {
       it('returns projection config for defined opportunity type', () => {

@@ -305,6 +305,66 @@ describe('Suggestion IT', async () => {
     });
   });
 
+  it('persists autofixPrecheckStatus field correctly', async () => {
+    const sampleSuggestion = sampleData.suggestions[0];
+    const suggestion = await Suggestion.findById(sampleSuggestion.getId());
+
+    expect(suggestion).to.be.an('object');
+
+    // Set precheck status with fixable result
+    const precheckStatus = {
+      fixable: true,
+      pageUrl: 'https://example.com/test-page',
+      pageCheckResult: {
+        fixable: true,
+        pageId: 'test-page-123',
+      },
+      checkedAt: '2026-03-18T15:30:00.000Z',
+      precheckOnly: true,
+    };
+
+    await suggestion
+      .setAutofixPrecheckStatus(precheckStatus)
+      .save();
+
+    // Validate in-memory state
+    expect(suggestion.getAutofixPrecheckStatus()).to.deep.equal(precheckStatus);
+
+    // Validate persistence by fetching from database
+    const storedSuggestion = await Suggestion.findById(sampleSuggestion.getId());
+    expect(storedSuggestion.getAutofixPrecheckStatus()).to.deep.equal(precheckStatus);
+
+    // Update with unfixable result
+    const unfixablePrecheckStatus = {
+      fixable: false,
+      pageUrl: 'https://example.com/test-page',
+      reason: 'IMAGE_NOT_IN_TREE',
+      reasonDetail: 'Image not found in content tree',
+      pageCheckResult: {
+        fixable: false,
+        reason: 'IMAGE_NOT_IN_TREE',
+      },
+      checkedAt: '2026-03-18T16:00:00.000Z',
+      precheckOnly: false,
+    };
+
+    await suggestion
+      .setAutofixPrecheckStatus(unfixablePrecheckStatus)
+      .save();
+
+    // Validate updated persistence
+    const updatedSuggestion = await Suggestion.findById(sampleSuggestion.getId());
+    expect(updatedSuggestion.getAutofixPrecheckStatus()).to.deep.equal(unfixablePrecheckStatus);
+
+    // Clear the field
+    await suggestion
+      .setAutofixPrecheckStatus(null)
+      .save();
+
+    const clearedSuggestion = await Suggestion.findById(sampleSuggestion.getId());
+    expect(clearedSuggestion.getAutofixPrecheckStatus()).to.be.null;
+  });
+
   it('handles non-existent suggestion ID in single operations', async () => {
     const nonExistentId = '123e4567-e89b-12d3-a456-426614174999';
 

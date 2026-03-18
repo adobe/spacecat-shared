@@ -31,18 +31,23 @@ class SuggestionGrantCollection extends BaseCollection {
    *
    * @async
    * @param {string[]} suggestionIds - Suggestion IDs to look up.
-   * @returns {Promise<{ data: Array<{suggestion_id: string,
-   *   grant_id: string}>, error: object|null }>}
+   * @returns {Promise<Array<{suggestion_id: string, grant_id: string}>>}
+   * @throws {DataAccessError} - On query failure.
    */
   async findBySuggestionIds(suggestionIds) {
     if (!Array.isArray(suggestionIds) || suggestionIds.length === 0) {
-      return { data: [], error: null };
+      return [];
     }
     const { data, error } = await this.postgrestService
       .from(this.tableName)
       .select('suggestion_id,grant_id')
       .in('suggestion_id', suggestionIds);
-    return { data: data ?? [], error };
+
+    if (error) {
+      throw new DataAccessError('Failed to find grants by suggestion IDs', this, error);
+    }
+
+    return data ?? [];
   }
 
   /**
@@ -86,14 +91,7 @@ class SuggestionGrantCollection extends BaseCollection {
     }
 
     try {
-      const { data, error } = await this.findBySuggestionIds(deduped);
-
-      if (error) {
-        this.log.error('splitSuggestionsByGrantStatus: query failed', error);
-        throw new DataAccessError('Failed to split suggestions by grant status', this, error);
-      }
-
-      const rows = data || [];
+      const rows = await this.findBySuggestionIds(deduped);
       const grantedIdSet = new Set(rows.map((r) => r.suggestion_id));
       const grantedIds = deduped.filter((id) => grantedIdSet.has(id));
       const notGrantedIds = deduped.filter((id) => !grantedIdSet.has(id));

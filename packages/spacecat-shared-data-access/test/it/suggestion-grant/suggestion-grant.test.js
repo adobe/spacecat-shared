@@ -63,26 +63,23 @@ describe('SuggestionGrant IT', () => {
     it('returns grant rows for granted suggestion IDs', async () => {
       const result = await SuggestionGrant.findBySuggestionIds([grantedSuggestionId]);
 
-      expect(result.error).to.be.null;
-      expect(result.data).to.be.an('array').with.length(1);
-      expect(result.data[0]).to.have.property('suggestion_id', grantedSuggestionId);
-      expect(result.data[0]).to.have.property('grant_id');
-      expect(result.data[0].grant_id).to.match(/^[0-9a-f-]{36}$/i);
+      expect(result).to.be.an('array').with.length(1);
+      expect(result[0]).to.have.property('suggestion_id', grantedSuggestionId);
+      expect(result[0]).to.have.property('grant_id');
+      expect(result[0].grant_id).to.match(/^[0-9a-f-]{36}$/i);
     });
 
-    it('returns empty data when given empty array', async () => {
+    it('returns empty array when given empty array', async () => {
       const result = await SuggestionGrant.findBySuggestionIds([]);
 
-      expect(result.data).to.deep.equal([]);
-      expect(result.error).to.be.null;
+      expect(result).to.deep.equal([]);
     });
 
-    it('returns empty data for suggestion IDs that are not granted', async () => {
+    it('returns empty array for suggestion IDs that are not granted', async () => {
       const notGrantedId = sampleData.suggestions[0].getId();
       const result = await SuggestionGrant.findBySuggestionIds([notGrantedId]);
 
-      expect(result.error).to.be.null;
-      expect(result.data).to.be.an('array').that.is.empty;
+      expect(result).to.be.an('array').that.is.empty;
     });
 
     it('returns only rows for granted IDs when mixing granted and not granted', async () => {
@@ -90,9 +87,8 @@ describe('SuggestionGrant IT', () => {
       const suggestionIds = [notGrantedId, grantedSuggestionId];
       const result = await SuggestionGrant.findBySuggestionIds(suggestionIds);
 
-      expect(result.error).to.be.null;
-      expect(result.data).to.be.an('array').with.length(1);
-      expect(result.data[0].suggestion_id).to.equal(grantedSuggestionId);
+      expect(result).to.be.an('array').with.length(1);
+      expect(result[0].suggestion_id).to.equal(grantedSuggestionId);
     });
   });
 

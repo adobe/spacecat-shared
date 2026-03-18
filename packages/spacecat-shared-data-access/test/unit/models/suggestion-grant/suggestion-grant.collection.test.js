@@ -74,7 +74,7 @@ describe('SuggestionGrantCollection', () => {
   });
 
   describe('findBySuggestionIds', () => {
-    it('returns data and error from postgrest when suggestionIds is non-empty', async () => {
+    it('returns data from postgrest when suggestionIds is non-empty', async () => {
       const suggestionIds = ['sugg-1', 'sugg-2'];
       const grantData = [
         { suggestion_id: 'sugg-1', grant_id: 'g1' },
@@ -88,27 +88,24 @@ describe('SuggestionGrantCollection', () => {
 
       const result = await instance.findBySuggestionIds(suggestionIds);
 
-      expect(result.data).to.deep.equal(grantData);
-      expect(result.error).to.be.null;
+      expect(result).to.deep.equal(grantData);
       expect(fromStub).to.have.been.calledOnceWith('suggestion_grants');
       expect(inStub).to.have.been.calledOnceWith('suggestion_id', suggestionIds);
     });
 
-    it('returns empty data and null error when suggestionIds is empty array', async () => {
+    it('returns empty array when suggestionIds is empty array', async () => {
       const result = await instance.findBySuggestionIds([]);
 
-      expect(result.data).to.deep.equal([]);
-      expect(result.error).to.be.null;
+      expect(result).to.deep.equal([]);
     });
 
-    it('returns empty data and null error when suggestionIds is not an array', async () => {
+    it('returns empty array when suggestionIds is not an array', async () => {
       const result = await instance.findBySuggestionIds(undefined);
 
-      expect(result.data).to.deep.equal([]);
-      expect(result.error).to.be.null;
+      expect(result).to.deep.equal([]);
     });
 
-    it('returns data [] when postgrest returns null data', async () => {
+    it('returns empty array when postgrest returns null data', async () => {
       const inStub = stub().resolves({ data: null, error: null });
       instance.postgrestService = {
         from: stub().returns({ select: stub().returns({ in: inStub }) }),
@@ -116,27 +113,24 @@ describe('SuggestionGrantCollection', () => {
 
       const result = await instance.findBySuggestionIds(['sugg-1']);
 
-      expect(result.data).to.deep.equal([]);
-      expect(result.error).to.be.null;
+      expect(result).to.deep.equal([]);
     });
 
-    it('returns error when postgrest returns an error', async () => {
+    it('throws DataAccessError when postgrest returns an error', async () => {
       const queryError = { message: 'db error' };
       const inStub = stub().resolves({ data: null, error: queryError });
       instance.postgrestService = {
         from: stub().returns({ select: stub().returns({ in: inStub }) }),
       };
 
-      const result = await instance.findBySuggestionIds(['sugg-1']);
-
-      expect(result.data).to.deep.equal([]);
-      expect(result.error).to.equal(queryError);
+      await expect(instance.findBySuggestionIds(['sugg-1']))
+        .to.be.rejectedWith(DataAccessError, 'Failed to find grants by suggestion IDs');
     });
   });
 
   describe('splitSuggestionsByGrantStatus', () => {
     const stubFindBySuggestionIds = (grantData) => {
-      stub(instance, 'findBySuggestionIds').resolves({ data: grantData ?? [], error: null });
+      stub(instance, 'findBySuggestionIds').resolves(grantData ?? []);
     };
 
     it('returns grantedIds, notGrantedIds, and unique grantIds for the given suggestion IDs', async () => {
@@ -200,13 +194,12 @@ describe('SuggestionGrantCollection', () => {
         .to.be.rejectedWith(DataAccessError, 'splitSuggestionsByGrantStatus: suggestionIds must be an array');
     });
 
-    it('throws DataAccessError when query fails', async () => {
-      const queryError = { message: 'db error' };
-      stub(instance, 'findBySuggestionIds').resolves({ data: null, error: queryError });
+    it('rethrows DataAccessError from findBySuggestionIds', async () => {
+      const dbError = new DataAccessError('Failed to find grants by suggestion IDs');
+      stub(instance, 'findBySuggestionIds').rejects(dbError);
 
       await expect(instance.splitSuggestionsByGrantStatus(['sugg-1']))
-        .to.be.rejectedWith(DataAccessError, 'Failed to split suggestions by grant status');
-      expect(mockLogger.error).to.have.been.calledWith('splitSuggestionsByGrantStatus: query failed', queryError);
+        .to.be.rejectedWith(DataAccessError, 'Failed to find grants by suggestion IDs');
     });
 
     it('logs and rethrows as DataAccessError when findBySuggestionIds rejects with non-DataAccessError', async () => {
@@ -227,16 +220,15 @@ describe('SuggestionGrantCollection', () => {
     });
 
     it('returns true when the suggestion has been granted', async () => {
-      stub(instance, 'findBySuggestionIds').resolves({
-        data: [{ suggestion_id: 'sugg-1', grant_id: 'grant-1' }],
-        error: null,
-      });
+      stub(instance, 'findBySuggestionIds').resolves(
+        [{ suggestion_id: 'sugg-1', grant_id: 'grant-1' }],
+      );
 
       expect(await instance.isSuggestionGranted('sugg-1')).to.be.true;
     });
 
     it('returns false when the suggestion has not been granted', async () => {
-      stub(instance, 'findBySuggestionIds').resolves({ data: [], error: null });
+      stub(instance, 'findBySuggestionIds').resolves([]);
 
       expect(await instance.isSuggestionGranted('sugg-1')).to.be.false;
     });

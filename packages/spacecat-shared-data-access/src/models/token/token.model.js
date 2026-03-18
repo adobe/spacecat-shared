@@ -27,8 +27,8 @@ class Token extends BaseModel {
    * @returns {number}
    */
   getRemaining() {
-    const total = this.getTotal?.() ?? this.total ?? 0;
-    const used = this.getUsed?.() ?? this.used ?? 0;
+    const total = this.getTotal();
+    const used = this.getUsed();
     return Math.max(0, total - used);
   }
 }

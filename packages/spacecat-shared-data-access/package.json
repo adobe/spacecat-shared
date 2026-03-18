@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@adobe/fetch": "^4.2.3",
-    "@adobe/spacecat-shared-utils": "https://gist.githubusercontent.com/sandsinh/e6c7d5895ece4f0ad3b32a64701faf3b/raw/4dc817e97910e998b17ad1f535a7e289dca89d95/adobe-spacecat-shared-utils-1.102.0.tgz",
+    "@adobe/spacecat-shared-utils": "https://gist.githubusercontent.com/sandsinh/e6c7d5895ece4f0ad3b32a64701faf3b/raw/5f65e64f31849dcae0699a7744f07a23f77bcc21/adobe-spacecat-shared-utils-1.102.1.tgz",
     "@supabase/postgrest-js": "2.99.1",
     "@aws-sdk/client-s3": "^3.940.0",
     "@types/joi": "17.2.3",

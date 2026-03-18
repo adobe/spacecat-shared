@@ -56,6 +56,10 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
   .addAttribute('skipDetail', {
     type: 'string',
     validate: (value) => !value || (isString(value) && value.length <= 500),
+  })
+  .addAttribute('autofixPrecheckStatus', {
+    type: 'any',
+    validate: (value) => !value || isNonEmptyObject(value),
   });
 
 export default schema.build();

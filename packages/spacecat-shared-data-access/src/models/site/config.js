@@ -344,7 +344,7 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
     countryCodeIgnoreList: Joi.array().items(
-      Joi.string().length(2).uppercase(),
+      Joi.string().length(2),
     ).optional(),
     cdnBucketConfig: Joi.object({
       bucketName: Joi.string().optional(),

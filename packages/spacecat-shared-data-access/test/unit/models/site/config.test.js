@@ -2490,11 +2490,11 @@ describe('Config Tests', () => {
         llmo: {
           dataFolder: '/test',
           brand: 'testBrand',
-          countryCodeIgnoreList: ['PS', 'AD'],
+          countryCodeIgnoreList: ['PS', 'ad'],
         },
       };
       const config = Config(data);
-      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(['PS', 'AD']);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(['PS', 'ad']);
     });
 
     it('has undefined countryCodeIgnoreList in default config', () => {

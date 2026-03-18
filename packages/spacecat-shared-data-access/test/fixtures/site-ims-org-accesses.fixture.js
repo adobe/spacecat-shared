@@ -10,12 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
+// Site 0 belongs to Org 0; delegate = Org 1, target = Org 0 (site-owning org)
+// Site 1 belongs to Org 1; delegate = Org 2, target = Org 1 (site-owning org)
 const siteImsOrgAccesses = [
   {
     siteImsOrgAccessId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
-    organizationId: '3fe5ca60-4850-431c-97b3-f88a80f07e9b',
-    targetOrganizationId: '71f85d21-14d2-4e6d-ae9a-b8860082fb6d',
+    organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
+    targetOrganizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     productCode: 'LLMO',
     role: 'agency',
     grantedBy: 'ims:user123',
@@ -24,8 +26,8 @@ const siteImsOrgAccesses = [
   {
     siteImsOrgAccessId: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
-    organizationId: '48656b02-62cb-46c0-b271-ee99c940e89e',
-    targetOrganizationId: '5bc610a9-bc59-48d8-937e-4808ade2ecb1',
+    organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
+    targetOrganizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     productCode: 'ASO',
     role: 'collaborator',
     grantedBy: 'slack:U12345',

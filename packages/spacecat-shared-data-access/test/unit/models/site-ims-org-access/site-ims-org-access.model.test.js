@@ -71,13 +71,13 @@ describe('SiteImsOrgAccessModel', () => {
 
   describe('organizationId', () => {
     it('gets organizationId', () => {
-      expect(instance.getOrganizationId()).to.equal('3fe5ca60-4850-431c-97b3-f88a80f07e9b');
+      expect(instance.getOrganizationId()).to.equal('757ceb98-05c8-4e07-bb23-bc722115b2b0');
     });
   });
 
   describe('targetOrganizationId', () => {
     it('gets targetOrganizationId', () => {
-      expect(instance.getTargetOrganizationId()).to.equal('71f85d21-14d2-4e6d-ae9a-b8860082fb6d');
+      expect(instance.getTargetOrganizationId()).to.equal('4854e75e-894b-4a74-92bf-d674abad1423');
     });
   });
 

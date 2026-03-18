@@ -70,7 +70,7 @@ describe('AccessGrantLogModel', () => {
 
   describe('organizationId', () => {
     it('gets organizationId', () => {
-      expect(instance.getOrganizationId()).to.equal('3fe5ca60-4850-431c-97b3-f88a80f07e9b');
+      expect(instance.getOrganizationId()).to.equal('757ceb98-05c8-4e07-bb23-bc722115b2b0');
     });
   });
 

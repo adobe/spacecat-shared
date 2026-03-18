@@ -10,11 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
+// siteId and organizationId are TEXT (not FK) — use real IDs for realism
 const accessGrantLogs = [
   {
     accessGrantLogId: 'c3d4e5f6-a7b8-9012-cdef-123456789012',
     siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
-    organizationId: '3fe5ca60-4850-431c-97b3-f88a80f07e9b',
+    organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     productCode: 'LLMO',
     action: 'grant',
     role: 'agency',
@@ -23,7 +24,7 @@ const accessGrantLogs = [
   {
     accessGrantLogId: 'd4e5f6a7-b8c9-0123-defa-234567890123',
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
-    organizationId: '48656b02-62cb-46c0-b271-ee99c940e89e',
+    organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     productCode: 'ASO',
     action: 'revoke',
     role: 'collaborator',

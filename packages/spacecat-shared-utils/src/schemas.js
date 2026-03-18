@@ -51,6 +51,7 @@ const prompt = z.object({
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
   source: z.union([z.literal('config'), z.literal('api'), z.string()]),
   status: z.union([z.literal('completed'), z.literal('processing'), z.string()]).optional(),
+  source_url: z.string().optional(),
   ...auditFields,
 });
 
@@ -107,6 +108,7 @@ export const llmoConfig = z.object({
   categories: z.record(z.uuid(), category),
   topics: z.record(z.uuid(), topic),
   aiTopics: z.record(z.uuid(), topic).optional(),
+  // experimentationTopics: z.record(z.uuid(), topic).optional(),
   brands: z.object({
     aliases: z.array(
       z.object({

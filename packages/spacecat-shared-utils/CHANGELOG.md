@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.103.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.102.1...@adobe/spacecat-shared-utils-v1.103.0) (2026-03-18)
+
+### Features
+
+* add cited-analsys as audit types ([#1444](https://github.com/adobe/spacecat-shared/issues/1444)) ([c87bf2e](https://github.com/adobe/spacecat-shared/commit/c87bf2e0d3ad77589fa44a1f9b9638ce0deaab53))
+
 ## [@adobe/spacecat-shared-utils-v1.102.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.102.0...@adobe/spacecat-shared-utils-v1.102.1) (2026-03-15)
 
 ### Bug Fixes

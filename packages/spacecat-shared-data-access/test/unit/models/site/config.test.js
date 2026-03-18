@@ -2484,6 +2484,42 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO Country Code Ignore List', () => {
+    it('creates a Config with llmo countryCodeIgnoreList property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          countryCodeIgnoreList: ['PS', 'AD'],
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(['PS', 'AD']);
+    });
+
+    it('has undefined countryCodeIgnoreList in default config', () => {
+      const config = Config();
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should return undefined for countryCodeIgnoreList if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should be able to update countryCodeIgnoreList', () => {
+      const config = Config();
+      const countryCodeIgnoreList = ['PS', 'AD'];
+      config.updateLlmoCountryCodeIgnoreList(countryCodeIgnoreList);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(countryCodeIgnoreList);
+    });
+  });
+
   describe('LLMO CDN Bucket Config', () => {
     it('creates a Config with llmo cdnBucketConfig property', () => {
       const data = {

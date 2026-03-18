@@ -343,6 +343,9 @@ export const configSchema = Joi.object({
         type: Joi.string().valid('include', 'exclude').optional(),
       }),
     ).optional(),
+    countryCodeIgnoreList: Joi.array().items(
+      Joi.string().length(2).uppercase(),
+    ).optional(),
     cdnBucketConfig: Joi.object({
       bucketName: Joi.string().optional(),
       orgId: Joi.string().optional(),
@@ -487,6 +490,7 @@ export const Config = (data = {}) => {
     return llmoConfig?.customerIntent || [];
   };
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
+  self.getLlmoCountryCodeIgnoreList = () => state?.llmo?.countryCodeIgnoreList;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
@@ -633,6 +637,11 @@ export const Config = (data = {}) => {
   self.updateLlmoCdnlogsFilter = (cdnlogsFilter) => {
     state.llmo = state.llmo || {};
     state.llmo.cdnlogsFilter = cdnlogsFilter;
+  };
+
+  self.updateLlmoCountryCodeIgnoreList = (countryCodeIgnoreList) => {
+    state.llmo = state.llmo || {};
+    state.llmo.countryCodeIgnoreList = countryCodeIgnoreList;
   };
 
   self.updateLlmoCdnBucketConfig = (cdnBucketConfig) => {

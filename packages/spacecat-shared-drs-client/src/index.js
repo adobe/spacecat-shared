@@ -18,7 +18,7 @@ export const EXPERIMENT_PHASES = Object.freeze({
 });
 
 const VALID_EXPERIMENT_PHASES = new Set(Object.values(EXPERIMENT_PHASES));
-const DEFAULT_EXPERIMENT_PLATFORMS = ['chatgpt_free', 'perplexity', 'gemini', 'copilot', 'aimode'];
+const DEFAULT_EXPERIMENT_PLATFORMS = ['chatgpt_free', 'perplexity'];
 const PRE_PHASE_CRON_EXPRESSION = '0 * * * *';
 const POST_PHASE_CRON_EXPRESSION = '0 0 * * *';
 const PRE_PHASE_EXPIRY_MS = 10 * 60 * 60 * 1000; // 10 hours

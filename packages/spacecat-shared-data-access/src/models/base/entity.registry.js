@@ -46,6 +46,8 @@ import PageCitabilityCollection from '../page-citability/page-citability.collect
 import PlgOnboardingCollection from '../plg-onboarding/plg-onboarding.collection.js';
 import SentimentGuidelineCollection from '../sentiment-guideline/sentiment-guideline.collection.js';
 import SentimentTopicCollection from '../sentiment-topic/sentiment-topic.collection.js';
+import AccessGrantLogCollection from '../access-grant-log/access-grant-log.collection.js';
+import SiteImsOrgAccessCollection from '../site-ims-org-access/site-ims-org-access.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -79,6 +81,8 @@ import PageCitabilitySchema from '../page-citability/page-citability.schema.js';
 import PlgOnboardingSchema from '../plg-onboarding/plg-onboarding.schema.js';
 import SentimentGuidelineSchema from '../sentiment-guideline/sentiment-guideline.schema.js';
 import SentimentTopicSchema from '../sentiment-topic/sentiment-topic.schema.js';
+import AccessGrantLogSchema from '../access-grant-log/access-grant-log.schema.js';
+import SiteImsOrgAccessSchema from '../site-ims-org-access/site-ims-org-access.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -207,6 +211,8 @@ EntityRegistry.registerEntity(PageCitabilitySchema, PageCitabilityCollection);
 EntityRegistry.registerEntity(PlgOnboardingSchema, PlgOnboardingCollection);
 EntityRegistry.registerEntity(SentimentGuidelineSchema, SentimentGuidelineCollection);
 EntityRegistry.registerEntity(SentimentTopicSchema, SentimentTopicCollection);
+EntityRegistry.registerEntity(AccessGrantLogSchema, AccessGrantLogCollection);
+EntityRegistry.registerEntity(SiteImsOrgAccessSchema, SiteImsOrgAccessCollection);
 EntityRegistry.defaultEntities = { ...EntityRegistry.entities };
 
 export default EntityRegistry;

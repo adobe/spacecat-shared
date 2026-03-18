@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+export * from './access-grant-log/index.js';
 export * from './api-key/index.js';
 export * from './async-job/index.js';
 export * from './audit/index.js';
@@ -32,6 +33,7 @@ export * from './scrape-job/index.js';
 export * from './scrape-url/index.js';
 export * from './site-candidate/index.js';
 export * from './site-enrollment/index.js';
+export * from './site-ims-org-access/index.js';
 export * from './site-top-form/index.js';
 export * from './site-top-page/index.js';
 export * from './site/index.js';

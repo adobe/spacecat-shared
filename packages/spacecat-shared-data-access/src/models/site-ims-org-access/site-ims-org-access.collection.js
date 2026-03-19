@@ -37,6 +37,15 @@ class SiteImsOrgAccessCollection extends BaseCollection {
    * is the authoritative guard against duplicates.
    */
   async create(item, options = {}) {
+    if (item?.organizationId && item?.targetOrganizationId
+      && item.organizationId === item.targetOrganizationId) {
+      const message = 'Cannot create self-delegation: organizationId and targetOrganizationId must differ';
+      this.log.warn(`[SiteImsOrgAccess] Self-delegation rejected: org=${item.organizationId}`);
+      const err = new DataAccessError(message);
+      err.status = 409;
+      throw err;
+    }
+
     if (item?.siteId && item?.organizationId && item?.productCode) {
       const existing = await this.findByIndexKeys({
         siteId: item.siteId,

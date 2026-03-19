@@ -83,6 +83,24 @@ describe('SiteImsOrgAccessCollection', () => {
       sinon.restore();
     });
 
+    it('throws a DataAccessError with status 409 when organizationId equals targetOrganizationId', async () => {
+      const selfDelegation = {
+        ...mockRecord,
+        targetOrganizationId: mockRecord.organizationId,
+      };
+
+      let caught;
+      try {
+        await instance.create(selfDelegation);
+      } catch (err) {
+        caught = err;
+      }
+
+      expect(caught).to.be.an.instanceof(DataAccessError);
+      expect(caught.message).to.include('Cannot create self-delegation');
+      expect(caught.status).to.equal(409);
+    });
+
     it('returns existing grant when siteId/organizationId/productCode already exists', async () => {
       const existing = { getOrganizationId: () => mockRecord.organizationId };
       const findByIndexKeysStub = sinon.stub(instance, 'findByIndexKeys').resolves(existing);

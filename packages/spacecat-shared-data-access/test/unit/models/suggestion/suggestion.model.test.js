@@ -35,6 +35,7 @@ describe('SuggestionModel', () => {
       expect(Suggestion.STATUSES.ERROR).to.equal('ERROR');
       expect(Suggestion.STATUSES.OUTDATED).to.equal('OUTDATED');
       expect(Suggestion.STATUSES.PENDING_VALIDATION).to.equal('PENDING_VALIDATION');
+      expect(Suggestion.STATUSES.REJECTED).to.equal('REJECTED');
     });
   });
 

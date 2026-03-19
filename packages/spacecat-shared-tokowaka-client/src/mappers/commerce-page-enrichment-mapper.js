@@ -13,19 +13,112 @@
 import { hasText } from '@adobe/spacecat-shared-utils';
 import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
+import { htmlToHast } from '../utils/html-utils.js';
 
 const EXCLUDED_FIELDS = new Set([
   'rationale',
 ]);
 
-function filterEnrichmentData(enrichmentData) {
-  const filtered = {};
-  for (const [key, value] of Object.entries(enrichmentData)) {
-    if (!EXCLUDED_FIELDS.has(key) && value != null) {
-      filtered[key] = value;
+// Fields rendered in fixed order at the top of the article.
+// Each entry: CSS class, display label, [source keys in priority order]
+const ORDERED_FIELDS = [
+  { cls: 'category', sources: ['facts.facets.category_path', 'category'] },
+  { cls: 'description', sources: ['pdp.description_plain', 'description'] },
+  { cls: 'features', sources: ['pdp.feature_bullets'] },
+  { cls: 'variants', sources: ['facts.variants.summary'] },
+];
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function sanitizeClassName(key) {
+  return key
+    .replace(/^(pdp\.|facts\.facets\.|facts\.variants\.|facts\.attributes\.)/, '')
+    .replace(/[^a-z0-9-]/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+}
+
+function renderCategoryPath(value) {
+  if (Array.isArray(value)) {
+    return escapeHtml(value.join(' \u203A '));
+  }
+  return escapeHtml(String(value));
+}
+
+function renderList(items, cls) {
+  const lis = items.map((item) => `<li>${escapeHtml(String(item))}</li>`).join('');
+  return `<ul class="${cls}">${lis}</ul>`;
+}
+
+function renderValue(key, value, cls) {
+  if (value == null) return '';
+
+  if (key === 'facts.facets.category_path' || key === 'category') {
+    return `<p class="${cls}">${renderCategoryPath(value)}</p>`;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '';
+    return renderList(value, cls);
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value).filter(([, v]) => v != null && v !== '');
+    if (entries.length === 0) return '';
+    const items = entries.map(([k, v]) => `${escapeHtml(k)}: ${escapeHtml(String(v))}`);
+    return renderList(items, cls);
+  }
+
+  const str = String(value);
+  if (!str) return '';
+  return `<p class="${cls}">${escapeHtml(str)}</p>`;
+}
+
+function enrichmentToHtml(enrichmentData) {
+  const sku = enrichmentData.sku || '';
+  const consumed = new Set(['sku', ...EXCLUDED_FIELDS]);
+  const parts = [];
+
+  // Render ordered fields first
+  for (const { cls, sources } of ORDERED_FIELDS) {
+    let matched = false;
+    for (const sourceKey of sources) {
+      if (!matched && sourceKey in enrichmentData && enrichmentData[sourceKey] != null) {
+        const html = renderValue(sourceKey, enrichmentData[sourceKey], cls);
+        if (html) {
+          parts.push(html);
+          matched = true;
+        }
+      }
+    }
+    // Consume all sources in the group so alternatives don't appear in remaining fields
+    for (const sourceKey of sources) {
+      consumed.add(sourceKey);
     }
   }
-  return filtered;
+
+  // Render remaining fields in document order
+  for (const [key, value] of Object.entries(enrichmentData)) {
+    if (consumed.has(key)) {
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+    const cls = sanitizeClassName(key);
+    const html = renderValue(key, value, cls);
+    if (html) {
+      parts.push(html);
+    }
+  }
+
+  const skuAttr = sku ? ` data-sku="${escapeHtml(sku)}"` : '';
+  return `<div data-enrichment="spacecat"${skuAttr}><article>${parts.join('')}</article></div>`;
 }
 
 export default class CommercePageEnrichmentMapper extends BaseOpportunityMapper {
@@ -76,17 +169,16 @@ export default class CommercePageEnrichmentMapper extends BaseOpportunityMapper 
 
       const data = suggestion.getData();
       const enrichmentData = JSON.parse(data.patchValue);
-      const value = filterEnrichmentData(enrichmentData);
+      const html = enrichmentToHtml(enrichmentData);
+      const value = htmlToHast(html);
 
       patches.push({
         ...this.createBasePatch(suggestion, opportunityId),
         op: 'appendChild',
-        selector: 'head',
+        selector: 'body',
         value,
-        valueFormat: 'json',
+        valueFormat: 'hast',
         target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
-        tag: 'script',
-        attrs: { type: 'application/json' },
       });
     });
 

@@ -55,25 +55,6 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     type: 'string',
     required: false,
   })
-  .addAttribute('urls', {
-    type: 'list',
-    required: false,
-    default: [],
-    items: {
-      type: 'map',
-      properties: {
-        url: { type: 'string', required: true },
-        timesCited: { type: 'number', required: true },
-        category: { type: 'string', required: false },
-        subPrompts: {
-          type: 'list',
-          items: { type: 'string' },
-          required: false,
-          default: [],
-        },
-      },
-    },
-  })
   .addAttribute('enabled', {
     type: 'boolean',
     required: true,

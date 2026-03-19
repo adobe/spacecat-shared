@@ -101,4 +101,37 @@ export default class AuthInfo {
     return this.scopes.some((scope) => scope.name === name
       && (!subScope || scope.subScopes?.includes(subScope)));
   }
+
+  /**
+   * Find a delegated tenant entry matching the given IMS org ID and product code.
+   * @param {string} imsOrgId - The IMS org ID (bare ident or with @AdobeOrg)
+   * @param {string} [productCode] - Optional product code filter. When omitted, the first
+   *   delegated tenant matching the org ID is returned regardless of product scope — callers
+   *   must be aware that this can match delegations across different products (e.g. LLMO vs ASO).
+   * @returns {Object|undefined} A shallow copy of the matching delegated tenant entry, or undefined
+   */
+  getDelegatedTenant(imsOrgId, productCode) {
+    if (!imsOrgId) return undefined;
+    const [id] = String(imsOrgId).split('@');
+    const delegated = this.profile?.delegated_tenants || [];
+    const match = delegated.find((dt) => dt.id === id
+      && (!productCode || dt.productCode === productCode));
+    return match ? { ...match } : undefined;
+  }
+
+  /**
+   * Get all delegated tenant entries from the JWT.
+   * @returns {Array} The delegated tenants array (empty if none)
+   */
+  getDelegatedTenants() {
+    return this.profile?.delegated_tenants || [];
+  }
+
+  /**
+   * Get IDs of all primary tenants.
+   * @returns {Array<string>} Array of tenant IDs
+   */
+  getTenantIds() {
+    return (this.profile?.tenants || []).filter((t) => t.id).map((t) => t.id);
+  }
 }

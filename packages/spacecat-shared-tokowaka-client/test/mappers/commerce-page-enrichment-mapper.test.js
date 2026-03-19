@@ -16,6 +16,43 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import CommercePageEnrichmentMapper from '../../src/mappers/commerce-page-enrichment-mapper.js';
 
+/**
+ * Recursively finds the first HAST element node matching a predicate.
+ */
+function findNode(node, predicate) {
+  if (predicate(node)) return node;
+  if (node.children) {
+    for (const child of node.children) {
+      const found = findNode(child, predicate);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * Collects all HAST element nodes matching a predicate.
+ */
+function findAllNodes(node, predicate) {
+  const results = [];
+  if (predicate(node)) results.push(node);
+  if (node.children) {
+    for (const child of node.children) {
+      results.push(...findAllNodes(child, predicate));
+    }
+  }
+  return results;
+}
+
+/**
+ * Extracts concatenated text content from a HAST subtree.
+ */
+function textContent(node) {
+  if (node.type === 'text') return node.value;
+  if (node.children) return node.children.map(textContent).join('');
+  return '';
+}
+
 describe('CommercePageEnrichmentMapper', () => {
   let mapper;
   let log;
@@ -194,7 +231,7 @@ describe('CommercePageEnrichmentMapper', () => {
       };
     }
 
-    it('should produce a key:value patch appended to head', () => {
+    it('should produce a HAST patch appended to body', () => {
       const suggestion = makeSuggestion({
         patchValue: JSON.stringify({
           sku: 'HT5695',
@@ -215,18 +252,51 @@ describe('CommercePageEnrichmentMapper', () => {
       const patch = patches[0];
 
       expect(patch.op).to.equal('appendChild');
-      expect(patch.selector).to.equal('head');
-      expect(patch.valueFormat).to.equal('json');
+      expect(patch.selector).to.equal('body');
+      expect(patch.valueFormat).to.equal('hast');
       expect(patch.target).to.equal('ai-bots');
-      expect(patch.tag).to.equal('script');
-      expect(patch.attrs).to.deep.equal({ type: 'application/json' });
       expect(patch.opportunityId).to.equal(opportunityId);
       expect(patch.suggestionId).to.equal(suggestionId);
       expect(patch.prerenderRequired).to.be.true;
       expect(patch.lastUpdated).to.be.a('number');
+
+      // HAST root
+      expect(patch.value).to.be.an('object');
+      expect(patch.value.type).to.equal('root');
+      expect(patch.value.children).to.be.an('array');
     });
 
-    it('should pass through enrichment data as-is', () => {
+    it('should produce HAST with correct wrapper and article structure', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'HT5695',
+          name: 'Seat Cover Set',
+          brand: 'Lovesac',
+          'pdp.description_plain': 'A great product.',
+        }),
+        url: 'https://www.lovesac.com/products/seat-cover-set',
+      });
+
+      const patches = mapper.suggestionsToPatches(
+        '/products/seat-cover-set',
+        [suggestion],
+        opportunityId,
+      );
+
+      const { value } = patches[0];
+
+      // Outer div with data-enrichment="spacecat" and data-sku
+      const wrapper = findNode(value, (n) => n.tagName === 'div'
+        && n.properties?.dataEnrichment === 'spacecat');
+      expect(wrapper).to.exist;
+      expect(wrapper.properties.dataSku).to.equal('HT5695');
+
+      // Article inside the wrapper
+      const article = findNode(wrapper, (n) => n.tagName === 'article');
+      expect(article).to.exist;
+    });
+
+    it('should render enrichment fields as semantic HTML elements', () => {
       const suggestion = makeSuggestion({
         patchValue: JSON.stringify({
           sku: 'HT5695',
@@ -247,13 +317,66 @@ describe('CommercePageEnrichmentMapper', () => {
       );
 
       const { value } = patches[0];
-      expect(value.sku).to.equal('HT5695');
-      expect(value.name).to.equal('Seat Cover Set');
-      expect(value.brand).to.equal('Lovesac');
-      expect(value['pdp.description_plain']).to.equal('A great product.');
-      expect(value.material).to.equal('100% polyester chenille');
-      expect(value['facts.facets.category_path']).to.deep.equal(['Home', 'Sactionals', 'Covers']);
-      expect(value.color_family).to.equal('Blue');
+      const article = findNode(value, (n) => n.tagName === 'article');
+      expect(article).to.exist;
+
+      // String fields → <p> elements
+      const paragraphs = findAllNodes(article, (n) => n.tagName === 'p');
+      expect(paragraphs.length).to.be.greaterThan(0);
+
+      // Category path → rendered with › separator
+      const categoryP = paragraphs.find((p) => p.properties?.className?.includes('category'));
+      expect(categoryP).to.exist;
+      expect(textContent(categoryP)).to.include('›');
+
+      // Description → <p class="description">
+      const descP = paragraphs.find((p) => p.properties?.className?.includes('description'));
+      expect(descP).to.exist;
+      expect(textContent(descP)).to.equal('A great product.');
+    });
+
+    it('should render array fields as unordered lists', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'HT5695',
+          'pdp.feature_bullets': ['Includes 4 Seats', 'StealthTech eligible'],
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const { value } = patches[0];
+
+      const ul = findNode(value, (n) => n.tagName === 'ul'
+        && n.properties?.className?.includes('features'));
+      expect(ul).to.exist;
+
+      const lis = ul.children.filter((c) => c.tagName === 'li');
+      expect(lis).to.have.length(2);
+      expect(textContent(lis[0])).to.equal('Includes 4 Seats');
+      expect(textContent(lis[1])).to.equal('StealthTech eligible');
+    });
+
+    it('should render object fields as lists of key-value entries', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'HT5695',
+          variants: { color: 'Blue', size: 'Large' },
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const { value } = patches[0];
+
+      const ul = findNode(value, (n) => n.tagName === 'ul'
+        && n.properties?.className?.includes('variants'));
+      expect(ul).to.exist;
+
+      const lis = ul.children.filter((c) => c.tagName === 'li');
+      expect(lis).to.have.length(2);
+      expect(textContent(lis[0])).to.include('color');
+      expect(textContent(lis[0])).to.include('Blue');
     });
 
     it('should handle minimal enrichment data (only sku)', () => {
@@ -269,10 +392,16 @@ describe('CommercePageEnrichmentMapper', () => {
       );
 
       expect(patches).to.have.length(1);
-      expect(patches[0].value).to.deep.equal({ sku: 'MINIMAL' });
+      const { value } = patches[0];
+      expect(value.type).to.equal('root');
+
+      const wrapper = findNode(value, (n) => n.tagName === 'div'
+        && n.properties?.dataEnrichment === 'spacecat');
+      expect(wrapper).to.exist;
+      expect(wrapper.properties.dataSku).to.equal('MINIMAL');
     });
 
-    it('should preserve all enrichment fields without transformation', () => {
+    it('should render all enrichment field types correctly', () => {
       const enrichment = {
         sku: '4Seats5Sides',
         name: '4 Seats + 5 Sides Sactional',
@@ -305,7 +434,25 @@ describe('CommercePageEnrichmentMapper', () => {
       );
 
       expect(patches).to.have.length(1);
-      expect(patches[0].value).to.deep.equal(enrichment);
+      const { value } = patches[0];
+      const article = findNode(value, (n) => n.tagName === 'article');
+      expect(article).to.exist;
+
+      // Ordered fields rendered: category_path used (not category), description, features, variants
+      const allText = textContent(article);
+      expect(allText).to.include('Furniture');
+      expect(allText).to.include('›');
+      expect(allText).to.include('A modular sofa configuration.');
+      expect(allText).to.include('Includes 4 Seats');
+      expect(allText).to.include('Multiple fabric options');
+
+      // Remaining fields rendered
+      expect(allText).to.include('4 Seats + 5 Sides Sactional');
+      expect(allText).to.include('Lovesac');
+      expect(allText).to.include('Corded Velvet');
+      expect(allText).to.include('Grey');
+      expect(allText).to.include('homeowners');
+      expect(allText).to.include('modular couch');
     });
 
     it('should skip ineligible suggestions and log warning', () => {
@@ -357,6 +504,7 @@ describe('CommercePageEnrichmentMapper', () => {
         patchValue: JSON.stringify({
           sku: 'HT5695',
           rationale: 'This should not appear in output',
+          brand: 'Lovesac',
         }),
         url: 'https://example.com/page',
       });
@@ -367,8 +515,9 @@ describe('CommercePageEnrichmentMapper', () => {
         opportunityId,
       );
 
-      expect(patches[0].value.rationale).to.be.undefined;
-      expect(patches[0].value.sku).to.equal('HT5695');
+      const allText = textContent(patches[0].value);
+      expect(allText).to.not.include('This should not appear in output');
+      expect(allText).to.include('Lovesac');
     });
 
     it('should exclude null values from output', () => {
@@ -387,7 +536,146 @@ describe('CommercePageEnrichmentMapper', () => {
         opportunityId,
       );
 
-      expect(patches[0].value).to.deep.equal({ sku: 'TEST', brand: 'Lovesac' });
+      const allText = textContent(patches[0].value);
+      expect(allText).to.include('Lovesac');
+      // null name should not produce any element
+      const article = findNode(patches[0].value, (n) => n.tagName === 'article');
+      const nameP = findAllNodes(article, (n) => n.tagName === 'p'
+        && n.properties?.className?.includes('name'));
+      expect(nameP).to.have.length(0);
+    });
+
+    it('should render string category as plain text with › not needed', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          category: 'Electronics',
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const article = findNode(patches[0].value, (n) => n.tagName === 'article');
+      const categoryP = findNode(article, (n) => n.tagName === 'p'
+        && n.properties?.className?.includes('category'));
+      expect(categoryP).to.exist;
+      expect(textContent(categoryP)).to.equal('Electronics');
+    });
+
+    it('should skip empty arrays and empty objects', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          'pdp.feature_bullets': [],
+          variants: {},
+          brand: 'TestBrand',
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const article = findNode(patches[0].value, (n) => n.tagName === 'article');
+      const allText = textContent(article);
+      expect(allText).to.include('TestBrand');
+
+      // Empty array and empty object should not produce elements
+      const featureUl = findNode(article, (n) => n.tagName === 'ul'
+        && n.properties?.className?.includes('features'));
+      expect(featureUl).to.not.exist;
+    });
+
+    it('should skip empty string values', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          name: '',
+          brand: 'Visible',
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const article = findNode(patches[0].value, (n) => n.tagName === 'article');
+      const allText = textContent(article);
+      expect(allText).to.include('Visible');
+
+      const nameP = findAllNodes(article, (n) => n.tagName === 'p'
+        && n.properties?.className?.includes('name'));
+      expect(nameP).to.have.length(0);
+    });
+
+    it('should filter null and empty entries from object values', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          variants: { color: 'Blue', size: null, weight: '' },
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const ul = findNode(patches[0].value, (n) => n.tagName === 'ul'
+        && n.properties?.className?.includes('variants'));
+      expect(ul).to.exist;
+      const lis = ul.children.filter((c) => c.tagName === 'li');
+      expect(lis).to.have.length(1);
+      expect(textContent(lis[0])).to.include('Blue');
+    });
+
+    it('should produce empty article when object has only null entries', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          variants: { color: null, size: '' },
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const ul = findNode(patches[0].value, (n) => n.tagName === 'ul'
+        && n.properties?.className?.includes('variants'));
+      expect(ul).to.not.exist;
+    });
+
+    it('should handle enrichment with no sku', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          brand: 'NoBrand',
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const wrapper = findNode(patches[0].value, (n) => n.tagName === 'div'
+        && n.properties?.dataEnrichment === 'spacecat');
+      expect(wrapper).to.exist;
+      expect(wrapper.properties.dataSku).to.be.undefined;
+    });
+
+    it('should use ordered fields priority (category_path over category)', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          category: 'Simple Category',
+          'facts.facets.category_path': ['Home', 'Furniture'],
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const { value } = patches[0];
+      const article = findNode(value, (n) => n.tagName === 'article');
+
+      // category_path should be used (has priority), not the flat category
+      const categoryP = findNode(article, (n) => n.tagName === 'p'
+        && n.properties?.className?.includes('category'));
+      expect(categoryP).to.exist;
+      expect(textContent(categoryP)).to.include('Home');
+      expect(textContent(categoryP)).to.include('›');
+
+      // Flat 'category' should NOT appear since category_path was consumed
+      const allText = textContent(article);
+      expect(allText).to.not.include('Simple Category');
     });
   });
 });

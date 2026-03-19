@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.22.2...@adobe/spacecat-shared-http-utils-v1.23.0) (2026-03-19)
+
+### Features
+
+* cross-org delegation entity models and AuthInfo extensions ([#1448](https://github.com/adobe/spacecat-shared/issues/1448)) ([b0cb091](https://github.com/adobe/spacecat-shared/commit/b0cb091432f15eb304e20263c0a18ec794d93bb9))
+
 ## [@adobe/spacecat-shared-http-utils-v1.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.22.1...@adobe/spacecat-shared-http-utils-v1.22.2) (2026-03-15)
 
 ### Bug Fixes

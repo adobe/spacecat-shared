@@ -204,4 +204,33 @@ describe('AuthInfo', () => {
       expect(authInfo.getTenantIds()).to.deep.equal(['T1', 'T3']);
     });
   });
+
+  describe('isDelegatedTenantsComplete', () => {
+    it('should return true when profile is not set', () => {
+      const authInfo = new AuthInfo();
+      expect(authInfo.isDelegatedTenantsComplete()).to.be.true;
+    });
+
+    it('should return true when delegated_tenants_complete is not in profile', () => {
+      const authInfo = new AuthInfo().withProfile({});
+      expect(authInfo.isDelegatedTenantsComplete()).to.be.true;
+    });
+
+    it('should return true when delegated_tenants_complete is true', () => {
+      const authInfo = new AuthInfo().withProfile({ delegated_tenants_complete: true });
+      expect(authInfo.isDelegatedTenantsComplete()).to.be.true;
+    });
+
+    it('should return false when delegated_tenants_complete is false', () => {
+      const authInfo = new AuthInfo().withProfile({ delegated_tenants_complete: false });
+      expect(authInfo.isDelegatedTenantsComplete()).to.be.false;
+    });
+
+    it('should return true when delegated_tenants_complete is absent but delegated_tenants is present', () => {
+      const authInfo = new AuthInfo().withProfile({
+        delegated_tenants: [{ id: 'ABC123', productCode: 'LLMO' }],
+      });
+      expect(authInfo.isDelegatedTenantsComplete()).to.be.true;
+    });
+  });
 });

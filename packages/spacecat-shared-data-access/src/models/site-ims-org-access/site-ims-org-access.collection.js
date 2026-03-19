@@ -79,11 +79,16 @@ class SiteImsOrgAccessCollection extends BaseCollection {
   }
 
   /**
+   * Shared pagination loop for PostgREST embedding queries. Fetches all pages and maps
+   * each row using the provided mapper function.
+   *
    * @param {object} query - PostgREST query builder (result of .from(...).select(...))
-   * @returns {Promise<Array<{grant: object, targetOrganization: object}>>}
+   * @param {Function} mapRow - Maps a raw row to the desired return shape
+   * @param {string} errorMessage - Used for logging and DataAccessError message
+   * @returns {Promise<Array>}
    * @private
    */
-  async #fetchGrantsWithTargetOrg(query) {
+  async #fetchPaginatedGrants(query, mapRow, errorMessage) {
     const allResults = [];
     let offset = 0;
     let keepGoing = true;
@@ -94,9 +99,9 @@ class SiteImsOrgAccessCollection extends BaseCollection {
       const { data, error } = await orderedQuery.range(offset, offset + DEFAULT_PAGE_SIZE - 1);
 
       if (error) {
-        this.log.error(`[SiteImsOrgAccess] Failed to query grants with target org - ${error.message}`, error);
+        this.log.error(`[SiteImsOrgAccess] ${errorMessage} - ${error.message}`, error);
         throw new DataAccessError(
-          'Failed to query grants with target organization',
+          errorMessage,
           { entityName: 'SiteImsOrgAccess', tableName: 'site_ims_org_accesses' },
           error,
         );
@@ -111,22 +116,23 @@ class SiteImsOrgAccessCollection extends BaseCollection {
       }
     }
 
-    return allResults.map((row) => ({
-      grant: {
-        id: row.id,
-        siteId: row.site_id,
-        organizationId: row.organization_id,
-        targetOrganizationId: row.target_organization_id,
-        productCode: row.product_code,
-        role: row.role,
-        grantedBy: row.granted_by,
-        expiresAt: row.expires_at,
-      },
-      targetOrganization: {
-        id: row.organizations.id,
-        imsOrgId: row.organizations.ims_org_id,
-      },
-    }));
+    return allResults.map(mapRow);
+  }
+
+  /**
+   * @param {object} query - PostgREST query builder
+   * @returns {Promise<Array<{grant: SiteImsOrgAccess, targetOrganization: object}>>}
+   * @private
+   */
+  async #fetchGrantsWithTargetOrg(query) {
+    return this.#fetchPaginatedGrants(
+      query,
+      (row) => ({
+        grant: this.createInstanceFromRow(row),
+        targetOrganization: { id: row.organizations.id, imsOrgId: row.organizations.ims_org_id },
+      }),
+      'Failed to query grants with target organization',
+    );
   }
 
   /**
@@ -183,6 +189,74 @@ class SiteImsOrgAccessCollection extends BaseCollection {
     const select = 'id, site_id, organization_id, target_organization_id, product_code, role, granted_by, expires_at, organizations!site_ims_org_accesses_target_organization_id_fkey(id, ims_org_id)';
     return this.#fetchGrantsWithTargetOrg(
       this.postgrestService.from('site_ims_org_accesses').select(select).in('organization_id', organizationIds),
+    );
+  }
+
+  /**
+   * Finds a single grant by the compound key (siteId, organizationId, productCode).
+   * Used by hasAccess() in the api-service to verify a grant still exists (Path A revocation
+   * check) or to perform a direct DB lookup when the JWT list was truncated (Path B).
+   *
+   * Returns a model instance so callers can use getExpiresAt(), getRole(), etc.
+   * Returns null when no matching grant exists.
+   *
+   * @param {string} siteId - UUID of the site.
+   * @param {string} organizationId - UUID of the delegate organization.
+   * @param {string} productCode - Product code (e.g. 'LLMO', 'ASO').
+   * @returns {Promise<SiteImsOrgAccess|null>}
+   */
+  async findBySiteIdAndOrganizationIdAndProductCode(siteId, organizationId, productCode) {
+    if (!siteId || !organizationId || !productCode) {
+      throw new DataAccessError(
+        'siteId, organizationId and productCode are required',
+        { entityName: 'SiteImsOrgAccess', tableName: 'site_ims_org_accesses' },
+      );
+    }
+    return this.findByIndexKeys({ siteId, organizationId, productCode });
+  }
+
+  /**
+   * Returns all grants for the given delegate organization with the full site row embedded
+   * via PostgREST resource embedding (INNER JOIN on site_id FK). This is a single round-trip
+   * query — no N+1 — suitable for populating the site dropdown for delegated users.
+   *
+   * Returns plain objects, not model instances. The `site` field contains the raw PostgREST
+   * row for the joined site (snake_case column names). It is null only when the FK is broken,
+   * which should not occur given ON DELETE CASCADE on site_id.
+   *
+   * @param {string} organizationId - UUID of the delegate organization.
+   * @returns {Promise<Array<{
+   *   grant: {id: string, siteId: string, organizationId: string,
+   *     targetOrganizationId: string, productCode: string, role: string,
+   *     grantedBy: string|null, expiresAt: string|null},
+   *   site: object|null
+   * }>>}
+   */
+  async allByOrganizationIdWithSites(organizationId) {
+    if (!organizationId) {
+      throw new DataAccessError('organizationId is required', { entityName: 'SiteImsOrgAccess', tableName: 'site_ims_org_accesses' });
+    }
+    // eslint-disable-next-line max-len
+    const select = 'id, site_id, organization_id, target_organization_id, product_code, role, granted_by, expires_at, sites!site_ims_org_accesses_site_id_fkey(*)';
+    return this.#fetchGrantsWithSite(
+      this.postgrestService.from('site_ims_org_accesses').select(select).eq('organization_id', organizationId),
+    );
+  }
+
+  /**
+   * @param {object} query - PostgREST query builder
+   * @returns {Promise<Array<{grant: SiteImsOrgAccess, site: Site|null}>>}
+   * @private
+   */
+  async #fetchGrantsWithSite(query) {
+    const siteCollection = this.entityRegistry.getCollection('SiteCollection');
+    return this.#fetchPaginatedGrants(
+      query,
+      (row) => ({
+        grant: this.createInstanceFromRow(row),
+        site: row.sites ? siteCollection.createInstanceFromRow(row.sites) : null,
+      }),
+      'Failed to query grants with site',
     );
   }
 }

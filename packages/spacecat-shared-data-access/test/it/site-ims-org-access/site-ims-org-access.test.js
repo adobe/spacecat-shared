@@ -165,8 +165,8 @@ describe('SiteImsOrgAccess IT', async () => {
     for (const entry of entries) {
       expect(entry).to.have.property('grant');
       expect(entry).to.have.property('targetOrganization');
-      expect(entry.grant.organizationId).to.equal(organizationId);
-      expect(entry.targetOrganization.id).to.equal(entry.grant.targetOrganizationId);
+      expect(entry.grant.getOrganizationId()).to.equal(organizationId);
+      expect(entry.targetOrganization.id).to.equal(entry.grant.getTargetOrganizationId());
     }
   });
 
@@ -183,10 +183,55 @@ describe('SiteImsOrgAccess IT', async () => {
     for (const entry of entries) {
       expect(entry).to.have.property('grant');
       expect(entry).to.have.property('targetOrganization');
-      expect(entry.grant.organizationId).to.equal(organizationId);
-      expect(entry.grant.targetOrganizationId).to.be.a('string');
-      expect(entry.targetOrganization.id).to.equal(entry.grant.targetOrganizationId);
+      expect(entry.grant.getOrganizationId()).to.equal(organizationId);
+      expect(entry.grant.getTargetOrganizationId()).to.be.a('string');
+      expect(entry.targetOrganization.id).to.equal(entry.grant.getTargetOrganizationId());
       expect(entry.targetOrganization.imsOrgId).to.be.a('string');
+    }
+  });
+
+  it('finds a grant by siteId, organizationId and productCode', async () => {
+    const sample = sampleData.siteImsOrgAccesses[0];
+
+    const grant = await SiteImsOrgAccess.findBySiteIdAndOrganizationIdAndProductCode(
+      sample.getSiteId(),
+      sample.getOrganizationId(),
+      sample.getProductCode(),
+    );
+
+    expect(grant).to.be.an('object');
+    expect(grant.getId()).to.equal(sample.getId());
+    expect(grant.getSiteId()).to.equal(sample.getSiteId());
+    expect(grant.getOrganizationId()).to.equal(sample.getOrganizationId());
+    expect(grant.getProductCode()).to.equal(sample.getProductCode());
+  });
+
+  it('returns null when no grant matches findBySiteIdAndOrganizationIdAndProductCode', async () => {
+    const result = await SiteImsOrgAccess.findBySiteIdAndOrganizationIdAndProductCode(
+      sampleData.siteImsOrgAccesses[0].getSiteId(),
+      sampleData.siteImsOrgAccesses[0].getOrganizationId(),
+      'ACO', // different productCode — no fixture has this combination
+    );
+
+    expect(result).to.be.null;
+  });
+
+  it('gets all grants with embedded site data for a delegate organization', async () => {
+    const sample = sampleData.siteImsOrgAccesses[0];
+    const organizationId = sample.getOrganizationId();
+
+    const entries = await SiteImsOrgAccess.allByOrganizationIdWithSites(organizationId);
+
+    expect(entries).to.be.an('array');
+    expect(entries.length).to.be.greaterThan(0);
+
+    for (const entry of entries) {
+      expect(entry).to.have.property('grant');
+      expect(entry).to.have.property('site');
+      expect(entry.grant.getOrganizationId()).to.equal(organizationId);
+      expect(entry.grant.getSiteId()).to.be.a('string');
+      expect(entry.site).to.be.an('object');
+      expect(entry.site.getId()).to.equal(entry.grant.getSiteId());
     }
   });
 

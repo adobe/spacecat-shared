@@ -10,14 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
-// Site 0 belongs to Org 0; delegate = Org 1, target = Org 0 (site-owning org)
+// Org 0 (4854e75e) is intentionally not referenced in any FK column here.
+// The Organization IT test removes organizations[0]; both org FK columns have ON DELETE RESTRICT,
+// so any fixture row referencing org 0 would block that test.
 // Site 1 belongs to Org 1; delegate = Org 2, target = Org 1 (site-owning org)
+// Site 2 belongs to Org 2; delegate = Org 1, target = Org 2 (site-owning org)
 const siteImsOrgAccesses = [
   {
     siteImsOrgAccessId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-    siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
-    organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
-    targetOrganizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
+    siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
+    organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
+    targetOrganizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     productCode: 'LLMO',
     role: 'agency',
     grantedBy: 'ims:user123',
@@ -25,9 +28,9 @@ const siteImsOrgAccesses = [
   },
   {
     siteImsOrgAccessId: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
-    siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
-    organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
-    targetOrganizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
+    siteId: '56a691db-d32e-4308-ac99-a21de0580557',
+    organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
+    targetOrganizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     productCode: 'ASO',
     role: 'collaborator',
     grantedBy: 'slack:U12345',

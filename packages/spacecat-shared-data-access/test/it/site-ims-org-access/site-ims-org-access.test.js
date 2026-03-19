@@ -152,6 +152,26 @@ describe('SiteImsOrgAccess IT', async () => {
     expect(updated.getRole()).to.equal('viewer');
   });
 
+  it('gets all grants with embedded target organization data', async () => {
+    const sample = sampleData.siteImsOrgAccesses[0];
+    const organizationId = sample.getOrganizationId();
+
+    // eslint-disable-next-line max-len
+    const entries = await SiteImsOrgAccess.allByOrganizationIdWithTargetOrganization(organizationId);
+
+    expect(entries).to.be.an('array');
+    expect(entries.length).to.be.greaterThan(0);
+
+    for (const entry of entries) {
+      expect(entry).to.have.property('grant');
+      expect(entry).to.have.property('targetOrganization');
+      expect(entry.grant.organizationId).to.equal(organizationId);
+      expect(entry.grant.targetOrganizationId).to.be.a('string');
+      expect(entry.targetOrganization.id).to.equal(entry.grant.targetOrganizationId);
+      expect(entry.targetOrganization.imsOrgId).to.be.a('string');
+    }
+  });
+
   it('removes a site ims org access', async () => {
     const access = await SiteImsOrgAccess.findById(sampleData.siteImsOrgAccesses[1].getId());
 

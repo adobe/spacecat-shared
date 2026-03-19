@@ -12,6 +12,7 @@
 
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
+import { DEFAULT_PAGE_SIZE } from '../../util/postgrest.utils.js';
 
 /**
  * SiteImsOrgAccessCollection - Collection of cross-org delegation grants.
@@ -66,6 +67,76 @@ class SiteImsOrgAccessCollection extends BaseCollection {
     const created = await super.create(item, options);
     this.log.info(`[SiteImsOrgAccess] New grant created: id=${created.getId()} site=${item.siteId} org=${item.organizationId} product=${item.productCode}`);
     return created;
+  }
+
+  /**
+   * Returns all grants for the given delegate organization with the target organization's
+   * id and imsOrgId embedded via PostgREST resource embedding (INNER JOIN). This avoids
+   * a separate batch query to resolve target org IMS identifiers.
+   *
+   * Returns plain objects, not model instances. Access properties directly
+   * (e.g., `entry.grant.productCode`, `entry.targetOrganization.imsOrgId`).
+   *
+   * @param {string} organizationId - UUID of the delegate organization.
+   * @returns {Promise<Array<{
+   *   grant: {id: string, siteId: string, organizationId: string,
+   *     targetOrganizationId: string, productCode: string, role: string,
+   *     grantedBy: string|null, expiresAt: string|null},
+   *   targetOrganization: {id: string, imsOrgId: string}
+   * }>>}
+   */
+  async allByOrganizationIdWithTargetOrganization(organizationId) {
+    if (!organizationId) {
+      throw new DataAccessError('organizationId is required', { entityName: 'SiteImsOrgAccess', tableName: 'site_ims_org_accesses' });
+    }
+
+    const allResults = [];
+    let offset = 0;
+    let keepGoing = true;
+
+    while (keepGoing) {
+      // eslint-disable-next-line no-await-in-loop
+      const { data, error } = await this.postgrestService
+        .from('site_ims_org_accesses')
+        .select('id, site_id, organization_id, target_organization_id, product_code, role, granted_by, expires_at, organizations!site_ims_org_accesses_target_organization_id_fkey(id, ims_org_id)')
+        .eq('organization_id', organizationId)
+        .order('id')
+        .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+
+      if (error) {
+        this.log.error(`[SiteImsOrgAccess] Failed to query grants with target org - ${error.message}`, error);
+        throw new DataAccessError(
+          'Failed to query grants with target organization',
+          { entityName: 'SiteImsOrgAccess', tableName: 'site_ims_org_accesses' },
+          error,
+        );
+      }
+
+      if (!data || data.length === 0) {
+        keepGoing = false;
+      } else {
+        allResults.push(...data);
+        keepGoing = data.length >= DEFAULT_PAGE_SIZE;
+        offset += DEFAULT_PAGE_SIZE;
+      }
+    }
+
+    return allResults.map((row) => ({
+      grant: {
+        id: row.id,
+        siteId: row.site_id,
+        organizationId: row.organization_id,
+        targetOrganizationId: row.target_organization_id,
+        productCode: row.product_code,
+        role: row.role,
+        grantedBy: row.granted_by,
+        expiresAt: row.expires_at,
+      },
+      targetOrganization: {
+        id: row.organizations.id,
+        imsOrgId: row.organizations.ims_org_id,
+      },
+    }));
   }
 }
 

@@ -21,6 +21,7 @@ import SiteImsOrgAccess from '../../../../src/models/site-ims-org-access/site-im
 import SiteImsOrgAccessCollection from '../../../../src/models/site-ims-org-access/site-ims-org-access.collection.js';
 import BaseCollection from '../../../../src/models/base/base.collection.js';
 import DataAccessError from '../../../../src/errors/data-access.error.js';
+import { DEFAULT_PAGE_SIZE } from '../../../../src/util/postgrest.utils.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -170,6 +171,139 @@ describe('SiteImsOrgAccessCollection', () => {
       await instance.create(itemWithoutSiteId);
 
       expect(superCreateStub).to.have.been.calledOnce;
+    });
+  });
+
+  describe('allByOrganizationIdWithTargetOrganization', () => {
+    let rangeStub;
+
+    function setupPostgrestChain(result) {
+      rangeStub = sinon.stub().resolves(result);
+      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const eqStub = sinon.stub().returns({ order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+      return {
+        selectStub, eqStub, orderStub, rangeStub,
+      };
+    }
+
+    it('returns grants with embedded target organization data', async () => {
+      const { selectStub, eqStub, orderStub } = setupPostgrestChain({
+        data: [{
+          id: 'grant-1',
+          site_id: 'site-uuid-1',
+          organization_id: mockRecord.organizationId,
+          target_organization_id: mockRecord.targetOrganizationId,
+          product_code: 'LLMO',
+          role: 'agency',
+          granted_by: 'ims:user123',
+          expires_at: null,
+          organizations: { id: mockRecord.targetOrganizationId, ims_org_id: 'target@AdobeOrg' },
+        }],
+        error: null,
+      });
+
+      // eslint-disable-next-line max-len
+      const results = await instance.allByOrganizationIdWithTargetOrganization(mockRecord.organizationId);
+
+      expect(results).to.have.lengthOf(1);
+      // eslint-disable-next-line max-len
+      expect(selectStub).to.have.been.calledWithMatch('organizations!site_ims_org_accesses_target_organization_id_fkey');
+      expect(eqStub).to.have.been.calledWith('organization_id', mockRecord.organizationId);
+      expect(orderStub).to.have.been.calledWith('id');
+      expect(results[0]).to.deep.equal({
+        grant: {
+          id: 'grant-1',
+          siteId: 'site-uuid-1',
+          organizationId: mockRecord.organizationId,
+          targetOrganizationId: mockRecord.targetOrganizationId,
+          productCode: 'LLMO',
+          role: 'agency',
+          grantedBy: 'ims:user123',
+          expiresAt: null,
+        },
+        targetOrganization: {
+          id: mockRecord.targetOrganizationId,
+          imsOrgId: 'target@AdobeOrg',
+        },
+      });
+    });
+
+    it('returns empty array when no grants exist', async () => {
+      setupPostgrestChain({ data: [], error: null });
+
+      // eslint-disable-next-line max-len
+      const results = await instance.allByOrganizationIdWithTargetOrganization(mockRecord.organizationId);
+
+      expect(results).to.deep.equal([]);
+    });
+
+    it('returns empty array when data is null', async () => {
+      setupPostgrestChain({ data: null, error: null });
+
+      // eslint-disable-next-line max-len
+      const results = await instance.allByOrganizationIdWithTargetOrganization(mockRecord.organizationId);
+
+      expect(results).to.deep.equal([]);
+    });
+
+    it('throws DataAccessError when organizationId is missing', async () => {
+      await expect(instance.allByOrganizationIdWithTargetOrganization(null))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required');
+      await expect(instance.allByOrganizationIdWithTargetOrganization(''))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required');
+    });
+
+    it('throws DataAccessError on PostgREST error', async () => {
+      setupPostgrestChain({ data: null, error: { message: 'connection refused' } });
+
+      await expect(instance.allByOrganizationIdWithTargetOrganization(mockRecord.organizationId))
+        .to.be.rejectedWith(DataAccessError, 'Failed to query grants with target organization');
+      expect(mockLogger.error).to.have.been.called;
+    });
+
+    it('paginates when results exceed page size', async () => {
+      const page1 = Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
+        id: `grant-${i}`,
+        site_id: `site-${i}`,
+        organization_id: mockRecord.organizationId,
+        target_organization_id: `target-uuid-${i}`,
+        product_code: 'LLMO',
+        role: 'agency',
+        granted_by: null,
+        expires_at: null,
+        organizations: { id: `target-uuid-${i}`, ims_org_id: `org${i}@AdobeOrg` },
+      }));
+      const page2 = [{
+        id: `grant-${DEFAULT_PAGE_SIZE}`,
+        site_id: `site-${DEFAULT_PAGE_SIZE}`,
+        organization_id: mockRecord.organizationId,
+        target_organization_id: `target-uuid-${DEFAULT_PAGE_SIZE}`,
+        product_code: 'LLMO',
+        role: 'agency',
+        granted_by: null,
+        expires_at: null,
+        // eslint-disable-next-line max-len
+        organizations: { id: `target-uuid-${DEFAULT_PAGE_SIZE}`, ims_org_id: `org${DEFAULT_PAGE_SIZE}@AdobeOrg` },
+      }];
+
+      rangeStub = sinon.stub();
+      rangeStub.onFirstCall().resolves({ data: page1, error: null });
+      rangeStub.onSecondCall().resolves({ data: page2, error: null });
+      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const eqStub = sinon.stub().returns({ order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+
+      // eslint-disable-next-line max-len
+      const results = await instance.allByOrganizationIdWithTargetOrganization(mockRecord.organizationId);
+
+      expect(results).to.have.lengthOf(DEFAULT_PAGE_SIZE + 1);
+      expect(rangeStub).to.have.been.calledTwice;
+      expect(rangeStub.firstCall.args).to.deep.equal([0, DEFAULT_PAGE_SIZE - 1]);
+      // eslint-disable-next-line max-len
+      expect(rangeStub.secondCall.args).to.deep.equal([DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE * 2 - 1]);
     });
   });
 });

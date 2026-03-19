@@ -34,11 +34,29 @@ export interface SiteImsOrgAccess extends BaseModel {
   setExpiresAt(expiresAt: string): SiteImsOrgAccess;
 }
 
+export interface SiteImsOrgAccessGrantWithTarget {
+  grant: {
+    id: string;
+    siteId: string;
+    organizationId: string;
+    targetOrganizationId: string;
+    productCode: EntitlementProductCode;
+    role: SiteImsOrgAccessRole;
+    grantedBy: string | null;
+    expiresAt: string | null;
+  };
+  targetOrganization: {
+    id: string;
+    imsOrgId: string;
+  };
+}
+
 export interface SiteImsOrgAccessCollection extends
     BaseCollection<SiteImsOrgAccess> {
   allBySiteId(siteId: string): Promise<SiteImsOrgAccess[]>;
   allByOrganizationId(organizationId: string): Promise<SiteImsOrgAccess[]>;
   allByTargetOrganizationId(targetOrganizationId: string): Promise<SiteImsOrgAccess[]>;
+  allByOrganizationIdWithTargetOrganization(organizationId: string): Promise<SiteImsOrgAccessGrantWithTarget[]>;
 
   findBySiteId(siteId: string): Promise<SiteImsOrgAccess | null>;
   findByOrganizationId(organizationId: string): Promise<SiteImsOrgAccess | null>;

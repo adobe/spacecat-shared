@@ -134,4 +134,16 @@ export default class AuthInfo {
   getTenantIds() {
     return (this.profile?.tenants || []).filter((t) => t.id).map((t) => t.id);
   }
+
+  /**
+   * Returns true when the JWT's delegated_tenants list is exhaustive (all grants fit within
+   * the cap). Returns false when the list was truncated because the delegate org has more
+   * grants than the cap allows. Defaults to true when the claim is absent — tokens issued
+   * before this flag was introduced had at most the original cap of grants and are treated
+   * as complete.
+   * @returns {boolean}
+   */
+  isDelegatedTenantsComplete() {
+    return this.profile?.delegated_tenants_complete !== false;
+  }
 }

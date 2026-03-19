@@ -585,6 +585,19 @@ class BaseCollection {
     return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
   }
 
+  /**
+   * Converts a raw PostgREST row (snake_case) to a model instance using the same field mapping
+   * pipeline as the internal create/find paths. Intended for use by collections that receive
+   * embedded sub-rows from PostgREST resource embedding (e.g. `sites!fkey(*)`), allowing them
+   * to return proper model instances rather than raw snake_case objects.
+   *
+   * @param {object} row - Raw PostgREST row with snake_case column names.
+   * @returns {object|null} A model instance, or null if the row is empty/invalid.
+   */
+  createInstanceFromRow(row) {
+    return this.#createInstance(this.#toModelRecord(row));
+  }
+
   async findById(id) {
     guardId(this.idName, id, this.entityName);
     if (this.entity) {

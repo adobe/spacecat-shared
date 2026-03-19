@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.105.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.104.0...@adobe/spacecat-shared-utils-v1.105.0) (2026-03-19)
+
+### Features
+
+* **spacecat-shared-utils:** SITES-40623 - add token grant config and exports ([#1420](https://github.com/adobe/spacecat-shared/issues/1420)) ([a14e001](https://github.com/adobe/spacecat-shared/commit/a14e0012f43ad4a13c4f9347bd64f66a5fc535f8))
+
 ## [@adobe/spacecat-shared-utils-v1.104.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.103.0...@adobe/spacecat-shared-utils-v1.104.0) (2026-03-19)
 
 ### Features

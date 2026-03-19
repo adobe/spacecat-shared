@@ -57,6 +57,7 @@ export interface SiteImsOrgAccessCollection extends
   allByOrganizationId(organizationId: string): Promise<SiteImsOrgAccess[]>;
   allByTargetOrganizationId(targetOrganizationId: string): Promise<SiteImsOrgAccess[]>;
   allByOrganizationIdWithTargetOrganization(organizationId: string): Promise<SiteImsOrgAccessGrantWithTarget[]>;
+  allByOrganizationIdsWithTargetOrganization(organizationIds: string[]): Promise<SiteImsOrgAccessGrantWithTarget[]>;
 
   findBySiteId(siteId: string): Promise<SiteImsOrgAccess | null>;
   findByOrganizationId(organizationId: string): Promise<SiteImsOrgAccess | null>;

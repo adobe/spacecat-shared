@@ -85,23 +85,19 @@ class SiteImsOrgAccessCollection extends BaseCollection {
    *   targetOrganization: {id: string, imsOrgId: string}
    * }>>}
    */
-  async allByOrganizationIdWithTargetOrganization(organizationId) {
-    if (!organizationId) {
-      throw new DataAccessError('organizationId is required', { entityName: 'SiteImsOrgAccess', tableName: 'site_ims_org_accesses' });
-    }
-
+  /**
+   * @param {object} query - PostgREST query builder (result of .from(...).select(...))
+   * @returns {Promise<Array<{grant: object, targetOrganization: object}>>}
+   * @private
+   */
+  async #fetchGrantsWithTargetOrg(query) {
     const allResults = [];
     let offset = 0;
     let keepGoing = true;
 
     while (keepGoing) {
       // eslint-disable-next-line no-await-in-loop
-      const { data, error } = await this.postgrestService
-        .from('site_ims_org_accesses')
-        .select('id, site_id, organization_id, target_organization_id, product_code, role, granted_by, expires_at, organizations!site_ims_org_accesses_target_organization_id_fkey(id, ims_org_id)')
-        .eq('organization_id', organizationId)
-        .order('id')
-        .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+      const { data, error } = await query.order('id').range(offset, offset + DEFAULT_PAGE_SIZE - 1);
 
       if (error) {
         this.log.error(`[SiteImsOrgAccess] Failed to query grants with target org - ${error.message}`, error);
@@ -137,6 +133,57 @@ class SiteImsOrgAccessCollection extends BaseCollection {
         imsOrgId: row.organizations.ims_org_id,
       },
     }));
+  }
+
+  /**
+   * Returns all grants for the given delegate organization with the target organization's
+   * id and imsOrgId embedded via PostgREST resource embedding (INNER JOIN). This avoids
+   * a separate batch query to resolve target org IMS identifiers.
+   *
+   * Returns plain objects, not model instances. Access properties directly
+   * (e.g., `entry.grant.productCode`, `entry.targetOrganization.imsOrgId`).
+   *
+   * @param {string} organizationId - UUID of the delegate organization.
+   * @returns {Promise<Array<{
+   *   grant: {id: string, siteId: string, organizationId: string,
+   *     targetOrganizationId: string, productCode: string, role: string,
+   *     grantedBy: string|null, expiresAt: string|null},
+   *   targetOrganization: {id: string, imsOrgId: string}
+   * }>>}
+   */
+  async allByOrganizationIdWithTargetOrganization(organizationId) {
+    if (!organizationId) {
+      throw new DataAccessError('organizationId is required', { entityName: 'SiteImsOrgAccess', tableName: 'site_ims_org_accesses' });
+    }
+    // eslint-disable-next-line max-len
+    const select = 'id, site_id, organization_id, target_organization_id, product_code, role, granted_by, expires_at, organizations!site_ims_org_accesses_target_organization_id_fkey(id, ims_org_id)';
+    return this.#fetchGrantsWithTargetOrg(
+      this.postgrestService.from('site_ims_org_accesses').select(select).eq('organization_id', organizationId),
+    );
+  }
+
+  /**
+   * Bulk variant of allByOrganizationIdWithTargetOrganization. Fetches grants for multiple
+   * delegate organizations in a single PostgREST IN query with target org embedding.
+   * Returns an empty array when organizationIds is empty.
+   *
+   * @param {string[]} organizationIds - UUIDs of the delegate organizations.
+   * @returns {Promise<Array<{
+   *   grant: {id: string, siteId: string, organizationId: string,
+   *     targetOrganizationId: string, productCode: string, role: string,
+   *     grantedBy: string|null, expiresAt: string|null},
+   *   targetOrganization: {id: string, imsOrgId: string}
+   * }>>}
+   */
+  async allByOrganizationIdsWithTargetOrganization(organizationIds) {
+    if (!organizationIds || organizationIds.length === 0) {
+      return [];
+    }
+    // eslint-disable-next-line max-len
+    const select = 'id, site_id, organization_id, target_organization_id, product_code, role, granted_by, expires_at, organizations!site_ims_org_accesses_target_organization_id_fkey(id, ims_org_id)';
+    return this.#fetchGrantsWithTargetOrg(
+      this.postgrestService.from('site_ims_org_accesses').select(select).in('organization_id', organizationIds),
+    );
   }
 }
 

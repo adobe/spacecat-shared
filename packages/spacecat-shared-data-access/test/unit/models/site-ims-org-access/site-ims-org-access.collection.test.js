@@ -306,4 +306,62 @@ describe('SiteImsOrgAccessCollection', () => {
       expect(rangeStub.secondCall.args).to.deep.equal([DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE * 2 - 1]);
     });
   });
+
+  describe('allByOrganizationIdsWithTargetOrganization', () => {
+    function setupPostgrestChainForIn(result) {
+      const rangeStub = sinon.stub().resolves(result);
+      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const inStub = sinon.stub().returns({ order: orderStub });
+      const selectStub = sinon.stub().returns({ in: inStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+      return {
+        selectStub, inStub, orderStub, rangeStub,
+      };
+    }
+
+    it('returns grants with embedded target organization data for multiple orgs', async () => {
+      const { inStub } = setupPostgrestChainForIn({
+        data: [{
+          id: 'grant-1',
+          site_id: 'site-uuid-1',
+          organization_id: mockRecord.organizationId,
+          target_organization_id: mockRecord.targetOrganizationId,
+          product_code: 'LLMO',
+          role: 'agency',
+          granted_by: null,
+          expires_at: null,
+          organizations: { id: mockRecord.targetOrganizationId, ims_org_id: 'target@AdobeOrg' },
+        }],
+        error: null,
+      });
+
+      const ids = [mockRecord.organizationId, 'other-org-uuid'];
+      // eslint-disable-next-line max-len
+      const results = await instance.allByOrganizationIdsWithTargetOrganization(ids);
+
+      expect(results).to.have.lengthOf(1);
+      expect(inStub).to.have.been.calledWith('organization_id', ids);
+      expect(results[0].grant.organizationId).to.equal(mockRecord.organizationId);
+      expect(results[0].targetOrganization.imsOrgId).to.equal('target@AdobeOrg');
+    });
+
+    it('returns empty array when organizationIds is empty', async () => {
+      const results = await instance.allByOrganizationIdsWithTargetOrganization([]);
+      expect(results).to.deep.equal([]);
+    });
+
+    it('returns empty array when organizationIds is null', async () => {
+      const results = await instance.allByOrganizationIdsWithTargetOrganization(null);
+      expect(results).to.deep.equal([]);
+    });
+
+    it('throws DataAccessError on PostgREST error', async () => {
+      setupPostgrestChainForIn({ data: null, error: { message: 'connection refused' } });
+
+      // eslint-disable-next-line max-len
+      await expect(instance.allByOrganizationIdsWithTargetOrganization([mockRecord.organizationId]))
+        .to.be.rejectedWith(DataAccessError, 'Failed to query grants with target organization');
+      expect(mockLogger.error).to.have.been.called;
+    });
+  });
 });

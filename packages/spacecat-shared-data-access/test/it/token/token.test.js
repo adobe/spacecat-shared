@@ -25,7 +25,7 @@ use(chaiAsPromised);
 describe('Token IT', () => {
   let sampleData;
   let Token;
-  let Suggestion;
+  let SuggestionGrant;
 
   before(async function () {
     this.timeout(10000);
@@ -33,7 +33,7 @@ describe('Token IT', () => {
 
     const dataAccess = getDataAccess();
     Token = dataAccess.Token;
-    Suggestion = dataAccess.Suggestion;
+    SuggestionGrant = dataAccess.SuggestionGrant;
   });
 
   const createOpts = { createIfNotFound: true };
@@ -107,7 +107,7 @@ describe('Token IT', () => {
       const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
       const usedBefore = tokenBefore.getUsed();
 
-      const result = await Suggestion.grantSuggestions([suggestionId], siteId, tokenType);
+      const result = await SuggestionGrant.grantSuggestions([suggestionId], siteId, tokenType);
 
       expect(result).to.have.property('success', true);
       expect(result).to.have.property('grantedSuggestions').that.is.an('array');
@@ -124,7 +124,7 @@ describe('Token IT', () => {
       const tokenBefore = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
       const usedBefore = tokenBefore.getUsed();
 
-      const result = await Suggestion.grantSuggestions(ids, siteId, tokenType);
+      const result = await SuggestionGrant.grantSuggestions(ids, siteId, tokenType);
 
       expect(result).to.have.property('success', true);
 
@@ -139,7 +139,7 @@ describe('Token IT', () => {
       for (let i = 0; i < tokensPerCycle; i += 1) {
         const suggestion = sampleData.suggestions[i % sampleData.suggestions.length];
         // eslint-disable-next-line no-await-in-loop -- sequential: each call consumes one token
-        await Suggestion.grantSuggestions([suggestion.getId()], siteId, tokenType);
+        await SuggestionGrant.grantSuggestions([suggestion.getId()], siteId, tokenType);
       }
 
       const exhaustedToken = await Token.findBySiteIdAndTokenType(siteId, tokenType, createOpts);
@@ -147,7 +147,8 @@ describe('Token IT', () => {
       expect(exhaustedToken.getUsed()).to.equal(tokensPerCycle);
 
       const lastSuggestion = sampleData.suggestions[sampleData.suggestions.length - 1];
-      const result = await Suggestion.grantSuggestions([lastSuggestion.getId()], siteId, tokenType);
+      const result = await SuggestionGrant
+        .grantSuggestions([lastSuggestion.getId()], siteId, tokenType);
 
       expect(result).to.have.property('success', false);
       expect(result).to.have.property('reason', 'no_tokens');
@@ -155,25 +156,25 @@ describe('Token IT', () => {
 
     it('throws when suggestionIds is not an array', async () => {
       await expect(
-        Suggestion.grantSuggestions('not-an-array', siteId, tokenType),
+        SuggestionGrant.grantSuggestions('not-an-array', siteId, tokenType),
       ).to.be.rejectedWith(/suggestionIds must be an array/);
     });
 
     it('throws when suggestionIds contains empty strings', async () => {
       await expect(
-        Suggestion.grantSuggestions([''], siteId, tokenType),
+        SuggestionGrant.grantSuggestions([''], siteId, tokenType),
       ).to.be.rejectedWith(/suggestionIds must be an array of non-empty strings/);
     });
 
     it('throws when siteId is missing', async () => {
       await expect(
-        Suggestion.grantSuggestions(['some-id'], '', tokenType),
+        SuggestionGrant.grantSuggestions(['some-id'], '', tokenType),
       ).to.be.rejectedWith(/siteId is required/);
     });
 
     it('throws when tokenType is missing', async () => {
       await expect(
-        Suggestion.grantSuggestions(['some-id'], siteId, ''),
+        SuggestionGrant.grantSuggestions(['some-id'], siteId, ''),
       ).to.be.rejectedWith(/tokenType is required/);
     });
   });

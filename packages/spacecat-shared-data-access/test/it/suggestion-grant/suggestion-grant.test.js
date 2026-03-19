@@ -20,7 +20,6 @@ import { seedDatabase } from '../util/seed.js';
 describe('SuggestionGrant IT', () => {
   let sampleData;
   let SuggestionGrant;
-  let Suggestion;
   let Token;
 
   // Use site 1 so token pool is independent of token.test.js
@@ -37,7 +36,6 @@ describe('SuggestionGrant IT', () => {
 
     const dataAccess = getDataAccess();
     SuggestionGrant = dataAccess.SuggestionGrant;
-    Suggestion = dataAccess.Suggestion;
     Token = dataAccess.Token;
 
     expect(SuggestionGrant).to.be.an('object');
@@ -46,7 +44,7 @@ describe('SuggestionGrant IT', () => {
     // Ensure token exists and grant one suggestion so suggestion_grants has at least one row
     await Token.findBySiteIdAndTokenType(siteId, tokenType, { createIfNotFound: true });
     const suggestionToGrant = sampleData.suggestions[4];
-    const grantResult = await Suggestion.grantSuggestions(
+    const grantResult = await SuggestionGrant.grantSuggestions(
       [suggestionToGrant.getId()],
       siteId,
       tokenType,

@@ -395,7 +395,8 @@ describe('Suggestion IT', async () => {
       const { Token } = getDataAccess();
       await Token.findBySiteIdAndTokenType(siteId, tokenType, { createIfNotFound: true });
       [, , , , preGrantedSuggestion] = sampleData.suggestions;
-      const grantResult = await Suggestion.grantSuggestions(
+      const { SuggestionGrant } = getDataAccess();
+      const grantResult = await SuggestionGrant.grantSuggestions(
         [preGrantedSuggestion.getId()],
         siteId,
         tokenType,
@@ -410,7 +411,8 @@ describe('Suggestion IT', async () => {
     it('splits suggestion IDs into grantedIds and notGrantedIds and returns unique grantIds', async () => {
       const notGrantedSuggestion = sampleData.suggestions[5];
       const suggestionIds = [preGrantedSuggestion.getId(), notGrantedSuggestion.getId()];
-      const result = await Suggestion.splitSuggestionsByGrantStatus(suggestionIds);
+      const { SuggestionGrant } = getDataAccess();
+      const result = await SuggestionGrant.splitSuggestionsByGrantStatus(suggestionIds);
 
       expect(result.grantedIds).to.be.an('array').with.length(1);
       expect(result.notGrantedIds).to.be.an('array').with.length(1);
@@ -423,7 +425,8 @@ describe('Suggestion IT', async () => {
     it('returns disjoint grantedIds and notGrantedIds that cover all input IDs', async () => {
       const suggestions = sampleData.suggestions.slice(0, 3);
       const suggestionIds = suggestions.map((s) => s.getId());
-      const result = await Suggestion.splitSuggestionsByGrantStatus(suggestionIds);
+      const { SuggestionGrant } = getDataAccess();
+      const result = await SuggestionGrant.splitSuggestionsByGrantStatus(suggestionIds);
 
       expect(result.grantedIds).to.be.an('array');
       expect(result.notGrantedIds).to.be.an('array');
@@ -434,7 +437,8 @@ describe('Suggestion IT', async () => {
     });
 
     it('returns empty arrays when given empty suggestionIds', async () => {
-      const result = await Suggestion.splitSuggestionsByGrantStatus([]);
+      const { SuggestionGrant } = getDataAccess();
+      const result = await SuggestionGrant.splitSuggestionsByGrantStatus([]);
 
       expect(result).to.deep.equal({ grantedIds: [], notGrantedIds: [], grantIds: [] });
     });
@@ -442,16 +446,18 @@ describe('Suggestion IT', async () => {
     it('accepts array of suggestion ID strings', async () => {
       const grantedId = preGrantedSuggestion.getId();
       const notGrantedId = sampleData.suggestions[0].getId();
-      const result = await Suggestion.splitSuggestionsByGrantStatus([grantedId, notGrantedId]);
+      const { SuggestionGrant } = getDataAccess();
+      const result = await SuggestionGrant.splitSuggestionsByGrantStatus([grantedId, notGrantedId]);
 
       expect(result.grantedIds).to.include(grantedId);
       expect(result.notGrantedIds).to.include(notGrantedId);
     });
 
     it('throws when suggestionIds is not an array', async () => {
-      await expect(Suggestion.splitSuggestionsByGrantStatus(null))
+      const { SuggestionGrant } = getDataAccess();
+      await expect(SuggestionGrant.splitSuggestionsByGrantStatus(null))
         .to.be.rejectedWith(/suggestionIds must be an array/);
-      await expect(Suggestion.splitSuggestionsByGrantStatus('sugg-1'))
+      await expect(SuggestionGrant.splitSuggestionsByGrantStatus('sugg-1'))
         .to.be.rejectedWith(/suggestionIds must be an array/);
     });
   });

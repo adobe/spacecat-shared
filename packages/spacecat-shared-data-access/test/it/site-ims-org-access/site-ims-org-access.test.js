@@ -33,10 +33,6 @@ describe('SiteImsOrgAccess IT', async () => {
 
     const dataAccess = getDataAccess();
     SiteImsOrgAccess = dataAccess.SiteImsOrgAccess;
-
-    if (!sampleData.siteImsOrgAccesses?.length) {
-      this.skip(); // site_ims_org_accesses table not present in the legacy test DB
-    }
   });
 
   it('gets a site ims org access by id', async () => {

@@ -65,19 +65,19 @@ describe('SiteImsOrgAccessModel', () => {
 
   describe('siteId', () => {
     it('gets siteId', () => {
-      expect(instance.getSiteId()).to.equal('5d6d4439-6659-46c2-b646-92d110fa5a52');
+      expect(instance.getSiteId()).to.equal('78fec9c7-2141-4600-b7b1-ea5c78752b91');
     });
   });
 
   describe('organizationId', () => {
     it('gets organizationId', () => {
-      expect(instance.getOrganizationId()).to.equal('757ceb98-05c8-4e07-bb23-bc722115b2b0');
+      expect(instance.getOrganizationId()).to.equal('5d42bdf8-b65d-4de8-b849-a4f28ebc93cd');
     });
   });
 
   describe('targetOrganizationId', () => {
     it('gets targetOrganizationId', () => {
-      expect(instance.getTargetOrganizationId()).to.equal('4854e75e-894b-4a74-92bf-d674abad1423');
+      expect(instance.getTargetOrganizationId()).to.equal('757ceb98-05c8-4e07-bb23-bc722115b2b0');
     });
   });
 

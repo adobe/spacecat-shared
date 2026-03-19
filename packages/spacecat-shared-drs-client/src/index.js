@@ -252,89 +252,6 @@ export default class DrsClient {
   }
 
   /**
-   * Submits an experiment to DRS for brand presence pre/post analysis.
-   * @param {object} params
-   * @param {string} params.siteId - SpaceCat site ID
-   * @param {string} params.experimentId - Unique experiment identifier (links pre and post phases)
-   * @param {string} params.experimentPhase - 'pre' or 'post'
-   * @param {string[]} [params.experimentationUrls] - URLs to filter prompts by
-   * @param {string[]} [params.platforms] - LLM platforms to query
-   * @param {number} [params.intervalMinutes] - Minutes between runs
-   * @param {number} [params.durationHours] - Total duration in hours
-   * @param {object} [params.metadata] - Additional metadata
-   * @returns {Promise<object>} Experiment submission result
-   */
-  async submitExperiment({
-    siteId,
-    experimentId,
-    experimentPhase,
-    experimentationUrls,
-    platforms,
-    intervalMinutes = 60,
-    durationHours = 10,
-    metadata,
-  }) {
-    if (!hasText(siteId)) {
-      throw new Error('siteId is required');
-    }
-    if (!hasText(experimentId)) {
-      throw new Error('experimentId is required');
-    }
-    if (!VALID_EXPERIMENT_PHASES.has(experimentPhase)) {
-      throw new Error(`experimentPhase must be one of: ${[...VALID_EXPERIMENT_PHASES].join(', ')}`);
-    }
-
-    this.log.info(`Submitting DRS experiment for site ${siteId}`, {
-      experimentId, experimentPhase, urlCount: experimentationUrls?.length,
-    });
-
-    const body = {
-      site_id: siteId,
-      experiment_id: experimentId,
-      experiment_phase: experimentPhase,
-      interval_minutes: intervalMinutes,
-      duration_hours: durationHours,
-    };
-
-    if (Array.isArray(experimentationUrls) && experimentationUrls.length > 0) {
-      body.experimentation_urls = experimentationUrls;
-    }
-    if (Array.isArray(platforms) && platforms.length > 0) {
-      body.platforms = platforms;
-    }
-    if (metadata) {
-      body.metadata = metadata;
-    }
-
-    const result = await this.#request('POST', '/experiments', body);
-    this.log.info(`DRS experiment submitted: ${result?.experiment_id}`, {
-      experimentId: result?.experiment_id,
-      experimentBatchId: result?.experiment_batch_id,
-    });
-    return result;
-  }
-
-  /**
-   * Gets the status of an experiment from DRS.
-   * @param {string} experimentId - The experiment identifier
-   * @param {string} [phase] - Optional phase filter ('pre' or 'post')
-   * @returns {Promise<object>} Experiment status with per-phase progress
-   */
-  async getExperimentStatus(experimentId, phase) {
-    if (!hasText(experimentId)) {
-      throw new Error('experimentId is required');
-    }
-    if (phase && !VALID_EXPERIMENT_PHASES.has(phase)) {
-      throw new Error(`phase must be one of: ${[...VALID_EXPERIMENT_PHASES].join(', ')}`);
-    }
-
-    const queryString = phase ? `?phase=${phase}` : '';
-    this.log.info(`Getting DRS experiment status for ${experimentId}`, { experimentId, phase });
-
-    return this.#request('GET', `/experiments/${experimentId}${queryString}`);
-  }
-
-  /**
    * Creates an experiment schedule in DRS and optionally triggers it immediately.
    * Uses the schedules API instead of legacy experiments API.
    * @param {object} params
@@ -343,6 +260,7 @@ export default class DrsClient {
    * @param {string} params.experimentPhase - 'pre' or 'post'
    * @param {string[]} [params.experimentationUrls] - URLs to filter prompts by
    * @param {string[]} [params.platforms] - LLM platforms to query
+   * @param {string[]} [params.providerIds] - DRS provider IDs
    * @param {object} [params.metadata] - Additional metadata
    * @param {boolean} [params.triggerImmediately=true] - Trigger job right after schedule creation
    * @returns {Promise<object>} Schedule creation response
@@ -353,6 +271,7 @@ export default class DrsClient {
     experimentPhase,
     experimentationUrls,
     platforms,
+    providerIds,
     metadata,
     triggerImmediately,
   }) {
@@ -395,7 +314,9 @@ export default class DrsClient {
       description: `SpaceCat edge deploy ${experimentPhase} experiment ${experimentId}`,
       job_config: {
         cadence: 'experiment',
-        provider_ids: ['brightdata'],
+        provider_ids: Array.isArray(providerIds) && providerIds.length > 0
+          ? providerIds
+          : ['brightdata', 'openai_web_search'],
         provider_parameters: {
           brightdata: {
             dataset_id: selectedPlatforms.join(','),
@@ -445,7 +366,7 @@ export default class DrsClient {
     }
 
     this.log.info('Getting DRS schedule status', { siteId, scheduleId });
-    return this.#request('GET', `/schedules/${siteId}/${scheduleId}?include_jobs=true`);
+    return this.#request('GET', `/schedules/${siteId}/${scheduleId}`);
   }
 
   /**

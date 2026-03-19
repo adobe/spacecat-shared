@@ -498,255 +498,6 @@ describe('DrsClient', () => {
     });
   });
 
-  describe('submitExperiment', () => {
-    let client;
-
-    beforeEach(() => {
-      client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
-    });
-
-    it('submits a pre-phase experiment with required params', async () => {
-      const responseBody = {
-        schedule_id: 'schedule-123',
-        experiment_id: 'exp-site1-001',
-        experiment_phase: 'pre',
-        experiment_batch_id: 'exp-batch-001',
-        parent_batch_id: 'bp-exp-batch-001',
-        site_id: 'site-1',
-        jobs_submitted: 6,
-        jobs_failed: 0,
-      };
-
-      const scope = nock(DRS_API_URL)
-        .post('/experiments', (body) => {
-          expect(body.site_id).to.equal('site-1');
-          expect(body.experiment_id).to.equal('exp-site1-001');
-          expect(body.experiment_phase).to.equal('pre');
-          expect(body.interval_minutes).to.equal(60);
-          expect(body.duration_hours).to.equal(10);
-          return true;
-        })
-        .reply(201, responseBody);
-
-      const result = await client.submitExperiment({
-        siteId: 'site-1',
-        experimentId: 'exp-site1-001',
-        experimentPhase: 'pre',
-      });
-
-      expect(result.experiment_id).to.equal('exp-site1-001');
-      expect(result.experiment_batch_id).to.equal('exp-batch-001');
-      expect(result.jobs_submitted).to.equal(6);
-      expect(log.info).to.have.been.called;
-      scope.done();
-    });
-
-    it('submits a post-phase experiment with all optional params', async () => {
-      const scope = nock(DRS_API_URL)
-        .post('/experiments', (body) => {
-          expect(body.experiment_phase).to.equal('post');
-          expect(body.experimentation_urls).to.deep.equal(['https://example.com/page1']);
-          expect(body.platforms).to.deep.equal(['chatgpt_free', 'perplexity']);
-          expect(body.interval_minutes).to.equal(30);
-          expect(body.duration_hours).to.equal(24);
-          expect(body.metadata).to.deep.equal({ triggered_by: 'spacecat' });
-          return true;
-        })
-        .reply(201, { experiment_id: 'exp-2', experiment_batch_id: 'batch-2' });
-
-      await client.submitExperiment({
-        siteId: 'site-2',
-        experimentId: 'exp-2',
-        experimentPhase: 'post',
-        experimentationUrls: ['https://example.com/page1'],
-        platforms: ['chatgpt_free', 'perplexity'],
-        intervalMinutes: 30,
-        durationHours: 24,
-        metadata: { triggered_by: 'spacecat' },
-      });
-
-      scope.done();
-    });
-
-    it('omits experimentation_urls when empty array', async () => {
-      const scope = nock(DRS_API_URL)
-        .post('/experiments', (body) => {
-          expect(body).to.not.have.property('experimentation_urls');
-          return true;
-        })
-        .reply(201, { experiment_id: 'exp-3', experiment_batch_id: 'batch-3' });
-
-      await client.submitExperiment({
-        siteId: 'site-3',
-        experimentId: 'exp-3',
-        experimentPhase: 'pre',
-        experimentationUrls: [],
-      });
-
-      scope.done();
-    });
-
-    it('omits platforms when empty array', async () => {
-      const scope = nock(DRS_API_URL)
-        .post('/experiments', (body) => {
-          expect(body).to.not.have.property('platforms');
-          return true;
-        })
-        .reply(201, { experiment_id: 'exp-4', experiment_batch_id: 'batch-4' });
-
-      await client.submitExperiment({
-        siteId: 'site-4',
-        experimentId: 'exp-4',
-        experimentPhase: 'pre',
-        platforms: [],
-      });
-
-      scope.done();
-    });
-
-    it('omits metadata when not provided', async () => {
-      const scope = nock(DRS_API_URL)
-        .post('/experiments', (body) => {
-          expect(body).to.not.have.property('metadata');
-          return true;
-        })
-        .reply(201, { experiment_id: 'exp-5', experiment_batch_id: 'batch-5' });
-
-      await client.submitExperiment({
-        siteId: 'site-5',
-        experimentId: 'exp-5',
-        experimentPhase: 'pre',
-      });
-
-      scope.done();
-    });
-
-    it('throws when siteId is missing', async () => {
-      await expect(client.submitExperiment({
-        experimentId: 'exp-1', experimentPhase: 'pre',
-      })).to.be.rejectedWith('siteId is required');
-    });
-
-    it('throws when siteId is empty', async () => {
-      await expect(client.submitExperiment({
-        siteId: '', experimentId: 'exp-1', experimentPhase: 'pre',
-      })).to.be.rejectedWith('siteId is required');
-    });
-
-    it('throws when experimentId is missing', async () => {
-      await expect(client.submitExperiment({
-        siteId: 'site-1', experimentPhase: 'pre',
-      })).to.be.rejectedWith('experimentId is required');
-    });
-
-    it('throws when experimentId is empty', async () => {
-      await expect(client.submitExperiment({
-        siteId: 'site-1', experimentId: '', experimentPhase: 'pre',
-      })).to.be.rejectedWith('experimentId is required');
-    });
-
-    it('throws when experimentPhase is invalid', async () => {
-      await expect(client.submitExperiment({
-        siteId: 'site-1', experimentId: 'exp-1', experimentPhase: 'during',
-      })).to.be.rejectedWith('experimentPhase must be one of: pre, post');
-    });
-
-    it('throws on HTTP error', async () => {
-      const scope = nock(DRS_API_URL)
-        .post('/experiments')
-        .reply(400, 'Bad request');
-
-      await expect(client.submitExperiment({
-        siteId: 'site-1', experimentId: 'exp-1', experimentPhase: 'pre',
-      })).to.be.rejectedWith('DRS POST /experiments failed: 400');
-
-      scope.done();
-    });
-  });
-
-  describe('getExperimentStatus', () => {
-    let client;
-
-    beforeEach(() => {
-      client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
-    });
-
-    it('gets experiment status without phase filter', async () => {
-      const responseBody = {
-        experiment_id: 'exp-1',
-        status: 'RUNNING',
-        phases: {
-          pre: { phase: 'pre', status: 'COMPLETED', progress_percent: 100 },
-          post: { phase: 'post', status: 'RUNNING', progress_percent: 33.3 },
-        },
-        summary: {
-          total_jobs: 12, pre_jobs: 6, post_jobs: 6, phases_started: 2, phases_completed: 1,
-        },
-      };
-
-      const scope = nock(DRS_API_URL)
-        .get('/experiments/exp-1')
-        .reply(200, responseBody);
-
-      const result = await client.getExperimentStatus('exp-1');
-
-      expect(result.experiment_id).to.equal('exp-1');
-      expect(result.status).to.equal('RUNNING');
-      expect(result.phases.pre.status).to.equal('COMPLETED');
-      expect(result.phases.post.status).to.equal('RUNNING');
-      expect(log.info).to.have.been.called;
-      scope.done();
-    });
-
-    it('gets experiment status with phase filter', async () => {
-      const scope = nock(DRS_API_URL)
-        .get('/experiments/exp-2?phase=pre')
-        .reply(200, { experiment_id: 'exp-2', status: 'COMPLETED' });
-
-      const result = await client.getExperimentStatus('exp-2', 'pre');
-
-      expect(result.experiment_id).to.equal('exp-2');
-      scope.done();
-    });
-
-    it('gets experiment status with post phase filter', async () => {
-      const scope = nock(DRS_API_URL)
-        .get('/experiments/exp-3?phase=post')
-        .reply(200, { experiment_id: 'exp-3', status: 'RUNNING' });
-
-      const result = await client.getExperimentStatus('exp-3', 'post');
-
-      expect(result.status).to.equal('RUNNING');
-      scope.done();
-    });
-
-    it('throws when experimentId is missing', async () => {
-      await expect(client.getExperimentStatus())
-        .to.be.rejectedWith('experimentId is required');
-    });
-
-    it('throws when experimentId is empty', async () => {
-      await expect(client.getExperimentStatus(''))
-        .to.be.rejectedWith('experimentId is required');
-    });
-
-    it('throws when phase is invalid', async () => {
-      await expect(client.getExperimentStatus('exp-1', 'during'))
-        .to.be.rejectedWith('phase must be one of: pre, post');
-    });
-
-    it('throws on HTTP error', async () => {
-      const scope = nock(DRS_API_URL)
-        .get('/experiments/exp-404')
-        .reply(404, 'Not found');
-
-      await expect(client.getExperimentStatus('exp-404'))
-        .to.be.rejectedWith('DRS GET /experiments/exp-404 failed: 404');
-
-      scope.done();
-    });
-  });
-
   describe('createExperimentSchedule', () => {
     let client;
 
@@ -762,7 +513,7 @@ describe('DrsClient', () => {
           expect(body.cron_expression).to.equal('0 * * * *');
           expect(body.trigger_immediately).to.equal(true);
           expect(body.job_config.cadence).to.equal('experiment');
-          expect(body.job_config.provider_ids).to.deep.equal(['brightdata']);
+          expect(body.job_config.provider_ids).to.deep.equal(['brightdata', 'openai_web_search']);
           expect(body.job_config.provider_parameters.brightdata.dataset_id).to.include('chatgpt_free');
           expect(body.job_config.experimentation_urls).to.deep.equal(['https://example.com/page-1']);
           expect(body.job_config.metadata.experiment_id).to.equal('exp-1');
@@ -781,6 +532,24 @@ describe('DrsClient', () => {
       });
 
       expect(result.schedule.schedule_id).to.equal('sched-1');
+      scope.done();
+    });
+
+    it('uses explicitly provided providerIds', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules', (body) => {
+          expect(body.job_config.provider_ids).to.deep.equal(['brightdata']);
+          return true;
+        })
+        .reply(201, { schedule: { schedule_id: 'sched-custom' } });
+
+      await client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-custom',
+        experimentPhase: 'pre',
+        providerIds: ['brightdata'],
+      });
+
       scope.done();
     });
 
@@ -870,7 +639,7 @@ describe('DrsClient', () => {
 
     it('fetches schedule status with jobs summary', async () => {
       const scope = nock(DRS_API_URL)
-        .get('/schedules/site-1/sched-1?include_jobs=true')
+        .get('/schedules/site-1/sched-1')
         .reply(200, {
           schedule: { schedule_id: 'sched-1', site_id: 'site-1' },
           jobs_summary: { total: 2, in_progress: 0, is_complete: true },

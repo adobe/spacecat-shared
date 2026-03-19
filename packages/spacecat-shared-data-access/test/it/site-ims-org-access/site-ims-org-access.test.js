@@ -165,8 +165,8 @@ describe('SiteImsOrgAccess IT', async () => {
     for (const entry of entries) {
       expect(entry).to.have.property('grant');
       expect(entry).to.have.property('targetOrganization');
-      expect(entry.grant.organizationId).to.equal(organizationId);
-      expect(entry.targetOrganization.id).to.equal(entry.grant.targetOrganizationId);
+      expect(entry.grant.getOrganizationId()).to.equal(organizationId);
+      expect(entry.targetOrganization.id).to.equal(entry.grant.getTargetOrganizationId());
     }
   });
 
@@ -183,9 +183,9 @@ describe('SiteImsOrgAccess IT', async () => {
     for (const entry of entries) {
       expect(entry).to.have.property('grant');
       expect(entry).to.have.property('targetOrganization');
-      expect(entry.grant.organizationId).to.equal(organizationId);
-      expect(entry.grant.targetOrganizationId).to.be.a('string');
-      expect(entry.targetOrganization.id).to.equal(entry.grant.targetOrganizationId);
+      expect(entry.grant.getOrganizationId()).to.equal(organizationId);
+      expect(entry.grant.getTargetOrganizationId()).to.be.a('string');
+      expect(entry.targetOrganization.id).to.equal(entry.grant.getTargetOrganizationId());
       expect(entry.targetOrganization.imsOrgId).to.be.a('string');
     }
   });
@@ -228,10 +228,10 @@ describe('SiteImsOrgAccess IT', async () => {
     for (const entry of entries) {
       expect(entry).to.have.property('grant');
       expect(entry).to.have.property('site');
-      expect(entry.grant.organizationId).to.equal(organizationId);
-      expect(entry.grant.siteId).to.be.a('string');
+      expect(entry.grant.getOrganizationId()).to.equal(organizationId);
+      expect(entry.grant.getSiteId()).to.be.a('string');
       expect(entry.site).to.be.an('object');
-      expect(entry.site.id).to.equal(entry.grant.siteId);
+      expect(entry.site.getId()).to.equal(entry.grant.getSiteId());
     }
   });
 

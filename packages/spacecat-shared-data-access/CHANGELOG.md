@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v3.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.22.0...@adobe/spacecat-shared-data-access-v3.23.0) (2026-03-18)
+
+### Features
+
+* add cited-analsys as audit types ([#1444](https://github.com/adobe/spacecat-shared/issues/1444)) ([c87bf2e](https://github.com/adobe/spacecat-shared/commit/c87bf2e0d3ad77589fa44a1f9b9638ce0deaab53))
+
+## [@adobe/spacecat-shared-data-access-v3.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.21.0...@adobe/spacecat-shared-data-access-v3.22.0) (2026-03-17)
+
+### Features
+
+* support boolean and timestamp for edgeOptimizeConfig.enabled ([#1441](https://github.com/adobe/spacecat-shared/issues/1441)) ([2fb173d](https://github.com/adobe/spacecat-shared/commit/2fb173da507df98c0a64977f90181ec501492c88))
+
 ## [@adobe/spacecat-shared-data-access-v3.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.20.1...@adobe/spacecat-shared-data-access-v3.21.0) (2026-03-16)
 
 ### Features

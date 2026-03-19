@@ -230,21 +230,18 @@ describe('SiteImsOrgAccessCollection', () => {
       expect(selectStub).to.have.been.calledWithMatch('organizations!site_ims_org_accesses_target_organization_id_fkey');
       expect(eqStub).to.have.been.calledWith('organization_id', mockRecord.organizationId);
       expect(orderStub).to.have.been.calledWith('id');
-      expect(results[0]).to.deep.equal({
-        grant: {
-          id: 'grant-1',
-          siteId: 'site-uuid-1',
-          organizationId: mockRecord.organizationId,
-          targetOrganizationId: mockRecord.targetOrganizationId,
-          productCode: 'LLMO',
-          role: 'agency',
-          grantedBy: 'ims:user123',
-          expiresAt: null,
-        },
-        targetOrganization: {
-          id: mockRecord.targetOrganizationId,
-          imsOrgId: 'target@AdobeOrg',
-        },
+      const { grant, targetOrganization } = results[0];
+      expect(grant.getId()).to.equal('grant-1');
+      expect(grant.getSiteId()).to.equal('site-uuid-1');
+      expect(grant.getOrganizationId()).to.equal(mockRecord.organizationId);
+      expect(grant.getTargetOrganizationId()).to.equal(mockRecord.targetOrganizationId);
+      expect(grant.getProductCode()).to.equal('LLMO');
+      expect(grant.getRole()).to.equal('agency');
+      expect(grant.getGrantedBy()).to.equal('ims:user123');
+      expect(grant.getExpiresAt()).to.be.undefined;
+      expect(targetOrganization).to.deep.equal({
+        id: mockRecord.targetOrganizationId,
+        imsOrgId: 'target@AdobeOrg',
       });
     });
 
@@ -359,7 +356,7 @@ describe('SiteImsOrgAccessCollection', () => {
 
       expect(results).to.have.lengthOf(1);
       expect(inStub).to.have.been.calledWith('organization_id', ids);
-      expect(results[0].grant.organizationId).to.equal(mockRecord.organizationId);
+      expect(results[0].grant.getOrganizationId()).to.equal(mockRecord.organizationId);
       expect(results[0].targetOrganization.imsOrgId).to.equal('target@AdobeOrg');
     });
 
@@ -503,17 +500,16 @@ describe('SiteImsOrgAccessCollection', () => {
       expect(selectStub).to.have.been.calledWithMatch('sites!site_ims_org_accesses_site_id_fkey');
       expect(eqStub).to.have.been.calledWith('organization_id', mockRecord.organizationId);
       expect(orderStub).to.have.been.calledWith('id');
-      expect(results[0].grant).to.deep.equal({
-        id: 'grant-1',
-        siteId: mockRecord.siteId,
-        organizationId: mockRecord.organizationId,
-        targetOrganizationId: mockRecord.targetOrganizationId,
-        productCode: 'LLMO',
-        role: 'agency',
-        grantedBy: 'ims:user123',
-        expiresAt: null,
-      });
-      expect(results[0].site).to.equal(mockSiteInstance);
+      const { grant, site } = results[0];
+      expect(grant.getId()).to.equal('grant-1');
+      expect(grant.getSiteId()).to.equal(mockRecord.siteId);
+      expect(grant.getOrganizationId()).to.equal(mockRecord.organizationId);
+      expect(grant.getTargetOrganizationId()).to.equal(mockRecord.targetOrganizationId);
+      expect(grant.getProductCode()).to.equal('LLMO');
+      expect(grant.getRole()).to.equal('agency');
+      expect(grant.getGrantedBy()).to.equal('ims:user123');
+      expect(grant.getExpiresAt()).to.be.undefined;
+      expect(site).to.equal(mockSiteInstance);
       expect(createInstanceFromRowStub).to.have.been.calledOnceWithExactly(siteRow);
     });
 

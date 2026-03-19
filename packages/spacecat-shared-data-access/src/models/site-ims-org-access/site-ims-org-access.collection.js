@@ -79,27 +79,6 @@ class SiteImsOrgAccessCollection extends BaseCollection {
   }
 
   /**
-   * Maps a raw PostgREST row to the common grant shape used by all embedding queries.
-   * @param {object} row
-   * @returns {
-   * {id, siteId, organizationId, targetOrganizationId, productCode, role, grantedBy, expiresAt}
-   * }
-   * @private
-   */
-  static #toGrant(row) {
-    return {
-      id: row.id,
-      siteId: row.site_id,
-      organizationId: row.organization_id,
-      targetOrganizationId: row.target_organization_id,
-      productCode: row.product_code,
-      role: row.role,
-      grantedBy: row.granted_by,
-      expiresAt: row.expires_at,
-    };
-  }
-
-  /**
    * Shared pagination loop for PostgREST embedding queries. Fetches all pages and maps
    * each row using the provided mapper function.
    *
@@ -142,14 +121,14 @@ class SiteImsOrgAccessCollection extends BaseCollection {
 
   /**
    * @param {object} query - PostgREST query builder
-   * @returns {Promise<Array<{grant: object, targetOrganization: object}>>}
+   * @returns {Promise<Array<{grant: SiteImsOrgAccess, targetOrganization: object}>>}
    * @private
    */
   async #fetchGrantsWithTargetOrg(query) {
     return this.#fetchPaginatedGrants(
       query,
       (row) => ({
-        grant: SiteImsOrgAccessCollection.#toGrant(row),
+        grant: this.createInstanceFromRow(row),
         targetOrganization: { id: row.organizations.id, imsOrgId: row.organizations.ims_org_id },
       }),
       'Failed to query grants with target organization',
@@ -266,7 +245,7 @@ class SiteImsOrgAccessCollection extends BaseCollection {
 
   /**
    * @param {object} query - PostgREST query builder
-   * @returns {Promise<Array<{grant: object, site: object|null}>>}
+   * @returns {Promise<Array<{grant: SiteImsOrgAccess, site: Site|null}>>}
    * @private
    */
   async #fetchGrantsWithSite(query) {
@@ -274,7 +253,7 @@ class SiteImsOrgAccessCollection extends BaseCollection {
     return this.#fetchPaginatedGrants(
       query,
       (row) => ({
-        grant: SiteImsOrgAccessCollection.#toGrant(row),
+        grant: this.createInstanceFromRow(row),
         site: row.sites ? siteCollection.createInstanceFromRow(row.sites) : null,
       }),
       'Failed to query grants with site',

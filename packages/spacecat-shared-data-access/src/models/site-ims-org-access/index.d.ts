@@ -35,16 +35,7 @@ export interface SiteImsOrgAccess extends BaseModel {
 }
 
 export interface SiteImsOrgAccessGrantWithTarget {
-  grant: {
-    id: string;
-    siteId: string;
-    organizationId: string;
-    targetOrganizationId: string;
-    productCode: EntitlementProductCode;
-    role: SiteImsOrgAccessRole;
-    grantedBy: string | null;
-    expiresAt: string | null;
-  };
+  grant: SiteImsOrgAccess;
   targetOrganization: {
     id: string;
     imsOrgId: string;
@@ -52,16 +43,7 @@ export interface SiteImsOrgAccessGrantWithTarget {
 }
 
 export interface SiteImsOrgAccessGrantWithSite {
-  grant: {
-    id: string;
-    siteId: string;
-    organizationId: string;
-    targetOrganizationId: string;
-    productCode: EntitlementProductCode;
-    role: SiteImsOrgAccessRole;
-    grantedBy: string | null;
-    expiresAt: string | null;
-  };
+  grant: SiteImsOrgAccess;
   /** Site model instance. Null only if the FK is broken (should not occur given ON DELETE CASCADE). */
   site: Site | null;
 }

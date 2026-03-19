@@ -122,8 +122,8 @@ describe('SuggestionGrant IT', () => {
       expect(row).to.have.property('success');
       if (row.success) {
         const findByResult = await SuggestionGrant.findBySuggestionIds([suggestionId]);
-        expect(findByResult.data).to.be.an('array').with.length(1);
-        expect(findByResult.data[0].suggestion_id).to.equal(suggestionId);
+        expect(findByResult).to.be.an('array').with.length(1);
+        expect(findByResult[0].suggestion_id).to.equal(suggestionId);
       }
     });
   });

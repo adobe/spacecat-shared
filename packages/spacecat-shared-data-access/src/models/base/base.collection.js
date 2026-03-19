@@ -595,6 +595,7 @@ class BaseCollection {
    * @returns {object|null} A model instance, or null if the row is empty/invalid.
    */
   createInstanceFromRow(row) {
+    if (!isNonEmptyObject(row)) return null;
     return this.#createInstance(this.#toModelRecord(row));
   }
 

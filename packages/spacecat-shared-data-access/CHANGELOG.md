@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.23.0...@adobe/spacecat-shared-data-access-v3.24.0) (2026-03-19)
+
+### Features
+
+* SITES-40623 - token system in Spacecat ([#1414](https://github.com/adobe/spacecat-shared/issues/1414)) ([9c540ba](https://github.com/adobe/spacecat-shared/commit/9c540babf47984e15737bde509b54df9b5233c54))
+
 ## [@adobe/spacecat-shared-data-access-v3.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.22.0...@adobe/spacecat-shared-data-access-v3.23.0) (2026-03-18)
 
 ### Features

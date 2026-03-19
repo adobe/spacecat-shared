@@ -79,22 +79,6 @@ class SiteImsOrgAccessCollection extends BaseCollection {
   }
 
   /**
-   * Returns all grants for the given delegate organization with the target organization's
-   * id and imsOrgId embedded via PostgREST resource embedding (INNER JOIN). This avoids
-   * a separate batch query to resolve target org IMS identifiers.
-   *
-   * Returns plain objects, not model instances. Access properties directly
-   * (e.g., `entry.grant.productCode`, `entry.targetOrganization.imsOrgId`).
-   *
-   * @param {string} organizationId - UUID of the delegate organization.
-   * @returns {Promise<Array<{
-   *   grant: {id: string, siteId: string, organizationId: string,
-   *     targetOrganizationId: string, productCode: string, role: string,
-   *     grantedBy: string|null, expiresAt: string|null},
-   *   targetOrganization: {id: string, imsOrgId: string}
-   * }>>}
-   */
-  /**
    * @param {object} query - PostgREST query builder (result of .from(...).select(...))
    * @returns {Promise<Array<{grant: object, targetOrganization: object}>>}
    * @private
@@ -103,10 +87,11 @@ class SiteImsOrgAccessCollection extends BaseCollection {
     const allResults = [];
     let offset = 0;
     let keepGoing = true;
+    const orderedQuery = query.order('id');
 
     while (keepGoing) {
       // eslint-disable-next-line no-await-in-loop
-      const { data, error } = await query.order('id').range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+      const { data, error } = await orderedQuery.range(offset, offset + DEFAULT_PAGE_SIZE - 1);
 
       if (error) {
         this.log.error(`[SiteImsOrgAccess] Failed to query grants with target org - ${error.message}`, error);
@@ -187,6 +172,12 @@ class SiteImsOrgAccessCollection extends BaseCollection {
   async allByOrganizationIdsWithTargetOrganization(organizationIds) {
     if (!organizationIds || organizationIds.length === 0) {
       return [];
+    }
+    if (organizationIds.length > SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE) {
+      throw new DataAccessError(
+        `allByOrganizationIdsWithTargetOrganization: organizationIds array exceeds maximum of ${SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE}`,
+        { entityName: 'SiteImsOrgAccess', tableName: 'site_ims_org_accesses' },
+      );
     }
     // eslint-disable-next-line max-len
     const select = 'id, site_id, organization_id, target_organization_id, product_code, role, granted_by, expires_at, organizations!site_ims_org_accesses_target_organization_id_fkey(id, ims_org_id)';

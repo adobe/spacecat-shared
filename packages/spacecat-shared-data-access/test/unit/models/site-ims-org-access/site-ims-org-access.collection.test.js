@@ -381,5 +381,15 @@ describe('SiteImsOrgAccessCollection', () => {
         .to.be.rejectedWith(DataAccessError, 'Failed to query grants with target organization');
       expect(mockLogger.error).to.have.been.called;
     });
+
+    it('throws DataAccessError when organizationIds array exceeds the maximum size', async () => {
+      const tooManyIds = Array.from(
+        { length: SiteImsOrgAccessCollection.MAX_DELEGATES_PER_SITE + 1 },
+        (_, i) => `org-uuid-${i}`,
+      );
+
+      await expect(instance.allByOrganizationIdsWithTargetOrganization(tooManyIds))
+        .to.be.rejectedWith(DataAccessError, 'organizationIds array exceeds maximum');
+    });
   });
 });

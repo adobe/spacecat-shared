@@ -12,18 +12,19 @@
 
 import { execFileSync } from 'child_process';
 import {
-  existsSync, mkdtempSync, rmSync, statfsSync, writeFileSync,
+  existsSync, mkdtempSync, readFileSync, rmSync, statfsSync, writeFileSync,
 } from 'fs';
 import os from 'os';
 import path from 'path';
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import AdmZip from 'adm-zip';
+import { archiveFolder, extract } from 'zip-lib';
 
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
 const PATCH_FILE_PREFIX = 'cm-patch-';
+const ZIP_DIR_PREFIX = 'cm-zip-';
 const GIT_OPERATION_TIMEOUT_MS = 120_000; // 120s — fail fast before Lambda timeout
 
 /**
@@ -320,10 +321,16 @@ export default class CloudManagerClient {
       throw new Error(`Clone path does not exist: ${clonePath}`);
     }
 
-    this.log.info(`Zipping repository at ${clonePath}`);
-    const zip = new AdmZip();
-    zip.addLocalFolder(clonePath);
-    return zip.toBuffer();
+    const zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
+    const zipFile = path.join(zipDir, 'repo.zip');
+
+    try {
+      this.log.info(`Zipping repository at ${clonePath}`);
+      await archiveFolder(clonePath, zipFile, { followSymlinks: false });
+      return readFileSync(zipFile);
+    } finally {
+      rmSync(zipDir, { recursive: true, force: true });
+    }
   }
 
   /**
@@ -481,15 +488,19 @@ export default class CloudManagerClient {
    */
   async unzipRepository(zipBuffer) {
     const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
+    const zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
+    const zipFile = path.join(zipDir, 'repo.zip');
 
     try {
-      const zip = new AdmZip(zipBuffer);
-      zip.extractAllTo(extractPath, true);
+      writeFileSync(zipFile, zipBuffer);
+      await extract(zipFile, extractPath);
       this.log.info(`Repository extracted to ${extractPath}`);
       return extractPath;
     } catch (error) {
       rmSync(extractPath, { recursive: true, force: true });
       throw new Error(`Failed to unzip repository: ${error.message}`);
+    } finally /* c8 ignore next */ {
+      rmSync(zipDir, { recursive: true, force: true });
     }
   }
 

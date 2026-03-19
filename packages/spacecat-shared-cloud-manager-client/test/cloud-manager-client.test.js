@@ -102,14 +102,9 @@ describe('CloudManagerClient', () => {
   const rmSyncStub = sinon.stub();
   const statfsSyncStub = sinon.stub();
   const writeSyncStub = sinon.stub();
-  const admZipExtractStub = sinon.stub();
-  const admZipAddLocalFolderStub = sinon.stub();
-  const admZipToBufferStub = sinon.stub().returns(Buffer.from('zip-content'));
-  const AdmZipStub = sinon.stub().returns({
-    extractAllTo: admZipExtractStub,
-    addLocalFolder: admZipAddLocalFolderStub,
-    toBuffer: admZipToBufferStub,
-  });
+  const readFileSyncStub = sinon.stub().returns(Buffer.from('zip-content'));
+  const archiveFolderStub = sinon.stub().resolves();
+  const extractStub = sinon.stub().resolves();
 
   // esmock's initial module resolution can exceed mocha's default 2s timeout
   // eslint-disable-next-line prefer-arrow-callback
@@ -120,11 +115,12 @@ describe('CloudManagerClient', () => {
       fs: {
         existsSync: existsSyncStub,
         mkdtempSync: mkdtempSyncStub,
+        readFileSync: readFileSyncStub,
         rmSync: rmSyncStub,
         statfsSync: statfsSyncStub,
         writeFileSync: writeSyncStub,
       },
-      'adm-zip': { default: AdmZipStub },
+      'zip-lib': { archiveFolder: archiveFolderStub, extract: extractStub },
     }, {
       '@adobe/spacecat-shared-ims-client': {
         ImsClient: { createFrom: createFromStub },
@@ -144,16 +140,12 @@ describe('CloudManagerClient', () => {
     statfsSyncStub.reset();
     statfsSyncStub.returns({ bsize: 4096, blocks: 131072, bfree: 65536 });
     writeSyncStub.reset();
-    admZipExtractStub.reset();
-    admZipAddLocalFolderStub.reset();
-    admZipToBufferStub.reset();
-    admZipToBufferStub.returns(Buffer.from('zip-content'));
-    AdmZipStub.reset();
-    AdmZipStub.returns({
-      extractAllTo: admZipExtractStub,
-      addLocalFolder: admZipAddLocalFolderStub,
-      toBuffer: admZipToBufferStub,
-    });
+    readFileSyncStub.reset();
+    readFileSyncStub.returns(Buffer.from('zip-content'));
+    archiveFolderStub.reset();
+    archiveFolderStub.resolves();
+    extractStub.reset();
+    extractStub.resolves();
     createFromStub.reset();
     createFromStub.returns(mockImsClient);
     mockImsClient.getServiceAccessToken.reset();
@@ -745,35 +737,37 @@ describe('CloudManagerClient', () => {
 
       const extractPath = await client.unzipRepository(zipBuffer);
 
-      // Should have created a temp dir with cm-repo- prefix
-      expect(mkdtempSyncStub).to.have.been.calledOnce;
+      // Should have created temp dirs for extract (cm-repo-) and zip file (cm-zip-)
+      expect(mkdtempSyncStub).to.have.been.calledTwice;
       expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-repo-$/);
+      expect(mkdtempSyncStub.secondCall.args[0]).to.match(/cm-zip-$/);
 
-      // Should have constructed AdmZip with the buffer and extracted
-      expect(AdmZipStub).to.have.been.calledOnceWith(zipBuffer);
-      expect(admZipExtractStub).to.have.been.calledOnceWith(
-        `${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`,
-        true,
-      );
+      // Should write buffer to temp zip file, then extract
+      expect(writeSyncStub).to.have.been.calledOnce;
+      expect(writeSyncStub.firstCall.args[1]).to.equal(zipBuffer);
+      expect(extractStub).to.have.been.calledOnce;
 
-      // Should not write a temp zip file (adm-zip works directly with buffer)
-      expect(writeSyncStub).to.not.have.been.called;
+      // Should clean up the temp zip directory
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
 
       // Should return the extract path
       expect(extractPath).to.equal(`${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`);
     });
 
     it('cleans up on unzip failure', async () => {
-      admZipExtractStub.throws(new Error('Invalid or unsupported zip format'));
+      extractStub.rejects(new Error('Invalid or unsupported zip format'));
       const client = CloudManagerClient.createFrom(createContext());
       const zipBuffer = Buffer.from('bad-zip-content');
 
       await expect(client.unzipRepository(zipBuffer))
         .to.be.rejectedWith('Failed to unzip repository');
 
-      // Should have cleaned up the extraction directory
-      expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
+      // Should have cleaned up both the extraction directory and the temp zip directory
+      expect(rmSyncStub).to.have.been.calledTwice;
+      const rmPaths = rmSyncStub.getCalls().map((c) => c.args[0]);
+      expect(rmPaths.some((p) => p.includes('cm-repo-'))).to.be.true;
+      expect(rmPaths.some((p) => p.includes('cm-zip-'))).to.be.true;
     });
   });
 
@@ -796,21 +790,36 @@ describe('CloudManagerClient', () => {
       expect(Buffer.isBuffer(result)).to.be.true;
       expect(result.toString()).to.equal('zip-content');
 
-      // AdmZip constructed with no args (empty archive), then folder added
-      expect(AdmZipStub).to.have.been.calledOnceWith();
-      expect(admZipAddLocalFolderStub).to.have.been.calledOnceWith(clonePath);
-      expect(admZipToBufferStub).to.have.been.calledOnce;
+      // Should create a temp dir for the zip file
+      expect(mkdtempSyncStub).to.have.been.calledOnce;
+      expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-zip-$/);
+
+      // Should archive the folder with followSymlinks: false
+      expect(archiveFolderStub).to.have.been.calledOnce;
+      expect(archiveFolderStub.firstCall.args[0]).to.equal(clonePath);
+      expect(archiveFolderStub.firstCall.args[2]).to.deep.equal({ followSymlinks: false });
+
+      // Should read the zip file into a buffer
+      expect(readFileSyncStub).to.have.been.calledOnce;
+
+      // Should clean up the temp zip directory
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
     });
 
-    it('throws when addLocalFolder fails', async () => {
+    it('throws when archiveFolder fails and cleans up temp dir', async () => {
       const clonePath = '/tmp/cm-repo-zip-test';
       existsSyncStub.withArgs(clonePath).returns(true);
-      admZipAddLocalFolderStub.throws(new Error('failed to read directory'));
+      archiveFolderStub.rejects(new Error('failed to read directory'));
 
       const client = CloudManagerClient.createFrom(createContext());
 
       await expect(client.zipRepository(clonePath))
         .to.be.rejectedWith('failed to read directory');
+
+      // Should still clean up the temp zip directory
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
     });
   });
 

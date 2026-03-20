@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.26.0...@adobe/spacecat-shared-data-access-v3.27.0) (2026-03-20)
+
+### Features
+
+* add countryCodeIgnoreList to site llmo config ([#1447](https://github.com/adobe/spacecat-shared/issues/1447)) ([6d824f8](https://github.com/adobe/spacecat-shared/commit/6d824f855aeadf623776a31e305270ae15fa1be2))
+
 ## [@adobe/spacecat-shared-data-access-v3.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.25.0...@adobe/spacecat-shared-data-access-v3.26.0) (2026-03-19)
 
 ### Features

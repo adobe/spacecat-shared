@@ -35,20 +35,17 @@ export interface SiteImsOrgAccess extends BaseModel {
 }
 
 export interface SiteImsOrgAccessGrantWithTarget {
-  grant: {
-    id: string;
-    siteId: string;
-    organizationId: string;
-    targetOrganizationId: string;
-    productCode: EntitlementProductCode;
-    role: SiteImsOrgAccessRole;
-    grantedBy: string | null;
-    expiresAt: string | null;
-  };
+  grant: SiteImsOrgAccess;
   targetOrganization: {
     id: string;
     imsOrgId: string;
   };
+}
+
+export interface SiteImsOrgAccessGrantWithSite {
+  grant: SiteImsOrgAccess;
+  /** Site model instance. Null only if the FK is broken (should not occur given ON DELETE CASCADE). */
+  site: Site | null;
 }
 
 export interface SiteImsOrgAccessCollection extends
@@ -58,8 +55,10 @@ export interface SiteImsOrgAccessCollection extends
   allByTargetOrganizationId(targetOrganizationId: string): Promise<SiteImsOrgAccess[]>;
   allByOrganizationIdWithTargetOrganization(organizationId: string): Promise<SiteImsOrgAccessGrantWithTarget[]>;
   allByOrganizationIdsWithTargetOrganization(organizationIds: string[]): Promise<SiteImsOrgAccessGrantWithTarget[]>;
+  allByOrganizationIdWithSites(organizationId: string): Promise<SiteImsOrgAccessGrantWithSite[]>;
 
   findBySiteId(siteId: string): Promise<SiteImsOrgAccess | null>;
   findByOrganizationId(organizationId: string): Promise<SiteImsOrgAccess | null>;
   findByTargetOrganizationId(targetOrganizationId: string): Promise<SiteImsOrgAccess | null>;
+  findBySiteIdAndOrganizationIdAndProductCode(siteId: string, organizationId: string, productCode: EntitlementProductCode): Promise<SiteImsOrgAccess | null>;
 }

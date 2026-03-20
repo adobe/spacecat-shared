@@ -230,21 +230,18 @@ describe('SiteImsOrgAccessCollection', () => {
       expect(selectStub).to.have.been.calledWithMatch('organizations!site_ims_org_accesses_target_organization_id_fkey');
       expect(eqStub).to.have.been.calledWith('organization_id', mockRecord.organizationId);
       expect(orderStub).to.have.been.calledWith('id');
-      expect(results[0]).to.deep.equal({
-        grant: {
-          id: 'grant-1',
-          siteId: 'site-uuid-1',
-          organizationId: mockRecord.organizationId,
-          targetOrganizationId: mockRecord.targetOrganizationId,
-          productCode: 'LLMO',
-          role: 'agency',
-          grantedBy: 'ims:user123',
-          expiresAt: null,
-        },
-        targetOrganization: {
-          id: mockRecord.targetOrganizationId,
-          imsOrgId: 'target@AdobeOrg',
-        },
+      const { grant, targetOrganization } = results[0];
+      expect(grant.getId()).to.equal('grant-1');
+      expect(grant.getSiteId()).to.equal('site-uuid-1');
+      expect(grant.getOrganizationId()).to.equal(mockRecord.organizationId);
+      expect(grant.getTargetOrganizationId()).to.equal(mockRecord.targetOrganizationId);
+      expect(grant.getProductCode()).to.equal('LLMO');
+      expect(grant.getRole()).to.equal('agency');
+      expect(grant.getGrantedBy()).to.equal('ims:user123');
+      expect(grant.getExpiresAt()).to.be.undefined;
+      expect(targetOrganization).to.deep.equal({
+        id: mockRecord.targetOrganizationId,
+        imsOrgId: 'target@AdobeOrg',
       });
     });
 
@@ -359,7 +356,7 @@ describe('SiteImsOrgAccessCollection', () => {
 
       expect(results).to.have.lengthOf(1);
       expect(inStub).to.have.been.calledWith('organization_id', ids);
-      expect(results[0].grant.organizationId).to.equal(mockRecord.organizationId);
+      expect(results[0].grant.getOrganizationId()).to.equal(mockRecord.organizationId);
       expect(results[0].targetOrganization.imsOrgId).to.equal('target@AdobeOrg');
     });
 
@@ -390,6 +387,223 @@ describe('SiteImsOrgAccessCollection', () => {
 
       await expect(instance.allByOrganizationIdsWithTargetOrganization(tooManyIds))
         .to.be.rejectedWith(DataAccessError, 'organizationIds array exceeds maximum');
+    });
+  });
+
+  describe('findBySiteIdAndOrganizationIdAndProductCode', () => {
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('delegates to findByIndexKeys with the correct compound key', async () => {
+      const expected = { getId: () => 'grant-uuid' };
+      const stub = sinon.stub(instance, 'findByIndexKeys').resolves(expected);
+
+      const result = await instance.findBySiteIdAndOrganizationIdAndProductCode(
+        mockRecord.siteId,
+        mockRecord.organizationId,
+        mockRecord.productCode,
+      );
+
+      expect(result).to.equal(expected);
+      expect(stub).to.have.been.calledOnceWithExactly({
+        siteId: mockRecord.siteId,
+        organizationId: mockRecord.organizationId,
+        productCode: mockRecord.productCode,
+      });
+    });
+
+    it('returns null when no matching grant exists', async () => {
+      sinon.stub(instance, 'findByIndexKeys').resolves(null);
+
+      const result = await instance.findBySiteIdAndOrganizationIdAndProductCode(
+        mockRecord.siteId,
+        mockRecord.organizationId,
+        mockRecord.productCode,
+      );
+
+      expect(result).to.be.null;
+    });
+
+    it('throws DataAccessError when siteId is missing', async () => {
+      // eslint-disable-next-line max-len
+      await expect(instance.findBySiteIdAndOrganizationIdAndProductCode(null, mockRecord.organizationId, mockRecord.productCode))
+        .to.be.rejectedWith(DataAccessError, 'siteId, organizationId and productCode are required');
+    });
+
+    it('throws DataAccessError when organizationId is missing', async () => {
+      // eslint-disable-next-line max-len
+      await expect(instance.findBySiteIdAndOrganizationIdAndProductCode(mockRecord.siteId, null, mockRecord.productCode))
+        .to.be.rejectedWith(DataAccessError, 'siteId, organizationId and productCode are required');
+    });
+
+    it('throws DataAccessError when productCode is missing', async () => {
+      // eslint-disable-next-line max-len
+      await expect(instance.findBySiteIdAndOrganizationIdAndProductCode(mockRecord.siteId, mockRecord.organizationId, null))
+        .to.be.rejectedWith(DataAccessError, 'siteId, organizationId and productCode are required');
+    });
+  });
+
+  describe('allByOrganizationIdWithSites', () => {
+    let rangeStub;
+    let mockSiteInstance;
+    let createInstanceFromRowStub;
+
+    function setupPostgrestChain(result) {
+      rangeStub = sinon.stub().resolves(result);
+      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const eqStub = sinon.stub().returns({ order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+      return {
+        selectStub, eqStub, orderStub, rangeStub,
+      };
+    }
+
+    beforeEach(() => {
+      mockSiteInstance = { getId: () => mockRecord.siteId, getBaseURL: () => 'https://example.com' };
+      createInstanceFromRowStub = sinon.stub().returns(mockSiteInstance);
+      mockEntityRegistry.getCollection.withArgs('SiteCollection').returns({
+        createInstanceFromRow: createInstanceFromRowStub,
+      });
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('returns grants with embedded site data as model instances', async () => {
+      const siteRow = {
+        id: mockRecord.siteId,
+        base_url: 'https://example.com',
+        organization_id: mockRecord.targetOrganizationId,
+        delivery_type: 'aem_edge',
+      };
+      const { selectStub, eqStub, orderStub } = setupPostgrestChain({
+        data: [{
+          id: 'grant-1',
+          site_id: mockRecord.siteId,
+          organization_id: mockRecord.organizationId,
+          target_organization_id: mockRecord.targetOrganizationId,
+          product_code: 'LLMO',
+          role: 'agency',
+          granted_by: 'ims:user123',
+          expires_at: null,
+          sites: siteRow,
+        }],
+        error: null,
+      });
+
+      const results = await instance.allByOrganizationIdWithSites(mockRecord.organizationId);
+
+      expect(results).to.have.lengthOf(1);
+      expect(selectStub).to.have.been.calledWithMatch('sites!site_ims_org_accesses_site_id_fkey');
+      expect(eqStub).to.have.been.calledWith('organization_id', mockRecord.organizationId);
+      expect(orderStub).to.have.been.calledWith('id');
+      const { grant, site } = results[0];
+      expect(grant.getId()).to.equal('grant-1');
+      expect(grant.getSiteId()).to.equal(mockRecord.siteId);
+      expect(grant.getOrganizationId()).to.equal(mockRecord.organizationId);
+      expect(grant.getTargetOrganizationId()).to.equal(mockRecord.targetOrganizationId);
+      expect(grant.getProductCode()).to.equal('LLMO');
+      expect(grant.getRole()).to.equal('agency');
+      expect(grant.getGrantedBy()).to.equal('ims:user123');
+      expect(grant.getExpiresAt()).to.be.undefined;
+      expect(site).to.equal(mockSiteInstance);
+      expect(createInstanceFromRowStub).to.have.been.calledOnceWithExactly(siteRow);
+    });
+
+    it('sets site to null when sites is missing from row', async () => {
+      setupPostgrestChain({
+        data: [{
+          id: 'grant-1',
+          site_id: mockRecord.siteId,
+          organization_id: mockRecord.organizationId,
+          target_organization_id: mockRecord.targetOrganizationId,
+          product_code: 'LLMO',
+          role: 'agency',
+          granted_by: null,
+          expires_at: null,
+          sites: null,
+        }],
+        error: null,
+      });
+
+      const results = await instance.allByOrganizationIdWithSites(mockRecord.organizationId);
+
+      expect(results[0].site).to.be.null;
+      expect(createInstanceFromRowStub).to.not.have.been.called;
+    });
+
+    it('returns empty array when no grants exist', async () => {
+      setupPostgrestChain({ data: [], error: null });
+
+      const results = await instance.allByOrganizationIdWithSites(mockRecord.organizationId);
+
+      expect(results).to.deep.equal([]);
+    });
+
+    it('returns empty array when data is null', async () => {
+      setupPostgrestChain({ data: null, error: null });
+
+      const results = await instance.allByOrganizationIdWithSites(mockRecord.organizationId);
+
+      expect(results).to.deep.equal([]);
+    });
+
+    it('throws DataAccessError when organizationId is missing', async () => {
+      await expect(instance.allByOrganizationIdWithSites(null))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required');
+      await expect(instance.allByOrganizationIdWithSites(''))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required');
+    });
+
+    it('throws DataAccessError on PostgREST error', async () => {
+      setupPostgrestChain({ data: null, error: { message: 'connection refused' } });
+
+      await expect(instance.allByOrganizationIdWithSites(mockRecord.organizationId))
+        .to.be.rejectedWith(DataAccessError, 'Failed to query grants with site');
+      expect(mockLogger.error).to.have.been.called;
+    });
+
+    it('paginates when results exceed page size', async () => {
+      const makeSiteRow = (i) => ({ id: `site-uuid-${i}`, base_url: `https://example${i}.com` });
+      const page1 = Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
+        id: `grant-${i}`,
+        site_id: `site-uuid-${i}`,
+        organization_id: mockRecord.organizationId,
+        target_organization_id: `target-uuid-${i}`,
+        product_code: 'LLMO',
+        role: 'agency',
+        granted_by: null,
+        expires_at: null,
+        sites: makeSiteRow(i),
+      }));
+      const page2 = [{
+        id: `grant-${DEFAULT_PAGE_SIZE}`,
+        site_id: `site-uuid-${DEFAULT_PAGE_SIZE}`,
+        organization_id: mockRecord.organizationId,
+        target_organization_id: `target-uuid-${DEFAULT_PAGE_SIZE}`,
+        product_code: 'LLMO',
+        role: 'agency',
+        granted_by: null,
+        expires_at: null,
+        sites: makeSiteRow(DEFAULT_PAGE_SIZE),
+      }];
+
+      rangeStub = sinon.stub();
+      rangeStub.onFirstCall().resolves({ data: page1, error: null });
+      rangeStub.onSecondCall().resolves({ data: page2, error: null });
+      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const eqStub = sinon.stub().returns({ order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+
+      const results = await instance.allByOrganizationIdWithSites(mockRecord.organizationId);
+
+      expect(results).to.have.lengthOf(DEFAULT_PAGE_SIZE + 1);
+      expect(rangeStub).to.have.been.calledTwice;
+      expect(createInstanceFromRowStub.callCount).to.equal(DEFAULT_PAGE_SIZE + 1);
     });
   });
 });

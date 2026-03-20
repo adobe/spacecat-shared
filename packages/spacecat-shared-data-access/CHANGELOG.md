@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v3.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.25.0...@adobe/spacecat-shared-data-access-v3.26.0) (2026-03-19)
+
+### Features
+
+* add access control helpers for cross-org delegation (Option 2a) ([#1453](https://github.com/adobe/spacecat-shared/issues/1453)) ([960623e](https://github.com/adobe/spacecat-shared/commit/960623ea9e77e849be8b0a5bd7ee047309377cef)), closes [adobe/spacecat-auth-service#503](https://github.com/adobe/spacecat-auth-service/issues/503) [#1448](https://github.com/adobe/spacecat-shared/issues/1448)
+
+## [@adobe/spacecat-shared-data-access-v3.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.24.0...@adobe/spacecat-shared-data-access-v3.25.0) (2026-03-19)
+
+### Features
+
+* cross-org delegation entity models and AuthInfo extensions ([#1448](https://github.com/adobe/spacecat-shared/issues/1448)) ([b0cb091](https://github.com/adobe/spacecat-shared/commit/b0cb091432f15eb304e20263c0a18ec794d93bb9))
+
 ## [@adobe/spacecat-shared-data-access-v3.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.23.0...@adobe/spacecat-shared-data-access-v3.24.0) (2026-03-19)
 
 ### Features

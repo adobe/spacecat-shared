@@ -165,8 +165,9 @@ describe('SiteImsOrgAccess IT', async () => {
     for (const entry of entries) {
       expect(entry).to.have.property('grant');
       expect(entry).to.have.property('targetOrganization');
-      expect(entry.grant.getOrganizationId()).to.equal(organizationId);
-      expect(entry.targetOrganization.id).to.equal(entry.grant.getTargetOrganizationId());
+      // grant is a plain camelCase object — use direct property access, not model getters
+      expect(entry.grant.organizationId).to.equal(organizationId);
+      expect(entry.targetOrganization.id).to.equal(entry.grant.targetOrganizationId);
     }
   });
 
@@ -183,9 +184,10 @@ describe('SiteImsOrgAccess IT', async () => {
     for (const entry of entries) {
       expect(entry).to.have.property('grant');
       expect(entry).to.have.property('targetOrganization');
-      expect(entry.grant.getOrganizationId()).to.equal(organizationId);
-      expect(entry.grant.getTargetOrganizationId()).to.be.a('string');
-      expect(entry.targetOrganization.id).to.equal(entry.grant.getTargetOrganizationId());
+      // grant is a plain camelCase object — use direct property access, not model getters
+      expect(entry.grant.organizationId).to.equal(organizationId);
+      expect(entry.grant.targetOrganizationId).to.be.a('string');
+      expect(entry.targetOrganization.id).to.equal(entry.grant.targetOrganizationId);
       expect(entry.targetOrganization.imsOrgId).to.be.a('string');
     }
   });

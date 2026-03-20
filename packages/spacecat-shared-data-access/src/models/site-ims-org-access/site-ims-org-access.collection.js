@@ -12,7 +12,7 @@
 
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
-import { DEFAULT_PAGE_SIZE } from '../../util/postgrest.utils.js';
+import { DEFAULT_PAGE_SIZE, fromDbRecord } from '../../util/postgrest.utils.js';
 
 /**
  * SiteImsOrgAccessCollection - Collection of cross-org delegation grants.
@@ -127,10 +127,13 @@ class SiteImsOrgAccessCollection extends BaseCollection {
   async #fetchGrantsWithTargetOrg(query) {
     return this.#fetchPaginatedGrants(
       query,
-      (row) => ({
-        grant: this.createInstanceFromRow(row),
-        targetOrganization: { id: row.organizations.id, imsOrgId: row.organizations.ims_org_id },
-      }),
+      (row) => {
+        const { organizations, ...grantRow } = row;
+        return {
+          grant: fromDbRecord(grantRow, this.fieldMaps.toModelMap),
+          targetOrganization: { id: organizations.id, imsOrgId: organizations.ims_org_id },
+        };
+      },
       'Failed to query grants with target organization',
     );
   }

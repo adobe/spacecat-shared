@@ -231,14 +231,17 @@ describe('SiteImsOrgAccessCollection', () => {
       expect(eqStub).to.have.been.calledWith('organization_id', mockRecord.organizationId);
       expect(orderStub).to.have.been.calledWith('id');
       const { grant, targetOrganization } = results[0];
-      expect(grant.getId()).to.equal('grant-1');
-      expect(grant.getSiteId()).to.equal('site-uuid-1');
-      expect(grant.getOrganizationId()).to.equal(mockRecord.organizationId);
-      expect(grant.getTargetOrganizationId()).to.equal(mockRecord.targetOrganizationId);
-      expect(grant.getProductCode()).to.equal('LLMO');
-      expect(grant.getRole()).to.equal('agency');
-      expect(grant.getGrantedBy()).to.equal('ims:user123');
-      expect(grant.getExpiresAt()).to.be.undefined;
+      // grant is a plain camelCase object (not a model instance) — use direct property access.
+      // The primary key maps to the model's idName (siteImsOrgAccessId), not 'id'.
+      // null DB values are excluded by normalizeModelValue (expiresAt is absent, not null).
+      expect(grant.siteImsOrgAccessId).to.equal('grant-1');
+      expect(grant.siteId).to.equal('site-uuid-1');
+      expect(grant.organizationId).to.equal(mockRecord.organizationId);
+      expect(grant.targetOrganizationId).to.equal(mockRecord.targetOrganizationId);
+      expect(grant.productCode).to.equal('LLMO');
+      expect(grant.role).to.equal('agency');
+      expect(grant.grantedBy).to.equal('ims:user123');
+      expect(grant.expiresAt).to.be.undefined;
       expect(targetOrganization).to.deep.equal({
         id: mockRecord.targetOrganizationId,
         imsOrgId: 'target@AdobeOrg',
@@ -356,7 +359,7 @@ describe('SiteImsOrgAccessCollection', () => {
 
       expect(results).to.have.lengthOf(1);
       expect(inStub).to.have.been.calledWith('organization_id', ids);
-      expect(results[0].grant.getOrganizationId()).to.equal(mockRecord.organizationId);
+      expect(results[0].grant.organizationId).to.equal(mockRecord.organizationId);
       expect(results[0].targetOrganization.imsOrgId).to.equal('target@AdobeOrg');
     });
 

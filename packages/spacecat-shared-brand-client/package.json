@@ -44,7 +44,7 @@
     "mocha": "11.7.5",
     "mocha-multi-reporters": "1.5.1",
     "nock": "14.0.11",
-    "sinon": "21.0.2",
+    "sinon": "21.0.3",
     "sinon-chai": "4.0.1",
     "typescript": "5.9.3",
     "aws-xray-sdk": "3.12.0"

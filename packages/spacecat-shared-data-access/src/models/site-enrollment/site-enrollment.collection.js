@@ -11,6 +11,7 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
+import DataAccessError from '../../errors/data-access.error.js';
 
 /**
  * SiteEnrollmentCollection - A class representing a collection of SiteEnrollment entities.
@@ -21,6 +22,30 @@ import BaseCollection from '../base/base.collection.js';
  */
 class SiteEnrollmentCollection extends BaseCollection {
   static COLLECTION_NAME = 'SiteEnrollmentCollection';
+
+  /**
+   * Returns all site IDs enrolled in a given product code in a single JOIN query.
+   *
+   * @param {string} productCode - Product code to filter by (e.g. 'LLMO').
+   * @returns {Promise<string[]>} Array of siteId strings.
+   */
+  async allSiteIdsByProductCode(productCode) {
+    if (!productCode) {
+      throw new DataAccessError('productCode is required', { entityName: 'SiteEnrollment', tableName: 'site_enrollments' });
+    }
+
+    const { data, error } = await this.postgrestService
+      .from('site_enrollments')
+      .select('site_id, entitlements!inner(product_code)')
+      .eq('entitlements.product_code', productCode);
+
+    if (error) {
+      this.log.error(`[SiteEnrollmentCollection] Failed to query site_enrollments by productCode - ${error.message}`, error);
+      throw new DataAccessError('Failed to query site_enrollments by productCode', { entityName: 'SiteEnrollment', tableName: 'site_enrollments' }, error);
+    }
+
+    return (data || []).map((row) => row.site_id);
+  }
 
   async create(item, options = {}) {
     if (item?.siteId && item?.entitlementId) {

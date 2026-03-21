@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-vault-secrets-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.3.0...@adobe/spacecat-shared-vault-secrets-v1.3.1) (2026-03-21)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
 ## [@adobe/spacecat-shared-vault-secrets-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.2.0...@adobe/spacecat-shared-vault-secrets-v1.3.0) (2026-03-13)
 
 ### Features

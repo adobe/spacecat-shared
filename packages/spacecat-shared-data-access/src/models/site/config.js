@@ -848,5 +848,5 @@ Config.toDynamoItem = (config) => ({
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
-  commerceLlmoConfig: config.getCommerceLlmoConfig(),
+  commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
 });

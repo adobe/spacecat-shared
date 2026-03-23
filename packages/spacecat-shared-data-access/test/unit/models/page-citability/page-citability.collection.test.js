@@ -69,8 +69,8 @@ describe('PageCitabilityCollection', () => {
   describe('static constants', () => {
     it('exposes updatedBy source constants', () => {
       expect(PageCitability.DEFAULT_UPDATED_BY).to.equal('spacecat');
-      expect(PageCitability.UPDATED_BY_PRERENDER).to.equal('prerender-audit');
-      expect(PageCitability.UPDATED_BY_PAGE_CITABILITY).to.equal('page-citability-audit');
+      expect(PageCitability.UPDATED_BY_PRERENDER).to.equal('prerender');
+      expect(PageCitability.UPDATED_BY_PAGE_CITABILITY).to.equal('page-citability');
     });
   });
 });

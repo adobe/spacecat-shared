@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.106.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.105.1...@adobe/spacecat-shared-utils-v1.106.0) (2026-03-23)
+
+### Features
+
+* strategy schema update ([#1452](https://github.com/adobe/spacecat-shared/issues/1452)) ([bcc9404](https://github.com/adobe/spacecat-shared/commit/bcc9404aca3d297de64e23442c8ec5186671275e))
+
 ## [@adobe/spacecat-shared-utils-v1.105.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.105.0...@adobe/spacecat-shared-utils-v1.105.1) (2026-03-21)
 
 ### Bug Fixes

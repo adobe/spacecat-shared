@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-utils-v1.105.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.105.0...@adobe/spacecat-shared-utils-v1.105.1) (2026-03-21)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
+## [@adobe/spacecat-shared-utils-v1.105.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.104.0...@adobe/spacecat-shared-utils-v1.105.0) (2026-03-19)
+
+### Features
+
+* **spacecat-shared-utils:** SITES-40623 - add token grant config and exports ([#1420](https://github.com/adobe/spacecat-shared/issues/1420)) ([a14e001](https://github.com/adobe/spacecat-shared/commit/a14e0012f43ad4a13c4f9347bd64f66a5fc535f8))
+
+## [@adobe/spacecat-shared-utils-v1.104.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.103.0...@adobe/spacecat-shared-utils-v1.104.0) (2026-03-19)
+
+### Features
+
+* add experimentation topics field to llmo config model ([#1450](https://github.com/adobe/spacecat-shared/issues/1450)) ([ffcb886](https://github.com/adobe/spacecat-shared/commit/ffcb886e26895c5a0da02c9da9007b0eb6fe3f37))
+
 ## [@adobe/spacecat-shared-utils-v1.103.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.102.1...@adobe/spacecat-shared-utils-v1.103.0) (2026-03-18)
 
 ### Features

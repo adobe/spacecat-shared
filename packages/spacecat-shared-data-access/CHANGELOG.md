@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-data-access-v3.27.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.27.0...@adobe/spacecat-shared-data-access-v3.27.1) (2026-03-21)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
+## [@adobe/spacecat-shared-data-access-v3.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.26.0...@adobe/spacecat-shared-data-access-v3.27.0) (2026-03-20)
+
+### Features
+
+* add countryCodeIgnoreList to site llmo config ([#1447](https://github.com/adobe/spacecat-shared/issues/1447)) ([6d824f8](https://github.com/adobe/spacecat-shared/commit/6d824f855aeadf623776a31e305270ae15fa1be2))
+
+## [@adobe/spacecat-shared-data-access-v3.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.25.0...@adobe/spacecat-shared-data-access-v3.26.0) (2026-03-19)
+
+### Features
+
+* add access control helpers for cross-org delegation (Option 2a) ([#1453](https://github.com/adobe/spacecat-shared/issues/1453)) ([960623e](https://github.com/adobe/spacecat-shared/commit/960623ea9e77e849be8b0a5bd7ee047309377cef)), closes [adobe/spacecat-auth-service#503](https://github.com/adobe/spacecat-auth-service/issues/503) [#1448](https://github.com/adobe/spacecat-shared/issues/1448)
+
+## [@adobe/spacecat-shared-data-access-v3.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.24.0...@adobe/spacecat-shared-data-access-v3.25.0) (2026-03-19)
+
+### Features
+
+* cross-org delegation entity models and AuthInfo extensions ([#1448](https://github.com/adobe/spacecat-shared/issues/1448)) ([b0cb091](https://github.com/adobe/spacecat-shared/commit/b0cb091432f15eb304e20263c0a18ec794d93bb9))
+
+## [@adobe/spacecat-shared-data-access-v3.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.23.0...@adobe/spacecat-shared-data-access-v3.24.0) (2026-03-19)
+
+### Features
+
+* SITES-40623 - token system in Spacecat ([#1414](https://github.com/adobe/spacecat-shared/issues/1414)) ([9c540ba](https://github.com/adobe/spacecat-shared/commit/9c540babf47984e15737bde509b54df9b5233c54))
+
 ## [@adobe/spacecat-shared-data-access-v3.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.22.0...@adobe/spacecat-shared-data-access-v3.23.0) (2026-03-18)
 
 ### Features

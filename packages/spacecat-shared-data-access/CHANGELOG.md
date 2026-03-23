@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.27.1...@adobe/spacecat-shared-data-access-v3.28.0) (2026-03-23)
+
+### Features
+
+* add commerceLlmoConfig to site configuration schema ([#1459](https://github.com/adobe/spacecat-shared/issues/1459)) ([8dd4bbf](https://github.com/adobe/spacecat-shared/commit/8dd4bbfda08343b37852d627c8528016358115c9))
+
 ## [@adobe/spacecat-shared-data-access-v3.27.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.27.0...@adobe/spacecat-shared-data-access-v3.27.1) (2026-03-21)
 
 ### Bug Fixes

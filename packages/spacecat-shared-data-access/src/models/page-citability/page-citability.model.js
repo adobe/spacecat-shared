@@ -23,6 +23,10 @@ class PageCitability extends BaseModel {
 
   static DEFAULT_UPDATED_BY = 'spacecat';
 
+  static UPDATED_BY_PRERENDER = 'prerender';
+
+  static UPDATED_BY_PAGE_CITABILITY = 'page-citability';
+
   // add any custom methods or overrides here
 }
 

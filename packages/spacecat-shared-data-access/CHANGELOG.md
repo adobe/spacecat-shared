@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.28.0...@adobe/spacecat-shared-data-access-v3.29.0) (2026-03-23)
+
+### Features
+
+* **page-citability:** add UPDATED_BY_PRERENDER and UPDATED_BY_PAGE_CITABILITY constants ([#1460](https://github.com/adobe/spacecat-shared/issues/1460)) ([dcdf2b0](https://github.com/adobe/spacecat-shared/commit/dcdf2b0af9b9426631e9363949027a267ce7d015))
+
 ## [@adobe/spacecat-shared-data-access-v3.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.27.1...@adobe/spacecat-shared-data-access-v3.28.0) (2026-03-23)
 
 ### Features

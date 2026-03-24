@@ -85,6 +85,8 @@ export const DATA_SCHEMAS = {
       ).required(),
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().optional(),
+      patchContent: Joi.string().optional(),
+      isCodeChangeAvailable: Joi.boolean().optional(),
     }).unknown(true),
     projections: {
       minimal: {
@@ -113,6 +115,8 @@ export const DATA_SCHEMAS = {
       ).required(),
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().optional(),
+      patchContent: Joi.string().optional(),
+      isCodeChangeAvailable: Joi.boolean().optional(),
     }).unknown(true),
     projections: {
       minimal: {
@@ -126,7 +130,7 @@ export const DATA_SCHEMAS = {
   [OPPORTUNITY_TYPES.CWV]: {
     schema: Joi.object({
       type: Joi.string().required(),
-      url: Joi.string().uri().required(),
+      url: Joi.string().uri().optional(),
       pageviews: Joi.number().optional(),
       organic: Joi.number().optional(),
       metrics: Joi.array().items(
@@ -144,7 +148,7 @@ export const DATA_SCHEMAS = {
           organic: Joi.number().optional(),
         }).unknown(true),
       ).required(),
-      issues: Joi.array().items(Joi.object()).required(),
+      issues: Joi.array().items(Joi.object()).optional(),
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().allow(null).optional(),
     }).unknown(true),
@@ -163,6 +167,7 @@ export const DATA_SCHEMAS = {
         Joi.object({
           isAppropriate: Joi.boolean().optional(),
           isDecorative: Joi.boolean().optional(),
+          hasAltAttribute: Joi.boolean().optional(),
           xpath: Joi.string().optional(),
           altText: Joi.string().optional(),
           imageUrl: Joi.string().uri().optional(),
@@ -374,12 +379,14 @@ export const DATA_SCHEMAS = {
   [OPPORTUNITY_TYPES.BROKEN_INTERNAL_LINKS]: {
     schema: Joi.object({
       // Support both naming conventions (snake_case and camelCase)
-      url_from: Joi.string().uri().optional(),
-      urlFrom: Joi.string().uri().optional(),
-      url_to: Joi.string().uri().optional(),
-      urlTo: Joi.string().uri().optional(),
+      // URL fields use Joi.string() instead of Joi.string().uri() because
+      // internal-links sometimes keeps URL values as-is, including malformed URLs
+      url_from: Joi.string().optional(),
+      urlFrom: Joi.string().optional(),
+      url_to: Joi.string().optional(),
+      urlTo: Joi.string().optional(),
       title: Joi.string().optional(),
-      urlsSuggested: Joi.array().items(Joi.string().uri()).optional(),
+      urlsSuggested: Joi.array().items(Joi.string()).optional(),
       aiRationale: Joi.string().optional(),
       trafficDomain: Joi.number().optional(),
       priority: Joi.string().optional(),

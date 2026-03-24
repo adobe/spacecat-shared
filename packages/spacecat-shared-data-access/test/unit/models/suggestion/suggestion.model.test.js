@@ -259,17 +259,17 @@ describe('SuggestionModel', () => {
           expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
         });
 
-        it('fails when issues is missing (schema requires issues array)', () => {
+        it('passes when issues is missing (issues is optional for update flow)', () => {
           const suggestionData = {
             type: 'url',
             url: 'https://www.example.com/page',
             pageviews: 11620,
             metrics: [{ deviceType: 'mobile', lcp: 2701 }],
           };
-          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
         });
 
-        it('fails when group-type has pattern but no url (schema requires url)', () => {
+        it('passes when group-type has pattern but no url (url is optional for groups)', () => {
           const suggestionData = {
             type: 'group',
             name: 'Some pages',
@@ -282,7 +282,7 @@ describe('SuggestionModel', () => {
             ],
             issues: [],
           };
-          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
         });
       });
     });

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-athena-client",
-  "version": "1.9.7",
+  "version": "1.9.8",
   "description": "Shared modules of the Spacecat Services - AWS Athena Client",
   "type": "module",
   "engines": {
@@ -36,12 +36,12 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.96.3",
-    "@aws-sdk/client-athena": "3.1009.0"
+    "@aws-sdk/client-athena": "3.1014.0"
   },
   "devDependencies": {
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
-    "sinon": "21.0.2",
+    "sinon": "21.0.3",
     "sinon-chai": "4.0.1",
     "typescript": "5.9.3"
   }

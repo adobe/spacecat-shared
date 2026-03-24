@@ -372,6 +372,91 @@ describe('SuggestionGrantCollection', () => {
     });
   });
 
+  describe('revokeSuggestionGrant', () => {
+    const grantId = 'grant-uuid-1';
+
+    beforeEach(() => {
+      stub(instance, 'invokeRevokeSuggestionGrantRpc');
+    });
+
+    it('revokes a grant when RPC succeeds', async () => {
+      instance.invokeRevokeSuggestionGrantRpc.resolves({
+        data: [{ success: true, reason: null, revoked_count: 2 }],
+        error: null,
+      });
+
+      const result = await instance.revokeSuggestionGrant(grantId);
+
+      expect(result).to.deep.equal({ success: true, revokedCount: 2 });
+      expect(instance.invokeRevokeSuggestionGrantRpc)
+        .to.have.been.calledOnceWith(grantId);
+    });
+
+    it('throws DataAccessError when RPC returns an error', async () => {
+      const rpcError = { message: 'rpc failure' };
+      instance.invokeRevokeSuggestionGrantRpc.resolves({ data: null, error: rpcError });
+
+      await expect(instance.revokeSuggestionGrant(grantId))
+        .to.be.rejectedWith(DataAccessError, 'Failed to revoke suggestion grant (revoke_suggestion_grant)');
+      expect(mockLogger.error).to.have.been.calledWith('revokeSuggestionGrant: RPC failed', rpcError);
+    });
+
+    it('returns success false with reason when RPC returns empty data', async () => {
+      instance.invokeRevokeSuggestionGrantRpc.resolves({ data: [], error: null });
+
+      const result = await instance.revokeSuggestionGrant(grantId);
+
+      expect(result).to.deep.equal({ success: false, reason: 'rpc_no_result' });
+    });
+
+    it('returns success false with reason from RPC row', async () => {
+      instance.invokeRevokeSuggestionGrantRpc.resolves({
+        data: [{ success: false, reason: 'grant_not_found' }],
+        error: null,
+      });
+
+      const result = await instance.revokeSuggestionGrant(grantId);
+
+      expect(result).to.deep.equal({ success: false, reason: 'grant_not_found' });
+    });
+
+    it('returns rpc_no_result when data is null', async () => {
+      instance.invokeRevokeSuggestionGrantRpc.resolves({ data: null, error: null });
+
+      const result = await instance.revokeSuggestionGrant(grantId);
+
+      expect(result).to.deep.equal({ success: false, reason: 'rpc_no_result' });
+    });
+
+    it('throws DataAccessError when grantId is missing', async () => {
+      await expect(instance.revokeSuggestionGrant(''))
+        .to.be.rejectedWith(DataAccessError, 'grantId is required');
+    });
+  });
+
+  describe('invokeRevokeSuggestionGrantRpc', () => {
+    it('calls postgrest rpc with revoke_suggestion_grant and correct params', async () => {
+      const grantId = 'grant-1';
+      const rpcStub = stub().resolves({ data: [{ success: true }], error: null });
+      instance.postgrestService = { rpc: rpcStub };
+
+      await instance.invokeRevokeSuggestionGrantRpc(grantId);
+
+      expect(rpcStub).to.have.been.calledOnceWith('revoke_suggestion_grant', {
+        p_grant_id: grantId,
+      });
+    });
+
+    it('returns the result from postgrest rpc', async () => {
+      const rpcResult = { data: [{ success: true }], error: null };
+      instance.postgrestService = { rpc: stub().resolves(rpcResult) };
+
+      const result = await instance.invokeRevokeSuggestionGrantRpc('grant-1');
+
+      expect(result).to.deep.equal(rpcResult);
+    });
+  });
+
   describe('invokeGrantSuggestionsRpc', () => {
     it('calls postgrest rpc with grant_suggestions and correct params', async () => {
       const suggestionIds = ['sugg-1', 'sugg-2'];

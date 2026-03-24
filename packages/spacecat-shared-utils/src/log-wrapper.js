@@ -77,6 +77,14 @@ export function logWrapper(fn) {
       context.contextualLog = context.log;
     }
 
-    return fn(message, context);
+    const response = await fn(message, context);
+
+    // Add traceId to response headers for end-to-end distributed tracing
+    const traceId = context.traceId || getTraceId();
+    if (traceId && response?.headers?.set) {
+      response.headers.set('x-trace-id', traceId);
+    }
+
+    return response;
   };
 }

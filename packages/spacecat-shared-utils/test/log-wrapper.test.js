@@ -40,7 +40,7 @@ const logLevels = [
   'fatal',
 ];
 
-const mockFnFromSqs = sinon.spy();
+let mockFnFromSqs;
 let mockContext;
 
 describe('logWrapper tests', () => {
@@ -56,7 +56,8 @@ describe('logWrapper tests', () => {
 
   beforeEach(() => {
     sinon.resetHistory();
-    getTraceIdStub.returns(null); // Default to no trace ID
+    mockFnFromSqs = sinon.stub().resolves(undefined);
+    getTraceIdStub.returns(null);
     mockContext = {
       // Simulate an SQS event
       invocation: {
@@ -298,6 +299,83 @@ describe('logWrapper tests', () => {
       expect(originalLog[level].calledOnce).to.be.true;
       const callArgs = originalLog[level].getCall(0).args;
       expect(callArgs[0]).to.equal(errorObject);
+    });
+  });
+
+  // Tests for x-trace-id response header
+  describe('response header x-trace-id', () => {
+    it('should add x-trace-id header to the response when traceId is available from X-Ray', async () => {
+      getTraceIdStub.returns('1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e');
+      const mockHeaders = { set: sinon.spy() };
+      const mockResponse = { headers: mockHeaders };
+      mockFnFromSqs.resolves(mockResponse);
+
+      const wrappedFn = logWrapper(mockFnFromSqs);
+      const result = await wrappedFn(message, mockContext);
+
+      expect(result).to.equal(mockResponse);
+      expect(mockHeaders.set.calledOnce).to.be.true;
+      expect(mockHeaders.set.calledWith('x-trace-id', '1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e')).to.be.true;
+    });
+
+    it('should add x-trace-id header from context.traceId when available', async () => {
+      mockContext.traceId = '1-context-trace-id';
+      getTraceIdStub.returns('1-xray-trace-id');
+      const mockHeaders = { set: sinon.spy() };
+      const mockResponse = { headers: mockHeaders };
+      mockFnFromSqs.resolves(mockResponse);
+
+      const wrappedFn = logWrapper(mockFnFromSqs);
+      const result = await wrappedFn(message, mockContext);
+
+      expect(result).to.equal(mockResponse);
+      expect(mockHeaders.set.calledOnce).to.be.true;
+      expect(mockHeaders.set.calledWith('x-trace-id', '1-context-trace-id')).to.be.true;
+    });
+
+    it('should not add x-trace-id header when no traceId is available', async () => {
+      getTraceIdStub.returns(null);
+      const mockHeaders = { set: sinon.spy() };
+      const mockResponse = { headers: mockHeaders };
+      mockFnFromSqs.resolves(mockResponse);
+
+      const wrappedFn = logWrapper(mockFnFromSqs);
+      const result = await wrappedFn({}, mockContext);
+
+      expect(result).to.equal(mockResponse);
+      expect(mockHeaders.set.called).to.be.false;
+    });
+
+    it('should not fail when response has no headers object', async () => {
+      getTraceIdStub.returns('1-abc-def');
+      const mockResponse = {};
+      mockFnFromSqs.resolves(mockResponse);
+
+      const wrappedFn = logWrapper(mockFnFromSqs);
+      const result = await wrappedFn(message, mockContext);
+
+      expect(result).to.equal(mockResponse);
+    });
+
+    it('should not fail when response is null or undefined', async () => {
+      getTraceIdStub.returns('1-abc-def');
+      mockFnFromSqs.resolves(null);
+
+      const wrappedFn = logWrapper(mockFnFromSqs);
+      const result = await wrappedFn(message, mockContext);
+
+      expect(result).to.be.null;
+    });
+
+    it('should not fail when response headers has no set method', async () => {
+      getTraceIdStub.returns('1-abc-def');
+      const mockResponse = { headers: {} };
+      mockFnFromSqs.resolves(mockResponse);
+
+      const wrappedFn = logWrapper(mockFnFromSqs);
+      const result = await wrappedFn(message, mockContext);
+
+      expect(result).to.equal(mockResponse);
     });
   });
 });

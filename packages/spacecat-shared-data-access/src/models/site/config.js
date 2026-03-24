@@ -387,6 +387,18 @@ export const configSchema = Joi.object({
     lastProfile: Joi.string().optional(),
     lastStartTime: Joi.number().optional(),
   }).optional(),
+  commerceLlmoConfig: Joi.object().pattern(
+    Joi.string(),
+    Joi.object({
+      environmentId: Joi.string().optional(),
+      websiteCode: Joi.string().optional(),
+      storeCode: Joi.string().optional(),
+      storeViewCode: Joi.string().optional(),
+      hostName: Joi.string().optional(),
+      magentoEndpoint: Joi.string().uri().optional(),
+      magentoAPIKey: Joi.string().optional(),
+    }),
+  ).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
@@ -499,6 +511,7 @@ export const Config = (data = {}) => {
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.getOnboardConfig = () => state?.onboardConfig;
+  self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
@@ -820,7 +833,11 @@ export const Config = (data = {}) => {
   };
 
   self.updateOnboardConfig = (onboardConfig) => {
-    state.onboardConfig = { ...(state.onboardConfig || {}), ...onboardConfig };
+    state.onboardConfig = onboardConfig;
+  };
+
+  self.updateCommerceLlmoConfig = (commerceLlmoConfig) => {
+    state.commerceLlmoConfig = commerceLlmoConfig;
   };
 
   return Object.freeze(self);
@@ -841,4 +858,5 @@ Config.toDynamoItem = (config) => ({
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
   onboardConfig: config.getOnboardConfig(),
+  commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
 });

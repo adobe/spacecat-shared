@@ -2781,28 +2781,17 @@ describe('Config Tests', () => {
     });
 
     it('updates onboard config', () => {
-      const config = Config();
-      config.updateOnboardConfig({ lastProfile: 'paid' });
-      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid' });
-    });
-
-    it('merges lastStartTime into existing onboard config', () => {
       const startTime = Date.now();
-      const config = Config({ onboardConfig: { lastProfile: 'paid' } });
-      config.updateOnboardConfig({ lastStartTime: startTime });
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
       expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime });
     });
 
-    it('merges into existing onboard config', () => {
-      const config = Config({ onboardConfig: { lastProfile: 'demo' } });
-      config.updateOnboardConfig({ lastProfile: 'paid' });
-      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid' });
-    });
-
-    it('stores only lastStartTime when lastProfile is absent', () => {
+    it('overwrites existing onboard config', () => {
       const startTime = Date.now();
-      const config = Config({ onboardConfig: { lastStartTime: startTime } });
-      expect(config.getOnboardConfig()).to.deep.equal({ lastStartTime: startTime });
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000 } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime });
     });
 
     it('includes onboardConfig in toDynamoItem', () => {
@@ -2816,6 +2805,82 @@ describe('Config Tests', () => {
       const config = Config();
       const dynamoItem = Config.toDynamoItem(config);
       expect(dynamoItem.onboardConfig).to.be.undefined;
+    });
+  });
+
+  describe('Commerce LLMO Config', () => {
+    it('creates a Config with commerceLlmoConfig property', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            websiteCode: 'base',
+            storeCode: 'main_store',
+            storeViewCode: 'default',
+            hostName: 'example.com',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'api-key-123',
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('has undefined commerceLlmoConfig in default config', () => {
+      const config = Config();
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for commerceLlmoConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should be able to update commerceLlmoConfig', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-456',
+            websiteCode: 'base',
+          },
+        },
+      };
+      const config = Config({});
+      config.updateCommerceLlmoConfig(data.commerceLlmoConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('should be able to update commerceLlmoConfig with different values', () => {
+      const config = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+          },
+        },
+      });
+
+      const newConfig = {
+        store2: {
+          environmentId: 'env-789',
+          hostName: 'new.example.com',
+        },
+      };
+      config.updateCommerceLlmoConfig(newConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes commerceLlmoConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+          },
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.commerceLlmoConfig).to.deep.equal(data.getCommerceLlmoConfig());
     });
   });
 

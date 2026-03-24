@@ -2763,6 +2763,62 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('onboard config', () => {
+    it('returns undefined when not set', () => {
+      const config = Config();
+      expect(config.getOnboardConfig()).to.be.undefined;
+    });
+
+    it('creates a Config with onboardConfig property', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'paid' } });
+      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid' });
+    });
+
+    it('stores lastStartTime', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'paid', lastStartTime: startTime } });
+      expect(config.getOnboardConfig().lastStartTime).to.equal(startTime);
+    });
+
+    it('updates onboard config', () => {
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'paid' });
+      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid' });
+    });
+
+    it('merges lastStartTime into existing onboard config', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'paid' } });
+      config.updateOnboardConfig({ lastStartTime: startTime });
+      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime });
+    });
+
+    it('merges into existing onboard config', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo' } });
+      config.updateOnboardConfig({ lastProfile: 'paid' });
+      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid' });
+    });
+
+    it('stores only lastStartTime when lastProfile is absent', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastStartTime: startTime } });
+      expect(config.getOnboardConfig()).to.deep.equal({ lastStartTime: startTime });
+    });
+
+    it('includes onboardConfig in toDynamoItem', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'paid', lastStartTime: startTime } });
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.onboardConfig).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime });
+    });
+
+    it('omits onboardConfig from toDynamoItem when not set', () => {
+      const config = Config();
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.onboardConfig).to.be.undefined;
+    });
+  });
+
   describe('LLMO Well Known Tags', () => {
     const { extractWellKnownTags } = Config();
 

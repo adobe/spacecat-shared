@@ -146,6 +146,10 @@ export interface SiteConfig {
       urlPatterns?: Array<LlmoUrlPattern>;
       customerIntent?: Array<LlmoCustomerIntent>;
     };
+    onboardConfig?: {
+      lastProfile?: string;
+      lastStartTime?: number;
+    };
   };
   extractWellKnownTags(tags: Array<string>): Partial<Record<WellKnownLmmoTag, string>>;
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
@@ -197,6 +201,8 @@ export interface SiteConfig {
   updateLlmoCustomerIntent(intentKey: string, updateData: Partial<LlmoCustomerIntent>): void;
   addLlmoTag(tag: string): void;
   removeLlmoTag(tag: string): void;
+  getOnboardConfig(): { lastProfile?: string; lastStartTime?: number } | undefined;
+  updateOnboardConfig(onboardConfig: { lastProfile?: string; lastStartTime?: number }): void;
 }
 
 export interface Site extends BaseModel {

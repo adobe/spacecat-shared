@@ -383,6 +383,10 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
   }).optional(),
+  onboardConfig: Joi.object({
+    lastProfile: Joi.string().optional(),
+    lastStartTime: Joi.number().optional(),
+  }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
@@ -494,6 +498,7 @@ export const Config = (data = {}) => {
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
+  self.getOnboardConfig = () => state?.onboardConfig;
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
@@ -814,6 +819,10 @@ export const Config = (data = {}) => {
     state.edgeOptimizeConfig = edgeOptimizeConfig;
   };
 
+  self.updateOnboardConfig = (onboardConfig) => {
+    state.onboardConfig = { ...(state.onboardConfig || {}), ...onboardConfig };
+  };
+
   return Object.freeze(self);
 };
 
@@ -831,4 +840,5 @@ Config.toDynamoItem = (config) => ({
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
+  onboardConfig: config.getOnboardConfig(),
 });

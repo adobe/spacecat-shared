@@ -35,7 +35,7 @@ class SiteEnrollmentCollection extends BaseCollection {
     }
 
     const { data, error } = await this.postgrestService
-      .from('site_enrollments')
+      .from(this.tableName)
       .select('site_id, entitlements!inner(product_code)')
       .eq('entitlements.product_code', productCode);
 

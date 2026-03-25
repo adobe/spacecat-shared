@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.12.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.1...@adobe/spacecat-shared-tokowaka-client-v1.12.2) (2026-03-25)
+
+### Bug Fixes
+
+* optimize preview api ([#1412](https://github.com/adobe/spacecat-shared/issues/1412)) ([3efb9de](https://github.com/adobe/spacecat-shared/commit/3efb9deb1ee6ad962b5288ef124f96fbfbb6e4ae))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.0...@adobe/spacecat-shared-tokowaka-client-v1.12.1) (2026-03-21)
 
 ### Bug Fixes

@@ -197,6 +197,7 @@ describe('HTML Utils', () => {
     });
 
     it('should use default warmup delay of 750ms for optimized HTML', async () => {
+      fetchStub.reset();
       fetchStub.resolves({
         ok: true,
         status: 200,
@@ -221,10 +222,10 @@ describe('HTML Utils', () => {
       const elapsed = Date.now() - startTime;
       expect(html).to.equal('<html>Optimized HTML</html>');
       expect(fetchStub.callCount).to.equal(2); // warmup + actual
-      expect(elapsed).to.be.at.least(750); // Should not have waited (0ms warmup)
+      expect(elapsed).to.be.at.least(750); // Default warmup delay for optimized is 750ms
     });
 
-    it('should return immediately for optimized HTML when no headers present', async () => {
+    it('should retry and throw for optimized HTML when no proxy or cache headers present', async () => {
       // Warmup succeeds
       fetchStub.onCall(0).resolves({
         ok: true,
@@ -235,30 +236,35 @@ describe('HTML Utils', () => {
         },
         text: async () => 'warmup',
       });
-      // First actual call - no headers, should succeed
-      fetchStub.onCall(1).resolves({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        headers: {
-          get: () => null,
-        },
-        text: async () => '<html>No headers</html>',
-      });
+      for (let i = 1; i <= 4; i += 1) {
+        fetchStub.onCall(i).resolves({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: {
+            get: () => null,
+          },
+          text: async () => '<html>No headers</html>',
+        });
+      }
 
-      const html = await fetchHtmlWithWarmup(
-        'https://example.com/page',
-        'api-key',
-        'host',
-        'https://edge.example.com',
-        log,
-        true, // isOptimized
-        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
-      );
-
-      expect(html).to.equal('<html>No headers</html>');
-      // Should succeed immediately (warmup + 1 attempt)
-      expect(fetchStub.callCount).to.equal(2);
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          'https://edge.example.com',
+          log,
+          true, // isOptimized
+          { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to fetch optimized HTML');
+        expect(error.message).to.include('Cache header (x-edgeoptimize-cache) not found after 3 retries');
+      }
+      // Warmup + 4 actual attempts (initial + 3 retries)
+      expect(fetchStub.callCount).to.equal(5);
     });
 
     it('should throw error for optimized HTML when proxy present but cache not found after retries', async () => {
@@ -404,6 +410,50 @@ describe('HTML Utils', () => {
         expect(error.message).to.include('Failed to fetch original HTML');
         expect(error.message).to.include('0 retries');
       }
+    });
+
+    it('should retry with same URL on 301 response', async () => {
+      const sameUrl = 'https://edge.example.com/page';
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: { get: () => null },
+        text: async () => 'warmup',
+      });
+      // First actual call returns 301
+      fetchStub.onCall(1).resolves({
+        ok: false,
+        status: 301,
+        statusText: 'Moved Permanently',
+        headers: { get: () => null },
+      });
+      // Second call (same URL) succeeds with cache header
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>OK</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 2, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>OK</html>');
+      expect(fetchStub.callCount).to.equal(3); // warmup + 301 + retry same URL
+      expect(fetchStub.getCall(1).args[0]).to.equal(sameUrl);
+      expect(fetchStub.getCall(2).args[0]).to.equal(sameUrl);
     });
 
     it('should retry and eventually throw error after max retries', async () => {

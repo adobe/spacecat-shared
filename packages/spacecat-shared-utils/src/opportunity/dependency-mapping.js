@@ -12,11 +12,13 @@
 
 /**
  * Dependency sources used by opportunities.
- * RUM         — Real User Monitoring (Adobe RUM / helix-rum-js)
+ * RUM          — Real User Monitoring (Adobe RUM / helix-rum-js)
  * AHREFSImport — Ahrefs import job (organic traffic, backlinks, keywords)
  * GSC          — Google Search Console import
  * scraping     — Page HTML scraping (spacecat-scraper / spacecat-content-scraper)
  * ExternalAPI  — Third-party API call at audit run-time (Wikipedia, Reddit, YouTube)
+ * CrUX         — Chrome User Experience Report (field data from Google)
+ * PSI          — PageSpeed Insights (lab data via Lighthouse API)
  */
 export const DEPENDENCY_SOURCES = /** @type {const} */ ({
   RUM: 'RUM',
@@ -24,6 +26,8 @@ export const DEPENDENCY_SOURCES = /** @type {const} */ ({
   GSC: 'GSC',
   SCRAPING: 'scraping',
   EXTERNAL_API: 'ExternalAPI',
+  CRUX: 'CrUX',
+  PSI: 'PSI',
 });
 
 /**
@@ -36,7 +40,7 @@ export const DEPENDENCY_SOURCES = /** @type {const} */ ({
  */
 export const OPPORTUNITY_DEPENDENCY_MAP = {
   // Performance
-  cwv: [DEPENDENCY_SOURCES.RUM],
+  cwv: [DEPENDENCY_SOURCES.RUM, DEPENDENCY_SOURCES.CRUX, DEPENDENCY_SOURCES.PSI],
   prerender: [DEPENDENCY_SOURCES.SCRAPING],
 
   // SEO — traffic-driven

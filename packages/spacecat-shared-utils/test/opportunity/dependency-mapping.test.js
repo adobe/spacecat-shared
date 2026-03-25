@@ -23,7 +23,7 @@ import {
 describe('dependency-mapping', () => {
   describe('DEPENDENCY_SOURCES', () => {
     it('defines all expected source keys', () => {
-      expect(DEPENDENCY_SOURCES).to.include.keys('RUM', 'AHREFS_IMPORT', 'GSC', 'SCRAPING', 'EXTERNAL_API');
+      expect(DEPENDENCY_SOURCES).to.include.keys('RUM', 'AHREFS_IMPORT', 'GSC', 'SCRAPING', 'EXTERNAL_API', 'CRUX', 'PSI');
     });
 
     it('has correct string values', () => {
@@ -32,6 +32,8 @@ describe('dependency-mapping', () => {
       expect(DEPENDENCY_SOURCES.GSC).to.equal('GSC');
       expect(DEPENDENCY_SOURCES.SCRAPING).to.equal('scraping');
       expect(DEPENDENCY_SOURCES.EXTERNAL_API).to.equal('ExternalAPI');
+      expect(DEPENDENCY_SOURCES.CRUX).to.equal('CrUX');
+      expect(DEPENDENCY_SOURCES.PSI).to.equal('PSI');
     });
   });
 
@@ -41,8 +43,12 @@ describe('dependency-mapping', () => {
       expect(Object.keys(OPPORTUNITY_DEPENDENCY_MAP).length).to.be.greaterThan(0);
     });
 
-    it('maps cwv to RUM dependency', () => {
-      expect(OPPORTUNITY_DEPENDENCY_MAP.cwv).to.deep.equal([DEPENDENCY_SOURCES.RUM]);
+    it('maps cwv to RUM, CrUX and PSI dependencies', () => {
+      expect(OPPORTUNITY_DEPENDENCY_MAP.cwv).to.deep.equal([
+        DEPENDENCY_SOURCES.RUM,
+        DEPENDENCY_SOURCES.CRUX,
+        DEPENDENCY_SOURCES.PSI,
+      ]);
     });
 
     it('maps broken-backlinks to AHREFS_IMPORT and SCRAPING', () => {
@@ -59,7 +65,11 @@ describe('dependency-mapping', () => {
 
   describe('getDependenciesForOpportunity', () => {
     it('returns dependencies for a known opportunity type', () => {
-      expect(getDependenciesForOpportunity('cwv')).to.deep.equal([DEPENDENCY_SOURCES.RUM]);
+      expect(getDependenciesForOpportunity('cwv')).to.deep.equal([
+        DEPENDENCY_SOURCES.RUM,
+        DEPENDENCY_SOURCES.CRUX,
+        DEPENDENCY_SOURCES.PSI,
+      ]);
     });
 
     it('returns multiple dependencies when applicable', () => {

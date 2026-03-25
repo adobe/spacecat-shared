@@ -156,3 +156,8 @@ export {
   getDependenciesForOpportunity,
   getOpportunitiesForSource,
 } from './opportunity/dependency-mapping.js';
+
+export {
+  OPPORTUNITY_TITLES,
+  getOpportunityTitle,
+} from './opportunity/opportunity-titles.js';

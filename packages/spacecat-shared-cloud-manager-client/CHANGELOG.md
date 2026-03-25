@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.0.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.0.4...@adobe/spacecat-shared-cloud-manager-client-v1.0.5) (2026-03-21)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.0.3...@adobe/spacecat-shared-cloud-manager-client-v1.0.4) (2026-03-20)
+
+### Bug Fixes
+
+* **cloud-manager-client:** replace adm-zip with zip-lib to preserve symlinks ([#1451](https://github.com/adobe/spacecat-shared/issues/1451)) ([541ba0d](https://github.com/adobe/spacecat-shared/commit/541ba0d757ee03846d547d462dfee6f6a4da3947))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.0.2...@adobe/spacecat-shared-cloud-manager-client-v1.0.3) (2026-03-15)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1440](https://github.com/adobe/spacecat-shared/issues/1440)) ([d1a583a](https://github.com/adobe/spacecat-shared/commit/d1a583aca6a68378debbc01e3a3e8796f1f228bf))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.0.1...@adobe/spacecat-shared-cloud-manager-client-v1.0.2) (2026-03-07)
 
 ### Bug Fixes

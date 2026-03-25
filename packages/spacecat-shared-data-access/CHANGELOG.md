@@ -1,3 +1,87 @@
+## [@adobe/spacecat-shared-data-access-v3.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.29.0...@adobe/spacecat-shared-data-access-v3.30.0) (2026-03-25)
+
+### Features
+
+* **data-access:** add allByEnrollmentProductCode to SiteCollection ([#1455](https://github.com/adobe/spacecat-shared/issues/1455)) ([0225791](https://github.com/adobe/spacecat-shared/commit/02257915bbf5aa2e15e1320bbcdfa27b236c44b8))
+
+## [@adobe/spacecat-shared-data-access-v3.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.28.0...@adobe/spacecat-shared-data-access-v3.29.0) (2026-03-23)
+
+### Features
+
+* **page-citability:** add UPDATED_BY_PRERENDER and UPDATED_BY_PAGE_CITABILITY constants ([#1460](https://github.com/adobe/spacecat-shared/issues/1460)) ([dcdf2b0](https://github.com/adobe/spacecat-shared/commit/dcdf2b0af9b9426631e9363949027a267ce7d015))
+
+## [@adobe/spacecat-shared-data-access-v3.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.27.1...@adobe/spacecat-shared-data-access-v3.28.0) (2026-03-23)
+
+### Features
+
+* add commerceLlmoConfig to site configuration schema ([#1459](https://github.com/adobe/spacecat-shared/issues/1459)) ([8dd4bbf](https://github.com/adobe/spacecat-shared/commit/8dd4bbfda08343b37852d627c8528016358115c9))
+
+## [@adobe/spacecat-shared-data-access-v3.27.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.27.0...@adobe/spacecat-shared-data-access-v3.27.1) (2026-03-21)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
+## [@adobe/spacecat-shared-data-access-v3.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.26.0...@adobe/spacecat-shared-data-access-v3.27.0) (2026-03-20)
+
+### Features
+
+* add countryCodeIgnoreList to site llmo config ([#1447](https://github.com/adobe/spacecat-shared/issues/1447)) ([6d824f8](https://github.com/adobe/spacecat-shared/commit/6d824f855aeadf623776a31e305270ae15fa1be2))
+
+## [@adobe/spacecat-shared-data-access-v3.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.25.0...@adobe/spacecat-shared-data-access-v3.26.0) (2026-03-19)
+
+### Features
+
+* add access control helpers for cross-org delegation (Option 2a) ([#1453](https://github.com/adobe/spacecat-shared/issues/1453)) ([960623e](https://github.com/adobe/spacecat-shared/commit/960623ea9e77e849be8b0a5bd7ee047309377cef)), closes [adobe/spacecat-auth-service#503](https://github.com/adobe/spacecat-auth-service/issues/503) [#1448](https://github.com/adobe/spacecat-shared/issues/1448)
+
+## [@adobe/spacecat-shared-data-access-v3.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.24.0...@adobe/spacecat-shared-data-access-v3.25.0) (2026-03-19)
+
+### Features
+
+* cross-org delegation entity models and AuthInfo extensions ([#1448](https://github.com/adobe/spacecat-shared/issues/1448)) ([b0cb091](https://github.com/adobe/spacecat-shared/commit/b0cb091432f15eb304e20263c0a18ec794d93bb9))
+
+## [@adobe/spacecat-shared-data-access-v3.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.23.0...@adobe/spacecat-shared-data-access-v3.24.0) (2026-03-19)
+
+### Features
+
+* SITES-40623 - token system in Spacecat ([#1414](https://github.com/adobe/spacecat-shared/issues/1414)) ([9c540ba](https://github.com/adobe/spacecat-shared/commit/9c540babf47984e15737bde509b54df9b5233c54))
+
+## [@adobe/spacecat-shared-data-access-v3.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.22.0...@adobe/spacecat-shared-data-access-v3.23.0) (2026-03-18)
+
+### Features
+
+* add cited-analsys as audit types ([#1444](https://github.com/adobe/spacecat-shared/issues/1444)) ([c87bf2e](https://github.com/adobe/spacecat-shared/commit/c87bf2e0d3ad77589fa44a1f9b9638ce0deaab53))
+
+## [@adobe/spacecat-shared-data-access-v3.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.21.0...@adobe/spacecat-shared-data-access-v3.22.0) (2026-03-17)
+
+### Features
+
+* support boolean and timestamp for edgeOptimizeConfig.enabled ([#1441](https://github.com/adobe/spacecat-shared/issues/1441)) ([2fb173d](https://github.com/adobe/spacecat-shared/commit/2fb173da507df98c0a64977f90181ec501492c88))
+
+## [@adobe/spacecat-shared-data-access-v3.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.20.1...@adobe/spacecat-shared-data-access-v3.21.0) (2026-03-16)
+
+### Features
+
+* **CWV:** add jiraLink to CWV suggestion schema and fix metric validation ([#1425](https://github.com/adobe/spacecat-shared/issues/1425)) ([d0429e0](https://github.com/adobe/spacecat-shared/commit/d0429e0e1b09348f31d5bfd21675b560bfb004e8))
+
+## [@adobe/spacecat-shared-data-access-v3.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.20.0...@adobe/spacecat-shared-data-access-v3.20.1) (2026-03-13)
+
+### Bug Fixes
+
+* **data-access:** supabase/postgrest-js major dependency bump to v2 ([#1439](https://github.com/adobe/spacecat-shared/issues/1439)) ([29ca15b](https://github.com/adobe/spacecat-shared/commit/29ca15b7e23c95af43a14536e6e4917d423ec71e))
+
+## [@adobe/spacecat-shared-data-access-v3.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.19.0...@adobe/spacecat-shared-data-access-v3.20.0) (2026-03-13)
+
+### Features
+
+* add OFFSITE_BRAND_PRESENCE audit type ([#1437](https://github.com/adobe/spacecat-shared/issues/1437)) ([5ffe54e](https://github.com/adobe/spacecat-shared/commit/5ffe54e740a4645b881c905fb6f1c2d2c47e556e))
+
+## [@adobe/spacecat-shared-data-access-v3.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.18.0...@adobe/spacecat-shared-data-access-v3.19.0) (2026-03-13)
+
+### Features
+
+* **data-access:** add PRE_ONBOARDING status to PlgOnboarding entity ([#1433](https://github.com/adobe/spacecat-shared/issues/1433)) ([69b35d7](https://github.com/adobe/spacecat-shared/commit/69b35d77c5f0b2c67ed153227f60198527e530d4))
+
 ## [@adobe/spacecat-shared-data-access-v3.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.17.0...@adobe/spacecat-shared-data-access-v3.18.0) (2026-03-12)
 
 ### Features

@@ -2484,6 +2484,42 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO Country Code Ignore List', () => {
+    it('creates a Config with llmo countryCodeIgnoreList property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          countryCodeIgnoreList: ['PS', 'ad'],
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(['PS', 'ad']);
+    });
+
+    it('has undefined countryCodeIgnoreList in default config', () => {
+      const config = Config();
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should return undefined for countryCodeIgnoreList if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should be able to update countryCodeIgnoreList', () => {
+      const config = Config();
+      const countryCodeIgnoreList = ['PS', 'AD'];
+      config.updateLlmoCountryCodeIgnoreList(countryCodeIgnoreList);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(countryCodeIgnoreList);
+    });
+  });
+
   describe('LLMO CDN Bucket Config', () => {
     it('creates a Config with llmo cdnBucketConfig property', () => {
       const data = {
@@ -2724,6 +2760,82 @@ describe('Config Tests', () => {
       });
       const dynamoItem = Config.toDynamoItem(data);
       expect(dynamoItem.edgeOptimizeConfig.stagingDomains).to.deep.equal(stagingDomains);
+    });
+  });
+
+  describe('Commerce LLMO Config', () => {
+    it('creates a Config with commerceLlmoConfig property', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            websiteCode: 'base',
+            storeCode: 'main_store',
+            storeViewCode: 'default',
+            hostName: 'example.com',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'api-key-123',
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('has undefined commerceLlmoConfig in default config', () => {
+      const config = Config();
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for commerceLlmoConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should be able to update commerceLlmoConfig', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-456',
+            websiteCode: 'base',
+          },
+        },
+      };
+      const config = Config({});
+      config.updateCommerceLlmoConfig(data.commerceLlmoConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('should be able to update commerceLlmoConfig with different values', () => {
+      const config = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+          },
+        },
+      });
+
+      const newConfig = {
+        store2: {
+          environmentId: 'env-789',
+          hostName: 'new.example.com',
+        },
+      };
+      config.updateCommerceLlmoConfig(newConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes commerceLlmoConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+          },
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.commerceLlmoConfig).to.deep.equal(data.getCommerceLlmoConfig());
     });
   });
 

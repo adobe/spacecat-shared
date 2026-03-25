@@ -180,6 +180,15 @@ describe('vaultSecrets wrapper', () => {
       expect(innerFn.called).to.equal(false);
     });
 
+    it('returns empty object when VAULT_SECRETS_DISABLED is true', async () => {
+      process.env.VAULT_SECRETS_DISABLED = 'true';
+      const ctx = makeContext();
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal({});
+      delete process.env.VAULT_SECRETS_DISABLED;
+    });
+
     it('returns empty object on simulate runtime (skips Vault)', async () => {
       const ctx = makeContext({ runtime: { name: 'simulate' } });
       const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });

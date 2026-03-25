@@ -455,6 +455,13 @@ describe('SuggestionGrantCollection', () => {
 
       expect(result).to.deep.equal(rpcResult);
     });
+
+    it('throws DataAccessError when grantId is missing', async () => {
+      await expect(instance.invokeRevokeSuggestionGrantRpc(''))
+        .to.be.rejectedWith(DataAccessError, 'grantId is required');
+      await expect(instance.invokeRevokeSuggestionGrantRpc(null))
+        .to.be.rejectedWith(DataAccessError, 'grantId is required');
+    });
   });
 
   describe('invokeGrantSuggestionsRpc', () => {

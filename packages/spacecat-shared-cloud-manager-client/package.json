@@ -38,6 +38,7 @@
     "@adobe/spacecat-shared-ims-client": "1.11.6",
     "@adobe/spacecat-shared-utils": "1.81.1",
     "@aws-sdk/client-s3": "3.1014.0",
+    "yazl": "3.3.1",
     "zip-lib": "1.2.3"
   },
   "devDependencies": {

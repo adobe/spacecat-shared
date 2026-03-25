@@ -12,7 +12,8 @@
 
 import { execFileSync } from 'child_process';
 import {
-  existsSync, mkdtempSync, readdirSync, readFileSync,
+  createWriteStream,
+  existsSync, lstatSync, mkdtempSync, readdirSync, readFileSync,
   readlinkSync, rmSync, statfsSync, writeFileSync,
 } from 'fs';
 import os from 'os';
@@ -20,7 +21,8 @@ import path from 'path';
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { archiveFolder, extract } from 'zip-lib';
+import { extract } from 'zip-lib';
+import yazl from 'yazl';
 
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
@@ -314,6 +316,7 @@ export default class CloudManagerClient {
   /**
    * Recursively validates that all symlinks under rootDir point to targets
    * within rootDir. Throws if any symlink escapes the root boundary.
+   * Logs a warning for broken symlinks (target does not exist).
    * @param {string} dir - Directory to scan
    * @param {string} rootDir - The root boundary all symlink targets must stay within
    */
@@ -329,8 +332,39 @@ export default class CloudManagerClient {
             `Symlink escapes repository root: ${path.relative(rootDir, fullPath)} -> ${target}`,
           );
         }
+        if (!existsSync(resolved)) {
+          this.log.warn(`Broken symlink: ${path.relative(rootDir, fullPath)} -> ${target} (target does not exist)`);
+        }
       } else if (entry.isDirectory()) {
         this.#validateSymlinks(fullPath, rootDir);
+      }
+    }
+  }
+
+  /**
+   * Recursively walks a directory and adds all entries to a yazl ZipFile.
+   * Uses lstat (not stat) so broken symlinks are preserved as-is without
+   * following the link target.
+   * @param {import('yazl').ZipFile} zip - yazl ZipFile instance
+   * @param {string} dir - Current directory being walked
+   * @param {string} rootDir - Repository root (for computing relative paths)
+   */
+  #addDirToZip(zip, dir, rootDir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      const metadataPath = path.relative(rootDir, fullPath);
+
+      if (entry.isSymbolicLink()) {
+        const linkTarget = readlinkSync(fullPath);
+        const stat = lstatSync(fullPath);
+        zip.addBuffer(Buffer.from(linkTarget), metadataPath, {
+          mtime: stat.mtime,
+          mode: stat.mode,
+        });
+      } else if (entry.isDirectory()) {
+        this.#addDirToZip(zip, fullPath, rootDir);
+      } else {
+        zip.addFile(fullPath, metadataPath);
       }
     }
   }
@@ -346,15 +380,30 @@ export default class CloudManagerClient {
       throw new Error(`Clone path does not exist: ${clonePath}`);
     }
 
-    // zip-lib is path-based (not buffer-based like adm-zip), so we write to
-    // a temp file and read the result back into a Buffer for the caller.
+    // yazl (and zip-lib) are path-based (not buffer-based like adm-zip), so we
+    // write to a temp file and read the result back into a Buffer for the caller.
     const zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
     const zipFile = path.join(zipDir, 'repo.zip');
 
     try {
       this.log.info(`Zipping repository at ${clonePath}`);
       this.#validateSymlinks(clonePath, clonePath);
-      await archiveFolder(clonePath, zipFile, { followSymlinks: false });
+
+      // Use yazl directly instead of zip-lib's archiveFolder because zip-lib
+      // calls fs.stat() on symlink targets to determine file type, which fails
+      // for broken symlinks (ENOENT). yazl with lstat preserves symlinks as-is.
+      const zip = new yazl.ZipFile();
+      this.#addDirToZip(zip, clonePath, clonePath);
+      zip.end();
+
+      await new Promise((resolve, reject) => {
+        const output = createWriteStream(zipFile);
+        output.on('close', resolve);
+        output.on('error', reject);
+        zip.outputStream.on('error', reject);
+        zip.outputStream.pipe(output);
+      });
+
       this.#logTmpDiskUsage('zip');
       return readFileSync(zipFile);
     } catch (error) {

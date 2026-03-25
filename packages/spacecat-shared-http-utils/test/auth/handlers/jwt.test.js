@@ -60,6 +60,7 @@ describe('SpacecatJWTHandler', () => {
     logStub = {
       debug: sinon.stub(),
       info: sinon.stub(),
+      warn: sinon.stub(),
       error: sinon.stub(),
     };
     handler = new SpacecatJWTHandler(logStub);
@@ -297,6 +298,40 @@ describe('SpacecatJWTHandler', () => {
 
       expect(result).to.be.null;
       expect(logStub.debug.calledWith('[jwt] No bearer token provided')).to.be.true;
+    });
+
+    it('returns null when token has both is_admin and is_read_only_admin', async () => {
+      const token = await createToken(createTokenPayload({
+        user_id: 'test-user',
+        is_admin: true,
+        is_read_only_admin: true,
+        tenants: [],
+      }));
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.null;
+      expect(logStub.warn.calledWith('[jwt] Token has both is_admin and is_read_only_admin — rejecting')).to.be.true;
+    });
+
+    it('successfully validates a token with is_read_only_admin and adds read_only_admin scope', async () => {
+      const orgId = 'ro-org';
+      const token = await createToken(createTokenPayload({
+        user_id: 'ro-user',
+        is_admin: false,
+        is_read_only_admin: true,
+        tenants: [{ id: orgId, subServices: [] }],
+      }));
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.isAdmin()).to.be.false;
+      expect(result.isReadOnlyAdmin()).to.be.true;
+      expect(result.hasScope('read_only_admin')).to.be.true;
+      expect(result.hasOrganization(`${orgId}@AdobeId`)).to.be.true;
     });
   });
 });

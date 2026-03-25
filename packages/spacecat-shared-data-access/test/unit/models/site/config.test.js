@@ -2780,25 +2780,33 @@ describe('Config Tests', () => {
       expect(config.getOnboardConfig().lastStartTime).to.equal(startTime);
     });
 
-    it('updates onboard config', () => {
+    it('updates onboard config and appends to history', () => {
       const startTime = Date.now();
       const config = Config();
       config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
-      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig()).to.deep.equal({
+        lastProfile: 'paid',
+        lastStartTime: startTime,
+        history: [{ profile: 'paid', startTime }],
+      });
     });
 
-    it('overwrites existing onboard config', () => {
+    it('accumulates history across multiple onboardings', () => {
       const startTime = Date.now();
-      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000 } });
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000, history: [{ profile: 'demo', startTime: 1000 }] } });
       config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
-      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig()).to.deep.equal({
+        lastProfile: 'paid',
+        lastStartTime: startTime,
+        history: [{ profile: 'demo', startTime: 1000 }, { profile: 'paid', startTime }],
+      });
     });
 
-    it('includes onboardConfig in toDynamoItem', () => {
+    it('includes onboardConfig with history in toDynamoItem', () => {
       const startTime = Date.now();
-      const config = Config({ onboardConfig: { lastProfile: 'paid', lastStartTime: startTime } });
+      const config = Config({ onboardConfig: { lastProfile: 'paid', lastStartTime: startTime, history: [{ profile: 'paid', startTime }] } });
       const dynamoItem = Config.toDynamoItem(config);
-      expect(dynamoItem.onboardConfig).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(dynamoItem.onboardConfig).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime, history: [{ profile: 'paid', startTime }] });
     });
 
     it('omits onboardConfig from toDynamoItem when not set', () => {

@@ -141,3 +141,18 @@ export {
   getTokenTypeForOpportunity,
   getCurrentCycle,
 } from './token-grant-config.js';
+
+export {
+  AUDIT_OPPORTUNITY_MAP,
+  getOpportunitiesForAudit,
+  getAuditsForOpportunity,
+  getAllOpportunityTypes,
+  getAllAuditTypes,
+} from './opportunity/audit-mapping.js';
+
+export {
+  DEPENDENCY_SOURCES,
+  OPPORTUNITY_DEPENDENCY_MAP,
+  getDependenciesForOpportunity,
+  getOpportunitiesForSource,
+} from './opportunity/dependency-mapping.js';

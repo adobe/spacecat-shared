@@ -386,6 +386,10 @@ export const configSchema = Joi.object({
   onboardConfig: Joi.object({
     lastProfile: Joi.string().optional(),
     lastStartTime: Joi.number().optional(),
+    history: Joi.array().items(Joi.object({
+      profile: Joi.string().optional(),
+      startTime: Joi.number().optional(),
+    })).optional(),
   }).optional(),
   commerceLlmoConfig: Joi.object().pattern(
     Joi.string(),
@@ -833,7 +837,11 @@ export const Config = (data = {}) => {
   };
 
   self.updateOnboardConfig = (onboardConfig) => {
-    state.onboardConfig = onboardConfig;
+    const history = [...(state.onboardConfig?.history || [])];
+    if (onboardConfig.lastProfile && onboardConfig.lastStartTime) {
+      history.push({ profile: onboardConfig.lastProfile, startTime: onboardConfig.lastStartTime });
+    }
+    state.onboardConfig = { ...onboardConfig, history };
   };
 
   self.updateCommerceLlmoConfig = (commerceLlmoConfig) => {

@@ -149,6 +149,7 @@ export interface SiteConfig {
     onboardConfig?: {
       lastProfile?: string;
       lastStartTime?: number;
+      history?: Array<{ profile?: string; startTime?: number }>;
     };
   };
   extractWellKnownTags(tags: Array<string>): Partial<Record<WellKnownLmmoTag, string>>;
@@ -201,7 +202,7 @@ export interface SiteConfig {
   updateLlmoCustomerIntent(intentKey: string, updateData: Partial<LlmoCustomerIntent>): void;
   addLlmoTag(tag: string): void;
   removeLlmoTag(tag: string): void;
-  getOnboardConfig(): { lastProfile?: string; lastStartTime?: number } | undefined;
+  getOnboardConfig(): { lastProfile?: string; lastStartTime?: number; history?: Array<{ profile?: string; startTime?: number }> } | undefined;
   updateOnboardConfig(onboardConfig: { lastProfile?: string; lastStartTime?: number }): void;
 }
 

@@ -17,9 +17,11 @@ import {
   decodeJwt,
   jwtVerify,
 } from 'jose';
+import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 import { getBearerToken } from './utils/bearer.js';
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
+import { FF_READ_ONLY_ADMIN } from '../constants.js';
 
 const IGNORED_PROFILE_PROPS = [
   'id',
@@ -99,6 +101,28 @@ function isUserASOAdmin(organizations) {
     return org.groups.some((group) => adminGroupsForOrg.includes(group.ident));
   });
 }
+
+/**
+ * Checks whether the read-only admin feature flag is enabled for the user's
+ * first IMS organization. Fail-closed: returns false when the LD client is
+ * unavailable or evaluation errors.
+ */
+async function isReadOnlyAdminEnabled(context, organizations) {
+  if (!isNonEmptyArray(organizations)) return false;
+
+  try {
+    const ldClient = LaunchDarklyClient.createFrom(context);
+    if (!ldClient) return false;
+
+    const ident = organizations[0]?.orgRef?.ident;
+    if (!ident) return false;
+
+    const imsOrgId = `${ident}@AdobeOrg`;
+    return await ldClient.isFlagEnabledForIMSOrg(FF_READ_ONLY_ADMIN, imsOrgId);
+  } catch {
+    return false;
+  }
+}
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
  */
@@ -172,6 +196,10 @@ export default class AdobeImsHandler extends AbstractHandler {
       const payload = await this.#validateToken(token, config);
       const imsProfile = await context.imsClient.getImsUserProfile(token);
       const organizations = await context.imsClient.getImsUserOrganizations(token);
+      if (await isReadOnlyAdminEnabled(context, organizations)) {
+        this.log('User belongs to a read-only org, blocking IMS authentication', 'warn');
+        throw new Error('Unauthorized');
+      }
       const isAdmin = isUserASOAdmin(organizations);
       const scopes = [];
       if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {

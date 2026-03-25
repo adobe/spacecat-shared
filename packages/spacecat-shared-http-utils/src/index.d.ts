@@ -36,6 +36,19 @@ export declare function unauthorized(message?: string, headers?: object): Respon
 export declare function forbidden(message?: string, headers?: object): Response;
 
 /**
+ * Read-only admin authorization wrapper for the helix-shared-wrap `.with()` chain.
+ * Blocks write operations for read-only admin users, gated by a LaunchDarkly feature flag.
+ *
+ * @param fn - The handler to wrap.
+ * @param opts - Options containing a routeCapabilities map of route patterns to actions.
+ * @returns A wrapped handler.
+ */
+export function readOnlyAdminWrapper(
+  fn: Function,
+  opts?: { routeCapabilities?: Record<string, string> },
+): Function;
+
+/**
  * Utility functions
  */
 export function hashWithSHA256(input: string): string;

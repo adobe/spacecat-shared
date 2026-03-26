@@ -57,7 +57,7 @@ async function evaluateFeatureFlag(context, authInfo) {
  * wrapper), this wrapper checks whether the authenticated user is a read-only admin.
  * If so it:
  *
- * 1. Evaluates the `FT_LLMO-3008` LaunchDarkly feature flag (fail-closed).
+ * 1. Evaluates the `FT_READ_ONLY_ORG` LaunchDarkly feature flag (fail-closed).
  * 2. Resolves the route's action from the routeCapabilities map and blocks
  *    write operations (or unmapped routes) for RO admins.
  * 3. Emits a structured audit log entry for allowed RO admin requests.
@@ -65,7 +65,7 @@ async function evaluateFeatureFlag(context, authInfo) {
  * Non-RO-admin requests pass through untouched.
  *
  * @param {Function} fn - The handler to wrap.
- * @param {{ routeCapabilities?: Object<string, string> }} opts - Map of route
+ * @param {{ routeCapabilities: Object<string, string> }} opts - Required map of route
  *   patterns (e.g. 'GET /sites/:siteId') to action strings ('read' | 'write').
  * @returns {Function} A wrapped handler.
  */
@@ -84,6 +84,7 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
       if (!ffEnabled) {
         log.warn({
           tag: 'ro-admin',
+          email: authInfo.getProfile?.()?.email,
           org: authInfo.getTenantIds?.()[0],
         }, 'Feature flag disabled, denying RO admin access');
         return forbidden('Forbidden');
@@ -99,6 +100,7 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
         if (action !== 'read') {
           log.warn({
             tag: 'ro-admin',
+            email: authInfo.getProfile?.()?.email,
             method: context.pathInfo?.method,
             suffix: context.pathInfo?.suffix,
             org: authInfo.getTenantIds?.()[0],
@@ -109,6 +111,7 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
 
       log.info({
         tag: 'ro-admin-audit',
+        email: authInfo.getProfile?.()?.email,
         method: context.pathInfo?.method,
         suffix: context.pathInfo?.suffix,
         org: authInfo.getTenantIds?.()[0],

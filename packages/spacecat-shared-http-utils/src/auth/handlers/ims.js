@@ -105,7 +105,7 @@ function isUserASOAdmin(organizations) {
 /**
  * Checks whether the read-only org gate flag is enabled for the user's first
  * IMS organization. When true, ALL IMS-authenticated users in that org are
- * blocked (not just RO admins) — this intentionally forces the entire org to
+ * blocked (not just RO admins) - this intentionally forces the entire org to
  * authenticate via the JWT/auth-service path instead.
  *
  * NOTE: Only the first org in the array is evaluated. Multi-org users whose
@@ -122,7 +122,7 @@ async function isOrgBlockedFromImsAuth(context, organizations) {
     const ldClient = LaunchDarklyClient.createFrom(context);
     if (!ldClient) return false;
 
-    // Only evaluate the first org — see NOTE above.
+    // Only evaluate the first org - see NOTE above.
     const ident = organizations[0]?.orgRef?.ident;
     if (!ident) return false;
 

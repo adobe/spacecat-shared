@@ -45,7 +45,7 @@ export declare function forbidden(message?: string, headers?: object): Response;
  */
 export function readOnlyAdminWrapper(
   fn: Function,
-  opts?: { routeCapabilities?: Record<string, string> },
+  opts: { routeCapabilities: Record<string, string> },
 ): Function;
 
 /**

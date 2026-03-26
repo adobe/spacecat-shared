@@ -14,7 +14,7 @@ import { Response } from '@adobe/fetch';
 import { isObject } from '@adobe/spacecat-shared-utils';
 import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 
-import { FF_READ_ONLY_ADMIN } from './constants.js';
+import { FF_READ_ONLY_ORG } from './constants.js';
 import { guardNonEmptyRouteCapabilities, resolveRouteCapability } from './route-utils.js';
 
 function forbidden(message) {
@@ -44,7 +44,7 @@ async function evaluateFeatureFlag(context, authInfo) {
     if (!ident) return false;
 
     const imsOrgId = `${ident}@AdobeOrg`;
-    return await ldClient.isFlagEnabledForIMSOrg(FF_READ_ONLY_ADMIN, imsOrgId);
+    return await ldClient.isFlagEnabledForIMSOrg(FF_READ_ONLY_ORG, imsOrgId);
   } catch {
     return false;
   }
@@ -70,6 +70,9 @@ async function evaluateFeatureFlag(context, authInfo) {
  * @returns {Function} A wrapped handler.
  */
 export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
+  if (!routeCapabilities) {
+    throw new Error('readOnlyAdminWrapper: routeCapabilities is required');
+  }
   guardNonEmptyRouteCapabilities('readOnlyAdminWrapper', routeCapabilities);
 
   return async (request, context) => {
@@ -79,22 +82,37 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
     if (authInfo?.isReadOnlyAdmin?.()) {
       const ffEnabled = await evaluateFeatureFlag(context, authInfo);
       if (!ffEnabled) {
-        log.warn('[ro-admin] Feature flag disabled, denying RO admin access');
-        return forbidden('Read-only admin access is not enabled');
+        log.warn({
+          tag: 'ro-admin',
+          org: authInfo.getTenantIds?.()[0],
+        }, 'Feature flag disabled, denying RO admin access');
+        return forbidden('Forbidden');
       }
 
       if (isObject(routeCapabilities)) {
         const capability = resolveRouteCapability(context, routeCapabilities);
+        // capability format is 'resource:action' (e.g. 'site:read', 'site:write').
+        // split(':').pop() extracts the action; a missing or malformed value yields
+        // undefined, which is !== 'read' and correctly blocks the request.
         const action = capability?.split(':').pop();
 
         if (action !== 'read') {
-          const route = `${context.pathInfo?.method} ${context.pathInfo?.suffix}`;
-          log.warn(`[ro-admin] Read-only admin blocked from route: ${route}`);
-          return forbidden('Read-only admin users cannot perform write operations');
+          log.warn({
+            tag: 'ro-admin',
+            method: context.pathInfo?.method,
+            suffix: context.pathInfo?.suffix,
+            org: authInfo.getTenantIds?.()[0],
+          }, 'Read-only admin blocked from route');
+          return forbidden('Forbidden');
         }
       }
 
-      log.info(`[ro-admin-audit] RO admin accessed: ${context.pathInfo?.method} ${context.pathInfo?.suffix}`);
+      log.info({
+        tag: 'ro-admin-audit',
+        method: context.pathInfo?.method,
+        suffix: context.pathInfo?.suffix,
+        org: authInfo.getTenantIds?.()[0],
+      }, 'RO admin accessed route');
     }
 
     return fn(request, context);

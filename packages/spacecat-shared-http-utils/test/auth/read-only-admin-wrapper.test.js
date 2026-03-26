@@ -116,8 +116,8 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       const body = await result.json();
-      expect(body.message).to.equal('Read-only admin access is not enabled');
-      expect(logStub.warn.calledWithMatch('Feature flag disabled')).to.be.true;
+      expect(body.message).to.equal('Forbidden');
+      expect(logStub.warn.calledWithMatch({ tag: 'ro-admin' }, 'Feature flag disabled, denying RO admin access')).to.be.true;
       expect(handler.called).to.be.false;
     });
 
@@ -134,7 +134,7 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       const body = await result.json();
-      expect(body.message).to.equal('Read-only admin access is not enabled');
+      expect(body.message).to.equal('Forbidden');
       expect(handler.called).to.be.false;
     });
 
@@ -151,7 +151,7 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       const body = await result.json();
-      expect(body.message).to.equal('Read-only admin access is not enabled');
+      expect(body.message).to.equal('Forbidden');
       expect(handler.called).to.be.false;
     });
 
@@ -162,7 +162,7 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       const body = await result.json();
-      expect(body.message).to.equal('Read-only admin access is not enabled');
+      expect(body.message).to.equal('Forbidden');
       expect(handler.called).to.be.false;
     });
 
@@ -191,7 +191,7 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(ldClient.isFlagEnabledForIMSOrg.calledOnce).to.be.true;
       const [flagKey, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
-      expect(flagKey).to.equal('FT_LLMO-3008');
+      expect(flagKey).to.equal('FT_READ_ONLY_ORG');
       expect(imsOrgId).to.equal('org-abc@AdobeOrg');
     });
   });
@@ -239,8 +239,8 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       const body = await result.json();
-      expect(body.message).to.equal('Read-only admin users cannot perform write operations');
-      expect(logStub.warn.calledWithMatch('blocked from route')).to.be.true;
+      expect(body.message).to.equal('Forbidden');
+      expect(logStub.warn.calledWithMatch({ tag: 'ro-admin' }, 'Read-only admin blocked from route')).to.be.true;
       expect(handler.called).to.be.false;
     });
 
@@ -251,7 +251,7 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       const body = await result.json();
-      expect(body.message).to.equal('Read-only admin users cannot perform write operations');
+      expect(body.message).to.equal('Forbidden');
       expect(handler.called).to.be.false;
     });
 
@@ -271,8 +271,8 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       const body = await result.json();
-      expect(body.message).to.equal('Read-only admin users cannot perform write operations');
-      expect(logStub.warn.calledWithMatch('blocked from route')).to.be.true;
+      expect(body.message).to.equal('Forbidden');
+      expect(logStub.warn.calledWithMatch({ tag: 'ro-admin' }, 'Read-only admin blocked from route')).to.be.true;
       expect(handler.called).to.be.false;
     });
 
@@ -297,36 +297,14 @@ describe('readOnlyAdminWrapper', () => {
   });
 
   describe('no routeCapabilities provided', () => {
-    let mockedWrapper;
-
-    beforeEach(async () => {
-      const ldClient = {
-        isFlagEnabledForIMSOrg: sinon.stub().resolves(true),
-      };
-      const mockedModule = await esmock('../../src/auth/read-only-admin-wrapper.js', {
-        '@adobe/spacecat-shared-launchdarkly-client': {
-          LaunchDarklyClient: {
-            createFrom: sinon.stub().returns(ldClient),
-          },
-        },
-      });
-      mockedWrapper = mockedModule.readOnlyAdminWrapper;
+    it('throws at creation time when routeCapabilities is not provided', () => {
+      expect(() => readOnlyAdminWrapper(handler))
+        .to.throw('readOnlyAdminWrapper: routeCapabilities is required');
     });
 
-    it('passes through RO admin when routeCapabilities is not provided', async () => {
-      const wrapped = mockedWrapper(handler);
-      const result = await wrapped({}, context);
-
-      expect(result).to.deep.equal({ status: 200 });
-      expect(handler.calledOnce).to.be.true;
-    });
-
-    it('passes through RO admin when routeCapabilities is null', async () => {
-      const wrapped = mockedWrapper(handler, { routeCapabilities: null });
-      const result = await wrapped({}, context);
-
-      expect(result).to.deep.equal({ status: 200 });
-      expect(handler.calledOnce).to.be.true;
+    it('throws at creation time when routeCapabilities is null', () => {
+      expect(() => readOnlyAdminWrapper(handler, { routeCapabilities: null }))
+        .to.throw('readOnlyAdminWrapper: routeCapabilities is required');
     });
   });
 
@@ -352,7 +330,7 @@ describe('readOnlyAdminWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       await wrapped({}, context);
 
-      expect(logStub.info.calledWithMatch('[ro-admin-audit] RO admin accessed: GET /sites')).to.be.true;
+      expect(logStub.info.calledWithMatch({ tag: 'ro-admin-audit', method: 'GET', suffix: '/sites' }, 'RO admin accessed route')).to.be.true;
     });
 
     it('does not emit audit log for non-RO-admin requests', async () => {
@@ -360,7 +338,7 @@ describe('readOnlyAdminWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       await wrapped({}, context);
 
-      expect(logStub.info.calledWithMatch('[ro-admin-audit]')).to.be.false;
+      expect(logStub.info.calledWithMatch({ tag: 'ro-admin-audit' })).to.be.false;
     });
 
     it('does not emit audit log when RO admin is blocked', async () => {
@@ -368,7 +346,7 @@ describe('readOnlyAdminWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       await wrapped({}, context);
 
-      expect(logStub.info.calledWithMatch('[ro-admin-audit]')).to.be.false;
+      expect(logStub.info.calledWithMatch({ tag: 'ro-admin-audit' })).to.be.false;
     });
   });
 });

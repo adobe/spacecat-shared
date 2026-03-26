@@ -21,7 +21,7 @@ import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 import { getBearerToken } from './utils/bearer.js';
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
-import { FF_READ_ONLY_ADMIN } from '../constants.js';
+import { FF_READ_ONLY_ORG } from '../constants.js';
 
 const IGNORED_PROFILE_PROPS = [
   'id',
@@ -103,22 +103,31 @@ function isUserASOAdmin(organizations) {
 }
 
 /**
- * Checks whether the read-only admin feature flag is enabled for the user's
- * first IMS organization. Fail-closed: returns false when the LD client is
+ * Checks whether the read-only org gate flag is enabled for the user's first
+ * IMS organization. When true, ALL IMS-authenticated users in that org are
+ * blocked (not just RO admins) — this intentionally forces the entire org to
+ * authenticate via the JWT/auth-service path instead.
+ *
+ * NOTE: Only the first org in the array is evaluated. Multi-org users whose
+ * read-only org is not first may bypass this gate; this is an accepted
+ * limitation given IMS org ordering is not guaranteed stable.
+ *
+ * Fail-open: returns false (allowing authentication) when the LD client is
  * unavailable or evaluation errors.
  */
-async function isReadOnlyAdminEnabled(context, organizations) {
+async function isOrgBlockedFromImsAuth(context, organizations) {
   if (!isNonEmptyArray(organizations)) return false;
 
   try {
     const ldClient = LaunchDarklyClient.createFrom(context);
     if (!ldClient) return false;
 
+    // Only evaluate the first org — see NOTE above.
     const ident = organizations[0]?.orgRef?.ident;
     if (!ident) return false;
 
     const imsOrgId = `${ident}@AdobeOrg`;
-    return await ldClient.isFlagEnabledForIMSOrg(FF_READ_ONLY_ADMIN, imsOrgId);
+    return await ldClient.isFlagEnabledForIMSOrg(FF_READ_ONLY_ORG, imsOrgId);
   } catch {
     return false;
   }
@@ -196,7 +205,9 @@ export default class AdobeImsHandler extends AbstractHandler {
       const payload = await this.#validateToken(token, config);
       const imsProfile = await context.imsClient.getImsUserProfile(token);
       const organizations = await context.imsClient.getImsUserOrganizations(token);
-      if (await isReadOnlyAdminEnabled(context, organizations)) {
+      // Blocks ALL users in the org (not just RO admins) when the gate flag is
+      // enabled — this is intentional: the entire org must migrate to the JWT path.
+      if (await isOrgBlockedFromImsAuth(context, organizations)) {
         this.log('User belongs to a read-only org, blocking IMS authentication', 'warn');
         throw new Error('Unauthorized');
       }

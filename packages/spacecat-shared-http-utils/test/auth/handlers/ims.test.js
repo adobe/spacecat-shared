@@ -449,7 +449,7 @@ describe('AdobeImsHandler', () => {
       expect(logStub.debug.calledWithMatch('Failed to validate token: Unauthorized')).to.be.true;
       expect(ldClient.isFlagEnabledForIMSOrg.calledOnce).to.be.true;
       const [flagKey, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
-      expect(flagKey).to.equal('FT_LLMO-3008');
+      expect(flagKey).to.equal('FT_READ_ONLY_ORG');
       expect(imsOrgId).to.equal('org-ro-1@AdobeOrg');
     });
 

@@ -312,7 +312,7 @@ describe('SpacecatJWTHandler', () => {
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.null;
-      expect(logStub.warn.calledWith('[jwt] Token has both is_admin and is_read_only_admin — rejecting')).to.be.true;
+      expect(logStub.warn.calledWith('[jwt] Token has both is_admin and is_read_only_admin - rejecting')).to.be.true;
     });
 
     it('successfully validates a token with is_read_only_admin and adds read_only_admin scope', async () => {

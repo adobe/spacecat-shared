@@ -42,7 +42,7 @@ export default class JwtHandler extends AbstractHandler {
       payload.tenants = payload.tenants || [];
 
       if (payload.is_admin && payload.is_read_only_admin) {
-        this.log('Token has both is_admin and is_read_only_admin — rejecting', 'warn');
+        this.log('Token has both is_admin and is_read_only_admin - rejecting', 'warn');
         return null;
       }
 

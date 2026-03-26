@@ -14,6 +14,7 @@ import { promisify } from 'util';
 import {
   gzip, brotliCompress, deflate, constants as zlibConstants,
 } from 'zlib';
+import { Response } from '@adobe/fetch';
 
 const gzipAsync = promisify(gzip);
 const brotliCompressAsync = promisify(brotliCompress);
@@ -102,4 +103,57 @@ export async function compress(encoding, buffer) {
     default:
       throw new Error(`Unsupported encoding: ${encoding}`);
   }
+}
+
+const DEFAULT_MIN_SIZE = 1024;
+const SKIP_STATUSES = new Set([204, 304]);
+
+export function compressResponse(fn, opts = {}) {
+  const {
+    minSize = DEFAULT_MIN_SIZE,
+    preference = DEFAULT_PREFERENCE,
+  } = opts;
+
+  return async (request, context) => {
+    const response = await fn(request, context);
+
+    if (SKIP_STATUSES.has(response.status)) {
+      return response;
+    }
+
+    if (response.headers.get('content-encoding')) {
+      return response;
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!isCompressible(contentType)) {
+      return response;
+    }
+
+    const acceptEncoding = request.headers.get('accept-encoding');
+    const encoding = negotiateEncoding(acceptEncoding, preference);
+    if (encoding === 'identity') {
+      return response;
+    }
+
+    const body = Buffer.from(await response.arrayBuffer());
+
+    if (body.length === 0 || body.length < minSize) {
+      return response;
+    }
+
+    const compressed = await compress(encoding, body);
+
+    const { log = console } = context;
+    log.info(`[compression] encoding=${encoding} original=${body.length} compressed=${compressed.length}`);
+
+    const headers = Object.fromEntries(response.headers.entries());
+    headers['content-encoding'] = encoding;
+    headers.vary = mergeVary(headers.vary);
+
+    return new Response(compressed, {
+      status: response.status,
+      headers,
+    });
+  };
 }

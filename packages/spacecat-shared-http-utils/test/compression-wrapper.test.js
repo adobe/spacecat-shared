@@ -13,9 +13,11 @@
 import { expect } from 'chai';
 import { gunzip, brotliDecompress, inflate } from 'zlib';
 import { promisify } from 'util';
+import sinon from 'sinon';
+import { Response } from '@adobe/fetch';
 
 import {
-  negotiateEncoding, isCompressible, mergeVary, compress,
+  negotiateEncoding, isCompressible, mergeVary, compress, compressResponse,
 } from '../src/compression-wrapper.js';
 
 const gunzipAsync = promisify(gunzip);
@@ -174,6 +176,280 @@ describe('compression-wrapper', () => {
       } catch (err) {
         expect(err.message).to.equal('Unsupported encoding: compress');
       }
+    });
+  });
+
+  describe('compressResponse', () => {
+    let mockContext;
+
+    beforeEach(() => {
+      mockContext = { log: { info: sinon.stub() } };
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    function createMockRequest(acceptEncoding) {
+      return {
+        headers: {
+          get: (key) => (key === 'accept-encoding' ? acceptEncoding : null),
+        },
+      };
+    }
+
+    function createJsonResponse(body, status = 200, extraHeaders = {}) {
+      const jsonBody = JSON.stringify(body);
+      return new Response(jsonBody, {
+        status,
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+          ...extraHeaders,
+        },
+      });
+    }
+
+    // Generate a body larger than default minSize (1024 bytes)
+    function largeBody() {
+      const items = [];
+      for (let i = 0; i < 50; i += 1) {
+        items.push({ id: i, name: `site-${i}.example.com`, status: 'active' });
+      }
+      return items;
+    }
+
+    it('passes through when status is 204', async () => {
+      const innerResponse = new Response('', { status: 204 });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result).to.equal(innerResponse);
+    });
+
+    it('passes through when status is 304', async () => {
+      const innerResponse = new Response('', { status: 304 });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result).to.equal(innerResponse);
+    });
+
+    it('passes through when Content-Encoding is already set', async () => {
+      const innerResponse = createJsonResponse({ data: 'test' }, 200, { 'content-encoding': 'br' });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result).to.equal(innerResponse);
+    });
+
+    it('passes through when content-type is not compressible', async () => {
+      const innerResponse = new Response(Buffer.from('binary'), {
+        status: 200,
+        headers: { 'content-type': 'image/png' },
+      });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result).to.equal(innerResponse);
+    });
+
+    it('passes through when Accept-Encoding is missing', async () => {
+      const innerResponse = createJsonResponse({ data: 'test' });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest(null), mockContext);
+      expect(result).to.equal(innerResponse);
+    });
+
+    it('passes through when Accept-Encoding resolves to identity', async () => {
+      const innerResponse = createJsonResponse({ data: 'test' });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('identity'), mockContext);
+      expect(result).to.equal(innerResponse);
+    });
+
+    it('passes through when body is empty', async () => {
+      const innerResponse = new Response('', {
+        status: 200,
+        headers: { 'content-type': 'application/json; charset=utf-8' },
+      });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result).to.equal(innerResponse);
+    });
+
+    it('passes through when body is below minSize', async () => {
+      const smallBody = JSON.stringify({ a: 1 });
+      const innerResponse = new Response(smallBody, {
+        status: 200,
+        headers: { 'content-type': 'application/json; charset=utf-8' },
+      });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler, { minSize: 1024 });
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result).to.equal(innerResponse);
+    });
+
+    it('calls the inner handler with request and context', async () => {
+      const innerResponse = new Response('', { status: 204 });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+      const req = createMockRequest('gzip');
+
+      await wrapped(req, mockContext);
+      expect(handler.calledOnceWith(req, mockContext)).to.be.true;
+    });
+
+    it('compresses with brotli when br is preferred', async () => {
+      const body = largeBody();
+      const innerResponse = createJsonResponse(body);
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip, br'), mockContext);
+
+      expect(result.status).to.equal(200);
+      expect(result.headers.get('content-encoding')).to.equal('br');
+      expect(result.headers.get('vary')).to.include('Accept-Encoding');
+
+      const compressed = Buffer.from(await result.arrayBuffer());
+      const decompressed = await brotliDecompressAsync(compressed);
+      expect(JSON.parse(decompressed.toString())).to.deep.equal(body);
+    });
+
+    it('compresses with gzip when only gzip is accepted', async () => {
+      const body = largeBody();
+      const innerResponse = createJsonResponse(body);
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+
+      expect(result.headers.get('content-encoding')).to.equal('gzip');
+
+      const compressed = Buffer.from(await result.arrayBuffer());
+      const decompressed = await gunzipAsync(compressed);
+      expect(JSON.parse(decompressed.toString())).to.deep.equal(body);
+    });
+
+    it('compresses with deflate when only deflate is accepted', async () => {
+      const body = largeBody();
+      const innerResponse = createJsonResponse(body);
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('deflate'), mockContext);
+
+      expect(result.headers.get('content-encoding')).to.equal('deflate');
+
+      const compressed = Buffer.from(await result.arrayBuffer());
+      const decompressed = await inflateAsync(compressed);
+      expect(JSON.parse(decompressed.toString())).to.deep.equal(body);
+    });
+
+    it('preserves response status code', async () => {
+      const body = largeBody();
+      const innerResponse = createJsonResponse(body, 201);
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result.status).to.equal(201);
+    });
+
+    it('preserves existing response headers', async () => {
+      const body = largeBody();
+      const innerResponse = createJsonResponse(body, 200, { 'x-custom': 'value' });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result.headers.get('x-custom')).to.equal('value');
+    });
+
+    it('merges Vary header without duplicating', async () => {
+      const body = largeBody();
+      const innerResponse = createJsonResponse(body, 200, { vary: 'Origin' });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result.headers.get('vary')).to.equal('Origin, Accept-Encoding');
+    });
+
+    it('logs compression stats', async () => {
+      const body = largeBody();
+      const innerResponse = createJsonResponse(body);
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      await wrapped(createMockRequest('gzip'), mockContext);
+      expect(mockContext.log.info.calledOnce).to.be.true;
+      expect(mockContext.log.info.firstCall.args[0]).to.match(/\[compression\]/);
+    });
+
+    it('respects custom minSize option', async () => {
+      const body = { small: true };
+      const jsonStr = JSON.stringify(body);
+      const innerResponse = new Response(jsonStr, {
+        status: 200,
+        headers: { 'content-type': 'application/json; charset=utf-8' },
+      });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler, { minSize: 1 });
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result.headers.get('content-encoding')).to.equal('gzip');
+    });
+
+    it('respects custom preference order', async () => {
+      const body = largeBody();
+      const innerResponse = createJsonResponse(body);
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler, { preference: ['gzip', 'br', 'deflate'] });
+
+      const result = await wrapped(createMockRequest('gzip, br'), mockContext);
+      expect(result.headers.get('content-encoding')).to.equal('gzip');
+    });
+
+    it('compresses text/html content', async () => {
+      const htmlBody = `<html>${'<p>content</p>'.repeat(100)}</html>`;
+      const innerResponse = new Response(htmlBody, {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler, { minSize: 1 });
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result.headers.get('content-encoding')).to.equal('gzip');
+
+      const compressed = Buffer.from(await result.arrayBuffer());
+      const decompressed = await gunzipAsync(compressed);
+      expect(decompressed.toString()).to.equal(htmlBody);
+    });
+
+    it('uses console as fallback when context has no log', async () => {
+      const body = largeBody();
+      const innerResponse = createJsonResponse(body);
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+      const consoleStub = sinon.stub(console, 'info');
+
+      await wrapped(createMockRequest('gzip'), {});
+
+      expect(consoleStub.calledOnce).to.be.true;
+      consoleStub.restore();
     });
   });
 });

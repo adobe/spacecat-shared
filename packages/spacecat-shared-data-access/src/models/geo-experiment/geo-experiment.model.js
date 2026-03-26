@@ -12,20 +12,19 @@
 
 import BaseModel from '../base/base.model.js';
 
-class DeploymentExperiment extends BaseModel {
-  static ENTITY_NAME = 'DeploymentExperiment';
+class GeoExperiment extends BaseModel {
+  static ENTITY_NAME = 'GeoExperiment';
 
   static DEFAULT_UPDATED_BY = 'spacecat';
 
   static STATUSES = {
     PRE_ANALYSIS_SUBMITTED: 'pre_analysis_submitted',
     PRE_ANALYSIS_DONE: 'pre_analysis_done',
-    DEPLOYED: 'deployed',
+    OPTIMISATION_DEPLOYED: 'optimisation_deployed',
     POST_ANALYSIS_SUBMITTED: 'post_analysis_submitted',
     POST_ANALYSIS_DONE: 'post_analysis_done',
     FAILED: 'failed',
-    DEPLOYED_POST_ANALYSIS_FAILED: 'deployed_post_analysis_failed',
   };
 }
 
-export default DeploymentExperiment;
+export default GeoExperiment;

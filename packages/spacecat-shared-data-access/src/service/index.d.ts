@@ -19,7 +19,7 @@ import type { AuditUrlCollection } from '../models/audit-url';
 import type { ConfigurationCollection } from '../models/configuration';
 import type { ConsumerCollection } from '../models/consumer';
 import type { EntitlementCollection } from '../models/entitlement';
-import type { DeploymentExperimentCollection } from '../models/deployment-experiment';
+import type { GeoExperimentCollection } from '../models/geo-experiment';
 import type { ExperimentCollection } from '../models/experiment';
 import type { FixEntityCollection } from '../models/fix-entity';
 import type { FixEntitySuggestionCollection } from '../models/fix-entity-suggestion';
@@ -69,7 +69,7 @@ export interface DataAccess {
   Configuration: ConfigurationCollection;
   Consumer: ConsumerCollection;
   Entitlement: EntitlementCollection;
-  DeploymentExperiment: DeploymentExperimentCollection;
+  GeoExperiment: GeoExperimentCollection;
   Experiment: ExperimentCollection;
   FixEntity: FixEntityCollection;
   FixEntitySuggestion: FixEntitySuggestionCollection;

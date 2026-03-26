@@ -18,11 +18,6 @@ export const EXPERIMENT_PHASES = Object.freeze({
 });
 
 const VALID_EXPERIMENT_PHASES = new Set(Object.values(EXPERIMENT_PHASES));
-const DEFAULT_EXPERIMENT_PLATFORMS = ['chatgpt_free', 'perplexity'];
-const PRE_PHASE_CRON_EXPRESSION = '0 * * * *';
-const POST_PHASE_CRON_EXPRESSION = '0 0 * * *';
-const PRE_PHASE_EXPIRY_MS = 10 * 60 * 60 * 1000; // 10 hours
-const POST_PHASE_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
 export const SCRAPE_DATASET_IDS = Object.freeze({
   REDDIT_COMMENTS: 'reddit_comments',
@@ -252,28 +247,31 @@ export default class DrsClient {
   }
 
   /**
-   * Creates an experiment schedule in DRS and optionally triggers it immediately.
-   * Uses the schedules API instead of legacy experiments API.
+   * Creates an experiment schedule in DRS.
    * @param {object} params
    * @param {string} params.siteId - SpaceCat site ID
    * @param {string} params.experimentId - Unique experiment identifier
    * @param {string} params.experimentPhase - 'pre' or 'post'
+   * @param {string} params.cronExpression - Cron expression for the schedule
+   * @param {string} params.expiresAt - ISO 8601 timestamp for schedule expiry
+   * @param {string[]} params.platforms - LLM platforms to query (used as brightdata dataset_id)
+   * @param {string[]} params.providerIds - DRS provider IDs
+   * @param {boolean} params.triggerImmediately - Trigger first job on schedule creation
    * @param {string[]} [params.experimentationUrls] - URLs to filter prompts by
-   * @param {string[]} [params.platforms] - LLM platforms to query
-   * @param {string[]} [params.providerIds] - DRS provider IDs
-   * @param {object} [params.metadata] - Additional metadata
-   * @param {boolean} [params.triggerImmediately=true] - Trigger job right after schedule creation
+   * @param {object} [params.metadata] - Additional metadata to attach to the job
    * @returns {Promise<object>} Schedule creation response
    */
   async createExperimentSchedule({
     siteId,
     experimentId,
     experimentPhase,
-    experimentationUrls,
+    cronExpression,
+    expiresAt,
     platforms,
     providerIds,
-    metadata,
     triggerImmediately,
+    experimentationUrls,
+    metadata,
   }) {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
@@ -284,42 +282,35 @@ export default class DrsClient {
     if (!VALID_EXPERIMENT_PHASES.has(experimentPhase)) {
       throw new Error(`experimentPhase must be one of: ${[...VALID_EXPERIMENT_PHASES].join(', ')}`);
     }
-
-    const phaseConfig = experimentPhase === EXPERIMENT_PHASES.PRE
-      ? {
-        cronExpression: PRE_PHASE_CRON_EXPRESSION,
-        expiresInMs: PRE_PHASE_EXPIRY_MS,
-        triggerImmediatelyDefault: true,
-      }
-      : {
-        cronExpression: POST_PHASE_CRON_EXPRESSION,
-        expiresInMs: POST_PHASE_EXPIRY_MS,
-        triggerImmediatelyDefault: false,
-      };
-
-    const expiresAt = new Date(Date.now() + phaseConfig.expiresInMs).toISOString();
-    const selectedPlatforms = Array.isArray(platforms) && platforms.length > 0
-      ? platforms
-      : DEFAULT_EXPERIMENT_PLATFORMS;
-    const shouldTriggerImmediately = typeof triggerImmediately === 'boolean'
-      ? triggerImmediately
-      : phaseConfig.triggerImmediatelyDefault;
+    if (!hasText(cronExpression)) {
+      throw new Error('cronExpression is required');
+    }
+    if (!hasText(expiresAt)) {
+      throw new Error('expiresAt is required');
+    }
+    if (!Array.isArray(platforms) || platforms.length === 0) {
+      throw new Error('platforms must be a non-empty array');
+    }
+    if (!Array.isArray(providerIds) || providerIds.length === 0) {
+      throw new Error('providerIds must be a non-empty array');
+    }
 
     const body = {
       site_id: siteId,
       frequency: 'cron',
-      cron_expression: phaseConfig.cronExpression,
+      cron_expression: cronExpression,
       expires_at: expiresAt,
-      trigger_immediately: shouldTriggerImmediately,
+      trigger_immediately: triggerImmediately === true,
       description: `SpaceCat edge deploy ${experimentPhase} experiment ${experimentId}`,
       job_config: {
         cadence: 'experiment',
-        provider_ids: Array.isArray(providerIds) && providerIds.length > 0
-          ? providerIds
-          : ['brightdata', 'openai_web_search'],
+        provider_ids: providerIds,
         provider_parameters: {
           brightdata: {
-            dataset_id: selectedPlatforms.join(','),
+            dataset_id: platforms.join(','),
+            metadata: {
+              site: siteId,
+            },
           },
         },
         priority: 'HIGH',
@@ -338,8 +329,10 @@ export default class DrsClient {
     this.log.info(`Creating DRS experiment schedule for site ${siteId}`, {
       experimentId,
       experimentPhase,
+      cronExpression,
+      expiresAt,
       urlCount: experimentationUrls?.length || 0,
-      triggerImmediately: shouldTriggerImmediately,
+      triggerImmediately: body.trigger_immediately,
     });
 
     const result = await this.#request('POST', '/schedules', body);
@@ -355,9 +348,11 @@ export default class DrsClient {
    * Gets schedule details with jobs summary from DRS.
    * @param {string} siteId - SpaceCat site ID
    * @param {string} scheduleId - DRS schedule ID
+   * @param {object} [options={}]
+   * @param {boolean} [options.includeJobs=false] - Include per-job details in the response
    * @returns {Promise<object>} Schedule + jobs summary payload
    */
-  async getScheduleStatus(siteId, scheduleId) {
+  async getScheduleStatus(siteId, scheduleId, { includeJobs = false } = {}) {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
     }
@@ -365,8 +360,12 @@ export default class DrsClient {
       throw new Error('scheduleId is required');
     }
 
-    this.log.info('Getting DRS schedule status', { siteId, scheduleId });
-    return this.#request('GET', `/schedules/${siteId}/${scheduleId}`);
+    const path = includeJobs
+      ? `/schedules/${siteId}/${scheduleId}?include_jobs=true`
+      : `/schedules/${siteId}/${scheduleId}`;
+
+    this.log.info('Getting DRS schedule status', { siteId, scheduleId, includeJobs });
+    return this.#request('GET', path);
   }
 
   /**

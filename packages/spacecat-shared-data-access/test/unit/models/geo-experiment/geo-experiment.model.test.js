@@ -17,23 +17,24 @@ import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import DeploymentExperiment from '../../../../src/models/deployment-experiment/deployment-experiment.model.js';
+import GeoExperiment from '../../../../src/models/geo-experiment/geo-experiment.model.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-describe('DeploymentExperimentModel', () => {
+describe('GeoExperimentModel', () => {
   let instance;
   let mockElectroService;
 
   const mockRecord = {
-    deploymentExperimentId: 'e12345',
+    geoExperimentId: 'e12345',
     siteId: '2c1f0868-cc2d-4358-ba26-a7b5965ee403',
     opportunityId: '3b7de19c-4bf8-4687-a337-b9f4a5d56f8e',
-    preDeploymentId: 'drs-pre-schedule-id',
-    postDeploymentId: 'drs-post-schedule-id',
-    status: DeploymentExperiment.STATUSES.POST_ANALYSIS_DONE,
+    preScheduleId: 'drs-pre-schedule-id',
+    postScheduleId: 'drs-post-schedule-id',
+    status: GeoExperiment.STATUSES.POST_ANALYSIS_DONE,
+    skipDeploy: false,
     suggestionIds: ['4d56efe4-9473-4e9a-95f3-c7536ffc56a3'],
     metadata: { deployType: 'edge' },
     error: { message: 'none' },
@@ -44,7 +45,7 @@ describe('DeploymentExperimentModel', () => {
     ({
       mockElectroService,
       model: instance,
-    } = createElectroMocks(DeploymentExperiment, mockRecord));
+    } = createElectroMocks(GeoExperiment, mockRecord));
 
     mockElectroService.entities.patch = stub().returns({ set: stub() });
   });
@@ -54,22 +55,28 @@ describe('DeploymentExperimentModel', () => {
     expect(instance.record).to.deep.equal(mockRecord);
   });
 
-  it('gets and sets preDeploymentId', () => {
-    expect(instance.getPreDeploymentId()).to.equal('drs-pre-schedule-id');
-    instance.setPreDeploymentId('pre-2');
-    expect(instance.getPreDeploymentId()).to.equal('pre-2');
+  it('gets and sets preScheduleId', () => {
+    expect(instance.getPreScheduleId()).to.equal('drs-pre-schedule-id');
+    instance.setPreScheduleId('pre-2');
+    expect(instance.getPreScheduleId()).to.equal('pre-2');
   });
 
-  it('gets and sets postDeploymentId', () => {
-    expect(instance.getPostDeploymentId()).to.equal('drs-post-schedule-id');
-    instance.setPostDeploymentId('post-2');
-    expect(instance.getPostDeploymentId()).to.equal('post-2');
+  it('gets and sets postScheduleId', () => {
+    expect(instance.getPostScheduleId()).to.equal('drs-post-schedule-id');
+    instance.setPostScheduleId('post-2');
+    expect(instance.getPostScheduleId()).to.equal('post-2');
   });
 
   it('gets and sets status', () => {
-    expect(instance.getStatus()).to.equal(DeploymentExperiment.STATUSES.POST_ANALYSIS_DONE);
-    instance.setStatus(DeploymentExperiment.STATUSES.DEPLOYED);
-    expect(instance.getStatus()).to.equal(DeploymentExperiment.STATUSES.DEPLOYED);
+    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.POST_ANALYSIS_DONE);
+    instance.setStatus(GeoExperiment.STATUSES.FAILED);
+    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.FAILED);
+  });
+
+  it('gets and sets skipDeploy', () => {
+    expect(instance.getSkipDeploy()).to.equal(false);
+    instance.setSkipDeploy(true);
+    expect(instance.getSkipDeploy()).to.equal(true);
   });
 
   it('gets and sets suggestionIds', () => {

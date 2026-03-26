@@ -16,13 +16,13 @@ import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
-import DeploymentExperiment from '../../../../src/models/deployment-experiment/deployment-experiment.model.js';
+import GeoExperiment from '../../../../src/models/geo-experiment/geo-experiment.model.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-describe('DeploymentExperimentCollection', () => {
+describe('GeoExperimentCollection', () => {
   let instance;
   let mockElectroService;
   let mockEntityRegistry;
@@ -31,7 +31,7 @@ describe('DeploymentExperimentCollection', () => {
   let schema;
 
   const mockRecord = {
-    deploymentExperimentId: 'e12345',
+    geoExperimentId: 'e12345',
   };
 
   beforeEach(() => {
@@ -42,7 +42,7 @@ describe('DeploymentExperimentCollection', () => {
       collection: instance,
       model,
       schema,
-    } = createElectroMocks(DeploymentExperiment, mockRecord));
+    } = createElectroMocks(GeoExperiment, mockRecord));
   });
 
   it('initializes correctly', () => {

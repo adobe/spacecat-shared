@@ -19,31 +19,40 @@ import {
 } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import DeploymentExperiment from './deployment-experiment.model.js';
-import DeploymentExperimentCollection from './deployment-experiment.collection.js';
+import GeoExperiment from './geo-experiment.model.js';
+import GeoExperimentCollection from './geo-experiment.collection.js';
 
-const schema = new SchemaBuilder(DeploymentExperiment, DeploymentExperimentCollection)
-  .addReference('belongs_to', 'Site')
-  .addReference('belongs_to', 'Opportunity')
-  .addAttribute('preDeploymentId', {
+const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
+  .addAttribute('geoExperimentId', {
     type: 'string',
+    postgrestField: 'id',
     required: true,
+    readOnly: true,
     validate: (value) => hasText(value),
   })
-  .addAttribute('postDeploymentId', {
+  .addReference('belongs_to', 'Site')
+  .addReference('belongs_to', 'Opportunity', [], { required: false })
+  .addAttribute('preScheduleId', {
+    type: 'string',
+    validate: (value) => !value || hasText(value),
+  })
+  .addAttribute('postScheduleId', {
     type: 'string',
     validate: (value) => !value || hasText(value),
   })
   .addAttribute('status', {
-    type: Object.values(DeploymentExperiment.STATUSES),
+    type: Object.values(GeoExperiment.STATUSES),
     required: true,
-    default: DeploymentExperiment.STATUSES.PRE_ANALYSIS_SUBMITTED,
+    default: GeoExperiment.STATUSES.PRE_ANALYSIS_SUBMITTED,
+  })
+  .addAttribute('skipDeploy', {
+    type: 'boolean',
+    default: false,
   })
   .addAttribute('suggestionIds', {
     type: 'list',
     items: {
       type: 'string',
-      required: true,
       validate: (value) => isValidUUID(value),
     },
     default: () => [],
@@ -58,11 +67,11 @@ const schema = new SchemaBuilder(DeploymentExperiment, DeploymentExperimentColle
   })
   .addAttribute('updatedBy', {
     type: 'string',
-    default: DeploymentExperiment.DEFAULT_UPDATED_BY,
+    default: GeoExperiment.DEFAULT_UPDATED_BY,
     validate: (value) => hasText(value),
   })
   .addIndex(
-    { composite: ['preDeploymentId'] },
+    { composite: ['preScheduleId'] },
     { composite: ['updatedAt'] },
   );
 

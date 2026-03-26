@@ -10,10 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseCollection from '../base/base.collection.js';
+import GeoExperiment from './geo-experiment.model.js';
+import GeoExperimentCollection from './geo-experiment.collection.js';
 
-class DeploymentExperimentCollection extends BaseCollection {
-  static COLLECTION_NAME = 'DeploymentExperimentCollection';
-}
-
-export default DeploymentExperimentCollection;
+export {
+  GeoExperiment,
+  GeoExperimentCollection,
+};

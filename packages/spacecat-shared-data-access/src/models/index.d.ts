@@ -18,7 +18,7 @@ export type * from './base';
 export type * from './configuration';
 export type * from './consumer';
 export type * from './entitlement';
-export type * from './deployment-experiment';
+export type * from './geo-experiment';
 export type * from './experiment';
 export type * from './fix-entity';
 export type * from './fix-entity-suggestion';

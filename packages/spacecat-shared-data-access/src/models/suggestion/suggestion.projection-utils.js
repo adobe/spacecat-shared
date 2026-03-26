@@ -56,13 +56,16 @@ export const FIELD_TRANSFORMERS = {
     }));
   },
   /**
-   * Extracts pageUrl from recommendations array.
-   * Used for alt-text opportunity type.
+   * Extracts essential fields from recommendations array for alt-text opportunities.
+   * Used for alt-text opportunity type minimal views.
+   * Includes: pageUrl, isDecorative, and hasAltAttribute (for filtering).
    */
   extractPageUrlFromRecommendations: (recommendations) => {
     if (!Array.isArray(recommendations)) return recommendations;
     return recommendations.map((rec) => ({
       pageUrl: rec.pageUrl,
+      ...(rec.isDecorative !== undefined && { isDecorative: rec.isDecorative }),
+      ...(rec.hasAltAttribute !== undefined && { hasAltAttribute: rec.hasAltAttribute }),
     }));
   },
   /**

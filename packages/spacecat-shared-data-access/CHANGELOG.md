@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v3.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.30.0...@adobe/spacecat-shared-data-access-v3.31.0) (2026-03-25)
+
+### Features
+
+* Added cwv-trends-audit import type ([#1434](https://github.com/adobe/spacecat-shared/issues/1434)) ([eab9653](https://github.com/adobe/spacecat-shared/commit/eab9653a367208f0cf9691fbf186ffabb9307fea))
+
+## [@adobe/spacecat-shared-data-access-v3.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.29.0...@adobe/spacecat-shared-data-access-v3.30.0) (2026-03-25)
+
+### Features
+
+* **data-access:** add allByEnrollmentProductCode to SiteCollection ([#1455](https://github.com/adobe/spacecat-shared/issues/1455)) ([0225791](https://github.com/adobe/spacecat-shared/commit/02257915bbf5aa2e15e1320bbcdfa27b236c44b8))
+
 ## [@adobe/spacecat-shared-data-access-v3.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.28.0...@adobe/spacecat-shared-data-access-v3.29.0) (2026-03-23)
 
 ### Features

@@ -393,4 +393,68 @@ describe('SiteCollection', () => {
       });
     });
   });
+
+  describe('allByEnrollmentProductCode', () => {
+    let mockSiteEnrollmentCollection;
+
+    beforeEach(() => {
+      mockSiteEnrollmentCollection = {
+        allSiteIdsByProductCode: stub(),
+      };
+      mockEntityRegistry.getCollection = stub()
+        .withArgs('SiteEnrollmentCollection')
+        .returns(mockSiteEnrollmentCollection);
+    });
+
+    it('throws DataAccessError when productCode is falsy', async () => {
+      await expect(instance.allByEnrollmentProductCode('')).to.be.rejectedWith('productCode is required');
+      await expect(instance.allByEnrollmentProductCode(null)).to.be.rejectedWith('productCode is required');
+      await expect(instance.allByEnrollmentProductCode(undefined)).to.be.rejectedWith('productCode is required');
+    });
+
+    it('returns empty array and does not call batchGetByKeys when no site IDs found', async () => {
+      mockSiteEnrollmentCollection.allSiteIdsByProductCode.resolves([]);
+      instance.batchGetByKeys = stub();
+
+      const result = await instance.allByEnrollmentProductCode('LLMO');
+
+      expect(result).to.deep.equal([]);
+      expect(mockSiteEnrollmentCollection.allSiteIdsByProductCode).to.have.been.calledOnceWithExactly('LLMO');
+      expect(instance.batchGetByKeys).to.not.have.been.called;
+    });
+
+    it('returns sites fetched by batchGetByKeys with default empty options', async () => {
+      const siteIds = ['cfa88998-a0a0-4136-b21d-0ff2aa127443', 'd1e2f3a4-b5c6-7890-abcd-ef1234567890'];
+      const mockSites = [{ getId: () => siteIds[0] }, { getId: () => siteIds[1] }];
+      mockSiteEnrollmentCollection.allSiteIdsByProductCode.resolves(siteIds);
+      instance.batchGetByKeys = stub().resolves({ data: mockSites });
+
+      const result = await instance.allByEnrollmentProductCode('LLMO');
+
+      expect(result).to.deep.equal(mockSites);
+      expect(instance.batchGetByKeys).to.have.been.calledOnceWithExactly(
+        [
+          { siteId: 'cfa88998-a0a0-4136-b21d-0ff2aa127443' },
+          { siteId: 'd1e2f3a4-b5c6-7890-abcd-ef1234567890' },
+        ],
+        {},
+      );
+    });
+
+    it('passes caller-supplied options through to batchGetByKeys', async () => {
+      const siteIds = ['cfa88998-a0a0-4136-b21d-0ff2aa127443'];
+      const mockSites = [{ getId: () => siteIds[0] }];
+      const options = { attributes: ['siteId', 'baseURL', 'config'] };
+      mockSiteEnrollmentCollection.allSiteIdsByProductCode.resolves(siteIds);
+      instance.batchGetByKeys = stub().resolves({ data: mockSites });
+
+      const result = await instance.allByEnrollmentProductCode('LLMO', options);
+
+      expect(result).to.deep.equal(mockSites);
+      expect(instance.batchGetByKeys).to.have.been.calledOnceWithExactly(
+        [{ siteId: 'cfa88998-a0a0-4136-b21d-0ff2aa127443' }],
+        options,
+      );
+    });
+  });
 });

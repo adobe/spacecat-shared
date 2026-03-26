@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.31.0...@adobe/spacecat-shared-data-access-v3.31.1) (2026-03-26)
+
+### Bug Fixes
+
+* **AGENTCOM-441:** update required fields from commerce config ([#1470](https://github.com/adobe/spacecat-shared/issues/1470)) ([5e89146](https://github.com/adobe/spacecat-shared/commit/5e89146110896cfcbcce9e80e743564ff8bb989b))
+
 ## [@adobe/spacecat-shared-data-access-v3.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.30.0...@adobe/spacecat-shared-data-access-v3.31.0) (2026-03-25)
 
 ### Features

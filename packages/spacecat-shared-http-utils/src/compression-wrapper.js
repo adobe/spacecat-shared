@@ -30,7 +30,8 @@ export function negotiateEncoding(header, preference = DEFAULT_PREFERENCE) {
     const parts = entry.trim().split(';');
     const encoding = parts[0].trim().toLowerCase();
     const qParam = parts.find((p) => p.trim().startsWith('q='));
-    const quality = qParam ? parseFloat(qParam.trim().substring(2)) : 1.0;
+    const rawQ = qParam ? parseFloat(qParam.trim().substring(2)) : 1.0;
+    const quality = Number.isNaN(rawQ) ? 1.0 : rawQ;
     return { encoding, quality };
   });
 
@@ -82,7 +83,9 @@ export function isCompressible(contentType) {
 
 export function mergeVary(existing) {
   if (!existing) return 'Accept-Encoding';
-  if (existing.toLowerCase().includes('accept-encoding')) return existing;
+  if (existing.trim() === '*') return existing;
+  const tokens = existing.split(',').map((t) => t.trim().toLowerCase());
+  if (tokens.includes('accept-encoding')) return existing;
   return `${existing}, Accept-Encoding`;
 }
 

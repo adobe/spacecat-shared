@@ -79,6 +79,10 @@ describe('compression-wrapper', () => {
     it('handles whitespace variations', () => {
       expect(negotiateEncoding('  gzip ; q=0.8 , br ; q=1.0 ')).to.equal('br');
     });
+
+    it('treats malformed quality as 1.0', () => {
+      expect(negotiateEncoding('gzip;q=abc')).to.equal('gzip');
+    });
   });
 
   describe('isCompressible', () => {
@@ -131,6 +135,14 @@ describe('compression-wrapper', () => {
 
     it('handles case-insensitive match', () => {
       expect(mergeVary('accept-encoding')).to.equal('accept-encoding');
+    });
+
+    it('does not false-match substring of Accept-Encoding', () => {
+      expect(mergeVary('X-Not-Accept-Encoding')).to.equal('X-Not-Accept-Encoding, Accept-Encoding');
+    });
+
+    it('returns * unchanged when Vary is wildcard', () => {
+      expect(mergeVary('*')).to.equal('*');
     });
   });
 

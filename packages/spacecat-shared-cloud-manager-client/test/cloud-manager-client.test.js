@@ -1031,7 +1031,7 @@ describe('CloudManagerClient', () => {
   });
 
   describe('createPullRequest', () => {
-    it('creates a PR with correct payload', async () => {
+    it('creates a PR and constructs pullRequestUrl from repoUrl and externalNumber', async () => {
       const prNock = nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`, {
           title: 'Fix issue',
@@ -1039,7 +1039,7 @@ describe('CloudManagerClient', () => {
           destinationBranch: 'main',
           description: 'Automated fix',
         })
-        .reply(201, { id: 'pr-1', status: 'open' });
+        .reply(201, { id: 169205, externalNumber: '2', state: 'OPEN' });
 
       const client = CloudManagerClient.createFrom(createContext());
       const result = await client.createPullRequest(
@@ -1051,11 +1051,144 @@ describe('CloudManagerClient', () => {
           sourceBranch: 'feature/fix',
           title: 'Fix issue',
           description: 'Automated fix',
+          repoUrl: 'https://github.com/owner/repo.git',
         },
       );
 
-      expect(result.id).to.equal('pr-1');
+      expect(result.id).to.equal(169205);
+      expect(result.pullRequestUrl).to.equal('https://github.com/owner/repo/pull/2');
       expect(prNock.isDone()).to.be.true;
+    });
+
+    it('constructs pullRequestUrl for GitHub without .git suffix', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '10', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://github.com/owner/repo',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://github.com/owner/repo/pull/10');
+    });
+
+    it('constructs pullRequestUrl for GitLab', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '5', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://gitlab.com/group/project.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://gitlab.com/group/project/-/merge_requests/5');
+    });
+
+    it('constructs pullRequestUrl for self-hosted GitLab', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '3', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://gitlab.corp.example.com/team/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://gitlab.corp.example.com/team/repo/-/merge_requests/3');
+    });
+
+    it('does not set pullRequestUrl for unsupported provider', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '1', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://bitbucket.org/owner/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.be.undefined;
+    });
+
+    it('does not set pullRequestUrl when repoUrl is not provided', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '1', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.be.undefined;
+    });
+
+    it('does not set pullRequestUrl when externalNumber is missing', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://github.com/owner/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.be.undefined;
     });
 
     it('throws on failed PR creation', async () => {

@@ -603,6 +603,41 @@ export default class CloudManagerClient {
   }
 
   /**
+   * PR/MR path patterns per git provider.
+   * Maps CM_REPO_TYPE to the URL path template used for pull/merge requests.
+   */
+  #PR_PATH_BY_PROVIDER = Object.freeze({
+    [CM_REPO_TYPE.GITHUB]: (n) => `/pull/${n}`,
+    [CM_REPO_TYPE.GITLAB]: (n) => `/-/merge_requests/${n}`,
+  });
+
+  /**
+   * Builds the pull request URL from the external repo URL and PR number.
+   * Detects the git provider from the repo URL to use the correct path format.
+   * Returns null if the provider is not recognized.
+   *
+   * @param {string} repoUrl - External repository URL (e.g. https://github.com/owner/repo.git)
+   * @param {string} externalNumber - PR/MR number from the CM API response
+   * @returns {string|null} Full pull request URL, or null if provider is unsupported
+   */
+  #buildPullRequestUrl(repoUrl, externalNumber) {
+    let provider = null;
+    if (repoUrl.includes('github.com') || repoUrl.includes('github.')) {
+      provider = CM_REPO_TYPE.GITHUB;
+    } else if (repoUrl.includes('gitlab.com') || repoUrl.includes('gitlab.')) {
+      provider = CM_REPO_TYPE.GITLAB;
+    }
+
+    const pathBuilder = provider && this.#PR_PATH_BY_PROVIDER[provider];
+    if (!pathBuilder) {
+      return null;
+    }
+
+    const baseUrl = repoUrl.replace(/\.git$/, '');
+    return `${baseUrl}${pathBuilder(externalNumber)}`;
+  }
+
+  /**
    * Creates a pull request in a CM repository via the CM Repo REST API.
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
@@ -612,10 +647,12 @@ export default class CloudManagerClient {
    * @param {string} config.sourceBranch - Branch that contains the changes (head)
    * @param {string} config.title - PR title
    * @param {string} config.description - PR description
-   * @returns {Promise<Object>}
+   * @param {string} [config.repoUrl] - External repository URL (e.g. https://github.com/owner/repo.git)
+   *   Used to construct the pullRequestUrl from the CM API response's externalNumber.
+   * @returns {Promise<Object>} CM API response augmented with pullRequestUrl
    */
   async createPullRequest(programId, repositoryId, {
-    imsOrgId, destinationBranch, sourceBranch, title, description,
+    imsOrgId, destinationBranch, sourceBranch, title, description, repoUrl,
   }) {
     const { access_token: token } = await this.imsClient.getServiceAccessToken();
     const url = `${this.config.cmRepoUrl}/api/program/${programId}/repository/${repositoryId}/pullRequests`;
@@ -643,6 +680,16 @@ export default class CloudManagerClient {
       throw new Error(`Pull request creation failed: ${response.status} - ${errorText}`);
     }
 
-    return response.json();
+    const result = await response.json();
+
+    // Construct pullRequestUrl from external repo URL and PR number
+    if (result.externalNumber && hasText(repoUrl)) {
+      const prUrl = this.#buildPullRequestUrl(repoUrl, result.externalNumber);
+      if (prUrl) {
+        result.pullRequestUrl = prUrl;
+      }
+    }
+
+    return result;
   }
 }

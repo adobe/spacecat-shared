@@ -2814,6 +2814,43 @@ describe('Config Tests', () => {
       const dynamoItem = Config.toDynamoItem(config);
       expect(dynamoItem.onboardConfig).to.be.undefined;
     });
+
+    it('stores forcedOverride when provided on creation', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo', forcedOverride: true } });
+      expect(config.getOnboardConfig().forcedOverride).to.be.true;
+    });
+
+    it('stores forcedOverride:true via updateOnboardConfig', () => {
+      const startTime = Date.now();
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'demo', lastStartTime: startTime, forcedOverride: true });
+      const result = config.getOnboardConfig();
+      expect(result.forcedOverride).to.be.true;
+      expect(result.lastProfile).to.equal('demo');
+      expect(result.lastStartTime).to.equal(startTime);
+    });
+
+    it('does not set forcedOverride when not passed to updateOnboardConfig', () => {
+      const startTime = Date.now();
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig().forcedOverride).to.be.undefined;
+    });
+
+    it('overwrites a previous forcedOverride when a clean updateOnboardConfig is applied', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000, forcedOverride: true } });
+      const newStartTime = Date.now();
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: newStartTime });
+      expect(config.getOnboardConfig().forcedOverride).to.be.undefined;
+      expect(config.getOnboardConfig().lastProfile).to.equal('paid');
+    });
+
+    it('persists forcedOverride in toDynamoItem', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: startTime, forcedOverride: true } });
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.onboardConfig.forcedOverride).to.be.true;
+    });
   });
 
   describe('Commerce LLMO Config', () => {

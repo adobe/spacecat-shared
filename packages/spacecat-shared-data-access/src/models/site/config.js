@@ -386,6 +386,7 @@ export const configSchema = Joi.object({
   onboardConfig: Joi.object({
     lastProfile: Joi.string().optional(),
     lastStartTime: Joi.number().optional(),
+    forcedOverride: Joi.boolean().optional(),
     history: Joi.array().items(Joi.object({
       profile: Joi.string().optional(),
       startTime: Joi.number().optional(),

@@ -284,7 +284,8 @@ describe('compression-wrapper', () => {
       const wrapped = compressResponse(handler);
 
       const result = await wrapped(createMockRequest('gzip'), mockContext);
-      expect(result).to.equal(innerResponse);
+      expect(result.status).to.equal(200);
+      expect(await result.text()).to.equal('');
     });
 
     it('passes through when body is below minSize', async () => {
@@ -297,7 +298,9 @@ describe('compression-wrapper', () => {
       const wrapped = compressResponse(handler, { minSize: 1024 });
 
       const result = await wrapped(createMockRequest('gzip'), mockContext);
-      expect(result).to.equal(innerResponse);
+      expect(result.status).to.equal(200);
+      expect(await result.text()).to.equal(smallBody);
+      expect(result.headers.get('content-encoding')).to.be.null;
     });
 
     it('calls the inner handler with request and context', async () => {
@@ -385,6 +388,24 @@ describe('compression-wrapper', () => {
 
       const result = await wrapped(createMockRequest('gzip'), mockContext);
       expect(result.headers.get('vary')).to.equal('Origin, Accept-Encoding');
+    });
+
+    it('strips content-length from compressed response', async () => {
+      const body = largeBody();
+      const jsonStr = JSON.stringify(body);
+      const innerResponse = new Response(jsonStr, {
+        status: 200,
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+          'content-length': String(jsonStr.length),
+        },
+      });
+      const handler = sinon.stub().resolves(innerResponse);
+      const wrapped = compressResponse(handler);
+
+      const result = await wrapped(createMockRequest('gzip'), mockContext);
+      expect(result.headers.get('content-length')).to.be.null;
+      expect(result.headers.get('content-encoding')).to.equal('gzip');
     });
 
     it('logs compression stats', async () => {

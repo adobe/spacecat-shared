@@ -138,8 +138,11 @@ export function compressResponse(fn, opts = {}) {
 
     const body = Buffer.from(await response.arrayBuffer());
 
-    if (body.length === 0 || body.length < minSize) {
-      return response;
+    if (body.length < minSize) {
+      return new Response(body, {
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
     }
 
     const compressed = await compress(encoding, body);
@@ -148,6 +151,7 @@ export function compressResponse(fn, opts = {}) {
     log.info(`[compression] encoding=${encoding} original=${body.length} compressed=${compressed.length}`);
 
     const headers = Object.fromEntries(response.headers.entries());
+    delete headers['content-length'];
     headers['content-encoding'] = encoding;
     headers.vary = mergeVary(headers.vary);
 

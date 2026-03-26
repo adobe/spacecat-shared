@@ -511,6 +511,7 @@ describe('DrsClient', () => {
           expect(body.site_id).to.equal('site-1');
           expect(body.frequency).to.equal('cron');
           expect(body.cron_expression).to.equal('0 * * * *');
+          expect(body.expires_at).to.equal('2099-01-01T00:00:00.000Z');
           expect(body.trigger_immediately).to.equal(true);
           expect(body.job_config.cadence).to.equal('experiment');
           expect(body.job_config.provider_ids).to.deep.equal(['brightdata', 'openai_web_search']);
@@ -527,6 +528,11 @@ describe('DrsClient', () => {
         siteId: 'site-1',
         experimentId: 'exp-1',
         experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free', 'chatgpt_paid'],
+        providerIds: ['brightdata', 'openai_web_search'],
+        triggerImmediately: true,
         experimentationUrls: ['https://example.com/page-1'],
         metadata: { triggered_by: 'spacecat-edge-deploy' },
       });
@@ -547,6 +553,9 @@ describe('DrsClient', () => {
         siteId: 'site-1',
         experimentId: 'exp-custom',
         experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free'],
         providerIds: ['brightdata'],
       });
 
@@ -567,7 +576,10 @@ describe('DrsClient', () => {
         siteId: 'site-1',
         experimentId: 'exp-2',
         experimentPhase: 'post',
+        cronExpression: '0 0 * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
         platforms: ['gemini', 'perplexity'],
+        providerIds: ['brightdata'],
       });
 
       scope.done();
@@ -586,6 +598,10 @@ describe('DrsClient', () => {
         siteId: 'site-1',
         experimentId: 'exp-3',
         experimentPhase: 'post',
+        cronExpression: '0 0 * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free'],
+        providerIds: ['brightdata'],
         triggerImmediately: true,
       });
 
@@ -601,6 +617,10 @@ describe('DrsClient', () => {
         siteId: 'site-1',
         experimentId: 'exp-flat',
         experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free'],
+        providerIds: ['brightdata'],
       });
 
       expect(result.schedule_id).to.equal('sched-flat-1');
@@ -628,6 +648,44 @@ describe('DrsClient', () => {
         experimentPhase: 'during',
       })).to.be.rejectedWith('experimentPhase must be one of: pre, post');
     });
+
+    it('throws when cronExpression is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+      })).to.be.rejectedWith('cronExpression is required');
+    });
+
+    it('throws when expiresAt is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+      })).to.be.rejectedWith('expiresAt is required');
+    });
+
+    it('throws when platforms is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+      })).to.be.rejectedWith('platforms must be a non-empty array');
+    });
+
+    it('throws when providerIds is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free'],
+      })).to.be.rejectedWith('providerIds must be a non-empty array');
+    });
   });
 
   describe('getScheduleStatus', () => {
@@ -648,6 +706,16 @@ describe('DrsClient', () => {
       const result = await client.getScheduleStatus('site-1', 'sched-1');
       expect(result.schedule.schedule_id).to.equal('sched-1');
       expect(result.jobs_summary.is_complete).to.equal(true);
+      scope.done();
+    });
+
+    it('fetches schedule status with include_jobs flag', async () => {
+      const scope = nock(DRS_API_URL)
+        .get('/schedules/site-1/sched-1?include_jobs=true')
+        .reply(200, { schedule: { schedule_id: 'sched-1' }, jobs: [] });
+
+      const result = await client.getScheduleStatus('site-1', 'sched-1', { includeJobs: true });
+      expect(result.schedule.schedule_id).to.equal('sched-1');
       scope.done();
     });
 

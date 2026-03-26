@@ -116,12 +116,12 @@ export const ISSUE_GRANULARITY_MAP = {
   'aria-roles': Granularity.PER_PAGE_PER_COMPONENT,
   'image-alt': Granularity.PER_PAGE_PER_COMPONENT,
   'link-in-text-block': Granularity.PER_PAGE_PER_COMPONENT,
-  'link-name': Granularity.PER_COMPONENT,
+  'link-name': Granularity.PER_PAGE_PER_COMPONENT,
   'target-size': Granularity.PER_PAGE_PER_COMPONENT,
   listitem: Granularity.PER_COMPONENT,
   label: Granularity.PER_PAGE_PER_COMPONENT,
   'aria-prohibited-attr': Granularity.PER_TYPE,
-  'button-name': Granularity.PER_COMPONENT,
+  'button-name': Granularity.PER_PAGE_PER_COMPONENT,
   'frame-title': Granularity.PER_PAGE_PER_COMPONENT,
   'aria-valid-attr-value': Granularity.PER_PAGE_PER_COMPONENT,
   'aria-allowed-attr': Granularity.PER_TYPE,
@@ -135,7 +135,7 @@ export const ISSUE_GRANULARITY_MAP = {
   'role-img-alt': Granularity.PER_PAGE_PER_COMPONENT,
   'aria-input-field-name': Granularity.PER_PAGE_PER_COMPONENT,
   'scrollable-region-focusable': Granularity.PER_PAGE_PER_COMPONENT,
-  'select-name': Granularity.PER_COMPONENT,
+  'select-name': Granularity.PER_PAGE_PER_COMPONENT,
 };
 
 /**

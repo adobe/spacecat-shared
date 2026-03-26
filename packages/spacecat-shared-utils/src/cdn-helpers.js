@@ -11,7 +11,7 @@
  */
 
 /**
- * Transforms credential fields object with backwards compatibility
+ * Transforms credential fields object
  * @param {Object} payload - The payload containing credential information
  * @returns {Object} - Object with credential fields
  */
@@ -20,14 +20,10 @@ const transformCredentialFields = (payload) => {
 
   if (payload.currentAccessKey) {
     fields['Access Key (current)'] = payload.currentAccessKey;
-  } else if (payload.accessKey) {
-    fields['Access Key'] = payload.accessKey;
   }
 
   if (payload.currentSecretKey) {
     fields['Secret Key (current)'] = payload.currentSecretKey;
-  } else if (payload.secretKey) {
-    fields['Secret Key'] = payload.secretKey;
   }
 
   if (payload.oldAccessKey) {
@@ -62,24 +58,43 @@ const FASTLY_LOG_FORMAT = `{
     "time_to_first_byte": "%{time.to_first_byte}V"
 }`;
 const CDN_TRANSFORMATIONS = {
-  'byocdn-fastly': (payload) => ({
-    'Bucket Name': payload.bucketName,
-    Domain: `s3.${payload.region}.amazonaws.com`,
-    Path: `${payload.allowedPaths?.[0] || ''}%Y/%m/%d/%H/`,
-    'Timestamp Format': '%Y-%m-%dT%H:%M:%S.000',
-    Placement: 'Format Version Default',
-    'Log format': FASTLY_LOG_FORMAT,
-    'Access method': 'User credentials',
-    ...transformCredentialFields(payload),
-    Period: 300,
-    'Log line format': 'Blank',
-    Compression: 'Gzip',
-    'Redundancy level': 'Standard',
-    ACL: 'None',
-    'Server side encryption': 'None',
-    'Maximum bytes': 0,
-    HelpUrl: 'https://www.fastly.com/documentation/guides/integrations/logging-endpoints/log-streaming-amazon-s3/',
-  }),
+  'byocdn-fastly': (payload) => {
+    const authMethodLabel = payload.authMethod === 'iam_role' ? 'IAM Role' : 'User credentials';
+    const authFields = {};
+    const hasCredentialData = [
+      payload.currentAccessKey,
+      payload.currentSecretKey,
+      payload.oldAccessKey,
+      payload.oldSecretKey,
+    ].some((value) => value);
+
+    if (payload.authMethod === 'iam_role' && payload.roleArn) {
+      authFields['Role ARN'] = payload.roleArn;
+    }
+
+    if (hasCredentialData) {
+      Object.assign(authFields, transformCredentialFields(payload));
+    }
+
+    return {
+      'Bucket Name': payload.bucketName,
+      Domain: `s3.${payload.region}.amazonaws.com`,
+      Path: `${payload.allowedPaths?.[0] || ''}%Y/%m/%d/%H/`,
+      'Timestamp Format': '%Y-%m-%dT%H:%M:%S.000',
+      Placement: 'Format Version Default',
+      'Log format': FASTLY_LOG_FORMAT,
+      'Access method': authMethodLabel,
+      ...authFields,
+      Period: 300,
+      'Log line format': 'Blank',
+      Compression: 'Gzip',
+      'Redundancy level': 'Standard',
+      ACL: 'None',
+      'Server side encryption': 'None',
+      'Maximum bytes': 0,
+      HelpUrl: 'https://www.fastly.com/documentation/guides/integrations/logging-endpoints/log-streaming-amazon-s3/',
+    };
+  },
   'byocdn-akamai': (payload) => ({
     'Bucket Name': payload.bucketName,
     Region: payload.region,
@@ -105,6 +120,7 @@ const CDN_TRANSFORMATIONS = {
     HelpUrl: 'https://techdocs.akamai.com/datastream2/docs/stream-amazon-s3',
   }),
   'byocdn-cloudflare': (payload) => ({
+    Dataset: 'HTTP Requests (zone-scoped)',
     'Bucket Name': payload.bucketName,
     Region: payload.region,
     Path: `${payload.allowedPaths?.[0] || ''}`,
@@ -237,12 +253,27 @@ const prettifyLogForwardingConfig = (payload) => {
     throw new Error('allowedPaths is required in payload');
   }
 
-  if (payload.logSource === 'byocdn-fastly' || payload.logSource === 'byocdn-akamai' || payload.logSource === 'byocdn-other') {
-    if (!payload.accessKey && !payload.currentAccessKey) {
-      throw new Error('accessKey or currentAccessKey is required in payload');
+  if (payload.logSource === 'byocdn-fastly') {
+    if (payload.authMethod === 'user_credentials') {
+      if (!payload.currentAccessKey) {
+        throw new Error('currentAccessKey is required in payload');
+      }
+      if (!payload.currentSecretKey) {
+        throw new Error('currentSecretKey is required in payload');
+      }
+    } else if (payload.authMethod === 'iam_role') {
+      if (!payload.roleArn) {
+        throw new Error('roleArn is required in payload when authMethod is iam_role');
+      }
     }
-    if (!payload.secretKey && !payload.currentSecretKey) {
-      throw new Error('secretKey or currentSecretKey is required in payload');
+  }
+
+  if (payload.logSource === 'byocdn-akamai' || payload.logSource === 'byocdn-other') {
+    if (!payload.currentAccessKey) {
+      throw new Error('currentAccessKey is required in payload');
+    }
+    if (!payload.currentSecretKey) {
+      throw new Error('currentSecretKey is required in payload');
     }
   }
 

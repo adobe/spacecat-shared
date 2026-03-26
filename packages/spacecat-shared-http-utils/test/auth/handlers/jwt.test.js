@@ -269,6 +269,25 @@ describe('SpacecatJWTHandler', () => {
       expect(result.profile).to.have.property('user_id', 'bearer-user');
     });
 
+    it('logs info when context.s2sConsumer is set', async () => {
+      const token = await createToken(createTokenPayload({
+        user_id: 'test-user',
+        is_s2s_consumer: true,
+        tenants: [],
+      }));
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/sites',
+        headers: { authorization: `Bearer ${token}` },
+      };
+      context.s2sConsumer = { getClientId: () => 'test-client' };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(logStub.info.calledWithMatch('[jwt] S2S consumer token used on route GET /sites')).to.be.true;
+    });
+
     it('returns null when both bearer token and cookie are missing', async () => {
       context.pathInfo = {
         headers: {},

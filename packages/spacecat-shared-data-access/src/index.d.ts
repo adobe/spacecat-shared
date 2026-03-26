@@ -13,3 +13,4 @@
 export type * from './errors';
 export type * from './models';
 export type * from './util';
+export type { DataAccess } from './service';

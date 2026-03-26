@@ -210,4 +210,80 @@ describe('SplunkAPIClient unit tests', () => {
       });
     });
   });
+
+  describe('oneshotSearch', () => {
+    it('throws when searchString is missing', async () => {
+      await expect(client.oneshotSearch('')).to.be.rejectedWith('Missing searchString');
+    });
+
+    it('runs oneshot search after login', async () => {
+      nock(config.apiBaseUrl)
+        .post('/services/auth/login')
+        .reply(200, loginSuccessResponse, { 'Set-Cookie': loginSuccessSetCookieHeader });
+
+      nock(config.apiBaseUrl)
+        .post('/servicesNS/admin/search/search/jobs')
+        .reply(200, notFoundsResponse);
+
+      const resp = await client.oneshotSearch('search index=dx_aem_engineering | head 1');
+      expect(resp).to.deep.equal(notFoundsResponse);
+    });
+
+    it('reuses login across calls', async () => {
+      nock(config.apiBaseUrl)
+        .post('/services/auth/login')
+        .once()
+        .reply(200, loginSuccessResponse, { 'Set-Cookie': loginSuccessSetCookieHeader });
+
+      nock(config.apiBaseUrl)
+        .post('/servicesNS/admin/search/search/jobs')
+        .twice()
+        .reply(200, notFoundsResponse);
+
+      await client.oneshotSearch('search index=dx_aem_engineering | head 1');
+      await client.oneshotSearch('search index=dx_aem_engineering | head 1');
+    });
+
+    it('runs without logging in if loginObj is already set', async () => {
+      client.loginObj = { sessionId: 'sessionKey123', cookie: 'cookie123' };
+
+      nock(config.apiBaseUrl)
+        .post('/servicesNS/admin/search/search/jobs')
+        .reply(200, notFoundsResponse);
+
+      const resp = await client.oneshotSearch('search index=dx_aem_engineering | head 1');
+      expect(resp).to.deep.equal(notFoundsResponse);
+    });
+
+    it('throws with non-200 response', async () => {
+      nock(config.apiBaseUrl)
+        .post('/services/auth/login')
+        .reply(200, loginSuccessResponse, { 'Set-Cookie': loginSuccessSetCookieHeader });
+
+      nock(config.apiBaseUrl)
+        .post('/servicesNS/admin/search/search/jobs')
+        .reply(400, { error: 'bad_request' });
+
+      await expect(client.oneshotSearch('search index=dx_aem_engineering | head 1'))
+        .to.be.rejectedWith('Splunk oneshot search failed. Status: 400');
+    });
+
+    it('propagates login parse errors (error is an Error instance)', async () => {
+      nock(config.apiBaseUrl)
+        .post('/services/auth/login')
+        .reply(200, invalidResponse);
+
+      await expect(client.oneshotSearch('search index=dx_aem_engineering | head 1'))
+        .to.be.rejected;
+    });
+
+    it('throws when login fails (error is string)', async () => {
+      nock(config.apiBaseUrl)
+        .post('/services/auth/login')
+        .reply(401, loginFailedResponse);
+
+      await expect(client.oneshotSearch('search index=dx_aem_engineering | head 1'))
+        .to.be.rejectedWith('Login failed');
+    });
+  });
 });

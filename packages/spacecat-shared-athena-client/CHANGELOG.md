@@ -1,3 +1,39 @@
+## [@adobe/spacecat-shared-athena-client-v1.9.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.7...@adobe/spacecat-shared-athena-client-v1.9.8) (2026-03-21)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
+## [@adobe/spacecat-shared-athena-client-v1.9.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.6...@adobe/spacecat-shared-athena-client-v1.9.7) (2026-03-15)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1440](https://github.com/adobe/spacecat-shared/issues/1440)) ([d1a583a](https://github.com/adobe/spacecat-shared/commit/d1a583aca6a68378debbc01e3a3e8796f1f228bf))
+
+## [@adobe/spacecat-shared-athena-client-v1.9.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.5...@adobe/spacecat-shared-athena-client-v1.9.6) (2026-03-07)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1410](https://github.com/adobe/spacecat-shared/issues/1410)) ([e5b5634](https://github.com/adobe/spacecat-shared/commit/e5b5634f788a8f440ef49218c0b2fa1ccb42fb8a))
+
+## [@adobe/spacecat-shared-athena-client-v1.9.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.4...@adobe/spacecat-shared-athena-client-v1.9.5) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-athena-client-v1.9.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.3...@adobe/spacecat-shared-athena-client-v1.9.4) (2026-02-25)
+
+### Bug Fixes
+
+* bump athena-client utils dep to 1.96.3 ([#1379](https://github.com/adobe/spacecat-shared/issues/1379)) ([03fe3e9](https://github.com/adobe/spacecat-shared/commit/03fe3e97df64dbb49dd31d0169742567ab45d5a8)), closes [#1376](https://github.com/adobe/spacecat-shared/issues/1376) [#1378](https://github.com/adobe/spacecat-shared/issues/1378)
+
+## [@adobe/spacecat-shared-athena-client-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.2...@adobe/spacecat-shared-athena-client-v1.9.3) (2026-02-25)
+
+### Bug Fixes
+
+* temporal series month/week wrap-around and add year to query pipeline ([#1376](https://github.com/adobe/spacecat-shared/issues/1376)) ([b15cfd7](https://github.com/adobe/spacecat-shared/commit/b15cfd705809612c4ad69bbdc09d87c06687dcb6))
+
 # [@adobe/spacecat-shared-athena-client-v1.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.9.1...@adobe/spacecat-shared-athena-client-v1.9.2) (2026-01-19)
 
 

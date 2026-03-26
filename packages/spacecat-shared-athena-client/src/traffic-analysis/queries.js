@@ -102,9 +102,9 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
   }
 
   if (numTemporalSeries > 1 && week && week > 0) {
-    dimensions.push('week');
+    dimensions.push('year', 'week');
   } else if (numTemporalSeries > 1 && month && month > 0) {
-    dimensions.push('month');
+    dimensions.push('year', 'month');
   }
   const dimensionColumns = dimensions.join(', ');
   const dimensionColumnsPrefixed = dimensions.map((col) => `a.${col}`).join(', ');
@@ -179,6 +179,7 @@ WITH min_totals AS (
 ),
 raw AS (
     SELECT
+        year,
         week,
         month,
         path,
@@ -279,6 +280,7 @@ WITH min_totals AS (
 ),
 raw AS (
     SELECT
+        year,
         week,
         month,
         path,

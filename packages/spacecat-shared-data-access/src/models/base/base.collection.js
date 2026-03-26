@@ -92,25 +92,41 @@ class BaseCollection {
     return isSingleFieldAcrossAll ? field : null;
   }
 
+  #normalizeEnumValue(key, value) {
+    if (typeof value !== 'string') return value;
+    const attr = this.schema.getAttribute(key);
+    if (!Array.isArray(attr?.type)) return value;
+    const match = attr.type.find((v) => v.toLowerCase() === value.toLowerCase());
+    return match ?? value;
+  }
+
   // eslint-disable-next-line class-methods-use-this
   #isInvalidInputError(error) {
     let current = error;
     while (current) {
-      if (current?.code === '22P02') {
-        return true;
-      }
+      if (current?.code === '22P02') return true;
       current = current.cause;
     }
     return false;
   }
 
   #logAndThrowError(message, cause) {
-    const error = new DataAccessError(message, this, cause);
-    this.log.error(`Base Collection Error [${this.entityName}]`, error);
-    if (isNonEmptyArray(error.cause?.fields)) {
-      this.log.error(`Validation errors: ${JSON.stringify(error.cause.fields)}`);
+    const parts = [message];
+    if (cause?.code) parts.push(`[${cause.code}] ${cause.message}`);
+    if (cause?.details) parts.push(cause.details);
+    if (cause?.hint) parts.push(`hint: ${cause.hint}`);
+
+    this.log.error(`[${this.entityName}] ${parts.join(' - ')}`);
+
+    if (isNonEmptyArray(cause?.fields)) {
+      this.log.error(`Validation errors: ${JSON.stringify(cause.fields)}`);
     }
-    throw error;
+
+    throw new DataAccessError(
+      message,
+      { entityName: this.entityName, tableName: this.tableName },
+      cause,
+    );
   }
 
   #initializeCollectionMethods() {
@@ -378,7 +394,7 @@ class BaseCollection {
 
     let filtered = query;
     Object.entries(keys).forEach(([key, value]) => {
-      filtered = filtered.eq(this.#toDbField(key), value);
+      filtered = filtered.eq(this.#toDbField(key), this.#normalizeEnumValue(key, value));
     });
     return filtered;
   }
@@ -539,7 +555,7 @@ class BaseCollection {
       const instances = this.#createInstances(allRows);
       return shouldReturnCursor ? { data: instances, cursor } : instances;
     } catch (error) {
-      if (error instanceof DataAccessError) {
+      if (error.constructor === DataAccessError) {
         throw error;
       }
       return this.#logAndThrowError('Failed to query', error);
@@ -569,6 +585,20 @@ class BaseCollection {
     return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
   }
 
+  /**
+   * Converts a raw PostgREST row (snake_case) to a model instance using the same field mapping
+   * pipeline as the internal create/find paths. Intended for use by collections that receive
+   * embedded sub-rows from PostgREST resource embedding (e.g. `sites!fkey(*)`), allowing them
+   * to return proper model instances rather than raw snake_case objects.
+   *
+   * @param {object} row - Raw PostgREST row with snake_case column names.
+   * @returns {object|null} A model instance, or null if the row is empty/invalid.
+   */
+  createInstanceFromRow(row) {
+    if (!isNonEmptyObject(row)) return null;
+    return this.#createInstance(this.#toModelRecord(row));
+  }
+
   async findById(id) {
     guardId(this.idName, id, this.entityName);
     if (this.entity) {
@@ -593,6 +623,7 @@ class BaseCollection {
     return isNonEmptyObject(item);
   }
 
+  // eslint-disable-next-line consistent-return
   async batchGetByKeys(keys, options = {}) {
     guardArray('keys', keys, this.entityName, 'any');
 
@@ -615,22 +646,40 @@ class BaseCollection {
       const bulkKeyField = this.#resolveBulkKeyField(keys);
       if (bulkKeyField) {
         const dbField = this.#toDbField(bulkKeyField);
-        const values = keys.map((key) => key[bulkKeyField]);
+        const values = keys.map(
+          (key) => this.#normalizeEnumValue(bulkKeyField, key[bulkKeyField]),
+        );
         const select = this.#buildSelect(options.attributes);
-        const { data, error } = await this.postgrestService
-          .from(this.tableName)
-          .select(select)
-          .in(dbField, values);
 
-        if (!error) {
-          return {
-            data: this.#createInstances((data || []).map((record) => this.#toModelRecord(record))),
-            unprocessed: [],
-          };
+        // Chunk values to avoid 414 URI Too Large from PostgREST GET URLs.
+        // Each UUID is ~36 chars; 50 × 36 ≈ 1,800 chars, well under the 8KB URL limit.
+        const CHUNK_SIZE = 50;
+        const allData = [];
+        let hadInvalidInput = false;
+
+        for (let i = 0; i < values.length; i += CHUNK_SIZE) {
+          const chunk = values.slice(i, i + CHUNK_SIZE);
+          // eslint-disable-next-line no-await-in-loop
+          const { data, error } = await this.postgrestService
+            .from(this.tableName)
+            .select(select)
+            .in(dbField, chunk);
+
+          if (error) {
+            if (!this.#isInvalidInputError(error)) {
+              throw error;
+            }
+            hadInvalidInput = true;
+            break;
+          }
+          allData.push(...(data || []));
         }
 
-        if (!this.#isInvalidInputError(error)) {
-          throw error;
+        if (!hadInvalidInput) {
+          return {
+            data: this.#createInstances(allData.map((record) => this.#toModelRecord(record))),
+            unprocessed: [],
+          };
         }
       }
 
@@ -651,8 +700,11 @@ class BaseCollection {
         unprocessed: [],
       };
     } catch (error) {
-      this.log.error(`Failed to batch get by keys [${this.entityName}]`, error);
-      throw new DataAccessError('Failed to batch get by keys', this, error);
+      /* c8 ignore next 3 -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
+      this.#logAndThrowError('Failed to batch get by keys', error);
     }
   }
 
@@ -695,6 +747,8 @@ class BaseCollection {
       await this.#onCreate(instance);
       return instance;
     } catch (error) {
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to create', error);
     }
   }
@@ -807,6 +861,8 @@ class BaseCollection {
       await this.#onCreateMany({ createdItems, errorItems });
       return { createdItems, errorItems };
     } catch (error) {
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to create many', error);
     }
   }
@@ -830,7 +886,49 @@ class BaseCollection {
 
     const { error } = await query.select().maybeSingle();
     if (error) {
-      throw new DataAccessError('Failed to update entity', this, error);
+      this.#logAndThrowError('Failed to update entity', error);
+    }
+  }
+
+  /**
+   * Saves multiple model instances to the database in chunked batches.
+   * Each chunk is persisted via a single PostgREST upsert call, avoiding
+   * the thundering-herd problem caused by N concurrent individual saves.
+   *
+   * Chunks are processed sequentially. If a chunk fails, the error is
+   * propagated immediately — chunks already persisted are NOT rolled back.
+   * Callers must account for partial saves on failure.
+   *
+   * @param {BaseModel[]} items - Model instances with in-memory mutations to persist.
+   * @param {Object} [options] - Options.
+   * @param {number} [options.chunkSize=25] - Max items per upsert request.
+   *   Keep low for entities with large payloads (e.g. Suggestion.data JSONB).
+   * @returns {Promise<void>}
+   * @throws {DataAccessError} If any chunk fails. Previously completed chunks
+   *   are already persisted — callers must account for partial saves.
+   */
+  async saveMany(items, { chunkSize = 25 } = {}) {
+    if (!isNonEmptyArray(items)) {
+      return;
+    }
+
+    const effectiveChunkSize = Math.max(1, Math.floor(chunkSize)) || 25;
+    const totalChunks = Math.ceil(items.length / effectiveChunkSize);
+
+    if (totalChunks > 1) {
+      this.log.info(`[${this.entityName}] saveMany: saving ${items.length} items in ${totalChunks} chunks of ${effectiveChunkSize}`);
+    }
+
+    for (let i = 0; i < items.length; i += effectiveChunkSize) {
+      const chunkIndex = Math.floor(i / effectiveChunkSize) + 1;
+      const chunk = items.slice(i, i + effectiveChunkSize);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await this._saveMany(chunk);
+      } catch (error) {
+        this.log.error(`[${this.entityName}] saveMany: chunk ${chunkIndex}/${totalChunks} failed — ${i} of ${items.length} items already persisted`);
+        throw error;
+      }
     }
   }
 
@@ -891,6 +989,8 @@ class BaseCollection {
       this.#invalidateCache();
       return undefined;
     } catch (error) {
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to save many', error);
     }
   }
@@ -921,6 +1021,8 @@ class BaseCollection {
       this.#invalidateCache();
       return undefined;
     } catch (error) {
+      /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
+      if (error.constructor === DataAccessError) throw error;
       return this.#logAndThrowError('Failed to remove by IDs', error);
     }
   }
@@ -951,7 +1053,9 @@ class BaseCollection {
       const bulkKeyField = this.#resolveBulkKeyField(keys);
       if (bulkKeyField) {
         const dbField = this.#toDbField(bulkKeyField);
-        const values = keys.map((key) => key[bulkKeyField]);
+        const values = keys.map(
+          (key) => this.#normalizeEnumValue(bulkKeyField, key[bulkKeyField]),
+        );
         const { error } = await this.postgrestService
           .from(this.tableName)
           .delete()

@@ -18,6 +18,7 @@ export const TrafficDataResponseDto = {
    * Converts a traffic data object into a JSON object.
    * @param {object} data - traffic data object.
    * @returns {{
+   *   year: number,
    *   type: string,
    *   channel: string,
    *   platform: string,
@@ -33,6 +34,7 @@ export const TrafficDataResponseDto = {
    * }} JSON object.
    */
   toJSON: (data) => ({
+    year: data.year,
     week: data.week,
     month: data.month,
     type: data.trf_type,

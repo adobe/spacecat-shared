@@ -15,6 +15,19 @@ import { loadBootstrapConfig } from './bootstrap.js';
 
 const DEFAULT_EXPIRATION = 60 * 60 * 1000; // 1 hour
 const DEFAULT_CHECK_DELAY = 60 * 1000; // 1 minute
+const ALIAS_PATTERN = /^[a-z0-9][a-z0-9_-]{0,30}$/i;
+const CI_PATTERN = /^ci\d+$/i;
+
+function isDevAliasDeployment(ctx, env) {
+  if (env !== 'dev') return false;
+  const { version } = ctx.func || {};
+  if (!version) return false;
+  if (version === 'latest' || version === '$LATEST') return false;
+  if (CI_PATTERN.test(version)) return false;
+  if (!ALIAS_PATTERN.test(version)) return false;
+  return true;
+}
+
 function resolveBootstrapPath(ctx, opts) {
   if (opts.bootstrapPath) return opts.bootstrapPath;
   return `/mysticat/bootstrap/${ctx.func.name}`;
@@ -23,6 +36,7 @@ function resolveBootstrapPath(ctx, opts) {
 let cache = {
   loaded: 0, checked: 0, lastChanged: 0, data: null,
 };
+let overrideCache = { loaded: 0, data: null };
 let vaultClient = null;
 let bootstrapConfig = null;
 let bootstrapEnvironment = null;
@@ -32,6 +46,7 @@ export function reset() {
   cache = {
     loaded: 0, checked: 0, lastChanged: 0, data: null,
   };
+  overrideCache = { loaded: 0, data: null };
   vaultClient = null;
   bootstrapConfig = null;
   bootstrapEnvironment = null;
@@ -110,6 +125,10 @@ function resolvePath(opts, ctx, log) {
 }
 
 export async function loadSecrets(ctx, opts = {}) {
+  if (process.env.VAULT_SECRETS_DISABLED === 'true') {
+    return {};
+  }
+
   if (ctx.runtime && ctx.runtime.name === 'simulate') {
     return {};
   }
@@ -144,7 +163,8 @@ export async function loadSecrets(ctx, opts = {}) {
   }
 
   // Re-fetch if expired, no cache, or metadata changed
-  if (!cache.data || isExpired || metadataChanged) {
+  const baseFetched = !cache.data || isExpired || metadataChanged;
+  if (baseFetched) {
     cache.data = await vaultClient.readSecret(secretPath);
     cache.loaded = now;
     cache.checked = now;
@@ -152,6 +172,31 @@ export async function loadSecrets(ctx, opts = {}) {
       cache.lastChanged = newLastChanged;
     } else if (isExpired) {
       cache.lastChanged = 0;
+    }
+  }
+
+  // Dev alias overrides: fetch alongside base, store separately, merge at return
+  if (isDevAliasDeployment(ctx, bootstrapEnvironment)) {
+    const alias = ctx.func.version;
+    const overridePath = `${bootstrapEnvironment}/development/${ctx.func.name}/${alias}`;
+
+    if (baseFetched || overrideCache.loaded === 0) {
+      try {
+        overrideCache.data = await vaultClient.tryReadSecret(overridePath);
+        overrideCache.loaded = now;
+        if (overrideCache.data && ctx.log) {
+          ctx.log.info(`Loaded dev overrides from ${overridePath}`);
+        }
+      } catch (e) {
+        overrideCache.data = null;
+        if (ctx.log) {
+          ctx.log.warn(`Failed to load dev overrides from ${overridePath}: ${e.message}`);
+        }
+      }
+    }
+
+    if (overrideCache.data) {
+      return { ...cache.data, ...overrideCache.data };
     }
   }
 

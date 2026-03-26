@@ -65,8 +65,11 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
   // Paid Cookie Consent
   PAID_COOKIE_CONSENT: 'paid-cookie-consent',
 
-  // Wikipedia Analysis (LLMO)
+  // Offsite Analysis (LLMO)
+  CITED_ANALYSIS: 'cited-analysis',
+  REDDIT_ANALYSIS: 'reddit-analysis',
   WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
+  YOUTUBE_ANALYSIS: 'youtube-analysis',
 });
 
 export const DEFAULT_CPC_VALUE = 1.5;

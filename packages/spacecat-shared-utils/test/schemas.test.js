@@ -684,6 +684,76 @@ describe('schemas', () => {
           }
         });
       });
+
+      describe('experimentationTopics prompts', () => {
+        it('validates when experimentationTopics prompt regions are subset of category regions', () => {
+          const expTopicId = 'cccc1111-ec1b-41d1-a111-111111111111';
+          const config = {
+            ...configWithRegions,
+            experimentationTopics: {
+              [expTopicId]: {
+                name: 'Exp Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Exp Test prompt 1',
+                    regions: ['us'],
+                    origin: 'human',
+                    source: 'config',
+                    source_url: 'https://www.example.com/page',
+                  },
+                  {
+                    prompt: 'Exp Test prompt 2',
+                    regions: ['ca', 'us'],
+                    origin: 'human',
+                    source: 'config',
+                    source_url: 'https://www.example.com/page',
+                  },
+                ],
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+          if (result.success) {
+            const saved = result.data.experimentationTopics[expTopicId].prompts[0];
+            expect(saved.source_url).equals('https://www.example.com/page');
+          }
+        });
+
+        it('validates when experimentationTopics category is a string name (no region validation)', () => {
+          const expTopicId = 'eeee2222-ee2b-42d2-a222-222222222222';
+          const config = {
+            ...configWithRegions,
+            experimentationTopics: {
+              [expTopicId]: {
+                name: 'Exp Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Exp Test prompt',
+                    regions: ['mx'], // Any regions allowed when category is string
+                    origin: 'human',
+                    source: 'config',
+                  },
+                ],
+                category: 'Exp Test Category Name', // String name, not UUID
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
+
+        it('validates configuration without experimentationTopics (optional field)', () => {
+          const result = llmoConfig.safeParse(configWithRegions);
+          expect(result.success).true;
+          if (result.success) {
+            expect(result.data.experimentationTopics).to.be.undefined;
+          }
+        });
+      });
     });
 
     describe('deleted', () => {
@@ -1332,6 +1402,36 @@ describe('schemas', () => {
         const result = llmoConfig.safeParse(config);
         expect(result.success).true;
       });
+
+      it('validates configuration with aws-style region in cdn bucket config', () => {
+        const config = {
+          ...baseConfig,
+          cdnBucketConfig: {
+            bucketName: 'test',
+            allowedPaths: ['test'],
+            cdnProvider: 'test',
+            region: 'us-east-1',
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails configuration with invalid aws-style region in cdn bucket config', () => {
+        const config = {
+          ...baseConfig,
+          cdnBucketConfig: {
+            bucketName: 'test',
+            allowedPaths: ['test'],
+            cdnProvider: 'test',
+            region: 'us_east_1',
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
     });
 
     describe('prompt status', () => {
@@ -1386,6 +1486,43 @@ describe('schemas', () => {
         expect(result.success).true;
         if (result.success) {
           expect(result.data.topics[topicId].prompts[0].status).equals('completed');
+        }
+      });
+    });
+
+    describe('prompt source_url', () => {
+      it('validates prompt without source_url (optional field)', () => {
+        const result = llmoConfig.safeParse(baseConfig);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.topics[topicId].prompts[0].source_url).to.be.undefined;
+        }
+      });
+
+      it('preserves source_url when present', () => {
+        const config = {
+          ...baseConfig,
+          topics: {
+            [topicId]: {
+              name: 'Topic One',
+              prompts: [
+                {
+                  prompt: 'Test prompt',
+                  regions: ['US'],
+                  origin: 'human',
+                  source: 'config',
+                  source_url: 'https://www.example.com/page',
+                },
+              ],
+              category: categoryId,
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.topics[topicId].prompts[0].source_url).equals('https://www.example.com/page');
         }
       });
     });

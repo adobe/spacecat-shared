@@ -18,6 +18,7 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import MapperRegistry from '../../src/mappers/mapper-registry.js';
 import HeadingsMapper from '../../src/mappers/headings-mapper.js';
+import CommercePageEnrichmentMapper from '../../src/mappers/commerce-page-enrichment-mapper.js';
 import BaseOpportunityMapper from '../../src/mappers/base-mapper.js';
 
 use(sinonChai);
@@ -115,6 +116,12 @@ describe('MapperRegistry', () => {
       expect(mapper).to.be.instanceOf(HeadingsMapper);
     });
 
+    it('should return commerce page enrichment mapper', () => {
+      const mapper = registry.getMapper('commerce-product-page-enrichment');
+
+      expect(mapper).to.be.instanceOf(CommercePageEnrichmentMapper);
+    });
+
     it('should return null for unsupported opportunity type', () => {
       const mapper = registry.getMapper('unsupported-type');
 
@@ -143,6 +150,7 @@ describe('MapperRegistry', () => {
 
       expect(types).to.be.an('array');
       expect(types).to.include('headings');
+      expect(types).to.include('commerce-product-page-enrichment');
     });
 
     it('should include custom registered mappers', () => {

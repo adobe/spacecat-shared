@@ -38,13 +38,18 @@ import SiteEnrollmentCollection from '../site-enrollment/site-enrollment.collect
 import SiteTopFormCollection from '../site-top-form/site-top-form.collection.js';
 import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
+import SuggestionGrantCollection from '../suggestion-grant/suggestion-grant.collection.js';
 import PageIntentCollection from '../page-intent/page-intent.collection.js';
 import ReportCollection from '../report/report.collection.js';
 import TrialUserCollection from '../trial-user/trial-user.collection.js';
 import TrialUserActivityCollection from '../trial-user-activity/trial-user-activity.collection.js';
+import TokenCollection from '../token/token.collection.js';
 import PageCitabilityCollection from '../page-citability/page-citability.collection.js';
+import PlgOnboardingCollection from '../plg-onboarding/plg-onboarding.collection.js';
 import SentimentGuidelineCollection from '../sentiment-guideline/sentiment-guideline.collection.js';
 import SentimentTopicCollection from '../sentiment-topic/sentiment-topic.collection.js';
+import AccessGrantLogCollection from '../access-grant-log/access-grant-log.collection.js';
+import SiteImsOrgAccessCollection from '../site-ims-org-access/site-ims-org-access.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -70,13 +75,18 @@ import SiteEnrollmentSchema from '../site-enrollment/site-enrollment.schema.js';
 import SiteTopFormSchema from '../site-top-form/site-top-form.schema.js';
 import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
 import SuggestionSchema from '../suggestion/suggestion.schema.js';
+import SuggestionGrantSchema from '../suggestion-grant/suggestion-grant.schema.js';
 import PageIntentSchema from '../page-intent/page-intent.schema.js';
 import ReportSchema from '../report/report.schema.js';
 import TrialUserSchema from '../trial-user/trial-user.schema.js';
 import TrialUserActivitySchema from '../trial-user-activity/trial-user-activity.schema.js';
+import TokenSchema from '../token/token.schema.js';
 import PageCitabilitySchema from '../page-citability/page-citability.schema.js';
+import PlgOnboardingSchema from '../plg-onboarding/plg-onboarding.schema.js';
 import SentimentGuidelineSchema from '../sentiment-guideline/sentiment-guideline.schema.js';
 import SentimentTopicSchema from '../sentiment-topic/sentiment-topic.schema.js';
+import AccessGrantLogSchema from '../access-grant-log/access-grant-log.schema.js';
+import SiteImsOrgAccessSchema from '../site-ims-org-access/site-ims-org-access.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -197,13 +207,18 @@ EntityRegistry.registerEntity(SiteEnrollmentSchema, SiteEnrollmentCollection);
 EntityRegistry.registerEntity(SiteTopFormSchema, SiteTopFormCollection);
 EntityRegistry.registerEntity(SiteTopPageSchema, SiteTopPageCollection);
 EntityRegistry.registerEntity(SuggestionSchema, SuggestionCollection);
+EntityRegistry.registerEntity(SuggestionGrantSchema, SuggestionGrantCollection);
 EntityRegistry.registerEntity(PageIntentSchema, PageIntentCollection);
 EntityRegistry.registerEntity(ReportSchema, ReportCollection);
 EntityRegistry.registerEntity(TrialUserSchema, TrialUserCollection);
 EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollection);
+EntityRegistry.registerEntity(TokenSchema, TokenCollection);
 EntityRegistry.registerEntity(PageCitabilitySchema, PageCitabilityCollection);
+EntityRegistry.registerEntity(PlgOnboardingSchema, PlgOnboardingCollection);
 EntityRegistry.registerEntity(SentimentGuidelineSchema, SentimentGuidelineCollection);
 EntityRegistry.registerEntity(SentimentTopicSchema, SentimentTopicCollection);
+EntityRegistry.registerEntity(AccessGrantLogSchema, AccessGrantLogCollection);
+EntityRegistry.registerEntity(SiteImsOrgAccessSchema, SiteImsOrgAccessCollection);
 EntityRegistry.defaultEntities = { ...EntityRegistry.entities };
 
 export default EntityRegistry;

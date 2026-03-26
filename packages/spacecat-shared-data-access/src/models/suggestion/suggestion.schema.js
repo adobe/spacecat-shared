@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject, isString } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import Suggestion from './suggestion.model.js';
@@ -49,6 +49,13 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
     type: Object.values(Suggestion.STATUSES),
     required: true,
     default: Suggestion.STATUSES.NEW,
+  })
+  .addAttribute('skipReason', {
+    type: Object.values(Suggestion.SKIP_REASONS),
+  })
+  .addAttribute('skipDetail', {
+    type: 'string',
+    validate: (value) => !value || (isString(value) && value.length <= 500),
   });
 
 export default schema.build();

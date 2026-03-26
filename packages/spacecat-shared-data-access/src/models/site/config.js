@@ -33,6 +33,8 @@ export const IMPORT_TYPES = {
   TOP_FORMS: 'top-forms',
   CODE: 'code',
   USER_ENGAGEMENT: 'user-engagement',
+  CWV_TRENDS_DAILY: 'cwv-trends-daily',
+  CWV_TRENDS_ONBOARD: 'cwv-trends-onboard',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -46,6 +48,7 @@ export const IMPORT_SOURCES = {
 };
 
 const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
+const AWS_REGION_PATTERN = /^[a-z]{2}(?:-[a-z]+)+-\d+$/i;
 const LLMO_TAG = Joi.alternatives()
   .try(
     // Tag market, product, topic like this: "market: ch", "product: firefly", "topic: copyright"
@@ -169,6 +172,14 @@ export const IMPORT_TYPE_SCHEMAS = {
     type: Joi.string().valid(IMPORT_TYPES.USER_ENGAGEMENT).required(),
     ...IMPORT_BASE_KEYS,
   }),
+  [IMPORT_TYPES.CWV_TRENDS_DAILY]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.CWV_TRENDS_DAILY).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
+  [IMPORT_TYPES.CWV_TRENDS_ONBOARD]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.CWV_TRENDS_ONBOARD).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
@@ -257,6 +268,18 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['rum'],
     enabled: true,
   },
+  'cwv-trends-daily': {
+    type: 'cwv-trends-daily',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
+  'cwv-trends-onboard': {
+    type: 'cwv-trends-onboard',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
 };
 
 export const configSchema = Joi.object({
@@ -320,10 +343,14 @@ export const configSchema = Joi.object({
         type: Joi.string().valid('include', 'exclude').optional(),
       }),
     ).optional(),
+    countryCodeIgnoreList: Joi.array().items(
+      Joi.string().length(2),
+    ).optional(),
     cdnBucketConfig: Joi.object({
       bucketName: Joi.string().optional(),
       orgId: Joi.string().optional(),
       cdnProvider: Joi.string().optional(),
+      region: Joi.string().pattern(AWS_REGION_PATTERN).optional(),
     }).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
@@ -342,9 +369,32 @@ export const configSchema = Joi.object({
     forwardedHost: Joi.string().optional(),
   }).optional(),
   edgeOptimizeConfig: Joi.object({
-    enabled: Joi.boolean().optional(),
+    enabled: Joi.alternatives()
+      .try(
+        Joi.boolean(),
+        Joi.number(),
+      )
+      .optional(),
     opted: Joi.number().optional(),
+    stagingDomains: Joi.array().items(
+      Joi.object({
+        domain: Joi.string().required(),
+        id: Joi.string().required(),
+      }),
+    ).optional(),
   }).optional(),
+  commerceLlmoConfig: Joi.object().pattern(
+    Joi.string(),
+    Joi.object({
+      environmentId: Joi.string().optional(),
+      websiteCode: Joi.string().optional(),
+      storeCode: Joi.string().optional(),
+      storeViewCode: Joi.string().optional(),
+      hostName: Joi.string().optional(),
+      magentoEndpoint: Joi.string().uri().optional(),
+      magentoAPIKey: Joi.string().optional(),
+    }),
+  ).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
@@ -452,9 +502,11 @@ export const Config = (data = {}) => {
     return llmoConfig?.customerIntent || [];
   };
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
+  self.getLlmoCountryCodeIgnoreList = () => state?.llmo?.countryCodeIgnoreList;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
+  self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
@@ -598,6 +650,11 @@ export const Config = (data = {}) => {
   self.updateLlmoCdnlogsFilter = (cdnlogsFilter) => {
     state.llmo = state.llmo || {};
     state.llmo.cdnlogsFilter = cdnlogsFilter;
+  };
+
+  self.updateLlmoCountryCodeIgnoreList = (countryCodeIgnoreList) => {
+    state.llmo = state.llmo || {};
+    state.llmo.countryCodeIgnoreList = countryCodeIgnoreList;
   };
 
   self.updateLlmoCdnBucketConfig = (cdnBucketConfig) => {
@@ -770,6 +827,10 @@ export const Config = (data = {}) => {
     state.edgeOptimizeConfig = edgeOptimizeConfig;
   };
 
+  self.updateCommerceLlmoConfig = (commerceLlmoConfig) => {
+    state.commerceLlmoConfig = commerceLlmoConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -787,4 +848,5 @@ Config.toDynamoItem = (config) => ({
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
+  commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
 });

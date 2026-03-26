@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-scrape-client-v2.5.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.5.3...@adobe/spacecat-shared-scrape-client-v2.5.4) (2026-03-21)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
+## [@adobe/spacecat-shared-scrape-client-v2.5.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.5.2...@adobe/spacecat-shared-scrape-client-v2.5.3) (2026-03-07)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1410](https://github.com/adobe/spacecat-shared/issues/1410)) ([e5b5634](https://github.com/adobe/spacecat-shared/commit/e5b5634f788a8f440ef49218c0b2fa1ccb42fb8a))
+
+## [@adobe/spacecat-shared-scrape-client-v2.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.5.1...@adobe/spacecat-shared-scrape-client-v2.5.2) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
 ## [@adobe/spacecat-shared-scrape-client-v2.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.5.0...@adobe/spacecat-shared-scrape-client-v2.5.1) (2026-02-17)
 
 ### Bug Fixes

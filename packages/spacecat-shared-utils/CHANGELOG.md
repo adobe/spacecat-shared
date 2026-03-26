@@ -1,3 +1,99 @@
+## [@adobe/spacecat-shared-utils-v1.106.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.105.1...@adobe/spacecat-shared-utils-v1.106.0) (2026-03-23)
+
+### Features
+
+* strategy schema update ([#1452](https://github.com/adobe/spacecat-shared/issues/1452)) ([bcc9404](https://github.com/adobe/spacecat-shared/commit/bcc9404aca3d297de64e23442c8ec5186671275e))
+
+## [@adobe/spacecat-shared-utils-v1.105.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.105.0...@adobe/spacecat-shared-utils-v1.105.1) (2026-03-21)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
+## [@adobe/spacecat-shared-utils-v1.105.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.104.0...@adobe/spacecat-shared-utils-v1.105.0) (2026-03-19)
+
+### Features
+
+* **spacecat-shared-utils:** SITES-40623 - add token grant config and exports ([#1420](https://github.com/adobe/spacecat-shared/issues/1420)) ([a14e001](https://github.com/adobe/spacecat-shared/commit/a14e0012f43ad4a13c4f9347bd64f66a5fc535f8))
+
+## [@adobe/spacecat-shared-utils-v1.104.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.103.0...@adobe/spacecat-shared-utils-v1.104.0) (2026-03-19)
+
+### Features
+
+* add experimentation topics field to llmo config model ([#1450](https://github.com/adobe/spacecat-shared/issues/1450)) ([ffcb886](https://github.com/adobe/spacecat-shared/commit/ffcb886e26895c5a0da02c9da9007b0eb6fe3f37))
+
+## [@adobe/spacecat-shared-utils-v1.103.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.102.1...@adobe/spacecat-shared-utils-v1.103.0) (2026-03-18)
+
+### Features
+
+* add cited-analsys as audit types ([#1444](https://github.com/adobe/spacecat-shared/issues/1444)) ([c87bf2e](https://github.com/adobe/spacecat-shared/commit/c87bf2e0d3ad77589fa44a1f9b9638ce0deaab53))
+
+## [@adobe/spacecat-shared-utils-v1.102.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.102.0...@adobe/spacecat-shared-utils-v1.102.1) (2026-03-15)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1440](https://github.com/adobe/spacecat-shared/issues/1440)) ([d1a583a](https://github.com/adobe/spacecat-shared/commit/d1a583aca6a68378debbc01e3a3e8796f1f228bf))
+
+## [@adobe/spacecat-shared-utils-v1.102.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.101.0...@adobe/spacecat-shared-utils-v1.102.0) (2026-03-12)
+
+### Features
+
+* LLMO-3473 byocdn-fastly supports switching to role-based access ([#1430](https://github.com/adobe/spacecat-shared/issues/1430)) ([743daab](https://github.com/adobe/spacecat-shared/commit/743daabaab9c8002cc64ef605e3415f9fa025acb))
+
+## [@adobe/spacecat-shared-utils-v1.101.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.100.1...@adobe/spacecat-shared-utils-v1.101.0) (2026-03-10)
+
+### Features
+
+* **utils:** export resetFetchContext and clearFetchCache ([#1421](https://github.com/adobe/spacecat-shared/issues/1421)) ([0e05bd8](https://github.com/adobe/spacecat-shared/commit/0e05bd865c92fe4f4bbfffb29575faa15e8d93b3))
+
+## [@adobe/spacecat-shared-utils-v1.100.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.100.0...@adobe/spacecat-shared-utils-v1.100.1) (2026-03-07)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1410](https://github.com/adobe/spacecat-shared/issues/1410)) ([e5b5634](https://github.com/adobe/spacecat-shared/commit/e5b5634f788a8f440ef49218c0b2fa1ccb42fb8a))
+
+## [@adobe/spacecat-shared-utils-v1.100.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.99.0...@adobe/spacecat-shared-utils-v1.100.0) (2026-03-05)
+
+### Features
+
+* add optional aws region to cdn bucket config ([#1404](https://github.com/adobe/spacecat-shared/issues/1404)) ([76a7051](https://github.com/adobe/spacecat-shared/commit/76a7051f465d0d43cb03875fcc77b3ff174c4317))
+
+## [@adobe/spacecat-shared-utils-v1.99.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.98.1...@adobe/spacecat-shared-utils-v1.99.0) (2026-03-02)
+
+### Features
+
+* extend strategy schema to store prompts under strategy ([#1386](https://github.com/adobe/spacecat-shared/issues/1386)) ([4e29cc5](https://github.com/adobe/spacecat-shared/commit/4e29cc5a24141e224b366c50948b8dce00d49afd))
+
+## [@adobe/spacecat-shared-utils-v1.98.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.98.0...@adobe/spacecat-shared-utils-v1.98.1) (2026-03-02)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1223](https://github.com/adobe/spacecat-shared/issues/1223)) ([7ee8461](https://github.com/adobe/spacecat-shared/commit/7ee8461c99223d07a2f47bd6838b6942fcb30f28))
+
+## [@adobe/spacecat-shared-utils-v1.98.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.97.0...@adobe/spacecat-shared-utils-v1.98.0) (2026-02-27)
+
+### Features
+
+* LLMO-3231 byocdn-fastly default auth method is iam role ([#1384](https://github.com/adobe/spacecat-shared/issues/1384)) ([446dd15](https://github.com/adobe/spacecat-shared/commit/446dd1540040c48181ef9a50093fced93fe92034))
+
+## [@adobe/spacecat-shared-utils-v1.97.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.3...@adobe/spacecat-shared-utils-v1.97.0) (2026-02-27)
+
+### Features
+
+* add dataset info for cloudflare ([#1383](https://github.com/adobe/spacecat-shared/issues/1383)) ([5ee3bbf](https://github.com/adobe/spacecat-shared/commit/5ee3bbf22188300e9e34f96cf786a0db993484ac))
+
+## [@adobe/spacecat-shared-utils-v1.96.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.2...@adobe/spacecat-shared-utils-v1.96.3) (2026-02-25)
+
+### Bug Fixes
+
+* revert breaking aggregation granularity changes from v1.96.1 ([#1378](https://github.com/adobe/spacecat-shared/issues/1378)) ([fbc00f4](https://github.com/adobe/spacecat-shared/commit/fbc00f4d282bd2753e46377ac8ead2c45ab79416)), closes [#1376](https://github.com/adobe/spacecat-shared/issues/1376)
+
+## [@adobe/spacecat-shared-utils-v1.96.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.1...@adobe/spacecat-shared-utils-v1.96.2) (2026-02-25)
+
+### Bug Fixes
+
+* temporal series month/week wrap-around and add year to query pipeline ([#1376](https://github.com/adobe/spacecat-shared/issues/1376)) ([b15cfd7](https://github.com/adobe/spacecat-shared/commit/b15cfd705809612c4ad69bbdc09d87c06687dcb6))
+
 # [@adobe/spacecat-shared-utils-v1.96.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.96.0...@adobe/spacecat-shared-utils-v1.96.1) (2026-02-13)
 
 

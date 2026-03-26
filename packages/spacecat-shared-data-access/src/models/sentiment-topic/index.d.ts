@@ -20,7 +20,6 @@ export interface SentimentTopic extends BaseModel {
   getTopicId(): string;
   getName(): string;
   getDescription(): string | undefined;
-  getSubPrompts(): string[];
   getEnabled(): boolean;
   getCreatedAt(): string;
   getCreatedBy(): string;
@@ -31,12 +30,8 @@ export interface SentimentTopic extends BaseModel {
 
   setName(name: string): SentimentTopic;
   setDescription(description: string): SentimentTopic;
-  setSubPrompts(subPrompts: string[]): SentimentTopic;
   setEnabled(enabled: boolean): SentimentTopic;
   setUpdatedBy(updatedBy: string): SentimentTopic;
-
-  addSubPrompt(prompt: string): SentimentTopic;
-  removeSubPrompt(prompt: string): SentimentTopic;
 }
 
 export interface SentimentTopicCollection extends BaseCollection<SentimentTopic> {

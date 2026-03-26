@@ -65,21 +65,21 @@ describe('Aggregation Strategies', () => {
       });
     });
 
-    describe('PER_PAGE_PER_COMPONENT granularity (image-alt)', () => {
+    describe('PER_PAGE_PER_COMPONENT granularity (button-name)', () => {
       it('should build key with url|type (no selector)', () => {
-        const key = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', null);
-        expect(key).to.equal('https://example.com/page1|image-alt');
+        const key = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', null);
+        expect(key).to.equal('https://example.com/page1|button-name');
       });
 
       it('should group different selectors together', () => {
-        const key1 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', null);
-        const key2 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.banner', null);
+        const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', null);
+        const key2 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.cancel', null);
         expect(key1).to.equal(key2); // Should be same key!
       });
 
       it('should include source when provided', () => {
-        const key = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', 'ahrefs');
-        expect(key).to.equal('https://example.com/page1|image-alt|ahrefs');
+        const key = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
+        expect(key).to.equal('https://example.com/page1|button-name|ahrefs');
       });
     });
 
@@ -147,7 +147,7 @@ describe('Aggregation Strategies', () => {
   describe('getGranularityForIssueType', () => {
     it('should return correct granularity for mapped issues', () => {
       expect(getGranularityForIssueType('color-contrast')).to.equal(Granularity.INDIVIDUAL);
-      expect(getGranularityForIssueType('button-name')).to.equal(Granularity.PER_COMPONENT);
+      expect(getGranularityForIssueType('button-name')).to.equal(Granularity.PER_PAGE_PER_COMPONENT);
       expect(getGranularityForIssueType('html-has-lang')).to.equal(Granularity.PER_PAGE);
       expect(getGranularityForIssueType('list')).to.equal(Granularity.PER_COMPONENT);
       expect(getGranularityForIssueType('aria-prohibited-attr')).to.equal(Granularity.PER_TYPE);
@@ -170,20 +170,20 @@ describe('Aggregation Strategies', () => {
 
   describe('Key Consistency', () => {
     it('should produce consistent keys for same data', () => {
-      const key1 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', 'ahrefs');
-      const key2 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', 'ahrefs');
+      const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
+      const key2 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
       expect(key1).to.equal(key2);
     });
 
     it('should produce different keys for different pages', () => {
-      const key1 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', 'ahrefs');
-      const key2 = buildAggregationKey('image-alt', 'https://example.com/page2', 'img.logo', 'ahrefs');
+      const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
+      const key2 = buildAggregationKey('button-name', 'https://example.com/page2', 'button.submit', 'ahrefs');
       expect(key1).to.not.equal(key2);
     });
 
     it('should produce different keys for different sources', () => {
-      const key1 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', 'ahrefs');
-      const key2 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', 'semrush');
+      const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
+      const key2 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'semrush');
       expect(key1).to.not.equal(key2);
     });
   });
@@ -192,9 +192,9 @@ describe('Aggregation Strategies', () => {
     describe('PER_PAGE_PER_COMPONENT should group', () => {
       it('all elements with same issue type on same page', () => {
         const keys = [
-          buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', null),
-          buildAggregationKey('image-alt', 'https://example.com/page1', 'img.banner', null),
-          buildAggregationKey('image-alt', 'https://example.com/page1', 'img.avatar', null),
+          buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', null),
+          buildAggregationKey('button-name', 'https://example.com/page1', 'button.cancel', null),
+          buildAggregationKey('button-name', 'https://example.com/page1', 'button.apply', null),
         ];
 
         // All should be same
@@ -203,15 +203,15 @@ describe('Aggregation Strategies', () => {
       });
 
       it('but not elements on different pages', () => {
-        const key1 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', null);
-        const key2 = buildAggregationKey('image-alt', 'https://example.com/page2', 'img.logo', null);
+        const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', null);
+        const key2 = buildAggregationKey('button-name', 'https://example.com/page2', 'button.submit', null);
 
         expect(key1).to.not.equal(key2);
       });
 
       it('but not different issue types', () => {
-        const key1 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', null);
-        const key2 = buildAggregationKey('target-size', 'https://example.com/page1', 'button.submit', null);
+        const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', null);
+        const key2 = buildAggregationKey('image-alt', 'https://example.com/page1', 'img.logo', null);
 
         expect(key1).to.not.equal(key2);
       });
@@ -274,12 +274,12 @@ describe('Aggregation Strategies', () => {
       const suggestionData = {
         url: 'https://example.com/page1',
         issues: [{
-          type: 'image-alt',
-          htmlWithIssues: [{ target_selector: 'img.logo' }],
+          type: 'button-name',
+          htmlWithIssues: [{ target_selector: 'button.submit' }],
         }],
       };
       const key = buildAggregationKeyFromSuggestion(suggestionData);
-      expect(key).to.equal('https://example.com/page1|image-alt');
+      expect(key).to.equal('https://example.com/page1|button-name');
     });
 
     it('should include source when provided', () => {
@@ -320,24 +320,24 @@ describe('Aggregation Strategies', () => {
       const suggestionData = {
         url: 'https://example.com/page1',
         issues: [{
-          type: 'image-alt',
+          type: 'button-name',
           htmlWithIssues: [{ target_selector: '' }],
         }],
       };
       const key = buildAggregationKeyFromSuggestion(suggestionData);
-      expect(key).to.equal('https://example.com/page1|image-alt');
+      expect(key).to.equal('https://example.com/page1|button-name');
     });
 
     it('should handle missing target selector', () => {
       const suggestionData = {
         url: 'https://example.com/page1',
         issues: [{
-          type: 'image-alt',
+          type: 'button-name',
           htmlWithIssues: [{}],
         }],
       };
       const key = buildAggregationKeyFromSuggestion(suggestionData);
-      expect(key).to.equal('https://example.com/page1|image-alt');
+      expect(key).to.equal('https://example.com/page1|button-name');
     });
 
     it('should return null when no issues present', () => {
@@ -370,14 +370,14 @@ describe('Aggregation Strategies', () => {
     it('should handle missing url field', () => {
       const suggestionData = {
         issues: [{
-          type: 'image-alt',
-          htmlWithIssues: [{ target_selector: 'img.logo' }],
+          type: 'button-name',
+          htmlWithIssues: [{ target_selector: 'button.submit' }],
         }],
       };
       const key = buildAggregationKeyFromSuggestion(suggestionData);
-      // image-alt has PER_PAGE_PER_COMPONENT granularity, so url is in the key
-      // When URL is undefined, it gets filtered by buildKey
-      expect(key).to.equal('image-alt');
+      // button-name has PER_PAGE_PER_COMPONENT granularity, so url is in the key
+      // When URL is undefined, it gets passed through as undefined
+      expect(key).to.equal('button-name');
     });
 
     it('should return null when first issue is null', () => {

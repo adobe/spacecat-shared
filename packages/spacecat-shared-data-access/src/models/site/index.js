@@ -18,3 +18,16 @@ export {
   Site,
   SiteCollection,
 };
+
+export {
+  Config,
+  configSchema,
+  validateConfiguration,
+  extractWellKnownTags,
+  IMPORT_TYPES,
+  IMPORT_DESTINATIONS,
+  IMPORT_SOURCES,
+  IMPORT_TYPE_SCHEMAS,
+  DEFAULT_IMPORT_CONFIGS,
+  DEFAULT_CONFIG,
+} from './config.js';

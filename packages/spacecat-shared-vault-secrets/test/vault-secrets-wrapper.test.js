@@ -124,6 +124,7 @@ describe('vaultSecrets wrapper', () => {
     Object.keys(testSecrets).forEach((key) => {
       delete process.env[key];
     });
+    delete process.env.NEW_KEY;
   });
 
   describe('middleware wrapper', () => {
@@ -177,6 +178,15 @@ describe('vaultSecrets wrapper', () => {
       expect(response.status).to.equal(502);
       expect(response.headers.get('x-error')).to.equal('error fetching secrets.');
       expect(innerFn.called).to.equal(false);
+    });
+
+    it('returns empty object when VAULT_SECRETS_DISABLED is true', async () => {
+      process.env.VAULT_SECRETS_DISABLED = 'true';
+      const ctx = makeContext();
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal({});
+      delete process.env.VAULT_SECRETS_DISABLED;
     });
 
     it('returns empty object on simulate runtime (skips Vault)', async () => {
@@ -525,6 +535,302 @@ describe('vaultSecrets wrapper', () => {
       expect(bootstrap.isDone()).to.equal(true);
       expect(login.isDone()).to.equal(true);
       expect(read.isDone()).to.equal(true);
+    });
+  });
+
+  describe('dev alias overrides', () => {
+    const devBootstrapConfig = { ...bootstrapConfig, environment: 'dev' };
+
+    function mockDevBootstrap() {
+      return nock(AWS_ENDPOINT)
+        .post('/', (body) => {
+          const str = typeof body === 'string' ? body : JSON.stringify(body);
+          return str.includes(BOOTSTRAP_PATH);
+        })
+        .reply(200, { SecretString: JSON.stringify(devBootstrapConfig) });
+    }
+
+    function mockDevSecretRead(path = 'dev/api-service') {
+      return nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/${path}`)
+        .reply(200, {
+          data: {
+            data: testSecrets,
+            metadata: { version: 1, created_time: '2026-01-01T00:00:00Z' },
+          },
+        });
+    }
+
+    function mockOverrideRead(alias, overrides) {
+      return nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/dev/development/api-service/${alias}`)
+        .reply(200, {
+          data: {
+            data: overrides,
+            metadata: { version: 1 },
+          },
+        });
+    }
+
+    function mockOverride404(alias) {
+      return nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/dev/development/api-service/${alias}`)
+        .reply(404, { errors: [] });
+    }
+
+    function makeDevContext(version = 'djc', overrides = {}) {
+      return makeContext({
+        func: {
+          name: 'api-service',
+          package: 'spacecat-services',
+          version,
+          ...overrides,
+        },
+      });
+    }
+
+    it('merges overrides when dev env + developer alias + overrides exist', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+      const overrides = { IMS_CLIENT_ID: 'override-id', CUSTOM_KEY: 'custom-val' };
+      mockOverrideRead('djc', overrides);
+
+      const ctx = makeDevContext('djc');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal({
+        ...testSecrets,
+        ...overrides,
+      });
+      expect(ctx.log.info.calledWithMatch(/Loaded dev overrides/)).to.equal(true);
+    });
+
+    it('returns base secrets when override path returns 404', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+      mockOverride404('djc');
+
+      const ctx = makeDevContext('djc');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+      expect(ctx.log.warn.called).to.equal(false);
+    });
+
+    it('does not attempt overrides for latest alias', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+
+      const ctx = makeDevContext('latest');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+    });
+
+    it('does not attempt overrides for $LATEST alias', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+
+      const ctx = makeDevContext('$LATEST');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+    });
+
+    it('does not attempt overrides in prod environment', async () => {
+      mockBootstrap(); // prod bootstrap
+      mockAppRoleLogin();
+      mockSecretRead(); // prod/api-service
+
+      const ctx = makeContext({
+        func: { name: 'api-service', package: 'spacecat-services', version: 'djc' },
+      });
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+    });
+
+    it('does not attempt overrides in stage environment', async () => {
+      const stageBootstrapConfig = { ...bootstrapConfig, environment: 'stage' };
+      nock(AWS_ENDPOINT)
+        .post('/', (body) => {
+          const str = typeof body === 'string' ? body : JSON.stringify(body);
+          return str.includes(BOOTSTRAP_PATH);
+        })
+        .reply(200, { SecretString: JSON.stringify(stageBootstrapConfig) });
+      mockAppRoleLogin();
+      nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/stage/api-service`)
+        .reply(200, {
+          data: {
+            data: testSecrets,
+            metadata: { version: 1, created_time: '2026-01-01T00:00:00Z' },
+          },
+        });
+
+      const ctx = makeContext({
+        func: { name: 'api-service', package: 'spacecat-services', version: 'djc' },
+      });
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+    });
+
+    it('does not attempt overrides when no version field', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+
+      const ctx = makeContext({
+        func: { name: 'api-service', package: 'spacecat-services' },
+      });
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+    });
+
+    it('does not attempt overrides for empty string version', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+
+      const ctx = makeDevContext('');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+    });
+
+    it('does not attempt overrides for CI alias (ci123)', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+
+      const ctx = makeDevContext('ci123');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+    });
+
+    it('does not attempt overrides for uppercase CI alias (CI42)', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+
+      const ctx = makeDevContext('CI42');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+    });
+
+    it('merges correctly — overrides matching keys, preserves others, adds new', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+      const overrides = { IMS_CLIENT_ID: 'overridden', NEW_KEY: 'new-value' };
+      mockOverrideRead('djc', overrides);
+
+      const ctx = makeDevContext('djc');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result.IMS_CLIENT_ID).to.equal('overridden');
+      expect(result.SLACK_BOT_TOKEN).to.equal('xoxb-test');
+      expect(result.IMS_CLIENT_SECRET).to.equal('test-client-secret');
+      expect(result.NEW_KEY).to.equal('new-value');
+    });
+
+    it('does not mutate base cache — second call without override returns original base', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+      const overrides = { IMS_CLIENT_ID: 'overridden' };
+      mockOverrideRead('djc', overrides);
+
+      const ctx1 = makeDevContext('djc');
+      const result1 = await loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH });
+      expect(result1.IMS_CLIENT_ID).to.equal('overridden');
+
+      // Reset and reload in prod env — base cache is cleared, no override
+      reset();
+      mockBootstrap(); // prod
+      mockAppRoleLogin();
+      mockSecretRead(); // prod/api-service
+
+      const ctx2 = makeContext();
+      const result2 = await loadSecrets(ctx2, { bootstrapPath: BOOTSTRAP_PATH });
+      expect(result2.IMS_CLIENT_ID).to.equal('test-client-id');
+    });
+
+    it('caches overrides with base — second call returns merged from cache', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+      const overrides = { IMS_CLIENT_ID: 'cached-override' };
+      mockOverrideRead('djc', overrides);
+
+      const ctx1 = makeDevContext('djc');
+      const result1 = await loadSecrets(ctx1, { bootstrapPath: BOOTSTRAP_PATH });
+      expect(result1.IMS_CLIENT_ID).to.equal('cached-override');
+
+      // Second call — no new nock mocks needed, should use cache
+      const ctx2 = makeDevContext('djc');
+      const result2 = await loadSecrets(ctx2, { bootstrapPath: BOOTSTRAP_PATH });
+      expect(result2.IMS_CLIENT_ID).to.equal('cached-override');
+      expect(result2.SLACK_BOT_TOKEN).to.equal('xoxb-test');
+    });
+
+    it('logs warning and returns base secrets on non-404 override error', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+      nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/dev/development/api-service/djc`)
+        .reply(403, { errors: ['permission denied'] });
+
+      const ctx = makeDevContext('djc');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
+      expect(ctx.log.warn.calledWithMatch(/Failed to load dev overrides/)).to.equal(true);
+    });
+
+    it('uses convention path even when custom opts.name is provided', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      // Custom name resolves for base secrets
+      nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/custom/path`)
+        .reply(200, {
+          data: {
+            data: testSecrets,
+            metadata: { version: 1, created_time: '2026-01-01T00:00:00Z' },
+          },
+        });
+      // Override path still uses convention: dev/development/api-service/djc
+      const overrides = { CUSTOM: 'override' };
+      mockOverrideRead('djc', overrides);
+
+      const ctx = makeDevContext('djc');
+      const result = await loadSecrets(ctx, {
+        bootstrapPath: BOOTSTRAP_PATH,
+        name: 'custom/path',
+      });
+
+      expect(result).to.deep.equal({ ...testSecrets, ...overrides });
+    });
+
+    it('does not attempt overrides for invalid alias format', async () => {
+      mockDevBootstrap();
+      mockAppRoleLogin();
+      mockDevSecretRead();
+
+      const ctx = makeDevContext('../../../etc');
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal(testSecrets);
     });
   });
 

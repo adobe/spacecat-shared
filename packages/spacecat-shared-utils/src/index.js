@@ -83,7 +83,7 @@ export { s3Wrapper, getObjectFromKey } from './s3.js';
 
 export { OPPORTUNITY_TYPES, DEFAULT_CPC_VALUE } from './constants.js';
 
-export { fetch } from './adobe-fetch.js';
+export { fetch, resetFetchContext, clearFetchCache } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';
 export {
   getHighFormViewsLowConversionMetrics,
@@ -132,3 +132,12 @@ export {
   GRANULARITY_KEY_BUILDERS,
   ISSUE_GRANULARITY_MAP,
 } from './aggregation/aggregation-strategies.js';
+
+export {
+  TOKEN_GRANT_CONFIG,
+  OPPORTUNITY_GRANT_CONFIG,
+  getTokenGrantConfig,
+  getTokenGrantConfigByOpportunity,
+  getTokenTypeForOpportunity,
+  getCurrentCycle,
+} from './token-grant-config.js';

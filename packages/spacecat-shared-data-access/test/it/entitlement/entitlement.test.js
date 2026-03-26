@@ -145,6 +145,66 @@ describe('Entitlement IT', async () => {
     );
   });
 
+  describe('allByProductCodeWithOrganization', () => {
+    it('returns LLMO entitlements with embedded organization data', async () => {
+      const results = await Entitlement.allByProductCodeWithOrganization('LLMO');
+
+      expect(results).to.be.an('array');
+      expect(results.length).to.be.greaterThan(0);
+
+      for (const { entitlement, organization } of results) {
+        expect(entitlement).to.be.an('object');
+        expect(entitlement.id).to.be.a('string');
+        expect(entitlement.productCode).to.equal('LLMO');
+        expect(entitlement.tier).to.be.oneOf(['FREE_TRIAL', 'PAID']);
+
+        expect(organization).to.be.an('object');
+        expect(organization.id).to.be.a('string');
+        expect(organization.name).to.be.a('string');
+        expect(organization.imsOrgId).to.be.a('string');
+      }
+    });
+
+    it('returns only entitlements matching the given product code', async () => {
+      const llmoResults = await Entitlement.allByProductCodeWithOrganization('LLMO');
+      const asoResults = await Entitlement.allByProductCodeWithOrganization('ASO');
+
+      // Verify product code filtering: no cross-contamination
+      for (const { entitlement } of llmoResults) {
+        expect(entitlement.productCode).to.equal('LLMO');
+      }
+      for (const { entitlement } of asoResults) {
+        expect(entitlement.productCode).to.equal('ASO');
+      }
+
+      // LLMO should have results (seed data has 2 + 1 created by earlier test)
+      expect(llmoResults.length).to.be.greaterThanOrEqual(1);
+
+      // Verify no ID overlap between product codes
+      const llmoIds = new Set(llmoResults.map((r) => r.entitlement.id));
+      for (const { entitlement } of asoResults) {
+        expect(llmoIds.has(entitlement.id)).to.be.false;
+      }
+    });
+
+    it('returns correct organization data for each entitlement', async () => {
+      const results = await Entitlement.allByProductCodeWithOrganization('LLMO');
+
+      // Verify that each entitlement's organization has a valid imsOrgId
+      const orgIds = results.map(({ organization }) => organization.imsOrgId);
+      for (const imsOrgId of orgIds) {
+        expect(imsOrgId).to.match(/@AdobeOrg$/);
+      }
+    });
+
+    it('returns empty array for product code with no entitlements', async () => {
+      const results = await Entitlement.allByProductCodeWithOrganization('ACO');
+
+      expect(results).to.be.an('array');
+      expect(results).to.have.lengthOf(0);
+    });
+  });
+
   it('removes an entitlement', async () => {
     const entitlement = await Entitlement.findById(sampleData.entitlements[0].getId());
 

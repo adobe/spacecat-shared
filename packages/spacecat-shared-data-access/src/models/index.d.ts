@@ -10,31 +10,39 @@
  * governing permissions and limitations under the License.
  */
 
-export type * from './audit';
+export type * from './access-grant-log';
+export type * from './api-key';
 export type * from './async-job';
-export type * from './configuration';
+export type * from './audit';
+export type * from './audit-url';
 export type * from './base';
+export type * from './configuration';
 export type * from './consumer';
+export type * from './entitlement';
+export type * from './experiment';
 export type * from './fix-entity';
 export type * from './fix-entity-suggestion';
-export type * from './experiment';
-export type * from './entitlement';
 export type * from './import-job';
 export type * from './import-url';
 export type * from './key-event';
 export type * from './latest-audit';
 export type * from './opportunity';
 export type * from './organization';
+export type * from './page-citability';
+export type * from './page-intent';
+export type * from './plg-onboarding';
+export type * from './project';
+export type * from './report';
 export type * from './scrape-job';
 export type * from './scrape-url';
+export type * from './sentiment-guideline';
+export type * from './sentiment-topic';
 export type * from './site';
 export type * from './site-candidate';
 export type * from './site-enrollment';
+export type * from './site-ims-org-access';
 export type * from './site-top-form';
 export type * from './site-top-page';
 export type * from './suggestion';
-export type * from './report';
 export type * from './trial-user';
 export type * from './trial-user-activity';
-export type * from './sentiment-guideline';
-export type * from './sentiment-topic';

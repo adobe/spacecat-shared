@@ -88,6 +88,8 @@ export default class AuthInfo {
 
   isS2SAdmin() { return this.profile?.is_s2s_admin; }
 
+  isS2SConsumer() { return this.profile?.is_s2s_consumer; }
+
   hasOrganization(orgId) {
     const [id] = orgId.split('@');
     return this.profile?.tenants?.some(
@@ -98,5 +100,50 @@ export default class AuthInfo {
   hasScope(name, subScope) {
     return this.scopes.some((scope) => scope.name === name
       && (!subScope || scope.subScopes?.includes(subScope)));
+  }
+
+  /**
+   * Find a delegated tenant entry matching the given IMS org ID and product code.
+   * @param {string} imsOrgId - The IMS org ID (bare ident or with @AdobeOrg)
+   * @param {string} [productCode] - Optional product code filter. When omitted, the first
+   *   delegated tenant matching the org ID is returned regardless of product scope — callers
+   *   must be aware that this can match delegations across different products (e.g. LLMO vs ASO).
+   * @returns {Object|undefined} A shallow copy of the matching delegated tenant entry, or undefined
+   */
+  getDelegatedTenant(imsOrgId, productCode) {
+    if (!imsOrgId) return undefined;
+    const [id] = String(imsOrgId).split('@');
+    const delegated = this.profile?.delegated_tenants || [];
+    const match = delegated.find((dt) => dt.id === id
+      && (!productCode || dt.productCode === productCode));
+    return match ? { ...match } : undefined;
+  }
+
+  /**
+   * Get all delegated tenant entries from the JWT.
+   * @returns {Array} The delegated tenants array (empty if none)
+   */
+  getDelegatedTenants() {
+    return this.profile?.delegated_tenants || [];
+  }
+
+  /**
+   * Get IDs of all primary tenants.
+   * @returns {Array<string>} Array of tenant IDs
+   */
+  getTenantIds() {
+    return (this.profile?.tenants || []).filter((t) => t.id).map((t) => t.id);
+  }
+
+  /**
+   * Returns true when the JWT's delegated_tenants list is exhaustive (all grants fit within
+   * the cap). Returns false when the list was truncated because the delegate org has more
+   * grants than the cap allows. Defaults to true when the claim is absent — tokens issued
+   * before this flag was introduced had at most the original cap of grants and are treated
+   * as complete.
+   * @returns {boolean}
+   */
+  isDelegatedTenantsComplete() {
+    return this.profile?.delegated_tenants_complete !== false;
   }
 }

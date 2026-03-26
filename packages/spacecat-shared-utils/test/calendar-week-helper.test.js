@@ -542,30 +542,22 @@ describe('Utils - temporal helpers', () => {
         expect(c).to.equal('(year=2025 AND month=2) OR (year=2025 AND month=1) OR (year=2024 AND month=12)');
       });
 
-      it('handles multiple transitions when week goes below 1 (demonstrates current implementation)', () => {
-        // Week 1 of 2025, going back 5 weeks
-        // Note: current implementation has a bug where week becomes 0, -1, -2, etc.
-        // and always gets set to 52 (since 2025 is not a 53-week year)
-        // This test documents the actual behavior
+      it('correctly wraps weeks across year boundary', () => {
+        // Week 1 of 2025, going back 5 weeks → weeks 1, 52, 51, 50, 49
         const c = getTemporalCondition({ week: 1, year: 2025, numSeries: 5 });
-        const parts = c.split(' OR ');
-        expect(parts.length).to.be.at.least(5);
         expect(c).to.include('(year=2025 AND month=1 AND week=1)');
-        // All subsequent weeks will be set to week 52 due to the implementation
         expect(c).to.include('(year=2024 AND month=12 AND week=52)');
+        expect(c).to.include('(year=2024 AND month=12 AND week=51)');
+        expect(c).to.include('(year=2024 AND month=12 AND week=50)');
+        expect(c).to.include('(year=2024 AND month=12 AND week=49)');
       });
 
-      it('handles multiple transitions when month goes below 1 (demonstrates current implementation)', () => {
-        // Month 1 of 2025, going back 5 months
-        // Note: current implementation has a bug where month becomes 0, -1, -2, etc.
-        // and always gets set to 12
-        // This test documents the actual behavior
+      it('correctly wraps months across year boundary', () => {
+        // Month 1 of 2025, going back 5 months → months 1, 12, 11, 10, 9
         const c = getTemporalCondition({ month: 1, year: 2025, numSeries: 5 });
-        const parts = c.split(' OR ');
-        expect(parts.length).to.equal(5);
-        expect(c).to.include('(year=2025 AND month=1)');
-        // All subsequent months will be set to month 12 due to the implementation
-        expect(c).to.include('(year=2024 AND month=12)');
+        expect(c).to.equal(
+          '(year=2025 AND month=1) OR (year=2024 AND month=12) OR (year=2024 AND month=11) OR (year=2024 AND month=10) OR (year=2024 AND month=9)',
+        );
       });
 
       it('prefers week over month when both are provided with numSeries > 1', () => {
@@ -597,8 +589,16 @@ describe('Utils - temporal helpers', () => {
         expect(parts.length).to.equal(15);
         expect(parts[0]).to.equal('(year=2025 AND month=12)');
         expect(parts[11]).to.equal('(year=2025 AND month=1)');
-        // After month goes below 1, it becomes 12 repeatedly due to implementation
-        expect(parts[14]).to.equal('(year=2024 AND month=12)');
+        expect(parts[12]).to.equal('(year=2024 AND month=12)');
+        expect(parts[13]).to.equal('(year=2024 AND month=11)');
+        expect(parts[14]).to.equal('(year=2024 AND month=10)');
+      });
+
+      it('handles month=12 with numSeries=4 (no year wrap)', () => {
+        const c = getTemporalCondition({ month: 12, year: 2025, numSeries: 4 });
+        expect(c).to.equal(
+          '(year=2025 AND month=12) OR (year=2025 AND month=11) OR (year=2025 AND month=10) OR (year=2025 AND month=9)',
+        );
       });
     });
   });

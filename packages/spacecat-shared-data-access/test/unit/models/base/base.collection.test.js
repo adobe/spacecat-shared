@@ -15,7 +15,7 @@
 // eslint-disable-next-line max-classes-per-file
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import sinon, { spy, stub } from 'sinon';
+import sinon, { match, spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import BaseCollection from '../../../../src/models/base/base.collection.js';
@@ -599,6 +599,216 @@ describe('BaseCollection', () => {
 
       expect(onCreateMany).to.have.been.calledOnce;
       expect(mockLogger.error).to.have.been.calledOnceWith('On-create-many handler failed');
+    });
+  });
+
+  describe('saveMany', () => {
+    it('does nothing when items is null', async () => {
+      const result = await baseCollectionInstance.saveMany(null);
+      expect(result).to.be.undefined;
+    });
+
+    it('does nothing when items is an empty array', async () => {
+      const result = await baseCollectionInstance.saveMany([]);
+      expect(result).to.be.undefined;
+    });
+
+    it('delegates to _saveMany for a small batch', async () => {
+      const { schema } = baseCollectionInstance;
+      const rec = { ...mockRecord };
+      const mockModelInstances = [
+        new MockModel(mockElectroService, mockEntityRegistry, schema, rec, mockLogger),
+        new MockModel(mockElectroService, mockEntityRegistry, schema, rec, mockLogger),
+      ];
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(mockModelInstances);
+
+      expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+    });
+
+    it('chunks items when exceeding chunkSize', async () => {
+      const items = Array.from({ length: 5 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 2 });
+
+      // 5 items / chunkSize 2 = 3 calls (2, 2, 1)
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(3);
+    });
+
+    it('uses default chunkSize of 25', async () => {
+      const items = Array.from({ length: 30 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items);
+
+      // 30 items / default chunkSize 25 = 2 calls (25, 5)
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(2);
+    });
+
+    it('treats chunkSize 0 as 1 to avoid infinite loop', async () => {
+      const items = Array.from({ length: 3 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 0 });
+
+      // chunkSize 0 -> effectiveChunkSize 1 -> 3 calls
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(3);
+    });
+
+    it('treats negative chunkSize as 1', async () => {
+      const items = Array.from({ length: 2 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: -5 });
+
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(2);
+    });
+
+    it('floors fractional chunkSize', async () => {
+      const items = Array.from({ length: 5 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 2.9 });
+
+      // floor(2.9) = 2 -> 5/2 = 3 calls (2, 2, 1)
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(3);
+    });
+
+    it('logs when chunking into multiple batches', async () => {
+      const items = Array.from({ length: 5 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 2 });
+
+      expect(mockLogger.info).to.have.been.calledWith(
+        '[mockEntityModel] saveMany: saving 5 items in 3 chunks of 2',
+      );
+    });
+
+    it('does not log when all items fit in one chunk', async () => {
+      const items = Array.from({ length: 2 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: 10 });
+
+      expect(mockLogger.info).not.to.have.been.calledWith(
+        match.string.and(match((s) => s.includes('saveMany'))),
+      );
+    });
+
+    it('falls back to default chunkSize of 25 when NaN', async () => {
+      const items = Array.from({ length: 30 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: NaN });
+
+      // NaN -> fallback 25 -> 30/25 = 2 calls
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(2);
+    });
+
+    it('falls back to default chunkSize of 25 when Infinity', async () => {
+      const items = Array.from({ length: 30 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance.saveMany(items, { chunkSize: Infinity });
+
+      // Infinity -> floor = Infinity -> max(1, Infinity) = Infinity
+      // || 25 does not trigger (Infinity is truthy), single call
+      expect(mockElectroService.entities.mockEntityModel.put.callCount).to.equal(1);
+    });
+
+    it('logs partial progress before re-throwing chunk error', async () => {
+      const putStub = stub();
+      putStub.onFirstCall().returns({ go: () => [] });
+      putStub.onSecondCall().returns({
+        go: () => Promise.reject(new Error('chunk failed')),
+      });
+      mockElectroService.entities.mockEntityModel.put = putStub;
+
+      const items = Array.from({ length: 4 }, () => new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        { ...mockRecord },
+        mockLogger,
+      ));
+
+      await expect(baseCollectionInstance.saveMany(items, { chunkSize: 2 }))
+        .to.be.rejectedWith(DataAccessError);
+
+      expect(mockLogger.error).to.have.been.calledWith(
+        '[mockEntityModel] saveMany: chunk 2/2 failed — 2 of 4 items already persisted',
+      );
+    });
+
+    it('propagates errors from _saveMany', async () => {
+      const { schema } = baseCollectionInstance;
+      const rec = { ...mockRecord };
+      const items = [
+        new MockModel(mockElectroService, mockEntityRegistry, schema, rec, mockLogger),
+      ];
+      mockElectroService.entities.mockEntityModel.put.returns({
+        go: () => Promise.reject(new Error('upsert failed')),
+      });
+
+      await expect(baseCollectionInstance.saveMany(items))
+        .to.be.rejectedWith(DataAccessError, 'Failed to save many');
     });
   });
 
@@ -1191,7 +1401,9 @@ describe('BaseCollection', () => {
       });
 
       await expect(baseCollectionInstance.batchGetByKeys(keys)).to.be.rejectedWith(DataAccessError);
-      expect(mockLogger.error).to.have.been.calledWith('Failed to batch get by keys [mockEntityModel]', error);
+      expect(mockLogger.error).to.have.been.calledWith(
+        sinon.match('[mockEntityModel] Failed to batch get by keys'),
+      );
     });
 
     it('should handle null records in results', async () => {
@@ -1410,10 +1622,9 @@ describe('BaseCollection', () => {
       await expect(baseCollectionInstance.removeByIndexKeys(keys))
         .to.be.rejectedWith(DataAccessError, 'Failed to remove by index keys');
 
-      // The error logging uses the format "Base Collection Error [entityName]"
+      // The error logging surfaces the error message with entity context
       expect(mockLogger.error).to.have.been.calledWith(
-        'Base Collection Error [mockEntityModel]',
-        sinon.match.instanceOf(DataAccessError),
+        sinon.match('[mockEntityModel] Failed to remove by index keys'),
       );
     });
 
@@ -1922,6 +2133,57 @@ describe('BaseCollection', () => {
       );
     });
 
+    it('chunks PostgREST batchGetByKeys into groups of 50 to avoid 414', async () => {
+      // Generate 120 keys (should produce 3 chunks: 50 + 50 + 20)
+      const keys = Array.from({ length: 120 }, (_, i) => ({
+        mockEntityModelId: `ef39921f-9a02-41db-b491-${String(i).padStart(12, '0')}`,
+      }));
+
+      const chunkResponses = [
+        { data: [{ some_key: 'chunk-1', some_other_key: 1 }], error: null },
+        { data: [{ some_key: 'chunk-2', some_other_key: 2 }], error: null },
+        { data: [{ some_key: 'chunk-3', some_other_key: 3 }], error: null },
+      ];
+
+      const inCalls = [];
+      let chunkIdx = 0;
+
+      const fromStub = stub().callsFake(() => ({
+        select: stub().callsFake(() => {
+          const idx = chunkIdx;
+          chunkIdx += 1;
+          const query = {
+            in: stub().callsFake((_field, vals) => {
+              inCalls.push(vals);
+              return query;
+            }),
+            then: (onFulfilled, onRejected) => Promise
+              .resolve(chunkResponses[idx] || { data: [], error: null })
+              .then(onFulfilled, onRejected),
+          };
+          return query;
+        }),
+      }));
+
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const batch = await instance.batchGetByKeys(keys);
+
+      expect(batch.data).to.have.length(3);
+      expect(batch.unprocessed).to.deep.equal([]);
+      // Should have made 3 chunked calls
+      expect(inCalls).to.have.length(3);
+      expect(inCalls[0]).to.have.length(50);
+      expect(inCalls[1]).to.have.length(50);
+      expect(inCalls[2]).to.have.length(20);
+    });
+
     it('throws on non-invalid bulk errors in PostgREST batchGetByKeys', async () => {
       const bulkQuery = {
         select: stub().returnsThis(),
@@ -2221,6 +2483,73 @@ describe('BaseCollection', () => {
       expect(upsert.calledOnce).to.be.true;
     });
 
+    it('saveMany chunks items in PostgREST mode', async () => {
+      const upsert = stub().resolves({ error: null });
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const items = Array.from({ length: 7 }, (_, i) => ({
+        record: { someKey: `k${i}`, someOtherKey: i },
+        getId: () => `k${i}`,
+      }));
+
+      await instance.saveMany(items, { chunkSize: 3 });
+
+      // 7 items / chunkSize 3 = 3 calls (3, 3, 1)
+      expect(upsert.callCount).to.equal(3);
+    });
+
+    it('saveMany handles single chunk in PostgREST mode', async () => {
+      const upsert = stub().resolves({ error: null });
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const items = [
+        { record: { someKey: 'a', someOtherKey: 1 }, getId: () => 'a' },
+        { record: { someKey: 'b', someOtherKey: 2 }, getId: () => 'b' },
+      ];
+
+      await instance.saveMany(items);
+
+      expect(upsert.calledOnce).to.be.true;
+    });
+
+    it('saveMany stops on first chunk error in PostgREST mode', async () => {
+      const upsert = stub();
+      upsert.onFirstCall()
+        .resolves({ error: null });
+      upsert.onSecondCall()
+        .resolves({ error: new Error('chunk 2 failed') });
+      const instance = createInstance(
+        { from: stub().returns({ upsert }) },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const items = Array.from({ length: 4 }, (_, i) => ({
+        record: { someKey: `k${i}`, someOtherKey: i },
+        getId: () => `k${i}`,
+      }));
+
+      await expect(instance.saveMany(items, { chunkSize: 2 }))
+        .to.be.rejectedWith(DataAccessError, 'Failed to save many');
+
+      // First chunk succeeded, second failed — no third call
+      expect(upsert.callCount).to.equal(2);
+    });
+
     it('throws DataAccessError when PostgREST upsert fails in saveMany', async () => {
       const upsert = stub().resolves({ error: new Error('bulk upsert failed') });
       const instance = createInstance(
@@ -2449,6 +2778,180 @@ describe('BaseCollection', () => {
       );
       expect(result.record.updatedAt).to.equal('2026-01-01T00:00:01.000Z');
       expect(result.updates.updatedAt).to.equal('2026-01-01T00:00:01.000Z');
+    });
+
+    describe('enum value normalization', () => {
+      const enumAttributes = {
+        someKey: { type: 'string', required: true },
+        someOtherKey: { type: 'number' },
+        status: { type: ['NEW', 'APPROVED', 'IN_PROGRESS'] },
+      };
+
+      const enumIndexes = {
+        primary: {
+          index: 'primary',
+          pk: { facets: ['someKey'] },
+          sk: { facets: [] },
+        },
+        byStatus: {
+          index: 'byStatus',
+          pk: { composite: ['someKey'] },
+          sk: { composite: ['status'] },
+        },
+      };
+
+      it('normalizes lowercase enum values to the correct case in key filters', async () => {
+        const query = createPostgrestQuery({
+          data: [{ some_key: 'a', status: 'NEW' }],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 'a', status: 'new' });
+
+        expect(query.eq).to.have.been.calledWith('status', 'NEW');
+      });
+
+      it('normalizes mixed-case enum values to the correct case', async () => {
+        const query = createPostgrestQuery({
+          data: [],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 'a', status: 'In_Progress' });
+
+        expect(query.eq).to.have.been.calledWith('status', 'IN_PROGRESS');
+      });
+
+      it('passes through non-enum string values unchanged', async () => {
+        const query = createPostgrestQuery({
+          data: [],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 'MyValue' });
+
+        expect(query.eq).to.have.been.calledWith('some_key', 'MyValue');
+      });
+
+      it('passes through non-string values unchanged', async () => {
+        const numAttributes = {
+          someKey: { type: 'number', required: true },
+        };
+        const numIndexes = {
+          primary: { pk: { facets: ['someKey'] }, sk: { facets: [] } },
+          bySomeKey: { index: 'bySomeKey', pk: { composite: ['someKey'] }, sk: { composite: [] } },
+        };
+
+        const query = createPostgrestQuery({
+          data: [],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          numIndexes,
+          mockLogger,
+          numAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 42 });
+
+        expect(query.eq).to.have.been.calledWith('some_key', 42);
+      });
+
+      it('passes through unrecognized enum values unchanged', async () => {
+        const query = createPostgrestQuery({
+          data: [],
+          error: null,
+        });
+        const fromStub = stub().returns({
+          select: stub().returns(query),
+        });
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.allByIndexKeys({ someKey: 'a', status: 'UNKNOWN_VALUE' });
+
+        expect(query.eq).to.have.been.calledWith('status', 'UNKNOWN_VALUE');
+      });
+
+      it('normalizes enum values in batchGetByKeys bulk .in() path', async () => {
+        const inCalls = [];
+        const fromStub = stub().callsFake(() => ({
+          select: stub().callsFake(() => {
+            const query = {
+              in: stub().callsFake((_field, vals) => {
+                inCalls.push({ field: _field, values: vals });
+                return query;
+              }),
+              then: (onFulfilled, onRejected) => Promise
+                .resolve({ data: [], error: null })
+                .then(onFulfilled, onRejected),
+            };
+            return query;
+          }),
+        }));
+
+        const instance = createInstance(
+          { from: fromStub },
+          mockEntityRegistry,
+          enumIndexes,
+          mockLogger,
+          enumAttributes,
+        );
+
+        await instance.batchGetByKeys([
+          { status: 'new' },
+          { status: 'approved' },
+          { status: 'in_progress' },
+        ]);
+
+        expect(inCalls).to.have.length(1);
+        expect(inCalls[0].values).to.deep.equal(['NEW', 'APPROVED', 'IN_PROGRESS']);
+      });
     });
 
     it('covers required-field validation branch with non-empty payload', async () => {

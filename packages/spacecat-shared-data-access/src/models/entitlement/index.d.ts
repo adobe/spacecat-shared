@@ -31,6 +31,19 @@ export interface Entitlement extends BaseModel {
   setQuotas(quotas: object): Entitlement;
 }
 
+export interface EntitlementWithOrganization {
+  entitlement: {
+    id: string;
+    productCode: EntitlementProductCode;
+    tier: EntitlementTier;
+  };
+  organization: {
+    id: string;
+    name: string;
+    imsOrgId: string;
+  } | null;
+}
+
 export interface EntitlementCollection extends
     BaseCollection<Entitlement> {
   allByOrganizationId(organizationId: string): Promise<Entitlement[]>;
@@ -44,4 +57,8 @@ export interface EntitlementCollection extends
     organizationId: string,
     productCode: EntitlementProductCode,
   ): Promise<Entitlement | null>;
+
+  allByProductCodeWithOrganization(
+    productCode: EntitlementProductCode,
+  ): Promise<EntitlementWithOrganization[]>;
 }

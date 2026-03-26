@@ -63,6 +63,12 @@ const strategyOpportunity = z.object({
   completedAt: z.string().optional(), // ISO 8601 date string
 });
 
+const strategyPromptSelection = z.object({
+  id: z.uuid().optional(),
+  prompt: nonEmptyString,
+  regions: z.array(z.string()),
+});
+
 /**
  * Strategy containing references to opportunities
  */
@@ -70,10 +76,13 @@ const strategy = z.object({
   id: nonEmptyString,
   name: nonEmptyString,
   status: workflowStatus,
-  url: z.string(),
+  url: z.union([z.string(), z.array(z.string())]),
   description: z.string(),
-  topic: z.string(),
-  platform: nonEmptyString,
+  topic: z.union([z.string(), z.array(z.string())]),
+  topicId: z.union([z.uuid(), z.array(z.uuid())]).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
+  selectedPrompts: z.array(strategyPromptSelection).optional(),
+  platform: nonEmptyString.optional(),
   opportunities: z.array(strategyOpportunity),
   createdAt: z.string(), // ISO 8601 date string
   createdBy: z.string().optional(), // Email of strategy creator/owner

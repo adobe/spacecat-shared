@@ -37,6 +37,7 @@ import * as z from 'zod';
 const nonEmptyString = z.string().min(1);
 
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
+const awsRegion = z.string().regex(/^[a-z]{2}(?:-[a-z]+)+-\d+$/i);
 
 const auditFields = {
   updatedBy: z.string().optional(),
@@ -50,6 +51,7 @@ const prompt = z.object({
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
   source: z.union([z.literal('config'), z.literal('api'), z.string()]),
   status: z.union([z.literal('completed'), z.literal('processing'), z.string()]).optional(),
+  source_url: z.string().optional(),
   ...auditFields,
 });
 
@@ -106,6 +108,7 @@ export const llmoConfig = z.object({
   categories: z.record(z.uuid(), category),
   topics: z.record(z.uuid(), topic),
   aiTopics: z.record(z.uuid(), topic).optional(),
+  experimentationTopics: z.record(z.uuid(), topic).optional(),
   brands: z.object({
     aliases: z.array(
       z.object({
@@ -136,6 +139,7 @@ export const llmoConfig = z.object({
     bucketName: z.string().optional(),
     allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
+    region: awsRegion.optional(),
   }).optional(),
   ignored: z.object({
     prompts: z.record(z.uuid(), ignoredPrompt).optional(),

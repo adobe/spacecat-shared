@@ -144,4 +144,51 @@ export default class SplunkAPIClient {
 
     return returnObj;
   }
+
+  /**
+   * Execute an ad-hoc Splunk oneshot search and return the JSON payload.
+   *
+   * @param {string} searchString SPL query string (e.g. `search index=... | stats ...`)
+   * @returns {Promise<object>} Splunk oneshot search response JSON
+   */
+  async oneshotSearch(searchString) {
+    if (typeof searchString !== 'string' || searchString.trim().length === 0) {
+      throw new Error('Missing searchString');
+    }
+
+    // Additive behavior: reuse existing login state, otherwise login now.
+    if (!this.loginObj) {
+      this.loginObj = await this.login();
+    }
+    if (this.loginObj?.error) {
+      const err = this.loginObj.error;
+      this.loginObj = null;
+      throw (err instanceof Error ? err : new Error(String(err)));
+    }
+
+    const queryBody = new URLSearchParams({
+      search: searchString,
+      adhoc_search_level: 'fast',
+      exec_mode: 'oneshot',
+      output_mode: 'json',
+    });
+
+    const url = `${this.apiBaseUrl}/servicesNS/admin/search/search/jobs`;
+    const response = await this.fetchAPI(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Splunk ${this.loginObj.sessionId}`,
+        Cookie: this.loginObj.cookie,
+      },
+      body: queryBody,
+    });
+
+    if (response.status !== 200) {
+      const body = await response.text();
+      throw new Error(`Splunk oneshot search failed. Status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json();
+  }
 }

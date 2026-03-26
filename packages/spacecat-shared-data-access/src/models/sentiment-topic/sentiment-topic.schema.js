@@ -55,12 +55,6 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
     type: 'string',
     required: false,
   })
-  .addAttribute('subPrompts', {
-    type: 'list',
-    items: { type: 'string' },
-    required: true,
-    default: [],
-  })
   .addAttribute('enabled', {
     type: 'boolean',
     required: true,

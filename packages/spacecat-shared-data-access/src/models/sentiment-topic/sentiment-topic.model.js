@@ -23,38 +23,6 @@ class SentimentTopic extends BaseModel {
   static ENTITY_NAME = 'SentimentTopic';
 
   /**
-   * Adds a sub-prompt to the topic.
-   * @param {string} prompt - The prompt to add.
-   * @returns {this} The current instance for chaining.
-   */
-  addSubPrompt(prompt) {
-    const subPrompts = this.getSubPrompts?.() ?? this.subPrompts ?? [];
-    const updated = [...subPrompts, prompt];
-    if (this.setSubPrompts) {
-      this.setSubPrompts(updated);
-    } else {
-      this.subPrompts = updated;
-    }
-    return this;
-  }
-
-  /**
-   * Removes a sub-prompt from the topic.
-   * @param {string} prompt - The prompt to remove.
-   * @returns {this} The current instance for chaining.
-   */
-  removeSubPrompt(prompt) {
-    const subPrompts = this.getSubPrompts?.() ?? this.subPrompts ?? [];
-    const filtered = subPrompts.filter((p) => p !== prompt);
-    if (this.setSubPrompts) {
-      this.setSubPrompts(filtered);
-    } else {
-      this.subPrompts = filtered;
-    }
-    return this;
-  }
-
-  /**
    * Generates the composite keys for remove/update operations.
    * Required for entities with composite primary keys.
    * @returns {Object} - The composite keys (siteId + topicId).

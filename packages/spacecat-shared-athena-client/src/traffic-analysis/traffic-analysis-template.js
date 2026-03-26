@@ -48,6 +48,7 @@ WITH min_totals AS (
 ),
 raw AS (
     SELECT
+        year,
         week,
         month,
         path,

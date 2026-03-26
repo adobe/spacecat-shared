@@ -943,6 +943,32 @@ describe('Config Tests', () => {
         expect(imports).to.have.length(1);
         expect(imports[0].sources).to.deep.equal(['google']);
       });
+
+      it('enables cwv-trends-daily import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-trends-daily');
+
+        const importConfig = config.getImportConfig('cwv-trends-daily');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-trends-daily',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
+
+      it('enables cwv-trends-onboard import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-trends-onboard');
+
+        const importConfig = config.getImportConfig('cwv-trends-onboard');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-trends-onboard',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
     });
 
     describe('disableImport method', () => {
@@ -1132,6 +1158,18 @@ describe('Config Tests', () => {
             sources: ['rum'],
             enabled: true,
           },
+          {
+            type: 'cwv-trends-daily',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
+            type: 'cwv-trends-onboard',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
         ],
         fetchConfig: {
           headers: {
@@ -1185,7 +1223,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]');
+            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]. "imports[0].type" must be [cwv-trends-daily]. "imports[0].type" must be [cwv-trends-onboard]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -1340,6 +1378,28 @@ describe('Config Tests', () => {
                   key: 'type',
                 },
               },
+              {
+                message: '"imports[0].type" must be [cwv-trends-daily]',
+                path: ['imports', 0, 'type'],
+                type: 'any.only',
+                context: {
+                  valids: ['cwv-trends-daily'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [cwv-trends-onboard]',
+                path: ['imports', 0, 'type'],
+                type: 'any.only',
+                context: {
+                  valids: ['cwv-trends-onboard'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
             ]);
           return true;
         });
@@ -1421,6 +1481,44 @@ describe('Config Tests', () => {
       };
       const validated = validateConfiguration(config);
       expect(validated).to.deep.equal(config);
+    });
+
+    it('validates optional llmo cdnBucketConfig region with aws-style format', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/tmp/data',
+          brand: 'testBrand',
+          cdnBucketConfig: {
+            bucketName: 'test-bucket',
+            cdnProvider: 'aws',
+            region: 'us-east-1',
+          },
+        },
+      };
+
+      const validated = validateConfiguration(config);
+      expect(validated).to.deep.equal(config);
+    });
+
+    it('throws error for invalid llmo cdnBucketConfig region format', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/tmp/data',
+          brand: 'testBrand',
+          cdnBucketConfig: {
+            bucketName: 'test-bucket',
+            cdnProvider: 'aws',
+            region: 'us_east_1',
+          },
+        },
+      };
+
+      expect(() => validateConfiguration(config))
+        .to.throw().and.satisfy((error) => {
+          expect(error.message).to.include('Configuration validation error');
+          expect(error.message).to.include('"llmo.cdnBucketConfig.region" with value "us_east_1" fails to match the required pattern');
+          return true;
+        });
     });
 
     it('throws error for missing required import fields', () => {
@@ -2386,6 +2484,42 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO Country Code Ignore List', () => {
+    it('creates a Config with llmo countryCodeIgnoreList property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          countryCodeIgnoreList: ['PS', 'ad'],
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(['PS', 'ad']);
+    });
+
+    it('has undefined countryCodeIgnoreList in default config', () => {
+      const config = Config();
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should return undefined for countryCodeIgnoreList if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should be able to update countryCodeIgnoreList', () => {
+      const config = Config();
+      const countryCodeIgnoreList = ['PS', 'AD'];
+      config.updateLlmoCountryCodeIgnoreList(countryCodeIgnoreList);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(countryCodeIgnoreList);
+    });
+  });
+
   describe('LLMO CDN Bucket Config', () => {
     it('creates a Config with llmo cdnBucketConfig property', () => {
       const data = {
@@ -2591,6 +2725,117 @@ describe('Config Tests', () => {
       config.updateEdgeOptimizeConfig(newConfig);
       expect(config.getEdgeOptimizeConfig()).to.deep.equal(newConfig);
       expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
+    });
+
+    it('should be able to create and update edgeOptimizeConfig with stagingDomains', () => {
+      const stagingDomains = [
+        { domain: 'staging.lovesac.com', id: 'site-uuid-1' },
+        { domain: 'stage1.lovesac.com', id: 'site-uuid-2' },
+      ];
+      const config = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains,
+        },
+      });
+      expect(config.getEdgeOptimizeConfig().stagingDomains).to.deep.equal(stagingDomains);
+
+      const updatedStagingDomains = [
+        { domain: 'staging.lovesac.com', id: 'site-uuid-1' },
+      ];
+      config.updateEdgeOptimizeConfig({
+        enabled: true,
+        stagingDomains: updatedStagingDomains,
+      });
+      expect(config.getEdgeOptimizeConfig().stagingDomains).to.deep.equal(updatedStagingDomains);
+    });
+
+    it('includes stagingDomains in toDynamoItem edgeOptimizeConfig', () => {
+      const stagingDomains = [{ domain: 'staging.example.com', id: 'stage-site-id' }];
+      const data = Config({
+        edgeOptimizeConfig: {
+          enabled: true,
+          stagingDomains,
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.edgeOptimizeConfig.stagingDomains).to.deep.equal(stagingDomains);
+    });
+  });
+
+  describe('Commerce LLMO Config', () => {
+    it('creates a Config with commerceLlmoConfig property', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            websiteCode: 'base',
+            storeCode: 'main_store',
+            storeViewCode: 'default',
+            hostName: 'example.com',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'api-key-123',
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('has undefined commerceLlmoConfig in default config', () => {
+      const config = Config();
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for commerceLlmoConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should be able to update commerceLlmoConfig', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-456',
+            websiteCode: 'base',
+          },
+        },
+      };
+      const config = Config({});
+      config.updateCommerceLlmoConfig(data.commerceLlmoConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('should be able to update commerceLlmoConfig with different values', () => {
+      const config = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+          },
+        },
+      });
+
+      const newConfig = {
+        store2: {
+          environmentId: 'env-789',
+          hostName: 'new.example.com',
+        },
+      };
+      config.updateCommerceLlmoConfig(newConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes commerceLlmoConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+          },
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.commerceLlmoConfig).to.deep.equal(data.getCommerceLlmoConfig());
     });
   });
 

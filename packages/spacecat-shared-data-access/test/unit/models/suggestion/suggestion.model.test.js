@@ -35,6 +35,7 @@ describe('SuggestionModel', () => {
       expect(Suggestion.STATUSES.ERROR).to.equal('ERROR');
       expect(Suggestion.STATUSES.OUTDATED).to.equal('OUTDATED');
       expect(Suggestion.STATUSES.PENDING_VALIDATION).to.equal('PENDING_VALIDATION');
+      expect(Suggestion.STATUSES.REJECTED).to.equal('REJECTED');
     });
   });
 
@@ -133,6 +134,50 @@ describe('SuggestionModel', () => {
     });
   });
 
+  describe('SKIP_REASONS', () => {
+    it('has SKIP_REASONS enum with all values', () => {
+      expect(Suggestion.SKIP_REASONS).to.be.an('object');
+      expect(Suggestion.SKIP_REASONS.ALREADY_IMPLEMENTED).to.equal('ALREADY_IMPLEMENTED');
+      expect(Suggestion.SKIP_REASONS.INACCURATE_OR_INCOMPLETE).to.equal('INACCURATE_OR_INCOMPLETE');
+      expect(Suggestion.SKIP_REASONS.TOO_RISKY).to.equal('TOO_RISKY');
+      expect(Suggestion.SKIP_REASONS.NO_REASON).to.equal('NO_REASON');
+      expect(Suggestion.SKIP_REASONS.OTHER).to.equal('OTHER');
+      expect(Object.keys(Suggestion.SKIP_REASONS)).to.have.lengthOf(5);
+    });
+  });
+
+  describe('getSkipReason and setSkipReason', () => {
+    it('returns undefined when no skip reason is set', () => {
+      expect(instance.getSkipReason()).to.be.undefined;
+    });
+
+    it('sets and gets the skip reason', () => {
+      instance.setSkipReason('TOO_RISKY');
+      expect(instance.getSkipReason()).to.equal('TOO_RISKY');
+    });
+
+    it('returns null when skip reason is set to null', () => {
+      instance.setSkipReason(null);
+      expect(instance.getSkipReason()).to.be.null;
+    });
+  });
+
+  describe('getSkipDetail and setSkipDetail', () => {
+    it('returns undefined when no skip detail is set', () => {
+      expect(instance.getSkipDetail()).to.be.undefined;
+    });
+
+    it('sets and gets the skip detail', () => {
+      instance.setSkipDetail('Not relevant for our use case');
+      expect(instance.getSkipDetail()).to.equal('Not relevant for our use case');
+    });
+
+    it('returns null when skip detail is set to null', () => {
+      instance.setSkipDetail(null);
+      expect(instance.getSkipDetail()).to.be.null;
+    });
+  });
+
   describe('getKpiDeltas and setKpiDeltas', () => {
     it('returns the KPI deltas for the suggestion', () => {
       expect(instance.getKpiDeltas()).to.deep.equal({ conversionRate: 0.05 });
@@ -183,6 +228,62 @@ describe('SuggestionModel', () => {
         expect(() => {
           Suggestion.validateData({ anything: 'goes' }, 'unknown-type');
         }).to.not.throw();
+      });
+
+      // Verification: CWV suggestion data (suggestion.data object only) vs DATA_SCHEMAS['cwv']
+      describe('CWV opportunity type', () => {
+        it('passes when url-type has type, url (uri), metrics, and issues', () => {
+          const suggestionData = {
+            type: 'url',
+            url: 'https://www.example.com/page',
+            pageviews: 11620,
+            organic: 2400,
+            metrics: [
+              {
+                deviceType: 'mobile',
+                pageviews: 6200,
+                lcp: 2701,
+                cls: 0.001,
+                ttfb: 682,
+              },
+              {
+                deviceType: 'desktop',
+                pageviews: 3600,
+                lcp: null,
+                cls: null,
+                ttfb: null,
+              },
+            ],
+            issues: [],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+        });
+
+        it('fails when issues is missing (schema requires issues array)', () => {
+          const suggestionData = {
+            type: 'url',
+            url: 'https://www.example.com/page',
+            pageviews: 11620,
+            metrics: [{ deviceType: 'mobile', lcp: 2701 }],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+        });
+
+        it('fails when group-type has pattern but no url (schema requires url)', () => {
+          const suggestionData = {
+            type: 'group',
+            name: 'Some pages',
+            pattern: 'https://www.aem.live/home/*',
+            pageviews: 9620,
+            organic: 1900,
+            metrics: [
+              { deviceType: 'desktop', lcp: 2099, cls: 0.011 },
+              { deviceType: 'mobile', lcp: 2454, cls: 0.27 },
+            ],
+            issues: [],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+        });
       });
     });
   });

@@ -11,6 +11,7 @@
  */
 
 import { createDataAccess } from '../../../src/service/index.js';
+import { POSTGREST_WRITER_JWT } from '../util/postgrest-jwt.js';
 
 export const TEST_IDS = {
   organizationId: '04f63783-3f76-4076-bbda-71a11145303c',
@@ -36,5 +37,6 @@ export const createLogger = () => ({
 
 export const createITDataAccess = () => {
   const postgrestUrl = process.env.POSTGREST_URL || 'http://127.0.0.1:3300';
-  return createDataAccess({ postgrestUrl }, createLogger());
+  const postgrestApiKey = process.env.POSTGREST_API_KEY || POSTGREST_WRITER_JWT;
+  return createDataAccess({ postgrestUrl, postgrestApiKey }, createLogger());
 };

@@ -12,18 +12,20 @@
 
 import { execFileSync } from 'child_process';
 import {
-  existsSync, mkdirSync, mkdtempSync, rmSync, statfsSync, writeFileSync,
+  existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync,
+  readlinkSync, rmSync, statfsSync, writeFileSync,
 } from 'fs';
 import os from 'os';
 import path from 'path';
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import AdmZip from 'adm-zip';
+import { archiveFolder, extract } from 'zip-lib';
 
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
 const PATCH_FILE_PREFIX = 'cm-patch-';
+const ZIP_DIR_PREFIX = 'cm-zip-';
 const GIT_OPERATION_TIMEOUT_MS = 120_000; // 120s — fail fast before Lambda timeout
 
 /**
@@ -337,6 +339,30 @@ export default class CloudManagerClient {
   }
 
   /**
+   * Recursively validates that all symlinks under rootDir point to targets
+   * within rootDir. Throws if any symlink escapes the root boundary.
+   * @param {string} dir - Directory to scan
+   * @param {string} rootDir - The root boundary all symlink targets must stay within
+   */
+  #validateSymlinks(dir, rootDir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isSymbolicLink()) {
+        const target = readlinkSync(fullPath);
+        const resolved = path.resolve(path.dirname(fullPath), target);
+        const relative = path.relative(rootDir, resolved);
+        if (relative.startsWith('..') || path.isAbsolute(relative)) {
+          throw new Error(
+            `Symlink escapes repository root: ${path.relative(rootDir, fullPath)} -> ${target}`,
+          );
+        }
+      } else if (entry.isDirectory()) {
+        this.#validateSymlinks(fullPath, rootDir);
+      }
+    }
+  }
+
+  /**
    * Zips the entire cloned repository including .git history.
    * Downstream services that read the ZIP from S3 need the full git history.
    * @param {string} clonePath - Path to the cloned repository
@@ -347,10 +373,22 @@ export default class CloudManagerClient {
       throw new Error(`Clone path does not exist: ${clonePath}`);
     }
 
-    this.log.info(`Zipping repository at ${clonePath}`);
-    const zip = new AdmZip();
-    zip.addLocalFolder(clonePath);
-    return zip.toBuffer();
+    // zip-lib is path-based (not buffer-based like adm-zip), so we write to
+    // a temp file and read the result back into a Buffer for the caller.
+    const zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
+    const zipFile = path.join(zipDir, 'repo.zip');
+
+    try {
+      this.log.info(`Zipping repository at ${clonePath}`);
+      this.#validateSymlinks(clonePath, clonePath);
+      await archiveFolder(clonePath, zipFile, { followSymlinks: false });
+      this.#logTmpDiskUsage('zip');
+      return readFileSync(zipFile);
+    } catch (error) {
+      throw new Error(`Failed to zip repository: ${error.message}`);
+    } finally /* c8 ignore next */ {
+      rmSync(zipDir, { recursive: true, force: true });
+    }
   }
 
   /**
@@ -574,15 +612,23 @@ export default class CloudManagerClient {
    */
   async unzipRepository(zipBuffer) {
     const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
-
+    // zip-lib is path-based, so we write the buffer to a temp file for extraction.
+    // zipDir is created inside the try block to avoid leaking extractPath if it fails.
+    let zipDir;
     try {
-      const zip = new AdmZip(zipBuffer);
-      zip.extractAllTo(extractPath, true);
+      zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
+      const zipFile = path.join(zipDir, 'repo.zip');
+      writeFileSync(zipFile, zipBuffer);
+      await extract(zipFile, extractPath);
+      this.#validateSymlinks(extractPath, extractPath);
       this.log.info(`Repository extracted to ${extractPath}`);
+      this.#logTmpDiskUsage('unzip');
       return extractPath;
     } catch (error) {
       rmSync(extractPath, { recursive: true, force: true });
       throw new Error(`Failed to unzip repository: ${error.message}`);
+    } finally /* c8 ignore next */ {
+      if (zipDir) rmSync(zipDir, { recursive: true, force: true });
     }
   }
 

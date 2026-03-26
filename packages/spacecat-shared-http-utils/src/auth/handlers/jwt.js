@@ -11,54 +11,25 @@
  */
 
 import { hasText } from '@adobe/spacecat-shared-utils';
-import { importSPKI, jwtVerify } from 'jose';
 
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
 import { getBearerToken } from './utils/bearer.js';
 import { getCookieValue } from './utils/cookie.js';
+import { loadPublicKey, validateToken } from './utils/token.js';
 
-const ALGORITHM_ES256 = 'ES256';
-export const ISSUER = 'https://spacecat.experiencecloud.live';
+export { ISSUER } from './utils/token.js';
 
 export default class JwtHandler extends AbstractHandler {
   constructor(log) {
     super('jwt', log);
   }
 
-  async #setup(context) {
-    const authPublicKeyB64 = context.env?.AUTH_PUBLIC_KEY_B64;
-
-    if (!hasText(authPublicKeyB64)) {
-      throw new Error('No public key provided');
-    }
-
-    const authPublicKey = Buffer.from(authPublicKeyB64, 'base64').toString('utf-8');
-
-    this.authPublicKey = await importSPKI(authPublicKey, ALGORITHM_ES256);
-  }
-
-  async #validateToken(token) {
-    const verifiedToken = await jwtVerify(
-      token,
-      this.authPublicKey,
-      {
-        algorithms: [ALGORITHM_ES256], // force expected algorithm
-        clockTolerance: 5, // number of seconds to tolerate when checking the nbf and exp claims
-        complete: false, // only return the payload and not headers etc.
-        ignoreExpiration: false, // validate expiration
-        issuer: ISSUER, // validate issuer
-      },
-    );
-
-    verifiedToken.payload.tenants = verifiedToken.payload.tenants || [];
-
-    return verifiedToken.payload;
-  }
-
   async checkAuth(request, context) {
     try {
-      await this.#setup(context);
+      if (!this.authPublicKey) {
+        this.authPublicKey = await loadPublicKey(context);
+      }
 
       const token = getBearerToken(context) ?? getCookieValue(context, 'sessionToken');
 
@@ -67,7 +38,8 @@ export default class JwtHandler extends AbstractHandler {
         return null;
       }
 
-      const payload = await this.#validateToken(token);
+      const payload = await validateToken(token, this.authPublicKey);
+      payload.tenants = payload.tenants || [];
 
       const scopes = payload.is_admin ? [{ name: 'admin' }] : [];
 
@@ -76,6 +48,10 @@ export default class JwtHandler extends AbstractHandler {
           name: 'user', domains: [tenant.id], subScopes: tenant?.subServices || [], entitlement: tenant?.entitlement || {},
         }),
       ));
+
+      if (context.s2sConsumer) {
+        this.log(`[jwt] S2S consumer token used on route ${context.pathInfo?.method} ${context.pathInfo?.suffix}`, 'info');
+      }
 
       return new AuthInfo()
         .withType(this.name)

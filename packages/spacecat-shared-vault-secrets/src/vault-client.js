@@ -10,6 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
+import { noCache, h1NoCache } from '@adobe/fetch';
+
+// Use @adobe/fetch for connection pooling instead of globalThis.fetch.
+// noCache() disables HTTP response caching (prevents stale Vault reads).
+// h1NoCache() in tests for nock compatibility; noCache() in production for HTTP/2 over HTTPS.
+const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1 ? h1NoCache() : noCache();
+
 const TOKEN_RENEW_BUFFER = 5 * 60 * 1000;
 
 export default class VaultClient {
@@ -98,6 +105,20 @@ export default class VaultClient {
 
     if (response.status === 404) {
       throw new Error(`Secret not found: ${path}`);
+    }
+    if (!response.ok) {
+      throw new Error(`Vault read failed: ${response.status}`);
+    }
+
+    const body = await response.json();
+    return body.data.data;
+  }
+
+  async tryReadSecret(path) {
+    const response = await this.#request('GET', `data/${path}`);
+
+    if (response.status === 404) {
+      return null;
     }
     if (!response.ok) {
       throw new Error(`Vault read failed: ${response.status}`);

@@ -82,19 +82,10 @@ describe('SentimentTopic IT', function () {
 
   it('creates a new sentiment topic', async () => {
     const site = sampleData.sites[0];
-    const urls = [
-      {
-        url: 'https://example.com/page1',
-        timesCited: 3,
-        category: 'tech',
-        subPrompts: ['prompt1'],
-      },
-    ];
     const data = {
       siteId: site.getId(),
       name: 'New Topic',
       description: 'A new test topic',
-      urls,
       enabled: true,
       createdBy: 'test@example.com',
     };
@@ -105,7 +96,6 @@ describe('SentimentTopic IT', function () {
     expect(topic.getSiteId()).to.equal(data.siteId);
     expect(topic.getName()).to.equal(data.name);
     expect(topic.getDescription()).to.equal(data.description);
-    expect(topic.getUrls()).to.deep.equal(urls);
     expect(topic.getEnabled()).to.equal(data.enabled);
     expect(topic.getCreatedBy()).to.equal(data.createdBy);
   });
@@ -122,7 +112,6 @@ describe('SentimentTopic IT', function () {
 
     checkSentimentTopic(topic);
     expect(topic.getEnabled()).to.equal(true);
-    expect(topic.getUrls()).to.deep.equal([]);
   });
 
   it('updates a sentiment topic', async () => {

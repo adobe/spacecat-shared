@@ -990,6 +990,19 @@ class TokowakaClient {
 
     const forwardedHost = calculateForwardedHost(previewUrl, this.log);
 
+    const originalHtmlPromise = fetchHtmlWithWarmup(
+      previewUrl,
+      apiKey,
+      forwardedHost,
+      edgeUrl,
+      this.log,
+      false,
+      options,
+    ).catch((err) => {
+      this.log.error(`Failed to fetch original HTML: ${err.message}`);
+      return null;
+    });
+
     // Generate configuration with eligible preview suggestions
     this.log.info(`Generating preview Tokowaka config for opportunity ${opportunity.getId()}`);
     const newConfig = this.generateConfig(previewUrl, opportunity, eligibleSuggestions);
@@ -1046,38 +1059,33 @@ class TokowakaClient {
     let cdnInvalidationResults = null;
 
     try {
-      const fetchAndInvalidateStartTime = Date.now();
-      // Fetch original HTML and invalidate CDN cache in parallel to save time
-      [originalHtml, cdnInvalidationResults] = await Promise.all([
+      // Invalidate CDN so edge serves fresh content for optimized fetch
+      cdnInvalidationResults = await this.invalidateCdnCache({
+        urls: [previewUrl],
+        isPreview: true,
+      });
+
+      // Await original HTML (started earlier) and fetch optimized HTML in parallel
+      const fetchStartTime = Date.now();
+      [originalHtml, optimizedHtml] = await Promise.all([
+        originalHtmlPromise,
         fetchHtmlWithWarmup(
           previewUrl,
           apiKey,
           forwardedHost,
           edgeUrl,
           this.log,
-          false,
+          true,
           options,
         ),
-        this.invalidateCdnCache({
-          urls: [previewUrl],
-          isPreview: true,
-        }),
       ]);
-      this.log.info('Successfully fetched original HTML and invalidated CDN cache'
-        + ` in ${Date.now() - fetchAndInvalidateStartTime}ms`);
-
-      // Step 2: Fetch optimized HTML after CDN invalidation and original fetch complete
-      this.log.info('Fetching optimized HTML...');
-      optimizedHtml = await fetchHtmlWithWarmup(
-        previewUrl,
-        apiKey,
-        forwardedHost,
-        edgeUrl,
-        this.log,
-        true,
-        options,
-      );
-      this.log.info('Successfully fetched optimized HTML');
+      /* c8 ignore start */
+      if (!originalHtml || !optimizedHtml) {
+        throw this.#createError('Failed to fetch original or optimized HTML', HTTP_INTERNAL_SERVER_ERROR);
+      }
+      /* c8 ignore stop */
+      this.log.info('Successfully fetched original and optimized HTML'
+        + ` in ${Date.now() - fetchStartTime}ms`);
     } catch (error) {
       this.log.error(`Failed to fetch HTML for preview: ${error.message}`);
       throw this.#createError(

@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.12.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.1...@adobe/spacecat-shared-tokowaka-client-v1.12.2) (2026-03-25)
+
+### Bug Fixes
+
+* optimize preview api ([#1412](https://github.com/adobe/spacecat-shared/issues/1412)) ([3efb9de](https://github.com/adobe/spacecat-shared/commit/3efb9deb1ee6ad962b5288ef124f96fbfbb6e4ae))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.0...@adobe/spacecat-shared-tokowaka-client-v1.12.1) (2026-03-21)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.11.2...@adobe/spacecat-shared-tokowaka-client-v1.12.0) (2026-03-19)
+
+### Features
+
+* **AGENTCOM-466:** switch commerce enrichment mapper to semantic HTML ([#1435](https://github.com/adobe/spacecat-shared/issues/1435)) ([05a8fd9](https://github.com/adobe/spacecat-shared/commit/05a8fd9c8574edcd59317abcebb2ba0b3c3e038c))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.11.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.11.1...@adobe/spacecat-shared-tokowaka-client-v1.11.2) (2026-03-15)
 
 ### Bug Fixes

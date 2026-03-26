@@ -3308,6 +3308,35 @@ describe('TokowakaClient', () => {
       }
     });
 
+    it('should throw when original HTML fetch returns null (e.g. early fetch failed and resolved null)', async () => {
+      const okResponse = {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: { get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null) },
+        text: async () => '<html><body>Test HTML</body></html>',
+      };
+      fetchStub.resetBehavior();
+      fetchStub.onCall(0).resolves(okResponse);
+      fetchStub.onCall(1).resolves(okResponse);
+      fetchStub.onCall(2).resolves(okResponse);
+      fetchStub.onCall(3).rejects(new Error('Original actual fetch failed'));
+
+      try {
+        await client.previewSuggestions(
+          mockSite,
+          mockOpportunity,
+          mockSuggestions,
+          { warmupDelayMs: 0, maxRetries: 0, retryDelayMs: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.satisfy((msg) => msg.includes('Failed to fetch original or optimized HTML')
+        || msg.includes('Preview failed'));
+        expect(error.status).to.equal(500);
+      }
+    });
+
     it('should merge with existing deployed patches for the same URL', async () => {
       // Setup existing config with deployed patches
       const existingConfig = {

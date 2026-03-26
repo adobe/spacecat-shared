@@ -36,6 +36,19 @@ export declare function unauthorized(message?: string, headers?: object): Respon
 export declare function forbidden(message?: string, headers?: object): Response;
 
 /**
+ * Compression
+ */
+export interface CompressResponseOptions {
+  minSize?: number;
+  preference?: string[];
+}
+
+export declare function compressResponse(
+  fn: (request: any, context: any) => Promise<Response>,
+  opts?: CompressResponseOptions,
+): (request: any, context: any) => Promise<Response>;
+
+/**
  * Utility functions
  */
 export function hashWithSHA256(input: string): string;

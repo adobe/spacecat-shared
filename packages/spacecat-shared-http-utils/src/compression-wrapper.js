@@ -14,7 +14,7 @@ import { promisify } from 'util';
 import {
   gzip, brotliCompress, deflate, constants as zlibConstants,
 } from 'zlib';
-import { Response } from '@adobe/fetch';
+import { Headers, Response } from '@adobe/fetch';
 
 const gzipAsync = promisify(gzip);
 const brotliCompressAsync = promisify(brotliCompress);
@@ -53,7 +53,7 @@ export function negotiateEncoding(header, preference = DEFAULT_PREFERENCE) {
 
   // Keep only supported encodings with quality > 0
   const candidates = expanded.filter(
-    ({ encoding, quality }) => quality > 0 && preference.includes(encoding),
+    ({ encoding, quality }) => quality > 0 && (preference.includes(encoding) || encoding === 'identity'),
   );
 
   if (candidates.length === 0) {
@@ -93,6 +93,8 @@ export function mergeVary(existing) {
 export async function compress(encoding, buffer) {
   switch (encoding) {
     case 'br':
+      // Quality 4 balances compression ratio vs CPU cost for Lambda
+      // (default 11 is too slow for large payloads, causing timeouts)
       return brotliCompressAsync(buffer, {
         params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 4 },
       });
@@ -106,7 +108,7 @@ export async function compress(encoding, buffer) {
 }
 
 const DEFAULT_MIN_SIZE = 1024;
-const SKIP_STATUSES = new Set([204, 304]);
+const SKIP_STATUSES = new Set([204, 206, 304]);
 
 export function compressResponse(fn, opts = {}) {
   const {
@@ -121,7 +123,15 @@ export function compressResponse(fn, opts = {}) {
       return response;
     }
 
+    if (response.headers.get('content-range')) {
+      return response;
+    }
+
     if (response.headers.get('content-encoding')) {
+      return response;
+    }
+
+    if (response.headers.get('cache-control')?.includes('no-transform')) {
       return response;
     }
 
@@ -141,23 +151,39 @@ export function compressResponse(fn, opts = {}) {
     if (body.length < minSize) {
       return new Response(body, {
         status: response.status,
-        headers: Object.fromEntries(response.headers.entries()),
+        headers: new Headers(response.headers),
       });
     }
 
-    const compressed = await compress(encoding, body);
+    const log = context?.log ?? console;
 
-    const { log = console } = context;
+    let compressed;
+    try {
+      compressed = await compress(encoding, body);
+    } catch (err) {
+      log.error(`[compression] failed to compress with ${encoding}: ${err.message}`);
+      return new Response(body, {
+        status: response.status,
+        headers: new Headers(response.headers),
+      });
+    }
+
     log.info(`[compression] encoding=${encoding} original=${body.length} compressed=${compressed.length}`);
 
-    const headers = Object.fromEntries(response.headers.entries());
-    delete headers['content-length'];
-    headers['content-encoding'] = encoding;
-    headers.vary = mergeVary(headers.vary);
+    const newHeaders = new Headers(response.headers);
+    newHeaders.delete('content-length');
+    newHeaders.set('content-encoding', encoding);
+    newHeaders.set('vary', mergeVary(newHeaders.get('vary')));
+
+    // Weaken strong ETags - compressed body invalidates them (RFC 7232 S2.1)
+    const etag = newHeaders.get('etag');
+    if (etag && !etag.startsWith('W/')) {
+      newHeaders.set('etag', `W/${etag}`);
+    }
 
     return new Response(compressed, {
       status: response.status,
-      headers,
+      headers: newHeaders,
     });
   };
 }

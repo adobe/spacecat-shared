@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-data-access-v3.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.31.0...@adobe/spacecat-shared-data-access-v3.31.1) (2026-03-26)
+
+### Bug Fixes
+
+* **AGENTCOM-441:** update required fields from commerce config ([#1470](https://github.com/adobe/spacecat-shared/issues/1470)) ([5e89146](https://github.com/adobe/spacecat-shared/commit/5e89146110896cfcbcce9e80e743564ff8bb989b))
+
+## [@adobe/spacecat-shared-data-access-v3.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.30.0...@adobe/spacecat-shared-data-access-v3.31.0) (2026-03-25)
+
+### Features
+
+* Added cwv-trends-audit import type ([#1434](https://github.com/adobe/spacecat-shared/issues/1434)) ([eab9653](https://github.com/adobe/spacecat-shared/commit/eab9653a367208f0cf9691fbf186ffabb9307fea))
+
+## [@adobe/spacecat-shared-data-access-v3.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.29.0...@adobe/spacecat-shared-data-access-v3.30.0) (2026-03-25)
+
+### Features
+
+* **data-access:** add allByEnrollmentProductCode to SiteCollection ([#1455](https://github.com/adobe/spacecat-shared/issues/1455)) ([0225791](https://github.com/adobe/spacecat-shared/commit/02257915bbf5aa2e15e1320bbcdfa27b236c44b8))
+
+## [@adobe/spacecat-shared-data-access-v3.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.28.0...@adobe/spacecat-shared-data-access-v3.29.0) (2026-03-23)
+
+### Features
+
+* **page-citability:** add UPDATED_BY_PRERENDER and UPDATED_BY_PAGE_CITABILITY constants ([#1460](https://github.com/adobe/spacecat-shared/issues/1460)) ([dcdf2b0](https://github.com/adobe/spacecat-shared/commit/dcdf2b0af9b9426631e9363949027a267ce7d015))
+
+## [@adobe/spacecat-shared-data-access-v3.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.27.1...@adobe/spacecat-shared-data-access-v3.28.0) (2026-03-23)
+
+### Features
+
+* add commerceLlmoConfig to site configuration schema ([#1459](https://github.com/adobe/spacecat-shared/issues/1459)) ([8dd4bbf](https://github.com/adobe/spacecat-shared/commit/8dd4bbfda08343b37852d627c8528016358115c9))
+
 ## [@adobe/spacecat-shared-data-access-v3.27.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.27.0...@adobe/spacecat-shared-data-access-v3.27.1) (2026-03-21)
 
 ### Bug Fixes

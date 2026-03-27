@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.31.1...@adobe/spacecat-shared-data-access-v3.32.0) (2026-03-27)
+
+### Features
+
+* Added redirectsQueued to plg onboarding schema ([#1473](https://github.com/adobe/spacecat-shared/issues/1473)) ([a7c5258](https://github.com/adobe/spacecat-shared/commit/a7c5258afd97df232b874f5e0763ad4236419e39))
+
 ## [@adobe/spacecat-shared-data-access-v3.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.31.0...@adobe/spacecat-shared-data-access-v3.31.1) (2026-03-26)
 
 ### Bug Fixes

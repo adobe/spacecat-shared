@@ -386,10 +386,10 @@ export const configSchema = Joi.object({
   commerceLlmoConfig: Joi.object().pattern(
     Joi.string(),
     Joi.object({
-      environmentId: Joi.string().optional(),
-      websiteCode: Joi.string().optional(),
-      storeCode: Joi.string().optional(),
-      storeViewCode: Joi.string().optional(),
+      environmentId: Joi.string().required(),
+      websiteCode: Joi.string().required(),
+      storeCode: Joi.string().required(),
+      storeViewCode: Joi.string().required(),
       hostName: Joi.string().optional(),
       magentoEndpoint: Joi.string().uri().optional(),
       magentoAPIKey: Joi.string().optional(),

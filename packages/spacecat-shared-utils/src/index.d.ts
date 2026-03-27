@@ -78,6 +78,22 @@ export function logWrapper(fn: (message: object, context: object) => Promise<Res
   (message: object, context: object) => Promise<Response>;
 
 /**
+ * Logs a message with an audit-type prefix such as `[prerender]`.
+ * @param log - Logger instance with level methods
+ * @param level - The log level to invoke
+ * @param auditType - The audit type used in the prefix
+ * @param message - The log message
+ * @param error - Optional error object to forward to the logger
+ */
+export function logWithAuditPrefix(
+  log: Record<string, (...args: unknown[]) => unknown> | null | undefined,
+  level: string,
+  auditType: string,
+  message: string,
+  error?: unknown,
+): void;
+
+/**
  * Instruments an AWS SDK v3 client with X-Ray tracing when running in AWS Lambda.
  * @param client - The AWS SDK v3 client to instrument
  * @returns The instrumented client (or original client if not in Lambda)

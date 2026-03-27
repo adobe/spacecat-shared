@@ -95,6 +95,7 @@ describe('Index Exports', () => {
     'isoCalendarWeekMonday',
     'isoCalendarWeekSunday',
     'llmoConfig',
+    'logWithAuditPrefix',
     'llmoStrategy',
     'logWrapper',
     'OPPORTUNITY_GRANT_CONFIG',

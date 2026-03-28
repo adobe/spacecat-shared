@@ -14,6 +14,7 @@
 
 import {
   hasText,
+  isInteger,
   isObject,
   isValidUUID,
 } from '@adobe/spacecat-shared-utils';
@@ -23,13 +24,6 @@ import GeoExperiment from './geo-experiment.model.js';
 import GeoExperimentCollection from './geo-experiment.collection.js';
 
 const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
-  .addAttribute('geoExperimentId', {
-    type: 'string',
-    postgrestField: 'id',
-    required: true,
-    readOnly: true,
-    validate: (value) => hasText(value),
-  })
   .addReference('belongs_to', 'Site')
   .addReference('belongs_to', 'Opportunity', [], { required: false })
   .addAttribute('preScheduleId', {
@@ -56,6 +50,19 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
       validate: (value) => isValidUUID(value),
     },
     default: () => [],
+  })
+  .addAttribute('name', {
+    type: 'string',
+    validate: (value) => !value || hasText(value),
+  })
+  .addAttribute('promptsCount', {
+    type: 'number',
+    default: 0,
+    validate: (value) => isInteger(value) && value >= 0,
+  })
+  .addAttribute('promptsS3Key', {
+    type: 'string',
+    validate: (value) => !value || hasText(value),
   })
   .addAttribute('metadata', {
     type: 'any',

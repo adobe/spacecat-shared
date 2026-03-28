@@ -28,7 +28,7 @@ describe('GeoExperimentModel', () => {
   let mockElectroService;
 
   const mockRecord = {
-    geoExperimentId: 'e12345',
+    geoExperimentId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     siteId: '2c1f0868-cc2d-4358-ba26-a7b5965ee403',
     opportunityId: '3b7de19c-4bf8-4687-a337-b9f4a5d56f8e',
     preScheduleId: 'drs-pre-schedule-id',
@@ -36,6 +36,9 @@ describe('GeoExperimentModel', () => {
     status: GeoExperiment.STATUSES.POST_ANALYSIS_DONE,
     skipDeploy: false,
     suggestionIds: ['4d56efe4-9473-4e9a-95f3-c7536ffc56a3'],
+    name: 'Test RCV Experiment',
+    promptsCount: 5,
+    promptsS3Key: 'geo-experiments/2c1f0868-cc2d-4358-ba26-a7b5965ee403/a1b2c3d4-e5f6-7890-abcd-ef1234567890-prompts.json',
     metadata: { deployType: 'edge' },
     error: { message: 'none' },
     updatedBy: 'spacecat-api-service',
@@ -83,6 +86,24 @@ describe('GeoExperimentModel', () => {
     expect(instance.getSuggestionIds()).to.deep.equal(['4d56efe4-9473-4e9a-95f3-c7536ffc56a3']);
     instance.setSuggestionIds(['73684b8d-22fc-4ac8-b5e3-502f6a256eb7']);
     expect(instance.getSuggestionIds()).to.deep.equal(['73684b8d-22fc-4ac8-b5e3-502f6a256eb7']);
+  });
+
+  it('gets and sets name', () => {
+    expect(instance.getName()).to.equal('Test RCV Experiment');
+    instance.setName('Updated Experiment Name');
+    expect(instance.getName()).to.equal('Updated Experiment Name');
+  });
+
+  it('gets and sets promptsCount', () => {
+    expect(instance.getPromptsCount()).to.equal(5);
+    instance.setPromptsCount(10);
+    expect(instance.getPromptsCount()).to.equal(10);
+  });
+
+  it('gets and sets promptsS3Key', () => {
+    expect(instance.getPromptsS3Key()).to.equal('geo-experiments/2c1f0868-cc2d-4358-ba26-a7b5965ee403/a1b2c3d4-e5f6-7890-abcd-ef1234567890-prompts.json');
+    instance.setPromptsS3Key('geo-experiments/site-id/new-experiment-id-prompts.json');
+    expect(instance.getPromptsS3Key()).to.equal('geo-experiments/site-id/new-experiment-id-prompts.json');
   });
 
   it('gets and sets metadata and error', () => {

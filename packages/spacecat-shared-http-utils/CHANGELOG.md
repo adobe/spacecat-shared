@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.25.0...@adobe/spacecat-shared-http-utils-v1.25.1) (2026-03-28)
+
+### Bug Fixes
+
+* add client id in audit trail of s2s requests ([#1476](https://github.com/adobe/spacecat-shared/issues/1476)) ([8623cea](https://github.com/adobe/spacecat-shared/commit/8623ceae4d1b661fc67ff4a470d1561ee5f6de1b))
+
 ## [@adobe/spacecat-shared-http-utils-v1.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.24.1...@adobe/spacecat-shared-http-utils-v1.25.0) (2026-03-26)
 
 ### Features

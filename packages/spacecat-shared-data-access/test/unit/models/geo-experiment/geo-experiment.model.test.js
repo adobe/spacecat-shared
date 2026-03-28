@@ -72,6 +72,10 @@ describe('GeoExperimentModel', () => {
 
   it('gets and sets status', () => {
     expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.POST_ANALYSIS_DONE);
+    instance.setStatus(GeoExperiment.STATUSES.PRE_ANALYSIS_FAILED);
+    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.PRE_ANALYSIS_FAILED);
+    instance.setStatus(GeoExperiment.STATUSES.POST_ANALYSIS_FAILED);
+    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.POST_ANALYSIS_FAILED);
     instance.setStatus(GeoExperiment.STATUSES.FAILED);
     expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.FAILED);
   });

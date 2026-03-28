@@ -20,9 +20,11 @@ class GeoExperiment extends BaseModel {
   static STATUSES = {
     PRE_ANALYSIS_SUBMITTED: 'pre_analysis_submitted',
     PRE_ANALYSIS_DONE: 'pre_analysis_done',
+    PRE_ANALYSIS_FAILED: 'pre_analysis_failed',
     OPTIMISATION_DEPLOYED: 'optimisation_deployed',
     POST_ANALYSIS_SUBMITTED: 'post_analysis_submitted',
     POST_ANALYSIS_DONE: 'post_analysis_done',
+    POST_ANALYSIS_FAILED: 'post_analysis_failed',
     FAILED: 'failed',
   };
 }

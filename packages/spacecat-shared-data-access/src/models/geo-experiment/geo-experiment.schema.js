@@ -37,7 +37,6 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
   .addAttribute('status', {
     type: Object.values(GeoExperiment.STATUSES),
     required: true,
-    default: GeoExperiment.STATUSES.PRE_ANALYSIS_SUBMITTED,
   })
   .addAttribute('skipDeploy', {
     type: 'boolean',

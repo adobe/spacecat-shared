@@ -75,10 +75,6 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     type: 'string',
     default: GeoExperiment.DEFAULT_UPDATED_BY,
     validate: (value) => hasText(value),
-  })
-  .addIndex(
-    { composite: ['preScheduleId'] },
-    { composite: ['updatedAt'] },
-  );
+  });
 
 export default schema.build();

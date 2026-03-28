@@ -73,64 +73,6 @@ interface BrandDetectionOptions {
 
 type ExperimentPhase = 'pre' | 'post';
 
-interface SubmitExperimentParams {
-  siteId: string;
-  experimentId: string;
-  experimentPhase: ExperimentPhase;
-  experimentationUrls?: string[];
-  platforms?: string[];
-  intervalMinutes?: number;
-  durationHours?: number;
-  metadata?: Record<string, unknown>;
-}
-
-interface ExperimentPhaseStatus {
-  phase: ExperimentPhase;
-  status: string;
-  progress: {
-    total: number;
-    completed: number;
-    failed: number;
-    running: number;
-    queued: number;
-    cancelled: number;
-  };
-  progress_percent: number;
-  platforms?: Record<string, { total: number; completed: number; failed: number; running: number }>;
-  started_at?: number;
-  completed_at?: number;
-  experiment_hour?: number;
-}
-
-interface ExperimentSubmitResult {
-  schedule_id: string;
-  experiment_id: string;
-  experiment_phase: ExperimentPhase;
-  experiment_batch_id: string;
-  parent_batch_id: string;
-  site_id: string;
-  jobs_submitted: number;
-  jobs_failed: number;
-  [key: string]: unknown;
-}
-
-interface ExperimentStatusResult {
-  experiment_id: string;
-  status: string;
-  site_id?: string;
-  phases: {
-    pre?: ExperimentPhaseStatus;
-    post?: ExperimentPhaseStatus;
-  };
-  summary: {
-    total_jobs: number;
-    pre_jobs: number;
-    post_jobs: number;
-    phases_started: number;
-    phases_completed: number;
-  };
-}
-
 interface CreateExperimentScheduleParams {
   siteId: string;
   experimentId: string;
@@ -177,8 +119,6 @@ declare class DrsClient {
   submitScrapeJob(params: ScrapeJobParams): Promise<DrsJobResult>;
   lookupScrapeResults(params: ScrapeLookupParams): Promise<ScrapeLookupResponse | null>;
   triggerBrandDetection(siteId: string, options?: BrandDetectionOptions): Promise<Record<string, unknown> | null>;
-  submitExperiment(params: SubmitExperimentParams): Promise<ExperimentSubmitResult>;
-  getExperimentStatus(experimentId: string, phase?: ExperimentPhase): Promise<ExperimentStatusResult>;
   createExperimentSchedule(params: CreateExperimentScheduleParams): Promise<ScheduleStatusResult>;
   getScheduleStatus(siteId: string, scheduleId: string): Promise<ScheduleStatusResult>;
   getJob(jobId: string): Promise<Record<string, unknown>>;

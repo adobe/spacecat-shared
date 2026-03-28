@@ -301,7 +301,7 @@ export default class DrsClient {
       cron_expression: cronExpression,
       expires_at: expiresAt,
       trigger_immediately: triggerImmediately === true,
-      description: `SpaceCat edge deploy ${experimentPhase} experiment ${experimentId}`,
+      description: `${experimentPhase} phase schedule of geo experiment: ${experimentId}`,
       job_config: {
         cadence: 'experiment',
         provider_ids: providerIds,

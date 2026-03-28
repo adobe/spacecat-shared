@@ -124,11 +124,6 @@ declare class DrsClient {
   getJob(jobId: string): Promise<Record<string, unknown>>;
 }
 
-export declare const EXPERIMENT_PHASES: Readonly<{
-  PRE: 'pre';
-  POST: 'post';
-}>;
-
 export declare const SCRAPE_DATASET_IDS: Readonly<{
   YOUTUBE_VIDEOS: 'youtube_videos';
   YOUTUBE_COMMENTS: 'youtube_comments';

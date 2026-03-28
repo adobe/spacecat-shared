@@ -79,18 +79,67 @@ describe('Suggestion Projection Utils', () => {
     });
 
     describe('extractPageUrlFromRecommendations', () => {
-      it('extracts pageUrl from recommendations', () => {
+      it('extracts pageUrl, isDecorative, and hasAltAttribute from recommendations', () => {
         const recommendations = [
-          { pageUrl: 'https://example.com/1', altText: 'test1', xpath: '/html/img' },
-          { pageUrl: 'https://example.com/2', altText: 'test2', xpath: '/html/img2' },
+          {
+            pageUrl: 'https://example.com/1',
+            isDecorative: false,
+            hasAltAttribute: false,
+            altText: 'test1',
+            xpath: '/html/img',
+            imageUrl: 'https://cdn.example.com/img1.jpg',
+          },
+          {
+            pageUrl: 'https://example.com/2',
+            isDecorative: true,
+            hasAltAttribute: true,
+            altText: 'test2',
+            xpath: '/html/img2',
+            imageUrl: 'https://cdn.example.com/img2.jpg',
+          },
         ];
 
         const result = FIELD_TRANSFORMERS.extractPageUrlFromRecommendations(recommendations);
 
         expect(result).to.deep.equal([
-          { pageUrl: 'https://example.com/1' },
-          { pageUrl: 'https://example.com/2' },
+          { pageUrl: 'https://example.com/1', isDecorative: false, hasAltAttribute: false },
+          { pageUrl: 'https://example.com/2', isDecorative: true, hasAltAttribute: true },
         ]);
+      });
+
+      it('strips all other recommendation fields except pageUrl, isDecorative, and hasAltAttribute', () => {
+        const recommendations = [
+          {
+            pageUrl: 'https://example.com/1',
+            isDecorative: false,
+            hasAltAttribute: false,
+            altText: 'should be stripped',
+            imageUrl: 'https://cdn.example.com/img.jpg',
+            xpath: '/html/img',
+            language: 'en',
+            id: 'rec-123',
+            isAutofixable: true,
+            reasonDetail: 'should be stripped',
+          },
+        ];
+
+        const result = FIELD_TRANSFORMERS.extractPageUrlFromRecommendations(recommendations);
+
+        expect(result).to.have.lengthOf(1);
+        expect(result[0]).to.have.keys(['pageUrl', 'isDecorative', 'hasAltAttribute']);
+        expect(result[0]).to.not.have.any.keys(['altText', 'imageUrl', 'xpath', 'language', 'id', 'isAutofixable', 'reasonDetail']);
+      });
+
+      it('omits isDecorative and hasAltAttribute when fields are absent', () => {
+        const recommendations = [
+          { pageUrl: 'https://example.com/1', altText: 'no flags here' },
+        ];
+
+        const result = FIELD_TRANSFORMERS.extractPageUrlFromRecommendations(recommendations);
+
+        expect(result).to.deep.equal([{ pageUrl: 'https://example.com/1' }]);
+        expect(result[0]).to.not.have.key('isDecorative');
+        expect(result[0]).to.not.have.key('hasAltAttribute');
       });
 
       it('returns non-array values unchanged', () => {

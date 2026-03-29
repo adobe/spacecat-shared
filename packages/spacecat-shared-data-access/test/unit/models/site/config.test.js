@@ -2845,6 +2845,29 @@ describe('Config Tests', () => {
       expect(config.getOnboardConfig().lastProfile).to.equal('paid');
     });
 
+    it('trims history to maxHistory when the limit is exceeded', () => {
+      const existingHistory = Array.from({ length: 10 }, (_, i) => ({ profile: 'demo', startTime: i + 1 }));
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 10, history: existingHistory } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: 11 }, { maxHistory: 10 });
+      const { history } = config.getOnboardConfig();
+      expect(history).to.have.length(10);
+      expect(history[0]).to.deep.equal({ profile: 'demo', startTime: 2 });
+      expect(history[9]).to.deep.equal({ profile: 'paid', startTime: 11 });
+    });
+
+    it('does not trim history when entries are within the maxHistory limit', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000, history: [{ profile: 'demo', startTime: 1000 }] } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: 2000 }, { maxHistory: 10 });
+      expect(config.getOnboardConfig().history).to.have.length(2);
+    });
+
+    it('does not trim history when maxHistory is not provided', () => {
+      const existingHistory = Array.from({ length: 15 }, (_, i) => ({ profile: 'demo', startTime: i + 1 }));
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 15, history: existingHistory } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: 16 });
+      expect(config.getOnboardConfig().history).to.have.length(16);
+    });
+
     it('persists forcedOverride in toDynamoItem', () => {
       const startTime = Date.now();
       const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: startTime, forcedOverride: true } });

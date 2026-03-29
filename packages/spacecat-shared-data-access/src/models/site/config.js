@@ -837,10 +837,13 @@ export const Config = (data = {}) => {
     state.edgeOptimizeConfig = edgeOptimizeConfig;
   };
 
-  self.updateOnboardConfig = (onboardConfig) => {
-    const history = [...(state.onboardConfig?.history || [])];
+  self.updateOnboardConfig = (onboardConfig, { maxHistory } = {}) => {
+    let history = [...(state.onboardConfig?.history || [])];
     if (onboardConfig.lastProfile && onboardConfig.lastStartTime) {
       history.push({ profile: onboardConfig.lastProfile, startTime: onboardConfig.lastStartTime });
+    }
+    if (maxHistory && history.length > maxHistory) {
+      history = history.slice(-maxHistory);
     }
     state.onboardConfig = { ...onboardConfig, history };
   };

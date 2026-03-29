@@ -165,6 +165,7 @@ export { authWrapper } from './auth/auth-wrapper.js';
 export { readOnlyAdminWrapper } from './auth/read-only-admin-wrapper.js';
 export { s2sAuthWrapper } from './auth/s2s-wrapper.js';
 export { enrichPathInfo } from './enrich-path-info-wrapper.js';
+export { compressResponse } from './compression-wrapper.js';
 export { hashWithSHA256 } from './auth/generate-hash.js';
 
 export {

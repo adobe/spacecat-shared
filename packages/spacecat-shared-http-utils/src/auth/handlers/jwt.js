@@ -60,7 +60,7 @@ export default class JwtHandler extends AbstractHandler {
       ));
 
       if (context.s2sConsumer) {
-        this.log(`[jwt] S2S consumer token used on route ${context.pathInfo?.method} ${context.pathInfo?.suffix}`, 'info');
+        this.log(`[jwt] S2S consumer ${context.s2sConsumer?.getClientId()} token used on route ${context.pathInfo?.method} ${context.pathInfo?.suffix}`, 'info');
       }
 
       return new AuthInfo()

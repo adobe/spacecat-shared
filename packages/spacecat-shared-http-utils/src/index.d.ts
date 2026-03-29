@@ -49,6 +49,19 @@ export function readOnlyAdminWrapper(
 ): Function;
 
 /**
+ * Compression
+ */
+export interface CompressResponseOptions {
+  minSize?: number;
+  preference?: string[];
+}
+
+export declare function compressResponse(
+  fn: (request: any, context: any) => Promise<Response>,
+  opts?: CompressResponseOptions,
+): (request: any, context: any) => Promise<Response>;
+
+/**
  * Utility functions
  */
 export function hashWithSHA256(input: string): string;

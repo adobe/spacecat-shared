@@ -18,6 +18,7 @@ class GeoExperiment extends BaseModel {
   static DEFAULT_UPDATED_BY = 'spacecat';
 
   static STATUSES = {
+    INITIATED: 'initiated',
     PRE_ANALYSIS_SUBMITTED: 'pre_analysis_submitted',
     PRE_ANALYSIS_DONE: 'pre_analysis_done',
     PRE_ANALYSIS_FAILED: 'pre_analysis_failed',

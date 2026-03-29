@@ -72,6 +72,8 @@ describe('GeoExperimentModel', () => {
 
   it('gets and sets status', () => {
     expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.POST_ANALYSIS_DONE);
+    instance.setStatus(GeoExperiment.STATUSES.INITIATED);
+    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.INITIATED);
     instance.setStatus(GeoExperiment.STATUSES.PRE_ANALYSIS_FAILED);
     expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.PRE_ANALYSIS_FAILED);
     instance.setStatus(GeoExperiment.STATUSES.POST_ANALYSIS_FAILED);
@@ -108,6 +110,12 @@ describe('GeoExperimentModel', () => {
     expect(instance.getPromptsS3Key()).to.equal('geo-experiments/2c1f0868-cc2d-4358-ba26-a7b5965ee403/a1b2c3d4-e5f6-7890-abcd-ef1234567890-prompts.json');
     instance.setPromptsS3Key('geo-experiments/site-id/new-experiment-id-prompts.json');
     expect(instance.getPromptsS3Key()).to.equal('geo-experiments/site-id/new-experiment-id-prompts.json');
+  });
+
+  it('gets and sets baselineDate', () => {
+    expect(instance.getBaselineDate()).to.be.undefined;
+    instance.setBaselineDate('2026-03-29T12:00:00.000Z');
+    expect(instance.getBaselineDate()).to.equal('2026-03-29T12:00:00.000Z');
   });
 
   it('gets and sets metadata and error', () => {

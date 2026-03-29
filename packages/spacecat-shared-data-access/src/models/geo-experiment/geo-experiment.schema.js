@@ -63,6 +63,10 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     type: 'string',
     validate: (value) => !value || hasText(value),
   })
+  .addAttribute('baselineDate', {
+    type: 'string',
+    validate: (value) => !value || hasText(value),
+  })
   .addAttribute('metadata', {
     type: 'any',
     validate: (value) => !value || isObject(value),

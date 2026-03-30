@@ -61,6 +61,7 @@ const strategyOpportunity = z.object({
   status: workflowStatus,
   assignee: z.string(),
   completedAt: z.string().optional(), // ISO 8601 date string
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 const strategyPromptSelection = z.object({

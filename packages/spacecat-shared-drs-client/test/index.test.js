@@ -516,7 +516,6 @@ describe('DrsClient', () => {
           expect(body.job_config.cadence).to.equal('experiment');
           expect(body.job_config.provider_ids).to.deep.equal(['brightdata', 'openai_web_search']);
           expect(body.job_config.provider_parameters.brightdata.dataset_id).to.include('chatgpt_free');
-          expect(body.job_config.experimentation_urls).to.deep.equal(['https://example.com/page-1']);
           expect(body.job_config.metadata.experiment_id).to.equal('exp-1');
           expect(body.job_config.metadata.experiment_phase).to.equal('pre');
           expect(body.job_config.metadata.triggered_by).to.equal('spacecat-edge-deploy');
@@ -533,7 +532,6 @@ describe('DrsClient', () => {
         platforms: ['chatgpt_free', 'chatgpt_paid'],
         providerIds: ['brightdata', 'openai_web_search'],
         triggerImmediately: true,
-        experimentationUrls: ['https://example.com/page-1'],
         metadata: { triggered_by: 'spacecat-edge-deploy' },
       });
 

@@ -257,7 +257,6 @@ export default class DrsClient {
    * @param {string[]} params.platforms - LLM platforms to query (used as brightdata dataset_id)
    * @param {string[]} params.providerIds - DRS provider IDs
    * @param {boolean} params.triggerImmediately - Trigger first job on schedule creation
-   * @param {string[]} [params.experimentationUrls] - URLs to filter prompts by
    * @param {object} [params.metadata] - Additional metadata to attach to the job
    * @returns {Promise<object>} Schedule creation response
    */
@@ -270,7 +269,6 @@ export default class DrsClient {
     platforms,
     providerIds,
     triggerImmediately,
-    experimentationUrls,
     metadata,
   }) {
     if (!hasText(siteId)) {
@@ -322,16 +320,11 @@ export default class DrsClient {
       },
     };
 
-    if (Array.isArray(experimentationUrls) && experimentationUrls.length > 0) {
-      body.job_config.experimentation_urls = experimentationUrls;
-    }
-
     this.log.info(`Creating DRS experiment schedule for site ${siteId}`, {
       experimentId,
       experimentPhase,
       cronExpression,
       expiresAt,
-      urlCount: experimentationUrls?.length || 0,
       triggerImmediately: body.trigger_immediately,
     });
 

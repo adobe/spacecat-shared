@@ -77,7 +77,6 @@ interface CreateExperimentScheduleParams {
   siteId: string;
   experimentId: string;
   experimentPhase: ExperimentPhase;
-  experimentationUrls?: string[];
   platforms?: string[];
   metadata?: Record<string, unknown>;
   triggerImmediately?: boolean;

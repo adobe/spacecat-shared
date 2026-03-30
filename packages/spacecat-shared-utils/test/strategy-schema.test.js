@@ -448,6 +448,44 @@ describe('strategyWorkspaceData', () => {
         expect(result.data.strategies[0].opportunities[0].metadata).to.be.undefined;
       }
     });
+
+    it('validates library opportunity with metadata object containing arbitrary key-value pairs', () => {
+      const data = {
+        ...baseWorkspaceData,
+        opportunities: [
+          {
+            ...baseWorkspaceData.opportunities[0],
+            metadata: {
+              source: 'import',
+              priority: 1,
+              tags: ['q1', 'optimization'],
+              nested: { key: 'value' },
+            },
+          },
+          baseWorkspaceData.opportunities[1],
+        ],
+      };
+
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.opportunities[0].metadata).deep.equals({
+          source: 'import',
+          priority: 1,
+          tags: ['q1', 'optimization'],
+          nested: { key: 'value' },
+        });
+      }
+    });
+
+    it('validates library opportunity without metadata (backward compatibility)', () => {
+      const result = strategyWorkspaceData.safeParse(baseWorkspaceData);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.opportunities[0].metadata).to.be.undefined;
+        expect(result.data.opportunities[1].metadata).to.be.undefined;
+      }
+    });
   });
 
   describe('required fields validation', () => {

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.107.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.106.1...@adobe/spacecat-shared-utils-v1.107.0) (2026-03-30)
+
+### Features
+
+* add onboard config and opportunity maps ([#1464](https://github.com/adobe/spacecat-shared/issues/1464)) ([9bd59f5](https://github.com/adobe/spacecat-shared/commit/9bd59f5e2b05f3fd29ea7568daf0e369bd4d2535))
+
 ## [@adobe/spacecat-shared-utils-v1.106.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.106.0...@adobe/spacecat-shared-utils-v1.106.1) (2026-03-28)
 
 ### Bug Fixes

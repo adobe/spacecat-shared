@@ -66,6 +66,10 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addAttribute('tags', {
     type: 'set',
     items: 'string',
+  })
+  .addAttribute('lastAuditedAt', {
+    type: 'string',
+    required: false,
   });
 
 export default schema.build();

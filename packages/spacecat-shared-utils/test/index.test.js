@@ -21,6 +21,7 @@ describe('Index Exports', () => {
     'addTraceIdHeader',
     'arrayEquals',
     'AUDIT_OPPORTUNITY_MAP',
+    'computeAuditCompletion',
     'AUTHORING_TYPES',
     'buildAggregationKey',
     'buildAggregationKeyFromSuggestion',

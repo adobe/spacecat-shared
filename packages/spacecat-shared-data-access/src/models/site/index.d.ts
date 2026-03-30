@@ -204,7 +204,7 @@ export interface SiteConfig {
   addLlmoTag(tag: string): void;
   removeLlmoTag(tag: string): void;
   getOnboardConfig(): { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean; history?: Array<{ profile?: string; startTime?: number }> } | undefined;
-  updateOnboardConfig(onboardConfig: { lastProfile?: string; lastStartTime?: number }): void;
+  updateOnboardConfig(onboardConfig: { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean }, options?: { maxHistory?: number }): void;
 }
 
 export interface Site extends BaseModel {

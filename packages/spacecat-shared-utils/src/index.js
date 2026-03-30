@@ -161,3 +161,5 @@ export {
   OPPORTUNITY_TITLES,
   getOpportunityTitle,
 } from './opportunity/opportunity-titles.js';
+
+export { computeAuditCompletion } from './opportunity/audit-completion.js';

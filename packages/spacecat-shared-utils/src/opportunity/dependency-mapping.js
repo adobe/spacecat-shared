@@ -48,7 +48,7 @@ export const OPPORTUNITY_DEPENDENCY_MAP = {
 
   // SEO — link audits
   'broken-backlinks': [DEPENDENCY_SOURCES.AHREFS_IMPORT, DEPENDENCY_SOURCES.SCRAPING],
-  'broken-internal-links': [DEPENDENCY_SOURCES.RUM, DEPENDENCY_SOURCES.AHREFS_IMPORT],
+  'broken-internal-links': [DEPENDENCY_SOURCES.RUM, DEPENDENCY_SOURCES.SCRAPING],
 
   // SEO — on-page / content
   canonical: [DEPENDENCY_SOURCES.SCRAPING],

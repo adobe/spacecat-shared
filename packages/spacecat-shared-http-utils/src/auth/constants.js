@@ -10,4 +10,4 @@
  * governing permissions and limitations under the License.
  */
 
-export const FF_READ_ONLY_ORG = 'FT_READ_ONLY_ORG';
+export const FF_READ_ONLY_ORG = 'FT_LLMO-3008';

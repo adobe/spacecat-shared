@@ -191,7 +191,7 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(ldClient.isFlagEnabledForIMSOrg.calledOnce).to.be.true;
       const [flagKey, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
-      expect(flagKey).to.equal('FT_READ_ONLY_ORG');
+      expect(flagKey).to.equal('FT_LLMO-3008');
       expect(imsOrgId).to.equal('org-abc@AdobeOrg');
     });
   });

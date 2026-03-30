@@ -383,13 +383,22 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
   }).optional(),
+  onboardConfig: Joi.object({
+    lastProfile: Joi.string().optional(),
+    lastStartTime: Joi.number().optional(),
+    forcedOverride: Joi.boolean().optional(),
+    history: Joi.array().items(Joi.object({
+      profile: Joi.string().optional(),
+      startTime: Joi.number().optional(),
+    })).optional(),
+  }).optional(),
   commerceLlmoConfig: Joi.object().pattern(
     Joi.string(),
     Joi.object({
-      environmentId: Joi.string().optional(),
-      websiteCode: Joi.string().optional(),
-      storeCode: Joi.string().optional(),
-      storeViewCode: Joi.string().optional(),
+      environmentId: Joi.string().required(),
+      websiteCode: Joi.string().required(),
+      storeCode: Joi.string().required(),
+      storeViewCode: Joi.string().required(),
       hostName: Joi.string().optional(),
       magentoEndpoint: Joi.string().uri().optional(),
       magentoAPIKey: Joi.string().optional(),
@@ -506,6 +515,7 @@ export const Config = (data = {}) => {
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
+  self.getOnboardConfig = () => state?.onboardConfig;
   self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -827,6 +837,17 @@ export const Config = (data = {}) => {
     state.edgeOptimizeConfig = edgeOptimizeConfig;
   };
 
+  self.updateOnboardConfig = (onboardConfig, { maxHistory } = {}) => {
+    let history = [...(state.onboardConfig?.history || [])];
+    if (onboardConfig.lastProfile && onboardConfig.lastStartTime) {
+      history.push({ profile: onboardConfig.lastProfile, startTime: onboardConfig.lastStartTime });
+    }
+    if (maxHistory && history.length > maxHistory) {
+      history = history.slice(-maxHistory);
+    }
+    state.onboardConfig = { ...onboardConfig, history };
+  };
+
   self.updateCommerceLlmoConfig = (commerceLlmoConfig) => {
     state.commerceLlmoConfig = commerceLlmoConfig;
   };
@@ -848,5 +869,6 @@ Config.toDynamoItem = (config) => ({
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
+  onboardConfig: config.getOnboardConfig?.(),
   commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
 });

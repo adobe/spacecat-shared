@@ -68,6 +68,11 @@ const schema = new SchemaBuilder(Audit, AuditCollection)
     required: true,
     default: () => new Date().toISOString(),
     validate: (value) => isIsoDate(value),
+  })
+  .addAttribute('completedAt', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || isIsoDate(value),
   });
 
 export default schema.build();

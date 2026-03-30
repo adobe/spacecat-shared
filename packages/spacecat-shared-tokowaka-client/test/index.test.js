@@ -4319,6 +4319,27 @@ describe('TokowakaClient', () => {
       expect(s1.getUpdatedBy()).to.equal('test-user');
     });
 
+    it('should deploy regular suggestions in PENDING_VALIDATION status', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} }, 'PENDING_VALIDATION');
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+        updatedBy: 'test-user',
+      });
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
+      expect(s1.save).to.have.been.called;
+    });
+
     it('should clear edgeOptimizeStatus STALE when deploying', async () => {
       const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {}, edgeOptimizeStatus: 'STALE' });
 

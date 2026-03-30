@@ -34,6 +34,11 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
 
+/** Matches SpaceCat API eligibility for edge deploy (non-domain-wide). */
+function isEdgeDeployableSuggestionStatus(status) {
+  return status === 'NEW' || status === 'PENDING_VALIDATION';
+}
+
 /**
  * Tokowaka Client - Manages edge optimization configurations
  */
@@ -1232,7 +1237,7 @@ class TokowakaClient {
         if (Array.isArray(allowedRegexPatterns) && allowedRegexPatterns.length > 0) {
           domainWideSuggestions.push({ suggestion, allowedRegexPatterns });
         }
-      } else if (suggestion.getStatus() === 'NEW') {
+      } else if (isEdgeDeployableSuggestionStatus(suggestion.getStatus())) {
         validSuggestions.push(suggestion);
       }
     });
@@ -1338,8 +1343,12 @@ class TokowakaClient {
             const covered = allSuggestions.filter((s) => {
               if (s.getId() === suggestion.getId()) return false;
               if (skippedInBatchIds.has(s.getId())) return false;
-              if (s.getStatus() !== 'NEW') return false;
-              if (s.getData()?.isDomainWide === true) return false;
+              if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
+                return false;
+              }
+              if (s.getData()?.isDomainWide === true) {
+                return false;
+              }
               const url = s.getData()?.url;
               return url && regexPatterns.some((r) => r.test(url));
             });

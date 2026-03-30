@@ -10,10 +10,34 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
 import BaseCollection from '../base/base.collection.js';
 
 class GeoExperimentCollection extends BaseCollection {
   static COLLECTION_NAME = 'GeoExperimentCollection';
+
+  /**
+   * Gets all geo experiments for a site, ordered by most recently updated.
+   *
+   * @param {string} siteId - The site ID.
+   * @param {object} [options={}] - Query options (limit, cursor).
+   * @returns {Promise<{data: GeoExperiment[], cursor: string|null}>} Paginated results.
+   */
+  async allBySiteId(siteId, options = {}) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    const result = await this.allByIndexKeys(
+      { siteId },
+      { ...options, returnCursor: true },
+    );
+
+    return {
+      data: result.data || [],
+      cursor: result.cursor,
+    };
+  }
 }
 
 export default GeoExperimentCollection;

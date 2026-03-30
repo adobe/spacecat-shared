@@ -15,6 +15,7 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import nock from 'nock';
 import { loadBootstrapConfig } from '../src/bootstrap.js';
+import { resetHelixFetchClient } from '../src/helix-fetch.js';
 
 use(chaiAsPromised);
 
@@ -32,6 +33,8 @@ describe('bootstrap', () => {
   afterEach(() => {
     sinon.restore();
     nock.cleanAll();
+    resetHelixFetchClient();
+    process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
     delete process.env.AWS_REGION;
     delete process.env.AWS_ACCESS_KEY_ID;
     delete process.env.AWS_SECRET_ACCESS_KEY;
@@ -39,6 +42,35 @@ describe('bootstrap', () => {
   });
 
   it('loads bootstrap config from AWS Secrets Manager', async () => {
+    const bootstrapSecret = {
+      role_id: 'test-role-id',
+      secret_id: 'test-secret-id',
+      vault_addr: 'https://vault-amer.adobe.net',
+      mount_point: 'dx_mysticat',
+      environment: 'prod',
+    };
+
+    nock(AWS_ENDPOINT)
+      .post('/', (body) => {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body;
+        return parsed.SecretId === '/mysticat/vault-bootstrap';
+      })
+      .matchHeader('X-Amz-Target', 'secretsmanager.GetSecretValue')
+      .reply(200, {
+        SecretString: JSON.stringify(bootstrapSecret),
+      });
+
+    const config = await loadBootstrapConfig({
+      bootstrapPath: '/mysticat/vault-bootstrap',
+    });
+
+    expect(config).to.deep.equal(bootstrapSecret);
+  });
+
+  it('loads bootstrap when HELIX_FETCH_FORCE_HTTP1 is set', async () => {
+    resetHelixFetchClient();
+    process.env.HELIX_FETCH_FORCE_HTTP1 = '1';
+
     const bootstrapSecret = {
       role_id: 'test-role-id',
       secret_id: 'test-secret-id',

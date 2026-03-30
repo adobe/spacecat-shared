@@ -10,12 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { noCache, h1NoCache } from '@adobe/fetch';
 import aws4 from 'aws4';
-
-// Use @adobe/fetch for connection pooling instead of globalThis.fetch.
-// noCache() disables HTTP response caching; h1NoCache() in tests for nock compatibility.
-const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1 ? h1NoCache() : noCache();
+import { getHelixFetch } from './helix-fetch.js';
 
 /**
  * Loads Vault AppRole bootstrap credentials from AWS Secrets Manager.
@@ -64,7 +60,7 @@ export async function loadBootstrapConfig({ bootstrapPath }) {
 
   let response;
   try {
-    response = await fetch(`https://${host}${opts.path}`, {
+    response = await getHelixFetch()(`https://${host}${opts.path}`, {
       method: opts.method,
       headers: opts.headers,
       body,

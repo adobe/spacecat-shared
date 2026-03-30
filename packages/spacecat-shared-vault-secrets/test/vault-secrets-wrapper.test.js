@@ -110,6 +110,7 @@ describe('vaultSecrets wrapper', () => {
     reset();
     sinon.restore();
     nock.cleanAll();
+    process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
 
     // Restore original env vars
     Object.entries(savedEnv).forEach(([key, val]) => {

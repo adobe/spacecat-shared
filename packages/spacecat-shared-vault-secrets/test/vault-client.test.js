@@ -18,6 +18,7 @@ import nock from 'nock';
 import sinon from 'sinon';
 
 import VaultClient from '../src/vault-client.js';
+import { resetHelixFetchClient } from '../src/helix-fetch.js';
 
 use(chaiAsPromised);
 
@@ -29,6 +30,8 @@ const SECRET_ID = 'test-secret-id';
 describe('VaultClient', () => {
   afterEach(() => {
     nock.cleanAll();
+    resetHelixFetchClient();
+    process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
   });
 
   describe('constructor', () => {
@@ -71,6 +74,27 @@ describe('VaultClient', () => {
 
       expect(client.tokenRenewable).to.equal(true);
       expect(client.tokenExpiry).to.be.a('number');
+      expect(client.isAuthenticated()).to.equal(true);
+      expect(scope.isDone()).to.equal(true);
+    });
+
+    it('authenticates when HELIX_FETCH_FORCE_HTTP1 is set', async () => {
+      resetHelixFetchClient();
+      process.env.HELIX_FETCH_FORCE_HTTP1 = '1';
+
+      const scope = nock(VAULT_ADDR)
+        .post('/v1/auth/approle/login', { role_id: ROLE_ID, secret_id: SECRET_ID })
+        .reply(200, {
+          auth: {
+            client_token: 'hvs.test-token-h1',
+            lease_duration: 3600,
+            renewable: true,
+          },
+        });
+
+      const client = new VaultClient({ vaultAddr: VAULT_ADDR, mountPoint: MOUNT_POINT });
+      await client.authenticate(ROLE_ID, SECRET_ID);
+
       expect(client.isAuthenticated()).to.equal(true);
       expect(scope.isDone()).to.equal(true);
     });

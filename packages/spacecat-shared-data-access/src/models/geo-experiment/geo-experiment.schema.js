@@ -34,13 +34,13 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     type: 'string',
     validate: (value) => !value || hasText(value),
   })
+  .addAttribute('type', {
+    type: Object.values(GeoExperiment.TYPES),
+    required: true,
+  })
   .addAttribute('status', {
     type: Object.values(GeoExperiment.STATUSES),
     required: true,
-  })
-  .addAttribute('skipDeploy', {
-    type: 'boolean',
-    default: false,
   })
   .addAttribute('suggestionIds', {
     type: 'list',
@@ -52,16 +52,13 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
   })
   .addAttribute('name', {
     type: 'string',
-    validate: (value) => !value || hasText(value),
+    required: true,
+    validate: (value) => hasText(value),
   })
   .addAttribute('promptsCount', {
     type: 'number',
     default: 0,
     validate: (value) => isInteger(value) && value >= 0,
-  })
-  .addAttribute('promptsS3Key', {
-    type: 'string',
-    validate: (value) => !value || hasText(value),
   })
   .addAttribute('baselineDate', {
     type: 'string',

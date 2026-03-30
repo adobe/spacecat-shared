@@ -19,9 +19,12 @@ export interface GeoExperiment extends BaseModel {
   getOpportunity(): Promise<Opportunity>;
   getPreScheduleId(): string | undefined;
   getPostScheduleId(): string | undefined;
+  getType(): string;
   getStatus(): string;
-  getSkipDeploy(): boolean;
   getSuggestionIds(): string[];
+  getName(): string;
+  getPromptsCount(): number;
+  getBaselineDate(): string | undefined;
   getMetadata(): object | undefined;
   getError(): object | undefined;
   getUpdatedBy(): string;
@@ -30,9 +33,12 @@ export interface GeoExperiment extends BaseModel {
   setOpportunityId(opportunityId?: string): GeoExperiment;
   setPreScheduleId(preScheduleId?: string): GeoExperiment;
   setPostScheduleId(postScheduleId?: string): GeoExperiment;
+  setType(type: string): GeoExperiment;
   setStatus(status: string): GeoExperiment;
-  setSkipDeploy(skipDeploy: boolean): GeoExperiment;
   setSuggestionIds(suggestionIds: string[]): GeoExperiment;
+  setName(name: string): GeoExperiment;
+  setPromptsCount(promptsCount: number): GeoExperiment;
+  setBaselineDate(baselineDate?: string): GeoExperiment;
   setMetadata(metadata?: object): GeoExperiment;
   setError(error?: object): GeoExperiment;
   setUpdatedBy(updatedBy: string): GeoExperiment;
@@ -43,6 +49,4 @@ export interface GeoExperimentCollection extends BaseCollection<GeoExperiment> {
   findBySiteId(siteId: string): Promise<GeoExperiment | null>;
   allByOpportunityId(opportunityId: string): Promise<GeoExperiment[]>;
   findByOpportunityId(opportunityId: string): Promise<GeoExperiment | null>;
-  allByPreScheduleId(preScheduleId: string): Promise<GeoExperiment[]>;
-  findByPreScheduleId(preScheduleId: string): Promise<GeoExperiment | null>;
 }

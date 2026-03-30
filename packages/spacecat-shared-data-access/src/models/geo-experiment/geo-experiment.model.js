@@ -17,6 +17,10 @@ class GeoExperiment extends BaseModel {
 
   static DEFAULT_UPDATED_BY = 'spacecat';
 
+  static TYPES = {
+    ONSITE_OPPORTUNITY_DEPLOYMENT: 'onsite_opportunity_deployment',
+  };
+
   static STATUSES = {
     INITIATED: 'initiated',
     PRE_ANALYSIS_SUBMITTED: 'pre_analysis_submitted',

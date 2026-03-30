@@ -46,6 +46,7 @@ const opportunity = z.object({
   name: nonEmptyString,
   description: z.string(),
   category: nonEmptyString,
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 /**

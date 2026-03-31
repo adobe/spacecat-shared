@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.33.1...@adobe/spacecat-shared-data-access-v3.34.0) (2026-03-31)
+
+### Features
+
+* adds revoke suggestion grants ([#1465](https://github.com/adobe/spacecat-shared/issues/1465)) ([8081661](https://github.com/adobe/spacecat-shared/commit/80816616d26a9b49b764b15d934881456f7ff656))
+
 ## [@adobe/spacecat-shared-data-access-v3.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.33.0...@adobe/spacecat-shared-data-access-v3.33.1) (2026-03-31)
 
 ### Bug Fixes

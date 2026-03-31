@@ -14,6 +14,10 @@ import { expect } from 'chai';
 
 import * as core from '../src/core.js';
 import * as aws from '../src/aws.js';
+import * as locale from '../src/locale.js';
+import * as calendar from '../src/calendar.js';
+import * as schemas from '../src/schemas.js';
+import * as constants from '../src/constants.js';
 
 const EXPECTED_CORE_EXPORTS = [
   'arrayEquals', 'dateAfterDays', 'deepEqual', 'hasText',
@@ -46,5 +50,27 @@ describe('sub-path barrel shape checks', () => {
       EXPECTED_AWS_EXPORTS.sort(),
       'AWS exports changed. Update EXPECTED_AWS_EXPORTS in test/subpaths.test.js to match the new barrel.',
     );
+  });
+
+  it('locale exports detectLocale', () => {
+    expect(locale).to.have.property('detectLocale').that.is.a('function');
+  });
+
+  it('calendar exports expected functions', () => {
+    const expected = [
+      'isoCalendarWeek', 'isoCalendarWeekSunday', 'isoCalendarWeekMonday',
+      'getDateRanges', 'getLastNumberOfWeeks', 'getWeekInfo',
+      'getMonthInfo', 'getTemporalCondition',
+    ];
+    expected.forEach((name) => expect(calendar).to.have.property(name).that.is.a('function'));
+  });
+
+  it('schemas exports llmoConfig', () => {
+    expect(schemas).to.have.property('llmoConfig');
+  });
+
+  it('constants exports OPPORTUNITY_TYPES and DEFAULT_CPC_VALUE', () => {
+    expect(constants).to.have.property('OPPORTUNITY_TYPES').that.is.an('object');
+    expect(constants).to.have.property('DEFAULT_CPC_VALUE').that.is.a('number');
   });
 });

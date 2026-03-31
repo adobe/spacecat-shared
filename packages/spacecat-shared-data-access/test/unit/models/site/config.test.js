@@ -3042,8 +3042,7 @@ describe('Config Tests', () => {
     it('creates config with grouped auditTargetURLs', () => {
       const config = Config({
         auditTargetURLs: {
-          manual: [{ url: 'https://example.com/page1' }],
-          'money-pages': [{ url: 'https://example.com/page2' }],
+          manual: [{ url: 'https://example.com/page1' }, { url: 'https://example.com/page2' }],
         },
       });
       const result = config.getAuditTargetURLs();
@@ -3051,23 +3050,20 @@ describe('Config Tests', () => {
       expect(result[0].url).to.equal('https://example.com/page1');
       expect(result[0].source).to.equal('manual');
       expect(result[1].url).to.equal('https://example.com/page2');
-      expect(result[1].source).to.equal('money-pages');
+      expect(result[1].source).to.equal('manual');
     });
 
     describe('getAuditTargetURLsBySource', () => {
       it('returns URLs for a specific source', () => {
         const config = Config({
           auditTargetURLs: {
-            manual: [{ url: 'https://example.com/m1' }],
-            'money-pages': [{ url: 'https://example.com/mp1' }, { url: 'https://example.com/mp2' }],
+            manual: [{ url: 'https://example.com/m1' }, { url: 'https://example.com/m2' }],
           },
         });
         const manual = config.getAuditTargetURLsBySource('manual');
-        expect(manual).to.have.lengthOf(1);
+        expect(manual).to.have.lengthOf(2);
         expect(manual[0].url).to.equal('https://example.com/m1');
-
-        const moneyPages = config.getAuditTargetURLsBySource('money-pages');
-        expect(moneyPages).to.have.lengthOf(2);
+        expect(manual[1].url).to.equal('https://example.com/m2');
       });
 
       it('returns empty array for source with no entries', () => {
@@ -3086,7 +3082,6 @@ describe('Config Tests', () => {
         const config = Config({
           auditTargetURLs: {
             manual: [{ url: 'https://old.com' }],
-            'money-pages': [{ url: 'https://keep.com' }],
           },
         });
         config.updateAuditTargetURLs('manual', [
@@ -3094,7 +3089,6 @@ describe('Config Tests', () => {
           { url: 'https://new2.com' },
         ]);
         expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(2);
-        expect(config.getAuditTargetURLsBySource('money-pages')).to.have.lengthOf(1);
       });
 
       it('rejects invalid URLs', () => {
@@ -3120,19 +3114,17 @@ describe('Config Tests', () => {
       it('appends a new URL to the specified source', () => {
         const config = Config();
         config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
-        config.addAuditTargetURL('money-pages', { url: 'https://example.com/page2' });
-        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
-        expect(config.getAuditTargetURLsBySource('money-pages')).to.have.lengthOf(1);
-        expect(config.getAuditTargetURLsBySource('money-pages')[0].url).to.equal('https://example.com/page2');
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page2' });
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(2);
+        expect(config.getAuditTargetURLsBySource('manual')[1].url).to.equal('https://example.com/page2');
       });
 
-      it('deduplicates across all sources', () => {
+      it('deduplicates within the source', () => {
         const config = Config();
         config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
-        config.addAuditTargetURL('money-pages', { url: 'https://example.com/page1' });
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
         expect(config.getAuditTargetURLs()).to.have.lengthOf(1);
         expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
-        expect(config.getAuditTargetURLsBySource('money-pages')).to.have.lengthOf(0);
       });
 
       it('rejects invalid URL', () => {
@@ -3155,13 +3147,12 @@ describe('Config Tests', () => {
       it('removes by url string from the specified source', () => {
         const config = Config({
           auditTargetURLs: {
-            manual: [{ url: 'https://example.com/page1' }],
-            'money-pages': [{ url: 'https://example.com/page2' }],
+            manual: [{ url: 'https://example.com/page1' }, { url: 'https://example.com/page2' }],
           },
         });
-        config.removeAuditTargetURL('money-pages', 'https://example.com/page2');
+        config.removeAuditTargetURL('manual', 'https://example.com/page2');
         expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
-        expect(config.getAuditTargetURLsBySource('money-pages')).to.have.lengthOf(0);
+        expect(config.getAuditTargetURLsBySource('manual')[0].url).to.equal('https://example.com/page1');
       });
 
       it('does nothing for non-existent url', () => {
@@ -3194,17 +3185,15 @@ describe('Config Tests', () => {
         const item = Config.toDynamoItem(config);
         expect(item.auditTargetURLs).to.deep.equal({
           manual: [{ url: 'https://example.com/page1' }],
-          'money-pages': [],
         });
       });
 
       it('round-trips through toDynamoItem and fromDynamoItem', () => {
         const config = Config({
           auditTargetURLs: {
-            manual: [{ url: 'https://example.com/page1' }],
-            'money-pages': [
+            manual: [
+              { url: 'https://example.com/page1' },
               { url: 'https://example.com/page2' },
-              { url: 'https://example.com/page3' },
             ],
           },
         });

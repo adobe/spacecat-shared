@@ -407,6 +407,14 @@ export const configSchema = Joi.object({
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
+  auditTargetURLs: Joi.object({
+    manual: Joi.array().items(Joi.object({
+      url: Joi.string().uri().required(),
+    })).optional().default([]),
+    'money-pages': Joi.array().items(Joi.object({
+      url: Joi.string().uri().required(),
+    })).optional().default([]),
+  }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),
@@ -517,6 +525,60 @@ export const Config = (data = {}) => {
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.getOnboardConfig = () => state?.onboardConfig;
   self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
+  const AUDIT_TARGET_SOURCES = ['manual', 'money-pages'];
+  const auditTargetEntrySchema = Joi.object({
+    url: Joi.string().uri().required(),
+  });
+
+  const validateAuditTargetSource = (source) => {
+    if (!AUDIT_TARGET_SOURCES.includes(source)) {
+      throw new Error(`Invalid audit target source: "${source}". Must be one of: ${AUDIT_TARGET_SOURCES.join(', ')}`);
+    }
+  };
+
+  self.getAuditTargetURLsConfig = () => state?.auditTargetURLs;
+
+  self.getAuditTargetURLs = () => {
+    const targets = state?.auditTargetURLs;
+    if (!targets) return [];
+    return AUDIT_TARGET_SOURCES.flatMap(
+      (source) => (targets[source] || []).map((entry) => ({ ...entry, source })),
+    );
+  };
+
+  self.getAuditTargetURLsBySource = (source) => {
+    validateAuditTargetSource(source);
+    return state?.auditTargetURLs?.[source] || [];
+  };
+
+  self.updateAuditTargetURLs = (source, urls) => {
+    validateAuditTargetSource(source);
+    Joi.assert(urls, Joi.array().items(auditTargetEntrySchema), 'Invalid audit target URLs');
+    state.auditTargetURLs = state.auditTargetURLs || {};
+    state.auditTargetURLs[source] = urls;
+  };
+
+  self.addAuditTargetURL = (source, urlObj) => {
+    validateAuditTargetSource(source);
+    Joi.assert(urlObj, auditTargetEntrySchema, 'Invalid audit target URL');
+
+    state.auditTargetURLs = state.auditTargetURLs || {};
+    state.auditTargetURLs[source] = state.auditTargetURLs[source] || [];
+    const allUrls = AUDIT_TARGET_SOURCES.flatMap(
+      (s) => (state.auditTargetURLs[s] || []).map((e) => e.url),
+    );
+    if (!allUrls.includes(urlObj.url)) {
+      state.auditTargetURLs[source].push(urlObj);
+    }
+  };
+
+  self.removeAuditTargetURL = (source, url) => {
+    validateAuditTargetSource(source);
+    if (!state.auditTargetURLs?.[source]) return;
+    state.auditTargetURLs[source] = state.auditTargetURLs[source]
+      .filter((t) => t.url !== url);
+  };
+
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
@@ -871,4 +933,5 @@ Config.toDynamoItem = (config) => ({
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
   onboardConfig: config.getOnboardConfig?.(),
   commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
+  auditTargetURLs: config.getAuditTargetURLsConfig?.(),
 });

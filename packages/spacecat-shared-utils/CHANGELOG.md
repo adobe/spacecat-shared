@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-utils-v1.109.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.108.0...@adobe/spacecat-shared-utils-v1.109.0) (2026-03-30)
+
+### Features
+
+* extend library opportunity with metadata field ([#1481](https://github.com/adobe/spacecat-shared/issues/1481)) ([45fa866](https://github.com/adobe/spacecat-shared/commit/45fa8662443c1787c99eaf766af5b10df6cd63f1))
+
+## [@adobe/spacecat-shared-utils-v1.108.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.107.0...@adobe/spacecat-shared-utils-v1.108.0) (2026-03-30)
+
+### Features
+
+* Add metadata field to strategyOpportunity schema ([#1480](https://github.com/adobe/spacecat-shared/issues/1480)) ([dbe1ba6](https://github.com/adobe/spacecat-shared/commit/dbe1ba6af78285e844719d4a9c0f0ded99216009))
+
+## [@adobe/spacecat-shared-utils-v1.107.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.106.1...@adobe/spacecat-shared-utils-v1.107.0) (2026-03-30)
+
+### Features
+
+* add onboard config and opportunity maps ([#1464](https://github.com/adobe/spacecat-shared/issues/1464)) ([9bd59f5](https://github.com/adobe/spacecat-shared/commit/9bd59f5e2b05f3fd29ea7568daf0e369bd4d2535))
+
+## [@adobe/spacecat-shared-utils-v1.106.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.106.0...@adobe/spacecat-shared-utils-v1.106.1) (2026-03-28)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1477](https://github.com/adobe/spacecat-shared/issues/1477)) ([67bdd1a](https://github.com/adobe/spacecat-shared/commit/67bdd1a2c497bed088bc1e54ae22e60c171308d1))
+
 ## [@adobe/spacecat-shared-utils-v1.106.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.105.1...@adobe/spacecat-shared-utils-v1.106.0) (2026-03-23)
 
 ### Features

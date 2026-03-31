@@ -61,7 +61,7 @@ jobs:
       - name: Set up Node.js 22 (temporary - for bootstrap)
         uses: actions/setup-node@v6
         with:
-          node-version: '22.22.1'
+          node-version: '22.22.2'
 
       - name: Update NPM
         run: npm install -g npm@10.9.4

@@ -600,6 +600,75 @@ describe('URL Extractors', () => {
       });
     });
 
+    describe('INFO_GAIN type', () => {
+      it('extracts report URLs and discovered target URLs from entries', () => {
+        const opportunity = {
+          getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
+          getData: () => ({
+            entries: [
+              {
+                report: { url: 'https://example.com/r1' },
+                discoveredOpportunities: [
+                  { targetUrl: 'https://example.com/t1' },
+                  { targetUrl: 'https://example.com/t2' },
+                ],
+              },
+              {
+                report: { url: 'https://example.com/r2' },
+              },
+            ],
+          }),
+        };
+
+        const urls = extractUrlsFromOpportunity({ opportunity });
+        expect(urls).to.deep.equal([
+          'https://example.com/r1',
+          'https://example.com/t1',
+          'https://example.com/t2',
+          'https://example.com/r2',
+        ]);
+      });
+
+      it('returns empty when entries are missing or not an array', () => {
+        const noEntries = {
+          getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
+          getData: () => ({}),
+        };
+        expect(extractUrlsFromOpportunity({ opportunity: noEntries })).to.deep.equal([]);
+
+        const notArray = {
+          getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
+          getData: () => ({ entries: null }),
+        };
+        expect(extractUrlsFromOpportunity({ opportunity: notArray })).to.deep.equal([]);
+      });
+
+      it('skips non-string report and target URLs', () => {
+        const opportunity = {
+          getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
+          getData: () => ({
+            entries: [
+              {
+                report: { url: 123 },
+                discoveredOpportunities: [{ targetUrl: null }, { targetUrl: 'https://ok.com' }],
+              },
+            ],
+          }),
+        };
+        expect(extractUrlsFromOpportunity({ opportunity })).to.deep.equal(['https://ok.com']);
+      });
+
+      it('uses data property when getData is absent', () => {
+        const opportunity = {
+          getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
+          data: {
+            entries: [{ report: { url: 'https://from.data/' } }],
+          },
+        };
+        expect(extractUrlsFromOpportunity({ opportunity })).to.deep.equal(['https://from.data/']);
+      });
+    });
+
     describe('Unknown type', () => {
       it('returns empty array for unknown type', () => {
         const opportunity = {

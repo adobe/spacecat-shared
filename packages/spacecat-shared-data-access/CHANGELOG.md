@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-data-access-v3.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.32.1...@adobe/spacecat-shared-data-access-v3.33.0) (2026-03-30)
+
+### Features
+
+* add onboard config and opportunity maps ([#1464](https://github.com/adobe/spacecat-shared/issues/1464)) ([9bd59f5](https://github.com/adobe/spacecat-shared/commit/9bd59f5e2b05f3fd29ea7568daf0e369bd4d2535))
+
+## [@adobe/spacecat-shared-data-access-v3.32.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.32.0...@adobe/spacecat-shared-data-access-v3.32.1) (2026-03-28)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1477](https://github.com/adobe/spacecat-shared/issues/1477)) ([67bdd1a](https://github.com/adobe/spacecat-shared/commit/67bdd1a2c497bed088bc1e54ae22e60c171308d1))
+
+## [@adobe/spacecat-shared-data-access-v3.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.31.1...@adobe/spacecat-shared-data-access-v3.32.0) (2026-03-27)
+
+### Features
+
+* Added redirectsQueued to plg onboarding schema ([#1473](https://github.com/adobe/spacecat-shared/issues/1473)) ([a7c5258](https://github.com/adobe/spacecat-shared/commit/a7c5258afd97df232b874f5e0763ad4236419e39))
+
+## [@adobe/spacecat-shared-data-access-v3.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.31.0...@adobe/spacecat-shared-data-access-v3.31.1) (2026-03-26)
+
+### Bug Fixes
+
+* **AGENTCOM-441:** update required fields from commerce config ([#1470](https://github.com/adobe/spacecat-shared/issues/1470)) ([5e89146](https://github.com/adobe/spacecat-shared/commit/5e89146110896cfcbcce9e80e743564ff8bb989b))
+
 ## [@adobe/spacecat-shared-data-access-v3.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.30.0...@adobe/spacecat-shared-data-access-v3.31.0) (2026-03-25)
 
 ### Features

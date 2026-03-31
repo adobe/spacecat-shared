@@ -66,6 +66,7 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       siteResolved: { type: 'boolean' },
       configUpdated: { type: 'boolean' },
       auditsEnabled: { type: 'boolean' },
+      redirectsQueued: { type: 'boolean' },
       entitlementCreated: { type: 'boolean' },
     },
   })

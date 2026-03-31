@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.33.0...@adobe/spacecat-shared-data-access-v3.33.1) (2026-03-31)
+
+### Bug Fixes
+
+* modifying the audit name max length ([#1485](https://github.com/adobe/spacecat-shared/issues/1485)) ([013528f](https://github.com/adobe/spacecat-shared/commit/013528fb486933a02395df0c461a3df1993c1ab1))
+
 ## [@adobe/spacecat-shared-data-access-v3.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.32.1...@adobe/spacecat-shared-data-access-v3.33.0) (2026-03-30)
 
 ### Features

@@ -90,6 +90,14 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
     type: 'string',
     validate: (value) => !value || isIsoDate(value),
   })
+  .addAttribute('siteTitle', {
+    type: 'string',
+    required: false,
+  })
+  .addAttribute('siteDescription', {
+    type: 'string',
+    required: false,
+  })
   // Index: by imsOrgId (PK=imsOrgId, SK=updatedAt) → allByImsOrgId / findByImsOrgId
   .addIndex(
     { composite: ['imsOrgId'] },

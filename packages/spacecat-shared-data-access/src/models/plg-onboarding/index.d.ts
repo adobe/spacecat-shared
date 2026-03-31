@@ -32,6 +32,8 @@ export interface PlgOnboarding extends BaseModel {
   getBotBlocker(): object | null;
   getWaitlistReason(): string | null;
   getCompletedAt(): string | null;
+  getSiteTitle(): string | null;
+  getSiteDescription(): string | null;
   setStatus(status: PlgOnboardingStatus): PlgOnboarding;
   setSiteId(siteId: string): PlgOnboarding;
   setOrganizationId(organizationId: string): PlgOnboarding;
@@ -40,6 +42,8 @@ export interface PlgOnboarding extends BaseModel {
   setBotBlocker(botBlocker: object): PlgOnboarding;
   setWaitlistReason(waitlistReason: string): PlgOnboarding;
   setCompletedAt(completedAt: string): PlgOnboarding;
+  setSiteTitle(siteTitle: string | null): PlgOnboarding;
+  setSiteDescription(siteDescription: string | null): PlgOnboarding;
 }
 
 export interface PlgOnboardingCollection extends BaseCollection<PlgOnboarding> {

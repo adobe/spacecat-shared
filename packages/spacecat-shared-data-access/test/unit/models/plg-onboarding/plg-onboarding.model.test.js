@@ -40,6 +40,8 @@ describe('PlgOnboardingModel', () => {
       botBlocker: null,
       waitlistReason: null,
       completedAt: null,
+      siteTitle: null,
+      siteDescription: null,
       createdAt: '2026-03-09T12:00:00.000Z',
       updatedAt: '2026-03-09T12:00:00.000Z',
       updatedBy: 'system',
@@ -127,6 +129,14 @@ describe('PlgOnboardingModel', () => {
     it('gets completedAt', () => {
       expect(instance.getCompletedAt()).to.be.null;
     });
+
+    it('gets siteTitle', () => {
+      expect(instance.getSiteTitle()).to.be.null;
+    });
+
+    it('gets siteDescription', () => {
+      expect(instance.getSiteDescription()).to.be.null;
+    });
   });
 
   describe('setters', () => {
@@ -185,6 +195,16 @@ describe('PlgOnboardingModel', () => {
     it('sets completedAt', () => {
       instance.setCompletedAt('2026-03-09T15:00:00.000Z');
       expect(instance.getCompletedAt()).to.equal('2026-03-09T15:00:00.000Z');
+    });
+
+    it('sets siteTitle', () => {
+      instance.setSiteTitle('Example Store');
+      expect(instance.getSiteTitle()).to.equal('Example Store');
+    });
+
+    it('sets siteDescription', () => {
+      instance.setSiteDescription('Quality goods since 1999.');
+      expect(instance.getSiteDescription()).to.equal('Quality goods since 1999.');
     });
   });
 });

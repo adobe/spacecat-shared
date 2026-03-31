@@ -12,6 +12,7 @@
 
 import VaultClient from './vault-client.js';
 import { loadBootstrapConfig } from './bootstrap.js';
+import { resetHelixFetchClient } from './helix-fetch.js';
 
 const DEFAULT_EXPIRATION = 60 * 60 * 1000; // 1 hour
 const DEFAULT_CHECK_DELAY = 60 * 1000; // 1 minute
@@ -20,7 +21,7 @@ const CI_PATTERN = /^ci\d+$/i;
 
 function isDevAliasDeployment(ctx, env) {
   if (env !== 'dev') return false;
-  const { version } = ctx.func || {};
+  const { version } = ctx.func;
   if (!version) return false;
   if (version === 'latest' || version === '$LATEST') return false;
   if (CI_PATTERN.test(version)) return false;
@@ -51,6 +52,7 @@ export function reset() {
   bootstrapConfig = null;
   bootstrapEnvironment = null;
   clientLock = null;
+  resetHelixFetchClient();
 }
 
 async function ensureClient(ctx, opts) {

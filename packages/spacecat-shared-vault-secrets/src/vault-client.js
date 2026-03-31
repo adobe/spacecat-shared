@@ -10,12 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { noCache, h1NoCache } from '@adobe/fetch';
-
-// Use @adobe/fetch for connection pooling instead of globalThis.fetch.
-// noCache() disables HTTP response caching (prevents stale Vault reads).
-// h1NoCache() in tests for nock compatibility; noCache() in production for HTTP/2 over HTTPS.
-const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1 ? h1NoCache() : noCache();
+import { getHelixFetch } from './helix-fetch.js';
 
 const TOKEN_RENEW_BUFFER = 5 * 60 * 1000;
 
@@ -69,7 +64,7 @@ export default class VaultClient {
   async authenticate(roleId, secretId) {
     let response;
     try {
-      response = await fetch(`${this.#vaultAddr}/v1/auth/approle/login`, {
+      response = await getHelixFetch()(`${this.#vaultAddr}/v1/auth/approle/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role_id: roleId, secret_id: secretId }),
@@ -94,7 +89,7 @@ export default class VaultClient {
       throw new Error('Not authenticated');
     }
     const url = `${this.#vaultAddr}/v1/${this.#mountPoint}/${path}`;
-    return fetch(url, {
+    return getHelixFetch()(url, {
       method,
       headers: { 'X-Vault-Token': this.#token },
     });
@@ -135,7 +130,7 @@ export default class VaultClient {
 
   async renewToken() {
     try {
-      const response = await fetch(`${this.#vaultAddr}/v1/auth/token/renew-self`, {
+      const response = await getHelixFetch()(`${this.#vaultAddr}/v1/auth/token/renew-self`, {
         method: 'POST',
         headers: { 'X-Vault-Token': this.#token },
       });

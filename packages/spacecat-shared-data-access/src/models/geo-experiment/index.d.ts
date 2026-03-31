@@ -10,7 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Opportunity, Site } from '../index.js';
+import type {
+  BaseCollection,
+  BaseModel,
+  Opportunity,
+  PaginatedResult,
+  QueryOptions,
+  Site,
+} from '../index';
 
 export interface GeoExperiment extends BaseModel {
   getSiteId(): string;
@@ -24,7 +31,8 @@ export interface GeoExperiment extends BaseModel {
   getSuggestionIds(): string[];
   getName(): string;
   getPromptsCount(): number;
-  getBaselineDate(): string | undefined;
+  getStartTime(): string | undefined;
+  getEndTime(): string | undefined;
   getMetadata(): object | undefined;
   getError(): object | undefined;
   getUpdatedBy(): string;
@@ -38,15 +46,22 @@ export interface GeoExperiment extends BaseModel {
   setSuggestionIds(suggestionIds: string[]): GeoExperiment;
   setName(name: string): GeoExperiment;
   setPromptsCount(promptsCount: number): GeoExperiment;
-  setBaselineDate(baselineDate?: string): GeoExperiment;
+  setStartTime(startTime?: string): GeoExperiment;
+  setEndTime(endTime?: string): GeoExperiment;
   setMetadata(metadata?: object): GeoExperiment;
   setError(error?: object): GeoExperiment;
   setUpdatedBy(updatedBy: string): GeoExperiment;
 }
 
 export interface GeoExperimentCollection extends BaseCollection<GeoExperiment> {
-  allBySiteId(siteId: string): Promise<GeoExperiment[]>;
+  allBySiteId(siteId: string, options?: QueryOptions): Promise<PaginatedResult<GeoExperiment>>;
   findBySiteId(siteId: string): Promise<GeoExperiment | null>;
-  allByOpportunityId(opportunityId: string): Promise<GeoExperiment[]>;
-  findByOpportunityId(opportunityId: string): Promise<GeoExperiment | null>;
+  allByOpportunityId(
+    opportunityId: string,
+    options?: QueryOptions,
+  ): Promise<GeoExperiment[] | PaginatedResult<GeoExperiment>>;
+  findByOpportunityId(
+    opportunityId: string,
+    options?: QueryOptions,
+  ): Promise<GeoExperiment | null>;
 }

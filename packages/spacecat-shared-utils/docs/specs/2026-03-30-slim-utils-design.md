@@ -14,16 +14,19 @@
 
 ## Goals
 
-- Consumers that only use pure utility functions (`hasText`, `isString`, etc.) pull in zero heavy dependencies in unbundled Node.js (the primary Lambda runtime).
-- Existing imports from `@adobe/spacecat-shared-utils` continue to work unchanged (fully backwards compatible public API).
+- New consumers running in size-constrained environments (Lambda@Edge, edge runtimes) can import only what they need and pull in zero heavy dependencies.
+- Existing imports from `@adobe/spacecat-shared-utils` continue to work unchanged — no action required from existing consumers.
 - No production dependencies are added or removed in this change.
-- Leave consumers to migrate to sub-paths at their own pace.
 
 ## Non-goals
 
 - Removing `date-fns` or replacing it with native Date arithmetic (tracked as future improvement).
 - Moving `@aws-sdk/*` to `peerDependencies`.
-- Updating consuming packages (`spacecat-shared-http-utils`, etc.) to use new sub-paths.
+- Updating existing consuming packages (`spacecat-shared-http-utils`, etc.) to use new sub-paths — there is no reason to do so unless they have a size constraint.
+
+## Design Intent
+
+Sub-paths are additive infrastructure, not a migration target. Existing consumers importing `@adobe/spacecat-shared-utils` continue pulling the full tree and benefit from no changes. The value is immediate for any new service or Lambda@Edge consumer that cannot afford 22MB zipped. No adoption drive is needed — the right consumer will find the right sub-path when the constraint applies.
 
 ---
 
@@ -85,9 +88,10 @@ After this change, loading `core.js` → `functions.js` never touches `validator
 | `@adobe/spacecat-shared-utils` | `src/index.js` (minimally updated) | All: `@aws-sdk/*`, `@adobe/fetch`, `aws-xray-sdk`, `date-fns`, `world-countries`, `cheerio`, `franc-min`, `iso-639-3`, `zod`, `validator`, `urijs`, `@json2csv/plainjs` |
 | `@adobe/spacecat-shared-utils/core` | `src/core.js` (new) | **None** — pure JS only |
 | `@adobe/spacecat-shared-utils/aws` | `src/aws.js` (new) | `@aws-sdk/client-s3`, `@aws-sdk/client-sqs`, `aws-xray-sdk`, `@adobe/fetch` (via both `sqs.js` directly and `tracing-fetch.js`) |
-| `@adobe/spacecat-shared-utils/locale` | `src/locale.js` (new) | `cheerio`, `world-countries`, `franc-min`, `iso-639-3`, `@adobe/fetch`, `aws-xray-sdk` (via `tracing-fetch.js`). **Side effect:** loading `./locale` triggers the `adobe-fetch.js` HTTP context initialization (`h1()`/`h2()`) at module load time. |
+| `@adobe/spacecat-shared-utils/locale` | `src/locale.js` (new) | `cheerio`, `world-countries`, `franc-min`, `iso-639-3`, `@adobe/fetch`, `aws-xray-sdk` (via `tracing-fetch.js`). **⚠ Side effect:** loading `./locale` triggers `adobe-fetch.js` HTTP context initialization (`h1()`/`h2()`) at module load time — before any `detectLocale()` call is made. In a VPC Lambda with restricted egress or no NAT, this can cause a silent hang at import time, not at the first fetch call. Add a `@sideeffect` JSDoc annotation to `src/locale.js` and call this out prominently in the README. |
 | `@adobe/spacecat-shared-utils/calendar` | `src/calendar.js` (new) | `date-fns` |
 | `@adobe/spacecat-shared-utils/schemas` | `src/schemas.js` (existing) | `zod` |
+| `@adobe/spacecat-shared-utils/constants` | `src/constants.js` (existing) | **None** — pure data |
 
 **Browser compatibility:** Sub-paths have no `browser` condition. `./aws` includes `@aws-sdk/*` and `aws-xray-sdk`, which are not browser-compatible. Sub-paths are intended for Node.js server-side consumers only.
 
@@ -105,11 +109,12 @@ The following remain accessible only via `@adobe/spacecat-shared-utils`:
 - `bot-blocker-detect/` — transitively depends on `@adobe/fetch` via `tracing-fetch.js`
 - `aem.js`, `aem-content-api-utils.js`, `url-extractors.js`, `formcalc.js`
 - `aggregation/`, `llmo-config.js`, `llmo-strategy.js`, `cdn-helpers.js`
-- `constants.js` — zero-dep, candidate for `./constants` in a follow-up (see Future Improvements)
 
-### Breaking change: deep `src/` imports become inaccessible
+### Deep `src/` imports are already inaccessible
 
-Once the `exports` map is in place, any consumer doing `import '..../src/url-helpers.js'` directly will receive `ERR_PACKAGE_PATH_NOT_EXPORTED`. This is intentional — the `exports` map seals the public API. It is a breaking change for any consumer relying on deep imports, though none are known within this monorepo.
+The package already has an `exports` map with only `"."`. Node.js has enforced `ERR_PACKAGE_PATH_NOT_EXPORTED` for any path not listed in the map since that field was added. Adding sub-paths only *adds* resolvable paths — it does not remove any. This is **not** a new breaking change introduced by this work.
+
+**Pre-publish check:** Grep `spacecat-api-service`, `spacecat-audit-worker`, and `spacecat-import-worker` for `spacecat-shared-utils/src/` to confirm no consumer is relying on deep imports that were previously blocked (and would therefore already be broken in production).
 
 ---
 
@@ -145,6 +150,10 @@ Each sub-path includes a `types` condition. The `browser` condition on `"."` is 
   "./schemas": {
     "types": "./src/schemas.d.ts",
     "default": "./src/schemas.js"
+  },
+  "./constants": {
+    "types": "./src/constants.d.ts",
+    "default": "./src/constants.js"
   }
 }
 ```
@@ -177,7 +186,7 @@ Add `esbuild` to `devDependencies` in `packages/spacecat-shared-utils/package.js
 Add a `pretest` hook so the dep hygiene check runs automatically before every `npm test` invocation, including `npm test -ws` at the monorepo root:
 
 ```json
-"pretest": "node scripts/check-core-deps.js",
+"pretest": "node scripts/check-subpath-deps.js",
 "test": "c8 mocha"
 ```
 
@@ -368,39 +377,53 @@ it('aws exports exactly the expected list', () => {
 
 Representative spot-checks are sufficient for `./locale`, `./calendar`, and `./schemas`.
 
-**2. Dep hygiene check: `scripts/check-core-deps.js`**
+**2. Dep hygiene check: `scripts/check-subpath-deps.js`**
 
-A standalone Node.js script located at `packages/spacecat-shared-utils/scripts/check-core-deps.js` (inside the package directory, not the monorepo root — `pretest` runs with CWD set to the package directory). Uses esbuild's JS API. External packages appear in `metafile.inputs[file].imports` (not `metafile.outputs[chunk].imports`, which lists inter-chunk splits and is always empty for a single-entry bundle):
+A standalone Node.js script located at `packages/spacecat-shared-utils/scripts/check-subpath-deps.js` (inside the package directory, not the monorepo root — `pretest` runs with CWD set to the package directory). Uses esbuild's JS API. External packages appear in `metafile.inputs[file].imports` (not `metafile.outputs[chunk].imports`, which lists inter-chunk splits and is always empty for a single-entry bundle).
+
+The script enforces invariants on three sub-paths:
+
+| Sub-path | Entry | Allowed externals |
+|---|---|---|
+| `./core` | `src/core.js` | none |
+| `./constants` | `src/constants.js` | none |
+| `./schemas` | `src/schemas.js` | `zod` |
+
+`./aws` and `./locale` are intentionally excluded — they already pull in heavy deps and new additions are expected there.
 
 ```js
-// scripts/check-core-deps.js
-import * as esbuild from 'esbuild';
+// scripts/check-subpath-deps.js
+const CHECKS = [
+  { entry: 'src/core.js', allowlist: [] },
+  { entry: 'src/constants.js', allowlist: [] },
+  { entry: 'src/schemas.js', allowlist: ['zod'] },
+];
 
-const result = await esbuild.build({
-  entryPoints: ['src/core.js'],
-  bundle: true,
-  write: false,
-  metafile: true,
-  packages: 'external',
-  logLevel: 'silent',
-});
+// (esbuild imported dynamically; exits 1 if not installed unless SKIP_DEP_CHECK=1)
 
-const external = [];
-for (const [file, info] of Object.entries(result.metafile.inputs)) {
-  for (const imp of info.imports) {
-    if (imp.external) {
-      external.push({ file, path: imp.path });
+let anyFailure = false;
+for (const { entry, allowlist } of CHECKS) {
+  const result = await esbuild.build({ entryPoints: [entry], bundle: true,
+    write: false, metafile: true, packages: 'external', logLevel: 'silent' });
+
+  const violations = [];
+  for (const [file, info] of Object.entries(result.metafile.inputs)) {
+    for (const imp of info.imports) {
+      if (imp.external && !allowlist.includes(imp.path)) {
+        violations.push({ file, path: imp.path });
+      }
     }
   }
-}
 
-if (external.length > 0) {
-  console.error('FAIL: src/core.js has unexpected external dependencies:');
-  external.forEach((i) => console.error(` - ${i.file} imports ${i.path}`));
-  process.exit(1);
+  if (violations.length > 0) {
+    console.error(`FAIL: ${entry} has unexpected external dependencies:`);
+    violations.forEach((i) => console.error(`  - ${i.file} imports ${i.path}`));
+    anyFailure = true;
+  } else {
+    console.log(`OK: ${entry} dep check passed.`);
+  }
 }
-
-console.log('OK: src/core.js has zero external dependencies.');
+if (anyFailure) process.exit(1);
 ```
 
 This script runs automatically via the `pretest` hook before every `npm test` invocation.
@@ -410,4 +433,12 @@ This script runs automatically via the `pretest` hook before every `npm test` in
 ## Future Improvements
 
 - **Approach B:** Replace the 4 `date-fns` functions in `calendar-week-helper.js` with native Date arithmetic. Eliminates 38MB for all consumers. Requires thorough tests for ISO week edge cases.
-- **`./constants` sub-path:** `constants.js` is zero-dependency and widely used. A trivially safe follow-up addition.
+- **Lazy fetch context initialization:** The `./locale` side effect (HTTP pool init at import time) is a known limitation. The longer-term fix is lazy initialization inside `adobe-fetch.js` so it only runs on first use.
+- **sideEffects maintenance CI script:** Statically scan `src/*.js` for top-level function calls and flag any file not listed in `sideEffects`. Without this, the array will drift as new files are added.
+- **Unify `.d.ts` declaration strategy:** `src/schemas.d.ts` cannot re-export from `./index.js` because `index.d.ts` exposes `schemas` as a namespace (`export * as schemas`) rather than flat named exports. All other `.d.ts` files use the simpler re-export pattern. The fix is to change `index.d.ts` to export `llmoConfig` and `LLMOConfig` as flat named exports, with a deprecated namespace alias for transition. Deferred to avoid unknown impact on consumers of the `schemas` namespace.
+
+## Principle for Future Sub-paths
+
+A new sub-path is warranted when: a consumer needs a specific function without pulling in a specific dependency cluster, and no existing sub-path provides it. The bar is a concrete consumer use case, not a theoretical one. Avoid adding sub-paths reactively to resolve individual consumer complaints — if multiple complaints point at the same cluster, that is the signal.
+
+The exports map is also a security boundary: it controls which modules are resolvable through the package name. Do not add a `"./*": "./src/*.js"` wildcard to resolve access issues — add the specific path instead.

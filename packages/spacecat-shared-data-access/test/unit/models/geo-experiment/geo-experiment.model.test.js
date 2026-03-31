@@ -105,16 +105,16 @@ describe('GeoExperimentModel', () => {
     expect(instance.getPromptsCount()).to.equal(10);
   });
 
-  it('gets and sets baselineDate', () => {
-    expect(instance.getBaselineDate()).to.be.undefined;
-    instance.setBaselineDate('2026-03-29T12:00:00.000Z');
-    expect(instance.getBaselineDate()).to.equal('2026-03-29T12:00:00.000Z');
+  it('gets and sets startTime', () => {
+    expect(instance.getStartTime()).to.be.undefined;
+    instance.setStartTime('2026-03-29T12:00:00.000Z');
+    expect(instance.getStartTime()).to.equal('2026-03-29T12:00:00.000Z');
   });
 
   it('gets and sets completionDate', () => {
-    expect(instance.getCompletionDate()).to.be.undefined;
-    instance.setCompletionDate('2026-04-12T08:00:00.000Z');
-    expect(instance.getCompletionDate()).to.equal('2026-04-12T08:00:00.000Z');
+    expect(instance.getEndTime()).to.be.undefined;
+    instance.setEndTime('2026-04-12T08:00:00.000Z');
+    expect(instance.getEndTime()).to.equal('2026-04-12T08:00:00.000Z');
   });
 
   it('gets and sets metadata and error', () => {

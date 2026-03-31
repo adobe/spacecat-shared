@@ -60,11 +60,11 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     default: 0,
     validate: (value) => isInteger(value) && value >= 0,
   })
-  .addAttribute('baselineDate', {
+  .addAttribute('startTime', {
     type: 'string',
     validate: (value) => !value || hasText(value),
   })
-  .addAttribute('completionDate', {
+  .addAttribute('endTime', {
     type: 'string',
     validate: (value) => !value || hasText(value),
   })

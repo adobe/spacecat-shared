@@ -12,5 +12,10 @@
 
 import type * as z from 'zod';
 
+// NOTE: This file declares types directly rather than re-exporting from ./index.js
+// because index.d.ts exposes schemas as a namespace (export * as schemas), not as
+// flat named exports. The ZodEffects<ZodObject<any>> type is lossy — it erases the
+// specific schema shape, so consumers get no field-level autocomplete or type errors.
+// See "Unify .d.ts declaration strategy" in the design spec's Future Improvements.
 export declare const llmoConfig: z.ZodEffects<z.ZodObject<any>>;
 export type LLMOConfig = z.output<typeof llmoConfig>;

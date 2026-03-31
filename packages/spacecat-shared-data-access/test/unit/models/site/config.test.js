@@ -3211,6 +3211,19 @@ describe('Config Tests', () => {
           label: 'not-allowed',
         })).to.throw();
       });
+
+      it('strips unknown source keys from auditTargetURLs', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }],
+            unknown: [{ url: 'https://example.com/page2' }],
+          },
+        });
+        const result = config.getAuditTargetURLs();
+        expect(result).to.have.lengthOf(1);
+        expect(result[0].url).to.equal('https://example.com/page1');
+        expect(result[0].source).to.equal('manual');
+      });
     });
   });
 });

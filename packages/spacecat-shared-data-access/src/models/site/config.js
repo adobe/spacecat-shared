@@ -411,7 +411,7 @@ export const configSchema = Joi.object({
     manual: Joi.array().items(Joi.object({
       url: Joi.string().uri().required(),
     })).optional().default([]),
-  }).optional(),
+  }).options({ stripUnknown: true }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),

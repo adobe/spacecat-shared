@@ -65,4 +65,12 @@ describe('PageCitabilityCollection', () => {
       expect(model).to.be.an('object');
     });
   });
+
+  describe('static constants', () => {
+    it('exposes updatedBy source constants', () => {
+      expect(PageCitability.DEFAULT_UPDATED_BY).to.equal('spacecat');
+      expect(PageCitability.UPDATED_BY_PRERENDER).to.equal('prerender');
+      expect(PageCitability.UPDATED_BY_PAGE_CITABILITY).to.equal('page-citability');
+    });
+  });
 });

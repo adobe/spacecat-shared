@@ -98,18 +98,16 @@ describe('CloudManagerClient', () => {
   let CloudManagerClient;
   const execFileSyncStub = sinon.stub();
   const existsSyncStub = sinon.stub();
+  const mkdirSyncStub = sinon.stub();
   const mkdtempSyncStub = sinon.stub();
+  const readdirSyncStub = sinon.stub();
+  const readFileSyncStub = sinon.stub().returns(Buffer.from('zip-content'));
+  const readlinkSyncStub = sinon.stub();
   const rmSyncStub = sinon.stub();
   const statfsSyncStub = sinon.stub();
   const writeSyncStub = sinon.stub();
-  const admZipExtractStub = sinon.stub();
-  const admZipAddLocalFolderStub = sinon.stub();
-  const admZipToBufferStub = sinon.stub().returns(Buffer.from('zip-content'));
-  const AdmZipStub = sinon.stub().returns({
-    extractAllTo: admZipExtractStub,
-    addLocalFolder: admZipAddLocalFolderStub,
-    toBuffer: admZipToBufferStub,
-  });
+  const archiveFolderStub = sinon.stub().resolves();
+  const extractStub = sinon.stub().resolves();
 
   // esmock's initial module resolution can exceed mocha's default 2s timeout
   // eslint-disable-next-line prefer-arrow-callback
@@ -119,12 +117,16 @@ describe('CloudManagerClient', () => {
       child_process: { execFileSync: execFileSyncStub },
       fs: {
         existsSync: existsSyncStub,
+        mkdirSync: mkdirSyncStub,
         mkdtempSync: mkdtempSyncStub,
+        readdirSync: readdirSyncStub,
+        readFileSync: readFileSyncStub,
+        readlinkSync: readlinkSyncStub,
         rmSync: rmSyncStub,
         statfsSync: statfsSyncStub,
         writeFileSync: writeSyncStub,
       },
-      'adm-zip': { default: AdmZipStub },
+      'zip-lib': { archiveFolder: archiveFolderStub, extract: extractStub },
     }, {
       '@adobe/spacecat-shared-ims-client': {
         ImsClient: { createFrom: createFromStub },
@@ -138,22 +140,22 @@ describe('CloudManagerClient', () => {
     execFileSyncStub.returns('');
     existsSyncStub.reset();
     existsSyncStub.returns(false);
+    mkdirSyncStub.reset();
     mkdtempSyncStub.reset();
     mkdtempSyncStub.callsFake((prefix) => `${prefix}XXXXXX`);
+    readdirSyncStub.reset();
+    readdirSyncStub.returns([]);
+    readFileSyncStub.reset();
+    readFileSyncStub.returns(Buffer.from('zip-content'));
+    readlinkSyncStub.reset();
     rmSyncStub.reset();
     statfsSyncStub.reset();
     statfsSyncStub.returns({ bsize: 4096, blocks: 131072, bfree: 65536 });
     writeSyncStub.reset();
-    admZipExtractStub.reset();
-    admZipAddLocalFolderStub.reset();
-    admZipToBufferStub.reset();
-    admZipToBufferStub.returns(Buffer.from('zip-content'));
-    AdmZipStub.reset();
-    AdmZipStub.returns({
-      extractAllTo: admZipExtractStub,
-      addLocalFolder: admZipAddLocalFolderStub,
-      toBuffer: admZipToBufferStub,
-    });
+    archiveFolderStub.reset();
+    archiveFolderStub.resolves();
+    extractStub.reset();
+    extractStub.resolves();
     createFromStub.reset();
     createFromStub.returns(mockImsClient);
     mockImsClient.getServiceAccessToken.reset();
@@ -568,6 +570,182 @@ describe('CloudManagerClient', () => {
     });
   });
 
+  describe('applyPatchContent', () => {
+    it('applies plain diff patch content with git apply, add, and commit', async () => {
+      const patchContent = 'diff --git a/file.txt b/file.txt\nindex abc..def 100644\n--- a/file.txt\n+++ b/file.txt\n@@ -1 +1 @@\n-old\n+new\n';
+
+      existsSyncStub.returns(true);
+
+      const client = CloudManagerClient.createFrom(createContext());
+      await client.applyPatchContent('/tmp/cm-repo-test', 'feature/fix', patchContent, 'Fix the bug');
+
+      // Verify patch file written to temp directory
+      expect(mkdtempSyncStub).to.have.been.calledOnce;
+      expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-patch-$/);
+      expect(writeSyncStub).to.have.been.calledOnce;
+      expect(writeSyncStub.firstCall.args[1]).to.equal(patchContent);
+
+      // Verify git commands: config, config, checkout, apply, add, commit
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.name') && s.includes('test-bot'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.email') && s.includes('test-bot@example.com'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('checkout') && s.includes('feature/fix'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('apply'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('add') && s.includes('-A'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('commit') && s.includes('-m') && s.includes('Fix the bug'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.startsWith('am '))).to.be.false;
+
+      // Verify temp directory cleanup
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
+    });
+
+    it('applies mail-message patch with git am (commitMessage ignored)', async () => {
+      const patchContent = 'From abc123\nSubject: Fix bug\n\ndiff --git a/file.txt b/file.txt\n';
+
+      existsSyncStub.returns(true);
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+      await client.applyPatchContent('/tmp/cm-repo-test', 'feature/fix', patchContent, 'This is ignored');
+
+      // Verify git am is used, not apply
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.startsWith('am '))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('apply'))).to.be.false;
+      expect(allGitArgStrs.some((s) => s.includes('commit'))).to.be.false;
+
+      // Verify log message mentions commitMessage ignored
+      expect(context.log.info).to.have.been.calledWith(
+        sinon.match(/commitMessage ignored/),
+      );
+    });
+
+    it('throws when commitMessage is not provided', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatchContent('/tmp/cm-repo-test', 'main', 'diff content'))
+        .to.be.rejectedWith('commitMessage is required for applyPatchContent');
+    });
+
+    it('cleans up temp patch directory even on error', async () => {
+      existsSyncStub.returns(true);
+      // Make checkout fail (3rd git call: config, config, checkout)
+      execFileSyncStub.onCall(2).throws(new Error('checkout failed'));
+
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatchContent('/tmp/cm-repo-test', 'bad-branch', 'diff content', 'msg'))
+        .to.be.rejected;
+
+      // Temp directory should still be cleaned up
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
+    });
+
+    it('skips cleanup when temp directory does not exist', async () => {
+      existsSyncStub.returns(false);
+      // Make checkout fail
+      execFileSyncStub.onCall(2).throws(new Error('checkout failed'));
+
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyPatchContent('/tmp/cm-repo-test', 'bad-branch', 'diff content', 'msg'))
+        .to.be.rejected;
+
+      // rmSync should NOT be called since existsSync returned false
+      expect(rmSyncStub).to.not.have.been.called;
+    });
+  });
+
+  describe('applyFiles', () => {
+    it('writes files and commits on the specified branch', async () => {
+      // existsSync returns true for directories (no mkdirSync needed)
+      existsSyncStub.returns(true);
+
+      const files = [
+        { path: 'src/main.js', content: 'console.log("hello");' },
+        { path: 'README.md', content: '# Hello' },
+      ];
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+      await client.applyFiles('/tmp/cm-repo-test', 'feature/fix', files, 'Add files');
+
+      // Verify git commands: config, config, checkout, add, commit
+      const allGitArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.name') && s.includes('test-bot'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('config') && s.includes('user.email') && s.includes('test-bot@example.com'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('checkout') && s.includes('feature/fix'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('add') && s.includes('-A'))).to.be.true;
+      expect(allGitArgStrs.some((s) => s.includes('commit') && s.includes('-m') && s.includes('Add files'))).to.be.true;
+
+      // Verify files written
+      expect(writeSyncStub).to.have.been.calledTwice;
+      expect(writeSyncStub.firstCall.args[0]).to.equal(path.join('/tmp/cm-repo-test', 'src/main.js'));
+      expect(writeSyncStub.firstCall.args[1]).to.equal('console.log("hello");');
+      expect(writeSyncStub.secondCall.args[0]).to.equal(path.join('/tmp/cm-repo-test', 'README.md'));
+      expect(writeSyncStub.secondCall.args[1]).to.equal('# Hello');
+
+      // No mkdirSync needed since directories exist
+      expect(mkdirSyncStub).to.not.have.been.called;
+
+      // Verify log message
+      expect(context.log.info).to.have.been.calledWith('2 file(s) applied and committed on branch feature/fix');
+    });
+
+    it('creates parent directories when they do not exist', async () => {
+      // existsSync returns false for directories
+      existsSyncStub.returns(false);
+
+      const files = [
+        { path: 'deep/nested/dir/file.js', content: 'export default {};' },
+      ];
+
+      const client = CloudManagerClient.createFrom(createContext());
+      await client.applyFiles('/tmp/cm-repo-test', 'main', files, 'Add nested file');
+
+      // Verify mkdirSync was called with recursive: true
+      expect(mkdirSyncStub).to.have.been.calledOnce;
+      expect(mkdirSyncStub.firstCall.args[0]).to.equal(
+        path.dirname(path.join('/tmp/cm-repo-test', 'deep/nested/dir/file.js')),
+      );
+      expect(mkdirSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true });
+
+      // Verify file written
+      expect(writeSyncStub).to.have.been.calledOnce;
+      expect(writeSyncStub.firstCall.args[0]).to.equal(path.join('/tmp/cm-repo-test', 'deep/nested/dir/file.js'));
+    });
+
+    it('throws when commitMessage is not provided', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyFiles('/tmp/cm-repo-test', 'main', [{ path: 'f.js', content: 'x' }]))
+        .to.be.rejectedWith('commitMessage is required for applyFiles');
+    });
+
+    it('throws when files is empty', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyFiles('/tmp/cm-repo-test', 'main', [], 'msg'))
+        .to.be.rejectedWith('files must be a non-empty array of {path, content} objects');
+    });
+
+    it('throws when files is not an array', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyFiles('/tmp/cm-repo-test', 'main', 'not-an-array', 'msg'))
+        .to.be.rejectedWith('files must be a non-empty array of {path, content} objects');
+    });
+
+    it('throws when files is null', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.applyFiles('/tmp/cm-repo-test', 'main', null, 'msg'))
+        .to.be.rejectedWith('files must be a non-empty array of {path, content} objects');
+    });
+  });
+
   describe('push', () => {
     it('pushes BYOG repo with auth headers and ref', async () => {
       const client = CloudManagerClient.createFrom(createContext());
@@ -739,41 +917,120 @@ describe('CloudManagerClient', () => {
   });
 
   describe('unzipRepository', () => {
+    const expectedExtractPath = `${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`;
+    const expectedZipDir = `${path.join(os.tmpdir(), 'cm-zip-')}XXXXXX`;
+    const expectedZipFile = path.join(expectedZipDir, 'repo.zip');
+
     it('extracts ZIP buffer to a temp directory', async () => {
       const client = CloudManagerClient.createFrom(createContext());
       const zipBuffer = Buffer.from('fake-zip-content');
 
       const extractPath = await client.unzipRepository(zipBuffer);
 
-      // Should have created a temp dir with cm-repo- prefix
-      expect(mkdtempSyncStub).to.have.been.calledOnce;
+      // Should have created temp dirs for extract (cm-repo-) and zip file (cm-zip-)
+      expect(mkdtempSyncStub).to.have.been.calledTwice;
       expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-repo-$/);
+      expect(mkdtempSyncStub.secondCall.args[0]).to.match(/cm-zip-$/);
 
-      // Should have constructed AdmZip with the buffer and extracted
-      expect(AdmZipStub).to.have.been.calledOnceWith(zipBuffer);
-      expect(admZipExtractStub).to.have.been.calledOnceWith(
-        `${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`,
-        true,
-      );
+      // Should write buffer to temp zip file, then extract
+      expect(writeSyncStub).to.have.been.calledOnce;
+      expect(writeSyncStub.firstCall.args[0]).to.equal(expectedZipFile);
+      expect(writeSyncStub.firstCall.args[1]).to.equal(zipBuffer);
+      expect(extractStub).to.have.been.calledOnce;
+      expect(extractStub.firstCall.args[0]).to.equal(expectedZipFile);
+      expect(extractStub.firstCall.args[1]).to.equal(expectedExtractPath);
 
-      // Should not write a temp zip file (adm-zip works directly with buffer)
-      expect(writeSyncStub).to.not.have.been.called;
+      // Should validate symlinks after extraction
+      expect(readdirSyncStub).to.have.been.calledOnce;
+      expect(readdirSyncStub.firstCall.args[0]).to.equal(expectedExtractPath);
+
+      // Should clean up the temp zip directory
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[0]).to.equal(expectedZipDir);
 
       // Should return the extract path
-      expect(extractPath).to.equal(`${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`);
+      expect(extractPath).to.equal(expectedExtractPath);
     });
 
     it('cleans up on unzip failure', async () => {
-      admZipExtractStub.throws(new Error('Invalid or unsupported zip format'));
+      extractStub.rejects(new Error('Invalid or unsupported zip format'));
       const client = CloudManagerClient.createFrom(createContext());
       const zipBuffer = Buffer.from('bad-zip-content');
 
       await expect(client.unzipRepository(zipBuffer))
         .to.be.rejectedWith('Failed to unzip repository');
 
-      // Should have cleaned up the extraction directory
+      // Should have cleaned up both the extraction directory and the temp zip directory
+      expect(rmSyncStub).to.have.been.calledTwice;
+      const rmPaths = rmSyncStub.getCalls().map((c) => c.args[0]);
+      expect(rmPaths.some((p) => p.includes('cm-repo-'))).to.be.true;
+      expect(rmPaths.some((p) => p.includes('cm-zip-'))).to.be.true;
+    });
+
+    it('cleans up extractPath when second mkdtempSync fails', async () => {
+      mkdtempSyncStub.onFirstCall().returns(expectedExtractPath);
+      mkdtempSyncStub.onSecondCall().throws(new Error('ENOSPC: no space left on device'));
+
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.unzipRepository(Buffer.from('zip')))
+        .to.be.rejectedWith('Failed to unzip repository: ENOSPC: no space left on device');
+
+      // extractPath should be cleaned up even though zipDir was never created
       expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[1]).to.deep.equal({ recursive: true, force: true });
+      expect(rmSyncStub.firstCall.args[0]).to.equal(expectedExtractPath);
+    });
+
+    it('rejects when extracted symlink points outside repository root', async () => {
+      // Simulate a directory with a symlink that escapes the root
+      readdirSyncStub.withArgs(expectedExtractPath, { withFileTypes: true }).returns([{
+        name: 'evil-link',
+        isSymbolicLink: () => true,
+        isDirectory: () => false,
+      }]);
+      readlinkSyncStub.returns('/etc/shadow');
+
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.unzipRepository(Buffer.from('zip')))
+        .to.be.rejectedWith('Symlink escapes repository root: evil-link -> /etc/shadow');
+
+      // extractPath should be cleaned up
+      const rmPaths = rmSyncStub.getCalls().map((c) => c.args[0]);
+      expect(rmPaths.some((p) => p.includes('cm-repo-'))).to.be.true;
+    });
+
+    it('allows symlinks that point within the repository root', async () => {
+      // Simulate dispatcher-style symlinks: enabled_farms/foo.farm -> ../available_farms/foo.farm
+      readdirSyncStub.withArgs(expectedExtractPath, { withFileTypes: true }).returns([{
+        name: 'dispatcher',
+        isSymbolicLink: () => false,
+        isDirectory: () => true,
+      }]);
+      const dispatcherPath = path.join(expectedExtractPath, 'dispatcher');
+      readdirSyncStub.withArgs(dispatcherPath, { withFileTypes: true }).returns([{
+        name: 'enabled_farms',
+        isSymbolicLink: () => false,
+        isDirectory: () => true,
+      }, {
+        name: 'available_farms',
+        isSymbolicLink: () => false,
+        isDirectory: () => true,
+      }]);
+      const enabledPath = path.join(dispatcherPath, 'enabled_farms');
+      readdirSyncStub.withArgs(enabledPath, { withFileTypes: true }).returns([{
+        name: 'default.farm',
+        isSymbolicLink: () => true,
+        isDirectory: () => false,
+      }]);
+      readlinkSyncStub.returns('../available_farms/default.farm');
+      const availablePath = path.join(dispatcherPath, 'available_farms');
+      readdirSyncStub.withArgs(availablePath, { withFileTypes: true }).returns([]);
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.unzipRepository(Buffer.from('zip'));
+
+      expect(result).to.equal(expectedExtractPath);
     });
   });
 
@@ -796,21 +1053,60 @@ describe('CloudManagerClient', () => {
       expect(Buffer.isBuffer(result)).to.be.true;
       expect(result.toString()).to.equal('zip-content');
 
-      // AdmZip constructed with no args (empty archive), then folder added
-      expect(AdmZipStub).to.have.been.calledOnceWith();
-      expect(admZipAddLocalFolderStub).to.have.been.calledOnceWith(clonePath);
-      expect(admZipToBufferStub).to.have.been.calledOnce;
+      // Should create a temp dir for the zip file
+      expect(mkdtempSyncStub).to.have.been.calledOnce;
+      expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-zip-$/);
+
+      // Should archive the folder with followSymlinks: false
+      expect(archiveFolderStub).to.have.been.calledOnce;
+      expect(archiveFolderStub.firstCall.args[0]).to.equal(clonePath);
+      expect(archiveFolderStub.firstCall.args[2]).to.deep.equal({ followSymlinks: false });
+
+      // Should read the zip file into a buffer
+      expect(readFileSyncStub).to.have.been.calledOnce;
+
+      // Should clean up the temp zip directory
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
     });
 
-    it('throws when addLocalFolder fails', async () => {
+    it('rejects symlinks that escape the repo root before zipping', async () => {
       const clonePath = '/tmp/cm-repo-zip-test';
       existsSyncStub.withArgs(clonePath).returns(true);
-      admZipAddLocalFolderStub.throws(new Error('failed to read directory'));
+
+      readdirSyncStub.withArgs(clonePath, { withFileTypes: true }).returns([{
+        name: 'evil-link',
+        isSymbolicLink: () => true,
+        isDirectory: () => false,
+      }]);
+      readlinkSyncStub.returns('/etc/passwd');
 
       const client = CloudManagerClient.createFrom(createContext());
 
       await expect(client.zipRepository(clonePath))
-        .to.be.rejectedWith('failed to read directory');
+        .to.be.rejectedWith('Symlink escapes repository root: evil-link -> /etc/passwd');
+
+      // archiveFolder should never be called
+      expect(archiveFolderStub).to.not.have.been.called;
+
+      // Should still clean up the temp zip directory
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
+    });
+
+    it('throws when archiveFolder fails and cleans up temp dir', async () => {
+      const clonePath = '/tmp/cm-repo-zip-test';
+      existsSyncStub.withArgs(clonePath).returns(true);
+      archiveFolderStub.rejects(new Error('failed to read directory'));
+
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await expect(client.zipRepository(clonePath))
+        .to.be.rejectedWith('Failed to zip repository: failed to read directory');
+
+      // Should still clean up the temp zip directory
+      expect(rmSyncStub).to.have.been.calledOnce;
+      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
     });
   });
 
@@ -852,7 +1148,7 @@ describe('CloudManagerClient', () => {
   });
 
   describe('createPullRequest', () => {
-    it('creates a PR with correct payload', async () => {
+    it('creates a PR and constructs pullRequestUrl from repoUrl and externalNumber', async () => {
       const prNock = nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`, {
           title: 'Fix issue',
@@ -860,7 +1156,7 @@ describe('CloudManagerClient', () => {
           destinationBranch: 'main',
           description: 'Automated fix',
         })
-        .reply(201, { id: 'pr-1', status: 'open' });
+        .reply(201, { id: 169205, externalNumber: '2', state: 'OPEN' });
 
       const client = CloudManagerClient.createFrom(createContext());
       const result = await client.createPullRequest(
@@ -872,11 +1168,144 @@ describe('CloudManagerClient', () => {
           sourceBranch: 'feature/fix',
           title: 'Fix issue',
           description: 'Automated fix',
+          repoUrl: 'https://github.com/owner/repo.git',
         },
       );
 
-      expect(result.id).to.equal('pr-1');
+      expect(result.id).to.equal(169205);
+      expect(result.pullRequestUrl).to.equal('https://github.com/owner/repo/pull/2');
       expect(prNock.isDone()).to.be.true;
+    });
+
+    it('constructs pullRequestUrl for GitHub without .git suffix', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '10', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://github.com/owner/repo',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://github.com/owner/repo/pull/10');
+    });
+
+    it('constructs pullRequestUrl for GitLab', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '5', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://gitlab.com/group/project.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://gitlab.com/group/project/-/merge_requests/5');
+    });
+
+    it('constructs pullRequestUrl for self-hosted GitLab', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '3', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://gitlab.corp.example.com/team/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://gitlab.corp.example.com/team/repo/-/merge_requests/3');
+    });
+
+    it('does not set pullRequestUrl for unsupported provider', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '1', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://bitbucket.org/owner/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.be.undefined;
+    });
+
+    it('does not set pullRequestUrl when repoUrl is not provided', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '1', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.be.undefined;
+    });
+
+    it('does not set pullRequestUrl when externalNumber is missing', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://github.com/owner/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.be.undefined;
     });
 
     it('throws on failed PR creation', async () => {

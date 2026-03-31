@@ -46,6 +46,7 @@ const opportunity = z.object({
   name: nonEmptyString,
   description: z.string(),
   category: nonEmptyString,
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 /**
@@ -61,6 +62,7 @@ const strategyOpportunity = z.object({
   status: workflowStatus,
   assignee: z.string(),
   completedAt: z.string().optional(), // ISO 8601 date string
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 const strategyPromptSelection = z.object({
@@ -76,10 +78,11 @@ const strategy = z.object({
   id: nonEmptyString,
   name: nonEmptyString,
   status: workflowStatus,
-  url: z.string(),
+  url: z.union([z.string(), z.array(z.string())]),
   description: z.string(),
-  topic: z.string(),
-  topicId: z.uuid().optional(),
+  topic: z.union([z.string(), z.array(z.string())]),
+  topicId: z.union([z.uuid(), z.array(z.uuid())]).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   selectedPrompts: z.array(strategyPromptSelection).optional(),
   platform: nonEmptyString.optional(),
   opportunities: z.array(strategyOpportunity),

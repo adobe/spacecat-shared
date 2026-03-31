@@ -343,6 +343,9 @@ export const configSchema = Joi.object({
         type: Joi.string().valid('include', 'exclude').optional(),
       }),
     ).optional(),
+    countryCodeIgnoreList: Joi.array().items(
+      Joi.string().length(2),
+    ).optional(),
     cdnBucketConfig: Joi.object({
       bucketName: Joi.string().optional(),
       orgId: Joi.string().optional(),
@@ -366,7 +369,12 @@ export const configSchema = Joi.object({
     forwardedHost: Joi.string().optional(),
   }).optional(),
   edgeOptimizeConfig: Joi.object({
-    enabled: Joi.boolean().optional(),
+    enabled: Joi.alternatives()
+      .try(
+        Joi.boolean(),
+        Joi.number(),
+      )
+      .optional(),
     opted: Joi.number().optional(),
     stagingDomains: Joi.array().items(
       Joi.object({
@@ -375,6 +383,27 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
   }).optional(),
+  onboardConfig: Joi.object({
+    lastProfile: Joi.string().optional(),
+    lastStartTime: Joi.number().optional(),
+    forcedOverride: Joi.boolean().optional(),
+    history: Joi.array().items(Joi.object({
+      profile: Joi.string().optional(),
+      startTime: Joi.number().optional(),
+    })).optional(),
+  }).optional(),
+  commerceLlmoConfig: Joi.object().pattern(
+    Joi.string(),
+    Joi.object({
+      environmentId: Joi.string().required(),
+      websiteCode: Joi.string().required(),
+      storeCode: Joi.string().required(),
+      storeViewCode: Joi.string().required(),
+      hostName: Joi.string().optional(),
+      magentoEndpoint: Joi.string().uri().optional(),
+      magentoAPIKey: Joi.string().optional(),
+    }),
+  ).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
@@ -482,9 +511,12 @@ export const Config = (data = {}) => {
     return llmoConfig?.customerIntent || [];
   };
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
+  self.getLlmoCountryCodeIgnoreList = () => state?.llmo?.countryCodeIgnoreList;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
+  self.getOnboardConfig = () => state?.onboardConfig;
+  self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
@@ -628,6 +660,11 @@ export const Config = (data = {}) => {
   self.updateLlmoCdnlogsFilter = (cdnlogsFilter) => {
     state.llmo = state.llmo || {};
     state.llmo.cdnlogsFilter = cdnlogsFilter;
+  };
+
+  self.updateLlmoCountryCodeIgnoreList = (countryCodeIgnoreList) => {
+    state.llmo = state.llmo || {};
+    state.llmo.countryCodeIgnoreList = countryCodeIgnoreList;
   };
 
   self.updateLlmoCdnBucketConfig = (cdnBucketConfig) => {
@@ -800,6 +837,21 @@ export const Config = (data = {}) => {
     state.edgeOptimizeConfig = edgeOptimizeConfig;
   };
 
+  self.updateOnboardConfig = (onboardConfig, { maxHistory } = {}) => {
+    let history = [...(state.onboardConfig?.history || [])];
+    if (onboardConfig.lastProfile && onboardConfig.lastStartTime) {
+      history.push({ profile: onboardConfig.lastProfile, startTime: onboardConfig.lastStartTime });
+    }
+    if (maxHistory && history.length > maxHistory) {
+      history = history.slice(-maxHistory);
+    }
+    state.onboardConfig = { ...onboardConfig, history };
+  };
+
+  self.updateCommerceLlmoConfig = (commerceLlmoConfig) => {
+    state.commerceLlmoConfig = commerceLlmoConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -817,4 +869,6 @@ Config.toDynamoItem = (config) => ({
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
+  onboardConfig: config.getOnboardConfig?.(),
+  commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
 });

@@ -36,6 +36,9 @@ const schema = new SchemaBuilder(ContactSalesLead, ContactSalesLeadCollection)
   .addAttribute('siteId', {
     type: 'string',
   })
+  .addAttribute('notes', {
+    type: 'string',
+  })
   .addAttribute('status', {
     type: Object.values(ContactSalesLead.STATUSES),
     required: true,

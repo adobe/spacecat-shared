@@ -21,12 +21,14 @@ export interface ContactSalesLead extends BaseModel {
   getEmail(): string;
   getDomain(): string | null;
   getSiteId(): string | null;
+  getNotes(): string | null;
   getStatus(): ContactSalesLeadStatus;
   getOrganization(): Promise<Organization>;
   setName(name: string): ContactSalesLead;
   setEmail(email: string): ContactSalesLead;
   setDomain(domain: string): ContactSalesLead;
   setSiteId(siteId: string): ContactSalesLead;
+  setNotes(notes: string): ContactSalesLead;
   setStatus(status: ContactSalesLeadStatus): ContactSalesLead;
 }
 

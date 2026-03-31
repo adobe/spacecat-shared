@@ -30,6 +30,7 @@ const schema = new SchemaBuilder(SuggestionGrant, SuggestionGrantCollection)
     type: 'string', required: false, postgrestIgnore: true,
   })
   .addIndex({ composite: ['suggestionId'] }, { composite: [] })
+  .addIndex({ composite: ['tokenId'] }, { composite: [] })
   .addAttribute('suggestionId', {
     type: 'string',
     required: true,

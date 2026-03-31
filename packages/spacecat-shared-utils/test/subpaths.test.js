@@ -13,6 +13,7 @@
 import { expect } from 'chai';
 
 import * as core from '../src/core.js';
+import * as aws from '../src/aws.js';
 
 const EXPECTED_CORE_EXPORTS = [
   'arrayEquals', 'dateAfterDays', 'deepEqual', 'hasText',
@@ -22,11 +23,28 @@ const EXPECTED_CORE_EXPORTS = [
   'isValidUUID', 'toBoolean',
 ];
 
+const EXPECTED_AWS_EXPORTS = [
+  's3Wrapper', 'getObjectFromKey',
+  'sqsWrapper', 'sqsEventAdapter',
+  'instrumentAWSClient', 'getTraceId', 'addTraceIdHeader',
+  'logWrapper', 'isAWSLambda',
+  'fetch', 'resetFetchContext', 'clearFetchCache',
+  'tracingFetch', 'SPACECAT_USER_AGENT',
+  'getStoredMetrics', 'storeMetrics', 'calculateCPCValue',
+];
+
 describe('sub-path barrel shape checks', () => {
   it('core exports exactly the expected list', () => {
     expect(Object.keys(core).sort()).to.deep.equal(
       EXPECTED_CORE_EXPORTS.sort(),
       'Core exports changed. If you added a function to functions.js, update EXPECTED_CORE_EXPORTS in test/subpaths.test.js.',
+    );
+  });
+
+  it('aws exports exactly the expected list', () => {
+    expect(Object.keys(aws).sort()).to.deep.equal(
+      EXPECTED_AWS_EXPORTS.sort(),
+      'AWS exports changed. Update EXPECTED_AWS_EXPORTS in test/subpaths.test.js to match the new barrel.',
     );
   });
 });

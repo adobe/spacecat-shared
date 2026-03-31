@@ -79,6 +79,9 @@ export const AUDIT_OPPORTUNITY_MAP = {
   'wikipedia-analysis': ['wikipedia-analysis'],
   'reddit-analysis': ['reddit-analysis'],
   'youtube-analysis': ['youtube-analysis'],
+
+  // LLMO customer / GEO content catalog
+  'llmo-customer-analysis': ['info-gain'],
 };
 
 // ─── Query helpers ───────────────────────────────────────────────────────────

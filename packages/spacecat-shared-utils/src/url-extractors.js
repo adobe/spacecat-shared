@@ -200,6 +200,28 @@ function extractUrlsFromOpportunity(opts) {
           }
         }
         break;
+      case OPPORTUNITY_TYPES.INFO_GAIN:
+        {
+          const entries = data?.entries;
+          if (Array.isArray(entries)) {
+            entries.forEach((entry) => {
+              const reportUrl = entry?.report?.url;
+              if (reportUrl && typeof reportUrl === 'string') {
+                urls.push(reportUrl);
+              }
+              const discovered = entry?.discoveredOpportunities;
+              if (Array.isArray(discovered)) {
+                discovered.forEach((opp) => {
+                  const targetUrl = opp?.targetUrl;
+                  if (targetUrl && typeof targetUrl === 'string') {
+                    urls.push(targetUrl);
+                  }
+                });
+              }
+            });
+          }
+        }
+        break;
       default:
         break;
     }

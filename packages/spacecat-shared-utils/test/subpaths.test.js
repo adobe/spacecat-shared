@@ -37,40 +37,64 @@ const EXPECTED_AWS_EXPORTS = [
   'getStoredMetrics', 'storeMetrics', 'calculateCPCValue',
 ];
 
+const EXPECTED_LOCALE_EXPORTS = [
+  'detectLocale',
+];
+
+const EXPECTED_CALENDAR_EXPORTS = [
+  'getDateRanges', 'getLastNumberOfWeeks', 'getMonthInfo',
+  'getTemporalCondition', 'getWeekInfo',
+  'isoCalendarWeek', 'isoCalendarWeekMonday', 'isoCalendarWeekSunday',
+];
+
+const EXPECTED_SCHEMAS_EXPORTS = [
+  'llmoConfig',
+];
+
+const EXPECTED_CONSTANTS_EXPORTS = [
+  'DEFAULT_CPC_VALUE', 'OPPORTUNITY_TYPES',
+];
+
 describe('sub-path barrel shape checks', () => {
   it('core exports exactly the expected list', () => {
-    expect(Object.keys(core).sort()).to.deep.equal(
-      EXPECTED_CORE_EXPORTS.sort(),
+    expect([...Object.keys(core)].sort()).to.deep.equal(
+      [...EXPECTED_CORE_EXPORTS].sort(),
       'Core exports changed. If you added a function to functions.js, update EXPECTED_CORE_EXPORTS in test/subpaths.test.js.',
     );
   });
 
   it('aws exports exactly the expected list', () => {
-    expect(Object.keys(aws).sort()).to.deep.equal(
-      EXPECTED_AWS_EXPORTS.sort(),
+    expect([...Object.keys(aws)].sort()).to.deep.equal(
+      [...EXPECTED_AWS_EXPORTS].sort(),
       'AWS exports changed. Update EXPECTED_AWS_EXPORTS in test/subpaths.test.js to match the new barrel.',
     );
   });
 
-  it('locale exports detectLocale', () => {
-    expect(locale).to.have.property('detectLocale').that.is.a('function');
+  it('locale exports exactly the expected list', () => {
+    expect([...Object.keys(locale)].sort()).to.deep.equal(
+      [...EXPECTED_LOCALE_EXPORTS].sort(),
+      'Locale exports changed. Update EXPECTED_LOCALE_EXPORTS in test/subpaths.test.js.',
+    );
   });
 
-  it('calendar exports expected functions', () => {
-    const expected = [
-      'isoCalendarWeek', 'isoCalendarWeekSunday', 'isoCalendarWeekMonday',
-      'getDateRanges', 'getLastNumberOfWeeks', 'getWeekInfo',
-      'getMonthInfo', 'getTemporalCondition',
-    ];
-    expected.forEach((name) => expect(calendar).to.have.property(name).that.is.a('function'));
+  it('calendar exports exactly the expected list', () => {
+    expect([...Object.keys(calendar)].sort()).to.deep.equal(
+      [...EXPECTED_CALENDAR_EXPORTS].sort(),
+      'Calendar exports changed. Update EXPECTED_CALENDAR_EXPORTS in test/subpaths.test.js.',
+    );
   });
 
-  it('schemas exports llmoConfig', () => {
-    expect(schemas).to.have.property('llmoConfig');
+  it('schemas exports exactly the expected list', () => {
+    expect([...Object.keys(schemas)].sort()).to.deep.equal(
+      [...EXPECTED_SCHEMAS_EXPORTS].sort(),
+      'Schemas exports changed. Update EXPECTED_SCHEMAS_EXPORTS in test/subpaths.test.js.',
+    );
   });
 
-  it('constants exports OPPORTUNITY_TYPES and DEFAULT_CPC_VALUE', () => {
-    expect(constants).to.have.property('OPPORTUNITY_TYPES').that.is.an('object');
-    expect(constants).to.have.property('DEFAULT_CPC_VALUE').that.is.a('number');
+  it('constants exports exactly the expected list', () => {
+    expect([...Object.keys(constants)].sort()).to.deep.equal(
+      [...EXPECTED_CONSTANTS_EXPORTS].sort(),
+      'Constants exports changed. Update EXPECTED_CONSTANTS_EXPORTS in test/subpaths.test.js.',
+    );
   });
 });

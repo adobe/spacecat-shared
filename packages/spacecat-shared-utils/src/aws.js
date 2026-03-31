@@ -10,6 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
+/**
+ * @sideeffect Importing this module initializes the @adobe/fetch HTTP connection pool
+ * (h1() or h2() based on HELIX_FETCH_FORCE_HTTP1) at module load time via adobe-fetch.js,
+ * before any fetch() call is made. In a VPC Lambda with restricted egress or no NAT gateway,
+ * this can cause a silent hang at import time. Ensure your Lambda has outbound internet
+ * access before importing this module.
+ */
 export { s3Wrapper, getObjectFromKey } from './s3.js';
 export { sqsWrapper, sqsEventAdapter } from './sqs.js';
 export { instrumentAWSClient, getTraceId, addTraceIdHeader } from './xray.js';

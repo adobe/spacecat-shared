@@ -412,4 +412,4 @@ export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
 
 export { detectLocale } from './locale-detect/index.js';
-export { type detectBotBlocker } from './bot-blocker-detect/index.js';
+export { detectBotBlocker } from './bot-blocker-detect/index.js';

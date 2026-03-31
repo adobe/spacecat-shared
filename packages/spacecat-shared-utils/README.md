@@ -129,7 +129,7 @@ To avoid pulling in the full dependency tree (~110MB), import from a sub-path:
 |--------|-------------|
 | `@adobe/spacecat-shared-utils` | All (~110MB) |
 | `@adobe/spacecat-shared-utils/core` | None — pure JS only |
-| `@adobe/spacecat-shared-utils/aws` | `@aws-sdk/*`, `aws-xray-sdk`, `@adobe/fetch` |
+| `@adobe/spacecat-shared-utils/aws` | `@aws-sdk/*`, `aws-xray-sdk`, `@adobe/fetch` ⚠ **Side effect:** initializes HTTP connection pool at import time — requires outbound internet access |
 | `@adobe/spacecat-shared-utils/locale` | `cheerio`, `world-countries`, `franc-min`, `iso-639-3`, `@adobe/fetch` ⚠ **Side effect:** initializes HTTP connection pool at import time — requires outbound internet access |
 | `@adobe/spacecat-shared-utils/calendar` | `date-fns` |
 | `@adobe/spacecat-shared-utils/schemas` | `zod` |

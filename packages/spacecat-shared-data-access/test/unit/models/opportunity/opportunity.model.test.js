@@ -360,6 +360,22 @@ describe('OpportunityModel', () => {
     });
   });
 
+  describe('getLastAuditedAt and setLastAuditedAt', () => {
+    it('returns the lastAuditedAt value', () => {
+      mockRecord.lastAuditedAt = '2025-01-15T10:30:00.000Z';
+      expect(instance.getLastAuditedAt()).to.equal('2025-01-15T10:30:00.000Z');
+    });
+
+    it('returns undefined when lastAuditedAt is not set', () => {
+      expect(instance.getLastAuditedAt()).to.be.undefined;
+    });
+
+    it('sets the lastAuditedAt value', () => {
+      instance.setLastAuditedAt('2025-03-20T14:00:00.000Z');
+      expect(instance.record.lastAuditedAt).to.equal('2025-03-20T14:00:00.000Z');
+    });
+  });
+
   describe('getData and setData', () => {
     it('returns additional data for the opportunity', () => {
       expect(instance.getData()).to.deep.equal({ additionalInfo: 'info' });

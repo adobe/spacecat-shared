@@ -224,17 +224,72 @@ describe('SeoClient', () => {
       expect(result.fullAuditRef).to.include('/analytics/v1/');
     });
 
-    it('throws error when API returns ERROR body', async () => {
+    it('delay resolves after specified ms', async () => {
+      const start = Date.now();
+      await SeoClient.delay(10);
+      expect(Date.now() - start).to.be.at.least(5);
+    });
+
+    it('retries on rate limit then succeeds', async () => {
+      sinon.stub(SeoClient, 'delay').resolves();
+
       nock(config.apiBaseUrl)
         .get('/')
         .query(true)
         .reply(200, 'ERROR 30 :: LIMIT EXCEEDED');
 
-      await expect(client.sendRawRequest({ type: 'test_type' }))
-        .to.be.rejectedWith('SEO API request failed: ERROR 30 :: LIMIT EXCEEDED');
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query(true)
+        .reply(200, 'H\nV');
+
+      const result = await client.sendRawRequest({ type: 'test_type' });
+      expect(result.body).to.equal('H\nV');
+      expect(SeoClient.delay.calledOnce).to.equal(true);
     });
 
-    it('throws error when API returns ERROR 132 (no units)', async () => {
+    it('throws after exhausting retries on rate limit', async () => {
+      sinon.stub(SeoClient, 'delay').resolves();
+
+      // 1 initial + 4 retries = 5 attempts
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query(true)
+        .times(5)
+        .reply(200, 'ERROR 30 :: LIMIT EXCEEDED');
+
+      await expect(client.sendRawRequest({ type: 'test_type' }))
+        .to.be.rejectedWith('SEO API request failed after 4 retries: ERROR 30 :: LIMIT EXCEEDED');
+      expect(SeoClient.delay.callCount).to.equal(4);
+    });
+
+    it('uses exponential backoff with increasing delays', async () => {
+      const delays = [];
+      sinon.stub(SeoClient, 'delay').callsFake((ms) => {
+        delays.push(ms);
+        return Promise.resolve();
+      });
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query(true)
+        .times(3)
+        .reply(200, 'ERROR 30 :: LIMIT EXCEEDED');
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query(true)
+        .reply(200, 'H\nV');
+
+      await client.sendRawRequest({ type: 'test_type' });
+      expect(delays).to.have.lengthOf(3);
+      // Exponential: base*2^0, base*2^1, base*2^2 (+ jitter 0-500)
+      expect(delays[0]).to.be.within(1000, 1500);
+      expect(delays[1]).to.be.within(2000, 2500);
+      expect(delays[2]).to.be.within(4000, 4500);
+    });
+
+    it('does not retry on non-rate-limit errors', async () => {
       nock(config.apiBaseUrl)
         .get('/')
         .query(true)
@@ -837,6 +892,31 @@ describe('SeoClient', () => {
       });
 
       expect(result.fullAuditRef).to.include('type=backlinks_pages');
+    });
+
+    it('parallelizes across multiple batches when limit exceeds batch size', async () => {
+      // 12 broken pages → 2 batches (10 + 2)
+      const pages = Array.from({ length: 12 }, (_, i) => `https://example.com/page${i};404;${100 - i};${50 - i}`);
+      const pagesCsv = ['source_url;response_code;backlinks_num;domains_num', ...pages].join('\n');
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks_pages')
+        .reply(200, pagesCsv);
+
+      // Mock backlinks response for each of the 12 pages
+      for (let i = 0; i < 12; i += 1) {
+        nock(config.apiBaseUrl)
+          .get('/analytics/v1/')
+          .query((q) => q.type === 'backlinks' && q.target === `https://example.com/page${i}`)
+          .reply(200, `source_title;source_url;target_url;page_ascore;external_num\nTitle ${i};https://ref${i}.com;https://example.com/page${i};${80 - i};10`);
+      }
+
+      const result = await client.getBrokenBacklinks('example.com', 12);
+      expect(result.result.backlinks).to.have.lengthOf(12);
+
+      const uniqueTargets = new Set(result.result.backlinks.map((b) => b.url_to));
+      expect(uniqueTargets.size).to.equal(12);
     });
 
     it('returns empty backlinks when no 404 pages found', async () => {

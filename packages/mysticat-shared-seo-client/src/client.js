@@ -27,10 +27,18 @@ export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
 const DEFAULT_DATABASE = 'us';
 const MAX_ERROR_BODY_LENGTH = 500;
 const MAX_PAID_KEYWORDS_FETCH = 10000;
+const RATE_LIMIT_BASE_DELAY_MS = 1000;
+const MAX_RETRIES = 4;
 
 const STUB_RESPONSE = { result: {}, fullAuditRef: '' };
 
 export default class SeoClient {
+  static delay(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
   static createFrom(context) {
     const { SEO_API_BASE_URL: apiBaseUrl, SEO_API_KEY: apiKey } = context.env;
     return new SeoClient({ apiBaseUrl, apiKey }, fetch, context.log);
@@ -81,26 +89,47 @@ export default class SeoClient {
       'key=REDACTED',
     );
 
-    this.log.debug(`SEO API request: ${fullAuditRef}`);
-    const response = await this.fetchAPI(requestUrl, { method: 'GET' });
-    const body = await response.text();
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+      this.log.debug(`SEO API request: ${fullAuditRef}${attempt > 0 ? ` (retry ${attempt})` : ''}`);
+      // eslint-disable-next-line no-await-in-loop
+      const response = await this.fetchAPI(requestUrl, { method: 'GET' });
+      // eslint-disable-next-line no-await-in-loop
+      const body = await response.text();
 
-    // SEO API returns HTTP 200 even on errors, with "ERROR XX :: message" body
-    if (body.startsWith('ERROR')) {
-      const errorMessage = `SEO API request failed: ${body.slice(0, MAX_ERROR_BODY_LENGTH)}`;
-      this.log.error(errorMessage);
-      throw new Error(errorMessage);
+      // SEO API returns HTTP 200 with "ERROR XX :: message" body on errors
+      if (body.startsWith('ERROR')) {
+        const isRateLimit = body.includes('LIMIT EXCEEDED');
+        if (isRateLimit && attempt < MAX_RETRIES) {
+          // Exponential backoff: 1s, 2s, 4s, 8s + random jitter 0-500ms
+          const retryDelay = (RATE_LIMIT_BASE_DELAY_MS * (2 ** attempt))
+            + Math.floor(Math.random() * 500);
+          this.log.warn(`SEO API rate limited, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+          // eslint-disable-next-line no-await-in-loop
+          await SeoClient.delay(retryDelay);
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+        const prefix = isRateLimit && attempt >= MAX_RETRIES
+          ? `SEO API request failed after ${MAX_RETRIES} retries: `
+          : 'SEO API request failed: ';
+        const errorMessage = `${prefix}${body.slice(0, MAX_ERROR_BODY_LENGTH)}`;
+        this.log.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      if (!response.ok) {
+        const errorMessage = `SEO API request failed with status: ${response.status} - ${body.slice(0, MAX_ERROR_BODY_LENGTH)}`;
+        this.log.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const rowCount = body.split('\n').length - 1;
+      this.log.info(`SEO API call: type=${queryParams.type || 'unknown'} domain=${queryParams.domain || queryParams.target || '-'} rows=${rowCount} path=${apiPath || '/'}`);
+
+      return { body, fullAuditRef };
     }
-
-    if (!response.ok) {
-      const errorMessage = `SEO API request failed with status: ${response.status} - ${body.slice(0, MAX_ERROR_BODY_LENGTH)}`;
-      this.log.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    this.log.info(`SEO API response for type=${queryParams.type || 'unknown'}`);
-
-    return { body, fullAuditRef };
+    /* c8 ignore next */
+    throw new Error('SEO API request failed: unexpected retry loop exit');
   }
 
   /**
@@ -445,6 +474,10 @@ export default class SeoClient {
    * broken page on the domain, paired with its best referring link. This matches the
    * practical value of the old provider's single-call endpoint, where results typically
    * surfaced many unique broken target URLs.
+   *
+   * Note on `traffic_domain` field: The previous provider returned estimated monthly
+   * organic traffic (0 to millions). This implementation maps it to the referring page's
+   * authority score (0-100). Relative ranking is preserved but absolute values differ.
    *
    * @param {string} url - The target domain
    * @param {number} [limit=50] - Maximum results (default: 50, max: 100)

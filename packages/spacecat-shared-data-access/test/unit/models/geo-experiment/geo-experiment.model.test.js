@@ -34,10 +34,12 @@ describe('GeoExperimentModel', () => {
     preScheduleId: 'drs-pre-schedule-id',
     postScheduleId: 'drs-post-schedule-id',
     type: GeoExperiment.TYPES.ONSITE_OPPORTUNITY_DEPLOYMENT,
-    status: GeoExperiment.STATUSES.POST_ANALYSIS_DONE,
+    status: GeoExperiment.STATUSES.COMPLETED,
+    phase: GeoExperiment.PHASES.POST_ANALYSIS_DONE,
     suggestionIds: ['4d56efe4-9473-4e9a-95f3-c7536ffc56a3'],
     name: 'Test RCV Experiment',
     promptsCount: 5,
+    promptsLocation: 'geo-experiments/site-123/exp-456-prompts.json',
     metadata: { deployType: 'edge' },
     error: { message: 'none' },
     updatedBy: 'spacecat-api-service',
@@ -76,15 +78,35 @@ describe('GeoExperimentModel', () => {
   });
 
   it('gets and sets status', () => {
-    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.POST_ANALYSIS_DONE);
-    instance.setStatus(GeoExperiment.STATUSES.INITIATED);
-    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.INITIATED);
-    instance.setStatus(GeoExperiment.STATUSES.PRE_ANALYSIS_FAILED);
-    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.PRE_ANALYSIS_FAILED);
-    instance.setStatus(GeoExperiment.STATUSES.POST_ANALYSIS_FAILED);
-    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.POST_ANALYSIS_FAILED);
+    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.COMPLETED);
+    instance.setStatus(GeoExperiment.STATUSES.GENERATING_BASELINE);
+    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.GENERATING_BASELINE);
+    instance.setStatus(GeoExperiment.STATUSES.IN_PROGRESS);
+    expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.IN_PROGRESS);
     instance.setStatus(GeoExperiment.STATUSES.FAILED);
     expect(instance.getStatus()).to.equal(GeoExperiment.STATUSES.FAILED);
+  });
+
+  it('gets and sets phase', () => {
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_DONE);
+    instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_SUBMITTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PRE_ANALYSIS_SUBMITTED);
+    instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_DONE);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PRE_ANALYSIS_DONE);
+    instance.setPhase(GeoExperiment.PHASES.DEPLOYMENT_STARTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_STARTED);
+    instance.setPhase(GeoExperiment.PHASES.DEPLOYMENT_COMPLETED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_COMPLETED);
+    instance.setPhase(GeoExperiment.PHASES.POST_ANALYSIS_SUBMITTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_SUBMITTED);
+    instance.setPhase(GeoExperiment.PHASES.FAILED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.FAILED);
+  });
+
+  it('gets and sets promptsLocation', () => {
+    expect(instance.getPromptsLocation()).to.equal('geo-experiments/site-123/exp-456-prompts.json');
+    instance.setPromptsLocation('geo-experiments/site-123/exp-789-prompts.json');
+    expect(instance.getPromptsLocation()).to.equal('geo-experiments/site-123/exp-789-prompts.json');
   });
 
   it('gets and sets suggestionIds', () => {

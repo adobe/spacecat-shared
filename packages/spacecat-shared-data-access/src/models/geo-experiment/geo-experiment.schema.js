@@ -42,6 +42,10 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     type: Object.values(GeoExperiment.STATUSES),
     required: true,
   })
+  .addAttribute('phase', {
+    type: Object.values(GeoExperiment.PHASES),
+    required: true,
+  })
   .addAttribute('suggestionIds', {
     type: 'list',
     items: {
@@ -59,6 +63,10 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     type: 'number',
     default: 0,
     validate: (value) => isInteger(value) && value >= 0,
+  })
+  .addAttribute('promptsLocation', {
+    type: 'string',
+    validate: (value) => !value || hasText(value),
   })
   .addAttribute('startTime', {
     type: 'string',

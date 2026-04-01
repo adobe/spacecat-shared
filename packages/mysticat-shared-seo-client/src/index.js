@@ -15,8 +15,41 @@ import SeoClient from './client.js';
 export default SeoClient;
 export { fetch } from './client.js';
 export { ENDPOINTS } from './endpoints.js';
-export { buildQueryParams, parseResponse } from './utils.js';
+export {
+  buildQueryParams, parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, todayISO,
+  buildFilter, extractBrand, INTENT_CODES,
+} from './utils.js';
 
-export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([]);
+/** @deprecated Use parseCsvResponse instead. Kept for backward compatibility. */
+export function parseResponse(response) {
+  return response;
+}
 
-export const METRICS_BY_COUNTRY_FILTER_FIELDS = /** @type {const} */ ([]);
+export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([
+  'keyword',
+  'keyword_country',
+  'language',
+  'sum_traffic',
+  'volume',
+  'best_position',
+  'best_position_url',
+  'cpc',
+  'last_update',
+  'is_branded',
+  'is_navigational',
+  'is_informational',
+  'is_commercial',
+  'is_transactional',
+  'serp_features',
+]);
+
+export const METRICS_BY_COUNTRY_FILTER_FIELDS = /** @type {const} */ ([
+  'org_keywords',
+  'paid_keywords',
+  'org_keywords_1_3',
+  'org_traffic',
+  'org_cost',
+  'paid_traffic',
+  'paid_cost',
+  'paid_pages',
+]);

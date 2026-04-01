@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.111.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.110.0...@adobe/spacecat-shared-utils-v1.111.0) (2026-04-01)
+
+### Features
+
+* LLMO-3758 info-gain ([#1488](https://github.com/adobe/spacecat-shared/issues/1488)) ([cc6bcc1](https://github.com/adobe/spacecat-shared/commit/cc6bcc16921e98f46b79efdff272004672fb455e))
+
 ## [@adobe/spacecat-shared-utils-v1.110.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.109.0...@adobe/spacecat-shared-utils-v1.110.0) (2026-04-01)
 
 ### Features

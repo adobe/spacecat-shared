@@ -17,7 +17,7 @@ const siteTopForms = [
     url: 'https://example0.com/contact',
     formSource: '',
     traffic: 12345,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -26,7 +26,7 @@ const siteTopForms = [
     url: 'https://example1.com/newsletter',
     formSource: '.newsletter-signup',
     traffic: 24690,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -35,7 +35,7 @@ const siteTopForms = [
     url: 'https://example2.com/quote',
     formSource: 'form[action*="quote"]',
     traffic: 37035,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -44,7 +44,7 @@ const siteTopForms = [
     url: 'https://example3.com/booking',
     formSource: '#booking-form',
     traffic: 49380,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -53,7 +53,7 @@ const siteTopForms = [
     url: 'https://example4.com/feedback',
     formSource: '.feedback-form',
     traffic: 61725,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -62,7 +62,7 @@ const siteTopForms = [
     url: 'https://example5.com/contact',
     formSource: '',
     traffic: 74070,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -71,7 +71,7 @@ const siteTopForms = [
     url: 'https://example6.com/support',
     formSource: 'form.support-form',
     traffic: 86415,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -80,7 +80,7 @@ const siteTopForms = [
     url: 'https://example7.com/registration',
     formSource: '#registration-form',
     traffic: 98760,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -89,7 +89,7 @@ const siteTopForms = [
     url: 'https://example8.com/login',
     formSource: '.login-form',
     traffic: 111105,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -98,7 +98,7 @@ const siteTopForms = [
     url: 'https://example9.com/survey',
     formSource: 'form[data-type="survey"]',
     traffic: 123450,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -107,7 +107,7 @@ const siteTopForms = [
     url: 'https://example0.com/contact',
     formSource: '#contact-form-2',
     traffic: 135795,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -116,7 +116,7 @@ const siteTopForms = [
     url: 'https://example1.com/contact',
     formSource: '.contact-form',
     traffic: 148140,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -125,7 +125,7 @@ const siteTopForms = [
     url: 'https://example2.com/contact',
     formSource: '#contact-form',
     traffic: 160485,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -134,7 +134,7 @@ const siteTopForms = [
     url: 'https://example3.com/contact',
     formSource: 'form.contact',
     traffic: 172830,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -143,7 +143,7 @@ const siteTopForms = [
     url: 'https://example4.com/contact',
     formSource: '#contact-form',
     traffic: 185175,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -152,7 +152,7 @@ const siteTopForms = [
     url: 'https://example5.com/contact',
     formSource: '.contact-form',
     traffic: 197520,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -161,7 +161,7 @@ const siteTopForms = [
     url: 'https://example6.com/contact',
     formSource: '#contact-form',
     traffic: 209865,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -170,7 +170,7 @@ const siteTopForms = [
     url: 'https://example7.com/contact',
     formSource: 'form[action*="contact"]',
     traffic: 222210,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -179,7 +179,7 @@ const siteTopForms = [
     url: 'https://example8.com/contact',
     formSource: '#contact-form',
     traffic: 234555,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -188,7 +188,7 @@ const siteTopForms = [
     url: 'https://example9.com/contact',
     formSource: '.contact-form',
     traffic: 246900,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -197,7 +197,7 @@ const siteTopForms = [
     url: 'https://example0.com/contact',
     formSource: '#contact-form-3',
     traffic: 259245,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -206,7 +206,7 @@ const siteTopForms = [
     url: 'https://example1.com/contact',
     formSource: '#contact-form',
     traffic: 271590,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -215,7 +215,7 @@ const siteTopForms = [
     url: 'https://example2.com/contact',
     formSource: '.contact-form',
     traffic: 283935,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -224,7 +224,7 @@ const siteTopForms = [
     url: 'https://example3.com/contact',
     formSource: '#contact-form',
     traffic: 296280,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -233,7 +233,7 @@ const siteTopForms = [
     url: 'https://example4.com/contact',
     formSource: 'form.contact',
     traffic: 308625,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -242,7 +242,7 @@ const siteTopForms = [
     url: 'https://example5.com/contact',
     formSource: '#contact-form',
     traffic: 320970,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -251,7 +251,7 @@ const siteTopForms = [
     url: 'https://example6.com/contact',
     formSource: '.contact-form',
     traffic: 333315,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -260,7 +260,7 @@ const siteTopForms = [
     url: 'https://example7.com/contact',
     formSource: '#contact-form',
     traffic: 345660,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -269,7 +269,7 @@ const siteTopForms = [
     url: 'https://example8.com/contact',
     formSource: 'form[action*="contact"]',
     traffic: 358005,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -278,7 +278,7 @@ const siteTopForms = [
     url: 'https://example9.com/contact',
     formSource: '#contact-form',
     traffic: 370350,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -287,7 +287,7 @@ const siteTopForms = [
     url: 'https://example0.com/contact',
     formSource: '#contact-form-4',
     traffic: 382695,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -296,7 +296,7 @@ const siteTopForms = [
     url: 'https://example1.com/contact',
     formSource: '#contact-form',
     traffic: 395040,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -305,7 +305,7 @@ const siteTopForms = [
     url: 'https://example2.com/contact',
     formSource: '.contact-form',
     traffic: 407385,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -314,7 +314,7 @@ const siteTopForms = [
     url: 'https://example3.com/contact',
     formSource: '#contact-form',
     traffic: 419730,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -323,7 +323,7 @@ const siteTopForms = [
     url: 'https://example4.com/contact',
     formSource: 'form.contact',
     traffic: 432075,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -332,7 +332,7 @@ const siteTopForms = [
     url: 'https://example5.com/contact',
     formSource: '#contact-form',
     traffic: 444420,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -341,7 +341,7 @@ const siteTopForms = [
     url: 'https://example6.com/contact',
     formSource: '.contact-form',
     traffic: 456765,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -350,7 +350,7 @@ const siteTopForms = [
     url: 'https://example7.com/contact',
     formSource: '#contact-form',
     traffic: 469110,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -359,7 +359,7 @@ const siteTopForms = [
     url: 'https://example8.com/contact',
     formSource: 'form[action*="contact"]',
     traffic: 481455,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -368,7 +368,7 @@ const siteTopForms = [
     url: 'https://example9.com/contact',
     formSource: '#contact-form',
     traffic: 493800,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -377,7 +377,7 @@ const siteTopForms = [
     url: 'https://example0.com/contact',
     formSource: '#contact-form-5',
     traffic: 506145,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -386,7 +386,7 @@ const siteTopForms = [
     url: 'https://example1.com/contact',
     formSource: '#contact-form',
     traffic: 518490,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -395,7 +395,7 @@ const siteTopForms = [
     url: 'https://example2.com/contact',
     formSource: '.contact-form',
     traffic: 530835,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -404,7 +404,7 @@ const siteTopForms = [
     url: 'https://example3.com/contact',
     formSource: '#contact-form',
     traffic: 543180,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -413,7 +413,7 @@ const siteTopForms = [
     url: 'https://example4.com/contact',
     formSource: 'form.contact',
     traffic: 555525,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -422,7 +422,7 @@ const siteTopForms = [
     url: 'https://example5.com/contact',
     formSource: '#contact-form',
     traffic: 567870,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -431,7 +431,7 @@ const siteTopForms = [
     url: 'https://example6.com/contact',
     formSource: '.contact-form',
     traffic: 580215,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -440,7 +440,7 @@ const siteTopForms = [
     url: 'https://example7.com/contact',
     formSource: '#contact-form',
     traffic: 592560,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -449,7 +449,7 @@ const siteTopForms = [
     url: 'https://example8.com/contact',
     formSource: 'form[action*="contact"]',
     traffic: 604905,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
   {
@@ -458,7 +458,7 @@ const siteTopForms = [
     url: 'https://example9.com/contact',
     formSource: '#contact-form',
     traffic: 617250,
-    source: 'ahrefs',
+    source: 'seo',
     importedAt: '2024-11-29T07:45:55.953Z',
   },
 ];

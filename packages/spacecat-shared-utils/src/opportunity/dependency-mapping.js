@@ -13,7 +13,7 @@
 /**
  * Dependency sources used by opportunities.
  * RUM          — Real User Monitoring (Adobe RUM / helix-rum-js)
- * AHREFSImport — Ahrefs import job (organic traffic, backlinks, keywords)
+ * SEOImport    — SEO import job (organic traffic, backlinks, keywords)
  * GSC          — Google Search Console import
  * scraping     — Page HTML scraping (spacecat-scraper / spacecat-content-scraper)
  * ExternalAPI  — Third-party API call at audit run-time (Wikipedia, Reddit, YouTube)
@@ -22,7 +22,7 @@
  */
 export const DEPENDENCY_SOURCES = /** @type {const} */ ({
   RUM: 'RUM',
-  AHREFS_IMPORT: 'AHREFSImport',
+  SEO_IMPORT: 'SEOImport',
   GSC: 'GSC',
   SCRAPING: 'scraping',
   EXTERNAL_API: 'ExternalAPI',
@@ -47,22 +47,22 @@ export const OPPORTUNITY_DEPENDENCY_MAP = {
   'high-organic-low-ctr': [DEPENDENCY_SOURCES.RUM, DEPENDENCY_SOURCES.GSC],
 
   // SEO — link audits
-  'broken-backlinks': [DEPENDENCY_SOURCES.AHREFS_IMPORT, DEPENDENCY_SOURCES.SCRAPING],
+  'broken-backlinks': [DEPENDENCY_SOURCES.SEO_IMPORT, DEPENDENCY_SOURCES.SCRAPING],
   'broken-internal-links': [DEPENDENCY_SOURCES.RUM, DEPENDENCY_SOURCES.SCRAPING],
 
   // SEO — on-page / content
   canonical: [DEPENDENCY_SOURCES.SCRAPING],
   hreflang: [DEPENDENCY_SOURCES.SCRAPING],
-  'meta-tags': [DEPENDENCY_SOURCES.AHREFS_IMPORT, DEPENDENCY_SOURCES.SCRAPING],
+  'meta-tags': [DEPENDENCY_SOURCES.SEO_IMPORT, DEPENDENCY_SOURCES.SCRAPING],
   sitemap: [DEPENDENCY_SOURCES.SCRAPING],
-  'sitemap-product-coverage': [DEPENDENCY_SOURCES.AHREFS_IMPORT, DEPENDENCY_SOURCES.SCRAPING],
+  'sitemap-product-coverage': [DEPENDENCY_SOURCES.SEO_IMPORT, DEPENDENCY_SOURCES.SCRAPING],
   'structured-data': [DEPENDENCY_SOURCES.SCRAPING],
   'redirect-chains': [DEPENDENCY_SOURCES.SCRAPING],
   headings: [DEPENDENCY_SOURCES.SCRAPING],
 
   // Accessibility & content
   accessibility: [DEPENDENCY_SOURCES.SCRAPING],
-  'alt-text': [DEPENDENCY_SOURCES.AHREFS_IMPORT, DEPENDENCY_SOURCES.SCRAPING],
+  'alt-text': [DEPENDENCY_SOURCES.SEO_IMPORT, DEPENDENCY_SOURCES.SCRAPING],
   'no-cta-above-the-fold': [DEPENDENCY_SOURCES.RUM, DEPENDENCY_SOURCES.SCRAPING],
   readability: [DEPENDENCY_SOURCES.SCRAPING],
 
@@ -85,7 +85,7 @@ export const OPPORTUNITY_DEPENDENCY_MAP = {
   'llm-blocked': [DEPENDENCY_SOURCES.SCRAPING],
   'llm-error-pages': [DEPENDENCY_SOURCES.SCRAPING],
   faqs: [DEPENDENCY_SOURCES.SCRAPING],
-  'related-urls': [DEPENDENCY_SOURCES.AHREFS_IMPORT],
+  'related-urls': [DEPENDENCY_SOURCES.SEO_IMPORT],
   toc: [DEPENDENCY_SOURCES.SCRAPING],
 
   // Experimentation (ESS signals — organic traffic + RUM)

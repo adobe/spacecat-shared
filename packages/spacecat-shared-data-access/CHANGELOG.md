@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.38.0...@adobe/spacecat-shared-data-access-v3.39.0) (2026-04-01)
+
+### Features
+
+* **audit:** add new constant for auto-fix enrichments ([#1494](https://github.com/adobe/spacecat-shared/issues/1494)) ([a76fa8f](https://github.com/adobe/spacecat-shared/commit/a76fa8f1708bee20a9e2e6dafcdd0a84d147294e))
+
 ## [@adobe/spacecat-shared-data-access-v3.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.37.0...@adobe/spacecat-shared-data-access-v3.38.0) (2026-04-01)
 
 ### Features

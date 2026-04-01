@@ -2,6 +2,10 @@ name: "Lint, Test, and Coverage"
 description: "Runs lint and test commands, plus coverage"
 
 inputs:
+  token:
+    description: "GitHub token for git operations (required for private repos)"
+    required: false
+    default: ""
   codecov_token:
     description: "Codecov Token (optional)"
     required: false
@@ -30,6 +34,7 @@ runs:
       id: changes
       uses: dorny/paths-filter@v3
       with:
+        token: ${{ inputs.token }}
         filters: |
           spacecat-shared:
             - 'packages/spacecat-shared-data-access/**'

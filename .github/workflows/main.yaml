@@ -35,6 +35,7 @@ jobs:
       - name: Lint, Test, Coverage Upload
         uses: ./.github/actions/lint-test-coverage
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           ecr_pull_role_arn: ${{ secrets.AWS_ECR_PULL_ROLE_ARN }}
           aws_region: us-east-1
 

@@ -20,7 +20,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           persist-credentials: 'false'
-          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -36,7 +35,6 @@ jobs:
       - name: Lint, Test, Coverage Upload
         uses: ./.github/actions/lint-test-coverage
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           ecr_pull_role_arn: ${{ secrets.AWS_ECR_PULL_ROLE_ARN }}
           aws_region: us-east-1
 
@@ -70,9 +68,9 @@ jobs:
 
       - name: Configure Git auth for private Mysticat types repo
         run: |
-          git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "https://github.com/adobe/mysticat-data-service"
-          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "ssh://git@github.com/adobe/mysticat-data-service"
-          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "git@github.com:adobe/mysticat-data-service"
+          git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "git@github.com:"
 
       - name: Install dependencies
         run: npm ci

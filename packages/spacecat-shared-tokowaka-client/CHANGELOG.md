@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.3...@adobe/spacecat-shared-tokowaka-client-v1.13.0) (2026-04-01)
+
+### Features
+
+* experimentation engine ([#1446](https://github.com/adobe/spacecat-shared/issues/1446)) ([44bff63](https://github.com/adobe/spacecat-shared/commit/44bff6350c18db58d8fbffde8de05074269ec969))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.12.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.2...@adobe/spacecat-shared-tokowaka-client-v1.12.3) (2026-03-28)
 
 ### Bug Fixes

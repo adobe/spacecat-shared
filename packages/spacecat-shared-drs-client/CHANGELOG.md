@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.3.1...@adobe/spacecat-shared-drs-client-v1.4.0) (2026-04-01)
+
+
+### Features
+
+* experimentation engine ([#1446](https://github.com/adobe/spacecat-shared/issues/1446)) ([44bff63](https://github.com/adobe/spacecat-shared/commit/44bff6350c18db58d8fbffde8de05074269ec969))
+
 # [@adobe/spacecat-shared-drs-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.3.0...@adobe/spacecat-shared-drs-client-v1.3.1) (2026-03-21)
 
 

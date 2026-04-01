@@ -34,6 +34,11 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
 
+/** Matches SpaceCat API eligibility for edge deploy (non-domain-wide). */
+function isEdgeDeployableSuggestionStatus(status) {
+  return status === 'NEW' || status === 'PENDING_VALIDATION';
+}
+
 /**
  * Tokowaka Client - Manages edge optimization configurations
  */
@@ -54,11 +59,10 @@ class TokowakaClient {
       return context.tokowakaClient;
     }
 
-    // s3ClientWrapper puts s3Client at context.s3.s3Client, so check both locations
     const client = new TokowakaClient({
       bucketName,
       previewBucketName,
-      s3Client: s3?.s3Client,
+      s3Client: s3?.s3Client ?? context.s3Client,
       env,
     }, log);
     context.tokowakaClient = client;
@@ -1196,6 +1200,215 @@ class TokowakaClient {
       HTTP_INTERNAL_SERVER_ERROR,
     );
     /* c8 ignore stop */
+  }
+
+  /**
+   * Deploys suggestions to edge, handling both regular and domain-wide suggestions.
+   *
+   * Regular suggestions are deployed via deploySuggestions(). Domain-wide suggestions
+   * update the site metaconfig's prerender allowList. Suggestions covered by domain-wide
+   * patterns (in the same batch or across the whole opportunity) are automatically marked.
+   *
+   * @param {Object} params
+   * @param {Object} params.site - Site entity
+   * @param {Object} params.opportunity - Opportunity entity
+   * @param {Array}  params.targetSuggestions - Suggestions selected for this deployment
+   * @param {Array}  params.allSuggestions - All suggestions for the opportunity
+   * @param {string} [params.updatedBy='edge-deploy'] - Value for updatedBy on saved suggestions
+   * @returns {Promise<Object>} { succeededSuggestions, failedSuggestions, coveredSuggestions }
+   *   - succeededSuggestions: suggestion entities that were deployed
+   *   - failedSuggestions: { suggestion, reason } items that couldn't be deployed
+   *   - coveredSuggestions: suggestion entities auto-marked via domain-wide patterns
+   */
+  async deployToEdge({
+    site,
+    opportunity,
+    targetSuggestions,
+    allSuggestions,
+    updatedBy = 'edge-deploy',
+  }) {
+    const validSuggestions = [];
+    const domainWideSuggestions = [];
+
+    targetSuggestions.forEach((suggestion) => {
+      const data = suggestion.getData();
+      if (data?.isDomainWide === true) {
+        const { allowedRegexPatterns } = data;
+        if (Array.isArray(allowedRegexPatterns) && allowedRegexPatterns.length > 0) {
+          domainWideSuggestions.push({ suggestion, allowedRegexPatterns });
+        }
+      } else if (isEdgeDeployableSuggestionStatus(suggestion.getStatus())) {
+        validSuggestions.push(suggestion);
+      }
+    });
+
+    // Filter valid suggestions that are covered by domain-wide patterns in the same batch
+    const skippedInBatch = [];
+    if (domainWideSuggestions.length > 0 && validSuggestions.length > 0) {
+      const allPatterns = [];
+      domainWideSuggestions.forEach(({ allowedRegexPatterns }) => {
+        allowedRegexPatterns.forEach((pattern) => {
+          try {
+            allPatterns.push(new RegExp(pattern));
+          } catch {
+            this.log.warn(`[edge-deploy] Skipping domain-wide pattern ${pattern} - invalid regex`);
+          }
+        });
+      });
+
+      const remaining = [];
+      validSuggestions.forEach((s) => {
+        const url = s.getData()?.url;
+        if (url && allPatterns.some((regex) => regex.test(url))) {
+          skippedInBatch.push(s);
+          this.log.info(`[edge-deploy] Skipping suggestion ${s.getId()} - covered by domain-wide pattern`);
+        } else {
+          remaining.push(s);
+        }
+      });
+      validSuggestions.length = 0;
+      validSuggestions.push(...remaining);
+    }
+
+    let succeededSuggestions = [];
+    const failedSuggestions = [];
+
+    // Deploy regular suggestions via tokowaka
+    if (validSuggestions.length > 0) {
+      try {
+        const result = await this.deploySuggestions(site, opportunity, validSuggestions);
+        const deploymentTimestamp = Date.now();
+
+        succeededSuggestions = await Promise.all(
+          result.succeededSuggestions.map(async (s) => {
+            const currentData = s.getData();
+            const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
+            if (updated.edgeOptimizeStatus === 'STALE') {
+              delete updated.edgeOptimizeStatus;
+            }
+            s.setData(updated);
+            s.setUpdatedBy(updatedBy);
+            await s.save();
+            return s;
+          }),
+        );
+
+        // ineligible suggestions get statusCode 400 — they weren't deployable
+        result.failedSuggestions.forEach((item) => {
+          failedSuggestions.push({ ...item, statusCode: 400 });
+          this.log.info(`[edge-deploy] ${opportunity.getType()} suggestion ${item.suggestion.getId()} is ineligible: ${item.reason}`);
+        });
+      } catch (error) {
+        this.log.error(`[edge-deploy] Error deploying suggestions: ${error.message}`, error);
+        throw error;
+      }
+    }
+
+    // Deploy domain-wide suggestions via metaconfig
+    const coveredSuggestions = [];
+    if (domainWideSuggestions.length > 0) {
+      const baseURL = site.getBaseURL();
+      const skippedInBatchIds = new Set(skippedInBatch.map((s) => s.getId()));
+
+      for (const { suggestion, allowedRegexPatterns } of domainWideSuggestions) {
+        // Fix #1: compile + validate regexes before any upload/save so a bad pattern
+        // never causes a suggestion to land in both succeeded and failed lists.
+        const regexPatterns = [];
+        for (const pattern of allowedRegexPatterns) {
+          try {
+            regexPatterns.push(new RegExp(pattern));
+          } catch {
+            this.log.warn(`[edge-deploy] Invalid regex pattern "${pattern}" for domain-wide suggestion ${suggestion.getId()}, skipping`);
+          }
+        }
+
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          let metaconfig = await this.fetchMetaconfig(baseURL);
+          if (!metaconfig) {
+            metaconfig = { siteId: site.getId() };
+          }
+          metaconfig.prerender = { allowList: allowedRegexPatterns };
+          // eslint-disable-next-line no-await-in-loop
+          await this.uploadMetaconfig(baseURL, metaconfig);
+
+          const deploymentTimestamp = Date.now();
+          suggestion.setData({ ...suggestion.getData(), edgeDeployed: deploymentTimestamp });
+          suggestion.setUpdatedBy(updatedBy);
+          // eslint-disable-next-line no-await-in-loop
+          await suggestion.save();
+          succeededSuggestions.push(suggestion);
+
+          if (regexPatterns.length > 0) {
+            const covered = allSuggestions.filter((s) => {
+              if (s.getId() === suggestion.getId()) return false;
+              if (skippedInBatchIds.has(s.getId())) return false;
+              if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
+                return false;
+              }
+              if (s.getData()?.isDomainWide === true) {
+                return false;
+              }
+              const url = s.getData()?.url;
+              return url && regexPatterns.some((r) => r.test(url));
+            });
+
+            if (covered.length > 0) {
+              try {
+                // eslint-disable-next-line no-await-in-loop
+                await Promise.all(covered.map(async (cs) => {
+                  cs.setData({
+                    ...cs.getData(),
+                    edgeDeployed: deploymentTimestamp,
+                    coveredByDomainWide: suggestion.getId(),
+                  });
+                  cs.setUpdatedBy(updatedBy);
+                  return cs.save();
+                }));
+                coveredSuggestions.push(...covered);
+              } catch (coverError) {
+                this.log.warn(`[edge-deploy] Failed to mark covered suggestions for domain-wide ${suggestion.getId()}: ${coverError.message}`);
+              }
+            }
+          }
+        } catch (error) {
+          this.log.error(`[edge-deploy] Error deploying domain-wide suggestion ${suggestion.getId()}: ${error.message}`, error);
+          // statusCode 500 — deploy itself failed, not an eligibility issue
+          failedSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
+        }
+      }
+    }
+
+    // Mark same-batch skipped suggestions individually so a single save failure
+    // surfaces as a per-item failure rather than swallowing the whole batch.
+    if (skippedInBatch.length > 0) {
+      const deploymentTimestamp = Date.now();
+      const results = await Promise.allSettled(skippedInBatch.map(async (s) => {
+        s.setData({
+          ...s.getData(),
+          edgeDeployed: deploymentTimestamp,
+          coveredByDomainWide: 'same-batch-deployment',
+          skippedInDeployment: true,
+        });
+        s.setUpdatedBy(updatedBy);
+        await s.save();
+        return s;
+      }));
+
+      results.forEach((result, i) => {
+        const s = skippedInBatch[i];
+        if (result.status === 'fulfilled') {
+          succeededSuggestions.push(s);
+          coveredSuggestions.push(s);
+        } else {
+          this.log.warn(`[edge-deploy] Failed to mark same-batch skipped suggestion ${s.getId()}`
+          + ` - ${result.reason?.message}`);
+          failedSuggestions.push({ suggestion: s, reason: 'Failed to mark as covered by domain-wide', statusCode: 500 });
+        }
+      });
+    }
+
+    return { succeededSuggestions, failedSuggestions, coveredSuggestions };
   }
 }
 

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.36.1...@adobe/spacecat-shared-data-access-v3.37.0) (2026-04-01)
+
+### Features
+
+* experimentation engine ([#1446](https://github.com/adobe/spacecat-shared/issues/1446)) ([44bff63](https://github.com/adobe/spacecat-shared/commit/44bff6350c18db58d8fbffde8de05074269ec969))
+
 ## [@adobe/spacecat-shared-data-access-v3.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.36.0...@adobe/spacecat-shared-data-access-v3.36.1) (2026-04-01)
 
 ### Bug Fixes

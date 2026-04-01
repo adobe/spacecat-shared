@@ -83,7 +83,7 @@ describe('SiteTopForm IT', async () => {
 
   it('gets all top forms for a site from a specific source in descending traffic order', async () => {
     const site = sampleData.sites[0];
-    const source = 'ahrefs';
+    const source = 'seo';
 
     const siteTopForms = await SiteTopForm.allBySiteIdAndSource(
       site.getId(),
@@ -452,7 +452,7 @@ describe('SiteTopForm IT', async () => {
       url,
       formSource: formSource1,
       traffic: 100,
-      source: 'ahrefs',
+      source: 'seo',
     };
 
     const data2 = {
@@ -460,7 +460,7 @@ describe('SiteTopForm IT', async () => {
       url,
       formSource: formSource2,
       traffic: 50,
-      source: 'ahrefs',
+      source: 'seo',
     };
 
     const form1 = await SiteTopForm.create(data1);

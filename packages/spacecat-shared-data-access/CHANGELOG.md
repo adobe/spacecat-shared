@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.37.0...@adobe/spacecat-shared-data-access-v3.38.0) (2026-04-01)
+
+### Features
+
+* rename ahrefs to seo in dependency mapping and test fixtures ([#1492](https://github.com/adobe/spacecat-shared/issues/1492)) ([40aa319](https://github.com/adobe/spacecat-shared/commit/40aa319d78fc1aa8ba96f83002b45eb2dbde570c))
+
 ## [@adobe/spacecat-shared-data-access-v3.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.36.1...@adobe/spacecat-shared-data-access-v3.37.0) (2026-04-01)
 
 ### Features

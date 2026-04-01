@@ -16,12 +16,15 @@ import { ENDPOINTS } from '../src/endpoints.js';
 
 describe('ENDPOINTS', () => {
   const expectedKeys = [
-    'brokenBacklinks',
     'topPages',
-    'backlinks',
-    'organicKeywords',
+    'topPagesKeywords',
     'paidPages',
     'metrics',
+    'organicTraffic',
+    'organicKeywords',
+    'brokenBacklinksPages',
+    'brokenBacklinks',
+    'backlinks',
     'metricsByCountry',
   ];
 
@@ -30,9 +33,24 @@ describe('ENDPOINTS', () => {
   });
 
   expectedKeys.forEach((key) => {
-    it(`${key} has path and defaultParams`, () => {
-      expect(ENDPOINTS[key]).to.have.property('path').that.is.a('string');
+    it(`${key} has type, columns, and defaultParams`, () => {
+      expect(ENDPOINTS[key]).to.have.property('type').that.is.a('string');
+      expect(ENDPOINTS[key]).to.have.property('columns').that.is.a('string');
       expect(ENDPOINTS[key]).to.have.property('defaultParams').that.is.an('object');
+    });
+  });
+
+  it('implemented endpoints have non-empty type', () => {
+    const implemented = ['topPages', 'topPagesKeywords', 'paidPages', 'metrics', 'organicTraffic', 'organicKeywords', 'brokenBacklinksPages', 'brokenBacklinks'];
+    implemented.forEach((key) => {
+      expect(ENDPOINTS[key].type).to.not.equal('');
+    });
+  });
+
+  it('stub endpoints have empty type', () => {
+    const stubs = ['backlinks', 'metricsByCountry'];
+    stubs.forEach((key) => {
+      expect(ENDPOINTS[key].type).to.equal('');
     });
   });
 });

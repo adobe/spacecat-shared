@@ -52,6 +52,7 @@ describe('opportunity-titles', () => {
         'llm-blocked', 'llm-error-pages', 'faqs', 'related-urls', 'toc',
         'experimentation-ess-daily', 'experimentation-ess-monthly',
         'cited-analysis', 'wikipedia-analysis', 'reddit-analysis', 'youtube-analysis',
+        'info-gain',
       ];
       expectedTypes.forEach((type) => {
         expect(OPPORTUNITY_TITLES).to.have.property(type);

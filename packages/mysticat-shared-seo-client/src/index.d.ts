@@ -13,67 +13,43 @@
 import { UniversalContext } from '@adobe/helix-universal';
 
 export interface SeoAPIOptions {
-    select: string;
-    where: string;
-    order_by: string;
-    date: string;
-    target: string;
-    limit: number;
-    mode: string;
-    output: string;
+    type: string;
+    domain?: string;
+    target?: string;
+    target_type?: string;
+    database?: string;
+    display_date?: string;
+    display_limit?: number;
+    display_sort?: string;
+    display_filter?: string;
+    export_columns?: string;
+    export_escape?: number;
+    key?: string;
 }
 
 export default class SeoClient {
-  /**
-   * Static factory method to create an instance of SeoClient.
-   * @param {UniversalContext} context - An object containing the AWS Lambda context information
-   * @returns An instance of SeoClient.
-   */
   static createFrom(context: UniversalContext): SeoClient;
 
-  /**
-   * Constructor for creating an instance of SeoClient.
-   * @param config
-   * @param fetchAPI
-   * @param log
-   */
-  constructor(config: object, fetchAPI, log?: Console);
+  constructor(config: object, fetchAPI: Function, log?: Console);
 
-  /**
-   * Asynchronous method to send a request to the SEO API.
-   * @param endpoint
-   * @param queryParams
-   */
   sendRequest(endpoint: string, queryParams?: SeoAPIOptions):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  /**
-   * Asynchronous method to get broken backlinks.
-   * @param url
-   * @param limit
-   */
+  sendRawRequest(queryParams?: SeoAPIOptions, apiPath?: string):
+      Promise<{ body: string, fullAuditRef: string }>;
+
   getBrokenBacklinks(url: string, limit?: number):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  /**
-   * Asynchronous method to get top pages.
-   * @param url
-   * @param limit
-   */
   getTopPages(url: string, limit?: number):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  /**
-   * Asynchronous method to get backlinks.
-   * @param url
-   * @param limit
-   */
   getBacklinks(url: string, limit?: number):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  /**
-   * Asynchronous method to get organic keywords.
-   */
+  getOrganicTraffic(url: string, startDate: string, endDate: string):
+      Promise<{ result: object, fullAuditRef: string }>;
+
   getOrganicKeywords(
     url: string,
     options?: {
@@ -85,30 +61,36 @@ export default class SeoClient {
     }):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  /**
-   * Asynchronous method to get paid pages for a URL.
-   * @param url - The target URL
-   * @param date - Optional date in YYYY-MM-DD format, defaults to today
-   * @param limit - Maximum number of results to return (max: 1000)
-   * @param mode - Search mode
-   */
   getPaidPages(url: string, date?: string, limit?: number,
     mode?: 'exact' | 'prefix' | 'domain' | 'subdomains'):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  /**
-   * Asynchronous method to get metrics for a URL.
-   * @param url - The target URL
-   * @param date - Optional date in YYYY-MM-DD format, defaults to today
-   */
   getMetrics(url: string, date?: string):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  /**
-   * Asynchronous method to get metrics by country for a URL.
-   * @param url - The target URL
-   * @param date - Optional date in YYYY-MM-DD format, defaults to today
-   */
   getMetricsByCountry(url: string, date?: string):
       Promise<{ result: object, fullAuditRef: string }>;
 }
+
+export function parseCsvResponse(text: string): object[];
+export function coerceValue(value: string, type: 'int' | 'float' | 'string' | 'bool'): any;
+export function getLimit(limit: number, upperLimit: number): number;
+export function toApiDate(date: string): string;
+export function fromApiDate(apiDate: string): string | null;
+export function todayISO(): string;
+export function buildFilter(filters: Array<{sign: string, field: string, op: string, value: string}>): string;
+export function extractBrand(domain: string): string;
+export function buildQueryParams(defaults: object, overrides: object): object;
+/** @deprecated Use parseCsvResponse instead. */
+export function parseResponse(response: any): any;
+
+export const INTENT_CODES: {
+  COMMERCIAL: 0,
+  INFORMATIONAL: 1,
+  NAVIGATIONAL: 2,
+  TRANSACTIONAL: 3,
+};
+export const ORGANIC_KEYWORDS_FIELDS: readonly string[];
+export const METRICS_BY_COUNTRY_FILTER_FIELDS: readonly string[];
+export const ENDPOINTS: Record<string, { type: string, path: string, columns: string, defaultParams: object }>;
+export function fetch(...args: any[]): Promise<Response>;

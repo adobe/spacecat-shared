@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-data-access-v3.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.35.0...@adobe/spacecat-shared-data-access-v3.36.0) (2026-04-01)
+
+### Features
+
+* add PLG tier to entitlement model and bump mysticat types  ([#1487](https://github.com/adobe/spacecat-shared/issues/1487)) ([7f9c6fc](https://github.com/adobe/spacecat-shared/commit/7f9c6fcb6d3672269081176ebf643151fb512e99))
+
+## [@adobe/spacecat-shared-data-access-v3.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.34.0...@adobe/spacecat-shared-data-access-v3.35.0) (2026-03-31)
+
+### Features
+
+* redirectsQueued step renamed ([#1489](https://github.com/adobe/spacecat-shared/issues/1489)) ([d4eb54f](https://github.com/adobe/spacecat-shared/commit/d4eb54ff4c7636b904f41881cbb0c0ef6a2a3da4))
+
+## [@adobe/spacecat-shared-data-access-v3.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.33.1...@adobe/spacecat-shared-data-access-v3.34.0) (2026-03-31)
+
+### Features
+
+* adds revoke suggestion grants ([#1465](https://github.com/adobe/spacecat-shared/issues/1465)) ([8081661](https://github.com/adobe/spacecat-shared/commit/80816616d26a9b49b764b15d934881456f7ff656))
+
+## [@adobe/spacecat-shared-data-access-v3.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.33.0...@adobe/spacecat-shared-data-access-v3.33.1) (2026-03-31)
+
+### Bug Fixes
+
+* modifying the audit name max length ([#1485](https://github.com/adobe/spacecat-shared/issues/1485)) ([013528f](https://github.com/adobe/spacecat-shared/commit/013528fb486933a02395df0c461a3df1993c1ab1))
+
 ## [@adobe/spacecat-shared-data-access-v3.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.32.1...@adobe/spacecat-shared-data-access-v3.33.0) (2026-03-30)
 
 ### Features

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.40.0...@adobe/spacecat-shared-data-access-v3.41.0) (2026-04-01)
+
+### Features
+
+* add lastAuditedAt attribute to Opportunity schema ([#1479](https://github.com/adobe/spacecat-shared/issues/1479)) ([ee92ba9](https://github.com/adobe/spacecat-shared/commit/ee92ba9218016b8f7918358aa67db219287704dd))
+
 ## [@adobe/spacecat-shared-data-access-v3.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.39.0...@adobe/spacecat-shared-data-access-v3.40.0) (2026-04-01)
 
 ### Features

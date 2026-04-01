@@ -13,14 +13,18 @@
 import { UniversalContext } from '@adobe/helix-universal';
 
 export interface SeoAPIOptions {
-    select: string;
-    where: string;
-    order_by: string;
-    date: string;
-    target: string;
-    limit: number;
-    mode: string;
-    output: string;
+    type: string;
+    domain?: string;
+    target?: string;
+    target_type?: string;
+    database?: string;
+    display_date?: string;
+    display_limit?: number;
+    display_sort?: string;
+    display_filter?: string;
+    export_columns?: string;
+    export_escape?: number;
+    key?: string;
 }
 
 export default class SeoClient {
@@ -37,15 +41,14 @@ export default class SeoClient {
    * @param fetchAPI
    * @param log
    */
-  constructor(config: object, fetchAPI, log?: Console);
+  constructor(config: object, fetchAPI: Function, log?: Console);
 
   /**
    * Asynchronous method to send a request to the SEO API.
-   * @param endpoint
    * @param queryParams
    */
-  sendRequest(endpoint: string, queryParams?: SeoAPIOptions):
-      Promise<{ result: object, fullAuditRef: string }>;
+  sendRequest(queryParams?: SeoAPIOptions):
+      Promise<{ body: string, fullAuditRef: string }>;
 
   /**
    * Asynchronous method to get broken backlinks.
@@ -69,6 +72,15 @@ export default class SeoClient {
    * @param limit
    */
   getBacklinks(url: string, limit?: number):
+      Promise<{ result: object, fullAuditRef: string }>;
+
+  /**
+   * Asynchronous method to get organic traffic history.
+   * @param url - The target URL
+   * @param startDate - Start date in YYYY-MM-DD format
+   * @param endDate - End date in YYYY-MM-DD format
+   */
+  getOrganicTraffic(url: string, startDate: string, endDate: string):
       Promise<{ result: object, fullAuditRef: string }>;
 
   /**
@@ -112,3 +124,16 @@ export default class SeoClient {
   getMetricsByCountry(url: string, date?: string):
       Promise<{ result: object, fullAuditRef: string }>;
 }
+
+export function parseCsvResponse(text: string): object[];
+export function coerceValue(value: string, type: 'int' | 'float' | 'string' | 'bool'): any;
+export function getLimit(limit: number, upperLimit: number): number;
+export function toApiDate(date: string): string;
+export function todayISO(): string;
+export function buildFilter(filters: Array<{sign: string, field: string, op: string, value: string}>): string;
+export function buildQueryParams(defaults: object, overrides: object): object;
+
+export const ORGANIC_KEYWORDS_FIELDS: readonly string[];
+export const METRICS_BY_COUNTRY_FILTER_FIELDS: readonly string[];
+export const ENDPOINTS: Record<string, { type: string, columns: string, defaultParams: object }>;
+export function fetch(...args: any[]): Promise<Response>;

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.36.0...@adobe/spacecat-shared-data-access-v3.36.1) (2026-04-01)
+
+### Bug Fixes
+
+* add isCodeChangeAvailable and patchContent to form accessibility schema ([#1373](https://github.com/adobe/spacecat-shared/issues/1373)) ([065bf56](https://github.com/adobe/spacecat-shared/commit/065bf561ba83f13d4c377f5ab4d7441ec0c15360))
+
 ## [@adobe/spacecat-shared-data-access-v3.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.35.0...@adobe/spacecat-shared-data-access-v3.36.0) (2026-04-01)
 
 ### Features

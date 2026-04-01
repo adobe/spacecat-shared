@@ -99,8 +99,6 @@ describe('GeoExperimentModel', () => {
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_COMPLETED);
     instance.setPhase(GeoExperiment.PHASES.POST_ANALYSIS_SUBMITTED);
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_SUBMITTED);
-    instance.setPhase(GeoExperiment.PHASES.FAILED);
-    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.FAILED);
   });
 
   it('gets and sets promptsLocation', () => {

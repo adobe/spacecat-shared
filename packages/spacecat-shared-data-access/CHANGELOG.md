@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.39.0...@adobe/spacecat-shared-data-access-v3.40.0) (2026-04-01)
+
+### Features
+
+* add auto-fix audit type for commerce product catalog enrichement ([#1495](https://github.com/adobe/spacecat-shared/issues/1495)) ([088759d](https://github.com/adobe/spacecat-shared/commit/088759d037309d39a9483ccb80479bca2fe6e9a9))
+
 ## [@adobe/spacecat-shared-data-access-v3.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.38.0...@adobe/spacecat-shared-data-access-v3.39.0) (2026-04-01)
 
 ### Features

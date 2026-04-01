@@ -51,7 +51,14 @@ export default class SeoClient {
     this.log = log;
   }
 
-  async sendRequest(queryParams = {}, apiPath = '') {
+  /**
+   * Internal method that executes the HTTP request and returns the raw CSV body.
+   * Used by all endpoint methods for CSV parsing.
+   * @param {object} queryParams - Query parameters including type, domain, etc.
+   * @param {string} [apiPath=''] - Optional API path segment (e.g., 'analytics/v1/')
+   * @returns {Promise<{body: string, fullAuditRef: string}>}
+   */
+  async sendRawRequest(queryParams = {}, apiPath = '') {
     const params = { ...queryParams, key: this.apiKey };
 
     const queryString = Object.entries(params)
@@ -59,7 +66,7 @@ export default class SeoClient {
       .join('&');
 
     const baseUrl = this.apiBaseUrl.replace(/\/$/, '');
-    const pathSegment = apiPath ? `/${apiPath}` : '';
+    const pathSegment = apiPath ? `/${apiPath.replace(/^\//, '')}` : '';
     const requestUrl = `${baseUrl}${pathSegment}?${queryString}`;
 
     // Mask the API key in the audit ref URL
@@ -90,6 +97,21 @@ export default class SeoClient {
     return { body, fullAuditRef };
   }
 
+  /**
+   * Public method matching the old AhrefsAPIClient.sendRequest(endpoint, queryParams) signature.
+   * Sends a request and returns a parsed result object.
+   * @param {string} endpoint - API endpoint path (e.g., '/site-explorer/top-pages')
+   * @param {object} [queryParams={}] - Query parameters
+   * @returns {Promise<{result: object, fullAuditRef: string}>}
+   */
+  async sendRequest(endpoint, queryParams = {}) {
+    const { body, fullAuditRef } = await this.sendRawRequest(queryParams, endpoint);
+    const rows = parseCsvResponse(body);
+    const result = rows.length === 1 ? rows[0] : rows;
+
+    return { result, fullAuditRef };
+  }
+
   async getTopPages(url, limit = 200) {
     const ep = ENDPOINTS.topPages;
     const epKw = ENDPOINTS.topPagesKeywords;
@@ -101,7 +123,7 @@ export default class SeoClient {
     };
 
     // Call 1: Get pages with traffic
-    const { body: pagesBody, fullAuditRef } = await this.sendRequest({
+    const { body: pagesBody, fullAuditRef } = await this.sendRawRequest({
       type: ep.type,
       ...commonParams,
       display_limit: effectiveLimit,
@@ -114,7 +136,7 @@ export default class SeoClient {
     const pageRows = parseCsvResponse(pagesBody);
 
     // Call 2: Get top keyword per URL
-    const { body: kwBody } = await this.sendRequest({
+    const { body: kwBody } = await this.sendRawRequest({
       type: epKw.type,
       ...commonParams,
       display_limit: effectiveLimit * 3,
@@ -153,7 +175,7 @@ export default class SeoClient {
     const ep = ENDPOINTS.paidPages;
     const effectiveLimit = getLimit(limit, 1000);
 
-    const { body, fullAuditRef } = await this.sendRequest({
+    const { body, fullAuditRef } = await this.sendRawRequest({
       type: ep.type,
       domain: url,
       database: DEFAULT_DATABASE,
@@ -211,7 +233,7 @@ export default class SeoClient {
   async getMetrics(url, date = todayISO()) {
     const ep = ENDPOINTS.metrics;
 
-    const { body, fullAuditRef } = await this.sendRequest({
+    const { body, fullAuditRef } = await this.sendRawRequest({
       type: ep.type,
       domain: url,
       database: DEFAULT_DATABASE,
@@ -242,7 +264,7 @@ export default class SeoClient {
   async getOrganicTraffic(url, startDate, endDate) {
     const ep = ENDPOINTS.organicTraffic;
 
-    const { body, fullAuditRef } = await this.sendRequest({
+    const { body, fullAuditRef } = await this.sendRawRequest({
       type: ep.type,
       domain: url,
       database: DEFAULT_DATABASE,
@@ -320,7 +342,7 @@ export default class SeoClient {
 
     this.log.debug(`Getting organic keywords for ${url} with country ${country}, mode ${mode}, limit ${limit}, excludeBranded ${excludeBranded}`);
 
-    const { body, fullAuditRef } = await this.sendRequest(params, ep.path);
+    const { body, fullAuditRef } = await this.sendRawRequest(params, ep.path);
     const rows = parseCsvResponse(body);
 
     // Client-side brand detection since API doesn't support Br column

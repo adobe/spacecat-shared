@@ -45,10 +45,12 @@ export default class SeoClient {
 
   /**
    * Asynchronous method to send a request to the SEO API.
-   * @param queryParams
+   * Backward-compatible with the old AhrefsAPIClient.sendRequest(endpoint, queryParams) signature.
+   * @param endpoint - API endpoint path
+   * @param queryParams - Query parameters
    */
-  sendRequest(queryParams?: SeoAPIOptions):
-      Promise<{ body: string, fullAuditRef: string }>;
+  sendRequest(endpoint: string, queryParams?: SeoAPIOptions):
+      Promise<{ result: object, fullAuditRef: string }>;
 
   /**
    * Asynchronous method to get broken backlinks.

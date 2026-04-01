@@ -145,20 +145,68 @@ describe('SeoClient', () => {
     });
   });
 
-  // ===== sendRequest =====
+  // ===== sendRequest (public, backward-compatible) =====
 
   describe('sendRequest', () => {
-    it('returns body and fullAuditRef on success', async () => {
+    it('accepts (endpoint, queryParams) signature and returns parsed result', async () => {
+      nock(config.apiBaseUrl)
+        .get('/some-endpoint')
+        .query(true)
+        .reply(200, 'Header1;Header2\nval1;val2');
+
+      const result = await client.sendRequest('/some-endpoint', { foo: 'bar' });
+      expect(result.result).to.deep.equal({ Header1: 'val1', Header2: 'val2' });
+      expect(result.fullAuditRef).to.include('key=REDACTED');
+      expect(result.fullAuditRef).to.not.include('testApiKey');
+    });
+
+    it('returns array when CSV has multiple rows', async () => {
+      nock(config.apiBaseUrl)
+        .get('/test')
+        .query(true)
+        .reply(200, 'A;B\n1;2\n3;4');
+
+      const result = await client.sendRequest('/test');
+      expect(result.result).to.deep.equal([
+        { A: '1', B: '2' },
+        { A: '3', B: '4' },
+      ]);
+    });
+
+    it('returns single object when CSV has one row', async () => {
+      nock(config.apiBaseUrl)
+        .get('/test')
+        .query(true)
+        .reply(200, 'A;B\n1;2');
+
+      const result = await client.sendRequest('/test');
+      expect(result.result).to.deep.equal({ A: '1', B: '2' });
+    });
+
+    it('returns empty array when CSV has header only', async () => {
+      nock(config.apiBaseUrl)
+        .get('/test')
+        .query(true)
+        .reply(200, 'A;B');
+
+      const result = await client.sendRequest('/test');
+      expect(result.result).to.deep.equal([]);
+    });
+  });
+
+  // ===== sendRawRequest (internal transport) =====
+
+  describe('sendRawRequest', () => {
+    it('returns raw body and fullAuditRef on success', async () => {
       nock(config.apiBaseUrl)
         .get('/')
         .query(true)
         .reply(200, 'Header1;Header2\nval1;val2');
 
-      const result = await client.sendRequest({ type: 'test_type' });
+      const result = await client.sendRawRequest({ type: 'test_type' });
       expect(result.body).to.equal('Header1;Header2\nval1;val2');
       expect(result.fullAuditRef).to.include('type=test_type');
       expect(result.fullAuditRef).to.include('key=REDACTED');
-      expect(result.fullAuditRef).to.not.include('testApiKey');
     });
 
     it('appends apiPath to the URL when provided', async () => {
@@ -167,7 +215,7 @@ describe('SeoClient', () => {
         .query(true)
         .reply(200, 'H\nV');
 
-      const result = await client.sendRequest({ type: 'test' }, 'analytics/v1/');
+      const result = await client.sendRawRequest({ type: 'test' }, 'analytics/v1/');
       expect(result.fullAuditRef).to.include('/analytics/v1/');
     });
 
@@ -177,7 +225,7 @@ describe('SeoClient', () => {
         .query(true)
         .reply(200, 'ERROR 30 :: LIMIT EXCEEDED');
 
-      await expect(client.sendRequest({ type: 'test_type' }))
+      await expect(client.sendRawRequest({ type: 'test_type' }))
         .to.be.rejectedWith('SEO API request failed: ERROR 30 :: LIMIT EXCEEDED');
     });
 
@@ -187,7 +235,7 @@ describe('SeoClient', () => {
         .query(true)
         .reply(200, 'ERROR 132 :: API UNITS BALANCE IS ZERO');
 
-      await expect(client.sendRequest({ type: 'test_type' }))
+      await expect(client.sendRawRequest({ type: 'test_type' }))
         .to.be.rejectedWith('SEO API request failed: ERROR 132 :: API UNITS BALANCE IS ZERO');
     });
 
@@ -197,17 +245,17 @@ describe('SeoClient', () => {
         .query(true)
         .reply(500, 'Internal Server Error');
 
-      await expect(client.sendRequest({ type: 'test_type' }))
+      await expect(client.sendRawRequest({ type: 'test_type' }))
         .to.be.rejectedWith('SEO API request failed with status: 500 - Internal Server Error');
     });
 
-    it('handles sendRequest without type param', async () => {
+    it('handles request without type param', async () => {
       nock(config.apiBaseUrl)
         .get('/')
         .query(true)
         .reply(200, 'H\nV');
 
-      const result = await client.sendRequest({});
+      const result = await client.sendRawRequest({});
       expect(result.body).to.equal('H\nV');
     });
   });

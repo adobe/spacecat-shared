@@ -601,11 +601,11 @@ describe('URL Extractors', () => {
     });
 
     describe('INFO_GAIN type', () => {
-      it('extracts report URLs and discovered target URLs from entries', () => {
+      it('extracts report URLs and discovered target URLs from data.suggestions', () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
           getData: () => ({
-            entries: [
+            suggestions: [
               {
                 report: { url: 'https://example.com/r1' },
                 discoveredOpportunities: [
@@ -629,16 +629,16 @@ describe('URL Extractors', () => {
         ]);
       });
 
-      it('returns empty when entries are missing or not an array', () => {
-        const noEntries = {
+      it('returns empty when suggestions are missing or not an array', () => {
+        const noSuggestions = {
           getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
           getData: () => ({}),
         };
-        expect(extractUrlsFromOpportunity({ opportunity: noEntries })).to.deep.equal([]);
+        expect(extractUrlsFromOpportunity({ opportunity: noSuggestions })).to.deep.equal([]);
 
         const notArray = {
           getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
-          getData: () => ({ entries: null }),
+          getData: () => ({ suggestions: null }),
         };
         expect(extractUrlsFromOpportunity({ opportunity: notArray })).to.deep.equal([]);
       });
@@ -647,7 +647,7 @@ describe('URL Extractors', () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
           getData: () => ({
-            entries: [
+            suggestions: [
               {
                 report: { url: 123 },
                 discoveredOpportunities: [{ targetUrl: null }, { targetUrl: 'https://ok.com' }],
@@ -662,10 +662,65 @@ describe('URL Extractors', () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
           data: {
-            entries: [{ report: { url: 'https://from.data/' } }],
+            suggestions: [{ report: { url: 'https://from.data/' } }],
           },
         };
         expect(extractUrlsFromOpportunity({ opportunity })).to.deep.equal(['https://from.data/']);
+      });
+
+      it('extracts URLs from flat GEO rows in data.suggestions', () => {
+        const opportunity = {
+          getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
+          getData: () => ({
+            suggestions: [
+              {
+                key: 'q1',
+                llmoQuery: 'test',
+                discoveredOpportunities: [
+                  { targetUrl: 'https://example.com/a' },
+                  { targetUrl: 'https://example.com/b' },
+                ],
+              },
+              {
+                key: 'q2',
+                llmoQuery: 'other',
+                report: { url: 'https://example.com/report' },
+              },
+            ],
+          }),
+        };
+        expect(extractUrlsFromOpportunity({ opportunity })).to.deep.equal([
+          'https://example.com/a',
+          'https://example.com/b',
+          'https://example.com/report',
+        ]);
+      });
+
+      it('skips null and non-object rows in suggestions', () => {
+        const opportunity = {
+          getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
+          getData: () => ({
+            suggestions: [
+              null,
+              123,
+              { report: { url: 'https://kept.com' } },
+            ],
+          }),
+        };
+        expect(extractUrlsFromOpportunity({ opportunity })).to.deep.equal(['https://kept.com']);
+      });
+
+      it('ignores data.entries; only data.suggestions is read', () => {
+        const opportunity = {
+          getType: () => OPPORTUNITY_TYPES.INFO_GAIN,
+          getData: () => ({
+            entries: [{ report: { url: 'https://from-entries/' } }],
+            suggestions: [{ discoveredOpportunities: [{ targetUrl: 'https://from-suggestions/' }] }],
+          }),
+        };
+        expect(extractUrlsFromOpportunity({ opportunity })).to.deep.equal([
+          'https://from-suggestions/',
+        ]);
       });
     });
 

@@ -64,7 +64,7 @@ export const ENDPOINTS = {
     type: 'backlinks_pages',
     path: API_PATHS.analytics,
     columns: 'source_url,response_code,backlinks_num,domains_num',
-    defaultParams: { export_escape: 1 },
+    defaultParams: { display_sort: 'domainsnum_desc', export_escape: 1 },
   },
   brokenBacklinks: {
     type: 'backlinks',

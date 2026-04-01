@@ -427,9 +427,97 @@ export default class SeoClient {
     };
   }
 
-  // eslint-disable-next-line no-unused-vars, class-methods-use-this
+  /**
+   * Retrieves broken backlinks for a domain — links pointing to pages that return 404.
+   *
+   * The SEO data provider does not offer a single broken-backlinks endpoint (unlike the
+   * previous provider). This method uses a two-step approach:
+   *
+   * Step 1: Call `backlinks_pages` with a server-side 404 filter to discover which of
+   * the domain's pages are broken, sorted by referring domain count (highest first).
+   * This is a single API call.
+   *
+   * Step 2: For each broken page (up to `limit`), fetch the single highest-quality
+   * backlink (by authority score) using `backlinks` with `display_limit=1`. These calls
+   * are parallelized in batches of 10 to respect rate limits while minimizing latency.
+   *
+   * This approach maximizes broken page diversity — each result row represents a different
+   * broken page on the domain, paired with its best referring link. This matches the
+   * practical value of the old provider's single-call endpoint, where results typically
+   * surfaced many unique broken target URLs.
+   *
+   * @param {string} url - The target domain
+   * @param {number} [limit=50] - Maximum results (default: 50, max: 100)
+   * @returns {Promise<{result: {backlinks: Array}, fullAuditRef: string}>}
+   */
   async getBrokenBacklinks(url, limit = 50) {
-    return STUB_RESPONSE;
+    if (!hasText(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+
+    const epPages = ENDPOINTS.brokenBacklinksPages;
+    const epLinks = ENDPOINTS.brokenBacklinks;
+    const effectiveLimit = getLimit(limit, 100);
+
+    // Step 1: Find broken (404) target pages, sorted by referring domains
+    const { body: pagesBody, fullAuditRef } = await this.sendRawRequest({
+      type: epPages.type,
+      target: url,
+      target_type: 'root_domain',
+      export_columns: epPages.columns,
+      display_limit: effectiveLimit,
+      display_filter: buildFilter([{
+        sign: '+', field: 'responsecode', op: 'Eq', value: '404',
+      }]),
+      ...epPages.defaultParams,
+    }, epPages.path);
+    const brokenPages = parseCsvResponse(pagesBody);
+
+    if (brokenPages.length === 0) {
+      return { result: { backlinks: [] }, fullAuditRef };
+    }
+
+    // Step 2: For each broken page, fetch the top backlink by authority score.
+    // Parallelized in batches to balance throughput and rate limits.
+    const BATCH_SIZE = 10;
+    const brokenUrls = brokenPages.map((p) => p.source_url);
+    const allBacklinks = [];
+
+    for (let i = 0; i < brokenUrls.length; i += BATCH_SIZE) {
+      const batch = brokenUrls.slice(i, i + BATCH_SIZE);
+      // eslint-disable-next-line no-await-in-loop
+      const results = await Promise.allSettled(
+        batch.map((brokenUrl) => this.sendRawRequest({
+          type: epLinks.type,
+          target: brokenUrl,
+          target_type: 'url',
+          export_columns: epLinks.columns,
+          display_limit: 1,
+          ...epLinks.defaultParams,
+        }, epLinks.path)),
+      );
+
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          const links = parseCsvResponse(result.value.body);
+          if (links.length > 0) {
+            allBacklinks.push(links[0]);
+          }
+        }
+      }
+    }
+
+    const backlinks = allBacklinks.map((row) => ({
+      title: row.source_title || null,
+      url_from: row.source_url,
+      url_to: row.target_url,
+      traffic_domain: coerceValue(row.page_ascore, 'int'),
+    }));
+
+    return {
+      result: { backlinks },
+      fullAuditRef,
+    };
   }
 
   // --- Out of scope methods (stubs) ---

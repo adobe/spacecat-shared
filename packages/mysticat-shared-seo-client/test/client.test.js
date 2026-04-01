@@ -758,12 +758,174 @@ describe('SeoClient', () => {
     });
   });
 
-  // ===== getBrokenBacklinks (stub — pending API clarification) =====
+  // ===== getBrokenBacklinks =====
 
   describe('getBrokenBacklinks', () => {
-    it('returns stub response', async () => {
-      const result = await client.getBrokenBacklinks('target.com');
-      expect(result).to.deep.equal({ result: {}, fullAuditRef: '' });
+    // Real API fixtures (adobe.com, April 2026)
+    const brokenPagesCsv = [
+      'source_url;response_code;backlinks_num;domains_num',
+      'https://www.adobe.com/error-pages/404.html;404;2265988;11065',
+      'https://www.adobe.com/devnet/security.html;404;5048;4454',
+      'https://www.adobe.com/404.html;404;404471;2147',
+    ].join('\n');
+
+    const backlinkForPage1Csv = [
+      'source_title;source_url;target_url;page_ascore;external_num',
+      ';http://support.adobe.co.jp/faq/faq/qadoc.sv?232607%2B002;https://www.adobe.com/error-pages/404.html;89;5',
+    ].join('\n');
+
+    const backlinkForPage2Csv = [
+      'source_title;source_url;target_url;page_ascore;external_num',
+      'Privacy Policy - ALM;https://www.alm.com/privacy-policy-new/;https://www.adobe.com/devnet/security.html;84;24',
+    ].join('\n');
+
+    const backlinkForPage3Csv = [
+      'source_title;source_url;target_url;page_ascore;external_num',
+      ';http://www.acrobat.com/;https://www.adobe.com/404.html;75;3',
+    ].join('\n');
+
+    it('returns one high-quality backlink per broken page with full diversity', async () => {
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks_pages'
+          && q.display_filter === '+|responsecode|Eq|404')
+        .reply(200, brokenPagesCsv);
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks'
+          && q.target === 'https://www.adobe.com/error-pages/404.html'
+          && q.display_limit === '1')
+        .reply(200, backlinkForPage1Csv);
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks'
+          && q.target === 'https://www.adobe.com/devnet/security.html'
+          && q.display_limit === '1')
+        .reply(200, backlinkForPage2Csv);
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks'
+          && q.target === 'https://www.adobe.com/404.html'
+          && q.display_limit === '1')
+        .reply(200, backlinkForPage3Csv);
+
+      const result = await client.getBrokenBacklinks('adobe.com', 3);
+
+      expect(result.result.backlinks).to.have.lengthOf(3);
+
+      // Each backlink points to a different broken page (diversity)
+      const uniqueTargets = new Set(result.result.backlinks.map((b) => b.url_to));
+      expect(uniqueTargets.size).to.equal(3);
+
+      // First: highest referring domains page
+      expect(result.result.backlinks[0]).to.deep.equal({
+        title: null,
+        url_from: 'http://support.adobe.co.jp/faq/faq/qadoc.sv?232607%2B002',
+        url_to: 'https://www.adobe.com/error-pages/404.html',
+        traffic_domain: 89,
+      });
+
+      // Second: ALM privacy policy linking to devnet/security
+      expect(result.result.backlinks[1]).to.deep.equal({
+        title: 'Privacy Policy - ALM',
+        url_from: 'https://www.alm.com/privacy-policy-new/',
+        url_to: 'https://www.adobe.com/devnet/security.html',
+        traffic_domain: 84,
+      });
+
+      expect(result.fullAuditRef).to.include('type=backlinks_pages');
+    });
+
+    it('returns empty backlinks when no 404 pages found', async () => {
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks_pages')
+        .reply(200, 'source_url;response_code;backlinks_num;domains_num');
+
+      const result = await client.getBrokenBacklinks('no-broken-pages.com');
+      expect(result.result.backlinks).to.deep.equal([]);
+    });
+
+    it('handles failed individual backlink fetches gracefully', async () => {
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks_pages')
+        .reply(200, brokenPagesCsv);
+
+      // First page returns backlink, second fails, third returns backlink
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks'
+          && q.target === 'https://www.adobe.com/error-pages/404.html')
+        .reply(200, backlinkForPage1Csv);
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks'
+          && q.target === 'https://www.adobe.com/devnet/security.html')
+        .reply(200, 'ERROR 50 :: NOTHING FOUND');
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks'
+          && q.target === 'https://www.adobe.com/404.html')
+        .reply(200, backlinkForPage3Csv);
+
+      const result = await client.getBrokenBacklinks('adobe.com', 3);
+
+      // 2 of 3 succeeded — failed one is silently skipped
+      expect(result.result.backlinks).to.have.lengthOf(2);
+      expect(result.result.backlinks[0].url_to).to.equal('https://www.adobe.com/error-pages/404.html');
+      expect(result.result.backlinks[1].url_to).to.equal('https://www.adobe.com/404.html');
+    });
+
+    it('handles broken page with no backlinks', async () => {
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks_pages')
+        .reply(200, 'source_url;response_code;backlinks_num;domains_num\nhttps://example.com/gone;404;0;0');
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks' && q.target === 'https://example.com/gone')
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num');
+
+      const result = await client.getBrokenBacklinks('example.com', 1);
+      expect(result.result.backlinks).to.deep.equal([]);
+    });
+
+    it('respects upper limit of 100', async () => {
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks_pages' && q.display_limit === '100')
+        .reply(200, 'source_url;response_code;backlinks_num;domains_num');
+
+      await client.getBrokenBacklinks('adobe.com', 500);
+    });
+
+    it('throws error when url is not a string', async () => {
+      await expect(client.getBrokenBacklinks(null)).to.be.rejectedWith('Invalid URL');
+    });
+
+    it('handles null title in backlink response', async () => {
+      const pagesCsv = 'source_url;response_code;backlinks_num;domains_num\nhttps://t.com/p;404;1;1';
+      const linkCsv = 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref.com;https://t.com/p;50;10';
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks_pages')
+        .reply(200, pagesCsv);
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks')
+        .reply(200, linkCsv);
+
+      const result = await client.getBrokenBacklinks('t.com', 1);
+      expect(result.result.backlinks[0].title).to.equal(null);
     });
   });
 

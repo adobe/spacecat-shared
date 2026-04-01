@@ -27,8 +27,10 @@ export interface GeoExperiment extends BaseModel {
   getPreScheduleId(): string | undefined;
   getPostScheduleId(): string | undefined;
   getType(): string;
+  getPhase(): string;
   getStatus(): string;
   getSuggestionIds(): string[];
+  getPromptsLocation(): string | undefined;
   getName(): string;
   getPromptsCount(): number;
   getStartTime(): string | undefined;
@@ -42,8 +44,10 @@ export interface GeoExperiment extends BaseModel {
   setPreScheduleId(preScheduleId?: string): GeoExperiment;
   setPostScheduleId(postScheduleId?: string): GeoExperiment;
   setType(type: string): GeoExperiment;
+  setPhase(phase: string): GeoExperiment;
   setStatus(status: string): GeoExperiment;
   setSuggestionIds(suggestionIds: string[]): GeoExperiment;
+  setPromptsLocation(promptsLocation?: string): GeoExperiment;
   setName(name: string): GeoExperiment;
   setPromptsCount(promptsCount: number): GeoExperiment;
   setStartTime(startTime?: string): GeoExperiment;

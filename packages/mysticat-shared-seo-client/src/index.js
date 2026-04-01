@@ -17,8 +17,13 @@ export { fetch } from './client.js';
 export { ENDPOINTS } from './endpoints.js';
 export {
   buildQueryParams, parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, todayISO,
-  buildFilter, extractBrand,
+  buildFilter, extractBrand, INTENT_CODES,
 } from './utils.js';
+
+/** @deprecated Use parseCsvResponse instead. Kept for backward compatibility. */
+export function parseResponse(response) {
+  return response;
+}
 
 export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([
   'keyword',

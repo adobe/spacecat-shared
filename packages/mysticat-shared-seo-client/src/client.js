@@ -16,7 +16,7 @@ import { context as h2, h1 } from '@adobe/fetch';
 import { ENDPOINTS } from './endpoints.js';
 import {
   parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, todayISO, buildFilter,
-  extractBrand,
+  extractBrand, INTENT_CODES,
 } from './utils.js';
 
 /* c8 ignore next 3 */
@@ -25,6 +25,8 @@ export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
   : h2();
 
 const DEFAULT_DATABASE = 'us';
+const MAX_ERROR_BODY_LENGTH = 500;
+const MAX_PAID_KEYWORDS_FETCH = 10000;
 
 const STUB_RESPONSE = { result: {}, fullAuditRef: '' };
 
@@ -39,6 +41,10 @@ export default class SeoClient {
 
     if (!isValidUrl(apiBaseUrl)) {
       throw new Error(`Invalid SEO API Base URL: ${apiBaseUrl}`);
+    }
+
+    if (!hasText(apiKey)) {
+      throw new Error('Missing SEO API key');
     }
 
     if (typeof fetchAPI !== 'function') {
@@ -81,13 +87,13 @@ export default class SeoClient {
 
     // SEO API returns HTTP 200 even on errors, with "ERROR XX :: message" body
     if (body.startsWith('ERROR')) {
-      const errorMessage = `SEO API request failed: ${body}`;
+      const errorMessage = `SEO API request failed: ${body.slice(0, MAX_ERROR_BODY_LENGTH)}`;
       this.log.error(errorMessage);
       throw new Error(errorMessage);
     }
 
     if (!response.ok) {
-      const errorMessage = `SEO API request failed with status: ${response.status} - ${body}`;
+      const errorMessage = `SEO API request failed with status: ${response.status} - ${body.slice(0, MAX_ERROR_BODY_LENGTH)}`;
       this.log.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -113,6 +119,10 @@ export default class SeoClient {
   }
 
   async getTopPages(url, limit = 200) {
+    if (!hasText(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+
     const ep = ENDPOINTS.topPages;
     const epKw = ENDPOINTS.topPagesKeywords;
     const effectiveLimit = getLimit(limit, 2000);
@@ -122,27 +132,30 @@ export default class SeoClient {
       database: DEFAULT_DATABASE,
     };
 
-    // Call 1: Get pages with traffic
-    const { body: pagesBody, fullAuditRef } = await this.sendRawRequest({
-      type: ep.type,
-      ...commonParams,
-      display_limit: effectiveLimit,
-      export_columns: ep.columns,
-      display_filter: buildFilter([{
-        sign: '+', field: 'Tg', op: 'Gt', value: '0',
-      }]),
-      ...ep.defaultParams,
-    }, ep.path);
-    const pageRows = parseCsvResponse(pagesBody);
+    // Two calls required: the SEO data provider does not offer a top-keyword-per-page
+    // field in its page-level report. Sorting organic keywords by traffic and grouping
+    // by URL client-side is the recommended approach.
+    const [{ body: pagesBody, fullAuditRef }, { body: kwBody }] = await Promise.all([
+      this.sendRawRequest({
+        type: ep.type,
+        ...commonParams,
+        display_limit: effectiveLimit,
+        export_columns: ep.columns,
+        display_filter: buildFilter([{
+          sign: '+', field: 'Tg', op: 'Gt', value: '0',
+        }]),
+        ...ep.defaultParams,
+      }, ep.path),
+      this.sendRawRequest({
+        type: epKw.type,
+        ...commonParams,
+        display_limit: effectiveLimit * 3,
+        export_columns: epKw.columns,
+        ...epKw.defaultParams,
+      }, epKw.path),
+    ]);
 
-    // Call 2: Get top keyword per URL
-    const { body: kwBody } = await this.sendRawRequest({
-      type: epKw.type,
-      ...commonParams,
-      display_limit: effectiveLimit * 3,
-      export_columns: epKw.columns,
-      ...epKw.defaultParams,
-    }, epKw.path);
+    const pageRows = parseCsvResponse(pagesBody);
     const kwRows = parseCsvResponse(kwBody);
 
     // Build keyword lookup: URL → top keyword (first occurrence = highest traffic)
@@ -169,18 +182,29 @@ export default class SeoClient {
     url,
     date = todayISO(),
     limit = 200,
+    // Accepted for contract compatibility but not supported by this provider,
+    // which scopes by report type (domain/subdomain/subfolder/URL) instead.
     // eslint-disable-next-line no-unused-vars
     mode = 'prefix',
   ) {
+    if (!hasText(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+
     const ep = ENDPOINTS.paidPages;
     const effectiveLimit = getLimit(limit, 1000);
+
+    // Over-fetch keywords to aggregate into pages. A domain typically has more
+    // keywords than pages, so we fetch a multiple of the requested limit.
+    // Capped at MAX_PAID_KEYWORDS_FETCH to bound cost.
+    const fetchLimit = Math.min(effectiveLimit * 10, MAX_PAID_KEYWORDS_FETCH);
 
     const { body, fullAuditRef } = await this.sendRawRequest({
       type: ep.type,
       domain: url,
       database: DEFAULT_DATABASE,
       display_date: toApiDate(date),
-      display_limit: effectiveLimit * 10,
+      display_limit: fetchLimit,
       export_columns: ep.columns,
       ...ep.defaultParams,
     }, ep.path);
@@ -231,6 +255,10 @@ export default class SeoClient {
   }
 
   async getMetrics(url, date = todayISO()) {
+    if (!hasText(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+
     const ep = ENDPOINTS.metrics;
 
     const { body, fullAuditRef } = await this.sendRawRequest({
@@ -251,9 +279,9 @@ export default class SeoClient {
           paid_keywords: coerceValue(row.Ad, 'int'),
           org_keywords_1_3: coerceValue(row.X0, 'int'),
           org_traffic: coerceValue(row.Ot, 'int'),
-          org_cost: (coerceValue(row.Oc, 'int') || 0) * 100,
+          org_cost: Math.round((coerceValue(row.Oc, 'float') || 0) * 100),
           paid_traffic: coerceValue(row.At, 'int'),
-          paid_cost: (coerceValue(row.Ac, 'int') || 0) * 100,
+          paid_cost: Math.round((coerceValue(row.Ac, 'float') || 0) * 100),
           paid_pages: null,
         },
       },
@@ -261,7 +289,21 @@ export default class SeoClient {
     };
   }
 
+  /**
+   * Retrieves historical organic traffic metrics for a URL within a date range.
+   * Note: The SEO data provider returns monthly data points only (no weekly option).
+   * The full history is fetched and filtered client-side because the provider's
+   * history endpoint does not support date range parameters.
+   * @param {string} url - The target domain
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   * @returns {Promise<{result: {metrics: Array}, fullAuditRef: string}>}
+   */
   async getOrganicTraffic(url, startDate, endDate) {
+    if (!hasText(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+
     const ep = ENDPOINTS.organicTraffic;
 
     const { body, fullAuditRef } = await this.sendRawRequest({
@@ -276,7 +318,7 @@ export default class SeoClient {
     // Convert API dates (YYYYMMDD) to ISO (YYYY-MM-DD) and filter to requested range
     const filtered = rows
       .map((row) => ({ ...row, isoDate: fromApiDate(row.Dt) }))
-      .filter((row) => row.isoDate >= startDate && row.isoDate <= endDate);
+      .filter((row) => row.isoDate && row.isoDate >= startDate && row.isoDate <= endDate);
 
     return {
       result: {
@@ -284,8 +326,8 @@ export default class SeoClient {
           date: `${row.isoDate}T00:00:00Z`,
           org_traffic: coerceValue(row.Ot, 'int'),
           paid_traffic: coerceValue(row.At, 'int'),
-          org_cost: (coerceValue(row.Oc, 'int') || 0) * 100,
-          paid_cost: (coerceValue(row.Ac, 'int') || 0) * 100,
+          org_cost: Math.round((coerceValue(row.Oc, 'float') || 0) * 100),
+          paid_cost: Math.round((coerceValue(row.Ac, 'float') || 0) * 100),
         })),
       },
       fullAuditRef,
@@ -296,6 +338,8 @@ export default class SeoClient {
     country = DEFAULT_DATABASE,
     keywordFilter = [],
     limit = 10,
+    // Accepted for contract compatibility but not supported by this provider,
+    // which scopes by report type (domain/subdomain/subfolder/URL) instead.
     mode = 'prefix',
     excludeBranded = false,
   } = {}) {
@@ -345,7 +389,8 @@ export default class SeoClient {
     const { body, fullAuditRef } = await this.sendRawRequest(params, ep.path);
     const rows = parseCsvResponse(body);
 
-    // Client-side brand detection since API doesn't support Br column
+    // Client-side brand detection since the SEO data provider
+    // does not expose a branded keyword flag
     const brand = extractBrand(url);
 
     let keywords = rows.map((row) => {
@@ -363,10 +408,10 @@ export default class SeoClient {
           ? new Date(parseInt(row.Ts, 10) * 1000).toISOString()
           : null,
         is_branded: brand.length > 1 && (row.Ph || '').toLowerCase().includes(brand),
-        is_navigational: intents.includes(2),
-        is_informational: intents.includes(1),
-        is_commercial: intents.includes(0),
-        is_transactional: intents.includes(3),
+        is_navigational: intents.includes(INTENT_CODES.NAVIGATIONAL),
+        is_informational: intents.includes(INTENT_CODES.INFORMATIONAL),
+        is_commercial: intents.includes(INTENT_CODES.COMMERCIAL),
+        is_transactional: intents.includes(INTENT_CODES.TRANSACTIONAL),
         serp_features: row.Fp || null,
       };
     });

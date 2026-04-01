@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import URI from 'urijs';
+
 /**
  * Maps SEO API response header names back to their column codes.
  * The API returns full names in headers even when requested by code.
@@ -60,8 +62,40 @@ function normalizeHeader(header) {
 }
 
 /**
+ * Splits a CSV line by semicolons, respecting double-quoted fields.
+ * Handles semicolons inside quoted values (e.g., "Products; Services").
+ * @param {string} line
+ * @returns {string[]}
+ */
+function splitCsvLine(line) {
+  const fields = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ';' && !inQuotes) {
+      fields.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  fields.push(current);
+  return fields;
+}
+
+/**
  * Parses semicolon-delimited CSV text into an array of objects.
- * First row is treated as headers. Handles double-quoted fields (export_escape=1).
+ * First row is treated as headers. Handles double-quoted fields (export_escape=1),
+ * including semicolons and escaped quotes inside quoted values.
  * Headers are normalized to column codes via HEADER_TO_CODE map.
  * @param {string} text - Raw CSV response body
  * @returns {object[]} Array of row objects keyed by column codes
@@ -70,11 +104,11 @@ export function parseCsvResponse(text) {
   if (!text || typeof text !== 'string') return [];
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
-  const headers = lines[0].split(';').map((h) => normalizeHeader(h.replace(/^"|"$/g, '').trim()));
+  const headers = splitCsvLine(lines[0]).map((h) => normalizeHeader(h.trim()));
   return lines.slice(1).map((line) => {
-    const values = line.split(';');
+    const values = splitCsvLine(line);
     return Object.fromEntries(
-      headers.map((h, i) => [h, (values[i] ?? '').replace(/^"|"$/g, '').trim()]),
+      headers.map((h, i) => [h, (values[i] ?? '').trim()]),
     );
   });
 }
@@ -130,16 +164,28 @@ export function todayISO() {
 
 /**
  * Converts a YYYYMMDD date string from the API to YYYY-MM-DD.
+ * Returns null for invalid/missing inputs.
  * @param {string} apiDate - Date in YYYYMMDD format
- * @returns {string} Date in YYYY-MM-DD format
+ * @returns {string|null} Date in YYYY-MM-DD format, or null if invalid
  */
 export function fromApiDate(apiDate) {
-  if (!apiDate || apiDate.length < 8) return apiDate;
+  if (!apiDate || apiDate.length < 8 || !/^\d{8}$/.test(apiDate)) return null;
   return `${apiDate.slice(0, 4)}-${apiDate.slice(4, 6)}-${apiDate.slice(6, 8)}`;
 }
 
 /**
+ * SEO data provider intent codes mapped to field names.
+ */
+export const INTENT_CODES = {
+  COMMERCIAL: 0,
+  INFORMATIONAL: 1,
+  NAVIGATIONAL: 2,
+  TRANSACTIONAL: 3,
+};
+
+/**
  * Builds a SEO API display_filter string from an array of filter descriptors.
+ * Pipe characters in values are stripped to prevent filter injection.
  * @param {Array<{sign: string, field: string, op: string, value: string}>} filters
  * @returns {string} Pipe-delimited filter string
  */
@@ -147,20 +193,22 @@ export function buildFilter(filters) {
   return filters
     .map(({
       sign, field, op, value,
-    }) => `${sign}|${field}|${op}|${value}`)
+    }) => `${sign}|${field}|${op}|${String(value).replace(/\|/g, '')}`)
     .join('|');
 }
 
 /**
  * Extracts a brand name from a domain for client-side branded keyword detection.
- * E.g., "adobe.com" → "adobe", "www.example.co.uk" → "example"
+ * Uses URI.js to resolve the registrable domain, then takes the first label.
+ * E.g., "adobe.com" → "adobe", "blog.adobe.com" → "adobe", "example.co.uk" → "example"
  * @param {string} domain
  * @returns {string} Lowercase brand name
  */
 export function extractBrand(domain) {
-  const cleaned = domain.replace(/^(https?:\/\/)?(www\.)?/, '');
-  const parts = cleaned.split('.');
-  return (parts[0] || '').toLowerCase();
+  if (!domain) return '';
+  const normalized = domain.includes('://') ? domain : `https://${domain}`;
+  const registrable = new URI(normalized).domain();
+  return registrable.split('.')[0].toLowerCase();
 }
 
 /**

@@ -114,6 +114,11 @@ describe('SeoClient', () => {
         .to.throw('Invalid SEO API Base URL');
     });
 
+    it('throws error when api key is missing', () => {
+      expect(() => new SeoClient({ apiBaseUrl: config.apiBaseUrl }, () => {}))
+        .to.throw('Missing SEO API key');
+    });
+
     it('throws error when fetch is not a function', () => {
       expect(() => new SeoClient(config, 'fetch')).to.throw('"fetchAPI" must be a function');
     });
@@ -287,6 +292,10 @@ describe('SeoClient', () => {
       expect(result.fullAuditRef).to.include('display_date=20250315');
     });
 
+    it('throws error when url is not a string', async () => {
+      await expect(client.getMetrics(null)).to.be.rejectedWith('Invalid URL');
+    });
+
     it('uses today as default date', async () => {
       nock(config.apiBaseUrl)
         .get('/')
@@ -361,6 +370,11 @@ describe('SeoClient', () => {
       expect(result.result.metrics[0].paid_cost).to.equal(0);
     });
 
+    it('throws error when url is not a string', async () => {
+      await expect(client.getOrganicTraffic(null, '2024-01-01', '2024-12-31'))
+        .to.be.rejectedWith('Invalid URL');
+    });
+
     it('returns empty array when no dates in range', async () => {
       nock(config.apiBaseUrl)
         .get('/')
@@ -430,6 +444,10 @@ describe('SeoClient', () => {
 
       const result = await client.getTopPages('unknown.com');
       expect(result.result.pages[0].top_keyword).to.equal(null);
+    });
+
+    it('throws error when url is not a string', async () => {
+      await expect(client.getTopPages(null)).to.be.rejectedWith('Invalid URL');
     });
 
     it('respects upper limit of 2000', async () => {
@@ -647,6 +665,10 @@ describe('SeoClient', () => {
   // ===== getPaidPages =====
 
   describe('getPaidPages', () => {
+    it('throws error when url is not a string', async () => {
+      await expect(client.getPaidPages(null)).to.be.rejectedWith('Invalid URL');
+    });
+
     it('aggregates adobe.com paid keywords into page-level data', async () => {
       nock(config.apiBaseUrl)
         .get('/')
@@ -790,6 +812,16 @@ describe('SeoClient', () => {
       expect(indexModule.todayISO).to.be.a('function');
       expect(indexModule.buildFilter).to.be.a('function');
       expect(indexModule.extractBrand).to.be.a('function');
+    });
+
+    it('exports INTENT_CODES', () => {
+      expect(indexModule.INTENT_CODES).to.be.an('object');
+      expect(indexModule.INTENT_CODES.COMMERCIAL).to.equal(0);
+    });
+
+    it('exports parseResponse for backward compatibility', () => {
+      expect(indexModule.parseResponse).to.be.a('function');
+      expect(indexModule.parseResponse({ test: 1 })).to.deep.equal({ test: 1 });
     });
 
     it('exports ORGANIC_KEYWORDS_FIELDS with 15 entries', () => {

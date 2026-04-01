@@ -14,7 +14,7 @@ import { expect } from 'chai';
 
 import {
   parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, todayISO,
-  buildFilter, buildQueryParams, extractBrand,
+  buildFilter, buildQueryParams, extractBrand, INTENT_CODES,
 } from '../src/utils.js';
 
 describe('utils', () => {
@@ -36,6 +36,20 @@ describe('utils', () => {
       ]);
     });
 
+    it('handles semicolons inside quoted fields', () => {
+      const csv = 'Title;Url\n"Products; Services - Adobe";"https://example.com/a;b"';
+      const result = parseCsvResponse(csv);
+      expect(result).to.deep.equal([
+        { Tt: 'Products; Services - Adobe', Ur: 'https://example.com/a;b' },
+      ]);
+    });
+
+    it('handles escaped quotes inside quoted fields', () => {
+      const csv = 'Title;Value\n"She said ""hello""";42';
+      const result = parseCsvResponse(csv);
+      expect(result[0].Tt).to.equal('She said "hello"');
+    });
+
     it('returns empty array for empty input', () => {
       expect(parseCsvResponse('')).to.deep.equal([]);
       expect(parseCsvResponse(null)).to.deep.equal([]);
@@ -52,6 +66,12 @@ describe('utils', () => {
       expect(result).to.deep.equal([{ A: '1', B: '', C: '3' }]);
     });
 
+    it('handles rows with fewer values than headers', () => {
+      const csv = 'A;B;C\n1;2';
+      const result = parseCsvResponse(csv);
+      expect(result[0]).to.deep.equal({ A: '1', B: '2', C: '' });
+    });
+
     it('handles single row', () => {
       const csv = 'X\n42';
       const result = parseCsvResponse(csv);
@@ -62,12 +82,6 @@ describe('utils', () => {
       const csv = 'Organic Keywords;Organic Traffic;Date\n100;5000;20240115';
       const result = parseCsvResponse(csv);
       expect(result[0]).to.deep.equal({ Or: '100', Ot: '5000', Dt: '20240115' });
-    });
-
-    it('handles rows with fewer values than headers', () => {
-      const csv = 'A;B;C\n1;2';
-      const result = parseCsvResponse(csv);
-      expect(result[0]).to.deep.equal({ A: '1', B: '2', C: '' });
     });
 
     it('keeps unknown headers as-is', () => {
@@ -139,6 +153,36 @@ describe('utils', () => {
     });
   });
 
+  describe('fromApiDate', () => {
+    it('converts YYYYMMDD to YYYY-MM-DD', () => {
+      expect(fromApiDate('20240115')).to.equal('2024-01-15');
+      expect(fromApiDate('20251210')).to.equal('2025-12-10');
+    });
+
+    it('returns null for empty/null input', () => {
+      expect(fromApiDate('')).to.equal(null);
+      expect(fromApiDate(null)).to.equal(null);
+      expect(fromApiDate(undefined)).to.equal(null);
+    });
+
+    it('returns null for short strings', () => {
+      expect(fromApiDate('short')).to.equal(null);
+    });
+
+    it('returns null for non-numeric strings', () => {
+      expect(fromApiDate('abcdefgh')).to.equal(null);
+    });
+  });
+
+  describe('INTENT_CODES', () => {
+    it('has correct numeric values', () => {
+      expect(INTENT_CODES.COMMERCIAL).to.equal(0);
+      expect(INTENT_CODES.INFORMATIONAL).to.equal(1);
+      expect(INTENT_CODES.NAVIGATIONAL).to.equal(2);
+      expect(INTENT_CODES.TRANSACTIONAL).to.equal(3);
+    });
+  });
+
   describe('buildFilter', () => {
     it('builds a single filter', () => {
       const result = buildFilter([{
@@ -162,18 +206,12 @@ describe('utils', () => {
     it('returns empty string for empty array', () => {
       expect(buildFilter([])).to.equal('');
     });
-  });
 
-  describe('fromApiDate', () => {
-    it('converts YYYYMMDD to YYYY-MM-DD', () => {
-      expect(fromApiDate('20240115')).to.equal('2024-01-15');
-      expect(fromApiDate('20251210')).to.equal('2025-12-10');
-    });
-
-    it('returns input for short/empty strings', () => {
-      expect(fromApiDate('')).to.equal('');
-      expect(fromApiDate(null)).to.equal(null);
-      expect(fromApiDate('short')).to.equal('short');
+    it('strips pipe characters from values to prevent injection', () => {
+      const result = buildFilter([{
+        sign: '+', field: 'Ph', op: 'Co', value: 'seo|+|Ph|Eq|secret',
+      }]);
+      expect(result).to.equal('+|Ph|Co|seo+PhEqsecret');
     });
   });
 
@@ -183,17 +221,16 @@ describe('utils', () => {
       expect(extractBrand('google.com')).to.equal('google');
     });
 
-    it('strips www prefix', () => {
+    it('strips www and protocol', () => {
       expect(extractBrand('www.adobe.com')).to.equal('adobe');
-    });
-
-    it('strips protocol', () => {
       expect(extractBrand('https://adobe.com')).to.equal('adobe');
       expect(extractBrand('http://www.adobe.com')).to.equal('adobe');
     });
 
-    it('handles multi-part TLDs', () => {
+    it('handles multi-part TLDs and subdomains', () => {
       expect(extractBrand('example.co.uk')).to.equal('example');
+      expect(extractBrand('blog.adobe.com')).to.equal('adobe');
+      expect(extractBrand('blog.example.co.uk')).to.equal('example');
     });
 
     it('handles empty input', () => {

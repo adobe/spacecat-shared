@@ -91,11 +91,17 @@ describe('dependency-mapping', () => {
       expect(opps).to.include('high-organic-low-ctr');
     });
 
+    it('returns opportunities that depend on scraping', () => {
+      const opps = getOpportunitiesForSource(DEPENDENCY_SOURCES.SCRAPING);
+      expect(opps).to.include('info-gain');
+    });
+
     it('returns opportunities that depend on EXTERNAL_API', () => {
       const opps = getOpportunitiesForSource(DEPENDENCY_SOURCES.EXTERNAL_API);
       expect(opps).to.include('wikipedia-analysis');
       expect(opps).to.include('reddit-analysis');
       expect(opps).to.include('youtube-analysis');
+      expect(opps).to.include('info-gain');
     });
 
     it('returns empty array for unknown source', () => {

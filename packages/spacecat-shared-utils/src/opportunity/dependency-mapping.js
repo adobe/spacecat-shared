@@ -97,6 +97,7 @@ export const OPPORTUNITY_DEPENDENCY_MAP = {
   'wikipedia-analysis': [DEPENDENCY_SOURCES.EXTERNAL_API],
   'reddit-analysis': [DEPENDENCY_SOURCES.EXTERNAL_API],
   'youtube-analysis': [DEPENDENCY_SOURCES.EXTERNAL_API],
+  'info-gain': [DEPENDENCY_SOURCES.SCRAPING, DEPENDENCY_SOURCES.EXTERNAL_API],
 };
 
 // ─── Query helpers ───────────────────────────────────────────────────────────

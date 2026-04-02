@@ -36,6 +36,7 @@ const SEED_PRIORITY = [
   'trialUsers',
   'siteEnrollments',
   'siteImsOrgAccesses',
+  'contactSalesLeads',
   'accessGrantLogs',
   'apiKeys',
   'siteCandidates',

@@ -1,4 +1,4 @@
-  name: spacecat-data-access-it
+name: spacecat-data-access-it
 
 services:
   db:

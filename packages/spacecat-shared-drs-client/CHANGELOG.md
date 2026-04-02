@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.4.0...@adobe/spacecat-shared-drs-client-v1.4.1) (2026-04-02)
+
+
+### Bug Fixes
+
+* enable brand presence flag in create schedule ([#1497](https://github.com/adobe/spacecat-shared/issues/1497))p ([468ae0c](https://github.com/adobe/spacecat-shared/commit/468ae0cffa0b163449d2472a9c77233eda2ceb9a))
+
 # [@adobe/spacecat-shared-drs-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.3.1...@adobe/spacecat-shared-drs-client-v1.4.0) (2026-04-01)
 
 

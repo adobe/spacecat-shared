@@ -58,7 +58,7 @@ class Configuration {
 
   static AUDIT_NAME_REGEX = /^[a-z0-9-]+$/;
 
-  static AUDIT_NAME_MAX_LENGTH = 37;
+  static AUDIT_NAME_MAX_LENGTH = 50;
 
   constructor(data, versionId, collection, log) {
     this.handlers = data.handlers;

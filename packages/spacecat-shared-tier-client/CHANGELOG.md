@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tier-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.16...@adobe/spacecat-shared-tier-client-v1.4.0) (2026-04-01)
+
+### Features
+
+* add PLG tier to entitlement model and bump mysticat types  ([#1487](https://github.com/adobe/spacecat-shared/issues/1487)) ([7f9c6fc](https://github.com/adobe/spacecat-shared/commit/7f9c6fcb6d3672269081176ebf643151fb512e99))
+
 ## [@adobe/spacecat-shared-tier-client-v1.3.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.15...@adobe/spacecat-shared-tier-client-v1.3.16) (2026-03-21)
 
 ### Bug Fixes

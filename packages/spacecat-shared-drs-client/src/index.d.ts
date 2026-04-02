@@ -71,6 +71,39 @@ interface BrandDetectionOptions {
   priority?: string;
 }
 
+type ExperimentPhase = 'pre' | 'post';
+
+interface CreateExperimentScheduleParams {
+  siteId: string;
+  experimentId: string;
+  experimentPhase: ExperimentPhase;
+  platforms?: string[];
+  metadata?: Record<string, unknown>;
+  triggerImmediately?: boolean;
+}
+
+interface ScheduleJobsSummary {
+  total: number;
+  completed: number;
+  completed_with_errors: number;
+  failed: number;
+  cancelled: number;
+  in_progress: number;
+  is_complete: boolean;
+  status_breakdown: Record<string, number>;
+}
+
+interface ScheduleStatusResult {
+  schedule: {
+    site_id: string;
+    schedule_id: string;
+    enabled?: string;
+    [key: string]: unknown;
+  };
+  jobs_summary?: ScheduleJobsSummary;
+  [key: string]: unknown;
+}
+
 interface DrsJobResult {
   job_id: string;
   [key: string]: unknown;
@@ -85,6 +118,8 @@ declare class DrsClient {
   submitScrapeJob(params: ScrapeJobParams): Promise<DrsJobResult>;
   lookupScrapeResults(params: ScrapeLookupParams): Promise<ScrapeLookupResponse | null>;
   triggerBrandDetection(siteId: string, options?: BrandDetectionOptions): Promise<Record<string, unknown> | null>;
+  createExperimentSchedule(params: CreateExperimentScheduleParams): Promise<ScheduleStatusResult>;
+  getScheduleStatus(siteId: string, scheduleId: string): Promise<ScheduleStatusResult>;
   getJob(jobId: string): Promise<Record<string, unknown>>;
 }
 

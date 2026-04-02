@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.0.6...@adobe/spacecat-shared-cloud-manager-client-v1.1.0) (2026-03-31)
+
+### Features
+
+* adding applyPatchContent and applyFiles for supporting autofix for code opportunities ([#1371](https://github.com/adobe/spacecat-shared/issues/1371)) ([5bb9c2a](https://github.com/adobe/spacecat-shared/commit/5bb9c2a61982f8bd92e0070741626aaa4e864434))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.0.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.0.5...@adobe/spacecat-shared-cloud-manager-client-v1.0.6) (2026-03-28)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1477](https://github.com/adobe/spacecat-shared/issues/1477)) ([67bdd1a](https://github.com/adobe/spacecat-shared/commit/67bdd1a2c497bed088bc1e54ae22e60c171308d1))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.0.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.0.4...@adobe/spacecat-shared-cloud-manager-client-v1.0.5) (2026-03-21)
 
 ### Bug Fixes

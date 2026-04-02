@@ -14,14 +14,9 @@ import SchemaBuilder from '../base/schema.builder.js';
 import ContactSalesLead from './contact-sales-lead.model.js';
 import ContactSalesLeadCollection from './contact-sales-lead.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
-*/
-
 const schema = new SchemaBuilder(ContactSalesLead, ContactSalesLeadCollection)
   .addReference('belongs_to', 'Organization')
+  .addReference('belongs_to', 'Site', [], { required: false })
   .addAttribute('name', {
     type: 'string',
     required: true,
@@ -33,9 +28,6 @@ const schema = new SchemaBuilder(ContactSalesLead, ContactSalesLeadCollection)
   .addAttribute('domain', {
     type: 'string',
   })
-  .addAttribute('siteId', {
-    type: 'string',
-  })
   .addAttribute('notes', {
     type: 'string',
   })
@@ -43,7 +35,6 @@ const schema = new SchemaBuilder(ContactSalesLead, ContactSalesLeadCollection)
     type: Object.values(ContactSalesLead.STATUSES),
     required: true,
     default: ContactSalesLead.STATUSES.NEW,
-  })
-  .addAllIndex(['email']);
+  });
 
 export default schema.build();

@@ -11,7 +11,7 @@
  */
 
 import type {
-  BaseCollection, BaseModel, Organization,
+  BaseCollection, BaseModel, Organization, Site,
 } from '../index';
 
 export type ContactSalesLeadStatus = 'NEW' | 'CONTACTED' | 'CLOSED';
@@ -24,6 +24,7 @@ export interface ContactSalesLead extends BaseModel {
   getNotes(): string | null;
   getStatus(): ContactSalesLeadStatus;
   getOrganization(): Promise<Organization>;
+  getSite(): Promise<Site | null>;
   setName(name: string): ContactSalesLead;
   setEmail(email: string): ContactSalesLead;
   setDomain(domain: string): ContactSalesLead;
@@ -34,7 +35,7 @@ export interface ContactSalesLead extends BaseModel {
 
 export interface ContactSalesLeadCollection extends BaseCollection<ContactSalesLead> {
   allByOrganizationId(organizationId: string): Promise<ContactSalesLead[]>;
-  allByEmail(email: string): Promise<ContactSalesLead[]>;
+  allBySiteId(siteId: string): Promise<ContactSalesLead[]>;
   findByOrganizationId(organizationId: string): Promise<ContactSalesLead | null>;
-  findByEmail(email: string): Promise<ContactSalesLead | null>;
+  findBySiteId(siteId: string): Promise<ContactSalesLead | null>;
 }

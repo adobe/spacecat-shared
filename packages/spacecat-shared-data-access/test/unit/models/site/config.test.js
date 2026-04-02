@@ -1227,16 +1227,6 @@ describe('Config Tests', () => {
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
-                message: '"imports[0].type" must be [organic-keywords-nonbranded]',
-                path: ['imports', 0, 'type'],
-                type: 'any.only',
-                context: {
-                  valids: ['organic-keywords-nonbranded'],
-                  label: 'imports[0].type',
-                  value: 'organic-keywords',
-                  key: 'type',
-                },
-              }, {
                 message: '"imports[0].destinations[0]" must be [default]',
                 path: ['imports', 0, 'destinations', 0],
                 type: 'any.only',

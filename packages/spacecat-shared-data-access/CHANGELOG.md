@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.42.0...@adobe/spacecat-shared-data-access-v3.43.0) (2026-04-02)
+
+### Features
+
+* remove llmo-prompts-ahrefs from shared config ([#1504](https://github.com/adobe/spacecat-shared/issues/1504)) ([e8628f2](https://github.com/adobe/spacecat-shared/commit/e8628f21e48e2f1bf89622c5004587165cd62673))
+
 ## [@adobe/spacecat-shared-data-access-v3.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.41.0...@adobe/spacecat-shared-data-access-v3.42.0) (2026-04-02)
 
 ### Features

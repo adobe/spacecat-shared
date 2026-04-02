@@ -57,13 +57,13 @@ export type IMPORT_DESTINATIONS = {
 };
 
 export type IMPORT_SOURCES = {
-  readonly AHREFS: 'ahrefs';
+  readonly SEO: 'seo';
   readonly GSC: 'google';
 };
 
 export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages' | 'top-forms' | 'ahref-paid-pages' ;
 export type ImportDestination = 'default';
-export type ImportSource = 'ahrefs' | 'google';
+export type ImportSource = 'seo' | 'google';
 
 export interface ImportConfig {
   type: ImportType;

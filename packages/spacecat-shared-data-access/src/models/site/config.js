@@ -17,7 +17,6 @@ import Joi from 'joi';
 import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
-  LLMO_QUESTIONS_IMPORT_TYPE: 'llmo-prompts-ahrefs',
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',
@@ -42,7 +41,7 @@ export const IMPORT_DESTINATIONS = {
 };
 
 export const IMPORT_SOURCES = {
-  AHREFS: 'ahrefs',
+  SEO: 'seo',
   GSC: 'google',
   RUM: 'rum',
 };
@@ -83,12 +82,6 @@ const IMPORT_BASE_KEYS = {
 };
 
 export const IMPORT_TYPE_SCHEMAS = {
-  [IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE]: Joi.object({
-    type: Joi.string().valid(IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE).required(),
-    enabled: Joi.boolean().default(true),
-    limit: Joi.number().integer().min(1).max(100)
-      .optional(),
-  }),
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
     ...IMPORT_BASE_KEYS,
@@ -186,37 +179,37 @@ export const DEFAULT_IMPORT_CONFIGS = {
   'organic-keywords': {
     type: 'organic-keywords',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-nonbranded': {
     type: 'organic-keywords-nonbranded',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-ai-overview': {
     type: 'organic-keywords-ai-overview',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-feature-snippets': {
     type: 'organic-keywords-feature-snippets',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-questions': {
     type: 'organic-keywords-questions',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-traffic': {
     type: 'organic-traffic',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'all-traffic': {
@@ -228,14 +221,14 @@ export const DEFAULT_IMPORT_CONFIGS = {
   'top-pages': {
     type: 'top-pages',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
     geo: 'global',
   },
   'ahref-paid-pages': {
     type: 'ahref-paid-pages',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'cwv-daily': {

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.112.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.111.0...@adobe/spacecat-shared-utils-v1.112.0) (2026-04-02)
+
+### Features
+
+* **spacecat-shared-utils:** add sub-path exports for slim imports ([#1486](https://github.com/adobe/spacecat-shared/issues/1486)) ([4e15c66](https://github.com/adobe/spacecat-shared/commit/4e15c6631f5f660283178d61891bf4773a6b564f))
+
 ## [@adobe/spacecat-shared-utils-v1.111.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.110.0...@adobe/spacecat-shared-utils-v1.111.0) (2026-04-01)
 
 ### Features

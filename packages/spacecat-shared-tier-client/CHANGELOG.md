@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tier-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.4.0...@adobe/spacecat-shared-tier-client-v1.4.1) (2026-04-02)
+
+### Bug Fixes
+
+* trigger release ([#1500](https://github.com/adobe/spacecat-shared/issues/1500)) ([c750a43](https://github.com/adobe/spacecat-shared/commit/c750a430379e5fa23813e4920c9d4c66f50947b8))
+
 ## [@adobe/spacecat-shared-tier-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.16...@adobe/spacecat-shared-tier-client-v1.4.0) (2026-04-01)
 
 ### Features

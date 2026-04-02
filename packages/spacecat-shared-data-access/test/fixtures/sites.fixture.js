@@ -27,7 +27,7 @@ const sites = [
       imports: [
         {
           sources: [
-            'ahrefs',
+            'seo',
           ],
           type: 'top-pages',
           destinations: [

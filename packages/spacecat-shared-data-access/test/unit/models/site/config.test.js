@@ -811,7 +811,7 @@ describe('Config Tests', () => {
         imports: [{
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
           pageUrl: 'https://example.com',
         }],
@@ -825,13 +825,13 @@ describe('Config Tests', () => {
         imports: [{
           type: 'unknown-type',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
         }],
       });
       expect(config.getImports()).to.deep.equal([{
         type: 'unknown-type',
         destinations: ['default'],
-        sources: ['ahrefs'],
+        sources: ['seo'],
       }]);
       expect(config.getSlackConfig()).to.be.undefined;
       expect(config.getHandlers()).to.be.undefined;
@@ -864,7 +864,7 @@ describe('Config Tests', () => {
         expect(importConfig).to.deep.equal({
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
         });
       });
@@ -930,7 +930,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -977,7 +977,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -998,13 +998,13 @@ describe('Config Tests', () => {
             {
               type: 'organic-keywords',
               destinations: ['default'],
-              sources: ['ahrefs'],
+              sources: ['seo'],
               enabled: true,
             },
             {
               type: 'organic-traffic',
               destinations: ['default'],
-              sources: ['ahrefs'],
+              sources: ['seo'],
               enabled: true,
             },
           ],
@@ -1018,13 +1018,13 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
           },
           {
             type: 'organic-traffic',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           },
         ]);
@@ -1036,7 +1036,7 @@ describe('Config Tests', () => {
         const importConfig = {
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
         };
         const config = Config({
@@ -1058,7 +1058,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -1070,7 +1070,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
           }],
         });
@@ -1120,7 +1120,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             pageUrl: 'https://example.com',
             enabled: false,
             geo: 'us',
@@ -1129,7 +1129,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-traffic',
             destinations: ['default'],
-            sources: ['ahrefs', 'google'],
+            sources: ['seo', 'google'],
             enabled: true,
           },
           {
@@ -1141,7 +1141,7 @@ describe('Config Tests', () => {
           {
             type: 'top-pages',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             geo: 'us',
             limit: 100,
@@ -1223,20 +1223,10 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]. "imports[0].type" must be [cwv-trends-daily]. "imports[0].type" must be [cwv-trends-onboard]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]. "imports[0].type" must be [cwv-trends-daily]. "imports[0].type" must be [cwv-trends-onboard]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
-                message: '"imports[0].type" must be [llmo-prompts-ahrefs]',
-                path: ['imports', 0, 'type'],
-                type: 'any.only',
-                context: {
-                  valids: ['llmo-prompts-ahrefs'],
-                  label: 'imports[0].type',
-                  value: 'organic-keywords',
-                  key: 'type',
-                },
-              }, {
                 message: '"imports[0].destinations[0]" must be [default]',
                 path: ['imports', 0, 'destinations', 0],
                 type: 'any.only',
@@ -1449,7 +1439,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             limit: 100,
             pageUrl: 'https://example.com',
@@ -1457,7 +1447,7 @@ describe('Config Tests', () => {
           {
             type: 'top-pages',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
             geo: 'global',
           },
@@ -1473,7 +1463,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             url: 'https://example.com',
           },

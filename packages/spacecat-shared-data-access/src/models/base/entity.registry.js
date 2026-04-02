@@ -15,6 +15,7 @@ import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
 
 import ApiKeyCollection from '../api-key/api-key.collection.js';
 import AsyncJobCollection from '../async-job/async-job.collection.js';
+import ContactSalesLeadCollection from '../contact-sales-lead/contact-sales-lead.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import AuditUrlCollection from '../audit-url/audit-url.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
@@ -54,6 +55,7 @@ import SiteImsOrgAccessCollection from '../site-ims-org-access/site-ims-org-acce
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
+import ContactSalesLeadSchema from '../contact-sales-lead/contact-sales-lead.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
 import AuditUrlSchema from '../audit-url/audit-url.schema.js';
 import ConsumerSchema from '../consumer/consumer.schema.js';
@@ -187,6 +189,7 @@ class EntityRegistry {
 // Register ElectroDB-based entities only (Configuration is handled separately)
 EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
+EntityRegistry.registerEntity(ContactSalesLeadSchema, ContactSalesLeadCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(AuditUrlSchema, AuditUrlCollection);
 EntityRegistry.registerEntity(ConsumerSchema, ConsumerCollection);

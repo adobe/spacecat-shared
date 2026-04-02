@@ -602,7 +602,7 @@ describe('Site IT', async () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             pageUrl: 'https://import-example.com/blog',
           }],
@@ -630,7 +630,7 @@ describe('Site IT', async () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         },

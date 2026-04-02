@@ -26,13 +26,14 @@ export {
   isObject,
   isString,
   isValidDate,
-  isValidEmail,
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
   isValidHelixPreviewUrl,
   toBoolean,
 } from './functions.js';
+
+export { isValidEmail } from './email.js';
 
 export {
   resolveSecretsName,

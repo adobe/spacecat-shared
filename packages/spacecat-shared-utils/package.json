@@ -5,10 +5,39 @@
   "type": "module",
   "exports": {
     ".": {
+      "types": "./src/index.d.ts",
       "browser": "./src/browser.js",
       "default": "./src/index.js"
+    },
+    "./core": {
+      "types": "./src/core.d.ts",
+      "default": "./src/core.js"
+    },
+    "./aws": {
+      "types": "./src/aws.d.ts",
+      "default": "./src/aws.js"
+    },
+    "./locale": {
+      "types": "./src/locale.d.ts",
+      "default": "./src/locale.js"
+    },
+    "./calendar": {
+      "types": "./src/calendar.d.ts",
+      "default": "./src/calendar.js"
+    },
+    "./schemas": {
+      "types": "./src/schemas.d.ts",
+      "default": "./src/schemas.js"
+    },
+    "./constants": {
+      "types": "./src/constants.d.ts",
+      "default": "./src/constants.js"
     }
   },
+  "sideEffects": [
+    "./src/adobe-fetch.js",
+    "./src/url-helpers.js"
+  ],
   "engines": {
     "node": ">=22.0.0 <25.0.0",
     "npm": ">=10.9.0 <12.0.0"
@@ -16,6 +45,7 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
+    "pretest": "node scripts/check-subpath-deps.js",
     "test": "c8 mocha",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
@@ -43,6 +73,7 @@
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
     "@types/validator": "^13.15.2",
+    "esbuild": "0.27.4",
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
     "esmock": "2.7.3",

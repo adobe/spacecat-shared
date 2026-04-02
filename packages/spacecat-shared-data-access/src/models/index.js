@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+export * from './access-grant-log/index.js';
 export * from './api-key/index.js';
 export * from './async-job/index.js';
 export * from './audit/index.js';
@@ -18,6 +19,7 @@ export * from './base/index.js';
 export * from './configuration/index.js';
 export * from './consumer/index.js';
 export * from './entitlement/index.js';
+export * from './geo-experiment/index.js';
 export * from './fix-entity/index.js';
 export * from './fix-entity-suggestion/index.js';
 export * from './experiment/index.js';
@@ -32,14 +34,17 @@ export * from './scrape-job/index.js';
 export * from './scrape-url/index.js';
 export * from './site-candidate/index.js';
 export * from './site-enrollment/index.js';
+export * from './site-ims-org-access/index.js';
 export * from './site-top-form/index.js';
 export * from './site-top-page/index.js';
 export * from './site/index.js';
 export * from './suggestion/index.js';
+export * from './suggestion-grant/index.js';
 export * from './page-intent/index.js';
 export * from './report/index.js';
 export * from './trial-user/index.js';
 export * from './trial-user-activity/index.js';
+export * from './token/index.js';
 export * from './page-citability/index.js';
 export * from './plg-onboarding/index.js';
 export * from './sentiment-guideline/index.js';

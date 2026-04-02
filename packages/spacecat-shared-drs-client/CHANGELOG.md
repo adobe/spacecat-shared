@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-drs-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.4.0...@adobe/spacecat-shared-drs-client-v1.4.1) (2026-04-02)
+
+
+### Bug Fixes
+
+* enable brand presence flag in create schedule ([#1497](https://github.com/adobe/spacecat-shared/issues/1497))p ([468ae0c](https://github.com/adobe/spacecat-shared/commit/468ae0cffa0b163449d2472a9c77233eda2ceb9a))
+
+# [@adobe/spacecat-shared-drs-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.3.1...@adobe/spacecat-shared-drs-client-v1.4.0) (2026-04-01)
+
+
+### Features
+
+* experimentation engine ([#1446](https://github.com/adobe/spacecat-shared/issues/1446)) ([44bff63](https://github.com/adobe/spacecat-shared/commit/44bff6350c18db58d8fbffde8de05074269ec969))
+
+# [@adobe/spacecat-shared-drs-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.3.0...@adobe/spacecat-shared-drs-client-v1.3.1) (2026-03-21)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1456](https://github.com/adobe/spacecat-shared/issues/1456)) ([b4654ec](https://github.com/adobe/spacecat-shared/commit/b4654ec88780f540f608fd8588182da805f2e6e2))
+
 # [@adobe/spacecat-shared-drs-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.2.0...@adobe/spacecat-shared-drs-client-v1.3.0) (2026-03-11)
 
 

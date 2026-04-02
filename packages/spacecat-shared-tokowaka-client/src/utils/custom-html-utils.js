@@ -12,6 +12,9 @@
 
 import { hasText } from '@adobe/spacecat-shared-utils';
 
+const ORIGINAL_FETCH_TYPE = 'original';
+const OPTIMIZED_FETCH_TYPE = 'optimized';
+
 /**
  * Helper function to wait for a specified duration
  * @param {number} ms - Milliseconds to wait
@@ -39,10 +42,11 @@ async function fetchWithTimeout(url, options = {}, timeout = 3000) {
 
 /**
  * Makes an HTTP request with retry logic for both original and optimized HTML.
- * Header validation logic (same for both):
- * - No proxy AND no cache header: Return response immediately (success)
- * - Proxy header present BUT no cache header: Retry until cache header found
+ * Header validation logic:
  * - Cache header present (regardless of proxy): Return response (success)
+ * - No proxy AND no cache header: If fetching optimized, retry; else success
+ * - Proxy header present BUT no cache header: Retry until cache header found
+ * - 301: Retry with the same URL (same as other non-ok responses)
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
  * @param {number} maxRetries - Maximum number of retries
@@ -63,7 +67,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
       const requestId = response?.headers?.get('x-edgeoptimize-request-id');
       log.info(`[${fetchType}] Response status (attempt ${attempt}): ${response.status} ${response.statusText}, x-edgeoptimize-request-id: ${requestId || 'none'}`);
 
-      if (!response.ok) {
+      if (!response.ok && response.status !== 301) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -79,14 +83,14 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
         return response;
       }
 
-      // Case 2: No cache header AND no proxy header -> Success (return immediately)
+      // No cache header AND no proxy header
       if (!proxyHeader) {
-        log.info(`[${fetchType}] No edge optimize headers found, proceeding as successful flow`);
-        return response;
+        if (fetchType === ORIGINAL_FETCH_TYPE && response.status !== 301) {
+          log.info(`[${fetchType}] No edge optimize headers found, proceeding as successful flow`);
+          return response;
+        }
+        log.info(`[${fetchType}] No proxy/cache header found`);
       }
-
-      // Case 3: Proxy header present BUT no cache header -> Retry until cache found
-      log.info(`[${fetchType}] Proxy header present without cache header, will retry...`);
 
       // If we haven't exhausted retries, continue
       if (attempt < maxRetries + 1) {
@@ -127,7 +131,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
  * @param {Object} log - Logger instance
  * @param {Object} options - Additional options
  * @param {number} options.warmupDelayMs - Delay after warmup call (default: 1000ms)
- * @param {number} options.maxRetries - Maximum number of retries for actual call (default: 3)
+ * @param {number} options.maxRetries - Maximum number of retries for actual call (default: 5)
  * @param {number} options.retryDelayMs - Delay between retries (default: 1000ms)
  * @returns {Promise<string>} - HTML content
  * @throws {Error} - If validation fails or fetch fails after retries or timeout
@@ -157,11 +161,11 @@ export async function fetchHtmlWithWarmup(
   // Default options
   const {
     warmupDelayMs = isOptimized ? 750 : 0, // milliseconds
-    maxRetries = 3,
-    retryDelayMs = 1000,
+    maxRetries = 8,
+    retryDelayMs = 1500,
   } = options;
 
-  const fetchType = isOptimized ? 'optimized' : 'original';
+  const fetchType = isOptimized ? OPTIMIZED_FETCH_TYPE : ORIGINAL_FETCH_TYPE;
 
   // Parse the URL to extract path and construct full URL
   const urlObj = new URL(url);

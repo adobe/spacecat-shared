@@ -12,18 +12,20 @@
 
 import { execFileSync } from 'child_process';
 import {
-  existsSync, mkdtempSync, rmSync, statfsSync, writeFileSync,
+  existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync,
+  readlinkSync, rmSync, statfsSync, writeFileSync,
 } from 'fs';
 import os from 'os';
 import path from 'path';
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import AdmZip from 'adm-zip';
+import { archiveFolder, extract } from 'zip-lib';
 
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
 const PATCH_FILE_PREFIX = 'cm-patch-';
+const ZIP_DIR_PREFIX = 'cm-zip-';
 const GIT_OPERATION_TIMEOUT_MS = 120_000; // 120s — fail fast before Lambda timeout
 
 /**
@@ -229,6 +231,33 @@ export default class CloudManagerClient {
   }
 
   /**
+   * Common orchestration for applying changes to a cloned repository.
+   * Configures git identity, checks out the branch, runs the caller-provided
+   * apply function, and optionally stages + commits.
+   *
+   * @param {string} clonePath - Path to the cloned repository
+   * @param {string} branch - Branch to checkout
+   * @param {Function} applyFn - Async callback that applies changes to the working tree.
+   *   Receives `clonePath` as its only argument.
+   * @param {string|null} commitMessage - If provided, runs `git add -A` + `git commit`
+   *   after applyFn completes. Pass null when the apply step already commits
+   *   (e.g. `git am` for mail-message patches).
+   */
+  async #applyChanges(clonePath, branch, applyFn, commitMessage) {
+    const { gitUsername, gitUserEmail } = this.config;
+    this.#execGit(['config', 'user.name', gitUsername], { cwd: clonePath });
+    this.#execGit(['config', 'user.email', gitUserEmail], { cwd: clonePath });
+    this.#execGit(['checkout', branch], { cwd: clonePath });
+
+    await applyFn(clonePath);
+
+    if (commitMessage) {
+      this.#execGit(['add', '-A'], { cwd: clonePath });
+      this.#execGit(['commit', '-m', commitMessage], { cwd: clonePath });
+    }
+  }
+
+  /**
    * Builds authenticated git arguments for a remote command (clone, push, or pull).
    *
    * Both repo types use http.extraheader for authentication:
@@ -310,6 +339,30 @@ export default class CloudManagerClient {
   }
 
   /**
+   * Recursively validates that all symlinks under rootDir point to targets
+   * within rootDir. Throws if any symlink escapes the root boundary.
+   * @param {string} dir - Directory to scan
+   * @param {string} rootDir - The root boundary all symlink targets must stay within
+   */
+  #validateSymlinks(dir, rootDir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isSymbolicLink()) {
+        const target = readlinkSync(fullPath);
+        const resolved = path.resolve(path.dirname(fullPath), target);
+        const relative = path.relative(rootDir, resolved);
+        if (relative.startsWith('..') || path.isAbsolute(relative)) {
+          throw new Error(
+            `Symlink escapes repository root: ${path.relative(rootDir, fullPath)} -> ${target}`,
+          );
+        }
+      } else if (entry.isDirectory()) {
+        this.#validateSymlinks(fullPath, rootDir);
+      }
+    }
+  }
+
+  /**
    * Zips the entire cloned repository including .git history.
    * Downstream services that read the ZIP from S3 need the full git history.
    * @param {string} clonePath - Path to the cloned repository
@@ -320,10 +373,22 @@ export default class CloudManagerClient {
       throw new Error(`Clone path does not exist: ${clonePath}`);
     }
 
-    this.log.info(`Zipping repository at ${clonePath}`);
-    const zip = new AdmZip();
-    zip.addLocalFolder(clonePath);
-    return zip.toBuffer();
+    // zip-lib is path-based (not buffer-based like adm-zip), so we write to
+    // a temp file and read the result back into a Buffer for the caller.
+    const zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
+    const zipFile = path.join(zipDir, 'repo.zip');
+
+    try {
+      this.log.info(`Zipping repository at ${clonePath}`);
+      this.#validateSymlinks(clonePath, clonePath);
+      await archiveFolder(clonePath, zipFile, { followSymlinks: false });
+      this.#logTmpDiskUsage('zip');
+      return readFileSync(zipFile);
+    } catch (error) {
+      throw new Error(`Failed to zip repository: ${error.message}`);
+    } finally /* c8 ignore next */ {
+      rmSync(zipDir, { recursive: true, force: true });
+    }
   }
 
   /**
@@ -336,6 +401,20 @@ export default class CloudManagerClient {
     this.log.info(`Creating branch ${newBranch} from ${baseBranch}`);
     this.#execGit(['checkout', baseBranch], { cwd: clonePath });
     this.#execGit(['checkout', '-b', newBranch], { cwd: clonePath });
+  }
+
+  /**
+   * Checks whether the given patch content is in git mail-message format.
+   * Mail-message patches (generated by `git format-patch`) start with "From "
+   * and are applied via `git am`, which auto-commits using embedded metadata.
+   * Plain diffs start with "diff " and require explicit `git apply` + commit.
+   *
+   * @param {string} patchContent - Raw patch content
+   * @returns {boolean} true if mail-message format
+   */
+  // eslint-disable-next-line class-methods-use-this
+  #isMailFormatPatch(patchContent) {
+    return patchContent.startsWith('From ');
   }
 
   /**
@@ -357,7 +436,6 @@ export default class CloudManagerClient {
     const { bucket, key } = parseS3Path(s3PatchPath);
     const patchDir = mkdtempSync(path.join(os.tmpdir(), PATCH_FILE_PREFIX));
     const patchFile = path.join(patchDir, 'applied.patch');
-    const { gitUsername, gitUserEmail } = this.config;
 
     try {
       // Download patch from S3
@@ -367,40 +445,93 @@ export default class CloudManagerClient {
       const patchContent = await response.Body.transformToString();
       writeFileSync(patchFile, patchContent);
 
-      // Configure committer identity
-      this.#execGit(['config', 'user.name', gitUsername], { cwd: clonePath });
-      this.#execGit(['config', 'user.email', gitUserEmail], { cwd: clonePath });
-
-      // Checkout branch
-      this.#execGit(['checkout', branch], { cwd: clonePath });
-
-      // Detect format from content and apply accordingly
-      const isMailMessage = patchContent.startsWith('From ');
       const { commitMessage } = options;
+      const isMailFormat = this.#isMailFormatPatch(patchContent);
 
-      if (isMailMessage) {
-        // Mail-message format: git am creates the commit using embedded metadata
-        if (commitMessage) {
-          this.log.warn('commitMessage is ignored for mail-message patches; git am uses the embedded commit message');
-        }
-        this.#execGit(['am', patchFile], { cwd: clonePath });
-      } else {
-        // Plain diff format: apply, stage, and commit
-        if (!commitMessage) {
-          throw new Error('commitMessage is required when applying a plain diff patch');
-        }
-        this.#execGit(['apply', patchFile], { cwd: clonePath });
-        this.#execGit(['add', '-A'], { cwd: clonePath });
-        this.#execGit(['commit', '-m', commitMessage], { cwd: clonePath });
+      if (!isMailFormat && !commitMessage) {
+        throw new Error('commitMessage is required when applying a plain diff patch');
+      }
+      if (isMailFormat && commitMessage) {
+        this.log.warn('commitMessage is ignored for mail-message patches; git am uses the embedded commit message');
       }
 
+      await this.#applyChanges(clonePath, branch, () => {
+        this.#execGit([isMailFormat ? 'am' : 'apply', patchFile], { cwd: clonePath });
+      }, isMailFormat ? null : commitMessage);
       this.log.info(`Patch applied and committed on branch ${branch}`);
     } finally {
-      // Clean up temp patch directory and file
       if (existsSync(patchDir)) {
         rmSync(patchDir, { recursive: true, force: true });
       }
     }
+  }
+
+  /**
+   * Applies a patch from an in-memory string (not from S3).
+   * Use this when the patch content is already available (e.g. from suggestion data)
+   * instead of downloading from S3. Writes the content to a temp file, applies it,
+   * then cleans up.
+   * @param {string} clonePath - Path to the cloned repository
+   * @param {string} branch - Branch to apply the patch on
+   * @param {string} patchContent - The patch/diff content as a string
+   * @param {string} commitMessage - Commit message for the applied changes
+   */
+  async applyPatchContent(clonePath, branch, patchContent, commitMessage) {
+    if (!commitMessage) {
+      throw new Error('commitMessage is required for applyPatchContent');
+    }
+
+    const patchDir = mkdtempSync(path.join(os.tmpdir(), PATCH_FILE_PREFIX));
+    const patchFile = path.join(patchDir, 'applied.patch');
+
+    try {
+      writeFileSync(patchFile, patchContent);
+
+      const isMailFormat = this.#isMailFormatPatch(patchContent);
+      await this.#applyChanges(clonePath, branch, () => {
+        this.#execGit([isMailFormat ? 'am' : 'apply', patchFile], { cwd: clonePath });
+      }, isMailFormat ? null : commitMessage);
+
+      if (isMailFormat) {
+        this.log.info(`Mail-message patch applied via git am on branch ${branch} (commitMessage ignored)`);
+      } else {
+        this.log.info(`Plain diff patch applied and committed on branch ${branch}`);
+      }
+    } finally {
+      if (existsSync(patchDir)) {
+        rmSync(patchDir, { recursive: true, force: true });
+      }
+    }
+  }
+
+  /**
+   * Writes files to the clone directory and commits the changes.
+   * Use this for file-based updates (e.g. accessibility S3 assets) where the
+   * content is provided as an array of {path, content} objects rather than a diff.
+   * @param {string} clonePath - Path to the cloned repository
+   * @param {string} branch - Branch to apply the files on
+   * @param {{path: string, content: string}[]} files - Files to write (relative paths)
+   * @param {string} commitMessage - Commit message
+   */
+  async applyFiles(clonePath, branch, files, commitMessage) {
+    if (!commitMessage) {
+      throw new Error('commitMessage is required for applyFiles');
+    }
+    if (!Array.isArray(files) || files.length === 0) {
+      throw new Error('files must be a non-empty array of {path, content} objects');
+    }
+
+    await this.#applyChanges(clonePath, branch, (cwd) => {
+      for (const file of files) {
+        const filePath = path.join(cwd, file.path);
+        const dir = path.dirname(filePath);
+        if (!existsSync(dir)) {
+          mkdirSync(dir, { recursive: true });
+        }
+        writeFileSync(filePath, file.content);
+      }
+    }, commitMessage);
+    this.log.info(`${files.length} file(s) applied and committed on branch ${branch}`);
   }
 
   /**
@@ -481,15 +612,23 @@ export default class CloudManagerClient {
    */
   async unzipRepository(zipBuffer) {
     const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
-
+    // zip-lib is path-based, so we write the buffer to a temp file for extraction.
+    // zipDir is created inside the try block to avoid leaking extractPath if it fails.
+    let zipDir;
     try {
-      const zip = new AdmZip(zipBuffer);
-      zip.extractAllTo(extractPath, true);
+      zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
+      const zipFile = path.join(zipDir, 'repo.zip');
+      writeFileSync(zipFile, zipBuffer);
+      await extract(zipFile, extractPath);
+      this.#validateSymlinks(extractPath, extractPath);
       this.log.info(`Repository extracted to ${extractPath}`);
+      this.#logTmpDiskUsage('unzip');
       return extractPath;
     } catch (error) {
       rmSync(extractPath, { recursive: true, force: true });
       throw new Error(`Failed to unzip repository: ${error.message}`);
+    } finally /* c8 ignore next */ {
+      if (zipDir) rmSync(zipDir, { recursive: true, force: true });
     }
   }
 
@@ -510,6 +649,41 @@ export default class CloudManagerClient {
   }
 
   /**
+   * PR/MR path patterns per git provider.
+   * Maps CM_REPO_TYPE to the URL path template used for pull/merge requests.
+   */
+  #PR_PATH_BY_PROVIDER = Object.freeze({
+    [CM_REPO_TYPE.GITHUB]: (n) => `/pull/${n}`,
+    [CM_REPO_TYPE.GITLAB]: (n) => `/-/merge_requests/${n}`,
+  });
+
+  /**
+   * Builds the pull request URL from the external repo URL and PR number.
+   * Detects the git provider from the repo URL to use the correct path format.
+   * Returns null if the provider is not recognized.
+   *
+   * @param {string} repoUrl - External repository URL (e.g. https://github.com/owner/repo.git)
+   * @param {string} externalNumber - PR/MR number from the CM API response
+   * @returns {string|null} Full pull request URL, or null if provider is unsupported
+   */
+  #buildPullRequestUrl(repoUrl, externalNumber) {
+    let provider = null;
+    if (repoUrl.includes('github.com') || repoUrl.includes('github.')) {
+      provider = CM_REPO_TYPE.GITHUB;
+    } else if (repoUrl.includes('gitlab.com') || repoUrl.includes('gitlab.')) {
+      provider = CM_REPO_TYPE.GITLAB;
+    }
+
+    const pathBuilder = provider && this.#PR_PATH_BY_PROVIDER[provider];
+    if (!pathBuilder) {
+      return null;
+    }
+
+    const baseUrl = repoUrl.replace(/\.git$/, '');
+    return `${baseUrl}${pathBuilder(externalNumber)}`;
+  }
+
+  /**
    * Creates a pull request in a CM repository via the CM Repo REST API.
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
@@ -519,10 +693,12 @@ export default class CloudManagerClient {
    * @param {string} config.sourceBranch - Branch that contains the changes (head)
    * @param {string} config.title - PR title
    * @param {string} config.description - PR description
-   * @returns {Promise<Object>}
+   * @param {string} [config.repoUrl] - External repository URL (e.g. https://github.com/owner/repo.git)
+   *   Used to construct the pullRequestUrl from the CM API response's externalNumber.
+   * @returns {Promise<Object>} CM API response augmented with pullRequestUrl
    */
   async createPullRequest(programId, repositoryId, {
-    imsOrgId, destinationBranch, sourceBranch, title, description,
+    imsOrgId, destinationBranch, sourceBranch, title, description, repoUrl,
   }) {
     const { access_token: token } = await this.imsClient.getServiceAccessToken();
     const url = `${this.config.cmRepoUrl}/api/program/${programId}/repository/${repositoryId}/pullRequests`;
@@ -550,6 +726,16 @@ export default class CloudManagerClient {
       throw new Error(`Pull request creation failed: ${response.status} - ${errorText}`);
     }
 
-    return response.json();
+    const result = await response.json();
+
+    // Construct pullRequestUrl from external repo URL and PR number
+    if (result.externalNumber && hasText(repoUrl)) {
+      const prUrl = this.#buildPullRequestUrl(repoUrl, result.externalNumber);
+      if (prUrl) {
+        result.pullRequestUrl = prUrl;
+      }
+    }
+
+    return result;
   }
 }

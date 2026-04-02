@@ -176,6 +176,20 @@ class BaseModel {
               }
 
               return null;
+            })
+            .catch((error) => {
+              // Gracefully skip dependents whose table/column is absent from the PostgREST
+              // schema cache (e.g. when the legacy test DB pre-dates this table). All other
+              // errors are re-thrown so they still surface as removal failures.
+              const msg = error?.cause?.message || error?.message || '';
+              if (
+                msg.includes('Could not find the')
+                && (msg.includes('table') || msg.includes('column'))
+                && msg.includes('schema cache')
+              ) {
+                return null;
+              }
+              throw error;
             }),
         );
       });

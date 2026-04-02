@@ -14,5 +14,5 @@ $ npm install @adobe/spacecat-shared-http-utils
 $ npm install @adobe/spacecat-shared-utils
 ```
 
-## Usage
+## Usage 
 See the [API documentation](docs/API.md).

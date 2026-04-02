@@ -811,7 +811,7 @@ describe('Config Tests', () => {
         imports: [{
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
           pageUrl: 'https://example.com',
         }],
@@ -825,13 +825,13 @@ describe('Config Tests', () => {
         imports: [{
           type: 'unknown-type',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
         }],
       });
       expect(config.getImports()).to.deep.equal([{
         type: 'unknown-type',
         destinations: ['default'],
-        sources: ['ahrefs'],
+        sources: ['seo'],
       }]);
       expect(config.getSlackConfig()).to.be.undefined;
       expect(config.getHandlers()).to.be.undefined;
@@ -864,7 +864,7 @@ describe('Config Tests', () => {
         expect(importConfig).to.deep.equal({
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
         });
       });
@@ -930,7 +930,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -977,7 +977,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -998,13 +998,13 @@ describe('Config Tests', () => {
             {
               type: 'organic-keywords',
               destinations: ['default'],
-              sources: ['ahrefs'],
+              sources: ['seo'],
               enabled: true,
             },
             {
               type: 'organic-traffic',
               destinations: ['default'],
-              sources: ['ahrefs'],
+              sources: ['seo'],
               enabled: true,
             },
           ],
@@ -1018,13 +1018,13 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
           },
           {
             type: 'organic-traffic',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           },
         ]);
@@ -1036,7 +1036,7 @@ describe('Config Tests', () => {
         const importConfig = {
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
         };
         const config = Config({
@@ -1058,7 +1058,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -1070,7 +1070,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
           }],
         });
@@ -1120,7 +1120,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             pageUrl: 'https://example.com',
             enabled: false,
             geo: 'us',
@@ -1129,7 +1129,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-traffic',
             destinations: ['default'],
-            sources: ['ahrefs', 'google'],
+            sources: ['seo', 'google'],
             enabled: true,
           },
           {
@@ -1141,7 +1141,7 @@ describe('Config Tests', () => {
           {
             type: 'top-pages',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             geo: 'us',
             limit: 100,
@@ -1449,7 +1449,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             limit: 100,
             pageUrl: 'https://example.com',
@@ -1457,7 +1457,7 @@ describe('Config Tests', () => {
           {
             type: 'top-pages',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
             geo: 'global',
           },
@@ -1473,7 +1473,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             url: 'https://example.com',
           },
@@ -2484,6 +2484,42 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO Country Code Ignore List', () => {
+    it('creates a Config with llmo countryCodeIgnoreList property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          countryCodeIgnoreList: ['PS', 'ad'],
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(['PS', 'ad']);
+    });
+
+    it('has undefined countryCodeIgnoreList in default config', () => {
+      const config = Config();
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should return undefined for countryCodeIgnoreList if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should be able to update countryCodeIgnoreList', () => {
+      const config = Config();
+      const countryCodeIgnoreList = ['PS', 'AD'];
+      config.updateLlmoCountryCodeIgnoreList(countryCodeIgnoreList);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(countryCodeIgnoreList);
+    });
+  });
+
   describe('LLMO CDN Bucket Config', () => {
     it('creates a Config with llmo cdnBucketConfig property', () => {
       const data = {
@@ -2724,6 +2760,195 @@ describe('Config Tests', () => {
       });
       const dynamoItem = Config.toDynamoItem(data);
       expect(dynamoItem.edgeOptimizeConfig.stagingDomains).to.deep.equal(stagingDomains);
+    });
+  });
+
+  describe('onboard config', () => {
+    it('returns undefined when not set', () => {
+      const config = Config();
+      expect(config.getOnboardConfig()).to.be.undefined;
+    });
+
+    it('creates a Config with onboardConfig property', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'paid' } });
+      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid' });
+    });
+
+    it('stores lastStartTime', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'paid', lastStartTime: startTime } });
+      expect(config.getOnboardConfig().lastStartTime).to.equal(startTime);
+    });
+
+    it('updates onboard config and appends to history', () => {
+      const startTime = Date.now();
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig()).to.deep.equal({
+        lastProfile: 'paid',
+        lastStartTime: startTime,
+        history: [{ profile: 'paid', startTime }],
+      });
+    });
+
+    it('accumulates history across multiple onboardings', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000, history: [{ profile: 'demo', startTime: 1000 }] } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig()).to.deep.equal({
+        lastProfile: 'paid',
+        lastStartTime: startTime,
+        history: [{ profile: 'demo', startTime: 1000 }, { profile: 'paid', startTime }],
+      });
+    });
+
+    it('includes onboardConfig with history in toDynamoItem', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'paid', lastStartTime: startTime, history: [{ profile: 'paid', startTime }] } });
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.onboardConfig).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime, history: [{ profile: 'paid', startTime }] });
+    });
+
+    it('omits onboardConfig from toDynamoItem when not set', () => {
+      const config = Config();
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.onboardConfig).to.be.undefined;
+    });
+
+    it('stores forcedOverride when provided on creation', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo', forcedOverride: true } });
+      expect(config.getOnboardConfig().forcedOverride).to.be.true;
+    });
+
+    it('stores forcedOverride:true via updateOnboardConfig', () => {
+      const startTime = Date.now();
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'demo', lastStartTime: startTime, forcedOverride: true });
+      const result = config.getOnboardConfig();
+      expect(result.forcedOverride).to.be.true;
+      expect(result.lastProfile).to.equal('demo');
+      expect(result.lastStartTime).to.equal(startTime);
+    });
+
+    it('does not set forcedOverride when not passed to updateOnboardConfig', () => {
+      const startTime = Date.now();
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig().forcedOverride).to.be.undefined;
+    });
+
+    it('overwrites a previous forcedOverride when a clean updateOnboardConfig is applied', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000, forcedOverride: true } });
+      const newStartTime = Date.now();
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: newStartTime });
+      expect(config.getOnboardConfig().forcedOverride).to.be.undefined;
+      expect(config.getOnboardConfig().lastProfile).to.equal('paid');
+    });
+
+    it('trims history to maxHistory when the limit is exceeded', () => {
+      const existingHistory = Array.from({ length: 10 }, (_, i) => ({ profile: 'demo', startTime: i + 1 }));
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 10, history: existingHistory } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: 11 }, { maxHistory: 10 });
+      const { history } = config.getOnboardConfig();
+      expect(history).to.have.length(10);
+      expect(history[0]).to.deep.equal({ profile: 'demo', startTime: 2 });
+      expect(history[9]).to.deep.equal({ profile: 'paid', startTime: 11 });
+    });
+
+    it('does not trim history when entries are within the maxHistory limit', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000, history: [{ profile: 'demo', startTime: 1000 }] } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: 2000 }, { maxHistory: 10 });
+      expect(config.getOnboardConfig().history).to.have.length(2);
+    });
+
+    it('does not trim history when maxHistory is not provided', () => {
+      const existingHistory = Array.from({ length: 15 }, (_, i) => ({ profile: 'demo', startTime: i + 1 }));
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 15, history: existingHistory } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: 16 });
+      expect(config.getOnboardConfig().history).to.have.length(16);
+    });
+
+    it('persists forcedOverride in toDynamoItem', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: startTime, forcedOverride: true } });
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.onboardConfig.forcedOverride).to.be.true;
+    });
+  });
+
+  describe('Commerce LLMO Config', () => {
+    it('creates a Config with commerceLlmoConfig property', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            websiteCode: 'base',
+            storeCode: 'main_store',
+            storeViewCode: 'default',
+            hostName: 'example.com',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'api-key-123',
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('has undefined commerceLlmoConfig in default config', () => {
+      const config = Config();
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for commerceLlmoConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should be able to update commerceLlmoConfig', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-456',
+            websiteCode: 'base',
+          },
+        },
+      };
+      const config = Config({});
+      config.updateCommerceLlmoConfig(data.commerceLlmoConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('should be able to update commerceLlmoConfig with different values', () => {
+      const config = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+          },
+        },
+      });
+
+      const newConfig = {
+        store2: {
+          environmentId: 'env-789',
+          hostName: 'new.example.com',
+        },
+      };
+      config.updateCommerceLlmoConfig(newConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes commerceLlmoConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+          },
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.commerceLlmoConfig).to.deep.equal(data.getCommerceLlmoConfig());
     });
   });
 

@@ -38,6 +38,8 @@ import entitlements from './entitlements.fixture.js';
 import trialUsers from './trial-users.fixture.js';
 import trialUserActivities from './trial-user-activities.fixture.js';
 import siteEnrollments from './site-enrollments.fixture.js';
+import siteImsOrgAccesses from './site-ims-org-accesses.fixture.js';
+import accessGrantLogs from './access-grant-logs.fixture.js';
 import pageCitabilities from './page-citabilities.fixture.js';
 import sentimentTopics from './sentiment-topics.fixture.js';
 import sentimentGuidelines from './sentiment-guidelines.fixture.js';
@@ -71,6 +73,8 @@ export default {
   trialUsers,
   trialUserActivities,
   siteEnrollments,
+  siteImsOrgAccesses,
+  accessGrantLogs,
   pageCitabilities,
   sentimentTopics,
   sentimentGuidelines,

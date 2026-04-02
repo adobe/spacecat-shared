@@ -90,7 +90,7 @@ describe('SiteTopPageCollection', () => {
 
     it('remove all SiteTopPages for a given siteId, source and geo', async () => {
       const siteId = 'site12345';
-      const source = 'ahrefs';
+      const source = 'seo';
       const geo = 'global';
 
       instance.allBySiteIdAndSourceAndGeo = stub().resolves([model]);

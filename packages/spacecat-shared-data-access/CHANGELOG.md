@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.43.0...@adobe/spacecat-shared-data-access-v3.44.0) (2026-04-02)
+
+### Features
+
+* add ContactSalesLead entity (SITES-42069) ([#1475](https://github.com/adobe/spacecat-shared/issues/1475)) ([d245781](https://github.com/adobe/spacecat-shared/commit/d2457810e7a01900b2da70b0f81f031f95acdffa))
+
 ## [@adobe/spacecat-shared-data-access-v3.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.42.0...@adobe/spacecat-shared-data-access-v3.43.0) (2026-04-02)
 
 ### Features

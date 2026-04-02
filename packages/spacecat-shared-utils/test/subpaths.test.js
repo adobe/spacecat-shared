@@ -11,6 +11,9 @@
  */
 
 import { expect } from 'chai';
+import { readFileSync, existsSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 import * as main from '../src/index.js';
 import * as core from '../src/core.js';
@@ -55,6 +58,24 @@ const EXPECTED_SCHEMAS_EXPORTS = [
 const EXPECTED_CONSTANTS_EXPORTS = [
   'DEFAULT_CPC_VALUE', 'OPPORTUNITY_TYPES',
 ];
+
+const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const pkg = JSON.parse(readFileSync(resolve(pkgDir, 'package.json'), 'utf8'));
+
+describe('exports map resolution', () => {
+  for (const [subpath, conditions] of Object.entries(pkg.exports)) {
+    const targets = typeof conditions === 'string' ? { default: conditions } : conditions;
+    for (const [condition, filePath] of Object.entries(targets)) {
+      it(`${subpath} (${condition}) resolves to an existing file`, () => {
+        const fullPath = resolve(pkgDir, filePath);
+        expect(existsSync(fullPath)).to.equal(
+          true,
+          `exports["${subpath}"]["${condition}"] points to "${filePath}" which does not exist.`,
+        );
+      });
+    }
+  }
+});
 
 describe('sub-path barrel shape checks', () => {
   it('core exports exactly the expected list', () => {

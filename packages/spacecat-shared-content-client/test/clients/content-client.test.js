@@ -24,11 +24,7 @@ import { resolveCustomerSecretsName } from '@adobe/spacecat-shared-utils';
 use(chaiAsPromised);
 use(sinonChai);
 
-describe('ContentClient', function () {
-  // These constructor flows can exceed Mocha's default 2s limit on slower runners.
-  // Keep the timeout local to this suite.
-  this.timeout(5000);
-
+describe('ContentClient', () => {
   let sandbox;
   let env;
   let context;

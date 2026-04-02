@@ -37,7 +37,6 @@ function checkContactSalesLead(lead) {
 
 describe('ContactSalesLead IT', async () => {
   const { organizationId } = fixtures.organizations[0];
-  const { siteId } = fixtures.sites[0];
   let sampleData;
   let ContactSalesLead;
 
@@ -113,7 +112,7 @@ describe('ContactSalesLead IT', async () => {
   it('adds a new lead with all fields', async () => {
     const data = {
       organizationId,
-      siteId,
+      siteId: '56a691db-d32e-4308-ac99-a21de0580557',
       name: 'Alice Johnson',
       email: 'alice@example.com',
       domain: 'example.com',

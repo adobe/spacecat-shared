@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import Opportunity from './opportunity.model.js';
@@ -66,6 +66,10 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addAttribute('tags', {
     type: 'set',
     items: 'string',
+  })
+  .addAttribute('lastAuditedAt', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
   });
 
 export default schema.build();

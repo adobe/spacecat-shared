@@ -1,3 +1,51 @@
+## [@adobe/spacecat-shared-data-access-v3.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.40.0...@adobe/spacecat-shared-data-access-v3.41.0) (2026-04-01)
+
+### Features
+
+* add lastAuditedAt attribute to Opportunity schema ([#1479](https://github.com/adobe/spacecat-shared/issues/1479)) ([ee92ba9](https://github.com/adobe/spacecat-shared/commit/ee92ba9218016b8f7918358aa67db219287704dd))
+
+## [@adobe/spacecat-shared-data-access-v3.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.39.0...@adobe/spacecat-shared-data-access-v3.40.0) (2026-04-01)
+
+### Features
+
+* add auto-fix audit type for commerce product catalog enrichement ([#1495](https://github.com/adobe/spacecat-shared/issues/1495)) ([088759d](https://github.com/adobe/spacecat-shared/commit/088759d037309d39a9483ccb80479bca2fe6e9a9))
+
+## [@adobe/spacecat-shared-data-access-v3.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.38.0...@adobe/spacecat-shared-data-access-v3.39.0) (2026-04-01)
+
+### Features
+
+* **audit:** add new constant for auto-fix enrichments ([#1494](https://github.com/adobe/spacecat-shared/issues/1494)) ([a76fa8f](https://github.com/adobe/spacecat-shared/commit/a76fa8f1708bee20a9e2e6dafcdd0a84d147294e))
+
+## [@adobe/spacecat-shared-data-access-v3.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.37.0...@adobe/spacecat-shared-data-access-v3.38.0) (2026-04-01)
+
+### Features
+
+* rename ahrefs to seo in dependency mapping and test fixtures ([#1492](https://github.com/adobe/spacecat-shared/issues/1492)) ([40aa319](https://github.com/adobe/spacecat-shared/commit/40aa319d78fc1aa8ba96f83002b45eb2dbde570c))
+
+## [@adobe/spacecat-shared-data-access-v3.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.36.1...@adobe/spacecat-shared-data-access-v3.37.0) (2026-04-01)
+
+### Features
+
+* experimentation engine ([#1446](https://github.com/adobe/spacecat-shared/issues/1446)) ([44bff63](https://github.com/adobe/spacecat-shared/commit/44bff6350c18db58d8fbffde8de05074269ec969))
+
+## [@adobe/spacecat-shared-data-access-v3.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.36.0...@adobe/spacecat-shared-data-access-v3.36.1) (2026-04-01)
+
+### Bug Fixes
+
+* add isCodeChangeAvailable and patchContent to form accessibility schema ([#1373](https://github.com/adobe/spacecat-shared/issues/1373)) ([065bf56](https://github.com/adobe/spacecat-shared/commit/065bf561ba83f13d4c377f5ab4d7441ec0c15360))
+
+## [@adobe/spacecat-shared-data-access-v3.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.35.0...@adobe/spacecat-shared-data-access-v3.36.0) (2026-04-01)
+
+### Features
+
+* add PLG tier to entitlement model and bump mysticat types  ([#1487](https://github.com/adobe/spacecat-shared/issues/1487)) ([7f9c6fc](https://github.com/adobe/spacecat-shared/commit/7f9c6fcb6d3672269081176ebf643151fb512e99))
+
+## [@adobe/spacecat-shared-data-access-v3.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.34.0...@adobe/spacecat-shared-data-access-v3.35.0) (2026-03-31)
+
+### Features
+
+* redirectsQueued step renamed ([#1489](https://github.com/adobe/spacecat-shared/issues/1489)) ([d4eb54f](https://github.com/adobe/spacecat-shared/commit/d4eb54ff4c7636b904f41881cbb0c0ef6a2a3da4))
+
 ## [@adobe/spacecat-shared-data-access-v3.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.33.1...@adobe/spacecat-shared-data-access-v3.34.0) (2026-03-31)
 
 ### Features

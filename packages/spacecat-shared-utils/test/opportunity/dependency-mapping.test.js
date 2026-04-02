@@ -23,12 +23,12 @@ import {
 describe('dependency-mapping', () => {
   describe('DEPENDENCY_SOURCES', () => {
     it('defines all expected source keys', () => {
-      expect(DEPENDENCY_SOURCES).to.include.keys('RUM', 'AHREFS_IMPORT', 'GSC', 'SCRAPING', 'EXTERNAL_API', 'CRUX', 'PSI');
+      expect(DEPENDENCY_SOURCES).to.include.keys('RUM', 'SEO_IMPORT', 'GSC', 'SCRAPING', 'EXTERNAL_API', 'CRUX', 'PSI');
     });
 
     it('has correct string values', () => {
       expect(DEPENDENCY_SOURCES.RUM).to.equal('RUM');
-      expect(DEPENDENCY_SOURCES.AHREFS_IMPORT).to.equal('AHREFSImport');
+      expect(DEPENDENCY_SOURCES.SEO_IMPORT).to.equal('SEOImport');
       expect(DEPENDENCY_SOURCES.GSC).to.equal('GSC');
       expect(DEPENDENCY_SOURCES.SCRAPING).to.equal('scraping');
       expect(DEPENDENCY_SOURCES.EXTERNAL_API).to.equal('ExternalAPI');
@@ -51,9 +51,9 @@ describe('dependency-mapping', () => {
       ]);
     });
 
-    it('maps broken-backlinks to AHREFS_IMPORT and SCRAPING', () => {
+    it('maps broken-backlinks to SEO_IMPORT and SCRAPING', () => {
       expect(OPPORTUNITY_DEPENDENCY_MAP['broken-backlinks']).to.deep.equal([
-        DEPENDENCY_SOURCES.AHREFS_IMPORT,
+        DEPENDENCY_SOURCES.SEO_IMPORT,
         DEPENDENCY_SOURCES.SCRAPING,
       ]);
     });
@@ -91,11 +91,17 @@ describe('dependency-mapping', () => {
       expect(opps).to.include('high-organic-low-ctr');
     });
 
+    it('returns opportunities that depend on scraping', () => {
+      const opps = getOpportunitiesForSource(DEPENDENCY_SOURCES.SCRAPING);
+      expect(opps).to.include('info-gain');
+    });
+
     it('returns opportunities that depend on EXTERNAL_API', () => {
       const opps = getOpportunitiesForSource(DEPENDENCY_SOURCES.EXTERNAL_API);
       expect(opps).to.include('wikipedia-analysis');
       expect(opps).to.include('reddit-analysis');
       expect(opps).to.include('youtube-analysis');
+      expect(opps).to.include('info-gain');
     });
 
     it('returns empty array for unknown source', () => {

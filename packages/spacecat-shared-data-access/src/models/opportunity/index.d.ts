@@ -31,12 +31,14 @@ export interface Opportunity extends BaseModel {
   getSuggestions(): Promise<Suggestion[]>;
   getSuggestionsByStatus(status: string): Promise<Suggestion[]>;
   getSuggestionsByStatusAndRank(status: string, rank: string): Promise<Suggestion[]>;
+  getLastAuditedAt(): string;
   getTags(): string[];
   getTitle(): string;
   getType(): string;
   setAuditId(auditId: string): Opportunity;
   setData(data: object): Opportunity;
   setDescription(description: string): Opportunity;
+  setLastAuditedAt(lastAuditedAt: string): Opportunity;
   setGuidance(guidance: string): Opportunity;
   setOrigin(origin: string): Opportunity;
   setRunbook(runbook: string): Opportunity;

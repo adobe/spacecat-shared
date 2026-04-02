@@ -58,5 +58,12 @@ export default defineConfig([
       'no-console': 'off',
       'func-names': 'off',
     }
+  },
+  {
+    files: ['packages/**/scripts/**/*.js'],
+    rules: {
+      'no-console': 'off',
+      'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+    },
   }
 ]);

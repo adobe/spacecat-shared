@@ -214,7 +214,7 @@ To remove `node_modules` and `package-lock.json`:
 npm run clean
 ```
 
-## Additional Information
+## Additional Informations
 
 - **Repository**: [GitHub](https://github.com/adobe/spacecat-shared.git)
 - **Issue Tracking**: [GitHub Issues](https://github.com/adobe/spacecat-shared/issues)

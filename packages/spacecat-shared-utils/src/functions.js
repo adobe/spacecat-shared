@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import isEmail from 'validator/lib/isEmail.js';
-
 // Precompile regular expressions
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
@@ -263,15 +261,6 @@ function isValidIMSOrgId(imsOrgId) {
 }
 
 /**
- * Validates whether the given string is a valid email address.
- * @param {string} email - The string to validate.
- * @returns {boolean} True if the given string is a valid email address, false otherwise.
- */
-function isValidEmail(email) {
-  return typeof email === 'string' && isEmail(email);
-}
-
-/**
  * Validates whether the given string is a valid Helix preview URL.
  * Preview URLs have the format: https://ref--site--owner.domain
  * where domain is typically .hlx.page, .aem.page, .hlx.live, etc.
@@ -333,7 +322,6 @@ export {
   isObject,
   isString,
   isValidDate,
-  isValidEmail,
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,

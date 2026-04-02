@@ -467,6 +467,70 @@ describe('TierClient', () => {
 
       await expect(tierClient.createEntitlement('FREE_TRIAL')).to.be.rejectedWith('Database error');
     });
+
+    it('should create entitlement with PLG tier when nothing exists', async () => {
+      const mockPlgEntitlement = { ...mockEntitlement, getTier: () => 'PLG' };
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockPlgEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      const result = await tierClient.createEntitlement('PLG');
+
+      expect(result).to.deep.equal({
+        entitlement: mockPlgEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+      expect(mockDataAccess.Entitlement.create).to.have.been.calledWith({
+        organizationId: orgId,
+        productCode,
+        tier: 'PLG',
+        quotas: { llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 },
+      });
+    });
+
+    it('should upgrade PLG entitlement to FREE_TRIAL (PLG is not PAID, so tier updates)', async () => {
+      const mockPlgEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'PLG',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockPlgEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      const result = await tierClient.createEntitlement('FREE_TRIAL');
+
+      expect(mockPlgEntitlement.setTier).to.have.been.calledWith('FREE_TRIAL');
+      expect(mockPlgEntitlement.save).to.have.been.called;
+      expect(result).to.deep.equal({
+        entitlement: mockPlgEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+    });
+
+    it('should upgrade PLG entitlement to PAID (PLG is not PAID, so tier updates)', async () => {
+      const mockPlgEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'PLG',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockPlgEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      const result = await tierClient.createEntitlement('PAID');
+
+      expect(mockPlgEntitlement.setTier).to.have.been.calledWith('PAID');
+      expect(mockPlgEntitlement.save).to.have.been.called;
+      expect(result).to.deep.equal({
+        entitlement: mockPlgEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+    });
   });
 
   describe('Edge Cases', () => {
@@ -601,6 +665,22 @@ describe('TierClient', () => {
 
       await expect(tierClient.revokeEntitlement()).to.be.rejectedWith('Paid entitlement cannot be revoked');
       expect(mockPaidEntitlement.remove).to.not.have.been.called;
+    });
+
+    it('should successfully revoke PLG-tier entitlement (PLG is not PAID, revoke is allowed)', async () => {
+      const mockPlgEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'PLG',
+        remove: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockPlgEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await tierClient.revokeEntitlement();
+
+      expect(mockPlgEntitlement.remove.calledOnce).to.be.true;
     });
 
     it('should throw error when entitlement does not exist', async () => {

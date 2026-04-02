@@ -91,6 +91,9 @@ class Audit extends BaseModel {
     COMMERCE_PRODUCT_ENRICHMENTS_YEARLY: 'commerce-product-enrichments-yearly',
     COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',
     COMMERCE_PRODUCT_CATALOG_ENRICHMENT: 'commerce-product-catalog-enrichment',
+    COMMERCE_PRODUCT_ENRICHMENTS_AUTO_FIX: 'commerce-product-enrichments-auto-fix',
+    COMMERCE_PRODUCT_CATALOG_ENRICHMENT_AUTO_FIX: 'commerce-product-catalog-enrichment-auto-fix',
+    CWV_TRENDS_AUDIT: 'cwv-trends-audit',
     OFFSITE_BRAND_PRESENCE: 'offsite-brand-presence',
   };
 

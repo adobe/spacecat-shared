@@ -455,9 +455,9 @@ describe('ConfigurationModel', () => {
       expect(() => instance.registerAudit(null, true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must be a non-empty string');
     });
 
-    it('throws error when audit name exceeds 37 characters', () => {
-      const longAuditType = 'this-is-a-very-long-audit-name-that-exceeds-37-characters';
-      expect(() => instance.registerAudit(longAuditType, true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must not exceed 37 characters');
+    it('throws error when audit name exceeds 50 characters', () => {
+      const longAuditType = 'this-is-a-very-long-audit-name-that-exceeds-50-characters';
+      expect(() => instance.registerAudit(longAuditType, true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must not exceed 50 characters');
     });
 
     it('throws error for invalid audit name format', () => {

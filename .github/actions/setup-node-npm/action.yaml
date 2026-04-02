@@ -1,6 +1,12 @@
 name: "Setup Node & NPM (with cache)"
 description: "Checks out code, sets up Node, uses NPM cache, installs dependencies"
 
+inputs:
+  github_token:
+    description: "GitHub token for git operations on the current repo"
+    required: false
+    default: ""
+
 runs:
   using: "composite"
   steps:
@@ -27,11 +33,16 @@ runs:
       run: npm install -g npm@10.9.4
       shell: bash
 
-    - name: Configure Git auth for private Mysticat types repo
+    - name: Configure Git auth for private repos
       run: |
-        git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "https://github.com/"
-        git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
-        git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "git@github.com:"
+        if [ -n "${{ inputs.github_token }}" ]; then
+          git config --global url."https://x-access-token:${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
+          git config --global --add url."https://x-access-token:${{ inputs.github_token }}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://x-access-token:${{ inputs.github_token }}@github.com/".insteadOf "git@github.com:"
+        fi
+        git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "https://github.com/adobe/mysticat-data-service"
+        git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "ssh://git@github.com/adobe/mysticat-data-service"
+        git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "git@github.com:adobe/mysticat-data-service"
       shell: bash
 
     - name: Install dependencies (only if cache miss)

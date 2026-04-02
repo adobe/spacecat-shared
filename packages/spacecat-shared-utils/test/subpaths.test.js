@@ -12,6 +12,7 @@
 
 import { expect } from 'chai';
 
+import * as main from '../src/index.js';
 import * as core from '../src/core.js';
 import * as aws from '../src/aws.js';
 import * as locale from '../src/locale.js';
@@ -96,5 +97,22 @@ describe('sub-path barrel shape checks', () => {
       [...EXPECTED_CONSTANTS_EXPORTS].sort(),
       'Constants exports changed. Update EXPECTED_CONSTANTS_EXPORTS in test/subpaths.test.js.',
     );
+  });
+
+  it('main entry exports a superset of all sub-path exports', () => {
+    const mainExports = new Set(Object.keys(main));
+    const subpathModules = {
+      core, aws, locale, calendar, schemas, constants,
+    };
+
+    for (const [name, mod] of Object.entries(subpathModules)) {
+      for (const key of Object.keys(mod)) {
+        expect(mainExports.has(key)).to.equal(
+          true,
+          `Main entry is missing '${key}' which is exported by the '${name}' sub-path. `
+          + 'Add it to src/index.js to preserve backward compatibility.',
+        );
+      }
+    }
   });
 });

@@ -15,6 +15,7 @@
  *   - src/core.js      → zero external deps
  *   - src/constants.js → zero external deps
  *   - src/schemas.js   → only 'zod' allowed
+ *   - src/calendar.js  → only 'date-fns' allowed
  *
  * Run automatically via the `pretest` npm hook before every `npm test` invocation.
  * Exit code 1 = violation found; exit code 0 = all checks passed.
@@ -24,13 +25,14 @@ const CHECKS = [
   { entry: 'src/core.js', allowlist: [] },
   { entry: 'src/constants.js', allowlist: [] },
   { entry: 'src/schemas.js', allowlist: ['zod'] },
+  { entry: 'src/calendar.js', allowlist: ['date-fns'] },
 ];
 
 let esbuild;
 try {
   esbuild = await import('esbuild');
 } catch {
-  if (process.env.SKIP_DEP_CHECK === '1') {
+  if (process.env.SKIP_DEP_CHECK === '1' && !process.env.CI) {
     console.warn('WARN: esbuild not installed, dep check skipped (SKIP_DEP_CHECK=1).');
     process.exit(0);
   }

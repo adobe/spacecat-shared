@@ -42,7 +42,7 @@ export const IMPORT_DESTINATIONS = {
 };
 
 export const IMPORT_SOURCES = {
-  AHREFS: 'ahrefs',
+  SEO: 'seo',
   GSC: 'google',
   RUM: 'rum',
 };
@@ -186,37 +186,37 @@ export const DEFAULT_IMPORT_CONFIGS = {
   'organic-keywords': {
     type: 'organic-keywords',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-nonbranded': {
     type: 'organic-keywords-nonbranded',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-ai-overview': {
     type: 'organic-keywords-ai-overview',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-feature-snippets': {
     type: 'organic-keywords-feature-snippets',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-questions': {
     type: 'organic-keywords-questions',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-traffic': {
     type: 'organic-traffic',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'all-traffic': {
@@ -228,14 +228,14 @@ export const DEFAULT_IMPORT_CONFIGS = {
   'top-pages': {
     type: 'top-pages',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
     geo: 'global',
   },
   'ahref-paid-pages': {
     type: 'ahref-paid-pages',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'cwv-daily': {

@@ -3022,4 +3022,198 @@ describe('Config Tests', () => {
       expect(llmoConfig).to.be.undefined;
     });
   });
+
+  describe('Audit Target URLs', () => {
+    it('returns empty array by default', () => {
+      const config = Config();
+      expect(config.getAuditTargetURLs()).to.deep.equal([]);
+    });
+
+    it('creates config with grouped auditTargetURLs', () => {
+      const config = Config({
+        auditTargetURLs: {
+          manual: [{ url: 'https://example.com/page1' }, { url: 'https://example.com/page2' }],
+        },
+      });
+      const result = config.getAuditTargetURLs();
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].url).to.equal('https://example.com/page1');
+      expect(result[0].source).to.equal('manual');
+      expect(result[1].url).to.equal('https://example.com/page2');
+      expect(result[1].source).to.equal('manual');
+    });
+
+    describe('getAuditTargetURLsBySource', () => {
+      it('returns URLs for a specific source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/m1' }, { url: 'https://example.com/m2' }],
+          },
+        });
+        const manual = config.getAuditTargetURLsBySource('manual');
+        expect(manual).to.have.lengthOf(2);
+        expect(manual[0].url).to.equal('https://example.com/m1');
+        expect(manual[1].url).to.equal('https://example.com/m2');
+      });
+
+      it('returns empty array for source with no entries', () => {
+        const config = Config();
+        expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([]);
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.getAuditTargetURLsBySource('invalid')).to.throw('Invalid audit target source');
+      });
+    });
+
+    describe('updateAuditTargetURLs', () => {
+      it('replaces URLs for a specific source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://old.com' }],
+          },
+        });
+        config.updateAuditTargetURLs('manual', [
+          { url: 'https://new1.com' },
+          { url: 'https://new2.com' },
+        ]);
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(2);
+      });
+
+      it('rejects invalid URLs', () => {
+        const config = Config();
+        expect(() => config.updateAuditTargetURLs('manual', [{ url: 'not-a-url' }])).to.throw();
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.updateAuditTargetURLs('invalid', [{ url: 'https://example.com' }])).to.throw('Invalid audit target source');
+      });
+
+      it('accepts empty array', () => {
+        const config = Config({
+          auditTargetURLs: { manual: [{ url: 'https://example.com' }] },
+        });
+        config.updateAuditTargetURLs('manual', []);
+        expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([]);
+      });
+    });
+
+    describe('addAuditTargetURL', () => {
+      it('appends a new URL to the specified source', () => {
+        const config = Config();
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page2' });
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(2);
+        expect(config.getAuditTargetURLsBySource('manual')[1].url).to.equal('https://example.com/page2');
+      });
+
+      it('deduplicates within the source', () => {
+        const config = Config();
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
+        expect(config.getAuditTargetURLs()).to.have.lengthOf(1);
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
+      });
+
+      it('rejects invalid URL', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('manual', { url: 'bad-url' })).to.throw();
+      });
+
+      it('rejects missing url field', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('manual', {})).to.throw();
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('invalid', { url: 'https://example.com' })).to.throw('Invalid audit target source');
+      });
+    });
+
+    describe('removeAuditTargetURL', () => {
+      it('removes by url string from the specified source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }, { url: 'https://example.com/page2' }],
+          },
+        });
+        config.removeAuditTargetURL('manual', 'https://example.com/page2');
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
+        expect(config.getAuditTargetURLsBySource('manual')[0].url).to.equal('https://example.com/page1');
+      });
+
+      it('does nothing for non-existent url', () => {
+        const config = Config({
+          auditTargetURLs: { manual: [{ url: 'https://example.com' }] },
+        });
+        config.removeAuditTargetURL('manual', 'https://does-not-exist.com');
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
+      });
+
+      it('does nothing when auditTargetURLs is not set', () => {
+        const config = Config();
+        config.removeAuditTargetURL('manual', 'https://example.com');
+        expect(config.getAuditTargetURLs()).to.deep.equal([]);
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.removeAuditTargetURL('invalid', 'https://example.com')).to.throw('Invalid audit target source');
+      });
+    });
+
+    describe('serialization', () => {
+      it('includes auditTargetURLs in toDynamoItem conversion', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        expect(item.auditTargetURLs).to.deep.equal({
+          manual: [{ url: 'https://example.com/page1' }],
+        });
+      });
+
+      it('round-trips through toDynamoItem and fromDynamoItem', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [
+              { url: 'https://example.com/page1' },
+              { url: 'https://example.com/page2' },
+            ],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        const restored = Config.fromDynamoItem(item);
+        expect(restored.getAuditTargetURLs()).to.deep.equal(config.getAuditTargetURLs());
+      });
+    });
+
+    describe('field validation', () => {
+      it('rejects extra fields', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('manual', {
+          url: 'https://example.com',
+          label: 'not-allowed',
+        })).to.throw();
+      });
+
+      it('strips unknown source keys from auditTargetURLs', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }],
+            unknown: [{ url: 'https://example.com/page2' }],
+          },
+        });
+        const result = config.getAuditTargetURLs();
+        expect(result).to.have.lengthOf(1);
+        expect(result[0].url).to.equal('https://example.com/page1');
+        expect(result[0].source).to.equal('manual');
+      });
+    });
+  });
 });

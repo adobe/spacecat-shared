@@ -187,7 +187,7 @@ describe('compression-wrapper', () => {
     let mockContext;
 
     beforeEach(() => {
-      mockContext = { log: { info: sinon.stub(), error: sinon.stub() } };
+      mockContext = { log: { debug: sinon.stub(), info: sinon.stub(), error: sinon.stub() } };
     });
 
     afterEach(() => {
@@ -419,8 +419,8 @@ describe('compression-wrapper', () => {
       const wrapped = compressResponse(handler);
 
       await wrapped(createMockRequest('gzip'), mockContext);
-      expect(mockContext.log.info.calledOnce).to.be.true;
-      expect(mockContext.log.info.firstCall.args[0]).to.match(/\[compression\]/);
+      expect(mockContext.log.debug.calledOnce).to.be.true;
+      expect(mockContext.log.debug.firstCall.args[0]).to.match(/\[compression\]/);
     });
 
     it('respects custom minSize option', async () => {
@@ -469,7 +469,7 @@ describe('compression-wrapper', () => {
       const innerResponse = createJsonResponse(body);
       const handler = sinon.stub().resolves(innerResponse);
       const wrapped = compressResponse(handler);
-      const consoleStub = sinon.stub(console, 'info');
+      const consoleStub = sinon.stub(console, 'debug');
 
       await wrapped(createMockRequest('gzip'), {});
 

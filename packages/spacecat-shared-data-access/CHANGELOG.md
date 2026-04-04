@@ -1,3 +1,10 @@
+## [@adobe/spacecat-shared-data-access-v3.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.44.0...@adobe/spacecat-shared-data-access-v3.45.0) (2026-04-04)
+
+### Features
+
+* Manage a custom list of audit target URLs ([#1484](https://github.com/adobe/spacecat-shared/issues/1484)) ([06c54d8](https://github.com/adobe/spacecat-shared/commit/06c54d89ea2488f6951cc96b9458521ac9d26706))
+* update suggestion data schemas for some of the opportunities ([#1466](https://github.com/adobe/spacecat-shared/issues/1466)) ([a09e968](https://github.com/adobe/spacecat-shared/commit/a09e968bba9235813451b65defe7d133a8956711))
+
 ## [@adobe/spacecat-shared-data-access-v3.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.43.0...@adobe/spacecat-shared-data-access-v3.44.0) (2026-04-02)
 
 ### Features

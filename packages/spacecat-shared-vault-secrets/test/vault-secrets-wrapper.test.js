@@ -85,7 +85,9 @@ function makeContext(overrides = {}) {
       version: '4.2.1',
     },
     env: {},
-    log: { info: sinon.stub(), warn: sinon.stub(), error: sinon.stub() },
+    log: {
+      debug: sinon.stub(), info: sinon.stub(), warn: sinon.stub(), error: sinon.stub(),
+    },
     ...overrides,
   };
 }

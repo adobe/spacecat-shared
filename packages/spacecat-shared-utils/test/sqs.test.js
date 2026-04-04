@@ -112,7 +112,7 @@ describe('SQS', () => {
       const messageId = 'message-id';
       const message = { key: 'value' };
       const queueUrl = 'queue-url';
-      const logSpy = sandbox.spy(context.log, 'info');
+      const logSpy = sandbox.spy(context.log, 'debug');
 
       nock('https://sqs.us-east-1.amazonaws.com')
         .post('/')
@@ -132,7 +132,7 @@ describe('SQS', () => {
 
       const queueName = queueUrl;
       expect(logSpy).to.have.been.calledWith(
-        sinon.match(new RegExp(`Success, message sent\\. Queue: ${queueName}, Type: unknown, MessageID: ${messageId}`)),
+        sinon.match(new RegExp(`Message sent\\. Queue: ${queueName}, Type: unknown, MessageID: ${messageId}`)),
       );
     });
   });

@@ -11,13 +11,13 @@
  */
 
 import ImsClient from './clients/ims-client.js';
-import ImsServiceClient from './clients/ims-service-client.js';
+import ImsEdgeClient from './clients/ims-edge-client.js';
 import ImsPromiseClient from './clients/ims-promise-client.js';
 import { imsClientWrapper } from './clients/ims-client-wrapper.js';
 
 export {
   ImsClient,
-  ImsServiceClient,
+  ImsEdgeClient,
   ImsPromiseClient,
   imsClientWrapper,
 };

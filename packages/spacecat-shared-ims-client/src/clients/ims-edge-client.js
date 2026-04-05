@@ -28,14 +28,14 @@ import {
  * - Retrieving org-scoped Service Principal tokens (SP binding flow)
  * - Looking up IMS org group membership without a user token
  */
-export default class ImsServiceClient extends ImsBaseClient {
+export default class ImsEdgeClient extends ImsBaseClient {
   /**
-   * Creates an ImsServiceClient from a context object.
+   * Creates an ImsEdgeClient from a context object.
    * Reads IMS_HOST, IMS_EDGE_CLIENT_ID, IMS_EDGE_CLIENT_SECRET, and optionally
    * IMS_EDGE_SCOPE from context.env.
    *
    * @param {Object} context - The context object containing env and log.
-   * @returns {ImsServiceClient}
+   * @returns {ImsEdgeClient}
    */
   static createFrom(context) {
     const { log = console } = context;
@@ -50,7 +50,7 @@ export default class ImsServiceClient extends ImsBaseClient {
       throw new Error('Context env must include IMS_HOST, IMS_EDGE_CLIENT_ID, and IMS_EDGE_CLIENT_SECRET.');
     }
 
-    return new ImsServiceClient({
+    return new ImsEdgeClient({
       imsHost,
       clientId,
       clientSecret,

@@ -17,7 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import sinon from 'sinon';
 
-import ImsServiceClient from '../../src/clients/ims-service-client.js';
+import ImsEdgeClient from '../../src/clients/ims-edge-client.js';
 
 import {
   GROUP_1_ID,
@@ -30,7 +30,7 @@ import {
 
 use(chaiAsPromised);
 
-describe('ImsServiceClient', () => {
+describe('ImsEdgeClient', () => {
   const DUMMY_HOST = 'ims.example.com';
   const SERVICE_CONTEXT = {
     env: {
@@ -60,28 +60,28 @@ describe('ImsServiceClient', () => {
 
   describe('createFrom', () => {
     it('throws when IMS_EDGE_CLIENT_ID is missing', () => {
-      expect(() => ImsServiceClient.createFrom({
+      expect(() => ImsEdgeClient.createFrom({
         env: { IMS_HOST: DUMMY_HOST, IMS_EDGE_CLIENT_SECRET: 'secret' },
         log: console,
       })).to.throw('Context env must include IMS_HOST, IMS_EDGE_CLIENT_ID, and IMS_EDGE_CLIENT_SECRET.');
     });
 
     it('throws when IMS_EDGE_CLIENT_SECRET is missing', () => {
-      expect(() => ImsServiceClient.createFrom({
+      expect(() => ImsEdgeClient.createFrom({
         env: { IMS_HOST: DUMMY_HOST, IMS_EDGE_CLIENT_ID: 'edge-client-id' },
         log: console,
       })).to.throw('Context env must include IMS_HOST, IMS_EDGE_CLIENT_ID, and IMS_EDGE_CLIENT_SECRET.');
     });
 
     it('throws when IMS_HOST is missing', () => {
-      expect(() => ImsServiceClient.createFrom({
+      expect(() => ImsEdgeClient.createFrom({
         env: { IMS_EDGE_CLIENT_ID: 'edge-client-id', IMS_EDGE_CLIENT_SECRET: 'secret' },
         log: console,
       })).to.throw('Context env must include IMS_HOST, IMS_EDGE_CLIENT_ID, and IMS_EDGE_CLIENT_SECRET.');
     });
 
     it('creates client with default scope when IMS_EDGE_SCOPE is not set', () => {
-      const client = ImsServiceClient.createFrom({
+      const client = ImsEdgeClient.createFrom({
         env: {
           IMS_HOST: DUMMY_HOST,
           IMS_EDGE_CLIENT_ID: 'edge-client-id',
@@ -89,12 +89,12 @@ describe('ImsServiceClient', () => {
         },
         log: console,
       });
-      expect(client).to.be.instanceOf(ImsServiceClient);
+      expect(client).to.be.instanceOf(ImsEdgeClient);
       expect(client.config.scope).to.equal('openid,AdobeID,additional_info.projectedProductContext');
     });
 
     it('creates client with explicit scope when IMS_EDGE_SCOPE is set', () => {
-      const client = ImsServiceClient.createFrom({
+      const client = ImsEdgeClient.createFrom({
         env: {
           IMS_HOST: DUMMY_HOST,
           IMS_EDGE_CLIENT_ID: 'edge-client-id',
@@ -111,7 +111,7 @@ describe('ImsServiceClient', () => {
     let client;
 
     beforeEach(() => {
-      client = ImsServiceClient.createFrom(SERVICE_CONTEXT);
+      client = ImsEdgeClient.createFrom(SERVICE_CONTEXT);
     });
 
     it('fetches and caches a service token', async () => {
@@ -144,7 +144,7 @@ describe('ImsServiceClient', () => {
     let client;
 
     beforeEach(() => {
-      client = ImsServiceClient.createFrom(SERVICE_CONTEXT);
+      client = ImsEdgeClient.createFrom(SERVICE_CONTEXT);
     });
 
     it('throws when imsOrgId is missing', async () => {
@@ -195,7 +195,7 @@ describe('ImsServiceClient', () => {
     let client;
 
     beforeEach(() => {
-      client = ImsServiceClient.createFrom(SERVICE_CONTEXT);
+      client = ImsEdgeClient.createFrom(SERVICE_CONTEXT);
       client.retryBaseDelayMs = 0;
     });
 
@@ -241,7 +241,7 @@ describe('ImsServiceClient', () => {
     let client;
 
     beforeEach(() => {
-      client = ImsServiceClient.createFrom(SERVICE_CONTEXT);
+      client = ImsEdgeClient.createFrom(SERVICE_CONTEXT);
     });
 
     it('throws when required params are missing', async () => {

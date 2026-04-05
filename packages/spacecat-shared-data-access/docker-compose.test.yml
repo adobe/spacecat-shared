@@ -3,7 +3,7 @@ name: spacecat-data-access-test
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: spacecat-test-db
     environment:
       POSTGRES_USER: postgres

@@ -56,6 +56,20 @@ class GeoExperiment extends BaseModel {
   static METADATA_KEYS = {
     SCHEDULE_CONFIG: 'scheduleConfig',
   };
+
+  /**
+   * Field names within a schedule config block (pre or post phase).
+   * Both the API service (writes) and the experimentation engine (reads) import
+   * these so a rename in one place propagates automatically to the other.
+   *
+   * @type {{ CRON_EXPRESSION: string, EXPIRY_MS: string, PLATFORMS: string, PROVIDER_IDS: string }}
+   */
+  static SCHEDULE_CONFIG_KEYS = {
+    CRON_EXPRESSION: 'cronExpression',
+    EXPIRY_MS: 'expiryMs',
+    PLATFORMS: 'platforms',
+    PROVIDER_IDS: 'providerIds',
+  };
 }
 
 export default GeoExperiment;

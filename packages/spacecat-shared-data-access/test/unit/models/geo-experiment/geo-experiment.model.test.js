@@ -79,6 +79,15 @@ describe('GeoExperimentModel', () => {
     expect(GeoExperiment.METADATA_KEYS).to.deep.equal({ SCHEDULE_CONFIG: 'scheduleConfig' });
   });
 
+  it('exposes SCHEDULE_CONFIG_KEYS constant', () => {
+    expect(GeoExperiment.SCHEDULE_CONFIG_KEYS).to.deep.equal({
+      CRON_EXPRESSION: 'cronExpression',
+      EXPIRY_MS: 'expiryMs',
+      PLATFORMS: 'platforms',
+      PROVIDER_IDS: 'providerIds',
+    });
+  });
+
   it('gets and sets type', () => {
     expect(instance.getType()).to.equal(GeoExperiment.TYPES.ONSITE_OPPORTUNITY_DEPLOYMENT);
     instance.setType(GeoExperiment.TYPES.ONSITE_OPPORTUNITY_DEPLOYMENT);

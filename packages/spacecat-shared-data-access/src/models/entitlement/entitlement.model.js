@@ -26,6 +26,7 @@ class Entitlement extends BaseModel {
     FREE_TRIAL: 'FREE_TRIAL',
     PAID: 'PAID',
     PLG: 'PLG',
+    PRE_ONBOARD: 'PRE_ONBOARD',
   };
 
   static PRODUCT_CODES = {

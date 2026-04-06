@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-launchdarkly-client-v1.0.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.0.5...@adobe/spacecat-shared-launchdarkly-client-v1.0.6) (2026-04-06)
+
+### Bug Fixes
+
+* **launchdarkly-client:** route SDK logs through Lambda logger at debug level ([#1511](https://github.com/adobe/spacecat-shared/issues/1511)) ([9efd5a9](https://github.com/adobe/spacecat-shared/commit/9efd5a95db96ac9f28db723e070be7ffa8d09546))
+
 ## [@adobe/spacecat-shared-launchdarkly-client-v1.0.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.0.4...@adobe/spacecat-shared-launchdarkly-client-v1.0.5) (2026-04-06)
 
 ### Bug Fixes

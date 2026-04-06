@@ -43,8 +43,9 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     required: true,
   })
   .addAttribute('phase', {
-    type: Object.values(GeoExperiment.PHASES),
+    type: 'string',
     required: true,
+    validate: (value) => hasText(value),
   })
   .addAttribute('suggestionIds', {
     type: 'list',

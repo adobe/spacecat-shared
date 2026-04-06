@@ -71,6 +71,14 @@ describe('GeoExperimentModel', () => {
     expect(instance.getPostScheduleId()).to.equal('post-2');
   });
 
+  it('exposes SCHEDULE_CONFIG_ENV_VAR constant', () => {
+    expect(GeoExperiment.SCHEDULE_CONFIG_ENV_VAR).to.equal('EXPERIMENT_SCHEDULE_CONFIG');
+  });
+
+  it('exposes METADATA_KEYS constant', () => {
+    expect(GeoExperiment.METADATA_KEYS).to.deep.equal({ SCHEDULE_CONFIG: 'scheduleConfig' });
+  });
+
   it('gets and sets type', () => {
     expect(instance.getType()).to.equal(GeoExperiment.TYPES.ONSITE_OPPORTUNITY_DEPLOYMENT);
     instance.setType(GeoExperiment.TYPES.ONSITE_OPPORTUNITY_DEPLOYMENT);

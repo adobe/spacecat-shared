@@ -14,12 +14,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import FixEntitySuggestion from './fix-entity-suggestion.model.js';
 import FixEntitySuggestionCollection from './fix-entity-suggestion.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(FixEntitySuggestion, FixEntitySuggestionCollection)
   .withPrimaryPartitionKeys(['suggestionId'])
   .withPrimarySortKeys(['fixEntityId'])

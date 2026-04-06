@@ -19,12 +19,6 @@ import ImportUrl from './import-url.model.js';
 import ImportUrlCollection from './import-url.collection.js';
 import { ImportJob } from '../import-job/index.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(ImportUrl, ImportUrlCollection)
   .withRecordExpiry(ImportUrl.IMPORT_URL_EXPIRES_IN_DAYS)
   .addReference('belongs_to', 'ImportJob', ['status'])

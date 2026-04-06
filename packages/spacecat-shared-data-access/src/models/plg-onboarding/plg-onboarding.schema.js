@@ -17,12 +17,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import PlgOnboarding from './plg-onboarding.model.js';
 import PlgOnboardingCollection from './plg-onboarding.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
-*/
-
 const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
   .addAttribute('imsOrgId', {
     type: 'string',

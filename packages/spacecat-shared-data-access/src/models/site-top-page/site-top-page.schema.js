@@ -23,12 +23,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import SiteTopPage from './site-top-page.model.js';
 import SiteTopPageCollection from './site-top-page.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(SiteTopPage, SiteTopPageCollection)
   .addReference('belongs_to', 'Site', ['source', 'geo', 'traffic'])
   .addAttribute('siteId', {

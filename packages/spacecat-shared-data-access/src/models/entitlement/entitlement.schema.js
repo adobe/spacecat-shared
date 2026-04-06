@@ -14,12 +14,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Entitlement from './entitlement.model.js';
 import EntitlementCollection from './entitlement.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Entitlement, EntitlementCollection)
   // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Organization')

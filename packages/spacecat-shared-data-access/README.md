@@ -1,11 +1,9 @@
-# Spacecat Shared Data Access (v3)
+# Spacecat Shared Data Access
 
 `@adobe/spacecat-shared-data-access` is the shared data-access layer used by Spacecat services.
 
-This package is **v3 Postgres-first**:
 - Primary datastore: **Postgres via PostgREST** (`@supabase/postgrest-js`)
 - Optional secondary datastore: **S3** (for `Configuration`)
-- No ElectroDB/DynamoDB runtime dependency in v3 behavior
 
 ## Installation
 

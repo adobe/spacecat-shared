@@ -332,6 +332,10 @@ export function getObjectFromKey(
  */
 export function calculateCPCValue(context: object, siteId: string): Promise<number>;
 
+export function isAWSLambda(): boolean;
+export function resetFetchContext(): void;
+export function clearFetchCache(): void;
+
 export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;
 
@@ -348,6 +352,38 @@ export function isoCalendarWeek(date: Date): ISOCalendarWeek;
 export function isoCalendarWeekSunday(date: Date): Date;
 
 export function isoCalendarWeekMonday(date: Date): Date;
+
+interface DateRange {
+  year: number;
+  month: number;
+  startTime: string;
+  endTime: string;
+}
+
+interface WeekInfo {
+  week: number;
+  year: number;
+  month: number;
+  temporalCondition: string;
+}
+
+interface MonthInfo {
+  month: number;
+  year: number;
+  temporalCondition: string;
+}
+
+export function getDateRanges(week?: number, year?: number): DateRange[];
+export function getWeekInfo(inputWeek?: number | null, inputYear?: number | null): WeekInfo;
+export function getMonthInfo(inputMonth?: number | null, inputYear?: number | null): MonthInfo;
+export function getTemporalCondition(options?: {
+  week?: number;
+  month?: number;
+  year?: number;
+  numSeries?: number;
+  log?: object | null;
+}): string;
+export function getLastNumberOfWeeks(number: number): { week: number; year: number }[];
 
 /**
  * Extracts URLs from a suggestion based on the opportunity type.
@@ -419,5 +455,5 @@ export * as llmoConfig from './llmo-config.js';
 export * as llmoStrategy from './llmo-strategy.js';
 export * as schemas from './schemas.js';
 
-export { type detectLocale } from './locale-detect/index.js';
-export { type detectBotBlocker } from './bot-blocker-detect/index.js';
+export { detectLocale } from './locale-detect/index.js';
+export { detectBotBlocker } from './bot-blocker-detect/index.js';

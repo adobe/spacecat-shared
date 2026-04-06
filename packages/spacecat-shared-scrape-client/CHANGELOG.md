@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-scrape-client-v2.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.6.0...@adobe/spacecat-shared-scrape-client-v2.6.1) (2026-04-06)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1087](https://github.com/adobe/spacecat-shared/issues/1087)) ([72e1ab6](https://github.com/adobe/spacecat-shared/commit/72e1ab65892120f94ba409d5ab10370947329188))
+
+## [@adobe/spacecat-shared-scrape-client-v2.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.5.4...@adobe/spacecat-shared-scrape-client-v2.6.0) (2026-04-01)
+
+### Features
+
+* add PLG tier to entitlement model and bump mysticat types  ([#1487](https://github.com/adobe/spacecat-shared/issues/1487)) ([7f9c6fc](https://github.com/adobe/spacecat-shared/commit/7f9c6fcb6d3672269081176ebf643151fb512e99))
+
 ## [@adobe/spacecat-shared-scrape-client-v2.5.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.5.3...@adobe/spacecat-shared-scrape-client-v2.5.4) (2026-03-21)
 
 ### Bug Fixes

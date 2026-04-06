@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-vault-secrets-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.3.1...@adobe/spacecat-shared-vault-secrets-v1.3.2) (2026-04-04)
+
+### Bug Fixes
+
+* downgrade noisy shared library logs to debug ([#1505](https://github.com/adobe/spacecat-shared/issues/1505)) ([e189419](https://github.com/adobe/spacecat-shared/commit/e189419e6b308133f707f5b78c3ed038d7363a5d))
+
 ## [@adobe/spacecat-shared-vault-secrets-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.3.0...@adobe/spacecat-shared-vault-secrets-v1.3.1) (2026-03-21)
 
 ### Bug Fixes

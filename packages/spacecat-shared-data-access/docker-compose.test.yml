@@ -3,7 +3,7 @@ name: spacecat-data-access-test
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: spacecat-test-db
     environment:
       POSTGRES_USER: postgres
@@ -22,7 +22,7 @@ services:
       retries: 10
 
   postgrest:
-    image: postgrest/postgrest:v14.7
+    image: postgrest/postgrest:v14.8
     container_name: spacecat-test-postgrest
     depends_on:
       db:

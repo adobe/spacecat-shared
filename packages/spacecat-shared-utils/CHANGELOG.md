@@ -1,3 +1,51 @@
+## [@adobe/spacecat-shared-utils-v1.112.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.1...@adobe/spacecat-shared-utils-v1.112.2) (2026-04-04)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1506](https://github.com/adobe/spacecat-shared/issues/1506)) ([a4516f6](https://github.com/adobe/spacecat-shared/commit/a4516f68dcb8b2efffc2a0c1e2ec2770347c163d))
+
+## [@adobe/spacecat-shared-utils-v1.112.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.0...@adobe/spacecat-shared-utils-v1.112.1) (2026-04-04)
+
+### Bug Fixes
+
+* downgrade noisy shared library logs to debug ([#1505](https://github.com/adobe/spacecat-shared/issues/1505)) ([e189419](https://github.com/adobe/spacecat-shared/commit/e189419e6b308133f707f5b78c3ed038d7363a5d))
+
+## [@adobe/spacecat-shared-utils-v1.112.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.111.0...@adobe/spacecat-shared-utils-v1.112.0) (2026-04-02)
+
+### Features
+
+* **spacecat-shared-utils:** add sub-path exports for slim imports ([#1486](https://github.com/adobe/spacecat-shared/issues/1486)) ([4e15c66](https://github.com/adobe/spacecat-shared/commit/4e15c6631f5f660283178d61891bf4773a6b564f))
+
+## [@adobe/spacecat-shared-utils-v1.111.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.110.0...@adobe/spacecat-shared-utils-v1.111.0) (2026-04-01)
+
+### Features
+
+* LLMO-3758 info-gain ([#1488](https://github.com/adobe/spacecat-shared/issues/1488)) ([cc6bcc1](https://github.com/adobe/spacecat-shared/commit/cc6bcc16921e98f46b79efdff272004672fb455e))
+
+## [@adobe/spacecat-shared-utils-v1.110.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.109.0...@adobe/spacecat-shared-utils-v1.110.0) (2026-04-01)
+
+### Features
+
+* rename ahrefs to seo in dependency mapping and test fixtures ([#1492](https://github.com/adobe/spacecat-shared/issues/1492)) ([40aa319](https://github.com/adobe/spacecat-shared/commit/40aa319d78fc1aa8ba96f83002b45eb2dbde570c))
+
+## [@adobe/spacecat-shared-utils-v1.109.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.108.0...@adobe/spacecat-shared-utils-v1.109.0) (2026-03-30)
+
+### Features
+
+* extend library opportunity with metadata field ([#1481](https://github.com/adobe/spacecat-shared/issues/1481)) ([45fa866](https://github.com/adobe/spacecat-shared/commit/45fa8662443c1787c99eaf766af5b10df6cd63f1))
+
+## [@adobe/spacecat-shared-utils-v1.108.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.107.0...@adobe/spacecat-shared-utils-v1.108.0) (2026-03-30)
+
+### Features
+
+* Add metadata field to strategyOpportunity schema ([#1480](https://github.com/adobe/spacecat-shared/issues/1480)) ([dbe1ba6](https://github.com/adobe/spacecat-shared/commit/dbe1ba6af78285e844719d4a9c0f0ded99216009))
+
+## [@adobe/spacecat-shared-utils-v1.107.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.106.1...@adobe/spacecat-shared-utils-v1.107.0) (2026-03-30)
+
+### Features
+
+* add onboard config and opportunity maps ([#1464](https://github.com/adobe/spacecat-shared/issues/1464)) ([9bd59f5](https://github.com/adobe/spacecat-shared/commit/9bd59f5e2b05f3fd29ea7568daf0e369bd4d2535))
+
 ## [@adobe/spacecat-shared-utils-v1.106.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.106.0...@adobe/spacecat-shared-utils-v1.106.1) (2026-03-28)
 
 ### Bug Fixes

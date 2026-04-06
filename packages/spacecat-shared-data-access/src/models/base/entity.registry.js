@@ -15,12 +15,14 @@ import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
 
 import ApiKeyCollection from '../api-key/api-key.collection.js';
 import AsyncJobCollection from '../async-job/async-job.collection.js';
+import ContactSalesLeadCollection from '../contact-sales-lead/contact-sales-lead.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import AuditUrlCollection from '../audit-url/audit-url.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
 import ConsumerCollection from '../consumer/consumer.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
 import EntitlementCollection from '../entitlement/entitlement.collection.js';
+import GeoExperimentCollection from '../geo-experiment/geo-experiment.collection.js';
 import FixEntityCollection from '../fix-entity/fix-entity.collection.js';
 import FixEntitySuggestionCollection from '../fix-entity-suggestion/fix-entity-suggestion.collection.js';
 import ImportJobCollection from '../import-job/import-job.collection.js';
@@ -53,10 +55,12 @@ import SiteImsOrgAccessCollection from '../site-ims-org-access/site-ims-org-acce
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
+import ContactSalesLeadSchema from '../contact-sales-lead/contact-sales-lead.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
 import AuditUrlSchema from '../audit-url/audit-url.schema.js';
 import ConsumerSchema from '../consumer/consumer.schema.js';
 import EntitlementSchema from '../entitlement/entitlement.schema.js';
+import GeoExperimentSchema from '../geo-experiment/geo-experiment.schema.js';
 import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
 import FixEntitySuggestionSchema from '../fix-entity-suggestion/fix-entity-suggestion.schema.js';
 import ExperimentSchema from '../experiment/experiment.schema.js';
@@ -185,10 +189,12 @@ class EntityRegistry {
 // Register ElectroDB-based entities only (Configuration is handled separately)
 EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
+EntityRegistry.registerEntity(ContactSalesLeadSchema, ContactSalesLeadCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(AuditUrlSchema, AuditUrlCollection);
 EntityRegistry.registerEntity(ConsumerSchema, ConsumerCollection);
 EntityRegistry.registerEntity(EntitlementSchema, EntitlementCollection);
+EntityRegistry.registerEntity(GeoExperimentSchema, GeoExperimentCollection);
 EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);
 EntityRegistry.registerEntity(FixEntitySuggestionSchema, FixEntitySuggestionCollection);
 EntityRegistry.registerEntity(ExperimentSchema, ExperimentCollection);

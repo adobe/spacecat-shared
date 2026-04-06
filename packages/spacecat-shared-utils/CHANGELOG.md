@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-utils-v1.112.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.1...@adobe/spacecat-shared-utils-v1.112.2) (2026-04-04)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1506](https://github.com/adobe/spacecat-shared/issues/1506)) ([a4516f6](https://github.com/adobe/spacecat-shared/commit/a4516f68dcb8b2efffc2a0c1e2ec2770347c163d))
+
+## [@adobe/spacecat-shared-utils-v1.112.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.0...@adobe/spacecat-shared-utils-v1.112.1) (2026-04-04)
+
+### Bug Fixes
+
+* downgrade noisy shared library logs to debug ([#1505](https://github.com/adobe/spacecat-shared/issues/1505)) ([e189419](https://github.com/adobe/spacecat-shared/commit/e189419e6b308133f707f5b78c3ed038d7363a5d))
+
+## [@adobe/spacecat-shared-utils-v1.112.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.111.0...@adobe/spacecat-shared-utils-v1.112.0) (2026-04-02)
+
+### Features
+
+* **spacecat-shared-utils:** add sub-path exports for slim imports ([#1486](https://github.com/adobe/spacecat-shared/issues/1486)) ([4e15c66](https://github.com/adobe/spacecat-shared/commit/4e15c6631f5f660283178d61891bf4773a6b564f))
+
 ## [@adobe/spacecat-shared-utils-v1.111.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.110.0...@adobe/spacecat-shared-utils-v1.111.0) (2026-04-01)
 
 ### Features

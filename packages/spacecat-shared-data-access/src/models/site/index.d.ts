@@ -57,13 +57,13 @@ export type IMPORT_DESTINATIONS = {
 };
 
 export type IMPORT_SOURCES = {
-  readonly AHREFS: 'ahrefs';
+  readonly SEO: 'seo';
   readonly GSC: 'google';
 };
 
 export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages' | 'top-forms' | 'ahref-paid-pages' ;
 export type ImportDestination = 'default';
-export type ImportSource = 'ahrefs' | 'google';
+export type ImportSource = 'seo' | 'google';
 
 export interface ImportConfig {
   type: ImportType;
@@ -99,6 +99,20 @@ export interface LlmoCustomerIntent {
   value: string;
 }
 
+export type AuditTargetSource = 'manual';
+
+export interface AuditTargetEntry {
+  url: string;
+}
+
+export interface AuditTargetEntryWithSource extends AuditTargetEntry {
+  source: AuditTargetSource;
+}
+
+export interface AuditTargetURLs {
+  manual?: AuditTargetEntry[];
+}
+
 export interface SiteConfig {
   state: {
     slack?: {
@@ -107,6 +121,7 @@ export interface SiteConfig {
       invitedUserCount?: number;
     };
     imports?: ImportConfig[];
+    auditTargetURLs?: AuditTargetURLs;
     handlers?: Record<string, {
       mentions?: Record<string, string[]>;
       excludedURLs?: string[];
@@ -205,6 +220,11 @@ export interface SiteConfig {
   removeLlmoTag(tag: string): void;
   getOnboardConfig(): { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean; history?: Array<{ profile?: string; startTime?: number }> } | undefined;
   updateOnboardConfig(onboardConfig: { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean }, options?: { maxHistory?: number }): void;
+  getAuditTargetURLs(): AuditTargetEntryWithSource[];
+  getAuditTargetURLsBySource(source: AuditTargetSource): AuditTargetEntry[];
+  updateAuditTargetURLs(source: AuditTargetSource, urls: AuditTargetEntry[]): void;
+  addAuditTargetURL(source: AuditTargetSource, urlObj: AuditTargetEntry): void;
+  removeAuditTargetURL(source: AuditTargetSource, url: string): void;
 }
 
 export interface Site extends BaseModel {

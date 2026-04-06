@@ -811,7 +811,7 @@ describe('Config Tests', () => {
         imports: [{
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
           pageUrl: 'https://example.com',
         }],
@@ -825,13 +825,13 @@ describe('Config Tests', () => {
         imports: [{
           type: 'unknown-type',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
         }],
       });
       expect(config.getImports()).to.deep.equal([{
         type: 'unknown-type',
         destinations: ['default'],
-        sources: ['ahrefs'],
+        sources: ['seo'],
       }]);
       expect(config.getSlackConfig()).to.be.undefined;
       expect(config.getHandlers()).to.be.undefined;
@@ -864,7 +864,7 @@ describe('Config Tests', () => {
         expect(importConfig).to.deep.equal({
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
         });
       });
@@ -930,7 +930,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -977,7 +977,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -998,13 +998,13 @@ describe('Config Tests', () => {
             {
               type: 'organic-keywords',
               destinations: ['default'],
-              sources: ['ahrefs'],
+              sources: ['seo'],
               enabled: true,
             },
             {
               type: 'organic-traffic',
               destinations: ['default'],
-              sources: ['ahrefs'],
+              sources: ['seo'],
               enabled: true,
             },
           ],
@@ -1018,13 +1018,13 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
           },
           {
             type: 'organic-traffic',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           },
         ]);
@@ -1036,7 +1036,7 @@ describe('Config Tests', () => {
         const importConfig = {
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
         };
         const config = Config({
@@ -1058,7 +1058,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -1070,7 +1070,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
           }],
         });
@@ -1120,7 +1120,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             pageUrl: 'https://example.com',
             enabled: false,
             geo: 'us',
@@ -1129,7 +1129,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-traffic',
             destinations: ['default'],
-            sources: ['ahrefs', 'google'],
+            sources: ['seo', 'google'],
             enabled: true,
           },
           {
@@ -1141,7 +1141,7 @@ describe('Config Tests', () => {
           {
             type: 'top-pages',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             geo: 'us',
             limit: 100,
@@ -1223,20 +1223,10 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]. "imports[0].type" must be [cwv-trends-daily]. "imports[0].type" must be [cwv-trends-onboard]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]. "imports[0].type" must be [cwv-trends-daily]. "imports[0].type" must be [cwv-trends-onboard]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
-                message: '"imports[0].type" must be [llmo-prompts-ahrefs]',
-                path: ['imports', 0, 'type'],
-                type: 'any.only',
-                context: {
-                  valids: ['llmo-prompts-ahrefs'],
-                  label: 'imports[0].type',
-                  value: 'organic-keywords',
-                  key: 'type',
-                },
-              }, {
                 message: '"imports[0].destinations[0]" must be [default]',
                 path: ['imports', 0, 'destinations', 0],
                 type: 'any.only',
@@ -1449,7 +1439,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             limit: 100,
             pageUrl: 'https://example.com',
@@ -1457,7 +1447,7 @@ describe('Config Tests', () => {
           {
             type: 'top-pages',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
             geo: 'global',
           },
@@ -1473,7 +1463,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             url: 'https://example.com',
           },
@@ -3030,6 +3020,200 @@ describe('Config Tests', () => {
       config.removeLlmoTag('opportunitiesReviewed');
       const llmoConfig = config.getLlmoConfig();
       expect(llmoConfig).to.be.undefined;
+    });
+  });
+
+  describe('Audit Target URLs', () => {
+    it('returns empty array by default', () => {
+      const config = Config();
+      expect(config.getAuditTargetURLs()).to.deep.equal([]);
+    });
+
+    it('creates config with grouped auditTargetURLs', () => {
+      const config = Config({
+        auditTargetURLs: {
+          manual: [{ url: 'https://example.com/page1' }, { url: 'https://example.com/page2' }],
+        },
+      });
+      const result = config.getAuditTargetURLs();
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].url).to.equal('https://example.com/page1');
+      expect(result[0].source).to.equal('manual');
+      expect(result[1].url).to.equal('https://example.com/page2');
+      expect(result[1].source).to.equal('manual');
+    });
+
+    describe('getAuditTargetURLsBySource', () => {
+      it('returns URLs for a specific source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/m1' }, { url: 'https://example.com/m2' }],
+          },
+        });
+        const manual = config.getAuditTargetURLsBySource('manual');
+        expect(manual).to.have.lengthOf(2);
+        expect(manual[0].url).to.equal('https://example.com/m1');
+        expect(manual[1].url).to.equal('https://example.com/m2');
+      });
+
+      it('returns empty array for source with no entries', () => {
+        const config = Config();
+        expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([]);
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.getAuditTargetURLsBySource('invalid')).to.throw('Invalid audit target source');
+      });
+    });
+
+    describe('updateAuditTargetURLs', () => {
+      it('replaces URLs for a specific source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://old.com' }],
+          },
+        });
+        config.updateAuditTargetURLs('manual', [
+          { url: 'https://new1.com' },
+          { url: 'https://new2.com' },
+        ]);
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(2);
+      });
+
+      it('rejects invalid URLs', () => {
+        const config = Config();
+        expect(() => config.updateAuditTargetURLs('manual', [{ url: 'not-a-url' }])).to.throw();
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.updateAuditTargetURLs('invalid', [{ url: 'https://example.com' }])).to.throw('Invalid audit target source');
+      });
+
+      it('accepts empty array', () => {
+        const config = Config({
+          auditTargetURLs: { manual: [{ url: 'https://example.com' }] },
+        });
+        config.updateAuditTargetURLs('manual', []);
+        expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([]);
+      });
+    });
+
+    describe('addAuditTargetURL', () => {
+      it('appends a new URL to the specified source', () => {
+        const config = Config();
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page2' });
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(2);
+        expect(config.getAuditTargetURLsBySource('manual')[1].url).to.equal('https://example.com/page2');
+      });
+
+      it('deduplicates within the source', () => {
+        const config = Config();
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
+        expect(config.getAuditTargetURLs()).to.have.lengthOf(1);
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
+      });
+
+      it('rejects invalid URL', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('manual', { url: 'bad-url' })).to.throw();
+      });
+
+      it('rejects missing url field', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('manual', {})).to.throw();
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('invalid', { url: 'https://example.com' })).to.throw('Invalid audit target source');
+      });
+    });
+
+    describe('removeAuditTargetURL', () => {
+      it('removes by url string from the specified source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }, { url: 'https://example.com/page2' }],
+          },
+        });
+        config.removeAuditTargetURL('manual', 'https://example.com/page2');
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
+        expect(config.getAuditTargetURLsBySource('manual')[0].url).to.equal('https://example.com/page1');
+      });
+
+      it('does nothing for non-existent url', () => {
+        const config = Config({
+          auditTargetURLs: { manual: [{ url: 'https://example.com' }] },
+        });
+        config.removeAuditTargetURL('manual', 'https://does-not-exist.com');
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
+      });
+
+      it('does nothing when auditTargetURLs is not set', () => {
+        const config = Config();
+        config.removeAuditTargetURL('manual', 'https://example.com');
+        expect(config.getAuditTargetURLs()).to.deep.equal([]);
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.removeAuditTargetURL('invalid', 'https://example.com')).to.throw('Invalid audit target source');
+      });
+    });
+
+    describe('serialization', () => {
+      it('includes auditTargetURLs in toDynamoItem conversion', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        expect(item.auditTargetURLs).to.deep.equal({
+          manual: [{ url: 'https://example.com/page1' }],
+        });
+      });
+
+      it('round-trips through toDynamoItem and fromDynamoItem', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [
+              { url: 'https://example.com/page1' },
+              { url: 'https://example.com/page2' },
+            ],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        const restored = Config.fromDynamoItem(item);
+        expect(restored.getAuditTargetURLs()).to.deep.equal(config.getAuditTargetURLs());
+      });
+    });
+
+    describe('field validation', () => {
+      it('rejects extra fields', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('manual', {
+          url: 'https://example.com',
+          label: 'not-allowed',
+        })).to.throw();
+      });
+
+      it('strips unknown source keys from auditTargetURLs', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }],
+            unknown: [{ url: 'https://example.com/page2' }],
+          },
+        });
+        const result = config.getAuditTargetURLs();
+        expect(result).to.have.lengthOf(1);
+        expect(result[0].url).to.equal('https://example.com/page1');
+        expect(result[0].source).to.equal('manual');
+      });
     });
   });
 });

@@ -54,7 +54,6 @@ const FASTLY_LOG_FORMAT = `{
     "request_user_agent": "%{json.escape(req.http.User-Agent)}V",
     "response_status": %{resp.status}V,
     "response_content_type": "%{json.escape(resp.http.Content-Type)}V",
-    "client_country_code": "%{client.geo.country_name}V",
     "time_to_first_byte": "%{time.to_first_byte}V"
 }`;
 const CDN_TRANSFORMATIONS = {
@@ -101,7 +100,6 @@ const CDN_TRANSFORMATIONS = {
     Path: `${payload.allowedPaths?.[0] || ''}{%Y}/{%m}/{%d}/{%H}`,
     'Logged Properties': [
       'reqTimeSec',
-      'country',
       'reqHost',
       'reqPath',
       'queryStr',
@@ -129,7 +127,6 @@ const CDN_TRANSFORMATIONS = {
     'Organize logs into daily subfolders': 'Yes',
     'Logged Properties': [
       'EdgeStartTimestamp',
-      'ClientCountry',
       'ClientRequestHost',
       'ClientRequestURI',
       'ClientRequestMethod',

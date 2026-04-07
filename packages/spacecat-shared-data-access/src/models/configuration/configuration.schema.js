@@ -13,7 +13,7 @@
 /**
  * Configuration Schema
  *
- * Unlike other entities, Configuration does not use ElectroDB and is stored in S3.
+ * Unlike other entities, Configuration is stored in S3 instead of PostgREST.
  * Validation is handled by Joi schemas defined below.
  */
 

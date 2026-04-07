@@ -16,12 +16,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import PageCitability from './page-citability.model.js';
 import PageCitabilityCollection from './page-citability.collection.js';
 
-/*
-  Schema: https://electrodb.dev/en/modeling/schema/
-  Attributes: https://electrodb.dev/en/modeling/attributes/
-  Indexes: https://electrodb.dev/en/modeling/indexes/
-*/
-
 const schema = new SchemaBuilder(PageCitability, PageCitabilityCollection)
   // link back to Site entity
   .addReference('belongs_to', 'Site')

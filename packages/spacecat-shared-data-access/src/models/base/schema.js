@@ -365,12 +365,12 @@ class Schema {
   }
 
   /**
-   * Transforms the stored schema model into a format directly usable by ElectroDB.
+   * Transforms the stored schema model into a serializable format.
    * Here, you could do any final adjustments or transformations needed before returning.
    *
-   * @returns {object} ElectroDB-compatible schema.
+   * @returns {object} Serialized schema.
    */
-  toElectroDBSchema() {
+  toSchema() {
     return {
       model: {
         entity: this.getModelName(),

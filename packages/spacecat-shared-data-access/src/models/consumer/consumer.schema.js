@@ -16,12 +16,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Consumer from './consumer.model.js';
 import ConsumerCollection from './consumer.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Consumer, ConsumerCollection)
   .addAttribute('clientId', {
     type: 'string',

@@ -18,7 +18,7 @@ import { Entitlement } from '../entitlement/index.js';
 /**
  * Configuration - A standalone class representing the global Configuration entity.
  * This is a singleton entity stored in S3 with versioning.
- * Unlike other entities, Configuration does not use ElectroDB or DynamoDB.
+ * Unlike other entities, Configuration uses S3 instead of PostgREST.
  *
  * @class Configuration
  */

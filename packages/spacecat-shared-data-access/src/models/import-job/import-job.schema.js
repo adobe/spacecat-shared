@@ -72,12 +72,6 @@ const validateOptions = (options) => {
   return true;
 };
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(ImportJob, ImportJobCollection)
   .addReference('has_many', 'ImportUrls')
   .addAttribute('baseURL', {

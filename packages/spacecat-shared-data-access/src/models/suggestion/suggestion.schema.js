@@ -18,12 +18,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Suggestion from './suggestion.model.js';
 import SuggestionCollection from './suggestion.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
   .addReference('belongs_to', 'Opportunity', ['status', 'rank'])
   .addReference('has_many', 'FixEntitySuggestion', ['updatedAt'], { removeDependents: true })

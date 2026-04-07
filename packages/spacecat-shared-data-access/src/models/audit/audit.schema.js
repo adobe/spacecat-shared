@@ -18,12 +18,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Audit from './audit.model.js';
 import AuditCollection from './audit.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Audit, AuditCollection)
   .addReference('belongs_to', 'Site', ['auditType', 'auditedAt'])
   .addReference('has_one', 'LatestAudit', ['auditType'], { required: false })
@@ -35,7 +29,7 @@ const schema = new SchemaBuilder(Audit, AuditCollection)
     required: true,
     validate: (value) => isNonEmptyObject(value) || isArray(value),
     set: (value, attributes) => {
-      // as the electroDb validate function does not provide access to the model instance
+      // as the validate function does not provide access to the model instance
       // we need to call the validate function from the model on setting the value
       Audit.validateAuditResult(value, attributes.auditType);
       return value;

@@ -44,6 +44,17 @@ export interface CodeConfig {
   s3StoragePath?: string;
 }
 
+export interface DeliveryConfig {
+  programId?: string;
+  environmentId?: string;
+  authorURL?: string;
+  siteId?: string;
+  tenantId?: string;
+  ipAllowlistExists?: boolean;
+  imsOrgId?: string;
+  [key: string]: unknown;
+}
+
 export type IMPORT_TYPES = {
   readonly ORGANIC_KEYWORDS: 'organic-keywords';
   readonly ORGANIC_TRAFFIC: 'organic-traffic';

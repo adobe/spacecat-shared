@@ -1,3 +1,9 @@
+## [@adobe/mysticat-shared-seo-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.1.1...@adobe/mysticat-shared-seo-client-v1.1.2) (2026-04-06)
+
+### Bug Fixes
+
+* **launchdarkly-client:** route SDK logs through Lambda logger at debug level ([#1511](https://github.com/adobe/spacecat-shared/issues/1511)) ([9efd5a9](https://github.com/adobe/spacecat-shared/commit/9efd5a95db96ac9f28db723e070be7ffa8d09546))
+
 ## [@adobe/mysticat-shared-seo-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.1.0...@adobe/mysticat-shared-seo-client-v1.1.1) (2026-04-06)
 
 ### Bug Fixes

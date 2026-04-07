@@ -158,6 +158,21 @@ Current exported entities include:
 - `TrialUser`
 - `TrialUserActivity`
 
+## Site deliveryConfig
+
+The `deliveryConfig` object on a Site stores delivery infrastructure details. It is a flexible JSON object (`type: 'any'`) — unknown properties are preserved (not stripped).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `programId` | string | Cloud Manager program ID |
+| `environmentId` | string | Cloud Manager environment ID (AEM CS only) |
+| `authorURL` | string | AEM author instance URL (e.g., `https://author-p12345-e67890.adobeaemcloud.com`) |
+| `siteId` | string | Spacecat site ID |
+| `imsOrgId` | string | Adobe IMS Organization ID of the customer |
+| `tenantId` | string | Cloud Manager tenant identifier (from `/program/{programId}` response) |
+| `ipAllowlistExists` | boolean | Whether the CM program has real IP allowlists configured (excludes default `0.0.0.0/32` entries) |
+| `preferContentApi` | boolean | Whether to prefer the Content API for content retrieval |
+
 ## Architecture
 
 ```

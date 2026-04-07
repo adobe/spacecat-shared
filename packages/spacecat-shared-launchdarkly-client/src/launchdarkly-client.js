@@ -48,6 +48,15 @@ class LaunchDarklyClient {
     this.sdkKey = sdkKey;
     this.options = options;
     this.log = log;
+    // Route LD SDK internal logs through our logger at debug level.
+    // Without this, the SDK defaults to basicLogger which writes to
+    // console.error and Lambda captures all stderr as error-level logs.
+    this.sdkLogger = {
+      error: (...args) => log.error('[LaunchDarkly]', ...args),
+      warn: (...args) => log.debug('[LaunchDarkly]', ...args),
+      info: (...args) => log.debug('[LaunchDarkly]', ...args),
+      debug: (...args) => log.debug('[LaunchDarkly]', ...args),
+    };
     this.client = null;
     this.initPromise = null;
   }
@@ -71,7 +80,7 @@ class LaunchDarklyClient {
     // Start initialization
     this.initPromise = (async () => {
       try {
-        this.client = ld.init(this.sdkKey, this.options);
+        this.client = ld.init(this.sdkKey, { ...this.options, logger: this.sdkLogger });
         await this.client.waitForInitialization();
         this.log.info('LaunchDarkly client initialized successfully');
       } catch (error) {

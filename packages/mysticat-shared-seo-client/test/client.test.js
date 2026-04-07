@@ -299,6 +299,37 @@ describe('SeoClient', () => {
         .to.be.rejectedWith('SEO API request failed: ERROR 132 :: API UNITS BALANCE IS ZERO');
     });
 
+    it('returns empty body for NOTHING FOUND instead of throwing', async () => {
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query(true)
+        .reply(200, 'ERROR 50 :: NOTHING FOUND');
+
+      const result = await client.sendRawRequest({ type: 'test_type', domain: 'no-data.com' });
+      expect(result.body).to.equal('');
+      expect(result.fullAuditRef).to.include('key=REDACTED');
+    });
+
+    it('returns empty body for NOTHING FOUND with target param', async () => {
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query(true)
+        .reply(200, 'ERROR 50 :: NOTHING FOUND');
+
+      const result = await client.sendRawRequest({ target: 'https://no-data.com/page' });
+      expect(result.body).to.equal('');
+    });
+
+    it('returns empty body for NOTHING FOUND without domain or target', async () => {
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query(true)
+        .reply(200, 'ERROR 50 :: NOTHING FOUND');
+
+      const result = await client.sendRawRequest({});
+      expect(result.body).to.equal('');
+    });
+
     it('throws error when HTTP status is not ok', async () => {
       nock(config.apiBaseUrl)
         .get('/')
@@ -929,13 +960,13 @@ describe('SeoClient', () => {
       expect(result.result.backlinks).to.deep.equal([]);
     });
 
-    it('handles failed individual backlink fetches gracefully', async () => {
+    it('handles no-data responses for individual backlink fetches gracefully', async () => {
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
         .query((q) => q.type === 'backlinks_pages')
         .reply(200, brokenPagesCsv);
 
-      // First page returns backlink, second fails, third returns backlink
+      // First page returns backlink, second has no data, third returns backlink
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
         .query((q) => q.type === 'backlinks'
@@ -956,7 +987,7 @@ describe('SeoClient', () => {
 
       const result = await client.getBrokenBacklinks('adobe.com', 3);
 
-      // 2 of 3 succeeded — failed one is silently skipped
+      // 2 of 3 had data — no-data response returns empty result, naturally skipped
       expect(result.result.backlinks).to.have.lengthOf(2);
       expect(result.result.backlinks[0].url_to).to.equal('https://www.adobe.com/error-pages/404.html');
       expect(result.result.backlinks[1].url_to).to.equal('https://www.adobe.com/404.html');

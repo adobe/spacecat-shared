@@ -29,11 +29,11 @@ class GeoExperiment extends BaseModel {
   };
 
   static PHASES = {
-    PRE_ANALYSIS_SUBMITTED: 'pre_analysis_submitted',
+    PRE_ANALYSIS_STARTED: 'pre_analysis_started',
     PRE_ANALYSIS_DONE: 'pre_analysis_done',
     DEPLOYMENT_STARTED: 'deployment_started',
-    DEPLOYMENT_COMPLETED: 'deployment_completed',
-    POST_ANALYSIS_SUBMITTED: 'post_analysis_submitted',
+    DEPLOYMENT_DONE: 'deployment_done',
+    POST_ANALYSIS_STARTED: 'post_analysis_started',
     POST_ANALYSIS_DONE: 'post_analysis_done',
   };
 

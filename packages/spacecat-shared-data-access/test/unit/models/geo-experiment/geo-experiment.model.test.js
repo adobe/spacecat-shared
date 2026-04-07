@@ -106,16 +106,16 @@ describe('GeoExperimentModel', () => {
 
   it('gets and sets phase', () => {
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_DONE);
-    instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_SUBMITTED);
-    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PRE_ANALYSIS_SUBMITTED);
+    instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_STARTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PRE_ANALYSIS_STARTED);
     instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_DONE);
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PRE_ANALYSIS_DONE);
     instance.setPhase(GeoExperiment.PHASES.DEPLOYMENT_STARTED);
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_STARTED);
-    instance.setPhase(GeoExperiment.PHASES.DEPLOYMENT_COMPLETED);
-    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_COMPLETED);
-    instance.setPhase(GeoExperiment.PHASES.POST_ANALYSIS_SUBMITTED);
-    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_SUBMITTED);
+    instance.setPhase(GeoExperiment.PHASES.DEPLOYMENT_DONE);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_DONE);
+    instance.setPhase(GeoExperiment.PHASES.POST_ANALYSIS_STARTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_STARTED);
   });
 
   it('gets and sets promptsLocation', () => {

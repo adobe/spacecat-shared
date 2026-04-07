@@ -87,11 +87,16 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       type: 'map',
       properties: {
         reason: { type: 'string' },
-        decision: { type: Object.values(PlgOnboarding.REVIEW_DECISIONS) },
+        decision: { type: 'string' },
         reviewedBy: { type: 'string' },
         reviewedAt: { type: 'string' },
         justification: { type: 'string' },
       },
+    },
+    validate: (value) => {
+      if (!Array.isArray(value)) return false;
+      const valid = Object.values(PlgOnboarding.REVIEW_DECISIONS);
+      return value.every((r) => valid.includes(r.decision) && isIsoDate(r.reviewedAt));
     },
   })
   .addAttribute('completedAt', {

@@ -1,3 +1,14 @@
+## [@adobe/spacecat-shared-data-access-v3.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.46.0...@adobe/spacecat-shared-data-access-v3.47.0) (2026-04-07)
+
+### Features
+
+* add PRE_ONBOARD tier to entitlement model ([#1514](https://github.com/adobe/spacecat-shared/issues/1514)) ([bc4e8f3](https://github.com/adobe/spacecat-shared/commit/bc4e8f36549ab1fe6a03d39d7dec6b4b1f67d229))
+
+### Bug Fixes
+
+* **data-access:** remove stale ElectroDB/DynamoDB v2 references ([#1509](https://github.com/adobe/spacecat-shared/issues/1509)) ([ddd180f](https://github.com/adobe/spacecat-shared/commit/ddd180fb5350a14a04583f7c55f89873ed3a3929))
+* update geo experiment schema for experimentation engine ([#1512](https://github.com/adobe/spacecat-shared/issues/1512)) ([58315cd](https://github.com/adobe/spacecat-shared/commit/58315cd973c373b399429bf11ff1b958d3cfe9c8))
+
 ## [@adobe/spacecat-shared-data-access-v3.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.45.2...@adobe/spacecat-shared-data-access-v3.46.0) (2026-04-07)
 
 ### Features

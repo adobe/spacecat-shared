@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-google-client-v1.5.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.9...@adobe/spacecat-shared-google-client-v1.5.10) (2026-04-06)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1087](https://github.com/adobe/spacecat-shared/issues/1087)) ([72e1ab6](https://github.com/adobe/spacecat-shared/commit/72e1ab65892120f94ba409d5ab10370947329188))
+
+## [@adobe/spacecat-shared-google-client-v1.5.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.8...@adobe/spacecat-shared-google-client-v1.5.9) (2026-04-04)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1506](https://github.com/adobe/spacecat-shared/issues/1506)) ([a4516f6](https://github.com/adobe/spacecat-shared/commit/a4516f68dcb8b2efffc2a0c1e2ec2770347c163d))
+
+## [@adobe/spacecat-shared-google-client-v1.5.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.7...@adobe/spacecat-shared-google-client-v1.5.8) (2026-03-28)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1477](https://github.com/adobe/spacecat-shared/issues/1477)) ([67bdd1a](https://github.com/adobe/spacecat-shared/commit/67bdd1a2c497bed088bc1e54ae22e60c171308d1))
+
 ## [@adobe/spacecat-shared-google-client-v1.5.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.5.6...@adobe/spacecat-shared-google-client-v1.5.7) (2026-03-21)
 
 ### Bug Fixes

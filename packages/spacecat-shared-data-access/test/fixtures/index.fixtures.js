@@ -12,6 +12,7 @@
 
 import apiKeys from './api-keys.fixtures.js';
 import asyncJobs from './async-jobs.fixture.js';
+import contactSalesLeads from './contact-sales-leads.fixture.js';
 import audits from './audits.fixture.js';
 import auditUrls from './audit-urls.fixture.js';
 import configurations from './configurations.fixture.js';
@@ -47,6 +48,7 @@ import sentimentGuidelines from './sentiment-guidelines.fixture.js';
 export default {
   apiKeys,
   asyncJobs,
+  contactSalesLeads,
   audits,
   auditUrls,
   configurations,

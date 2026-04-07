@@ -24,7 +24,6 @@ const FASTLY_LOG_FORMAT = `{
     "request_user_agent": "%{json.escape(req.http.User-Agent)}V",
     "response_status": %{resp.status}V,
     "response_content_type": "%{json.escape(resp.http.Content-Type)}V",
-    "client_country_code": "%{client.geo.country_name}V",
     "time_to_first_byte": "%{time.to_first_byte}V"
 }`;
 
@@ -182,7 +181,6 @@ describe('CDN Helper Functions', () => {
           Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-fastly/{%Y}/{%m}/{%d}/{%H}',
           'Logged Properties': [
             'reqTimeSec',
-            'country',
             'reqHost',
             'reqPath',
             'queryStr',
@@ -219,7 +217,6 @@ describe('CDN Helper Functions', () => {
           'Organize logs into daily subfolders': 'Yes',
           'Logged Properties': [
             'EdgeStartTimestamp',
-            'ClientCountry',
             'ClientRequestHost',
             'ClientRequestURI',
             'ClientRequestMethod',

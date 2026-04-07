@@ -1,14 +1,43 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.106.0",
+  "version": "1.112.2",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "exports": {
     ".": {
+      "types": "./src/index.d.ts",
       "browser": "./src/browser.js",
       "default": "./src/index.js"
+    },
+    "./core": {
+      "types": "./src/core.d.ts",
+      "default": "./src/core.js"
+    },
+    "./aws": {
+      "types": "./src/aws.d.ts",
+      "default": "./src/aws.js"
+    },
+    "./locale": {
+      "types": "./src/locale.d.ts",
+      "default": "./src/locale.js"
+    },
+    "./calendar": {
+      "types": "./src/calendar.d.ts",
+      "default": "./src/calendar.js"
+    },
+    "./schemas": {
+      "types": "./src/schemas.d.ts",
+      "default": "./src/schemas.js"
+    },
+    "./constants": {
+      "types": "./src/constants.d.ts",
+      "default": "./src/constants.js"
     }
   },
+  "sideEffects": [
+    "./src/adobe-fetch.js",
+    "./src/url-helpers.js"
+  ],
   "engines": {
     "node": ">=22.0.0 <25.0.0",
     "npm": ">=10.9.0 <12.0.0"
@@ -16,6 +45,7 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
+    "pretest": "node scripts/check-subpath-deps.js",
     "test": "c8 mocha",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
@@ -43,6 +73,7 @@
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
     "@types/validator": "^13.15.2",
+    "esbuild": "0.28.0",
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
     "esmock": "2.7.3",
@@ -53,8 +84,8 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.2.3",
-    "@aws-sdk/client-s3": "3.1014.0",
-    "@aws-sdk/client-sqs": "3.1014.0",
+    "@aws-sdk/client-s3": "3.1024.0",
+    "@aws-sdk/client-sqs": "3.1024.0",
     "@json2csv/plainjs": "7.0.6",
     "aws-xray-sdk": "3.12.0",
     "cheerio": "1.2.0",

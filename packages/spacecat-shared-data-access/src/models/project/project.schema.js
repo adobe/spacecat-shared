@@ -18,12 +18,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Project from './project.model.js';
 import ProjectCollection from './project.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Project, ProjectCollection)
   .addReference('belongs_to', 'Organization')
   .addReference('has_many', 'Sites')

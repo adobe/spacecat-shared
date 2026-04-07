@@ -12,17 +12,11 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import Opportunity from './opportunity.model.js';
 import OpportunityCollection from './opportunity.collection.js';
-
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
 
 const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addReference('belongs_to', 'Site', ['status', 'updatedAt'])
@@ -66,6 +60,10 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addAttribute('tags', {
     type: 'set',
     items: 'string',
+  })
+  .addAttribute('lastAuditedAt', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
   });
 
 export default schema.build();

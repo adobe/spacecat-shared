@@ -17,7 +17,6 @@ import Joi from 'joi';
 import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
-  LLMO_QUESTIONS_IMPORT_TYPE: 'llmo-prompts-ahrefs',
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',
@@ -42,7 +41,7 @@ export const IMPORT_DESTINATIONS = {
 };
 
 export const IMPORT_SOURCES = {
-  AHREFS: 'ahrefs',
+  SEO: 'seo',
   GSC: 'google',
   RUM: 'rum',
 };
@@ -83,12 +82,6 @@ const IMPORT_BASE_KEYS = {
 };
 
 export const IMPORT_TYPE_SCHEMAS = {
-  [IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE]: Joi.object({
-    type: Joi.string().valid(IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE).required(),
-    enabled: Joi.boolean().default(true),
-    limit: Joi.number().integer().min(1).max(100)
-      .optional(),
-  }),
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
     ...IMPORT_BASE_KEYS,
@@ -186,37 +179,37 @@ export const DEFAULT_IMPORT_CONFIGS = {
   'organic-keywords': {
     type: 'organic-keywords',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-nonbranded': {
     type: 'organic-keywords-nonbranded',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-ai-overview': {
     type: 'organic-keywords-ai-overview',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-feature-snippets': {
     type: 'organic-keywords-feature-snippets',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-keywords-questions': {
     type: 'organic-keywords-questions',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'organic-traffic': {
     type: 'organic-traffic',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'all-traffic': {
@@ -228,14 +221,14 @@ export const DEFAULT_IMPORT_CONFIGS = {
   'top-pages': {
     type: 'top-pages',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
     geo: 'global',
   },
   'ahref-paid-pages': {
     type: 'ahref-paid-pages',
     destinations: ['default'],
-    sources: ['ahrefs'],
+    sources: ['seo'],
     enabled: true,
   },
   'cwv-daily': {
@@ -383,13 +376,22 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
   }).optional(),
+  onboardConfig: Joi.object({
+    lastProfile: Joi.string().optional(),
+    lastStartTime: Joi.number().optional(),
+    forcedOverride: Joi.boolean().optional(),
+    history: Joi.array().items(Joi.object({
+      profile: Joi.string().optional(),
+      startTime: Joi.number().optional(),
+    })).optional(),
+  }).optional(),
   commerceLlmoConfig: Joi.object().pattern(
     Joi.string(),
     Joi.object({
-      environmentId: Joi.string().optional(),
-      websiteCode: Joi.string().optional(),
-      storeCode: Joi.string().optional(),
-      storeViewCode: Joi.string().optional(),
+      environmentId: Joi.string().required(),
+      websiteCode: Joi.string().required(),
+      storeCode: Joi.string().required(),
+      storeViewCode: Joi.string().required(),
       hostName: Joi.string().optional(),
       magentoEndpoint: Joi.string().uri().optional(),
       magentoAPIKey: Joi.string().optional(),
@@ -398,6 +400,11 @@ export const configSchema = Joi.object({
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
+  auditTargetURLs: Joi.object({
+    manual: Joi.array().items(Joi.object({
+      url: Joi.string().uri().required(),
+    })).optional().default([]),
+  }).options({ stripUnknown: true }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),
@@ -506,7 +513,62 @@ export const Config = (data = {}) => {
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
+  self.getOnboardConfig = () => state?.onboardConfig;
   self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
+  const AUDIT_TARGET_SOURCES = ['manual'];
+  const auditTargetEntrySchema = Joi.object({
+    url: Joi.string().uri().required(),
+  });
+
+  const validateAuditTargetSource = (source) => {
+    if (!AUDIT_TARGET_SOURCES.includes(source)) {
+      throw new Error(`Invalid audit target source: "${source}". Must be one of: ${AUDIT_TARGET_SOURCES.join(', ')}`);
+    }
+  };
+
+  self.getAuditTargetURLsConfig = () => state?.auditTargetURLs;
+
+  self.getAuditTargetURLs = () => {
+    const targets = state?.auditTargetURLs;
+    if (!targets) return [];
+    return AUDIT_TARGET_SOURCES.flatMap(
+      (source) => (targets[source] || []).map((entry) => ({ ...entry, source })),
+    );
+  };
+
+  self.getAuditTargetURLsBySource = (source) => {
+    validateAuditTargetSource(source);
+    return state?.auditTargetURLs?.[source] || [];
+  };
+
+  self.updateAuditTargetURLs = (source, urls) => {
+    validateAuditTargetSource(source);
+    Joi.assert(urls, Joi.array().items(auditTargetEntrySchema), 'Invalid audit target URLs');
+    state.auditTargetURLs = state.auditTargetURLs || {};
+    state.auditTargetURLs[source] = urls;
+  };
+
+  self.addAuditTargetURL = (source, urlObj) => {
+    validateAuditTargetSource(source);
+    Joi.assert(urlObj, auditTargetEntrySchema, 'Invalid audit target URL');
+
+    state.auditTargetURLs = state.auditTargetURLs || {};
+    state.auditTargetURLs[source] = state.auditTargetURLs[source] || [];
+    const allUrls = AUDIT_TARGET_SOURCES.flatMap(
+      (s) => (state.auditTargetURLs[s] || []).map((e) => e.url),
+    );
+    if (!allUrls.includes(urlObj.url)) {
+      state.auditTargetURLs[source].push(urlObj);
+    }
+  };
+
+  self.removeAuditTargetURL = (source, url) => {
+    validateAuditTargetSource(source);
+    if (!state.auditTargetURLs?.[source]) return;
+    state.auditTargetURLs[source] = state.auditTargetURLs[source]
+      .filter((t) => t.url !== url);
+  };
+
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
@@ -827,6 +889,17 @@ export const Config = (data = {}) => {
     state.edgeOptimizeConfig = edgeOptimizeConfig;
   };
 
+  self.updateOnboardConfig = (onboardConfig, { maxHistory } = {}) => {
+    let history = [...(state.onboardConfig?.history || [])];
+    if (onboardConfig.lastProfile && onboardConfig.lastStartTime) {
+      history.push({ profile: onboardConfig.lastProfile, startTime: onboardConfig.lastStartTime });
+    }
+    if (maxHistory && history.length > maxHistory) {
+      history = history.slice(-maxHistory);
+    }
+    state.onboardConfig = { ...onboardConfig, history };
+  };
+
   self.updateCommerceLlmoConfig = (commerceLlmoConfig) => {
     state.commerceLlmoConfig = commerceLlmoConfig;
   };
@@ -848,5 +921,7 @@ Config.toDynamoItem = (config) => ({
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
+  onboardConfig: config.getOnboardConfig?.(),
   commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
+  auditTargetURLs: config.getAuditTargetURLsConfig?.(),
 });

@@ -79,7 +79,7 @@ class AuditUrl extends BaseModel {
 
   /**
    * Generates the composite keys for the AuditUrl model.
-   * Required for ElectroDB operations with composite primary key (siteId + url).
+   * Required for operations with composite primary key (siteId + url).
    * @returns {Object} - The composite keys.
    */
   generateCompositeKeys() {

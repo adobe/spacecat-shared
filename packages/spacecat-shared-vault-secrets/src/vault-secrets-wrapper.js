@@ -95,7 +95,7 @@ async function ensureClient(ctx, opts) {
     }
 
     if (ctx.log) {
-      ctx.log.info('Vault client ready');
+      ctx.log.debug('Vault client ready');
     }
   } finally {
     clientLock = null;

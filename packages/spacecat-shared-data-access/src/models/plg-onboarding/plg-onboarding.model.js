@@ -33,6 +33,12 @@ class PlgOnboarding extends BaseModel {
     ERROR: 'ERROR',
     WAITING_FOR_IP_ALLOWLISTING: 'WAITING_FOR_IP_ALLOWLISTING',
     WAITLISTED: 'WAITLISTED',
+    INACTIVE: 'INACTIVE',
+  };
+
+  static REVIEW_DECISIONS = {
+    BYPASSED: 'BYPASSED',
+    UPHELD: 'UPHELD',
   };
 }
 

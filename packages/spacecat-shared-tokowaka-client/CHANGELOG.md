@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.1...@adobe/spacecat-shared-tokowaka-client-v1.13.2) (2026-04-06)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1087](https://github.com/adobe/spacecat-shared/issues/1087)) ([72e1ab6](https://github.com/adobe/spacecat-shared/commit/72e1ab65892120f94ba409d5ab10370947329188))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.0...@adobe/spacecat-shared-tokowaka-client-v1.13.1) (2026-04-04)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1506](https://github.com/adobe/spacecat-shared/issues/1506)) ([a4516f6](https://github.com/adobe/spacecat-shared/commit/a4516f68dcb8b2efffc2a0c1e2ec2770347c163d))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.3...@adobe/spacecat-shared-tokowaka-client-v1.13.0) (2026-04-01)
+
+### Features
+
+* experimentation engine ([#1446](https://github.com/adobe/spacecat-shared/issues/1446)) ([44bff63](https://github.com/adobe/spacecat-shared/commit/44bff6350c18db58d8fbffde8de05074269ec969))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.12.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.2...@adobe/spacecat-shared-tokowaka-client-v1.12.3) (2026-03-28)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1477](https://github.com/adobe/spacecat-shared/issues/1477)) ([67bdd1a](https://github.com/adobe/spacecat-shared/commit/67bdd1a2c497bed088bc1e54ae22e60c171308d1))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.12.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.1...@adobe/spacecat-shared-tokowaka-client-v1.12.2) (2026-03-25)
+
+### Bug Fixes
+
+* optimize preview api ([#1412](https://github.com/adobe/spacecat-shared/issues/1412)) ([3efb9de](https://github.com/adobe/spacecat-shared/commit/3efb9deb1ee6ad962b5288ef124f96fbfbb6e4ae))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.12.0...@adobe/spacecat-shared-tokowaka-client-v1.12.1) (2026-03-21)
 
 ### Bug Fixes

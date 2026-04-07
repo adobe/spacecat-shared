@@ -3799,7 +3799,7 @@ describe('TokowakaClient', () => {
         const site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -3816,7 +3816,7 @@ describe('TokowakaClient', () => {
         const site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -3829,6 +3829,76 @@ describe('TokowakaClient', () => {
       });
     });
 
+    describe('Early Return (Already Enabled via Site Config)', () => {
+      it('should return edgeOptimizeEnabled: true immediately when enabled is boolean true, without making HTTP request', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: true }) }),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
+        expect(tracingFetchStub).to.not.have.been.called;
+      });
+
+      it('should return edgeOptimizeEnabled: true immediately when enabled is a timestamp (number), without making HTTP request', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: 1772531669121 }) }),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/products');
+
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
+        expect(tracingFetchStub).to.not.have.been.called;
+      });
+
+      it('should NOT return early and should make HTTP request when enabled is false', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: false }) }),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: { get: () => null },
+        };
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result.edgeOptimizeEnabled).to.be.false;
+        expect(tracingFetchStub).to.have.been.called;
+      });
+
+      it('should NOT return early and should make HTTP request when edgeOptimizeConfig is undefined', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: { get: () => null },
+        };
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result.edgeOptimizeEnabled).to.be.false;
+        expect(tracingFetchStub).to.have.been.called;
+      });
+    });
+
     describe('Direct Response (No Redirect)', () => {
       let site;
 
@@ -3836,7 +3906,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
       });
@@ -3961,7 +4031,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
         clock = sinon.useFakeTimers();
@@ -4096,7 +4166,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
       });
@@ -4133,7 +4203,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com/',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -4154,7 +4224,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -4179,7 +4249,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
       });

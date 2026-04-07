@@ -120,6 +120,9 @@ const schema = new SchemaBuilder(Site, SiteCollection)
       environmentId: { type: 'string' },
       authorURL: { type: 'string', validate: (value) => isValidUrl(value) },
       siteId: { type: 'string' },
+      tenantId: { type: 'string' },
+      ipAllowlistExists: { type: 'boolean' },
+      imsOrgId: { type: 'string' },
     },
   })
   .addAttribute('hlxConfig', {

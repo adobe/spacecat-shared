@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.45.2...@adobe/spacecat-shared-data-access-v3.46.0) (2026-04-07)
+
+### Features
+
+* **data-access:** add tenantId, ipAllowlistExists, imsOrgId to deliveryConfig schema ([#1515](https://github.com/adobe/spacecat-shared/issues/1515)) ([ff9629e](https://github.com/adobe/spacecat-shared/commit/ff9629e28bff7d0ee0d1d26f1f13df5eaa2ef4f8))
+
 ## [@adobe/spacecat-shared-data-access-v3.45.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.45.1...@adobe/spacecat-shared-data-access-v3.45.2) (2026-04-06)
 
 ### Bug Fixes

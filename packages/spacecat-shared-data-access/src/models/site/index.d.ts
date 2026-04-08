@@ -52,6 +52,7 @@ export interface DeliveryConfig {
   tenantId?: string;
   ipAllowlistExists?: boolean;
   imsOrgId?: string;
+  contentSourcePath?: string;
   [key: string]: unknown;
 }
 

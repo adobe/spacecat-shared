@@ -64,7 +64,9 @@ export class AWSAthenaClient {
    * @returns {AWSAthenaClient}
    */
   static fromContext(context, tempLocation, opts = {}) {
-    if (context.athenaClient) return context.athenaClient;
+    if (context.athenaClient) {
+      return context.athenaClient;
+    }
 
     const { env = {}, log } = context;
     const region = env.AWS_REGION || 'us-east-1';

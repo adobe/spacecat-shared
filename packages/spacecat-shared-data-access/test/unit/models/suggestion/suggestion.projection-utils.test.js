@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 
 import { FIELD_TRANSFORMERS, FALLBACK_PROJECTION } from '../../../../src/models/suggestion/suggestion.projection-utils.js';

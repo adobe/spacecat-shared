@@ -47,7 +47,9 @@ export function diffDOMBlocks(originalBlocks, currentBlocks) {
   // Map tokens to ints for faster LCS
   const sym = new Map();
   const mapTok = (t) => {
-    if (!sym.has(t)) sym.set(t, sym.size + 1);
+    if (!sym.has(t)) {
+      sym.set(t, sym.size + 1);
+    }
     return sym.get(t);
   };
   const a = A.map(mapTok);
@@ -187,7 +189,9 @@ function extractBlocks(children, $) {
         if (getTagName(li) === 'LI') {
           // Skip empty list items - they cause alignment issues
           const liText = getTextContent(li, $).trim();
-          if (!liText) return;
+          if (!liText) {
+            return;
+          }
 
           // Check if the list item contains nested block elements (p, div, h1-h6, etc.)
           const liChildren = getChildren(li);
@@ -204,7 +208,9 @@ function extractBlocks(children, $) {
             // but wrap them in li/ul for proper display
             nestedBlocks.forEach((child) => {
               const childText = getTextContent(child, $).trim();
-              if (!childText) return; // Skip empty nested blocks too
+              if (!childText) {
+                return; // Skip empty nested blocks too
+              }
 
               blocks.push({
                 html: `<${listType}><li>${getOuterHTML(child, $)}</li></${listType}>`,

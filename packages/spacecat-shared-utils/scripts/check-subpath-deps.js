@@ -74,4 +74,6 @@ for (const { entry, allowlist } of CHECKS) {
   }
 }
 
-if (anyFailure) process.exit(1);
+if (anyFailure) {
+  process.exit(1);
+}

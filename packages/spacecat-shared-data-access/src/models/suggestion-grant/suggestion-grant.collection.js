@@ -100,7 +100,9 @@ class SuggestionGrantCollection extends BaseCollection {
 
       return { grantedIds, notGrantedIds, grantIds };
     } catch (err) {
-      if (err instanceof DataAccessError) throw err;
+      if (err instanceof DataAccessError) {
+        throw err;
+      }
       this.log.error('splitSuggestionsByGrantStatus failed', err);
       throw new DataAccessError('Failed to split suggestions by grant status', this, err);
     }
@@ -115,7 +117,9 @@ class SuggestionGrantCollection extends BaseCollection {
    *   false otherwise or if id is empty.
    */
   async isSuggestionGranted(suggestionId) {
-    if (!hasText(suggestionId)) return false;
+    if (!hasText(suggestionId)) {
+      return false;
+    }
     const { grantedIds } = await this.splitSuggestionsByGrantStatus([suggestionId]);
     return grantedIds.length > 0;
   }

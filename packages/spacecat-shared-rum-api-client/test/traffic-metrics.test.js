@@ -9,8 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 import trafficMetrics from '../src/functions/traffic-metrics.js';
 import bundlesWithTraffic from './fixtures/bundles.json' with { type: 'json' };

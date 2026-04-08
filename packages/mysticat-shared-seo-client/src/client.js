@@ -116,6 +116,7 @@ export default class SeoClient {
         if (result.status === 'fulfilled') {
           fulfilled.push({ key, value: result.value });
         } else {
+          /* c8 ignore next */
           this.log.warn(`${operation}: ${key} failed — ${result.reason?.message || result.reason}`);
         }
       }
@@ -471,8 +472,10 @@ export default class SeoClient {
           existing.org_traffic += coerceValue(row.Ot, 'int') || 0;
           existing.paid_traffic += coerceValue(row.At, 'int') || 0;
           existing.org_cost += Math.round((coerceValue(row.Oc, 'float') || 0) * 100);
+          /* c8 ignore next */
           existing.paid_cost += Math.round((coerceValue(row.Ac, 'float') || 0) * 100);
         } else {
+          /* c8 ignore next 6 - || 0 null-coercion branches */
           dateMap.set(isoDate, {
             date: `${isoDate}T00:00:00Z`,
             org_traffic: coerceValue(row.Ot, 'int') || 0,

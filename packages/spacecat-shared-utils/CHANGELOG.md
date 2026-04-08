@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.112.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.2...@adobe/spacecat-shared-utils-v1.112.3) (2026-04-08)
+
+### Bug Fixes
+
+* remove client country from logged properties ([#1517](https://github.com/adobe/spacecat-shared/issues/1517)) ([04bb4a6](https://github.com/adobe/spacecat-shared/commit/04bb4a60beac791347c710558535597e792ccd35))
+
 ## [@adobe/spacecat-shared-utils-v1.112.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.1...@adobe/spacecat-shared-utils-v1.112.2) (2026-04-04)
 
 ### Bug Fixes

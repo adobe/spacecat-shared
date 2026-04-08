@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.47.0...@adobe/spacecat-shared-data-access-v3.48.0) (2026-04-08)
+
+### Features
+
+* **data-access:** add INACTIVE status, reviews field, and REVIEW_DECISIONS to PlgOnboarding ([#1516](https://github.com/adobe/spacecat-shared/issues/1516)) ([8f038e9](https://github.com/adobe/spacecat-shared/commit/8f038e93287da51acf0e586f3e786aeb00d4a0d3))
+
 ## [@adobe/spacecat-shared-data-access-v3.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.46.0...@adobe/spacecat-shared-data-access-v3.47.0) (2026-04-07)
 
 ### Features

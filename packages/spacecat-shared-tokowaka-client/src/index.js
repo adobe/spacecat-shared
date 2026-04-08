@@ -1129,6 +1129,13 @@ class TokowakaClient {
       throw this.#createError('Path is required', HTTP_BAD_REQUEST);
     }
 
+    const currentConfig = site.getConfig();
+    const existingEdgeConfig = currentConfig?.getEdgeOptimizeConfig();
+    const isAlreadyEnabled = existingEdgeConfig?.enabled ?? false;
+    if (isAlreadyEnabled) {
+      return { edgeOptimizeEnabled: true };
+    }
+
     const baseURL = getEffectiveBaseURL(site);
     const targetUrl = new URL(path, baseURL).toString();
 

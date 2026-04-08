@@ -118,6 +118,27 @@ describe('LaunchDarklyClient', () => {
 
       expect(client.log).to.equal(console);
     });
+
+    it('should create SDK logger that routes info/warn/debug to debug level', () => {
+      const customLog = {
+        info: sinon.stub(),
+        error: sinon.stub(),
+        debug: sinon.stub(),
+        warn: sinon.stub(),
+      };
+      const client = new LaunchDarklyClient({ sdkKey: testSdkKey }, customLog);
+
+      client.sdkLogger.error('test error');
+      expect(customLog.error).to.have.been.calledWith('[LaunchDarkly]', 'test error');
+
+      client.sdkLogger.warn('test warn');
+      client.sdkLogger.info('test info');
+      client.sdkLogger.debug('test debug');
+      expect(customLog.debug).to.have.been.calledThrice;
+      expect(customLog.debug).to.have.been.calledWith('[LaunchDarkly]', 'test warn');
+      expect(customLog.debug).to.have.been.calledWith('[LaunchDarkly]', 'test info');
+      expect(customLog.debug).to.have.been.calledWith('[LaunchDarkly]', 'test debug');
+    });
   });
 
   describe('createFrom', () => {
@@ -190,7 +211,9 @@ describe('LaunchDarklyClient', () => {
 
       await client.init();
 
-      expect(mockInit).to.have.been.calledOnceWith(testSdkKey, {});
+      expect(mockInit).to.have.been.calledOnce;
+      expect(mockInit.firstCall.args[0]).to.equal(testSdkKey);
+      expect(mockInit.firstCall.args[1]).to.have.property('logger');
       expect(mockClient.waitForInitialization).to.have.been.calledOnce;
       expect(customLog.info).to.have.been.calledWith('LaunchDarkly client initialized successfully');
     });

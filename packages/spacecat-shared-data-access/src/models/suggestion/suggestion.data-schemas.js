@@ -27,6 +27,17 @@ import Joi from 'joi';
 import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
 
 /**
+ * Custom Joi validator that accepts malformed HTTP/HTTPS URLs and relative paths
+ * while rejecting dangerous URI schemes (javascript:, data:, blob:, etc.).
+ * Used for BROKEN_INTERNAL_LINKS where crawled content may contain malformed URLs.
+ */
+const relaxedUrl = Joi.string().min(1).custom((value, helpers) => (
+  /^(https?:\/\/|\/)/i.test(value) ? value : helpers.error('string.uriScheme')
+), 'relaxed URL').messages({
+  'string.uriScheme': '{{#label}} must start with http://, https://, or /',
+});
+
+/**
  * Data schemas configuration per opportunity type.
  *
  * @typedef {Object} OpportunityTypeSchema
@@ -85,6 +96,8 @@ export const DATA_SCHEMAS = {
       ).required(),
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().optional(),
+      patchContent: Joi.string().optional(),
+      isCodeChangeAvailable: Joi.boolean().optional(),
     }).unknown(true),
     projections: {
       minimal: {
@@ -113,6 +126,8 @@ export const DATA_SCHEMAS = {
       ).required(),
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().optional(),
+      patchContent: Joi.string().optional(),
+      isCodeChangeAvailable: Joi.boolean().optional(),
     }).unknown(true),
     projections: {
       minimal: {
@@ -123,10 +138,14 @@ export const DATA_SCHEMAS = {
       },
     },
   },
+  // CWV has two implicit data shapes:
+  // 1. Page-level (type='url'): url and issues are present
+  // 2. Group-type (type='group'): url is absent, issues may be populated later via update
+  // Both shapes share the same schema; url and issues are optional to support both.
   [OPPORTUNITY_TYPES.CWV]: {
     schema: Joi.object({
       type: Joi.string().required(),
-      url: Joi.string().uri().required(),
+      url: Joi.string().uri().optional(),
       pageviews: Joi.number().optional(),
       organic: Joi.number().optional(),
       metrics: Joi.array().items(
@@ -144,7 +163,7 @@ export const DATA_SCHEMAS = {
           organic: Joi.number().optional(),
         }).unknown(true),
       ).required(),
-      issues: Joi.array().items(Joi.object()).required(),
+      issues: Joi.array().items(Joi.object()).optional().default([]),
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().allow(null).optional(),
     }).unknown(true),
@@ -163,6 +182,7 @@ export const DATA_SCHEMAS = {
         Joi.object({
           isAppropriate: Joi.boolean().optional(),
           isDecorative: Joi.boolean().optional(),
+          hasAltAttribute: Joi.boolean().optional(),
           xpath: Joi.string().optional(),
           altText: Joi.string().optional(),
           imageUrl: Joi.string().uri().optional(),
@@ -376,12 +396,16 @@ export const DATA_SCHEMAS = {
   [OPPORTUNITY_TYPES.BROKEN_INTERNAL_LINKS]: {
     schema: Joi.object({
       // Support both naming conventions (snake_case and camelCase)
-      url_from: Joi.string().uri().optional(),
-      urlFrom: Joi.string().uri().optional(),
-      url_to: Joi.string().uri().optional(),
-      urlTo: Joi.string().uri().optional(),
+      // URL fields use relaxedUrl instead of Joi.string().uri() because
+      // internal-links sometimes keeps URL values as-is, including malformed URLs.
+      // Unlike BROKEN_BACKLINKS, these accept malformed http/https/relative URLs
+      // but reject dangerous schemes (javascript:, data:, blob:, etc.).
+      url_from: relaxedUrl.optional(),
+      urlFrom: relaxedUrl.optional(),
+      url_to: relaxedUrl.optional(),
+      urlTo: relaxedUrl.optional(),
       title: Joi.string().optional(),
-      urlsSuggested: Joi.array().items(Joi.string().uri()).optional(),
+      urlsSuggested: Joi.array().items(relaxedUrl).optional(),
       aiRationale: Joi.string().optional(),
       trafficDomain: Joi.number().optional(),
       priority: Joi.string().optional(),

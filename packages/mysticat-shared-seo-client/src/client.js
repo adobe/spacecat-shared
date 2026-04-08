@@ -99,6 +99,7 @@ export default class SeoClient {
       // SEO API returns HTTP 200 with "ERROR XX :: message" body on errors
       if (body.startsWith('ERROR')) {
         const isRateLimit = body.includes('LIMIT EXCEEDED');
+        const isNoData = body.includes('NOTHING FOUND');
         if (isRateLimit && attempt < MAX_RETRIES) {
           // Exponential backoff: 1s, 2s, 4s, 8s + random jitter 0-500ms
           const retryDelay = (RATE_LIMIT_BASE_DELAY_MS * (2 ** attempt))
@@ -108,6 +109,10 @@ export default class SeoClient {
           await SeoClient.delay(retryDelay);
           // eslint-disable-next-line no-continue
           continue;
+        }
+        if (isNoData) {
+          this.log.info(`SEO API returned no data for domain=${queryParams.domain || queryParams.target || '-'} type=${queryParams.type || 'unknown'}`);
+          return { body: '', fullAuditRef };
         }
         const prefix = isRateLimit && attempt >= MAX_RETRIES
           ? `SEO API request failed after ${MAX_RETRIES} retries: `

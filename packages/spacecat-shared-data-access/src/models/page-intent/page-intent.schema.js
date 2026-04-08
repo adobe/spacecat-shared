@@ -16,12 +16,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import PageIntent from './page-intent.model.js';
 import PageIntentCollection from './page-intent.collection.js';
 
-/*
-  Schema: https://electrodb.dev/en/modeling/schema/
-  Attributes: https://electrodb.dev/en/modeling/attributes/
-  Indexes: https://electrodb.dev/en/modeling/indexes/
-*/
-
 const schema = new SchemaBuilder(PageIntent, PageIntentCollection)
   // link back to Site entity
   .addReference('belongs_to', 'Site')

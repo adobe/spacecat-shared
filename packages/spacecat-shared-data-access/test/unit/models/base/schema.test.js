@@ -280,9 +280,9 @@ describe('Schema', () => {
     });
   });
 
-  describe('toElectroDBSchema', () => {
-    it('returns an ElectroDB-compatible schema', () => {
-      expect(instance.toElectroDBSchema()).to.deep.equal({
+  describe('toSchema', () => {
+    it('returns a serialized schema', () => {
+      expect(instance.toSchema()).to.deep.equal({
         model: {
           entity: 'MockEntityModel',
           version: '1',

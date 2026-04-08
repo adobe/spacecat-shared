@@ -18,12 +18,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import ApiKey from './api-key.model.js';
 import ApiKeyCollection from './api-key.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(ApiKey, ApiKeyCollection)
   .addAttribute('hashedApiKey', {
     type: 'string',

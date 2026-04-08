@@ -25,7 +25,7 @@ The `PageIntent` entity persists each page’s metadata. Key attributes include:
     - `TRANSACTIONAL`
     - `COMMERCIAL`
 - **`topic`** (string) – arbitrary topic label for the page.
-- **`createdAt`, `updatedAt`** (ISO timestamp) – automatically maintained by ElectroDB.
+- **`createdAt`, `updatedAt`** (ISO timestamp) – automatically maintained by the framework.
 
 ## Best Practices
 

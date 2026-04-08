@@ -121,7 +121,7 @@ export interface Schema {
   getServiceName(): string;
   getVersion(): number;
   toAccessorConfigs(): object[];
-  toElectroDBSchema(): object;
+  toSchema(): object;
 }
 
 export interface SchemaBuilder {

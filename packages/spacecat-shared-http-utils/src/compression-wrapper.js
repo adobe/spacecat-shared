@@ -168,7 +168,7 @@ export function compressResponse(fn, opts = {}) {
       });
     }
 
-    log.info(`[compression] encoding=${encoding} original=${body.length} compressed=${compressed.length}`);
+    log.debug(`[compression] encoding=${encoding} original=${body.length} compressed=${compressed.length}`);
 
     const newHeaders = new Headers(response.headers);
     newHeaders.delete('content-length');

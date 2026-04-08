@@ -25,12 +25,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Site, { computeExternalIds } from './site.model.js';
 import SiteCollection from './site.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Site, SiteCollection)
   // this will add an attribute 'organizationId' as well as an index 'byOrganizationId'
   .addReference('belongs_to', 'Organization')
@@ -120,6 +114,9 @@ const schema = new SchemaBuilder(Site, SiteCollection)
       environmentId: { type: 'string' },
       authorURL: { type: 'string', validate: (value) => isValidUrl(value) },
       siteId: { type: 'string' },
+      tenantId: { type: 'string' },
+      ipAllowlistExists: { type: 'boolean' },
+      imsOrgId: { type: 'string' },
     },
   })
   .addAttribute('hlxConfig', {

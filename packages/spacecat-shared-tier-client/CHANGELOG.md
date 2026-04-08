@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-tier-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.4.2...@adobe/spacecat-shared-tier-client-v1.5.0) (2026-04-07)
+
+### Features
+
+* add PRE_ONBOARD tier to entitlement model ([#1514](https://github.com/adobe/spacecat-shared/issues/1514)) ([bc4e8f3](https://github.com/adobe/spacecat-shared/commit/bc4e8f36549ab1fe6a03d39d7dec6b4b1f67d229))
+
+## [@adobe/spacecat-shared-tier-client-v1.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.4.1...@adobe/spacecat-shared-tier-client-v1.4.2) (2026-04-06)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1087](https://github.com/adobe/spacecat-shared/issues/1087)) ([72e1ab6](https://github.com/adobe/spacecat-shared/commit/72e1ab65892120f94ba409d5ab10370947329188))
+
 ## [@adobe/spacecat-shared-tier-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.4.0...@adobe/spacecat-shared-tier-client-v1.4.1) (2026-04-02)
 
 ### Bug Fixes

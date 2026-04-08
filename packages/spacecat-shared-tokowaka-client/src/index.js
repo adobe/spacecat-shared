@@ -1348,8 +1348,12 @@ class TokowakaClient {
 
           if (regexPatterns.length > 0) {
             const covered = allSuggestions.filter((s) => {
-              if (s.getId() === suggestion.getId()) return false;
-              if (skippedInBatchIds.has(s.getId())) return false;
+              if (s.getId() === suggestion.getId()) {
+                return false;
+              }
+              if (skippedInBatchIds.has(s.getId())) {
+                return false;
+              }
               if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
                 return false;
               }

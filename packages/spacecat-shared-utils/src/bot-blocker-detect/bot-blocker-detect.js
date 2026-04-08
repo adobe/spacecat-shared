@@ -133,7 +133,9 @@ function analyzeResponse(response, html = null) {
 
   // Check HTML content for challenge page patterns (if HTML provided)
   const htmlHasChallenge = (patterns) => {
-    if (!html) return false;
+    if (!html) {
+      return false;
+    }
     return patterns.some((pattern) => pattern.test(html));
   };
 

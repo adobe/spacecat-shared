@@ -184,7 +184,9 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
  * @returns {string} The normalized URL
  */
 function normalizeUrl(url) {
-  if (!url || typeof url !== 'string') return url;
+  if (!url || typeof url !== 'string') {
+    return url;
+  }
   // Trim whitespace from beginning and end
   let normalized = url.trim();
   // Handle trailing slashes - normalize multiple trailing slashes to single slash
@@ -207,8 +209,12 @@ function normalizeUrl(url) {
  * @returns {string} The normalized pathname
  */
 function normalizePathname(pathname) {
-  if (!pathname || typeof pathname !== 'string') return pathname;
-  if (pathname === '/') return '/';
+  if (!pathname || typeof pathname !== 'string') {
+    return pathname;
+  }
+  if (pathname === '/') {
+    return '/';
+  }
   return pathname.replace(/\/+$/, '');
 }
 
@@ -219,7 +225,9 @@ function normalizePathname(pathname) {
  * @returns {boolean} True if URL matches any filter URL, false if any URL is invalid
  */
 function urlMatchesFilter(url, filterUrls) {
-  if (!filterUrls || filterUrls.length === 0) return true;
+  if (!filterUrls || filterUrls.length === 0) {
+    return true;
+  }
   try {
     // Normalize the input URL
     const normalizedInputUrl = normalizeUrl(url);
@@ -268,7 +276,9 @@ function hasNonWWWSubdomain(baseUrl) {
  * @returns {string} - The hostname with the www subdomain toggled.
  */
 function toggleWWWHostname(hostname) {
-  if (hasNonWWWSubdomain(`https://${hostname}`)) return hostname;
+  if (hasNonWWWSubdomain(`https://${hostname}`)) {
+    return hostname;
+  }
   return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
 }
 

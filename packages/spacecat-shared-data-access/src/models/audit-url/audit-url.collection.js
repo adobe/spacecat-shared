@@ -60,9 +60,15 @@ class AuditUrlCollection extends BaseCollection {
       }
 
       // Handle null/undefined values (push to end)
-      if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return 1;
-      if (bValue == null) return -1;
+      if (aValue == null && bValue == null) {
+        return 0;
+      }
+      if (aValue == null) {
+        return 1;
+      }
+      if (bValue == null) {
+        return -1;
+      }
 
       // Compare values
       let comparison = 0;

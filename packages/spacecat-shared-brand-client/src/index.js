@@ -27,7 +27,9 @@ export default class BrandClient {
     const { env, log = console } = context;
     const { BRAND_API_BASE_URL: apiBaseUrl, BRAND_API_KEY: apiKey } = env;
 
-    if (context.brandClient) return context.brandClient;
+    if (context.brandClient) {
+      return context.brandClient;
+    }
 
     const client = new BrandClient({ apiBaseUrl, apiKey }, log);
     context.brandClient = client;

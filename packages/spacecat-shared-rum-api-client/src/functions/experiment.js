@@ -50,7 +50,9 @@ function handler(bundles) {
   const result = {};
   experiments.forEach((uev) => {
     const [url, experiment] = uev.value.split(DELIMITER);
-    if (!result[url]) result[url] = [];
+    if (!result[url]) {
+      result[url] = [];
+    }
     result[url].push({
       experiment,
       variants: [],

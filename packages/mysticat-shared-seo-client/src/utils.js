@@ -101,9 +101,13 @@ function splitCsvLine(line) {
  * @returns {object[]} Array of row objects keyed by column codes
  */
 export function parseCsvResponse(text) {
-  if (!text || typeof text !== 'string') return [];
+  if (!text || typeof text !== 'string') {
+    return [];
+  }
   const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
+  if (lines.length < 2) {
+    return [];
+  }
   const headers = splitCsvLine(lines[0]).map((h) => normalizeHeader(h.trim()));
   return lines.slice(1).map((line) => {
     const values = splitCsvLine(line);
@@ -120,7 +124,9 @@ export function parseCsvResponse(text) {
  * @returns {*} Coerced value
  */
 export function coerceValue(value, type) {
-  if (value === '' || value === undefined || value === null) return null;
+  if (value === '' || value === undefined || value === null) {
+    return null;
+  }
   switch (type) {
     case 'int': {
       const parsed = parseInt(value, 10);
@@ -169,7 +175,9 @@ export function todayISO() {
  * @returns {string|null} Date in YYYY-MM-DD format, or null if invalid
  */
 export function fromApiDate(apiDate) {
-  if (!apiDate || apiDate.length < 8 || !/^\d{8}$/.test(apiDate)) return null;
+  if (!apiDate || apiDate.length < 8 || !/^\d{8}$/.test(apiDate)) {
+    return null;
+  }
   return `${apiDate.slice(0, 4)}-${apiDate.slice(4, 6)}-${apiDate.slice(6, 8)}`;
 }
 
@@ -205,7 +213,9 @@ export function buildFilter(filters) {
  * @returns {string} Lowercase brand name
  */
 export function extractBrand(domain) {
-  if (!domain) return '';
+  if (!domain) {
+    return '';
+  }
   const normalized = domain.includes('://') ? domain : `https://${domain}`;
   const registrable = new URI(normalized).domain();
   return registrable.split('.')[0].toLowerCase();

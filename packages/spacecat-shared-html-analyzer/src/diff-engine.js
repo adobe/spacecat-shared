@@ -31,7 +31,9 @@ export function diffTokens(aStr, bStr, mode = 'word') {
   // Map tokens to integers for faster LCS computation
   const sym = new Map();
   const mapTok = (t) => {
-    if (!sym.has(t)) sym.set(t, sym.size + 1);
+    if (!sym.has(t)) {
+      sym.set(t, sym.size + 1);
+    }
     return sym.get(t);
   };
   const a = A.map(mapTok);

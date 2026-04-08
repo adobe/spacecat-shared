@@ -62,7 +62,9 @@ export function negotiateEncoding(header, preference = DEFAULT_PREFERENCE) {
 
   // Highest quality first; preference order breaks ties
   candidates.sort((a, b) => {
-    if (b.quality !== a.quality) return b.quality - a.quality;
+    if (b.quality !== a.quality) {
+      return b.quality - a.quality;
+    }
     return preference.indexOf(a.encoding) - preference.indexOf(b.encoding);
   });
 
@@ -78,15 +80,23 @@ const COMPRESSIBLE_TYPES = [
 ];
 
 export function isCompressible(contentType) {
-  if (!contentType) return false;
+  if (!contentType) {
+    return false;
+  }
   return COMPRESSIBLE_TYPES.some((re) => re.test(contentType));
 }
 
 export function mergeVary(existing) {
-  if (!existing) return 'Accept-Encoding';
-  if (existing.trim() === '*') return existing;
+  if (!existing) {
+    return 'Accept-Encoding';
+  }
+  if (existing.trim() === '*') {
+    return existing;
+  }
   const tokens = existing.split(',').map((t) => t.trim().toLowerCase());
-  if (tokens.includes('accept-encoding')) return existing;
+  if (tokens.includes('accept-encoding')) {
+    return existing;
+  }
   return `${existing}, Accept-Encoding`;
 }
 

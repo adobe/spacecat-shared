@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import os from 'os';
 import path from 'path';
 import { expect, use } from 'chai';

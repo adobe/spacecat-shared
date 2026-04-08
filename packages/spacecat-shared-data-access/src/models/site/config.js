@@ -530,7 +530,9 @@ export const Config = (data = {}) => {
 
   self.getAuditTargetURLs = () => {
     const targets = state?.auditTargetURLs;
-    if (!targets) return [];
+    if (!targets) {
+      return [];
+    }
     return AUDIT_TARGET_SOURCES.flatMap(
       (source) => (targets[source] || []).map((entry) => ({ ...entry, source })),
     );
@@ -564,7 +566,9 @@ export const Config = (data = {}) => {
 
   self.removeAuditTargetURL = (source, url) => {
     validateAuditTargetSource(source);
-    if (!state.auditTargetURLs?.[source]) return;
+    if (!state.auditTargetURLs?.[source]) {
+      return;
+    }
     state.auditTargetURLs[source] = state.auditTargetURLs[source]
       .filter((t) => t.url !== url);
   };
@@ -702,7 +706,9 @@ export const Config = (data = {}) => {
 
   self.removeLlmoUrlPattern = (urlPattern) => {
     const urlPatterns = state.llmo?.urlPatterns;
-    if (!urlPatterns) return;
+    if (!urlPatterns) {
+      return;
+    }
 
     state.llmo.urlPatterns = urlPatterns.filter(
       (pattern) => pattern.urlPattern !== urlPattern,
@@ -733,7 +739,9 @@ export const Config = (data = {}) => {
   };
 
   self.removeLlmoTag = (tag) => {
-    if (!state.llmo?.tags) return;
+    if (!state.llmo?.tags) {
+      return;
+    }
     state.llmo.tags = state.llmo.tags.filter((t) => t !== tag);
   };
 
@@ -803,7 +811,9 @@ export const Config = (data = {}) => {
     const prior = state.brandProfile || {};
     // compute hash over all content except functional fields
     const stripFunctional = (p) => {
-      if (!isNonEmptyObject(p)) return {};
+      if (!isNonEmptyObject(p)) {
+        return {};
+      }
       const {
         /* eslint-disable no-unused-vars */
         version, updatedAt, contentHash, ...rest
@@ -861,7 +871,9 @@ export const Config = (data = {}) => {
   };
 
   self.disableImport = (type) => {
-    if (!state.imports) return;
+    if (!state.imports) {
+      return;
+    }
 
     state.imports = state.imports.map(
       (imp) => (imp.type === type ? { ...imp, enabled: false } : imp),

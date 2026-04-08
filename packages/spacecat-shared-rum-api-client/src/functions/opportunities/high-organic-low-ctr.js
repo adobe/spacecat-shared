@@ -112,7 +112,9 @@ function convertToOpportunity(traffic) {
  * @returns {Array} List of pages sorted by joint strength
  */
 function sortPagesByEarnedAndOverallTraffic(pages) {
-  if (!Array.isArray(pages) || pages.length === 0) return [];
+  if (!Array.isArray(pages) || pages.length === 0) {
+    return [];
+  }
 
   const sortedOverall = [...pages].sort((a, b) => a.total - b.total);
   const sortedEarned = [...pages].sort((a, b) => {

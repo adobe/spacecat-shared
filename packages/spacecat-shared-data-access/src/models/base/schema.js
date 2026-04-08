@@ -143,7 +143,9 @@ class Schema {
     Object.keys(indexes).forEach((indexName) => {
       const indexKeys = this.getIndexKeys(indexName);
 
-      if (!isNonEmptyArray(indexKeys)) return;
+      if (!isNonEmptyArray(indexKeys)) {
+        return;
+      }
 
       const keySets = [];
       for (let i = 1; i <= indexKeys.length; i += 1) {

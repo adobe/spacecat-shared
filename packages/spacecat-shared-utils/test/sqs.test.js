@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { SQSClient } from '@aws-sdk/client-sqs';
 import wrap from '@adobe/helix-shared-wrap';
 import sinon from 'sinon';

@@ -41,14 +41,19 @@ export default class SeoClient {
   getBrokenBacklinks(url: string, limit?: number):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  getTopPages(url: string, limit?: number):
-      Promise<{ result: object, fullAuditRef: string }>;
+  getTopPages(url: string, options?: {
+    limit?: number,
+    region?: string,
+  }): Promise<{ result: object, fullAuditRef: string }>;
 
   getBacklinks(url: string, limit?: number):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  getOrganicTraffic(url: string, startDate: string, endDate: string):
-      Promise<{ result: object, fullAuditRef: string }>;
+  getOrganicTraffic(url: string, options?: {
+    startDate?: string,
+    endDate?: string,
+    region?: string,
+  }): Promise<{ result: object, fullAuditRef: string }>;
 
   getOrganicKeywords(
     url: string,
@@ -61,12 +66,16 @@ export default class SeoClient {
     }):
       Promise<{ result: object, fullAuditRef: string }>;
 
-  getPaidPages(url: string, date?: string, limit?: number,
-    mode?: 'exact' | 'prefix' | 'domain' | 'subdomains'):
-      Promise<{ result: object, fullAuditRef: string }>;
+  getPaidPages(url: string, options?: {
+    date?: string,
+    limit?: number,
+    region?: string,
+  }): Promise<{ result: object, fullAuditRef: string }>;
 
-  getMetrics(url: string, date?: string):
-      Promise<{ result: object, fullAuditRef: string }>;
+  getMetrics(url: string, options?: {
+    date?: string,
+    region?: string,
+  }): Promise<{ result: object, fullAuditRef: string }>;
 
   getMetricsByCountry(url: string, date?: string):
       Promise<{ result: object, fullAuditRef: string }>;
@@ -78,6 +87,9 @@ export function getLimit(limit: number, upperLimit: number): number;
 export function toApiDate(date: string): string;
 export function fromApiDate(apiDate: string): string | null;
 export function todayISO(): string;
+export function lastMonthISO(): string;
+export function getDatabases(region?: string): string[];
+export const BIG_MARKETS: readonly string[];
 export function buildFilter(filters: Array<{sign: string, field: string, op: string, value: string}>): string;
 export function extractBrand(domain: string): string;
 export function buildQueryParams(defaults: object, overrides: object): object;

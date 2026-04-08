@@ -462,6 +462,11 @@ describe('SeoClient', () => {
       await expect(client.getMetrics(null)).to.be.rejectedWith('Invalid URL');
     });
 
+    it('throws when called with old positional signature', async () => {
+      await expect(client.getMetrics('adobe.com', '2025-03-01'))
+        .to.be.rejectedWith('options object');
+    });
+
     it('defaults to last month when no date provided', async () => {
       nockMetricsDatabases(BIG_MARKETS, metricsCsv, { targetDb: 'us' });
 
@@ -582,6 +587,18 @@ describe('SeoClient', () => {
     it('throws error when url is not a string', async () => {
       await expect(client.getOrganicTraffic(null, { startDate: '2024-01-01', endDate: '2024-12-31' }))
         .to.be.rejectedWith('Invalid URL');
+    });
+
+    it('throws when called with old positional signature', async () => {
+      await expect(client.getOrganicTraffic('adobe.com', '2024-01-01'))
+        .to.be.rejectedWith('options object');
+    });
+
+    it('throws when startDate or endDate is missing', async () => {
+      await expect(client.getOrganicTraffic('adobe.com', {}))
+        .to.be.rejectedWith('startDate and endDate are required');
+      await expect(client.getOrganicTraffic('adobe.com', { startDate: '2024-01-01' }))
+        .to.be.rejectedWith('startDate and endDate are required');
     });
 
     it('returns empty array when no dates in range', async () => {
@@ -714,6 +731,11 @@ describe('SeoClient', () => {
 
     it('throws error when url is not a string', async () => {
       await expect(client.getTopPages(null)).to.be.rejectedWith('Invalid URL');
+    });
+
+    it('throws when called with old positional signature', async () => {
+      await expect(client.getTopPages('adobe.com', 200))
+        .to.be.rejectedWith('options object');
     });
 
     it('respects upper limit of 2000', async () => {
@@ -972,6 +994,11 @@ describe('SeoClient', () => {
 
     it('throws error when url is not a string', async () => {
       await expect(client.getPaidPages(null)).to.be.rejectedWith('Invalid URL');
+    });
+
+    it('throws when called with old positional signature', async () => {
+      await expect(client.getPaidPages('adobe.com', '2025-03-01'))
+        .to.be.rejectedWith('options object');
     });
 
     it('aggregates adobe.com paid keywords into page-level data across databases', async () => {

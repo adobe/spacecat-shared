@@ -90,6 +90,7 @@ export default class SeoClient {
   }
 
   /**
+   * @private
    * Fans out an async operation across items in batches, collects fulfilled
    * results, and logs rejected ones. Each call to `fn(item)` already has
    * per-request retry/backoff via sendRawRequest; this layer adds batching to
@@ -207,7 +208,11 @@ export default class SeoClient {
     return { result, fullAuditRef };
   }
 
-  async getTopPages(url, { limit = 200, region } = {}) {
+  async getTopPages(url, opts = {}) {
+    if (typeof opts !== 'object' || opts === null) {
+      throw new Error('Second argument must be an options object, not a positional value');
+    }
+    const { limit = 200, region } = opts;
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -284,11 +289,11 @@ export default class SeoClient {
     };
   }
 
-  async getPaidPages(url, {
-    date = lastMonthISO(),
-    limit = 200,
-    region,
-  } = {}) {
+  async getPaidPages(url, opts = {}) {
+    if (typeof opts !== 'object' || opts === null) {
+      throw new Error('Second argument must be an options object, not a positional value');
+    }
+    const { date = lastMonthISO(), limit = 200, region } = opts;
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -363,7 +368,11 @@ export default class SeoClient {
     };
   }
 
-  async getMetrics(url, { date = lastMonthISO(), region } = {}) {
+  async getMetrics(url, opts = {}) {
+    if (typeof opts !== 'object' || opts === null) {
+      throw new Error('Second argument must be an options object, not a positional value');
+    }
+    const { date = lastMonthISO(), region } = opts;
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -432,13 +441,22 @@ export default class SeoClient {
    * The full history is fetched and filtered client-side because the provider's
    * history endpoint does not support date range parameters.
    * @param {string} url - The target domain
-   * @param {string} startDate - Start date in YYYY-MM-DD format
-   * @param {string} endDate - End date in YYYY-MM-DD format
+   * @param {object} options
+   * @param {string} options.startDate - Start date in YYYY-MM-DD format
+   * @param {string} options.endDate - End date in YYYY-MM-DD format
+   * @param {string} [options.region] - ISO 3166-1 alpha-2 region code
    * @returns {Promise<{result: {metrics: Array}, fullAuditRef: string}>}
    */
-  async getOrganicTraffic(url, { startDate, endDate, region } = {}) {
+  async getOrganicTraffic(url, opts = {}) {
+    if (typeof opts !== 'object' || opts === null) {
+      throw new Error('Second argument must be an options object, not a positional value');
+    }
+    const { startDate, endDate, region } = opts;
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
+    }
+    if (!hasText(startDate) || !hasText(endDate)) {
+      throw new Error('startDate and endDate are required');
     }
 
     const ep = ENDPOINTS.organicTraffic;

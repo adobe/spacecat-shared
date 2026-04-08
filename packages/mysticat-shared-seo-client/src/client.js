@@ -206,7 +206,7 @@ export default class SeoClient {
     return { result, fullAuditRef };
   }
 
-  async getTopPages(url, limit = 200, { region } = {}) {
+  async getTopPages(url, { limit = 200, region } = {}) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -283,16 +283,11 @@ export default class SeoClient {
     };
   }
 
-  async getPaidPages(
-    url,
+  async getPaidPages(url, {
     date = lastMonthISO(),
     limit = 200,
-    // Accepted for contract compatibility but not supported by this provider,
-    // which scopes by report type (domain/subdomain/subfolder/URL) instead.
-    // eslint-disable-next-line no-unused-vars
-    mode = 'prefix',
-    { region } = {},
-  ) {
+    region,
+  } = {}) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -367,7 +362,7 @@ export default class SeoClient {
     };
   }
 
-  async getMetrics(url, date = lastMonthISO(), { region } = {}) {
+  async getMetrics(url, { date = lastMonthISO(), region } = {}) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -440,7 +435,7 @@ export default class SeoClient {
    * @param {string} endDate - End date in YYYY-MM-DD format
    * @returns {Promise<{result: {metrics: Array}, fullAuditRef: string}>}
    */
-  async getOrganicTraffic(url, startDate, endDate, { region } = {}) {
+  async getOrganicTraffic(url, { startDate, endDate, region } = {}) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }

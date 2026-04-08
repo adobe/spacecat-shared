@@ -413,7 +413,7 @@ describe('SeoClient', () => {
     it('returns metrics summed across all databases', async () => {
       nockMetricsDatabases(BIG_MARKETS, metricsCsv, { targetDb: 'us' });
 
-      const result = await client.getMetrics('adobe.com', '2025-03-01');
+      const result = await client.getMetrics('adobe.com', { date: '2025-03-01' });
       expect(result.result.metrics.org_keywords).to.equal(8669522);
       expect(result.result.metrics.org_traffic).to.equal(41042165);
       expect(result.result.metrics.org_cost).to.equal(10246020100);
@@ -429,7 +429,7 @@ describe('SeoClient', () => {
       const csvWithNulls = 'Organic Keywords;Adwords Keywords;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost;X0\n"";"";"";"";"";"";""';
       nockMetricsDatabases(BIG_MARKETS, csvWithNulls, { targetDb: 'us' });
 
-      const result = await client.getMetrics('adobe.com', '2025-03-01');
+      const result = await client.getMetrics('adobe.com', { date: '2025-03-01' });
       expect(result.result.metrics.org_keywords).to.equal(0);
       expect(result.result.metrics.org_traffic).to.equal(0);
       expect(result.result.metrics.org_cost).to.equal(0);
@@ -449,7 +449,7 @@ describe('SeoClient', () => {
           .reply(200, csv);
       }
 
-      const result = await client.getMetrics('adobe.com', '2025-03-01');
+      const result = await client.getMetrics('adobe.com', { date: '2025-03-01' });
       expect(result.result.metrics.org_keywords).to.equal(300);
       expect(result.result.metrics.org_traffic).to.equal(3000);
       expect(result.result.metrics.paid_traffic).to.equal(150);
@@ -498,7 +498,7 @@ describe('SeoClient', () => {
     it('returns filtered historical metrics summed across databases', async () => {
       nockTrafficDatabases(BIG_MARKETS, organicTrafficCsv, { targetDb: 'us' });
 
-      const result = await client.getOrganicTraffic('adobe.com', '2024-11-01', '2025-01-31');
+      const result = await client.getOrganicTraffic('adobe.com', { startDate: '2024-11-01', endDate: '2025-01-31' });
 
       expect(result.result.metrics).to.have.lengthOf(3);
       expect(result.result.metrics[0]).to.deep.equal({
@@ -531,7 +531,7 @@ describe('SeoClient', () => {
           .reply(200, csv);
       }
 
-      const result = await client.getOrganicTraffic('adobe.com', '2025-01-01', '2025-02-01');
+      const result = await client.getOrganicTraffic('adobe.com', { startDate: '2025-01-01', endDate: '2025-02-01' });
       expect(result.result.metrics).to.have.lengthOf(1);
       expect(result.result.metrics[0].org_traffic).to.equal(100);
       expect(result.result.metrics[0].paid_traffic).to.equal(10);
@@ -553,7 +553,7 @@ describe('SeoClient', () => {
           .reply(200, csv);
       }
 
-      const result = await client.getOrganicTraffic('adobe.com', '2025-01-01', '2025-02-01');
+      const result = await client.getOrganicTraffic('adobe.com', { startDate: '2025-01-01', endDate: '2025-02-01' });
       expect(result.result.metrics).to.have.lengthOf(1);
       expect(result.result.metrics[0].org_traffic).to.equal(300);
       expect(result.result.metrics[0].paid_traffic).to.equal(30);
@@ -564,7 +564,7 @@ describe('SeoClient', () => {
     it('filters out data points outside the date range', async () => {
       nockTrafficDatabases(BIG_MARKETS, organicTrafficCsv, { targetDb: 'us' });
 
-      const result = await client.getOrganicTraffic('adobe.com', '2025-02-01', '2025-02-28');
+      const result = await client.getOrganicTraffic('adobe.com', { startDate: '2025-02-01', endDate: '2025-02-28' });
       expect(result.result.metrics).to.have.lengthOf(1);
       expect(result.result.metrics[0].date).to.equal('2025-02-15T00:00:00Z');
       expect(result.result.metrics[0].org_traffic).to.equal(42197498);
@@ -574,27 +574,27 @@ describe('SeoClient', () => {
       const csv = 'Date;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost\n"20250115";"100";"";"50";""';
       nockTrafficDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
 
-      const result = await client.getOrganicTraffic('adobe.com', '2025-01-01', '2025-02-01');
+      const result = await client.getOrganicTraffic('adobe.com', { startDate: '2025-01-01', endDate: '2025-02-01' });
       expect(result.result.metrics[0].org_cost).to.equal(0);
       expect(result.result.metrics[0].paid_cost).to.equal(0);
     });
 
     it('throws error when url is not a string', async () => {
-      await expect(client.getOrganicTraffic(null, '2024-01-01', '2024-12-31'))
+      await expect(client.getOrganicTraffic(null, { startDate: '2024-01-01', endDate: '2024-12-31' }))
         .to.be.rejectedWith('Invalid URL');
     });
 
     it('returns empty array when no dates in range', async () => {
       nockTrafficDatabases(BIG_MARKETS, organicTrafficCsv, { targetDb: 'us' });
 
-      const result = await client.getOrganicTraffic('adobe.com', '2030-01-01', '2030-12-31');
+      const result = await client.getOrganicTraffic('adobe.com', { startDate: '2030-01-01', endDate: '2030-12-31' });
       expect(result.result.metrics).to.deep.equal([]);
     });
 
     it('includes fullAuditRef with correct type and domain', async () => {
       nockTrafficDatabases(BIG_MARKETS, organicTrafficCsv, { targetDb: 'us' });
 
-      const result = await client.getOrganicTraffic('adobe.com', '2024-01-01', '2025-12-31');
+      const result = await client.getOrganicTraffic('adobe.com', { startDate: '2024-01-01', endDate: '2025-12-31' });
       expect(result.fullAuditRef).to.include('type=domain_rank_history');
       expect(result.fullAuditRef).to.include('domain=adobe.com');
     });
@@ -626,7 +626,7 @@ describe('SeoClient', () => {
     it('fans out to all big markets and merges results', async () => {
       nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'us' });
 
-      const result = await client.getTopPages('adobe.com', 3);
+      const result = await client.getTopPages('adobe.com', { limit: 3 });
 
       expect(result.result.pages).to.have.lengthOf(3);
       expect(result.result.pages[0]).to.deep.equal({
@@ -690,7 +690,7 @@ describe('SeoClient', () => {
       const allDbs = [...BIG_MARKETS, 'cz'];
       nockAllDatabases(allDbs, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'cz' });
 
-      const result = await client.getTopPages('example.cz', 3, { region: 'CZ' });
+      const result = await client.getTopPages('example.cz', { limit: 3, region: 'CZ' });
 
       expect(result.result.pages).to.have.lengthOf(3);
       expect(result.result.pages[0].url).to.equal('https://www.adobe.com/');
@@ -699,7 +699,7 @@ describe('SeoClient', () => {
     it('does not duplicate database when region is already in big markets', async () => {
       nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'es' });
 
-      const result = await client.getTopPages('example.es', 3, { region: 'ES' });
+      const result = await client.getTopPages('example.es', { limit: 3, region: 'ES' });
 
       expect(result.result.pages).to.have.lengthOf(3);
     });
@@ -719,7 +719,7 @@ describe('SeoClient', () => {
     it('respects upper limit of 2000', async () => {
       nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'us' });
 
-      const result = await client.getTopPages('adobe.com', 5000);
+      const result = await client.getTopPages('adobe.com', { limit: 5000 });
       expect(result.result.pages).to.have.length.greaterThan(0);
     });
 
@@ -752,7 +752,7 @@ describe('SeoClient', () => {
         }
       }
 
-      const result = await client.getTopPages('adobe.com', 3);
+      const result = await client.getTopPages('adobe.com', { limit: 3 });
 
       expect(result.result.pages).to.have.lengthOf(3);
       expect(result.result.pages[0].url).to.equal('https://www.adobe.com/');
@@ -977,7 +977,7 @@ describe('SeoClient', () => {
     it('aggregates adobe.com paid keywords into page-level data across databases', async () => {
       nockPaidDatabases(BIG_MARKETS, paidKeywordsCsv, { targetDb: 'us' });
 
-      const result = await client.getPaidPages('adobe.com', '2025-03-01', 5);
+      const result = await client.getPaidPages('adobe.com', { date: '2025-03-01', limit: 5 });
 
       // 7 keywords across 6 unique URLs (pricing page has 2 keywords)
       expect(result.result.pages).to.have.lengthOf(5);
@@ -1024,13 +1024,13 @@ describe('SeoClient', () => {
     it('sends custom date converted to API format', async () => {
       nockPaidDatabases(BIG_MARKETS, paidKeywordsCsv, { targetDb: 'us' });
 
-      await client.getPaidPages('adobe.com', '2025-11-10', 500);
+      await client.getPaidPages('adobe.com', { date: '2025-11-10', limit: 500 });
     });
 
     it('respects upper limit of 1000 on output', async () => {
       nockPaidDatabases(BIG_MARKETS, paidKeywordsCsv, { targetDb: 'us' });
 
-      const result = await client.getPaidPages('adobe.com', undefined, 5000);
+      const result = await client.getPaidPages('adobe.com', { limit: 5000 });
       expect(result.result.pages.length).to.be.at.most(1000);
     });
 

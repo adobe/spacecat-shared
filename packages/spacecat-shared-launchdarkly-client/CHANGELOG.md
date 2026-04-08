@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-launchdarkly-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.0.6...@adobe/spacecat-shared-launchdarkly-client-v1.1.0) (2026-04-08)
+
+### Features
+
+* **launchdarkly-client:** add REST API support for feature flag management ([#1502](https://github.com/adobe/spacecat-shared/issues/1502)) ([f0fbd00](https://github.com/adobe/spacecat-shared/commit/f0fbd0028e4d8c3f191d8a8a001555ef36475db3))
+
 ## [@adobe/spacecat-shared-launchdarkly-client-v1.0.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.0.5...@adobe/spacecat-shared-launchdarkly-client-v1.0.6) (2026-04-06)
 
 ### Bug Fixes

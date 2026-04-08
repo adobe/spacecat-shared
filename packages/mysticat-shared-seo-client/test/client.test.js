@@ -15,7 +15,13 @@ import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import sinon from 'sinon';
 
-import SeoClient, { fetch, ORGANIC_KEYWORDS_FIELDS, METRICS_BY_COUNTRY_FILTER_FIELDS } from '../src/index.js';
+import SeoClient, {
+  fetch,
+  BIG_MARKETS,
+  getDatabases,
+  ORGANIC_KEYWORDS_FIELDS,
+  METRICS_BY_COUNTRY_FILTER_FIELDS,
+} from '../src/index.js';
 
 use(chaiAsPromised);
 const sandbox = sinon.createSandbox();
@@ -147,6 +153,76 @@ describe('SeoClient', () => {
     it('throws when SEO_API_BASE_URL is missing', () => {
       const context = { env: { SEO_API_KEY: 'key' } };
       expect(() => SeoClient.createFrom(context)).to.throw('Invalid SEO API Base URL');
+    });
+  });
+
+  // ===== getDatabases =====
+
+  describe('getDatabases', () => {
+    it('returns big markets when no region provided', () => {
+      expect(getDatabases()).to.deep.equal(BIG_MARKETS);
+    });
+
+    it('adds region when not in big markets', () => {
+      const dbs = getDatabases('CZ');
+      expect(dbs).to.include('cz');
+      expect(dbs).to.have.lengthOf(BIG_MARKETS.length + 1);
+    });
+
+    it('does not duplicate when region is already in big markets', () => {
+      const dbs = getDatabases('US');
+      expect(dbs).to.deep.equal(BIG_MARKETS);
+    });
+  });
+
+  // ===== fanOut =====
+
+  describe('fanOut', () => {
+    it('logs warning for failed databases and returns fulfilled ones', async () => {
+      const logSpy = {
+        warn: sinon.spy(), debug: sinon.spy(), info: sinon.spy(), error: sinon.spy(),
+      };
+      const c = new SeoClient(config, fetch, logSpy);
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.database === 'ok')
+        .reply(200, 'H\nV');
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.database === 'fail')
+        .reply(200, 'ERROR 50 :: SOME ERROR');
+
+      const results = await c.fanOut(
+        ['ok', 'fail'],
+        (db) => c.sendRawRequest({ database: db }),
+        'testOp',
+      );
+
+      expect(results).to.have.lengthOf(1);
+      expect(results[0].key).to.equal('ok');
+      expect(logSpy.warn.calledOnce).to.equal(true);
+      expect(logSpy.warn.firstCall.args[0]).to.include('testOp: fail failed');
+    });
+
+    it('batches requests to respect rate limits', async () => {
+      // Create 15 items to verify batching (batch size is 10)
+      const items = Array.from({ length: 15 }, (_, i) => `db${i}`);
+      for (const db of items) {
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.database === db)
+          .reply(200, 'H\nV');
+      }
+
+      const results = await client.fanOut(
+        items,
+        (db) => client.sendRawRequest({ database: db }),
+        'batchTest',
+      );
+
+      expect(results).to.have.lengthOf(15);
     });
   });
 
@@ -323,48 +399,80 @@ describe('SeoClient', () => {
   // ===== getMetrics =====
 
   describe('getMetrics', () => {
-    it('returns adobe.com metrics with correct field mapping and currency conversion', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_rank')
-        .reply(200, metricsCsv);
+    const emptyMetricsCsv = 'Organic Keywords;Adwords Keywords;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost;X0';
+
+    function nockMetricsDatabases(databases, csv, { targetDb } = {}) {
+      for (const db of databases) {
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_rank' && q.database === db)
+          .reply(200, db === targetDb ? csv : emptyMetricsCsv);
+      }
+    }
+
+    it('returns metrics summed across all databases', async () => {
+      nockMetricsDatabases(BIG_MARKETS, metricsCsv, { targetDb: 'us' });
 
       const result = await client.getMetrics('adobe.com', '2025-03-01');
-      expect(result.result).to.deep.equal({
-        metrics: {
-          org_keywords: 8669522,
-          paid_keywords: 38372,
-          org_keywords_1_3: 851962,
-          org_traffic: 41042165,
-          org_cost: 10246020100, // 102460201 * 100
-          paid_traffic: 1231861,
-          paid_cost: 681185500, // 6811855 * 100
-          paid_pages: null,
-        },
-      });
+      expect(result.result.metrics.org_keywords).to.equal(8669522);
+      expect(result.result.metrics.org_traffic).to.equal(41042165);
+      expect(result.result.metrics.org_cost).to.equal(10246020100);
+      expect(result.result.metrics.paid_traffic).to.equal(1231861);
+      expect(result.result.metrics.paid_cost).to.equal(681185500);
+      expect(result.result.metrics.paid_pages).to.equal(null);
       expect(result.fullAuditRef).to.include('type=domain_rank');
       expect(result.fullAuditRef).to.include('domain=adobe.com');
       expect(result.fullAuditRef).to.include('display_date=20250315');
+    });
+
+    it('handles null values in metrics accumulation', async () => {
+      const csvWithNulls = 'Organic Keywords;Adwords Keywords;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost;X0\n"";"";"";"";"";"";""';
+      nockMetricsDatabases(BIG_MARKETS, csvWithNulls, { targetDb: 'us' });
+
+      const result = await client.getMetrics('adobe.com', '2025-03-01');
+      expect(result.result.metrics.org_keywords).to.equal(0);
+      expect(result.result.metrics.org_traffic).to.equal(0);
+      expect(result.result.metrics.org_cost).to.equal(0);
+    });
+
+    it('sums metrics across multiple databases', async () => {
+      const usCsv = 'Organic Keywords;Adwords Keywords;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost;X0\n"100";"10";"1000";"5.00";"50";"2.00";"20"';
+      const deCsv = 'Organic Keywords;Adwords Keywords;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost;X0\n"200";"20";"2000";"10.00";"100";"4.00";"40"';
+
+      for (const db of BIG_MARKETS) {
+        let csv = emptyMetricsCsv;
+        if (db === 'us') csv = usCsv;
+        if (db === 'de') csv = deCsv;
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_rank' && q.database === db)
+          .reply(200, csv);
+      }
+
+      const result = await client.getMetrics('adobe.com', '2025-03-01');
+      expect(result.result.metrics.org_keywords).to.equal(300);
+      expect(result.result.metrics.org_traffic).to.equal(3000);
+      expect(result.result.metrics.paid_traffic).to.equal(150);
+      expect(result.result.metrics.org_cost).to.equal(1500);
+      expect(result.result.metrics.paid_cost).to.equal(600);
+      expect(result.result.metrics.org_keywords_1_3).to.equal(60);
     });
 
     it('throws error when url is not a string', async () => {
       await expect(client.getMetrics(null)).to.be.rejectedWith('Invalid URL');
     });
 
-    it('uses today as default date', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_rank' && q.display_date === '20250315')
-        .reply(200, metricsCsv);
+    it('defaults to last month when no date provided', async () => {
+      nockMetricsDatabases(BIG_MARKETS, metricsCsv, { targetDb: 'us' });
 
-      await client.getMetrics('adobe.com');
+      const result = await client.getMetrics('adobe.com');
+      // Clock is 2025-03-12, so lastMonthISO() = 2025-02-01 → toApiDate = 20250215
+      expect(result.fullAuditRef).to.include('display_date=20250215');
+      expect(result.result.metrics.org_traffic).to.equal(41042165);
     });
 
-    it('handles empty CSV response', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_rank')
-        .reply(200, 'Organic Keywords;Adwords Keywords;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost;X0');
+    it('handles empty CSV response from all databases', async () => {
+      nockMetricsDatabases(BIG_MARKETS, emptyMetricsCsv, {});
 
       const result = await client.getMetrics('adobe.com');
       expect(result.result.metrics.org_keywords).to.equal(null);
@@ -376,11 +484,19 @@ describe('SeoClient', () => {
   // ===== getOrganicTraffic =====
 
   describe('getOrganicTraffic', () => {
-    it('returns filtered adobe.com historical metrics with currency conversion', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_rank_history')
-        .reply(200, organicTrafficCsv);
+    const emptyTrafficCsv = 'Date;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost';
+
+    function nockTrafficDatabases(databases, csv, { targetDb } = {}) {
+      for (const db of databases) {
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_rank_history' && q.database === db)
+          .reply(200, db === targetDb ? csv : emptyTrafficCsv);
+      }
+    }
+
+    it('returns filtered historical metrics summed across databases', async () => {
+      nockTrafficDatabases(BIG_MARKETS, organicTrafficCsv, { targetDb: 'us' });
 
       const result = await client.getOrganicTraffic('adobe.com', '2024-11-01', '2025-01-31');
 
@@ -401,11 +517,52 @@ describe('SeoClient', () => {
       });
     });
 
+    it('handles null values in traffic accumulation across databases', async () => {
+      const usCsv = 'Date;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost\n"20250115";"100";"1.00";"10";"0.50"';
+      const deCsv = 'Date;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost\n"20250115";"";"";"";"0.25"';
+
+      for (const db of BIG_MARKETS) {
+        let csv = emptyTrafficCsv;
+        if (db === 'us') csv = usCsv;
+        if (db === 'de') csv = deCsv;
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_rank_history' && q.database === db)
+          .reply(200, csv);
+      }
+
+      const result = await client.getOrganicTraffic('adobe.com', '2025-01-01', '2025-02-01');
+      expect(result.result.metrics).to.have.lengthOf(1);
+      expect(result.result.metrics[0].org_traffic).to.equal(100);
+      expect(result.result.metrics[0].paid_traffic).to.equal(10);
+      expect(result.result.metrics[0].org_cost).to.equal(100);
+      expect(result.result.metrics[0].paid_cost).to.equal(75);
+    });
+
+    it('sums traffic by date across databases', async () => {
+      const usCsv = 'Date;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost\n"20250115";"100";"1.00";"10";"0.50"';
+      const deCsv = 'Date;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost\n"20250115";"200";"2.00";"20";"1.00"';
+
+      for (const db of BIG_MARKETS) {
+        let csv = emptyTrafficCsv;
+        if (db === 'us') csv = usCsv;
+        if (db === 'de') csv = deCsv;
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_rank_history' && q.database === db)
+          .reply(200, csv);
+      }
+
+      const result = await client.getOrganicTraffic('adobe.com', '2025-01-01', '2025-02-01');
+      expect(result.result.metrics).to.have.lengthOf(1);
+      expect(result.result.metrics[0].org_traffic).to.equal(300);
+      expect(result.result.metrics[0].paid_traffic).to.equal(30);
+      expect(result.result.metrics[0].org_cost).to.equal(300);
+      expect(result.result.metrics[0].paid_cost).to.equal(150);
+    });
+
     it('filters out data points outside the date range', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_rank_history')
-        .reply(200, organicTrafficCsv);
+      nockTrafficDatabases(BIG_MARKETS, organicTrafficCsv, { targetDb: 'us' });
 
       const result = await client.getOrganicTraffic('adobe.com', '2025-02-01', '2025-02-28');
       expect(result.result.metrics).to.have.lengthOf(1);
@@ -415,10 +572,7 @@ describe('SeoClient', () => {
 
     it('handles null cost values', async () => {
       const csv = 'Date;Organic Traffic;Organic Cost;Adwords Traffic;Adwords Cost\n"20250115";"100";"";"50";""';
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_rank_history')
-        .reply(200, csv);
+      nockTrafficDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
 
       const result = await client.getOrganicTraffic('adobe.com', '2025-01-01', '2025-02-01');
       expect(result.result.metrics[0].org_cost).to.equal(0);
@@ -431,20 +585,14 @@ describe('SeoClient', () => {
     });
 
     it('returns empty array when no dates in range', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_rank_history')
-        .reply(200, organicTrafficCsv);
+      nockTrafficDatabases(BIG_MARKETS, organicTrafficCsv, { targetDb: 'us' });
 
       const result = await client.getOrganicTraffic('adobe.com', '2030-01-01', '2030-12-31');
       expect(result.result.metrics).to.deep.equal([]);
     });
 
     it('includes fullAuditRef with correct type and domain', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_rank_history')
-        .reply(200, organicTrafficCsv);
+      nockTrafficDatabases(BIG_MARKETS, organicTrafficCsv, { targetDb: 'us' });
 
       const result = await client.getOrganicTraffic('adobe.com', '2024-01-01', '2025-12-31');
       expect(result.fullAuditRef).to.include('type=domain_rank_history');
@@ -455,16 +603,28 @@ describe('SeoClient', () => {
   // ===== getTopPages =====
 
   describe('getTopPages', () => {
-    it('returns adobe.com pages with top keywords from two API calls', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_organic_unique')
-        .reply(200, topPagesCsv);
+    const emptyPagesCsv = 'Url;Traffic';
+    const emptyKwCsv = 'Url;Keyword;Traffic';
 
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg')
-        .reply(200, topPagesKeywordsCsv);
+    function nockAllDatabases(databases, pagesCsv, kwCsv, { targetDb } = {}) {
+      for (const db of databases) {
+        const pCsv = db === targetDb ? pagesCsv : emptyPagesCsv;
+        const kCsv = db === targetDb ? kwCsv : emptyKwCsv;
+
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_organic_unique' && q.database === db)
+          .reply(200, pCsv);
+
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg' && q.database === db)
+          .reply(200, kCsv);
+      }
+    }
+
+    it('fans out to all big markets and merges results', async () => {
+      nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'us' });
 
       const result = await client.getTopPages('adobe.com', 3);
 
@@ -486,16 +646,67 @@ describe('SeoClient', () => {
       });
     });
 
-    it('returns null for top_keyword when no keyword data found', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_organic_unique')
-        .reply(200, 'Url;Traffic\n"https://unknown.com/page";"50"');
+    it('handles null traffic values during accumulation', async () => {
+      const usCsv = 'Url;Traffic\n"https://example.com/page";""';
+      const usKwCsv = 'Url;Keyword;Traffic\n"https://example.com/page";"widget";""';
+      nockAllDatabases(BIG_MARKETS, usCsv, usKwCsv, { targetDb: 'us' });
 
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg')
-        .reply(200, 'Url;Keyword;Traffic');
+      const result = await client.getTopPages('example.com');
+      expect(result.result.pages[0].sum_traffic).to.equal(0);
+    });
+
+    it('sums traffic across databases for the same URL', async () => {
+      const usCsv = 'Url;Traffic\n"https://example.com/page";"100"';
+      const deCsv = 'Url;Traffic\n"https://example.com/page";"250"';
+      const usKwCsv = 'Url;Keyword;Traffic\n"https://example.com/page";"widget";"100"';
+
+      for (const db of BIG_MARKETS) {
+        let pCsv = emptyPagesCsv;
+        if (db === 'us') pCsv = usCsv;
+        if (db === 'de') pCsv = deCsv;
+
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_organic_unique' && q.database === db)
+          .reply(200, pCsv);
+
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg' && q.database === db)
+          .reply(200, db === 'us' ? usKwCsv : emptyKwCsv);
+      }
+
+      const result = await client.getTopPages('example.com');
+
+      expect(result.result.pages).to.have.lengthOf(1);
+      expect(result.result.pages[0]).to.deep.equal({
+        url: 'https://example.com/page',
+        sum_traffic: 350,
+        top_keyword: 'widget',
+      });
+    });
+
+    it('adds site region to databases when not in big markets', async () => {
+      const allDbs = [...BIG_MARKETS, 'cz'];
+      nockAllDatabases(allDbs, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'cz' });
+
+      const result = await client.getTopPages('example.cz', 3, { region: 'CZ' });
+
+      expect(result.result.pages).to.have.lengthOf(3);
+      expect(result.result.pages[0].url).to.equal('https://www.adobe.com/');
+    });
+
+    it('does not duplicate database when region is already in big markets', async () => {
+      nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'es' });
+
+      const result = await client.getTopPages('example.es', 3, { region: 'ES' });
+
+      expect(result.result.pages).to.have.lengthOf(3);
+    });
+
+    it('returns null for top_keyword when no keyword data found', async () => {
+      const pageCsv = 'Url;Traffic\n"https://unknown.com/page";"50"';
+      nockAllDatabases(BIG_MARKETS, pageCsv, emptyKwCsv, { targetDb: 'us' });
 
       const result = await client.getTopPages('unknown.com');
       expect(result.result.pages[0].top_keyword).to.equal(null);
@@ -506,17 +717,45 @@ describe('SeoClient', () => {
     });
 
     it('respects upper limit of 2000', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_organic_unique' && q.display_limit === '2000')
-        .reply(200, topPagesCsv);
+      nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'us' });
 
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg')
-        .reply(200, topPagesKeywordsCsv);
+      const result = await client.getTopPages('adobe.com', 5000);
+      expect(result.result.pages).to.have.length.greaterThan(0);
+    });
 
-      await client.getTopPages('adobe.com', 5000);
+    it('handles database failures gracefully via fanOut', async () => {
+      sinon.stub(SeoClient, 'delay').resolves();
+
+      for (const db of BIG_MARKETS) {
+        if (db === 'us') {
+          nock(config.apiBaseUrl)
+            .get('/')
+            .query((q) => q.type === 'domain_organic_unique' && q.database === 'us')
+            .reply(200, topPagesCsv);
+
+          nock(config.apiBaseUrl)
+            .get('/')
+            .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg' && q.database === 'us')
+            .reply(200, topPagesKeywordsCsv);
+        } else {
+          nock(config.apiBaseUrl)
+            .get('/')
+            .query((q) => q.type === 'domain_organic_unique' && q.database === db)
+            .times(5)
+            .reply(200, 'ERROR 50 :: LIMIT EXCEEDED');
+
+          nock(config.apiBaseUrl)
+            .get('/')
+            .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg' && q.database === db)
+            .times(5)
+            .reply(200, 'ERROR 50 :: LIMIT EXCEEDED');
+        }
+      }
+
+      const result = await client.getTopPages('adobe.com', 3);
+
+      expect(result.result.pages).to.have.lengthOf(3);
+      expect(result.result.pages[0].url).to.equal('https://www.adobe.com/');
     });
   });
 
@@ -720,15 +959,23 @@ describe('SeoClient', () => {
   // ===== getPaidPages =====
 
   describe('getPaidPages', () => {
+    const emptyPaidCsv = 'Keyword;Url;Traffic;Search Volume;CPC;Position;Title';
+
+    function nockPaidDatabases(databases, csv, { targetDb } = {}) {
+      for (const db of databases) {
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_adwords' && q.database === db)
+          .reply(200, db === targetDb ? csv : emptyPaidCsv);
+      }
+    }
+
     it('throws error when url is not a string', async () => {
       await expect(client.getPaidPages(null)).to.be.rejectedWith('Invalid URL');
     });
 
-    it('aggregates adobe.com paid keywords into page-level data', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_adwords')
-        .reply(200, paidKeywordsCsv);
+    it('aggregates adobe.com paid keywords into page-level data across databases', async () => {
+      nockPaidDatabases(BIG_MARKETS, paidKeywordsCsv, { targetDb: 'us' });
 
       const result = await client.getPaidPages('adobe.com', '2025-03-01', 5);
 
@@ -757,20 +1004,31 @@ describe('SeoClient', () => {
       expect(acrobatPage.sum_traffic).to.equal(23124);
     });
 
+    it('sets top_keyword_country from the database with highest traffic keyword', async () => {
+      const deCsv = [
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
+        '"fenster";"https://example.com/p";"500";"1000";"0.50";"1";"Fenster"',
+      ].join('\n');
+
+      for (const db of BIG_MARKETS) {
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_adwords' && q.database === db)
+          .reply(200, db === 'de' ? deCsv : emptyPaidCsv);
+      }
+
+      const result = await client.getPaidPages('example.com');
+      expect(result.result.pages[0].top_keyword_country).to.equal('DE');
+    });
+
     it('sends custom date converted to API format', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_adwords' && q.display_date === '20251115')
-        .reply(200, paidKeywordsCsv);
+      nockPaidDatabases(BIG_MARKETS, paidKeywordsCsv, { targetDb: 'us' });
 
       await client.getPaidPages('adobe.com', '2025-11-10', 500);
     });
 
     it('respects upper limit of 1000 on output', async () => {
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_adwords')
-        .reply(200, paidKeywordsCsv);
+      nockPaidDatabases(BIG_MARKETS, paidKeywordsCsv, { targetDb: 'us' });
 
       const result = await client.getPaidPages('adobe.com', undefined, 5000);
       expect(result.result.pages.length).to.be.at.most(1000);
@@ -783,10 +1041,7 @@ describe('SeoClient', () => {
         '"kw2";"https://example.com/p";"";"200";"0.50";"5";"Title"',
       ].join('\n');
 
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_adwords')
-        .reply(200, csv);
+      nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
 
       const result = await client.getPaidPages('example.com');
       const page = result.result.pages[0];
@@ -802,10 +1057,7 @@ describe('SeoClient', () => {
         '"high-kw";"https://example.com/p";"500";"200";"1.00";"1";"High Title"',
       ].join('\n');
 
-      nock(config.apiBaseUrl)
-        .get('/')
-        .query((q) => q.type === 'domain_adwords')
-        .reply(200, csv);
+      nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
 
       const result = await client.getPaidPages('example.com');
       expect(result.result.pages[0].top_keyword).to.equal('high-kw');

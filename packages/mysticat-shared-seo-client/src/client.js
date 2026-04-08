@@ -15,7 +15,7 @@ import { context as h2, h1 } from '@adobe/fetch';
 
 import { ENDPOINTS } from './endpoints.js';
 import {
-  parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, todayISO, buildFilter,
+  parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, lastMonthISO, buildFilter,
   extractBrand, INTENT_CODES,
 } from './utils.js';
 
@@ -29,6 +29,30 @@ const MAX_ERROR_BODY_LENGTH = 500;
 const MAX_PAID_KEYWORDS_FETCH = 10000;
 const RATE_LIMIT_BASE_DELAY_MS = 1000;
 const MAX_RETRIES = 4;
+
+/**
+ * Major SEO provider databases by search volume. Used as the default fan-out
+ * set for getTopPages to aggregate traffic across top global markets.
+ */
+export const BIG_MARKETS = ['us', 'uk', 'de', 'fr', 'es', 'it', 'br', 'ca', 'au', 'in', 'jp', 'nl'];
+
+/**
+ * Returns the list of databases to query: BIG_MARKETS + site region if not already present.
+ * @param {string} [region] - ISO 3166-1 alpha-2 region code (e.g. 'CZ')
+ * @returns {string[]}
+ */
+export function getDatabases(region) {
+  const databases = [...BIG_MARKETS];
+  if (region) {
+    const db = region.toLowerCase();
+    if (!databases.includes(db)) {
+      databases.push(db);
+    }
+  }
+  return databases;
+}
+
+const FANOUT_BATCH_SIZE = 10;
 
 const STUB_RESPONSE = { result: {}, fullAuditRef: '' };
 
@@ -63,6 +87,41 @@ export default class SeoClient {
     this.apiKey = apiKey;
     this.fetchAPI = fetchAPI;
     this.log = log;
+  }
+
+  /**
+   * Fans out an async operation across items in batches, collects fulfilled
+   * results, and logs rejected ones. Each call to `fn(item)` already has
+   * per-request retry/backoff via sendRawRequest; this layer adds batching to
+   * respect rate limits and consistent error reporting for items that fail
+   * after all retries are exhausted.
+   *
+   * @param {string[]} items - Items to process (database codes, URLs, etc.)
+   * @param {function(string): Promise<T>} fn - Async operation per item
+   * @param {string} operation - Name for logging (e.g. 'getTopPages')
+   * @returns {Promise<Array<{key: string, value: T}>>} Fulfilled results
+   * @template T
+   */
+  async fanOut(items, fn, operation) {
+    const fulfilled = [];
+
+    for (let i = 0; i < items.length; i += FANOUT_BATCH_SIZE) {
+      const batch = items.slice(i, i + FANOUT_BATCH_SIZE);
+      // eslint-disable-next-line no-await-in-loop
+      const results = await Promise.allSettled(batch.map((item) => fn(item)));
+
+      for (let j = 0; j < results.length; j += 1) {
+        const key = batch[j];
+        const result = results[j];
+        if (result.status === 'fulfilled') {
+          fulfilled.push({ key, value: result.value });
+        } else {
+          this.log.warn(`${operation}: ${key} failed — ${result.reason?.message || result.reason}`);
+        }
+      }
+    }
+
+    return fulfilled;
   }
 
   /**
@@ -147,7 +206,7 @@ export default class SeoClient {
     return { result, fullAuditRef };
   }
 
-  async getTopPages(url, limit = 200) {
+  async getTopPages(url, limit = 200, { region } = {}) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -155,51 +214,68 @@ export default class SeoClient {
     const ep = ENDPOINTS.topPages;
     const epKw = ENDPOINTS.topPagesKeywords;
     const effectiveLimit = getLimit(limit, 2000);
+    const databases = getDatabases(region);
 
-    const commonParams = {
-      domain: url,
-      database: DEFAULT_DATABASE,
-    };
+    const dbResults = await this.fanOut(databases, async (db) => {
+      const commonParams = { domain: url, database: db };
+      const [{ body: pagesBody, fullAuditRef }, { body: kwBody }] = await Promise.all([
+        this.sendRawRequest({
+          type: ep.type,
+          ...commonParams,
+          display_limit: effectiveLimit,
+          export_columns: ep.columns,
+          display_filter: buildFilter([{
+            sign: '+', field: 'Tg', op: 'Gt', value: '0',
+          }]),
+          ...ep.defaultParams,
+        }, ep.path),
+        this.sendRawRequest({
+          type: epKw.type,
+          ...commonParams,
+          display_limit: effectiveLimit * 3,
+          export_columns: epKw.columns,
+          ...epKw.defaultParams,
+        }, epKw.path),
+      ]);
+      return {
+        pageRows: parseCsvResponse(pagesBody),
+        kwRows: parseCsvResponse(kwBody),
+        fullAuditRef,
+      };
+    }, 'getTopPages');
 
-    // Two calls required: the SEO data provider does not offer a top-keyword-per-page
-    // field in its page-level report. Sorting organic keywords by traffic and grouping
-    // by URL client-side is the recommended approach.
-    const [{ body: pagesBody, fullAuditRef }, { body: kwBody }] = await Promise.all([
-      this.sendRawRequest({
-        type: ep.type,
-        ...commonParams,
-        display_limit: effectiveLimit,
-        export_columns: ep.columns,
-        display_filter: buildFilter([{
-          sign: '+', field: 'Tg', op: 'Gt', value: '0',
-        }]),
-        ...ep.defaultParams,
-      }, ep.path),
-      this.sendRawRequest({
-        type: epKw.type,
-        ...commonParams,
-        display_limit: effectiveLimit * 3,
-        export_columns: epKw.columns,
-        ...epKw.defaultParams,
-      }, epKw.path),
-    ]);
-
-    const pageRows = parseCsvResponse(pagesBody);
-    const kwRows = parseCsvResponse(kwBody);
-
-    // Build keyword lookup: URL → top keyword (first occurrence = highest traffic)
+    // Merge pages: sum traffic across databases, keep first keyword per URL
+    const pageMap = new Map();
     const keywordMap = new Map();
-    for (const row of kwRows) {
-      if (!keywordMap.has(row.Ur)) {
-        keywordMap.set(row.Ur, row.Ph);
+    let fullAuditRef = '';
+
+    for (const { value } of dbResults) {
+      if (!fullAuditRef) fullAuditRef = value.fullAuditRef;
+
+      for (const row of value.kwRows) {
+        if (!keywordMap.has(row.Ur)) {
+          keywordMap.set(row.Ur, row.Ph);
+        }
+      }
+
+      for (const row of value.pageRows) {
+        const traffic = coerceValue(row.Tg, 'int') || 0;
+        const existing = pageMap.get(row.Ur);
+        if (existing) {
+          existing.sum_traffic += traffic;
+        } else {
+          pageMap.set(row.Ur, { url: row.Ur, sum_traffic: traffic });
+        }
       }
     }
 
-    const pages = pageRows.map((row) => ({
-      url: row.Ur,
-      sum_traffic: coerceValue(row.Tg, 'int'),
-      top_keyword: keywordMap.get(row.Ur) ?? null,
-    }));
+    const pages = [...pageMap.values()]
+      .map((page) => ({
+        ...page,
+        top_keyword: keywordMap.get(page.url) ?? null,
+      }))
+      .sort((a, b) => b.sum_traffic - a.sum_traffic)
+      .slice(0, effectiveLimit);
 
     return {
       result: { pages },
@@ -209,12 +285,13 @@ export default class SeoClient {
 
   async getPaidPages(
     url,
-    date = todayISO(),
+    date = lastMonthISO(),
     limit = 200,
     // Accepted for contract compatibility but not supported by this provider,
     // which scopes by report type (domain/subdomain/subfolder/URL) instead.
     // eslint-disable-next-line no-unused-vars
     mode = 'prefix',
+    { region } = {},
   ) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
@@ -222,34 +299,41 @@ export default class SeoClient {
 
     const ep = ENDPOINTS.paidPages;
     const effectiveLimit = getLimit(limit, 1000);
+    const databases = getDatabases(region);
 
     // Over-fetch keywords to aggregate into pages. A domain typically has more
     // keywords than pages, so we fetch a multiple of the requested limit.
     // Capped at MAX_PAID_KEYWORDS_FETCH to bound cost.
     const fetchLimit = Math.min(effectiveLimit * 10, MAX_PAID_KEYWORDS_FETCH);
 
-    const { body, fullAuditRef } = await this.sendRawRequest({
+    const dbResults = await this.fanOut(databases, (db) => this.sendRawRequest({
       type: ep.type,
       domain: url,
-      database: DEFAULT_DATABASE,
+      database: db,
       display_date: toApiDate(date),
       display_limit: fetchLimit,
       export_columns: ep.columns,
       ...ep.defaultParams,
-    }, ep.path);
-    const rows = parseCsvResponse(body);
+    }, ep.path), 'getPaidPages');
 
-    // Group keywords by URL
+    // Group keywords by URL across all databases
     const pageMap = new Map();
-    for (const row of rows) {
-      const pageUrl = row.Ur;
-      if (!pageMap.has(pageUrl)) {
-        pageMap.set(pageUrl, { url: pageUrl, keywords: [], totalTraffic: 0 });
+    let fullAuditRef = '';
+
+    for (const { key: db, value } of dbResults) {
+      if (!fullAuditRef) fullAuditRef = value.fullAuditRef;
+
+      const rows = parseCsvResponse(value.body);
+      for (const row of rows) {
+        const pageUrl = row.Ur;
+        if (!pageMap.has(pageUrl)) {
+          pageMap.set(pageUrl, { url: pageUrl, keywords: [], totalTraffic: 0 });
+        }
+        const page = pageMap.get(pageUrl);
+        const traffic = coerceValue(row.Tg, 'int') || 0;
+        page.totalTraffic += traffic;
+        page.keywords.push({ ...row, kwTraffic: traffic, db });
       }
-      const page = pageMap.get(pageUrl);
-      const traffic = coerceValue(row.Tg, 'int') || 0;
-      page.totalTraffic += traffic;
-      page.keywords.push({ ...row, kwTraffic: traffic });
     }
 
     // Transform to page-level aggregation, sorted by traffic desc
@@ -265,7 +349,7 @@ export default class SeoClient {
           url: page.url,
           top_keyword: topKw.Ph,
           top_keyword_best_position_title: topKw.Tt || null,
-          top_keyword_country: DEFAULT_DATABASE.toUpperCase(),
+          top_keyword_country: topKw.db.toUpperCase(),
           top_keyword_volume: coerceValue(topKw.Nq, 'int'),
           sum_traffic: page.totalTraffic,
           value: page.keywords.reduce(
@@ -283,37 +367,65 @@ export default class SeoClient {
     };
   }
 
-  async getMetrics(url, date = todayISO()) {
+  async getMetrics(url, date = lastMonthISO(), { region } = {}) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
 
     const ep = ENDPOINTS.metrics;
+    const databases = getDatabases(region);
 
-    const { body, fullAuditRef } = await this.sendRawRequest({
+    const dbResults = await this.fanOut(databases, (db) => this.sendRawRequest({
       type: ep.type,
       domain: url,
-      database: DEFAULT_DATABASE,
+      database: db,
       display_date: toApiDate(date),
       export_columns: ep.columns,
       ...ep.defaultParams,
-    }, ep.path);
-    const rows = parseCsvResponse(body);
-    const row = rows[0] || {};
+    }, ep.path), 'getMetrics');
+
+    const metrics = {
+      org_keywords: 0,
+      paid_keywords: 0,
+      org_keywords_1_3: 0,
+      org_traffic: 0,
+      org_cost: 0,
+      paid_traffic: 0,
+      paid_cost: 0,
+      paid_pages: null,
+    };
+    let fullAuditRef = '';
+    let hasData = false;
+
+    for (const { value } of dbResults) {
+      if (!fullAuditRef) fullAuditRef = value.fullAuditRef;
+
+      const rows = parseCsvResponse(value.body);
+      const row = rows[0];
+      if (row) {
+        hasData = true;
+        metrics.org_keywords += coerceValue(row.Or, 'int') || 0;
+        metrics.paid_keywords += coerceValue(row.Ad, 'int') || 0;
+        metrics.org_keywords_1_3 += coerceValue(row.X0, 'int') || 0;
+        metrics.org_traffic += coerceValue(row.Ot, 'int') || 0;
+        metrics.org_cost += Math.round((coerceValue(row.Oc, 'float') || 0) * 100);
+        metrics.paid_traffic += coerceValue(row.At, 'int') || 0;
+        metrics.paid_cost += Math.round((coerceValue(row.Ac, 'float') || 0) * 100);
+      }
+    }
+
+    if (!hasData) {
+      metrics.org_keywords = null;
+      metrics.paid_keywords = null;
+      metrics.org_keywords_1_3 = null;
+      metrics.org_traffic = null;
+      metrics.org_cost = 0;
+      metrics.paid_traffic = null;
+      metrics.paid_cost = 0;
+    }
 
     return {
-      result: {
-        metrics: {
-          org_keywords: coerceValue(row.Or, 'int'),
-          paid_keywords: coerceValue(row.Ad, 'int'),
-          org_keywords_1_3: coerceValue(row.X0, 'int'),
-          org_traffic: coerceValue(row.Ot, 'int'),
-          org_cost: Math.round((coerceValue(row.Oc, 'float') || 0) * 100),
-          paid_traffic: coerceValue(row.At, 'int'),
-          paid_cost: Math.round((coerceValue(row.Ac, 'float') || 0) * 100),
-          paid_pages: null,
-        },
-      },
+      result: { metrics },
       fullAuditRef,
     };
   }
@@ -328,37 +440,60 @@ export default class SeoClient {
    * @param {string} endDate - End date in YYYY-MM-DD format
    * @returns {Promise<{result: {metrics: Array}, fullAuditRef: string}>}
    */
-  async getOrganicTraffic(url, startDate, endDate) {
+  async getOrganicTraffic(url, startDate, endDate, { region } = {}) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
 
     const ep = ENDPOINTS.organicTraffic;
+    const databases = getDatabases(region);
 
-    const { body, fullAuditRef } = await this.sendRawRequest({
+    const dbResults = await this.fanOut(databases, (db) => this.sendRawRequest({
       type: ep.type,
       domain: url,
-      database: DEFAULT_DATABASE,
+      database: db,
       export_columns: ep.columns,
       ...ep.defaultParams,
-    }, ep.path);
-    const rows = parseCsvResponse(body);
+    }, ep.path), 'getOrganicTraffic');
 
-    // Convert API dates (YYYYMMDD) to ISO (YYYY-MM-DD) and filter to requested range
-    const filtered = rows
-      .map((row) => ({ ...row, isoDate: fromApiDate(row.Dt) }))
-      .filter((row) => row.isoDate && row.isoDate >= startDate && row.isoDate <= endDate);
+    // Group by date across all databases, sum numeric fields
+    const dateMap = new Map();
+    let fullAuditRef = '';
+
+    for (const { value } of dbResults) {
+      if (!fullAuditRef) fullAuditRef = value.fullAuditRef;
+
+      const rows = parseCsvResponse(value.body);
+      for (const row of rows) {
+        const isoDate = fromApiDate(row.Dt);
+        if (!isoDate || isoDate < startDate || isoDate > endDate) {
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
+        const existing = dateMap.get(isoDate);
+        if (existing) {
+          existing.org_traffic += coerceValue(row.Ot, 'int') || 0;
+          existing.paid_traffic += coerceValue(row.At, 'int') || 0;
+          existing.org_cost += Math.round((coerceValue(row.Oc, 'float') || 0) * 100);
+          existing.paid_cost += Math.round((coerceValue(row.Ac, 'float') || 0) * 100);
+        } else {
+          dateMap.set(isoDate, {
+            date: `${isoDate}T00:00:00Z`,
+            org_traffic: coerceValue(row.Ot, 'int') || 0,
+            paid_traffic: coerceValue(row.At, 'int') || 0,
+            org_cost: Math.round((coerceValue(row.Oc, 'float') || 0) * 100),
+            paid_cost: Math.round((coerceValue(row.Ac, 'float') || 0) * 100),
+          });
+        }
+      }
+    }
+
+    const metrics = [...dateMap.values()]
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     return {
-      result: {
-        metrics: filtered.map((row) => ({
-          date: `${row.isoDate}T00:00:00Z`,
-          org_traffic: coerceValue(row.Ot, 'int'),
-          paid_traffic: coerceValue(row.At, 'int'),
-          org_cost: Math.round((coerceValue(row.Oc, 'float') || 0) * 100),
-          paid_cost: Math.round((coerceValue(row.Ac, 'float') || 0) * 100),
-        })),
-      },
+      result: { metrics },
       fullAuditRef,
     };
   }
@@ -511,32 +646,21 @@ export default class SeoClient {
     }
 
     // Step 2: For each broken page, fetch the top backlink by authority score.
-    // Parallelized in batches to balance throughput and rate limits.
-    const BATCH_SIZE = 10;
     const brokenUrls = brokenPages.map((p) => p.source_url);
+    const linkResults = await this.fanOut(brokenUrls, (brokenUrl) => this.sendRawRequest({
+      type: epLinks.type,
+      target: brokenUrl,
+      target_type: 'url',
+      export_columns: epLinks.columns,
+      display_limit: 1,
+      ...epLinks.defaultParams,
+    }, epLinks.path), 'getBrokenBacklinks');
+
     const allBacklinks = [];
-
-    for (let i = 0; i < brokenUrls.length; i += BATCH_SIZE) {
-      const batch = brokenUrls.slice(i, i + BATCH_SIZE);
-      // eslint-disable-next-line no-await-in-loop
-      const results = await Promise.allSettled(
-        batch.map((brokenUrl) => this.sendRawRequest({
-          type: epLinks.type,
-          target: brokenUrl,
-          target_type: 'url',
-          export_columns: epLinks.columns,
-          display_limit: 1,
-          ...epLinks.defaultParams,
-        }, epLinks.path)),
-      );
-
-      for (const result of results) {
-        if (result.status === 'fulfilled') {
-          const links = parseCsvResponse(result.value.body);
-          if (links.length > 0) {
-            allBacklinks.push(links[0]);
-          }
-        }
+    for (const { value } of linkResults) {
+      const links = parseCsvResponse(value.body);
+      if (links.length > 0) {
+        allBacklinks.push(links[0]);
       }
     }
 
@@ -561,7 +685,7 @@ export default class SeoClient {
   }
 
   // eslint-disable-next-line no-unused-vars, class-methods-use-this
-  async getMetricsByCountry(url, date = todayISO()) {
+  async getMetricsByCountry(url, date = lastMonthISO()) {
     return STUB_RESPONSE;
   }
 }

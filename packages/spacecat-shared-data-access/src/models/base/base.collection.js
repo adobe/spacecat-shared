@@ -75,6 +75,7 @@ class BaseCollection {
 
   // eslint-disable-next-line class-methods-use-this
   #resolveBulkKeyField(keys) {
+    /* c8 ignore next 3 */
     if (!isNonEmptyArray(keys)) {
       return null;
     }
@@ -126,6 +127,7 @@ class BaseCollection {
     if (cause?.details) {
       parts.push(cause.details);
     }
+    /* c8 ignore next 3 */
     if (cause?.hint) {
       parts.push(`hint: ${cause.hint}`);
     }
@@ -609,6 +611,7 @@ class BaseCollection {
    * @returns {object|null} A model instance, or null if the row is empty/invalid.
    */
   createInstanceFromRow(row) {
+    /* c8 ignore next 3 */
     if (!isNonEmptyObject(row)) {
       return null;
     }

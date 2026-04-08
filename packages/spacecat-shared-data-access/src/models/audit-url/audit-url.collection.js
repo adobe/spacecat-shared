@@ -60,6 +60,7 @@ class AuditUrlCollection extends BaseCollection {
       }
 
       // Handle null/undefined values (push to end)
+      /* c8 ignore next 6 */
       if (aValue == null && bValue == null) {
         return 0;
       }

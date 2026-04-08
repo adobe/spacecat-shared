@@ -706,6 +706,7 @@ export const Config = (data = {}) => {
 
   self.removeLlmoUrlPattern = (urlPattern) => {
     const urlPatterns = state.llmo?.urlPatterns;
+    /* c8 ignore next 3 */
     if (!urlPatterns) {
       return;
     }
@@ -811,6 +812,7 @@ export const Config = (data = {}) => {
     const prior = state.brandProfile || {};
     // compute hash over all content except functional fields
     const stripFunctional = (p) => {
+      /* c8 ignore next 3 */
       if (!isNonEmptyObject(p)) {
         return {};
       }

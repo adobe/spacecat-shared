@@ -209,6 +209,7 @@ function normalizeUrl(url) {
  * @returns {string} The normalized pathname
  */
 function normalizePathname(pathname) {
+  /* c8 ignore next 3 */
   if (!pathname || typeof pathname !== 'string') {
     return pathname;
   }

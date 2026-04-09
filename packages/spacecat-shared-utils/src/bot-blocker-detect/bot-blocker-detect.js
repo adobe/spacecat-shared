@@ -91,7 +91,7 @@ const CHALLENGE_PATTERNS = {
   akamai: [
     /Access Denied.*Akamai/i,
     /Reference.*Akamai/i,
-    /errors\.edgesuite\.net/i,
+    /errors\.(edgesuite|edgekey)\.net/i,
   ],
   general: [
     /captcha/i,

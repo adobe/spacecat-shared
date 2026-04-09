@@ -753,6 +753,21 @@ describe('Bot Blocker Detection', () => {
       expect(result.reason).to.equal('Challenge page detected despite 200 status');
     });
 
+    it('detects Akamai edgekey.net error page as challenge', () => {
+      const html = '<HTML><HEAD><TITLE>Access Denied</TITLE></HEAD><BODY><H1>Access Denied</H1><P>https://errors.edgekey.net/18.abc123</P></BODY></HTML>';
+      const headers = { 'akamai-cache-status': 'Error from child' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('akamai');
+      expect(result.confidence).to.equal(0.99);
+    });
+
     it('returns akamai-allowed when akamai-cache-status present on 200 with real content', () => {
       const realContent = 'This is real page content from a site behind Akamai CDN. '.repeat(200);
       const html = `<html><head><title>Real Page</title></head><body>${realContent}</body></html>`;

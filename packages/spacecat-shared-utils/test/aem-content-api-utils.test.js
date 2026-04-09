@@ -13,7 +13,14 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import nock from 'nock';
-import { determineAEMCSPageId, getPageEditUrl, CONTENT_API_PREFIX } from '../src/aem-content-api-utils.js';
+import {
+  determineAEMCSPageId,
+  getPageEditUrl,
+  CONTENT_API_PREFIX,
+  PSS_API_PREFIX,
+  CONTENT_API_EXPERIMENTAL_PREFIX,
+  PSS_API_EXPERIMENTAL_PREFIX,
+} from '../src/aem-content-api-utils.js';
 
 describe('determineAEMCSPageId', () => {
   let mockLog;
@@ -275,6 +282,10 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-abc123`)
+      .reply(404);
+
+    nock('https://author.example.com')
       .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-abc123`)
       .reply(200, { id: expectedPageId });
 
@@ -302,6 +313,10 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-abc123`)
+      .reply(404);
+
+    nock('https://author.example.com')
       .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-abc123`)
       .reply(200, { id: expectedPageId });
 
@@ -325,6 +340,10 @@ describe('determineAEMCSPageId', () => {
     nock('https://example.com')
       .get('/page')
       .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-no-id`)
+      .reply(404);
 
     nock('https://author.example.com')
       .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-no-id`)
@@ -352,6 +371,10 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-empty`)
+      .reply(404);
+
+    nock('https://author.example.com')
       .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-empty`)
       .reply(200, {});
 
@@ -375,6 +398,10 @@ describe('determineAEMCSPageId', () => {
     nock('https://example.com')
       .get('/page')
       .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-fail`)
+      .reply(404);
 
     nock('https://author.example.com')
       .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-fail`)
@@ -402,6 +429,10 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-fail-no-fallback`)
+      .reply(404);
+
+    nock('https://author.example.com')
       .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-fail-no-fallback`)
       .reply(500, 'Internal Server Error');
 
@@ -424,6 +455,10 @@ describe('determineAEMCSPageId', () => {
     nock('https://example.com')
       .get('/page')
       .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-network-error`)
+      .reply(404);
 
     nock('https://author.example.com')
       .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-network-error`)
@@ -453,7 +488,11 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/pss/pages/resolve?pageRef=content-ref-abc123')
+      .get(`${PSS_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-abc123`)
+      .reply(404);
+
+    nock('https://author.example.com')
+      .get(`${PSS_API_PREFIX}/pages/resolve?pageRef=content-ref-abc123`)
       .reply(200, expectedPageId);
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', false, mockLog);
@@ -478,7 +517,11 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/pss/pages/resolve?pageRef=content-ref-empty')
+      .get(`${PSS_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-empty`)
+      .reply(404);
+
+    nock('https://author.example.com')
+      .get(`${PSS_API_PREFIX}/pages/resolve?pageRef=content-ref-empty`)
       .reply(200, '');
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', false, mockLog);
@@ -503,7 +546,11 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/pss/pages/resolve?pageRef=content-ref-fail')
+      .get(`${PSS_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-fail`)
+      .reply(404);
+
+    nock('https://author.example.com')
+      .get(`${PSS_API_PREFIX}/pages/resolve?pageRef=content-ref-fail`)
       .reply(500, 'Internal Server Error');
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', false, mockLog);
@@ -530,6 +577,10 @@ describe('determineAEMCSPageId', () => {
     nock('https://example.com')
       .get('/page')
       .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=content-ref-priority`)
+      .reply(404);
 
     nock('https://author.example.com')
       .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-priority`)
@@ -580,6 +631,153 @@ describe('determineAEMCSPageId', () => {
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true);
     expect(result).to.be.null;
   });
+
+  it('should use experimental Content API prefix when available', async () => {
+    const pageURL = 'https://example.com/page';
+    const contentPageRef = 'content-ref-exp';
+    const expectedPageId = 'exp-page-id';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="${contentPageRef}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=${contentPageRef}`)
+      .reply(200, { id: expectedPageId });
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
+    expect(result).to.equal(expectedPageId);
+    expect(mockLog.info).to.have.been.calledWith(`Resolved pageId: "${expectedPageId}" from JSON directly for ref "${contentPageRef}"`);
+  });
+
+  it('should use experimental PSS API prefix when available', async () => {
+    const pageURL = 'https://example.com/page';
+    const contentPageRef = 'content-ref-exp-pss';
+    const expectedPageId = 'exp-pss-page-id';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="${contentPageRef}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get(`${PSS_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=${contentPageRef}`)
+      .reply(200, expectedPageId);
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', false, mockLog);
+    expect(result).to.equal(expectedPageId);
+    expect(mockLog.info).to.have.been.calledWith(`Resolved pageId: "${expectedPageId}" from JSON directly for ref "${contentPageRef}"`);
+  });
+
+  it('should fall back from experimental to standard Content API prefix', async () => {
+    const pageURL = 'https://example.com/page';
+    const contentPageRef = 'content-ref-fallback';
+    const expectedPageId = 'std-page-id';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="${contentPageRef}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=${contentPageRef}`)
+      .reply(404);
+
+    nock('https://author.example.com')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=${contentPageRef}`)
+      .reply(200, { id: expectedPageId });
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
+    expect(result).to.equal(expectedPageId);
+    expect(mockLog.info).to.have.been.calledWith(`Resolved pageId: "${expectedPageId}" from JSON directly for ref "${contentPageRef}"`);
+  });
+
+  it('should fall back from experimental to standard PSS API prefix', async () => {
+    const pageURL = 'https://example.com/page';
+    const contentPageRef = 'content-ref-pss-fallback';
+    const expectedPageId = 'std-pss-page-id';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="${contentPageRef}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get(`${PSS_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=${contentPageRef}`)
+      .reply(404);
+
+    nock('https://author.example.com')
+      .get(`${PSS_API_PREFIX}/pages/resolve?pageRef=${contentPageRef}`)
+      .reply(200, expectedPageId);
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', false, mockLog);
+    expect(result).to.equal(expectedPageId);
+    expect(mockLog.info).to.have.been.calledWith(`Resolved pageId: "${expectedPageId}" from JSON directly for ref "${contentPageRef}"`);
+  });
+
+  it('should fall back when experimental Content API has network error', async () => {
+    const pageURL = 'https://example.com/page';
+    const contentPageRef = 'content-ref-exp-network-err';
+    const expectedPageId = 'fallback-page-id';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="${contentPageRef}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/resolve?pageRef=${contentPageRef}`)
+      .replyWithError('Experimental API network error');
+
+    nock('https://author.example.com')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=${contentPageRef}`)
+      .reply(200, { id: expectedPageId });
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
+    expect(result).to.equal(expectedPageId);
+    expect(mockLog.error).to.have.been.calledWith('Error while resolving content-page-ref: Experimental API network error');
+  });
 });
 
 describe('getPageEditUrl', () => {
@@ -606,6 +804,11 @@ describe('getPageEditUrl', () => {
     };
 
     nock(AUTHOR_URL)
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/${PAGE_ID}`)
+      .matchHeader('Authorization', BEARER_TOKEN)
+      .reply(404);
+
+    nock(AUTHOR_URL)
       .get(`${CONTENT_API_PREFIX}/pages/${PAGE_ID}`)
       .matchHeader('Authorization', BEARER_TOKEN)
       .reply(200, apiResponse);
@@ -615,6 +818,11 @@ describe('getPageEditUrl', () => {
   });
 
   it('should return null when API call fails', async () => {
+    nock(AUTHOR_URL)
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/${PAGE_ID}`)
+      .matchHeader('Authorization', BEARER_TOKEN)
+      .reply(500, 'Internal Server Error');
+
     nock(AUTHOR_URL)
       .get(`${CONTENT_API_PREFIX}/pages/${PAGE_ID}`)
       .matchHeader('Authorization', BEARER_TOKEN)
@@ -632,11 +840,57 @@ describe('getPageEditUrl', () => {
     };
 
     nock(AUTHOR_URL)
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/${PAGE_ID}`)
+      .matchHeader('Authorization', BEARER_TOKEN)
+      .reply(404);
+
+    nock(AUTHOR_URL)
       .get(`${CONTENT_API_PREFIX}/pages/${PAGE_ID}`)
       .matchHeader('Authorization', BEARER_TOKEN)
       .reply(200, apiResponse);
 
     const result = await getPageEditUrl(AUTHOR_URL, BEARER_TOKEN, PAGE_ID);
     expect(result).to.be.undefined;
+  });
+
+  it('should use experimental Content API prefix for edit URL when available', async () => {
+    const expectedEditUrl = 'https://author.example.com/editor.html/content/exp-page';
+    const apiResponse = {
+      id: 'exp-page-id',
+      _links: {
+        edit: expectedEditUrl,
+      },
+    };
+
+    nock(AUTHOR_URL)
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/${PAGE_ID}`)
+      .matchHeader('Authorization', BEARER_TOKEN)
+      .reply(200, apiResponse);
+
+    const result = await getPageEditUrl(AUTHOR_URL, BEARER_TOKEN, PAGE_ID);
+    expect(result).to.equal(expectedEditUrl);
+  });
+
+  it('should fall back to standard Content API prefix for edit URL', async () => {
+    const expectedEditUrl = 'https://author.example.com/editor.html/content/std-page';
+    const apiResponse = {
+      id: 'std-page-id',
+      _links: {
+        edit: expectedEditUrl,
+      },
+    };
+
+    nock(AUTHOR_URL)
+      .get(`${CONTENT_API_EXPERIMENTAL_PREFIX}/pages/${PAGE_ID}`)
+      .matchHeader('Authorization', BEARER_TOKEN)
+      .reply(404);
+
+    nock(AUTHOR_URL)
+      .get(`${CONTENT_API_PREFIX}/pages/${PAGE_ID}`)
+      .matchHeader('Authorization', BEARER_TOKEN)
+      .reply(200, apiResponse);
+
+    const result = await getPageEditUrl(AUTHOR_URL, BEARER_TOKEN, PAGE_ID);
+    expect(result).to.equal(expectedEditUrl);
   });
 });

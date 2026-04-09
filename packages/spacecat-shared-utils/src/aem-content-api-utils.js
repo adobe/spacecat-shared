@@ -13,6 +13,9 @@
 import { fetch } from './adobe-fetch.js';
 
 export const CONTENT_API_PREFIX = '/adobe';
+export const PSS_API_PREFIX = '/adobe/experimental/pss';
+export const CONTENT_API_EXPERIMENTAL_PREFIX = '/adobe/experimental/aspm-expires-20251231';
+export const PSS_API_EXPERIMENTAL_PREFIX = '/adobe/experimental/aso-expires-20251231';
 
 /**
  * Determines the AEM CS/AMS page ID for Content API, from the page URL
@@ -51,40 +54,46 @@ export async function determineAEMCSPageId(
       return null;
     }
     const contentPageRef = refMatch[1].trim();
-    try {
-      const base = preferContentApi
-        ? `${authorURL}${CONTENT_API_PREFIX}`
-        : `${authorURL}/adobe/experimental/pss`;
+    const prefixes = preferContentApi
+      ? [CONTENT_API_EXPERIMENTAL_PREFIX, CONTENT_API_PREFIX]
+      : [PSS_API_EXPERIMENTAL_PREFIX, PSS_API_PREFIX];
+
+    for (const prefix of prefixes) {
+      const base = `${authorURL}${prefix}`;
       const resolveUrl = `${base}/pages/resolve?pageRef=${contentPageRef}`;
       log.info(`Resolving content-page-ref via ${resolveUrl} (preferContentApi=${preferContentApi})`);
-      const resp = await fetch(resolveUrl, {
-        method: 'GET',
-        headers: { Authorization: bearerToken },
-        redirect: 'follow',
-      });
-      if (resp.status === 200) {
-        let pageId = null;
-        if (preferContentApi) {
-          const data = await resp.json();
-          pageId = data?.id || null;
-        } else {
-          const data = await resp.text();
-          pageId = data || null;
-        }
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const resp = await fetch(resolveUrl, {
+          method: 'GET',
+          headers: { Authorization: bearerToken },
+          redirect: 'follow',
+        });
+        if (resp.status === 200) {
+          let pageId = null;
+          if (preferContentApi) {
+            // eslint-disable-next-line no-await-in-loop
+            const data = await resp.json();
+            pageId = data?.id || null;
+          } else {
+            // eslint-disable-next-line no-await-in-loop
+            const data = await resp.text();
+            pageId = data || null;
+          }
 
-        if (pageId) {
-          log.info(`Resolved pageId: "${pageId}" from JSON directly for ref "${contentPageRef}"`);
-          return pageId;
+          if (pageId) {
+            log.info(`Resolved pageId: "${pageId}" from JSON directly for ref "${contentPageRef}"`);
+            return pageId;
+          }
+          log.error('resolve response did not contain an "id" property.');
+          return null;
         }
-        log.error('resolve response did not contain an "id" property.');
-        return null;
-      } else {
         log.warn(`Unexpected status ${resp.status} when resolving content-page-ref.`);
+      } catch (e) {
+        log.error(`Error while resolving content-page-ref: ${e.message}`);
       }
-    } catch (e) {
-      log.error(`Error while resolving content-page-ref: ${e.message}`);
     }
-    // If ref was present but resolution failed, return null per spec
+    // If ref was present but resolution failed on all prefixes, return null per spec
     return null;
   }
 
@@ -110,15 +119,19 @@ export async function determineAEMCSPageId(
  * @returns {string} The edit URL or null if the page ID is not found
  */
 export const getPageEditUrl = async (authorURL, bearerToken, pageId) => {
-  const PAGE_ID_API = `${authorURL}${CONTENT_API_PREFIX}/pages/${pageId}`;
-  const response = await fetch(PAGE_ID_API, {
-    method: 'GET',
-    headers: { Authorization: bearerToken },
-  });
-  if (response.ok) {
-    const responseData = await response.json();
-    // eslint-disable-next-line no-underscore-dangle
-    return responseData?._links?.edit;
+  for (const prefix of [CONTENT_API_EXPERIMENTAL_PREFIX, CONTENT_API_PREFIX]) {
+    const PAGE_ID_API = `${authorURL}${prefix}/pages/${pageId}`;
+    // eslint-disable-next-line no-await-in-loop
+    const response = await fetch(PAGE_ID_API, {
+      method: 'GET',
+      headers: { Authorization: bearerToken },
+    });
+    if (response.ok) {
+      // eslint-disable-next-line no-await-in-loop
+      const responseData = await response.json();
+      // eslint-disable-next-line no-underscore-dangle
+      return responseData?._links?.edit;
+    }
   }
   return null;
 };

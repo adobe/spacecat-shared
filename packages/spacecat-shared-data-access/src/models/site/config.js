@@ -404,6 +404,9 @@ export const configSchema = Joi.object({
     manual: Joi.array().items(Joi.object({
       url: Joi.string().uri().required(),
     })).optional().default([]),
+    moneyPages: Joi.array().items(Joi.object({
+      url: Joi.string().uri().required(),
+    })).optional().default([]),
   }).options({ stripUnknown: true }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
@@ -515,7 +518,7 @@ export const Config = (data = {}) => {
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.getOnboardConfig = () => state?.onboardConfig;
   self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
-  const AUDIT_TARGET_SOURCES = ['manual'];
+  const AUDIT_TARGET_SOURCES = ['manual', 'moneyPages'];
   const auditTargetEntrySchema = Joi.object({
     url: Joi.string().uri().required(),
   });

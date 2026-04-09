@@ -91,6 +91,7 @@ const CHALLENGE_PATTERNS = {
   akamai: [
     /Access Denied.*Akamai/i,
     /Reference.*Akamai/i,
+    /errors\.(edgesuite|edgekey)\.net/i,
   ],
   general: [
     /captcha/i,
@@ -124,7 +125,9 @@ function analyzeResponse(response, html = null) {
   const hasImperva = () => headers.get('x-iinfo') || headers.get('x-cdn') === 'Incapsula';
   const hasAkamai = () => headers.get('x-akamai-request-id')
     || headers.get('x-akamai-session-id')
-    || headers.get('server')?.includes('AkamaiGHost');
+    || headers.get('server')?.includes('AkamaiGHost')
+    || headers.get('akamai-cache-status')
+    || headers.get('akamai-grn');
   const hasFastly = () => headers.get('x-served-by')?.startsWith('cache-')
     || headers.get('fastly-io-info');
   const hasCloudFront = () => headers.get('x-amz-cf-id')

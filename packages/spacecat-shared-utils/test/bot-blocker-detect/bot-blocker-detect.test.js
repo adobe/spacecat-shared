@@ -195,6 +195,34 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(0.99);
     });
 
+    it('detects Akamai blocking with 403 and akamai-cache-status header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          'akamai-cache-status': 'Error from child',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('akamai');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects Akamai blocking with 403 and akamai-grn header', async () => {
+      nock(baseUrl)
+        .head('/')
+        .reply(403, '', {
+          'akamai-grn': '0.12847b5c.1775713505.2874823e',
+        });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('akamai');
+      expect(result.confidence).to.equal(0.99);
+    });
+
     it('detects Fastly blocking with 403 and x-served-by cache header', async () => {
       nock(baseUrl)
         .head('/')
@@ -692,6 +720,53 @@ describe('Bot Blocker Detection', () => {
 
       expect(result.crawlable).to.be.false;
       expect(result.type).to.equal('akamai');
+    });
+
+    it('detects Akamai blocking with 403 and akamai-cache-status header', () => {
+      const html = '<HTML><HEAD><TITLE>Access Denied</TITLE></HEAD><BODY><H1>Access Denied</H1></BODY></HTML>';
+      const headers = { 'akamai-cache-status': 'Error from child', 'akamai-grn': '0.12847b5c.1775713505.2874823e' };
+
+      const result = analyzeBotProtection({
+        status: 403,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('akamai');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects Akamai edgesuite.net error page as challenge', () => {
+      const html = '<HTML><HEAD><TITLE>Access Denied</TITLE></HEAD><BODY><H1>Access Denied</H1><P>https://errors.edgesuite.net/18.12847b5c</P></BODY></HTML>';
+      const headers = { 'akamai-cache-status': 'Error from child' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('akamai');
+      expect(result.confidence).to.equal(0.99);
+      expect(result.reason).to.equal('Challenge page detected despite 200 status');
+    });
+
+    it('returns akamai-allowed when akamai-cache-status present on 200 with real content', () => {
+      const realContent = 'This is real page content from a site behind Akamai CDN. '.repeat(200);
+      const html = `<html><head><title>Real Page</title></head><body>${realContent}</body></html>`;
+      const headers = { 'akamai-cache-status': 'Hit from child' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('akamai-allowed');
+      expect(result.confidence).to.equal(1.0);
     });
 
     // Tests for generic HTTP error code handling

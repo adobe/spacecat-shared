@@ -3134,7 +3134,49 @@ describe('Config Tests', () => {
           { url: 'https://new1.com' },
           { url: 'https://new2.com' },
         ]);
-        expect(config.getAuditTargetURLsBySource('moneyPages')).to.have.lengthOf(2);
+        const result = config.getAuditTargetURLsBySource('moneyPages');
+        expect(result).to.have.lengthOf(2);
+        expect(result[0].url).to.equal('https://new1.com');
+        expect(result[1].url).to.equal('https://new2.com');
+      });
+    });
+
+    describe('mergeAuditTargetURLs', () => {
+      it('merges a partial update without affecting other sources', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/m1' }],
+            moneyPages: [{ url: 'https://example.com/mp1' }],
+          },
+        });
+        config.mergeAuditTargetURLs({ manual: [{ url: 'https://example.com/m2' }] });
+        expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([{ url: 'https://example.com/m2' }]);
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.deep.equal([{ url: 'https://example.com/mp1' }]);
+      });
+
+      it('merges moneyPages without affecting manual', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/m1' }],
+            moneyPages: [{ url: 'https://example.com/mp1' }],
+          },
+        });
+        config.mergeAuditTargetURLs({ moneyPages: [{ url: 'https://example.com/mp2' }] });
+        expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([{ url: 'https://example.com/m1' }]);
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.deep.equal([{ url: 'https://example.com/mp2' }]);
+      });
+
+      it('ignores invalid input gracefully', () => {
+        const config = Config({ auditTargetURLs: { manual: [{ url: 'https://example.com/m1' }] } });
+        expect(() => config.mergeAuditTargetURLs(null)).to.not.throw();
+        expect(() => config.mergeAuditTargetURLs([])).to.not.throw();
+        expect(() => config.mergeAuditTargetURLs('string')).to.not.throw();
+        expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([{ url: 'https://example.com/m1' }]);
+      });
+
+      it('rejects invalid source in partial', () => {
+        const config = Config();
+        expect(() => config.mergeAuditTargetURLs({ invalid: [] })).to.throw('Invalid audit target source');
       });
     });
 

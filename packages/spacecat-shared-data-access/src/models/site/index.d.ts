@@ -235,6 +235,7 @@ export interface SiteConfig {
   getAuditTargetURLs(): AuditTargetEntryWithSource[];
   getAuditTargetURLsBySource(source: AuditTargetSource): AuditTargetEntry[];
   updateAuditTargetURLs(source: AuditTargetSource, urls: AuditTargetEntry[]): void;
+  mergeAuditTargetURLs(partial: Partial<AuditTargetURLs>): void;
   addAuditTargetURL(source: AuditTargetSource, urlObj: AuditTargetEntry): void;
   removeAuditTargetURL(source: AuditTargetSource, url: string): void;
 }

@@ -553,6 +553,13 @@ export const Config = (data = {}) => {
     state.auditTargetURLs[source] = urls;
   };
 
+  self.mergeAuditTargetURLs = (partial) => {
+    if (!partial || typeof partial !== 'object' || Array.isArray(partial)) return;
+    for (const [source, urls] of Object.entries(partial)) {
+      self.updateAuditTargetURLs(source, urls);
+    }
+  };
+
   self.addAuditTargetURL = (source, urlObj) => {
     validateAuditTargetSource(source);
     Joi.assert(urlObj, auditTargetEntrySchema, 'Invalid audit target URL');

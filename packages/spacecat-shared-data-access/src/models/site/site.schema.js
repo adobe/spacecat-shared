@@ -117,6 +117,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
       tenantId: { type: 'string' },
       ipAllowlistExists: { type: 'boolean' },
       imsOrgId: { type: 'string' },
+      contentSourcePath: { type: 'string' },
     },
   })
   .addAttribute('hlxConfig', {

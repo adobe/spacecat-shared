@@ -3057,6 +3057,43 @@ describe('Config Tests', () => {
   });
 
   describe('Audit Target URLs', () => {
+    describe('isMoneyPageUrlsEnabled', () => {
+      it('returns true when flag is explicitly set to true', () => {
+        const config = Config({ enableMoneyPageUrls: true });
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(true);
+      });
+
+      it('returns true when flag is absent from config', () => {
+        const config = Config();
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(true);
+      });
+
+      it('returns false when flag is explicitly set to false', () => {
+        const config = Config({ enableMoneyPageUrls: false });
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(false);
+      });
+
+      it('setter updates the flag and reflects in isMoneyPageUrlsEnabled', () => {
+        const config = Config();
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(true);
+        config.setEnableMoneyPageUrls(false);
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(false);
+      });
+
+      it('omits enableMoneyPageUrls from toDynamoItem when not set', () => {
+        const config = Config();
+        const item = Config.toDynamoItem(config);
+        expect(item.enableMoneyPageUrls).to.be.undefined;
+      });
+
+      it('persists enableMoneyPageUrls in toDynamoItem when set via setter', () => {
+        const config = Config();
+        config.setEnableMoneyPageUrls(false);
+        const item = Config.toDynamoItem(config);
+        expect(item.enableMoneyPageUrls).to.equal(false);
+      });
+    });
+
     it('returns empty array by default', () => {
       const config = Config();
       expect(config.getAuditTargetURLs()).to.deep.equal([]);

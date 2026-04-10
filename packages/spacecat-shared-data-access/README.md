@@ -170,6 +170,7 @@ The `deliveryConfig` object on a Site stores delivery infrastructure details. It
 | `tenantId` | string | Cloud Manager tenant identifier (from `/program/{programId}` response) |
 | `ipAllowlistExists` | boolean | Whether the CM program has real IP allowlists configured (excludes default `0.0.0.0/32` entries) |
 | `preferContentApi` | boolean | Whether to prefer the Content API for content retrieval |
+| `contentSourcePath` | string | AEM content root path for a site. Used to disambiguate multiple sites that share the same Cloud Manager program and environment. Corresponds to `/content/<site-name>` in the AEM repository. |
 
 ## Architecture
 

@@ -486,10 +486,12 @@ describe('SeoClient', () => {
   // ===== getTopPages =====
 
   describe('getTopPages', () => {
-    it('returns adobe.com pages with top keywords from two API calls', async () => {
+    it('returns pages with top keywords from two API calls (www prefix)', async () => {
       nock(config.apiBaseUrl)
         .get('/')
-        .query((q) => q.type === 'domain_organic_unique')
+        .query((q) => q.type === 'domain_organic_unique'
+          && q.domain === 'www.adobe.com'
+          && q.display_filter.includes('Bw|https://www.adobe.com'))
         .reply(200, topPagesCsv);
 
       nock(config.apiBaseUrl)
@@ -497,18 +499,14 @@ describe('SeoClient', () => {
         .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg')
         .reply(200, topPagesKeywordsCsv);
 
-      const result = await client.getTopPages('adobe.com', 3);
+      const result = await client.getTopPages('https://www.adobe.com', 3);
 
+      // www prefix: Bw filter sent, API trusted (no client-side filtering)
       expect(result.result.pages).to.have.lengthOf(3);
       expect(result.result.pages[0]).to.deep.equal({
         url: 'https://www.adobe.com/',
         sum_traffic: 1035443,
         top_keyword: 'adobe',
-      });
-      expect(result.result.pages[1]).to.deep.equal({
-        url: 'https://get.adobe.com/reader/',
-        sum_traffic: 849245,
-        top_keyword: 'adobe reader',
       });
       expect(result.result.pages[2]).to.deep.equal({
         url: 'https://www.adobe.com/products/firefly/features/text-to-image.html',
@@ -517,18 +515,38 @@ describe('SeoClient', () => {
       });
     });
 
+    it('filters subdomain pages client-side for non-www prefix', async () => {
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic_unique'
+          && q.domain === 'adobe.com'
+          && q.display_limit === '6')
+        .reply(200, topPagesCsv);
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg')
+        .reply(200, topPagesKeywordsCsv);
+
+      const result = await client.getTopPages('https://adobe.com', 3);
+
+      // non-www: requests 2x limit, then filters to matching prefix
+      // get.adobe.com and www.adobe.com pages are filtered out
+      expect(result.result.pages).to.have.lengthOf(0);
+    });
+
     it('returns null for top_keyword when no keyword data found', async () => {
       nock(config.apiBaseUrl)
         .get('/')
         .query((q) => q.type === 'domain_organic_unique')
-        .reply(200, 'Url;Traffic\n"https://unknown.com/page";"50"');
+        .reply(200, 'Url;Traffic\n"https://www.unknown.com/page";"50"');
 
       nock(config.apiBaseUrl)
         .get('/')
         .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg')
         .reply(200, 'Url;Keyword;Traffic');
 
-      const result = await client.getTopPages('unknown.com');
+      const result = await client.getTopPages('https://www.unknown.com');
       expect(result.result.pages[0].top_keyword).to.equal(null);
     });
 
@@ -536,7 +554,24 @@ describe('SeoClient', () => {
       await expect(client.getTopPages(null)).to.be.rejectedWith('Invalid URL');
     });
 
-    it('respects upper limit of 2000', async () => {
+    it('handles unparseable URL by falling back to raw domain', async () => {
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic_unique'
+          && q.domain === ':::invalid')
+        .reply(200, 'Url;Traffic\n"https://example.com/page";"100"');
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic')
+        .reply(200, 'Url;Keyword;Traffic');
+
+      const result = await client.getTopPages(':::invalid');
+      // Unparseable URL: domain falls back to raw input, no results match prefix
+      expect(result.result.pages).to.have.lengthOf(0);
+    });
+
+    it('respects upper limit of 2000 for www prefix', async () => {
       nock(config.apiBaseUrl)
         .get('/')
         .query((q) => q.type === 'domain_organic_unique' && q.display_limit === '2000')
@@ -547,7 +582,105 @@ describe('SeoClient', () => {
         .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg')
         .reply(200, topPagesKeywordsCsv);
 
-      await client.getTopPages('adobe.com', 5000);
+      await client.getTopPages('https://www.adobe.com', 5000);
+    });
+
+    it('accepts plain domain for backward compatibility', async () => {
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic_unique'
+          && q.domain === 'adobe.com')
+        .reply(200, topPagesCsv);
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic' && q.export_columns === 'Ur,Ph,Tg')
+        .reply(200, topPagesKeywordsCsv);
+
+      const result = await client.getTopPages('adobe.com', 3);
+      // Plain domain treated as non-www prefix https://adobe.com
+      // All test URLs are www.adobe.com or get.adobe.com, so all filtered out
+      expect(result.result.pages).to.have.lengthOf(0);
+    });
+
+    it('logs warn when non-www filter cannot meet requested limit', async () => {
+      const log = { warn: sinon.stub(), debug: sinon.stub(), info: sinon.stub() };
+      const logClient = new SeoClient(config, fetch, log);
+
+      // Return enough rows to fill requestLimit (limit * 2 = 6), all from subdomains
+      const manySubdomainPages = [
+        'Url;Traffic',
+        ...Array.from({ length: 6 }, (_, i) => `"https://sub.example.com/page${i}";"${100 - i}"`),
+      ].join('\n');
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic_unique')
+        .reply(200, manySubdomainPages);
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic')
+        .reply(200, 'Url;Keyword;Traffic');
+
+      const result = await logClient.getTopPages('https://example.com', 3);
+      expect(result.result.pages).to.have.lengthOf(0);
+      expect(log.warn.calledOnce).to.be.true;
+      expect(log.warn.firstCall.args[0]).to.include('Could not meet');
+    });
+
+    it('preserves subpath in prefix filter (e.g. celestyal.com/gb)', async () => {
+      const subpathPages = [
+        'Url;Traffic',
+        '"https://celestyal.com/gb/cruises";"500"',
+        '"https://celestyal.com/gb/destinations";"400"',
+        '"https://celestyal.com/us/cruises";"300"',
+        '"https://sub.celestyal.com/page";"200"',
+      ].join('\n');
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic_unique'
+          && q.domain === 'celestyal.com'
+          && q.display_filter.includes('Bw|https://celestyal.com/gb'))
+        .reply(200, subpathPages);
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic')
+        .reply(200, 'Url;Keyword;Traffic');
+
+      const result = await client.getTopPages('celestyal.com/gb', 10);
+
+      // Only /gb pages kept, not /us or subdomain
+      expect(result.result.pages).to.have.lengthOf(2);
+      expect(result.result.pages[0].url).to.equal('https://celestyal.com/gb/cruises');
+      expect(result.result.pages[1].url).to.equal('https://celestyal.com/gb/destinations');
+    });
+
+    it('logs debug when provider has fewer pages than requested', async () => {
+      const log = { warn: sinon.stub(), debug: sinon.stub(), info: sinon.stub() };
+      const logClient = new SeoClient(config, fetch, log);
+
+      // Return fewer rows than requestLimit, one matching prefix
+      const fewPages = [
+        'Url;Traffic',
+        '"https://example.com/page1";"100"',
+        '"https://sub.example.com/page2";"50"',
+      ].join('\n');
+
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic_unique')
+        .reply(200, fewPages);
+      nock(config.apiBaseUrl)
+        .get('/')
+        .query((q) => q.type === 'domain_organic')
+        .reply(200, 'Url;Keyword;Traffic');
+
+      const result = await logClient.getTopPages('https://example.com', 3);
+      expect(result.result.pages).to.have.lengthOf(1);
+      expect(result.result.pages[0].url).to.equal('https://example.com/page1');
+      expect(log.debug.called).to.be.true;
+      expect(log.debug.args.some((a) => a[0].includes('Provider has only'))).to.be.true;
     });
   });
 

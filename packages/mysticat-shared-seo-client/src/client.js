@@ -157,14 +157,41 @@ export default class SeoClient {
       throw new Error(`Invalid URL: ${url}`);
     }
 
+    // Ensure url has protocol for the Bw filter and extract hostname for the API.
+    // Input is a prefix URL, either full (https://www.veeam.com) or protocol-stripped
+    // (www.veeam.com, celestyal.com/gb).
+    const prefixUrl = url.includes('://') ? url : `https://${url}`;
+    let domain;
+    try {
+      domain = new URL(prefixUrl).hostname;
+    } catch {
+      domain = url;
+    }
+
+    const isWww = prefixUrl.includes('://www.');
     const ep = ENDPOINTS.topPages;
     const epKw = ENDPOINTS.topPagesKeywords;
-    const effectiveLimit = getLimit(limit, 2000);
+
+    // For non-www prefixes, the Bw filter is unreliable (matches subdomains),
+    // so we over-fetch and filter client-side.
+    const requestLimit = !isWww
+      ? getLimit(limit * 2, 2000)
+      : getLimit(limit, 2000);
 
     const commonParams = {
-      domain: url,
+      domain,
       database: DEFAULT_DATABASE,
     };
+
+    // Build display_filter: traffic > 0, plus Bw prefix filter
+    const filters = [
+      {
+        sign: '+', field: 'Tg', op: 'Gt', value: '0',
+      },
+      {
+        sign: '+', field: 'Ur', op: 'Bw', value: prefixUrl,
+      },
+    ];
 
     // Two calls required: the SEO data provider does not offer a top-keyword-per-page
     // field in its page-level report. Sorting organic keywords by traffic and grouping
@@ -173,17 +200,15 @@ export default class SeoClient {
       this.sendRawRequest({
         type: ep.type,
         ...commonParams,
-        display_limit: effectiveLimit,
+        display_limit: requestLimit,
         export_columns: ep.columns,
-        display_filter: buildFilter([{
-          sign: '+', field: 'Tg', op: 'Gt', value: '0',
-        }]),
+        display_filter: buildFilter(filters),
         ...ep.defaultParams,
       }, ep.path),
       this.sendRawRequest({
         type: epKw.type,
         ...commonParams,
-        display_limit: effectiveLimit * 3,
+        display_limit: requestLimit * 3,
         export_columns: epKw.columns,
         ...epKw.defaultParams,
       }, epKw.path),
@@ -200,11 +225,27 @@ export default class SeoClient {
       }
     }
 
-    const pages = pageRows.map((row) => ({
+    let pages = pageRows.map((row) => ({
       url: row.Ur,
       sum_traffic: coerceValue(row.Tg, 'int'),
       top_keyword: keywordMap.get(row.Ur) ?? null,
     }));
+
+    // For non-www prefixes, apply client-side filtering since Bw is unreliable
+    if (!isWww) {
+      const filteredPages = pages.filter(
+        (page) => page.url === prefixUrl
+          || page.url.startsWith(`${prefixUrl}/`),
+      );
+
+      if (filteredPages.length < limit && pages.length >= requestLimit) {
+        this.log.warn(`[SEO] Could not meet ${limit} top pages for ${prefixUrl} after requesting ${requestLimit} (got ${filteredPages.length} matching)`);
+      } else if (filteredPages.length < limit) {
+        this.log.debug(`[SEO] Provider has only ${filteredPages.length} pages matching prefix ${prefixUrl}`);
+      }
+
+      pages = filteredPages.slice(0, limit);
+    }
 
     return {
       result: { pages },

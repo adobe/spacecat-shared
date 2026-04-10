@@ -34,7 +34,7 @@ const MAX_RETRIES = 4;
  * Major SEO provider databases by search volume. Used as the default fan-out
  * set for getTopPages to aggregate traffic across top global markets.
  */
-export const BIG_MARKETS = ['us', 'uk', 'de', 'fr', 'es', 'it', 'br', 'ca', 'au', 'in', 'jp', 'nl'];
+export const BIG_MARKETS = ['us', 'in', 'jp', 'br', 'uk', 'de', 'fr', 'ph', 'ca', 'it', 'au', 'mx', 'id', 'es', 'pk', 'nl', 'bd', 'pl', 'my', 'kr', 'th', 'co', 'ru', 'tr', 'ar', 'za', 'pe', 'vn', 'tw', 'ae'];
 
 /**
  * Returns the list of databases to query: BIG_MARKETS + site region if not already present.

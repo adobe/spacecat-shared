@@ -1,3 +1,9 @@
+## [@adobe/mysticat-shared-seo-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.2.0...@adobe/mysticat-shared-seo-client-v1.2.1) (2026-04-10)
+
+### Bug Fixes
+
+* **seo-client:** add prefix URL filter to getTopPages ([#1528](https://github.com/adobe/spacecat-shared/issues/1528)) ([60e0a31](https://github.com/adobe/spacecat-shared/commit/60e0a31cb2948282c61498baaa0442791ed210b2))
+
 ## [@adobe/mysticat-shared-seo-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.1.3...@adobe/mysticat-shared-seo-client-v1.2.0) (2026-04-10)
 
 ### Features

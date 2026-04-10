@@ -169,6 +169,19 @@ export function todayISO() {
 }
 
 /**
+ * Returns the 1st of the previous month as YYYY-MM-DD.
+ * The SEO provider publishes monthly snapshots with a delay, so the most
+ * recent available data is typically from the previous month.
+ * @returns {string}
+ */
+export function lastMonthISO() {
+  const now = new Date();
+  now.setUTCDate(1);
+  now.setUTCMonth(now.getUTCMonth() - 1);
+  return now.toISOString().split('T')[0];
+}
+
+/**
  * Converts a YYYYMMDD date string from the API to YYYY-MM-DD.
  * Returns null for invalid/missing inputs.
  * @param {string} apiDate - Date in YYYYMMDD format

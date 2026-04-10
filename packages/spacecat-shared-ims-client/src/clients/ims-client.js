@@ -226,7 +226,7 @@ export default class ImsClient extends ImsBaseClient {
     return this.serviceAccessTokenV3;
   }
 
-  async getServiceAccessTokenOrgScopedV3(imsOrgId) {
+  async getServicePrincipalAccessToken(imsOrgId) {
     if (!hasText(imsOrgId)) {
       throw new Error('imsOrgId param is required.');
     }
@@ -245,7 +245,7 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!tokenResponse.ok) {
-      throw new Error(`IMS getServiceAccessTokenOrgScopedV3 request failed with status: ${tokenResponse.status}`);
+      throw new Error(`IMS getServicePrincipalAccessToken request failed with status: ${tokenResponse.status}`);
     }
 
     /* eslint-disable camelcase */

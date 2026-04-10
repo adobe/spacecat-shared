@@ -282,7 +282,7 @@ describe('ImsClient', () => {
     });
   });
 
-  describe('getServiceAccessTokenOrgScopedV3', () => {
+  describe('getServicePrincipalAccessToken', () => {
     let client;
 
     beforeEach(() => {
@@ -291,9 +291,9 @@ describe('ImsClient', () => {
     });
 
     it('throws when imsOrgId is missing', async () => {
-      await expect(client.getServiceAccessTokenOrgScopedV3('')).to.be.rejectedWith('imsOrgId param is required.');
-      await expect(client.getServiceAccessTokenOrgScopedV3(null)).to.be.rejectedWith('imsOrgId param is required.');
-      await expect(client.getServiceAccessTokenOrgScopedV3(undefined)).to.be.rejectedWith('imsOrgId param is required.');
+      await expect(client.getServicePrincipalAccessToken('')).to.be.rejectedWith('imsOrgId param is required.');
+      await expect(client.getServicePrincipalAccessToken(null)).to.be.rejectedWith('imsOrgId param is required.');
+      await expect(client.getServicePrincipalAccessToken(undefined)).to.be.rejectedWith('imsOrgId param is required.');
     });
 
     it('includes org_id in the POST body to IMS token v3', async () => {
@@ -310,7 +310,7 @@ describe('ImsClient', () => {
           token_type: 'Bearer',
         });
 
-      await expect(client.getServiceAccessTokenOrgScopedV3(orgId)).to.be.eventually.deep.equal({
+      await expect(client.getServicePrincipalAccessToken(orgId)).to.be.eventually.deep.equal({
         access_token: 'org-scoped-token',
         expires_in: 3600,
         token_type: 'Bearer',
@@ -328,7 +328,7 @@ describe('ImsClient', () => {
           token_type: 'Bearer',
         });
 
-      await expect(client.getServiceAccessTokenOrgScopedV3(orgId)).to.be.eventually.deep.equal({
+      await expect(client.getServicePrincipalAccessToken(orgId)).to.be.eventually.deep.equal({
         access_token: 'org-scoped-token',
         expires_in: 3600,
         token_type: 'Bearer',
@@ -343,8 +343,8 @@ describe('ImsClient', () => {
         .times(3)
         .reply(500);
 
-      await expect(client.getServiceAccessTokenOrgScopedV3(orgId)).to.be.rejectedWith(
-        'IMS getServiceAccessTokenOrgScopedV3 request failed with status: 500',
+      await expect(client.getServicePrincipalAccessToken(orgId)).to.be.rejectedWith(
+        'IMS getServicePrincipalAccessToken request failed with status: 500',
       );
     });
   });

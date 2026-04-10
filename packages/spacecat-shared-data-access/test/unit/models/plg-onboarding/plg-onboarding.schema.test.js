@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 import plgOnboardingSchema from '../../../../src/models/plg-onboarding/plg-onboarding.schema.js';
 

@@ -12,7 +12,6 @@
 import { expect } from 'chai';
 import totalMetrics from '../src/functions/total-metrics.js';
 import bundlesForUrls from './fixtures/bundles.json' with { type: 'json' };
-/* eslint-env mocha */
 
 describe('Total Metrics Queries', () => {
   it('crunches CWV data', async () => {

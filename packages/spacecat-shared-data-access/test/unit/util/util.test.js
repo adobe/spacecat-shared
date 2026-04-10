@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 // utils.test.js
 // This suite tests all utility functions from the provided utils file.
 // Requires Mocha for tests, Chai for assertions, and Sinon for spying/stubbing.

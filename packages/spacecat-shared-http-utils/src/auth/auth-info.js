@@ -111,7 +111,9 @@ export default class AuthInfo {
    * @returns {Object|undefined} A shallow copy of the matching delegated tenant entry, or undefined
    */
   getDelegatedTenant(imsOrgId, productCode) {
-    if (!imsOrgId) return undefined;
+    if (!imsOrgId) {
+      return undefined;
+    }
     const [id] = String(imsOrgId).split('@');
     const delegated = this.profile?.delegated_tenants || [];
     const match = delegated.find((dt) => dt.id === id

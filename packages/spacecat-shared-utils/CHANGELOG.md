@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-utils-v1.112.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.4...@adobe/spacecat-shared-utils-v1.112.5) (2026-04-10)
+
+### Bug Fixes
+
+* byocdn-imperva shows correct config ([#1529](https://github.com/adobe/spacecat-shared/issues/1529)) ([8aaaf1d](https://github.com/adobe/spacecat-shared/commit/8aaaf1df7b5081184f9f6c3824b915f260c0d898))
+
+## [@adobe/spacecat-shared-utils-v1.112.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.3...@adobe/spacecat-shared-utils-v1.112.4) (2026-04-09)
+
+### Bug Fixes
+
+* **utils:** detect Akamai blocking via akamai-cache-status and akamai-grn headers ([#1524](https://github.com/adobe/spacecat-shared/issues/1524)) ([85f93a2](https://github.com/adobe/spacecat-shared/commit/85f93a276be0668a75fa3058102d86e537898a79)), closes [#1523](https://github.com/adobe/spacecat-shared/issues/1523)
+
 ## [@adobe/spacecat-shared-utils-v1.112.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.2...@adobe/spacecat-shared-utils-v1.112.3) (2026-04-08)
 
 ### Bug Fixes

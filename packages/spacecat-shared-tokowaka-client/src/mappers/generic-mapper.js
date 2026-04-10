@@ -36,8 +36,12 @@ export default class GenericMapper extends BaseOpportunityMapper {
 
   // eslint-disable-next-line class-methods-use-this
   #resolveValue(data) {
-    if (data.format === 'html') return htmlToHast(data.patchValue);
-    if (data.format === 'hast' || data.format === 'json') return JSON.parse(data.patchValue);
+    if (data.format === 'html') {
+      return htmlToHast(data.patchValue);
+    }
+    if (data.format === 'hast' || data.format === 'json') {
+      return JSON.parse(data.patchValue);
+    }
     return data.patchValue;
   }
 

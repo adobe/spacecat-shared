@@ -64,7 +64,9 @@ export default {
   ],
   onwarn(warning, warn) {
     // Suppress warnings about dynamic imports that we'll handle
-    if (warning.code === 'UNRESOLVED_IMPORT') return;
+    if (warning.code === 'UNRESOLVED_IMPORT') {
+      return;
+    }
     warn(warning);
   },
 };

@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 
 import {
@@ -2550,6 +2548,41 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO Detected CDN', () => {
+    it('creates a Config with llmo detectedCdn property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          detectedCdn: 'aem-cs-fastly',
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoDetectedCdn()).to.equal('aem-cs-fastly');
+    });
+
+    it('returns null for detectedCdn in default config', () => {
+      const config = Config();
+      expect(config.getLlmoDetectedCdn()).to.be.null;
+    });
+
+    it('returns null for detectedCdn if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoDetectedCdn()).to.be.null;
+    });
+
+    it('should be able to update detectedCdn', () => {
+      const config = Config();
+      config.updateLlmoDetectedCdn('other');
+      expect(config.getLlmoDetectedCdn()).to.equal('other');
+    });
+  });
+
   describe('Tokowaka Config', () => {
     it('creates a Config with tokowakaConfig property', () => {
       const data = {
@@ -3043,6 +3076,20 @@ describe('Config Tests', () => {
       expect(result[1].source).to.equal('manual');
     });
 
+    it('returns entries from both manual and moneyPages with correct source tags', () => {
+      const config = Config({
+        auditTargetURLs: {
+          manual: [{ url: 'https://example.com/manual1' }],
+          moneyPages: [{ url: 'https://example.com/money1' }, { url: 'https://example.com/money2' }],
+        },
+      });
+      const result = config.getAuditTargetURLs();
+      expect(result).to.have.lengthOf(3);
+      expect(result[0]).to.deep.equal({ url: 'https://example.com/manual1', source: 'manual' });
+      expect(result[1]).to.deep.equal({ url: 'https://example.com/money1', source: 'moneyPages' });
+      expect(result[2]).to.deep.equal({ url: 'https://example.com/money2', source: 'moneyPages' });
+    });
+
     describe('getAuditTargetURLsBySource', () => {
       it('returns URLs for a specific source', () => {
         const config = Config({
@@ -3056,9 +3103,22 @@ describe('Config Tests', () => {
         expect(manual[1].url).to.equal('https://example.com/m2');
       });
 
+      it('returns moneyPages URLs for moneyPages source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            moneyPages: [{ url: 'https://example.com/mp1' }, { url: 'https://example.com/mp2' }],
+          },
+        });
+        const moneyPages = config.getAuditTargetURLsBySource('moneyPages');
+        expect(moneyPages).to.have.lengthOf(2);
+        expect(moneyPages[0].url).to.equal('https://example.com/mp1');
+        expect(moneyPages[1].url).to.equal('https://example.com/mp2');
+      });
+
       it('returns empty array for source with no entries', () => {
         const config = Config();
         expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([]);
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.deep.equal([]);
       });
 
       it('rejects invalid source', () => {
@@ -3098,6 +3158,22 @@ describe('Config Tests', () => {
         config.updateAuditTargetURLs('manual', []);
         expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([]);
       });
+
+      it('replaces URLs for moneyPages source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            moneyPages: [{ url: 'https://old.com' }],
+          },
+        });
+        config.updateAuditTargetURLs('moneyPages', [
+          { url: 'https://new1.com' },
+          { url: 'https://new2.com' },
+        ]);
+        const result = config.getAuditTargetURLsBySource('moneyPages');
+        expect(result).to.have.lengthOf(2);
+        expect(result[0].url).to.equal('https://new1.com');
+        expect(result[1].url).to.equal('https://new2.com');
+      });
     });
 
     describe('addAuditTargetURL', () => {
@@ -3131,6 +3207,25 @@ describe('Config Tests', () => {
         const config = Config();
         expect(() => config.addAuditTargetURL('invalid', { url: 'https://example.com' })).to.throw('Invalid audit target source');
       });
+
+      it('appends a new URL to moneyPages source', () => {
+        const config = Config();
+        config.addAuditTargetURL('moneyPages', { url: 'https://example.com/mp1' });
+        config.addAuditTargetURL('moneyPages', { url: 'https://example.com/mp2' });
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.have.lengthOf(2);
+        expect(config.getAuditTargetURLsBySource('moneyPages')[1].url).to.equal('https://example.com/mp2');
+      });
+
+      it('deduplicates across manual and moneyPages sources', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/shared' }],
+          },
+        });
+        config.addAuditTargetURL('moneyPages', { url: 'https://example.com/shared' });
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.have.lengthOf(0);
+        expect(config.getAuditTargetURLs()).to.have.lengthOf(1);
+      });
     });
 
     describe('removeAuditTargetURL', () => {
@@ -3163,6 +3258,17 @@ describe('Config Tests', () => {
         const config = Config();
         expect(() => config.removeAuditTargetURL('invalid', 'https://example.com')).to.throw('Invalid audit target source');
       });
+
+      it('removes by url string from moneyPages source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            moneyPages: [{ url: 'https://example.com/mp1' }, { url: 'https://example.com/mp2' }],
+          },
+        });
+        config.removeAuditTargetURL('moneyPages', 'https://example.com/mp2');
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.have.lengthOf(1);
+        expect(config.getAuditTargetURLsBySource('moneyPages')[0].url).to.equal('https://example.com/mp1');
+      });
     });
 
     describe('serialization', () => {
@@ -3175,6 +3281,7 @@ describe('Config Tests', () => {
         const item = Config.toDynamoItem(config);
         expect(item.auditTargetURLs).to.deep.equal({
           manual: [{ url: 'https://example.com/page1' }],
+          moneyPages: [],
         });
       });
 
@@ -3185,6 +3292,31 @@ describe('Config Tests', () => {
               { url: 'https://example.com/page1' },
               { url: 'https://example.com/page2' },
             ],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        const restored = Config.fromDynamoItem(item);
+        expect(restored.getAuditTargetURLs()).to.deep.equal(config.getAuditTargetURLs());
+      });
+
+      it('includes moneyPages in toDynamoItem conversion', () => {
+        const config = Config({
+          auditTargetURLs: {
+            moneyPages: [{ url: 'https://example.com/mp1' }],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        expect(item.auditTargetURLs).to.deep.equal({
+          manual: [],
+          moneyPages: [{ url: 'https://example.com/mp1' }],
+        });
+      });
+
+      it('round-trips both manual and moneyPages through serialization', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/m1' }],
+            moneyPages: [{ url: 'https://example.com/mp1' }],
           },
         });
         const item = Config.toDynamoItem(config);
@@ -3202,17 +3334,20 @@ describe('Config Tests', () => {
         })).to.throw();
       });
 
-      it('strips unknown source keys from auditTargetURLs', () => {
+      it('strips unknown source keys from auditTargetURLs but keeps moneyPages', () => {
         const config = Config({
           auditTargetURLs: {
             manual: [{ url: 'https://example.com/page1' }],
+            moneyPages: [{ url: 'https://example.com/mp1' }],
             unknown: [{ url: 'https://example.com/page2' }],
           },
         });
         const result = config.getAuditTargetURLs();
-        expect(result).to.have.lengthOf(1);
+        expect(result).to.have.lengthOf(2);
         expect(result[0].url).to.equal('https://example.com/page1');
         expect(result[0].source).to.equal('manual');
+        expect(result[1].url).to.equal('https://example.com/mp1');
+        expect(result[1].source).to.equal('moneyPages');
       });
     });
   });

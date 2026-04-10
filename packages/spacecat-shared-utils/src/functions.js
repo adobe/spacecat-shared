@@ -94,30 +94,48 @@ function isNonEmptyObject(value) {
  * @return {boolean} True if the objects or arrays are equal, false otherwise.
  */
 function deepEqual(x, y) {
-  if (x === y) return true;
+  if (x === y) {
+    return true;
+  }
 
   if (isArray(x) && isArray(y)) {
-    if (x.length !== y.length) return false;
+    if (x.length !== y.length) {
+      return false;
+    }
     for (let i = 0; i < x.length; i += 1) {
-      if (!deepEqual(x[i], y[i])) return false;
+      if (!deepEqual(x[i], y[i])) {
+        return false;
+      }
     }
     return true;
   }
 
-  if (!isObject(x) || !isObject(y)) return false;
+  if (!isObject(x) || !isObject(y)) {
+    return false;
+  }
 
-  if (x.constructor !== y.constructor) return false;
+  if (x.constructor !== y.constructor) {
+    return false;
+  }
 
-  if (x instanceof Date) return x.getTime() === y.getTime();
-  if (x instanceof RegExp) return x.toString() === y.toString();
+  if (x instanceof Date) {
+    return x.getTime() === y.getTime();
+  }
+  if (x instanceof RegExp) {
+    return x.toString() === y.toString();
+  }
 
   const xKeys = Object.keys(x).filter((key) => typeof x[key] !== 'function');
   const yKeys = Object.keys(y).filter((key) => typeof y[key] !== 'function');
 
-  if (xKeys.length !== yKeys.length) return false;
+  if (xKeys.length !== yKeys.length) {
+    return false;
+  }
 
   for (const key of xKeys) {
-    if (!Object.prototype.hasOwnProperty.call(y, key) || !deepEqual(x[key], y[key])) return false;
+    if (!Object.prototype.hasOwnProperty.call(y, key) || !deepEqual(x[key], y[key])) {
+      return false;
+    }
   }
 
   return true;

@@ -9,8 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-/* eslint-env mocha */
-
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
@@ -153,7 +151,9 @@ describe('RUMAPIClient#queryStream', () => {
     while (true) {
       // eslint-disable-next-line no-await-in-loop
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        break;
+      }
       received.push(value);
     }
 
@@ -191,7 +191,9 @@ describe('RUMAPIClient#queryStream', () => {
     while (true) {
       // eslint-disable-next-line no-await-in-loop
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        break;
+      }
       received.push(value);
     }
 
@@ -237,7 +239,9 @@ describe('RUMAPIClient#queryStream', () => {
     while (true) {
       // eslint-disable-next-line no-await-in-loop
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        break;
+      }
       received.push(value);
     }
 

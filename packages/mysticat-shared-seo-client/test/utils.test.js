@@ -13,7 +13,7 @@
 import { expect } from 'chai';
 
 import {
-  parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, todayISO,
+  parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, todayISO, lastMonthISO,
   buildFilter, buildQueryParams, extractBrand, INTENT_CODES,
 } from '../src/utils.js';
 
@@ -150,6 +150,21 @@ describe('utils', () => {
     it('returns a date string in YYYY-MM-DD format', () => {
       const result = todayISO();
       expect(result).to.match(/^\d{4}-\d{2}-\d{2}$/);
+    });
+  });
+
+  describe('lastMonthISO', () => {
+    it('returns a date string in YYYY-MM-DD format', () => {
+      const result = lastMonthISO();
+      expect(result).to.match(/^\d{4}-\d{2}-\d{2}$/);
+    });
+
+    it('returns the 1st of the previous month', () => {
+      const result = lastMonthISO();
+      expect(result).to.match(/^\d{4}-\d{2}-01$/);
+      const today = new Date();
+      const expected = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+      expect(result).to.equal(expected.toISOString().split('T')[0]);
     });
   });
 

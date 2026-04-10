@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
@@ -281,6 +279,73 @@ describe('ImsClient', () => {
       const orgDetails = await client.getImsOrganizationDetails(testOrgId);
       expect(orgDetails.admins).to.be.an('array');
       expect(orgDetails.admins).to.have.length(0);
+    });
+  });
+
+  describe('getServicePrincipalAccessToken', () => {
+    let client;
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+      client.retryBaseDelayMs = 0;
+    });
+
+    it('throws when imsOrgId is missing', async () => {
+      await expect(client.getServicePrincipalAccessToken('')).to.be.rejectedWith('imsOrgId param is required.');
+      await expect(client.getServicePrincipalAccessToken(null)).to.be.rejectedWith('imsOrgId param is required.');
+      await expect(client.getServicePrincipalAccessToken(undefined)).to.be.rejectedWith('imsOrgId param is required.');
+    });
+
+    it('includes org_id in the POST body to IMS token v3', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3', (body) => {
+          const str = typeof body === 'string' ? body : body.toString('utf8');
+          return str.includes('org_id') && str.includes('1234567890ABCDEF12345678@AdobeOrg');
+        })
+        .query(true)
+        .reply(200, {
+          access_token: 'org-scoped-token',
+          expires_in: 3600,
+          token_type: 'Bearer',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId)).to.be.eventually.deep.equal({
+        access_token: 'org-scoped-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+      });
+    });
+
+    it('returns org-scoped token payload on success', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(200, {
+          access_token: 'org-scoped-token',
+          expires_in: 3600,
+          token_type: 'Bearer',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId)).to.be.eventually.deep.equal({
+        access_token: 'org-scoped-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+      });
+    });
+
+    it('throws when IMS returns non-OK status', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .times(3)
+        .reply(500);
+
+      await expect(client.getServicePrincipalAccessToken(orgId)).to.be.rejectedWith(
+        'IMS getServicePrincipalAccessToken request failed with status: 500',
+      );
     });
   });
 

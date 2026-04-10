@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.112.3",
+  "version": "1.112.5",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "exports": {
@@ -83,7 +83,7 @@
     "sinon-chai": "4.0.1"
   },
   "dependencies": {
-    "@adobe/fetch": "4.2.3",
+    "@adobe/fetch": "4.3.0",
     "@aws-sdk/client-s3": "3.1024.0",
     "@aws-sdk/client-sqs": "3.1024.0",
     "@json2csv/plainjs": "7.0.6",

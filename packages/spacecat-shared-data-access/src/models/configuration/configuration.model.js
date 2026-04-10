@@ -176,7 +176,9 @@ class Configuration {
 
   isHandlerEnabledForSite(type, site) {
     const handler = this.getHandlers()?.[type];
-    if (!handler) return false;
+    if (!handler) {
+      return false;
+    }
 
     const siteId = site.getId();
     const orgId = site.getOrganizationId();
@@ -203,7 +205,9 @@ class Configuration {
 
   isHandlerEnabledForOrg(type, org) {
     const handler = this.getHandlers()?.[type];
-    if (!handler) return false;
+    if (!handler) {
+      return false;
+    }
 
     const orgId = org.getId();
 
@@ -226,7 +230,9 @@ class Configuration {
     const handlers = this.getHandlers();
     const handler = handlers?.[type];
 
-    if (!isNonEmptyObject(handler)) return;
+    if (!isNonEmptyObject(handler)) {
+      return;
+    }
 
     if (!isNonEmptyObject(handler.disabled)) {
       handler.disabled = { orgs: [], sites: [] };
@@ -267,7 +273,9 @@ class Configuration {
 
   enableHandlerForSite(type, site) {
     const siteId = site.getId();
-    if (this.isHandlerEnabledForSite(type, site)) return;
+    if (this.isHandlerEnabledForSite(type, site)) {
+      return;
+    }
 
     const deps = this.isHandlerDependencyMetForSite(type, site);
     if (deps !== true) {
@@ -287,7 +295,9 @@ class Configuration {
   isHandlerDependencyMetForOrg(type, org) {
     const handler = this.getHandler(type);
 
-    if (!handler || !isNonEmptyArray(handler?.dependencies)) return true;
+    if (!handler || !isNonEmptyArray(handler?.dependencies)) {
+      return true;
+    }
 
     const unmetDependencies = handler.dependencies
       .filter(({ handler: depHandler }) => !this.isHandlerEnabledForOrg(depHandler, org))
@@ -305,7 +315,9 @@ class Configuration {
    */
   isHandlerDependencyMetForSite(type, site) {
     const handler = this.getHandler(type);
-    if (!handler || !isNonEmptyArray(handler?.dependencies)) return true;
+    if (!handler || !isNonEmptyArray(handler?.dependencies)) {
+      return true;
+    }
 
     const unmetDependencies = handler.dependencies
       .filter(({ handler: depHandler }) => !this.isHandlerEnabledForSite(depHandler, site))
@@ -316,7 +328,9 @@ class Configuration {
 
   enableHandlerForOrg(type, org) {
     const orgId = org.getId();
-    if (this.isHandlerEnabledForOrg(type, org)) return;
+    if (this.isHandlerEnabledForOrg(type, org)) {
+      return;
+    }
     const deps = this.isHandlerDependencyMetForOrg(type, org);
     if (deps !== true) {
       throw new Error(`Cannot enable handler ${type} for org ${orgId} because of missing dependencies: ${deps}`);
@@ -327,14 +341,18 @@ class Configuration {
 
   disableHandlerForSite(type, site) {
     const siteId = site.getId();
-    if (!this.isHandlerEnabledForSite(type, site)) return;
+    if (!this.isHandlerEnabledForSite(type, site)) {
+      return;
+    }
 
     this.updateHandlerSites(type, siteId, false);
   }
 
   disableHandlerForOrg(type, org) {
     const orgId = org.getId();
-    if (!this.isHandlerEnabledForOrg(type, org)) return;
+    if (!this.isHandlerEnabledForOrg(type, org)) {
+      return;
+    }
 
     this.updateHandlerOrgs(type, orgId, false);
   }

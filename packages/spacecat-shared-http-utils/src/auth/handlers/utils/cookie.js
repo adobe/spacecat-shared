@@ -33,7 +33,9 @@ export const getCookie = (context) => {
  */
 export const getCookieValue = (context, name) => {
   const cookieString = getCookie(context);
-  if (!cookieString) return null;
+  if (!cookieString) {
+    return null;
+  }
 
   const cookies = cookieString.split(';');
   for (const cookie of cookies) {

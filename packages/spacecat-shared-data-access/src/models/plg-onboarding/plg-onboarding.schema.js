@@ -94,7 +94,9 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       },
     },
     validate: (value) => {
-      if (!Array.isArray(value)) return false;
+      if (!Array.isArray(value)) {
+        return false;
+      }
       const valid = Object.values(PlgOnboarding.REVIEW_DECISIONS);
       return value.every((r) => valid.includes(r.decision) && isIsoDate(r.reviewedAt));
     },

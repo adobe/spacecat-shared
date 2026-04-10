@@ -111,7 +111,7 @@ export interface LlmoCustomerIntent {
   value: string;
 }
 
-export type AuditTargetSource = 'manual';
+export type AuditTargetSource = 'manual' | 'moneyPages';
 
 export interface AuditTargetEntry {
   url: string;
@@ -123,6 +123,7 @@ export interface AuditTargetEntryWithSource extends AuditTargetEntry {
 
 export interface AuditTargetURLs {
   manual?: AuditTargetEntry[];
+  moneyPages?: AuditTargetEntry[];
 }
 
 export interface SiteConfig {

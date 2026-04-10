@@ -53,7 +53,9 @@ class SiteEnrollmentCollection extends BaseCollection {
         siteId: item.siteId,
         entitlementId: item.entitlementId,
       });
-      if (existing) return existing;
+      if (existing) {
+        return existing;
+      }
     }
 
     return super.create(item, options);

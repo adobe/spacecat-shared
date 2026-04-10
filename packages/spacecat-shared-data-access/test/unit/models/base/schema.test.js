@@ -22,8 +22,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 // eslint-disable-next-line max-classes-per-file
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';

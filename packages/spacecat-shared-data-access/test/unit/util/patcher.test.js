@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 // eslint-disable-next-line max-classes-per-file
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
 

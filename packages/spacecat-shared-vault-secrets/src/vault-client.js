@@ -61,8 +61,12 @@ export default class VaultClient {
   }
 
   isAuthenticated() {
-    if (!this.#token) return false;
-    if (this.#tokenExpiry && Date.now() >= this.#tokenExpiry) return false;
+    if (!this.#token) {
+      return false;
+    }
+    if (this.#tokenExpiry && Date.now() >= this.#tokenExpiry) {
+      return false;
+    }
     return true;
   }
 
@@ -129,7 +133,9 @@ export default class VaultClient {
   }
 
   isTokenExpiringSoon() {
-    if (!this.isAuthenticated()) return false;
+    if (!this.isAuthenticated()) {
+      return false;
+    }
     return (this.#tokenExpiry - Date.now()) <= TOKEN_RENEW_BUFFER;
   }
 

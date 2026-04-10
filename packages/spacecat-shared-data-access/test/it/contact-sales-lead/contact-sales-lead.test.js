@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { isValidUUID } from '@adobe/spacecat-shared-utils';
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';

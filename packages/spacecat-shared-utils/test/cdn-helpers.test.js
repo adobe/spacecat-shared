@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 import { prettifyLogForwardingConfig } from '../src/cdn-helpers.js';
 
@@ -295,20 +293,20 @@ describe('CDN Helper Functions', () => {
       it('should handle byocdn-imperva', () => {
         const impervaPayload = {
           ...mockPayload,
+          bucketName: 'cdn-logs-abc123xyz',
           logSource: 'byocdn-imperva',
-          allowedPaths: ['9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-imperva/'],
+          allowedPaths: ['ABC123XYZAdobeOrg_raw_byocdn-imperva'],
         };
         const result = prettifyLogForwardingConfig(impervaPayload);
         expect(result).to.deep.equal({
           'Log integration mode': 'Push mode',
           'Delivery method': 'Amazon S3 ARN',
-          'Bucket Name': 'cdn-logs-adobe-dev',
           Region: 'us-east-1',
-          Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-imperva/',
+          Path: 'cdn-logs-abc123xyz/ABC123XYZAdobeOrg_raw_byocdn-imperva',
           'Log types': 'Cloud WAF',
           'Log level': 'Access logs',
           Format: 'W3C',
-          'Compress logs': 'Yes',
+          'Compress logs': 'No',
           HelpUrl: 'https://docs-cybersec.thalesgroup.com/bundle/cloud-application-security/page/siem-log-configuration.htm',
         });
       });

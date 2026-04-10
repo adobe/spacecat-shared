@@ -1,3 +1,15 @@
+## [@adobe/mysticat-shared-seo-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.1.3...@adobe/mysticat-shared-seo-client-v1.2.0) (2026-04-10)
+
+### Features
+
+* **seo-client:** fan-out queries across markets using site region ([#1522](https://github.com/adobe/spacecat-shared/issues/1522)) ([8b2260c](https://github.com/adobe/spacecat-shared/commit/8b2260c6f49410a56c9d5fd7b37b2faf5ab36acb))
+
+## [@adobe/mysticat-shared-seo-client-v1.1.3](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.1.2...@adobe/mysticat-shared-seo-client-v1.1.3) (2026-04-09)
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1503](https://github.com/adobe/spacecat-shared/issues/1503)) ([21d4d4b](https://github.com/adobe/spacecat-shared/commit/21d4d4b3cfa95ca7748ef4b65b04cace24768dfc))
+
 ## [@adobe/mysticat-shared-seo-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.1.1...@adobe/mysticat-shared-seo-client-v1.1.2) (2026-04-06)
 
 ### Bug Fixes

@@ -11,7 +11,6 @@
  */
 import { expect } from 'chai';
 import { initializeDataChunks, calculateMetrics, filterBundles } from '../src/functions/reports/optimization/utils.js';
-/* eslint-env mocha */
 
 describe('Optimization Utils', () => {
   describe('initializeDataChunks', () => {

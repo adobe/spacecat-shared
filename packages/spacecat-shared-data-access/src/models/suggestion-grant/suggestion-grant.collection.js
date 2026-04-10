@@ -63,7 +63,7 @@ class SuggestionGrantCollection extends BaseCollection {
    * @returns {Promise<{ data: Array|null, error: object|null }>}
    */
   async invokeGrantSuggestionsRpc(suggestionIds, siteId, tokenType, cycle) {
-    return this.postgrestService.rpc('grant_suggestions', {
+    return this.postgrestService.rpc('wrpc_grant_suggestions', {
       p_suggestion_ids: suggestionIds,
       p_site_id: siteId,
       p_token_type: tokenType,
@@ -100,7 +100,9 @@ class SuggestionGrantCollection extends BaseCollection {
 
       return { grantedIds, notGrantedIds, grantIds };
     } catch (err) {
-      if (err instanceof DataAccessError) throw err;
+      if (err instanceof DataAccessError) {
+        throw err;
+      }
       this.log.error('splitSuggestionsByGrantStatus failed', err);
       throw new DataAccessError('Failed to split suggestions by grant status', this, err);
     }
@@ -115,7 +117,9 @@ class SuggestionGrantCollection extends BaseCollection {
    *   false otherwise or if id is empty.
    */
   async isSuggestionGranted(suggestionId) {
-    if (!hasText(suggestionId)) return false;
+    if (!hasText(suggestionId)) {
+      return false;
+    }
     const { grantedIds } = await this.splitSuggestionsByGrantStatus([suggestionId]);
     return grantedIds.length > 0;
   }
@@ -163,7 +167,7 @@ class SuggestionGrantCollection extends BaseCollection {
 
     if (error) {
       this.log.error('grantSuggestions: RPC failed', error);
-      throw new DataAccessError('Failed to grant suggestions (grant_suggestions)', this, error);
+      throw new DataAccessError('Failed to grant suggestions (wrpc_grant_suggestions)', this, error);
     }
 
     const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
@@ -188,7 +192,7 @@ class SuggestionGrantCollection extends BaseCollection {
     if (!hasText(grantId)) {
       throw new DataAccessError('invokeRevokeSuggestionGrantRpc: grantId is required', this);
     }
-    return this.postgrestService.rpc('revoke_suggestion_grant', {
+    return this.postgrestService.rpc('wrpc_revoke_suggestion_grant', {
       p_grant_id: grantId,
     });
   }
@@ -212,7 +216,7 @@ class SuggestionGrantCollection extends BaseCollection {
 
     if (error) {
       this.log.error('revokeSuggestionGrant: RPC failed', error);
-      throw new DataAccessError('Failed to revoke suggestion grant (revoke_suggestion_grant)', this, error);
+      throw new DataAccessError('Failed to revoke suggestion grant (wrpc_revoke_suggestion_grant)', this, error);
     }
 
     const row = Array.isArray(data) && data.length > 0 ? data[0] : null;

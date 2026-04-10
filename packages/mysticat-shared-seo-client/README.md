@@ -31,16 +31,17 @@ const client = new SeoClient(config, fetch);
 
 ## API Methods
 
-### `getTopPages(url, limit)`
+### `getTopPages(url, opts)`
 
-Returns the top organic pages for a given URL prefix, sorted by traffic.
+Returns the top organic pages for a given URL prefix, sorted by traffic. Fans out across multiple databases to aggregate traffic globally.
 
 **Parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `url` | `string` | *(required)* | A **prefix URL** scoping which pages to return. Can include protocol (e.g., `https://www.example.com`) or omit it (e.g., `www.example.com`, `example.com/us`). |
-| `limit` | `number` | `200` | Maximum number of pages to return (capped at 2000). |
+| `opts.limit` | `number` | `200` | Maximum number of pages to return (capped at 2000). |
+| `opts.region` | `string` | *(optional)* | ISO 3166-1 alpha-2 region code (e.g., `CZ`). Added to the default database list if not already present. |
 
 **Prefix URL filtering:**
 
@@ -56,10 +57,13 @@ The `url` parameter acts as a prefix filter, not just a plain domain. This ensur
 
 ```js
 // Fetch top 100 pages for www.example.com (API-level filtering)
-const { result } = await client.getTopPages('https://www.example.com', 100);
+const { result } = await client.getTopPages('https://www.example.com', { limit: 100 });
 
 // Fetch top 50 pages for a subfolder prefix (client-side filtering)
-const { result: subResult } = await client.getTopPages('example.com/us', 50);
+const { result: subResult } = await client.getTopPages('example.com/us', { limit: 50 });
+
+// Fetch with a specific region database
+const { result: czResult } = await client.getTopPages('https://www.example.cz', { limit: 100, region: 'CZ' });
 ```
 
 ## Testing

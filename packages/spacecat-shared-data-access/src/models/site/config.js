@@ -352,6 +352,7 @@ export const configSchema = Joi.object({
       cdnProvider: Joi.string().optional(),
       region: Joi.string().pattern(AWS_REGION_PATTERN).optional(),
     }).optional(),
+    detectedCdn: Joi.string().valid('aem-cs-fastly', 'other').optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
@@ -513,6 +514,7 @@ export const Config = (data = {}) => {
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
   self.getLlmoCountryCodeIgnoreList = () => state?.llmo?.countryCodeIgnoreList;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
+  self.getLlmoDetectedCdn = () => state?.llmo?.detectedCdn ?? null;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.getOnboardConfig = () => state?.onboardConfig;
@@ -670,6 +672,11 @@ export const Config = (data = {}) => {
   self.updateLlmoCdnBucketConfig = (cdnBucketConfig) => {
     state.llmo = state.llmo || {};
     state.llmo.cdnBucketConfig = cdnBucketConfig;
+  };
+
+  self.updateLlmoDetectedCdn = (detectedCdn) => {
+    state.llmo = state.llmo || {};
+    state.llmo.detectedCdn = detectedCdn;
   };
 
   self.addLlmoTag = (tag) => {

@@ -106,10 +106,6 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     type: Object.values(Site.AUTHORING_TYPES),
     required: false,
   })
-  .addAttribute('detectedCdn', {
-    type: 'string',
-    required: false,
-  })
   .addAttribute('gitHubURL', {
     type: 'string',
     postgrestField: 'github_url',

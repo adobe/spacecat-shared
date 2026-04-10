@@ -13,10 +13,11 @@
 import SeoClient from './client.js';
 
 export default SeoClient;
-export { fetch } from './client.js';
+export { fetch, BIG_MARKETS, getDatabases } from './client.js';
 export { ENDPOINTS } from './endpoints.js';
 export {
-  buildQueryParams, parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, todayISO,
+  buildQueryParams, parseCsvResponse, coerceValue, getLimit,
+  toApiDate, fromApiDate, todayISO, lastMonthISO,
   buildFilter, extractBrand, INTENT_CODES,
 } from './utils.js';
 

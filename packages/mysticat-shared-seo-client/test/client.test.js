@@ -683,10 +683,10 @@ describe('SeoClient', () => {
       }
     }
 
-    it('fans out to all big markets and merges results', async () => {
+    it('fans out to all big markets with Bw prefix filter', async () => {
       nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'us' });
 
-      const result = await client.getTopPages('adobe.com', { limit: 3 });
+      const result = await client.getTopPages('https://www.adobe.com', { limit: 3 });
 
       expect(result.result.pages).to.have.lengthOf(3);
       expect(result.result.pages[0]).to.deep.equal({
@@ -694,16 +694,21 @@ describe('SeoClient', () => {
         sum_traffic: 1035443,
         top_keyword: 'adobe',
       });
-      expect(result.result.pages[1]).to.deep.equal({
-        url: 'https://get.adobe.com/reader/',
-        sum_traffic: 849245,
-        top_keyword: 'adobe reader',
-      });
       expect(result.result.pages[2]).to.deep.equal({
         url: 'https://www.adobe.com/products/firefly/features/text-to-image.html',
         sum_traffic: 548150,
         top_keyword: 'ai image generator',
       });
+    });
+
+    it('filters subdomain pages client-side for non-www prefix', async () => {
+      nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'us' });
+
+      const result = await client.getTopPages('https://adobe.com', { limit: 3 });
+
+      // non-www: over-fetches 2x, then filters to matching prefix
+      // get.adobe.com and www.adobe.com pages are filtered out
+      expect(result.result.pages).to.have.lengthOf(0);
     });
 
     it('handles null traffic values during accumulation', async () => {
@@ -754,7 +759,7 @@ describe('SeoClient', () => {
       const allDbs = [...BIG_MARKETS, 'cz'];
       nockAllDatabases(allDbs, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'cz' });
 
-      const result = await client.getTopPages('example.cz', { limit: 3, region: 'CZ' });
+      const result = await client.getTopPages('https://www.adobe.com', { limit: 3, region: 'CZ' });
 
       expect(result.result.pages).to.have.lengthOf(3);
       expect(result.result.pages[0].url).to.equal('https://www.adobe.com/');
@@ -763,16 +768,16 @@ describe('SeoClient', () => {
     it('does not duplicate database when region is already in big markets', async () => {
       nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'es' });
 
-      const result = await client.getTopPages('example.es', { limit: 3, region: 'ES' });
+      const result = await client.getTopPages('https://www.adobe.com', { limit: 3, region: 'ES' });
 
       expect(result.result.pages).to.have.lengthOf(3);
     });
 
     it('returns null for top_keyword when no keyword data found', async () => {
-      const pageCsv = 'Url;Traffic\n"https://unknown.com/page";"50"';
+      const pageCsv = 'Url;Traffic\n"https://www.unknown.com/page";"50"';
       nockAllDatabases(BIG_MARKETS, pageCsv, emptyKwCsv, { targetDb: 'us' });
 
-      const result = await client.getTopPages('unknown.com');
+      const result = await client.getTopPages('https://www.unknown.com');
       expect(result.result.pages[0].top_keyword).to.equal(null);
     });
 
@@ -785,11 +790,84 @@ describe('SeoClient', () => {
         .to.be.rejectedWith('options object');
     });
 
+    it('handles unparseable URL by falling back to raw domain', async () => {
+      nockAllDatabases(BIG_MARKETS, 'Url;Traffic\n"https://example.com/page";"100"', emptyKwCsv, { targetDb: 'us' });
+
+      const result = await client.getTopPages(':::invalid');
+      // Unparseable URL: domain falls back to raw input, no results match prefix
+      expect(result.result.pages).to.have.lengthOf(0);
+    });
+
     it('respects upper limit of 2000', async () => {
       nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'us' });
 
-      const result = await client.getTopPages('adobe.com', { limit: 5000 });
+      const result = await client.getTopPages('https://www.adobe.com', { limit: 5000 });
       expect(result.result.pages).to.have.length.greaterThan(0);
+    });
+
+    it('treats plain domain as non-www prefix (filters out www results)', async () => {
+      nockAllDatabases(BIG_MARKETS, topPagesCsv, topPagesKeywordsCsv, { targetDb: 'us' });
+
+      const result = await client.getTopPages('adobe.com', { limit: 3 });
+      // Plain domain treated as non-www prefix https://adobe.com
+      // All test URLs are www.adobe.com or get.adobe.com, so all filtered out
+      expect(result.result.pages).to.have.lengthOf(0);
+    });
+
+    it('logs warn when non-www filter cannot meet requested limit', async () => {
+      const log = { warn: sinon.stub(), debug: sinon.stub(), info: sinon.stub() };
+      const logClient = new SeoClient(config, fetch, log);
+
+      // Return enough rows to fill requestLimit (limit * 2 = 6), all from subdomains
+      const manySubdomainPages = [
+        'Url;Traffic',
+        ...Array.from({ length: 6 }, (_, i) => `"https://sub.example.com/page${i}";"${100 - i}"`),
+      ].join('\n');
+
+      nockAllDatabases(BIG_MARKETS, manySubdomainPages, emptyKwCsv, { targetDb: 'us' });
+
+      const result = await logClient.getTopPages('https://example.com', { limit: 3 });
+      expect(result.result.pages).to.have.lengthOf(0);
+      expect(log.warn.calledOnce).to.be.true;
+      expect(log.warn.firstCall.args[0]).to.include('Could not meet');
+    });
+
+    it('preserves subpath in prefix filter (e.g. example.com/us)', async () => {
+      const subpathPages = [
+        'Url;Traffic',
+        '"https://example.com/us/products";"500"',
+        '"https://example.com/us/about";"400"',
+        '"https://example.com/gb/products";"300"',
+        '"https://sub.example.com/page";"200"',
+      ].join('\n');
+
+      nockAllDatabases(BIG_MARKETS, subpathPages, emptyKwCsv, { targetDb: 'us' });
+
+      const result = await client.getTopPages('example.com/us', { limit: 10 });
+
+      // Only /us pages kept, not /gb or subdomain
+      expect(result.result.pages).to.have.lengthOf(2);
+      expect(result.result.pages[0].url).to.equal('https://example.com/us/products');
+      expect(result.result.pages[1].url).to.equal('https://example.com/us/about');
+    });
+
+    it('logs debug when provider has fewer pages than requested', async () => {
+      const log = { warn: sinon.stub(), debug: sinon.stub(), info: sinon.stub() };
+      const logClient = new SeoClient(config, fetch, log);
+
+      const fewPages = [
+        'Url;Traffic',
+        '"https://example.com/page1";"100"',
+        '"https://sub.example.com/page2";"50"',
+      ].join('\n');
+
+      nockAllDatabases(BIG_MARKETS, fewPages, emptyKwCsv, { targetDb: 'us' });
+
+      const result = await logClient.getTopPages('https://example.com', { limit: 3 });
+      expect(result.result.pages).to.have.lengthOf(1);
+      expect(result.result.pages[0].url).to.equal('https://example.com/page1');
+      expect(log.debug.called).to.be.true;
+      expect(log.debug.args.some((a) => a[0].includes('Provider has only'))).to.be.true;
     });
 
     it('handles database failures gracefully via fanOut', async () => {
@@ -821,7 +899,7 @@ describe('SeoClient', () => {
         }
       }
 
-      const result = await client.getTopPages('adobe.com', { limit: 3 });
+      const result = await client.getTopPages('https://www.adobe.com', { limit: 3 });
 
       expect(result.result.pages).to.have.lengthOf(3);
       expect(result.result.pages[0].url).to.equal('https://www.adobe.com/');

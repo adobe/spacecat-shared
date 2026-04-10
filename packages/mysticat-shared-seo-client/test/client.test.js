@@ -628,32 +628,32 @@ describe('SeoClient', () => {
       expect(log.warn.firstCall.args[0]).to.include('Could not meet');
     });
 
-    it('preserves subpath in prefix filter (e.g. celestyal.com/gb)', async () => {
+    it('preserves subpath in prefix filter (e.g. example.com/us)', async () => {
       const subpathPages = [
         'Url;Traffic',
-        '"https://celestyal.com/gb/cruises";"500"',
-        '"https://celestyal.com/gb/destinations";"400"',
-        '"https://celestyal.com/us/cruises";"300"',
-        '"https://sub.celestyal.com/page";"200"',
+        '"https://example.com/us/products";"500"',
+        '"https://example.com/us/about";"400"',
+        '"https://example.com/gb/products";"300"',
+        '"https://sub.example.com/page";"200"',
       ].join('\n');
 
       nock(config.apiBaseUrl)
         .get('/')
         .query((q) => q.type === 'domain_organic_unique'
-          && q.domain === 'celestyal.com'
-          && q.display_filter.includes('Bw|https://celestyal.com/gb'))
+          && q.domain === 'example.com'
+          && q.display_filter.includes('Bw|https://example.com/us'))
         .reply(200, subpathPages);
       nock(config.apiBaseUrl)
         .get('/')
         .query((q) => q.type === 'domain_organic')
         .reply(200, 'Url;Keyword;Traffic');
 
-      const result = await client.getTopPages('celestyal.com/gb', 10);
+      const result = await client.getTopPages('example.com/us', 10);
 
-      // Only /gb pages kept, not /us or subdomain
+      // Only /us pages kept, not /gb or subdomain
       expect(result.result.pages).to.have.lengthOf(2);
-      expect(result.result.pages[0].url).to.equal('https://celestyal.com/gb/cruises');
-      expect(result.result.pages[1].url).to.equal('https://celestyal.com/gb/destinations');
+      expect(result.result.pages[0].url).to.equal('https://example.com/us/products');
+      expect(result.result.pages[1].url).to.equal('https://example.com/us/about');
     });
 
     it('logs debug when provider has fewer pages than requested', async () => {

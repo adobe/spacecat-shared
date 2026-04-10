@@ -158,8 +158,8 @@ export default class SeoClient {
     }
 
     // Ensure url has protocol for the Bw filter and extract hostname for the API.
-    // Input is a prefix URL, either full (https://www.veeam.com) or protocol-stripped
-    // (www.veeam.com, celestyal.com/gb).
+    // Input is a prefix URL, either full (https://www.example.com) or protocol-stripped
+    // (www.example.com, example.com/us).
     const prefixUrl = url.includes('://') ? url : `https://${url}`;
     let domain;
     try {

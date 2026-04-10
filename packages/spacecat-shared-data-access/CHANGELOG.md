@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.49.0...@adobe/spacecat-shared-data-access-v3.50.0) (2026-04-10)
+
+### Features
+
+* LLMO-3959 changing schema to add detectCdn flag ([#1501](https://github.com/adobe/spacecat-shared/issues/1501)) ([0bb4642](https://github.com/adobe/spacecat-shared/commit/0bb46425b1351df2b12525182367c2635ae7fc48))
+
 ## [@adobe/spacecat-shared-data-access-v3.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.48.0...@adobe/spacecat-shared-data-access-v3.49.0) (2026-04-10)
 
 ### Features

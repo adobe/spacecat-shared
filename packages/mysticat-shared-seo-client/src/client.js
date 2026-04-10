@@ -261,7 +261,9 @@ export default class SeoClient {
     let fullAuditRef = '';
 
     for (const { value } of dbResults) {
-      if (!fullAuditRef) fullAuditRef = value.fullAuditRef;
+      if (!fullAuditRef) {
+        fullAuditRef = value.fullAuditRef;
+      }
 
       for (const row of value.kwRows) {
         if (!keywordMap.has(row.Ur)) {
@@ -327,7 +329,9 @@ export default class SeoClient {
     let fullAuditRef = '';
 
     for (const { key: db, value } of dbResults) {
-      if (!fullAuditRef) fullAuditRef = value.fullAuditRef;
+      if (!fullAuditRef) {
+        fullAuditRef = value.fullAuditRef;
+      }
 
       const rows = parseCsvResponse(value.body);
       for (const row of rows) {
@@ -408,7 +412,9 @@ export default class SeoClient {
     let hasData = false;
 
     for (const { value } of dbResults) {
-      if (!fullAuditRef) fullAuditRef = value.fullAuditRef;
+      if (!fullAuditRef) {
+        fullAuditRef = value.fullAuditRef;
+      }
 
       const rows = parseCsvResponse(value.body);
       const row = rows[0];
@@ -480,7 +486,9 @@ export default class SeoClient {
     let fullAuditRef = '';
 
     for (const { value } of dbResults) {
-      if (!fullAuditRef) fullAuditRef = value.fullAuditRef;
+      if (!fullAuditRef) {
+        fullAuditRef = value.fullAuditRef;
+      }
 
       const rows = parseCsvResponse(value.body);
       for (const row of rows) {

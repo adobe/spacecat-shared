@@ -472,8 +472,12 @@ describe('SeoClient', () => {
 
       for (const db of BIG_MARKETS) {
         let csv = emptyMetricsCsv;
-        if (db === 'us') csv = usCsv;
-        if (db === 'de') csv = deCsv;
+        if (db === 'us') {
+          csv = usCsv;
+        }
+        if (db === 'de') {
+          csv = deCsv;
+        }
         nock(config.apiBaseUrl)
           .get('/')
           .query((q) => q.type === 'domain_rank' && q.database === db)
@@ -559,8 +563,12 @@ describe('SeoClient', () => {
 
       for (const db of BIG_MARKETS) {
         let csv = emptyTrafficCsv;
-        if (db === 'us') csv = usCsv;
-        if (db === 'de') csv = deCsv;
+        if (db === 'us') {
+          csv = usCsv;
+        }
+        if (db === 'de') {
+          csv = deCsv;
+        }
         nock(config.apiBaseUrl)
           .get('/')
           .query((q) => q.type === 'domain_rank_history' && q.database === db)
@@ -581,8 +589,12 @@ describe('SeoClient', () => {
 
       for (const db of BIG_MARKETS) {
         let csv = emptyTrafficCsv;
-        if (db === 'us') csv = usCsv;
-        if (db === 'de') csv = deCsv;
+        if (db === 'us') {
+          csv = usCsv;
+        }
+        if (db === 'de') {
+          csv = deCsv;
+        }
         nock(config.apiBaseUrl)
           .get('/')
           .query((q) => q.type === 'domain_rank_history' && q.database === db)
@@ -710,8 +722,12 @@ describe('SeoClient', () => {
 
       for (const db of BIG_MARKETS) {
         let pCsv = emptyPagesCsv;
-        if (db === 'us') pCsv = usCsv;
-        if (db === 'de') pCsv = deCsv;
+        if (db === 'us') {
+          pCsv = usCsv;
+        }
+        if (db === 'de') {
+          pCsv = deCsv;
+        }
 
         nock(config.apiBaseUrl)
           .get('/')

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.51.0...@adobe/spacecat-shared-data-access-v3.52.0) (2026-04-10)
+
+### Features
+
+* **data-access:** add enableMoneyPageUrls flag to site config ([#1532](https://github.com/adobe/spacecat-shared/issues/1532)) ([865cd45](https://github.com/adobe/spacecat-shared/commit/865cd456e255ed0e2cb3af354fb087d4ce165ef8))
+
 ## [@adobe/spacecat-shared-data-access-v3.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.50.1...@adobe/spacecat-shared-data-access-v3.51.0) (2026-04-10)
 
 ### Features

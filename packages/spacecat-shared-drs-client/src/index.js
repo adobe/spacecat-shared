@@ -40,7 +40,9 @@ export default class DrsClient {
     const { env, log = console } = context;
     const { DRS_API_URL: apiBaseUrl, DRS_API_KEY: apiKey } = env;
 
-    if (context.drsClient) return context.drsClient;
+    if (context.drsClient) {
+      return context.drsClient;
+    }
 
     const client = new DrsClient({ apiBaseUrl, apiKey }, log);
     context.drsClient = client;
@@ -51,7 +53,9 @@ export default class DrsClient {
     // Strip trailing slashes without regex (CodeQL flags /\/+$/ as polynomial)
     let url = apiBaseUrl;
     if (url) {
-      while (url.endsWith('/')) url = url.slice(0, -1);
+      while (url.endsWith('/')) {
+        url = url.slice(0, -1);
+      }
     }
     this.apiBaseUrl = url || undefined;
     this.apiKey = apiKey;
@@ -257,6 +261,7 @@ export default class DrsClient {
    * @param {string[]} params.platforms - LLM platforms to query (used as brightdata dataset_id)
    * @param {string[]} params.providerIds - DRS provider IDs
    * @param {boolean} params.triggerImmediately - Trigger first job on schedule creation
+   * @param {boolean} [params.enableBrandPresence] - Enable brand presence detection in the job
    * @param {object} [params.metadata] - Additional metadata to attach to the job
    * @returns {Promise<object>} Schedule creation response
    */
@@ -269,6 +274,7 @@ export default class DrsClient {
     platforms,
     providerIds,
     triggerImmediately,
+    enableBrandPresence = false,
     metadata,
   }) {
     if (!hasText(siteId)) {
@@ -302,6 +308,7 @@ export default class DrsClient {
       description: `${experimentPhase} phase schedule of geo experiment: ${experimentId}`,
       job_config: {
         cadence: 'experiment',
+        enable_brand_presence: enableBrandPresence,
         provider_ids: providerIds,
         provider_parameters: {
           brightdata: {

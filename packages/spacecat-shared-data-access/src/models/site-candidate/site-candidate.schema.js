@@ -18,12 +18,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import SiteCandidate from './site-candidate.model.js';
 import SiteCandidateCollection from './site-candidate.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(SiteCandidate, SiteCandidateCollection)
   .addReference('belongs_to', 'Site')
   .addAttribute('siteId', {

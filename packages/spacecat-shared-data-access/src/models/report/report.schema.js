@@ -17,12 +17,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Report from './report.model.js';
 import ReportCollection from './report.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Report, ReportCollection)
   .addReference('belongs_to', 'Site')
   .addAllIndex(['reportType'])

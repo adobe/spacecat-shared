@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
@@ -39,6 +37,7 @@ describe('PlgOnboardingModel', () => {
       error: null,
       botBlocker: null,
       waitlistReason: null,
+      reviews: null,
       completedAt: null,
       createdAt: '2026-03-09T12:00:00.000Z',
       updatedAt: '2026-03-09T12:00:00.000Z',
@@ -72,6 +71,16 @@ describe('PlgOnboardingModel', () => {
         ERROR: 'ERROR',
         WAITING_FOR_IP_ALLOWLISTING: 'WAITING_FOR_IP_ALLOWLISTING',
         WAITLISTED: 'WAITLISTED',
+        INACTIVE: 'INACTIVE',
+      });
+    });
+  });
+
+  describe('REVIEW_DECISIONS', () => {
+    it('defines all expected review decisions', () => {
+      expect(PlgOnboarding.REVIEW_DECISIONS).to.deep.equal({
+        BYPASSED: 'BYPASSED',
+        UPHELD: 'UPHELD',
       });
     });
   });
@@ -122,6 +131,10 @@ describe('PlgOnboardingModel', () => {
 
     it('gets waitlistReason', () => {
       expect(instance.getWaitlistReason()).to.be.null;
+    });
+
+    it('gets reviews', () => {
+      expect(instance.getReviews()).to.be.null;
     });
 
     it('gets completedAt', () => {
@@ -180,6 +193,20 @@ describe('PlgOnboardingModel', () => {
       expect(instance.getWaitlistReason()).to.equal(
         'Domain owned by another organization',
       );
+    });
+
+    it('sets reviews', () => {
+      const reviews = [
+        {
+          reason: 'AEM_SITE_CHECK',
+          decision: 'BYPASSED',
+          reviewedBy: 'ese@adobe.com',
+          reviewedAt: '2026-04-07T12:00:00.000Z',
+          justification: 'AEM migration confirmed',
+        },
+      ];
+      instance.setReviews(reviews);
+      expect(instance.getReviews()).to.deep.equal(reviews);
     });
 
     it('sets completedAt', () => {

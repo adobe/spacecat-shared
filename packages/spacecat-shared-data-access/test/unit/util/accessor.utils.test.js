@@ -21,8 +21,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import sinon, { stub } from 'sinon';
 import sinonChai from 'sinon-chai';

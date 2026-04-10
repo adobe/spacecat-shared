@@ -13,21 +13,20 @@
 import type { LDOptions, LDContext, LDFlagValue } from '@launchdarkly/node-server-sdk';
 
 export interface LaunchDarklyConfig {
-  sdkKey: string;
+  sdkKey?: string;
+  apiToken?: string;
+  apiBaseUrl?: string;
   options?: LDOptions;
 }
 
 export interface UniversalContext {
   env: {
-    LAUNCHDARKLY_SDK_KEY: string;
+    LD_SDK_KEY?: string;
+    LD_API_TOKEN?: string;
+    LD_API_BASE_URL?: string;
     [key: string]: any;
   };
-  log: {
-    info: (message: string, ...args: any[]) => void;
-    error: (message: string, ...args: any[]) => void;
-    debug: (message: string, ...args: any[]) => void;
-    warn: (message: string, ...args: any[]) => void;
-  };
+  log: Logger;
 }
 
 export interface Logger {
@@ -51,6 +50,28 @@ export declare class LaunchDarklyClient {
     imsOrgId: string,
     userKey?: string
   ): Promise<boolean>;
+
+  getFeatureFlag(
+    projectKey: string,
+    flagKey: string,
+    environmentKey?: string
+  ): Promise<Record<string, any>>;
+
+  updateFallthroughVariation(
+    projectKey: string,
+    flagKey: string,
+    environmentKey: string,
+    variationId: string,
+    comment?: string
+  ): Promise<Record<string, any>>;
+
+  updateVariationValue(
+    projectKey: string,
+    flagKey: string,
+    variationIndex: number,
+    newValue: any,
+    comment?: string
+  ): Promise<Record<string, any>>;
 }
 
 export { LaunchDarklyClient as default };

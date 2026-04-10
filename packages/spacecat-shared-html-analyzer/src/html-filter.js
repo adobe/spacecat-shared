@@ -376,7 +376,9 @@ export function filterHtmlContent(
   returnText = true,
   includeNoscript = false,
 ) {
-  if (!htmlContent) return '';
+  if (!htmlContent) {
+    return '';
+  }
 
   // Browser environment (DOMParser) - works in Chrome extensions too - SYNCHRONOUS
   if (isBrowser()) {

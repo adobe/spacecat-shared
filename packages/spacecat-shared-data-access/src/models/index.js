@@ -13,6 +13,7 @@
 export * from './access-grant-log/index.js';
 export * from './api-key/index.js';
 export * from './async-job/index.js';
+export * from './contact-sales-lead/index.js';
 export * from './audit/index.js';
 export * from './audit-url/index.js';
 export * from './base/index.js';

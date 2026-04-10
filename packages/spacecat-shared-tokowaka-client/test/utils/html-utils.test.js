@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from '../../src/utils/custom-html-utils.js';
@@ -656,8 +654,12 @@ describe('HTML Utils', () => {
         statusText: 'OK',
         headers: {
           get: (name) => {
-            if (name === 'x-edgeoptimize-cache') return 'HIT';
-            if (name === 'x-edgeoptimize-proxy') return 'true';
+            if (name === 'x-edgeoptimize-cache') {
+              return 'HIT';
+            }
+            if (name === 'x-edgeoptimize-proxy') {
+              return 'true';
+            }
             return null;
           },
         },
@@ -794,8 +796,12 @@ describe('HTML Utils', () => {
         statusText: 'OK',
         headers: {
           get: (name) => {
-            if (name === 'x-edgeoptimize-cache') return 'HIT';
-            if (name === 'x-edgeoptimize-proxy') return 'true';
+            if (name === 'x-edgeoptimize-cache') {
+              return 'HIT';
+            }
+            if (name === 'x-edgeoptimize-proxy') {
+              return 'true';
+            }
             return null;
           },
         },

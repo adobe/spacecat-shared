@@ -17,12 +17,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import PlgOnboarding from './plg-onboarding.model.js';
 import PlgOnboardingCollection from './plg-onboarding.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
-*/
-
 const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
   .addAttribute('imsOrgId', {
     type: 'string',
@@ -85,6 +79,27 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
   .addAttribute('waitlistReason', {
     type: 'string',
     required: false,
+  })
+  .addAttribute('reviews', {
+    type: 'list',
+    required: false,
+    items: {
+      type: 'map',
+      properties: {
+        reason: { type: 'string' },
+        decision: { type: 'string' },
+        reviewedBy: { type: 'string' },
+        reviewedAt: { type: 'string' },
+        justification: { type: 'string' },
+      },
+    },
+    validate: (value) => {
+      if (!Array.isArray(value)) {
+        return false;
+      }
+      const valid = Object.values(PlgOnboarding.REVIEW_DECISIONS);
+      return value.every((r) => valid.includes(r.decision) && isIsoDate(r.reviewedAt));
+    },
   })
   .addAttribute('completedAt', {
     type: 'string',

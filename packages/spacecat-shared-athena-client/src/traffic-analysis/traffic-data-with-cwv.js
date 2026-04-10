@@ -30,8 +30,12 @@ function scoreCWV(metric, val, config) {
   const GOOD = getThreshold(`${metric}_GOOD`, config);
   const NEEDS_IMPROVEMENT = getThreshold(`${metric}_NEEDS_IMPROVEMENT`, config);
 
-  if (val <= GOOD) return 'good';
-  if (val <= NEEDS_IMPROVEMENT) return 'needs improvement';
+  if (val <= GOOD) {
+    return 'good';
+  }
+  if (val <= NEEDS_IMPROVEMENT) {
+    return 'needs improvement';
+  }
   return 'poor';
 }
 

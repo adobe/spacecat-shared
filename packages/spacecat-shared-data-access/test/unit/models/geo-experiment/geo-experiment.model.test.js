@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
@@ -71,6 +69,23 @@ describe('GeoExperimentModel', () => {
     expect(instance.getPostScheduleId()).to.equal('post-2');
   });
 
+  it('exposes SCHEDULE_CONFIG_ENV_VAR constant', () => {
+    expect(GeoExperiment.SCHEDULE_CONFIG_ENV_VAR).to.equal('EXPERIMENT_SCHEDULE_CONFIG');
+  });
+
+  it('exposes METADATA_KEYS constant', () => {
+    expect(GeoExperiment.METADATA_KEYS).to.deep.equal({ SCHEDULE_CONFIG: 'scheduleConfig' });
+  });
+
+  it('exposes SCHEDULE_CONFIG_KEYS constant', () => {
+    expect(GeoExperiment.SCHEDULE_CONFIG_KEYS).to.deep.equal({
+      CRON_EXPRESSION: 'cronExpression',
+      EXPIRY_MS: 'expiryMs',
+      PLATFORMS: 'platforms',
+      PROVIDER_IDS: 'providerIds',
+    });
+  });
+
   it('gets and sets type', () => {
     expect(instance.getType()).to.equal(GeoExperiment.TYPES.ONSITE_OPPORTUNITY_DEPLOYMENT);
     instance.setType(GeoExperiment.TYPES.ONSITE_OPPORTUNITY_DEPLOYMENT);
@@ -89,16 +104,16 @@ describe('GeoExperimentModel', () => {
 
   it('gets and sets phase', () => {
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_DONE);
-    instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_SUBMITTED);
-    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PRE_ANALYSIS_SUBMITTED);
+    instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_STARTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PRE_ANALYSIS_STARTED);
     instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_DONE);
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PRE_ANALYSIS_DONE);
     instance.setPhase(GeoExperiment.PHASES.DEPLOYMENT_STARTED);
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_STARTED);
-    instance.setPhase(GeoExperiment.PHASES.DEPLOYMENT_COMPLETED);
-    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_COMPLETED);
-    instance.setPhase(GeoExperiment.PHASES.POST_ANALYSIS_SUBMITTED);
-    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_SUBMITTED);
+    instance.setPhase(GeoExperiment.PHASES.DEPLOYMENT_DONE);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_DONE);
+    instance.setPhase(GeoExperiment.PHASES.POST_ANALYSIS_STARTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_STARTED);
   });
 
   it('gets and sets promptsLocation', () => {

@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import isEmail from 'validator/lib/isEmail.js';
-
 // Precompile regular expressions
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
@@ -96,30 +94,48 @@ function isNonEmptyObject(value) {
  * @return {boolean} True if the objects or arrays are equal, false otherwise.
  */
 function deepEqual(x, y) {
-  if (x === y) return true;
+  if (x === y) {
+    return true;
+  }
 
   if (isArray(x) && isArray(y)) {
-    if (x.length !== y.length) return false;
+    if (x.length !== y.length) {
+      return false;
+    }
     for (let i = 0; i < x.length; i += 1) {
-      if (!deepEqual(x[i], y[i])) return false;
+      if (!deepEqual(x[i], y[i])) {
+        return false;
+      }
     }
     return true;
   }
 
-  if (!isObject(x) || !isObject(y)) return false;
+  if (!isObject(x) || !isObject(y)) {
+    return false;
+  }
 
-  if (x.constructor !== y.constructor) return false;
+  if (x.constructor !== y.constructor) {
+    return false;
+  }
 
-  if (x instanceof Date) return x.getTime() === y.getTime();
-  if (x instanceof RegExp) return x.toString() === y.toString();
+  if (x instanceof Date) {
+    return x.getTime() === y.getTime();
+  }
+  if (x instanceof RegExp) {
+    return x.toString() === y.toString();
+  }
 
   const xKeys = Object.keys(x).filter((key) => typeof x[key] !== 'function');
   const yKeys = Object.keys(y).filter((key) => typeof y[key] !== 'function');
 
-  if (xKeys.length !== yKeys.length) return false;
+  if (xKeys.length !== yKeys.length) {
+    return false;
+  }
 
   for (const key of xKeys) {
-    if (!Object.prototype.hasOwnProperty.call(y, key) || !deepEqual(x[key], y[key])) return false;
+    if (!Object.prototype.hasOwnProperty.call(y, key) || !deepEqual(x[key], y[key])) {
+      return false;
+    }
   }
 
   return true;
@@ -263,15 +279,6 @@ function isValidIMSOrgId(imsOrgId) {
 }
 
 /**
- * Validates whether the given string is a valid email address.
- * @param {string} email - The string to validate.
- * @returns {boolean} True if the given string is a valid email address, false otherwise.
- */
-function isValidEmail(email) {
-  return typeof email === 'string' && isEmail(email);
-}
-
-/**
  * Validates whether the given string is a valid Helix preview URL.
  * Preview URLs have the format: https://ref--site--owner.domain
  * where domain is typically .hlx.page, .aem.page, .hlx.live, etc.
@@ -333,7 +340,6 @@ export {
   isObject,
   isString,
   isValidDate,
-  isValidEmail,
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,

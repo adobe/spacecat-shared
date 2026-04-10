@@ -18,7 +18,18 @@ export type PlgOnboardingStatus =
   | 'ONBOARDED'
   | 'ERROR'
   | 'WAITING_FOR_IP_ALLOWLISTING'
-  | 'WAITLISTED';
+  | 'WAITLISTED'
+  | 'INACTIVE';
+
+export type PlgOnboardingReviewDecision = 'BYPASSED' | 'UPHELD';
+
+export interface PlgOnboardingReview {
+  reason: string;
+  decision: PlgOnboardingReviewDecision;
+  reviewedBy: string;
+  reviewedAt: string;
+  justification: string;
+}
 
 export interface PlgOnboarding extends BaseModel {
   getImsOrgId(): string;
@@ -31,6 +42,7 @@ export interface PlgOnboarding extends BaseModel {
   getError(): object | null;
   getBotBlocker(): object | null;
   getWaitlistReason(): string | null;
+  getReviews(): PlgOnboardingReview[] | null;
   getCompletedAt(): string | null;
   setStatus(status: PlgOnboardingStatus): PlgOnboarding;
   setSiteId(siteId: string): PlgOnboarding;
@@ -39,6 +51,7 @@ export interface PlgOnboarding extends BaseModel {
   setError(error: object): PlgOnboarding;
   setBotBlocker(botBlocker: object): PlgOnboarding;
   setWaitlistReason(waitlistReason: string): PlgOnboarding;
+  setReviews(reviews: PlgOnboardingReview[]): PlgOnboarding;
   setCompletedAt(completedAt: string): PlgOnboarding;
 }
 

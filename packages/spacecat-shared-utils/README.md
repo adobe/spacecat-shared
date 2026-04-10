@@ -121,6 +121,28 @@ This library includes a comprehensive test suite to ensure the reliability of th
 npm test
 ```
 
+## Sub-path Exports
+
+To avoid pulling in the full dependency tree (~110MB), import from a sub-path:
+
+| Import | Dependencies |
+|--------|-------------|
+| `@adobe/spacecat-shared-utils` | All (~110MB) |
+| `@adobe/spacecat-shared-utils/core` | None — pure JS only |
+| `@adobe/spacecat-shared-utils/aws` | `@aws-sdk/*`, `aws-xray-sdk`, `@adobe/fetch` ⚠ **Side effect:** initializes HTTP connection pool at import time — requires outbound internet access |
+| `@adobe/spacecat-shared-utils/locale` | `cheerio`, `world-countries`, `franc-min`, `iso-639-3`, `@adobe/fetch` ⚠ **Side effect:** initializes HTTP connection pool at import time — requires outbound internet access |
+| `@adobe/spacecat-shared-utils/calendar` | `date-fns` |
+| `@adobe/spacecat-shared-utils/schemas` | `zod` |
+| `@adobe/spacecat-shared-utils/constants` | None — pure data |
+
+### TypeScript
+
+Sub-path exports require `"moduleResolution": "node16"`, `"nodenext"`, or `"bundler"` in `tsconfig.json`. Legacy `"moduleResolution": "node"` does not resolve sub-path exports.
+
+### Maintenance
+
+Any new `src/` file that contains top-level imperative code (anything beyond `import`/`export` statements) must be added to the `sideEffects` array in `package.json`.
+
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE.txt) file for details.

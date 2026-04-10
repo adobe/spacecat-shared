@@ -19,12 +19,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Organization from './organization.model.js';
 import OrganizationCollection from './organization.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Organization, OrganizationCollection)
   // this will add an attribute 'organizationId' as well as an index 'byOrganizationId'
   .addReference('has_many', 'Sites')

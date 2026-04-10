@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { Request } from '@adobe/fetch';
 import wrap from '@adobe/helix-shared-wrap';
 import { expect, use } from 'chai';

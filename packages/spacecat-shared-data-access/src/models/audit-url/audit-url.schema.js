@@ -19,10 +19,6 @@ import AuditUrl from './audit-url.model.js';
 import AuditUrlCollection from './audit-url.collection.js';
 
 /*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
-
 Data Access Patterns:
 1. Get all URLs for a site: allBySiteId(siteId)
 2. Get all URLs for a site by byCustomer: allBySiteIdAndByCustomer(siteId, byCustomer) - uses GSI

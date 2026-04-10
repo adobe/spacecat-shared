@@ -68,4 +68,5 @@ export interface GeoExperimentCollection extends BaseCollection<GeoExperiment> {
     opportunityId: string,
     options?: QueryOptions,
   ): Promise<GeoExperiment | null>;
+  allActive(options?: QueryOptions): Promise<GeoExperiment[]>;
 }

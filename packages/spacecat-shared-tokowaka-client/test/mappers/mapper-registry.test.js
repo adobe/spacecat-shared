@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
 /* eslint-disable max-classes-per-file */
 
 import { expect, use } from 'chai';

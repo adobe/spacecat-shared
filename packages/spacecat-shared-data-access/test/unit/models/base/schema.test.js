@@ -22,8 +22,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 // eslint-disable-next-line max-classes-per-file
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
@@ -280,9 +278,9 @@ describe('Schema', () => {
     });
   });
 
-  describe('toElectroDBSchema', () => {
-    it('returns an ElectroDB-compatible schema', () => {
-      expect(instance.toElectroDBSchema()).to.deep.equal({
+  describe('toSchema', () => {
+    it('returns a serialized schema', () => {
+      expect(instance.toSchema()).to.deep.equal({
         model: {
           entity: 'MockEntityModel',
           version: '1',

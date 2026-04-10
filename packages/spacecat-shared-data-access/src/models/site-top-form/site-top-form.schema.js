@@ -23,12 +23,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import SiteTopForm from './site-top-form.model.js';
 import SiteTopFormCollection from './site-top-form.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(SiteTopForm, SiteTopFormCollection)
   .addReference('belongs_to', 'Site', ['source', 'traffic'])
   .addAttribute('siteId', {

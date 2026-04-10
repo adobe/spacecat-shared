@@ -189,13 +189,12 @@ const CDN_TRANSFORMATIONS = {
   'byocdn-imperva': (payload) => ({
     'Log integration mode': 'Push mode',
     'Delivery method': 'Amazon S3 ARN',
-    'Bucket Name': payload.bucketName,
     Region: payload.region,
-    Path: payload.allowedPaths?.[0] || '',
+    Path: `${payload.bucketName}/${payload.allowedPaths?.[0] || ''}`.replace(/\/$/, ''),
     'Log types': 'Cloud WAF',
     'Log level': 'Access logs',
     Format: 'W3C',
-    'Compress logs': 'Yes',
+    'Compress logs': 'No',
     HelpUrl: 'https://docs-cybersec.thalesgroup.com/bundle/cloud-application-security/page/siem-log-configuration.htm',
   }),
   'byocdn-other': (payload) => ({

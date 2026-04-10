@@ -2548,6 +2548,41 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO Detected CDN', () => {
+    it('creates a Config with llmo detectedCdn property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          detectedCdn: 'aem-cs-fastly',
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoDetectedCdn()).to.equal('aem-cs-fastly');
+    });
+
+    it('returns null for detectedCdn in default config', () => {
+      const config = Config();
+      expect(config.getLlmoDetectedCdn()).to.be.null;
+    });
+
+    it('returns null for detectedCdn if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoDetectedCdn()).to.be.null;
+    });
+
+    it('should be able to update detectedCdn', () => {
+      const config = Config();
+      config.updateLlmoDetectedCdn('other');
+      expect(config.getLlmoDetectedCdn()).to.equal('other');
+    });
+  });
+
   describe('Tokowaka Config', () => {
     it('creates a Config with tokowakaConfig property', () => {
       const data = {

@@ -401,6 +401,7 @@ export const configSchema = Joi.object({
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
+  enableMoneyPageUrls: Joi.boolean().optional(),
   auditTargetURLs: Joi.object({
     manual: Joi.array().items(Joi.object({
       url: Joi.string().uri().required(),
@@ -529,6 +530,11 @@ export const Config = (data = {}) => {
     if (!AUDIT_TARGET_SOURCES.includes(source)) {
       throw new Error(`Invalid audit target source: "${source}". Must be one of: ${AUDIT_TARGET_SOURCES.join(', ')}`);
     }
+  };
+
+  self.isMoneyPageUrlsEnabled = () => state?.enableMoneyPageUrls ?? true;
+  self.setEnableMoneyPageUrls = (value) => {
+    state.enableMoneyPageUrls = value;
   };
 
   self.getAuditTargetURLsConfig = () => state?.auditTargetURLs;
@@ -947,5 +953,6 @@ Config.toDynamoItem = (config) => ({
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
   onboardConfig: config.getOnboardConfig?.(),
   commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
+  enableMoneyPageUrls: config.isMoneyPageUrlsEnabled?.() === false ? false : undefined,
   auditTargetURLs: config.getAuditTargetURLsConfig?.(),
 });

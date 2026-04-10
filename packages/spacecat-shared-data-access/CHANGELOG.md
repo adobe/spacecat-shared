@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.50.1...@adobe/spacecat-shared-data-access-v3.51.0) (2026-04-10)
+
+### Features
+
+* add contentSourcePath to deliveryConfig schema ([#1520](https://github.com/adobe/spacecat-shared/issues/1520)) ([80341f3](https://github.com/adobe/spacecat-shared/commit/80341f39e0eb34ffca0622a38824c5a33614c96e))
+
 ## [@adobe/spacecat-shared-data-access-v3.50.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.50.0...@adobe/spacecat-shared-data-access-v3.50.1) (2026-04-10)
 
 ### Bug Fixes

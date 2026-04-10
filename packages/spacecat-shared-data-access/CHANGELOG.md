@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.48.0...@adobe/spacecat-shared-data-access-v3.49.0) (2026-04-10)
+
+### Features
+
+* **audit-url:** add moneyPages source to auditTargetURLs config ([#1496](https://github.com/adobe/spacecat-shared/issues/1496)) ([78df8f9](https://github.com/adobe/spacecat-shared/commit/78df8f91008e739bfd67e2277858523a276d70b2))
+
 ## [@adobe/spacecat-shared-data-access-v3.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.47.0...@adobe/spacecat-shared-data-access-v3.48.0) (2026-04-08)
 
 ### Features

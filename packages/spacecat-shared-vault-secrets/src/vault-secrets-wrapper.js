@@ -19,17 +19,29 @@ const ALIAS_PATTERN = /^[a-z0-9][a-z0-9_-]{0,30}$/i;
 const CI_PATTERN = /^ci\d+$/i;
 
 function isDevAliasDeployment(ctx, env) {
-  if (env !== 'dev') return false;
+  if (env !== 'dev') {
+    return false;
+  }
   const { version } = ctx.func || {};
-  if (!version) return false;
-  if (version === 'latest' || version === '$LATEST') return false;
-  if (CI_PATTERN.test(version)) return false;
-  if (!ALIAS_PATTERN.test(version)) return false;
+  if (!version) {
+    return false;
+  }
+  if (version === 'latest' || version === '$LATEST') {
+    return false;
+  }
+  if (CI_PATTERN.test(version)) {
+    return false;
+  }
+  if (!ALIAS_PATTERN.test(version)) {
+    return false;
+  }
   return true;
 }
 
 function resolveBootstrapPath(ctx, opts) {
-  if (opts.bootstrapPath) return opts.bootstrapPath;
+  if (opts.bootstrapPath) {
+    return opts.bootstrapPath;
+  }
   return `/mysticat/bootstrap/${ctx.func.name}`;
 }
 
@@ -95,7 +107,7 @@ async function ensureClient(ctx, opts) {
     }
 
     if (ctx.log) {
-      ctx.log.info('Vault client ready');
+      ctx.log.debug('Vault client ready');
     }
   } finally {
     clientLock = null;
@@ -125,6 +137,10 @@ function resolvePath(opts, ctx, log) {
 }
 
 export async function loadSecrets(ctx, opts = {}) {
+  if (process.env.VAULT_SECRETS_DISABLED === 'true') {
+    return {};
+  }
+
   if (ctx.runtime && ctx.runtime.name === 'simulate') {
     return {};
   }

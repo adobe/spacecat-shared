@@ -16,6 +16,7 @@ const DEFAULT_PAGE_SIZE = 1000;
 
 const ENTITY_TABLE_OVERRIDES = {
   LatestAudit: 'audits',
+  SuggestionGrant: 'suggestion_grants',
 };
 
 const camelToSnake = (value) => value.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();

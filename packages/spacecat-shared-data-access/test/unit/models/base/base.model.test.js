@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { spy, stub } from 'sinon';
@@ -213,6 +211,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
 
     afterEach(() => {
       OpportunitySchema.references = originalReferences;
+      OpportunitySchema.options.allowRemove = true;
     });
 
     it('removes the record and returns the current instance', async () => {
@@ -316,6 +315,37 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
 
       await expect(baseModelInstance.remove()).to.be.rejectedWith('The entity Opportunity does not allow removal');
       expect(mockElectroService.entities.opportunity.remove.notCalled).to.be.true;
+    });
+
+    it('swallows PostgREST schema-cache errors when fetching dependents', async () => {
+      const reference = Reference.fromJSON({
+        type: Reference.TYPES.HAS_ONE,
+        target: 'SomeModel',
+        options: { removeDependents: true },
+      });
+
+      schema.references = [reference];
+
+      const schemaCacheError = new Error("Could not find the table 'public.foo' in the schema cache");
+      baseModelInstance.getSomeModel = stub().rejects(schemaCacheError);
+
+      await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
+      expect(mockElectroService.entities.opportunity.remove.calledOnce).to.be.true;
+    });
+
+    it('re-throws non-schema-cache errors when fetching dependents', async () => {
+      const reference = Reference.fromJSON({
+        type: Reference.TYPES.HAS_ONE,
+        target: 'SomeModel',
+        options: { removeDependents: true },
+      });
+
+      schema.references = [reference];
+
+      const networkError = new Error('Network error');
+      baseModelInstance.getSomeModel = stub().rejects(networkError);
+
+      await expect(baseModelInstance.remove()).to.be.rejectedWith('Failed to remove entity opportunity with ID 12345');
     });
 
     it('throws when no remove strategy is available', async () => {

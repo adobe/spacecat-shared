@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 import { prettifyLogForwardingConfig } from '../src/cdn-helpers.js';
 
@@ -24,7 +22,6 @@ const FASTLY_LOG_FORMAT = `{
     "request_user_agent": "%{json.escape(req.http.User-Agent)}V",
     "response_status": %{resp.status}V,
     "response_content_type": "%{json.escape(resp.http.Content-Type)}V",
-    "client_country_code": "%{client.geo.country_name}V",
     "time_to_first_byte": "%{time.to_first_byte}V"
 }`;
 
@@ -38,9 +35,14 @@ describe('CDN Helper Functions', () => {
       allowedPaths: [
         '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-fastly/',
       ],
-      accessKey: 'AKIAZ5TC4XVOZ65PV3X2',
-      secretKey: 'somesecret',
+      currentAccessKey: 'AKIAZ5TC4XVOZ65PV3X2',
+      currentSecretKey: 'somesecret',
       message: 'Retrieved existing S3 bucket for organization: 9E1005A551ED61CA0A490D45@AdobeOrg (ID: 9E1005A551ED61CA0A490D45@AdobeOrg). Successfully created new credentials.',
+    };
+    const mockFastlyUserCredentialsPayload = {
+      ...mockPayload,
+      currentAccessKey: 'AKIAZ5TC4XVOZ65PV3X3',
+      currentSecretKey: 'newsecret',
     };
 
     const mockCloudFrontPayload = {
@@ -58,7 +60,10 @@ describe('CDN Helper Functions', () => {
 
     describe('byocdn-fastly transformations', () => {
       it('should transform payload for byocdn-fastly', () => {
-        const result = prettifyLogForwardingConfig({ ...mockPayload, logSource: 'byocdn-fastly' });
+        const result = prettifyLogForwardingConfig({
+          ...mockFastlyUserCredentialsPayload,
+          logSource: 'byocdn-fastly',
+        });
 
         expect(result).to.deep.equal({
           'Bucket Name': 'cdn-logs-adobe-dev',
@@ -68,8 +73,8 @@ describe('CDN Helper Functions', () => {
           Placement: 'Format Version Default',
           'Log format': FASTLY_LOG_FORMAT,
           'Access method': 'User credentials',
-          'Access Key': 'AKIAZ5TC4XVOZ65PV3X2',
-          'Secret Key': 'somesecret',
+          'Access Key (current)': 'AKIAZ5TC4XVOZ65PV3X3',
+          'Secret Key (current)': 'newsecret',
           currentCredentialsCreatedAt: undefined,
           currentCredentialsLastUsed: undefined,
           oldCredentialsCreatedAt: undefined,
@@ -87,7 +92,7 @@ describe('CDN Helper Functions', () => {
 
       it('should handle multiple allowed paths for byocdn-fastly', () => {
         const payloadWithMultiplePaths = {
-          ...mockPayload,
+          ...mockFastlyUserCredentialsPayload,
           logSource: 'byocdn-fastly',
           allowedPaths: [
             'org1/raw/byocdn-fastly/',
@@ -103,7 +108,7 @@ describe('CDN Helper Functions', () => {
 
       it('should handle empty allowed paths array for byocdn-fastly', () => {
         const payloadWithEmptyPaths = {
-          ...mockPayload,
+          ...mockFastlyUserCredentialsPayload,
           logSource: 'byocdn-fastly',
           allowedPaths: [],
         };
@@ -121,8 +126,8 @@ describe('CDN Helper Functions', () => {
           authMethod: 'iam_role',
           roleArn: 'arn:aws:iam::123456789012:role/FastlyCDNRole',
         };
-        delete iamRolePayload.accessKey;
-        delete iamRolePayload.secretKey;
+        delete iamRolePayload.currentAccessKey;
+        delete iamRolePayload.currentSecretKey;
 
         const result = prettifyLogForwardingConfig(iamRolePayload);
 
@@ -145,6 +150,24 @@ describe('CDN Helper Functions', () => {
           HelpUrl: 'https://www.fastly.com/documentation/guides/integrations/logging-endpoints/log-streaming-amazon-s3/',
         });
       });
+
+      it('should include credentials in byocdn-fastly iam_role output when they are present', () => {
+        const iamRolePayloadWithCredentials = {
+          ...mockFastlyUserCredentialsPayload,
+          authMethod: 'iam_role',
+          roleArn: 'arn:aws:iam::123456789012:role/FastlyCDNRole',
+          oldAccessKey: 'AKIAZ5TC4XVOZ65PV3X2',
+          oldSecretKey: 'oldsecret',
+        };
+
+        const result = prettifyLogForwardingConfig(iamRolePayloadWithCredentials);
+
+        expect(result['Role ARN']).to.equal('arn:aws:iam::123456789012:role/FastlyCDNRole');
+        expect(result['Access Key (current)']).to.equal('AKIAZ5TC4XVOZ65PV3X3');
+        expect(result['Secret Key (current)']).to.equal('newsecret');
+        expect(result['Access Key (to be retired)']).to.equal('AKIAZ5TC4XVOZ65PV3X2');
+        expect(result['Secret Key (to be retired)']).to.equal('oldsecret');
+      });
     });
 
     describe('other CDN types', () => {
@@ -156,7 +179,6 @@ describe('CDN Helper Functions', () => {
           Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-fastly/{%Y}/{%m}/{%d}/{%H}',
           'Logged Properties': [
             'reqTimeSec',
-            'country',
             'reqHost',
             'reqPath',
             'queryStr',
@@ -171,8 +193,8 @@ describe('CDN Helper Functions', () => {
           'Log file suffix': '.log',
           'Log format': 'JSON',
           'Log interval': '60 seconds',
-          'Access Key': 'AKIAZ5TC4XVOZ65PV3X2',
-          'Secret Key': 'somesecret',
+          'Access Key (current)': 'AKIAZ5TC4XVOZ65PV3X2',
+          'Secret Key (current)': 'somesecret',
           currentCredentialsCreatedAt: undefined,
           currentCredentialsLastUsed: undefined,
           oldCredentialsCreatedAt: undefined,
@@ -193,7 +215,6 @@ describe('CDN Helper Functions', () => {
           'Organize logs into daily subfolders': 'Yes',
           'Logged Properties': [
             'EdgeStartTimestamp',
-            'ClientCountry',
             'ClientRequestHost',
             'ClientRequestURI',
             'ClientRequestMethod',
@@ -272,20 +293,20 @@ describe('CDN Helper Functions', () => {
       it('should handle byocdn-imperva', () => {
         const impervaPayload = {
           ...mockPayload,
+          bucketName: 'cdn-logs-abc123xyz',
           logSource: 'byocdn-imperva',
-          allowedPaths: ['9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-imperva/'],
+          allowedPaths: ['ABC123XYZAdobeOrg_raw_byocdn-imperva'],
         };
         const result = prettifyLogForwardingConfig(impervaPayload);
         expect(result).to.deep.equal({
           'Log integration mode': 'Push mode',
           'Delivery method': 'Amazon S3 ARN',
-          'Bucket Name': 'cdn-logs-adobe-dev',
           Region: 'us-east-1',
-          Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-imperva/',
+          Path: 'cdn-logs-abc123xyz/ABC123XYZAdobeOrg_raw_byocdn-imperva',
           'Log types': 'Cloud WAF',
           'Log level': 'Access logs',
           Format: 'W3C',
-          'Compress logs': 'Yes',
+          'Compress logs': 'No',
           HelpUrl: 'https://docs-cybersec.thalesgroup.com/bundle/cloud-application-security/page/siem-log-configuration.htm',
         });
       });
@@ -301,8 +322,8 @@ describe('CDN Helper Functions', () => {
           'Bucket name': 'cdn-logs-adobe-dev',
           Region: 'us-east-1',
           Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-other/<year>/<month>/<day>',
-          'Access Key': 'AKIAZ5TC4XVOZ65PV3X2',
-          'Secret Key': 'somesecret',
+          'Access Key (current)': 'AKIAZ5TC4XVOZ65PV3X2',
+          'Secret Key (current)': 'somesecret',
           currentCredentialsCreatedAt: undefined,
           currentCredentialsLastUsed: undefined,
           oldCredentialsCreatedAt: undefined,
@@ -392,19 +413,19 @@ describe('CDN Helper Functions', () => {
         );
       });
 
-      it('should throw error when accessKey/currentAccessKey is missing for byocdn-fastly', () => {
-        const payloadWithoutAccessKey = { ...mockPayload };
-        delete payloadWithoutAccessKey.accessKey;
-        expect(() => prettifyLogForwardingConfig(payloadWithoutAccessKey)).to.throw(
-          'accessKey or currentAccessKey is required in payload',
+      it('should throw error when currentAccessKey is missing for byocdn-fastly', () => {
+        const payloadWithoutCurrentAccessKey = { ...mockFastlyUserCredentialsPayload };
+        delete payloadWithoutCurrentAccessKey.currentAccessKey;
+        expect(() => prettifyLogForwardingConfig(payloadWithoutCurrentAccessKey)).to.throw(
+          'currentAccessKey is required in payload',
         );
       });
 
-      it('should throw error when secretKey/currentSecretKey is missing for byocdn-fastly', () => {
-        const payloadWithoutSecretKey = { ...mockPayload };
-        delete payloadWithoutSecretKey.secretKey;
-        expect(() => prettifyLogForwardingConfig(payloadWithoutSecretKey)).to.throw(
-          'secretKey or currentSecretKey is required in payload',
+      it('should throw error when currentSecretKey is missing for byocdn-fastly', () => {
+        const payloadWithoutCurrentSecretKey = { ...mockFastlyUserCredentialsPayload };
+        delete payloadWithoutCurrentSecretKey.currentSecretKey;
+        expect(() => prettifyLogForwardingConfig(payloadWithoutCurrentSecretKey)).to.throw(
+          'currentSecretKey is required in payload',
         );
       });
 
@@ -417,35 +438,35 @@ describe('CDN Helper Functions', () => {
         );
       });
 
-      it('should throw error when accessKey/currentAccessKey is missing for byocdn-akamai', () => {
+      it('should throw error when currentAccessKey is missing for byocdn-akamai', () => {
         const payloadWithoutAccessKey = { ...mockPayload, logSource: 'byocdn-akamai' };
-        delete payloadWithoutAccessKey.accessKey;
+        delete payloadWithoutAccessKey.currentAccessKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutAccessKey)).to.throw(
-          'accessKey or currentAccessKey is required in payload',
+          'currentAccessKey is required in payload',
         );
       });
 
-      it('should throw error when secretKey/currentSecretKey is missing for byocdn-akamai', () => {
+      it('should throw error when currentSecretKey is missing for byocdn-akamai', () => {
         const payloadWithoutSecretKey = { ...mockPayload, logSource: 'byocdn-akamai' };
-        delete payloadWithoutSecretKey.secretKey;
+        delete payloadWithoutSecretKey.currentSecretKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutSecretKey)).to.throw(
-          'secretKey or currentSecretKey is required in payload',
+          'currentSecretKey is required in payload',
         );
       });
 
-      it('should throw error when accessKey/currentAccessKey is missing for byocdn-other', () => {
+      it('should throw error when currentAccessKey is missing for byocdn-other', () => {
         const payloadWithoutAccessKey = { ...mockPayload, logSource: 'byocdn-other' };
-        delete payloadWithoutAccessKey.accessKey;
+        delete payloadWithoutAccessKey.currentAccessKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutAccessKey)).to.throw(
-          'accessKey or currentAccessKey is required in payload',
+          'currentAccessKey is required in payload',
         );
       });
 
-      it('should throw error when secretKey/currentSecretKey is missing for byocdn-other', () => {
+      it('should throw error when currentSecretKey is missing for byocdn-other', () => {
         const payloadWithoutSecretKey = { ...mockPayload, logSource: 'byocdn-other' };
-        delete payloadWithoutSecretKey.secretKey;
+        delete payloadWithoutSecretKey.currentSecretKey;
         expect(() => prettifyLogForwardingConfig(payloadWithoutSecretKey)).to.throw(
-          'secretKey or currentSecretKey is required in payload',
+          'currentSecretKey is required in payload',
         );
       });
 
@@ -498,7 +519,7 @@ describe('CDN Helper Functions', () => {
       });
 
       it('should not require deliveryDestinationName for byocdn-fastly', () => {
-        const payloadWithoutDeliveryDestination = { ...mockPayload };
+        const payloadWithoutDeliveryDestination = { ...mockFastlyUserCredentialsPayload };
         delete payloadWithoutDeliveryDestination.deliveryDestinationName;
         // Should not throw error
         expect(() => prettifyLogForwardingConfig(payloadWithoutDeliveryDestination)).to.not.throw();
@@ -526,7 +547,7 @@ describe('CDN Helper Functions', () => {
     describe('immutability', () => {
       it('should not mutate the original payload', () => {
         const originalPayload = {
-          ...mockPayload,
+          ...mockFastlyUserCredentialsPayload,
           logSource: 'byocdn-fastly',
           allowedPaths: [...mockPayload.allowedPaths],
         };
@@ -542,16 +563,7 @@ describe('CDN Helper Functions', () => {
       });
     });
 
-    describe('credential backwards compatibility', () => {
-      it('should support old format with accessKey and secretKey for byocdn-fastly', () => {
-        const result = prettifyLogForwardingConfig({ ...mockPayload, logSource: 'byocdn-fastly' });
-
-        expect(result['Access Key']).to.equal('AKIAZ5TC4XVOZ65PV3X2');
-        expect(result['Secret Key']).to.equal('somesecret');
-        expect(result['Access Key (current)']).to.be.undefined;
-        expect(result['Secret Key (current)']).to.be.undefined;
-      });
-
+    describe('credential formatting', () => {
       it('should support new format with currentAccessKey and currentSecretKey for byocdn-fastly', () => {
         const newFormatPayload = {
           ...mockPayload,
@@ -566,8 +578,6 @@ describe('CDN Helper Functions', () => {
 
         expect(result['Access Key (current)']).to.equal('AKIAZ5TC4XVOZ65PV3X3');
         expect(result['Secret Key (current)']).to.equal('newsecret');
-        expect(result['Access Key']).to.be.undefined;
-        expect(result['Secret Key']).to.be.undefined;
       });
 
       it('should show both current and old credentials when both are provided for byocdn-fastly', () => {
@@ -588,8 +598,6 @@ describe('CDN Helper Functions', () => {
         expect(result['Secret Key (current)']).to.equal('newsecret');
         expect(result['Access Key (to be retired)']).to.equal('AKIAZ5TC4XVOZ65PV3X2');
         expect(result['Secret Key (to be retired)']).to.equal('oldsecret');
-        expect(result['Access Key']).to.be.undefined;
-        expect(result['Secret Key']).to.be.undefined;
       });
 
       it('should show both current and old credentials when both are provided for byocdn-akamai', () => {
@@ -610,8 +618,6 @@ describe('CDN Helper Functions', () => {
         expect(result['Secret Key (current)']).to.equal('newsecret');
         expect(result['Access Key (to be retired)']).to.equal('AKIAZ5TC4XVOZ65PV3X2');
         expect(result['Secret Key (to be retired)']).to.equal('oldsecret');
-        expect(result['Access Key']).to.be.undefined;
-        expect(result['Secret Key']).to.be.undefined;
       });
 
       it('should show both current and old credentials when both are provided for byocdn-other', () => {
@@ -633,8 +639,6 @@ describe('CDN Helper Functions', () => {
         expect(result['Secret Key (current)']).to.equal('newsecret');
         expect(result['Access Key (to be retired)']).to.equal('AKIAZ5TC4XVOZ65PV3X2');
         expect(result['Secret Key (to be retired)']).to.equal('oldsecret');
-        expect(result['Access Key']).to.be.undefined;
-        expect(result['Secret Key']).to.be.undefined;
       });
 
       it('should pass through timestamp fields as-is when provided with actual values', () => {

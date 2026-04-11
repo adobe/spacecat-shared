@@ -15,12 +15,6 @@ import TrialUserActivity from './trial-user-activity.model.js';
 import TrialUserActivityCollection from './trial-user-activity.collection.js';
 import Entitlement from '../entitlement/entitlement.model.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
-*/
-
 const schema = new SchemaBuilder(TrialUserActivity, TrialUserActivityCollection)
   .addReference('belongs_to', 'TrialUser')
   // Reference to Organization (many-to-one relationship)

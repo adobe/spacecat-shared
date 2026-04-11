@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
@@ -35,6 +33,7 @@ describe('SuggestionModel', () => {
       expect(Suggestion.STATUSES.ERROR).to.equal('ERROR');
       expect(Suggestion.STATUSES.OUTDATED).to.equal('OUTDATED');
       expect(Suggestion.STATUSES.PENDING_VALIDATION).to.equal('PENDING_VALIDATION');
+      expect(Suggestion.STATUSES.REJECTED).to.equal('REJECTED');
     });
   });
 
@@ -227,6 +226,152 @@ describe('SuggestionModel', () => {
         expect(() => {
           Suggestion.validateData({ anything: 'goes' }, 'unknown-type');
         }).to.not.throw();
+      });
+
+      // Verification: CWV suggestion data (suggestion.data object only) vs DATA_SCHEMAS['cwv']
+      describe('CWV opportunity type', () => {
+        it('passes when url-type has type, url (uri), metrics, and issues', () => {
+          const suggestionData = {
+            type: 'url',
+            url: 'https://www.example.com/page',
+            pageviews: 11620,
+            organic: 2400,
+            metrics: [
+              {
+                deviceType: 'mobile',
+                pageviews: 6200,
+                lcp: 2701,
+                cls: 0.001,
+                ttfb: 682,
+              },
+              {
+                deviceType: 'desktop',
+                pageviews: 3600,
+                lcp: null,
+                cls: null,
+                ttfb: null,
+              },
+            ],
+            issues: [],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+        });
+
+        it('passes when issues is missing (issues is optional)', () => {
+          const suggestionData = {
+            type: 'url',
+            url: 'https://www.example.com/page',
+            pageviews: 11620,
+            metrics: [{ deviceType: 'mobile', lcp: 2701 }],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+        });
+
+        it('passes when url is missing (url is optional)', () => {
+          const suggestionData = {
+            type: 'group',
+            name: 'Some pages',
+            pattern: 'https://www.aem.live/home/*',
+            pageviews: 9620,
+            organic: 1900,
+            metrics: [
+              { deviceType: 'desktop', lcp: 2099, cls: 0.011 },
+              { deviceType: 'mobile', lcp: 2454, cls: 0.27 },
+            ],
+            issues: [],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+        });
+      });
+
+      describe('COLOR_CONTRAST opportunity type', () => {
+        it('passes with patchContent and isCodeChangeAvailable fields', () => {
+          const data = {
+            url: 'https://example.com/page',
+            issues: [{ wcagLevel: 'AA', severity: 'serious' }],
+            patchContent: 'diff --git a/file.js',
+            isCodeChangeAvailable: true,
+          };
+          expect(() => Suggestion.validateData(data, 'color-contrast')).to.not.throw();
+        });
+      });
+
+      describe('A11Y_ASSISTIVE opportunity type', () => {
+        it('passes with patchContent and isCodeChangeAvailable fields', () => {
+          const data = {
+            url: 'https://example.com/page',
+            issues: [{ wcagLevel: 'A', severity: 'critical' }],
+            patchContent: 'diff --git a/style.css',
+            isCodeChangeAvailable: false,
+          };
+          expect(() => Suggestion.validateData(data, 'a11y-assistive')).to.not.throw();
+        });
+      });
+
+      describe('ALT_TEXT opportunity type', () => {
+        it('passes with hasAltAttribute field in recommendations', () => {
+          const data = {
+            recommendations: [{
+              pageUrl: 'https://example.com/page',
+              imageUrl: 'https://example.com/img.png',
+              isDecorative: false,
+              hasAltAttribute: true,
+            }],
+          };
+          expect(() => Suggestion.validateData(data, 'image-alt-text')).to.not.throw();
+        });
+      });
+
+      describe('BROKEN_INTERNAL_LINKS opportunity type', () => {
+        it('passes with malformed http/https URLs', () => {
+          const data = {
+            url_from: 'https://example.com/page with spaces',
+            url_to: 'https://example.com/broken[link]',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.not.throw();
+        });
+
+        it('passes with relative URLs', () => {
+          const data = {
+            urlFrom: '/relative/path',
+            urlTo: '/another/path',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.not.throw();
+        });
+
+        it('rejects dangerous URI schemes (javascript:)', () => {
+          const data = {
+            // eslint-disable-next-line no-script-url
+            url_from: 'javascript:alert(1)',
+            url_to: 'https://example.com',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.throw();
+        });
+
+        it('rejects dangerous URI schemes (data:)', () => {
+          const data = {
+            url_from: 'https://example.com',
+            url_to: 'data:text/html,<script>alert(1)</script>',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.throw();
+        });
+
+        it('rejects empty string URLs', () => {
+          const data = {
+            url_from: '',
+            url_to: 'https://example.com',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.throw();
+        });
+
+        it('passes with urlsSuggested containing relaxed URLs', () => {
+          const data = {
+            url_from: 'https://example.com/from',
+            url_to: 'https://example.com/to',
+            urlsSuggested: ['https://example.com/suggested page', '/relative/suggestion'],
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.not.throw();
+        });
       });
     });
   });

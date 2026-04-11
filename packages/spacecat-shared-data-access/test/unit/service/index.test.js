@@ -10,11 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
+import sinon from 'sinon';
 
-import { createDataAccess } from '../../../src/service/index.js';
+import { createDataAccess, createFetchCompat } from '../../../src/service/index.js';
 
 describe('service/index', () => {
   it('uses provided PostgREST client and does not require postgrestUrl', () => {
@@ -64,5 +63,56 @@ describe('service/index', () => {
     }, console, {});
 
     expect(dataAccess).to.be.an('object');
+  });
+
+  describe('createFetchCompat', () => {
+    it('converts native Headers instances to plain objects', async () => {
+      const mockFetch = sinon.stub().resolves({ ok: true });
+      const wrappedFetch = createFetchCompat(mockFetch);
+
+      const nativeHeaders = new Headers();
+      nativeHeaders.set('Content-Type', 'application/json');
+      nativeHeaders.set('Authorization', 'Bearer token');
+
+      await wrappedFetch('http://example.com', {
+        method: 'POST',
+        headers: nativeHeaders,
+        body: '{"test":true}',
+      });
+
+      expect(mockFetch).to.have.been.calledOnce;
+      const [url, opts] = mockFetch.firstCall.args;
+      expect(url).to.equal('http://example.com');
+      expect(opts.headers).to.deep.equal({
+        'content-type': 'application/json',
+        authorization: 'Bearer token',
+      });
+      expect(opts.body).to.equal('{"test":true}');
+    });
+
+    it('passes plain object headers through unchanged', async () => {
+      const mockFetch = sinon.stub().resolves({ ok: true });
+      const wrappedFetch = createFetchCompat(mockFetch);
+
+      const plainHeaders = { 'Content-Type': 'application/json' };
+
+      await wrappedFetch('http://example.com', {
+        method: 'GET',
+        headers: plainHeaders,
+      });
+
+      expect(mockFetch).to.have.been.calledOnce;
+      const [, opts] = mockFetch.firstCall.args;
+      expect(opts.headers).to.equal(plainHeaders);
+    });
+
+    it('handles calls with no options', async () => {
+      const mockFetch = sinon.stub().resolves({ ok: true });
+      const wrappedFetch = createFetchCompat(mockFetch);
+
+      await wrappedFetch('http://example.com');
+
+      expect(mockFetch).to.have.been.calledOnceWith('http://example.com', undefined);
+    });
   });
 });

@@ -39,9 +39,7 @@ const ID_ATTRIBUTE_DATA = {
   postgrestField: 'id',
   required: true,
   readOnly: true,
-  // https://electrodb.dev/en/modeling/attributes/#default
   default: () => crypto.randomUUID(),
-  // https://electrodb.dev/en/modeling/attributes/#attribute-validation
   validate: (value) => isValidUUID(value),
 };
 
@@ -141,7 +139,7 @@ class SchemaBuilder {
     // will be populated by build() from rawIndexes
     this.indexes = {};
 
-    // this is not part of the ElectroDB schema spec, but we use it to store reference data
+    // this is not part of the standard schema spec, but we use it to store reference data
     this.references = [];
 
     this.#initialize();

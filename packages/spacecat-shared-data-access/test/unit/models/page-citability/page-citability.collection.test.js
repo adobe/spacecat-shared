@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
@@ -63,6 +61,14 @@ describe('PageCitabilityCollection', () => {
       expect(instance.log).to.equal(mockLogger);
 
       expect(model).to.be.an('object');
+    });
+  });
+
+  describe('static constants', () => {
+    it('exposes updatedBy source constants', () => {
+      expect(PageCitability.DEFAULT_UPDATED_BY).to.equal('spacecat');
+      expect(PageCitability.UPDATED_BY_PRERENDER).to.equal('prerender');
+      expect(PageCitability.UPDATED_BY_PAGE_CITABILITY).to.equal('page-citability');
     });
   });
 });

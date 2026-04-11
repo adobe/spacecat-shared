@@ -10,14 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
-import DrsClient, { SCRAPE_DATASET_IDS } from '../src/index.js';
+import DrsClient, { SCRAPE_DATASET_IDS, EXPERIMENT_PHASES } from '../src/index.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -236,10 +234,11 @@ describe('DrsClient', () => {
   describe('SCRAPE_DATASET_IDS', () => {
     it('exports all expected dataset IDs', () => {
       expect(SCRAPE_DATASET_IDS).to.deep.equal({
-        YOUTUBE_VIDEOS: 'youtube_videos',
-        YOUTUBE_COMMENTS: 'youtube_comments',
-        REDDIT_POSTS: 'reddit_posts',
         REDDIT_COMMENTS: 'reddit_comments',
+        REDDIT_POSTS: 'reddit_posts',
+        TOP_CITED: 'topCited',
+        YOUTUBE_COMMENTS: 'youtube_comments',
+        YOUTUBE_VIDEOS: 'youtube_videos',
         WIKIPEDIA: 'wikipedia',
       });
     });
@@ -352,6 +351,52 @@ describe('DrsClient', () => {
       await expect(client.submitScrapeJob({ ...params, siteId: '' }))
         .to.be.rejectedWith('siteId is required');
     });
+
+    it('includes days_back for reddit_comments', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters.days_back).to.equal(30);
+          expect(body.parameters.dataset_id).to.equal(SCRAPE_DATASET_IDS.REDDIT_COMMENTS);
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-days' });
+
+      const result = await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+        daysBack: 30,
+      });
+
+      expect(result.job_id).to.equal('scrape-days');
+      scope.done();
+    });
+
+    it('omits days_back when not provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters).to.not.have.property('days_back');
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-no-days' });
+
+      await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+      });
+
+      scope.done();
+    });
+
+    it('throws when daysBack is used with a non-reddit_comments dataset', async () => {
+      await expect(client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: ['https://youtube.com/watch?v=abc'],
+        daysBack: 7,
+      })).to.be.rejectedWith('daysBack is only supported for reddit_comments dataset');
+    });
   });
 
   describe('lookupScrapeResults', () => {
@@ -435,6 +480,249 @@ describe('DrsClient', () => {
         .to.be.rejectedWith('siteId is required');
       await expect(client.lookupScrapeResults({ ...params, siteId: '' }))
         .to.be.rejectedWith('siteId is required');
+    });
+  });
+
+  describe('EXPERIMENT_PHASES', () => {
+    it('exports all expected phase values', () => {
+      expect(EXPERIMENT_PHASES).to.deep.equal({
+        PRE: 'pre',
+        POST: 'post',
+      });
+    });
+
+    it('is frozen', () => {
+      expect(Object.isFrozen(EXPERIMENT_PHASES)).to.be.true;
+    });
+  });
+
+  describe('createExperimentSchedule', () => {
+    let client;
+
+    beforeEach(() => {
+      client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+    });
+
+    it('creates a schedule with experiment cadence and immediate trigger', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules', (body) => {
+          expect(body.site_id).to.equal('site-1');
+          expect(body.frequency).to.equal('cron');
+          expect(body.cron_expression).to.equal('0 * * * *');
+          expect(body.expires_at).to.equal('2099-01-01T00:00:00.000Z');
+          expect(body.trigger_immediately).to.equal(true);
+          expect(body.job_config.cadence).to.equal('experiment');
+          expect(body.job_config.provider_ids).to.deep.equal(['brightdata', 'openai_web_search']);
+          expect(body.job_config.provider_parameters.brightdata.dataset_id).to.include('chatgpt_free');
+          expect(body.job_config.metadata.experiment_id).to.equal('exp-1');
+          expect(body.job_config.metadata.experiment_phase).to.equal('pre');
+          expect(body.job_config.metadata.triggered_by).to.equal('spacecat-edge-deploy');
+          return true;
+        })
+        .reply(201, { schedule: { schedule_id: 'sched-1' } });
+
+      const result = await client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free', 'chatgpt_paid'],
+        providerIds: ['brightdata', 'openai_web_search'],
+        triggerImmediately: true,
+        metadata: { triggered_by: 'spacecat-edge-deploy' },
+      });
+
+      expect(result.schedule.schedule_id).to.equal('sched-1');
+      scope.done();
+    });
+
+    it('uses explicitly provided providerIds', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules', (body) => {
+          expect(body.job_config.provider_ids).to.deep.equal(['brightdata']);
+          return true;
+        })
+        .reply(201, { schedule: { schedule_id: 'sched-custom' } });
+
+      await client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-custom',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free'],
+        providerIds: ['brightdata'],
+      });
+
+      scope.done();
+    });
+
+    it('uses explicitly provided platforms', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules', (body) => {
+          expect(body.cron_expression).to.equal('0 0 * * *');
+          expect(body.trigger_immediately).to.equal(false);
+          expect(body.job_config.provider_parameters.brightdata.dataset_id).to.equal('gemini,perplexity');
+          return true;
+        })
+        .reply(201, { schedule: { schedule_id: 'sched-2' } });
+
+      await client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-2',
+        experimentPhase: 'post',
+        cronExpression: '0 0 * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['gemini', 'perplexity'],
+        providerIds: ['brightdata'],
+      });
+
+      scope.done();
+    });
+
+    it('allows overriding post triggerImmediately', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules', (body) => {
+          expect(body.cron_expression).to.equal('0 0 * * *');
+          expect(body.trigger_immediately).to.equal(true);
+          return true;
+        })
+        .reply(201, { schedule: { schedule_id: 'sched-3' } });
+
+      await client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-3',
+        experimentPhase: 'post',
+        cronExpression: '0 0 * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free'],
+        providerIds: ['brightdata'],
+        triggerImmediately: true,
+      });
+
+      scope.done();
+    });
+
+    it('supports top-level schedule_id response shape', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(201, { schedule_id: 'sched-flat-1' });
+
+      const result = await client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-flat',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free'],
+        providerIds: ['brightdata'],
+      });
+
+      expect(result.schedule_id).to.equal('sched-flat-1');
+      scope.done();
+    });
+
+    it('throws when siteId is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+      })).to.be.rejectedWith('siteId is required');
+    });
+
+    it('throws when experimentId is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentPhase: 'pre',
+      })).to.be.rejectedWith('experimentId is required');
+    });
+
+    it('throws when experimentPhase is invalid', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'during',
+      })).to.be.rejectedWith('experimentPhase must be one of: pre, post');
+    });
+
+    it('throws when cronExpression is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+      })).to.be.rejectedWith('cronExpression is required');
+    });
+
+    it('throws when expiresAt is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+      })).to.be.rejectedWith('expiresAt is required');
+    });
+
+    it('throws when platforms is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+      })).to.be.rejectedWith('platforms must be a non-empty array');
+    });
+
+    it('throws when providerIds is missing', async () => {
+      await expect(client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-1',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free'],
+      })).to.be.rejectedWith('providerIds must be a non-empty array');
+    });
+  });
+
+  describe('getScheduleStatus', () => {
+    let client;
+
+    beforeEach(() => {
+      client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+    });
+
+    it('fetches schedule status with jobs summary', async () => {
+      const scope = nock(DRS_API_URL)
+        .get('/schedules/site-1/sched-1')
+        .reply(200, {
+          schedule: { schedule_id: 'sched-1', site_id: 'site-1' },
+          jobs_summary: { total: 2, in_progress: 0, is_complete: true },
+        });
+
+      const result = await client.getScheduleStatus('site-1', 'sched-1');
+      expect(result.schedule.schedule_id).to.equal('sched-1');
+      expect(result.jobs_summary.is_complete).to.equal(true);
+      scope.done();
+    });
+
+    it('fetches schedule status with include_jobs flag', async () => {
+      const scope = nock(DRS_API_URL)
+        .get('/schedules/site-1/sched-1?include_jobs=true')
+        .reply(200, { schedule: { schedule_id: 'sched-1' }, jobs: [] });
+
+      const result = await client.getScheduleStatus('site-1', 'sched-1', { includeJobs: true });
+      expect(result.schedule.schedule_id).to.equal('sched-1');
+      scope.done();
+    });
+
+    it('throws when siteId is missing', async () => {
+      await expect(client.getScheduleStatus('', 'sched-1'))
+        .to.be.rejectedWith('siteId is required');
+    });
+
+    it('throws when scheduleId is missing', async () => {
+      await expect(client.getScheduleStatus('site-1', ''))
+        .to.be.rejectedWith('scheduleId is required');
     });
   });
 

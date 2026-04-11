@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import * as chai from 'chai';
 import {
   Granularity,
@@ -54,8 +52,8 @@ describe('Aggregation Strategies', () => {
       });
 
       it('should include source when provided', () => {
-        const key = buildAggregationKey('color-contrast', 'https://example.com/page1', 'div.header', 'ahrefs');
-        expect(key).to.equal('https://example.com/page1|color-contrast|div.header|ahrefs');
+        const key = buildAggregationKey('color-contrast', 'https://example.com/page1', 'div.header', 'seo');
+        expect(key).to.equal('https://example.com/page1|color-contrast|div.header|seo');
       });
 
       it('should handle missing selector', () => {
@@ -78,8 +76,8 @@ describe('Aggregation Strategies', () => {
       });
 
       it('should include source when provided', () => {
-        const key = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
-        expect(key).to.equal('https://example.com/page1|button-name|ahrefs');
+        const key = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'seo');
+        expect(key).to.equal('https://example.com/page1|button-name|seo');
       });
     });
 
@@ -96,8 +94,8 @@ describe('Aggregation Strategies', () => {
       });
 
       it('should include source when provided', () => {
-        const key = buildAggregationKey('html-has-lang', 'https://example.com/page1', 'html', 'ahrefs');
-        expect(key).to.equal('https://example.com/page1|ahrefs');
+        const key = buildAggregationKey('html-has-lang', 'https://example.com/page1', 'html', 'seo');
+        expect(key).to.equal('https://example.com/page1|seo');
       });
     });
 
@@ -170,19 +168,19 @@ describe('Aggregation Strategies', () => {
 
   describe('Key Consistency', () => {
     it('should produce consistent keys for same data', () => {
-      const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
-      const key2 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
+      const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'seo');
+      const key2 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'seo');
       expect(key1).to.equal(key2);
     });
 
     it('should produce different keys for different pages', () => {
-      const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
-      const key2 = buildAggregationKey('button-name', 'https://example.com/page2', 'button.submit', 'ahrefs');
+      const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'seo');
+      const key2 = buildAggregationKey('button-name', 'https://example.com/page2', 'button.submit', 'seo');
       expect(key1).to.not.equal(key2);
     });
 
     it('should produce different keys for different sources', () => {
-      const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'ahrefs');
+      const key1 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'seo');
       const key2 = buildAggregationKey('button-name', 'https://example.com/page1', 'button.submit', 'semrush');
       expect(key1).to.not.equal(key2);
     });
@@ -285,14 +283,14 @@ describe('Aggregation Strategies', () => {
     it('should include source when provided', () => {
       const suggestionData = {
         url: 'https://example.com/page1',
-        source: 'ahrefs',
+        source: 'seo',
         issues: [{
           type: 'color-contrast',
           htmlWithIssues: [{ target_selector: 'a.nav-link' }],
         }],
       };
       const key = buildAggregationKeyFromSuggestion(suggestionData);
-      expect(key).to.equal('https://example.com/page1|color-contrast|a.nav-link|ahrefs');
+      expect(key).to.equal('https://example.com/page1|color-contrast|a.nav-link|seo');
     });
 
     it('should support both snake_case and camelCase for target_selector', () => {
@@ -453,14 +451,14 @@ describe('Aggregation Strategies', () => {
     it('should include source when provided', () => {
       const suggestionData = {
         url: 'https://example.com/page1',
-        source: 'ahrefs',
+        source: 'seo',
         issues: [{
           type: 'link-name',
           htmlWithIssues: [{ target_selector: 'a.nav-link' }],
         }],
       };
       const key = buildSuggestionKey(suggestionData);
-      expect(key).to.equal('https://example.com/page1|link-name|a.nav-link|ahrefs');
+      expect(key).to.equal('https://example.com/page1|link-name|a.nav-link|seo');
     });
 
     it('should return url when no issues present', () => {

@@ -12,11 +12,19 @@
 
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 
+export const EXPERIMENT_PHASES = Object.freeze({
+  PRE: 'pre',
+  POST: 'post',
+});
+
+const VALID_EXPERIMENT_PHASES = new Set(Object.values(EXPERIMENT_PHASES));
+
 export const SCRAPE_DATASET_IDS = Object.freeze({
-  YOUTUBE_VIDEOS: 'youtube_videos',
-  YOUTUBE_COMMENTS: 'youtube_comments',
-  REDDIT_POSTS: 'reddit_posts',
   REDDIT_COMMENTS: 'reddit_comments',
+  REDDIT_POSTS: 'reddit_posts',
+  TOP_CITED: 'topCited',
+  YOUTUBE_COMMENTS: 'youtube_comments',
+  YOUTUBE_VIDEOS: 'youtube_videos',
   WIKIPEDIA: 'wikipedia',
 });
 
@@ -32,7 +40,9 @@ export default class DrsClient {
     const { env, log = console } = context;
     const { DRS_API_URL: apiBaseUrl, DRS_API_KEY: apiKey } = env;
 
-    if (context.drsClient) return context.drsClient;
+    if (context.drsClient) {
+      return context.drsClient;
+    }
 
     const client = new DrsClient({ apiBaseUrl, apiKey }, log);
     context.drsClient = client;
@@ -43,7 +53,9 @@ export default class DrsClient {
     // Strip trailing slashes without regex (CodeQL flags /\/+$/ as polynomial)
     let url = apiBaseUrl;
     if (url) {
-      while (url.endsWith('/')) url = url.slice(0, -1);
+      while (url.endsWith('/')) {
+        url = url.slice(0, -1);
+      }
     }
     this.apiBaseUrl = url || undefined;
     this.apiKey = apiKey;
@@ -156,6 +168,7 @@ export default class DrsClient {
    * @param {string} params.siteId - SpaceCat site ID
    * @param {string[]} params.urls - URLs to scrape
    * @param {string} [params.priority='HIGH'] - Job priority (HIGH or LOW)
+   * @param {number} [params.daysBack] - Number of days back to scrape (reddit_comments only)
    * @returns {Promise<object>} Job result with job_id
    */
   async submitScrapeJob({
@@ -163,6 +176,7 @@ export default class DrsClient {
     siteId,
     urls,
     priority = 'HIGH',
+    daysBack,
   }) {
     if (!VALID_SCRAPE_DATASET_IDS.has(datasetId)) {
       throw new Error(`Invalid dataset_id "${datasetId}". Must be one of: ${[...VALID_SCRAPE_DATASET_IDS].join(', ')}`);
@@ -173,17 +187,25 @@ export default class DrsClient {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
     }
+    if (daysBack !== undefined && datasetId !== SCRAPE_DATASET_IDS.REDDIT_COMMENTS) {
+      throw new Error('daysBack is only supported for reddit_comments dataset');
+    }
 
     this.log.info(`Submitting DRS scrape job for dataset ${datasetId}`, { datasetId, siteId, urlCount: urls.length });
+
+    const parameters = {
+      dataset_id: datasetId,
+      site_id: siteId,
+      urls,
+    };
+    if (daysBack !== undefined) {
+      parameters.days_back = daysBack;
+    }
 
     return this.submitJob({
       provider_id: 'brightdata',
       priority,
-      parameters: {
-        dataset_id: datasetId,
-        site_id: siteId,
-        urls,
-      },
+      parameters,
     });
   }
 
@@ -226,6 +248,124 @@ export default class DrsClient {
   async triggerBrandDetection(siteId, options = {}) {
     this.log.info(`Triggering DRS brand detection for site ${siteId}`, options);
     return this.#request('POST', `/sites/${siteId}/brand-detection`, options);
+  }
+
+  /**
+   * Creates an experiment schedule in DRS.
+   * @param {object} params
+   * @param {string} params.siteId - SpaceCat site ID
+   * @param {string} params.experimentId - Unique experiment identifier
+   * @param {string} params.experimentPhase - 'pre' or 'post'
+   * @param {string} params.cronExpression - Cron expression for the schedule
+   * @param {string} params.expiresAt - ISO 8601 timestamp for schedule expiry
+   * @param {string[]} params.platforms - LLM platforms to query (used as brightdata dataset_id)
+   * @param {string[]} params.providerIds - DRS provider IDs
+   * @param {boolean} params.triggerImmediately - Trigger first job on schedule creation
+   * @param {boolean} [params.enableBrandPresence] - Enable brand presence detection in the job
+   * @param {object} [params.metadata] - Additional metadata to attach to the job
+   * @returns {Promise<object>} Schedule creation response
+   */
+  async createExperimentSchedule({
+    siteId,
+    experimentId,
+    experimentPhase,
+    cronExpression,
+    expiresAt,
+    platforms,
+    providerIds,
+    triggerImmediately,
+    enableBrandPresence = false,
+    metadata,
+  }) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!hasText(experimentId)) {
+      throw new Error('experimentId is required');
+    }
+    if (!VALID_EXPERIMENT_PHASES.has(experimentPhase)) {
+      throw new Error(`experimentPhase must be one of: ${[...VALID_EXPERIMENT_PHASES].join(', ')}`);
+    }
+    if (!hasText(cronExpression)) {
+      throw new Error('cronExpression is required');
+    }
+    if (!hasText(expiresAt)) {
+      throw new Error('expiresAt is required');
+    }
+    if (!Array.isArray(platforms) || platforms.length === 0) {
+      throw new Error('platforms must be a non-empty array');
+    }
+    if (!Array.isArray(providerIds) || providerIds.length === 0) {
+      throw new Error('providerIds must be a non-empty array');
+    }
+
+    const body = {
+      site_id: siteId,
+      frequency: 'cron',
+      cron_expression: cronExpression,
+      expires_at: expiresAt,
+      trigger_immediately: triggerImmediately === true,
+      description: `${experimentPhase} phase schedule of geo experiment: ${experimentId}`,
+      job_config: {
+        cadence: 'experiment',
+        enable_brand_presence: enableBrandPresence,
+        provider_ids: providerIds,
+        provider_parameters: {
+          brightdata: {
+            dataset_id: platforms.join(','),
+            metadata: {
+              site: siteId,
+            },
+          },
+        },
+        priority: 'HIGH',
+        metadata: {
+          experiment_id: experimentId,
+          experiment_phase: experimentPhase,
+          ...(metadata || {}),
+        },
+      },
+    };
+
+    this.log.info(`Creating DRS experiment schedule for site ${siteId}`, {
+      experimentId,
+      experimentPhase,
+      cronExpression,
+      expiresAt,
+      triggerImmediately: body.trigger_immediately,
+    });
+
+    const result = await this.#request('POST', '/schedules', body);
+    this.log.info('DRS experiment schedule created', {
+      scheduleId: result?.schedule?.schedule_id || result?.schedule_id,
+      experimentId,
+      experimentPhase,
+    });
+    return result;
+  }
+
+  /**
+   * Gets schedule details with jobs summary from DRS.
+   * @param {string} siteId - SpaceCat site ID
+   * @param {string} scheduleId - DRS schedule ID
+   * @param {object} [options={}]
+   * @param {boolean} [options.includeJobs=false] - Include per-job details in the response
+   * @returns {Promise<object>} Schedule + jobs summary payload
+   */
+  async getScheduleStatus(siteId, scheduleId, { includeJobs = false } = {}) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!hasText(scheduleId)) {
+      throw new Error('scheduleId is required');
+    }
+
+    const path = includeJobs
+      ? `/schedules/${siteId}/${scheduleId}?include_jobs=true`
+      : `/schedules/${siteId}/${scheduleId}`;
+
+    this.log.info('Getting DRS schedule status', { siteId, scheduleId, includeJobs });
+    return this.#request('GET', path);
   }
 
   /**

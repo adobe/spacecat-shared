@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { isIsoDate, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import { expect, use } from 'chai';
@@ -244,6 +242,67 @@ describe('Suggestion IT', async () => {
     });
   });
 
+  it('saves many suggestions in bulk via saveMany', async () => {
+    // Use suggestions from the second opportunity to avoid conflicts with prior tests
+    const opportunity = sampleData.opportunities[2];
+    const suggestions = await Suggestion.allByOpportunityId(opportunity.getId());
+    expect(suggestions.length).to.be.greaterThan(0);
+
+    const originalStatuses = suggestions.map((s) => s.getStatus());
+    const originalUpdatedAts = suggestions.map((s) => s.getUpdatedAt());
+
+    // Mutate each suggestion in memory
+    suggestions.forEach((suggestion) => {
+      suggestion.setData({ ...suggestion.getData(), bulkSaveTest: true });
+      suggestion.setUpdatedBy('saveMany-it');
+    });
+
+    // Bulk save all at once
+    await Suggestion.saveMany(suggestions);
+
+    // Verify persistence: re-fetch from DB
+    const updatedSuggestions = await Promise.all(
+      suggestions.map((s) => Suggestion.findById(s.getId())),
+    );
+
+    updatedSuggestions.forEach((suggestion, index) => {
+      // data mutation persisted
+      expect(suggestion.getData()).to.have.property('bulkSaveTest', true);
+      // updatedBy persisted
+      expect(suggestion.getUpdatedBy()).to.equal('saveMany-it');
+      // status unchanged (we didn't change it)
+      expect(suggestion.getStatus()).to.equal(originalStatuses[index]);
+      // updatedAt advanced
+      expect(new Date(suggestion.getUpdatedAt())).to.be.greaterThan(
+        new Date(originalUpdatedAts[index]),
+      );
+    });
+  });
+
+  it('saveMany with chunkSize splits into multiple batches', async () => {
+    const opportunity = sampleData.opportunities[1];
+    const suggestions = await Suggestion.allByOpportunityId(opportunity.getId());
+    expect(suggestions.length).to.be.greaterThan(1);
+
+    // Mutate in memory
+    suggestions.forEach((suggestion) => {
+      suggestion.setData({ ...suggestion.getData(), chunkTest: true });
+      suggestion.setUpdatedBy('chunk-it');
+    });
+
+    // Use chunkSize=1 to force multiple batches
+    await Suggestion.saveMany(suggestions, { chunkSize: 1 });
+
+    // Verify all persisted
+    const updated = await Promise.all(
+      suggestions.map((s) => Suggestion.findById(s.getId())),
+    );
+    updated.forEach((suggestion) => {
+      expect(suggestion.getData()).to.have.property('chunkTest', true);
+      expect(suggestion.getUpdatedBy()).to.equal('chunk-it');
+    });
+  });
+
   it('throws an error when adding a suggestion with invalid opportunity id', async () => {
     const data = [
       {
@@ -318,5 +377,86 @@ describe('Suggestion IT', async () => {
     await expect(
       Suggestion.getFixEntitiesBySuggestionId(invalidId),
     ).to.be.rejectedWith('Validation failed');
+  });
+
+  describe('splitSuggestionsByGrantStatus', () => {
+    // DB must have tokens, suggestion_grants, grant_suggestions RPC
+    // Use site 1 so token pool is independent of token.test.js (site 0)
+    const siteId = '78fec9c7-2141-4600-b7b1-ea5c78752b91'; // fixtures.sites[1]
+    const tokenType = 'grant_cwv';
+
+    /** One suggestion granted in before(); shared by tests that need a granted suggestion */
+    let preGrantedSuggestion;
+    before(async function () {
+      this.timeout(10000);
+      expect(sampleData.suggestions.length).to.be.at.least(6);
+      const { Token } = getDataAccess();
+      await Token.findBySiteIdAndTokenType(siteId, tokenType, { createIfNotFound: true });
+      [, , , , preGrantedSuggestion] = sampleData.suggestions;
+      const { SuggestionGrant } = getDataAccess();
+      const grantResult = await SuggestionGrant.grantSuggestions(
+        [preGrantedSuggestion.getId()],
+        siteId,
+        tokenType,
+      );
+      const reason = grantResult.reason ?? 'unknown';
+      expect(
+        grantResult.success,
+        `grantSuggestions should succeed (tokens + suggestion_grants). reason=${reason}`,
+      ).to.be.true;
+    });
+
+    it('splits suggestion IDs into grantedIds and notGrantedIds and returns unique grantIds', async () => {
+      const notGrantedSuggestion = sampleData.suggestions[5];
+      const suggestionIds = [preGrantedSuggestion.getId(), notGrantedSuggestion.getId()];
+      const { SuggestionGrant } = getDataAccess();
+      const result = await SuggestionGrant.splitSuggestionsByGrantStatus(suggestionIds);
+
+      expect(result.grantedIds).to.be.an('array').with.length(1);
+      expect(result.notGrantedIds).to.be.an('array').with.length(1);
+      expect(result.grantedIds[0]).to.equal(preGrantedSuggestion.getId());
+      expect(result.notGrantedIds[0]).to.equal(notGrantedSuggestion.getId());
+      expect(result.grantIds).to.be.an('array').with.length(1);
+      expect(result.grantIds[0]).to.match(/^[0-9a-f-]{36}$/i);
+    });
+
+    it('returns disjoint grantedIds and notGrantedIds that cover all input IDs', async () => {
+      const suggestions = sampleData.suggestions.slice(0, 3);
+      const suggestionIds = suggestions.map((s) => s.getId());
+      const { SuggestionGrant } = getDataAccess();
+      const result = await SuggestionGrant.splitSuggestionsByGrantStatus(suggestionIds);
+
+      expect(result.grantedIds).to.be.an('array');
+      expect(result.notGrantedIds).to.be.an('array');
+      expect(result.grantedIds.length + result.notGrantedIds.length).to.equal(suggestionIds.length);
+      const resultIds = [...result.grantedIds, ...result.notGrantedIds].sort();
+      const inputIds = [...suggestionIds].sort();
+      expect(resultIds).to.deep.equal(inputIds);
+    });
+
+    it('returns empty arrays when given empty suggestionIds', async () => {
+      const { SuggestionGrant } = getDataAccess();
+      const result = await SuggestionGrant.splitSuggestionsByGrantStatus([]);
+
+      expect(result).to.deep.equal({ grantedIds: [], notGrantedIds: [], grantIds: [] });
+    });
+
+    it('accepts array of suggestion ID strings', async () => {
+      const grantedId = preGrantedSuggestion.getId();
+      const notGrantedId = sampleData.suggestions[0].getId();
+      const { SuggestionGrant } = getDataAccess();
+      const result = await SuggestionGrant.splitSuggestionsByGrantStatus([grantedId, notGrantedId]);
+
+      expect(result.grantedIds).to.include(grantedId);
+      expect(result.notGrantedIds).to.include(notGrantedId);
+    });
+
+    it('throws when suggestionIds is not an array', async () => {
+      const { SuggestionGrant } = getDataAccess();
+      await expect(SuggestionGrant.splitSuggestionsByGrantStatus(null))
+        .to.be.rejectedWith(/suggestionIds must be an array/);
+      await expect(SuggestionGrant.splitSuggestionsByGrantStatus('sugg-1'))
+        .to.be.rejectedWith(/suggestionIds must be an array/);
+    });
   });
 });

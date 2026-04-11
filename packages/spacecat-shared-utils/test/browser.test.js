@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 import { prettifyLogForwardingConfig } from '../src/browser.js';
 
@@ -28,16 +26,16 @@ describe('Browser Module', () => {
         authMethod: 'user_credentials',
         logSource: 'byocdn-fastly',
         allowedPaths: ['org/raw/byocdn-fastly/'],
-        accessKey: 'TESTKEY',
-        secretKey: 'testsecret',
+        currentAccessKey: 'TESTKEY',
+        currentSecretKey: 'testsecret',
       };
 
       const result = prettifyLogForwardingConfig(payload);
 
       expect(result).to.have.property('Bucket Name', 'test-bucket');
       expect(result).to.have.property('Domain', 's3.us-east-1.amazonaws.com');
-      expect(result).to.have.property('Access Key', 'TESTKEY');
-      expect(result).to.have.property('Secret Key', 'testsecret');
+      expect(result).to.have.property('Access Key (current)', 'TESTKEY');
+      expect(result).to.have.property('Secret Key (current)', 'testsecret');
     });
 
     it('should correctly transform a CloudFront payload', () => {

@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use } from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -205,6 +203,49 @@ describe('llmo-strategy utilities', () => {
       expect(result.data).deep.equals(emptyData);
       expect(result.exists).equals(true);
     });
+
+    it('parses strategy with array url, topic, topicId and metadata (end-to-end read)', async () => {
+      const strategyDataWithArraysAndMetadata = {
+        opportunities: [
+          {
+            id: 'opp-1',
+            name: 'Improve Page Speed',
+            description: 'Optimize loading times',
+            category: 'performance',
+          },
+        ],
+        strategies: [
+          {
+            id: 'strat-2',
+            name: 'Multi-URL Strategy',
+            status: 'planning',
+            url: ['/strategies/url-a', '/strategies/url-b'],
+            description: 'Strategy with array fields',
+            topic: ['Performance', 'SEO'],
+            topicId: ['550e8400-e29b-41d4-a716-446655440000', '6ba7b810-9dad-11d1-80b4-00c04fd430c8'],
+            metadata: { source: 'import', priority: 1 },
+            platform: 'chatgpt-paid',
+            createdAt: '2025-01-20T12:00:00Z',
+            opportunities: [
+              {
+                opportunityId: 'opp-1',
+                status: 'new',
+                assignee: 'user@example.com',
+              },
+            ],
+          },
+        ],
+      };
+      const body = {
+        transformToString: sinon.stub().resolves(JSON.stringify(strategyDataWithArraysAndMetadata)),
+      };
+      s3Client.send.resolves({ Body: body });
+
+      const result = await readStrategy(siteId, s3Client);
+
+      expect(result.data).deep.equals(strategyDataWithArraysAndMetadata);
+      expect(result.exists).equals(true);
+    });
   });
 
   describe('writeStrategy', () => {
@@ -252,6 +293,47 @@ describe('llmo-strategy utilities', () => {
       expect(result).deep.equals({ version: 'v3' });
       const command = s3Client.send.firstCall.args[0];
       expect(command.input.Body).equals(JSON.stringify(arbitraryData, null, 2));
+    });
+
+    it('writes strategy with array url, topic, topicId and metadata (end-to-end write)', async () => {
+      const strategyDataWithArraysAndMetadata = {
+        opportunities: [
+          {
+            id: 'opp-1',
+            name: 'Improve Page Speed',
+            description: 'Optimize loading times',
+            category: 'performance',
+          },
+        ],
+        strategies: [
+          {
+            id: 'strat-2',
+            name: 'Multi-URL Strategy',
+            status: 'planning',
+            url: ['/strategies/url-a', '/strategies/url-b'],
+            description: 'Strategy with array fields',
+            topic: ['Performance', 'SEO'],
+            topicId: ['550e8400-e29b-41d4-a716-446655440000', '6ba7b810-9dad-11d1-80b4-00c04fd430c8'],
+            metadata: { source: 'import', priority: 1 },
+            platform: 'chatgpt-paid',
+            createdAt: '2025-01-20T12:00:00Z',
+            opportunities: [
+              {
+                opportunityId: 'opp-1',
+                status: 'new',
+                assignee: 'user@example.com',
+              },
+            ],
+          },
+        ],
+      };
+      s3Client.send.resolves({ VersionId: 'v4' });
+
+      const result = await writeStrategy(siteId, strategyDataWithArraysAndMetadata, s3Client);
+
+      expect(result).deep.equals({ version: 'v4' });
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Body).equals(JSON.stringify(strategyDataWithArraysAndMetadata, null, 2));
     });
   });
 });

@@ -11,7 +11,7 @@
  */
 
 /**
- * Transforms credential fields object with backwards compatibility
+ * Transforms credential fields object
  * @param {Object} payload - The payload containing credential information
  * @returns {Object} - Object with credential fields
  */
@@ -20,14 +20,10 @@ const transformCredentialFields = (payload) => {
 
   if (payload.currentAccessKey) {
     fields['Access Key (current)'] = payload.currentAccessKey;
-  } else if (payload.accessKey) {
-    fields['Access Key'] = payload.accessKey;
   }
 
   if (payload.currentSecretKey) {
     fields['Secret Key (current)'] = payload.currentSecretKey;
-  } else if (payload.secretKey) {
-    fields['Secret Key'] = payload.secretKey;
   }
 
   if (payload.oldAccessKey) {
@@ -58,15 +54,26 @@ const FASTLY_LOG_FORMAT = `{
     "request_user_agent": "%{json.escape(req.http.User-Agent)}V",
     "response_status": %{resp.status}V,
     "response_content_type": "%{json.escape(resp.http.Content-Type)}V",
-    "client_country_code": "%{client.geo.country_name}V",
     "time_to_first_byte": "%{time.to_first_byte}V"
 }`;
 const CDN_TRANSFORMATIONS = {
   'byocdn-fastly': (payload) => {
     const authMethodLabel = payload.authMethod === 'iam_role' ? 'IAM Role' : 'User credentials';
-    const authFields = payload.authMethod === 'iam_role'
-      ? { 'Role ARN': payload.roleArn }
-      : transformCredentialFields(payload);
+    const authFields = {};
+    const hasCredentialData = [
+      payload.currentAccessKey,
+      payload.currentSecretKey,
+      payload.oldAccessKey,
+      payload.oldSecretKey,
+    ].some((value) => value);
+
+    if (payload.authMethod === 'iam_role' && payload.roleArn) {
+      authFields['Role ARN'] = payload.roleArn;
+    }
+
+    if (hasCredentialData) {
+      Object.assign(authFields, transformCredentialFields(payload));
+    }
 
     return {
       'Bucket Name': payload.bucketName,
@@ -93,7 +100,6 @@ const CDN_TRANSFORMATIONS = {
     Path: `${payload.allowedPaths?.[0] || ''}{%Y}/{%m}/{%d}/{%H}`,
     'Logged Properties': [
       'reqTimeSec',
-      'country',
       'reqHost',
       'reqPath',
       'queryStr',
@@ -121,7 +127,6 @@ const CDN_TRANSFORMATIONS = {
     'Organize logs into daily subfolders': 'Yes',
     'Logged Properties': [
       'EdgeStartTimestamp',
-      'ClientCountry',
       'ClientRequestHost',
       'ClientRequestURI',
       'ClientRequestMethod',
@@ -184,13 +189,12 @@ const CDN_TRANSFORMATIONS = {
   'byocdn-imperva': (payload) => ({
     'Log integration mode': 'Push mode',
     'Delivery method': 'Amazon S3 ARN',
-    'Bucket Name': payload.bucketName,
     Region: payload.region,
-    Path: payload.allowedPaths?.[0] || '',
+    Path: `${payload.bucketName}/${payload.allowedPaths?.[0] || ''}`.replace(/\/$/, ''),
     'Log types': 'Cloud WAF',
     'Log level': 'Access logs',
     Format: 'W3C',
-    'Compress logs': 'Yes',
+    'Compress logs': 'No',
     HelpUrl: 'https://docs-cybersec.thalesgroup.com/bundle/cloud-application-security/page/siem-log-configuration.htm',
   }),
   'byocdn-other': (payload) => ({
@@ -247,11 +251,11 @@ const prettifyLogForwardingConfig = (payload) => {
 
   if (payload.logSource === 'byocdn-fastly') {
     if (payload.authMethod === 'user_credentials') {
-      if (!payload.accessKey && !payload.currentAccessKey) {
-        throw new Error('accessKey or currentAccessKey is required in payload');
+      if (!payload.currentAccessKey) {
+        throw new Error('currentAccessKey is required in payload');
       }
-      if (!payload.secretKey && !payload.currentSecretKey) {
-        throw new Error('secretKey or currentSecretKey is required in payload');
+      if (!payload.currentSecretKey) {
+        throw new Error('currentSecretKey is required in payload');
       }
     } else if (payload.authMethod === 'iam_role') {
       if (!payload.roleArn) {
@@ -261,11 +265,11 @@ const prettifyLogForwardingConfig = (payload) => {
   }
 
   if (payload.logSource === 'byocdn-akamai' || payload.logSource === 'byocdn-other') {
-    if (!payload.accessKey && !payload.currentAccessKey) {
-      throw new Error('accessKey or currentAccessKey is required in payload');
+    if (!payload.currentAccessKey) {
+      throw new Error('currentAccessKey is required in payload');
     }
-    if (!payload.secretKey && !payload.currentSecretKey) {
-      throw new Error('secretKey or currentSecretKey is required in payload');
+    if (!payload.currentSecretKey) {
+      throw new Error('currentSecretKey is required in payload');
     }
   }
 

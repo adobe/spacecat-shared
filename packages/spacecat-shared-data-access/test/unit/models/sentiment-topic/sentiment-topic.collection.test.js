@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
@@ -36,7 +34,6 @@ describe('SentimentTopicCollection', () => {
     siteId: 'site-12345',
     name: 'BMW XM Latest',
     description: 'Track sentiment around the BMW XM luxury SUV',
-    subPrompts: ['What about performance?'],
     enabled: true,
   };
 

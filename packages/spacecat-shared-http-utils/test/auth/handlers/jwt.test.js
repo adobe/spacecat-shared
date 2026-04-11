@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use } from 'chai';
 import crypto from 'crypto';
 import sinon from 'sinon';
@@ -285,7 +283,7 @@ describe('SpacecatJWTHandler', () => {
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.instanceof(AuthInfo);
-      expect(logStub.info.calledWithMatch('[jwt] S2S consumer token used on route GET /sites')).to.be.true;
+      expect(logStub.info.calledWithMatch('[jwt] S2S consumer test-client token used on route GET /sites')).to.be.true;
     });
 
     it('returns null when both bearer token and cookie are missing', async () => {

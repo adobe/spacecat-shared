@@ -12,6 +12,7 @@
 
 import { hasText } from '@adobe/spacecat-shared-utils';
 import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
+import { htmlToHast } from '../utils/html-utils.js';
 import BaseOpportunityMapper from './base-mapper.js';
 
 /**
@@ -31,6 +32,17 @@ export default class GenericMapper extends BaseOpportunityMapper {
 
   requiresPrerender() {
     return this.prerenderRequired;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  #resolveValue(data) {
+    if (data.format === 'html') {
+      return htmlToHast(data.patchValue);
+    }
+    if (data.format === 'hast' || data.format === 'json') {
+      return JSON.parse(data.patchValue);
+    }
+    return data.patchValue;
   }
 
   /**
@@ -53,12 +65,15 @@ export default class GenericMapper extends BaseOpportunityMapper {
       const data = suggestion.getData();
       const { transformRules } = data;
 
+      const value = this.#resolveValue(data);
+      const valueFormat = data.format === 'html' ? 'hast' : (data.format || 'text');
+
       const patch = {
         ...this.createBasePatch(suggestion, opportunityId),
         op: transformRules.action,
         selector: transformRules.selector,
-        value: (data.format === 'hast' || data.format === 'json') ? JSON.parse(data.patchValue) : data.patchValue,
-        valueFormat: data.format || 'text',
+        value,
+        valueFormat,
         target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
       };
 

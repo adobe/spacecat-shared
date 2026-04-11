@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
@@ -90,7 +88,7 @@ describe('SiteTopPageCollection', () => {
 
     it('remove all SiteTopPages for a given siteId, source and geo', async () => {
       const siteId = 'site12345';
-      const source = 'ahrefs';
+      const source = 'seo';
       const geo = 'global';
 
       instance.allBySiteIdAndSourceAndGeo = stub().resolves([model]);

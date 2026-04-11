@@ -75,7 +75,10 @@ class BaseCollection {
 
   // eslint-disable-next-line class-methods-use-this
   #resolveBulkKeyField(keys) {
-    if (!isNonEmptyArray(keys)) return null;
+    /* c8 ignore next 3 */
+    if (!isNonEmptyArray(keys)) {
+      return null;
+    }
 
     const [firstKey] = keys;
     const fields = Object.keys(firstKey);
@@ -93,9 +96,13 @@ class BaseCollection {
   }
 
   #normalizeEnumValue(key, value) {
-    if (typeof value !== 'string') return value;
+    if (typeof value !== 'string') {
+      return value;
+    }
     const attr = this.schema.getAttribute(key);
-    if (!Array.isArray(attr?.type)) return value;
+    if (!Array.isArray(attr?.type)) {
+      return value;
+    }
     const match = attr.type.find((v) => v.toLowerCase() === value.toLowerCase());
     return match ?? value;
   }
@@ -104,7 +111,9 @@ class BaseCollection {
   #isInvalidInputError(error) {
     let current = error;
     while (current) {
-      if (current?.code === '22P02') return true;
+      if (current?.code === '22P02') {
+        return true;
+      }
       current = current.cause;
     }
     return false;
@@ -112,9 +121,16 @@ class BaseCollection {
 
   #logAndThrowError(message, cause) {
     const parts = [message];
-    if (cause?.code) parts.push(`[${cause.code}] ${cause.message}`);
-    if (cause?.details) parts.push(cause.details);
-    if (cause?.hint) parts.push(`hint: ${cause.hint}`);
+    if (cause?.code) {
+      parts.push(`[${cause.code}] ${cause.message}`);
+    }
+    if (cause?.details) {
+      parts.push(cause.details);
+    }
+    /* c8 ignore next 3 */
+    if (cause?.hint) {
+      parts.push(`hint: ${cause.hint}`);
+    }
 
     this.log.error(`[${this.entityName}] ${parts.join(' - ')}`);
 
@@ -585,6 +601,23 @@ class BaseCollection {
     return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
   }
 
+  /**
+   * Converts a raw PostgREST row (snake_case) to a model instance using the same field mapping
+   * pipeline as the internal create/find paths. Intended for use by collections that receive
+   * embedded sub-rows from PostgREST resource embedding (e.g. `sites!fkey(*)`), allowing them
+   * to return proper model instances rather than raw snake_case objects.
+   *
+   * @param {object} row - Raw PostgREST row with snake_case column names.
+   * @returns {object|null} A model instance, or null if the row is empty/invalid.
+   */
+  createInstanceFromRow(row) {
+    /* c8 ignore next 3 */
+    if (!isNonEmptyObject(row)) {
+      return null;
+    }
+    return this.#createInstance(this.#toModelRecord(row));
+  }
+
   async findById(id) {
     guardId(this.idName, id, this.entityName);
     if (this.entity) {
@@ -734,7 +767,9 @@ class BaseCollection {
       return instance;
     } catch (error) {
       /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
-      if (error.constructor === DataAccessError) throw error;
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
       return this.#logAndThrowError('Failed to create', error);
     }
   }
@@ -848,7 +883,9 @@ class BaseCollection {
       return { createdItems, errorItems };
     } catch (error) {
       /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
-      if (error.constructor === DataAccessError) throw error;
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
       return this.#logAndThrowError('Failed to create many', error);
     }
   }
@@ -873,6 +910,48 @@ class BaseCollection {
     const { error } = await query.select().maybeSingle();
     if (error) {
       this.#logAndThrowError('Failed to update entity', error);
+    }
+  }
+
+  /**
+   * Saves multiple model instances to the database in chunked batches.
+   * Each chunk is persisted via a single PostgREST upsert call, avoiding
+   * the thundering-herd problem caused by N concurrent individual saves.
+   *
+   * Chunks are processed sequentially. If a chunk fails, the error is
+   * propagated immediately — chunks already persisted are NOT rolled back.
+   * Callers must account for partial saves on failure.
+   *
+   * @param {BaseModel[]} items - Model instances with in-memory mutations to persist.
+   * @param {Object} [options] - Options.
+   * @param {number} [options.chunkSize=25] - Max items per upsert request.
+   *   Keep low for entities with large payloads (e.g. Suggestion.data JSONB).
+   * @returns {Promise<void>}
+   * @throws {DataAccessError} If any chunk fails. Previously completed chunks
+   *   are already persisted — callers must account for partial saves.
+   */
+  async saveMany(items, { chunkSize = 25 } = {}) {
+    if (!isNonEmptyArray(items)) {
+      return;
+    }
+
+    const effectiveChunkSize = Math.max(1, Math.floor(chunkSize)) || 25;
+    const totalChunks = Math.ceil(items.length / effectiveChunkSize);
+
+    if (totalChunks > 1) {
+      this.log.info(`[${this.entityName}] saveMany: saving ${items.length} items in ${totalChunks} chunks of ${effectiveChunkSize}`);
+    }
+
+    for (let i = 0; i < items.length; i += effectiveChunkSize) {
+      const chunkIndex = Math.floor(i / effectiveChunkSize) + 1;
+      const chunk = items.slice(i, i + effectiveChunkSize);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await this._saveMany(chunk);
+      } catch (error) {
+        this.log.error(`[${this.entityName}] saveMany: chunk ${chunkIndex}/${totalChunks} failed — ${i} of ${items.length} items already persisted`);
+        throw error;
+      }
     }
   }
 
@@ -934,7 +1013,9 @@ class BaseCollection {
       return undefined;
     } catch (error) {
       /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
-      if (error.constructor === DataAccessError) throw error;
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
       return this.#logAndThrowError('Failed to save many', error);
     }
   }
@@ -966,7 +1047,9 @@ class BaseCollection {
       return undefined;
     } catch (error) {
       /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
-      if (error.constructor === DataAccessError) throw error;
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
       return this.#logAndThrowError('Failed to remove by IDs', error);
     }
   }

@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 
 import { strategyWorkspaceData } from '../src/llmo-strategy.js';
@@ -291,6 +289,199 @@ describe('strategyWorkspaceData', () => {
       expect(result.success).true;
       if (result.success) {
         expect(result.data.strategies[0].createdBy).to.be.undefined;
+      }
+    });
+  });
+
+  describe('url, topic, topicId, and metadata variants', () => {
+    it('validates strategy with url as an array of strings', () => {
+      const data = {
+        ...baseWorkspaceData,
+        strategies: [
+          {
+            ...baseWorkspaceData.strategies[0],
+            url: ['/strategies/q1-optimization', '/strategies/q1-alt'],
+          },
+        ],
+      };
+
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].url).deep.equals(['/strategies/q1-optimization', '/strategies/q1-alt']);
+      }
+    });
+
+    it('validates strategy with topic as an array of strings', () => {
+      const data = {
+        ...baseWorkspaceData,
+        strategies: [
+          {
+            ...baseWorkspaceData.strategies[0],
+            topic: ['Performance', 'SEO'],
+          },
+        ],
+      };
+
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].topic).deep.equals(['Performance', 'SEO']);
+      }
+    });
+
+    it('validates strategy with topicId as an array of UUIDs', () => {
+      const data = {
+        ...baseWorkspaceData,
+        strategies: [
+          {
+            ...baseWorkspaceData.strategies[0],
+            topicId: ['550e8400-e29b-41d4-a716-446655440000', '6ba7b810-9dad-11d1-80b4-00c04fd430c8'],
+          },
+        ],
+      };
+
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].topicId).deep.equals(['550e8400-e29b-41d4-a716-446655440000', '6ba7b810-9dad-11d1-80b4-00c04fd430c8']);
+      }
+    });
+
+    it('validates strategy with metadata object containing arbitrary key-value pairs', () => {
+      const data = {
+        ...baseWorkspaceData,
+        strategies: [
+          {
+            ...baseWorkspaceData.strategies[0],
+            metadata: {
+              source: 'import',
+              priority: 1,
+              tags: ['q1', 'optimization'],
+              nested: { key: 'value' },
+            },
+          },
+        ],
+      };
+
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].metadata).deep.equals({
+          source: 'import',
+          priority: 1,
+          tags: ['q1', 'optimization'],
+          nested: { key: 'value' },
+        });
+      }
+    });
+
+    it('validates strategy with single-value url, topic, topicId (backward compatibility)', () => {
+      const data = {
+        ...baseWorkspaceData,
+        strategies: [
+          {
+            ...baseWorkspaceData.strategies[0],
+            url: '/strategies/q1-optimization',
+            topic: 'Performance',
+            topicId: '550e8400-e29b-41d4-a716-446655440000',
+          },
+        ],
+      };
+
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].url).equals('/strategies/q1-optimization');
+        expect(result.data.strategies[0].topic).equals('Performance');
+        expect(result.data.strategies[0].topicId).equals('550e8400-e29b-41d4-a716-446655440000');
+      }
+    });
+
+    it('validates strategy without metadata (backward compatibility)', () => {
+      const result = strategyWorkspaceData.safeParse(baseWorkspaceData);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].metadata).to.be.undefined;
+      }
+    });
+
+    it('validates strategyOpportunity with metadata object containing arbitrary key-value pairs', () => {
+      const data = {
+        ...baseWorkspaceData,
+        strategies: [
+          {
+            ...baseWorkspaceData.strategies[0],
+            opportunities: [
+              {
+                ...baseWorkspaceData.strategies[0].opportunities[0],
+                metadata: {
+                  source: 'import',
+                  priority: 1,
+                  tags: ['q1', 'optimization'],
+                  nested: { key: 'value' },
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].opportunities[0].metadata).deep.equals({
+          source: 'import',
+          priority: 1,
+          tags: ['q1', 'optimization'],
+          nested: { key: 'value' },
+        });
+      }
+    });
+
+    it('validates strategyOpportunity without metadata (backward compatibility)', () => {
+      const result = strategyWorkspaceData.safeParse(baseWorkspaceData);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].opportunities[0].metadata).to.be.undefined;
+      }
+    });
+
+    it('validates library opportunity with metadata object containing arbitrary key-value pairs', () => {
+      const data = {
+        ...baseWorkspaceData,
+        opportunities: [
+          {
+            ...baseWorkspaceData.opportunities[0],
+            metadata: {
+              source: 'import',
+              priority: 1,
+              tags: ['q1', 'optimization'],
+              nested: { key: 'value' },
+            },
+          },
+          baseWorkspaceData.opportunities[1],
+        ],
+      };
+
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.opportunities[0].metadata).deep.equals({
+          source: 'import',
+          priority: 1,
+          tags: ['q1', 'optimization'],
+          nested: { key: 'value' },
+        });
+      }
+    });
+
+    it('validates library opportunity without metadata (backward compatibility)', () => {
+      const result = strategyWorkspaceData.safeParse(baseWorkspaceData);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.opportunities[0].metadata).to.be.undefined;
+        expect(result.data.opportunities[1].metadata).to.be.undefined;
       }
     });
   });

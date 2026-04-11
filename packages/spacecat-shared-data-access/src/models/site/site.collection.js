@@ -145,6 +145,35 @@ class SiteCollection extends BaseCollection {
     return this.allByProjectId(projectId);
   }
 
+  /**
+   * Returns all sites enrolled in a given product (e.g. 'LLMO', 'ASO').
+   * Uses entityRegistry to chain through EntitlementCollection and SiteEnrollmentCollection,
+   * then batch-fetches full Site objects.
+   *
+   * @param {string} productCode - Product code to filter by (e.g. 'LLMO').
+   * @returns {Promise<Site[]>}
+   */
+  async allByEnrollmentProductCode(productCode, options = {}) {
+    if (!hasText(productCode)) {
+      throw new DataAccessError('productCode is required', this);
+    }
+
+    const siteEnrollmentCollection = this.entityRegistry.getCollection('SiteEnrollmentCollection');
+
+    // Query 1: get all site IDs enrolled in the given product (single JOIN query)
+    const siteIds = await siteEnrollmentCollection.allSiteIdsByProductCode(productCode);
+    if (siteIds.length === 0) {
+      return [];
+    }
+
+    // Query 2: batch-fetch Site objects (caller controls which fields to fetch)
+    const { data: sites } = await this.batchGetByKeys(
+      siteIds.map((siteId) => ({ siteId })),
+      options,
+    );
+    return sites;
+  }
+
   async allByOrganizationIdAndProjectName(organizationId, projectName) {
     if (!hasText(organizationId)) {
       throw new DataAccessError('organizationId is required', this);

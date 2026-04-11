@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
@@ -91,16 +89,17 @@ describe('EntitlementCollection', () => {
 
     function setupPostgrestChain(result) {
       rangeStub = sinon.stub().resolves(result);
-      const eqStub = sinon.stub().returns({ range: rangeStub });
+      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const eqStub = sinon.stub().returns({ order: orderStub });
       const selectStub = sinon.stub().returns({ eq: eqStub });
       instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
       return {
-        selectStub, eqStub, rangeStub,
+        selectStub, eqStub, orderStub, rangeStub,
       };
     }
 
     it('returns entitlements with embedded organization data', async () => {
-      setupPostgrestChain({
+      const { orderStub } = setupPostgrestChain({
         data: [
           {
             id: 'ent-1',
@@ -121,6 +120,7 @@ describe('EntitlementCollection', () => {
       const results = await instance.allByProductCodeWithOrganization('LLMO');
 
       expect(results).to.have.lengthOf(2);
+      expect(orderStub).to.have.been.calledWith('id');
       expect(results[0]).to.deep.equal({
         entitlement: { id: 'ent-1', productCode: 'LLMO', tier: 'PAID' },
         organization: { id: 'org-1', name: 'Acme Corp', imsOrgId: 'acme@AdobeOrg' },
@@ -179,13 +179,15 @@ describe('EntitlementCollection', () => {
       rangeStub = sinon.stub();
       rangeStub.onFirstCall().resolves({ data: page1, error: null });
       rangeStub.onSecondCall().resolves({ data: page2, error: null });
-      const eqStub = sinon.stub().returns({ range: rangeStub });
+      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const eqStub = sinon.stub().returns({ order: orderStub });
       const selectStub = sinon.stub().returns({ eq: eqStub });
       instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
 
       const results = await instance.allByProductCodeWithOrganization('LLMO');
 
       expect(results).to.have.lengthOf(DEFAULT_PAGE_SIZE + 1);
+      expect(orderStub).to.have.been.calledWith('id');
       expect(rangeStub).to.have.been.calledTwice;
       expect(rangeStub.firstCall.args).to.deep.equal([0, DEFAULT_PAGE_SIZE - 1]);
       expect(rangeStub.secondCall.args)

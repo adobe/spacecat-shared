@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
@@ -85,7 +83,9 @@ function makeContext(overrides = {}) {
       version: '4.2.1',
     },
     env: {},
-    log: { info: sinon.stub(), warn: sinon.stub(), error: sinon.stub() },
+    log: {
+      debug: sinon.stub(), info: sinon.stub(), warn: sinon.stub(), error: sinon.stub(),
+    },
     ...overrides,
   };
 }
@@ -124,6 +124,7 @@ describe('vaultSecrets wrapper', () => {
     Object.keys(testSecrets).forEach((key) => {
       delete process.env[key];
     });
+    delete process.env.NEW_KEY;
   });
 
   describe('middleware wrapper', () => {
@@ -177,6 +178,15 @@ describe('vaultSecrets wrapper', () => {
       expect(response.status).to.equal(502);
       expect(response.headers.get('x-error')).to.equal('error fetching secrets.');
       expect(innerFn.called).to.equal(false);
+    });
+
+    it('returns empty object when VAULT_SECRETS_DISABLED is true', async () => {
+      process.env.VAULT_SECRETS_DISABLED = 'true';
+      const ctx = makeContext();
+      const result = await loadSecrets(ctx, { bootstrapPath: BOOTSTRAP_PATH });
+
+      expect(result).to.deep.equal({});
+      delete process.env.VAULT_SECRETS_DISABLED;
     });
 
     it('returns empty object on simulate runtime (skips Vault)', async () => {

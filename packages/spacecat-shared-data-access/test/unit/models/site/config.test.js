@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 
 import {
@@ -811,7 +809,7 @@ describe('Config Tests', () => {
         imports: [{
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
           pageUrl: 'https://example.com',
         }],
@@ -825,13 +823,13 @@ describe('Config Tests', () => {
         imports: [{
           type: 'unknown-type',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
         }],
       });
       expect(config.getImports()).to.deep.equal([{
         type: 'unknown-type',
         destinations: ['default'],
-        sources: ['ahrefs'],
+        sources: ['seo'],
       }]);
       expect(config.getSlackConfig()).to.be.undefined;
       expect(config.getHandlers()).to.be.undefined;
@@ -864,7 +862,7 @@ describe('Config Tests', () => {
         expect(importConfig).to.deep.equal({
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
         });
       });
@@ -930,7 +928,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -943,6 +941,32 @@ describe('Config Tests', () => {
         expect(imports).to.have.length(1);
         expect(imports[0].sources).to.deep.equal(['google']);
       });
+
+      it('enables cwv-trends-daily import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-trends-daily');
+
+        const importConfig = config.getImportConfig('cwv-trends-daily');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-trends-daily',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
+
+      it('enables cwv-trends-onboard import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-trends-onboard');
+
+        const importConfig = config.getImportConfig('cwv-trends-onboard');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-trends-onboard',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
     });
 
     describe('disableImport method', () => {
@@ -951,7 +975,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -972,13 +996,13 @@ describe('Config Tests', () => {
             {
               type: 'organic-keywords',
               destinations: ['default'],
-              sources: ['ahrefs'],
+              sources: ['seo'],
               enabled: true,
             },
             {
               type: 'organic-traffic',
               destinations: ['default'],
-              sources: ['ahrefs'],
+              sources: ['seo'],
               enabled: true,
             },
           ],
@@ -992,13 +1016,13 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
           },
           {
             type: 'organic-traffic',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           },
         ]);
@@ -1010,7 +1034,7 @@ describe('Config Tests', () => {
         const importConfig = {
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['ahrefs'],
+          sources: ['seo'],
           enabled: true,
         };
         const config = Config({
@@ -1032,7 +1056,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
           }],
         });
@@ -1044,7 +1068,7 @@ describe('Config Tests', () => {
           imports: [{
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
           }],
         });
@@ -1094,7 +1118,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             pageUrl: 'https://example.com',
             enabled: false,
             geo: 'us',
@@ -1103,7 +1127,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-traffic',
             destinations: ['default'],
-            sources: ['ahrefs', 'google'],
+            sources: ['seo', 'google'],
             enabled: true,
           },
           {
@@ -1115,7 +1139,7 @@ describe('Config Tests', () => {
           {
             type: 'top-pages',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             geo: 'us',
             limit: 100,
@@ -1128,6 +1152,18 @@ describe('Config Tests', () => {
           },
           {
             type: 'cwv-weekly',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
+            type: 'cwv-trends-daily',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
+            type: 'cwv-trends-onboard',
             destinations: ['default'],
             sources: ['rum'],
             enabled: true,
@@ -1185,20 +1221,10 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]. "imports[0].type" must be [cwv-trends-daily]. "imports[0].type" must be [cwv-trends-onboard]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
-                message: '"imports[0].type" must be [llmo-prompts-ahrefs]',
-                path: ['imports', 0, 'type'],
-                type: 'any.only',
-                context: {
-                  valids: ['llmo-prompts-ahrefs'],
-                  label: 'imports[0].type',
-                  value: 'organic-keywords',
-                  key: 'type',
-                },
-              }, {
                 message: '"imports[0].destinations[0]" must be [default]',
                 path: ['imports', 0, 'destinations', 0],
                 type: 'any.only',
@@ -1340,6 +1366,28 @@ describe('Config Tests', () => {
                   key: 'type',
                 },
               },
+              {
+                message: '"imports[0].type" must be [cwv-trends-daily]',
+                path: ['imports', 0, 'type'],
+                type: 'any.only',
+                context: {
+                  valids: ['cwv-trends-daily'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [cwv-trends-onboard]',
+                path: ['imports', 0, 'type'],
+                type: 'any.only',
+                context: {
+                  valids: ['cwv-trends-onboard'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
             ]);
           return true;
         });
@@ -1389,7 +1437,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             limit: 100,
             pageUrl: 'https://example.com',
@@ -1397,7 +1445,7 @@ describe('Config Tests', () => {
           {
             type: 'top-pages',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: false,
             geo: 'global',
           },
@@ -1413,7 +1461,7 @@ describe('Config Tests', () => {
           {
             type: 'organic-keywords',
             destinations: ['default'],
-            sources: ['ahrefs'],
+            sources: ['seo'],
             enabled: true,
             url: 'https://example.com',
           },
@@ -2424,6 +2472,42 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO Country Code Ignore List', () => {
+    it('creates a Config with llmo countryCodeIgnoreList property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          countryCodeIgnoreList: ['PS', 'ad'],
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(['PS', 'ad']);
+    });
+
+    it('has undefined countryCodeIgnoreList in default config', () => {
+      const config = Config();
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should return undefined for countryCodeIgnoreList if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoCountryCodeIgnoreList()).to.be.undefined;
+    });
+
+    it('should be able to update countryCodeIgnoreList', () => {
+      const config = Config();
+      const countryCodeIgnoreList = ['PS', 'AD'];
+      config.updateLlmoCountryCodeIgnoreList(countryCodeIgnoreList);
+      expect(config.getLlmoCountryCodeIgnoreList()).to.deep.equal(countryCodeIgnoreList);
+    });
+  });
+
   describe('LLMO CDN Bucket Config', () => {
     it('creates a Config with llmo cdnBucketConfig property', () => {
       const data = {
@@ -2461,6 +2545,41 @@ describe('Config Tests', () => {
       ];
       config.updateLlmoCdnBucketConfig(cdnBucketConfig);
       expect(config.getLlmoCdnBucketConfig()).to.deep.equal(cdnBucketConfig);
+    });
+  });
+
+  describe('LLMO Detected CDN', () => {
+    it('creates a Config with llmo detectedCdn property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          detectedCdn: 'aem-cs-fastly',
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoDetectedCdn()).to.equal('aem-cs-fastly');
+    });
+
+    it('returns null for detectedCdn in default config', () => {
+      const config = Config();
+      expect(config.getLlmoDetectedCdn()).to.be.null;
+    });
+
+    it('returns null for detectedCdn if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoDetectedCdn()).to.be.null;
+    });
+
+    it('should be able to update detectedCdn', () => {
+      const config = Config();
+      config.updateLlmoDetectedCdn('other');
+      expect(config.getLlmoDetectedCdn()).to.equal('other');
     });
   });
 
@@ -2667,6 +2786,195 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('onboard config', () => {
+    it('returns undefined when not set', () => {
+      const config = Config();
+      expect(config.getOnboardConfig()).to.be.undefined;
+    });
+
+    it('creates a Config with onboardConfig property', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'paid' } });
+      expect(config.getOnboardConfig()).to.deep.equal({ lastProfile: 'paid' });
+    });
+
+    it('stores lastStartTime', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'paid', lastStartTime: startTime } });
+      expect(config.getOnboardConfig().lastStartTime).to.equal(startTime);
+    });
+
+    it('updates onboard config and appends to history', () => {
+      const startTime = Date.now();
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig()).to.deep.equal({
+        lastProfile: 'paid',
+        lastStartTime: startTime,
+        history: [{ profile: 'paid', startTime }],
+      });
+    });
+
+    it('accumulates history across multiple onboardings', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000, history: [{ profile: 'demo', startTime: 1000 }] } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig()).to.deep.equal({
+        lastProfile: 'paid',
+        lastStartTime: startTime,
+        history: [{ profile: 'demo', startTime: 1000 }, { profile: 'paid', startTime }],
+      });
+    });
+
+    it('includes onboardConfig with history in toDynamoItem', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'paid', lastStartTime: startTime, history: [{ profile: 'paid', startTime }] } });
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.onboardConfig).to.deep.equal({ lastProfile: 'paid', lastStartTime: startTime, history: [{ profile: 'paid', startTime }] });
+    });
+
+    it('omits onboardConfig from toDynamoItem when not set', () => {
+      const config = Config();
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.onboardConfig).to.be.undefined;
+    });
+
+    it('stores forcedOverride when provided on creation', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo', forcedOverride: true } });
+      expect(config.getOnboardConfig().forcedOverride).to.be.true;
+    });
+
+    it('stores forcedOverride:true via updateOnboardConfig', () => {
+      const startTime = Date.now();
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'demo', lastStartTime: startTime, forcedOverride: true });
+      const result = config.getOnboardConfig();
+      expect(result.forcedOverride).to.be.true;
+      expect(result.lastProfile).to.equal('demo');
+      expect(result.lastStartTime).to.equal(startTime);
+    });
+
+    it('does not set forcedOverride when not passed to updateOnboardConfig', () => {
+      const startTime = Date.now();
+      const config = Config();
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: startTime });
+      expect(config.getOnboardConfig().forcedOverride).to.be.undefined;
+    });
+
+    it('overwrites a previous forcedOverride when a clean updateOnboardConfig is applied', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000, forcedOverride: true } });
+      const newStartTime = Date.now();
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: newStartTime });
+      expect(config.getOnboardConfig().forcedOverride).to.be.undefined;
+      expect(config.getOnboardConfig().lastProfile).to.equal('paid');
+    });
+
+    it('trims history to maxHistory when the limit is exceeded', () => {
+      const existingHistory = Array.from({ length: 10 }, (_, i) => ({ profile: 'demo', startTime: i + 1 }));
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 10, history: existingHistory } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: 11 }, { maxHistory: 10 });
+      const { history } = config.getOnboardConfig();
+      expect(history).to.have.length(10);
+      expect(history[0]).to.deep.equal({ profile: 'demo', startTime: 2 });
+      expect(history[9]).to.deep.equal({ profile: 'paid', startTime: 11 });
+    });
+
+    it('does not trim history when entries are within the maxHistory limit', () => {
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 1000, history: [{ profile: 'demo', startTime: 1000 }] } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: 2000 }, { maxHistory: 10 });
+      expect(config.getOnboardConfig().history).to.have.length(2);
+    });
+
+    it('does not trim history when maxHistory is not provided', () => {
+      const existingHistory = Array.from({ length: 15 }, (_, i) => ({ profile: 'demo', startTime: i + 1 }));
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: 15, history: existingHistory } });
+      config.updateOnboardConfig({ lastProfile: 'paid', lastStartTime: 16 });
+      expect(config.getOnboardConfig().history).to.have.length(16);
+    });
+
+    it('persists forcedOverride in toDynamoItem', () => {
+      const startTime = Date.now();
+      const config = Config({ onboardConfig: { lastProfile: 'demo', lastStartTime: startTime, forcedOverride: true } });
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.onboardConfig.forcedOverride).to.be.true;
+    });
+  });
+
+  describe('Commerce LLMO Config', () => {
+    it('creates a Config with commerceLlmoConfig property', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            websiteCode: 'base',
+            storeCode: 'main_store',
+            storeViewCode: 'default',
+            hostName: 'example.com',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'api-key-123',
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('has undefined commerceLlmoConfig in default config', () => {
+      const config = Config();
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for commerceLlmoConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('should be able to update commerceLlmoConfig', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-456',
+            websiteCode: 'base',
+          },
+        },
+      };
+      const config = Config({});
+      config.updateCommerceLlmoConfig(data.commerceLlmoConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('should be able to update commerceLlmoConfig with different values', () => {
+      const config = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+          },
+        },
+      });
+
+      const newConfig = {
+        store2: {
+          environmentId: 'env-789',
+          hostName: 'new.example.com',
+        },
+      };
+      config.updateCommerceLlmoConfig(newConfig);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes commerceLlmoConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+          },
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.commerceLlmoConfig).to.deep.equal(data.getCommerceLlmoConfig());
+    });
+  });
+
   describe('LLMO Well Known Tags', () => {
     const { extractWellKnownTags } = Config();
 
@@ -2745,6 +3053,339 @@ describe('Config Tests', () => {
       config.removeLlmoTag('opportunitiesReviewed');
       const llmoConfig = config.getLlmoConfig();
       expect(llmoConfig).to.be.undefined;
+    });
+  });
+
+  describe('Audit Target URLs', () => {
+    describe('isMoneyPageUrlsEnabled', () => {
+      it('returns true when flag is explicitly set to true', () => {
+        const config = Config({ enableMoneyPageUrls: true });
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(true);
+      });
+
+      it('returns true when flag is absent from config', () => {
+        const config = Config();
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(true);
+      });
+
+      it('returns false when flag is explicitly set to false', () => {
+        const config = Config({ enableMoneyPageUrls: false });
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(false);
+      });
+
+      it('setter updates the flag and reflects in isMoneyPageUrlsEnabled', () => {
+        const config = Config();
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(true);
+        config.setEnableMoneyPageUrls(false);
+        expect(config.isMoneyPageUrlsEnabled()).to.equal(false);
+      });
+
+      it('omits enableMoneyPageUrls from toDynamoItem when not set', () => {
+        const config = Config();
+        const item = Config.toDynamoItem(config);
+        expect(item.enableMoneyPageUrls).to.be.undefined;
+      });
+
+      it('persists enableMoneyPageUrls in toDynamoItem when set via setter', () => {
+        const config = Config();
+        config.setEnableMoneyPageUrls(false);
+        const item = Config.toDynamoItem(config);
+        expect(item.enableMoneyPageUrls).to.equal(false);
+      });
+    });
+
+    it('returns empty array by default', () => {
+      const config = Config();
+      expect(config.getAuditTargetURLs()).to.deep.equal([]);
+    });
+
+    it('creates config with grouped auditTargetURLs', () => {
+      const config = Config({
+        auditTargetURLs: {
+          manual: [{ url: 'https://example.com/page1' }, { url: 'https://example.com/page2' }],
+        },
+      });
+      const result = config.getAuditTargetURLs();
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].url).to.equal('https://example.com/page1');
+      expect(result[0].source).to.equal('manual');
+      expect(result[1].url).to.equal('https://example.com/page2');
+      expect(result[1].source).to.equal('manual');
+    });
+
+    it('returns entries from both manual and moneyPages with correct source tags', () => {
+      const config = Config({
+        auditTargetURLs: {
+          manual: [{ url: 'https://example.com/manual1' }],
+          moneyPages: [{ url: 'https://example.com/money1' }, { url: 'https://example.com/money2' }],
+        },
+      });
+      const result = config.getAuditTargetURLs();
+      expect(result).to.have.lengthOf(3);
+      expect(result[0]).to.deep.equal({ url: 'https://example.com/manual1', source: 'manual' });
+      expect(result[1]).to.deep.equal({ url: 'https://example.com/money1', source: 'moneyPages' });
+      expect(result[2]).to.deep.equal({ url: 'https://example.com/money2', source: 'moneyPages' });
+    });
+
+    describe('getAuditTargetURLsBySource', () => {
+      it('returns URLs for a specific source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/m1' }, { url: 'https://example.com/m2' }],
+          },
+        });
+        const manual = config.getAuditTargetURLsBySource('manual');
+        expect(manual).to.have.lengthOf(2);
+        expect(manual[0].url).to.equal('https://example.com/m1');
+        expect(manual[1].url).to.equal('https://example.com/m2');
+      });
+
+      it('returns moneyPages URLs for moneyPages source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            moneyPages: [{ url: 'https://example.com/mp1' }, { url: 'https://example.com/mp2' }],
+          },
+        });
+        const moneyPages = config.getAuditTargetURLsBySource('moneyPages');
+        expect(moneyPages).to.have.lengthOf(2);
+        expect(moneyPages[0].url).to.equal('https://example.com/mp1');
+        expect(moneyPages[1].url).to.equal('https://example.com/mp2');
+      });
+
+      it('returns empty array for source with no entries', () => {
+        const config = Config();
+        expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([]);
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.deep.equal([]);
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.getAuditTargetURLsBySource('invalid')).to.throw('Invalid audit target source');
+      });
+    });
+
+    describe('updateAuditTargetURLs', () => {
+      it('replaces URLs for a specific source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://old.com' }],
+          },
+        });
+        config.updateAuditTargetURLs('manual', [
+          { url: 'https://new1.com' },
+          { url: 'https://new2.com' },
+        ]);
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(2);
+      });
+
+      it('rejects invalid URLs', () => {
+        const config = Config();
+        expect(() => config.updateAuditTargetURLs('manual', [{ url: 'not-a-url' }])).to.throw();
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.updateAuditTargetURLs('invalid', [{ url: 'https://example.com' }])).to.throw('Invalid audit target source');
+      });
+
+      it('accepts empty array', () => {
+        const config = Config({
+          auditTargetURLs: { manual: [{ url: 'https://example.com' }] },
+        });
+        config.updateAuditTargetURLs('manual', []);
+        expect(config.getAuditTargetURLsBySource('manual')).to.deep.equal([]);
+      });
+
+      it('replaces URLs for moneyPages source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            moneyPages: [{ url: 'https://old.com' }],
+          },
+        });
+        config.updateAuditTargetURLs('moneyPages', [
+          { url: 'https://new1.com' },
+          { url: 'https://new2.com' },
+        ]);
+        const result = config.getAuditTargetURLsBySource('moneyPages');
+        expect(result).to.have.lengthOf(2);
+        expect(result[0].url).to.equal('https://new1.com');
+        expect(result[1].url).to.equal('https://new2.com');
+      });
+    });
+
+    describe('addAuditTargetURL', () => {
+      it('appends a new URL to the specified source', () => {
+        const config = Config();
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page2' });
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(2);
+        expect(config.getAuditTargetURLsBySource('manual')[1].url).to.equal('https://example.com/page2');
+      });
+
+      it('deduplicates within the source', () => {
+        const config = Config();
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
+        config.addAuditTargetURL('manual', { url: 'https://example.com/page1' });
+        expect(config.getAuditTargetURLs()).to.have.lengthOf(1);
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
+      });
+
+      it('rejects invalid URL', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('manual', { url: 'bad-url' })).to.throw();
+      });
+
+      it('rejects missing url field', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('manual', {})).to.throw();
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('invalid', { url: 'https://example.com' })).to.throw('Invalid audit target source');
+      });
+
+      it('appends a new URL to moneyPages source', () => {
+        const config = Config();
+        config.addAuditTargetURL('moneyPages', { url: 'https://example.com/mp1' });
+        config.addAuditTargetURL('moneyPages', { url: 'https://example.com/mp2' });
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.have.lengthOf(2);
+        expect(config.getAuditTargetURLsBySource('moneyPages')[1].url).to.equal('https://example.com/mp2');
+      });
+
+      it('deduplicates across manual and moneyPages sources', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/shared' }],
+          },
+        });
+        config.addAuditTargetURL('moneyPages', { url: 'https://example.com/shared' });
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.have.lengthOf(0);
+        expect(config.getAuditTargetURLs()).to.have.lengthOf(1);
+      });
+    });
+
+    describe('removeAuditTargetURL', () => {
+      it('removes by url string from the specified source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }, { url: 'https://example.com/page2' }],
+          },
+        });
+        config.removeAuditTargetURL('manual', 'https://example.com/page2');
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
+        expect(config.getAuditTargetURLsBySource('manual')[0].url).to.equal('https://example.com/page1');
+      });
+
+      it('does nothing for non-existent url', () => {
+        const config = Config({
+          auditTargetURLs: { manual: [{ url: 'https://example.com' }] },
+        });
+        config.removeAuditTargetURL('manual', 'https://does-not-exist.com');
+        expect(config.getAuditTargetURLsBySource('manual')).to.have.lengthOf(1);
+      });
+
+      it('does nothing when auditTargetURLs is not set', () => {
+        const config = Config();
+        config.removeAuditTargetURL('manual', 'https://example.com');
+        expect(config.getAuditTargetURLs()).to.deep.equal([]);
+      });
+
+      it('rejects invalid source', () => {
+        const config = Config();
+        expect(() => config.removeAuditTargetURL('invalid', 'https://example.com')).to.throw('Invalid audit target source');
+      });
+
+      it('removes by url string from moneyPages source', () => {
+        const config = Config({
+          auditTargetURLs: {
+            moneyPages: [{ url: 'https://example.com/mp1' }, { url: 'https://example.com/mp2' }],
+          },
+        });
+        config.removeAuditTargetURL('moneyPages', 'https://example.com/mp2');
+        expect(config.getAuditTargetURLsBySource('moneyPages')).to.have.lengthOf(1);
+        expect(config.getAuditTargetURLsBySource('moneyPages')[0].url).to.equal('https://example.com/mp1');
+      });
+    });
+
+    describe('serialization', () => {
+      it('includes auditTargetURLs in toDynamoItem conversion', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        expect(item.auditTargetURLs).to.deep.equal({
+          manual: [{ url: 'https://example.com/page1' }],
+          moneyPages: [],
+        });
+      });
+
+      it('round-trips through toDynamoItem and fromDynamoItem', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [
+              { url: 'https://example.com/page1' },
+              { url: 'https://example.com/page2' },
+            ],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        const restored = Config.fromDynamoItem(item);
+        expect(restored.getAuditTargetURLs()).to.deep.equal(config.getAuditTargetURLs());
+      });
+
+      it('includes moneyPages in toDynamoItem conversion', () => {
+        const config = Config({
+          auditTargetURLs: {
+            moneyPages: [{ url: 'https://example.com/mp1' }],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        expect(item.auditTargetURLs).to.deep.equal({
+          manual: [],
+          moneyPages: [{ url: 'https://example.com/mp1' }],
+        });
+      });
+
+      it('round-trips both manual and moneyPages through serialization', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/m1' }],
+            moneyPages: [{ url: 'https://example.com/mp1' }],
+          },
+        });
+        const item = Config.toDynamoItem(config);
+        const restored = Config.fromDynamoItem(item);
+        expect(restored.getAuditTargetURLs()).to.deep.equal(config.getAuditTargetURLs());
+      });
+    });
+
+    describe('field validation', () => {
+      it('rejects extra fields', () => {
+        const config = Config();
+        expect(() => config.addAuditTargetURL('manual', {
+          url: 'https://example.com',
+          label: 'not-allowed',
+        })).to.throw();
+      });
+
+      it('strips unknown source keys from auditTargetURLs but keeps moneyPages', () => {
+        const config = Config({
+          auditTargetURLs: {
+            manual: [{ url: 'https://example.com/page1' }],
+            moneyPages: [{ url: 'https://example.com/mp1' }],
+            unknown: [{ url: 'https://example.com/page2' }],
+          },
+        });
+        const result = config.getAuditTargetURLs();
+        expect(result).to.have.lengthOf(2);
+        expect(result[0].url).to.equal('https://example.com/page1');
+        expect(result[0].source).to.equal('manual');
+        expect(result[1].url).to.equal('https://example.com/mp1');
+        expect(result[1].source).to.equal('moneyPages');
+      });
     });
   });
 });

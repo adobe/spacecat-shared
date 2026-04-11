@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
@@ -357,6 +355,22 @@ describe('OpportunityModel', () => {
     it('sets the tags of the opportunity', () => {
       instance.setTags(['newTag1', 'newTag2']);
       expect(instance.record.tags).to.deep.equal(['newTag1', 'newTag2']);
+    });
+  });
+
+  describe('getLastAuditedAt and setLastAuditedAt', () => {
+    it('returns the lastAuditedAt value', () => {
+      mockRecord.lastAuditedAt = '2025-01-15T10:30:00.000Z';
+      expect(instance.getLastAuditedAt()).to.equal('2025-01-15T10:30:00.000Z');
+    });
+
+    it('returns undefined when lastAuditedAt is not set', () => {
+      expect(instance.getLastAuditedAt()).to.be.undefined;
+    });
+
+    it('sets the lastAuditedAt value', () => {
+      instance.setLastAuditedAt('2025-03-20T14:00:00.000Z');
+      expect(instance.record.lastAuditedAt).to.equal('2025-03-20T14:00:00.000Z');
     });
   });
 

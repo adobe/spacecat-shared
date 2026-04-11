@@ -15,12 +15,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import TrialUser from './trial-user.model.js';
 import TrialUserCollection from './trial-user.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
-*/
-
 const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
   // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Organization')

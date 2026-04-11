@@ -19,10 +19,6 @@ import SentimentTopic from './sentiment-topic.model.js';
 import SentimentTopicCollection from './sentiment-topic.collection.js';
 
 /*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
-
 Data Access Patterns:
 1. Get all topics for a site: allBySiteId(siteId)
 2. Get a specific topic: findById(siteId, topicId)
@@ -54,26 +50,6 @@ const schema = new SchemaBuilder(SentimentTopic, SentimentTopicCollection)
   .addAttribute('description', {
     type: 'string',
     required: false,
-  })
-  .addAttribute('subPrompts', {
-    type: 'list',
-    items: { type: 'string' },
-    required: true,
-    default: [],
-  })
-  .addAttribute('citations', {
-    type: 'list',
-    required: false,
-    default: [],
-    postgrestIgnore: true,
-    items: {
-      type: 'map',
-      properties: {
-        url: { type: 'string', required: true },
-        timesCited: { type: 'number', required: true },
-        category: { type: 'string', required: false },
-      },
-    },
   })
   .addAttribute('enabled', {
     type: 'boolean',

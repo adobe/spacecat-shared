@@ -55,7 +55,7 @@ class SuggestionCollection extends BaseCollection {
       suggestion.setStatus(status);
     });
 
-    await this._saveMany(suggestions);
+    await this.saveMany(suggestions);
 
     return suggestions;
   }

@@ -200,6 +200,33 @@ function extractUrlsFromOpportunity(opts) {
           }
         }
         break;
+      case OPPORTUNITY_TYPES.INFO_GAIN:
+        {
+          const pushCatalogRow = (row) => {
+            const entry = row?.data && typeof row.data === 'object' ? row.data : row;
+            if (!entry || typeof entry !== 'object') {
+              return;
+            }
+            const reportUrl = entry?.report?.url;
+            if (reportUrl && typeof reportUrl === 'string') {
+              urls.push(reportUrl);
+            }
+            const discovered = entry?.discoveredOpportunities;
+            if (Array.isArray(discovered)) {
+              discovered.forEach((opp) => {
+                const targetUrl = opp?.targetUrl;
+                if (targetUrl && typeof targetUrl === 'string') {
+                  urls.push(targetUrl);
+                }
+              });
+            }
+          };
+          const embeddedSuggestions = data?.suggestions;
+          if (Array.isArray(embeddedSuggestions)) {
+            embeddedSuggestions.forEach(pushCatalogRow);
+          }
+        }
+        break;
       default:
         break;
     }

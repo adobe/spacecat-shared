@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use } from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -154,6 +152,22 @@ describe('TokowakaClient', () => {
       expect(createdClient).to.be.instanceOf(TokowakaClient);
       expect(context.tokowakaClient).to.equal(createdClient);
       expect(createdClient.previewBucketName).to.equal('test-preview-bucket');
+    });
+
+    it('should create client from context using context.s3Client directly', () => {
+      const context = {
+        env: {
+          TOKOWAKA_SITE_CONFIG_BUCKET: 'test-bucket',
+          TOKOWAKA_PREVIEW_BUCKET: 'test-preview-bucket',
+        },
+        s3Client,
+        log,
+      };
+
+      const createdClient = TokowakaClient.createFrom(context);
+
+      expect(createdClient).to.be.instanceOf(TokowakaClient);
+      expect(context.tokowakaClient).to.equal(createdClient);
     });
 
     it('should reuse existing client from context', () => {
@@ -3292,6 +3306,35 @@ describe('TokowakaClient', () => {
       }
     });
 
+    it('should throw when original HTML fetch returns null (e.g. early fetch failed and resolved null)', async () => {
+      const okResponse = {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: { get: (name) => (name === 'x-edgeoptimize-cache' ? 'HIT' : null) },
+        text: async () => '<html><body>Test HTML</body></html>',
+      };
+      fetchStub.resetBehavior();
+      fetchStub.onCall(0).resolves(okResponse);
+      fetchStub.onCall(1).resolves(okResponse);
+      fetchStub.onCall(2).resolves(okResponse);
+      fetchStub.onCall(3).rejects(new Error('Original actual fetch failed'));
+
+      try {
+        await client.previewSuggestions(
+          mockSite,
+          mockOpportunity,
+          mockSuggestions,
+          { warmupDelayMs: 0, maxRetries: 0, retryDelayMs: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.satisfy((msg) => msg.includes('Failed to fetch original or optimized HTML')
+        || msg.includes('Preview failed'));
+        expect(error.status).to.equal(500);
+      }
+    });
+
     it('should merge with existing deployed patches for the same URL', async () => {
       // Setup existing config with deployed patches
       const existingConfig = {
@@ -3799,7 +3842,7 @@ describe('TokowakaClient', () => {
         const site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -3816,7 +3859,7 @@ describe('TokowakaClient', () => {
         const site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -3829,6 +3872,76 @@ describe('TokowakaClient', () => {
       });
     });
 
+    describe('Early Return (Already Enabled via Site Config)', () => {
+      it('should return edgeOptimizeEnabled: true immediately when enabled is boolean true, without making HTTP request', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: true }) }),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
+        expect(tracingFetchStub).to.not.have.been.called;
+      });
+
+      it('should return edgeOptimizeEnabled: true immediately when enabled is a timestamp (number), without making HTTP request', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: 1772531669121 }) }),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/products');
+
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
+        expect(tracingFetchStub).to.not.have.been.called;
+      });
+
+      it('should NOT return early and should make HTTP request when enabled is false', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => ({ enabled: false }) }),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: { get: () => null },
+        };
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result.edgeOptimizeEnabled).to.be.false;
+        expect(tracingFetchStub).to.have.been.called;
+      });
+
+      it('should NOT return early and should make HTTP request when edgeOptimizeConfig is undefined', async () => {
+        const site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
+          getDeliveryType: () => 'aem_edge',
+        };
+
+        const mockResponse = {
+          status: 200,
+          headers: { get: () => null },
+        };
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result.edgeOptimizeEnabled).to.be.false;
+        expect(tracingFetchStub).to.have.been.called;
+      });
+    });
+
     describe('Direct Response (No Redirect)', () => {
       let site;
 
@@ -3836,7 +3949,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
       });
@@ -3932,7 +4045,9 @@ describe('TokowakaClient', () => {
         await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         const fetchOptions = tracingFetchStub.firstCall.args[1];
-        expect(fetchOptions.headers['User-Agent']).to.equal('Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0');
+        const userAgent = fetchOptions.headers['User-Agent'];
+        expect(userAgent).to.include('Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0');
+        expect(userAgent).to.include('Mozilla/5.0');
       });
 
       it('should pass timeout option to tracingFetch', async () => {
@@ -3959,7 +4074,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
         clock = sinon.useFakeTimers();
@@ -4094,7 +4209,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
       });
@@ -4131,7 +4246,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com/',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -4152,7 +4267,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
 
@@ -4177,7 +4292,7 @@ describe('TokowakaClient', () => {
         site = {
           getId: () => 'site-id',
           getBaseURL: () => 'https://example.com',
-          getConfig: () => ({}),
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
           getDeliveryType: () => 'aem_edge',
         };
       });
@@ -4220,6 +4335,472 @@ describe('TokowakaClient', () => {
           edgeOptimizeEnabled: true,
         });
       });
+    });
+  });
+
+  describe('deployToEdge', () => {
+    let deploySuggestionsStub;
+    let fetchMetaconfigStub;
+    let uploadMetaconfigStub;
+
+    function makeSuggestion(id, data, status = 'NEW') {
+      let storedData = { ...data };
+      let storedUpdatedBy;
+      return {
+        getId: () => id,
+        getStatus: () => status,
+        getData: () => storedData,
+        setData: (d) => { storedData = d; },
+        setUpdatedBy: (v) => { storedUpdatedBy = v; },
+        getUpdatedBy: () => storedUpdatedBy,
+        save: sinon.stub().resolves(),
+      };
+    }
+
+    beforeEach(() => {
+      deploySuggestionsStub = sinon.stub(client, 'deploySuggestions');
+      fetchMetaconfigStub = sinon.stub(client, 'fetchMetaconfig');
+      uploadMetaconfigStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+    });
+
+    it('should deploy regular suggestions only', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: { action: 'replace', selector: 'h1' } });
+      const s2 = makeSuggestion('s2', { url: 'https://example.com/page2', transformRules: { action: 'replace', selector: 'h2' } });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1, s2],
+        failedSuggestions: [],
+      });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1, s2],
+        allSuggestions: [s1, s2],
+        updatedBy: 'test-user',
+      });
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.coveredSuggestions).to.have.length(0);
+      expect(s1.save).to.have.been.called;
+      expect(s1.getUpdatedBy()).to.equal('test-user');
+    });
+
+    it('should deploy regular suggestions in PENDING_VALIDATION status', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} }, 'PENDING_VALIDATION');
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+        updatedBy: 'test-user',
+      });
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
+      expect(s1.save).to.have.been.called;
+    });
+
+    it('should clear edgeOptimizeStatus STALE when deploying', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {}, edgeOptimizeStatus: 'STALE' });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+      });
+
+      expect(s1.getData()).to.not.have.property('edgeOptimizeStatus');
+    });
+
+    it('should mark ineligible suggestions as failed with statusCode 400', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1' });
+      const ineligible = { suggestion: s1, reason: 'not eligible' };
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [],
+        failedSuggestions: [ineligible],
+      });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+      });
+
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].statusCode).to.equal(400);
+      expect(result.failedSuggestions[0].reason).to.equal('not eligible');
+    });
+
+    it('should re-throw errors from deploySuggestions', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1' });
+      deploySuggestionsStub.rejects(new Error('deploy error'));
+
+      try {
+        await client.deployToEdge({
+          site: mockSite,
+          opportunity: mockOpportunity,
+          targetSuggestions: [s1],
+          allSuggestions: [s1],
+        });
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error.message).to.equal('deploy error');
+      }
+    });
+
+    it('should deploy domain-wide suggestion and update metaconfig', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: true });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      expect(uploadMetaconfigStub).to.have.been.calledOnce;
+      expect(result.succeededSuggestions).to.include(dw);
+      expect(dw.getData()).to.have.property('edgeDeployed');
+    });
+
+    it('should create new metaconfig when none exists for domain-wide', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+
+      fetchMetaconfigStub.resolves(null);
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      const uploadCall = uploadMetaconfigStub.firstCall.args[1];
+      expect(uploadCall).to.have.property('siteId', 'site-123');
+    });
+
+    it('should mark non-batch suggestions covered by domain-wide patterns', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const covered = makeSuggestion('covered1', { url: 'https://example.com/page1' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw, covered],
+      });
+
+      expect(result.coveredSuggestions).to.include(covered);
+      expect(covered.getData()).to.have.property('coveredByDomainWide', 'dw1');
+    });
+
+    it('should not mark already-domain-wide suggestions as covered', async () => {
+      const dw1 = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const dw2 = makeSuggestion('dw2', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/other/.*'],
+        url: 'https://example.com/other/page',
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw1],
+        allSuggestions: [dw1, dw2],
+      });
+
+      // dw2 is domain-wide so should not appear in coveredSuggestions
+      expect(result.coveredSuggestions).to.not.include(dw2);
+    });
+
+    it('should not mark non-NEW suggestions as covered', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const approved = makeSuggestion('ap1', { url: 'https://example.com/page1' }, 'APPROVED');
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw, approved],
+      });
+
+      expect(result.coveredSuggestions).to.not.include(approved);
+    });
+
+    it('should warn but continue when covered-suggestion save fails', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const covered = makeSuggestion('covered1', { url: 'https://example.com/page1' });
+      covered.save = sinon.stub().rejects(new Error('DB error'));
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw, covered],
+      });
+
+      // domain-wide itself still succeeded
+      expect(result.succeededSuggestions).to.include(dw);
+      // covered is not in either list — the error was swallowed with a warning
+      expect(result.coveredSuggestions).to.not.include(covered);
+      expect(log.warn).to.have.been.called;
+    });
+
+    it('should mark domain-wide as failed with statusCode 500 when metaconfig upload fails', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      uploadMetaconfigStub.rejects(new Error('upload failed'));
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      expect(result.succeededSuggestions).to.not.include(dw);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].statusCode).to.equal(500);
+      expect(result.failedSuggestions[0].reason).to.equal('upload failed');
+    });
+
+    it('should skip invalid regex in same-batch pattern filtering without throwing', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['[invalid', '^https://example\\.com/.*'],
+      });
+      const regular = makeSuggestion('r1', { url: 'https://example.com/page1' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw, regular],
+        allSuggestions: [dw, regular],
+      });
+
+      // valid pattern matches regular, so it's skipped in batch
+      expect(result.coveredSuggestions).to.include(regular);
+    });
+
+    it('should skip domain-wide suggestion with no valid allowedRegexPatterns', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: [],
+      });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(uploadMetaconfigStub).to.not.have.been.called;
+    });
+
+    it('should warn and skip invalid regex patterns for domain-wide', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['[invalid', '^https://example\\.com/.*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      expect(log.warn).to.have.been.called;
+      expect(uploadMetaconfigStub).to.have.been.calledOnce;
+    });
+
+    it('should skip same-batch regular suggestions covered by domain-wide patterns', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const regular = makeSuggestion('r1', { url: 'https://example.com/page1' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw, regular],
+        allSuggestions: [dw, regular],
+      });
+
+      // regular was in same batch as domain-wide, should be marked covered
+      expect(result.coveredSuggestions).to.include(regular);
+      expect(regular.getData()).to.have.property('coveredByDomainWide', 'same-batch-deployment');
+      expect(regular.getData()).to.have.property('skippedInDeployment', true);
+      // deploySuggestions should NOT have been called for the regular suggestion
+      expect(deploySuggestionsStub).to.not.have.been.called;
+    });
+
+    it('should surface same-batch save failures as failed suggestions with statusCode 500', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const regular = makeSuggestion('r1', { url: 'https://example.com/page1' });
+      regular.save = sinon.stub().rejects(new Error('save failed'));
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw, regular],
+        allSuggestions: [dw, regular],
+      });
+
+      expect(result.failedSuggestions.some((f) => f.suggestion === regular)).to.be.true;
+      expect(result.failedSuggestions.find((f) => f.suggestion === regular).statusCode)
+        .to.equal(500);
+      expect(result.coveredSuggestions).to.not.include(regular);
+      expect(log.warn).to.have.been.called;
+    });
+
+    it('should use default updatedBy when not provided', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+      });
+
+      expect(s1.getUpdatedBy()).to.equal('edge-deploy');
+    });
+
+    it('should deploy regular suggestion alongside domain-wide when URL does not match pattern', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/special/.*'],
+      });
+      // URL does not match the domain-wide pattern, so stays in validSuggestions
+      const regular = makeSuggestion('r1', { url: 'https://example.com/other/page' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [regular],
+        failedSuggestions: [],
+      });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw, regular],
+        allSuggestions: [dw, regular],
+      });
+
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
+      expect(result.succeededSuggestions).to.include(regular);
+      expect(result.coveredSuggestions).to.not.include(regular);
+    });
+
+    it('should not call deploySuggestions when all regular suggestions are skipped in batch', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const r1 = makeSuggestion('r1', { url: 'https://example.com/page1' });
+      const r2 = makeSuggestion('r2', { url: 'https://example.com/page2' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw, r1, r2],
+        allSuggestions: [dw, r1, r2],
+      });
+
+      expect(deploySuggestionsStub).to.not.have.been.called;
+    });
+
+    it('should not include same-batch skipped suggestions in covered-by-pattern check', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const skipped = makeSuggestion('r1', { url: 'https://example.com/page1' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw, skipped],
+        allSuggestions: [dw, skipped],
+      });
+
+      // skipped is in same batch, it should be in coveredSuggestions once (via same-batch path)
+      // but NOT doubly added via the per-suggestion covered-marking path
+      const skippedInCovered = result.coveredSuggestions.filter((s) => s.getId() === 'r1');
+      expect(skippedInCovered).to.have.length(1);
     });
   });
 });

@@ -25,12 +25,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Site, { computeExternalIds } from './site.model.js';
 import SiteCollection from './site.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Site, SiteCollection)
   // this will add an attribute 'organizationId' as well as an index 'byOrganizationId'
   .addReference('belongs_to', 'Organization')
@@ -43,6 +37,11 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addReference('has_many', 'Opportunities')
   .addReference('has_many', 'SiteCandidates')
   .addReference('has_many', 'SiteEnrollments')
+  // TODO(Phase 2 audit gap): removeDependents silently removes all SiteImsOrgAccess records on
+  // site deletion without writing AccessGrantLog 'revoke' entries. Anyone auditing "why did
+  // agency X lose access to site Y" will find nothing in the log. Add a model-level pre-remove
+  // hook that writes revoke audit entries before this ships to production.
+  .addReference('has_many', 'SiteImsOrgAccesses', [], { removeDependents: true })
   .addReference('has_many', 'SiteTopForms')
   .addReference('has_many', 'SiteTopPages')
   .addReference('has_many', 'TrialUserActivities')
@@ -115,6 +114,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
       environmentId: { type: 'string' },
       authorURL: { type: 'string', validate: (value) => isValidUrl(value) },
       siteId: { type: 'string' },
+      tenantId: { type: 'string' },
+      ipAllowlistExists: { type: 'boolean' },
+      imsOrgId: { type: 'string' },
+      contentSourcePath: { type: 'string' },
     },
   })
   .addAttribute('hlxConfig', {

@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
@@ -103,6 +101,7 @@ describe('ImsClient', () => {
 
     beforeEach(() => {
       client = ImsClient.createFrom(mockContext);
+      client.retryBaseDelayMs = 0;
     });
 
     it('should throw an error for invalid imsOrgId', async () => {
@@ -144,9 +143,10 @@ describe('ImsClient', () => {
 
     it('should handle IMS service token request failures', async () => {
       nock(`https://${DUMMY_HOST}`)
-        // Mock the token request, with a 500 server error response
+        // Mock the token request, with a 500 server error response — must cover all retry attempts
         .post('/ims/token/v4')
         .query(true)
+        .times(3)
         .reply(500);
 
       await expect(client.getImsOrganizationDetails('123456@AdobeOrg')).to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 500');
@@ -186,9 +186,10 @@ describe('ImsClient', () => {
 
     it('should handle IMS service token v3 request failures', async () => {
       nock(`https://${DUMMY_HOST}`)
-        // Mock the token request, with a 500 server error response
+        // Mock the token request, with a 500 server error response — must cover all retry attempts
         .post('/ims/token/v3')
         .query(true)
+        .times(3)
         .reply(500);
 
       await expect(client.getServiceAccessTokenV3()).to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 500');
@@ -232,9 +233,10 @@ describe('ImsClient', () => {
         .get(`/ims/organizations/${testOrgId}/v2`)
         .query(true)
         .reply(200, IMS_FETCH_ORG_DETAILS_RESPONSE)
-        // Mock the request for group members in 123456789
+        // Mock the request for group members in 123456789 — 500 must cover all retry attempts
         .get(`/ims/organizations/${testOrgId}/groups/${GROUP_1_ID}/members`)
         .query(true)
+        .times(3)
         .reply(500);
 
       await expect(client.getImsOrganizationDetails(testOrgId)).to.be.rejectedWith('IMS getUsersByImsGroupId request failed with status: 500');
@@ -277,6 +279,73 @@ describe('ImsClient', () => {
       const orgDetails = await client.getImsOrganizationDetails(testOrgId);
       expect(orgDetails.admins).to.be.an('array');
       expect(orgDetails.admins).to.have.length(0);
+    });
+  });
+
+  describe('getServicePrincipalAccessToken', () => {
+    let client;
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+      client.retryBaseDelayMs = 0;
+    });
+
+    it('throws when imsOrgId is missing', async () => {
+      await expect(client.getServicePrincipalAccessToken('')).to.be.rejectedWith('imsOrgId param is required.');
+      await expect(client.getServicePrincipalAccessToken(null)).to.be.rejectedWith('imsOrgId param is required.');
+      await expect(client.getServicePrincipalAccessToken(undefined)).to.be.rejectedWith('imsOrgId param is required.');
+    });
+
+    it('includes org_id in the POST body to IMS token v3', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3', (body) => {
+          const str = typeof body === 'string' ? body : body.toString('utf8');
+          return str.includes('org_id') && str.includes('1234567890ABCDEF12345678@AdobeOrg');
+        })
+        .query(true)
+        .reply(200, {
+          access_token: 'org-scoped-token',
+          expires_in: 3600,
+          token_type: 'Bearer',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId)).to.be.eventually.deep.equal({
+        access_token: 'org-scoped-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+      });
+    });
+
+    it('returns org-scoped token payload on success', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(200, {
+          access_token: 'org-scoped-token',
+          expires_in: 3600,
+          token_type: 'Bearer',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId)).to.be.eventually.deep.equal({
+        access_token: 'org-scoped-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+      });
+    });
+
+    it('throws when IMS returns non-OK status', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .times(3)
+        .reply(500);
+
+      await expect(client.getServicePrincipalAccessToken(orgId)).to.be.rejectedWith(
+        'IMS getServicePrincipalAccessToken request failed with status: 500',
+      );
     });
   });
 
@@ -343,6 +412,7 @@ describe('ImsClient', () => {
 
     beforeEach(() => {
       client = ImsClient.createFrom(mockContext);
+      client.retryBaseDelayMs = 0;
     });
 
     it('throws error if no access token is provided', async () => {
@@ -350,16 +420,20 @@ describe('ImsClient', () => {
     });
 
     it('throws error if fetch throws error', async () => {
+      // Network errors are retried — mock all 3 attempts
       nock(`https://${DUMMY_HOST}`)
         .get('/ims/organizations/v6')
+        .times(3)
         .replyWithError('test error');
 
       await expect(client.getImsUserOrganizations('some-token')).to.be.rejectedWith('test error');
     });
 
     it('throws error if request fails', async () => {
+      // 5xx responses are retried — mock all 3 attempts
       nock(`https://${DUMMY_HOST}`)
         .get('/ims/organizations/v6')
+        .times(3)
         .reply(500, {
           error: 'server_error',
           error_description: 'Boom',
@@ -412,6 +486,7 @@ describe('ImsClient', () => {
 
     beforeEach(() => {
       client = ImsClient.createFrom(mockContext);
+      client.retryBaseDelayMs = 0;
     });
 
     it('throws error if no access token is provided', async () => {
@@ -419,8 +494,10 @@ describe('ImsClient', () => {
     });
 
     it('throws error if request fails', async () => {
+      // 5xx responses are retried — mock all 3 attempts
       nock(`https://${DUMMY_HOST}`)
         .post('/ims/validate_token/v1')
+        .times(3)
         .reply(500, {
           error: 'server_error',
           error_description: 'Boom',
@@ -605,6 +682,7 @@ describe('ImsClient', () => {
 
     beforeEach(() => {
       client = ImsClient.createFrom(mockContext);
+      client.retryBaseDelayMs = 0;
     });
 
     it('throws error when accessToken is not provided', async () => {
@@ -633,10 +711,12 @@ describe('ImsClient', () => {
     });
 
     it('throws error when account cluster request fails', async () => {
+      // 5xx responses are retried — mock all 3 attempts
       nock(`https://${DUMMY_HOST}`)
         .get('/ims/account_cluster/v2')
         .query({ client_id: mockContext.env.IMS_CLIENT_ID })
         .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .times(3)
         .reply(500, {
           error: 'server_error',
           error_description: 'Internal server error',
@@ -702,10 +782,12 @@ describe('ImsClient', () => {
     });
 
     it('handles non-JSON error response gracefully', async () => {
+      // 5xx responses are retried — mock all 3 attempts
       nock(`https://${DUMMY_HOST}`)
         .get('/ims/account_cluster/v2')
         .query({ client_id: mockContext.env.IMS_CLIENT_ID })
         .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .times(3)
         .reply(500, 'Internal Server Error');
 
       await expect(client.getAccountCluster(testAccessToken))
@@ -713,10 +795,12 @@ describe('ImsClient', () => {
     });
 
     it('handles empty error response body gracefully', async () => {
+      // 5xx responses are retried — mock all 3 attempts
       nock(`https://${DUMMY_HOST}`)
         .get('/ims/account_cluster/v2')
         .query({ client_id: mockContext.env.IMS_CLIENT_ID })
         .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .times(3)
         .reply(503, {});
 
       await expect(client.getAccountCluster(testAccessToken))
@@ -724,10 +808,12 @@ describe('ImsClient', () => {
     });
 
     it('handles error response with no error or message fields', async () => {
+      // 429 is retried — mock all 3 attempts
       nock(`https://${DUMMY_HOST}`)
         .get('/ims/account_cluster/v2')
         .query({ client_id: mockContext.env.IMS_CLIENT_ID })
         .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .times(3)
         .reply(429, {
           retryAfter: 60,
           code: 'rate_limit_exceeded',
@@ -735,6 +821,115 @@ describe('ImsClient', () => {
 
       await expect(client.getAccountCluster(testAccessToken))
         .to.be.rejectedWith('IMS getAccountCluster request failed with status: 429');
+    });
+  });
+
+  describe('imsApiCall retry behavior', () => {
+    let client;
+    let warnSpy;
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+      // Zero delay avoids real sleep in tests while still exercising retry paths
+      client.retryBaseDelayMs = 0;
+      warnSpy = sandbox.spy(console, 'warn');
+    });
+
+    it('retries on 5xx and succeeds on second attempt', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .reply(503) // attempt 1: server error
+        .get('/ims/organizations/v6')
+        .reply(200, []); // attempt 2: success
+
+      const result = await client.getImsUserOrganizations('some-token');
+
+      expect(result).to.deep.equal([]);
+      expect(warnSpy.calledOnce).to.be.true;
+      expect(warnSpy.firstCall.args[0]).to.include('/ims/organizations/v6');
+      expect(warnSpy.firstCall.args[0]).to.include('503');
+      expect(warnSpy.firstCall.args[0]).to.include('attempt 1/3');
+    });
+
+    it('retries on 429 rate limiting and succeeds on second attempt', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .reply(429) // attempt 1: rate limited
+        .get('/ims/organizations/v6')
+        .reply(200, []); // attempt 2: success
+
+      const result = await client.getImsUserOrganizations('some-token');
+
+      expect(result).to.deep.equal([]);
+      expect(warnSpy.calledOnce).to.be.true;
+      expect(warnSpy.firstCall.args[0]).to.include('429');
+      expect(warnSpy.firstCall.args[0]).to.include('attempt 1/3');
+    });
+
+    it('respects Retry-After header on 429 response', async () => {
+      // Retry-After: 0 keeps the test instant while still exercising the header path
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .reply(429, '', { 'Retry-After': '0' }) // attempt 1: rate limited with header
+        .get('/ims/organizations/v6')
+        .reply(200, []); // attempt 2: success
+
+      const result = await client.getImsUserOrganizations('some-token');
+
+      expect(result).to.deep.equal([]);
+      expect(warnSpy.calledOnce).to.be.true;
+      expect(warnSpy.firstCall.args[0]).to.include('429');
+    });
+
+    it('retries on network error and succeeds on third attempt', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .replyWithError('ECONNRESET') // attempt 1: network error
+        .get('/ims/organizations/v6')
+        .replyWithError('ECONNRESET') // attempt 2: network error
+        .get('/ims/organizations/v6')
+        .reply(200, []); // attempt 3: success
+
+      const result = await client.getImsUserOrganizations('some-token');
+
+      expect(result).to.deep.equal([]);
+      expect(warnSpy.calledTwice).to.be.true;
+      expect(warnSpy.firstCall.args[0]).to.include('attempt 1/3');
+      expect(warnSpy.secondCall.args[0]).to.include('attempt 2/3');
+    });
+
+    it('exhausts all retries on network error and throws', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .times(3)
+        .replyWithError('ECONNRESET');
+
+      await expect(client.getImsUserOrganizations('some-token')).to.be.rejectedWith('ECONNRESET');
+
+      // Two warn logs (attempts 1 and 2), no warn on final attempt — error log instead
+      expect(warnSpy.calledTwice).to.be.true;
+    });
+
+    it('returns last bad response when all 5xx retries exhausted', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .times(3)
+        .reply(503);
+
+      await expect(client.getImsUserOrganizations('some-token')).to.be.rejectedWith('IMS getImsUserOrganizations request failed with status: 503');
+
+      // Two warn logs for the two retries; no warn on last attempt (just returns the response)
+      expect(warnSpy.calledTwice).to.be.true;
+    });
+
+    it('does not retry on 4xx client errors', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .reply(401, { error: 'unauthorized' });
+
+      await expect(client.getImsUserOrganizations('some-token')).to.be.rejectedWith('IMS getImsUserOrganizations request failed with status: 401');
+
+      expect(warnSpy.called).to.be.false;
     });
   });
 });

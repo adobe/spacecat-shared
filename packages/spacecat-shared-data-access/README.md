@@ -1,11 +1,9 @@
-# Spacecat Shared Data Access (v3)
+# Spacecat Shared Data Access
 
 `@adobe/spacecat-shared-data-access` is the shared data-access layer used by Spacecat services.
 
-This package is **v3 Postgres-first**:
 - Primary datastore: **Postgres via PostgREST** (`@supabase/postgrest-js`)
 - Optional secondary datastore: **S3** (for `Configuration`)
-- No ElectroDB/DynamoDB runtime dependency in v3 behavior
 
 ## Installation
 
@@ -157,6 +155,22 @@ Current exported entities include:
 - `Suggestion`
 - `TrialUser`
 - `TrialUserActivity`
+
+## Site deliveryConfig
+
+The `deliveryConfig` object on a Site stores delivery infrastructure details. It is a flexible JSON object (`type: 'any'`) — unknown properties are preserved (not stripped).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `programId` | string | Cloud Manager program ID |
+| `environmentId` | string | Cloud Manager environment ID (AEM CS only) |
+| `authorURL` | string | AEM author instance URL (e.g., `https://author-p12345-e67890.adobeaemcloud.com`) |
+| `siteId` | string | Spacecat site ID |
+| `imsOrgId` | string | Adobe IMS Organization ID of the customer |
+| `tenantId` | string | Cloud Manager tenant identifier (from `/program/{programId}` response) |
+| `ipAllowlistExists` | boolean | Whether the CM program has real IP allowlists configured (excludes default `0.0.0.0/32` entries) |
+| `preferContentApi` | boolean | Whether to prefer the Content API for content retrieval |
+| `contentSourcePath` | string | AEM content root path for a site. Used to disambiguate multiple sites that share the same Cloud Manager program and environment. Corresponds to `/content/<site-name>` in the AEM repository. |
 
 ## Architecture
 

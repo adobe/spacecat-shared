@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
@@ -90,7 +88,7 @@ describe('SiteTopFormCollection', () => {
 
     it('removes all SiteTopForms for a given siteId and source', async () => {
       const siteId = 'site12345';
-      const source = 'ahrefs';
+      const source = 'seo';
 
       instance.allBySiteIdAndSource = stub().resolves([model]);
 

@@ -15,12 +15,14 @@ import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
 
 import ApiKeyCollection from '../api-key/api-key.collection.js';
 import AsyncJobCollection from '../async-job/async-job.collection.js';
+import ContactSalesLeadCollection from '../contact-sales-lead/contact-sales-lead.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import AuditUrlCollection from '../audit-url/audit-url.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
 import ConsumerCollection from '../consumer/consumer.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
 import EntitlementCollection from '../entitlement/entitlement.collection.js';
+import GeoExperimentCollection from '../geo-experiment/geo-experiment.collection.js';
 import FixEntityCollection from '../fix-entity/fix-entity.collection.js';
 import FixEntitySuggestionCollection from '../fix-entity-suggestion/fix-entity-suggestion.collection.js';
 import ImportJobCollection from '../import-job/import-job.collection.js';
@@ -38,20 +40,27 @@ import SiteEnrollmentCollection from '../site-enrollment/site-enrollment.collect
 import SiteTopFormCollection from '../site-top-form/site-top-form.collection.js';
 import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
+import SuggestionGrantCollection from '../suggestion-grant/suggestion-grant.collection.js';
 import PageIntentCollection from '../page-intent/page-intent.collection.js';
 import ReportCollection from '../report/report.collection.js';
 import TrialUserCollection from '../trial-user/trial-user.collection.js';
 import TrialUserActivityCollection from '../trial-user-activity/trial-user-activity.collection.js';
+import TokenCollection from '../token/token.collection.js';
 import PageCitabilityCollection from '../page-citability/page-citability.collection.js';
+import PlgOnboardingCollection from '../plg-onboarding/plg-onboarding.collection.js';
 import SentimentGuidelineCollection from '../sentiment-guideline/sentiment-guideline.collection.js';
 import SentimentTopicCollection from '../sentiment-topic/sentiment-topic.collection.js';
+import AccessGrantLogCollection from '../access-grant-log/access-grant-log.collection.js';
+import SiteImsOrgAccessCollection from '../site-ims-org-access/site-ims-org-access.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
+import ContactSalesLeadSchema from '../contact-sales-lead/contact-sales-lead.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
 import AuditUrlSchema from '../audit-url/audit-url.schema.js';
 import ConsumerSchema from '../consumer/consumer.schema.js';
 import EntitlementSchema from '../entitlement/entitlement.schema.js';
+import GeoExperimentSchema from '../geo-experiment/geo-experiment.schema.js';
 import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
 import FixEntitySuggestionSchema from '../fix-entity-suggestion/fix-entity-suggestion.schema.js';
 import ExperimentSchema from '../experiment/experiment.schema.js';
@@ -70,13 +79,18 @@ import SiteEnrollmentSchema from '../site-enrollment/site-enrollment.schema.js';
 import SiteTopFormSchema from '../site-top-form/site-top-form.schema.js';
 import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
 import SuggestionSchema from '../suggestion/suggestion.schema.js';
+import SuggestionGrantSchema from '../suggestion-grant/suggestion-grant.schema.js';
 import PageIntentSchema from '../page-intent/page-intent.schema.js';
 import ReportSchema from '../report/report.schema.js';
 import TrialUserSchema from '../trial-user/trial-user.schema.js';
 import TrialUserActivitySchema from '../trial-user-activity/trial-user-activity.schema.js';
+import TokenSchema from '../token/token.schema.js';
 import PageCitabilitySchema from '../page-citability/page-citability.schema.js';
+import PlgOnboardingSchema from '../plg-onboarding/plg-onboarding.schema.js';
 import SentimentGuidelineSchema from '../sentiment-guideline/sentiment-guideline.schema.js';
 import SentimentTopicSchema from '../sentiment-topic/sentiment-topic.schema.js';
+import AccessGrantLogSchema from '../access-grant-log/access-grant-log.schema.js';
+import SiteImsOrgAccessSchema from '../site-ims-org-access/site-ims-org-access.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -158,7 +172,7 @@ class EntityRegistry {
 
   static getEntities() {
     return Object.keys(this.entities).reduce((acc, key) => {
-      acc[key] = this.entities[key].schema.toElectroDBSchema();
+      acc[key] = this.entities[key].schema.toSchema();
       return acc;
     }, {});
   }
@@ -172,13 +186,15 @@ class EntityRegistry {
   }
 }
 
-// Register ElectroDB-based entities only (Configuration is handled separately)
+// Register entities (Configuration is handled separately via S3)
 EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
+EntityRegistry.registerEntity(ContactSalesLeadSchema, ContactSalesLeadCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(AuditUrlSchema, AuditUrlCollection);
 EntityRegistry.registerEntity(ConsumerSchema, ConsumerCollection);
 EntityRegistry.registerEntity(EntitlementSchema, EntitlementCollection);
+EntityRegistry.registerEntity(GeoExperimentSchema, GeoExperimentCollection);
 EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);
 EntityRegistry.registerEntity(FixEntitySuggestionSchema, FixEntitySuggestionCollection);
 EntityRegistry.registerEntity(ExperimentSchema, ExperimentCollection);
@@ -197,13 +213,18 @@ EntityRegistry.registerEntity(SiteEnrollmentSchema, SiteEnrollmentCollection);
 EntityRegistry.registerEntity(SiteTopFormSchema, SiteTopFormCollection);
 EntityRegistry.registerEntity(SiteTopPageSchema, SiteTopPageCollection);
 EntityRegistry.registerEntity(SuggestionSchema, SuggestionCollection);
+EntityRegistry.registerEntity(SuggestionGrantSchema, SuggestionGrantCollection);
 EntityRegistry.registerEntity(PageIntentSchema, PageIntentCollection);
 EntityRegistry.registerEntity(ReportSchema, ReportCollection);
 EntityRegistry.registerEntity(TrialUserSchema, TrialUserCollection);
 EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollection);
+EntityRegistry.registerEntity(TokenSchema, TokenCollection);
 EntityRegistry.registerEntity(PageCitabilitySchema, PageCitabilityCollection);
+EntityRegistry.registerEntity(PlgOnboardingSchema, PlgOnboardingCollection);
 EntityRegistry.registerEntity(SentimentGuidelineSchema, SentimentGuidelineCollection);
 EntityRegistry.registerEntity(SentimentTopicSchema, SentimentTopicCollection);
+EntityRegistry.registerEntity(AccessGrantLogSchema, AccessGrantLogCollection);
+EntityRegistry.registerEntity(SiteImsOrgAccessSchema, SiteImsOrgAccessCollection);
 EntityRegistry.defaultEntities = { ...EntityRegistry.entities };
 
 export default EntityRegistry;

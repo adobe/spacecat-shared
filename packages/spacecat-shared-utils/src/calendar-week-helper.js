@@ -40,8 +40,12 @@ function has53CalendarWeeks(year) {
 }
 
 function isValidWeek(week, year) {
-  if (!Number.isInteger(year) || year < 100 || !Number.isInteger(week) || week < 1) return false;
-  if (week === 53) return has53CalendarWeeks(year);
+  if (!Number.isInteger(year) || year < 100 || !Number.isInteger(week) || week < 1) {
+    return false;
+  }
+  if (week === 53) {
+    return has53CalendarWeeks(year);
+  }
   return week <= 52;
 }
 

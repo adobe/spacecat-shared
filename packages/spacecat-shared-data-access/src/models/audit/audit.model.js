@@ -54,6 +54,7 @@ class Audit extends BaseModel {
     LLM_ERROR_PAGES: 'llm-error-pages',
     COSTS: 'costs',
     STRUCTURED_DATA: 'structured-data',
+    RELATED_URLS: 'related-urls',
     STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
     FORMS_OPPORTUNITIES: 'forms-opportunities',
     SITE_DETECTION: 'site-detection',
@@ -83,10 +84,17 @@ class Audit extends BaseModel {
     NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
     TOC: 'toc',
     WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
+    REDDIT_ANALYSIS: 'reddit-analysis',
+    YOUTUBE_ANALYSIS: 'youtube-analysis',
+    CITED_ANALYSIS: 'cited-analysis',
     COMMERCE_PRODUCT_ENRICHMENTS: 'commerce-product-enrichments',
     COMMERCE_PRODUCT_ENRICHMENTS_YEARLY: 'commerce-product-enrichments-yearly',
     COMMERCE_PRODUCT_PAGE_ENRICHMENT: 'commerce-product-page-enrichment',
     COMMERCE_PRODUCT_CATALOG_ENRICHMENT: 'commerce-product-catalog-enrichment',
+    COMMERCE_PRODUCT_ENRICHMENTS_AUTO_FIX: 'commerce-product-enrichments-auto-fix',
+    COMMERCE_PRODUCT_CATALOG_ENRICHMENT_AUTO_FIX: 'commerce-product-catalog-enrichment-auto-fix',
+    CWV_TRENDS_AUDIT: 'cwv-trends-audit',
+    OFFSITE_BRAND_PRESENCE: 'offsite-brand-presence',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

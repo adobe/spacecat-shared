@@ -12,6 +12,7 @@
 
 import apiKeys from './api-keys.fixtures.js';
 import asyncJobs from './async-jobs.fixture.js';
+import contactSalesLeads from './contact-sales-leads.fixture.js';
 import audits from './audits.fixture.js';
 import auditUrls from './audit-urls.fixture.js';
 import configurations from './configurations.fixture.js';
@@ -38,6 +39,8 @@ import entitlements from './entitlements.fixture.js';
 import trialUsers from './trial-users.fixture.js';
 import trialUserActivities from './trial-user-activities.fixture.js';
 import siteEnrollments from './site-enrollments.fixture.js';
+import siteImsOrgAccesses from './site-ims-org-accesses.fixture.js';
+import accessGrantLogs from './access-grant-logs.fixture.js';
 import pageCitabilities from './page-citabilities.fixture.js';
 import sentimentTopics from './sentiment-topics.fixture.js';
 import sentimentGuidelines from './sentiment-guidelines.fixture.js';
@@ -45,6 +48,7 @@ import sentimentGuidelines from './sentiment-guidelines.fixture.js';
 export default {
   apiKeys,
   asyncJobs,
+  contactSalesLeads,
   audits,
   auditUrls,
   configurations,
@@ -71,6 +75,8 @@ export default {
   trialUsers,
   trialUserActivities,
   siteEnrollments,
+  siteImsOrgAccesses,
+  accessGrantLogs,
   pageCitabilities,
   sentimentTopics,
   sentimentGuidelines,

@@ -26,13 +26,14 @@ export {
   isObject,
   isString,
   isValidDate,
-  isValidEmail,
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
   isValidHelixPreviewUrl,
   toBoolean,
 } from './functions.js';
+
+export { isValidEmail } from './email.js';
 
 export {
   resolveSecretsName,
@@ -83,7 +84,7 @@ export { s3Wrapper, getObjectFromKey } from './s3.js';
 
 export { OPPORTUNITY_TYPES, DEFAULT_CPC_VALUE } from './constants.js';
 
-export { fetch } from './adobe-fetch.js';
+export { fetch, resetFetchContext, clearFetchCache } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';
 export {
   getHighFormViewsLowConversionMetrics,
@@ -132,3 +133,34 @@ export {
   GRANULARITY_KEY_BUILDERS,
   ISSUE_GRANULARITY_MAP,
 } from './aggregation/aggregation-strategies.js';
+
+export {
+  TOKEN_GRANT_CONFIG,
+  OPPORTUNITY_GRANT_CONFIG,
+  getTokenGrantConfig,
+  getTokenGrantConfigByOpportunity,
+  getTokenTypeForOpportunity,
+  getCurrentCycle,
+} from './token-grant-config.js';
+
+export {
+  AUDIT_OPPORTUNITY_MAP,
+  getOpportunitiesForAudit,
+  getAuditsForOpportunity,
+  getAllOpportunityTypes,
+  getAllAuditTypes,
+} from './opportunity/audit-mapping.js';
+
+export {
+  DEPENDENCY_SOURCES,
+  OPPORTUNITY_DEPENDENCY_MAP,
+  getDependenciesForOpportunity,
+  getOpportunitiesForSource,
+} from './opportunity/dependency-mapping.js';
+
+export {
+  OPPORTUNITY_TITLES,
+  getOpportunityTitle,
+} from './opportunity/opportunity-titles.js';
+
+export { computeAuditCompletion } from './opportunity/audit-completion.js';

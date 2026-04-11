@@ -121,7 +121,9 @@ function generateUrlsForDateRange(startDate, endDate, domain, granularity, domai
  * then data for the `/a1/` and `/a2` are counted towards `/`'s data
  */
 async function mergeBundlesWithSameId(bundles) {
-  if (!bundles[0]?.url?.includes('bamboohr.com')) return bundles;
+  if (!bundles[0]?.url?.includes('bamboohr.com')) {
+    return bundles;
+  }
   const prodBaseUrl = 'https://www.bamboohr.com/experiments/';
   const previewBaseUrl = 'https://main--bamboohr-website--bamboohr.hlx.page/experiments/archive/';
   const manifestUrls = [
@@ -178,14 +180,18 @@ async function mergeBundlesWithSameId(bundles) {
 
   const getControlPath = (url) => {
     const path = new URL(url).pathname;
-    if (variantPaths.includes(path)) return mapping[path];
+    if (variantPaths.includes(path)) {
+      return mapping[path];
+    }
     return path;
   };
 
   const byIdAndPath = bundles.reduce((acc, cur) => {
     const controlPath = getControlPath(cur.url);
     const key = `${cur.id}-${controlPath}`;
-    if (!acc[key]) acc[key] = [];
+    if (!acc[key]) {
+      acc[key] = [];
+    }
     if (variantPaths.includes(new URL(cur.url).pathname)) {
       // eslint-disable-next-line no-param-reassign
       cur.url = new URL(controlPath, cur.url).href;

@@ -194,6 +194,8 @@ describe('AuditModel', () => {
       HEADINGS: 'headings',
       PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
       PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
+      EMAIL_TRAFFIC_ANALYSIS_WEEKLY: 'email-traffic-analysis-weekly',
+      EMAIL_TRAFFIC_ANALYSIS_MONTHLY: 'email-traffic-analysis-monthly',
       READABILITY: 'readability',
       PRERENDER: 'prerender',
       PRODUCT_METATAGS: 'product-metatags',

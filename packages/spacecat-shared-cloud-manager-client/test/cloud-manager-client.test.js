@@ -278,7 +278,7 @@ describe('CloudManagerClient', () => {
       const cloneArgs = getGitArgs(execFileSyncStub.firstCall);
       const cloneArgsStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(cloneArgs).to.include('clone');
-      expect(cloneArgsStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
+      expect(cloneArgsStr).to.include('http.https://git.cloudmanager.adobe.com/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==');
       expect(cloneArgsStr).to.include(TEST_STANDARD_REPO_URL);
       expect(cloneArgs).to.include(EXPECTED_CLONE_PATH);
       // No credentials in the URL itself
@@ -797,7 +797,7 @@ describe('CloudManagerClient', () => {
       const pushArgs = getGitArgs(execFileSyncStub.firstCall);
       const pushArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pushArgStr).to.include('push');
-      expect(pushArgStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
+      expect(pushArgStr).to.include('http.https://git.cloudmanager.adobe.com/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==');
       expect(pushArgStr).to.include(TEST_STANDARD_REPO_URL);
       expect(pushArgStr).to.not.include('stduser:stdtoken123@');
       expect(pushArgStr).to.not.include('Bearer');
@@ -859,7 +859,7 @@ describe('CloudManagerClient', () => {
 
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
-      expect(pullArgStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
+      expect(pullArgStr).to.include('http.https://git.cloudmanager.adobe.com/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==');
       expect(pullArgStr).to.include(TEST_STANDARD_REPO_URL);
       expect(pullArgStr).to.not.include('stduser:stdtoken123@');
       expect(pullArgStr).to.not.include('Bearer');

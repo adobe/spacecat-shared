@@ -261,7 +261,8 @@ export default class CloudManagerClient {
    * Builds authenticated git arguments for a remote command (clone, push, or pull).
    *
    * Both repo types use http.extraheader for authentication:
-   * - Standard repos: Basic auth header via extraheader on the repo URL
+   * - Standard repos: Basic auth header via extraheader on the repo origin (scheme + host + '/'),
+   *   so the header is applied to all paths on that host, including submodule URLs
    * - BYOG repos: Bearer token + API key + IMS org ID via extraheader on the CM Repo URL
    *
    * @param {string} command - The git command ('clone', 'push', or 'pull')
@@ -277,8 +278,9 @@ export default class CloudManagerClient {
     if (repoType === CM_REPO_TYPE.STANDARD) {
       const credentials = this.#getStandardRepoCredentials(programId);
       const basicAuth = Buffer.from(credentials).toString('base64');
+      const repoOrigin = `${new URL(repoUrl).origin}/`;
       return [
-        '-c', `http.${repoUrl}.extraheader=Authorization: Basic ${basicAuth}`,
+        '-c', `http.${repoOrigin}.extraheader=Authorization: Basic ${basicAuth}`,
         command, repoUrl,
       ];
     }

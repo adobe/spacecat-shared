@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.25.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.25.1...@adobe/spacecat-shared-http-utils-v1.25.2) (2026-04-04)
+
+### Bug Fixes
+
+* downgrade noisy shared library logs to debug ([#1505](https://github.com/adobe/spacecat-shared/issues/1505)) ([e189419](https://github.com/adobe/spacecat-shared/commit/e189419e6b308133f707f5b78c3ed038d7363a5d))
+
 ## [@adobe/spacecat-shared-http-utils-v1.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.25.0...@adobe/spacecat-shared-http-utils-v1.25.1) (2026-03-28)
 
 ### Bug Fixes

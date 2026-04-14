@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 import siteImsOrgAccessSchema from '../../../../src/models/site-ims-org-access/site-ims-org-access.schema.js';
 

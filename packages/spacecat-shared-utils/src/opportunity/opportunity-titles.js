@@ -73,6 +73,7 @@ export const OPPORTUNITY_TITLES = {
   'wikipedia-analysis': 'Wikipedia Analysis',
   'reddit-analysis': 'Reddit Analysis',
   'youtube-analysis': 'YouTube Analysis',
+  'info-gain': 'Information Gain',
 };
 
 /**

@@ -677,7 +677,9 @@ export default class CloudManagerClient {
       rmSync(extractPath, { recursive: true, force: true });
       throw new Error(`Failed to unzip repository: ${error.message}`);
     } finally /* c8 ignore next */ {
-      if (zipDir) rmSync(zipDir, { recursive: true, force: true });
+      if (zipDir) {
+        rmSync(zipDir, { recursive: true, force: true });
+      }
     }
   }
 

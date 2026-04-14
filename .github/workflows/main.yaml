@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: 'false'
 
@@ -29,6 +29,8 @@ jobs:
 
       - name: Setup Node & NPM
         uses: ./.github/actions/setup-node-npm
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
         env:
           MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
 
@@ -54,23 +56,23 @@ jobs:
       MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: 'false'
 
       - name: Set up Node.js 22 (temporary - for bootstrap)
         uses: actions/setup-node@v6
         with:
-          node-version: '22.22.2'
+          node-version: '24.14.1'
 
       - name: Update NPM
         run: npm install -g npm@10.9.4
 
       - name: Configure Git auth for private Mysticat types repo
         run: |
-          git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
-          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "https://github.com/adobe/mysticat-data-service"
+          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "ssh://git@github.com/adobe/mysticat-data-service"
+          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "git@github.com:adobe/mysticat-data-service"
 
       - name: Install dependencies
         run: npm ci

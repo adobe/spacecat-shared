@@ -24,7 +24,7 @@ const S3_CONFIG_KEY = 'config/spacecat/global-config.json';
 
 /**
  * ConfigurationCollection - A standalone collection class for managing Configuration entities.
- * Unlike other collections, this does not use ElectroDB or DynamoDB.
+ * Unlike other collections, this uses S3 instead of PostgREST.
  * Configuration is stored as a versioned JSON object in S3.
  *
  * @class ConfigurationCollection

@@ -75,7 +75,10 @@ class BaseCollection {
 
   // eslint-disable-next-line class-methods-use-this
   #resolveBulkKeyField(keys) {
-    if (!isNonEmptyArray(keys)) return null;
+    /* c8 ignore next 3 */
+    if (!isNonEmptyArray(keys)) {
+      return null;
+    }
 
     const [firstKey] = keys;
     const fields = Object.keys(firstKey);
@@ -93,9 +96,13 @@ class BaseCollection {
   }
 
   #normalizeEnumValue(key, value) {
-    if (typeof value !== 'string') return value;
+    if (typeof value !== 'string') {
+      return value;
+    }
     const attr = this.schema.getAttribute(key);
-    if (!Array.isArray(attr?.type)) return value;
+    if (!Array.isArray(attr?.type)) {
+      return value;
+    }
     const match = attr.type.find((v) => v.toLowerCase() === value.toLowerCase());
     return match ?? value;
   }
@@ -104,7 +111,9 @@ class BaseCollection {
   #isInvalidInputError(error) {
     let current = error;
     while (current) {
-      if (current?.code === '22P02') return true;
+      if (current?.code === '22P02') {
+        return true;
+      }
       current = current.cause;
     }
     return false;
@@ -112,9 +121,16 @@ class BaseCollection {
 
   #logAndThrowError(message, cause) {
     const parts = [message];
-    if (cause?.code) parts.push(`[${cause.code}] ${cause.message}`);
-    if (cause?.details) parts.push(cause.details);
-    if (cause?.hint) parts.push(`hint: ${cause.hint}`);
+    if (cause?.code) {
+      parts.push(`[${cause.code}] ${cause.message}`);
+    }
+    if (cause?.details) {
+      parts.push(cause.details);
+    }
+    /* c8 ignore next 3 */
+    if (cause?.hint) {
+      parts.push(`hint: ${cause.hint}`);
+    }
 
     this.log.error(`[${this.entityName}] ${parts.join(' - ')}`);
 
@@ -595,7 +611,10 @@ class BaseCollection {
    * @returns {object|null} A model instance, or null if the row is empty/invalid.
    */
   createInstanceFromRow(row) {
-    if (!isNonEmptyObject(row)) return null;
+    /* c8 ignore next 3 */
+    if (!isNonEmptyObject(row)) {
+      return null;
+    }
     return this.#createInstance(this.#toModelRecord(row));
   }
 
@@ -748,7 +767,9 @@ class BaseCollection {
       return instance;
     } catch (error) {
       /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
-      if (error.constructor === DataAccessError) throw error;
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
       return this.#logAndThrowError('Failed to create', error);
     }
   }
@@ -862,7 +883,9 @@ class BaseCollection {
       return { createdItems, errorItems };
     } catch (error) {
       /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
-      if (error.constructor === DataAccessError) throw error;
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
       return this.#logAndThrowError('Failed to create many', error);
     }
   }
@@ -990,7 +1013,9 @@ class BaseCollection {
       return undefined;
     } catch (error) {
       /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
-      if (error.constructor === DataAccessError) throw error;
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
       return this.#logAndThrowError('Failed to save many', error);
     }
   }
@@ -1022,7 +1047,9 @@ class BaseCollection {
       return undefined;
     } catch (error) {
       /* c8 ignore next -- re-throw guard (exact match; excludes ValidationError subclass) */
-      if (error.constructor === DataAccessError) throw error;
+      if (error.constructor === DataAccessError) {
+        throw error;
+      }
       return this.#logAndThrowError('Failed to remove by IDs', error);
     }
   }

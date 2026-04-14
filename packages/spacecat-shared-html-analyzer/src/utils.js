@@ -20,7 +20,9 @@
  * @returns {string} Hex hash string
  */
 export function hashDJB2(str) {
-  if (!str) return '';
+  if (!str) {
+    return '';
+  }
   let h = 5381;
   for (let i = 0; i < str.length; i += 1) {
     // eslint-disable-next-line no-bitwise
@@ -67,12 +69,20 @@ export function isBrowser() {
  */
 export function getGlobalObject() {
   // eslint-disable-next-line no-undef
-  if (typeof globalThis !== 'undefined') return globalThis;
-  // eslint-disable-next-line no-undef
-  if (typeof self !== 'undefined') return self;
-  // eslint-disable-next-line no-undef
-  if (typeof window !== 'undefined') return window;
-  // eslint-disable-next-line no-undef
-  if (typeof global !== 'undefined') return global;
+  if (typeof globalThis !== 'undefined') {
+    return globalThis;
+  }
+  if (typeof self !== 'undefined') {
+    // eslint-disable-next-line no-undef
+    return self;
+  }
+  if (typeof window !== 'undefined') {
+    // eslint-disable-next-line no-undef
+    return window;
+  }
+  if (typeof global !== 'undefined') {
+    // eslint-disable-next-line no-undef
+    return global;
+  }
   return {};
 }

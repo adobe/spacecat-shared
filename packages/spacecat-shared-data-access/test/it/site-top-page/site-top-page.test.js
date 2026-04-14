@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -72,7 +70,7 @@ describe('SiteTopPage IT', async () => {
 
   it('gets all top pages for a site from a specific source and geo in descending traffic order', async () => {
     const site = sampleData.sites[0];
-    const source = 'ahrefs';
+    const source = 'seo';
     const geo = 'global';
 
     const siteTopPages = await SiteTopPage.allBySiteIdAndSourceAndGeo(

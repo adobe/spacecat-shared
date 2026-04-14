@@ -37,7 +37,9 @@ export const FIELD_TRANSFORMERS = {
    * Used for accessibility-related opportunity types.
    */
   filterIssuesOccurrences: (issues) => {
-    if (!Array.isArray(issues)) return issues;
+    if (!Array.isArray(issues)) {
+      return issues;
+    }
     return issues.map((issue) => ({
       occurrences: issue.occurrences,
     }));
@@ -47,7 +49,9 @@ export const FIELD_TRANSFORMERS = {
    * Used for Core Web Vitals opportunity type.
    */
   filterCwvMetrics: (metrics) => {
-    if (!Array.isArray(metrics)) return metrics;
+    if (!Array.isArray(metrics)) {
+      return metrics;
+    }
     return metrics.map((metric) => ({
       deviceType: metric.deviceType,
       lcp: metric.lcp,
@@ -65,7 +69,9 @@ export const FIELD_TRANSFORMERS = {
    * /AltText/handlers/AltTextOpportunityAdapter.tsx
    */
   extractPageUrlFromRecommendations: (recommendations) => {
-    if (!Array.isArray(recommendations)) return recommendations;
+    if (!Array.isArray(recommendations)) {
+      return recommendations;
+    }
     return recommendations.map((rec) => ({
       pageUrl: rec.pageUrl,
       ...(rec.isDecorative !== undefined && { isDecorative: rec.isDecorative }),
@@ -77,7 +83,9 @@ export const FIELD_TRANSFORMERS = {
    * Used for security vulnerability opportunity types.
    */
   extractCveUrls: (cves) => {
-    if (!Array.isArray(cves)) return cves;
+    if (!Array.isArray(cves)) {
+      return cves;
+    }
     return cves.map((cve) => ({
       url: cve.url,
     }));

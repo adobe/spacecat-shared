@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-launchdarkly-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.1.0...@adobe/spacecat-shared-launchdarkly-client-v1.1.1) (2026-04-09)
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1503](https://github.com/adobe/spacecat-shared/issues/1503)) ([21d4d4b](https://github.com/adobe/spacecat-shared/commit/21d4d4b3cfa95ca7748ef4b65b04cace24768dfc))
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.0.6...@adobe/spacecat-shared-launchdarkly-client-v1.1.0) (2026-04-08)
+
+### Features
+
+* **launchdarkly-client:** add REST API support for feature flag management ([#1502](https://github.com/adobe/spacecat-shared/issues/1502)) ([f0fbd00](https://github.com/adobe/spacecat-shared/commit/f0fbd0028e4d8c3f191d8a8a001555ef36475db3))
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.0.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.0.5...@adobe/spacecat-shared-launchdarkly-client-v1.0.6) (2026-04-06)
+
+### Bug Fixes
+
+* **launchdarkly-client:** route SDK logs through Lambda logger at debug level ([#1511](https://github.com/adobe/spacecat-shared/issues/1511)) ([9efd5a9](https://github.com/adobe/spacecat-shared/commit/9efd5a95db96ac9f28db723e070be7ffa8d09546))
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.0.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.0.4...@adobe/spacecat-shared-launchdarkly-client-v1.0.5) (2026-04-06)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1087](https://github.com/adobe/spacecat-shared/issues/1087)) ([72e1ab6](https://github.com/adobe/spacecat-shared/commit/72e1ab65892120f94ba409d5ab10370947329188))
+
 ## [@adobe/spacecat-shared-launchdarkly-client-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.0.3...@adobe/spacecat-shared-launchdarkly-client-v1.0.4) (2026-03-21)
 
 ### Bug Fixes

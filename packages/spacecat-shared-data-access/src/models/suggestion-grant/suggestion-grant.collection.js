@@ -17,8 +17,9 @@ import DataAccessError from '../../errors/data-access.error.js';
 
 /**
  * SuggestionGrantCollection - Manages SuggestionGrant records (suggestion_grants table).
- * Table is insert-only; inserts happen via grant_suggestions RPC. This collection
- * provides read-only lookup by suggestion IDs.
+ * Inserts happen via the grant_suggestions RPC and deletes via the revoke_suggestion_grant
+ * RPC. This collection provides read-only lookup by suggestion IDs as well as grant and
+ * revoke operations.
  *
  * @class SuggestionGrantCollection
  * @extends BaseCollection
@@ -62,7 +63,7 @@ class SuggestionGrantCollection extends BaseCollection {
    * @returns {Promise<{ data: Array|null, error: object|null }>}
    */
   async invokeGrantSuggestionsRpc(suggestionIds, siteId, tokenType, cycle) {
-    return this.postgrestService.rpc('grant_suggestions', {
+    return this.postgrestService.rpc('wrpc_grant_suggestions', {
       p_suggestion_ids: suggestionIds,
       p_site_id: siteId,
       p_token_type: tokenType,
@@ -99,7 +100,9 @@ class SuggestionGrantCollection extends BaseCollection {
 
       return { grantedIds, notGrantedIds, grantIds };
     } catch (err) {
-      if (err instanceof DataAccessError) throw err;
+      if (err instanceof DataAccessError) {
+        throw err;
+      }
       this.log.error('splitSuggestionsByGrantStatus failed', err);
       throw new DataAccessError('Failed to split suggestions by grant status', this, err);
     }
@@ -114,7 +117,9 @@ class SuggestionGrantCollection extends BaseCollection {
    *   false otherwise or if id is empty.
    */
   async isSuggestionGranted(suggestionId) {
-    if (!hasText(suggestionId)) return false;
+    if (!hasText(suggestionId)) {
+      return false;
+    }
     const { grantedIds } = await this.splitSuggestionsByGrantStatus([suggestionId]);
     return grantedIds.length > 0;
   }
@@ -162,7 +167,7 @@ class SuggestionGrantCollection extends BaseCollection {
 
     if (error) {
       this.log.error('grantSuggestions: RPC failed', error);
-      throw new DataAccessError('Failed to grant suggestions (grant_suggestions)', this, error);
+      throw new DataAccessError('Failed to grant suggestions (wrpc_grant_suggestions)', this, error);
     }
 
     const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
@@ -171,6 +176,55 @@ class SuggestionGrantCollection extends BaseCollection {
     }
 
     return { success: true, grantedSuggestions: row.granted_suggestions };
+  }
+
+  /**
+   * Invokes the revoke_suggestion_grant RPC. Deletes suggestion_grants rows for the given
+   * grant ID and decrements tokens.used by 1.
+   * RPC name and parameter shape live in this collection (suggestion_grants).
+   *
+   * @async
+   * @param {string} grantId - Grant ID to revoke.
+   * @returns {Promise<{ data: Array|null, error: object|null }>}
+   * @throws {DataAccessError} - On missing grantId.
+   */
+  async invokeRevokeSuggestionGrantRpc(grantId) {
+    if (!hasText(grantId)) {
+      throw new DataAccessError('invokeRevokeSuggestionGrantRpc: grantId is required', this);
+    }
+    return this.postgrestService.rpc('wrpc_revoke_suggestion_grant', {
+      p_grant_id: grantId,
+    });
+  }
+
+  /**
+   * Revokes a suggestion grant by grant ID. Calls the revoke_suggestion_grant RPC to
+   * atomically delete suggestion_grants rows and refund the consumed token.
+   *
+   * @async
+   * @param {string} grantId - The grant ID to revoke.
+   * @returns {Promise<{ success: boolean, reason?: string, revokedCount?: number }>}
+   * @throws {DataAccessError} - On missing inputs or RPC failure.
+   */
+  async revokeSuggestionGrant(grantId) {
+    if (!hasText(grantId)) {
+      throw new DataAccessError('revokeSuggestionGrant: grantId is required', this);
+    }
+
+    const rpcResult = await this.invokeRevokeSuggestionGrantRpc(grantId);
+    const { data, error } = rpcResult;
+
+    if (error) {
+      this.log.error('revokeSuggestionGrant: RPC failed', error);
+      throw new DataAccessError('Failed to revoke suggestion grant (wrpc_revoke_suggestion_grant)', this, error);
+    }
+
+    const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+    if (!row || !row.success) {
+      return { success: false, reason: row?.reason || 'rpc_no_result' };
+    }
+
+    return { success: true, revokedCount: row.revoked_count };
   }
 }
 

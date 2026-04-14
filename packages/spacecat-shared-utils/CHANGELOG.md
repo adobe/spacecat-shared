@@ -1,3 +1,51 @@
+## [@adobe/spacecat-shared-utils-v1.112.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.4...@adobe/spacecat-shared-utils-v1.112.5) (2026-04-10)
+
+### Bug Fixes
+
+* byocdn-imperva shows correct config ([#1529](https://github.com/adobe/spacecat-shared/issues/1529)) ([8aaaf1d](https://github.com/adobe/spacecat-shared/commit/8aaaf1df7b5081184f9f6c3824b915f260c0d898))
+
+## [@adobe/spacecat-shared-utils-v1.112.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.3...@adobe/spacecat-shared-utils-v1.112.4) (2026-04-09)
+
+### Bug Fixes
+
+* **utils:** detect Akamai blocking via akamai-cache-status and akamai-grn headers ([#1524](https://github.com/adobe/spacecat-shared/issues/1524)) ([85f93a2](https://github.com/adobe/spacecat-shared/commit/85f93a276be0668a75fa3058102d86e537898a79)), closes [#1523](https://github.com/adobe/spacecat-shared/issues/1523)
+
+## [@adobe/spacecat-shared-utils-v1.112.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.2...@adobe/spacecat-shared-utils-v1.112.3) (2026-04-08)
+
+### Bug Fixes
+
+* remove client country from logged properties ([#1517](https://github.com/adobe/spacecat-shared/issues/1517)) ([04bb4a6](https://github.com/adobe/spacecat-shared/commit/04bb4a60beac791347c710558535597e792ccd35))
+
+## [@adobe/spacecat-shared-utils-v1.112.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.1...@adobe/spacecat-shared-utils-v1.112.2) (2026-04-04)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1506](https://github.com/adobe/spacecat-shared/issues/1506)) ([a4516f6](https://github.com/adobe/spacecat-shared/commit/a4516f68dcb8b2efffc2a0c1e2ec2770347c163d))
+
+## [@adobe/spacecat-shared-utils-v1.112.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.0...@adobe/spacecat-shared-utils-v1.112.1) (2026-04-04)
+
+### Bug Fixes
+
+* downgrade noisy shared library logs to debug ([#1505](https://github.com/adobe/spacecat-shared/issues/1505)) ([e189419](https://github.com/adobe/spacecat-shared/commit/e189419e6b308133f707f5b78c3ed038d7363a5d))
+
+## [@adobe/spacecat-shared-utils-v1.112.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.111.0...@adobe/spacecat-shared-utils-v1.112.0) (2026-04-02)
+
+### Features
+
+* **spacecat-shared-utils:** add sub-path exports for slim imports ([#1486](https://github.com/adobe/spacecat-shared/issues/1486)) ([4e15c66](https://github.com/adobe/spacecat-shared/commit/4e15c6631f5f660283178d61891bf4773a6b564f))
+
+## [@adobe/spacecat-shared-utils-v1.111.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.110.0...@adobe/spacecat-shared-utils-v1.111.0) (2026-04-01)
+
+### Features
+
+* LLMO-3758 info-gain ([#1488](https://github.com/adobe/spacecat-shared/issues/1488)) ([cc6bcc1](https://github.com/adobe/spacecat-shared/commit/cc6bcc16921e98f46b79efdff272004672fb455e))
+
+## [@adobe/spacecat-shared-utils-v1.110.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.109.0...@adobe/spacecat-shared-utils-v1.110.0) (2026-04-01)
+
+### Features
+
+* rename ahrefs to seo in dependency mapping and test fixtures ([#1492](https://github.com/adobe/spacecat-shared/issues/1492)) ([40aa319](https://github.com/adobe/spacecat-shared/commit/40aa319d78fc1aa8ba96f83002b45eb2dbde570c))
+
 ## [@adobe/spacecat-shared-utils-v1.109.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.108.0...@adobe/spacecat-shared-utils-v1.109.0) (2026-03-30)
 
 ### Features

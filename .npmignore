@@ -3,6 +3,7 @@ node_modules/
 junit/
 test/
 docs/
+scripts/
 logs/
 test-results.xml
 renovate.json

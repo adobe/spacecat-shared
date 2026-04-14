@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
@@ -259,17 +257,17 @@ describe('SuggestionModel', () => {
           expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
         });
 
-        it('fails when issues is missing (schema requires issues array)', () => {
+        it('passes when issues is missing (issues is optional)', () => {
           const suggestionData = {
             type: 'url',
             url: 'https://www.example.com/page',
             pageviews: 11620,
             metrics: [{ deviceType: 'mobile', lcp: 2701 }],
           };
-          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
         });
 
-        it('fails when group-type has pattern but no url (schema requires url)', () => {
+        it('passes when url is missing (url is optional)', () => {
           const suggestionData = {
             type: 'group',
             name: 'Some pages',
@@ -282,7 +280,97 @@ describe('SuggestionModel', () => {
             ],
             issues: [],
           };
-          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+        });
+      });
+
+      describe('COLOR_CONTRAST opportunity type', () => {
+        it('passes with patchContent and isCodeChangeAvailable fields', () => {
+          const data = {
+            url: 'https://example.com/page',
+            issues: [{ wcagLevel: 'AA', severity: 'serious' }],
+            patchContent: 'diff --git a/file.js',
+            isCodeChangeAvailable: true,
+          };
+          expect(() => Suggestion.validateData(data, 'color-contrast')).to.not.throw();
+        });
+      });
+
+      describe('A11Y_ASSISTIVE opportunity type', () => {
+        it('passes with patchContent and isCodeChangeAvailable fields', () => {
+          const data = {
+            url: 'https://example.com/page',
+            issues: [{ wcagLevel: 'A', severity: 'critical' }],
+            patchContent: 'diff --git a/style.css',
+            isCodeChangeAvailable: false,
+          };
+          expect(() => Suggestion.validateData(data, 'a11y-assistive')).to.not.throw();
+        });
+      });
+
+      describe('ALT_TEXT opportunity type', () => {
+        it('passes with hasAltAttribute field in recommendations', () => {
+          const data = {
+            recommendations: [{
+              pageUrl: 'https://example.com/page',
+              imageUrl: 'https://example.com/img.png',
+              isDecorative: false,
+              hasAltAttribute: true,
+            }],
+          };
+          expect(() => Suggestion.validateData(data, 'image-alt-text')).to.not.throw();
+        });
+      });
+
+      describe('BROKEN_INTERNAL_LINKS opportunity type', () => {
+        it('passes with malformed http/https URLs', () => {
+          const data = {
+            url_from: 'https://example.com/page with spaces',
+            url_to: 'https://example.com/broken[link]',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.not.throw();
+        });
+
+        it('passes with relative URLs', () => {
+          const data = {
+            urlFrom: '/relative/path',
+            urlTo: '/another/path',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.not.throw();
+        });
+
+        it('rejects dangerous URI schemes (javascript:)', () => {
+          const data = {
+            // eslint-disable-next-line no-script-url
+            url_from: 'javascript:alert(1)',
+            url_to: 'https://example.com',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.throw();
+        });
+
+        it('rejects dangerous URI schemes (data:)', () => {
+          const data = {
+            url_from: 'https://example.com',
+            url_to: 'data:text/html,<script>alert(1)</script>',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.throw();
+        });
+
+        it('rejects empty string URLs', () => {
+          const data = {
+            url_from: '',
+            url_to: 'https://example.com',
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.throw();
+        });
+
+        it('passes with urlsSuggested containing relaxed URLs', () => {
+          const data = {
+            url_from: 'https://example.com/from',
+            url_to: 'https://example.com/to',
+            urlsSuggested: ['https://example.com/suggested page', '/relative/suggestion'],
+          };
+          expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.not.throw();
         });
       });
     });

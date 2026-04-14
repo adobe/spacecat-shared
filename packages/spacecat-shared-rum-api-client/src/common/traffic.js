@@ -25,8 +25,12 @@ import URI from 'urijs';
  *                    URL if it does not contain any text.
  */
 export function getSecondLevelDomain(url) {
-  if (!hasText(url)) return url;
-  if (url === '(direct)') return '';
+  if (!hasText(url)) {
+    return url;
+  }
+  if (url === '(direct)') {
+    return '';
+  }
 
   try {
     const uri = new URI(prependSchema(url));
@@ -132,8 +136,12 @@ const emailTrackingParams = ['email'];
 const any = () => true;
 
 const anyOf = (truth) => (text) => {
-  if (Array.isArray(truth)) return truth.includes(text);
-  if (truth instanceof RegExp) return truth.test(text);
+  if (Array.isArray(truth)) {
+    return truth.includes(text);
+  }
+  if (truth instanceof RegExp) {
+    return truth.test(text);
+  }
   return truth === text;
 };
 
@@ -141,9 +149,15 @@ const anyOf = (truth) => (text) => {
 const none = (input) => (Array.isArray(input) ? input.length === 0 : !hasText(input));
 
 const not = (truth) => (text) => {
-  if (!hasText(text)) return false;
-  if (Array.isArray(truth)) return !truth.includes(text);
-  if (truth instanceof RegExp) return !truth.test(text);
+  if (!hasText(text)) {
+    return false;
+  }
+  if (Array.isArray(truth)) {
+    return !truth.includes(text);
+  }
+  if (truth instanceof RegExp) {
+    return !truth.test(text);
+  }
   return truth !== text;
 };
 
@@ -199,12 +213,16 @@ const ALLOWED_VENDORS = {
  * @returns {string} The vendor if allowed, empty string otherwise
  */
 function validateVendor(type, category, vendor) {
-  if (!vendor) return '';
+  if (!vendor) {
+    return '';
+  }
 
   const allowedVendors = ALLOWED_VENDORS[type]?.[category];
 
   // null/undefined means any vendor is allowed
-  if (!allowedVendors) return vendor;
+  if (!allowedVendors) {
+    return vendor;
+  }
 
   // Check if vendor is in the allowed list
   return allowedVendors.includes(vendor) ? vendor : '';
@@ -308,9 +326,15 @@ export function extractTrafficHints(bundle) {
  */
 export function classifyVendor(referrer, utmSource, utmMedium) {
   const result = vendorClassifications.find(({ regex }) => {
-    if (regex.test(referrer)) return true;
-    if (regex.test(utmSource)) return true;
-    if (regex.test(utmMedium)) return true;
+    if (regex.test(referrer)) {
+      return true;
+    }
+    if (regex.test(utmSource)) {
+      return true;
+    }
+    if (regex.test(utmMedium)) {
+      return true;
+    }
     return false;
   });
   return result ? result.result : '';

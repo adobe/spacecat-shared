@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { EventEmitter } from 'events';
 import os from 'os';
 import path from 'path';
@@ -1250,7 +1248,9 @@ describe('CloudManagerClient', () => {
           // Emit error on the outputStream error handler
           const errorHandler = mockYazlZipFile.outputStream.on.getCalls()
             .find((c) => c.args[0] === 'error');
-          if (errorHandler) errorHandler.args[1](new Error('write failed'));
+          if (errorHandler) {
+            errorHandler.args[1](new Error('write failed'));
+          }
         });
       });
 

@@ -19,10 +19,6 @@ import SentimentGuideline from './sentiment-guideline.model.js';
 import SentimentGuidelineCollection from './sentiment-guideline.collection.js';
 
 /*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
-
 Data Access Patterns:
 1. Get all guidelines for a site: allBySiteId(siteId)
 2. Get a specific guideline: findById(siteId, guidelineId)

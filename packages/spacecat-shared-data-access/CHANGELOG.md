@@ -1,3 +1,153 @@
+## [@adobe/spacecat-shared-data-access-v3.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.51.0...@adobe/spacecat-shared-data-access-v3.52.0) (2026-04-10)
+
+### Features
+
+* **data-access:** add enableMoneyPageUrls flag to site config ([#1532](https://github.com/adobe/spacecat-shared/issues/1532)) ([865cd45](https://github.com/adobe/spacecat-shared/commit/865cd456e255ed0e2cb3af354fb087d4ce165ef8))
+
+## [@adobe/spacecat-shared-data-access-v3.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.50.1...@adobe/spacecat-shared-data-access-v3.51.0) (2026-04-10)
+
+### Features
+
+* add contentSourcePath to deliveryConfig schema ([#1520](https://github.com/adobe/spacecat-shared/issues/1520)) ([80341f3](https://github.com/adobe/spacecat-shared/commit/80341f39e0eb34ffca0622a38824c5a33614c96e))
+
+## [@adobe/spacecat-shared-data-access-v3.50.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.50.0...@adobe/spacecat-shared-data-access-v3.50.1) (2026-04-10)
+
+### Bug Fixes
+
+* grantSuggestions/revokeSuggestionGrant RPC calls hitting the REA… ([#1530](https://github.com/adobe/spacecat-shared/issues/1530)) ([4e077f8](https://github.com/adobe/spacecat-shared/commit/4e077f86bd4a6636af5b165ec42d39add3a556f1))
+
+## [@adobe/spacecat-shared-data-access-v3.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.49.0...@adobe/spacecat-shared-data-access-v3.50.0) (2026-04-10)
+
+### Features
+
+* LLMO-3959 changing schema to add detectCdn flag ([#1501](https://github.com/adobe/spacecat-shared/issues/1501)) ([0bb4642](https://github.com/adobe/spacecat-shared/commit/0bb46425b1351df2b12525182367c2635ae7fc48))
+
+## [@adobe/spacecat-shared-data-access-v3.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.48.0...@adobe/spacecat-shared-data-access-v3.49.0) (2026-04-10)
+
+### Features
+
+* **audit-url:** add moneyPages source to auditTargetURLs config ([#1496](https://github.com/adobe/spacecat-shared/issues/1496)) ([78df8f9](https://github.com/adobe/spacecat-shared/commit/78df8f91008e739bfd67e2277858523a276d70b2))
+
+## [@adobe/spacecat-shared-data-access-v3.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.47.0...@adobe/spacecat-shared-data-access-v3.48.0) (2026-04-08)
+
+### Features
+
+* **data-access:** add INACTIVE status, reviews field, and REVIEW_DECISIONS to PlgOnboarding ([#1516](https://github.com/adobe/spacecat-shared/issues/1516)) ([8f038e9](https://github.com/adobe/spacecat-shared/commit/8f038e93287da51acf0e586f3e786aeb00d4a0d3))
+
+## [@adobe/spacecat-shared-data-access-v3.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.46.0...@adobe/spacecat-shared-data-access-v3.47.0) (2026-04-07)
+
+### Features
+
+* add PRE_ONBOARD tier to entitlement model ([#1514](https://github.com/adobe/spacecat-shared/issues/1514)) ([bc4e8f3](https://github.com/adobe/spacecat-shared/commit/bc4e8f36549ab1fe6a03d39d7dec6b4b1f67d229))
+
+### Bug Fixes
+
+* **data-access:** remove stale ElectroDB/DynamoDB v2 references ([#1509](https://github.com/adobe/spacecat-shared/issues/1509)) ([ddd180f](https://github.com/adobe/spacecat-shared/commit/ddd180fb5350a14a04583f7c55f89873ed3a3929))
+* update geo experiment schema for experimentation engine ([#1512](https://github.com/adobe/spacecat-shared/issues/1512)) ([58315cd](https://github.com/adobe/spacecat-shared/commit/58315cd973c373b399429bf11ff1b958d3cfe9c8))
+
+## [@adobe/spacecat-shared-data-access-v3.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.45.2...@adobe/spacecat-shared-data-access-v3.46.0) (2026-04-07)
+
+### Features
+
+* **data-access:** add tenantId, ipAllowlistExists, imsOrgId to deliveryConfig schema ([#1515](https://github.com/adobe/spacecat-shared/issues/1515)) ([ff9629e](https://github.com/adobe/spacecat-shared/commit/ff9629e28bff7d0ee0d1d26f1f13df5eaa2ef4f8))
+
+## [@adobe/spacecat-shared-data-access-v3.45.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.45.1...@adobe/spacecat-shared-data-access-v3.45.2) (2026-04-06)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1087](https://github.com/adobe/spacecat-shared/issues/1087)) ([72e1ab6](https://github.com/adobe/spacecat-shared/commit/72e1ab65892120f94ba409d5ab10370947329188))
+
+## [@adobe/spacecat-shared-data-access-v3.45.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.45.0...@adobe/spacecat-shared-data-access-v3.45.1) (2026-04-04)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1506](https://github.com/adobe/spacecat-shared/issues/1506)) ([a4516f6](https://github.com/adobe/spacecat-shared/commit/a4516f68dcb8b2efffc2a0c1e2ec2770347c163d))
+
+## [@adobe/spacecat-shared-data-access-v3.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.44.0...@adobe/spacecat-shared-data-access-v3.45.0) (2026-04-04)
+
+### Features
+
+* Manage a custom list of audit target URLs ([#1484](https://github.com/adobe/spacecat-shared/issues/1484)) ([06c54d8](https://github.com/adobe/spacecat-shared/commit/06c54d89ea2488f6951cc96b9458521ac9d26706))
+* update suggestion data schemas for some of the opportunities ([#1466](https://github.com/adobe/spacecat-shared/issues/1466)) ([a09e968](https://github.com/adobe/spacecat-shared/commit/a09e968bba9235813451b65defe7d133a8956711))
+
+## [@adobe/spacecat-shared-data-access-v3.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.43.0...@adobe/spacecat-shared-data-access-v3.44.0) (2026-04-02)
+
+### Features
+
+* add ContactSalesLead entity (SITES-42069) ([#1475](https://github.com/adobe/spacecat-shared/issues/1475)) ([d245781](https://github.com/adobe/spacecat-shared/commit/d2457810e7a01900b2da70b0f81f031f95acdffa))
+
+## [@adobe/spacecat-shared-data-access-v3.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.42.0...@adobe/spacecat-shared-data-access-v3.43.0) (2026-04-02)
+
+### Features
+
+* remove llmo-prompts-ahrefs from shared config ([#1504](https://github.com/adobe/spacecat-shared/issues/1504)) ([e8628f2](https://github.com/adobe/spacecat-shared/commit/e8628f21e48e2f1bf89622c5004587165cd62673))
+
+## [@adobe/spacecat-shared-data-access-v3.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.41.0...@adobe/spacecat-shared-data-access-v3.42.0) (2026-04-02)
+
+### Features
+
+* **data-access:** update default import source from ahrefs to seo ([#1499](https://github.com/adobe/spacecat-shared/issues/1499)) ([99f66c0](https://github.com/adobe/spacecat-shared/commit/99f66c020e02469b84192ff354a9cf9a862c831f))
+
+## [@adobe/spacecat-shared-data-access-v3.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.40.0...@adobe/spacecat-shared-data-access-v3.41.0) (2026-04-01)
+
+### Features
+
+* add lastAuditedAt attribute to Opportunity schema ([#1479](https://github.com/adobe/spacecat-shared/issues/1479)) ([ee92ba9](https://github.com/adobe/spacecat-shared/commit/ee92ba9218016b8f7918358aa67db219287704dd))
+
+## [@adobe/spacecat-shared-data-access-v3.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.39.0...@adobe/spacecat-shared-data-access-v3.40.0) (2026-04-01)
+
+### Features
+
+* add auto-fix audit type for commerce product catalog enrichement ([#1495](https://github.com/adobe/spacecat-shared/issues/1495)) ([088759d](https://github.com/adobe/spacecat-shared/commit/088759d037309d39a9483ccb80479bca2fe6e9a9))
+
+## [@adobe/spacecat-shared-data-access-v3.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.38.0...@adobe/spacecat-shared-data-access-v3.39.0) (2026-04-01)
+
+### Features
+
+* **audit:** add new constant for auto-fix enrichments ([#1494](https://github.com/adobe/spacecat-shared/issues/1494)) ([a76fa8f](https://github.com/adobe/spacecat-shared/commit/a76fa8f1708bee20a9e2e6dafcdd0a84d147294e))
+
+## [@adobe/spacecat-shared-data-access-v3.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.37.0...@adobe/spacecat-shared-data-access-v3.38.0) (2026-04-01)
+
+### Features
+
+* rename ahrefs to seo in dependency mapping and test fixtures ([#1492](https://github.com/adobe/spacecat-shared/issues/1492)) ([40aa319](https://github.com/adobe/spacecat-shared/commit/40aa319d78fc1aa8ba96f83002b45eb2dbde570c))
+
+## [@adobe/spacecat-shared-data-access-v3.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.36.1...@adobe/spacecat-shared-data-access-v3.37.0) (2026-04-01)
+
+### Features
+
+* experimentation engine ([#1446](https://github.com/adobe/spacecat-shared/issues/1446)) ([44bff63](https://github.com/adobe/spacecat-shared/commit/44bff6350c18db58d8fbffde8de05074269ec969))
+
+## [@adobe/spacecat-shared-data-access-v3.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.36.0...@adobe/spacecat-shared-data-access-v3.36.1) (2026-04-01)
+
+### Bug Fixes
+
+* add isCodeChangeAvailable and patchContent to form accessibility schema ([#1373](https://github.com/adobe/spacecat-shared/issues/1373)) ([065bf56](https://github.com/adobe/spacecat-shared/commit/065bf561ba83f13d4c377f5ab4d7441ec0c15360))
+
+## [@adobe/spacecat-shared-data-access-v3.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.35.0...@adobe/spacecat-shared-data-access-v3.36.0) (2026-04-01)
+
+### Features
+
+* add PLG tier to entitlement model and bump mysticat types  ([#1487](https://github.com/adobe/spacecat-shared/issues/1487)) ([7f9c6fc](https://github.com/adobe/spacecat-shared/commit/7f9c6fcb6d3672269081176ebf643151fb512e99))
+
+## [@adobe/spacecat-shared-data-access-v3.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.34.0...@adobe/spacecat-shared-data-access-v3.35.0) (2026-03-31)
+
+### Features
+
+* redirectsQueued step renamed ([#1489](https://github.com/adobe/spacecat-shared/issues/1489)) ([d4eb54f](https://github.com/adobe/spacecat-shared/commit/d4eb54ff4c7636b904f41881cbb0c0ef6a2a3da4))
+
+## [@adobe/spacecat-shared-data-access-v3.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.33.1...@adobe/spacecat-shared-data-access-v3.34.0) (2026-03-31)
+
+### Features
+
+* adds revoke suggestion grants ([#1465](https://github.com/adobe/spacecat-shared/issues/1465)) ([8081661](https://github.com/adobe/spacecat-shared/commit/80816616d26a9b49b764b15d934881456f7ff656))
+
+## [@adobe/spacecat-shared-data-access-v3.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.33.0...@adobe/spacecat-shared-data-access-v3.33.1) (2026-03-31)
+
+### Bug Fixes
+
+* modifying the audit name max length ([#1485](https://github.com/adobe/spacecat-shared/issues/1485)) ([013528f](https://github.com/adobe/spacecat-shared/commit/013528fb486933a02395df0c461a3df1993c1ab1))
+
 ## [@adobe/spacecat-shared-data-access-v3.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.32.1...@adobe/spacecat-shared-data-access-v3.33.0) (2026-03-30)
 
 ### Features

@@ -18,8 +18,6 @@ import optimizationGraph from '../src/functions/reports/optimization/graph.js';
 const filename = fileURLToPath(import.meta.url);
 const dirnamePath = dirname(filename);
 const bundlesForUrls = JSON.parse(readFileSync(join(dirnamePath, './fixtures/bundles.json'), 'utf8'));
-/* eslint-env mocha */
-
 describe('Optimization Report Graph', () => {
   describe('handler', () => {
     it('should return default structure when no opts provided', () => {

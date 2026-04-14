@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { EventEmitter } from 'events';
 import os from 'os';
 import path from 'path';
 import { expect, use } from 'chai';
@@ -96,9 +95,7 @@ function getGitArgsStr(call) {
 describe('CloudManagerClient', () => {
   let CloudManagerClient;
   const execFileSyncStub = sinon.stub();
-  const createWriteStreamStub = sinon.stub();
   const existsSyncStub = sinon.stub();
-  const lstatSyncStub = sinon.stub();
   const mkdirSyncStub = sinon.stub();
   const mkdtempSyncStub = sinon.stub();
   const readdirSyncStub = sinon.stub();
@@ -107,29 +104,8 @@ describe('CloudManagerClient', () => {
   const rmSyncStub = sinon.stub();
   const statfsSyncStub = sinon.stub();
   const writeSyncStub = sinon.stub();
+  const archiveFolderStub = sinon.stub().resolves(Buffer.from('zip-content'));
   const extractStub = sinon.stub().resolves();
-
-  // Mock yazl ZipFile — records all entries and simulates piping to a write stream
-  const mockZipEntries = [];
-  const mockYazlZipFile = {
-    addFile: sinon.stub().callsFake((filePath, metadataPath) => {
-      mockZipEntries.push({ type: 'file', filePath, metadataPath });
-    }),
-    addBuffer: sinon.stub().callsFake((buffer, metadataPath, opts) => {
-      mockZipEntries.push({
-        type: 'buffer', buffer, metadataPath, opts,
-      });
-    }),
-    end: sinon.stub(),
-    outputStream: {
-      on: sinon.stub().returnsThis(),
-      pipe: sinon.stub().callsFake((writable) => {
-        // Simulate async close after pipe
-        process.nextTick(() => writable.emit('close'));
-      }),
-    },
-  };
-  const YazlMock = { ZipFile: sinon.stub().returns(mockYazlZipFile) };
 
   // esmock's initial module resolution can exceed mocha's default 2s timeout
   // eslint-disable-next-line prefer-arrow-callback
@@ -138,9 +114,7 @@ describe('CloudManagerClient', () => {
     const mod = await esmock('../src/index.js', {
       child_process: { execFileSync: execFileSyncStub },
       fs: {
-        createWriteStream: createWriteStreamStub,
         existsSync: existsSyncStub,
-        lstatSync: lstatSyncStub,
         mkdirSync: mkdirSyncStub,
         mkdtempSync: mkdtempSyncStub,
         readdirSync: readdirSyncStub,
@@ -150,8 +124,7 @@ describe('CloudManagerClient', () => {
         statfsSync: statfsSyncStub,
         writeFileSync: writeSyncStub,
       },
-      'zip-lib': { extract: extractStub },
-      yazl: YazlMock,
+      'zip-lib': { archiveFolder: archiveFolderStub, extract: extractStub },
     }, {
       '@adobe/spacecat-shared-ims-client': {
         ImsClient: { createFrom: createFromStub },
@@ -163,16 +136,8 @@ describe('CloudManagerClient', () => {
   beforeEach(() => {
     execFileSyncStub.reset();
     execFileSyncStub.returns('');
-    createWriteStreamStub.reset();
-    createWriteStreamStub.callsFake(() => {
-      const emitter = new EventEmitter();
-      emitter.write = sinon.stub();
-      emitter.end = sinon.stub();
-      return emitter;
-    });
     existsSyncStub.reset();
     existsSyncStub.returns(false);
-    lstatSyncStub.reset();
     mkdirSyncStub.reset();
     mkdtempSyncStub.reset();
     mkdtempSyncStub.callsFake((prefix) => `${prefix}XXXXXX`);
@@ -185,21 +150,10 @@ describe('CloudManagerClient', () => {
     statfsSyncStub.reset();
     statfsSyncStub.returns({ bsize: 4096, blocks: 131072, bfree: 65536 });
     writeSyncStub.reset();
+    archiveFolderStub.reset();
+    archiveFolderStub.resolves(Buffer.from('zip-content'));
     extractStub.reset();
     extractStub.resolves();
-    // Reset yazl mocks
-    mockZipEntries.length = 0;
-    YazlMock.ZipFile.reset();
-    YazlMock.ZipFile.returns(mockYazlZipFile);
-    mockYazlZipFile.addFile.reset();
-    mockYazlZipFile.addBuffer.reset();
-    mockYazlZipFile.end.reset();
-    mockYazlZipFile.outputStream.on.reset();
-    mockYazlZipFile.outputStream.on.returnsThis();
-    mockYazlZipFile.outputStream.pipe.reset();
-    mockYazlZipFile.outputStream.pipe.callsFake((writable) => {
-      process.nextTick(() => writable.emit('close'));
-    });
     createFromStub.reset();
     createFromStub.returns(mockImsClient);
     mockImsClient.getServiceAccessToken.reset();
@@ -1097,20 +1051,10 @@ describe('CloudManagerClient', () => {
       expect(Buffer.isBuffer(result)).to.be.true;
       expect(result.toString()).to.equal('zip-content');
 
-      // Should create a temp dir for the zip file
-      expect(mkdtempSyncStub).to.have.been.calledOnce;
-      expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-zip-$/);
-
-      // Should use yazl to create the zip
-      expect(YazlMock.ZipFile).to.have.been.calledOnce;
-      expect(mockYazlZipFile.end).to.have.been.calledOnce;
-
-      // Should read the zip file into a buffer
-      expect(readFileSyncStub).to.have.been.calledOnce;
-
-      // Should clean up the temp zip directory
-      expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
+      // Should call archiveFolder with followSymlinks: false
+      expect(archiveFolderStub).to.have.been.calledOnce;
+      expect(archiveFolderStub.firstCall.args[0]).to.equal(clonePath);
+      expect(archiveFolderStub.firstCall.args[1]).to.deep.equal({ followSymlinks: false });
     });
 
     it('rejects symlinks that escape the repo root before zipping', async () => {
@@ -1129,15 +1073,11 @@ describe('CloudManagerClient', () => {
       await expect(client.zipRepository(clonePath))
         .to.be.rejectedWith('Symlink escapes repository root: evil-link -> /etc/passwd');
 
-      // yazl should never be used
-      expect(YazlMock.ZipFile).to.not.have.been.called;
-
-      // Should still clean up the temp zip directory
-      expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
+      // archiveFolder should never be called
+      expect(archiveFolderStub).to.not.have.been.called;
     });
 
-    it('preserves broken symlinks as-is in the zip', async () => {
+    it('logs a warning for broken symlinks but proceeds with zip', async () => {
       const clonePath = '/tmp/cm-repo-zip-test';
       existsSyncStub.withArgs(clonePath).returns(true);
 
@@ -1145,30 +1085,23 @@ describe('CloudManagerClient', () => {
       const brokenLinkPath = path.join(enabledFarmsPath, 'broken.farm');
       const brokenTarget = '../available_farms/missing.farm';
       const resolvedTarget = path.resolve(enabledFarmsPath, brokenTarget);
-      const symlinkMtime = new Date('2025-01-01');
-      const symlinkMode = 0o120777;
 
-      // Root dir has a 'dispatcher' directory
       readdirSyncStub.withArgs(clonePath, { withFileTypes: true }).returns([{
         name: 'dispatcher',
         isSymbolicLink: () => false,
         isDirectory: () => true,
       }]);
-      // dispatcher has 'enabled_farms' directory
       readdirSyncStub.withArgs(path.join(clonePath, 'dispatcher'), { withFileTypes: true }).returns([{
         name: 'enabled_farms',
         isSymbolicLink: () => false,
         isDirectory: () => true,
       }]);
-      // enabled_farms has a broken symlink
       readdirSyncStub.withArgs(enabledFarmsPath, { withFileTypes: true }).returns([{
         name: 'broken.farm',
         isSymbolicLink: () => true,
         isDirectory: () => false,
       }]);
       readlinkSyncStub.withArgs(brokenLinkPath).returns(brokenTarget);
-      lstatSyncStub.withArgs(brokenLinkPath).returns({ mtime: symlinkMtime, mode: symlinkMode });
-      // Target does not exist — broken symlink
       existsSyncStub.withArgs(resolvedTarget).returns(false);
 
       const ctx = createContext();
@@ -1176,92 +1109,19 @@ describe('CloudManagerClient', () => {
       const result = await client.zipRepository(clonePath);
 
       expect(Buffer.isBuffer(result)).to.be.true;
-
-      // Should log a warning about the broken symlink
       expect(ctx.log.warn).to.have.been.calledWithMatch(/Broken symlink.*broken\.farm.*missing\.farm/);
-
-      // Should add the symlink via addBuffer with symlink mode bits preserved
-      expect(mockYazlZipFile.addBuffer).to.have.been.calledOnce;
-      const [buf, metadataPath, opts] = mockYazlZipFile.addBuffer.firstCall.args;
-      expect(buf.toString()).to.equal(brokenTarget);
-      expect(metadataPath).to.equal(path.relative(clonePath, brokenLinkPath));
-      expect(opts.mode).to.equal(symlinkMode);
-      expect(opts.mtime).to.equal(symlinkMtime);
+      expect(archiveFolderStub).to.have.been.calledOnce;
     });
 
-    it('adds regular files via yazl addFile', async () => {
+    it('throws when archiveFolder fails', async () => {
       const clonePath = '/tmp/cm-repo-zip-test';
       existsSyncStub.withArgs(clonePath).returns(true);
-
-      readdirSyncStub.withArgs(clonePath, { withFileTypes: true }).returns([{
-        name: 'index.html',
-        isSymbolicLink: () => false,
-        isDirectory: () => false,
-      }]);
-
-      const client = CloudManagerClient.createFrom(createContext());
-      await client.zipRepository(clonePath);
-
-      expect(mockYazlZipFile.addFile).to.have.been.calledOnce;
-      expect(mockYazlZipFile.addFile.firstCall.args[0]).to.equal(path.join(clonePath, 'index.html'));
-      expect(mockYazlZipFile.addFile.firstCall.args[1]).to.equal('index.html');
-    });
-
-    it('adds valid symlinks via addBuffer with lstat mode', async () => {
-      const clonePath = '/tmp/cm-repo-zip-test';
-      existsSyncStub.withArgs(clonePath).returns(true);
-
-      const subDir = path.join(clonePath, 'enabled');
-      const linkPath = path.join(subDir, 'link.farm');
-      const linkTarget = '../available/target.farm';
-      const resolvedTarget = path.resolve(subDir, linkTarget);
-
-      readdirSyncStub.withArgs(clonePath, { withFileTypes: true }).returns([{
-        name: 'enabled',
-        isSymbolicLink: () => false,
-        isDirectory: () => true,
-      }]);
-      readdirSyncStub.withArgs(subDir, { withFileTypes: true }).returns([{
-        name: 'link.farm',
-        isSymbolicLink: () => true,
-        isDirectory: () => false,
-      }]);
-      readlinkSyncStub.withArgs(linkPath).returns(linkTarget);
-      lstatSyncStub.withArgs(linkPath).returns({ mtime: new Date(), mode: 0o120777 });
-      existsSyncStub.withArgs(resolvedTarget).returns(true);
-
-      const client = CloudManagerClient.createFrom(createContext());
-      await client.zipRepository(clonePath);
-
-      // Symlink stored as buffer with link target content
-      expect(mockYazlZipFile.addBuffer).to.have.been.calledOnce;
-      expect(mockYazlZipFile.addBuffer.firstCall.args[0].toString()).to.equal(linkTarget);
-    });
-
-    it('throws when yazl zip fails and cleans up temp dir', async () => {
-      const clonePath = '/tmp/cm-repo-zip-test';
-      existsSyncStub.withArgs(clonePath).returns(true);
-
-      // Make the output stream emit an error
-      mockYazlZipFile.outputStream.pipe.callsFake((_) => {
-        process.nextTick(() => {
-          // Emit error on the outputStream error handler
-          const errorHandler = mockYazlZipFile.outputStream.on.getCalls()
-            .find((c) => c.args[0] === 'error');
-          if (errorHandler) {
-            errorHandler.args[1](new Error('write failed'));
-          }
-        });
-      });
+      archiveFolderStub.rejects(new Error('failed to read directory'));
 
       const client = CloudManagerClient.createFrom(createContext());
 
       await expect(client.zipRepository(clonePath))
-        .to.be.rejectedWith('Failed to zip repository: write failed');
-
-      // Should still clean up the temp zip directory
-      expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
+        .to.be.rejectedWith('Failed to zip repository: failed to read directory');
     });
   });
 

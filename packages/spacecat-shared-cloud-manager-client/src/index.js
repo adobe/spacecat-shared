@@ -12,8 +12,7 @@
 
 import { execFileSync } from 'child_process';
 import {
-  createWriteStream,
-  existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync,
+  existsSync, mkdirSync, mkdtempSync, readdirSync,
   readlinkSync, rmSync, statfsSync, writeFileSync,
 } from 'fs';
 import os from 'os';
@@ -21,8 +20,7 @@ import path from 'path';
 import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { extract } from 'zip-lib';
-import yazl from 'yazl';
+import { archiveFolder, extract } from 'zip-lib';
 
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
@@ -369,34 +367,6 @@ export default class CloudManagerClient {
   }
 
   /**
-   * Recursively walks a directory and adds all entries to a yazl ZipFile.
-   * Uses lstat (not stat) so broken symlinks are preserved as-is without
-   * following the link target.
-   * @param {import('yazl').ZipFile} zip - yazl ZipFile instance
-   * @param {string} dir - Current directory being walked
-   * @param {string} rootDir - Repository root (for computing relative paths)
-   */
-  #addDirToZip(zip, dir, rootDir) {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const fullPath = path.join(dir, entry.name);
-      const metadataPath = path.relative(rootDir, fullPath);
-
-      if (entry.isSymbolicLink()) {
-        const linkTarget = readlinkSync(fullPath);
-        const stat = lstatSync(fullPath);
-        zip.addBuffer(Buffer.from(linkTarget), metadataPath, {
-          mtime: stat.mtime,
-          mode: stat.mode,
-        });
-      } else if (entry.isDirectory()) {
-        this.#addDirToZip(zip, fullPath, rootDir);
-      } else {
-        zip.addFile(fullPath, metadataPath);
-      }
-    }
-  }
-
-  /**
    * Zips the entire cloned repository including .git history.
    * Downstream services that read the ZIP from S3 need the full git history.
    * @param {string} clonePath - Path to the cloned repository
@@ -407,36 +377,13 @@ export default class CloudManagerClient {
       throw new Error(`Clone path does not exist: ${clonePath}`);
     }
 
-    // yazl (and zip-lib) are path-based (not buffer-based like adm-zip), so we
-    // write to a temp file and read the result back into a Buffer for the caller.
-    const zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
-    const zipFile = path.join(zipDir, 'repo.zip');
-
     try {
       this.log.info(`Zipping repository at ${clonePath}`);
       this.#validateSymlinks(clonePath, clonePath);
-
-      // Use yazl directly instead of zip-lib's archiveFolder because zip-lib
-      // calls fs.stat() on symlink targets to determine file type, which fails
-      // for broken symlinks (ENOENT). yazl with lstat preserves symlinks as-is.
-      const zip = new yazl.ZipFile();
-      this.#addDirToZip(zip, clonePath, clonePath);
-      zip.end();
-
-      await new Promise((resolve, reject) => {
-        const output = createWriteStream(zipFile);
-        output.on('close', resolve);
-        output.on('error', reject);
-        zip.outputStream.on('error', reject);
-        zip.outputStream.pipe(output);
-      });
-
       this.#logTmpDiskUsage('zip');
-      return readFileSync(zipFile);
+      return await archiveFolder(clonePath, { followSymlinks: false });
     } catch (error) {
       throw new Error(`Failed to zip repository: ${error.message}`);
-    } finally /* c8 ignore next */ {
-      rmSync(zipDir, { recursive: true, force: true });
     }
   }
 

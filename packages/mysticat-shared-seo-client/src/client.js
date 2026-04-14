@@ -704,7 +704,7 @@ export default class SeoClient {
     const { body: pagesBody, fullAuditRef } = await this.sendRawRequest({
       type: epPages.type,
       target: url,
-      target_type: 'root_domain',
+      target_type: 'domain',
       export_columns: epPages.columns,
       display_limit: effectiveLimit,
       display_filter: buildFilter([{

@@ -44,7 +44,7 @@
     "chai-as-promised": "8.0.2",
     "mocha": "11.7.5",
     "mocha-multi-reporters": "1.5.1",
-    "sinon": "21.0.3",
+    "sinon": "21.1.2",
     "sinon-chai": "4.0.1",
     "typescript": "6.0.2"
   }

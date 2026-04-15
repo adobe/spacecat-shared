@@ -502,6 +502,13 @@ describe('SeoClient', () => {
         .to.be.rejectedWith('options object');
     });
 
+    it('sends display_date when explicit date is provided', async () => {
+      nockMetricsDatabases(BIG_MARKETS, metricsCsv, { targetDb: 'us' });
+
+      const result = await client.getMetrics('adobe.com', { date: '2025-02-01' });
+      expect(result.fullAuditRef).to.include('display_date=20250215');
+    });
+
     it('omits display_date when no date provided (live pricing)', async () => {
       nockMetricsDatabases(BIG_MARKETS, metricsCsv, { targetDb: 'us' });
 

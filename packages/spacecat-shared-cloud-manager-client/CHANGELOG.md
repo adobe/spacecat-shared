@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.1.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.1.2...@adobe/spacecat-shared-cloud-manager-client-v1.1.3) (2026-04-15)
+
+### Bug Fixes
+
+* **cm-client:** preserve broken symlinks when zipping repositories ([#1468](https://github.com/adobe/spacecat-shared/issues/1468)) ([943662a](https://github.com/adobe/spacecat-shared/commit/943662ac5d3765ee2a289355b9bf1e23c6c88230))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.1.1...@adobe/spacecat-shared-cloud-manager-client-v1.1.2) (2026-04-06)
 
 ### Bug Fixes

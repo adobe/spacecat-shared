@@ -368,8 +368,8 @@ export default class SeoClient {
         ...ep.defaultParams,
       };
       // Omitting display_date returns the provider's latest snapshot at live pricing
-      // (5x cheaper). The exact month may vary during early-month windows, which is
-      // acceptable because downstream consumers do not assume a specific reporting period.
+      // (5x cheaper). The latest snapshot is always last month's data, same as what
+      // lastMonthISO() was computing, so the returned data is identical.
       if (date) {
         params.display_date = toApiDate(date);
       }
@@ -450,8 +450,8 @@ export default class SeoClient {
         ...ep.defaultParams,
       };
       // Omitting display_date returns the provider's latest snapshot at live pricing
-      // (5x cheaper). The exact month may vary during early-month windows, which is
-      // acceptable because downstream consumers do not assume a specific reporting period.
+      // (5x cheaper). The latest snapshot is always last month's data, same as what
+      // lastMonthISO() was computing, so the returned data is identical.
       if (date) {
         params.display_date = toApiDate(date);
       }

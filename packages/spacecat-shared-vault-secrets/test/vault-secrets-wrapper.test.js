@@ -14,6 +14,7 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import sinon from 'sinon';
+import { clearFetchCache } from '@adobe/spacecat-shared-utils';
 import vaultSecrets, { loadSecrets, reset } from '../src/vault-secrets-wrapper.js';
 
 use(chaiAsPromised);
@@ -108,6 +109,7 @@ describe('vaultSecrets wrapper', () => {
 
   afterEach(() => {
     reset();
+    clearFetchCache();
     sinon.restore();
     nock.cleanAll();
 

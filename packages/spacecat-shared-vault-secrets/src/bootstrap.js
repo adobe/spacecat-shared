@@ -10,13 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { noCache, h1NoCache } from '@adobe/fetch';
+import { tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import aws4 from 'aws4';
-
-// Use @adobe/fetch for connection pooling instead of globalThis.fetch.
-// noCache() disables HTTP response caching; h1NoCache() in tests for nock compatibility.
-/* c8 ignore next */
-const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1 ? h1NoCache() : noCache();
 
 /**
  * Loads Vault AppRole bootstrap credentials from AWS Secrets Manager.

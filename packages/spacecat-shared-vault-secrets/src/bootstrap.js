@@ -49,6 +49,7 @@ export async function loadBootstrapConfig({ bootstrapPath }) {
     headers: {
       'Content-Type': 'application/x-amz-json-1.1',
       'X-Amz-Target': 'secretsmanager.GetSecretValue',
+      'Cache-Control': 'no-store',
       Host: host,
     },
     body,

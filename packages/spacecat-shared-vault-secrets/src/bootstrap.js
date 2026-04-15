@@ -10,8 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
+import { noCache, h1NoCache } from '@adobe/fetch';
 import aws4 from 'aws4';
+
+const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1 ? h1NoCache() : noCache();
 
 /**
  * Loads Vault AppRole bootstrap credentials from AWS Secrets Manager.

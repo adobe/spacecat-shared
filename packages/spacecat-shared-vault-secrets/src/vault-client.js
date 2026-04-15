@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
+import { fetch } from '@adobe/spacecat-shared-utils';
 
 const TOKEN_RENEW_BUFFER = 5 * 60 * 1000;
 

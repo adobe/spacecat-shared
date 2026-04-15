@@ -151,7 +151,7 @@ describe('CloudManagerClient', () => {
     statfsSyncStub.returns({ bsize: 4096, blocks: 131072, bfree: 65536 });
     writeSyncStub.reset();
     archiveFolderStub.reset();
-    archiveFolderStub.resolves();
+    archiveFolderStub.resolves(Buffer.from('zip-content'));
     extractStub.reset();
     extractStub.resolves();
     createFromStub.reset();
@@ -916,8 +916,6 @@ describe('CloudManagerClient', () => {
 
   describe('unzipRepository', () => {
     const expectedExtractPath = `${path.join(os.tmpdir(), 'cm-repo-')}XXXXXX`;
-    const expectedZipDir = `${path.join(os.tmpdir(), 'cm-zip-')}XXXXXX`;
-    const expectedZipFile = path.join(expectedZipDir, 'repo.zip');
 
     it('extracts ZIP buffer to a temp directory', async () => {
       const client = CloudManagerClient.createFrom(createContext());
@@ -925,28 +923,16 @@ describe('CloudManagerClient', () => {
 
       const extractPath = await client.unzipRepository(zipBuffer);
 
-      // Should have created temp dirs for extract (cm-repo-) and zip file (cm-zip-)
-      expect(mkdtempSyncStub).to.have.been.calledTwice;
+      // Should create a temp dir for extraction
+      expect(mkdtempSyncStub).to.have.been.calledOnce;
       expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-repo-$/);
-      expect(mkdtempSyncStub.secondCall.args[0]).to.match(/cm-zip-$/);
 
-      // Should write buffer to temp zip file, then extract
-      expect(writeSyncStub).to.have.been.calledOnce;
-      expect(writeSyncStub.firstCall.args[0]).to.equal(expectedZipFile);
-      expect(writeSyncStub.firstCall.args[1]).to.equal(zipBuffer);
+      // Should pass buffer directly to extract with safeSymlinksOnly
       expect(extractStub).to.have.been.calledOnce;
-      expect(extractStub.firstCall.args[0]).to.equal(expectedZipFile);
+      expect(extractStub.firstCall.args[0]).to.equal(zipBuffer);
       expect(extractStub.firstCall.args[1]).to.equal(expectedExtractPath);
+      expect(extractStub.firstCall.args[2]).to.deep.equal({ safeSymlinksOnly: true });
 
-      // Should validate symlinks after extraction
-      expect(readdirSyncStub).to.have.been.calledOnce;
-      expect(readdirSyncStub.firstCall.args[0]).to.equal(expectedExtractPath);
-
-      // Should clean up the temp zip directory
-      expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[0]).to.equal(expectedZipDir);
-
-      // Should return the extract path
       expect(extractPath).to.equal(expectedExtractPath);
     });
 
@@ -958,77 +944,9 @@ describe('CloudManagerClient', () => {
       await expect(client.unzipRepository(zipBuffer))
         .to.be.rejectedWith('Failed to unzip repository');
 
-      // Should have cleaned up both the extraction directory and the temp zip directory
-      expect(rmSyncStub).to.have.been.calledTwice;
-      const rmPaths = rmSyncStub.getCalls().map((c) => c.args[0]);
-      expect(rmPaths.some((p) => p.includes('cm-repo-'))).to.be.true;
-      expect(rmPaths.some((p) => p.includes('cm-zip-'))).to.be.true;
-    });
-
-    it('cleans up extractPath when second mkdtempSync fails', async () => {
-      mkdtempSyncStub.onFirstCall().returns(expectedExtractPath);
-      mkdtempSyncStub.onSecondCall().throws(new Error('ENOSPC: no space left on device'));
-
-      const client = CloudManagerClient.createFrom(createContext());
-
-      await expect(client.unzipRepository(Buffer.from('zip')))
-        .to.be.rejectedWith('Failed to unzip repository: ENOSPC: no space left on device');
-
-      // extractPath should be cleaned up even though zipDir was never created
+      // Should clean up the extraction directory
       expect(rmSyncStub).to.have.been.calledOnce;
       expect(rmSyncStub.firstCall.args[0]).to.equal(expectedExtractPath);
-    });
-
-    it('rejects when extracted symlink points outside repository root', async () => {
-      // Simulate a directory with a symlink that escapes the root
-      readdirSyncStub.withArgs(expectedExtractPath, { withFileTypes: true }).returns([{
-        name: 'evil-link',
-        isSymbolicLink: () => true,
-        isDirectory: () => false,
-      }]);
-      readlinkSyncStub.returns('/etc/shadow');
-
-      const client = CloudManagerClient.createFrom(createContext());
-
-      await expect(client.unzipRepository(Buffer.from('zip')))
-        .to.be.rejectedWith('Symlink escapes repository root: evil-link -> /etc/shadow');
-
-      // extractPath should be cleaned up
-      const rmPaths = rmSyncStub.getCalls().map((c) => c.args[0]);
-      expect(rmPaths.some((p) => p.includes('cm-repo-'))).to.be.true;
-    });
-
-    it('allows symlinks that point within the repository root', async () => {
-      // Simulate dispatcher-style symlinks: enabled_farms/foo.farm -> ../available_farms/foo.farm
-      readdirSyncStub.withArgs(expectedExtractPath, { withFileTypes: true }).returns([{
-        name: 'dispatcher',
-        isSymbolicLink: () => false,
-        isDirectory: () => true,
-      }]);
-      const dispatcherPath = path.join(expectedExtractPath, 'dispatcher');
-      readdirSyncStub.withArgs(dispatcherPath, { withFileTypes: true }).returns([{
-        name: 'enabled_farms',
-        isSymbolicLink: () => false,
-        isDirectory: () => true,
-      }, {
-        name: 'available_farms',
-        isSymbolicLink: () => false,
-        isDirectory: () => true,
-      }]);
-      const enabledPath = path.join(dispatcherPath, 'enabled_farms');
-      readdirSyncStub.withArgs(enabledPath, { withFileTypes: true }).returns([{
-        name: 'default.farm',
-        isSymbolicLink: () => true,
-        isDirectory: () => false,
-      }]);
-      readlinkSyncStub.returns('../available_farms/default.farm');
-      const availablePath = path.join(dispatcherPath, 'available_farms');
-      readdirSyncStub.withArgs(availablePath, { withFileTypes: true }).returns([]);
-
-      const client = CloudManagerClient.createFrom(createContext());
-      const result = await client.unzipRepository(Buffer.from('zip'));
-
-      expect(result).to.equal(expectedExtractPath);
     });
   });
 
@@ -1051,21 +969,47 @@ describe('CloudManagerClient', () => {
       expect(Buffer.isBuffer(result)).to.be.true;
       expect(result.toString()).to.equal('zip-content');
 
-      // Should create a temp dir for the zip file
-      expect(mkdtempSyncStub).to.have.been.calledOnce;
-      expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-zip-$/);
-
-      // Should archive the folder with followSymlinks: false
+      // Should call archiveFolder with followSymlinks: false (buffer-returning overload)
       expect(archiveFolderStub).to.have.been.calledOnce;
       expect(archiveFolderStub.firstCall.args[0]).to.equal(clonePath);
-      expect(archiveFolderStub.firstCall.args[2]).to.deep.equal({ followSymlinks: false });
+      expect(archiveFolderStub.firstCall.args[1]).to.deep.equal({ followSymlinks: false });
+    });
 
-      // Should read the zip file into a buffer
-      expect(readFileSyncStub).to.have.been.calledOnce;
+    it('logs a warning for broken symlinks but proceeds with zip', async () => {
+      const clonePath = '/tmp/cm-repo-zip-test';
+      existsSyncStub.withArgs(clonePath).returns(true);
 
-      // Should clean up the temp zip directory
-      expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
+      const enabledFarmsPath = path.join(clonePath, 'dispatcher', 'enabled_farms');
+      const brokenTarget = '../available_farms/missing.farm';
+      const resolvedTarget = path.resolve(enabledFarmsPath, brokenTarget);
+
+      readdirSyncStub.withArgs(clonePath, { withFileTypes: true }).returns([{
+        name: 'dispatcher',
+        isSymbolicLink: () => false,
+        isDirectory: () => true,
+      }]);
+      readdirSyncStub.withArgs(path.join(clonePath, 'dispatcher'), { withFileTypes: true }).returns([{
+        name: 'enabled_farms',
+        isSymbolicLink: () => false,
+        isDirectory: () => true,
+      }]);
+      readdirSyncStub.withArgs(enabledFarmsPath, { withFileTypes: true }).returns([{
+        name: 'broken.farm',
+        isSymbolicLink: () => true,
+        isDirectory: () => false,
+      }]);
+      readlinkSyncStub.withArgs(path.join(enabledFarmsPath, 'broken.farm')).returns(brokenTarget);
+      existsSyncStub.withArgs(resolvedTarget).returns(false);
+
+      const ctx = createContext();
+      const client = CloudManagerClient.createFrom(ctx);
+      const result = await client.zipRepository(clonePath);
+
+      expect(Buffer.isBuffer(result)).to.be.true;
+      expect(archiveFolderStub).to.have.been.calledOnce;
+      // Broken symlink triggers a warn log during validateSymlinks
+      expect(ctx.log.warn).to.have.been.calledOnce;
+      expect(ctx.log.warn.firstCall.args[0]).to.match(/Broken symlink.*broken\.farm.*missing\.farm/);
     });
 
     it('rejects symlinks that escape the repo root before zipping', async () => {
@@ -1086,13 +1030,9 @@ describe('CloudManagerClient', () => {
 
       // archiveFolder should never be called
       expect(archiveFolderStub).to.not.have.been.called;
-
-      // Should still clean up the temp zip directory
-      expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
     });
 
-    it('throws when archiveFolder fails and cleans up temp dir', async () => {
+    it('throws when archiveFolder fails', async () => {
       const clonePath = '/tmp/cm-repo-zip-test';
       existsSyncStub.withArgs(clonePath).returns(true);
       archiveFolderStub.rejects(new Error('failed to read directory'));
@@ -1101,10 +1041,6 @@ describe('CloudManagerClient', () => {
 
       await expect(client.zipRepository(clonePath))
         .to.be.rejectedWith('Failed to zip repository: failed to read directory');
-
-      // Should still clean up the temp zip directory
-      expect(rmSyncStub).to.have.been.calledOnce;
-      expect(rmSyncStub.firstCall.args[0]).to.match(/cm-zip-/);
     });
   });
 

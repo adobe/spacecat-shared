@@ -15,7 +15,7 @@ import { context as h2, h1 } from '@adobe/fetch';
 
 import { ENDPOINTS } from './endpoints.js';
 import {
-  parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, lastMonthISO, buildFilter,
+  parseCsvResponse, coerceValue, getLimit, toApiDate, fromApiDate, buildFilter,
   extractBrand, INTENT_CODES,
 } from './utils.js';
 
@@ -344,7 +344,7 @@ export default class SeoClient {
     if (typeof opts !== 'object' || opts === null) {
       throw new Error('Second argument must be an options object, not a positional value');
     }
-    const { date = lastMonthISO(), limit = 200, region } = opts;
+    const { date, limit = 200, region } = opts;
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -358,15 +358,23 @@ export default class SeoClient {
     // Capped at MAX_PAID_KEYWORDS_FETCH to bound cost.
     const fetchLimit = Math.min(effectiveLimit * 10, MAX_PAID_KEYWORDS_FETCH);
 
-    const dbResults = await this.fanOut(databases, (db) => this.sendRawRequest({
-      type: ep.type,
-      domain: url,
-      database: db,
-      display_date: toApiDate(date),
-      display_limit: fetchLimit,
-      export_columns: ep.columns,
-      ...ep.defaultParams,
-    }, ep.path), 'getPaidPages');
+    const dbResults = await this.fanOut(databases, (db) => {
+      const params = {
+        type: ep.type,
+        domain: url,
+        database: db,
+        display_limit: fetchLimit,
+        export_columns: ep.columns,
+        ...ep.defaultParams,
+      };
+      // Omitting display_date returns the provider's latest snapshot at live pricing
+      // (5x cheaper). The returned data may differ slightly from a pinned monthly
+      // snapshot, which is acceptable for our use case.
+      if (date) {
+        params.display_date = toApiDate(date);
+      }
+      return this.sendRawRequest(params, ep.path);
+    }, 'getPaidPages');
 
     // Group keywords by URL across all databases
     const pageMap = new Map();
@@ -425,7 +433,7 @@ export default class SeoClient {
     if (typeof opts !== 'object' || opts === null) {
       throw new Error('Second argument must be an options object, not a positional value');
     }
-    const { date = lastMonthISO(), region } = opts;
+    const { date, region } = opts;
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -433,14 +441,22 @@ export default class SeoClient {
     const ep = ENDPOINTS.metrics;
     const databases = getDatabases(region);
 
-    const dbResults = await this.fanOut(databases, (db) => this.sendRawRequest({
-      type: ep.type,
-      domain: url,
-      database: db,
-      display_date: toApiDate(date),
-      export_columns: ep.columns,
-      ...ep.defaultParams,
-    }, ep.path), 'getMetrics');
+    const dbResults = await this.fanOut(databases, (db) => {
+      const params = {
+        type: ep.type,
+        domain: url,
+        database: db,
+        export_columns: ep.columns,
+        ...ep.defaultParams,
+      };
+      // Omitting display_date returns the provider's latest snapshot at live pricing
+      // (5x cheaper). The returned data may differ slightly from a pinned monthly
+      // snapshot, which is acceptable for our use case.
+      if (date) {
+        params.display_date = toApiDate(date);
+      }
+      return this.sendRawRequest(params, ep.path);
+    }, 'getMetrics');
 
     const metrics = {
       org_keywords: 0,
@@ -758,7 +774,7 @@ export default class SeoClient {
   }
 
   // eslint-disable-next-line no-unused-vars, class-methods-use-this
-  async getMetricsByCountry(url, date = lastMonthISO()) {
+  async getMetricsByCountry(url, date) {
     return STUB_RESPONSE;
   }
 }

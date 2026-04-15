@@ -33,7 +33,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.112.5",
+    "@adobe/fetch": "4.3.0",
     "aws4": "1.13.2"
   },
   "devDependencies": {

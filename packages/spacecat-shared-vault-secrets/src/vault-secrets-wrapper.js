@@ -22,7 +22,7 @@ function isDevAliasDeployment(ctx, env) {
   if (env !== 'dev') {
     return false;
   }
-  const { version } = ctx.func || {};
+  const { version } = ctx.func;
   if (!version) {
     return false;
   }

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.13.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.3...@adobe/spacecat-shared-tokowaka-client-v1.13.4) (2026-04-15)
+
+### Bug Fixes
+
+* **cm-client:** preserve broken symlinks when zipping repositories ([#1468](https://github.com/adobe/spacecat-shared/issues/1468)) ([943662a](https://github.com/adobe/spacecat-shared/commit/943662ac5d3765ee2a289355b9bf1e23c6c88230))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.13.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.2...@adobe/spacecat-shared-tokowaka-client-v1.13.3) (2026-04-09)
 
 ### Bug Fixes

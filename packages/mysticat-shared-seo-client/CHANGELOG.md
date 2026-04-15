@@ -1,3 +1,9 @@
+## [@adobe/mysticat-shared-seo-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.2.2...@adobe/mysticat-shared-seo-client-v1.2.3) (2026-04-15)
+
+### Bug Fixes
+
+* **seo-client:** omit display_date to avoid 5x historical pricing ([#1537](https://github.com/adobe/spacecat-shared/issues/1537)) ([4ffc683](https://github.com/adobe/spacecat-shared/commit/4ffc683db492d10414c2bc5c23804ec42d88b2c5))
+
 ## [@adobe/mysticat-shared-seo-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.2.1...@adobe/mysticat-shared-seo-client-v1.2.2) (2026-04-14)
 
 ### Bug Fixes

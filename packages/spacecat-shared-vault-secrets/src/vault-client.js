@@ -15,6 +15,7 @@ import { noCache, h1NoCache } from '@adobe/fetch';
 // Use @adobe/fetch for connection pooling instead of globalThis.fetch.
 // noCache() disables HTTP response caching (prevents stale Vault reads).
 // h1NoCache() in tests for nock compatibility; noCache() in production for HTTP/2 over HTTPS.
+/* c8 ignore next */
 const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1 ? h1NoCache() : noCache();
 
 const TOKEN_RENEW_BUFFER = 5 * 60 * 1000;

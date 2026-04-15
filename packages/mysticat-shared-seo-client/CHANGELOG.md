@@ -1,3 +1,9 @@
+## [@adobe/mysticat-shared-seo-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.2.1...@adobe/mysticat-shared-seo-client-v1.2.2) (2026-04-14)
+
+### Bug Fixes
+
+* Fix request params for the original results in SEO client ([#1535](https://github.com/adobe/spacecat-shared/issues/1535)) ([b8687cf](https://github.com/adobe/spacecat-shared/commit/b8687cf8d42098ee746df79f1268d729e73f6587))
+
 ## [@adobe/mysticat-shared-seo-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.2.0...@adobe/mysticat-shared-seo-client-v1.2.1) (2026-04-10)
 
 ### Bug Fixes

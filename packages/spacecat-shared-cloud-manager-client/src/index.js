@@ -260,7 +260,9 @@ export default class CloudManagerClient {
    * Builds authenticated git arguments for a remote command (clone, push, or pull).
    *
    * Both repo types use http.extraheader for authentication:
-   * - Standard repos: Basic auth header via extraheader on the repo URL
+   * - Standard repos: Basic auth header via extraheader scoped to the org prefix
+   *   (scheme + host + '/' + orgName + '/'), so the header covers all repos and submodules
+   *   belonging to that customer org without granting access to other orgs on the same host
    * - BYOG repos: Bearer token + API key + IMS org ID via extraheader on the CM Repo URL
    *
    * @param {string} command - The git command ('clone', 'push', or 'pull')
@@ -276,8 +278,11 @@ export default class CloudManagerClient {
     if (repoType === CM_REPO_TYPE.STANDARD) {
       const credentials = this.#getStandardRepoCredentials(programId);
       const basicAuth = Buffer.from(credentials).toString('base64');
+      const parsedUrl = new URL(repoUrl);
+      const orgName = parsedUrl.pathname.split('/')[1];
+      const repoOrgPrefix = `${parsedUrl.origin}/${orgName}/`;
       return [
-        '-c', `http.${repoUrl}.extraheader=Authorization: Basic ${basicAuth}`,
+        '-c', `http.${repoOrgPrefix}.extraheader=Authorization: Basic ${basicAuth}`,
         command, repoUrl,
       ];
     }
@@ -316,7 +321,7 @@ export default class CloudManagerClient {
       this.log.info(`Cloning CM repository: program=${programId}, repo=${repositoryId}, type=${repoType}`);
 
       const args = await this.#buildAuthGitArgs('clone', programId, repositoryId, { imsOrgId, repoType, repoUrl });
-      this.#execGit([...args, clonePath]);
+      this.#execGit([...args, '--recurse-submodules', clonePath]);
       this.log.info(`Repository cloned to ${clonePath}`);
       this.#logTmpDiskUsage('clone');
 

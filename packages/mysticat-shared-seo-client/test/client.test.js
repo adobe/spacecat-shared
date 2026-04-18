@@ -502,12 +502,18 @@ describe('SeoClient', () => {
         .to.be.rejectedWith('options object');
     });
 
-    it('defaults to last month when no date provided', async () => {
+    it('sends display_date when explicit date is provided', async () => {
+      nockMetricsDatabases(BIG_MARKETS, metricsCsv, { targetDb: 'us' });
+
+      const result = await client.getMetrics('adobe.com', { date: '2025-02-01' });
+      expect(result.fullAuditRef).to.include('display_date=20250215');
+    });
+
+    it('omits display_date when no date provided (live pricing)', async () => {
       nockMetricsDatabases(BIG_MARKETS, metricsCsv, { targetDb: 'us' });
 
       const result = await client.getMetrics('adobe.com');
-      // Clock is 2025-03-12, so lastMonthISO() = 2025-02-01 → toApiDate = 20250215
-      expect(result.fullAuditRef).to.include('display_date=20250215');
+      expect(result.fullAuditRef).to.not.include('display_date');
       expect(result.result.metrics.org_traffic).to.equal(41042165);
     });
 
@@ -1173,10 +1179,18 @@ describe('SeoClient', () => {
       expect(result.result.pages[0].top_keyword_country).to.equal('DE');
     });
 
-    it('sends custom date converted to API format', async () => {
+    it('sends display_date when explicit date is provided', async () => {
       nockPaidDatabases(BIG_MARKETS, paidKeywordsCsv, { targetDb: 'us' });
 
-      await client.getPaidPages('adobe.com', { date: '2025-11-10', limit: 500 });
+      const result = await client.getPaidPages('adobe.com', { date: '2025-11-10', limit: 500 });
+      expect(result.fullAuditRef).to.include('display_date=20251115');
+    });
+
+    it('omits display_date when no date provided (live pricing)', async () => {
+      nockPaidDatabases(BIG_MARKETS, paidKeywordsCsv, { targetDb: 'us' });
+
+      const result = await client.getPaidPages('adobe.com');
+      expect(result.fullAuditRef).to.not.include('display_date');
     });
 
     it('respects upper limit of 1000 on output', async () => {

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.1.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.1.3...@adobe/spacecat-shared-cloud-manager-client-v1.1.4) (2026-04-18)
+
+### Bug Fixes
+
+* clone functionality to include submodules ([#1413](https://github.com/adobe/spacecat-shared/issues/1413)) ([a5c0016](https://github.com/adobe/spacecat-shared/commit/a5c0016987f6ebb8235493f877f1a681326192ec))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.1.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.1.2...@adobe/spacecat-shared-cloud-manager-client-v1.1.3) (2026-04-15)
 
 ### Bug Fixes

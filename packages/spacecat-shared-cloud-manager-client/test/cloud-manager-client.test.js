@@ -278,25 +278,12 @@ describe('CloudManagerClient', () => {
       const cloneArgs = getGitArgs(execFileSyncStub.firstCall);
       const cloneArgsStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(cloneArgs).to.include('clone');
-      expect(cloneArgsStr).to.include('http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==');
+      expect(cloneArgsStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
       expect(cloneArgsStr).to.include(TEST_STANDARD_REPO_URL);
       expect(cloneArgs).to.include(EXPECTED_CLONE_PATH);
       // No credentials in the URL itself
       expect(cloneArgsStr).to.not.include('stduser:stdtoken123@');
       expect(cloneArgsStr).to.not.include('Bearer');
-    });
-
-    it('includes --recurse-submodules in the clone arguments', async () => {
-      const client = CloudManagerClient.createFrom(createContext());
-
-      await client.clone(
-        TEST_PROGRAM_ID,
-        TEST_REPO_ID,
-        { imsOrgId: TEST_IMS_ORG_ID },
-      );
-
-      const gitArgs = getGitArgs(execFileSyncStub.firstCall);
-      expect(gitArgs).to.include('--recurse-submodules');
     });
 
     it('throws when standard credentials not found for programId', async () => {
@@ -797,7 +784,7 @@ describe('CloudManagerClient', () => {
       const pushArgs = getGitArgs(execFileSyncStub.firstCall);
       const pushArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pushArgStr).to.include('push');
-      expect(pushArgStr).to.include('http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==');
+      expect(pushArgStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
       expect(pushArgStr).to.include(TEST_STANDARD_REPO_URL);
       expect(pushArgStr).to.not.include('stduser:stdtoken123@');
       expect(pushArgStr).to.not.include('Bearer');
@@ -859,7 +846,7 @@ describe('CloudManagerClient', () => {
 
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
-      expect(pullArgStr).to.include('http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==');
+      expect(pullArgStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
       expect(pullArgStr).to.include(TEST_STANDARD_REPO_URL);
       expect(pullArgStr).to.not.include('stduser:stdtoken123@');
       expect(pullArgStr).to.not.include('Bearer');

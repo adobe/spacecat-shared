@@ -42,6 +42,6 @@
     "@adobe/helix-shared-wrap": "2.0.2",
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
-    "sinon": "21.0.3"
+    "sinon": "21.1.2"
   }
 }

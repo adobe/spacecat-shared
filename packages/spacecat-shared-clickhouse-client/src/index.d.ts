@@ -10,7 +10,16 @@
  * governing permissions and limitations under the License.
  */
 
-export default class ClickhouseClient {}
+export interface ClickhouseClientConfig {
+  url?: string;
+  username?: string;
+  password?: string;
+  database?: string;
+}
+
+export default class ClickhouseClient {
+  constructor(config?: ClickhouseClientConfig);
+}
 
 export type { BrandPresenceExecution } from './brand-presence-execution.d.ts';
 export type { BrandPresenceCompetitorData } from './brand-presence-competitor-data.d.ts';

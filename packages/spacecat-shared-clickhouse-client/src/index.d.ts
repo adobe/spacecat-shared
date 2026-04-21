@@ -18,7 +18,7 @@ export interface ClickhouseClientConfig {
 }
 
 export default class ClickhouseClient {
-  constructor(config?: ClickhouseClientConfig);
+  constructor(config?: ClickhouseClientConfig, log?: Console);
 
   writeBatch(table: string, rows: object[]): Promise<void>;
 

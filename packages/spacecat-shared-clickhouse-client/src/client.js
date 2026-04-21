@@ -13,7 +13,7 @@
 import { createClient } from '@clickhouse/client';
 
 export default class ClickhouseClient {
-  constructor(config = {}) {
+  constructor(config = {}, log = console) {
     const {
       url = process.env.CLICKHOUSE_URL,
       username = process.env.CLICKHOUSE_USER,
@@ -21,6 +21,7 @@ export default class ClickhouseClient {
       database = process.env.CLICKHOUSE_DB,
     } = config;
 
+    this.log = log;
     this.client = createClient({
       url,
       username,
@@ -34,21 +35,31 @@ export default class ClickhouseClient {
       return;
     }
 
-    await this.client.insert({
-      table,
-      values: rows,
-      format: 'JSONEachRow',
-    });
+    try {
+      await this.client.insert({
+        table,
+        values: rows,
+        format: 'JSONEachRow',
+      });
+    } catch (err) {
+      this.log.error(`[clickhouse-client] writeBatch failed on table ${table}: ${err.message}`);
+      throw new Error(`ClickHouse write failed: ${err.message}`);
+    }
   }
 
   async query(query, queryParams = {}) {
-    const result = await this.client.query({
-      query,
-      query_params: queryParams,
-      format: 'JSONEachRow',
-    });
+    try {
+      const result = await this.client.query({
+        query,
+        query_params: queryParams,
+        format: 'JSONEachRow',
+      });
 
-    return result.json();
+      return result.json();
+    } catch (err) {
+      this.log.error(`[clickhouse-client] query failed: ${err.message}`);
+      throw new Error(`ClickHouse query failed: ${err.message}`);
+    }
   }
 
   async close() {

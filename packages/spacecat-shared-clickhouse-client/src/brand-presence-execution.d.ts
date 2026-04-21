@@ -31,7 +31,7 @@ export interface BrandPresenceExecution {
 
   volume: number;
 
-  user_intent: 'informational' | 'commercial' | 'transactional';
+  user_intent: 'informational' | 'commercial' | 'transactional' | '';
 
   answer: string;
 
@@ -51,7 +51,7 @@ export interface BrandPresenceExecution {
 
   visibility_score: number;
 
-  detected_brand_mentions: string | null;
+  detected_brand_mentions: string[] | null;
 
   error_code: string | null;
 

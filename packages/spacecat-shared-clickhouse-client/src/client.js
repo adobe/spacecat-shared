@@ -40,4 +40,8 @@ export default class ClickhouseClient {
       format: 'JSONEachRow',
     });
   }
+
+  async close() {
+    await this.client.close();
+  }
 }

@@ -13,3 +13,4 @@
 import ClickhouseClient from './client.js';
 
 export default ClickhouseClient;
+export { VALIDATORS } from './validators.js';

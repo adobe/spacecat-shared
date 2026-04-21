@@ -11,6 +11,7 @@
  */
 
 import { createClient } from '@clickhouse/client';
+import { VALIDATORS } from './validators.js';
 
 export default class ClickhouseClient {
   constructor(config = {}, log = console) {
@@ -33,6 +34,18 @@ export default class ClickhouseClient {
   async writeBatch(table, rows) {
     if (!rows || rows.length === 0) {
       return;
+    }
+
+    const validator = VALIDATORS[table];
+    if (validator) {
+      const tagWithIndex = (err, i) => ({ index: i, ...err });
+      const validateRow = (row, i) => validator(row).map((err) => tagWithIndex(err, i));
+      const errors = rows.flatMap(validateRow);
+      if (errors.length > 0) {
+        const err = new Error('Validation failed');
+        err.errors = errors;
+        throw err;
+      }
     }
 
     try {

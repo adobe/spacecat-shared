@@ -10,6 +10,22 @@
  * governing permissions and limitations under the License.
  */
 
+import { createClient } from '@clickhouse/client';
+
 export default class ClickhouseClient {
-  // TODO: implement
+  constructor(config = {}) {
+    const {
+      url = process.env.CLICKHOUSE_URL,
+      username = process.env.CLICKHOUSE_USER,
+      password = process.env.CLICKHOUSE_PASSWORD,
+      database = process.env.CLICKHOUSE_DB,
+    } = config;
+
+    this.client = createClient({
+      url,
+      username,
+      password,
+      database,
+    });
+  }
 }

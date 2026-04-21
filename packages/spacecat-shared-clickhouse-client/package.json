@@ -33,7 +33,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@clickhouse/client": "^1.18.3"
+  },
   "devDependencies": {
     "chai": "6.2.2",
     "typescript": "6.0.2"

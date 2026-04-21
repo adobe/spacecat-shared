@@ -22,6 +22,8 @@ export default class ClickhouseClient {
 
   writeBatch(table: string, rows: object[]): Promise<void>;
 
+  query(query: string, queryParams?: Record<string, unknown>): Promise<object[]>;
+
   close(): Promise<void>;
 }
 

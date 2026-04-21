@@ -41,6 +41,16 @@ export default class ClickhouseClient {
     });
   }
 
+  async query(query, queryParams = {}) {
+    const result = await this.client.query({
+      query,
+      query_params: queryParams,
+      format: 'JSONEachRow',
+    });
+
+    return result.json();
+  }
+
   async close() {
     await this.client.close();
   }

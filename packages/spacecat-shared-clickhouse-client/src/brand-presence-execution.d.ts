@@ -30,13 +30,13 @@ export interface BrandPresenceExecution {
 
   prompt: string;
 
-  origin: string; //'HUMAN' | 'AI'
+  origin: 'HUMAN' | 'AI';
 
   region: string;
 
   volume: number;
 
-  user_intent: string; //'informational' | 'commercial' | 'transactional';
+  user_intent: 'informational' | 'commercial' | 'transactional';
 
   answer: string;
 
@@ -46,7 +46,7 @@ export interface BrandPresenceExecution {
 
   mentions: boolean;
 
-  sentiment: string; //'positive' | 'neutral' | 'negative';
+  sentiment: 'positive' | 'neutral' | 'negative';
 
   business_competitors: string[];
 

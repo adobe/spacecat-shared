@@ -10,13 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/**
- * Represents a single row in the `brand_presence_executions` ClickHouse table.
- *
- * Table engine: MergeTree()
- * Partition by: (platform, toYYYYMM(execution_date))
- * Order by:     (platform, execution_date, category, topic)
- */
 export interface BrandPresenceExecution {
   platform: string;
 

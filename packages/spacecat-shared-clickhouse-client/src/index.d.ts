@@ -19,6 +19,8 @@ export interface ClickhouseClientConfig {
 
 export default class ClickhouseClient {
   constructor(config?: ClickhouseClientConfig);
+
+  writeBatch(table: string, rows: object[]);
 }
 
 export type { BrandPresenceExecution } from './brand-presence-execution.d.ts';

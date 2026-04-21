@@ -28,4 +28,16 @@ export default class ClickhouseClient {
       database,
     });
   }
+
+  async writeBatch(table, rows) {
+    if (!rows || rows.length === 0) {
+      return;
+    }
+
+    await this.client.insert({
+      table,
+      values: rows,
+      format: 'JSONEachRow',
+    });
+  }
 }

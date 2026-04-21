@@ -12,7 +12,9 @@
 
 import crypto from 'crypto';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { hasText, isNonEmptyObject, tracingFetch } from '@adobe/spacecat-shared-utils';
+import {
+  hasText, isNonEmptyObject, prependSchema, tracingFetch,
+} from '@adobe/spacecat-shared-utils';
 import { v4 as uuidv4 } from 'uuid';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
@@ -33,6 +35,60 @@ export { calculateForwardedHost } from './utils/custom-html-utils.js';
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
+
+// ---------------------------------------------------------------------------
+// WAF / Bot-Manager connectivity probe
+// ---------------------------------------------------------------------------
+
+const EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT = 'https://live.edgeoptimize.net';
+
+// Blocks loopback, link-local, and RFC1918 ranges — never forward these as probe targets.
+const PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/i;
+
+const WAF_PROBE_TIMEOUT_MS = 15000;
+
+// Soft-block detection: only phrases that appear exclusively in challenge pages.
+// Broad terms like 'blocked' or 'cloudflare' cause false positives on legitimate pages.
+const BOT_CHALLENGE_BODY_MAX_BYTES = 2048;
+const BOT_CHALLENGE_KEYWORDS = [
+  'challenge',
+  'captcha',
+  'bot manager',
+  'access denied',
+  'cf-chl-widget',
+  'completing the challenge',
+];
+
+// 403 and 429 are universal WAF block signals; 406 is used by Signal Sciences
+// (Fastly Next-Gen WAF) and some Imperva configurations as their block response.
+const HARD_BLOCK_STATUS_CODES = new Set([403, 406, 429]);
+
+async function classifyProbeResponse(response, targetHost, log) {
+  const { status } = response;
+
+  if (HARD_BLOCK_STATUS_CODES.has(status)) {
+    log.info(`[edge-optimize-probe] Hard block for ${targetHost}: HTTP ${status}`);
+    return { reachable: false, blocked: true, statusCode: status };
+  }
+
+  if (status >= 200 && status < 300) {
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('text/html')) {
+      const text = await response.text();
+      const snippet = text.slice(0, BOT_CHALLENGE_BODY_MAX_BYTES).toLowerCase();
+      const isSoftBlock = BOT_CHALLENGE_KEYWORDS.some((kw) => snippet.includes(kw));
+      if (isSoftBlock) {
+        log.info(`[edge-optimize-probe] Soft block (challenge page) for ${targetHost}: HTTP ${status}`);
+        return { reachable: false, blocked: true, statusCode: status };
+      }
+    }
+    log.info(`[edge-optimize-probe] Clean pass for ${targetHost}: HTTP ${status}`);
+    return { reachable: true, blocked: false, statusCode: status };
+  }
+
+  log.info(`[edge-optimize-probe] Unexpected status for ${targetHost}: HTTP ${status}`);
+  return { reachable: false, blocked: false, statusCode: status };
+}
 
 /** Matches SpaceCat API eligibility for edge deploy (non-domain-wide). */
 function isEdgeDeployableSuggestionStatus(status) {
@@ -1207,6 +1263,76 @@ class TokowakaClient {
       HTTP_INTERNAL_SERVER_ERROR,
     );
     /* c8 ignore stop */
+  }
+
+  /**
+   * Probes whether a WAF or Bot Manager is blocking AdobeEdgeOptimize/1.0 traffic for
+   * the site, then cross-checks the live edge-optimize routing status so a stale probe
+   * result never overrides a working deployment.
+   *
+   * Four probe outcomes:
+   * - Hard block: HTTP 403/406/429 → `{ reachable: false, blocked: true }`
+   * - Soft block: 2xx with bot-challenge HTML → `{ reachable: false, blocked: true }`
+   * - Pass: 2xx with real content → `{ reachable: true, blocked: false }`
+   * - Network/timeout error → `{ reachable: false, blocked: null, reason: 'timeout'|'error' }`
+   *
+   * When the probe does not pass, `edgeOptimizeEnabled` from `checkEdgeOptimizeStatus`
+   * is included in the result so callers can detect a self-healed deployment.
+   *
+   * This method never throws — all errors are captured into the return value.
+   *
+   * @param {Object} site - Site entity with a `getBaseURL()` method.
+   * @returns {Promise<Object>} WAF probe result, optionally extended with `edgeOptimizeEnabled`.
+   */
+  async checkWafConnectivity(site) {
+    const proxyBaseUrl = this.env.EDGE_OPTIMIZE_PROXY_BASE_URL
+      ?? EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT;
+    const siteBaseUrl = site.getBaseURL();
+    let probeResult = { probedUrl: String(siteBaseUrl) };
+
+    try {
+      const normalizedUrl = prependSchema(siteBaseUrl);
+      const { host: targetHost, hostname, href: probedUrl } = new URL(normalizedUrl);
+      probeResult = { probedUrl };
+
+      if (PRIVATE_HOST_RE.test(hostname)) {
+        this.log.warn(`[edge-optimize-probe] Refusing to probe private/loopback host: ${hostname}`);
+        return {
+          ...probeResult, reachable: false, blocked: null, reason: 'error',
+        };
+      }
+
+      this.log.info(`[edge-optimize-probe] Probing ${targetHost} via edge optimize proxy at ${proxyBaseUrl}`);
+
+      const response = await tracingFetch(proxyBaseUrl, {
+        method: 'GET',
+        headers: { 'x-forwarded-host': targetHost },
+        signal: AbortSignal.timeout(WAF_PROBE_TIMEOUT_MS),
+      });
+
+      const classification = await classifyProbeResponse(response, targetHost, this.log);
+      probeResult = { ...probeResult, ...classification };
+    } catch (error) {
+      const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
+      const reason = isTimeout ? 'timeout' : 'error';
+      this.log.warn(`[edge-optimize-probe] ${reason} during WAF probe: ${error.message}`);
+      probeResult = {
+        ...probeResult, reachable: false, blocked: null, reason,
+      };
+    }
+
+    if (!probeResult.reachable) {
+      try {
+        const { edgeOptimizeEnabled } = await this.checkEdgeOptimizeStatus(site, '/');
+        this.log.info(`[edge-optimize-probe] Edge optimize status: edgeOptimizeEnabled=${edgeOptimizeEnabled}`);
+        return { ...probeResult, edgeOptimizeEnabled };
+      } catch (err) {
+        this.log.warn(`[edge-optimize-probe] Edge optimize status check failed: ${err.message}`);
+        return { ...probeResult, edgeOptimizeEnabled: null };
+      }
+    }
+
+    return probeResult;
   }
 
   /**

@@ -10,7 +10,20 @@
  * governing permissions and limitations under the License.
  */
 
-export default class ClickhouseClient {}
+export interface BrandPresenceCompetitorData {
+  platform: string;
 
-export type { BrandPresenceExecution } from './brand-presence-execution.d.ts';
-export type { BrandPresenceCompetitorData } from './brand-presence-competitor-data.d.ts';
+  week: string;
+
+  category: string;
+
+  competitor: string;
+
+  mentions: number;
+
+  citations: number;
+
+  region: string;
+
+  updated_at: Date;
+}

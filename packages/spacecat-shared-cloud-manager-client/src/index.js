@@ -25,7 +25,11 @@ import { archiveFolder, extract } from 'zip-lib';
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
 const PATCH_FILE_PREFIX = 'cm-patch-';
-const GIT_OPERATION_TIMEOUT_MS = 120_000; // 120s — fail fast before Lambda timeout
+
+// Per-operation timeout for git commands (clone, push, pull, commit, etc.).
+// Override via GIT_OPERATION_TIMEOUT_MS env var. Defaults to 10 min so large
+// repositories can finish cloning within the Lambda's 15-min envelope.
+const GIT_OPERATION_TIMEOUT_MS = parseInt(process.env.GIT_OPERATION_TIMEOUT_MS, 10) || 600_000;
 
 /**
  * Repository type constants for Cloud Manager integrations.
@@ -586,7 +590,7 @@ export default class CloudManagerClient {
       this.log.info(`Checked out ref '${ref}' before pull`);
     }
     const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
-    this.#execGit(pullArgs, { cwd: clonePath });
+    this.#execGit([...pullArgs, '--recurse-submodules'], { cwd: clonePath });
     this.log.info('Changes pulled successfully');
     this.#logTmpDiskUsage('pull');
   }

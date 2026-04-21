@@ -391,9 +391,9 @@ describe('CloudManagerClient', () => {
       const client = CloudManagerClient.createFrom(context);
 
       await expect(client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, { imsOrgId: TEST_IMS_ORG_ID }))
-        .to.be.rejectedWith('Git command timed out after 120s');
+        .to.be.rejectedWith(/^Git command timed out after \d+s$/);
 
-      expect(context.log.error.firstCall.args[0]).to.include('timed out after 120s');
+      expect(context.log.error.firstCall.args[0]).to.match(/timed out after \d+s/);
     });
 
     it('sanitizes Bearer token and credentials in git error output', async () => {
@@ -836,6 +836,7 @@ describe('CloudManagerClient', () => {
 
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
+      expect(pullArgStr).to.include('--recurse-submodules');
       expect(pullArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
       expect(pullArgStr).to.include('x-api-key: test-client-id');
       expect(pullArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
@@ -859,6 +860,7 @@ describe('CloudManagerClient', () => {
 
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
+      expect(pullArgStr).to.include('--recurse-submodules');
       expect(pullArgStr).to.include('http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==');
       expect(pullArgStr).to.include(TEST_STANDARD_REPO_URL);
       expect(pullArgStr).to.not.include('stduser:stdtoken123@');

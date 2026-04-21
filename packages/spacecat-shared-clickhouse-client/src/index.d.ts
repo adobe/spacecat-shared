@@ -11,3 +11,5 @@
  */
 
 export default class ClickhouseClient {}
+
+export type { BrandPresenceExecution } from './brand-presence-execution.d.ts';

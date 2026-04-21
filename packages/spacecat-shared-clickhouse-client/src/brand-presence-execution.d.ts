@@ -11,11 +11,13 @@
  */
 
 export interface BrandPresenceExecution {
+  site_id: string;
+
   platform: string;
 
   week: string;
 
-  execution_date: Date;
+  execution_date: string;
 
   category: string;
 
@@ -37,7 +39,7 @@ export interface BrandPresenceExecution {
 
   citations: boolean;
 
-  mentions: boolean;
+  answer_contains_brandname: boolean; // mentions
 
   sentiment: 'positive' | 'neutral' | 'negative';
 
@@ -58,6 +60,6 @@ export interface BrandPresenceExecution {
   citation_answers_with_citations: number;
 
   citation_potential: string;
-  
-  updated_at: Date;
+
+  updated_at: string;
 }

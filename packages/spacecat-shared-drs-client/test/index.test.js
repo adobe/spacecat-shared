@@ -726,6 +726,264 @@ describe('DrsClient', () => {
     });
   });
 
+  describe('isS3Configured', () => {
+    it('returns false when s3Bucket is missing', () => {
+      const client = new DrsClient({
+        apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY, snsTopicArn: 'arn:aws:sns:us-east-1:123:topic',
+      }, log);
+      expect(client.isS3Configured()).to.be.false;
+    });
+
+    it('returns false when snsTopicArn is missing', () => {
+      const client = new DrsClient({
+        apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY, s3Bucket: 'drs-bucket',
+      }, log);
+      expect(client.isS3Configured()).to.be.false;
+    });
+
+    it('returns true when both s3Bucket and snsTopicArn are set', () => {
+      const client = new DrsClient({
+        apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY, s3Bucket: 'drs-bucket', snsTopicArn: 'arn:aws:sns:us-east-1:123:topic',
+      }, log);
+      expect(client.isS3Configured()).to.be.true;
+    });
+  });
+
+  describe('uploadExcelToDrs', () => {
+    const S3_BUCKET = 'drs-bucket';
+    const SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:123456789:drs-topic';
+    let s3ClientStub;
+    let s3Client;
+
+    beforeEach(() => {
+      s3ClientStub = sinon.stub();
+      s3Client = { send: s3ClientStub };
+    });
+
+    it('uploads Excel and returns the S3 URI', async () => {
+      s3ClientStub.resolves({});
+
+      const client = new DrsClient({
+        apiBaseUrl: DRS_API_URL,
+        apiKey: DRS_API_KEY,
+        s3Bucket: S3_BUCKET,
+        snsTopicArn: SNS_TOPIC_ARN,
+        s3Client,
+      }, log);
+
+      const excelBuffer = Buffer.from('fake-excel-bytes');
+      const result = await client.uploadExcelToDrs({
+        siteId: 'site-1',
+        brandSlug: 'acme',
+        jobId: 'job-abc',
+        excelBuffer,
+      });
+
+      expect(result).to.equal('s3://drs-bucket/external/spacecat/site-1/acme/job-abc/source.xlsx');
+      expect(s3ClientStub).to.have.been.calledOnce;
+      const [cmd] = s3ClientStub.args[0];
+      expect(cmd.input.Bucket).to.equal(S3_BUCKET);
+      expect(cmd.input.Key).to.equal('external/spacecat/site-1/acme/job-abc/source.xlsx');
+      expect(cmd.input.ContentType).to.equal('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      expect(cmd.input.ServerSideEncryption).to.equal('AES256');
+      expect(cmd.input.Body).to.equal(excelBuffer);
+      expect(log.info).to.have.been.calledWith('Uploading Excel to DRS S3', { siteId: 'site-1', jobId: 'job-abc', key: 'external/spacecat/site-1/acme/job-abc/source.xlsx' });
+      expect(log.info).to.have.been.calledWith('Excel uploaded to DRS S3', { uri: result });
+    });
+
+    it('throws when not S3 configured', async () => {
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      await expect(client.uploadExcelToDrs({ siteId: 'site-1', brandSlug: 'acme', jobId: 'job-1', excelBuffer: Buffer.from('x') }))
+        .to.be.rejectedWith('DRS S3 is not configured');
+    });
+
+    it('throws when siteId is missing', async () => {
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, s3Client,
+      }, log);
+      await expect(client.uploadExcelToDrs({ brandSlug: 'acme', jobId: 'job-1', excelBuffer: Buffer.from('x') }))
+        .to.be.rejectedWith('siteId is required');
+    });
+
+    it('throws when jobId is missing', async () => {
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, s3Client,
+      }, log);
+      await expect(client.uploadExcelToDrs({ siteId: 'site-1', brandSlug: 'acme', excelBuffer: Buffer.from('x') }))
+        .to.be.rejectedWith('jobId is required');
+    });
+
+    it('throws when excelBuffer is missing', async () => {
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, s3Client,
+      }, log);
+      await expect(client.uploadExcelToDrs({ siteId: 'site-1', brandSlug: 'acme', jobId: 'job-1' }))
+        .to.be.rejectedWith('excelBuffer is required and must be non-empty');
+    });
+
+    it('throws when excelBuffer is empty', async () => {
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, s3Client,
+      }, log);
+      await expect(client.uploadExcelToDrs({ siteId: 'site-1', brandSlug: 'acme', jobId: 'job-1', excelBuffer: Buffer.alloc(0) }))
+        .to.be.rejectedWith('excelBuffer is required and must be non-empty');
+    });
+
+    it('propagates S3 send errors', async () => {
+      s3ClientStub.rejects(new Error('S3 access denied'));
+
+      const client = new DrsClient({
+        apiBaseUrl: DRS_API_URL,
+        apiKey: DRS_API_KEY,
+        s3Bucket: S3_BUCKET,
+        snsTopicArn: SNS_TOPIC_ARN,
+        s3Client,
+      }, log);
+
+      await expect(client.uploadExcelToDrs({
+        siteId: 'site-1',
+        brandSlug: 'acme',
+        jobId: 'job-1',
+        excelBuffer: Buffer.from('x'),
+      })).to.be.rejectedWith('S3 access denied');
+    });
+  });
+
+  describe('publishBrandPresenceAnalyze', () => {
+    const S3_BUCKET = 'drs-bucket';
+    const SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:123456789:drs-topic';
+    let snsClientStub;
+    let snsClient;
+
+    beforeEach(() => {
+      snsClientStub = sinon.stub();
+      snsClient = { send: snsClientStub };
+    });
+
+    it('publishes JOB_COMPLETED SNS event with all fields', async () => {
+      snsClientStub.resolves({});
+
+      const client = new DrsClient({
+        apiBaseUrl: DRS_API_URL,
+        apiKey: DRS_API_KEY,
+        s3Bucket: S3_BUCKET,
+        snsTopicArn: SNS_TOPIC_ARN,
+        snsClient,
+      }, log);
+
+      await client.publishBrandPresenceAnalyze({
+        jobId: 'job-abc',
+        siteId: 'site-1',
+        brandName: 'Acme',
+        imsOrgId: 'org-123',
+        resultLocation: 's3://drs-bucket/external/spacecat/site-1/acme/job-abc/source.xlsx',
+        platform: 'chatgpt_free',
+        week: 12,
+        year: 2026,
+      });
+
+      expect(snsClientStub).to.have.been.calledOnce;
+      const [cmd] = snsClientStub.args[0];
+      expect(cmd.input.TopicArn).to.equal(SNS_TOPIC_ARN);
+      const message = JSON.parse(cmd.input.Message);
+      expect(message.event_type).to.equal('JOB_COMPLETED');
+      expect(message.job_id).to.equal('job-abc');
+      expect(message.provider_id).to.equal('external_spacecat');
+      expect(message.result_location).to.equal('s3://drs-bucket/external/spacecat/site-1/acme/job-abc/source.xlsx');
+      expect(message.reanalysis).to.be.true;
+      expect(message.metadata).to.deep.equal({ site: 'site-1', brand: 'Acme', imsOrgId: 'org-123' });
+      expect(message.platform).to.equal('chatgpt_free');
+      expect(message.week).to.equal(12);
+      expect(message.year).to.equal(2026);
+      expect(cmd.input.MessageAttributes.event_type.StringValue).to.equal('JOB_COMPLETED');
+      expect(cmd.input.MessageAttributes.provider_id.StringValue).to.equal('external_spacecat');
+    });
+
+    it('omits optional fields when not provided', async () => {
+      snsClientStub.resolves({});
+
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient,
+      }, log);
+
+      await client.publishBrandPresenceAnalyze({
+        jobId: 'job-1',
+        siteId: 'site-1',
+        resultLocation: 's3://drs-bucket/external/spacecat/site-1/acme/job-1/source.xlsx',
+      });
+
+      const [cmd] = snsClientStub.args[0];
+      const message = JSON.parse(cmd.input.Message);
+      expect(message).to.not.have.property('platform');
+      expect(message).to.not.have.property('week');
+      expect(message).to.not.have.property('year');
+    });
+
+    it('throws when not S3 configured', async () => {
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      await expect(client.publishBrandPresenceAnalyze({ jobId: 'j', siteId: 's', resultLocation: 's3://x' }))
+        .to.be.rejectedWith('DRS S3 is not configured');
+    });
+
+    it('throws when jobId is missing', async () => {
+      const client = new DrsClient({ s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient }, log);
+      await expect(client.publishBrandPresenceAnalyze({ siteId: 'site-1', resultLocation: 's3://x' }))
+        .to.be.rejectedWith('jobId is required');
+    });
+
+    it('throws when siteId is missing', async () => {
+      const client = new DrsClient({ s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient }, log);
+      await expect(client.publishBrandPresenceAnalyze({ jobId: 'job-1', resultLocation: 's3://x' }))
+        .to.be.rejectedWith('siteId is required');
+    });
+
+    it('throws when resultLocation is missing', async () => {
+      const client = new DrsClient({ s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient }, log);
+      await expect(client.publishBrandPresenceAnalyze({ jobId: 'job-1', siteId: 'site-1' }))
+        .to.be.rejectedWith('resultLocation is required');
+    });
+
+    it('propagates SNS send errors', async () => {
+      snsClientStub.rejects(new Error('SNS publish failed'));
+
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient,
+      }, log);
+
+      await expect(client.publishBrandPresenceAnalyze({
+        jobId: 'job-1',
+        siteId: 'site-1',
+        resultLocation: 's3://drs-bucket/external/spacecat/site-1/acme/job-1/source.xlsx',
+      })).to.be.rejectedWith('SNS publish failed');
+    });
+  });
+
+  describe('createFrom with S3/SNS config', () => {
+    it('reads DRS_S3_BUCKET and DRS_SNS_TOPIC_ARN from env', () => {
+      const context = {
+        env: {
+          DRS_API_URL,
+          DRS_API_KEY,
+          DRS_S3_BUCKET: 'drs-bucket',
+          DRS_SNS_TOPIC_ARN: 'arn:aws:sns:us-east-1:123:topic',
+          AWS_REGION: 'us-east-1',
+        },
+        log,
+      };
+      const client = DrsClient.createFrom(context);
+      expect(client.isS3Configured()).to.be.true;
+    });
+
+    it('isS3Configured returns false when S3 env vars are absent', () => {
+      const context = {
+        env: { DRS_API_URL, DRS_API_KEY },
+        log,
+      };
+      const client = DrsClient.createFrom(context);
+      expect(client.isS3Configured()).to.be.false;
+    });
+  });
+
   describe('trailing slash handling', () => {
     it('strips trailing slash from apiBaseUrl', async () => {
       const scope = nock(DRS_API_URL)

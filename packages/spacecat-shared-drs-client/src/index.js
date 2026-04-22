@@ -10,7 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
+import { hasText, instrumentAWSClient, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
+
+const EXTERNAL_SPACECAT_PROVIDER_ID = 'external_spacecat';
+const DRS_S3_KEY_PREFIX = 'external/spacecat';
 
 export const EXPERIMENT_PHASES = Object.freeze({
   PRE: 'pre',
@@ -38,18 +43,34 @@ export default class DrsClient {
    */
   static createFrom(context) {
     const { env, log = console } = context;
-    const { DRS_API_URL: apiBaseUrl, DRS_API_KEY: apiKey } = env;
+    const {
+      DRS_API_URL: apiBaseUrl,
+      DRS_API_KEY: apiKey,
+      DRS_S3_BUCKET: s3Bucket,
+      DRS_SNS_TOPIC_ARN: snsTopicArn,
+      AWS_REGION: awsRegion,
+    } = env;
 
     if (context.drsClient) {
       return context.drsClient;
     }
 
-    const client = new DrsClient({ apiBaseUrl, apiKey }, log);
+    const client = new DrsClient({
+      apiBaseUrl, apiKey, s3Bucket, snsTopicArn, awsRegion,
+    }, log);
     context.drsClient = client;
     return client;
   }
 
-  constructor({ apiBaseUrl, apiKey }, log = console) {
+  constructor({
+    apiBaseUrl,
+    apiKey,
+    s3Bucket,
+    snsTopicArn,
+    awsRegion,
+    s3Client,
+    snsClient,
+  }, log = console) {
     // Strip trailing slashes without regex (CodeQL flags /\/+$/ as polynomial)
     let url = apiBaseUrl;
     if (url) {
@@ -59,6 +80,10 @@ export default class DrsClient {
     }
     this.apiBaseUrl = url || undefined;
     this.apiKey = apiKey;
+    this.s3Bucket = s3Bucket;
+    this.snsTopicArn = snsTopicArn;
+    this.s3Client = s3Client ?? instrumentAWSClient(new S3Client({ region: awsRegion }));
+    this.snsClient = snsClient ?? instrumentAWSClient(new SNSClient({ region: awsRegion }));
     this.log = log;
   }
 
@@ -67,6 +92,13 @@ export default class DrsClient {
    */
   isConfigured() {
     return hasText(this.apiBaseUrl) && hasText(this.apiKey);
+  }
+
+  /**
+   * @returns {boolean} True if DRS_S3_BUCKET and DRS_SNS_TOPIC_ARN are set
+   */
+  isS3Configured() {
+    return hasText(this.s3Bucket) && hasText(this.snsTopicArn);
   }
 
   async #request(method, path, body = undefined) {
@@ -375,5 +407,112 @@ export default class DrsClient {
    */
   async getJob(jobId) {
     return this.#request('GET', `/jobs/${jobId}`);
+  }
+
+  /**
+   * Uploads a brand presence Excel file directly to the DRS S3 bucket.
+   * @param {object} params
+   * @param {string} params.siteId - SpaceCat site ID
+   * @param {string} params.brandSlug - URL-safe brand slug
+   * @param {string} params.jobId - Unique job ID (used to derive the S3 key)
+   * @param {Buffer|Uint8Array} params.excelBuffer - Raw Excel file bytes
+   * @returns {Promise<string>} S3 URI of the uploaded file (s3://bucket/key)
+   */
+  async uploadExcelToDrs({
+    siteId, brandSlug, jobId, excelBuffer,
+  }) {
+    if (!this.isS3Configured()) {
+      throw new Error('DRS S3 is not configured. Set DRS_S3_BUCKET and DRS_SNS_TOPIC_ARN environment variables.');
+    }
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!hasText(jobId)) {
+      throw new Error('jobId is required');
+    }
+    if (!excelBuffer || excelBuffer.length === 0) {
+      throw new Error('excelBuffer is required and must be non-empty');
+    }
+
+    const key = `${DRS_S3_KEY_PREFIX}/${siteId}/${brandSlug}/${jobId}/source.xlsx`;
+    this.log.info(`Uploading Excel to DRS S3`, { siteId, jobId, key });
+
+    await this.s3Client.send(new PutObjectCommand({
+      Bucket: this.s3Bucket,
+      Key: key,
+      Body: excelBuffer,
+      ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ServerSideEncryption: 'AES256',
+    }));
+
+    const uri = `s3://${this.s3Bucket}/${key}`;
+    this.log.info(`Excel uploaded to DRS S3`, { uri });
+    return uri;
+  }
+
+  /**
+   * Publishes a JOB_COMPLETED SNS event to trigger DRS Fargate brand presence analysis.
+   * @param {object} params
+   * @param {string} params.jobId - Job ID (must match the one used in uploadExcelToDrs)
+   * @param {string} params.siteId - SpaceCat site ID
+   * @param {string} [params.brandName] - Brand name
+   * @param {string} [params.imsOrgId] - IMS organization ID
+   * @param {string} params.resultLocation - S3 URI of the uploaded Excel file
+   * @param {string} [params.platform] - Canonical platform string (e.g. 'chatgpt_free')
+   * @param {number} [params.week] - ISO week number
+   * @param {number} [params.year] - Year
+   * @returns {Promise<void>}
+   */
+  async publishBrandPresenceAnalyze({
+    jobId,
+    siteId,
+    brandName,
+    imsOrgId,
+    resultLocation,
+    platform,
+    week,
+    year,
+  }) {
+    if (!this.isS3Configured()) {
+      throw new Error('DRS S3 is not configured. Set DRS_S3_BUCKET and DRS_SNS_TOPIC_ARN environment variables.');
+    }
+    if (!hasText(jobId)) {
+      throw new Error('jobId is required');
+    }
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!hasText(resultLocation)) {
+      throw new Error('resultLocation is required');
+    }
+
+    const message = {
+      event_type: 'JOB_COMPLETED',
+      job_id: jobId,
+      provider_id: EXTERNAL_SPACECAT_PROVIDER_ID,
+      result_location: resultLocation,
+      reanalysis: true,
+      metadata: {
+        site: siteId,
+        brand: brandName,
+        imsOrgId,
+      },
+      ...(platform && { platform }),
+      ...(week != null && { week }),
+      ...(year != null && { year }),
+    };
+
+    this.log.info(`Publishing brand presence analyze SNS event`, { jobId, siteId, resultLocation });
+
+    await this.snsClient.send(new PublishCommand({
+      TopicArn: this.snsTopicArn,
+      Message: JSON.stringify(message),
+      MessageAttributes: {
+        event_type: { DataType: 'String', StringValue: 'JOB_COMPLETED' },
+        provider_id: { DataType: 'String', StringValue: EXTERNAL_SPACECAT_PROVIDER_ID },
+      },
+    }));
+
+    this.log.info(`Brand presence analyze SNS event published`, { jobId });
   }
 }

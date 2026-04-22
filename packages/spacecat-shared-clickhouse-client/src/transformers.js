@@ -51,3 +51,14 @@ export function toBrandPresenceExecution(raw) {
     updated_at: raw.updated_at ?? new Date().toISOString(),
   };
 }
+
+export function toBrandPresenceCompetitorData(raw) {
+  return toArray(raw.business_competitors).map((competitor) => ({
+    site_id: raw.site_id,
+    platform: raw.platform,
+    week: raw.week,
+    category: raw.category,
+    competitor,
+    region: raw.region,
+  }));
+}

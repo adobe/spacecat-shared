@@ -48,7 +48,8 @@ export function toBrandPresenceExecution(raw) {
     citation_sample_size: raw.citation_sample_size,
     citation_answers_with_citations: raw.citation_answers_with_citations,
     citation_potential: raw.citation_potential,
-    updated_at: raw.updated_at ?? new Date().toISOString(),
+    updated_at: (raw.updated_at ?? new Date().toISOString()).replace('T', ' ').replace(/\.\d+Z$/, ''),
+    // Claude Code, Model: Sonnet 4.6 - Prompt: "fix ISO timestamp to a valid clickhouse timestamp"
   };
 }
 

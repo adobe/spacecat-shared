@@ -530,6 +530,46 @@ describe('SiteModel', () => {
       instance.setCode({ ...instance.getCode(), s3StoragePath: 'code/site-123/github/adobe/spacecat/main/repository.zip' });
       expect(instance.getCode().s3StoragePath).to.equal('code/site-123/github/adobe/spacecat/main/repository.zip');
     });
+
+    it('stores and retrieves metadata.submodules', () => {
+      const metadata = {
+        submodules: {
+          external: true,
+          urls: [
+            '../internal-sub.git',
+            'https://gitlab.example.com/team/external-sub.git',
+          ],
+        },
+      };
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+        metadata,
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().metadata).to.deep.equal(metadata);
+    });
+
+    it('overwrites metadata on re-import to clear stale submodule data', () => {
+      const firstImport = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+        metadata: {
+          submodules: { external: false, urls: ['../sub.git'] },
+        },
+      };
+      instance.setCode(firstImport);
+      expect(instance.getCode().metadata.submodules.urls).to.have.lengthOf(1);
+
+      instance.setCode({ ...instance.getCode(), metadata: {} });
+      expect(instance.getCode().metadata).to.deep.equal({});
+    });
   });
 
   describe('localization fields', () => {

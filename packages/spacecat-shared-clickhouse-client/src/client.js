@@ -33,31 +33,41 @@ export default class ClickhouseClient {
 
   async writeBatch(table, rows) {
     if (!rows || rows.length === 0) {
-      return;
+      return { written: 0, failures: [] };
     }
 
     const validator = VALIDATORS[table];
+    let validRows = rows;
+    const failures = [];
+
     if (validator) {
-      const tagWithIndex = (err, i) => ({ index: i, ...err });
-      const validateRow = (row, i) => validator(row).map((err) => tagWithIndex(err, i));
-      const errors = rows.flatMap(validateRow);
-      if (errors.length > 0) {
-        const err = new Error('Validation failed');
-        err.errors = errors;
-        throw err;
+      validRows = [];
+      for (let i = 0; i < rows.length; i += 1) {
+        const errors = validator(rows[i]);
+        if (errors.length > 0) {
+          for (const err of errors) {
+            failures.push({ index: i, ...err });
+          }
+        } else {
+          validRows.push(rows[i]);
+        }
       }
     }
 
-    try {
-      await this.client.insert({
-        table,
-        values: rows,
-        format: 'JSONEachRow',
-      });
-    } catch (err) {
-      this.log.error(`[clickhouse-client] writeBatch failed on table ${table}: ${err.message}`);
-      throw new Error(`ClickHouse write failed: ${err.message}`);
+    if (validRows.length > 0) {
+      try {
+        await this.client.insert({
+          table,
+          values: validRows,
+          format: 'JSONEachRow',
+        });
+      } catch (err) {
+        this.log.error(`[clickhouse-client] writeBatch failed on table ${table}: ${err.message}`);
+        throw new Error(`ClickHouse write failed: ${err.message}`);
+      }
     }
+
+    return { written: validRows.length, failures };
   }
 
   async query(query, queryParams = {}) {

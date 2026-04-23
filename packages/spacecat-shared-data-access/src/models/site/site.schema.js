@@ -82,13 +82,17 @@ const schema = new SchemaBuilder(Site, SiteCollection)
    *
    * Fields written by the importer after a successful clone:
    *   - s3StoragePath: S3 key (not full URL) of the imported repository ZIP
-   *   - metadata: extracted repository information (see CodeMetadata in
-   *     index.d.ts). Today this carries `submodules: { external, urls }`
-   *     when the repo has a `.gitmodules` file. The importer always
-   *     overwrites this object so a re-import that finds no submodules
-   *     clears stale entries from an earlier import.
+   *   - metadata.submodules: `{ external, urls }` when the repo has a
+   *     `.gitmodules` file. The importer always overwrites `metadata` so
+   *     a re-import that finds no submodules clears stale entries from
+   *     an earlier import.
    *
-   * See CodeConfig in index.d.ts for the TypeScript shape.
+   * Fields populated at onboarding (not by the importer):
+   *   - metadata.submodules.cmProgramRepos: BYOG-only name→id map
+   *     needed to translate relative submodule URLs into CM proxy URLs
+   *     the service can serve. See SubmodulesMetadata in index.d.ts.
+   *
+   * See CodeConfig in index.d.ts for the full TypeScript shape.
    */
   .addAttribute('code', {
     type: 'any',

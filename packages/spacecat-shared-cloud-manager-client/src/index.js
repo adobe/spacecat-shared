@@ -43,6 +43,20 @@ export const CM_REPO_TYPE = Object.freeze({
   STANDARD: 'standard',
 });
 
+/**
+ * Returns true for any repo type that tunnels through the CM repo service
+ * proxy (i.e. anything other than STANDARD). BYOG repos need extra handling
+ * for submodules because the proxy URL uses numeric repository IDs, not
+ * names — relative URLs in .gitmodules must be rewritten via a onboarding-
+ * populated name→id map (`site.code.metadata.submodules.cmProgramRepos`).
+ *
+ * @param {string} repoType
+ * @returns {boolean}
+ */
+export function isBYOG(repoType) {
+  return repoType !== CM_REPO_TYPE.STANDARD;
+}
+
 // Lambda layer environment: git and its helpers (git-remote-https) live under /opt.
 // Without these, the dynamic linker can't find shared libraries (libcurl, libexpat, …)
 // and git can't locate its sub-commands (git-remote-https for HTTPS transport).
@@ -303,6 +317,15 @@ export default class CloudManagerClient {
    * - BYOG repos: Bearer token + API key + IMS org ID via CM Repo URL
    * - Standard repos: Basic auth header via the repo URL
    *
+   * Submodule handling differs by repo type:
+   * - STANDARD: `--recurse-submodules` at clone time. .gitmodules URLs resolve
+   *   against the customer's real git host, which is what we want.
+   * - BYOG: `--no-recurse-submodules` at clone time (auto-recursion would
+   *   resolve .gitmodules relative URLs against the CM proxy URL, producing
+   *   name-based URLs the proxy rejects). Submodules are populated in a
+   *   second step that rewrites URLs to numeric-ID form via the
+   *   `cmProgramRepos` map before running `submodule update`.
+   *
    * If a ref is provided, the clone will be checked out to that ref after cloning.
    * Checkout failures are logged but do not cause the clone to fail, so the caller
    * always gets a usable working copy (on the default branch if checkout fails).
@@ -314,18 +337,28 @@ export default class CloudManagerClient {
    * @param {string} config.repoType - Repository type ('standard' or VCS type)
    * @param {string} config.repoUrl - Repository URL
    * @param {string} [config.ref] - Optional. Git ref to checkout after clone (branch, tag, or SHA)
+   * @param {Object<string,string>} [config.cmProgramRepos] - Optional. For BYOG
+   *   repos only: name → numeric repo id map for every repo in the CM program.
+   *   Populated at onboarding from `GET /api/program/{pid}/repositories`.
+   *   Used to rewrite relative submodule URLs into the numeric-id form the
+   *   CM proxy can serve. Ignored for STANDARD repos.
    * @returns {Promise<string>} The local clone path
    */
   async clone(programId, repositoryId, {
-    imsOrgId, repoType, repoUrl, ref,
+    imsOrgId, repoType, repoUrl, ref, cmProgramRepos,
   } = {}) {
     const clonePath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
+    const byog = isBYOG(repoType);
 
     try {
       this.log.info(`Cloning CM repository: program=${programId}, repo=${repositoryId}, type=${repoType}`);
 
       const args = await this.#buildAuthGitArgs('clone', programId, repositoryId, { imsOrgId, repoType, repoUrl });
-      this.#execGit([...args, '--recurse-submodules', clonePath]);
+      // BYOG: skip auto-recursion so the initial clone doesn't try (and fail)
+      // to fetch submodules via name-based proxy URLs. We populate them in a
+      // second pass below once .git/config has been rewritten to numeric IDs.
+      const recurseFlag = byog ? '--no-recurse-submodules' : '--recurse-submodules';
+      this.#execGit([...args, recurseFlag, clonePath]);
       this.log.info(`Repository cloned to ${clonePath}`);
       this.#logTmpDiskUsage('clone');
 
@@ -339,10 +372,152 @@ export default class CloudManagerClient {
         }
       }
 
+      // Populate submodules for the current ref.
+      // - STANDARD: only needed when we switched ref above. The initial
+      //   --recurse-submodules clone handled the default branch already;
+      //   sync+update picks up any new/changed submodules introduced by the
+      //   ref switch.
+      // - BYOG: always needed. The initial --no-recurse-submodules clone
+      //   didn't populate any submodules on any branch.
+      if (byog) {
+        await this.#resolveByogSubmodules(clonePath, programId, cmProgramRepos, { imsOrgId });
+      } else if (hasText(ref)) {
+        this.#initStandardSubmodules(clonePath);
+      }
+
       return clonePath;
     } catch (error) {
       rmSync(clonePath, { recursive: true, force: true });
       throw error;
+    }
+  }
+
+  /**
+   * For STANDARD repos after a ref checkout: pick up any submodules the ref
+   * declares but weren't initialized by the initial `--recurse-submodules`
+   * clone. Uses `sync` to refresh any URL changes between branches and
+   * `update --init --recursive` to actually fetch and check them out.
+   *
+   * Safe for standard repos because .gitmodules URLs resolve to the
+   * customer's real git host — which is exactly what we want git to use.
+   *
+   * NOTE: do NOT call this on the BYOG path. BYOG .gitmodules URLs are
+   * name-based and require rewriting first; `sync` would overwrite the
+   * rewritten entries in .git/config.
+   */
+  #initStandardSubmodules(clonePath) {
+    try {
+      this.#execGit(['submodule', 'sync', '--recursive'], { cwd: clonePath });
+      this.#execGit(['submodule', 'update', '--init', '--recursive'], { cwd: clonePath });
+      this.log.info(`Initialized submodules for standard repo at ${clonePath}`);
+    } catch (submoduleError) {
+      this.log.warn(`Standard submodule init failed: ${submoduleError.message}. Continuing without submodule recursion.`);
+    }
+  }
+
+  /**
+   * For BYOG repos: initialize submodules by rewriting their name-based URLs
+   * (from relative entries in .gitmodules) to the numeric-ID URLs the CM
+   * proxy can serve.
+   *
+   * Flow:
+   *   1. `git submodule init` — registers each submodule in .git/config with
+   *      a URL git resolved by joining the parent proxy URL with the relative
+   *      .gitmodules entry (e.g. `.../repository/<name>`). The proxy rejects
+   *      these because it only serves numeric repository IDs.
+   *   2. For every registered URL that matches the CM proxy prefix, look up
+   *      the submodule's real name in `cmProgramRepos` and overwrite the
+   *      .git/config URL with the numeric-id form
+   *      (`.../repository/<id>.git`). `.gitmodules` stays untouched.
+   *   3. `git submodule update --recursive` — fetches and checks out each
+   *      submodule via the now-correct URL stored in .git/config. The same
+   *      Bearer + x-api-key + x-gw-ims-org-id extraheader as the parent
+   *      clone is re-applied since transient `-c` flags don't carry over.
+   *
+   * IMPORTANT: never call `git submodule sync` in this flow — sync copies
+   * .gitmodules URLs back into .git/config, undoing step 2.
+   *
+   * Idempotent by design: `submodule init` leaves existing .git/config
+   * entries alone, and the rewrite always produces the same numeric-ID URL
+   * (since CM repo IDs are stable). This lets `pull()` call it unconditionally
+   * after every pull to pick up submodules newly introduced by pulled commits.
+   *
+   * Graceful fallbacks:
+   *   - No .gitmodules: nothing to do.
+   *   - No `cmProgramRepos` map: can't rewrite relative URLs. Log a warning;
+   *     the subsequent submodule update will fail naturally, but the parent
+   *     clone/pull itself is still usable.
+   *   - Submodule name not in map: leave its URL unchanged. Likely an
+   *     absolute external URL (different host) or a submodule added after
+   *     the map was populated.
+   */
+  async #resolveByogSubmodules(clonePath, programId, cmProgramRepos, { imsOrgId } = {}) {
+    if (!existsSync(path.join(clonePath, '.gitmodules'))) {
+      return;
+    }
+
+    try {
+      // Step 1: register submodules in .git/config with name-based URLs
+      this.#execGit(['submodule', 'init'], { cwd: clonePath });
+
+      // Step 2: rewrite name-based URLs → numeric-id URLs using the onboarding map
+      const hasMap = cmProgramRepos
+        && typeof cmProgramRepos === 'object'
+        && !Array.isArray(cmProgramRepos)
+        && Object.keys(cmProgramRepos).length > 0;
+
+      if (!hasMap) {
+        this.log.warn(
+          `BYOG program ${programId} has .gitmodules but no cmProgramRepos map — `
+          + 'relative submodule URLs cannot be resolved through the CM proxy. '
+          + 'Populate site.code.metadata.submodules.cmProgramRepos at onboarding.',
+        );
+      } else {
+        let configOutput = '';
+        try {
+          configOutput = this.#execGit(
+            ['config', '--local', '--get-regexp', '^submodule\\..+\\.url$'],
+            { cwd: clonePath },
+          );
+        } catch {
+          // git config --get-regexp exits non-zero when there are no matches.
+          // .gitmodules exists but init registered nothing — nothing to rewrite.
+          configOutput = '';
+        }
+
+        const prefix = `${this.config.cmRepoUrl}/api/program/${programId}/repository/`;
+        const lines = configOutput.trim().split('\n').filter(Boolean);
+        lines.forEach((line) => {
+          const spaceIdx = line.indexOf(' ');
+          if (spaceIdx < 0) {
+            return;
+          }
+          const key = line.slice(0, spaceIdx);
+          const currentUrl = line.slice(spaceIdx + 1);
+          if (!currentUrl.startsWith(prefix)) {
+            // Absolute external / SSH / git:// URL — leave alone.
+            return;
+          }
+          const name = currentUrl.slice(prefix.length).replace(/\.git$/, '').replace(/\/$/, '');
+          const id = cmProgramRepos[name];
+          if (!id) {
+            this.log.warn(`BYOG submodule '${name}' not found in cmProgramRepos map — leaving URL unchanged. Submodule fetch will likely fail.`);
+            return;
+          }
+          const newUrl = `${prefix}${id}.git`;
+          this.#execGit(['config', '--local', key, newUrl], { cwd: clonePath });
+        });
+      }
+
+      // Step 3: fetch + check out submodules using the (now-rewritten) URLs.
+      // Re-apply auth — transient `-c` flags from the parent clone don't carry
+      // into subsequent invocations, and all BYOG submodules share the same
+      // CM proxy host as the parent.
+      const authArgs = await this.#getCMRepoServiceCredentials(imsOrgId);
+      this.#execGit([...authArgs, 'submodule', 'update', '--recursive'], { cwd: clonePath });
+      this.log.info(`BYOG submodules initialized at ${clonePath}`);
+    } catch (submoduleError) {
+      this.log.warn(`BYOG submodule init failed: ${submoduleError.message}. Continuing without submodule recursion.`);
     }
   }
 
@@ -573,6 +748,12 @@ export default class CloudManagerClient {
    * If a ref is provided, the ref is checked out before pulling so that
    * the pull updates the correct branch.
    *
+   * Submodule handling differs by repo type:
+   * - STANDARD: `pull --recurse-submodules` updates submodules in one step.
+   * - BYOG: pull the parent only, then resolve submodules via the same
+   *   name→id rewrite the clone path uses. This also picks up any new
+   *   submodules the pull may have introduced.
+   *
    * @param {string} clonePath - Path to the cloned repository
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
@@ -581,18 +762,38 @@ export default class CloudManagerClient {
    * @param {string} config.repoType - Repository type ('standard' or VCS type)
    * @param {string} config.repoUrl - Repository URL
    * @param {string} [config.ref] - Optional. Git ref to checkout before pull (branch, tag, or SHA)
+   * @param {Object<string,string>} [config.cmProgramRepos] - Optional. BYOG-only
+   *   name → numeric repo id map for the program. See clone() for details.
    */
   async pull(clonePath, programId, repositoryId, {
-    imsOrgId, repoType, repoUrl, ref,
+    imsOrgId, repoType, repoUrl, ref, cmProgramRepos,
   } = {}) {
+    const byog = isBYOG(repoType);
+
     if (hasText(ref)) {
       this.#execGit(['checkout', ref], { cwd: clonePath });
       this.log.info(`Checked out ref '${ref}' before pull`);
     }
+
     const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
-    this.#execGit([...pullArgs, '--recurse-submodules'], { cwd: clonePath });
+    // STANDARD: --recurse-submodules keeps submodules in sync during pull.
+    // BYOG: pull the parent only; submodules are handled separately below
+    // because relative .gitmodules URLs need rewriting through cmProgramRepos.
+    if (byog) {
+      this.#execGit(pullArgs, { cwd: clonePath });
+    } else {
+      this.#execGit([...pullArgs, '--recurse-submodules'], { cwd: clonePath });
+    }
     this.log.info('Changes pulled successfully');
     this.#logTmpDiskUsage('pull');
+
+    // For BYOG, re-apply the rewrite after the pull in case the pulled commits
+    // changed .gitmodules (new submodules, renamed ones, etc). The helper is
+    // idempotent — existing .git/config entries are left alone and only new
+    // ones are rewritten.
+    if (byog) {
+      await this.#resolveByogSubmodules(clonePath, programId, cmProgramRepos, { imsOrgId });
+    }
   }
 
   /**

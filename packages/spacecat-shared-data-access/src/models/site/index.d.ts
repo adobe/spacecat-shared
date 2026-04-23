@@ -51,6 +51,28 @@ export interface SubmodulesMetadata {
    * (`../foo.git`) and SSH (`git@host:path`) forms are preserved as-is.
    */
   urls: string[];
+  /**
+   * BYOG-only. Map of CM repository *name* → *numeric id* for every repo
+   * in the program, keyed by the last path segment of each CM repo's
+   * `url`/`proxyUrl` (the real repo name on the customer's git host —
+   * NOT the CM display name in the `repo` field).
+   *
+   * The CM repo service proxies BYOG clones through URLs of the form
+   * `{CM_REPO_URL}/api/program/{programId}/repository/{numericId}.git`.
+   * When a customer's `.gitmodules` uses relative URLs like `../foo`,
+   * git resolves them against the parent's clone URL and produces
+   * `.../repository/foo` — which the proxy rejects because it only
+   * serves numeric ids. The CM client reads this map at clone/pull
+   * time to rewrite those URLs into the numeric-id form before
+   * running `git submodule update`.
+   *
+   * Populated at onboarding by calling
+   * `GET /api/program/{programId}/repositories` and indexing by the
+   * last path segment of each entry's `url`. Omit for `standard`
+   * repos — their relative URLs resolve natively on the customer's
+   * git host and don't need translation.
+   */
+  cmProgramRepos?: Record<string, string>;
 }
 
 /**

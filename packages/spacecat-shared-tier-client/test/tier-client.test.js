@@ -486,7 +486,7 @@ describe('TierClient', () => {
       });
     });
 
-    it('should upgrade PLG entitlement to FREE_TRIAL (PLG is not PAID, so tier updates)', async () => {
+    it('should NOT change tier when upgrading PLG to FREE_TRIAL (only PAID upgrades are applied)', async () => {
       const mockPlgEntitlement = {
         ...mockEntitlement,
         getTier: () => 'PLG',
@@ -500,8 +500,8 @@ describe('TierClient', () => {
 
       const result = await tierClient.createEntitlement('FREE_TRIAL');
 
-      expect(mockPlgEntitlement.setTier).to.have.been.calledWith('FREE_TRIAL');
-      expect(mockPlgEntitlement.save).to.have.been.called;
+      expect(mockPlgEntitlement.setTier).to.not.have.been.called;
+      expect(mockPlgEntitlement.save).to.not.have.been.called;
       expect(result).to.deep.equal({
         entitlement: mockPlgEntitlement,
         siteEnrollment: mockSiteEnrollment,
@@ -550,7 +550,7 @@ describe('TierClient', () => {
       });
     });
 
-    it('should upgrade PRE_ONBOARD entitlement to PLG (PRE_ONBOARD is not PAID, so tier updates)', async () => {
+    it('should NOT change tier when upgrading PRE_ONBOARD to PLG (only PAID upgrades are applied)', async () => {
       const mockPreOnboardEntitlement = {
         ...mockEntitlement,
         getTier: () => 'PRE_ONBOARD',
@@ -564,8 +564,8 @@ describe('TierClient', () => {
 
       const result = await tierClient.createEntitlement('PLG');
 
-      expect(mockPreOnboardEntitlement.setTier).to.have.been.calledWith('PLG');
-      expect(mockPreOnboardEntitlement.save).to.have.been.called;
+      expect(mockPreOnboardEntitlement.setTier).to.not.have.been.called;
+      expect(mockPreOnboardEntitlement.save).to.not.have.been.called;
       expect(result).to.deep.equal({
         entitlement: mockPreOnboardEntitlement,
         siteEnrollment: mockSiteEnrollment,

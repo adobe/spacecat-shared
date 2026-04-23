@@ -11,6 +11,7 @@
  */
 
 import { expect } from 'chai';
+import esmock from 'esmock';
 import nock from 'nock';
 
 import {
@@ -39,7 +40,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Cloudflare blocking with 403 and cf-ray header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'cf-ray': '123456789-CDG',
           server: 'cloudflare',
@@ -54,7 +55,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Imperva blocking with 403 and x-iinfo header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-iinfo': 'some-value',
         });
@@ -68,7 +69,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Imperva blocking with 403 and x-cdn Incapsula header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-cdn': 'Incapsula',
         });
@@ -85,7 +86,7 @@ describe('Bot Blocker Detection', () => {
       error.code = 'NGHTTP2_INTERNAL_ERROR';
 
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .replyWithError(error);
 
       const result = await detectBotBlocker({ baseUrl });
@@ -100,7 +101,7 @@ describe('Bot Blocker Detection', () => {
       error.code = 'ERR_HTTP2_STREAM_ERROR';
 
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .replyWithError(error);
 
       const result = await detectBotBlocker({ baseUrl });
@@ -112,7 +113,7 @@ describe('Bot Blocker Detection', () => {
 
     it('returns crawlable for 200 OK responses', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200);
 
       const result = await detectBotBlocker({ baseUrl });
@@ -127,7 +128,7 @@ describe('Bot Blocker Detection', () => {
       error.code = 'ETIMEDOUT';
 
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .replyWithError(error);
 
       const result = await detectBotBlocker({ baseUrl });
@@ -139,7 +140,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects 403 as blocked even without known CDN headers', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           server: 'nginx',
         });
@@ -155,7 +156,7 @@ describe('Bot Blocker Detection', () => {
     // New CDN detection tests
     it('detects Akamai blocking with 403 and x-akamai-request-id header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-akamai-request-id': 'abc123',
         });
@@ -169,7 +170,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai blocking with 403 and x-akamai-session-id header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-akamai-session-id': 'session-123',
         });
@@ -183,7 +184,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai blocking with 403 and AkamaiGHost server header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           server: 'AkamaiGHost',
         });
@@ -225,7 +226,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Fastly blocking with 403 and x-served-by cache header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-served-by': 'cache-sjc10039-SJC',
         });
@@ -239,7 +240,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Fastly blocking with 403 and fastly-io-info header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'fastly-io-info': 'some-value',
         });
@@ -253,7 +254,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects CloudFront blocking with 403 and x-amz-cf-id header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-amz-cf-id': 'cf-id-123',
         });
@@ -267,7 +268,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects CloudFront blocking with 403 and x-amz-cf-pop header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-amz-cf-pop': 'SEA73-P1',
         });
@@ -281,7 +282,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects CloudFront blocking with 403 and via CloudFront header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           via: '1.1 abc123.cloudfront.net (CloudFront)',
         });
@@ -296,7 +297,7 @@ describe('Bot Blocker Detection', () => {
     // Infrastructure detection on 200 OK responses
     it('detects Cloudflare infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'cf-ray': '123456789-CDG',
         });
@@ -310,7 +311,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Imperva infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'x-iinfo': 'some-value',
         });
@@ -324,7 +325,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'x-akamai-request-id': 'abc123',
         });
@@ -338,7 +339,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Fastly infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'x-served-by': 'cache-sjc10039-SJC',
         });
@@ -352,7 +353,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects CloudFront infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'x-amz-cf-id': 'cf-id-123',
         });
@@ -361,6 +362,78 @@ describe('Bot Blocker Detection', () => {
 
       expect(result.crawlable).to.be.true;
       expect(result.type).to.equal('cloudfront-allowed');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    it('detects Cloudflare challenge page via GET body (200 + cf-ray + JS challenge)', async () => {
+      const challengeHtml = '<html><title>Just a moment...</title><body>Checking your browser before accessing the site.</body></html>';
+      nock(baseUrl)
+        .get('/')
+        .reply(200, challengeHtml, { 'cf-ray': '123456789-CDG' });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects Imperva challenge page via GET body (200 + x-iinfo + Incapsula pattern)', async () => {
+      const challengeHtml = '<html><body>_Incapsula_Resource detected on this page</body></html>';
+      nock(baseUrl)
+        .get('/')
+        .reply(200, challengeHtml, { 'x-iinfo': 'some-value' });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('imperva');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects generic CAPTCHA challenge via GET body (200 + no CDN headers)', async () => {
+      const challengeHtml = '<html><body><div class="g-recaptcha" data-sitekey="abc123"></div></body></html>';
+      nock(baseUrl)
+        .get('/')
+        .reply(200, challengeHtml, {});
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('proceeds with header-only analysis when GET body cannot be read', async () => {
+      nock(baseUrl)
+        .get('/')
+        .reply(200, 'normal page content', { 'cf-ray': '123456789-CDG' });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+    });
+
+    it('falls back to header-only analysis when response.text() throws', async () => {
+      const { detectBotBlocker: detectBotBlockerMocked } = await esmock(
+        '../../src/bot-blocker-detect/bot-blocker-detect.js',
+        {
+          '../../src/tracing-fetch.js': {
+            tracingFetch: async () => ({
+              status: 200,
+              headers: new Headers({ 'cf-ray': '123456789-CDG' }),
+              text: () => Promise.reject(new Error('body read failed')),
+            }),
+            SPACECAT_USER_AGENT: 'SpaceCat/1.0',
+          },
+        },
+      );
+
+      const result = await detectBotBlockerMocked({ baseUrl });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
       expect(result.confidence).to.equal(1.0);
     });
   });

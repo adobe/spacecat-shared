@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-vault-secrets-v1.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.3.3...@adobe/spacecat-shared-vault-secrets-v1.3.4) (2026-04-15)
+
+### Bug Fixes
+
+* **vault-secrets:** revert to dedicated noCache() fetch context ([#1543](https://github.com/adobe/spacecat-shared/issues/1543)) ([ca25526](https://github.com/adobe/spacecat-shared/commit/ca255260a513109fcbf2284e613eaa48bc57a789)), closes [#1538](https://github.com/adobe/spacecat-shared/issues/1538) [#1538](https://github.com/adobe/spacecat-shared/issues/1538)
+
+## [@adobe/spacecat-shared-vault-secrets-v1.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.3.2...@adobe/spacecat-shared-vault-secrets-v1.3.3) (2026-04-15)
+
+### Bug Fixes
+
+* **vault-secrets:** raise branch coverage threshold to 100% ([#1538](https://github.com/adobe/spacecat-shared/issues/1538)) ([869876f](https://github.com/adobe/spacecat-shared/commit/869876f12a3e7128ba290c4044f7e0c83bac936e))
+
 ## [@adobe/spacecat-shared-vault-secrets-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.3.1...@adobe/spacecat-shared-vault-secrets-v1.3.2) (2026-04-04)
 
 ### Bug Fixes

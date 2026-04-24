@@ -11,6 +11,7 @@
   "types": "src/index.d.ts",
   "scripts": {
     "test": "c8 mocha",
+    "test:it": "mocha --require test/it/setup.js 'test/it/**/*.test.js'",
     "lint": "eslint .",
     "clean": "rm -rf package-lock.json node_modules"
   },
@@ -18,7 +19,7 @@
     "require": "test/setup-env.js",
     "reporter": "mocha-multi-reporters",
     "reporter-options": "configFile=.mocha-multi.json",
-    "spec": "test/**/*.test.js"
+    "spec": "test/*.test.js"
   },
   "repository": {
     "type": "git",

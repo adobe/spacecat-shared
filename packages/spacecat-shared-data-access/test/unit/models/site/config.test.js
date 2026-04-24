@@ -2715,6 +2715,31 @@ describe('Config Tests', () => {
       expect(config.getEdgeOptimizeConfig().opted).to.equal(optedTimestamp);
     });
 
+    it('should be able to create edgeOptimizeConfig with cdnLogSource field', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          opted: Date.now(),
+          cdnLogSource: 'byocdn-imperva',
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+      expect(config.getEdgeOptimizeConfig().cdnLogSource).to.equal('byocdn-imperva');
+    });
+
+    it('should be able to update edgeOptimizeConfig with cdnLogSource field', () => {
+      const config = Config({
+        edgeOptimizeConfig: {
+          opted: Date.now(),
+        },
+      });
+      config.updateEdgeOptimizeConfig({
+        ...config.getEdgeOptimizeConfig(),
+        cdnLogSource: 'byocdn-akamai',
+      });
+      expect(config.getEdgeOptimizeConfig().cdnLogSource).to.equal('byocdn-akamai');
+    });
+
     it('should be able to create and update edgeOptimizeConfig with stagingDomains', () => {
       const stagingDomains = [
         { domain: 'staging.lovesac.com', id: 'site-uuid-1' },

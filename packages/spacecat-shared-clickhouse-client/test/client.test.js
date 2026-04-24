@@ -11,11 +11,93 @@
  */
 
 import { expect } from 'chai';
-
 import ClickhouseClient from '../src/index.js';
+
+const VALID_EXECUTION = {
+  site_id: '94d151ff-09d2-4462-9703-4956e635425f',
+  platform: 'google-ai-overviews',
+  week: '2025-W47',
+  execution_date: '2025-11-23',
+  category: 'Dining Room',
+  topic: 'oak dining table',
+  prompt: 'What size oak dining table do I need for 6 people?',
+  region: 'gb',
+  answer: 'Oakwood Living solid oak dining tables are available in fixed and extending configurations.',
+};
+
+function makeClient() {
+  const log = { error: () => {} };
+  const client = new ClickhouseClient({}, log);
+  client.client = {
+    insert: async () => {},
+    query: async () => ({ json: async () => [] }),
+    close: async () => {},
+  };
+  return client;
+}
 
 describe('ClickhouseClient', () => {
   it('can be instantiated', () => {
     expect(new ClickhouseClient()).to.be.instanceOf(ClickhouseClient);
+  });
+
+  describe('writeBatch()', () => {
+    it('writes valid rows and returns the written count', async () => {
+      const client = makeClient();
+      const result = await client.writeBatch('brand_presence_executions', [VALID_EXECUTION]);
+      expect(result.written).to.equal(1);
+      expect(result.failures).to.deep.equal([]);
+    });
+
+    it('skips insert for empty input', async () => {
+      const client = makeClient();
+      const result = await client.writeBatch('brand_presence_executions', []);
+      expect(result.written).to.equal(0);
+      expect(result.failures).to.deep.equal([]);
+    });
+
+    it('writes valid rows and reports invalid ones', async () => {
+      const client = makeClient();
+      const invalidRow = { site_id: '94d151ff-09d2-4462-9703-4956e635425f' };
+      const result = await client.writeBatch('brand_presence_executions', [VALID_EXECUTION, invalidRow]);
+      expect(result.written).to.equal(1);
+      expect(result.failures.length).to.be.greaterThan(0);
+    });
+  });
+
+  describe('query()', () => {
+    it('returns parsed JSON results', async () => {
+      const client = makeClient();
+      const expected = [{ site_id: '94d151ff-09d2-4462-9703-4956e635425f' }];
+      client.client.query = async () => ({ json: async () => expected });
+      const result = await client.query('SELECT 1');
+      expect(result).to.deep.equal(expected);
+    });
+
+    it('wraps and rethrows clickhouse query errors', async () => {
+      const client = makeClient();
+      client.client.query = async () => {
+        throw new Error('timeout');
+      };
+      let caught;
+      try {
+        await client.query('SELECT 1');
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught.message).to.include('ClickHouse query failed');
+    });
+  });
+
+  describe('close()', () => {
+    it('closes the clickhouse connection', async () => {
+      const client = makeClient();
+      let closeCalled = false;
+      client.client.close = async () => {
+        closeCalled = true;
+      };
+      await client.close();
+      expect(closeCalled).to.be.true;
+    });
   });
 });

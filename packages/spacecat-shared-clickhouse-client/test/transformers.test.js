@@ -13,6 +13,8 @@
 import { expect } from 'chai';
 import { toBrandPresenceExecution, toBrandPresenceCompetitorData } from '../src/transformers.js';
 
+// Claude Code, Model: Sonnet 4.6 - Prompt: "write unit tests for the transformers,
+// follow AAA pattern and coverage should be 80% at least"
 describe('transformers', () => {
   describe('toBrandPresenceExecution', () => {
     // Claude Code, Model: Sonnet 4.6 - Prompt: "please create a valid brand presence execution

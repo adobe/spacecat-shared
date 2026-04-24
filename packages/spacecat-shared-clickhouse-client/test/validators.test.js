@@ -13,6 +13,8 @@
 import { expect } from 'chai';
 import { VALIDATORS } from '../src/validators.js';
 
+// Claude Code, Model: Sonnet 4.6 - Prompt: "write unit tests for the validators,
+// follow AAA pattern and coverage should be 80% at least"
 describe('VALIDATORS', () => {
   describe('brand_presence_executions', () => {
     const validate = VALIDATORS.brand_presence_executions;
@@ -29,24 +31,24 @@ describe('VALIDATORS', () => {
       answer: 'Oakwood Living solid oak dining tables are available in fixed and extending configurations.',
     };
 
-    it('S-05: returns an error when visibility_score is below 0', () => {
+    it('returns an error when visibility_score is below 0', () => {
       expect(validate({ ...validRow, visibility_score: -1.0 }).some((e) => e.field === 'visibility_score')).to.be.true;
     });
 
-    it('S-05: returns an error when visibility_score is above 100', () => {
+    it('returns an error when visibility_score is above 100', () => {
       expect(validate({ ...validRow, visibility_score: 100.1 }).some((e) => e.field === 'visibility_score')).to.be.true;
     });
 
-    it('S-05: accepts visibility_score at boundary values 0 and 100', () => {
+    it('accepts visibility_score at boundary values 0 and 100', () => {
       expect(validate({ ...validRow, visibility_score: 0 })).to.deep.equal([]);
       expect(validate({ ...validRow, visibility_score: 100 })).to.deep.equal([]);
     });
 
-    it('S-05: skips visibility_score range check when it is not a number', () => {
+    it('skips visibility_score range check when it is not a number', () => {
       expect(validate({ ...validRow, visibility_score: '-1' }).some((e) => e.field === 'visibility_score')).to.be.false;
     });
 
-    it('S-06: accepts object without optional fields volume, business_competitors, and organic_competitors', () => {
+    it('accepts object without optional fields volume, business_competitors, and organic_competitors', () => {
       const row = { ...validRow };
       delete row.volume;
       delete row.business_competitors;

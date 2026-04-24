@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+// Claude Code, Model: Sonnet 4.6 - Prompt: "write unit tests for the clickhouse client,
+// follow AAA pattern and coverage should be 80% at least"
 import { expect } from 'chai';
 import ClickhouseClient from '../src/index.js';
 

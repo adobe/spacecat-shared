@@ -31,7 +31,7 @@ export function toBrandPresenceExecution(raw) {
     topic: raw.topic,
     prompt: raw.prompt,
     origin: raw.origin,
-    region: raw.region,
+    region: raw.region?.toLowerCase(),
     volume: parseInt(raw.volume, 10),
     user_intent: raw.user_intent,
     answer: raw.answer,
@@ -60,6 +60,6 @@ export function toBrandPresenceCompetitorData(raw) {
     week: raw.week,
     category: raw.category,
     competitor,
-    region: raw.region,
+    region: raw.region?.toLowerCase(),
   }));
 }

@@ -406,7 +406,7 @@ describe('URL Utility Functions', () => {
       expect(duration).to.be.below(11000); // Should complete well before timeout
     });
 
-    it('should use 20s timeout for GET requests', async () => {
+    it('should use 15s timeout for GET requests', async () => {
       // Verify GET request completes within timeout
       nock('https://example.com')
         .get('/')
@@ -417,7 +417,12 @@ describe('URL Utility Functions', () => {
       const duration = Date.now() - startTime;
 
       expect(result).to.equal('https://example.com/');
-      expect(duration).to.be.below(21000); // Should complete well before timeout
+      expect(duration).to.be.below(16000); // Should complete well before timeout
+    });
+
+    it('should return null immediately when total deadline has already passed', async () => {
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD', Date.now() - 1);
+      expect(result).to.be.null;
     });
 
     it('should handle AbortError from timeout and retry with GET for HEAD', async () => {

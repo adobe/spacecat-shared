@@ -198,7 +198,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai blocking with 403 and akamai-cache-status header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'akamai-cache-status': 'Error from child',
         });
@@ -212,7 +212,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai blocking with 403 and akamai-grn header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'akamai-grn': '0.12847b5c.1775713505.2874823e',
         });

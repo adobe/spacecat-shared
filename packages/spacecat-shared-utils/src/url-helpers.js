@@ -134,22 +134,32 @@ function getSpacecatRequestHeaders() {
   };
 }
 
+const RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT = 20000;
+
 /**
  * Resolve canonical URL for a given URL string by following redirect chain.
  * @param {string} urlString - The URL string to normalize.
  * @param {string} method - HTTP method to use ('HEAD' or 'GET').
+ * @param {number} deadline - Absolute timestamp (ms) by which all attempts must finish.
  * @returns {Promise<string|null>} A Promise that resolves to the canonical URL or null if failed.
  */
-async function resolveCanonicalUrl(urlString, method = 'HEAD') {
+async function resolveCanonicalUrl(
+  urlString,
+  method = 'HEAD',
+  deadline = Date.now() + RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT,
+) {
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) return null;
+
   const headers = getSpacecatRequestHeaders();
   let resp;
 
   try {
-    const timeout = method === 'HEAD' ? 10000 : 20000; // 10s for HEAD, 20s for GET
+    const maxPerAttempt = method === 'HEAD' ? 10000 : 15000;
     resp = await fetch(urlString, {
       headers,
       method,
-      signal: AbortSignal.timeout(timeout),
+      signal: AbortSignal.timeout(Math.min(remaining, maxPerAttempt)),
     });
 
     if (resp.ok) {
@@ -158,11 +168,11 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
 
     // Handle redirect chains
     if (urlString !== resp.url) {
-      return resolveCanonicalUrl(resp.url, method);
+      return resolveCanonicalUrl(resp.url, method, deadline);
     }
 
     if (method === 'HEAD') {
-      return resolveCanonicalUrl(urlString, 'GET');
+      return resolveCanonicalUrl(urlString, 'GET', deadline);
     }
 
     // If the URL is not found and we've tried both HEAD and GET, return null
@@ -170,7 +180,7 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
   } catch {
     // If HEAD failed with network error and we haven't tried GET yet, retry with GET
     if (method === 'HEAD') {
-      return resolveCanonicalUrl(urlString, 'GET');
+      return resolveCanonicalUrl(urlString, 'GET', deadline);
     }
 
     // For all errors (both HTTP status and network), return null

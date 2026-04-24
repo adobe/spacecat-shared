@@ -57,7 +57,7 @@ describe('ClickhouseClient — integration', () => {
       delete row.site_id;
 
       const result = await client.writeBatch('brand_presence_executions', [row]);
-      const [{ amount }] = await client.query('SELECT count() AS c FROM brand_presence_executions');
+      const [{ amount }] = await client.query('SELECT count() AS amount FROM brand_presence_executions');
 
       expect(result.written).to.equal(0);
       expect(result.failures.some((f) => f.field === 'site_id')).to.be.true;
@@ -69,7 +69,7 @@ describe('ClickhouseClient — integration', () => {
       delete row.execution_date;
 
       const result = await client.writeBatch('brand_presence_executions', [row]);
-      const [{ amount }] = await client.query('SELECT count() AS c FROM brand_presence_executions');
+      const [{ amount }] = await client.query('SELECT count() AS amount FROM brand_presence_executions');
 
       expect(result.written).to.equal(0);
       expect(result.failures.some((f) => f.field === 'execution_date')).to.be.true;
@@ -81,7 +81,7 @@ describe('ClickhouseClient — integration', () => {
       delete row.platform;
 
       const result = await client.writeBatch('brand_presence_executions', [row]);
-      const [{ amount }] = await client.query('SELECT count() AS c FROM brand_presence_executions');
+      const [{ amount }] = await client.query('SELECT count() AS amount FROM brand_presence_executions');
 
       expect(result.written).to.equal(0);
       expect(result.failures.some((f) => f.field === 'platform')).to.be.true;
@@ -92,7 +92,7 @@ describe('ClickhouseClient — integration', () => {
       const result = await client.writeBatch('brand_presence_executions', [
         { ...VALID_EXECUTION, visibility_score: -1.0 },
       ]);
-      const [{ amount }] = await client.query('SELECT count() AS c FROM brand_presence_executions');
+      const [{ amount }] = await client.query('SELECT count() AS amount FROM brand_presence_executions');
 
       expect(result.written).to.equal(0);
       expect(result.failures.some((f) => f.field === 'visibility_score')).to.be.true;
@@ -145,6 +145,59 @@ describe('ClickhouseClient — integration', () => {
       expect(result.failures[0].index).to.equal(1);
       expect(stored).to.have.length(1);
       expect(stored[0].site_id).to.equal('94d151ff-09d2-4462-9703-4956e635425f');
+    });
+  });
+
+  describe('writeBatch() — brand_presence_competitor_data', () => {
+    const VALID_COMPETITOR = {
+      site_id: '94d151ff-09d2-4462-9703-4956e635425f',
+      platform: 'google-ai-overviews',
+      week: '2025-W47',
+      category: 'Dining Room',
+      competitor: 'IKEA',
+      region: 'gb',
+    };
+
+    it('inserts a valid competitor row and confirms it is stored', async () => {
+      const result = await client.writeBatch('brand_presence_competitor_data', [VALID_COMPETITOR]);
+      const rows = await client.query('SELECT site_id, competitor, region FROM brand_presence_competitor_data');
+
+      expect(result.written).to.equal(1);
+      expect(result.failures).to.deep.equal([]);
+      expect(rows).to.have.length(1);
+      expect(rows[0].site_id).to.equal('94d151ff-09d2-4462-9703-4956e635425f');
+      expect(rows[0].competitor).to.equal('IKEA');
+      expect(rows[0].region).to.equal('gb');
+    });
+
+    it('rejects a competitor row with a missing required field and writes nothing to ClickHouse', async () => {
+      const row = { ...VALID_COMPETITOR };
+      delete row.competitor;
+
+      const result = await client.writeBatch('brand_presence_competitor_data', [row]);
+      const [{ amount }] = await client.query('SELECT count() AS amount FROM brand_presence_competitor_data');
+
+      expect(result.written).to.equal(0);
+      expect(result.failures.some((f) => f.field === 'competitor')).to.be.true;
+      expect(Number(amount)).to.equal(0);
+    });
+
+    it('inserts a batch of multiple competitor rows and confirms all are stored', async () => {
+      const rows = [
+        VALID_COMPETITOR,
+        { ...VALID_COMPETITOR, competitor: 'John Lewis' },
+        { ...VALID_COMPETITOR, competitor: 'Wayfair' },
+      ];
+
+      const result = await client.writeBatch('brand_presence_competitor_data', rows);
+      const stored = await client.query(
+        'SELECT competitor FROM brand_presence_competitor_data ORDER BY competitor',
+      );
+
+      expect(result.written).to.equal(3);
+      expect(result.failures).to.deep.equal([]);
+      expect(stored).to.have.length(3);
+      expect(stored.map((row) => row.competitor)).to.deep.equal(['IKEA', 'John Lewis', 'Wayfair']);
     });
   });
 });

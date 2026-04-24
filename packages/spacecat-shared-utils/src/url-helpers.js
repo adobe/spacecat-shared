@@ -149,7 +149,9 @@ async function resolveCanonicalUrl(
   deadline = Date.now() + RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT,
 ) {
   const remaining = deadline - Date.now();
-  if (remaining <= 0) return null;
+  if (remaining <= 0) {
+    return null;
+  }
 
   const headers = getSpacecatRequestHeaders();
   let resp;

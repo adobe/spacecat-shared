@@ -191,11 +191,19 @@ class Configuration {
     // Site-level takes priority over org-level: an explicit site enable/disable
     // overrides the org-level setting, allowing a single site to be upgraded to
     // a paid profile even if the org is in disabled.orgs.
-    if (disabledSites.includes(siteId)) return false;
-    if (enabledSites.includes(siteId)) return true;
+    if (disabledSites.includes(siteId)) {
+      return false;
+    }
+    if (enabledSites.includes(siteId)) {
+      return true;
+    }
 
-    if (disabledOrgs.includes(orgId)) return false;
-    if (handler.enabledByDefault) return true;
+    if (disabledOrgs.includes(orgId)) {
+      return false;
+    }
+    if (handler.enabledByDefault) {
+      return true;
+    }
     return enabledOrgs.includes(orgId);
   }
 

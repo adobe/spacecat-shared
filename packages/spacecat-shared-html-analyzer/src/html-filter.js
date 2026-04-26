@@ -18,6 +18,27 @@
 import { isBrowser } from './utils.js';
 import { tokenize } from './tokenizer.js';
 
+/**
+ * Recursively sort all object keys alphabetically so that semantically
+ * equivalent JSON-LD blocks with different server-side key orderings
+ * produce identical strings after serialization (no false diff noise).
+ * Arrays are traversed but their element order is preserved, because
+ * JSON-LD @graph / @set ordering can be meaningful.
+ * @param {*} value - Value to sort
+ * @returns {*} Value with all object keys recursively sorted
+ */
+function deepSortKeys(value) {
+  if (Array.isArray(value)) {
+    return value.map(deepSortKeys);
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.keys(value).sort().map((k) => [k, deepSortKeys(value[k])]),
+    );
+  }
+  return value;
+}
+
 // Optimized navigation and footer selectors - combined for single DOM query performance
 // Ordered by frequency: semantic elements (most common) → classes → IDs → ARIA (least common)
 const NAVIGATION_FOOTER_SELECTOR = [
@@ -230,7 +251,7 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNosc
           }
 
           const parsedJson = JSON.parse(cleanJsonContent);
-          const formattedJson = JSON.stringify(parsedJson, null, 2);
+          const formattedJson = JSON.stringify(deepSortKeys(parsedJson), null, 2);
 
           // Create a pre/code block to preserve JSON-LD for markdown conversion
           const codeBlock = document.createElement('pre'); // eslint-disable-line no-undef
@@ -318,7 +339,7 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
           }
 
           const parsedJson = JSON.parse(cleanJsonContent);
-          const formattedJson = JSON.stringify(parsedJson, null, 2);
+          const formattedJson = JSON.stringify(deepSortKeys(parsedJson), null, 2);
           const codeBlock = `<pre><code class="ld-json">${formattedJson}</code></pre>`;
           $(this).before(codeBlock);
         } catch (e) {

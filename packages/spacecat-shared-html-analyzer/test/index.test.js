@@ -16,6 +16,7 @@ import {
   calculateStats,
   calculateBothScenarioStats,
   stripTagsToText,
+  filterHtmlContent,
 } from '../src/index.js';
 
 describe('HTML Visibility Analyzer', () => {
@@ -276,6 +277,59 @@ describe('HTML Visibility Analyzer', () => {
       expect(textWith).to.include('Content');
       expect(textWith).to.include('First noscript');
       expect(textWith).to.include('Second noscript');
+    });
+  });
+
+  describe('JSON-LD key-order normalization (filterHtmlContent)', () => {
+    const makeHtml = (jsonLd) => `<html><head><script type="application/ld+json">${JSON.stringify(jsonLd)}</script></head><body><p>Content</p></body></html>`;
+
+    it('produces identical output for JSON-LD objects with different key orderings', async () => {
+      const leftJsonLd = { '@type': 'WebPage', '@context': 'https://schema.org', name: 'HDFC FD Calculator' };
+      const rightJsonLd = { '@context': 'https://schema.org', name: 'HDFC FD Calculator', '@type': 'WebPage' };
+
+      const leftHtml = await filterHtmlContent(makeHtml(leftJsonLd), true, false);
+      const rightHtml = await filterHtmlContent(makeHtml(rightJsonLd), true, false);
+
+      // Both sides must produce the same ld-json block so no false diff is generated
+      const extractLdJson = (html) => {
+        const match = html.match(/<code class="ld-json">([\s\S]*?)<\/code>/);
+        return match ? match[1] : null;
+      };
+
+      expect(extractLdJson(leftHtml)).to.equal(extractLdJson(rightHtml));
+    });
+
+    it('sorts nested object keys recursively', async () => {
+      const jsonLd = {
+        '@type': 'Product',
+        '@context': 'https://schema.org',
+        offers: { '@type': 'Offer', price: '100', currency: 'USD' },
+      };
+
+      const html = await filterHtmlContent(makeHtml(jsonLd), true, false);
+      const match = html.match(/<code class="ld-json">([\s\S]*?)<\/code>/);
+      const parsed = JSON.parse(match[1]);
+      const keys = Object.keys(parsed);
+
+      expect(keys).to.deep.equal([...keys].sort());
+      expect(Object.keys(parsed.offers)).to.deep.equal([...Object.keys(parsed.offers)].sort());
+    });
+
+    it('preserves array element order within JSON-LD', async () => {
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@graph': [
+          { '@type': 'WebPage', name: 'Page A' },
+          { '@type': 'Organization', name: 'Org B' },
+        ],
+      };
+
+      const html = await filterHtmlContent(makeHtml(jsonLd), true, false);
+      const match = html.match(/<code class="ld-json">([\s\S]*?)<\/code>/);
+      const parsed = JSON.parse(match[1]);
+
+      expect(parsed['@graph'][0].name).to.equal('Page A');
+      expect(parsed['@graph'][1].name).to.equal('Org B');
     });
   });
 });

@@ -28,6 +28,12 @@ import {
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
+import {
+  EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT,
+  PRIVATE_HOST_RE,
+  WAF_PROBE_TIMEOUT_MS,
+  classifyProbeResponse,
+} from './utils/waf-probe-utils.js';
 
 export { FastlyKVClient } from './fastly-kv-client.js';
 export { calculateForwardedHost } from './utils/custom-html-utils.js';
@@ -35,60 +41,6 @@ export { calculateForwardedHost } from './utils/custom-html-utils.js';
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
-
-// ---------------------------------------------------------------------------
-// WAF / Bot-Manager connectivity probe
-// ---------------------------------------------------------------------------
-
-const EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT = 'https://live.edgeoptimize.net';
-
-// Blocks loopback, link-local, and RFC1918 ranges — never forward these as probe targets.
-const PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/i;
-
-const WAF_PROBE_TIMEOUT_MS = 15000;
-
-// Soft-block detection: only phrases that appear exclusively in challenge pages.
-// Broad terms like 'blocked' or 'cloudflare' cause false positives on legitimate pages.
-const BOT_CHALLENGE_BODY_MAX_BYTES = 2048;
-const BOT_CHALLENGE_KEYWORDS = [
-  'challenge',
-  'captcha',
-  'bot manager',
-  'access denied',
-  'cf-chl-widget',
-  'completing the challenge',
-];
-
-// 403 and 429 are universal WAF block signals; 406 is used by Signal Sciences
-// (Fastly Next-Gen WAF) and some Imperva configurations as their block response.
-const HARD_BLOCK_STATUS_CODES = new Set([403, 406, 429]);
-
-async function classifyProbeResponse(response, targetHost, log) {
-  const { status } = response;
-
-  if (HARD_BLOCK_STATUS_CODES.has(status)) {
-    log.info(`[edge-optimize-probe] Hard block for ${targetHost}: HTTP ${status}`);
-    return { reachable: false, blocked: true, statusCode: status };
-  }
-
-  if (status >= 200 && status < 300) {
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('text/html')) {
-      const text = await response.text();
-      const snippet = text.slice(0, BOT_CHALLENGE_BODY_MAX_BYTES).toLowerCase();
-      const isSoftBlock = BOT_CHALLENGE_KEYWORDS.some((kw) => snippet.includes(kw));
-      if (isSoftBlock) {
-        log.info(`[edge-optimize-probe] Soft block (challenge page) for ${targetHost}: HTTP ${status}`);
-        return { reachable: false, blocked: true, statusCode: status };
-      }
-    }
-    log.info(`[edge-optimize-probe] Clean pass for ${targetHost}: HTTP ${status}`);
-    return { reachable: true, blocked: false, statusCode: status };
-  }
-
-  log.info(`[edge-optimize-probe] Unexpected status for ${targetHost}: HTTP ${status}`);
-  return { reachable: false, blocked: false, statusCode: status };
-}
 
 /** Matches SpaceCat API eligibility for edge deploy (non-domain-wide). */
 function isEdgeDeployableSuggestionStatus(status) {

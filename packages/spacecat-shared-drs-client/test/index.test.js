@@ -922,13 +922,17 @@ describe('DrsClient', () => {
     });
 
     it('throws when siteId is missing', async () => {
-      const client = new DrsClient({ s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient }, log);
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient,
+      }, log);
       await expect(client.publishBrandPresenceAnalyze(undefined, { resultLocation: 's3://x' }))
         .to.be.rejectedWith('siteId is required');
     });
 
     it('throws when resultLocation is missing', async () => {
-      const client = new DrsClient({ s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient }, log);
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient,
+      }, log);
       await expect(client.publishBrandPresenceAnalyze('site-1', {}))
         .to.be.rejectedWith('resultLocation is required');
     });

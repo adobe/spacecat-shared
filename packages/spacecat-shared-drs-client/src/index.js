@@ -432,7 +432,7 @@ export default class DrsClient {
     }
 
     const key = `${DRS_S3_KEY_PREFIX}/${siteId}/${jobId}/source.xlsx`;
-    this.log.info(`Uploading Excel to DRS S3`, { siteId, jobId, key });
+    this.log.info('Uploading Excel to DRS S3', { siteId, jobId, key });
 
     await this.s3Client.send(new PutObjectCommand({
       Bucket: this.s3Bucket,
@@ -443,7 +443,7 @@ export default class DrsClient {
     }));
 
     const uri = `s3://${this.s3Bucket}/${key}`;
-    this.log.info(`Excel uploaded to DRS S3`, { uri });
+    this.log.info('Excel uploaded to DRS S3', { uri });
     return uri;
   }
 
@@ -453,7 +453,7 @@ export default class DrsClient {
    * @param {string} siteId - SpaceCat site ID
    * @param {object} params
    * @param {string} params.resultLocation - S3 URI of the uploaded Excel file
-   * @param {string} [params.webSearchProvider] - Provider string (e.g. 'chatgpt', 'google_ai_overviews')
+   * @param {string} [params.webSearchProvider] - Provider string (e.g. 'chatgpt', 'gemini')
    * @param {string} [params.configVersion] - SpaceCat config schema version
    * @param {number} [params.week] - ISO week number
    * @param {number} [params.year] - Year
@@ -502,7 +502,7 @@ export default class DrsClient {
       ...(year != null && { year }),
     };
 
-    this.log.info(`Publishing brand presence analyze SNS event`, { jobId, siteId, resultLocation });
+    this.log.info('Publishing brand presence analyze SNS event', { jobId, siteId, resultLocation });
 
     await this.snsClient.send(new PublishCommand({
       TopicArn: this.snsTopicArn,
@@ -513,7 +513,7 @@ export default class DrsClient {
       },
     }));
 
-    this.log.info(`Brand presence analyze SNS event published`, { jobId });
+    this.log.info('Brand presence analyze SNS event published', { jobId });
     return jobId;
   }
 }

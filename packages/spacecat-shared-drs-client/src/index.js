@@ -13,6 +13,7 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 import { hasText, instrumentAWSClient, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
+import { randomUUID } from 'crypto';
 
 const EXTERNAL_SPACECAT_PROVIDER_ID = 'external_spacecat';
 const DRS_S3_KEY_PREFIX = 'external/spacecat';
@@ -411,16 +412,12 @@ export default class DrsClient {
 
   /**
    * Uploads a brand presence Excel file directly to the DRS S3 bucket.
-   * @param {object} params
-   * @param {string} params.siteId - SpaceCat site ID
-   * @param {string} params.brandSlug - URL-safe brand slug
-   * @param {string} params.jobId - Unique job ID (used to derive the S3 key)
-   * @param {Buffer|Uint8Array} params.excelBuffer - Raw Excel file bytes
+   * @param {string} siteId - SpaceCat site ID
+   * @param {string} jobId - Unique job ID (used to derive the S3 key)
+   * @param {Buffer|Uint8Array} excelBuffer - Raw Excel file bytes
    * @returns {Promise<string>} S3 URI of the uploaded file (s3://bucket/key)
    */
-  async uploadExcelToDrs({
-    siteId, brandSlug, jobId, excelBuffer,
-  }) {
+  async uploadExcelToDrs(siteId, jobId, excelBuffer) {
     if (!this.isS3Configured()) {
       throw new Error('DRS S3 is not configured. Set DRS_S3_BUCKET and DRS_SNS_TOPIC_ARN environment variables.');
     }
@@ -434,7 +431,7 @@ export default class DrsClient {
       throw new Error('excelBuffer is required and must be non-empty');
     }
 
-    const key = `${DRS_S3_KEY_PREFIX}/${siteId}/${brandSlug}/${jobId}/source.xlsx`;
+    const key = `${DRS_S3_KEY_PREFIX}/${siteId}/${jobId}/source.xlsx`;
     this.log.info(`Uploading Excel to DRS S3`, { siteId, jobId, key });
 
     await this.s3Client.send(new PutObjectCommand({
@@ -452,32 +449,31 @@ export default class DrsClient {
 
   /**
    * Publishes a JOB_COMPLETED SNS event to trigger DRS Fargate brand presence analysis.
+   * Generates a unique job ID internally and returns it so the caller can correlate logs.
+   * @param {string} siteId - SpaceCat site ID
    * @param {object} params
-   * @param {string} params.jobId - Job ID (must match the one used in uploadExcelToDrs)
-   * @param {string} params.siteId - SpaceCat site ID
-   * @param {string} [params.brandName] - Brand name
-   * @param {string} [params.imsOrgId] - IMS organization ID
    * @param {string} params.resultLocation - S3 URI of the uploaded Excel file
-   * @param {string} [params.platform] - Canonical platform string (e.g. 'chatgpt_free')
+   * @param {string} [params.webSearchProvider] - Provider string (e.g. 'chatgpt', 'google_ai_overviews')
+   * @param {string} [params.configVersion] - SpaceCat config schema version
    * @param {number} [params.week] - ISO week number
    * @param {number} [params.year] - Year
-   * @returns {Promise<void>}
+   * @param {string} [params.runFrequency] - 'daily' | 'weekly'
+   * @param {string} [params.brand] - Brand name
+   * @param {string} [params.imsOrgId] - IMS organization ID
+   * @returns {Promise<string>} The generated job ID
    */
-  async publishBrandPresenceAnalyze({
-    jobId,
-    siteId,
-    brandName,
-    imsOrgId,
+  async publishBrandPresenceAnalyze(siteId, {
     resultLocation,
-    platform,
+    webSearchProvider,
+    configVersion,
     week,
     year,
-  }) {
+    runFrequency,
+    brand,
+    imsOrgId,
+  } = {}) {
     if (!this.isS3Configured()) {
       throw new Error('DRS S3 is not configured. Set DRS_S3_BUCKET and DRS_SNS_TOPIC_ARN environment variables.');
-    }
-    if (!hasText(jobId)) {
-      throw new Error('jobId is required');
     }
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
@@ -486,6 +482,8 @@ export default class DrsClient {
       throw new Error('resultLocation is required');
     }
 
+    const jobId = `spacecat-${randomUUID()}`;
+
     const message = {
       event_type: 'JOB_COMPLETED',
       job_id: jobId,
@@ -493,11 +491,13 @@ export default class DrsClient {
       result_location: resultLocation,
       reanalysis: true,
       metadata: {
-        site: siteId,
-        brand: brandName,
+        site_id: siteId,
+        brand,
         imsOrgId,
+        web_search_provider: webSearchProvider,
+        config_version: configVersion,
+        ...(runFrequency && { run_frequency: runFrequency }),
       },
-      ...(platform && { platform }),
       ...(week != null && { week }),
       ...(year != null && { year }),
     };
@@ -514,5 +514,6 @@ export default class DrsClient {
     }));
 
     this.log.info(`Brand presence analyze SNS event published`, { jobId });
+    return jobId;
   }
 }

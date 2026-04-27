@@ -772,28 +772,23 @@ describe('DrsClient', () => {
       }, log);
 
       const excelBuffer = Buffer.from('fake-excel-bytes');
-      const result = await client.uploadExcelToDrs({
-        siteId: 'site-1',
-        brandSlug: 'acme',
-        jobId: 'job-abc',
-        excelBuffer,
-      });
+      const result = await client.uploadExcelToDrs('site-1', 'job-abc', excelBuffer);
 
-      expect(result).to.equal('s3://drs-bucket/external/spacecat/site-1/acme/job-abc/source.xlsx');
+      expect(result).to.equal('s3://drs-bucket/external/spacecat/site-1/job-abc/source.xlsx');
       expect(s3ClientStub).to.have.been.calledOnce;
       const [cmd] = s3ClientStub.args[0];
       expect(cmd.input.Bucket).to.equal(S3_BUCKET);
-      expect(cmd.input.Key).to.equal('external/spacecat/site-1/acme/job-abc/source.xlsx');
+      expect(cmd.input.Key).to.equal('external/spacecat/site-1/job-abc/source.xlsx');
       expect(cmd.input.ContentType).to.equal('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       expect(cmd.input.ServerSideEncryption).to.equal('AES256');
       expect(cmd.input.Body).to.equal(excelBuffer);
-      expect(log.info).to.have.been.calledWith('Uploading Excel to DRS S3', { siteId: 'site-1', jobId: 'job-abc', key: 'external/spacecat/site-1/acme/job-abc/source.xlsx' });
+      expect(log.info).to.have.been.calledWith('Uploading Excel to DRS S3', { siteId: 'site-1', jobId: 'job-abc', key: 'external/spacecat/site-1/job-abc/source.xlsx' });
       expect(log.info).to.have.been.calledWith('Excel uploaded to DRS S3', { uri: result });
     });
 
     it('throws when not S3 configured', async () => {
       const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
-      await expect(client.uploadExcelToDrs({ siteId: 'site-1', brandSlug: 'acme', jobId: 'job-1', excelBuffer: Buffer.from('x') }))
+      await expect(client.uploadExcelToDrs('site-1', 'job-1', Buffer.from('x')))
         .to.be.rejectedWith('DRS S3 is not configured');
     });
 
@@ -801,7 +796,7 @@ describe('DrsClient', () => {
       const client = new DrsClient({
         s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, s3Client,
       }, log);
-      await expect(client.uploadExcelToDrs({ brandSlug: 'acme', jobId: 'job-1', excelBuffer: Buffer.from('x') }))
+      await expect(client.uploadExcelToDrs(undefined, 'job-1', Buffer.from('x')))
         .to.be.rejectedWith('siteId is required');
     });
 
@@ -809,7 +804,7 @@ describe('DrsClient', () => {
       const client = new DrsClient({
         s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, s3Client,
       }, log);
-      await expect(client.uploadExcelToDrs({ siteId: 'site-1', brandSlug: 'acme', excelBuffer: Buffer.from('x') }))
+      await expect(client.uploadExcelToDrs('site-1', undefined, Buffer.from('x')))
         .to.be.rejectedWith('jobId is required');
     });
 
@@ -817,7 +812,7 @@ describe('DrsClient', () => {
       const client = new DrsClient({
         s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, s3Client,
       }, log);
-      await expect(client.uploadExcelToDrs({ siteId: 'site-1', brandSlug: 'acme', jobId: 'job-1' }))
+      await expect(client.uploadExcelToDrs('site-1', 'job-1', undefined))
         .to.be.rejectedWith('excelBuffer is required and must be non-empty');
     });
 
@@ -825,7 +820,7 @@ describe('DrsClient', () => {
       const client = new DrsClient({
         s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, s3Client,
       }, log);
-      await expect(client.uploadExcelToDrs({ siteId: 'site-1', brandSlug: 'acme', jobId: 'job-1', excelBuffer: Buffer.alloc(0) }))
+      await expect(client.uploadExcelToDrs('site-1', 'job-1', Buffer.alloc(0)))
         .to.be.rejectedWith('excelBuffer is required and must be non-empty');
     });
 
@@ -840,12 +835,8 @@ describe('DrsClient', () => {
         s3Client,
       }, log);
 
-      await expect(client.uploadExcelToDrs({
-        siteId: 'site-1',
-        brandSlug: 'acme',
-        jobId: 'job-1',
-        excelBuffer: Buffer.from('x'),
-      })).to.be.rejectedWith('S3 access denied');
+      await expect(client.uploadExcelToDrs('site-1', 'job-1', Buffer.from('x')))
+        .to.be.rejectedWith('S3 access denied');
     });
   });
 
@@ -860,7 +851,7 @@ describe('DrsClient', () => {
       snsClient = { send: snsClientStub };
     });
 
-    it('publishes JOB_COMPLETED SNS event with all fields', async () => {
+    it('publishes JOB_COMPLETED SNS event with all fields and returns jobId', async () => {
       snsClientStub.resolves({});
 
       const client = new DrsClient({
@@ -871,75 +862,74 @@ describe('DrsClient', () => {
         snsClient,
       }, log);
 
-      await client.publishBrandPresenceAnalyze({
-        jobId: 'job-abc',
-        siteId: 'site-1',
-        brandName: 'Acme',
-        imsOrgId: 'org-123',
-        resultLocation: 's3://drs-bucket/external/spacecat/site-1/acme/job-abc/source.xlsx',
-        platform: 'chatgpt_free',
+      const jobId = await client.publishBrandPresenceAnalyze('site-1', {
+        resultLocation: 's3://drs-bucket/external/spacecat/site-1/job-abc/source.xlsx',
+        webSearchProvider: 'chatgpt',
+        configVersion: 'v1',
         week: 12,
         year: 2026,
+        runFrequency: 'weekly',
+        brand: 'Acme',
+        imsOrgId: 'org-123',
       });
 
+      expect(jobId).to.be.a('string').and.match(/^spacecat-/);
       expect(snsClientStub).to.have.been.calledOnce;
       const [cmd] = snsClientStub.args[0];
       expect(cmd.input.TopicArn).to.equal(SNS_TOPIC_ARN);
       const message = JSON.parse(cmd.input.Message);
       expect(message.event_type).to.equal('JOB_COMPLETED');
-      expect(message.job_id).to.equal('job-abc');
+      expect(message.job_id).to.equal(jobId);
       expect(message.provider_id).to.equal('external_spacecat');
-      expect(message.result_location).to.equal('s3://drs-bucket/external/spacecat/site-1/acme/job-abc/source.xlsx');
+      expect(message.result_location).to.equal('s3://drs-bucket/external/spacecat/site-1/job-abc/source.xlsx');
       expect(message.reanalysis).to.be.true;
-      expect(message.metadata).to.deep.equal({ site: 'site-1', brand: 'Acme', imsOrgId: 'org-123' });
-      expect(message.platform).to.equal('chatgpt_free');
+      expect(message.metadata).to.deep.equal({
+        site_id: 'site-1',
+        brand: 'Acme',
+        imsOrgId: 'org-123',
+        web_search_provider: 'chatgpt',
+        config_version: 'v1',
+        run_frequency: 'weekly',
+      });
       expect(message.week).to.equal(12);
       expect(message.year).to.equal(2026);
       expect(cmd.input.MessageAttributes.event_type.StringValue).to.equal('JOB_COMPLETED');
       expect(cmd.input.MessageAttributes.provider_id.StringValue).to.equal('external_spacecat');
     });
 
-    it('omits optional fields when not provided', async () => {
+    it('omits optional metadata fields when not provided', async () => {
       snsClientStub.resolves({});
 
       const client = new DrsClient({
         s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient,
       }, log);
 
-      await client.publishBrandPresenceAnalyze({
-        jobId: 'job-1',
-        siteId: 'site-1',
-        resultLocation: 's3://drs-bucket/external/spacecat/site-1/acme/job-1/source.xlsx',
+      await client.publishBrandPresenceAnalyze('site-1', {
+        resultLocation: 's3://drs-bucket/external/spacecat/site-1/job-1/source.xlsx',
       });
 
       const [cmd] = snsClientStub.args[0];
       const message = JSON.parse(cmd.input.Message);
-      expect(message).to.not.have.property('platform');
       expect(message).to.not.have.property('week');
       expect(message).to.not.have.property('year');
+      expect(message.metadata).to.not.have.property('run_frequency');
     });
 
     it('throws when not S3 configured', async () => {
       const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
-      await expect(client.publishBrandPresenceAnalyze({ jobId: 'j', siteId: 's', resultLocation: 's3://x' }))
+      await expect(client.publishBrandPresenceAnalyze('s', { resultLocation: 's3://x' }))
         .to.be.rejectedWith('DRS S3 is not configured');
-    });
-
-    it('throws when jobId is missing', async () => {
-      const client = new DrsClient({ s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient }, log);
-      await expect(client.publishBrandPresenceAnalyze({ siteId: 'site-1', resultLocation: 's3://x' }))
-        .to.be.rejectedWith('jobId is required');
     });
 
     it('throws when siteId is missing', async () => {
       const client = new DrsClient({ s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient }, log);
-      await expect(client.publishBrandPresenceAnalyze({ jobId: 'job-1', resultLocation: 's3://x' }))
+      await expect(client.publishBrandPresenceAnalyze(undefined, { resultLocation: 's3://x' }))
         .to.be.rejectedWith('siteId is required');
     });
 
     it('throws when resultLocation is missing', async () => {
       const client = new DrsClient({ s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient }, log);
-      await expect(client.publishBrandPresenceAnalyze({ jobId: 'job-1', siteId: 'site-1' }))
+      await expect(client.publishBrandPresenceAnalyze('site-1', {}))
         .to.be.rejectedWith('resultLocation is required');
     });
 
@@ -950,10 +940,8 @@ describe('DrsClient', () => {
         s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient,
       }, log);
 
-      await expect(client.publishBrandPresenceAnalyze({
-        jobId: 'job-1',
-        siteId: 'site-1',
-        resultLocation: 's3://drs-bucket/external/spacecat/site-1/acme/job-1/source.xlsx',
+      await expect(client.publishBrandPresenceAnalyze('site-1', {
+        resultLocation: 's3://drs-bucket/external/spacecat/site-1/job-1/source.xlsx',
       })).to.be.rejectedWith('SNS publish failed');
     });
   });

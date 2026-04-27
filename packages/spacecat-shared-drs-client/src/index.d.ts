@@ -69,22 +69,15 @@ export interface ScrapeLookupResponse {
   summary: ScrapeLookupSummary;
 }
 
-interface UploadExcelParams {
-  siteId: string;
-  brandSlug: string;
-  jobId: string;
-  excelBuffer: Buffer | Uint8Array;
-}
-
 interface PublishBrandPresenceParams {
-  jobId: string;
-  siteId: string;
-  brandName?: string;
-  imsOrgId?: string;
   resultLocation: string;
-  platform?: string;
+  webSearchProvider?: string;
+  configVersion?: string;
   week?: number;
   year?: number;
+  runFrequency?: 'daily' | 'weekly';
+  brand?: string;
+  imsOrgId?: string;
 }
 
 interface BrandDetectionOptions {
@@ -135,8 +128,8 @@ declare class DrsClient {
   constructor(config: DrsClientConfig, log?: Console);
   isConfigured(): boolean;
   isS3Configured(): boolean;
-  uploadExcelToDrs(params: UploadExcelParams): Promise<string>;
-  publishBrandPresenceAnalyze(params: PublishBrandPresenceParams): Promise<void>;
+  uploadExcelToDrs(siteId: string, jobId: string, excelBuffer: Buffer | Uint8Array): Promise<string>;
+  publishBrandPresenceAnalyze(siteId: string, params: PublishBrandPresenceParams): Promise<string>;
   submitJob(params: Record<string, unknown>): Promise<DrsJobResult>;
   submitPromptGenerationJob(params: PromptGenerationParams): Promise<DrsJobResult>;
   submitScrapeJob(params: ScrapeJobParams): Promise<DrsJobResult>;

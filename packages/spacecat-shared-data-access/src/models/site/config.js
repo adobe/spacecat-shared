@@ -345,7 +345,16 @@ export const configSchema = Joi.object({
       cdnProvider: Joi.string().optional(),
       region: Joi.string().pattern(AWS_REGION_PATTERN).optional(),
     }).optional(),
-    detectedCdn: Joi.string().valid('aem-cs-fastly', 'other').optional(),
+    detectedCdn: Joi.string().valid(
+      'aem-cs-fastly',
+      'commerce-fastly',
+      'byocdn-fastly',
+      'byocdn-akamai',
+      'byocdn-cloudflare',
+      'byocdn-imperva',
+      'byocdn-other',
+      'other',
+    ).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),

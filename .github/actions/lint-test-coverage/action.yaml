@@ -50,6 +50,19 @@ runs:
       run: npm run --prefix packages/spacecat-shared-data-access test:it
       shell: bash
 
+    - name: Check if spacecat-shared-clickhouse-client changed
+      id: ch-changes
+      uses: dorny/paths-filter@v4
+      with:
+        filters: |
+          clickhouse-client:
+            - 'packages/spacecat-shared-clickhouse-client/**'
+
+    - name: Run ClickHouse Integration Tests
+      if: steps.ch-changes.outputs.clickhouse-client == 'true'
+      run: npm run --prefix packages/spacecat-shared-clickhouse-client test:it
+      shell: bash
+
     - name: Run Unit Tests
       run: npm run test
       shell: bash

@@ -37,6 +37,7 @@ class ApiKey extends BaseModel {
     'imports.read_all',
     'imports.all_domains',
     'imports.assistant',
+    'brand-presence.write',
   ];
 
   isValid() {

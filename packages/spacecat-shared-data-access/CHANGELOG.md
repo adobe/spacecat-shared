@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.52.0...@adobe/spacecat-shared-data-access-v3.53.0) (2026-04-27)
+
+### Features
+
+* **data-access:** widen detectedCdn Joi schema to LLMO-supported tokens ([#1559](https://github.com/adobe/spacecat-shared/issues/1559)) ([f6e08e9](https://github.com/adobe/spacecat-shared/commit/f6e08e9e94cef4e230f0d892cc73d5e78395c492))
+
 ## [@adobe/spacecat-shared-data-access-v3.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.51.0...@adobe/spacecat-shared-data-access-v3.52.0) (2026-04-10)
 
 ### Features

@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-data-access-v3.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.54.0...@adobe/spacecat-shared-data-access-v3.55.0) (2026-04-28)
+
+### Features
+
+* **data-access:** add semantic-value-visibility audit type ([#1545](https://github.com/adobe/spacecat-shared/issues/1545)) ([e49aa54](https://github.com/adobe/spacecat-shared/commit/e49aa54ab3e9ad59d7c44b83b25c81477c6a497d))
+
+## [@adobe/spacecat-shared-data-access-v3.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.53.0...@adobe/spacecat-shared-data-access-v3.54.0) (2026-04-28)
+
+### Features
+
+* **data-access:** align detectedCdn Joi schema with CDN_TYPES taxonomy ([#1563](https://github.com/adobe/spacecat-shared/issues/1563)) ([bf02ca1](https://github.com/adobe/spacecat-shared/commit/bf02ca1f265c5e6de05512c07a742ce52388bb62)), closes [#1559](https://github.com/adobe/spacecat-shared/issues/1559) [adobe/spacecat-api-service#2245](https://github.com/adobe/spacecat-api-service/issues/2245)
+
+## [@adobe/spacecat-shared-data-access-v3.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.52.0...@adobe/spacecat-shared-data-access-v3.53.0) (2026-04-27)
+
+### Features
+
+* **data-access:** widen detectedCdn Joi schema to LLMO-supported tokens ([#1559](https://github.com/adobe/spacecat-shared/issues/1559)) ([f6e08e9](https://github.com/adobe/spacecat-shared/commit/f6e08e9e94cef4e230f0d892cc73d5e78395c492))
+
 ## [@adobe/spacecat-shared-data-access-v3.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.51.0...@adobe/spacecat-shared-data-access-v3.52.0) (2026-04-10)
 
 ### Features

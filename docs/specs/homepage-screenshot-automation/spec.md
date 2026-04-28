@@ -4,7 +4,7 @@
 **Status:** Brainstorm
 **Author:** Sandesh Sinha
 **Date:** 2026-04-17
-**Updated:** 2026-04-17
+**Updated:** 2026-04-28
 
 ---
 
@@ -25,11 +25,7 @@ At the same time, `spacecat-content-scraper` already runs Puppeteer at scale in 
 
 ## Proposal
 
-Two approaches are viable. **Option A is recommended.**
-
-### Option A — SpaceCat Content Scraper Pipeline (Recommended)
-
-Reuse the existing `spacecat-content-scraper` (`full-page` processingType) as the capture engine. Add a new `screenshot` audit type to `spacecat-audit-worker` that triggers a scrape job. Expose the result via a new API endpoint in `spacecat-api-service`. For failures, an admin uploads a manual override via `experience-success-studio-backoffice`, stored at a separate S3 prefix that takes precedence.
+Reuse `spacecat-content-scraper` (`full-page` processingType) for capture, port the heuristic validator into `spacecat-audit-worker`, then upload validated screenshots to SharePoint via MS Graph so the existing `aem.live` CDN URL is unchanged — no breaking change to consumers. Manual overrides write to the same SharePoint location via the backoffice. CloudFront migration is deferred to Phase 2.
 
 ```
 Scheduler (weekly, ASO-entitled sites only)
@@ -40,52 +36,50 @@ spacecat-audit-worker — new `screenshot` audit type
     ▼
 spacecat-scrape-job-manager → spacecat-content-scraper (FullPageHandler)
     │
-    ▼  Stores capture to S3_SCRAPER_BUCKET:
+    ▼  Stores raw capture to S3_SCRAPER_BUCKET:
     │    scrapes/{siteId}/screenshot-desktop-fullpage.png
     │    scrapes/{siteId}/screenshot-desktop-thumbnail.png
     ▼
 spacecat-audit-worker — heuristic validator (no AI)
-    │  pass → copy to screenshots/auto/{siteId}.png        ← serving key
-    │  fail → write screenshots/rejected/{siteId}.json     ← reasons + stats
+    │  pass → upload validated PNG (re-encoded JPEG) to SharePoint approved/{siteId}.jpeg via MS Graph
+    │         write screenshots/status/{siteId}.json { source: 'auto', publishedAt }
+    │  fail → write screenshots/rejected/{siteId}.json { reasons[], stats, capturedAt }
     ▼
 GET /sites/:siteId/screenshot  (spacecat-api-service)
-    │  1. Check override:  screenshots/overrides/{siteId}.png  ← manual upload via backoffice
-    │  2. Check auto:      screenshots/auto/{siteId}.png        ← only validated captures
-    │  3. Return presigned URL (7-day TTL) or 404 with rejection reasons
+    │  1. If screenshots/status/{siteId}.json exists → return aem.live URL + source
+    │  2. Else if screenshots/rejected/{siteId}.json exists → 404 with rejection reasons
+    │  3. Else → 404 'No screenshot available'
     ▼
 experience-success-studio-backoffice — Screenshots page
-    │  View current screenshot (auto or override)
+    │  View current screenshot via aem.live URL
     │  See rejection reasons when auto failed validation
-    │  Upload override (presigned PUT URL)
-    └─ Delete override (fall back to auto)
+    │  Upload override → API streams to SharePoint approved/{siteId}.jpeg via MS Graph,
+    │                    writes status.json { source: 'override' }
+    └─ Delete override → API deletes SharePoint file + status.json; next weekly run re-publishes
 ```
 
-**S3 key paths:**
+**Storage map:**
 
-| Purpose | Key |
+| Purpose | Location |
 |---|---|
-| Raw capture (fullpage) | `scrapes/{siteId}/screenshot-desktop-fullpage.png` |
-| Raw capture (thumbnail) | `scrapes/{siteId}/screenshot-desktop-thumbnail.png` |
-| Validated serving image | `screenshots/auto/{siteId}.png` |
-| Validation failure record | `screenshots/rejected/{siteId}.json` |
-| Manual override | `screenshots/overrides/{siteId}.png` |
+| Raw capture (fullpage / thumbnail) | S3: `scrapes/{siteId}/screenshot-desktop-{type}.png` |
+| Publish status (auto vs override) | S3: `screenshots/status/{siteId}.json` |
+| Validation failure record | S3: `screenshots/rejected/{siteId}.json` |
+| Published screenshot (single source) | SharePoint: `approved/{siteId}.jpeg`, served by `aem.live` CDN |
 
-Bucket: `process.env.S3_SCRAPER_BUCKET` (already wired in `spacecat-api-service`).
+Bucket: `process.env.S3_SCRAPER_BUCKET` (already wired). SharePoint upload uses MS Graph via existing platform credentials.
 
-### Option B — SharePoint Automation (Keep aem.live CDN)
+**Override semantics.** Overrides and auto-published captures share the same SharePoint path (`approved/{siteId}.jpeg`). Uploading an override overwrites whatever is there; the next weekly auto run will overwrite the override back. Admins re-upload if they want an override to stick longer. This keeps Phase 1 stateless beyond `status.json` — no override-locking machinery.
 
-Automate the current pipeline via GitHub Actions. Capture → heuristic-validate → upload to a SharePoint `pending/` folder. Admin reviews in `experience-success-studio-backoffice` and approves. Approval triggers an MS Graph API move from `pending/` to `approved/`, which the `aem.live` CDN serves.
+### Rejected: Manual Review / GitHub Actions Workflow
 
-| | Option A | Option B |
-|---|---|---|
-| Screenshot infra | Existing Lambda scraper (team-maintained) | GitHub Actions + local Puppeteer |
-| Human review step | Override only (on failure) | Required before publish |
-| Serving URL | New: `GET /sites/:siteId/screenshot` | Existing: `aem.live/content/{siteId}.jpeg` |
-| Breaking change | Yes — consumers must update to new URL | No |
-| Maintenance cost | Low | Medium (GH Actions + MSGraph token rotation) |
-| Screenshot quality | Good (consent banners dismissed by scraper) | Better (heuristic validator) |
+An earlier alternative proposed running the existing `site-screenshot` scripts in GitHub Actions, uploading to a SharePoint `pending/` folder, and requiring backoffice approval before publishing to `approved/`. Rejected because:
 
-Option B is preferred only if backwards compatibility of the `aem.live` serving URL is a hard requirement.
+- The scraper Lambda is already team-maintained, scaled, and observable; GitHub Actions duplicates that for no benefit.
+- A required manual review gate per site does not scale to hundreds of ASO sites — the validator should auto-publish on pass and only escalate failures.
+- MS Graph token rotation in a cron-only GitHub workflow has worse operational ergonomics than calling MS Graph from Lambda where credentials are already managed.
+
+We keep the SharePoint serving layer (no breaking change for consumers) but drop the manual-review workflow.
 
 ### Rejected: Option C — DRS (`llmo-data-retrieval-service`) as a Screenshot Provider
 
@@ -94,16 +88,16 @@ DRS was considered as a third option since it already has a provider-adapter fra
 1. **Domain mismatch.** DRS is purpose-built for "query an LLM provider, return structured JSON, run brand-presence analysis, emit Excel." Its `ProviderAdapter` contract (`execute_sync` / `execute_async` / `poll_async_status`) returns JSON results that flow into the Brand Presence Fargate pipeline. A screenshot has no LLM output and no brand-mention payload — it would be a non-conforming citizen of the pipeline.
 2. **Duplicates `spacecat-content-scraper`.** The scraper already runs Puppeteer at scale in Lambda, dismisses consent banners, and writes `scrapes/{jobId}/screenshot-desktop-fullpage.png` — exactly what this spec needs. Adding a Puppeteer provider in DRS reinvents that infrastructure outside the team that owns it.
 3. **Compute model is wrong.** DRS Fargate is gated behind a `BRAND_PRESENCE_WHITELIST` due to VPC/IGW limits in dev; Lambda Puppeteer in DRS has known architecture pitfalls (x86_64 mismatch, native-binary issues). The scraper's Lambda fleet is already tuned for Puppeteer.
-4. **Wrong consumer surface.** The screenshot's consumer is the backoffice UI via a presigned S3 URL. It does not need DRS's job model, SQS fan-out, SNS `JOB_COMPLETED` event, brand-presence analysis, or Excel/SharePoint distribution. Routing a binary PNG through that pipeline adds latency and operational surface for zero benefit.
+4. **Wrong consumer surface.** The screenshot's consumer is the backoffice UI loading a CDN URL. It does not need DRS's job model, SQS fan-out, SNS `JOB_COMPLETED` event, brand-presence analysis, or Excel distribution. Routing a binary PNG through that pipeline adds latency and operational surface for zero benefit.
 5. **Ownership.** Screenshot capture belongs with the content-scraping team that owns `spacecat-content-scraper`, not with the LLM-data team that owns DRS. Aligning code ownership with infrastructure ownership keeps on-call scope coherent.
 
-DRS *would* be the right home if the requirement evolved into "capture homepage → run an LLM-powered visual analysis on it" (e.g., visual brand audit, OCR-based mention extraction). For storing and serving a PNG, Option A is strictly simpler.
+DRS *would* be the right home if the requirement evolved into "capture homepage → run an LLM-powered visual analysis on it" (e.g., visual brand audit, OCR-based mention extraction). For capturing, validating, and publishing a PNG, the scraper-based pipeline is strictly simpler.
 
 ---
 
 ## Implementation
 
-### Phase 1 — Option A Core (This ticket)
+### Phase 1 — Automated Capture + SharePoint Delivery (This ticket)
 
 #### Step 1: New `screenshot` audit type — `spacecat-audit-worker`
 
@@ -133,11 +127,11 @@ export default new AuditBuilder()
 
 Register in the audit type map (same pattern as `cwv`). A lightweight completion step (Step 1.5) runs the heuristic validator before the API will serve the screenshot.
 
-**S3 key promotion.** The `FullPageHandler` writes to `scrapes/{siteId}/screenshot-desktop-fullpage.png` (the *capture* key). The validator promotes accepted captures to `screenshots/auto/{siteId}.png` (the *serving* key). The API only ever reads from the serving key, so a failed validation never reaches consumers — no DynamoDB model needed.
+**Capture → publish split.** The `FullPageHandler` writes to `scrapes/{siteId}/screenshot-desktop-fullpage.png` (the *capture* in S3). The validator publishes accepted captures by uploading them to SharePoint `approved/{siteId}.jpeg` via MS Graph (re-encoding PNG → JPEG to match the existing `aem.live` URL). A small `screenshots/status/{siteId}.json` record is written to S3 to track which sites have a current publish and whether it is auto- or override-sourced. The API never reads SharePoint directly — `status.json` plus `rejected.json` give it everything it needs to answer `GET /sites/:siteId/screenshot`.
 
 #### Step 1.5: Heuristic Screenshot Validator (no AI)
 
-A classical, deterministic validator runs on every capture before it is promoted to the serving key. The current manual flow already uses `validate-screenshots-heuristic.js` in the `site-screenshot` repo — port that logic into `spacecat-audit-worker` as a completion handler so we get the same signal automatically.
+A classical, deterministic validator runs on every capture before it is published to SharePoint. The current manual flow already uses `validate-screenshots-heuristic.js` in the `site-screenshot` repo — port that logic into `spacecat-audit-worker` as a completion handler so we get the same signal automatically.
 
 **Why no AI?** Determinism, cost, latency, and explainability. Heuristics give a binary pass/fail with named failure reasons we can log and surface in the backoffice. An AI judge would be a black box for what is fundamentally a "did the page render" check.
 
@@ -149,8 +143,9 @@ FullPageHandler writes scrapes/{siteId}/screenshot-desktop-fullpage.png
     ▼
 spacecat-audit-worker — screenshot completion handler (SQS-triggered on scrape complete)
     │  download PNG → run validator → emit { valid, reasons[], stats{} }
-    ├─ valid:   copy to screenshots/auto/{siteId}.png  (serving key)
-    └─ invalid: leave capture key, emit metric `screenshot.validation.failed{reason}`,
+    ├─ valid:   re-encode PNG → JPEG; PUT to SharePoint approved/{siteId}.jpeg via MS Graph;
+    │           write screenshots/status/{siteId}.json { source: 'auto', publishedAt }
+    └─ invalid: emit metric `screenshot.validation.failed{reason}`;
                 write { reasons, stats, capturedAt } to screenshots/rejected/{siteId}.json
                 so the backoffice can show *why* it failed and prompt for an override
 ```
@@ -179,79 +174,27 @@ Implementation notes:
 - `valid-homepage.png`, `valid-dark-mode.png` — should pass
 - `blank-white.png`, `blank-black.png`, `loading-spinner.png`, `cf-challenge.png`, `tiny-truncated.png` — each fails exactly one heuristic, asserted by `reasons[]`
 
-#### Step 1.6: Serving Architecture — CloudFront + S3 (no presigned URLs)
+#### Step 1.6: Serving — Reuse the Existing aem.live CDN
 
-Presigned URLs are the wrong tool here. They cost an SDK call per render, return non-cacheable URLs, generate constant API traffic for a static asset, and produce log volume proportional to page views. For an asset that is *immutable per capture* and *not secret in content* (a homepage screenshot of a public website), a CDN-fronted S3 bucket is strictly better.
+Phase 1 reuses the existing serving substrate: validated screenshots are uploaded to SharePoint at `approved/{siteId}.jpeg` via MS Graph; the existing AEM Edge Delivery host (`https://main--experience-success-studio-demo--hlxscreens.aem.live/content/{siteId}.jpeg`) serves them. Consumers continue to fetch the same URL — no breaking change.
 
-**Recommended architecture:**
+**Why this and not new infra.** The aem.live CDN already exists, already serves these screenshots, and is already what every consumer points at. Standing up a CloudFront distribution + OAC + private S3 in Phase 1 buys us nothing the existing CDN doesn't already provide and forces a coordinated consumer migration. The right time to migrate serving is when we have a concrete reason to leave SharePoint (see Phase 2).
+
+**MS Graph upload contract.**
 
 ```
-CloudFront distribution (screenshots.spacecat.adobe.com)
-    │  cache: max-age=31536000, immutable        (versioned paths → safe to cache forever)
-    │  OAC (Origin Access Control) → S3
-    ▼
-S3 bucket (private, OAC-only — no public ACLs, no website hosting)
-    └── screenshots/auto/{siteId}/{captureSha:0:12}.png        ← versioned key per capture
-        screenshots/overrides/{siteId}/{uploadSha:0:12}.png
+PUT /drives/{driveId}/items/{folderId}:/{siteId}.jpeg:/content   ← content upload
+    Content-Type: image/jpeg
+    body: <validated, re-encoded JPEG buffer>
 ```
 
-**Why versioned paths?** The capture's first 12 hex chars of SHA-256 are appended to the key after validation. Each new capture writes a new object; old ones expire via S3 lifecycle (30 days). This means the CDN can cache aggressively (`immutable`, 1 year) without ever serving stale content — the URL itself changes when the screenshot changes.
+- Reuse the existing platform MS Graph credential pattern; do not introduce a new app registration if one already covers the SharePoint site.
+- Drive ID and parent folder ID for `approved/` are configured via env (`SHAREPOINT_DRIVE_ID`, `SHAREPOINT_APPROVED_FOLDER_ID`).
+- Both the auto-publish (validator completion handler) and the override-upload API path call the same `publishToSharePoint(siteId, buffer)` helper.
 
-**Auth model.** Two clean choices, pick by org-leakage tolerance:
+**Why JPEG re-encode.** The existing aem.live URL ends in `.jpeg`. Re-encoding PNG→JPEG at quality ~85 cuts size by ~5–10× for typical homepages, which keeps the SharePoint upload fast and the CDN payload small. Use `sharp` (already required for the validator) for both the validation read and the JPEG encode in a single pipeline.
 
-| | Public via UUID | CloudFront Signed Cookies |
-|---|---|---|
-| How | Bucket served by CDN with no auth; siteId UUID in path is unguessable | Backoffice login mints a short JWT → CloudFront key-pair signed cookie covering `/screenshots/*` for ~12h |
-| Leak surface | Anyone who knows a siteId can view that homepage screenshot (the homepage itself is already public) | None beyond authenticated users |
-| Caching | Edge-cacheable across all viewers (single cache key per object) | Edge-cacheable, but cache key includes auth → split per session-bucket |
-| Op cost | Lowest | Slightly higher (key rotation, cookie issuance) |
-| Right answer when | The image content is already public (homepages are) and only customer-list privacy matters — UUIDs satisfy that | Compliance/legal explicitly forbids pre-auth access |
-
-**Default recommendation: signed cookies.** The screenshot pixels are public, but the *list of which siteIds are ASO customers* is sensitive. A CloudFront signed cookie issued by the backoffice IMS-login flow gives us cacheable, low-cost delivery without leaking the customer list. The cookie is set on a parent domain (`.spacecat.adobe.com`) at login and covers every screenshot the user views during the session.
-
-**API change.** The API stops minting presigned URLs and instead returns the canonical CDN URL plus the capture version. Cookie issuance happens once at login on a separate `POST /auth/cdn-cookie` endpoint, not per-request.
-
-```js
-// GET /sites/:siteId/screenshot
-export async function getScreenshot(ctx) {
-  const { siteId } = ctx.params;
-  const meta = await readJson(ctx.s3Client, BUCKET, `screenshots/meta/${siteId}.json`);
-  // meta = { auto: { version, capturedAt }, override?: { version, uploadedAt } }
-  if (!meta) return notFound(/* validation_failed payload as before */);
-
-  const which = meta.override ?? meta.auto;
-  const kind  = meta.override ? 'override' : 'auto';
-  return ok({
-    url: `https://${ctx.env.SCREENSHOT_CDN_HOST}/screenshots/${kind}/${siteId}/${which.version}.png`,
-    source: kind,
-    capturedAt: which.capturedAt ?? which.uploadedAt,
-  });
-}
-```
-
-The `screenshots/meta/{siteId}.json` pointer is written by the validator (auto) and the override upload completion (override). It records the current version per site — a tiny JSON read instead of a `HeadObject` + presign per request.
-
-**Cost comparison (rough, for ~100k screenshot views/month at ~500 KB each):**
-
-| | Presigned URL (current spec) | CloudFront + S3 |
-|---|---|---|
-| API calls | 100k SDK + presign generations | ~0 (one cookie at login) |
-| S3 GET requests | 100k | ~5k (cache misses ~5%) |
-| Data transfer | 100k × 500 KB = 50 GB out of S3 | 50 GB out of CloudFront, 2.5 GB out of S3 |
-| Edge latency | ~80–200 ms (S3 region direct) | ~10–40 ms (edge cache) |
-| Approx. monthly | **~$5 (transfer-dominated, all S3)** | **~$4 + faster** |
-
-The dollar delta is small at this scale — the real wins are **latency** and **operational simplicity** (no per-request presign codepath, no SDK cost on the hot path, no expiration sliding window to manage).
-
-**Why not just public S3 website hosting?** No edge cache, no HTTPS on custom domains without CloudFront anyway, no signed-cookie story if we ever need auth. CloudFront is the right primitive even if we start with anonymous access.
-
-**Why not aem.live / SharePoint serving (Option B's URL)?** Possible, but it pushes binary assets through MS Graph + Edge Delivery Service for an asset that lives in our own AWS account. CloudFront in the same account is simpler and gives us direct cache invalidation control.
-
-**Migration / rollout.**
-1. Stand up CloudFront distribution with OAC over the existing `S3_SCRAPER_BUCKET` `screenshots/` prefix; do not change the validator or capture flow.
-2. Ship the new `GET /sites/:siteId/screenshot` shape returning CDN URLs (no breaking change for backoffice — same route, different `url` field).
-3. Add `POST /auth/cdn-cookie` and call it from the backoffice on login.
-4. Once backoffice is verified, remove the presigned-URL code path.
+**API behavior.** `GET /sites/:siteId/screenshot` does not call MS Graph on the read path — it reads `screenshots/status/{siteId}.json` from S3 and returns the canonical aem.live URL. See Step 2 for the controller.
 
 #### Step 2: Screenshot API endpoints — `spacecat-api-service`
 
@@ -262,44 +205,43 @@ Add `src/controllers/screenshot.js` (modeled on `src/controllers/consentBanner.j
 export async function getScreenshot(ctx) {
   const { siteId } = ctx.params;
   const bucket = ctx.env.S3_SCRAPER_BUCKET;
+  const cdnBase = ctx.env.SCREENSHOT_AEM_LIVE_BASE; // e.g. https://main--experience-success-studio-demo--hlxscreens.aem.live/content
 
-  for (const [source, key] of [
-    ['override', `screenshots/overrides/${siteId}.png`],
-    ['auto',     `screenshots/auto/${siteId}.png`],     // only validated captures
-  ]) {
-    if (await objectExists(ctx.s3Client, bucket, key)) {
-      const url = await getSignedUrl(ctx.s3Client,
-        new GetObjectCommand({ Bucket: bucket, Key: key }),
-        { expiresIn: 604800 }
-      );
-      return ok({ url, source });
-    }
+  const status = await readJsonOrNull(ctx.s3Client, bucket, `screenshots/status/${siteId}.json`);
+  if (status) {
+    return ok({
+      url: `${cdnBase}/${siteId}.jpeg`,
+      source: status.source,        // 'auto' | 'override'
+      publishedAt: status.publishedAt,
+    });
   }
   // Surface validator output so the backoffice can show *why* it failed
-  const rejectedKey = `screenshots/rejected/${siteId}.json`;
-  if (await objectExists(ctx.s3Client, bucket, rejectedKey)) {
-    const rejection = await readJson(ctx.s3Client, bucket, rejectedKey);
-    return notFound({ reason: 'validation_failed', rejection });
-  }
+  const rejection = await readJsonOrNull(ctx.s3Client, bucket, `screenshots/rejected/${siteId}.json`);
+  if (rejection) return notFound({ reason: 'validation_failed', rejection });
   return notFound('No screenshot available for this site');
 }
 
 // POST /sites/:siteId/screenshot/override
-// Returns a presigned PUT URL so the backoffice can upload directly to S3
-export async function getOverrideUploadUrl(ctx) { ... }
+// Backoffice POSTs a multipart JPEG; the API streams it to SharePoint via MS Graph
+// and writes screenshots/status/{siteId}.json { source: 'override', publishedAt }.
+export async function uploadOverride(ctx) { ... }
 
 // DELETE /sites/:siteId/screenshot/override
+// Deletes SharePoint approved/{siteId}.jpeg + screenshots/status/{siteId}.json.
+// Next weekly auto run will re-publish if the capture validates.
 export async function deleteOverride(ctx) { ... }
 ```
 
 Register routes in `src/routes/index.js`:
 ```js
 'GET /sites/:siteId/screenshot':                getScreenshot,
-'POST /sites/:siteId/screenshot/override':      getOverrideUploadUrl,
+'POST /sites/:siteId/screenshot/override':      uploadOverride,
 'DELETE /sites/:siteId/screenshot/override':    deleteOverride,
 ```
 
 Auth: `getScreenshot` — authenticated (scoped to org); override endpoints — `hasAdminAccess()`.
+
+The override endpoint accepts the upload as `multipart/form-data` and streams it directly to MS Graph rather than minting a presigned URL — this avoids exposing a SharePoint write surface to the browser and keeps MS Graph credentials server-side.
 
 #### Step 3: Backoffice Screenshots page — `experience-success-studio-backoffice`
 
@@ -323,8 +265,8 @@ Add route in `App.js`:
 - `useAsyncList` for data loading — follows `Reports.js` pattern
 
 **ScreenshotDetails.js** features:
-- Full image via presigned URL (same pattern as `ReportDetails.js`)
-- "Upload Override": `POST .../override` → file picker → browser `PUT` to presigned URL
+- Full image via the `aem.live` URL returned by `GET /sites/:siteId/screenshot`
+- "Upload Override": file picker → `POST .../override` with `multipart/form-data` body → API forwards to SharePoint
 - "Delete Override": `DELETE .../override` with `ConfirmationDialog`
 - `ToastQueue` notifications on success/failure
 
@@ -332,8 +274,10 @@ Add to `apiService.js`:
 ```js
 export const getScreenshotUrl = (ims, siteId) =>
   fetchAPI(ims, `sites/${siteId}/screenshot`);
-export const getScreenshotOverrideUploadUrl = (ims, siteId) =>
-  fetchAPI(ims, `sites/${siteId}/screenshot/override`, { method: 'POST' });
+export const uploadScreenshotOverride = (ims, siteId, file) => {
+  const fd = new FormData(); fd.append('file', file);
+  return fetchAPI(ims, `sites/${siteId}/screenshot/override`, { method: 'POST', body: fd });
+};
 export const deleteScreenshotOverride = (ims, siteId) =>
   fetchAPI(ims, `sites/${siteId}/screenshot/override`, { method: 'DELETE' });
 ```
@@ -347,28 +291,50 @@ Enable the `screenshot` audit type in SpaceCat scheduler config:
 - Entitlement gate: `Entitlement.PRODUCT_CODES.ASO`
 - Mechanism: same `registerAudit()` call used for `cwv` and `cwv-trends-audit`
 
-### Phase 2 — Option B (If aem.live URL backwards-compat is required)
+### Phase 2 — Migrate Serving to CloudFront + S3 (Optional)
 
-1. Add `.github/workflows/screenshot-automation.yml` in `site-screenshot` repo:
-   - Weekly cron trigger (`workflow_dispatch` for manual runs)
-   - Steps: `node index.js --chrome-only` → `node validate-screenshots-heuristic.js` → upload to SharePoint `pending/` via MS Graph
-2. Add `PATCH /sites/:siteId/screenshot { action: 'approve' | 'reject' }` to `spacecat-api-service` — proxies MS Graph API to move file between `pending/` and `approved/` folders
-3. Same backoffice Screenshots page as Phase 1, but approve/reject calls PATCH endpoint instead of managing S3 directly
+Phase 1 reuses the `aem.live` CDN, which means SharePoint is on the publish path forever — with MS Graph token rotation, throttling limits, and a control plane outside our AWS account. Migrate to a CloudFront + private S3 distribution when one of these forces it:
+
+- We need direct cache-invalidation control (e.g., to push a fix to a stale screenshot in seconds rather than waiting on Edge Delivery).
+- MS Graph throttling becomes a publish-rate ceiling as the site count grows.
+- A consumer requires a non-`aem.live` URL (different domain, different auth model, etc.).
+
+**Target architecture.**
+
+```
+CloudFront distribution (screenshots.spacecat.adobe.com)
+    │  cache: max-age=3600 (1 hour)
+    │  OAC (Origin Access Control) → S3
+    ▼
+S3 bucket (private, OAC-only — no public ACLs, no website hosting)
+    └── screenshots/auto/{siteId}.png        ← stable key, overwritten by validator
+        screenshots/overrides/{siteId}.png   ← stable key, overwritten by upload
+```
+
+**Why this shape.** Stable per-site keys + a 1-hour edge TTL match the publish cadence (weekly auto, occasional overrides). On override writes, the API issues a single-key `CreateInvalidation` so admins see their change immediately (CloudFront's first 1000 invalidations/month are free). Auth is anonymous CDN-side: the bucket is private (OAC only), and the `siteId` UUID in the path is unguessable, which protects the customer-list privacy concern — homepage screenshot pixels themselves are public. If compliance later forbids pre-auth access, swap in CloudFront signed URLs (per-request) without restructuring the storage.
+
+**Migration plan.**
+
+1. Stand up CloudFront + S3 alongside SharePoint publishing — validator dual-writes (`PUT` to S3, `PUT` to SharePoint) for one full weekly cycle so the new path is exercised end-to-end.
+2. Update `GET /sites/:siteId/screenshot` to return the CloudFront URL (`https://${SCREENSHOT_CDN_HOST}/screenshots/{auto|override}/${siteId}.png`) behind a feature flag; backoffice flips first.
+3. Notify any external consumers of the URL change with a deprecation window.
+4. Drop SharePoint publishing from the validator; remove MS Graph dependency from the API service.
+
+**What stays from Phase 1.** The audit type, validator, status/rejected JSON records, and override flow are unchanged — only the publish target and serving URL move. Phase 1's status.json schema already carries enough information (`source`, `publishedAt`) to drive both serving paths.
 
 ---
 
 ## Rollout Strategy
 
-**Option A:**
-1. Deploy `spacecat-audit-worker` with new `screenshot` type — scheduler not yet enabled
-2. Manually trigger a `screenshot` audit job for 5–10 test sites via the API; verify S3 keys are populated
-3. Deploy `spacecat-api-service` screenshot endpoints; verify `GET /sites/:siteId/screenshot` returns presigned URLs
-4. Deploy backoffice Screenshots page; test override upload + delete flow end-to-end
-5. Enable scheduler for all ASO sites
+**Phase 1:**
+1. Deploy `spacecat-audit-worker` with new `screenshot` audit type — scheduler not yet enabled.
+2. Manually trigger a `screenshot` audit job for 5–10 test sites via the API; verify the raw capture lands in S3, the validator runs, and the JPEG is published to SharePoint `approved/{siteId}.jpeg`.
+3. Confirm the existing `aem.live` URL serves the new image for those test siteIds.
+4. Deploy `spacecat-api-service` screenshot endpoints; verify `GET /sites/:siteId/screenshot` returns the `aem.live` URL with `source: 'auto'` and surfaces rejection reasons on validation failure.
+5. Deploy backoffice Screenshots page; test override upload + delete end-to-end (override should be visible at the same `aem.live` URL).
+6. Enable scheduler for all ASO sites.
 
-**Rollback:** Disable the `screenshot` audit type in scheduler config. No data is mutated — S3 objects accumulate passively. API endpoints return 404 if S3 has no screenshot; no user-visible breakage.
-
-**Option B rollback:** Disable the GitHub Actions schedule. SharePoint `pending/` folder stays untouched; no files are pushed to `approved/` without manual approval, so aem.live CDN is never affected.
+**Rollback:** Disable the `screenshot` audit type in scheduler config. The validator stops publishing; existing SharePoint files stay in place (and continue to serve via `aem.live`) so consumers see the last good state. API endpoints return 404 only for sites that never had a screenshot. To fully reverse, also delete `screenshots/status/*.json` and `screenshots/rejected/*.json` from S3.
 
 ---
 
@@ -376,21 +342,23 @@ Enable the `screenshot` audit type in SpaceCat scheduler config:
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| Scraper fails for sites with bot protection | Medium | Medium | Existing stealth plugin + bot detection in scraper; failed scrapes → S3 key absent → API returns 404 → admin uploads override |
+| Scraper fails for sites with bot protection | Medium | Medium | Existing stealth plugin + bot detection in scraper; failed scrapes → SharePoint not updated → admin uploads override |
 | S3 key format changes in `spacecat-content-scraper` | Low | High | Pin scraper version; add integration test that asserts key path; document the convention |
-| Option A breaking change on serving URL | High | Medium | Communicate to all consumers before enabling scheduler; maintain a redirect or alias for 90 days |
-| S3_SCRAPER_BUCKET IAM permissions missing for override prefix | Low | Low | Add `screenshots/overrides/*` to existing bucket policy alongside `scrapes/*` |
+| MS Graph throttling on bulk weekly publish | Medium | Medium | Spread publishes across the weekly window; respect `Retry-After`; one upload per site is well under SharePoint per-app throttle limits |
+| MS Graph token expiry / rotation drift | Low | Medium | Reuse existing platform token-refresh pattern; alert on `401`/`403` from publish path; status.json absence is the signal a site failed to publish |
+| S3 IAM permissions missing for `screenshots/{status,rejected}/*` prefixes | Low | Low | Add prefixes to the existing bucket policy alongside `scrapes/*` |
 | Weekly scrape load on scraper fleet | Low | Low | 1 URL per site, same queue as other audits; scraper handles bursts via FIFO concurrency |
 
 ---
 
 ## Open Questions
 
-1. Is the `aem.live` serving URL actively consumed by any external service or partner? This determines whether Option A's URL change is acceptable or Option B is required.
-2. Should the `screenshot` audit type be gated on `ASO` entitlement only, or also `ACO`/`LLMO`?
-3. Should old auto-captured screenshots in S3 be TTL-expired (e.g. after 30 days), or kept indefinitely?
-4. What device should be canonical for the homepage screenshot — desktop only, or also mobile thumbnail?
-5. Does the scraper's `FullPageHandler` need any option tweaks for homepage capture (e.g. `rejectRedirects: false` since homepages often redirect `www` → non-www)?
+1. Should the `screenshot` audit type be gated on `ASO` entitlement only, or also `ACO`/`LLMO`?
+2. Should raw S3 captures (`scrapes/{siteId}/screenshot-desktop-*.png`) be TTL-expired (e.g. after 30 days), or kept indefinitely for debugging?
+3. What device should be canonical for the homepage screenshot — desktop only, or also a mobile companion at `approved/{siteId}-mobile.jpeg`?
+4. Does the scraper's `FullPageHandler` need option tweaks for homepage capture (e.g. `rejectRedirects: false` since homepages often redirect `www` → non-www)?
+5. Which existing platform component owns the MS Graph credential / token refresh that we should reuse (vs. provisioning a new one)?
+6. What concrete trigger moves us from Phase 1 (SharePoint) to Phase 2 (CloudFront) — site-count threshold, throttling incident, or a planned migration window?
 
 ---
 
@@ -401,6 +369,7 @@ Enable the `screenshot` audit type in SpaceCat scheduler config:
 3. **What S3 key does the scraper use?** `scrapes/{jobId}/{importPath}/screenshot-{device}-{type}.png`. Setting `jobId = siteId` makes the path predictable.
 4. **Is there an existing approve/reject UI pattern in the backoffice?** Yes — `OpportunityDetails.js` has `APPROVED`/`SKIPPED`/`FIXED` suggestion status flow; `ConfirmationDialog.js` handles destructive confirmations.
 5. **What triggers consent-banner screenshots today?** `POST /consent-banner` in `spacecat-api-service` calls `ScrapeClient.createScrapeJob()` — this is the exact template to reuse.
+6. **Should Phase 1 keep the `aem.live` serving URL or move serving to a new CDN?** Keep `aem.live` for Phase 1 to avoid breaking consumers and standing up new infra. CloudFront + S3 is the Phase 2 target, triggered by a concrete need (MS Graph throttling, invalidation control, or non-`aem.live` consumer requirement).
 
 ---
 
@@ -408,10 +377,10 @@ Enable the `screenshot` audit type in SpaceCat scheduler config:
 
 | Repository | Change | Notes |
 |---|---|---|
-| `spacecat-audit-worker` | New `screenshot` audit type | Uses existing `SCRAPE_CLIENT` step destination |
-| `spacecat-api-service` | 3 new screenshot endpoints | Reuses `S3_SCRAPER_BUCKET`, `consentBanner.js` pattern |
+| `spacecat-audit-worker` | New `screenshot` audit type + validator + SharePoint publish step | Uses existing `SCRAPE_CLIENT` step destination; new MS Graph upload helper |
+| `spacecat-api-service` | 3 new screenshot endpoints (multipart override upload) | Reuses `S3_SCRAPER_BUCKET`, `consentBanner.js` pattern; calls MS Graph for override write/delete |
 | `experience-success-studio-backoffice` | New Screenshots page | Reuses `Reports.js` + `ReportDetails.js` patterns |
-| `site-screenshot` (Option B only) | GitHub Actions workflow | Automates existing manual scripts |
+| `site-screenshot` | Decommission once Phase 1 ships | Existing manual scripts become redundant; keep the validator logic that ports into `spacecat-audit-worker` |
 
 ---
 

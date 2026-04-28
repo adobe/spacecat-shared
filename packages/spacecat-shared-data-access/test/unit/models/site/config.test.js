@@ -2587,9 +2587,12 @@ describe('Config Tests', () => {
       'commerce-fastly',
       'byocdn-fastly',
       'byocdn-akamai',
+      'byocdn-cloudfront',
       'byocdn-cloudflare',
       'byocdn-imperva',
       'byocdn-other',
+      'ams-cloudfront',
+      'ams-frontdoor',
       'other',
     ].forEach((token) => {
       it(`accepts detectedCdn token "${token}" via validateConfiguration`, () => {

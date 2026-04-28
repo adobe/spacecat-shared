@@ -36,6 +36,8 @@ export const SCRAPE_DATASET_IDS = Object.freeze({
 
 const VALID_SCRAPE_DATASET_IDS = new Set(Object.values(SCRAPE_DATASET_IDS));
 
+const URL_LOOKUP_BATCH_SIZE = 100;
+
 export default class DrsClient {
   /**
    * Creates a DrsClient from a universal context object.
@@ -244,6 +246,8 @@ export default class DrsClient {
 
   /**
    * Looks up scraping results for an array of URLs.
+   * Transparently batches requests when the URL list exceeds URL_LOOKUP_BATCH_SIZE (100),
+   * merging all results into a single response with aggregated summary counts.
    * @param {object} params
    * @param {string} params.datasetId - One of SCRAPE_DATASET_IDS values
    * @param {string} params.siteId - SpaceCat site ID
@@ -263,11 +267,46 @@ export default class DrsClient {
 
     this.log.info(`Looking up scrape results for dataset ${datasetId}`, { datasetId, siteId, urlCount: urls.length });
 
-    return this.#request('POST', '/url-lookup', {
-      dataset_id: datasetId,
-      site_id: siteId,
-      urls,
-    });
+    if (urls.length <= URL_LOOKUP_BATCH_SIZE) {
+      return this.#request('POST', '/url-lookup', {
+        dataset_id: datasetId,
+        site_id: siteId,
+        urls,
+      });
+    }
+
+    const batches = [];
+    for (let i = 0; i < urls.length; i += URL_LOOKUP_BATCH_SIZE) {
+      batches.push(urls.slice(i, i + URL_LOOKUP_BATCH_SIZE));
+    }
+
+    this.log.info(`URL list exceeds batch size, splitting into ${batches.length} batches`, { datasetId, siteId, batchCount: batches.length });
+
+    const responses = await Promise.all(
+      batches.map((batch) => this.#request('POST', '/url-lookup', {
+        dataset_id: datasetId,
+        site_id: siteId,
+        urls: batch,
+      })),
+    );
+
+    const mergedResults = responses.flatMap((r) => r.results ?? []);
+    const mergedSummary = responses.reduce(
+      (acc, r) => {
+        const s = r.summary ?? {};
+        return {
+          total: acc.total + (s.total ?? 0),
+          available: acc.available + (s.available ?? 0),
+          scraping: acc.scraping + (s.scraping ?? 0),
+          not_found: acc.not_found + (s.not_found ?? 0),
+        };
+      },
+      {
+        total: 0, available: 0, scraping: 0, not_found: 0,
+      },
+    );
+
+    return { results: mergedResults, summary: mergedSummary };
   }
 
   /**

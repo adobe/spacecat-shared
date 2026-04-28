@@ -460,6 +460,97 @@ describe('DrsClient', () => {
       scope.done();
     });
 
+    it('batches requests when urls exceed 100 and merges results', async () => {
+      const batch1Urls = Array.from({ length: 100 }, (_, i) => `https://youtube.com/watch?v=${i}`);
+      const batch2Urls = Array.from({ length: 20 }, (_, i) => `https://youtube.com/watch?v=${i + 100}`);
+      const allUrls = [...batch1Urls, ...batch2Urls];
+
+      const batch1Response = {
+        results: batch1Urls.map((url) => ({ url, status: 'available' })),
+        summary: {
+          total: 100, available: 100, scraping: 0, not_found: 0,
+        },
+      };
+      const batch2Response = {
+        results: [
+          { url: batch2Urls[0], status: 'available' },
+          ...batch2Urls.slice(1).map((url) => ({ url, status: 'not_found' })),
+        ],
+        summary: {
+          total: 20, available: 1, scraping: 0, not_found: 19,
+        },
+      };
+
+      const scope1 = nock(DRS_API_URL)
+        .post('/url-lookup', (body) => body.urls.length === 100 && body.urls[0] === batch1Urls[0])
+        .reply(200, batch1Response);
+      const scope2 = nock(DRS_API_URL)
+        .post('/url-lookup', (body) => body.urls.length === 20 && body.urls[0] === batch2Urls[0])
+        .reply(200, batch2Response);
+
+      const result = await client.lookupScrapeResults({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: allUrls,
+      });
+
+      expect(result.results).to.have.lengthOf(120);
+      expect(result.summary).to.deep.equal({
+        total: 120, available: 101, scraping: 0, not_found: 19,
+      });
+      expect(log.info).to.have.been.calledWithMatch(/splitting into 2 batches/);
+      scope1.done();
+      scope2.done();
+    });
+
+    it('handles missing results and summary fields gracefully when batching', async () => {
+      const batch1Urls = Array.from({ length: 100 }, (_, i) => `https://youtube.com/watch?v=${i}`);
+      const batch2Urls = ['https://youtube.com/watch?v=100'];
+      const allUrls = [...batch1Urls, ...batch2Urls];
+
+      nock(DRS_API_URL)
+        .post('/url-lookup', (body) => body.urls.length === 100)
+        .reply(200, { results: batch1Urls.map((url) => ({ url, status: 'available' })) });
+      nock(DRS_API_URL)
+        .post('/url-lookup', (body) => body.urls.length === 1)
+        .reply(200, {});
+
+      const result = await client.lookupScrapeResults({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: allUrls,
+      });
+
+      expect(result.results).to.have.lengthOf(100);
+      expect(result.summary).to.deep.equal({
+        total: 0, available: 0, scraping: 0, not_found: 0,
+      });
+    });
+
+    it('does not batch when urls are exactly at the limit', async () => {
+      const urls = Array.from({ length: 100 }, (_, i) => `https://youtube.com/watch?v=${i}`);
+      const responseBody = {
+        results: urls.map((url) => ({ url, status: 'available' })),
+        summary: {
+          total: 100, available: 100, scraping: 0, not_found: 0,
+        },
+      };
+
+      const scope = nock(DRS_API_URL)
+        .post('/url-lookup', (body) => body.urls.length === 100)
+        .reply(200, responseBody);
+
+      const result = await client.lookupScrapeResults({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls,
+      });
+
+      expect(result.results).to.have.lengthOf(100);
+      expect(log.info).to.not.have.been.calledWithMatch(/splitting into/);
+      scope.done();
+    });
+
     it('throws on invalid datasetId', async () => {
       await expect(client.lookupScrapeResults({
         datasetId: 'bad', siteId: 'site-1', urls: ['https://example.com'],

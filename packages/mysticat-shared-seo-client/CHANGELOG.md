@@ -1,3 +1,9 @@
+## [@adobe/mysticat-shared-seo-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.2.3...@adobe/mysticat-shared-seo-client-v1.3.0) (2026-04-28)
+
+### Features
+
+* **seo-client:** return keywords[] array from getPaidPages() ([#1564](https://github.com/adobe/spacecat-shared/issues/1564)) ([71be968](https://github.com/adobe/spacecat-shared/commit/71be968ac133fc3c0d547d70e9663fcf2fe90437))
+
 ## [@adobe/mysticat-shared-seo-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.2.2...@adobe/mysticat-shared-seo-client-v1.2.3) (2026-04-15)
 
 ### Bug Fixes

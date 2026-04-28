@@ -29,7 +29,7 @@ Reuse `spacecat-content-scraper` (`full-page` processingType) for capture, port 
 
 ```
 Scheduler (weekly, ASO-entitled sites only)
-    │
+    │  per-site Configuration check: skip if `screenshot` audit is disabled for this site
     ▼
 spacecat-audit-worker — new `screenshot` audit type
     │  ScrapeClient.createScrapeJob({ processingType: 'full-page', jobId: siteId, urls: [baseURL] })
@@ -42,20 +42,20 @@ spacecat-scrape-job-manager → spacecat-content-scraper (FullPageHandler)
     ▼
 spacecat-audit-worker — heuristic validator (no AI)
     │  pass → upload validated PNG (re-encoded JPEG) to SharePoint approved/{siteId}.jpeg via MS Graph
-    │         write screenshots/status/{siteId}.json { source: 'auto', publishedAt }
-    │  fail → write screenshots/rejected/{siteId}.json { reasons[], stats, capturedAt }
+    │  fail → log structured error + emit metric `screenshot.validation.failed{reason}`
     ▼
 GET /sites/:siteId/screenshot  (spacecat-api-service)
-    │  1. If screenshots/status/{siteId}.json exists → return aem.live URL + source
-    │  2. Else if screenshots/rejected/{siteId}.json exists → 404 with rejection reasons
-    │  3. Else → 404 'No screenshot available'
+    │  Returns deterministic aem.live URL: https://main--…aem.live/content/{siteId}.jpeg
+    │  Consumer/CDN sees 404 if not yet published; API itself does not gate on existence.
     ▼
 experience-success-studio-backoffice — Screenshots page
     │  View current screenshot via aem.live URL
-    │  See rejection reasons when auto failed validation
-    │  Upload override → API streams to SharePoint approved/{siteId}.jpeg via MS Graph,
-    │                    writes status.json { source: 'override' }
-    └─ Delete override → API deletes SharePoint file + status.json; next weekly run re-publishes
+    │  Upload override → API streams to SharePoint approved/{siteId}.jpeg via MS Graph
+    │                    AND disables `screenshot` audit for this siteId in Configuration
+    │                    (auto runs no longer overwrite the override)
+    └─ Delete override → API deletes SharePoint file
+                         AND re-enables `screenshot` audit for this siteId
+                         (next weekly auto run re-publishes if validation passes)
 ```
 
 **Storage map:**
@@ -63,13 +63,14 @@ experience-success-studio-backoffice — Screenshots page
 | Purpose | Location |
 |---|---|
 | Raw capture (fullpage / thumbnail) | S3: `scrapes/{siteId}/screenshot-desktop-{type}.png` |
-| Publish status (auto vs override) | S3: `screenshots/status/{siteId}.json` |
-| Validation failure record | S3: `screenshots/rejected/{siteId}.json` |
-| Published screenshot (single source) | SharePoint: `approved/{siteId}.jpeg`, served by `aem.live` CDN |
+| Published screenshot (auto + override share path) | SharePoint: `approved/{siteId}.jpeg`, served by `aem.live` CDN |
+| Per-site override flag (lock) | `Configuration.handlers.screenshot.disabledForSites` (existing audit-skip mechanism) |
 
-Bucket: `process.env.S3_SCRAPER_BUCKET` (already wired). SharePoint upload uses MS Graph via existing platform credentials.
+Bucket: `process.env.S3_SCRAPER_BUCKET` (already wired) — used only for raw scraper output. No `screenshots/` prefix is created. SharePoint upload uses MS Graph via existing platform credentials.
 
-**Override semantics.** Overrides and auto-published captures share the same SharePoint path (`approved/{siteId}.jpeg`). Uploading an override overwrites whatever is there; the next weekly auto run will overwrite the override back. Admins re-upload if they want an override to stick longer. This keeps Phase 1 stateless beyond `status.json` — no override-locking machinery.
+**Override semantics.** Overrides and auto-published captures share the same SharePoint path (`approved/{siteId}.jpeg`). Uploading an override does two things atomically: (1) overwrites the SharePoint file, (2) disables the `screenshot` audit for that siteId in `Configuration` so subsequent weekly runs skip the site. Deleting an override reverses both: removes the SharePoint file and re-enables the audit. The `Configuration` flag is the single source of truth for "is this site overridden?" — no shadow state in S3.
+
+**Where do failures show up?** The validator emits `screenshot.validation.failed{reason}` metrics and structured logs on every rejection. Failure visibility lives in CloudWatch / metrics dashboards, not in the API or backoffice. If a screenshot is missing, the admin's recourse is to upload an override; they don't need an in-product rejection reason to act.
 
 ### Rejected: Manual Review / GitHub Actions Workflow
 
@@ -127,13 +128,15 @@ export default new AuditBuilder()
 
 Register in the audit type map (same pattern as `cwv`). A lightweight completion step (Step 1.5) runs the heuristic validator before the API will serve the screenshot.
 
-**Capture → publish split.** The `FullPageHandler` writes to `scrapes/{siteId}/screenshot-desktop-fullpage.png` (the *capture* in S3). The validator publishes accepted captures by uploading them to SharePoint `approved/{siteId}.jpeg` via MS Graph (re-encoding PNG → JPEG to match the existing `aem.live` URL). A small `screenshots/status/{siteId}.json` record is written to S3 to track which sites have a current publish and whether it is auto- or override-sourced. The API never reads SharePoint directly — `status.json` plus `rejected.json` give it everything it needs to answer `GET /sites/:siteId/screenshot`.
+**Capture → publish split.** The `FullPageHandler` writes to `scrapes/{siteId}/screenshot-desktop-fullpage.png` (the *capture* in S3). The validator publishes accepted captures by uploading them to SharePoint `approved/{siteId}.jpeg` via MS Graph (re-encoding PNG → JPEG to match the existing `aem.live` URL). No state is written back to S3 — the publish is the publish. The API never inspects S3 or SharePoint to answer `GET /sites/:siteId/screenshot`; it returns a deterministic `aem.live` URL based on `siteId` alone.
+
+**Override = audit skip.** Before triggering a scrape, the handler checks the site's `Configuration` for the `screenshot` audit. If the site is disabled (because an admin uploaded an override), the audit short-circuits without enqueuing a scrape job. This is the same per-site enable/disable mechanism used by other audit types (e.g., `cwv`); we reuse it rather than introducing a new lock primitive.
 
 #### Step 1.5: Heuristic Screenshot Validator (no AI)
 
 A classical, deterministic validator runs on every capture before it is published to SharePoint. The current manual flow already uses `validate-screenshots-heuristic.js` in the `site-screenshot` repo — port that logic into `spacecat-audit-worker` as a completion handler so we get the same signal automatically.
 
-**Why no AI?** Determinism, cost, latency, and explainability. Heuristics give a binary pass/fail with named failure reasons we can log and surface in the backoffice. An AI judge would be a black box for what is fundamentally a "did the page render" check.
+**Why no AI?** Determinism, cost, latency, and explainability. Heuristics give a binary pass/fail with named failure reasons we can emit as structured logs and CloudWatch metric dimensions. An AI judge would be a black box for what is fundamentally a "did the page render" check.
 
 **Pipeline placement:**
 
@@ -143,11 +146,10 @@ FullPageHandler writes scrapes/{siteId}/screenshot-desktop-fullpage.png
     ▼
 spacecat-audit-worker — screenshot completion handler (SQS-triggered on scrape complete)
     │  download PNG → run validator → emit { valid, reasons[], stats{} }
-    ├─ valid:   re-encode PNG → JPEG; PUT to SharePoint approved/{siteId}.jpeg via MS Graph;
-    │           write screenshots/status/{siteId}.json { source: 'auto', publishedAt }
-    └─ invalid: emit metric `screenshot.validation.failed{reason}`;
-                write { reasons, stats, capturedAt } to screenshots/rejected/{siteId}.json
-                so the backoffice can show *why* it failed and prompt for an override
+    ├─ valid:   re-encode PNG → JPEG; PUT to SharePoint approved/{siteId}.jpeg via MS Graph
+    └─ invalid: log structured error { siteId, reasons, stats, capturedAt };
+                emit metric `screenshot.validation.failed{reason}` (one dimension per failed check)
+                — visibility lives in CloudWatch / dashboards, not S3
 ```
 
 **Heuristic checks** (all pure pixel/file statistics — no model inference):
@@ -194,7 +196,7 @@ PUT /drives/{driveId}/items/{folderId}:/{siteId}.jpeg:/content   ← content upl
 
 **Why JPEG re-encode.** The existing aem.live URL ends in `.jpeg`. Re-encoding PNG→JPEG at quality ~85 cuts size by ~5–10× for typical homepages, which keeps the SharePoint upload fast and the CDN payload small. Use `sharp` (already required for the validator) for both the validation read and the JPEG encode in a single pipeline.
 
-**API behavior.** `GET /sites/:siteId/screenshot` does not call MS Graph on the read path — it reads `screenshots/status/{siteId}.json` from S3 and returns the canonical aem.live URL. See Step 2 for the controller.
+**API behavior.** `GET /sites/:siteId/screenshot` does not call MS Graph or S3 on the read path — it returns the deterministic aem.live URL constructed from `siteId` alone. See Step 2 for the controller.
 
 #### Step 2: Screenshot API endpoints — `spacecat-api-service`
 
@@ -202,35 +204,38 @@ Add `src/controllers/screenshot.js` (modeled on `src/controllers/consentBanner.j
 
 ```js
 // GET /sites/:siteId/screenshot
+// Returns the deterministic aem.live URL. The API does not check whether the
+// SharePoint file exists — the consumer's image fetch surfaces 404 if not yet published.
 export async function getScreenshot(ctx) {
   const { siteId } = ctx.params;
-  const bucket = ctx.env.S3_SCRAPER_BUCKET;
-  const cdnBase = ctx.env.SCREENSHOT_AEM_LIVE_BASE; // e.g. https://main--experience-success-studio-demo--hlxscreens.aem.live/content
-
-  const status = await readJsonOrNull(ctx.s3Client, bucket, `screenshots/status/${siteId}.json`);
-  if (status) {
-    return ok({
-      url: `${cdnBase}/${siteId}.jpeg`,
-      source: status.source,        // 'auto' | 'override'
-      publishedAt: status.publishedAt,
-    });
-  }
-  // Surface validator output so the backoffice can show *why* it failed
-  const rejection = await readJsonOrNull(ctx.s3Client, bucket, `screenshots/rejected/${siteId}.json`);
-  if (rejection) return notFound({ reason: 'validation_failed', rejection });
-  return notFound('No screenshot available for this site');
+  const cdnBase = ctx.env.SCREENSHOT_AEM_LIVE_BASE; // https://main--experience-success-studio-demo--hlxscreens.aem.live/content
+  return ok({ url: `${cdnBase}/${siteId}.jpeg` });
 }
 
 // POST /sites/:siteId/screenshot/override
-// Backoffice POSTs a multipart JPEG; the API streams it to SharePoint via MS Graph
-// and writes screenshots/status/{siteId}.json { source: 'override', publishedAt }.
-export async function uploadOverride(ctx) { ... }
+// 1. Stream multipart JPEG to SharePoint approved/{siteId}.jpeg via MS Graph.
+// 2. Disable the `screenshot` audit for this siteId in Configuration so weekly
+//    runs no longer overwrite the override.
+export async function uploadOverride(ctx) {
+  const { siteId } = ctx.params;
+  await publishToSharePoint(ctx, siteId, ctx.body); // multipart -> MS Graph PUT
+  await disableAuditForSite(ctx, 'screenshot', siteId);
+  return ok({ url: `${ctx.env.SCREENSHOT_AEM_LIVE_BASE}/${siteId}.jpeg` });
+}
 
 // DELETE /sites/:siteId/screenshot/override
-// Deletes SharePoint approved/{siteId}.jpeg + screenshots/status/{siteId}.json.
-// Next weekly auto run will re-publish if the capture validates.
-export async function deleteOverride(ctx) { ... }
+// 1. Delete SharePoint approved/{siteId}.jpeg via MS Graph.
+// 2. Re-enable the `screenshot` audit for this siteId in Configuration so the
+//    next weekly run re-publishes if validation passes.
+export async function deleteOverride(ctx) {
+  const { siteId } = ctx.params;
+  await deleteFromSharePoint(ctx, siteId);
+  await enableAuditForSite(ctx, 'screenshot', siteId);
+  return noContent();
+}
 ```
+
+`disableAuditForSite` / `enableAuditForSite` use the existing per-site audit-skip surface on the `Configuration` model in `spacecat-shared-data-access` — the same mechanism that gates `cwv` per site.
 
 Register routes in `src/routes/index.js`:
 ```js
@@ -259,15 +264,16 @@ Add route in `App.js`:
 ```
 
 **Screenshots.js** features:
-- `TableView` (React Spectrum) with columns: Site URL, Source (Auto/Override), Thumbnail, Last Updated
-- Status badge: Auto (green) / Override (blue) / Missing (red)
+- `TableView` (React Spectrum) with columns: Site URL, Thumbnail, Override (yes/no)
+- "Override" column reads from the site's `Configuration` (audit disabled for `screenshot` ⇒ override active)
 - Actions: View, Upload Override, Delete Override
 - `useAsyncList` for data loading — follows `Reports.js` pattern
 
 **ScreenshotDetails.js** features:
 - Full image via the `aem.live` URL returned by `GET /sites/:siteId/screenshot`
-- "Upload Override": file picker → `POST .../override` with `multipart/form-data` body → API forwards to SharePoint
-- "Delete Override": `DELETE .../override` with `ConfirmationDialog`
+- Image element falls back to a "no screenshot yet" state on `onError` (404 from CDN before first publish)
+- "Upload Override": file picker → `POST .../override` with `multipart/form-data` body → API forwards to SharePoint and disables the audit
+- "Delete Override": `DELETE .../override` with `ConfirmationDialog` — confirmation copy notes the next weekly run will re-publish
 - `ToastQueue` notifications on success/failure
 
 Add to `apiService.js`:
@@ -320,7 +326,7 @@ S3 bucket (private, OAC-only — no public ACLs, no website hosting)
 3. Notify any external consumers of the URL change with a deprecation window.
 4. Drop SharePoint publishing from the validator; remove MS Graph dependency from the API service.
 
-**What stays from Phase 1.** The audit type, validator, status/rejected JSON records, and override flow are unchanged — only the publish target and serving URL move. Phase 1's status.json schema already carries enough information (`source`, `publishedAt`) to drive both serving paths.
+**What stays from Phase 1.** The audit type, validator, override-disables-audit semantics, and `Configuration` skip flag are all unchanged — only the publish target (SharePoint → S3) and serving host (`aem.live` → CloudFront) move. The CloudFront design uses two stable keys (`screenshots/auto/{siteId}.png` and `screenshots/overrides/{siteId}.png`); the API picks which to return based on whether the audit is currently disabled for the site (override active) or enabled (auto). Still no per-site state in S3 — the `Configuration` flag remains the source of truth.
 
 ---
 
@@ -330,11 +336,12 @@ S3 bucket (private, OAC-only — no public ACLs, no website hosting)
 1. Deploy `spacecat-audit-worker` with new `screenshot` audit type — scheduler not yet enabled.
 2. Manually trigger a `screenshot` audit job for 5–10 test sites via the API; verify the raw capture lands in S3, the validator runs, and the JPEG is published to SharePoint `approved/{siteId}.jpeg`.
 3. Confirm the existing `aem.live` URL serves the new image for those test siteIds.
-4. Deploy `spacecat-api-service` screenshot endpoints; verify `GET /sites/:siteId/screenshot` returns the `aem.live` URL with `source: 'auto'` and surfaces rejection reasons on validation failure.
-5. Deploy backoffice Screenshots page; test override upload + delete end-to-end (override should be visible at the same `aem.live` URL).
-6. Enable scheduler for all ASO sites.
+4. Deploy `spacecat-api-service` screenshot endpoints; verify `GET /sites/:siteId/screenshot` returns the `aem.live` URL.
+5. Deploy backoffice Screenshots page; test override upload + delete end-to-end. Verify upload sets the audit-disabled flag in `Configuration` and the next audit run skips that site; verify delete clears the flag and the next run re-publishes.
+6. Confirm CloudWatch metric `screenshot.validation.failed` is emitted on a deliberately bad capture (e.g., a non-existent URL).
+7. Enable scheduler for all ASO sites.
 
-**Rollback:** Disable the `screenshot` audit type in scheduler config. The validator stops publishing; existing SharePoint files stay in place (and continue to serve via `aem.live`) so consumers see the last good state. API endpoints return 404 only for sites that never had a screenshot. To fully reverse, also delete `screenshots/status/*.json` and `screenshots/rejected/*.json` from S3.
+**Rollback:** Disable the `screenshot` audit type in scheduler config. The validator stops publishing; existing SharePoint files stay in place (and continue to serve via `aem.live`) so consumers see the last good state. The `Configuration` skip flag is per-site state on existing entities — no separate cleanup needed; if reverting fully, an admin can clear `handlers.screenshot.disabledForSites` via the existing config-management surface.
 
 ---
 
@@ -342,11 +349,12 @@ S3 bucket (private, OAC-only — no public ACLs, no website hosting)
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| Scraper fails for sites with bot protection | Medium | Medium | Existing stealth plugin + bot detection in scraper; failed scrapes → SharePoint not updated → admin uploads override |
+| Scraper fails for sites with bot protection | Medium | Medium | Existing stealth plugin + bot detection in scraper; failed scrapes → SharePoint not updated → admin uploads override (which also disables the audit until they delete it) |
 | S3 key format changes in `spacecat-content-scraper` | Low | High | Pin scraper version; add integration test that asserts key path; document the convention |
 | MS Graph throttling on bulk weekly publish | Medium | Medium | Spread publishes across the weekly window; respect `Retry-After`; one upload per site is well under SharePoint per-app throttle limits |
-| MS Graph token expiry / rotation drift | Low | Medium | Reuse existing platform token-refresh pattern; alert on `401`/`403` from publish path; status.json absence is the signal a site failed to publish |
-| S3 IAM permissions missing for `screenshots/{status,rejected}/*` prefixes | Low | Low | Add prefixes to the existing bucket policy alongside `scrapes/*` |
+| MS Graph token expiry / rotation drift | Low | Medium | Reuse existing platform token-refresh pattern; alert on `401`/`403` from publish path; CloudWatch metric on publish failures |
+| Override deleted but next weekly run still days away | Medium | Low | Backoffice surfaces this in the delete confirmation; admin can also manually trigger an audit run if they need an immediate refresh |
+| Validator failure goes unnoticed (no UI surface) | Medium | Low | CloudWatch alarm on `screenshot.validation.failed` rate exceeding baseline; admin investigates via dashboards and uploads override |
 | Weekly scrape load on scraper fleet | Low | Low | 1 URL per site, same queue as other audits; scraper handles bursts via FIFO concurrency |
 
 ---
@@ -359,6 +367,7 @@ S3 bucket (private, OAC-only — no public ACLs, no website hosting)
 4. Does the scraper's `FullPageHandler` need option tweaks for homepage capture (e.g. `rejectRedirects: false` since homepages often redirect `www` → non-www)?
 5. Which existing platform component owns the MS Graph credential / token refresh that we should reuse (vs. provisioning a new one)?
 6. What concrete trigger moves us from Phase 1 (SharePoint) to Phase 2 (CloudFront) — site-count threshold, throttling incident, or a planned migration window?
+7. Is the existing `Configuration.handlers.<auditType>` skip surface the right field for the override lock, or do we need a dedicated flag (e.g. `Configuration.handlers.screenshot.overrideActive: [siteId]`) to keep "admin disabled audit" distinct from "override active"?
 
 ---
 

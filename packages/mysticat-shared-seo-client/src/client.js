@@ -424,9 +424,9 @@ export default class SeoClient {
             keyword: kw.Ph,
             traffic: kw.kwTraffic,
             cpc: coerceValue(kw.Cp, 'float') ?? null,
-            serpTitle: kw.Tt || null,
-            position: coerceValue(kw.Po, 'int') || 0,
-            volume: coerceValue(kw.Nq, 'int') || 0,
+            serp_title: kw.Tt || null,
+            position: coerceValue(kw.Po, 'int') ?? null,
+            volume: coerceValue(kw.Nq, 'int') ?? null,
             country: kw.db.toUpperCase(),
           })),
         };

@@ -1240,11 +1240,11 @@ describe('SeoClient', () => {
       expect(topPage.keywords).to.have.lengthOf(2);
 
       const kw = topPage.keywords[0];
-      expect(kw).to.have.all.keys('keyword', 'traffic', 'cpc', 'serpTitle', 'position', 'volume', 'country');
+      expect(kw).to.have.all.keys('keyword', 'traffic', 'cpc', 'serp_title', 'position', 'volume', 'country');
       expect(kw.keyword).to.equal('adobe');
       expect(kw.traffic).to.equal(47000);
       expect(kw.cpc).to.equal(6.43);
-      expect(kw.serpTitle).to.equal('Adobe® - Official Site');
+      expect(kw.serp_title).to.equal('Adobe® - Official Site');
       expect(kw.position).to.equal(1);
       expect(kw.volume).to.equal(1000000);
       expect(kw.country).to.equal('US');
@@ -1306,10 +1306,10 @@ describe('SeoClient', () => {
 
       const result = await client.getPaidPages('example.com');
       const kw = result.result.pages[0].keywords[0];
-      expect(kw.position).to.equal(0);
-      expect(kw.volume).to.equal(0);
+      expect(kw.position).to.equal(null);
+      expect(kw.volume).to.equal(null);
       expect(kw.cpc).to.equal(null);
-      expect(kw.serpTitle).to.equal('Sparse');
+      expect(kw.serp_title).to.equal('Sparse');
       expect(kw.country).to.equal('US');
     });
   });

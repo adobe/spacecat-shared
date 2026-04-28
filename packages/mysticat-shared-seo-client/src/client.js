@@ -340,6 +340,23 @@ export default class SeoClient {
     };
   }
 
+  /**
+   * Fetch paid (PPC) pages and their keyword data from Semrush.
+   *
+   * Per-keyword CPC is returned as float dollars (e.g., 3.95) with null for unknown.
+   * This deliberately differs from getOrganicKeywords() which returns CPC as integer
+   * cents (e.g., 395) with 0 for unknown. The float-dollars convention was chosen for
+   * the keywords[] array because downstream consumers (import-worker, Mystique) expect
+   * dollars and the per-keyword CPC should not go through the cents round-trip used by
+   * the aggregate `value` field.
+   *
+   * @param {string} url - Domain to query
+   * @param {Object} [opts] - Options
+   * @param {string} [opts.date] - Report date
+   * @param {number} [opts.limit=200] - Max pages to return
+   * @param {string} [opts.region] - Limit to specific region
+   * @returns {Promise<{result: {pages: Array}, fullAuditRef: string}>}
+   */
   async getPaidPages(url, opts = {}) {
     if (typeof opts !== 'object' || opts === null) {
       throw new Error('Second argument must be an options object, not a positional value');
@@ -420,6 +437,15 @@ export default class SeoClient {
             ),
             0,
           ),
+          keywords: page.keywords.map((kw) => ({
+            keyword: kw.Ph,
+            traffic: kw.kwTraffic,
+            cpc: coerceValue(kw.Cp, 'float') ?? null,
+            serp_title: kw.Tt || null,
+            position: coerceValue(kw.Po, 'int') ?? null,
+            volume: coerceValue(kw.Nq, 'int') ?? null,
+            country: kw.db.toUpperCase(),
+          })),
         };
       });
 

@@ -345,14 +345,26 @@ export const configSchema = Joi.object({
       cdnProvider: Joi.string().optional(),
       region: Joi.string().pattern(AWS_REGION_PATTERN).optional(),
     }).optional(),
+    // Aligned with llmo-utils.js#CDN_TYPES in spacecat-api-service.
+    // Detector currently emits a 7-token subset of CDN_TYPES; the remaining
+    // three (`byocdn-cloudfront`, `ams-cloudfront`, `ams-frontdoor`) are
+    // valid CDN tokens the detector cannot yet identify from network signals
+    // and therefore collapses into `byocdn-other`. Listed here so the schema
+    // accepts them once detector revisions add AMS-aware signatures, without
+    // requiring a coupled shared-package release.
+    // `'other'` is retained for backward compatibility with records written
+    // by the original Phase-1-only detector and is no longer emitted.
     detectedCdn: Joi.string().valid(
       'aem-cs-fastly',
       'commerce-fastly',
       'byocdn-fastly',
       'byocdn-akamai',
+      'byocdn-cloudfront',
       'byocdn-cloudflare',
       'byocdn-imperva',
       'byocdn-other',
+      'ams-cloudfront',
+      'ams-frontdoor',
       'other',
     ).optional(),
   }).optional(),

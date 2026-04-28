@@ -1218,27 +1218,23 @@ class TokowakaClient {
   }
 
   /**
-   * Probes whether a WAF or Bot Manager is blocking AdobeEdgeOptimize/1.0 traffic for
-   * the site, then cross-checks the live edge-optimize routing status so a stale probe
-   * result never overrides a working deployment.
+   * Probes whether a WAF or Bot Manager is blocking AdobeEdgeOptimize/1.0 traffic
+   * for the site.
    *
-   * Four probe outcomes:
-   * - Hard block: HTTP 403/406/429 → `{ reachable: false, blocked: true }`
+   * Probe outcomes:
+   * - Hard block: HTTP 401/403/406/429/503 → `{ reachable: false, blocked: true }`
+   * - CF challenge: cf-mitigated: challenge header → `{ reachable: false, blocked: true }`
    * - Soft block: 2xx with bot-challenge HTML → `{ reachable: false, blocked: true }`
    * - Pass: 2xx with real content → `{ reachable: true, blocked: false }`
-   * - Network/timeout error → `{ reachable: false, blocked: null, reason: 'timeout'|'error' }`
-   *
-   * When the probe does not pass, `edgeOptimizeEnabled` from `checkEdgeOptimizeStatus`
-   * is included in the result so callers can detect a self-healed deployment.
+   * - Network/timeout error → `{ reachable: false, blocked: null }`
    *
    * This method never throws — all errors are captured into the return value.
+   * Use the separate edge-optimize status API to determine if edge optimize is active.
    *
    * @param {Object} site - Site entity with a `getBaseURL()` method.
-   * @returns {Promise<Object>} WAF probe result, optionally extended with `edgeOptimizeEnabled`.
+   * @returns {Promise<Object>} WAF probe result.
    */
   async checkWafConnectivity(site) {
-    const proxyBaseUrl = this.env.EDGE_OPTIMIZE_PROXY_BASE_URL
-      ?? EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT;
     const siteBaseUrl = site.getBaseURL();
     let probeResult = { probedUrl: String(siteBaseUrl) };
 
@@ -1249,14 +1245,12 @@ class TokowakaClient {
 
       if (PRIVATE_HOST_RE.test(hostname)) {
         this.log.warn(`[edge-optimize-probe] Refusing to probe private/loopback host: ${hostname}`);
-        return {
-          ...probeResult, reachable: false, blocked: null, reason: 'error',
-        };
+        return { ...probeResult, reachable: false, blocked: null };
       }
 
-      this.log.info(`[edge-optimize-probe] Probing ${targetHost} via edge optimize proxy at ${proxyBaseUrl}`);
+      this.log.info(`[edge-optimize-probe] Probing ${targetHost} via edge optimize proxy`);
 
-      const response = await tracingFetch(proxyBaseUrl, {
+      const response = await tracingFetch(EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT, {
         method: 'GET',
         headers: { 'x-forwarded-host': targetHost },
         signal: AbortSignal.timeout(WAF_PROBE_TIMEOUT_MS),
@@ -1265,23 +1259,8 @@ class TokowakaClient {
       const classification = await classifyProbeResponse(response, targetHost, this.log);
       probeResult = { ...probeResult, ...classification };
     } catch (error) {
-      const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
-      const reason = isTimeout ? 'timeout' : 'error';
-      this.log.warn(`[edge-optimize-probe] ${reason} during WAF probe: ${error.message}`);
-      probeResult = {
-        ...probeResult, reachable: false, blocked: null, reason,
-      };
-    }
-
-    if (!probeResult.reachable) {
-      try {
-        const { edgeOptimizeEnabled } = await this.checkEdgeOptimizeStatus(site, '/');
-        this.log.info(`[edge-optimize-probe] Edge optimize status: edgeOptimizeEnabled=${edgeOptimizeEnabled}`);
-        return { ...probeResult, edgeOptimizeEnabled };
-      } catch (err) {
-        this.log.warn(`[edge-optimize-probe] Edge optimize status check failed: ${err.message}`);
-        return { ...probeResult, edgeOptimizeEnabled: null };
-      }
+      this.log.warn(`[edge-optimize-probe] Probe failed for ${siteBaseUrl}: ${error.message}`);
+      probeResult = { ...probeResult, reachable: false, blocked: null };
     }
 
     return probeResult;

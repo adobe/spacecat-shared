@@ -4372,8 +4372,6 @@ describe('TokowakaClient', () => {
         getId: () => 'waf-site-id',
         getBaseURL: () => 'https://example.com',
       };
-
-      sinon.stub(esmockClient, 'checkEdgeOptimizeStatus').resolves({ edgeOptimizeEnabled: false });
     });
 
     const makeHeaders = (plain = {}) => new Headers(plain);
@@ -4491,20 +4489,20 @@ describe('TokowakaClient', () => {
     });
 
     describe('Network errors', () => {
-      it('returns blocked:null with reason:timeout on AbortError', async () => {
+      it('returns blocked:null on AbortError (timeout)', async () => {
         const err = new Error('The operation was aborted');
         err.name = 'TimeoutError';
         tracingFetchStub.rejects(err);
         const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
         expect(result.blocked).to.equal(null);
-        expect(result.reason).to.equal('timeout');
+        expect(result.reachable).to.equal(false);
       });
 
-      it('returns blocked:null with reason:error on network failure', async () => {
+      it('returns blocked:null on network failure', async () => {
         tracingFetchStub.rejects(new Error('ECONNREFUSED'));
         const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
         expect(result.blocked).to.equal(null);
-        expect(result.reason).to.equal('error');
+        expect(result.reachable).to.equal(false);
       });
     });
 
@@ -4515,16 +4513,6 @@ describe('TokowakaClient', () => {
         expect(result.blocked).to.equal(false);
         expect(result.reachable).to.equal(false);
         expect(result.statusCode).to.equal(301);
-      });
-    });
-
-    describe('Edge optimize status check failure', () => {
-      it('returns edgeOptimizeEnabled:null when checkEdgeOptimizeStatus throws', async () => {
-        esmockClient.checkEdgeOptimizeStatus.rejects(new Error('Status check failed'));
-        tracingFetchStub.resolves({ status: 403, headers: makeHeaders() });
-        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
-        expect(result.blocked).to.equal(true);
-        expect(result.edgeOptimizeEnabled).to.equal(null);
       });
     });
 

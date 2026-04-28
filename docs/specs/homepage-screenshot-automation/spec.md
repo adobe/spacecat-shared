@@ -40,17 +40,22 @@ spacecat-audit-worker — new `screenshot` audit type
     ▼
 spacecat-scrape-job-manager → spacecat-content-scraper (FullPageHandler)
     │
-    ▼  Stores to S3_SCRAPER_BUCKET:
+    ▼  Stores capture to S3_SCRAPER_BUCKET:
     │    scrapes/{siteId}/screenshot-desktop-fullpage.png
     │    scrapes/{siteId}/screenshot-desktop-thumbnail.png
     ▼
+spacecat-audit-worker — heuristic validator (no AI)
+    │  pass → copy to screenshots/auto/{siteId}.png        ← serving key
+    │  fail → write screenshots/rejected/{siteId}.json     ← reasons + stats
+    ▼
 GET /sites/:siteId/screenshot  (spacecat-api-service)
     │  1. Check override:  screenshots/overrides/{siteId}.png  ← manual upload via backoffice
-    │  2. Check auto:      scrapes/{siteId}/screenshot-desktop-fullpage.png
-    │  3. Return presigned URL (7-day TTL) or 404
+    │  2. Check auto:      screenshots/auto/{siteId}.png        ← only validated captures
+    │  3. Return presigned URL (7-day TTL) or 404 with rejection reasons
     ▼
 experience-success-studio-backoffice — Screenshots page
     │  View current screenshot (auto or override)
+    │  See rejection reasons when auto failed validation
     │  Upload override (presigned PUT URL)
     └─ Delete override (fall back to auto)
 ```
@@ -59,8 +64,10 @@ experience-success-studio-backoffice — Screenshots page
 
 | Purpose | Key |
 |---|---|
-| Auto-captured fullpage | `scrapes/{siteId}/screenshot-desktop-fullpage.png` |
-| Auto-captured thumbnail | `scrapes/{siteId}/screenshot-desktop-thumbnail.png` |
+| Raw capture (fullpage) | `scrapes/{siteId}/screenshot-desktop-fullpage.png` |
+| Raw capture (thumbnail) | `scrapes/{siteId}/screenshot-desktop-thumbnail.png` |
+| Validated serving image | `screenshots/auto/{siteId}.png` |
+| Validation failure record | `screenshots/rejected/{siteId}.json` |
 | Manual override | `screenshots/overrides/{siteId}.png` |
 
 Bucket: `process.env.S3_SCRAPER_BUCKET` (already wired in `spacecat-api-service`).
@@ -79,6 +86,18 @@ Automate the current pipeline via GitHub Actions. Capture → heuristic-validate
 | Screenshot quality | Good (consent banners dismissed by scraper) | Better (heuristic validator) |
 
 Option B is preferred only if backwards compatibility of the `aem.live` serving URL is a hard requirement.
+
+### Rejected: Option C — DRS (`llmo-data-retrieval-service`) as a Screenshot Provider
+
+DRS was considered as a third option since it already has a provider-adapter framework, S3 result storage, a scheduler, and SharePoint distribution. Rejected for the following reasons:
+
+1. **Domain mismatch.** DRS is purpose-built for "query an LLM provider, return structured JSON, run brand-presence analysis, emit Excel." Its `ProviderAdapter` contract (`execute_sync` / `execute_async` / `poll_async_status`) returns JSON results that flow into the Brand Presence Fargate pipeline. A screenshot has no LLM output and no brand-mention payload — it would be a non-conforming citizen of the pipeline.
+2. **Duplicates `spacecat-content-scraper`.** The scraper already runs Puppeteer at scale in Lambda, dismisses consent banners, and writes `scrapes/{jobId}/screenshot-desktop-fullpage.png` — exactly what this spec needs. Adding a Puppeteer provider in DRS reinvents that infrastructure outside the team that owns it.
+3. **Compute model is wrong.** DRS Fargate is gated behind a `BRAND_PRESENCE_WHITELIST` due to VPC/IGW limits in dev; Lambda Puppeteer in DRS has known architecture pitfalls (x86_64 mismatch, native-binary issues). The scraper's Lambda fleet is already tuned for Puppeteer.
+4. **Wrong consumer surface.** The screenshot's consumer is the backoffice UI via a presigned S3 URL. It does not need DRS's job model, SQS fan-out, SNS `JOB_COMPLETED` event, brand-presence analysis, or Excel/SharePoint distribution. Routing a binary PNG through that pipeline adds latency and operational surface for zero benefit.
+5. **Ownership.** Screenshot capture belongs with the content-scraping team that owns `spacecat-content-scraper`, not with the LLM-data team that owns DRS. Aligning code ownership with infrastructure ownership keeps on-call scope coherent.
+
+DRS *would* be the right home if the requirement evolved into "capture homepage → run an LLM-powered visual analysis on it" (e.g., visual brand audit, OCR-based mention extraction). For storing and serving a PNG, Option A is strictly simpler.
 
 ---
 
@@ -112,9 +131,127 @@ export default new AuditBuilder()
   .build();
 ```
 
-Register in the audit type map (same pattern as `cwv`). No completion SQS handler needed — the S3 key is fully deterministic from `siteId`.
+Register in the audit type map (same pattern as `cwv`). A lightweight completion step (Step 1.5) runs the heuristic validator before the API will serve the screenshot.
 
-**Why no completion handler?** The `FullPageHandler` stores the screenshot at `scrapes/{jobId}/screenshot-desktop-fullpage.png`. By passing `jobId = siteId`, the API can construct the key directly and check with a `HeadObject` call. This avoids a DynamoDB model just for screenshot state.
+**S3 key promotion.** The `FullPageHandler` writes to `scrapes/{siteId}/screenshot-desktop-fullpage.png` (the *capture* key). The validator promotes accepted captures to `screenshots/auto/{siteId}.png` (the *serving* key). The API only ever reads from the serving key, so a failed validation never reaches consumers — no DynamoDB model needed.
+
+#### Step 1.5: Heuristic Screenshot Validator (no AI)
+
+A classical, deterministic validator runs on every capture before it is promoted to the serving key. The current manual flow already uses `validate-screenshots-heuristic.js` in the `site-screenshot` repo — port that logic into `spacecat-audit-worker` as a completion handler so we get the same signal automatically.
+
+**Why no AI?** Determinism, cost, latency, and explainability. Heuristics give a binary pass/fail with named failure reasons we can log and surface in the backoffice. An AI judge would be a black box for what is fundamentally a "did the page render" check.
+
+**Pipeline placement:**
+
+```
+FullPageHandler writes scrapes/{siteId}/screenshot-desktop-fullpage.png
+    │
+    ▼
+spacecat-audit-worker — screenshot completion handler (SQS-triggered on scrape complete)
+    │  download PNG → run validator → emit { valid, reasons[], stats{} }
+    ├─ valid:   copy to screenshots/auto/{siteId}.png  (serving key)
+    └─ invalid: leave capture key, emit metric `screenshot.validation.failed{reason}`,
+                write { reasons, stats, capturedAt } to screenshots/rejected/{siteId}.json
+                so the backoffice can show *why* it failed and prompt for an override
+```
+
+**Heuristic checks** (all pure pixel/file statistics — no model inference):
+
+| Check | Signal | Threshold (initial) | Catches |
+|---|---|---|---|
+| File size | `bytes(png)` | ≥ 20 KB and ≤ 8 MB | Empty/aborted captures; runaway full-page renders |
+| Dimensions | `width × height` | width ≥ 1024, height ≥ 768 | Truncated viewport, sub-fold captures |
+| Mean luminance | average pixel brightness | between 12 and 245 (0–255 scale) | All-black (CSP failure) and all-white (blank document) pages |
+| Color variance | stddev of luminance across sampled grid | ≥ 8 | Solid-color screens, single-frame error pages |
+| Unique colors (sampled) | `count(distinct(quantized RGB))` over a 64×64 grid | ≥ 64 | "Loading…" spinner pages, blank shells |
+| Edge density (Sobel sample) | proportion of pixels with gradient > τ | ≥ 0.02 | Pages with no rendered content / no text or imagery |
+| Text-row signature | count of horizontal pixel rows with high horizontal-gradient variance | ≥ 6 | Catches renders that look colorful but contain no actual text rows |
+| Top-band hash | perceptual hash of the top 200px | not in `KNOWN_BAD_HASHES` set | "Site can't be reached", Cloudflare challenge, default browser error pages |
+
+Implementation notes:
+- Use `sharp` (already a transitive dep via Puppeteer chains) for decode + resize + raw pixel buffer access. No native deps beyond what the scraper layer already ships.
+- Validator is a pure function `validate(buffer): { valid: boolean, reasons: string[], stats: object }` so it is unit-testable from fixture PNGs without invoking S3.
+- `KNOWN_BAD_HASHES` lives in a small JSON file checked into the repo (curated from observed failures); it is updated via PR, not at runtime.
+- All thresholds are configurable via env (`SCREENSHOT_MIN_BYTES`, `SCREENSHOT_MIN_EDGE_DENSITY`, etc.) so we can tune without redeploying logic.
+- Validator must run in well under the Lambda timeout for an 8 MB PNG; budget 5 s p99.
+
+**Test fixtures** (in `spacecat-audit-worker/test/fixtures/screenshots/`):
+- `valid-homepage.png`, `valid-dark-mode.png` — should pass
+- `blank-white.png`, `blank-black.png`, `loading-spinner.png`, `cf-challenge.png`, `tiny-truncated.png` — each fails exactly one heuristic, asserted by `reasons[]`
+
+#### Step 1.6: Serving Architecture — CloudFront + S3 (no presigned URLs)
+
+Presigned URLs are the wrong tool here. They cost an SDK call per render, return non-cacheable URLs, generate constant API traffic for a static asset, and produce log volume proportional to page views. For an asset that is *immutable per capture* and *not secret in content* (a homepage screenshot of a public website), a CDN-fronted S3 bucket is strictly better.
+
+**Recommended architecture:**
+
+```
+CloudFront distribution (screenshots.spacecat.adobe.com)
+    │  cache: max-age=31536000, immutable        (versioned paths → safe to cache forever)
+    │  OAC (Origin Access Control) → S3
+    ▼
+S3 bucket (private, OAC-only — no public ACLs, no website hosting)
+    └── screenshots/auto/{siteId}/{captureSha:0:12}.png        ← versioned key per capture
+        screenshots/overrides/{siteId}/{uploadSha:0:12}.png
+```
+
+**Why versioned paths?** The capture's first 12 hex chars of SHA-256 are appended to the key after validation. Each new capture writes a new object; old ones expire via S3 lifecycle (30 days). This means the CDN can cache aggressively (`immutable`, 1 year) without ever serving stale content — the URL itself changes when the screenshot changes.
+
+**Auth model.** Two clean choices, pick by org-leakage tolerance:
+
+| | Public via UUID | CloudFront Signed Cookies |
+|---|---|---|
+| How | Bucket served by CDN with no auth; siteId UUID in path is unguessable | Backoffice login mints a short JWT → CloudFront key-pair signed cookie covering `/screenshots/*` for ~12h |
+| Leak surface | Anyone who knows a siteId can view that homepage screenshot (the homepage itself is already public) | None beyond authenticated users |
+| Caching | Edge-cacheable across all viewers (single cache key per object) | Edge-cacheable, but cache key includes auth → split per session-bucket |
+| Op cost | Lowest | Slightly higher (key rotation, cookie issuance) |
+| Right answer when | The image content is already public (homepages are) and only customer-list privacy matters — UUIDs satisfy that | Compliance/legal explicitly forbids pre-auth access |
+
+**Default recommendation: signed cookies.** The screenshot pixels are public, but the *list of which siteIds are ASO customers* is sensitive. A CloudFront signed cookie issued by the backoffice IMS-login flow gives us cacheable, low-cost delivery without leaking the customer list. The cookie is set on a parent domain (`.spacecat.adobe.com`) at login and covers every screenshot the user views during the session.
+
+**API change.** The API stops minting presigned URLs and instead returns the canonical CDN URL plus the capture version. Cookie issuance happens once at login on a separate `POST /auth/cdn-cookie` endpoint, not per-request.
+
+```js
+// GET /sites/:siteId/screenshot
+export async function getScreenshot(ctx) {
+  const { siteId } = ctx.params;
+  const meta = await readJson(ctx.s3Client, BUCKET, `screenshots/meta/${siteId}.json`);
+  // meta = { auto: { version, capturedAt }, override?: { version, uploadedAt } }
+  if (!meta) return notFound(/* validation_failed payload as before */);
+
+  const which = meta.override ?? meta.auto;
+  const kind  = meta.override ? 'override' : 'auto';
+  return ok({
+    url: `https://${ctx.env.SCREENSHOT_CDN_HOST}/screenshots/${kind}/${siteId}/${which.version}.png`,
+    source: kind,
+    capturedAt: which.capturedAt ?? which.uploadedAt,
+  });
+}
+```
+
+The `screenshots/meta/{siteId}.json` pointer is written by the validator (auto) and the override upload completion (override). It records the current version per site — a tiny JSON read instead of a `HeadObject` + presign per request.
+
+**Cost comparison (rough, for ~100k screenshot views/month at ~500 KB each):**
+
+| | Presigned URL (current spec) | CloudFront + S3 |
+|---|---|---|
+| API calls | 100k SDK + presign generations | ~0 (one cookie at login) |
+| S3 GET requests | 100k | ~5k (cache misses ~5%) |
+| Data transfer | 100k × 500 KB = 50 GB out of S3 | 50 GB out of CloudFront, 2.5 GB out of S3 |
+| Edge latency | ~80–200 ms (S3 region direct) | ~10–40 ms (edge cache) |
+| Approx. monthly | **~$5 (transfer-dominated, all S3)** | **~$4 + faster** |
+
+The dollar delta is small at this scale — the real wins are **latency** and **operational simplicity** (no per-request presign codepath, no SDK cost on the hot path, no expiration sliding window to manage).
+
+**Why not just public S3 website hosting?** No edge cache, no HTTPS on custom domains without CloudFront anyway, no signed-cookie story if we ever need auth. CloudFront is the right primitive even if we start with anonymous access.
+
+**Why not aem.live / SharePoint serving (Option B's URL)?** Possible, but it pushes binary assets through MS Graph + Edge Delivery Service for an asset that lives in our own AWS account. CloudFront in the same account is simpler and gives us direct cache invalidation control.
+
+**Migration / rollout.**
+1. Stand up CloudFront distribution with OAC over the existing `S3_SCRAPER_BUCKET` `screenshots/` prefix; do not change the validator or capture flow.
+2. Ship the new `GET /sites/:siteId/screenshot` shape returning CDN URLs (no breaking change for backoffice — same route, different `url` field).
+3. Add `POST /auth/cdn-cookie` and call it from the backoffice on login.
+4. Once backoffice is verified, remove the presigned-URL code path.
 
 #### Step 2: Screenshot API endpoints — `spacecat-api-service`
 
@@ -126,17 +263,23 @@ export async function getScreenshot(ctx) {
   const { siteId } = ctx.params;
   const bucket = ctx.env.S3_SCRAPER_BUCKET;
 
-  for (const key of [
-    `screenshots/overrides/${siteId}.png`,
-    `scrapes/${siteId}/screenshot-desktop-fullpage.png`,
+  for (const [source, key] of [
+    ['override', `screenshots/overrides/${siteId}.png`],
+    ['auto',     `screenshots/auto/${siteId}.png`],     // only validated captures
   ]) {
     if (await objectExists(ctx.s3Client, bucket, key)) {
       const url = await getSignedUrl(ctx.s3Client,
         new GetObjectCommand({ Bucket: bucket, Key: key }),
         { expiresIn: 604800 }
       );
-      return ok({ url, source: key.startsWith('screenshots/overrides') ? 'override' : 'auto' });
+      return ok({ url, source });
     }
+  }
+  // Surface validator output so the backoffice can show *why* it failed
+  const rejectedKey = `screenshots/rejected/${siteId}.json`;
+  if (await objectExists(ctx.s3Client, bucket, rejectedKey)) {
+    const rejection = await readJson(ctx.s3Client, bucket, rejectedKey);
+    return notFound({ reason: 'validation_failed', rejection });
   }
   return notFound('No screenshot available for this site');
 }

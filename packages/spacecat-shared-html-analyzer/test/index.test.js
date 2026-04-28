@@ -10,12 +10,15 @@
  * governing permissions and limitations under the License.
  */
 
+import * as cheerio from 'cheerio';
 import { expect } from 'chai';
 import {
   analyzeTextComparison,
   calculateStats,
   calculateBothScenarioStats,
   stripTagsToText,
+  generateMarkdownDiff,
+  getAddedMarkdownBlocks,
 } from '../src/index.js';
 
 describe('HTML Visibility Analyzer', () => {
@@ -276,6 +279,51 @@ describe('HTML Visibility Analyzer', () => {
       expect(textWith).to.include('Content');
       expect(textWith).to.include('First noscript');
       expect(textWith).to.include('Second noscript');
+    });
+  });
+
+  describe('generateMarkdownDiff + getAddedMarkdownBlocks', () => {
+    it('should not show JSON-LD as added when content is identical but DOM nesting differs', async () => {
+      const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Test' });
+      // Server-side: skip button has 3-space indentation (from DOM nesting)
+      const serverHtml = `<html><head><script type="application/ld+json">${jsonLd}</script></head><body><div>   Skip To Main Content</div><h1>Title</h1></body></html>`;
+      // Client-side: JS adds a wrapper div, shifting indentation to 4+ spaces
+      const clientHtml = `<html><head><script type="application/ld+json">${jsonLd}</script></head><body><div>    Skip To Main Content</div><h1>Title</h1></body></html>`;
+
+      const {
+        originalRenderedHtml, currentRenderedHtml,
+      } = await generateMarkdownDiff(serverHtml, clientHtml, false);
+      const $orig = cheerio.load(originalRenderedHtml);
+      const $curr = cheerio.load(currentRenderedHtml);
+      const { addedBlocks } = getAddedMarkdownBlocks(
+        $orig('body').children().toArray(),
+        $curr('body').children().toArray(),
+        $curr,
+      );
+
+      const hasJsonLdAdded = addedBlocks.some((b) => b.html.includes('ld-json') || b.text.includes('@context'));
+      expect(hasJsonLdAdded).to.equal(false);
+    });
+
+    it('should show JSON-LD as added when client-side JSON-LD content genuinely differs', async () => {
+      const serverJsonLd = JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Original' });
+      const clientJsonLd = JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Modified by JS' });
+      const serverHtml = `<html><head><script type="application/ld+json">${serverJsonLd}</script></head><body><h1>Title</h1></body></html>`;
+      const clientHtml = `<html><head><script type="application/ld+json">${clientJsonLd}</script></head><body><h1>Title</h1></body></html>`;
+
+      const {
+        originalRenderedHtml, currentRenderedHtml,
+      } = await generateMarkdownDiff(serverHtml, clientHtml, false);
+      const $orig = cheerio.load(originalRenderedHtml);
+      const $curr = cheerio.load(currentRenderedHtml);
+      const { addedBlocks } = getAddedMarkdownBlocks(
+        $orig('body').children().toArray(),
+        $curr('body').children().toArray(),
+        $curr,
+      );
+
+      const hasJsonLdAdded = addedBlocks.some((b) => b.text.includes('Modified by JS'));
+      expect(hasJsonLdAdded).to.equal(true);
     });
   });
 });

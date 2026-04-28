@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.2.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.9...@adobe/spacecat-shared-html-analyzer-v1.2.10) (2026-04-28)
+
+### Bug Fixes
+
+* **html-analyzer:** use fenced code blocks and fix JSON-LD false positives (LLMO-4462) ([#1560](https://github.com/adobe/spacecat-shared/issues/1560)) ([f8abce2](https://github.com/adobe/spacecat-shared/commit/f8abce2b2cfdc28c23ee854f28e3c9d3155d4b48))
+
 ## [@adobe/spacecat-shared-html-analyzer-v1.2.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.8...@adobe/spacecat-shared-html-analyzer-v1.2.9) (2026-04-06)
 
 ### Bug Fixes

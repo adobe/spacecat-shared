@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.4.2...@adobe/spacecat-shared-drs-client-v1.5.0) (2026-04-28)
+
+
+### Features
+
+* **drs-client:** implement URL batching for scrape results lookup ([#1536](https://github.com/adobe/spacecat-shared/issues/1536)) ([786b561](https://github.com/adobe/spacecat-shared/commit/786b5610b784303aaa9506686dc903f6553b3601))
+
 # [@adobe/spacecat-shared-drs-client-v1.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.4.1...@adobe/spacecat-shared-drs-client-v1.4.2) (2026-04-06)
 
 

@@ -1296,7 +1296,7 @@ describe('SeoClient', () => {
       expect(kw.cpc).to.equal(3.95);
     });
 
-    it('keywords[] handles missing position, volume, and defaults country to empty', async () => {
+    it('keywords[] returns null for missing position/volume/cpc and derives country from database key', async () => {
       const csv = [
         'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
         '"kw-sparse";"https://example.com/p";"50";"";"";"";"Sparse"',
@@ -1311,6 +1311,36 @@ describe('SeoClient', () => {
       expect(kw.cpc).to.equal(null);
       expect(kw.serp_title).to.equal('Sparse');
       expect(kw.country).to.equal('US');
+    });
+
+    it('keywords[] from multiple databases carry their respective country codes', async () => {
+      const usCsv = [
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
+        '"shoes";"https://example.com/shoes";"100";"5000";"2.50";"1";"Buy Shoes"',
+      ].join('\n');
+      const gbCsv = [
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
+        '"trainers";"https://example.com/shoes";"80";"3000";"1.80";"3";"Buy Trainers"',
+      ].join('\n');
+
+      const csvByDb = { us: usCsv, uk: gbCsv };
+      for (const db of BIG_MARKETS) {
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_adwords' && q.database === db)
+          .reply(200, csvByDb[db] || emptyPaidCsv);
+      }
+
+      const result = await client.getPaidPages('example.com');
+      const page = result.result.pages[0];
+      expect(page.keywords).to.have.lengthOf(2);
+
+      const usKw = page.keywords.find((k) => k.keyword === 'shoes');
+      const gbKw = page.keywords.find((k) => k.keyword === 'trainers');
+      expect(usKw.country).to.equal('US');
+      expect(gbKw.country).to.equal('UK');
+      expect(usKw.traffic).to.equal(100);
+      expect(gbKw.traffic).to.equal(80);
     });
   });
 

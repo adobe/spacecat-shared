@@ -361,13 +361,11 @@ S3 bucket (private, OAC-only — no public ACLs, no website hosting)
 
 ## Open Questions
 
-1. Should the `screenshot` audit type be gated on `ASO` entitlement only, or also `ACO`/`LLMO`?
-2. Should raw S3 captures (`scrapes/{siteId}/screenshot-desktop-*.png`) be TTL-expired (e.g. after 30 days), or kept indefinitely for debugging?
-3. What device should be canonical for the homepage screenshot — desktop only, or also a mobile companion at `approved/{siteId}-mobile.jpeg`?
-4. Does the scraper's `FullPageHandler` need option tweaks for homepage capture (e.g. `rejectRedirects: false` since homepages often redirect `www` → non-www)?
-5. Which existing platform component owns the MS Graph credential / token refresh that we should reuse (vs. provisioning a new one)?
-6. What concrete trigger moves us from Phase 1 (SharePoint) to Phase 2 (CloudFront) — site-count threshold, throttling incident, or a planned migration window?
-7. Is the existing `Configuration.handlers.<auditType>` skip surface the right field for the override lock, or do we need a dedicated flag (e.g. `Configuration.handlers.screenshot.overrideActive: [siteId]`) to keep "admin disabled audit" distinct from "override active"?
+1. Does the scraper's `FullPageHandler` need option tweaks for homepage capture (e.g. `rejectRedirects: false` since homepages often redirect `www` → non-www)?
+2. Which existing platform component owns the MS Graph credential / token refresh that we should reuse (vs. provisioning a new one)?
+3. What concrete trigger moves us from Phase 1 (SharePoint) to Phase 2 (CloudFront) — site-count threshold, throttling incident, or a planned migration window?
+4. Is the existing `Configuration.handlers.<auditType>` skip surface the right field for the override lock, or do we need a dedicated flag (e.g. `Configuration.handlers.screenshot.overrideActive: [siteId]`) to keep "admin disabled audit" distinct from "override active"?
+5. How are SharePoint assets actually published to `aem.live`? Does an MS Graph `PUT` to `approved/{siteId}.jpeg` immediately make the file servable at `aem.live/content/{siteId}.jpeg`, or does it require a follow-up admin-API call (e.g. helix `admin.hlx.page/preview` + `/live` promote)? If a publish step is required, the validator's completion handler must call it, and we need to handle its failure modes (retry, partial state) explicitly.
 
 ---
 

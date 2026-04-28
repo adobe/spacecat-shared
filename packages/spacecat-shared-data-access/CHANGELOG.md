@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.54.0...@adobe/spacecat-shared-data-access-v3.55.0) (2026-04-28)
+
+### Features
+
+* **data-access:** add semantic-value-visibility audit type ([#1545](https://github.com/adobe/spacecat-shared/issues/1545)) ([e49aa54](https://github.com/adobe/spacecat-shared/commit/e49aa54ab3e9ad59d7c44b83b25c81477c6a497d))
+
 ## [@adobe/spacecat-shared-data-access-v3.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.53.0...@adobe/spacecat-shared-data-access-v3.54.0) (2026-04-28)
 
 ### Features

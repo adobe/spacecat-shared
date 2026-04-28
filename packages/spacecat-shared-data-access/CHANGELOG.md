@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.53.0...@adobe/spacecat-shared-data-access-v3.54.0) (2026-04-28)
+
+### Features
+
+* **data-access:** align detectedCdn Joi schema with CDN_TYPES taxonomy ([#1563](https://github.com/adobe/spacecat-shared/issues/1563)) ([bf02ca1](https://github.com/adobe/spacecat-shared/commit/bf02ca1f265c5e6de05512c07a742ce52388bb62)), closes [#1559](https://github.com/adobe/spacecat-shared/issues/1559) [adobe/spacecat-api-service#2245](https://github.com/adobe/spacecat-api-service/issues/2245)
+
 ## [@adobe/spacecat-shared-data-access-v3.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.52.0...@adobe/spacecat-shared-data-access-v3.53.0) (2026-04-27)
 
 ### Features

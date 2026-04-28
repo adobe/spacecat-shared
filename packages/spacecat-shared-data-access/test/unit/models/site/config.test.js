@@ -2581,6 +2581,44 @@ describe('Config Tests', () => {
       config.updateLlmoDetectedCdn('other');
       expect(config.getLlmoDetectedCdn()).to.equal('other');
     });
+
+    [
+      'aem-cs-fastly',
+      'commerce-fastly',
+      'byocdn-fastly',
+      'byocdn-akamai',
+      'byocdn-cloudfront',
+      'byocdn-cloudflare',
+      'byocdn-imperva',
+      'byocdn-other',
+      'ams-cloudfront',
+      'ams-frontdoor',
+      'other',
+    ].forEach((token) => {
+      it(`accepts detectedCdn token "${token}" via validateConfiguration`, () => {
+        const config = {
+          llmo: {
+            dataFolder: '/test',
+            brand: 'testBrand',
+            detectedCdn: token,
+          },
+        };
+        const validated = validateConfiguration(config);
+        expect(validated.llmo.detectedCdn).to.equal(token);
+      });
+    });
+
+    it('rejects unknown detectedCdn token via validateConfiguration', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          detectedCdn: 'byocdn-unknown',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw(/Configuration validation error: "llmo\.detectedCdn" must be one of/);
+    });
   });
 
   describe('Tokowaka Config', () => {

@@ -94,6 +94,39 @@ describe('PlgOnboarding Schema', () => {
       expect(reviewsAttr.validate(reviews)).to.be.false;
     });
 
+    it('accepts valid reviews with CLOSED decision', () => {
+      const reviews = [{
+        reason: 'superseded by new onboarding',
+        decision: 'CLOSED',
+        reviewedBy: 'admin@adobe.com',
+        reviewedAt: '2026-04-29T10:00:00.000Z',
+        justification: 'new domain started for same org',
+      }];
+      expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+
+    it('accepts valid reviews with REOPENED decision', () => {
+      const reviews = [{
+        reason: 'Domain example.com manually transitioned from REJECTED to OUTDATED by admin.',
+        decision: 'REOPENED',
+        reviewedBy: 'admin@adobe.com',
+        reviewedAt: '2026-04-29T10:00:00.000Z',
+        justification: 'customer reapplied',
+      }];
+      expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+
+    it('accepts valid reviews with OFFBOARDED decision', () => {
+      const reviews = [{
+        reason: 'Domain example.com manually transitioned from ONBOARDED to OUTDATED by admin.',
+        decision: 'OFFBOARDED',
+        reviewedBy: 'admin@adobe.com',
+        reviewedAt: '2026-04-29T10:00:00.000Z',
+        justification: 'customer request',
+      }];
+      expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+
     it('accepts multiple reviews', () => {
       const reviews = [
         {
@@ -112,6 +145,28 @@ describe('PlgOnboarding Schema', () => {
         },
       ];
       expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+  });
+
+  describe('createdBy attribute', () => {
+    let createdByAttr;
+
+    before(() => {
+      const attributes = plgOnboardingSchema.getAttributes();
+      createdByAttr = attributes.createdBy;
+    });
+
+    it('should exist as an optional string attribute', () => {
+      expect(createdByAttr).to.exist;
+      expect(createdByAttr.type).to.equal('string');
+      expect(createdByAttr.required).to.not.be.true;
+    });
+
+    it('should have a default value of system', () => {
+      const defaultValue = typeof createdByAttr.default === 'function'
+        ? createdByAttr.default()
+        : createdByAttr.default;
+      expect(defaultValue).to.equal('system');
     });
   });
 });

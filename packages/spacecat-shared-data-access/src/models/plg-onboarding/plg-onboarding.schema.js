@@ -76,6 +76,11 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       userAgent: { type: 'string' },
     },
   })
+  .addAttribute('createdBy', {
+    type: 'string',
+    required: false,
+    default: 'system',
+  })
   .addAttribute('waitlistReason', {
     type: 'string',
     required: false,

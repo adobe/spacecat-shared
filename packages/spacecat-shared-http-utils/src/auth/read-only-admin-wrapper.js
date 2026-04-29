@@ -37,11 +37,15 @@ function forbidden(message) {
 async function evaluateFeatureFlag(context, authInfo) {
   try {
     const ldClient = LaunchDarklyClient.createFrom(context);
-    if (!ldClient) return false;
+    if (!ldClient) {
+      return false;
+    }
 
     const tenantIds = authInfo.getTenantIds?.() || [];
     const ident = tenantIds[0];
-    if (!ident) return false;
+    if (!ident) {
+      return false;
+    }
 
     const imsOrgId = `${ident}@AdobeOrg`;
     return await ldClient.isFlagEnabledForIMSOrg(FF_READ_ONLY_ORG, imsOrgId);

@@ -18,13 +18,19 @@ import { isObject } from '@adobe/spacecat-shared-utils';
  */
 function matchRoute(method, requestSegments, routeKey) {
   const spaceIdx = routeKey.indexOf(' ');
-  if (spaceIdx === -1) return false;
+  if (spaceIdx === -1) {
+    return false;
+  }
 
   const routeMethod = routeKey.slice(0, spaceIdx);
-  if (routeMethod !== method) return false;
+  if (routeMethod !== method) {
+    return false;
+  }
 
   const routeSegments = routeKey.slice(spaceIdx + 1).split('/').filter(Boolean);
-  if (routeSegments.length !== requestSegments.length) return false;
+  if (routeSegments.length !== requestSegments.length) {
+    return false;
+  }
 
   return routeSegments.every(
     (seg, i) => seg.charCodeAt(0) === 58 /* ':' */ || seg === requestSegments[i],
@@ -43,10 +49,14 @@ function matchRoute(method, requestSegments, routeKey) {
 export function resolveRouteCapability(context, routeMap) {
   const method = context.pathInfo?.method?.toUpperCase();
   const path = context.pathInfo?.suffix;
-  if (!method || !path) return null;
+  if (!method || !path) {
+    return null;
+  }
 
   const exactKey = `${method} ${path}`;
-  if (routeMap[exactKey]) return routeMap[exactKey];
+  if (routeMap[exactKey]) {
+    return routeMap[exactKey];
+  }
 
   const requestSegments = path.split('/').filter(Boolean);
   const matchedKey = Object.keys(routeMap)

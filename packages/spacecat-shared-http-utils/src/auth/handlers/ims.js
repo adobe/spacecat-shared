@@ -116,15 +116,21 @@ function isUserASOAdmin(organizations) {
  * unavailable or evaluation errors.
  */
 async function isOrgBlockedFromImsAuth(context, organizations) {
-  if (!isNonEmptyArray(organizations)) return false;
+  if (!isNonEmptyArray(organizations)) {
+    return false;
+  }
 
   try {
     const ldClient = LaunchDarklyClient.createFrom(context);
-    if (!ldClient) return false;
+    if (!ldClient) {
+      return false;
+    }
 
     // Only evaluate the first org - see NOTE above.
     const ident = organizations[0]?.orgRef?.ident;
-    if (!ident) return false;
+    if (!ident) {
+      return false;
+    }
 
     const imsOrgId = `${ident}@AdobeOrg`;
     return await ldClient.isFlagEnabledForIMSOrg(FF_READ_ONLY_ORG, imsOrgId);

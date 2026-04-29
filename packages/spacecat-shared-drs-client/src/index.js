@@ -488,10 +488,13 @@ export default class DrsClient {
 
   /**
    * Publishes a JOB_COMPLETED SNS event to trigger DRS Fargate brand presence analysis.
-   * Generates a unique job ID internally and returns it so the caller can correlate logs.
+   * Returns the job ID used in the SNS message so the caller can correlate logs.
    * @param {string} siteId - SpaceCat site ID
    * @param {object} params
    * @param {string} params.resultLocation - S3 URI of the uploaded Excel file
+   * @param {string} [params.jobId] - Job ID that matches the one used in uploadExcelToDrs.
+   *   When omitted a new spacecat-{uuid} is generated — only safe when the caller does not
+   *   need the SNS job_id to match an existing S3 key.
    * @param {string} [params.webSearchProvider] - Provider string (e.g. 'chatgpt', 'gemini')
    * @param {string} [params.configVersion] - SpaceCat config schema version
    * @param {number} [params.week] - ISO week number
@@ -499,9 +502,10 @@ export default class DrsClient {
    * @param {string} [params.runFrequency] - 'daily' | 'weekly'
    * @param {string} [params.brand] - Brand name
    * @param {string} [params.imsOrgId] - IMS organization ID
-   * @returns {Promise<string>} The generated job ID
+   * @returns {Promise<string>} The job ID used in the SNS message
    */
   async publishBrandPresenceAnalyze(siteId, {
+    jobId = `spacecat-${randomUUID()}`,
     resultLocation,
     webSearchProvider,
     configVersion,
@@ -520,8 +524,6 @@ export default class DrsClient {
     if (!hasText(resultLocation)) {
       throw new Error('resultLocation is required');
     }
-
-    const jobId = `spacecat-${randomUUID()}`;
 
     const message = {
       event_type: 'JOB_COMPLETED',

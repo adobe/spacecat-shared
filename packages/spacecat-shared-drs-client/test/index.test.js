@@ -988,6 +988,24 @@ describe('DrsClient', () => {
       expect(cmd.input.MessageAttributes.provider_id.StringValue).to.equal('external_spacecat');
     });
 
+    it('uses caller-supplied jobId so SNS job_id matches the S3 key', async () => {
+      snsClientStub.resolves({});
+
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient,
+      }, log);
+
+      const returnedId = await client.publishBrandPresenceAnalyze('site-1', {
+        jobId: 'job-abc',
+        resultLocation: 's3://drs-bucket/external/spacecat/site-1/job-abc/source.xlsx',
+      });
+
+      expect(returnedId).to.equal('job-abc');
+      const [cmd] = snsClientStub.args[0];
+      const message = JSON.parse(cmd.input.Message);
+      expect(message.job_id).to.equal('job-abc');
+    });
+
     it('omits optional metadata fields when not provided', async () => {
       snsClientStub.resolves({});
 

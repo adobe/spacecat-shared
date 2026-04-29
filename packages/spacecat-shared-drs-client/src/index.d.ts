@@ -71,6 +71,7 @@ export interface ScrapeLookupResponse {
 
 interface PublishBrandPresenceParams {
   resultLocation: string;
+  jobId?: string;
   webSearchProvider?: string;
   configVersion?: string;
   week?: number;

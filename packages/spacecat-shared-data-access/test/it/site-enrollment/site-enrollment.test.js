@@ -71,6 +71,32 @@ describe('SiteEnrollment IT', async () => {
     }
   });
 
+  it('gets all site IDs by tier', async () => {
+    const siteIds = await SiteEnrollment.allSiteIdsByTier('PAID');
+
+    expect(siteIds).to.be.an('array');
+    expect(siteIds).to.have.members([
+      '78fec9c7-2141-4600-b7b1-ea5c78752b91',
+      '56a691db-d32e-4308-ac99-a21de0580557',
+    ]);
+  });
+
+  it('gets all site IDs by tier filtered by product code', async () => {
+    const siteIds = await SiteEnrollment.allSiteIdsByTier('PAID', 'LLMO');
+
+    expect(siteIds).to.eql(['56a691db-d32e-4308-ac99-a21de0580557']);
+  });
+
+  it('returns empty array when no enrollments match the tier', async () => {
+    const siteIds = await SiteEnrollment.allSiteIdsByTier('PLG');
+
+    expect(siteIds).to.eql([]);
+  });
+
+  it('throws when tier is missing for allSiteIdsByTier', async () => {
+    await expect(SiteEnrollment.allSiteIdsByTier()).to.be.rejectedWith('tier is required');
+  });
+
   it('adds a new site enrollment', async () => {
     const data = {
       siteId: sampleData.sites[0].getId(),

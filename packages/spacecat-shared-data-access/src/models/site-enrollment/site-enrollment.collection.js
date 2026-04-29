@@ -47,6 +47,39 @@ class SiteEnrollmentCollection extends BaseCollection {
     return (data || []).map((row) => row.site_id);
   }
 
+  /**
+   * Returns all site IDs enrolled at a given entitlement tier (e.g. 'PAID',
+   * 'FREE_TRIAL', 'PLG') in a single JOIN query. Optionally narrows the tier
+   * match to a single product code.
+   *
+   * @param {string} tier - Entitlement tier to filter by.
+   * @param {string} [productCode] - Optional product code to further filter by.
+   * @returns {Promise<string[]>} Array of siteId strings.
+   */
+  async allSiteIdsByTier(tier, productCode) {
+    if (!tier) {
+      throw new DataAccessError('tier is required', { entityName: 'SiteEnrollment', tableName: 'site_enrollments' });
+    }
+
+    let query = this.postgrestService
+      .from(this.tableName)
+      .select('site_id, entitlements!inner(tier, product_code)')
+      .eq('entitlements.tier', tier);
+
+    if (productCode) {
+      query = query.eq('entitlements.product_code', productCode);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      this.log.error(`[SiteEnrollmentCollection] Failed to query site_enrollments by tier - ${error.message}`, error);
+      throw new DataAccessError('Failed to query site_enrollments by tier', { entityName: 'SiteEnrollment', tableName: 'site_enrollments' }, error);
+    }
+
+    return (data || []).map((row) => row.site_id);
+  }
+
   async create(item, options = {}) {
     if (item?.siteId && item?.entitlementId) {
       const existing = await this.findByIndexKeys({

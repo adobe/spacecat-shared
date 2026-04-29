@@ -455,4 +455,73 @@ describe('SiteCollection', () => {
       );
     });
   });
+
+  describe('allByEnrollmentAndTier', () => {
+    let mockSiteEnrollmentCollection;
+
+    beforeEach(() => {
+      mockSiteEnrollmentCollection = {
+        allSiteIdsByTier: stub(),
+      };
+      mockEntityRegistry.getCollection = stub()
+        .withArgs('SiteEnrollmentCollection')
+        .returns(mockSiteEnrollmentCollection);
+    });
+
+    it('throws DataAccessError when tier is falsy', async () => {
+      await expect(instance.allByEnrollmentAndTier('')).to.be.rejectedWith('tier is required');
+      await expect(instance.allByEnrollmentAndTier(null)).to.be.rejectedWith('tier is required');
+      await expect(instance.allByEnrollmentAndTier(undefined)).to.be.rejectedWith('tier is required');
+    });
+
+    it('returns empty array and skips batchGetByKeys when no site IDs found', async () => {
+      mockSiteEnrollmentCollection.allSiteIdsByTier.resolves([]);
+      instance.batchGetByKeys = stub();
+
+      const result = await instance.allByEnrollmentAndTier('PAID');
+
+      expect(result).to.deep.equal([]);
+      expect(mockSiteEnrollmentCollection.allSiteIdsByTier)
+        .to.have.been.calledOnceWithExactly('PAID', undefined);
+      expect(instance.batchGetByKeys).to.not.have.been.called;
+    });
+
+    it('returns sites fetched by batchGetByKeys with default empty options', async () => {
+      const siteIds = ['cfa88998-a0a0-4136-b21d-0ff2aa127443', 'd1e2f3a4-b5c6-7890-abcd-ef1234567890'];
+      const mockSites = [{ getId: () => siteIds[0] }, { getId: () => siteIds[1] }];
+      mockSiteEnrollmentCollection.allSiteIdsByTier.resolves(siteIds);
+      instance.batchGetByKeys = stub().resolves({ data: mockSites });
+
+      const result = await instance.allByEnrollmentAndTier('FREE_TRIAL');
+
+      expect(result).to.deep.equal(mockSites);
+      expect(mockSiteEnrollmentCollection.allSiteIdsByTier)
+        .to.have.been.calledOnceWithExactly('FREE_TRIAL', undefined);
+      expect(instance.batchGetByKeys).to.have.been.calledOnceWithExactly(
+        [
+          { siteId: 'cfa88998-a0a0-4136-b21d-0ff2aa127443' },
+          { siteId: 'd1e2f3a4-b5c6-7890-abcd-ef1234567890' },
+        ],
+        {},
+      );
+    });
+
+    it('forwards productCode and options to underlying calls', async () => {
+      const siteIds = ['cfa88998-a0a0-4136-b21d-0ff2aa127443'];
+      const mockSites = [{ getId: () => siteIds[0] }];
+      const options = { attributes: ['siteId', 'baseURL'] };
+      mockSiteEnrollmentCollection.allSiteIdsByTier.resolves(siteIds);
+      instance.batchGetByKeys = stub().resolves({ data: mockSites });
+
+      const result = await instance.allByEnrollmentAndTier('PLG', 'LLMO', options);
+
+      expect(result).to.deep.equal(mockSites);
+      expect(mockSiteEnrollmentCollection.allSiteIdsByTier)
+        .to.have.been.calledOnceWithExactly('PLG', 'LLMO');
+      expect(instance.batchGetByKeys).to.have.been.calledOnceWithExactly(
+        [{ siteId: 'cfa88998-a0a0-4136-b21d-0ff2aa127443' }],
+        options,
+      );
+    });
+  });
 });

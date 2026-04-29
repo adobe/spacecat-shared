@@ -549,6 +549,57 @@ describe('Site IT', async () => {
     expect(reloadedProfile.main_profile.id).to.equal(sample.main_profile.id);
   });
 
+  describe('allByEnrollmentAndTier', () => {
+    it('returns sites enrolled at a given tier', async () => {
+      const sites = await Site.allByEnrollmentAndTier('PAID');
+
+      expect(sites).to.be.an('array');
+      const ids = sites.map((s) => s.getId()).sort();
+      expect(ids).to.eql([
+        '56a691db-d32e-4308-ac99-a21de0580557',
+        '78fec9c7-2141-4600-b7b1-ea5c78752b91',
+      ]);
+    });
+
+    it('narrows by product code when supplied', async () => {
+      const sites = await Site.allByEnrollmentAndTier('PAID', 'LLMO');
+
+      expect(sites).to.be.an('array');
+      expect(sites).to.have.lengthOf(1);
+      expect(sites[0].getId()).to.equal('56a691db-d32e-4308-ac99-a21de0580557');
+    });
+
+    it('returns FREE_TRIAL enrolled sites', async () => {
+      const sites = await Site.allByEnrollmentAndTier('FREE_TRIAL', 'LLMO');
+
+      expect(sites).to.have.lengthOf(1);
+      expect(sites[0].getId()).to.equal('5d6d4439-6659-46c2-b646-92d110fa5a52');
+    });
+
+    it('returns empty array when tier has no enrollments', async () => {
+      const sites = await Site.allByEnrollmentAndTier('PLG');
+
+      expect(sites).to.eql([]);
+    });
+
+    it('honors attribute projection via options', async () => {
+      const sites = await Site.allByEnrollmentAndTier('PAID', 'LLMO', {
+        attributes: ['siteId', 'baseURL'],
+      });
+
+      expect(sites).to.have.lengthOf(1);
+      const json = sites[0].toJSON();
+      expect(json.siteId).to.equal('56a691db-d32e-4308-ac99-a21de0580557');
+      expect(json.baseURL).to.be.a('string');
+      expect(json.organizationId).to.be.undefined;
+      expect(json.deliveryType).to.be.undefined;
+    });
+
+    it('throws when tier is missing', async () => {
+      await expect(Site.allByEnrollmentAndTier('')).to.be.rejectedWith('tier is required');
+    });
+  });
+
   it('removes a site', async () => {
     const site = await Site.findById(sampleData.sites[0].getId());
 

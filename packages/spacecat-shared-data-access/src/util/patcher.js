@@ -180,7 +180,7 @@ class Patcher {
       && typeof this.collection.applyUpdateWatchers === 'function'
       && typeof this.collection.updateByKeys === 'function') {
       const watched = this.collection.applyUpdateWatchers(this.record, updates);
-      this.record = watched.record;
+      Object.assign(this.record, watched.record);
       await this.collection.updateByKeys(keys, watched.updates);
       return;
     }

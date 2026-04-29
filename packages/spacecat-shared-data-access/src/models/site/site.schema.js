@@ -76,6 +76,24 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     validate: (value) => isNonEmptyObject(validateConfiguration(value)),
     get: (value) => Config(value),
   })
+  /**
+   * Repository configuration used by the code importer and downstream
+   * consumers (autofix, suggestion generation, code analysis).
+   *
+   * Fields written by the importer after a successful clone:
+   *   - s3StoragePath: S3 key (not full URL) of the imported repository ZIP
+   *   - metadata.submodules: `{ external, urls }` when the repo has a
+   *     `.gitmodules` file. The importer always overwrites `metadata` so
+   *     a re-import that finds no submodules clears stale entries from
+   *     an earlier import.
+   *
+   * Fields populated at onboarding (not by the importer):
+   *   - metadata.submodules.cmProgramRepos: BYOG-only name→id map
+   *     needed to translate relative submodule URLs into CM proxy URLs
+   *     the service can serve. See SubmodulesMetadata in index.d.ts.
+   *
+   * See CodeConfig in index.d.ts for the full TypeScript shape.
+   */
   .addAttribute('code', {
     type: 'any',
     required: false,
@@ -89,6 +107,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
       installationId: { type: 'string', required: false },
       url: { type: 'string', required: true, validate: (value) => isValidUrl(value) },
       s3StoragePath: { type: 'string', required: false },
+      metadata: { type: 'any', required: false },
     },
   })
   .addAttribute('deliveryType', {

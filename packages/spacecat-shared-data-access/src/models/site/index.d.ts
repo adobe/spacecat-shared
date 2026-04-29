@@ -34,6 +34,55 @@ export interface HlxConfig {
   };
 }
 
+/**
+ * Detected submodule information captured during code import.
+ * Omitted when the cloned repo has no `.gitmodules` file.
+ */
+export interface SubmodulesMetadata {
+  /**
+   * True when at least one submodule URL points to a host other than
+   * the parent repo's host. Relative URLs (`../foo.git`) and SSH URLs
+   * targeting the parent's host classify as internal.
+   */
+  external: boolean;
+  /**
+   * Submodule URLs exactly as declared in `.gitmodules`, with
+   * basic-auth credentials stripped from https/http forms. Relative
+   * (`../foo.git`) and SSH (`git@host:path`) forms are preserved as-is.
+   */
+  urls: string[];
+  /**
+   * BYOG-only. Map of CM repository *name* → *numeric id* for every repo
+   * in the program, keyed by the last path segment of each CM repo's
+   * `url`/`proxyUrl` (the real repo name on the customer's git host —
+   * NOT the CM display name in the `repo` field).
+   *
+   * The CM repo service proxies BYOG clones through URLs of the form
+   * `{CM_REPO_URL}/api/program/{programId}/repository/{numericId}.git`.
+   * When a customer's `.gitmodules` uses relative URLs like `../foo`,
+   * git resolves them against the parent's clone URL and produces
+   * `.../repository/foo` — which the proxy rejects because it only
+   * serves numeric ids. The CM client reads this map at clone/pull
+   * time to rewrite those URLs into the numeric-id form before
+   * running `git submodule update`.
+   *
+   * Populated at onboarding by calling
+   * `GET /api/program/{programId}/repositories` and indexing by the
+   * last path segment of each entry's `url`. Omit for `standard`
+   * repos — their relative URLs resolve natively on the customer's
+   * git host and don't need translation.
+   */
+  cmProgramRepos?: Record<string, string>;
+}
+
+/**
+ * Metadata extracted during code import. Consumers should assume an
+ * empty object when a field is absent.
+ */
+export interface CodeMetadata {
+  submodules?: SubmodulesMetadata;
+}
+
 export interface CodeConfig {
   type: string;
   owner: string;
@@ -41,7 +90,17 @@ export interface CodeConfig {
   ref: string;
   installationId?: string;
   url: string;
+  /**
+   * S3 key (not full URL) where the imported repository ZIP is stored.
+   * Written by the code importer after successful ingestion.
+   */
   s3StoragePath?: string;
+  /**
+   * Metadata extracted from the cloned repository. Always overwritten
+   * on each successful import — a re-import that finds no submodules
+   * clears any submodule entries from an earlier import.
+   */
+  metadata?: CodeMetadata;
 }
 
 export interface DeliveryConfig {

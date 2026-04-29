@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.113.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.5...@adobe/spacecat-shared-utils-v1.113.0) (2026-04-29)
+
+### Features
+
+* **utils/sqs:** add MessageDeduplicationId support for FIFO sends ([#1566](https://github.com/adobe/spacecat-shared/issues/1566)) ([b3b9511](https://github.com/adobe/spacecat-shared/commit/b3b95112d14ac9f07dcfae8baa1599c1429ea1f7))
+
 ## [@adobe/spacecat-shared-utils-v1.112.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.4...@adobe/spacecat-shared-utils-v1.112.5) (2026-04-10)
 
 ### Bug Fixes

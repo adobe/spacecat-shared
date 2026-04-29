@@ -161,7 +161,9 @@ async function resolveCanonicalUrl(
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), Math.min(remaining, maxPerAttempt));
     try {
-      resp = await fetch(urlString, { headers, method, signal: ac.signal });
+      resp = await fetch(urlString, {
+        headers, method, signal: ac.signal, decode: false,
+      });
     } finally {
       clearTimeout(timer);
     }

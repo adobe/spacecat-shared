@@ -438,6 +438,45 @@ describe('URL Utility Functions', () => {
       const result = await resolveCanonicalUrl('https://example.com', 'HEAD');
       expect(result).to.equal('https://example.com/');
     });
+
+    it('should return null when GET request errors (does not retry unlike HEAD)', async () => {
+      nock('https://example.com')
+        .get('/')
+        .replyWithError('ECONNRESET');
+
+      const result = await resolveCanonicalUrl('https://example.com', 'GET');
+      expect(result).to.be.null;
+    });
+
+    it('should clear the per-attempt abort timer after a successful response', async () => {
+      const clearTimeoutSpy = sinon.spy(globalThis, 'clearTimeout');
+
+      nock('https://example.com')
+        .head('/')
+        .reply(200);
+
+      await resolveCanonicalUrl('https://example.com');
+
+      expect(clearTimeoutSpy).to.have.been.called;
+      clearTimeoutSpy.restore();
+    });
+
+    it('should clear the per-attempt abort timer after a failed response', async () => {
+      const clearTimeoutSpy = sinon.spy(globalThis, 'clearTimeout');
+
+      nock('https://example.com')
+        .head('/')
+        .replyWithError('Network error');
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      await resolveCanonicalUrl('https://example.com');
+
+      expect(clearTimeoutSpy).to.have.been.called;
+      clearTimeoutSpy.restore();
+    });
   });
 
   describe('urlMatchesFilter', () => {

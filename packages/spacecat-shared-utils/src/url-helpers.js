@@ -134,7 +134,7 @@ function getSpacecatRequestHeaders() {
   };
 }
 
-const RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT = 20000;
+const RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT = 7000;
 
 /**
  * Resolve canonical URL for a given URL string by following redirect chain.
@@ -158,11 +158,13 @@ async function resolveCanonicalUrl(
 
   try {
     const maxPerAttempt = method === 'HEAD' ? 10000 : 15000;
-    resp = await fetch(urlString, {
-      headers,
-      method,
-      signal: AbortSignal.timeout(Math.min(remaining, maxPerAttempt)),
-    });
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), Math.min(remaining, maxPerAttempt));
+    try {
+      resp = await fetch(urlString, { headers, method, signal: ac.signal });
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (resp.ok) {
       return ensureHttps(resp.url);

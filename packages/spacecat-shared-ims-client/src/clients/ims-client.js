@@ -226,6 +226,38 @@ export default class ImsClient extends ImsBaseClient {
     return this.serviceAccessTokenV3;
   }
 
+  async getServicePrincipalAccessToken(imsOrgId) {
+    if (!hasText(imsOrgId)) {
+      throw new Error('imsOrgId param is required.');
+    }
+
+    const tokenResponse = await this.imsApiCall(
+      IMS_TOKEN_ENDPOINT_V3,
+      {},
+      {
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        scope: this.config.scope,
+        org_id: imsOrgId,
+        grant_type: 'client_credentials',
+      },
+      { noContentType: true, noAuth: true },
+    );
+
+    if (!tokenResponse.ok) {
+      throw new Error(`IMS getServicePrincipalAccessToken request failed with status: ${tokenResponse.status}`);
+    }
+
+    /* eslint-disable camelcase */
+    const { access_token, token_type, expires_in } = await tokenResponse.json();
+
+    return {
+      access_token,
+      expires_in,
+      token_type,
+    };
+  }
+
   async getImsOrganizationDetails(imsOrgId) {
     if (!hasText(imsOrgId)) {
       throw new Error('imsOrgId param is required.');

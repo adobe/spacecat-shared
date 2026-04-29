@@ -1,3 +1,74 @@
+## [@adobe/spacecat-shared-data-access-v3.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.54.0...@adobe/spacecat-shared-data-access-v3.55.0) (2026-04-28)
+
+### Features
+
+* **data-access:** add semantic-value-visibility audit type ([#1545](https://github.com/adobe/spacecat-shared/issues/1545)) ([e49aa54](https://github.com/adobe/spacecat-shared/commit/e49aa54ab3e9ad59d7c44b83b25c81477c6a497d))
+
+## [@adobe/spacecat-shared-data-access-v3.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.53.0...@adobe/spacecat-shared-data-access-v3.54.0) (2026-04-28)
+
+### Features
+
+* **data-access:** align detectedCdn Joi schema with CDN_TYPES taxonomy ([#1563](https://github.com/adobe/spacecat-shared/issues/1563)) ([bf02ca1](https://github.com/adobe/spacecat-shared/commit/bf02ca1f265c5e6de05512c07a742ce52388bb62)), closes [#1559](https://github.com/adobe/spacecat-shared/issues/1559) [adobe/spacecat-api-service#2245](https://github.com/adobe/spacecat-api-service/issues/2245)
+
+## [@adobe/spacecat-shared-data-access-v3.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.52.0...@adobe/spacecat-shared-data-access-v3.53.0) (2026-04-27)
+
+### Features
+
+* **data-access:** widen detectedCdn Joi schema to LLMO-supported tokens ([#1559](https://github.com/adobe/spacecat-shared/issues/1559)) ([f6e08e9](https://github.com/adobe/spacecat-shared/commit/f6e08e9e94cef4e230f0d892cc73d5e78395c492))
+
+## [@adobe/spacecat-shared-data-access-v3.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.51.0...@adobe/spacecat-shared-data-access-v3.52.0) (2026-04-10)
+
+### Features
+
+* **data-access:** add enableMoneyPageUrls flag to site config ([#1532](https://github.com/adobe/spacecat-shared/issues/1532)) ([865cd45](https://github.com/adobe/spacecat-shared/commit/865cd456e255ed0e2cb3af354fb087d4ce165ef8))
+
+## [@adobe/spacecat-shared-data-access-v3.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.50.1...@adobe/spacecat-shared-data-access-v3.51.0) (2026-04-10)
+
+### Features
+
+* add contentSourcePath to deliveryConfig schema ([#1520](https://github.com/adobe/spacecat-shared/issues/1520)) ([80341f3](https://github.com/adobe/spacecat-shared/commit/80341f39e0eb34ffca0622a38824c5a33614c96e))
+
+## [@adobe/spacecat-shared-data-access-v3.50.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.50.0...@adobe/spacecat-shared-data-access-v3.50.1) (2026-04-10)
+
+### Bug Fixes
+
+* grantSuggestions/revokeSuggestionGrant RPC calls hitting the REA… ([#1530](https://github.com/adobe/spacecat-shared/issues/1530)) ([4e077f8](https://github.com/adobe/spacecat-shared/commit/4e077f86bd4a6636af5b165ec42d39add3a556f1))
+
+## [@adobe/spacecat-shared-data-access-v3.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.49.0...@adobe/spacecat-shared-data-access-v3.50.0) (2026-04-10)
+
+### Features
+
+* LLMO-3959 changing schema to add detectCdn flag ([#1501](https://github.com/adobe/spacecat-shared/issues/1501)) ([0bb4642](https://github.com/adobe/spacecat-shared/commit/0bb46425b1351df2b12525182367c2635ae7fc48))
+
+## [@adobe/spacecat-shared-data-access-v3.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.48.0...@adobe/spacecat-shared-data-access-v3.49.0) (2026-04-10)
+
+### Features
+
+* **audit-url:** add moneyPages source to auditTargetURLs config ([#1496](https://github.com/adobe/spacecat-shared/issues/1496)) ([78df8f9](https://github.com/adobe/spacecat-shared/commit/78df8f91008e739bfd67e2277858523a276d70b2))
+
+## [@adobe/spacecat-shared-data-access-v3.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.47.0...@adobe/spacecat-shared-data-access-v3.48.0) (2026-04-08)
+
+### Features
+
+* **data-access:** add INACTIVE status, reviews field, and REVIEW_DECISIONS to PlgOnboarding ([#1516](https://github.com/adobe/spacecat-shared/issues/1516)) ([8f038e9](https://github.com/adobe/spacecat-shared/commit/8f038e93287da51acf0e586f3e786aeb00d4a0d3))
+
+## [@adobe/spacecat-shared-data-access-v3.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.46.0...@adobe/spacecat-shared-data-access-v3.47.0) (2026-04-07)
+
+### Features
+
+* add PRE_ONBOARD tier to entitlement model ([#1514](https://github.com/adobe/spacecat-shared/issues/1514)) ([bc4e8f3](https://github.com/adobe/spacecat-shared/commit/bc4e8f36549ab1fe6a03d39d7dec6b4b1f67d229))
+
+### Bug Fixes
+
+* **data-access:** remove stale ElectroDB/DynamoDB v2 references ([#1509](https://github.com/adobe/spacecat-shared/issues/1509)) ([ddd180f](https://github.com/adobe/spacecat-shared/commit/ddd180fb5350a14a04583f7c55f89873ed3a3929))
+* update geo experiment schema for experimentation engine ([#1512](https://github.com/adobe/spacecat-shared/issues/1512)) ([58315cd](https://github.com/adobe/spacecat-shared/commit/58315cd973c373b399429bf11ff1b958d3cfe9c8))
+
+## [@adobe/spacecat-shared-data-access-v3.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.45.2...@adobe/spacecat-shared-data-access-v3.46.0) (2026-04-07)
+
+### Features
+
+* **data-access:** add tenantId, ipAllowlistExists, imsOrgId to deliveryConfig schema ([#1515](https://github.com/adobe/spacecat-shared/issues/1515)) ([ff9629e](https://github.com/adobe/spacecat-shared/commit/ff9629e28bff7d0ee0d1d26f1f13df5eaa2ef4f8))
+
 ## [@adobe/spacecat-shared-data-access-v3.45.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.45.1...@adobe/spacecat-shared-data-access-v3.45.2) (2026-04-06)
 
 ### Bug Fixes

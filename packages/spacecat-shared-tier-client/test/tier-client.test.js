@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { use, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
@@ -531,6 +529,70 @@ describe('TierClient', () => {
         siteEnrollment: mockSiteEnrollment,
       });
     });
+
+    it('should create entitlement with PRE_ONBOARD tier when nothing exists', async () => {
+      const mockPreOnboardEntitlement = { ...mockEntitlement, getTier: () => 'PRE_ONBOARD' };
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockPreOnboardEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      const result = await tierClient.createEntitlement('PRE_ONBOARD');
+
+      expect(result).to.deep.equal({
+        entitlement: mockPreOnboardEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+      expect(mockDataAccess.Entitlement.create).to.have.been.calledWith({
+        organizationId: orgId,
+        productCode,
+        tier: 'PRE_ONBOARD',
+        quotas: { llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 },
+      });
+    });
+
+    it('should upgrade PRE_ONBOARD entitlement to PLG (PRE_ONBOARD is not PAID, so tier updates)', async () => {
+      const mockPreOnboardEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'PRE_ONBOARD',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockPreOnboardEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      const result = await tierClient.createEntitlement('PLG');
+
+      expect(mockPreOnboardEntitlement.setTier).to.have.been.calledWith('PLG');
+      expect(mockPreOnboardEntitlement.save).to.have.been.called;
+      expect(result).to.deep.equal({
+        entitlement: mockPreOnboardEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+    });
+
+    it('should upgrade PRE_ONBOARD entitlement to PAID (PRE_ONBOARD is not PAID, so tier updates)', async () => {
+      const mockPreOnboardEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'PRE_ONBOARD',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockPreOnboardEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      const result = await tierClient.createEntitlement('PAID');
+
+      expect(mockPreOnboardEntitlement.setTier).to.have.been.calledWith('PAID');
+      expect(mockPreOnboardEntitlement.save).to.have.been.called;
+      expect(result).to.deep.equal({
+        entitlement: mockPreOnboardEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+    });
   });
 
   describe('Edge Cases', () => {
@@ -681,6 +743,22 @@ describe('TierClient', () => {
       await tierClient.revokeEntitlement();
 
       expect(mockPlgEntitlement.remove.calledOnce).to.be.true;
+    });
+
+    it('should successfully revoke PRE_ONBOARD-tier entitlement (PRE_ONBOARD is not PAID, revoke is allowed)', async () => {
+      const mockPreOnboardEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'PRE_ONBOARD',
+        remove: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockPreOnboardEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await tierClient.revokeEntitlement();
+
+      expect(mockPreOnboardEntitlement.remove.calledOnce).to.be.true;
     });
 
     it('should throw error when entitlement does not exist', async () => {

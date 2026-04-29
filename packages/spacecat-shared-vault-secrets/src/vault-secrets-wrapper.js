@@ -19,17 +19,29 @@ const ALIAS_PATTERN = /^[a-z0-9][a-z0-9_-]{0,30}$/i;
 const CI_PATTERN = /^ci\d+$/i;
 
 function isDevAliasDeployment(ctx, env) {
-  if (env !== 'dev') return false;
-  const { version } = ctx.func || {};
-  if (!version) return false;
-  if (version === 'latest' || version === '$LATEST') return false;
-  if (CI_PATTERN.test(version)) return false;
-  if (!ALIAS_PATTERN.test(version)) return false;
+  if (env !== 'dev') {
+    return false;
+  }
+  const { version } = ctx.func;
+  if (!version) {
+    return false;
+  }
+  if (version === 'latest' || version === '$LATEST') {
+    return false;
+  }
+  if (CI_PATTERN.test(version)) {
+    return false;
+  }
+  if (!ALIAS_PATTERN.test(version)) {
+    return false;
+  }
   return true;
 }
 
 function resolveBootstrapPath(ctx, opts) {
-  if (opts.bootstrapPath) return opts.bootstrapPath;
+  if (opts.bootstrapPath) {
+    return opts.bootstrapPath;
+  }
   return `/mysticat/bootstrap/${ctx.func.name}`;
 }
 

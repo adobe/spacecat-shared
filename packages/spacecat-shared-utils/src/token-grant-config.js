@@ -90,9 +90,13 @@ export function getCurrentCycle(cycleFormat) {
  *   cycleFormat: string, currentCycle: string }|undefined}
  */
 export function getTokenGrantConfig(tokenType) {
-  if (!hasText(tokenType)) return undefined;
+  if (!hasText(tokenType)) {
+    return undefined;
+  }
   const entry = TOKEN_GRANT_CONFIG[tokenType];
-  if (!entry) return undefined;
+  if (!entry) {
+    return undefined;
+  }
   return { ...entry, currentCycle: getCurrentCycle(entry.cycleFormat) };
 }
 
@@ -105,9 +109,13 @@ export function getTokenGrantConfig(tokenType) {
  *   tokenType: string }|undefined}
  */
 export function getTokenGrantConfigByOpportunity(opportunityName) {
-  if (!hasText(opportunityName)) return undefined;
+  if (!hasText(opportunityName)) {
+    return undefined;
+  }
   const tokenType = getTokenTypeForOpportunity(opportunityName);
   const config = getTokenGrantConfig(tokenType);
-  if (!config) return undefined;
+  if (!config) {
+    return undefined;
+  }
   return { ...config, tokenType };
 }

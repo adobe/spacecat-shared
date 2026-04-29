@@ -172,7 +172,7 @@ class EntityRegistry {
 
   static getEntities() {
     return Object.keys(this.entities).reduce((acc, key) => {
-      acc[key] = this.entities[key].schema.toElectroDBSchema();
+      acc[key] = this.entities[key].schema.toSchema();
       return acc;
     }, {});
   }
@@ -186,7 +186,7 @@ class EntityRegistry {
   }
 }
 
-// Register ElectroDB-based entities only (Configuration is handled separately)
+// Register entities (Configuration is handled separately via S3)
 EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
 EntityRegistry.registerEntity(ContactSalesLeadSchema, ContactSalesLeadCollection);

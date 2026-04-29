@@ -345,6 +345,28 @@ export const configSchema = Joi.object({
       cdnProvider: Joi.string().optional(),
       region: Joi.string().pattern(AWS_REGION_PATTERN).optional(),
     }).optional(),
+    // Aligned with llmo-utils.js#CDN_TYPES in spacecat-api-service.
+    // Detector currently emits a 7-token subset of CDN_TYPES; the remaining
+    // three (`byocdn-cloudfront`, `ams-cloudfront`, `ams-frontdoor`) are
+    // valid CDN tokens the detector cannot yet identify from network signals
+    // and therefore collapses into `byocdn-other`. Listed here so the schema
+    // accepts them once detector revisions add AMS-aware signatures, without
+    // requiring a coupled shared-package release.
+    // `'other'` is retained for backward compatibility with records written
+    // by the original Phase-1-only detector and is no longer emitted.
+    detectedCdn: Joi.string().valid(
+      'aem-cs-fastly',
+      'commerce-fastly',
+      'byocdn-fastly',
+      'byocdn-akamai',
+      'byocdn-cloudfront',
+      'byocdn-cloudflare',
+      'byocdn-imperva',
+      'byocdn-other',
+      'ams-cloudfront',
+      'ams-frontdoor',
+      'other',
+    ).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
@@ -400,8 +422,12 @@ export const configSchema = Joi.object({
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
+  enableMoneyPageUrls: Joi.boolean().optional(),
   auditTargetURLs: Joi.object({
     manual: Joi.array().items(Joi.object({
+      url: Joi.string().uri().required(),
+    })).optional().default([]),
+    moneyPages: Joi.array().items(Joi.object({
       url: Joi.string().uri().required(),
     })).optional().default([]),
   }).options({ stripUnknown: true }).optional(),
@@ -511,11 +537,12 @@ export const Config = (data = {}) => {
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
   self.getLlmoCountryCodeIgnoreList = () => state?.llmo?.countryCodeIgnoreList;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
+  self.getLlmoDetectedCdn = () => state?.llmo?.detectedCdn ?? null;
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.getOnboardConfig = () => state?.onboardConfig;
   self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
-  const AUDIT_TARGET_SOURCES = ['manual'];
+  const AUDIT_TARGET_SOURCES = ['manual', 'moneyPages'];
   const auditTargetEntrySchema = Joi.object({
     url: Joi.string().uri().required(),
   });
@@ -526,11 +553,18 @@ export const Config = (data = {}) => {
     }
   };
 
+  self.isMoneyPageUrlsEnabled = () => state?.enableMoneyPageUrls ?? true;
+  self.setEnableMoneyPageUrls = (value) => {
+    state.enableMoneyPageUrls = value;
+  };
+
   self.getAuditTargetURLsConfig = () => state?.auditTargetURLs;
 
   self.getAuditTargetURLs = () => {
     const targets = state?.auditTargetURLs;
-    if (!targets) return [];
+    if (!targets) {
+      return [];
+    }
     return AUDIT_TARGET_SOURCES.flatMap(
       (source) => (targets[source] || []).map((entry) => ({ ...entry, source })),
     );
@@ -564,7 +598,9 @@ export const Config = (data = {}) => {
 
   self.removeAuditTargetURL = (source, url) => {
     validateAuditTargetSource(source);
-    if (!state.auditTargetURLs?.[source]) return;
+    if (!state.auditTargetURLs?.[source]) {
+      return;
+    }
     state.auditTargetURLs[source] = state.auditTargetURLs[source]
       .filter((t) => t.url !== url);
   };
@@ -702,7 +738,10 @@ export const Config = (data = {}) => {
 
   self.removeLlmoUrlPattern = (urlPattern) => {
     const urlPatterns = state.llmo?.urlPatterns;
-    if (!urlPatterns) return;
+    /* c8 ignore next 3 */
+    if (!urlPatterns) {
+      return;
+    }
 
     state.llmo.urlPatterns = urlPatterns.filter(
       (pattern) => pattern.urlPattern !== urlPattern,
@@ -724,6 +763,11 @@ export const Config = (data = {}) => {
     state.llmo.cdnBucketConfig = cdnBucketConfig;
   };
 
+  self.updateLlmoDetectedCdn = (detectedCdn) => {
+    state.llmo = state.llmo || {};
+    state.llmo.detectedCdn = detectedCdn;
+  };
+
   self.addLlmoTag = (tag) => {
     state.llmo = state.llmo || {};
     state.llmo.tags = state.llmo.tags || [];
@@ -733,7 +777,9 @@ export const Config = (data = {}) => {
   };
 
   self.removeLlmoTag = (tag) => {
-    if (!state.llmo?.tags) return;
+    if (!state.llmo?.tags) {
+      return;
+    }
     state.llmo.tags = state.llmo.tags.filter((t) => t !== tag);
   };
 
@@ -803,7 +849,10 @@ export const Config = (data = {}) => {
     const prior = state.brandProfile || {};
     // compute hash over all content except functional fields
     const stripFunctional = (p) => {
-      if (!isNonEmptyObject(p)) return {};
+      /* c8 ignore next 3 */
+      if (!isNonEmptyObject(p)) {
+        return {};
+      }
       const {
         /* eslint-disable no-unused-vars */
         version, updatedAt, contentHash, ...rest
@@ -861,7 +910,9 @@ export const Config = (data = {}) => {
   };
 
   self.disableImport = (type) => {
-    if (!state.imports) return;
+    if (!state.imports) {
+      return;
+    }
 
     state.imports = state.imports.map(
       (imp) => (imp.type === type ? { ...imp, enabled: false } : imp),
@@ -923,5 +974,6 @@ Config.toDynamoItem = (config) => ({
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
   onboardConfig: config.getOnboardConfig?.(),
   commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
+  enableMoneyPageUrls: config.isMoneyPageUrlsEnabled?.() === false ? false : undefined,
   auditTargetURLs: config.getAuditTargetURLsConfig?.(),
 });

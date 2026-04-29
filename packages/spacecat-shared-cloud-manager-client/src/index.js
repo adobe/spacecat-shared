@@ -12,7 +12,7 @@
 
 import { execFileSync } from 'child_process';
 import {
-  existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync,
+  existsSync, mkdirSync, mkdtempSync, readdirSync,
   readlinkSync, rmSync, statfsSync, writeFileSync,
 } from 'fs';
 import os from 'os';
@@ -25,7 +25,6 @@ import { archiveFolder, extract } from 'zip-lib';
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
 const PATCH_FILE_PREFIX = 'cm-patch-';
-const ZIP_DIR_PREFIX = 'cm-zip-';
 const GIT_OPERATION_TIMEOUT_MS = 120_000; // 120s — fail fast before Lambda timeout
 
 /**
@@ -341,6 +340,7 @@ export default class CloudManagerClient {
   /**
    * Recursively validates that all symlinks under rootDir point to targets
    * within rootDir. Throws if any symlink escapes the root boundary.
+   * Logs a warning for broken symlinks (target does not exist).
    * @param {string} dir - Directory to scan
    * @param {string} rootDir - The root boundary all symlink targets must stay within
    */
@@ -355,6 +355,9 @@ export default class CloudManagerClient {
           throw new Error(
             `Symlink escapes repository root: ${path.relative(rootDir, fullPath)} -> ${target}`,
           );
+        }
+        if (!existsSync(resolved)) {
+          this.log.warn(`Broken symlink: ${path.relative(rootDir, fullPath)} -> ${target} (target does not exist)`);
         }
       } else if (entry.isDirectory()) {
         this.#validateSymlinks(fullPath, rootDir);
@@ -373,21 +376,13 @@ export default class CloudManagerClient {
       throw new Error(`Clone path does not exist: ${clonePath}`);
     }
 
-    // zip-lib is path-based (not buffer-based like adm-zip), so we write to
-    // a temp file and read the result back into a Buffer for the caller.
-    const zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
-    const zipFile = path.join(zipDir, 'repo.zip');
-
     try {
       this.log.info(`Zipping repository at ${clonePath}`);
       this.#validateSymlinks(clonePath, clonePath);
-      await archiveFolder(clonePath, zipFile, { followSymlinks: false });
       this.#logTmpDiskUsage('zip');
-      return readFileSync(zipFile);
+      return await archiveFolder(clonePath, { followSymlinks: false });
     } catch (error) {
       throw new Error(`Failed to zip repository: ${error.message}`);
-    } finally /* c8 ignore next */ {
-      rmSync(zipDir, { recursive: true, force: true });
     }
   }
 
@@ -612,23 +607,14 @@ export default class CloudManagerClient {
    */
   async unzipRepository(zipBuffer) {
     const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
-    // zip-lib is path-based, so we write the buffer to a temp file for extraction.
-    // zipDir is created inside the try block to avoid leaking extractPath if it fails.
-    let zipDir;
     try {
-      zipDir = mkdtempSync(path.join(os.tmpdir(), ZIP_DIR_PREFIX));
-      const zipFile = path.join(zipDir, 'repo.zip');
-      writeFileSync(zipFile, zipBuffer);
-      await extract(zipFile, extractPath);
-      this.#validateSymlinks(extractPath, extractPath);
+      await extract(zipBuffer, extractPath, { safeSymlinksOnly: true });
       this.log.info(`Repository extracted to ${extractPath}`);
       this.#logTmpDiskUsage('unzip');
       return extractPath;
     } catch (error) {
       rmSync(extractPath, { recursive: true, force: true });
       throw new Error(`Failed to unzip repository: ${error.message}`);
-    } finally /* c8 ignore next */ {
-      if (zipDir) rmSync(zipDir, { recursive: true, force: true });
     }
   }
 

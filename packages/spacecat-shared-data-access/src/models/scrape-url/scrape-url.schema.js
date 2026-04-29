@@ -19,12 +19,6 @@ import ScrapeUrl from './scrape-url.model.js';
 import ScrapeUrlCollection from './scrape-url.collection.js';
 import { ScrapeJob } from '../scrape-job/index.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(ScrapeUrl, ScrapeUrlCollection)
   .withRecordExpiry(ScrapeUrl.SCRAPE_URL_EXPIRES_IN_DAYS)
   .addReference('belongs_to', 'ScrapeJob', ['status'])

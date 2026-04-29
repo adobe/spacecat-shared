@@ -65,7 +65,9 @@ export default class RUMAPIClient {
     const { env, log = console } = context;
     const { RUM_ADMIN_KEY: rumAdminKey } = env;
 
-    if (context.rumApiClient) return context.rumApiClient;
+    if (context.rumApiClient) {
+      return context.rumApiClient;
+    }
 
     const client = new RUMAPIClient({ rumAdminKey }, log);
     context.rumApiClient = client;
@@ -126,7 +128,9 @@ export default class RUMAPIClient {
   // eslint-disable-next-line class-methods-use-this
   async query(query, opts) {
     const { handler, checkpoints } = HANDLERS[query] || {};
-    if (!handler) throw new Error(`Unknown query ${query}`);
+    if (!handler) {
+      throw new Error(`Unknown query ${query}`);
+    }
 
     try {
       const domainkey = await this._getDomainkey(opts);
@@ -186,7 +190,9 @@ export default class RUMAPIClient {
 
   async queryStream(query, opts) {
     const { handler, checkpoints } = HANDLERS[query] || {};
-    if (!handler) throw new Error(`Unknown query ${query}`);
+    if (!handler) {
+      throw new Error(`Unknown query ${query}`);
+    }
 
     try {
       const domainkey = await this._getDomainkey(opts);

@@ -20,12 +20,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Experiment from './experiment.model.js';
 import ExperimentCollection from './experiment.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Experiment, ExperimentCollection)
   .addReference('belongs_to', 'Site', ['expId', 'url', 'updatedAt'])
   .addAttribute('conversionEventName', {

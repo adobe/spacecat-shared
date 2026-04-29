@@ -18,12 +18,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Opportunity from './opportunity.model.js';
 import OpportunityCollection from './opportunity.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addReference('belongs_to', 'Site', ['status', 'updatedAt'])
   .addReference('belongs_to', 'Audit', ['updatedAt'], { required: false })

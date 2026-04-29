@@ -74,14 +74,18 @@ export const guardAny = (propertyName, value, entityName, nullable = false) => {
  * @throws Will throw an error if the value is not a valid boolean.
  */
 export const guardBoolean = (propertyName, value, entityName, nullable = false) => {
-  if (checkNullable(value, nullable)) return;
+  if (checkNullable(value, nullable)) {
+    return;
+  }
   if (typeof value !== 'boolean') {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a boolean`);
   }
 };
 
 export const guardArray = (propertyName, value, entityName, type = 'string', nullable = false) => {
-  if (checkNullable(value, nullable)) return;
+  if (checkNullable(value, nullable)) {
+    return;
+  }
   if (!Array.isArray(value)) {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be an array`);
   }
@@ -100,7 +104,9 @@ export const guardArray = (propertyName, value, entityName, type = 'string', nul
  * @throws Will throw an error if the value is not a valid set (unique array) of a given type.
  */
 export const guardSet = (propertyName, value, entityName, type = 'string', nullable = false) => {
-  if (checkNullable(value, nullable)) return;
+  if (checkNullable(value, nullable)) {
+    return;
+  }
   if (!Array.isArray(value) || new Set(value).size !== value.length) {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a unique array (set)`);
   }
@@ -118,7 +124,9 @@ export const guardSet = (propertyName, value, entityName, type = 'string', nulla
  * @throws Will throw an error if the value is not a valid string.
  */
 export const guardString = (propertyName, value, entityName, nullable = false) => {
-  if (checkNullable(value, nullable)) return;
+  if (checkNullable(value, nullable)) {
+    return;
+  }
   if (!hasText(value)) {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} is required`);
   }
@@ -134,7 +142,9 @@ export const guardString = (propertyName, value, entityName, nullable = false) =
  * @throws Will throw an error if the value is not a valid enum value.
  */
 export const guardEnum = (propertyName, value, enumValues, entityName, nullable = false) => {
-  if (checkNullable(value, nullable)) return;
+  if (checkNullable(value, nullable)) {
+    return;
+  }
   if (!enumValues.includes(value)) {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be one of ${enumValues}`);
   }
@@ -149,7 +159,9 @@ export const guardEnum = (propertyName, value, enumValues, entityName, nullable 
  * @throws Will throw an error if the value is not a valid ID.
  */
 export const guardId = (propertyName, value, entityName, nullable = false) => {
-  if (checkNullable(value, nullable)) return;
+  if (checkNullable(value, nullable)) {
+    return;
+  }
   if (!isValidUUID(value)) {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a valid UUID`);
   }
@@ -164,7 +176,9 @@ export const guardId = (propertyName, value, entityName, nullable = false) => {
  * @throws Will throw an error if the value is not a valid map (object).
  */
 export const guardMap = (propertyName, value, entityName, nullable = false) => {
-  if (checkNullable(value, nullable)) return;
+  if (checkNullable(value, nullable)) {
+    return;
+  }
   if (!isObject(value)) {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be an object`);
   }
@@ -179,7 +193,9 @@ export const guardMap = (propertyName, value, entityName, nullable = false) => {
  * @throws Will throw an error if the value is not a valid number.
  */
 export const guardNumber = (propertyName, value, entityName, nullable = false) => {
-  if (checkNullable(value, nullable)) return;
+  if (checkNullable(value, nullable)) {
+    return;
+  }
   if (!isNumber(value)) {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a number`);
   }

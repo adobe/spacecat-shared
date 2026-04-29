@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect } from 'chai';
 import sinon from 'sinon';
 import CommercePageEnrichmentMapper from '../../src/mappers/commerce-page-enrichment-mapper.js';
@@ -20,11 +18,15 @@ import CommercePageEnrichmentMapper from '../../src/mappers/commerce-page-enrich
  * Recursively finds the first HAST element node matching a predicate.
  */
 function findNode(node, predicate) {
-  if (predicate(node)) return node;
+  if (predicate(node)) {
+    return node;
+  }
   if (node.children) {
     for (const child of node.children) {
       const found = findNode(child, predicate);
-      if (found) return found;
+      if (found) {
+        return found;
+      }
     }
   }
   return null;
@@ -35,7 +37,9 @@ function findNode(node, predicate) {
  */
 function findAllNodes(node, predicate) {
   const results = [];
-  if (predicate(node)) results.push(node);
+  if (predicate(node)) {
+    results.push(node);
+  }
   if (node.children) {
     for (const child of node.children) {
       results.push(...findAllNodes(child, predicate));
@@ -48,8 +52,12 @@ function findAllNodes(node, predicate) {
  * Extracts concatenated text content from a HAST subtree.
  */
 function textContent(node) {
-  if (node.type === 'text') return node.value;
-  if (node.children) return node.children.map(textContent).join('');
+  if (node.type === 'text') {
+    return node.value;
+  }
+  if (node.children) {
+    return node.children.map(textContent).join('');
+  }
   return '';
 }
 

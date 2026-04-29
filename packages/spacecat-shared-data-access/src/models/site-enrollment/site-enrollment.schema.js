@@ -14,12 +14,6 @@ import SchemaBuilder from '../base/schema.builder.js';
 import SiteEnrollment from './site-enrollment.model.js';
 import SiteEnrollmentCollection from './site-enrollment.collection.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(SiteEnrollment, SiteEnrollmentCollection)
   // Reference to Site (many-to-one relationship)
   .addReference('belongs_to', 'Site')

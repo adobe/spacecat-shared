@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-ims-client-v1.12.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.12.5...@adobe/spacecat-shared-ims-client-v1.12.6) (2026-04-10)
+
+### Bug Fixes
+
+* add method for fetching org scoped service principal token  ([#1526](https://github.com/adobe/spacecat-shared/issues/1526)) ([f1d742b](https://github.com/adobe/spacecat-shared/commit/f1d742b34f4fd9683999f1efc2acc50e9bfdb779))
+
+## [@adobe/spacecat-shared-ims-client-v1.12.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.12.4...@adobe/spacecat-shared-ims-client-v1.12.5) (2026-04-09)
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1503](https://github.com/adobe/spacecat-shared/issues/1503)) ([21d4d4b](https://github.com/adobe/spacecat-shared/commit/21d4d4b3cfa95ca7748ef4b65b04cace24768dfc))
+
 ## [@adobe/spacecat-shared-ims-client-v1.12.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.12.3...@adobe/spacecat-shared-ims-client-v1.12.4) (2026-04-06)
 
 ### Bug Fixes

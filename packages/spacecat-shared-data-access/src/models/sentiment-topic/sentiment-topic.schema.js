@@ -19,10 +19,6 @@ import SentimentTopic from './sentiment-topic.model.js';
 import SentimentTopicCollection from './sentiment-topic.collection.js';
 
 /*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
-
 Data Access Patterns:
 1. Get all topics for a site: allBySiteId(siteId)
 2. Get a specific topic: findById(siteId, topicId)

@@ -58,26 +58,34 @@ function renderList(items, cls) {
 }
 
 function renderValue(key, value, cls) {
-  if (value == null) return '';
+  if (value == null) {
+    return '';
+  }
 
   if (key === 'facts.facets.category_path' || key === 'category') {
     return `<p class="${cls}">${renderCategoryPath(value)}</p>`;
   }
 
   if (Array.isArray(value)) {
-    if (value.length === 0) return '';
+    if (value.length === 0) {
+      return '';
+    }
     return renderList(value, cls);
   }
 
   if (typeof value === 'object') {
     const entries = Object.entries(value).filter(([, v]) => v != null && v !== '');
-    if (entries.length === 0) return '';
+    if (entries.length === 0) {
+      return '';
+    }
     const items = entries.map(([k, v]) => `${escapeHtml(k)}: ${escapeHtml(String(v))}`);
     return renderList(items, cls);
   }
 
   const str = String(value);
-  if (!str) return '';
+  if (!str) {
+    return '';
+  }
   return `<p class="${cls}">${escapeHtml(str)}</p>`;
 }
 

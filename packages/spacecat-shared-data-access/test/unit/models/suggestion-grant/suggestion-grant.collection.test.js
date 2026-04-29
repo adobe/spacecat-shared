@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub, restore } from 'sinon';
@@ -317,7 +315,7 @@ describe('SuggestionGrantCollection', () => {
       instance.invokeGrantSuggestionsRpc.resolves({ data: null, error: rpcError });
 
       await expect(instance.grantSuggestions(suggestionIds, siteId, tokenType))
-        .to.be.rejectedWith(DataAccessError, 'Failed to grant suggestions (grant_suggestions)');
+        .to.be.rejectedWith(DataAccessError, 'Failed to grant suggestions (wrpc_grant_suggestions)');
       expect(mockLogger.error).to.have.been.calledWith('grantSuggestions: RPC failed', rpcError);
     });
 
@@ -397,7 +395,7 @@ describe('SuggestionGrantCollection', () => {
       instance.invokeRevokeSuggestionGrantRpc.resolves({ data: null, error: rpcError });
 
       await expect(instance.revokeSuggestionGrant(grantId))
-        .to.be.rejectedWith(DataAccessError, 'Failed to revoke suggestion grant (revoke_suggestion_grant)');
+        .to.be.rejectedWith(DataAccessError, 'Failed to revoke suggestion grant (wrpc_revoke_suggestion_grant)');
       expect(mockLogger.error).to.have.been.calledWith('revokeSuggestionGrant: RPC failed', rpcError);
     });
 
@@ -442,7 +440,7 @@ describe('SuggestionGrantCollection', () => {
 
       await instance.invokeRevokeSuggestionGrantRpc(grantId);
 
-      expect(rpcStub).to.have.been.calledOnceWith('revoke_suggestion_grant', {
+      expect(rpcStub).to.have.been.calledOnceWith('wrpc_revoke_suggestion_grant', {
         p_grant_id: grantId,
       });
     });
@@ -475,7 +473,7 @@ describe('SuggestionGrantCollection', () => {
 
       await instance.invokeGrantSuggestionsRpc(suggestionIds, siteId, tokenType, cycle);
 
-      expect(rpcStub).to.have.been.calledOnceWith('grant_suggestions', {
+      expect(rpcStub).to.have.been.calledOnceWith('wrpc_grant_suggestions', {
         p_suggestion_ids: suggestionIds,
         p_site_id: siteId,
         p_token_type: tokenType,

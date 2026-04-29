@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
@@ -98,6 +96,58 @@ describe('GeoExperimentCollection', () => {
 
       const callArgs = instance.allByIndexKeys.getCall(0).args;
       expect(callArgs[1]).to.deep.include({ limit: 10, cursor: 'abc', returnCursor: true });
+    });
+  });
+
+  describe('allActive', () => {
+    it('calls all() with a where filter for active statuses', async () => {
+      const mockExps = [{ getId: () => 'exp-1' }, { getId: () => 'exp-2' }];
+      instance.all = stub().resolves(mockExps);
+
+      const result = await instance.allActive();
+
+      expect(result).to.equal(mockExps);
+      expect(instance.all).to.have.been.calledOnce;
+
+      const [sortKeys, options] = instance.all.getCall(0).args;
+      expect(sortKeys).to.deep.equal({});
+      expect(options.where).to.be.a('function');
+    });
+
+    it('where function produces an in-expression for active statuses', async () => {
+      instance.all = stub().resolves([]);
+
+      await instance.allActive();
+
+      const [, options] = instance.all.getCall(0).args;
+      const attrs = new Proxy({}, { get: (_, prop) => prop });
+      const op = { in: (field, value) => ({ type: 'in', field, value }) };
+
+      const expr = options.where(attrs, op);
+      expect(expr).to.deep.equal({
+        type: 'in',
+        field: 'status',
+        value: ['GENERATING_BASELINE', 'IN_PROGRESS'],
+      });
+    });
+
+    it('passes through caller options merged with where', async () => {
+      instance.all = stub().resolves([]);
+
+      await instance.allActive({ limit: 5, order: 'asc' });
+
+      const [, options] = instance.all.getCall(0).args;
+      expect(options.limit).to.equal(5);
+      expect(options.order).to.equal('asc');
+      expect(options.where).to.be.a('function');
+    });
+
+    it('returns empty array when no active experiments exist', async () => {
+      instance.all = stub().resolves([]);
+
+      const result = await instance.allActive();
+
+      expect(result).to.deep.equal([]);
     });
   });
 });

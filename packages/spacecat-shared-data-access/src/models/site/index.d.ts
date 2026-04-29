@@ -44,6 +44,18 @@ export interface CodeConfig {
   s3StoragePath?: string;
 }
 
+export interface DeliveryConfig {
+  programId?: string;
+  environmentId?: string;
+  authorURL?: string;
+  siteId?: string;
+  tenantId?: string;
+  ipAllowlistExists?: boolean;
+  imsOrgId?: string;
+  contentSourcePath?: string;
+  [key: string]: unknown;
+}
+
 export type IMPORT_TYPES = {
   readonly ORGANIC_KEYWORDS: 'organic-keywords';
   readonly ORGANIC_TRAFFIC: 'organic-traffic';
@@ -99,7 +111,7 @@ export interface LlmoCustomerIntent {
   value: string;
 }
 
-export type AuditTargetSource = 'manual';
+export type AuditTargetSource = 'manual' | 'moneyPages';
 
 export interface AuditTargetEntry {
   url: string;
@@ -111,6 +123,7 @@ export interface AuditTargetEntryWithSource extends AuditTargetEntry {
 
 export interface AuditTargetURLs {
   manual?: AuditTargetEntry[];
+  moneyPages?: AuditTargetEntry[];
 }
 
 export interface SiteConfig {

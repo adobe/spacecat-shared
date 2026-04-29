@@ -57,16 +57,24 @@ function getClicked(bundle) {
   const latestClickEvent = bundle.events
     .filter((e) => e.checkpoint === 'click')
     .reduce((latest, current) => {
-      if (!latest || !latest.timeDelta) return current;
-      if (current?.timeDelta > latest.timeDelta) return current;
+      if (!latest || !latest.timeDelta) {
+        return current;
+      }
+      if (current?.timeDelta > latest.timeDelta) {
+        return current;
+      }
       return latest;
     }, null);
 
-  if (!latestClickEvent) return 0;
+  if (!latestClickEvent) {
+    return 0;
+  }
 
   const isConsentClick = !!utils.reclassifyConsent(latestClickEvent).vendor;
 
-  if (isConsentClick) return 0;
+  if (isConsentClick) {
+    return 0;
+  }
 
   return 1;
 }
@@ -78,14 +86,18 @@ function getConsent(bundle) {
 
   const consentClick = bundle.events.find((e) => e.checkpoint === 'click' && utils.reclassifyConsent(e).vendor);
 
-  if (!consentClick) return consentBannerStatus || null;
+  if (!consentClick) {
+    return consentBannerStatus || null;
+  }
 
   return utils.reclassifyConsent(consentClick).target;
 }
 
 function trafficType(bundle, memo) {
   const key = `${bundle.id}${bundle.url}${bundle.time}`;
-  if (memo[key]) return memo[key];
+  if (memo[key]) {
+    return memo[key];
+  }
 
   const type = classifyTraffic(bundle);
   // eslint-disable-next-line no-param-reassign

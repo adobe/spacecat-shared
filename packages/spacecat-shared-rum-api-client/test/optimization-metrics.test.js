@@ -18,8 +18,6 @@ import optimizationMetrics from '../src/functions/reports/optimization/metrics.j
 const filename = fileURLToPath(import.meta.url);
 const dirnamePath = dirname(filename);
 const bundlesForUrls = JSON.parse(readFileSync(join(dirnamePath, './fixtures/bundles.json'), 'utf8'));
-/* eslint-env mocha */
-
 describe('Optimization Report Metrics', () => {
   describe('handler', () => {
     it('should process real RUM bundles and return metrics', () => {

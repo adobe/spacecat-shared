@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-tier-client",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "Shared modules of the Spacecat Services - Tier Client",
   "type": "module",
   "engines": {
@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "@mysticat/data-service-types": "git+https://github.com/adobe/mysticat-data-service.git#types-ts-v1.44.0"
+    "@mysticat/data-service-types": "git+https://github.com/adobe/mysticat-data-service.git#types-ts-v1.53.0"
   },
   "devDependencies": {
     "c8": "11.0.0",

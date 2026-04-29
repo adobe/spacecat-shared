@@ -17,12 +17,6 @@ import FixEntity from './fix-entity.model.js';
 import FixEntityCollection from './fix-entity.collection.js';
 import Suggestion from '../suggestion/suggestion.model.js';
 
-/*
-Schema Doc: https://electrodb.dev/en/modeling/schema/
-Attribute Doc: https://electrodb.dev/en/modeling/attributes/
-Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
-
 const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
   .addReference('has_many', 'FixEntitySuggestion', ['updatedAt'], { removeDependents: true })
   .addReference('belongs_to', 'Opportunity', ['status'])

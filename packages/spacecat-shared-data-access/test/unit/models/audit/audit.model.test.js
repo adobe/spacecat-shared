@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-env mocha */
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon, { stub } from 'sinon';
@@ -222,6 +220,7 @@ describe('AuditModel', () => {
       COMMERCE_PRODUCT_CATALOG_ENRICHMENT_AUTO_FIX: 'commerce-product-catalog-enrichment-auto-fix',
       CWV_TRENDS_AUDIT: 'cwv-trends-audit',
       OFFSITE_BRAND_PRESENCE: 'offsite-brand-presence',
+      SEMANTIC_VALUE_VISIBILITY: 'semantic-value-visibility',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

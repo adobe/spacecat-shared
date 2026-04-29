@@ -12,9 +12,6 @@
 
 import { noCache, h1NoCache } from '@adobe/fetch';
 
-// Use @adobe/fetch for connection pooling instead of globalThis.fetch.
-// noCache() disables HTTP response caching (prevents stale Vault reads).
-// h1NoCache() in tests for nock compatibility; noCache() in production for HTTP/2 over HTTPS.
 const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1 ? h1NoCache() : noCache();
 
 const TOKEN_RENEW_BUFFER = 5 * 60 * 1000;
@@ -61,8 +58,12 @@ export default class VaultClient {
   }
 
   isAuthenticated() {
-    if (!this.#token) return false;
-    if (this.#tokenExpiry && Date.now() >= this.#tokenExpiry) return false;
+    if (!this.#token) {
+      return false;
+    }
+    if (this.#tokenExpiry && Date.now() >= this.#tokenExpiry) {
+      return false;
+    }
     return true;
   }
 
@@ -71,7 +72,7 @@ export default class VaultClient {
     try {
       response = await fetch(`${this.#vaultAddr}/v1/auth/approle/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
         body: JSON.stringify({ role_id: roleId, secret_id: secretId }),
       });
     } catch (err) {
@@ -96,7 +97,7 @@ export default class VaultClient {
     const url = `${this.#vaultAddr}/v1/${this.#mountPoint}/${path}`;
     return fetch(url, {
       method,
-      headers: { 'X-Vault-Token': this.#token },
+      headers: { 'X-Vault-Token': this.#token, 'Cache-Control': 'no-store' },
     });
   }
 
@@ -129,7 +130,9 @@ export default class VaultClient {
   }
 
   isTokenExpiringSoon() {
-    if (!this.isAuthenticated()) return false;
+    if (!this.isAuthenticated()) {
+      return false;
+    }
     return (this.#tokenExpiry - Date.now()) <= TOKEN_RENEW_BUFFER;
   }
 
@@ -137,7 +140,7 @@ export default class VaultClient {
     try {
       const response = await fetch(`${this.#vaultAddr}/v1/auth/token/renew-self`, {
         method: 'POST',
-        headers: { 'X-Vault-Token': this.#token },
+        headers: { 'X-Vault-Token': this.#token, 'Cache-Control': 'no-store' },
       });
       if (response.ok) {
         const body = await response.json();

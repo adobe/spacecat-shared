@@ -18,7 +18,7 @@ import TocMapper from './toc-mapper.js';
 import GenericMapper from './generic-mapper.js';
 import PrerenderMapper from './prerender-mapper.js';
 import CommercePageEnrichmentMapper from './commerce-page-enrichment-mapper.js';
-import SemanticValueVisibilityMapper from './semantic-value-visibility-mapper.js';
+import ImageEnrichmentMapper from './image-enrichment-mapper.js';
 
 /**
  * Registry for opportunity mappers
@@ -45,7 +45,7 @@ export default class MapperRegistry {
       GenericMapper,
       PrerenderMapper,
       CommercePageEnrichmentMapper,
-      SemanticValueVisibilityMapper,
+      ImageEnrichmentMapper,
     ];
 
     defaultMappers.forEach((MapperClass) => {

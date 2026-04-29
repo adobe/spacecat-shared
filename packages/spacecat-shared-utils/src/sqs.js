@@ -57,9 +57,16 @@ class SQS {
    * @param {object} message - The message body to send.
    *   Can include traceId for propagation or set to null to opt-out.
    * @param {string} messageGroupId - (Optional) The message group ID for FIFO queues.
+   * @param {string} messageDeduplicationId - (Optional) The deduplication ID for FIFO
+   *   queues that have content-based deduplication disabled. Ignored on standard queues.
    * @return {Promise<void>}
    */
-  async sendMessage(queueUrl, message, messageGroupId = undefined) {
+  async sendMessage(
+    queueUrl,
+    message,
+    messageGroupId = undefined,
+    messageDeduplicationId = undefined,
+  ) {
     const body = {
       ...message,
       timestamp: new Date().toISOString(),
@@ -87,9 +94,14 @@ class SQS {
       QueueUrl: queueUrl,
     };
 
-    // Only include MessageGroupId if the queue is a FIFO queue
-    if (SQS.#isFifoQueue(queueUrl) && hasText(messageGroupId)) {
-      params.MessageGroupId = messageGroupId;
+    // Only include FIFO-specific attributes if the queue is a FIFO queue
+    if (SQS.#isFifoQueue(queueUrl)) {
+      if (hasText(messageGroupId)) {
+        params.MessageGroupId = messageGroupId;
+      }
+      if (hasText(messageDeduplicationId)) {
+        params.MessageDeduplicationId = messageDeduplicationId;
+      }
     }
 
     const msgCommand = new SendMessageCommand(params);

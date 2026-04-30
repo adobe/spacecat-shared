@@ -15,6 +15,7 @@ import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 import fs from 'fs';
 import { importPKCS8, SignJWT } from 'jose';
+import esmock from 'esmock';
 
 import publicJwk from '../../fixtures/auth/ims/public-jwks.js';
 import AdobeImsHandler from '../../../src/auth/handlers/ims.js';
@@ -56,6 +57,7 @@ describe('AdobeImsHandler', () => {
     logStub = {
       debug: sinon.stub(),
       info: sinon.stub(),
+      warn: sinon.stub(),
       error: sinon.stub(),
     };
 
@@ -399,6 +401,200 @@ describe('AdobeImsHandler', () => {
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
       expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
+    });
+  });
+
+  describe('read-only org feature flag gate', () => {
+    let ldClient;
+
+    beforeEach(async () => {
+      ldClient = {
+        isFlagEnabledForIMSOrg: sinon.stub().resolves(true),
+      };
+
+      const { default: MockedImsHandler } = await esmock('../../../src/auth/handlers/ims.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: {
+            createFrom: sinon.stub().returns(ldClient),
+          },
+        },
+      });
+      handler = new MockedImsHandler(logStub);
+
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'user@adobe.com',
+      });
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: { ident: 'org-ro-1' },
+        orgName: 'RO Test Org',
+        groups: [],
+      }]);
+    });
+
+    it('returns null when FF is enabled for the org', async () => {
+      const token = await createToken({
+        user_id: 'user@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.null;
+      expect(logStub.warn.calledWithMatch('read-only org')).to.be.true;
+      expect(logStub.debug.calledWithMatch('Failed to validate token: Unauthorized')).to.be.true;
+      expect(ldClient.isFlagEnabledForIMSOrg.calledOnce).to.be.true;
+      const [flagKey, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
+      expect(flagKey).to.equal('FT_LLMO-3008');
+      expect(imsOrgId).to.equal('org-ro-1@AdobeOrg');
+    });
+
+    it('returns null for ASO admin when org FF is enabled', async () => {
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: { ident: '8C6043F15F43B6390A49401A' },
+        groups: [{ ident: 635541219 }],
+      }]);
+      const token = await createToken({
+        user_id: 'admin@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.null;
+      expect(logStub.warn.calledWithMatch('read-only org')).to.be.true;
+    });
+
+    it('returns null for non-adobe user when org FF is enabled', async () => {
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'user@customer.com',
+      });
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: { ident: 'org-ro-1' },
+        orgName: 'RO Test Org',
+        groups: [],
+      }]);
+      const token = await createToken({
+        user_id: 'user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.null;
+      expect(logStub.warn.calledWithMatch('read-only org')).to.be.true;
+    });
+
+    it('proceeds normally when FF is disabled', async () => {
+      ldClient.isFlagEnabledForIMSOrg.resolves(false);
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: { ident: 'org-1' },
+        orgName: 'Normal Org',
+        groups: [],
+      }]);
+      const token = await createToken({
+        user_id: 'user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+      mockImsClient.getImsUserProfile.resolves({ email: 'user@customer.com' });
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+
+    it('proceeds normally when createFrom returns null (fail-open)', async () => {
+      const { default: NullLdHandler } = await esmock('../../../src/auth/handlers/ims.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: {
+            createFrom: sinon.stub().returns(null),
+          },
+        },
+      });
+      handler = new NullLdHandler(logStub);
+      const token = await createToken({
+        user_id: 'user@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+
+    it('proceeds normally when createFrom throws (fail-open)', async () => {
+      const { default: ThrowLdHandler } = await esmock('../../../src/auth/handlers/ims.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: {
+            createFrom: sinon.stub().throws(new Error('SDK key missing')),
+          },
+        },
+      });
+      handler = new ThrowLdHandler(logStub);
+      const token = await createToken({
+        user_id: 'user@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+
+    it('proceeds normally when isFlagEnabledForIMSOrg throws (fail-open)', async () => {
+      ldClient.isFlagEnabledForIMSOrg.rejects(new Error('LD unavailable'));
+      const token = await createToken({
+        user_id: 'user@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+
+    it('proceeds normally when org has no ident', async () => {
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: {},
+        orgName: 'No-Ident Org',
+        groups: [],
+      }]);
+      const token = await createToken({
+        user_id: 'user@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
     });
   });
 });

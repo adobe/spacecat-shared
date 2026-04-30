@@ -318,6 +318,54 @@ describe('SQS', () => {
       expect(firstSendArg.input.MessageGroupId).to.be.undefined;
     });
 
+    it('should include a MessageDeduplicationId when the queue is a FIFO queue', async () => {
+      const action = wrap(async (req, ctx) => {
+        await ctx.sqs.sendMessage(
+          'fifo-queue.fifo',
+          { key: 'value' },
+          'job-id',
+          'dedup-id',
+        );
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      expect(firstSendArg.input.MessageGroupId).to.equal('job-id');
+      expect(firstSendArg.input.MessageDeduplicationId).to.equal('dedup-id');
+    });
+
+    it('should not include a MessageDeduplicationId on a standard queue', async () => {
+      const action = wrap(async (req, ctx) => {
+        // Note: no .fifo suffix
+        await ctx.sqs.sendMessage(
+          'standard-queue',
+          { key: 'value' },
+          'job-id',
+          'dedup-id',
+        );
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      expect(firstSendArg.input.MessageDeduplicationId).to.be.undefined;
+    });
+
+    it('should accept messageGroupId without messageDeduplicationId on FIFO', async () => {
+      // Backwards-compatible: callers who only pass groupId still work, no
+      // MessageDeduplicationId is set (caller relies on content-based dedup).
+      const action = wrap(async (req, ctx) => {
+        await ctx.sqs.sendMessage('fifo-queue.fifo', { key: 'value' }, 'job-id');
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      expect(firstSendArg.input.MessageGroupId).to.equal('job-id');
+      expect(firstSendArg.input.MessageDeduplicationId).to.be.undefined;
+    });
+
     it('should include traceId in message when explicitly provided', async () => {
       const action = wrap(async (req, ctx) => {
         await ctx.sqs.sendMessage('https://sqs.mock-region-1.mockaws.com/123456789012/test-queue', { key: 'value', traceId: '1-explicit-traceid' });

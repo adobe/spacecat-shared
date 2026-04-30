@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, getTokenGrantConfig } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyArray, getTokenGrantConfig } from '@adobe/spacecat-shared-utils';
 
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
@@ -65,6 +65,37 @@ class TokenCollection extends BaseCollection {
       total,
       used: 0,
     });
+  }
+
+  /**
+   * Finds Tokens for the given siteId and cycle in a single PostgREST query,
+   * optionally filtered to a subset of tokenTypes. Backed by the
+   * (site_id, cycle) index, so the wildcard form (no tokenTypes) is also a
+   * range scan rather than a table scan.
+   *
+   * @param {string} siteId - Site ID (UUID).
+   * @param {string[]|null} [tokenTypes] - Optional non-empty array of token
+   *   type strings. When omitted, returns all token types for the cycle.
+   * @param {string} cycle - Cycle string (e.g. '2025-03').
+   * @param {Object} [options={}] - Query options forwarded to the underlying query.
+   * @returns {Promise<import('./token.model.js').default[]>} Array of Token instances.
+   */
+  async allBySiteIdAndTokenTypesAndCycle(siteId, tokenTypes, cycle, options = {}) {
+    if (!hasText(siteId)) {
+      throw new DataAccessError('TokenCollection.allBySiteIdAndTokenTypesAndCycle: siteId is required');
+    }
+    if (!hasText(cycle)) {
+      throw new DataAccessError('TokenCollection.allBySiteIdAndTokenTypesAndCycle: cycle is required');
+    }
+    const hasTypeFilter = tokenTypes != null;
+    if (hasTypeFilter && (!isNonEmptyArray(tokenTypes) || !tokenTypes.every(hasText))) {
+      throw new DataAccessError('TokenCollection.allBySiteIdAndTokenTypesAndCycle: tokenTypes must be a non-empty array of strings when provided');
+    }
+    const queryOptions = { ...options };
+    if (hasTypeFilter) {
+      queryOptions.where = (attrs, op) => op.in(attrs.tokenType, tokenTypes);
+    }
+    return this.all({ siteId, cycle }, queryOptions);
   }
 }
 

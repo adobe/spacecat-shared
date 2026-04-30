@@ -41,6 +41,7 @@ describe('llmo-strategy utilities', () => {
     strategies: [
       {
         id: 'strat-1',
+        type: 'evolving',
         name: 'Q1 Optimization',
         status: 'in_progress',
         url: '/strategies/q1-optimization',
@@ -55,6 +56,7 @@ describe('llmo-strategy utilities', () => {
             assignee: 'user@example.com',
           },
         ],
+        baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
       },
     ],
   };
@@ -217,6 +219,7 @@ describe('llmo-strategy utilities', () => {
         strategies: [
           {
             id: 'strat-2',
+            type: 'evolving',
             name: 'Multi-URL Strategy',
             status: 'planning',
             url: ['/strategies/url-a', '/strategies/url-b'],
@@ -233,6 +236,7 @@ describe('llmo-strategy utilities', () => {
                 assignee: 'user@example.com',
               },
             ],
+            baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
           },
         ],
       };

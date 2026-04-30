@@ -47,6 +47,10 @@ describe('strategyWorkspaceData', () => {
             assignee: 'user@example.com',
           },
         ],
+        // Evolving strategies (the default type) require a non-empty baselinePrompts array
+        baselinePrompts: [
+          { prompt: 'best photo editor', regions: ['us'] },
+        ],
       },
     ],
   };
@@ -111,6 +115,7 @@ describe('strategyWorkspaceData', () => {
               assignee: 'user@example.com',
             },
           ],
+          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
         },
       ],
     };
@@ -542,6 +547,324 @@ describe('strategyWorkspaceData', () => {
 
       const result = strategyWorkspaceData.safeParse(data);
       expect(result.success).false;
+    });
+  });
+
+  describe('strategy type discriminator', () => {
+    it('defaults type to "evolving" when missing (backward compat)', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-1',
+          name: 'Existing strategy without type field',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].type).equal('evolving');
+      }
+    });
+
+    it('accepts type "atomic"', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-2',
+          type: 'atomic',
+          experimentId: '550e8400-e29b-41d4-a716-446655440000',
+          name: 'Atomic strategy',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].type).equal('atomic');
+      }
+    });
+
+    it('rejects unknown type values', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-3',
+          type: 'something-else',
+          name: 'Bad type',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).false;
+    });
+
+    it('accepts a valid UUID experimentId', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-4',
+          type: 'evolving',
+          experimentId: '550e8400-e29b-41d4-a716-446655440000',
+          name: 'Strategy with experiment',
+          status: 'completed',
+          completedAt: '2025-02-01T00:00:00Z',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+    });
+
+    it('accepts null experimentId on Evolving (no opt-in yet)', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-5',
+          type: 'evolving',
+          experimentId: null,
+          name: 'Evolving without opt-in',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+    });
+
+    it('rejects non-UUID experimentId', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-6',
+          type: 'evolving',
+          experimentId: 'not-a-uuid',
+          name: 'Bad experiment id',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).false;
+    });
+
+    it('accepts baselinePrompts array on Evolving', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-7',
+          type: 'evolving',
+          name: 'With baseline prompts',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+          baselinePrompts: [
+            { prompt: 'best photo editor', regions: ['us', 'uk'] },
+            { prompt: 'photo editing software', regions: ['us'] },
+          ],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].baselinePrompts).length(2);
+      }
+    });
+  });
+
+  describe('strategy type invariants (superRefine)', () => {
+    it('rejects Atomic without experimentId', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-bad-1',
+          type: 'atomic',
+          // experimentId missing
+          name: 'Bad atomic',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).false;
+      if (!result.success) {
+        expect(result.error.issues.some(
+          (i) => i.message.includes('Atomic strategies require a non-null experimentId'),
+        )).true;
+      }
+    });
+
+    it('rejects Atomic with null experimentId', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-bad-2',
+          type: 'atomic',
+          experimentId: null,
+          name: 'Atomic with null exp',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).false;
+    });
+
+    it('rejects Atomic with non-empty baselinePrompts', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-bad-3',
+          type: 'atomic',
+          experimentId: '550e8400-e29b-41d4-a716-446655440000',
+          baselinePrompts: [{ prompt: 'x', regions: ['us'] }],
+          name: 'Atomic with baseline prompts',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).false;
+      if (!result.success) {
+        expect(result.error.issues.some(
+          (i) => i.message.includes('must not carry baselinePrompts'),
+        )).true;
+      }
+    });
+
+    it('accepts Atomic with empty baselinePrompts array (treated as none)', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-edge-1',
+          type: 'atomic',
+          experimentId: '550e8400-e29b-41d4-a716-446655440000',
+          baselinePrompts: [],
+          name: 'Atomic with empty baseline prompts',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+    });
+
+    it('rejects Evolving without baselinePrompts', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-bad-4',
+          type: 'evolving',
+          // baselinePrompts missing
+          name: 'Evolving without baseline',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).false;
+      if (!result.success) {
+        expect(result.error.issues.some(
+          (i) => i.message.includes('Evolving strategies require a non-empty baselinePrompts'),
+        )).true;
+      }
+    });
+
+    it('rejects Evolving with empty baselinePrompts array', () => {
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-bad-5',
+          type: 'evolving',
+          baselinePrompts: [],
+          name: 'Evolving with empty baseline',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).false;
+    });
+
+    it('accepts Evolving with default type (no type field) and baselinePrompts', () => {
+      // Backward-compat path: existing strategies will lack `type`, default kicks in to 'evolving'.
+      // The Evolving invariant fires regardless of whether `type` was provided or defaulted, so
+      // backward-compat consumers must include baselinePrompts (or be migrated to do so).
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-existing',
+          // type defaults to 'evolving'
+          name: 'Pre-GA strategy',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+          baselinePrompts: [{ prompt: 'p', regions: ['us'] }], // explicit
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
     });
   });
 });

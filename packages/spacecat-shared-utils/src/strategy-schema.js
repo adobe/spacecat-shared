@@ -38,6 +38,10 @@ const strategyGoalType = z.union([
   z.string(), // Catchall for future goal types
 ]);
 
+// Discriminator between Atomic (experiment-driven) and Evolving (iterative) strategies.
+// Existing pre-GA strategies have no `type` field and default to 'evolving' for backward compat.
+const strategyType = z.enum(['atomic', 'evolving']);
+
 /**
  * Library opportunity - user-created reusable opportunity template
  */
@@ -76,6 +80,7 @@ const strategyPromptSelection = z.object({
  */
 const strategy = z.object({
   id: nonEmptyString,
+  type: strategyType.default('evolving'),
   name: nonEmptyString,
   status: workflowStatus,
   url: z.union([z.string(), z.array(z.string())]),
@@ -90,6 +95,8 @@ const strategy = z.object({
   createdBy: z.string().optional(), // Email of strategy creator/owner
   completedAt: z.string().optional(), // ISO 8601 date string
   goalType: strategyGoalType.optional(),
+  experimentId: z.uuid().nullable().optional(),
+  baselinePrompts: z.array(strategyPromptSelection).optional(),
 });
 
 /**
@@ -137,5 +144,35 @@ export const strategyWorkspaceData = z.object({
         });
       }
     });
+  });
+
+  // Validate type-based invariants (Atomic vs Evolving)
+  strategies.forEach((strat, strategyIndex) => {
+    // Atomic must have a non-null experimentId
+    if (strat.type === 'atomic' && (strat.experimentId === undefined || strat.experimentId === null)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['strategies', strategyIndex, 'experimentId'],
+        message: 'Atomic strategies require a non-null experimentId',
+      });
+    }
+
+    // Atomic must not carry baselinePrompts (those come from GeoExperiment)
+    if (strat.type === 'atomic' && Array.isArray(strat.baselinePrompts) && strat.baselinePrompts.length > 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['strategies', strategyIndex, 'baselinePrompts'],
+        message: 'Atomic strategies must not carry baselinePrompts (use GeoExperiment.promptsLocation)',
+      });
+    }
+
+    // Evolving must have a non-empty baselinePrompts array
+    if (strat.type === 'evolving' && (!Array.isArray(strat.baselinePrompts) || strat.baselinePrompts.length === 0)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['strategies', strategyIndex, 'baselinePrompts'],
+        message: 'Evolving strategies require a non-empty baselinePrompts array',
+      });
+    }
   });
 });

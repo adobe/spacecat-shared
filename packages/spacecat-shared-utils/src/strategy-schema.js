@@ -166,12 +166,16 @@ export const strategyWorkspaceData = z.object({
       });
     }
 
-    // Evolving must have a non-empty baselinePrompts array
-    if (strat.type === 'evolving' && (!Array.isArray(strat.baselinePrompts) || strat.baselinePrompts.length === 0)) {
+    // Evolving: if baselinePrompts is provided, it must be non-empty.
+    // Soft rule by design — does NOT require the field to be present, so
+    // pre-GA strategies (which lack baselinePrompts) parse cleanly. The
+    // "newly-created Evolving strategies must include baselinePrompts" rule
+    // is enforced at the API layer in saveStrategy (see PR C2).
+    if (strat.type === 'evolving' && Array.isArray(strat.baselinePrompts) && strat.baselinePrompts.length === 0) {
       ctx.addIssue({
         code: 'custom',
         path: ['strategies', strategyIndex, 'baselinePrompts'],
-        message: 'Evolving strategies require a non-empty baselinePrompts array',
+        message: 'Evolving strategies must not have an empty baselinePrompts array (omit the field if not yet set)',
       });
     }
   });

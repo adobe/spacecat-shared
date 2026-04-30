@@ -799,14 +799,18 @@ describe('strategyWorkspaceData', () => {
       expect(result.success).true;
     });
 
-    it('rejects Evolving without baselinePrompts', () => {
+    it('accepts Evolving without baselinePrompts (backward-compat for legacy data)', () => {
+      // Schema invariant is intentionally soft: pre-GA strategies in S3 lack
+      // baselinePrompts and must parse cleanly. The "must have baselinePrompts
+      // on creation" rule is enforced at the API layer in saveStrategy (PR C2),
+      // not in the schema.
       const data = {
         opportunities: [],
         strategies: [{
-          id: 'strat-bad-4',
+          id: 'strat-legacy-1',
           type: 'evolving',
-          // baselinePrompts missing
-          name: 'Evolving without baseline',
+          // baselinePrompts missing — legacy/pre-GA shape
+          name: 'Legacy Evolving strategy',
           status: 'in_progress',
           url: '/x',
           description: '',
@@ -816,15 +820,12 @@ describe('strategyWorkspaceData', () => {
         }],
       };
       const result = strategyWorkspaceData.safeParse(data);
-      expect(result.success).false;
-      if (!result.success) {
-        expect(result.error.issues.some(
-          (i) => i.message.includes('Evolving strategies require a non-empty baselinePrompts'),
-        )).true;
-      }
+      expect(result.success).true;
     });
 
     it('rejects Evolving with empty baselinePrompts array', () => {
+      // Field present but empty is malformed — distinguishable from "field
+      // absent" which is legacy-tolerated.
       const data = {
         opportunities: [],
         strategies: [{
@@ -842,12 +843,17 @@ describe('strategyWorkspaceData', () => {
       };
       const result = strategyWorkspaceData.safeParse(data);
       expect(result.success).false;
+      if (!result.success) {
+        expect(result.error.issues.some(
+          (i) => i.message.includes('must not have an empty baselinePrompts array'),
+        )).true;
+      }
     });
 
     it('accepts Evolving with default type (no type field) and baselinePrompts', () => {
-      // Backward-compat path: existing strategies will lack `type`, default kicks in to 'evolving'.
-      // The Evolving invariant fires regardless of whether `type` was provided or defaulted, so
-      // backward-compat consumers must include baselinePrompts (or be migrated to do so).
+      // Backward-compat path: existing strategies lack `type`, default kicks
+      // in to 'evolving'. With the soft invariant, baselinePrompts can also be
+      // absent and the strategy still parses.
       const data = {
         opportunities: [],
         strategies: [{
@@ -865,6 +871,30 @@ describe('strategyWorkspaceData', () => {
       };
       const result = strategyWorkspaceData.safeParse(data);
       expect(result.success).true;
+    });
+
+    it('accepts Evolving with default type and no baselinePrompts (true legacy shape)', () => {
+      // The actual shape of pre-GA strategies in S3 — no `type`, no
+      // `baselinePrompts`. The schema must accept this.
+      const data = {
+        opportunities: [],
+        strategies: [{
+          id: 'strat-true-legacy',
+          name: 'True pre-GA strategy',
+          status: 'in_progress',
+          url: '/x',
+          description: '',
+          topic: 'T',
+          createdAt: '2025-01-01T00:00:00Z',
+          opportunities: [],
+        }],
+      };
+      const result = strategyWorkspaceData.safeParse(data);
+      expect(result.success).true;
+      if (result.success) {
+        expect(result.data.strategies[0].type).equal('evolving');
+        expect(result.data.strategies[0].baselinePrompts).undefined;
+      }
     });
   });
 });

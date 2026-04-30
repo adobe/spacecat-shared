@@ -56,7 +56,7 @@ describe('llmo-strategy utilities', () => {
             assignee: 'user@example.com',
           },
         ],
-        baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+        selectedPrompts: [{ prompt: 'p', regions: ['us'] }],
       },
     ],
   };
@@ -236,7 +236,7 @@ describe('llmo-strategy utilities', () => {
                 assignee: 'user@example.com',
               },
             ],
-            baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+            selectedPrompts: [{ prompt: 'p', regions: ['us'] }],
           },
         ],
       };

@@ -47,8 +47,8 @@ describe('strategyWorkspaceData', () => {
             assignee: 'user@example.com',
           },
         ],
-        // Evolving strategies (the default type) require a non-empty baselinePrompts array
-        baselinePrompts: [
+        // Evolving strategies (the default type) require a non-empty selectedPrompts array
+        selectedPrompts: [
           { prompt: 'best photo editor', regions: ['us'] },
         ],
       },
@@ -115,7 +115,7 @@ describe('strategyWorkspaceData', () => {
               assignee: 'user@example.com',
             },
           ],
-          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+          selectedPrompts: [{ prompt: 'p', regions: ['us'] }],
         },
       ],
     };
@@ -563,7 +563,7 @@ describe('strategyWorkspaceData', () => {
           topic: 'T',
           createdAt: '2025-01-01T00:00:00Z',
           opportunities: [],
-          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+          selectedPrompts: [{ prompt: 'p', regions: ['us'] }],
         }],
       };
       const result = strategyWorkspaceData.safeParse(data);
@@ -630,7 +630,7 @@ describe('strategyWorkspaceData', () => {
           topic: 'T',
           createdAt: '2025-01-01T00:00:00Z',
           opportunities: [],
-          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+          selectedPrompts: [{ prompt: 'p', regions: ['us'] }],
         }],
       };
       const result = strategyWorkspaceData.safeParse(data);
@@ -651,7 +651,7 @@ describe('strategyWorkspaceData', () => {
           topic: 'T',
           createdAt: '2025-01-01T00:00:00Z',
           opportunities: [],
-          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+          selectedPrompts: [{ prompt: 'p', regions: ['us'] }],
         }],
       };
       const result = strategyWorkspaceData.safeParse(data);
@@ -672,14 +672,14 @@ describe('strategyWorkspaceData', () => {
           topic: 'T',
           createdAt: '2025-01-01T00:00:00Z',
           opportunities: [],
-          baselinePrompts: [{ prompt: 'p', regions: ['us'] }],
+          selectedPrompts: [{ prompt: 'p', regions: ['us'] }],
         }],
       };
       const result = strategyWorkspaceData.safeParse(data);
       expect(result.success).false;
     });
 
-    it('accepts baselinePrompts array on Evolving', () => {
+    it('accepts selectedPrompts array on Evolving', () => {
       const data = {
         opportunities: [],
         strategies: [{
@@ -692,7 +692,7 @@ describe('strategyWorkspaceData', () => {
           topic: 'T',
           createdAt: '2025-01-01T00:00:00Z',
           opportunities: [],
-          baselinePrompts: [
+          selectedPrompts: [
             { prompt: 'best photo editor', regions: ['us', 'uk'] },
             { prompt: 'photo editing software', regions: ['us'] },
           ],
@@ -701,7 +701,7 @@ describe('strategyWorkspaceData', () => {
       const result = strategyWorkspaceData.safeParse(data);
       expect(result.success).true;
       if (result.success) {
-        expect(result.data.strategies[0].baselinePrompts).length(2);
+        expect(result.data.strategies[0].selectedPrompts).length(2);
       }
     });
   });
@@ -752,14 +752,14 @@ describe('strategyWorkspaceData', () => {
       expect(result.success).false;
     });
 
-    it('rejects Atomic with non-empty baselinePrompts', () => {
+    it('rejects Atomic with non-empty selectedPrompts', () => {
       const data = {
         opportunities: [],
         strategies: [{
           id: 'strat-bad-3',
           type: 'atomic',
           experimentId: '550e8400-e29b-41d4-a716-446655440000',
-          baselinePrompts: [{ prompt: 'x', regions: ['us'] }],
+          selectedPrompts: [{ prompt: 'x', regions: ['us'] }],
           name: 'Atomic with baseline prompts',
           status: 'in_progress',
           url: '/x',
@@ -773,19 +773,19 @@ describe('strategyWorkspaceData', () => {
       expect(result.success).false;
       if (!result.success) {
         expect(result.error.issues.some(
-          (i) => i.message.includes('must not carry baselinePrompts'),
+          (i) => i.message.includes('must not carry selectedPrompts'),
         )).true;
       }
     });
 
-    it('accepts Atomic with empty baselinePrompts array (treated as none)', () => {
+    it('accepts Atomic with empty selectedPrompts array (treated as none)', () => {
       const data = {
         opportunities: [],
         strategies: [{
           id: 'strat-edge-1',
           type: 'atomic',
           experimentId: '550e8400-e29b-41d4-a716-446655440000',
-          baselinePrompts: [],
+          selectedPrompts: [],
           name: 'Atomic with empty baseline prompts',
           status: 'in_progress',
           url: '/x',
@@ -799,9 +799,9 @@ describe('strategyWorkspaceData', () => {
       expect(result.success).true;
     });
 
-    it('accepts Evolving without baselinePrompts (backward-compat for legacy data)', () => {
+    it('accepts Evolving without selectedPrompts (backward-compat for legacy data)', () => {
       // Schema invariant is intentionally soft: pre-GA strategies in S3 lack
-      // baselinePrompts and must parse cleanly. The "must have baselinePrompts
+      // selectedPrompts and must parse cleanly. The "must have selectedPrompts
       // on creation" rule is enforced at the API layer in saveStrategy (PR C2),
       // not in the schema.
       const data = {
@@ -809,7 +809,7 @@ describe('strategyWorkspaceData', () => {
         strategies: [{
           id: 'strat-legacy-1',
           type: 'evolving',
-          // baselinePrompts missing — legacy/pre-GA shape
+          // selectedPrompts missing — legacy/pre-GA shape
           name: 'Legacy Evolving strategy',
           status: 'in_progress',
           url: '/x',
@@ -823,7 +823,7 @@ describe('strategyWorkspaceData', () => {
       expect(result.success).true;
     });
 
-    it('rejects Evolving with empty baselinePrompts array', () => {
+    it('rejects Evolving with empty selectedPrompts array', () => {
       // Field present but empty is malformed — distinguishable from "field
       // absent" which is legacy-tolerated.
       const data = {
@@ -831,7 +831,7 @@ describe('strategyWorkspaceData', () => {
         strategies: [{
           id: 'strat-bad-5',
           type: 'evolving',
-          baselinePrompts: [],
+          selectedPrompts: [],
           name: 'Evolving with empty baseline',
           status: 'in_progress',
           url: '/x',
@@ -845,14 +845,14 @@ describe('strategyWorkspaceData', () => {
       expect(result.success).false;
       if (!result.success) {
         expect(result.error.issues.some(
-          (i) => i.message.includes('must not have an empty baselinePrompts array'),
+          (i) => i.message.includes('must not have an empty selectedPrompts array'),
         )).true;
       }
     });
 
-    it('accepts Evolving with default type (no type field) and baselinePrompts', () => {
+    it('accepts Evolving with default type (no type field) and selectedPrompts', () => {
       // Backward-compat path: existing strategies lack `type`, default kicks
-      // in to 'evolving'. With the soft invariant, baselinePrompts can also be
+      // in to 'evolving'. With the soft invariant, selectedPrompts can also be
       // absent and the strategy still parses.
       const data = {
         opportunities: [],
@@ -866,16 +866,16 @@ describe('strategyWorkspaceData', () => {
           topic: 'T',
           createdAt: '2025-01-01T00:00:00Z',
           opportunities: [],
-          baselinePrompts: [{ prompt: 'p', regions: ['us'] }], // explicit
+          selectedPrompts: [{ prompt: 'p', regions: ['us'] }], // explicit
         }],
       };
       const result = strategyWorkspaceData.safeParse(data);
       expect(result.success).true;
     });
 
-    it('accepts Evolving with default type and no baselinePrompts (true legacy shape)', () => {
+    it('accepts Evolving with default type and no selectedPrompts (true legacy shape)', () => {
       // The actual shape of pre-GA strategies in S3 — no `type`, no
-      // `baselinePrompts`. The schema must accept this.
+      // `selectedPrompts`. The schema must accept this.
       const data = {
         opportunities: [],
         strategies: [{
@@ -893,7 +893,7 @@ describe('strategyWorkspaceData', () => {
       expect(result.success).true;
       if (result.success) {
         expect(result.data.strategies[0].type).equal('evolving');
-        expect(result.data.strategies[0].baselinePrompts).undefined;
+        expect(result.data.strategies[0].selectedPrompts).undefined;
       }
     });
   });

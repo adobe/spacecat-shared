@@ -96,7 +96,6 @@ const strategy = z.object({
   completedAt: z.string().optional(), // ISO 8601 date string
   goalType: strategyGoalType.optional(),
   experimentId: z.uuid().nullable().optional(),
-  baselinePrompts: z.array(strategyPromptSelection).optional(),
 });
 
 /**
@@ -157,25 +156,25 @@ export const strategyWorkspaceData = z.object({
       });
     }
 
-    // Atomic must not carry baselinePrompts (those come from GeoExperiment)
-    if (strat.type === 'atomic' && Array.isArray(strat.baselinePrompts) && strat.baselinePrompts.length > 0) {
+    // Atomic must not carry selectedPrompts (those come from GeoExperiment)
+    if (strat.type === 'atomic' && Array.isArray(strat.selectedPrompts) && strat.selectedPrompts.length > 0) {
       ctx.addIssue({
         code: 'custom',
-        path: ['strategies', strategyIndex, 'baselinePrompts'],
-        message: 'Atomic strategies must not carry baselinePrompts (use GeoExperiment.promptsLocation)',
+        path: ['strategies', strategyIndex, 'selectedPrompts'],
+        message: 'Atomic strategies must not carry selectedPrompts (use GeoExperiment.promptsLocation)',
       });
     }
 
-    // Evolving: if baselinePrompts is provided, it must be non-empty.
+    // Evolving: if selectedPrompts is provided, it must be non-empty.
     // Soft rule by design — does NOT require the field to be present, so
-    // pre-GA strategies (which lack baselinePrompts) parse cleanly. The
-    // "newly-created Evolving strategies must include baselinePrompts" rule
+    // pre-GA strategies (which lack selectedPrompts) parse cleanly. The
+    // "newly-created Evolving strategies must include selectedPrompts" rule
     // is enforced at the API layer in saveStrategy (see PR C2).
-    if (strat.type === 'evolving' && Array.isArray(strat.baselinePrompts) && strat.baselinePrompts.length === 0) {
+    if (strat.type === 'evolving' && Array.isArray(strat.selectedPrompts) && strat.selectedPrompts.length === 0) {
       ctx.addIssue({
         code: 'custom',
-        path: ['strategies', strategyIndex, 'baselinePrompts'],
-        message: 'Evolving strategies must not have an empty baselinePrompts array (omit the field if not yet set)',
+        path: ['strategies', strategyIndex, 'selectedPrompts'],
+        message: 'Evolving strategies must not have an empty selectedPrompts array (omit the field if not yet set)',
       });
     }
   });

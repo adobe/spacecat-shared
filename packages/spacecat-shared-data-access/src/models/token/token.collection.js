@@ -68,34 +68,41 @@ class TokenCollection extends BaseCollection {
   }
 
   /**
-   * Finds Tokens for the given siteId and cycle in a single PostgREST query,
-   * optionally filtered to a subset of tokenTypes. Backed by the
-   * (site_id, cycle) index, so the wildcard form (no tokenTypes) is also a
-   * range scan rather than a table scan.
+   * Finds Tokens for the given siteId, optionally narrowed by tokenTypes and/or
+   * cycle. Issued as a single PostgREST query; all combinations are index-backed:
+   *   - siteId + cycle           → (site_id, cycle) index
+   *   - siteId + cycle + types   → (site_id, cycle) index + IN filter
+   *   - siteId + types           → (site_id, token_type, cycle) unique index prefix
+   *   - siteId only              → (site_id, …) prefix scan
    *
    * @param {string} siteId - Site ID (UUID).
-   * @param {string[]|null} [tokenTypes] - Optional non-empty array of token
-   *   type strings. When omitted, returns all token types for the cycle.
-   * @param {string} cycle - Cycle string (e.g. '2025-03').
-   * @param {Object} [options={}] - Query options forwarded to the underlying query.
+   * @param {Object} [options={}] - Query and filter options.
+   * @param {string[]} [options.tokenTypes] - Optional non-empty array of token
+   *   type strings. When omitted, returns rows for all token types.
+   * @param {string} [options.cycle] - Optional cycle string (e.g. '2025-03').
+   *   When omitted, returns rows for all cycles.
    * @returns {Promise<import('./token.model.js').default[]>} Array of Token instances.
    */
-  async allBySiteIdAndTokenTypesAndCycle(siteId, tokenTypes, cycle, options = {}) {
+  async allBySiteId(siteId, options = {}) {
     if (!hasText(siteId)) {
-      throw new DataAccessError('TokenCollection.allBySiteIdAndTokenTypesAndCycle: siteId is required');
+      throw new DataAccessError('TokenCollection.allBySiteId: siteId is required');
     }
-    if (!hasText(cycle)) {
-      throw new DataAccessError('TokenCollection.allBySiteIdAndTokenTypesAndCycle: cycle is required');
-    }
+    const { tokenTypes, cycle, ...queryOptions } = options;
     const hasTypeFilter = tokenTypes != null;
     if (hasTypeFilter && (!isNonEmptyArray(tokenTypes) || !tokenTypes.every(hasText))) {
-      throw new DataAccessError('TokenCollection.allBySiteIdAndTokenTypesAndCycle: tokenTypes must be a non-empty array of strings when provided');
+      throw new DataAccessError('TokenCollection.allBySiteId: tokenTypes must be a non-empty array of strings when provided');
     }
-    const queryOptions = { ...options };
+    if (cycle != null && !hasText(cycle)) {
+      throw new DataAccessError('TokenCollection.allBySiteId: cycle must be a non-empty string when provided');
+    }
+    const keys = { siteId };
+    if (hasText(cycle)) {
+      keys.cycle = cycle;
+    }
     if (hasTypeFilter) {
       queryOptions.where = (attrs, op) => op.in(attrs.tokenType, tokenTypes);
     }
-    return this.all({ siteId, cycle }, queryOptions);
+    return this.all(keys, queryOptions);
   }
 }
 

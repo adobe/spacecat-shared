@@ -180,27 +180,22 @@ describe('TokenCollection', () => {
     });
   });
 
-  describe('allBySiteIdAndTokenTypesAndCycle', () => {
-    it('issues a single query with siteId + cycle eq filters and tokenType IN clause', async () => {
+  describe('allBySiteId', () => {
+    it('queries by siteId + cycle with a tokenType IN filter when both provided', async () => {
       const tokenA = { ...model, tokenType: 'monthly_suggestion_cwv' };
       const tokenB = { ...model, tokenType: 'monthly_suggestion_lcp' };
       instance.all = stub().resolves([tokenA, tokenB]);
 
       const tokenTypes = ['monthly_suggestion_cwv', 'monthly_suggestion_lcp'];
-      const result = await instance.allBySiteIdAndTokenTypesAndCycle(
-        'site-1',
-        tokenTypes,
-        '2025-03',
-      );
+      const result = await instance.allBySiteId('site-1', { tokenTypes, cycle: '2025-03' });
 
       expect(result).to.deep.equal([tokenA, tokenB]);
       expect(instance.all).to.have.been.calledOnce;
-      const [keys, options] = instance.all.firstCall.args;
+      const [keys, opts] = instance.all.firstCall.args;
       expect(keys).to.deep.equal({ siteId: 'site-1', cycle: '2025-03' });
-      expect(options.where).to.be.a('function');
+      expect(opts.where).to.be.a('function');
 
-      // Verify the where function builds an `in` expression on tokenType.
-      const captured = options.where(
+      const captured = opts.where(
         new Proxy({}, { get: (_, prop) => String(prop) }),
         { in: (field, value) => ({ type: 'in', field, value }) },
       );
@@ -211,72 +206,79 @@ describe('TokenCollection', () => {
       });
     });
 
-    it('forwards extra options (e.g. limit) to all()', async () => {
-      instance.all = stub().resolves([]);
-
-      await instance.allBySiteIdAndTokenTypesAndCycle(
-        'site-1',
-        ['monthly_suggestion_cwv'],
-        '2025-03',
-        { limit: 10 },
-      );
-
-      expect(instance.all.firstCall.args[1].limit).to.equal(10);
-    });
-
-    it('returns empty array when no rows match', async () => {
-      instance.all = stub().resolves([]);
-
-      const result = await instance.allBySiteIdAndTokenTypesAndCycle(
-        'site-1',
-        ['monthly_suggestion_cwv'],
-        '2025-03',
-      );
-
-      expect(result).to.deep.equal([]);
-    });
-
-    it('throws when siteId is missing', async () => {
-      await expect(
-        instance.allBySiteIdAndTokenTypesAndCycle('', ['monthly_suggestion_cwv'], '2025-03'),
-      ).to.be.rejectedWith(/siteId is required/);
-    });
-
-    it('omits the where clause when tokenTypes is undefined (wildcard cycle query)', async () => {
+    it('queries by siteId + cycle only when tokenTypes is omitted', async () => {
       instance.all = stub().resolves([model]);
 
-      const result = await instance.allBySiteIdAndTokenTypesAndCycle('site-1', undefined, '2025-03');
+      await instance.allBySiteId('site-1', { cycle: '2025-03' });
 
-      expect(result).to.deep.equal([model]);
       const [keys, opts] = instance.all.firstCall.args;
       expect(keys).to.deep.equal({ siteId: 'site-1', cycle: '2025-03' });
       expect(opts.where).to.be.undefined;
     });
 
-    it('omits the where clause when tokenTypes is null', async () => {
+    it('queries by siteId + tokenType IN filter when cycle is omitted', async () => {
+      instance.all = stub().resolves([model]);
+
+      await instance.allBySiteId('site-1', { tokenTypes: ['monthly_suggestion_cwv'] });
+
+      const [keys, opts] = instance.all.firstCall.args;
+      expect(keys).to.deep.equal({ siteId: 'site-1' });
+      expect(opts.where).to.be.a('function');
+    });
+
+    it('queries by siteId only when no filters are provided', async () => {
+      instance.all = stub().resolves([model]);
+
+      await instance.allBySiteId('site-1');
+
+      const [keys, opts] = instance.all.firstCall.args;
+      expect(keys).to.deep.equal({ siteId: 'site-1' });
+      expect(opts.where).to.be.undefined;
+    });
+
+    it('forwards extra options (e.g. limit) to all() and excludes filter keys', async () => {
       instance.all = stub().resolves([]);
 
-      await instance.allBySiteIdAndTokenTypesAndCycle('site-1', null, '2025-03');
+      await instance.allBySiteId('site-1', {
+        tokenTypes: ['monthly_suggestion_cwv'],
+        cycle: '2025-03',
+        limit: 10,
+      });
 
-      expect(instance.all.firstCall.args[1].where).to.be.undefined;
+      const opts = instance.all.firstCall.args[1];
+      expect(opts.limit).to.equal(10);
+      expect(opts).to.not.have.property('tokenTypes');
+      expect(opts).to.not.have.property('cycle');
+    });
+
+    it('returns empty array when no rows match', async () => {
+      instance.all = stub().resolves([]);
+
+      const result = await instance.allBySiteId('site-1', { cycle: '2099-12' });
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('throws when siteId is missing', async () => {
+      await expect(instance.allBySiteId('')).to.be.rejectedWith(/siteId is required/);
     });
 
     it('throws when tokenTypes is provided but not a non-empty array of strings', async () => {
       await expect(
-        instance.allBySiteIdAndTokenTypesAndCycle('site-1', [], '2025-03'),
+        instance.allBySiteId('site-1', { tokenTypes: [] }),
       ).to.be.rejectedWith(/tokenTypes must be a non-empty array of strings when provided/);
       await expect(
-        instance.allBySiteIdAndTokenTypesAndCycle('site-1', 'monthly_suggestion_cwv', '2025-03'),
+        instance.allBySiteId('site-1', { tokenTypes: 'monthly_suggestion_cwv' }),
       ).to.be.rejectedWith(/tokenTypes must be a non-empty array of strings when provided/);
       await expect(
-        instance.allBySiteIdAndTokenTypesAndCycle('site-1', ['monthly_suggestion_cwv', ''], '2025-03'),
+        instance.allBySiteId('site-1', { tokenTypes: ['monthly_suggestion_cwv', ''] }),
       ).to.be.rejectedWith(/tokenTypes must be a non-empty array of strings when provided/);
     });
 
-    it('throws when cycle is missing', async () => {
+    it('throws when cycle is provided but empty', async () => {
       await expect(
-        instance.allBySiteIdAndTokenTypesAndCycle('site-1', ['monthly_suggestion_cwv'], ''),
-      ).to.be.rejectedWith(/cycle is required/);
+        instance.allBySiteId('site-1', { cycle: '' }),
+      ).to.be.rejectedWith(/cycle must be a non-empty string when provided/);
     });
   });
 

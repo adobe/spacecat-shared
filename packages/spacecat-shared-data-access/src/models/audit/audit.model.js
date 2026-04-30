@@ -96,6 +96,8 @@ class Audit extends BaseModel {
     CWV_TRENDS_AUDIT: 'cwv-trends-audit',
     OFFSITE_BRAND_PRESENCE: 'offsite-brand-presence',
     IMAGE_ENRICHMENT: 'image-enrichment',
+    // @deprecated use IMAGE_ENRICHMENT — remove after producer cutover
+    SEMANTIC_VALUE_VISIBILITY: 'image-enrichment',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

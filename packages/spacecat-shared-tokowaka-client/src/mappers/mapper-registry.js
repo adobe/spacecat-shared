@@ -52,6 +52,12 @@ export default class MapperRegistry {
       const mapper = new MapperClass(this.log);
       this.registerMapper(mapper);
     });
+
+    // Deprecated alias — remove after mystique PR 1704 producer cutover
+    const imageEnrichmentInstance = this.mappers.get('image-enrichment');
+    if (imageEnrichmentInstance) {
+      this.mappers.set('semantic-value-visibility', imageEnrichmentInstance);
+    }
   }
 
   /**

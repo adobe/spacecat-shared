@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.25.2...@adobe/spacecat-shared-http-utils-v1.26.0) (2026-04-30)
+
+### Features
+
+* http utils read only org ims gate ([#1469](https://github.com/adobe/spacecat-shared/issues/1469)) ([f708d67](https://github.com/adobe/spacecat-shared/commit/f708d670a376a495bd5927accf0f76a14a697988))
+
 ## [@adobe/spacecat-shared-http-utils-v1.25.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.25.1...@adobe/spacecat-shared-http-utils-v1.25.2) (2026-04-04)
 
 ### Bug Fixes

@@ -51,7 +51,7 @@ class Consumer extends BaseModel {
     return super.save();
   }
 
-  static CAPABILITIES = ['read', 'write', 'delete'];
+  static CAPABILITIES = ['read', 'write', 'delete', 'readAll'];
 
   static IMS_ORG_ID_REGEX = /^[a-z0-9]{24}@AdobeOrg$/i;
 

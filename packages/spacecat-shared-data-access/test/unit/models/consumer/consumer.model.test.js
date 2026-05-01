@@ -62,7 +62,7 @@ describe('ConsumerModel', () => {
     });
 
     it('has CAPABILITIES', () => {
-      expect(Consumer.CAPABILITIES).to.deep.equal(['read', 'write', 'delete']);
+      expect(Consumer.CAPABILITIES).to.deep.equal(['read', 'write', 'delete', 'readAll']);
     });
 
     it('has TECHNICAL_ACCOUNT_ID_REGEX', () => {

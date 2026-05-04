@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.114.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.113.0...@adobe/spacecat-shared-utils-v1.114.0) (2026-05-04)
+
+### Features
+
+* **llmo-config:** fail-closed writeConfig validation (SITES-43238) ([#1574](https://github.com/adobe/spacecat-shared/issues/1574)) ([a177743](https://github.com/adobe/spacecat-shared/commit/a177743a7def37dd3fabb026241d0e0ea9e9bac3))
+
 ## [@adobe/spacecat-shared-utils-v1.113.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.5...@adobe/spacecat-shared-utils-v1.113.0) (2026-04-29)
 
 ### Features

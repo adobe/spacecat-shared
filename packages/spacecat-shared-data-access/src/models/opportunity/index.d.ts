@@ -35,6 +35,10 @@ export interface Opportunity extends BaseModel {
   getTags(): string[];
   getTitle(): string;
   getType(): string;
+  getScopeId(): string | null;
+  getScopeType(): string | null;
+  setScopeId(scopeId: string): Opportunity;
+  setScopeType(scopeType: string): Opportunity;
   setAuditId(auditId: string): Opportunity;
   setData(data: object): Opportunity;
   setDescription(description: string): Opportunity;
@@ -49,6 +53,7 @@ export interface Opportunity extends BaseModel {
 }
 
 export interface OpportunityCollection extends BaseCollection<Opportunity> {
+  allByScopeId(scopeType: string, scopeId: string): Promise<Opportunity[]>;
   allByAuditId(auditId: string): Promise<Opportunity[]>;
   allByAuditIdAndUpdatedAt(auditId: string, updatedAt: string): Promise<Opportunity[]>;
   allBySiteId(siteId: string): Promise<Opportunity[]>;

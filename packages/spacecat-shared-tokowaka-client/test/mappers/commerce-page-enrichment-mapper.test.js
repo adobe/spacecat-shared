@@ -660,6 +660,146 @@ describe('CommercePageEnrichmentMapper', () => {
       expect(wrapper.properties.dataSku).to.be.undefined;
     });
 
+    it('should wrap each qualifying array field in a <section> with derived <h3>', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'BigOne_1935',
+          'facts.attributes.color_family': ['Black', 'Blue'],
+          'facts.attributes.fabric': ['Velvet'],
+          'facts.attributes.fabric_type': ['Charcoal Wombat Phur'],
+          'facts.options': ['Cover', 'Insert'],
+          'facts.configurations': ['BigOne Insert & Cover'],
+        }),
+        url: 'https://www.lovesac.com/products/bigone',
+      });
+
+      const patches = mapper.suggestionsToPatches('/products/bigone', [suggestion], opportunityId);
+      const article = findNode(patches[0].value, (n) => n.tagName === 'article');
+
+      const sections = findAllNodes(article, (n) => n.tagName === 'section');
+      expect(sections).to.have.length(5);
+
+      const expected = [
+        { cls: 'color-family', label: 'Color family' },
+        { cls: 'fabric', label: 'Fabric' },
+        { cls: 'fabric-type', label: 'Fabric type' },
+        { cls: 'facts-options', label: 'Options' },
+        { cls: 'facts-configurations', label: 'Configurations' },
+      ];
+      for (const { cls, label } of expected) {
+        const section = sections.find((s) => s.properties?.className?.includes(cls));
+        expect(section, `section.${cls}`).to.exist;
+
+        const h3 = findNode(section, (n) => n.tagName === 'h3');
+        expect(h3, `h3 in section.${cls}`).to.exist;
+        expect(h3.properties.className).to.include(cls);
+        expect(textContent(h3)).to.equal(label);
+
+        const ul = findNode(section, (n) => n.tagName === 'ul');
+        expect(ul, `ul in section.${cls}`).to.exist;
+        expect(ul.properties.className).to.include(cls);
+      }
+    });
+
+    it('should place <h3> immediately before <ul> inside the <section>', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          'facts.attributes.fabric': ['Velvet', 'Phur'],
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const section = findNode(patches[0].value, (n) => n.tagName === 'section'
+        && n.properties?.className?.includes('fabric'));
+      expect(section).to.exist;
+
+      const elementChildren = section.children.filter((c) => c.type === 'element');
+      expect(elementChildren).to.have.length(2);
+      expect(elementChildren[0].tagName).to.equal('h3');
+      expect(elementChildren[1].tagName).to.equal('ul');
+    });
+
+    it('should NOT wrap excluded array keys (facts.feature_bullets, facts.description_plain)', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          'facts.feature_bullets': ['Bullet one', 'Bullet two'],
+          'facts.description_plain': 'A plain description.',
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const article = findNode(patches[0].value, (n) => n.tagName === 'article');
+
+      expect(findAllNodes(article, (n) => n.tagName === 'section')).to.have.length(0);
+      expect(findAllNodes(article, (n) => n.tagName === 'h3')).to.have.length(0);
+
+      const ul = findNode(article, (n) => n.tagName === 'ul'
+        && n.properties?.className?.includes('facts-feature-bullets'));
+      expect(ul).to.exist;
+    });
+
+    it('should NOT wrap empty arrays in a <section>', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          'facts.attributes.fabric': [],
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const article = findNode(patches[0].value, (n) => n.tagName === 'article');
+
+      expect(findAllNodes(article, (n) => n.tagName === 'section')).to.have.length(0);
+      expect(findAllNodes(article, (n) => n.tagName === 'h3')).to.have.length(0);
+      expect(findAllNodes(article, (n) => n.tagName === 'ul'
+        && n.properties?.className?.includes('fabric'))).to.have.length(0);
+    });
+
+    it('should NOT wrap non-array values (string, object) in a <section>', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          brand: 'Lovesac',
+          custom_attrs: { color: 'Blue', size: 'L' },
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const article = findNode(patches[0].value, (n) => n.tagName === 'article');
+
+      expect(findAllNodes(article, (n) => n.tagName === 'section')).to.have.length(0);
+      expect(findAllNodes(article, (n) => n.tagName === 'h3')).to.have.length(0);
+
+      const brandP = findNode(article, (n) => n.tagName === 'p'
+        && n.properties?.className?.includes('brand'));
+      expect(brandP).to.exist;
+
+      const customUl = findNode(article, (n) => n.tagName === 'ul'
+        && n.properties?.className?.includes('custom-attrs'));
+      expect(customUl).to.exist;
+    });
+
+    it('should derive heading labels with only the first character uppercased', () => {
+      const suggestion = makeSuggestion({
+        patchValue: JSON.stringify({
+          sku: 'TEST',
+          'facts.attributes.fabric_type': ['Wombat Phur'],
+        }),
+        url: 'https://example.com/page',
+      });
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], opportunityId);
+      const h3 = findNode(patches[0].value, (n) => n.tagName === 'h3');
+      expect(h3).to.exist;
+      expect(textContent(h3)).to.equal('Fabric type');
+    });
+
     it('should use ordered fields priority (category_path over category)', () => {
       const suggestion = makeSuggestion({
         patchValue: JSON.stringify({

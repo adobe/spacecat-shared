@@ -128,6 +128,24 @@ describe('resolveCustomerSecretsName', () => {
     const hyphenPath = resolveCustomerSecretsName('https://nba.com/us-kings', ctx);
     expect(slashPath).to.not.equal(hyphenPath);
   });
+
+  it('normalizes percent-encoded path segments', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/k%C3%B6nig', ctx))
+      .to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com__k_nig/1.0.0');
+  });
+
+  it('case-folds path segments so /Kings and /kings resolve to the same key', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/Kings', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com/kings', ctx));
+  });
+
+  it('handles double slashes in paths correctly', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com//kings', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com/kings', ctx));
+  });
 });
 
 describe('generateCSVFile', () => {

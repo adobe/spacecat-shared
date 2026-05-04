@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.13.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.4...@adobe/spacecat-shared-tokowaka-client-v1.13.5) (2026-05-04)
+
+### Bug Fixes
+
+* **deps:** update dependency uuid to v14 [security] ([#1555](https://github.com/adobe/spacecat-shared/issues/1555)) ([9c1fdda](https://github.com/adobe/spacecat-shared/commit/9c1fddab68014d16a6b5cc53965a08303345ed79))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.13.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.3...@adobe/spacecat-shared-tokowaka-client-v1.13.4) (2026-04-15)
 
 ### Bug Fixes

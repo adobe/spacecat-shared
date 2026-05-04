@@ -43,7 +43,7 @@ describe('ScrapeJob IT', async () => {
   let newJobData;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(30000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

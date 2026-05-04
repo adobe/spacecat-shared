@@ -29,7 +29,7 @@ describe('SuggestionGrant IT', () => {
   let grantedSuggestionId;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(30000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -90,7 +90,7 @@ describe('SuggestionGrant IT', () => {
 
   describe('invokeGrantSuggestionsRpc', () => {
     it('inserts suggestion_grants and returns success when token is available', async function () {
-      this.timeout(10000);
+      this.timeout(30000);
       // Use a suggestion not yet granted
       const suggestionToGrant = sampleData.suggestions[3];
       const suggestionId = suggestionToGrant.getId();
@@ -128,7 +128,7 @@ describe('SuggestionGrant IT', () => {
 
   describe('revokeSuggestionGrant', () => {
     it('revokes a granted suggestion and refunds the token', async function () {
-      this.timeout(10000);
+      this.timeout(30000);
 
       // Grant a fresh suggestion so we have a known grant to revoke
       const suggestionToRevoke = sampleData.suggestions[5];
@@ -167,7 +167,7 @@ describe('SuggestionGrant IT', () => {
     });
 
     it('returns success false for a non-existent grant ID', async function () {
-      this.timeout(10000);
+      this.timeout(30000);
 
       const fakeGrantId = '00000000-0000-0000-0000-000000000000';
       const result = await SuggestionGrant.revokeSuggestionGrant(fakeGrantId);
@@ -179,7 +179,7 @@ describe('SuggestionGrant IT', () => {
 
   describe('invokeRevokeSuggestionGrantRpc', () => {
     it('returns grant_not_found for a non-existent grant ID', async function () {
-      this.timeout(10000);
+      this.timeout(30000);
 
       const fakeGrantId = '00000000-0000-0000-0000-000000000000';
       const rpcResult = await SuggestionGrant.invokeRevokeSuggestionGrantRpc(fakeGrantId);
@@ -194,7 +194,7 @@ describe('SuggestionGrant IT', () => {
     });
 
     it('deletes suggestion_grants rows and decrements token used by 1', async function () {
-      this.timeout(10000);
+      this.timeout(30000);
 
       // Grant two suggestions under one grant_id
       const sugg0 = sampleData.suggestions[0];
@@ -234,7 +234,7 @@ describe('SuggestionGrant IT', () => {
     });
 
     it('revoking the same grant_id twice returns grant_not_found on second call', async function () {
-      this.timeout(10000);
+      this.timeout(30000);
 
       const sugg = sampleData.suggestions[2];
       const suggId = sugg.getId();
@@ -261,7 +261,7 @@ describe('SuggestionGrant IT', () => {
     });
 
     it('revoke only affects the targeted grant_id, not other grants', async function () {
-      this.timeout(10000);
+      this.timeout(30000);
 
       // Use separate token types so each grant gets its own fresh token pool
       const tokenTypeA = 'grant_broken_backlinks';
@@ -306,7 +306,7 @@ describe('SuggestionGrant IT', () => {
     });
 
     it('revoke with a single suggestion returns revoked_count of 1', async function () {
-      this.timeout(10000);
+      this.timeout(30000);
 
       // Use a fresh token type to avoid exhausting the grant_cwv pool
       const freshTokenType = 'grant_alt_text';

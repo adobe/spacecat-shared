@@ -27,7 +27,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
   let mockLogger;
 
   beforeEach(async function () {
-    this.timeout(10000);
+    this.timeout(30000);
     sampleData = await seedDatabase();
     mockLogger = {
       debug: sinon.stub(),

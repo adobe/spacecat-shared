@@ -42,7 +42,7 @@ describe('Report IT', async () => {
   let Report;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(30000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

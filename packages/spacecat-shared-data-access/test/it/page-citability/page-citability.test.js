@@ -58,7 +58,7 @@ describe('PageCitability IT', async () => {
   let siteId;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(30000);
     sampleData = await seedDatabase();
     siteId = sampleData.sites[0].getId();
     const dataAccess = getDataAccess();

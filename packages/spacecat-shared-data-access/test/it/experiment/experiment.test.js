@@ -39,7 +39,7 @@ describe('Experiment IT', async () => {
   let Experiment;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(30000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

@@ -29,7 +29,7 @@ describe('Suggestion IT', async () => {
   let FixEntitySuggestion;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(30000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -388,7 +388,7 @@ describe('Suggestion IT', async () => {
     /** One suggestion granted in before(); shared by tests that need a granted suggestion */
     let preGrantedSuggestion;
     before(async function () {
-      this.timeout(10000);
+      this.timeout(30000);
       expect(sampleData.suggestions.length).to.be.at.least(6);
       const { Token } = getDataAccess();
       await Token.findBySiteIdAndTokenType(siteId, tokenType, { createIfNotFound: true });

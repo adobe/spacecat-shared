@@ -24,6 +24,7 @@ import {
   customerConfigV2Path,
   readCustomerConfigV2,
   writeCustomerConfigV2,
+  LlmoConfigValidationError,
 } from '../src/llmo-config.js';
 
 use(sinonChai);
@@ -199,6 +200,50 @@ describe('llmo-config utilities', () => {
       s3Client.send.resolves({});
 
       await expect(writeConfig(siteId, validConfig, s3Client)).rejectedWith('Failed to get version ID after writing LLMO config');
+    });
+
+    it('throws LlmoConfigValidationError when category region is invalid', async () => {
+      const invalidConfig = {
+        ...validConfig,
+        categories: {
+          '00000000-0000-0000-0000-000000000001': { name: 'brand', region: 'en-us' },
+        },
+      };
+
+      await expect(writeConfig(siteId, invalidConfig, s3Client))
+        .rejectedWith(LlmoConfigValidationError);
+      expect(s3Client.send).not.called;
+    });
+
+    it('throws LlmoConfigValidationError when a required field is missing', async () => {
+      const invalidConfig = { ...validConfig };
+      delete invalidConfig.entities;
+
+      await expect(writeConfig(siteId, invalidConfig, s3Client))
+        .rejectedWith(LlmoConfigValidationError);
+      expect(s3Client.send).not.called;
+    });
+
+    it('LlmoConfigValidationError carries siteId, name, and Zod issues', async () => {
+      const invalidConfig = {
+        ...validConfig,
+        categories: {
+          '00000000-0000-0000-0000-000000000001': { name: 'brand', region: 'en-us' },
+        },
+      };
+
+      let caught;
+      try {
+        await writeConfig(siteId, invalidConfig, s3Client);
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(caught).instanceOf(LlmoConfigValidationError);
+      expect(caught.name).equals('LlmoConfigValidationError');
+      expect(caught.siteId).equals(siteId);
+      expect(caught.issues).to.be.an('array').with.length.greaterThan(0);
+      expect(caught.message).to.include(siteId);
     });
   });
 

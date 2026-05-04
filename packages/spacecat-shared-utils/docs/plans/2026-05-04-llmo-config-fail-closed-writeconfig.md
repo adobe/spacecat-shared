@@ -46,36 +46,28 @@ All paths below are relative to `packages/spacecat-shared-utils/` unless stated 
 
 ### Task 1.1: Enumerate callers across consumer repos
 
-- [ ] Grep for `writeConfig` import + call patterns across the workspace:
-  - `spacecat-api-service`
-  - `spacecat-audit-worker`
-  - `spacecat-import-worker`
-  - `spacecat-content-processor`
-  - `spacecat-content-scraper`
-  - `spacecat-fulfillment-worker`
-  - `spacecat-task-processor`
-  - `spacecat-autofix-worker`
-  - `spacecat-reporting-worker`
-  - `spacecat-jobs-dispatcher`
-- [ ] Search patterns: `llmoConfig.writeConfig`, `from '@adobe/spacecat-shared-utils'` near `writeConfig`, `import { writeConfig }`. Capture file:line for each hit.
+- [x] Grep for `writeConfig` import + call patterns across the workspace.
+- [x] Search pattern: `writeConfig\(` in `src/` of every spacecat-* consumer repo.
 
 ### Task 1.2: Classify each call site
 
-- [ ] For each call site, document in a short audit table:
-  - Repo / file:line
-  - Source of the `config` arg (read-then-modify, fresh `defaultConfig()`, user-input, etc.)
-  - Risk level (low: round-trips through readConfig; medium: programmatically constructed; high: user/external input)
-- [ ] For any high-risk caller, trace what the config can look like in the worst case.
+- [x] Audit table (executed 2026-05-04 against current main of each repo):
+
+| Repo | File:line | Source of `config` arg | Risk | Notes |
+|---|---|---|---|---|
+| spacecat-audit-worker | `src/drs-prompt-generation/drs-config-writer.js:200` | DRS prompts merged into config (read-then-modify) | Low | Step 1 (PR #2442, merged 2026-05-04) filters non-alpha-2 regions and skips new categories without a valid region before reaching writeConfig. Residual risk is anything else the schema rejects that the filter doesn't catch — covered by fail-closed itself. |
+| spacecat-api-service | `src/controllers/llmo/llmo.js:543` | User input via PUT endpoint | None | Controller already calls `llmoConfigSchema.safeParse(newConfig)` at line 533 and returns HTTP 400 on failure before calling writeConfig. Fail-closed inside writeConfig is a no-op for this caller. |
+
+No other production callers found across `spacecat-api-service`, `spacecat-audit-worker`, `spacecat-import-worker`, `spacecat-content-processor`, `spacecat-content-scraper`, `spacecat-fulfillment-worker`, `spacecat-task-processor`, `spacecat-autofix-worker`, `spacecat-reporting-worker`, or `spacecat-jobs-dispatcher`.
 
 ### Task 1.3: File fix-at-edge tasks if needed
 
-- [ ] For every caller other than the DRS prompt writer (already filtered in step 1), if the audit shows it could write an invalid config: file a sub-task on SITES-43238 and address before Phase 2 lands.
+- [x] None required. Both known callers either pre-validate (api-service) or pre-filter (audit-worker via step 1).
 
-**Validation gate (Phase 1):**
+**Validation gate (Phase 1):** PASSED.
 
-- Audit table covers 100% of `writeConfig` call sites in the consumer-repo set above. New consumers added later are out of scope for this gate.
-- Every high-risk caller has either (a) a clean justification for why it cannot emit invalid configs, or (b) a fix-at-edge PR merged before Phase 2.
-- Audit table committed alongside this plan or attached as a comment on SITES-43238.
+- Audit table covers 100% of `writeConfig` call sites in the consumer-repo set above.
+- No fix-at-edge PRs needed before Phase 2.
 
 ---
 

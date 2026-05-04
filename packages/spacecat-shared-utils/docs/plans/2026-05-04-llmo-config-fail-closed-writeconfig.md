@@ -30,9 +30,12 @@
 
 - None. The error class lives next to `writeConfig` in `llmo-config.js`.
 
+**Also rolled in (originally tracked separately as SITES-43908):**
+
+- `readConfig` switched from raw `llmoConfig.parse` to `safeParse` and now throws `LlmoConfigValidationError` (instead of raw `ZodError`) on schema failure. Closes the read/write asymmetry surfaced in PR #1574 review so consumers have a single catch contract.
+
 **Out of scope (this plan):**
 
-- `readConfig` already fails closed (`llmoConfig.parse` on read since 2025). Not modified.
 - `customerConfigV2` read/write — different schema, separate concern.
 - Repair of already-corrupted S3 configs — that's step 3.
 

@@ -87,6 +87,10 @@ export function defaultConfig() {
  * Reads the LLMO configuration for a given site.
  * Returns an empty configuration if the configuration does not exist.
  *
+ * If the persisted config exists but fails schema validation, throws
+ * `LlmoConfigValidationError` so callers have a uniform error contract
+ * across read and write paths.
+ *
  * @param {string} sideId The ID of the site.
  * @param {S3Client} s3Client The S3 client to use for reading the configuration.
  * @param {object} [options]
@@ -95,6 +99,7 @@ export function defaultConfig() {
  * @param {string} [options.s3Bucket] Optional S3 bucket name.
  * @returns {Promise<{config: LLMOConfig, exists: boolean, version?: string}>} The configuration,
  *        a flag indicating if it existed, and the version ID if it exists.
+ * @throws {LlmoConfigValidationError} If the persisted config fails schema validation.
  * @throws {Error} If reading the configuration fails for reasons other than it not existing.
  */
 export async function readConfig(sideId, s3Client, options) {
@@ -122,8 +127,11 @@ export async function readConfig(sideId, s3Client, options) {
     throw new Error('LLMO config body is empty');
   }
   const text = await body.transformToString();
-  const config = llmoConfig.parse(JSON.parse(text));
-  return { config, exists: true, version: res.VersionId || undefined };
+  const result = llmoConfig.safeParse(JSON.parse(text));
+  if (!result.success) {
+    throw new LlmoConfigValidationError(sideId, result.error);
+  }
+  return { config: result.data, exists: true, version: res.VersionId || undefined };
 }
 
 /**

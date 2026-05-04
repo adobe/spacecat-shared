@@ -161,13 +161,25 @@ describe('llmo-config utilities', () => {
       await expect(readConfig(siteId, s3Client)).rejectedWith(SyntaxError);
     });
 
-    it('throws when the configuration fails schema validation', async () => {
+    it('throws LlmoConfigValidationError when the persisted config fails schema validation', async () => {
       const body = {
         transformToString: sinon.stub().resolves(JSON.stringify({ entities: {} })),
       };
       s3Client.send.resolves({ Body: body });
 
-      await expect(readConfig(siteId, s3Client)).rejectedWith(Error);
+      let caught;
+      try {
+        await readConfig(siteId, s3Client);
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(caught).instanceOf(LlmoConfigValidationError);
+      expect(caught.name).equals('LlmoConfigValidationError');
+      expect(caught.siteId).equals(siteId);
+      expect(caught.issues).to.be.an('array').with.length.greaterThan(0);
+      expect(caught.cause).to.exist;
+      expect(caught.cause.issues).to.equal(caught.issues);
     });
   });
 

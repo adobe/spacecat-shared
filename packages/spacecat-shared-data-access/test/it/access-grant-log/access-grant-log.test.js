@@ -17,6 +17,7 @@ import { sanitizeTimestamps } from '../../../src/util/util.js';
 import DataAccessError from '../../../src/errors/data-access.error.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -25,7 +26,7 @@ describe('AccessGrantLog IT', async () => {
   let AccessGrantLog;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

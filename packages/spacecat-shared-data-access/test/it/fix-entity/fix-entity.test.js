@@ -16,6 +16,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 import fixEntityFixtures from '../../fixtures/fix-entity.fixture.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -43,7 +44,7 @@ describe('FixEntity IT', async () => {
   let sampleData;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

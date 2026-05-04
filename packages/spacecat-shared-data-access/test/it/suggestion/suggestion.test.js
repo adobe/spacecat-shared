@@ -20,6 +20,7 @@ import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 import ValidationError from '../../../src/errors/validation.error.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -29,7 +30,7 @@ describe('Suggestion IT', async () => {
   let FixEntitySuggestion;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -388,7 +389,7 @@ describe('Suggestion IT', async () => {
     /** One suggestion granted in before(); shared by tests that need a granted suggestion */
     let preGrantedSuggestion;
     before(async function () {
-      this.timeout(10000);
+      this.timeout(IT_HOOK_TIMEOUT);
       expect(sampleData.suggestions.length).to.be.at.least(6);
       const { Token } = getDataAccess();
       await Token.findBySiteIdAndTokenType(siteId, tokenType, { createIfNotFound: true });

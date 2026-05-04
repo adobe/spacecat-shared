@@ -17,6 +17,7 @@ import ImportJobModel from '../../../src/models/import-job/import-job.model.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 import { DataAccessError } from '../../../src/index.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -43,7 +44,7 @@ describe('ImportJob IT', async () => {
   let newJobData;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

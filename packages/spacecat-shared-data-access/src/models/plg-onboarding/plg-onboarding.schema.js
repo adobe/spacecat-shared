@@ -58,10 +58,16 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       rumVerified: { type: 'boolean' },
       siteCreated: { type: 'boolean' },
       siteResolved: { type: 'boolean' },
+      siteOrgReassigned: { type: 'boolean' },
+      authorUrlResolved: { type: 'boolean' },
+      hlxConfigSet: { type: 'boolean' },
+      codeConfigResolved: { type: 'boolean' },
       configUpdated: { type: 'boolean' },
       auditsEnabled: { type: 'boolean' },
       deliveryConfigQueued: { type: 'boolean' },
       entitlementCreated: { type: 'boolean' },
+      orgResolutionFailed: { type: 'boolean' },
+      siteOrgReassignmentFailed: { type: 'boolean' },
     },
   })
   .addAttribute('error', {

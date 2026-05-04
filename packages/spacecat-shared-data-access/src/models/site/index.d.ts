@@ -313,6 +313,8 @@ export interface SiteCollection extends BaseCollection<Site> {
   allByProjectName(projectName: string): Promise<Site[]>;
   allByOrganizationIdAndProjectId(organizationId: string, projectId: string): Promise<Site[]>;
   allByOrganizationIdAndProjectName(organizationId: string, projectName: string): Promise<Site[]>;
+  allByEnrollmentProductCode(productCode: string, options?: object): Promise<Site[]>;
+  allByEnrollmentAndTier(tier: string, productCode?: string, options?: object): Promise<Site[]>;
   allSitesToAudit(): Promise<string[]>;
   allWithLatestAudit(auditType: string, order?: string, deliveryType?: string): Promise<Site[]>;
   findByBaseURL(baseURL: string): Promise<Site | null>;

@@ -109,6 +109,12 @@ describe('resolveCustomerSecretsName', () => {
     expect(resolveCustomerSecretsName('https://nba.com', ctx))
       .to.equal(resolveCustomerSecretsName('https://nba.com/', ctx));
   });
+
+  it('resolves unique secrets names for nested subpath sites', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/us/kings', ctx))
+      .to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com_us_kings/1.0.0');
+  });
 });
 
 describe('generateCSVFile', () => {

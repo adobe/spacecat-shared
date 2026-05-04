@@ -48,7 +48,7 @@ export function resolveCustomerSecretsName(baseURL, ctx) {
   let customer;
   try {
     const url = new URL(baseURL);
-    const host = url.host.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+    const host = url.hostname.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
     const pathSuffix = url.pathname.replace(/^\/|\/$/g, '').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
     customer = pathSuffix ? `${host}_${pathSuffix}` : host;
   } catch {

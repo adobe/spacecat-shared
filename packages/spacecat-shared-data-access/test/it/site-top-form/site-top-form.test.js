@@ -16,6 +16,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 import { sanitizeTimestamps } from '../../../src/util/util.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -43,7 +44,7 @@ describe('SiteTopForm IT', async () => {
   let SiteTopForm;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();

@@ -16,6 +16,7 @@ import sinon from 'sinon';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -60,7 +61,7 @@ describe('Configuration IT', async () => {
   };
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     await seedDatabase();
 
     const dataAccess = getDataAccess();

@@ -94,6 +94,119 @@ describe('Token IT', () => {
     });
   });
 
+  describe('allBySiteId', () => {
+    // fixtures.sites[1].siteId — isolated from findBySiteIdAndTokenType /
+    // grantSuggestions tests so seeded historical-cycle rows do not leak into
+    // current-cycle suites.
+    const siteId = '78fec9c7-2141-4600-b7b1-ea5c78752b91';
+    const cycleA = '2099-01';
+    const cycleB = '2099-02';
+    const typeCwv = 'monthly_suggestion_cwv';
+    const typeLcp = 'monthly_suggestion_lcp';
+    const typeBb = 'monthly_suggestion_broken_backlinks';
+
+    before(async () => {
+      // Seed: 3 types in cycleA, 1 type in cycleB.
+      await Token.create({
+        siteId, tokenType: typeCwv, cycle: cycleA, total: 3,
+      });
+      await Token.create({
+        siteId, tokenType: typeLcp, cycle: cycleA, total: 5,
+      });
+      await Token.create({
+        siteId, tokenType: typeBb, cycle: cycleA, total: 2,
+      });
+      await Token.create({
+        siteId, tokenType: typeCwv, cycle: cycleB, total: 4,
+      });
+    });
+
+    it('returns rows filtered by tokenTypes and cycle in a single query', async () => {
+      const results = await Token.allBySiteId(siteId, {
+        tokenTypes: [typeCwv, typeLcp],
+        cycle: cycleA,
+      });
+
+      expect(results).to.be.an('array').with.lengthOf(2);
+      const byType = Object.fromEntries(results.map((t) => [t.getTokenType(), t]));
+      expect(byType[typeCwv].getCycle()).to.equal(cycleA);
+      expect(byType[typeCwv].getTotal()).to.equal(3);
+      expect(byType[typeLcp].getCycle()).to.equal(cycleA);
+      expect(byType[typeLcp].getTotal()).to.equal(5);
+    });
+
+    it('skips token types that have no row for the given cycle', async () => {
+      const results = await Token.allBySiteId(siteId, {
+        tokenTypes: [typeCwv, 'monthly_suggestion_does_not_exist'],
+        cycle: cycleA,
+      });
+
+      expect(results).to.have.lengthOf(1);
+      expect(results[0].getTokenType()).to.equal(typeCwv);
+    });
+
+    it('returns all token types for the cycle when tokenTypes is omitted', async () => {
+      const results = await Token.allBySiteId(siteId, { cycle: cycleA });
+
+      const types = results.map((t) => t.getTokenType()).sort();
+      expect(types).to.deep.equal([typeBb, typeCwv, typeLcp].sort());
+      results.forEach((t) => expect(t.getCycle()).to.equal(cycleA));
+    });
+
+    it('returns rows across cycles when only tokenTypes is provided', async () => {
+      const results = await Token.allBySiteId(siteId, { tokenTypes: [typeCwv] });
+
+      const cycles = results.map((t) => t.getCycle()).sort();
+      expect(cycles).to.deep.equal([cycleA, cycleB]);
+      results.forEach((t) => expect(t.getTokenType()).to.equal(typeCwv));
+    });
+
+    it('returns all rows for the site when no filters are provided', async () => {
+      const results = await Token.allBySiteId(siteId);
+
+      // Seeded: 3 in cycleA + 1 in cycleB = 4 rows.
+      expect(results.length).to.be.at.least(4);
+      results.forEach((t) => expect(t.getSiteId()).to.equal(siteId));
+    });
+
+    it('isolates results by cycle', async () => {
+      const results = await Token.allBySiteId(siteId, {
+        tokenTypes: [typeCwv],
+        cycle: cycleB,
+      });
+
+      expect(results).to.have.lengthOf(1);
+      expect(results[0].getTokenType()).to.equal(typeCwv);
+      expect(results[0].getCycle()).to.equal(cycleB);
+      expect(results[0].getTotal()).to.equal(4);
+    });
+
+    it('returns empty array when no rows match the cycle', async () => {
+      const results = await Token.allBySiteId(siteId, {
+        tokenTypes: [typeCwv],
+        cycle: '2099-12',
+      });
+
+      expect(results).to.deep.equal([]);
+    });
+
+    it('throws when siteId is missing', async () => {
+      await expect(Token.allBySiteId('')).to.be.rejectedWith(/siteId is required/);
+    });
+
+    it('throws when tokenTypes is provided but empty', async () => {
+      await expect(
+        Token.allBySiteId(siteId, { tokenTypes: [] }),
+      ).to.be.rejectedWith(/tokenTypes must be a non-empty array of strings when provided/);
+    });
+
+    it('throws when cycle is provided but empty', async () => {
+      await expect(
+        Token.allBySiteId(siteId, { cycle: '' }),
+      ).to.be.rejectedWith(/cycle must be a non-empty string when provided/);
+    });
+  });
+
   describe('grantSuggestions', () => {
     const siteId = '5d6d4439-6659-46c2-b646-92d110fa5a52';
     const tokenType = 'grant_cwv';

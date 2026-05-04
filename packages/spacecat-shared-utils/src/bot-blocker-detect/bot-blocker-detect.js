@@ -29,6 +29,7 @@ const CONFIDENCE_HIGH = 0.99;
 const CONFIDENCE_MEDIUM = 0.95;
 const CONFIDENCE_ABSOLUTE = 1.0;
 const DEFAULT_TIMEOUT = 5000;
+const BODY_READ_TIMEOUT = 3000;
 
 /**
  * SpaceCat bot identification constants
@@ -336,14 +337,27 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT }) {
 
   try {
     const response = await tracingFetch(baseUrl, {
-      method: 'HEAD',
+      method: 'GET',
       headers: {
         'User-Agent': SPACECAT_USER_AGENT,
       },
-      signal: AbortSignal.timeout(timeout),
+      timeout,
     });
 
-    return analyzeResponse(response);
+    let html = null;
+    try {
+      // Promise.race guards against servers that stream body slowly after headers arrive.
+      // tracingFetch clears its AbortSignal in finally{} before returning, so response.text()
+      // has no built-in timeout.
+      html = await Promise.race([
+        response.text(),
+        new Promise((_, reject) => { setTimeout(() => reject(new Error('body-read-timeout')), BODY_READ_TIMEOUT); }),
+      ]);
+    } catch {
+      // Body reading timed out or failed - fall back to header-only analysis
+    }
+
+    return analyzeResponse(response, html);
   } catch (error) {
     return analyzeError(error);
   }

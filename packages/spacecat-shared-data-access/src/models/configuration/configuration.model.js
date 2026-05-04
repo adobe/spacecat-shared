@@ -183,24 +183,28 @@ class Configuration {
     const siteId = site.getId();
     const orgId = site.getOrganizationId();
 
-    if (handler.disabled) {
-      const sites = handler.disabled.sites || [];
-      const orgs = handler.disabled.orgs || [];
-      if (sites.includes(siteId) || orgs.includes(orgId)) {
-        return false;
-      }
+    const disabledSites = handler.disabled?.sites || [];
+    const enabledSites = handler.enabled?.sites || [];
+    const disabledOrgs = handler.disabled?.orgs || [];
+    const enabledOrgs = handler.enabled?.orgs || [];
+
+    // Site-level takes priority over org-level: an explicit site enable/disable
+    // overrides the org-level setting, allowing a single site to be upgraded to
+    // a paid profile even if the org is in disabled.orgs.
+    if (disabledSites.includes(siteId)) {
+      return false;
+    }
+    if (enabledSites.includes(siteId)) {
+      return true;
     }
 
+    if (disabledOrgs.includes(orgId)) {
+      return false;
+    }
     if (handler.enabledByDefault) {
       return true;
     }
-    if (handler.enabled) {
-      const sites = handler.enabled.sites || [];
-      const orgs = handler.enabled.orgs || [];
-      return sites.includes(siteId) || orgs.includes(orgId);
-    }
-
-    return false;
+    return enabledOrgs.includes(orgId);
   }
 
   isHandlerEnabledForOrg(type, org) {
@@ -243,20 +247,23 @@ class Configuration {
     }
 
     if (enabled) {
-      if (handler.enabledByDefault) {
-        handler.disabled[entityKey] = handler.disabled[entityKey]
-          /* c8 ignore next */
-          .filter((id) => id !== entityId) || [];
-      } else {
+      // Always remove from disabled first (handles re-enabling a previously disabled entry).
+      handler.disabled[entityKey] = (handler.disabled[entityKey] || [])
+        .filter((id) => id !== entityId);
+      if (!handler.enabledByDefault) {
+        // For non-default handlers, explicitly add to enabled list so isHandlerEnabledForSite
+        // can find the site in enabled.sites and return true even when org is in disabled.orgs.
         handler.enabled[entityKey] = Array
           .from(new Set([...(handler.enabled[entityKey] || []), entityId]));
       }
     } else if (handler.enabledByDefault) {
       handler.disabled[entityKey] = Array
         .from(new Set([...(handler.disabled[entityKey] || []), entityId]));
+      handler.enabled[entityKey] = (handler.enabled[entityKey] || [])
+        .filter((id) => id !== entityId);
     } else {
-      /* c8 ignore next */
-      handler.enabled[entityKey] = handler.enabled[entityKey].filter((id) => id !== entityId) || [];
+      handler.enabled[entityKey] = (handler.enabled[entityKey] || [])
+        .filter((id) => id !== entityId);
     }
 
     handlers[type] = handler;

@@ -99,8 +99,8 @@ describe('resolveCustomerSecretsName', () => {
     const kingsSecret = resolveCustomerSecretsName(kingsURL, ctx);
     const lakersSecret = resolveCustomerSecretsName(lakersURL, ctx);
 
-    expect(kingsSecret).to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com_kings/1.0.0');
-    expect(lakersSecret).to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com_lakers/1.0.0');
+    expect(kingsSecret).to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com__kings/1.0.0');
+    expect(lakersSecret).to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com__lakers/1.0.0');
     expect(kingsSecret).to.not.equal(lakersSecret);
   });
 
@@ -110,10 +110,23 @@ describe('resolveCustomerSecretsName', () => {
       .to.equal(resolveCustomerSecretsName('https://nba.com/', ctx));
   });
 
+  it('resolves the same secret name for subpath with and without trailing slash', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/kings', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com/kings/', ctx));
+  });
+
   it('resolves unique secrets names for nested subpath sites', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(resolveCustomerSecretsName('https://nba.com/us/kings', ctx))
-      .to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com_us_kings/1.0.0');
+      .to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com__us__kings/1.0.0');
+  });
+
+  it('resolves distinct secrets names for paths that differ only by separator type', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    const slashPath = resolveCustomerSecretsName('https://nba.com/us/kings', ctx);
+    const hyphenPath = resolveCustomerSecretsName('https://nba.com/us-kings', ctx);
+    expect(slashPath).to.not.equal(hyphenPath);
   });
 });
 

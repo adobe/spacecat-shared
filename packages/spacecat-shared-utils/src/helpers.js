@@ -39,6 +39,19 @@ export function resolveSecretsName(opts, ctx, defaultPath) {
 
 /**
  * Resolves the name of the customer secrets based on the baseURL.
+ *
+ * The hostname and (if present) each URL path segment are individually sanitized
+ * (non-alphanumeric replaced with `_`, lowercased) and joined with `__` as a
+ * path-segment delimiter. The double-underscore delimiter cannot appear in a
+ * sanitized segment, so distinct paths cannot collide.
+ *
+ * Key format: /helix-deploy/spacecat-services/customer-secrets/<host>[__<seg>...]/<version>
+ *
+ * Examples:
+ *   https://nba.com         -> .../nba_com/<version>
+ *   https://nba.com/kings   -> .../nba_com__kings/<version>
+ *   https://nba.com/us/kings -> .../nba_com__us__kings/<version>
+ *
  * @param {string} baseURL - The base URL to resolve the customer secrets name from.
  * @param {Object} ctx - The context object containing the function version.
  * @returns {string} - The resolved secret name.
@@ -49,8 +62,9 @@ export function resolveCustomerSecretsName(baseURL, ctx) {
   try {
     const url = new URL(baseURL);
     const host = url.hostname.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-    const pathSuffix = url.pathname.replace(/^\/|\/$/g, '').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-    customer = pathSuffix ? `${host}_${pathSuffix}` : host;
+    const segments = url.pathname.split('/').filter(Boolean)
+      .map((seg) => seg.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase());
+    customer = segments.length > 0 ? `${host}__${segments.join('__')}` : host;
   } catch {
     throw new Error('Invalid baseURL: must be a valid URL');
   }

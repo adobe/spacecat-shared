@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.115.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.114.0...@adobe/spacecat-shared-utils-v1.115.0) (2026-05-04)
+
+### Features
+
+* **strategy:** add type discriminator and experimentId for Atomic strategies | LLMO-4643 ([#1571](https://github.com/adobe/spacecat-shared/issues/1571)) ([0151ff5](https://github.com/adobe/spacecat-shared/commit/0151ff510f7643021e6c1ccf21298f6d3c07034b))
+
 ## [@adobe/spacecat-shared-utils-v1.114.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.113.0...@adobe/spacecat-shared-utils-v1.114.0) (2026-05-04)
 
 ### Features

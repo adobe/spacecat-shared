@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.5.0...@adobe/spacecat-shared-drs-client-v1.6.0) (2026-04-30)
+
+
+### Features
+
+* **drs-client:** add S3 upload and SNS publish for brand presence analysis ([#1553](https://github.com/adobe/spacecat-shared/issues/1553)) ([56b1266](https://github.com/adobe/spacecat-shared/commit/56b126686fc0be81253fb0a5f510a2913b2073cc))
+
 # [@adobe/spacecat-shared-drs-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.4.2...@adobe/spacecat-shared-drs-client-v1.5.0) (2026-04-28)
 
 

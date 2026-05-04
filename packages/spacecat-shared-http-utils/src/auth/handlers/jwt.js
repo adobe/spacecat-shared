@@ -41,7 +41,17 @@ export default class JwtHandler extends AbstractHandler {
       const payload = await validateToken(token, this.authPublicKey);
       payload.tenants = payload.tenants || [];
 
-      const scopes = payload.is_admin ? [{ name: 'admin' }] : [];
+      if (payload.is_admin && payload.is_read_only_admin) {
+        this.log('Token has both is_admin and is_read_only_admin - rejecting', 'warn');
+        return null;
+      }
+
+      const scopes = [];
+      if (payload.is_admin) {
+        scopes.push({ name: 'admin' });
+      } else if (payload.is_read_only_admin) {
+        scopes.push({ name: 'read_only_admin' });
+      }
 
       scopes.push(...payload.tenants.map(
         (tenant) => ({

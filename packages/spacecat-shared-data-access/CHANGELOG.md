@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.55.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.55.0...@adobe/spacecat-shared-data-access-v3.55.1) (2026-04-29)
+
+### Bug Fixes
+
+* BaseModel/Patcher record desync after save() causes silent sette… ([#1567](https://github.com/adobe/spacecat-shared/issues/1567)) ([c9c782d](https://github.com/adobe/spacecat-shared/commit/c9c782dab95d588852f8b2931405f0174965c346))
+
 ## [@adobe/spacecat-shared-data-access-v3.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.54.0...@adobe/spacecat-shared-data-access-v3.55.0) (2026-04-28)
 
 ### Features

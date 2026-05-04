@@ -165,17 +165,16 @@ export const strategyWorkspaceData = z.object({
       });
     }
 
-    // Evolving: if selectedPrompts is provided, it must be non-empty.
-    // Soft rule by design — does NOT require the field to be present, so
-    // pre-GA strategies (which lack selectedPrompts) parse cleanly. The
-    // "newly-created Evolving strategies must include selectedPrompts" rule
-    // is enforced at the API layer in saveStrategy (see PR C2).
-    if (strat.type === 'evolving' && Array.isArray(strat.selectedPrompts) && strat.selectedPrompts.length === 0) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['strategies', strategyIndex, 'selectedPrompts'],
-        message: 'Evolving strategies must not have an empty selectedPrompts array (omit the field if not yet set)',
-      });
-    }
+    // Evolving: schema is intentionally permissive on `selectedPrompts`. Today's
+    // CreateStrategyDialog initializes selectedPrompts as `[]` for newly-created
+    // Evolving strategies (no prompt-selection UI yet). Enforcing "must be
+    // non-empty" at the schema would reject those in-flight reads + writes.
+    //
+    // The "newly-created Evolving strategies must include selectedPrompts" rule
+    // is deferred to the milestone where Evolving promotes out of co-innovation
+    // mode — at that point the schema tightens, the API layer (saveStrategy)
+    // adds the creation-time check, and the prompt-selection screen ships.
+    // All three land together. Until then, selectedPrompts on Evolving is
+    // structurally validated only.
   });
 });

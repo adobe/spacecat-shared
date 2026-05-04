@@ -823,16 +823,20 @@ describe('strategyWorkspaceData', () => {
       expect(result.success).true;
     });
 
-    it('rejects Evolving with empty selectedPrompts array', () => {
-      // Field present but empty is malformed — distinguishable from "field
-      // absent" which is legacy-tolerated.
+    it('accepts Evolving with empty selectedPrompts array (FE init shape)', () => {
+      // Today's CreateStrategyDialog initializes selectedPrompts as [] for
+      // newly-created Evolving strategies (no prompt-selection screen yet).
+      // The schema is intentionally permissive here. The "must include
+      // selectedPrompts" rule lands at the milestone where Evolving promotes
+      // out of co-innovation mode (schema tightening + saveStrategy rule +
+      // prompt-selection screen all ship together).
       const data = {
         opportunities: [],
         strategies: [{
-          id: 'strat-bad-5',
+          id: 'strat-fe-init',
           type: 'evolving',
           selectedPrompts: [],
-          name: 'Evolving with empty baseline',
+          name: 'Evolving with FE-initialized empty array',
           status: 'in_progress',
           url: '/x',
           description: '',
@@ -842,12 +846,7 @@ describe('strategyWorkspaceData', () => {
         }],
       };
       const result = strategyWorkspaceData.safeParse(data);
-      expect(result.success).false;
-      if (!result.success) {
-        expect(result.error.issues.some(
-          (i) => i.message.includes('must not have an empty selectedPrompts array'),
-        )).true;
-      }
+      expect(result.success).true;
     });
 
     it('accepts Evolving with default type (no type field) and selectedPrompts', () => {

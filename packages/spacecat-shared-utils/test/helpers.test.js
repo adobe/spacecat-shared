@@ -129,6 +129,18 @@ describe('resolveCustomerSecretsName', () => {
     expect(slashPath).to.not.equal(hyphenPath);
   });
 
+  it('does not collide multi-segment paths with single-segment paths containing dots', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/us..kings', ctx))
+      .to.not.equal(resolveCustomerSecretsName('https://nba.com/us/kings', ctx));
+  });
+
+  it('does not collide multi-segment paths with single-segment paths containing underscores', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/us__kings', ctx))
+      .to.not.equal(resolveCustomerSecretsName('https://nba.com/us/kings', ctx));
+  });
+
   it('normalizes percent-encoded path segments', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(resolveCustomerSecretsName('https://nba.com/k%C3%B6nig', ctx))
@@ -145,6 +157,11 @@ describe('resolveCustomerSecretsName', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(resolveCustomerSecretsName('https://nba.com//kings', ctx))
       .to.equal(resolveCustomerSecretsName('https://nba.com/kings', ctx));
+  });
+
+  it('handles malformed percent-encoding in path segments without throwing', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(() => resolveCustomerSecretsName('https://nba.com/%ZZkings', ctx)).to.not.throw();
   });
 });
 

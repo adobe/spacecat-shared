@@ -69,7 +69,7 @@ export function resolveCustomerSecretsName(baseURL, ctx) {
         try {
           decoded = decodeURIComponent(seg);
         } catch { /* keep raw on malformed percent-encoding */ }
-        return decoded.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase().replace(/_+/g, '_');
+        return decoded.replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
       });
     customer = segments.length > 0 ? `${host}__${segments.join('__')}` : host;
   } catch {

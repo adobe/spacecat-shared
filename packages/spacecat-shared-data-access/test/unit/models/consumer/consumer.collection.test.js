@@ -131,7 +131,7 @@ describe('ConsumerCollection', () => {
       expect(mockElectroService.entities.consumer.create).to.not.have.been.called;
     });
 
-    it('accepts the readAll action for any registered entity', async () => {
+    it('accepts site:readAll and organization:readAll capabilities', async () => {
       const item = {
         clientId: 'client-readall',
         technicalAccountId: 'AABB00112233445566778899@techacct.adobe.com',
@@ -148,6 +148,7 @@ describe('ConsumerCollection', () => {
 
       const result = await instance.create(item);
       expect(result).to.not.be.null;
+      expect(mockElectroService.entities.consumer.create).to.have.been.calledOnce;
       instance.findByClientId.restore();
     });
 

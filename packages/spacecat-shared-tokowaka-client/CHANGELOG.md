@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.5...@adobe/spacecat-shared-tokowaka-client-v1.14.0) (2026-05-04)
+
+### Features
+
+* **tokowaka-client:** add checkWafConnectivity method ([#1552](https://github.com/adobe/spacecat-shared/issues/1552)) ([46f72e3](https://github.com/adobe/spacecat-shared/commit/46f72e39964d2e6906746e2d72f843a7d4a08428))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.13.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.4...@adobe/spacecat-shared-tokowaka-client-v1.13.5) (2026-05-04)
 
 ### Bug Fixes

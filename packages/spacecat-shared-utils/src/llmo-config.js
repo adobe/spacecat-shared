@@ -26,10 +26,17 @@ import { llmoConfig } from './schemas.js';
  */
 export class LlmoConfigValidationError extends Error {
   constructor(siteId, zodError) {
+    // Use issue `code` rather than `message` in the summary: Zod's default
+    // messages can echo received values, which may include user-supplied
+    // content (brand names, competitor URLs) on the api-service write path.
+    // The full message and value remain on `this.issues` for trusted callers.
     const summary = zodError.issues
-      .map((i) => `${i.path.join('.')}: ${i.message}`)
+      .map((i) => `${i.path.join('.')}: ${i.code}`)
       .join('; ');
-    super(`LLMO config for site ${siteId} failed schema validation: ${summary}`);
+    super(
+      `LLMO config for site ${siteId} failed schema validation: ${summary}`,
+      { cause: zodError },
+    );
     this.name = 'LlmoConfigValidationError';
     this.siteId = siteId;
     this.issues = zodError.issues;

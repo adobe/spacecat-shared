@@ -206,7 +206,7 @@ describe('llmo-config utilities', () => {
       const invalidConfig = {
         ...validConfig,
         categories: {
-          '00000000-0000-0000-0000-000000000001': { name: 'brand', region: 'en-us' },
+          '550e8400-e29b-41d4-a716-446655440000': { name: 'brand', region: 'en-us' },
         },
       };
 
@@ -224,11 +224,11 @@ describe('llmo-config utilities', () => {
       expect(s3Client.send).not.called;
     });
 
-    it('LlmoConfigValidationError carries siteId, name, and Zod issues', async () => {
+    it('LlmoConfigValidationError carries siteId, name, Zod issues, and cause', async () => {
       const invalidConfig = {
         ...validConfig,
         categories: {
-          '00000000-0000-0000-0000-000000000001': { name: 'brand', region: 'en-us' },
+          '550e8400-e29b-41d4-a716-446655440000': { name: 'brand', region: 'en-us' },
         },
       };
 
@@ -243,7 +243,14 @@ describe('llmo-config utilities', () => {
       expect(caught.name).equals('LlmoConfigValidationError');
       expect(caught.siteId).equals(siteId);
       expect(caught.issues).to.be.an('array').with.length.greaterThan(0);
+
+      // Message format: "...failed schema validation: <path>: <code>"
       expect(caught.message).to.include(siteId);
+      expect(caught.message).to.match(/categories\..+\.region/);
+
+      // Original ZodError preserved as cause for stack-chain debugging.
+      expect(caught.cause).to.exist;
+      expect(caught.cause.issues).to.equal(caught.issues);
     });
   });
 

@@ -90,6 +90,25 @@ describe('resolveCustomerSecretsName', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(() => resolveCustomerSecretsName('not a valid url', ctx)).to.throw('Invalid baseURL: must be a valid URL');
   });
+
+  it('resolves unique secrets names for subpath sites on the same domain', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    const kingsURL = 'https://nba.com/kings';
+    const lakersURL = 'https://nba.com/lakers';
+
+    const kingsSecret = resolveCustomerSecretsName(kingsURL, ctx);
+    const lakersSecret = resolveCustomerSecretsName(lakersURL, ctx);
+
+    expect(kingsSecret).to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com_kings/1.0.0');
+    expect(lakersSecret).to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com_lakers/1.0.0');
+    expect(kingsSecret).to.not.equal(lakersSecret);
+  });
+
+  it('resolves the same secret name for root domain with and without trailing slash', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com/', ctx));
+  });
 });
 
 describe('generateCSVFile', () => {

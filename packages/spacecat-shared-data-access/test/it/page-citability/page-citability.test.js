@@ -15,6 +15,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -58,7 +59,7 @@ describe('PageCitability IT', async () => {
   let siteId;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
     siteId = sampleData.sites[0].getId();
     const dataAccess = getDataAccess();

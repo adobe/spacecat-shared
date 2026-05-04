@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.55.1...@adobe/spacecat-shared-data-access-v3.56.0) (2026-05-04)
+
+### Features
+
+* **data-access:** add readAll capability to Consumer.CAPABILITIES ([#1573](https://github.com/adobe/spacecat-shared/issues/1573)) ([4475928](https://github.com/adobe/spacecat-shared/commit/44759289abb95bc22c58d59327ff3e881d39c430))
+
 ## [@adobe/spacecat-shared-data-access-v3.55.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.55.0...@adobe/spacecat-shared-data-access-v3.55.1) (2026-04-29)
 
 ### Bug Fixes

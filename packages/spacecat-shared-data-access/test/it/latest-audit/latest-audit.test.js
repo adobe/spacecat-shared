@@ -16,6 +16,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/util.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -39,7 +40,7 @@ describe('LatestAudit IT', async () => {
   let dataAccess;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     dataAccess = getDataAccess();

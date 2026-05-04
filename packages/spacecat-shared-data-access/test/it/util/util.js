@@ -11,6 +11,10 @@
  */
 import { removeElectroProperties } from '../../../src/util/util.js';
 
+// Generous hook timeout for IT before/after hooks — the v5.x image runs
+// dbmate migrations on startup, which makes cold CI runs slower than 10 s.
+export const IT_HOOK_TIMEOUT = 30000;
+
 const randomDate = (start, end) => {
   if (start.getTime() >= end.getTime()) {
     throw new Error('start must be before end');

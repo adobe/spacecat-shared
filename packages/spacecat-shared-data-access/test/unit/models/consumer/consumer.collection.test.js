@@ -131,6 +131,27 @@ describe('ConsumerCollection', () => {
       expect(mockElectroService.entities.consumer.create).to.not.have.been.called;
     });
 
+    it('accepts site:readAll and organization:readAll capabilities', async () => {
+      const item = {
+        clientId: 'client-readall',
+        technicalAccountId: 'AABB00112233445566778899@techacct.adobe.com',
+        consumerName: 'consumer-readall',
+        status: 'ACTIVE',
+        capabilities: ['site:readAll', 'organization:readAll'],
+        imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
+      };
+
+      stub(instance, 'findByClientId').resolves(null);
+      mockElectroService.entities.consumer.create.returns({
+        go: () => Promise.resolve({ data: sampleConsumer }),
+      });
+
+      const result = await instance.create(item);
+      expect(result).to.not.be.null;
+      expect(mockElectroService.entities.consumer.create).to.have.been.calledOnce;
+      instance.findByClientId.restore();
+    });
+
     it('throws ValidationError for unknown entity in capability', async () => {
       const item = {
         clientId: 'client-new',

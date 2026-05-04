@@ -64,6 +64,12 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addAttribute('lastAuditedAt', {
     type: 'string',
     validate: (value) => !value || isIsoDate(value),
+  })
+  .addAttribute('scopeType', {
+    type: Object.values(Opportunity.SCOPE_TYPES),
+  })
+  .addAttribute('scopeId', {
+    type: 'string',
   });
 
 export default schema.build();

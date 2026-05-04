@@ -4338,6 +4338,194 @@ describe('TokowakaClient', () => {
     });
   });
 
+  describe('checkWafConnectivity', () => {
+    let tracingFetchStub;
+    let esmockClient;
+    let mockSiteWaf;
+
+    beforeEach(async () => {
+      tracingFetchStub = sinon.stub();
+
+      const MockedTokowakaClient = await esmock('../src/index.js', {
+        '@adobe/spacecat-shared-utils': {
+          hasText: (val) => typeof val === 'string' && val.trim().length > 0,
+          isNonEmptyObject: (val) => val !== null && typeof val === 'object' && Object.keys(val).length > 0,
+          prependSchema: (url) => (url.startsWith('http') ? url : `https://${url}`),
+          tracingFetch: tracingFetchStub,
+        },
+      });
+
+      esmockClient = new MockedTokowakaClient(
+        {
+          bucketName: 'test-bucket',
+          previewBucketName: 'test-preview-bucket',
+          s3Client: { send: sinon.stub().resolves() },
+          env: {
+            TOKOWAKA_CDN_PROVIDER: 'cloudfront',
+            TOKOWAKA_CDN_CONFIG: JSON.stringify({ cloudfront: { distributionId: 'E123456', region: 'us-east-1' } }),
+          },
+        },
+        log,
+      );
+
+      mockSiteWaf = {
+        getId: () => 'waf-site-id',
+        getBaseURL: () => 'https://example.com',
+      };
+    });
+
+    const makeHeaders = (plain = {}) => new Headers(plain);
+
+    describe('Hard block — status codes', () => {
+      [401, 403, 406, 429, 503].forEach((status) => {
+        it(`returns blocked:true for HTTP ${status}`, async () => {
+          tracingFetchStub.resolves({ status, headers: makeHeaders() });
+          const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+          expect(result.blocked).to.equal(true);
+          expect(result.reachable).to.equal(false);
+          expect(result.statusCode).to.equal(status);
+        });
+      });
+    });
+
+    describe('Cloudflare header detection', () => {
+      it('returns blocked:true when cf-mitigated: challenge header is present', async () => {
+        tracingFetchStub.resolves({
+          status: 200,
+          headers: makeHeaders({ 'cf-mitigated': 'challenge' }),
+          text: sinon.stub().resolves('<html>Just a moment</html>'),
+        });
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(true);
+        expect(result.reachable).to.equal(false);
+        expect(result.statusCode).to.equal(200);
+      });
+
+      it('returns blocked:false when cf-mitigated header is absent (Cloudflare passing)', async () => {
+        tracingFetchStub.resolves({
+          status: 200,
+          headers: makeHeaders({ 'cf-ray': 'abc123-LHR' }),
+          text: sinon.stub().resolves('<html><body>Welcome</body></html>'),
+        });
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(false);
+        expect(result.reachable).to.equal(true);
+      });
+    });
+
+    describe('Soft block — vendor-specific keyword detection', () => {
+      const makeSoftBlockResponse = (bodyKeyword) => ({
+        status: 200,
+        headers: makeHeaders({ 'content-type': 'text/html' }),
+        text: sinon.stub().resolves(`<html><body>${bodyKeyword}</body></html>`),
+      });
+
+      it('detects Cloudflare challenge via cf-chl-widget', async () => {
+        tracingFetchStub.resolves(makeSoftBlockResponse('<div class="cf-chl-widget"></div>'));
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(true);
+      });
+
+      it('detects Imperva challenge via _Incapsula_Resource', async () => {
+        tracingFetchStub.resolves(makeSoftBlockResponse('window._incapsula_resource={}'));
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(true);
+      });
+
+      it('detects Akamai error page via errors.edgesuite.net', async () => {
+        tracingFetchStub.resolves(makeSoftBlockResponse('<a href="https://errors.edgesuite.net/abc">Reference</a>'));
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(true);
+      });
+
+      it('detects Akamai error page via errors.edgekey.net', async () => {
+        tracingFetchStub.resolves(makeSoftBlockResponse('<a href="https://errors.edgekey.net/abc">Reference</a>'));
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(true);
+      });
+    });
+
+    describe('False positive prevention — broad natural-language terms no longer trigger block', () => {
+      const makeNormalPage = (text) => ({
+        status: 200,
+        headers: makeHeaders({ 'content-type': 'text/html' }),
+        text: sinon.stub().resolves(`<html><body>${text}</body></html>`),
+      });
+
+      it('does not flag page containing the word "challenge" in marketing copy', async () => {
+        tracingFetchStub.resolves(makeNormalPage('Take the 30-day challenge today!'));
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(false);
+        expect(result.reachable).to.equal(true);
+      });
+
+      it('does not flag page containing "captcha" in reCAPTCHA script tag', async () => {
+        tracingFetchStub.resolves(makeNormalPage(
+          '<script src="https://www.google.com/recaptcha/api.js"></script>',
+        ));
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(false);
+        expect(result.reachable).to.equal(true);
+      });
+
+      it('does not flag page containing "access denied" in help text', async () => {
+        tracingFetchStub.resolves(makeNormalPage(
+          '<p>If access is denied, contact your administrator.</p>',
+        ));
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(false);
+        expect(result.reachable).to.equal(true);
+      });
+
+      it('does not flag 200 JSON response', async () => {
+        tracingFetchStub.resolves({
+          status: 200,
+          headers: makeHeaders({ 'content-type': 'application/json' }),
+        });
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(false);
+        expect(result.reachable).to.equal(true);
+      });
+    });
+
+    describe('Network errors', () => {
+      it('returns blocked:null on AbortError (timeout)', async () => {
+        const err = new Error('The operation was aborted');
+        err.name = 'TimeoutError';
+        tracingFetchStub.rejects(err);
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(null);
+        expect(result.reachable).to.equal(false);
+      });
+
+      it('returns blocked:null on network failure', async () => {
+        tracingFetchStub.rejects(new Error('ECONNREFUSED'));
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(null);
+        expect(result.reachable).to.equal(false);
+      });
+    });
+
+    describe('Unexpected status (e.g. redirect)', () => {
+      it('returns blocked:false for a 301 redirect response', async () => {
+        tracingFetchStub.resolves({ status: 301, headers: makeHeaders() });
+        const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
+        expect(result.blocked).to.equal(false);
+        expect(result.reachable).to.equal(false);
+        expect(result.statusCode).to.equal(301);
+      });
+    });
+
+    describe('Private host rejection', () => {
+      it('returns blocked:null without probing for private IP host', async () => {
+        const privateSite = { getId: () => 'p1', getBaseURL: () => 'http://192.168.1.1' };
+        const result = await esmockClient.checkWafConnectivity(privateSite);
+        expect(result.blocked).to.equal(null);
+        expect(tracingFetchStub).to.not.have.been.called;
+      });
+    });
+  });
+
   describe('deployToEdge', () => {
     let deploySuggestionsStub;
     let fetchMetaconfigStub;

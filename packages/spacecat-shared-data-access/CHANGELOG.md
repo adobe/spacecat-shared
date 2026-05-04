@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.56.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.56.0...@adobe/spacecat-shared-data-access-v3.56.1) (2026-05-04)
+
+### Bug Fixes
+
+* **data-access:** replace hard-coded IT hook timeout with shared constant ([#1579](https://github.com/adobe/spacecat-shared/issues/1579)) ([4fbc6e0](https://github.com/adobe/spacecat-shared/commit/4fbc6e0ce30e59525bd9c9136a5cf2215c9f186a)), closes [#1573](https://github.com/adobe/spacecat-shared/issues/1573)
+
 ## [@adobe/spacecat-shared-data-access-v3.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.55.1...@adobe/spacecat-shared-data-access-v3.56.0) (2026-05-04)
 
 ### Features

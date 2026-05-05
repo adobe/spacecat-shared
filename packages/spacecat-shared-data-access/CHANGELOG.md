@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.56.1...@adobe/spacecat-shared-data-access-v3.57.0) (2026-05-05)
+
+### Features
+
+* added new status in PLG onboarding flow ([#1568](https://github.com/adobe/spacecat-shared/issues/1568)) ([e1d2be5](https://github.com/adobe/spacecat-shared/commit/e1d2be5242378ca8adb14a347dc46faf028801d7))
+
 ## [@adobe/spacecat-shared-data-access-v3.56.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.56.0...@adobe/spacecat-shared-data-access-v3.56.1) (2026-05-04)
 
 ### Bug Fixes

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.57.0...@adobe/spacecat-shared-data-access-v3.58.0) (2026-05-05)
+
+### Features
+
+* **data-access:** forward customHeaders in SCRAPE_CLIENT payload ([#1585](https://github.com/adobe/spacecat-shared/issues/1585)) ([41f636e](https://github.com/adobe/spacecat-shared/commit/41f636ee03037f98db3838f487a3211a2ea716a4))
+
 ## [@adobe/spacecat-shared-data-access-v3.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.56.1...@adobe/spacecat-shared-data-access-v3.57.0) (2026-05-05)
 
 ### Features

@@ -96,12 +96,12 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
 
       if (isObject(routeCapabilities)) {
         const capability = resolveRouteCapability(context, routeCapabilities);
-        // capability format is 'resource:action' (e.g. 'site:read', 'site:write').
+        // capability format is 'resource:action' (e.g. 'site:read', 'site:readAll', 'site:write').
         // split(':').pop() extracts the action; a missing or malformed value yields
-        // undefined, which is !== 'read' and correctly blocks the request.
+        // undefined, which is not a read action and correctly blocks the request.
         const action = capability?.split(':').pop();
 
-        if (action !== 'read') {
+        if (action !== 'read' && action !== 'readAll') {
           log.warn({
             tag: 'ro-admin',
             email: authInfo.getProfile?.()?.email,

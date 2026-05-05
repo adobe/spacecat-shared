@@ -471,7 +471,7 @@ export default class DrsClient {
     if (!excelBuffer || excelBuffer.length === 0) {
       throw new Error('excelBuffer is required and must be non-empty');
     }
-    if (!Buffer.from(excelBuffer).slice(0, 4).equals(XLSX_MAGIC)) {
+    if (!Buffer.from(excelBuffer.subarray(0, 4)).equals(XLSX_MAGIC)) {
       throw new Error(`Refusing to upload non-XLSX content to S3 (size=${excelBuffer.length})`);
     }
 

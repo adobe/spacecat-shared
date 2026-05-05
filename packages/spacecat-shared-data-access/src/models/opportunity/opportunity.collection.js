@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
 import BaseCollection from '../base/base.collection.js';
 
 /**
@@ -22,7 +24,22 @@ import BaseCollection from '../base/base.collection.js';
 class OpportunityCollection extends BaseCollection {
   static COLLECTION_NAME = 'OpportunityCollection';
 
-  // add custom methods here
+  /**
+   * Returns all opportunities matching a given scope type and scope ID.
+   *
+   * @param {string} scopeType - The scope type (e.g. 'brand').
+   * @param {string} scopeId - The scope entity UUID.
+   * @returns {Promise<Opportunity[]>} The matching opportunities.
+   */
+  async allByScope(scopeType, scopeId) {
+    if (!hasText(scopeType)) {
+      throw new Error('allByScope: scopeType is required');
+    }
+    if (!hasText(scopeId)) {
+      throw new Error('allByScope: scopeId is required');
+    }
+    return this.allByIndexKeys({ scopeType, scopeId });
+  }
 }
 
 export default OpportunityCollection;

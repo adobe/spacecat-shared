@@ -37,6 +37,10 @@ class Opportunity extends BaseModel {
     RESOLVED: 'RESOLVED',
   };
 
+  static SCOPE_TYPES = {
+    BRAND: 'brand',
+  };
+
   /**
    * Adds the given suggestions to this Opportunity. Sets this opportunity as the parent
    * of each suggestion, as such the opportunity ID does not need to be provided.

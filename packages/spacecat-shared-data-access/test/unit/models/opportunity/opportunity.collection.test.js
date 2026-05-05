@@ -12,6 +12,7 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import Opportunity from '../../../../src/models/opportunity/opportunity.model.js';
@@ -68,6 +69,37 @@ describe('OpportunityCollection', () => {
       expect(instance.log).to.equal(mockLogger);
 
       expect(model).to.be.an('object');
+    });
+  });
+
+  describe('allByScope', () => {
+    it('throws an error if scopeType is not provided', async () => {
+      await expect(instance.allByScope()).to.be.rejectedWith('allByScope: scopeType is required');
+    });
+
+    it('throws an error if scopeId is not provided', async () => {
+      await expect(instance.allByScope('brand')).to.be.rejectedWith('allByScope: scopeId is required');
+    });
+
+    it('delegates to allByIndexKeys with the correct arguments', async () => {
+      const mockOpportunity = { getOpportunityId: () => 'op-111' };
+      instance.allByIndexKeys = stub().resolves([mockOpportunity]);
+
+      const result = await instance.allByScope('brand', 'brand-uuid-123');
+
+      expect(instance.allByIndexKeys).to.have.been.calledOnceWith({
+        scopeType: 'brand',
+        scopeId: 'brand-uuid-123',
+      });
+      expect(result).to.deep.equal([mockOpportunity]);
+    });
+
+    it('returns an empty array when no opportunities match the scope', async () => {
+      instance.allByIndexKeys = stub().resolves([]);
+
+      const result = await instance.allByScope('brand', 'brand-uuid-no-results');
+
+      expect(result).to.be.an('array').with.lengthOf(0);
     });
   });
 });

@@ -223,6 +223,10 @@ class Audit extends BaseModel {
           },
         };
 
+        if (stepResult.customHeaders) {
+          payload.customHeaders = stepResult.customHeaders;
+        }
+
         // Propagate traceId for cross-worker tracing continuity
         // This allows the scrape client to maintain the same trace across multiple workers
         if (context.traceId) {

@@ -79,6 +79,8 @@ interface PublishBrandPresenceParams {
   runFrequency?: 'daily' | 'weekly';
   brand?: string;
   imsOrgId?: string;
+  /** SpaceCat brand UUID; signals v2 onboarding to the DRS Fargate runner. */
+  brandId?: string;
 }
 
 interface BrandDetectionOptions {

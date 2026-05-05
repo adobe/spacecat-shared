@@ -58,10 +58,16 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       rumVerified: { type: 'boolean' },
       siteCreated: { type: 'boolean' },
       siteResolved: { type: 'boolean' },
+      siteOrgReassigned: { type: 'boolean' },
+      authorUrlResolved: { type: 'boolean' },
+      hlxConfigSet: { type: 'boolean' },
+      codeConfigResolved: { type: 'boolean' },
       configUpdated: { type: 'boolean' },
       auditsEnabled: { type: 'boolean' },
       deliveryConfigQueued: { type: 'boolean' },
       entitlementCreated: { type: 'boolean' },
+      entitlementFailed: { type: 'boolean' },
+      orgResolutionFailed: { type: 'boolean' },
     },
   })
   .addAttribute('error', {
@@ -75,6 +81,11 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       ipsToAllowlist: { type: 'list', items: { type: 'string' } },
       userAgent: { type: 'string' },
     },
+  })
+  .addAttribute('createdBy', {
+    type: 'string',
+    required: false,
+    default: 'system',
   })
   .addAttribute('waitlistReason', {
     type: 'string',

@@ -163,6 +163,12 @@ describe('resolveCustomerSecretsName', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(() => resolveCustomerSecretsName('https://nba.com/%ZZkings', ctx)).to.not.throw();
   });
+
+  it('does not collide hostname with consecutive dots and a subpath with the same text', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com..foo', ctx))
+      .to.not.equal(resolveCustomerSecretsName('https://nba.com/foo', ctx));
+  });
 });
 
 describe('generateCSVFile', () => {

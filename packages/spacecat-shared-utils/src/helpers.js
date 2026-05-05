@@ -62,7 +62,7 @@ export function resolveCustomerSecretsName(baseURL, ctx) {
   let customer;
   try {
     const url = new URL(baseURL);
-    const host = url.hostname.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+    const host = url.hostname.replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
     const segments = url.pathname.split('/').filter(Boolean)
       .map((seg) => {
         let decoded = seg;

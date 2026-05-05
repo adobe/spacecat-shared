@@ -362,6 +362,41 @@ describe('AuditModel', () => {
       });
     });
 
+    it('forwards customHeaders in the scrape client payload when present', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+        customHeaders: { 'User-Agent': 'GPTBot/1.2' },
+      };
+      const context = {
+        env: { AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url' },
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.SCRAPE_CLIENT]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload.customHeaders).to.deep.equal({ 'User-Agent': 'GPTBot/1.2' });
+    });
+
+    it('omits customHeaders from the scrape client payload when absent', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+      };
+      const context = {
+        env: { AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url' },
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.SCRAPE_CLIENT]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.not.have.property('customHeaders');
+    });
+
     it('formats scrape client payload with traceId when present in context', () => {
       const stepResult = {
         urls: [{ url: 'someUrl' }],

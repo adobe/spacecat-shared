@@ -317,7 +317,10 @@ export default class CloudManagerClient {
       this.log.info(`Cloning CM repository: program=${programId}, repo=${repositoryId}, type=${repoType}`);
 
       const args = await this.#buildAuthGitArgs('clone', programId, repositoryId, { imsOrgId, repoType, repoUrl });
-      this.#execGit([...args, clonePath]);
+      // Pop the repo URL so --recurse-submodules can be inserted before it.
+      // The -c auth flags are inherited by submodule clones, covering authenticated submodule URLs.
+      const repoUrlArg = args.pop();
+      this.#execGit([...args, '--recurse-submodules', repoUrlArg, clonePath]);
       this.log.info(`Repository cloned to ${clonePath}`);
       this.#logTmpDiskUsage('clone');
 
@@ -587,6 +590,10 @@ export default class CloudManagerClient {
     }
     const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
     this.#execGit(pullArgs, { cwd: clonePath });
+    // Re-use the -c auth flags (everything before the trailing 'pull' + remote-url pair)
+    // so submodule update can reach authenticated submodule URLs.
+    const configArgs = pullArgs.slice(0, -2);
+    this.#execGit([...configArgs, 'submodule', 'update', '--init', '--recursive'], { cwd: clonePath });
     this.log.info('Changes pulled successfully');
     this.#logTmpDiskUsage('pull');
   }

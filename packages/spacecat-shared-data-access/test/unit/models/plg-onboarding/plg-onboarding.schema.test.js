@@ -148,6 +148,55 @@ describe('PlgOnboarding Schema', () => {
     });
   });
 
+  describe('steps attribute', () => {
+    let stepsAttr;
+
+    before(() => {
+      const attributes = plgOnboardingSchema.getAttributes();
+      stepsAttr = attributes.steps;
+    });
+
+    it('should exist as a map type', () => {
+      expect(stepsAttr).to.exist;
+      expect(stepsAttr.type).to.equal('map');
+    });
+
+    it('should define all expected step keys', () => {
+      const keys = Object.keys(stepsAttr.properties);
+      const expected = [
+        'orgResolved',
+        'rumVerified',
+        'siteCreated',
+        'siteResolved',
+        'siteOrgReassigned',
+        'authorUrlResolved',
+        'hlxConfigSet',
+        'codeConfigResolved',
+        'configUpdated',
+        'auditsEnabled',
+        'deliveryConfigQueued',
+        'entitlementCreated',
+        'entitlementFailed',
+        'orgResolutionFailed',
+      ];
+      expect(keys).to.have.members(expected);
+    });
+
+    it('should not contain the removed siteOrgReassignmentFailed key', () => {
+      expect(stepsAttr.properties).to.not.have.property('siteOrgReassignmentFailed');
+    });
+
+    it('should define entitlementFailed as a boolean', () => {
+      expect(stepsAttr.properties.entitlementFailed).to.deep.equal({ type: 'boolean' });
+    });
+
+    it('should define all step properties as boolean type', () => {
+      Object.values(stepsAttr.properties).forEach((prop) => {
+        expect(prop).to.deep.equal({ type: 'boolean' });
+      });
+    });
+  });
+
   describe('createdBy attribute', () => {
     let createdByAttr;
 

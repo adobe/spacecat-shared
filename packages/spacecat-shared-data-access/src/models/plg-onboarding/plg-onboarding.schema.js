@@ -66,8 +66,8 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       auditsEnabled: { type: 'boolean' },
       deliveryConfigQueued: { type: 'boolean' },
       entitlementCreated: { type: 'boolean' },
+      entitlementFailed: { type: 'boolean' },
       orgResolutionFailed: { type: 'boolean' },
-      siteOrgReassignmentFailed: { type: 'boolean' },
     },
   })
   .addAttribute('error', {

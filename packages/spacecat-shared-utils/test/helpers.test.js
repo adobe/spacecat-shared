@@ -190,6 +190,13 @@ describe('resolveCustomerSecretsName', () => {
     expect(() => resolveCustomerSecretsName('ftp://nba.com/kings', ctx))
       .to.throw('Invalid baseURL: must be an http(s) URL with a hostname');
   });
+
+  it('throws error when hostname reduces to empty after sanitization', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    // hostname consisting entirely of non-alnum chars sanitizes to empty
+    expect(() => resolveCustomerSecretsName('https://---/foo', ctx))
+      .to.throw('Invalid baseURL: hostname reduces to empty after sanitization');
+  });
 });
 
 describe('generateCSVFile', () => {

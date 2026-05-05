@@ -47,7 +47,7 @@ export function resolveSecretsName(opts, ctx, defaultPath) {
  * dropped. Sanitized parts are joined with `__` as the path-segment delimiter.
  *
  * The `__` delimiter cannot appear inside a sanitized segment (any run of
- * non-alphanumeric characters — including `__` — collapses to a single `_`),
+ * non-alphanumeric characters, including `__`, collapses to a single `_`),
  * so URLs that differ in path structure (different number of segments, or
  * segments with different alphanumeric content) produce distinct keys. Note
  * that path segments differing only in punctuation (e.g. `us-kings` vs
@@ -64,7 +64,7 @@ export function resolveSecretsName(opts, ctx, defaultPath) {
  * @param {string} baseURL - The base URL (must be http(s) with a hostname).
  * @param {Object} ctx - The context object containing the function version.
  * @returns {string} - The resolved secret name.
- * @since 2.x — key now includes URL path segments; prior versions used hostname
+ * @since next - key now includes URL path segments; prior versions used hostname
  *   only, causing subpath sites on the same domain to share a secret. LLMO-4186.
  */
 export function resolveCustomerSecretsName(baseURL, ctx) {
@@ -80,6 +80,9 @@ export function resolveCustomerSecretsName(baseURL, ctx) {
   }
   const sanitize = (s) => s.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').toLowerCase();
   const host = sanitize(url.hostname);
+  if (!host) {
+    throw new Error('Invalid baseURL: hostname reduces to empty after sanitization');
+  }
   const segments = url.pathname.split('/').filter(Boolean)
     .map((seg) => {
       let decoded = seg;

@@ -502,6 +502,10 @@ export default class DrsClient {
    * @param {string} [params.runFrequency] - 'daily' | 'weekly'
    * @param {string} [params.brand] - Brand name
    * @param {string} [params.imsOrgId] - IMS organization ID
+   * @param {string} [params.brandId] - SpaceCat brand UUID; signals v2 onboarding to the
+   *   downstream Fargate runner. When set, the runner reads brand/topic/category/prompt
+   *   config from the v2 PostgREST tables; when undefined the runner falls back to v1
+   *   config sourced from the legacy spreadsheet mirror.
    * @returns {Promise<string>} The job ID used in the SNS message
    */
   async publishBrandPresenceAnalyze(siteId, {
@@ -514,6 +518,7 @@ export default class DrsClient {
     runFrequency,
     brand,
     imsOrgId,
+    brandId,
   } = {}) {
     if (!this.isS3Configured()) {
       throw new Error('DRS S3 is not configured. Set DRS_S3_BUCKET and DRS_SNS_TOPIC_ARN environment variables.');
@@ -538,6 +543,7 @@ export default class DrsClient {
         web_search_provider: webSearchProvider,
         config_version: configVersion,
         ...(runFrequency && { run_frequency: runFrequency }),
+        ...(hasText(brandId) && { brand_id: brandId }),
       },
       ...(week != null && { week }),
       ...(year != null && { year }),

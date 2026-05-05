@@ -14,10 +14,10 @@ import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import SemanticValueVisibilityMapper from '../../src/mappers/semantic-value-visibility-mapper.js';
+import ImageEnrichmentMapper from '../../src/mappers/image-enrichment-mapper.js';
 
 const filename = fileURLToPath(import.meta.url);
-const fixturesPath = join(dirname(filename), '../fixtures/semantic-value-visibility');
+const fixturesPath = join(dirname(filename), '../fixtures/image-enrichment');
 
 // Load real Mystique response fixtures
 // Carahsoft proves the logic is correct, others prove it doesn't crash with different real inputs.
@@ -27,7 +27,7 @@ const krisshopFixture = JSON.parse(readFileSync(join(fixturesPath, 'Krisshop.jso
 const veserisFixture = JSON.parse(readFileSync(join(fixturesPath, 'Veseris.json'), 'utf8'));
 const vuseFixture = JSON.parse(readFileSync(join(fixturesPath, 'Vuse.json'), 'utf8'));
 
-describe('SemanticValueVisibilityMapper', () => {
+describe('ImageEnrichmentMapper', () => {
   let mapper;
   let log;
 
@@ -38,12 +38,12 @@ describe('SemanticValueVisibilityMapper', () => {
       warn: () => {},
       error: () => {},
     };
-    mapper = new SemanticValueVisibilityMapper(log);
+    mapper = new ImageEnrichmentMapper(log);
   });
 
   describe('getOpportunityType', () => {
-    it('should return semantic-value-visibility', () => {
-      expect(mapper.getOpportunityType()).to.equal('semantic-value-visibility');
+    it('should return image-enrichment', () => {
+      expect(mapper.getOpportunityType()).to.equal('image-enrichment');
     });
   });
 

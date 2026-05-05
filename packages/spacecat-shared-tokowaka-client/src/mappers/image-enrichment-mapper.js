@@ -16,13 +16,13 @@ import BaseOpportunityMapper from './base-mapper.js';
 import { htmlToHast } from '../utils/html-utils.js';
 
 /**
- * Mapper for semantic-value-visibility opportunity
+ * Mapper for image-enrichment opportunity
  * Handles conversion of image semantic HTML suggestions to Tokowaka patches
  */
-export default class SemanticValueVisibilityMapper extends BaseOpportunityMapper {
+export default class ImageEnrichmentMapper extends BaseOpportunityMapper {
   constructor(log) {
     super(log);
-    this.opportunityType = 'semantic-value-visibility';
+    this.opportunityType = 'image-enrichment';
     this.prerenderRequired = true;
     this.validActions = ['insertAfter', 'insertBefore', 'appendChild'];
   }
@@ -48,7 +48,7 @@ export default class SemanticValueVisibilityMapper extends BaseOpportunityMapper
     suggestions.forEach((suggestion) => {
       const eligibility = this.canDeploy(suggestion);
       if (!eligibility.eligible) {
-        this.log.warn(`Semantic-value-visibility suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
+        this.log.warn(`Image-enrichment suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
         return;
       }
 
@@ -74,7 +74,7 @@ export default class SemanticValueVisibilityMapper extends BaseOpportunityMapper
   }
 
   /**
-   * Checks if a semantic-value-visibility suggestion can be deployed
+   * Checks if an image-enrichment suggestion can be deployed
    * @param {Object} suggestion - Suggestion object
    * @returns {Object} { eligible: boolean, reason?: string }
    */

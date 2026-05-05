@@ -42,7 +42,6 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
   })
   .addAttribute('llmBackend', {
     type: Organization.LLM_BACKENDS,
-    default: Organization.LLM_BACKEND_AZURE,
     validate: (value) => !value || Organization.LLM_BACKENDS.includes(value),
   })
   .addAttribute('fulfillableItems', {

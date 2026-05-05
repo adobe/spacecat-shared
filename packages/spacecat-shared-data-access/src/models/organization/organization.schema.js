@@ -40,6 +40,11 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
     type: 'string',
     validate: (value) => !value || Organization.IMS_ORG_ID_REGEX.test(value),
   })
+  .addAttribute('llmBackend', {
+    type: Organization.LLM_BACKENDS,
+    default: Organization.LLM_BACKEND_AZURE,
+    validate: (value) => !value || Organization.LLM_BACKENDS.includes(value),
+  })
   .addAttribute('fulfillableItems', {
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),

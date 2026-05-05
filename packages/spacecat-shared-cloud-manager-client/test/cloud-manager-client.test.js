@@ -256,7 +256,10 @@ describe('CloudManagerClient', () => {
       expect(gitArgsStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
       expect(gitArgsStr).to.include('x-api-key: test-client-id');
       expect(gitArgsStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
-      expect(gitArgsStr).to.include(`${TEST_ENV.CM_REPO_URL}/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}.git`);
+      expect(gitArgsStr).to.include('--recurse-submodules');
+      const repoUrl = `${TEST_ENV.CM_REPO_URL}/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}.git`;
+      expect(gitArgsStr).to.include(repoUrl);
+      expect(gitArgs.indexOf('--recurse-submodules')).to.be.lessThan(gitArgs.indexOf(repoUrl));
       expect(gitArgs).to.include(EXPECTED_CLONE_PATH);
     });
 
@@ -279,7 +282,9 @@ describe('CloudManagerClient', () => {
       const cloneArgsStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(cloneArgs).to.include('clone');
       expect(cloneArgsStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==`);
+      expect(cloneArgsStr).to.include('--recurse-submodules');
       expect(cloneArgsStr).to.include(TEST_STANDARD_REPO_URL);
+      expect(cloneArgs.indexOf('--recurse-submodules')).to.be.lessThan(cloneArgs.indexOf(TEST_STANDARD_REPO_URL));
       expect(cloneArgs).to.include(EXPECTED_CLONE_PATH);
       // No credentials in the URL itself
       expect(cloneArgsStr).to.not.include('stduser:stdtoken123@');
@@ -819,15 +824,20 @@ describe('CloudManagerClient', () => {
         { imsOrgId: TEST_IMS_ORG_ID },
       );
 
-      expect(execFileSyncStub).to.have.been.calledOnce;
+      // pull + submodule update
+      expect(execFileSyncStub).to.have.been.calledTwice;
 
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
       expect(pullArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
       expect(pullArgStr).to.include('x-api-key: test-client-id');
       expect(pullArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
-
       expect(execFileSyncStub.firstCall.args[2]).to.have.property('cwd', '/tmp/cm-repo-test');
+
+      const submoduleArgStr = getGitArgsStr(execFileSyncStub.secondCall);
+      expect(submoduleArgStr).to.include('submodule update --init --recursive');
+      expect(submoduleArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
+      expect(execFileSyncStub.secondCall.args[2]).to.have.property('cwd', '/tmp/cm-repo-test');
     });
 
     it('pulls standard repo with basic auth in URL', async () => {
@@ -842,7 +852,8 @@ describe('CloudManagerClient', () => {
         { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
       );
 
-      expect(execFileSyncStub).to.have.been.calledOnce;
+      // pull + submodule update
+      expect(execFileSyncStub).to.have.been.calledTwice;
 
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
@@ -850,6 +861,11 @@ describe('CloudManagerClient', () => {
       expect(pullArgStr).to.include(TEST_STANDARD_REPO_URL);
       expect(pullArgStr).to.not.include('stduser:stdtoken123@');
       expect(pullArgStr).to.not.include('Bearer');
+
+      const submoduleArgStr = getGitArgsStr(execFileSyncStub.secondCall);
+      expect(submoduleArgStr).to.include('submodule update --init --recursive');
+      expect(submoduleArgStr).to.include(`http.${TEST_STANDARD_REPO_URL}.extraheader=Authorization: Basic`);
+      expect(submoduleArgStr).to.not.include('pull');
     });
 
     it('checks out ref before pulling when ref is provided', async () => {
@@ -862,7 +878,8 @@ describe('CloudManagerClient', () => {
         { imsOrgId: TEST_IMS_ORG_ID, ref: 'feature/my-branch' },
       );
 
-      expect(execFileSyncStub).to.have.been.calledTwice;
+      // checkout + pull + submodule update
+      expect(execFileSyncStub).to.have.been.calledThrice;
 
       // First call: checkout
       const checkoutArgStr = getGitArgsStr(execFileSyncStub.firstCall);
@@ -873,6 +890,11 @@ describe('CloudManagerClient', () => {
       const pullArgStr = getGitArgsStr(execFileSyncStub.secondCall);
       expect(pullArgStr).to.include('pull');
       expect(pullArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
+
+      // Third call: submodule update
+      const submoduleArgStr = getGitArgsStr(execFileSyncStub.thirdCall);
+      expect(submoduleArgStr).to.include('submodule update --init --recursive');
+      expect(submoduleArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
     });
 
     it('skips checkout when ref is not provided', async () => {
@@ -885,11 +907,15 @@ describe('CloudManagerClient', () => {
         { imsOrgId: TEST_IMS_ORG_ID },
       );
 
-      expect(execFileSyncStub).to.have.been.calledOnce;
+      // pull + submodule update (no checkout)
+      expect(execFileSyncStub).to.have.been.calledTwice;
 
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
       expect(pullArgStr).to.not.include('checkout');
+
+      const submoduleArgStr = getGitArgsStr(execFileSyncStub.secondCall);
+      expect(submoduleArgStr).to.include('submodule update --init --recursive');
     });
   });
 

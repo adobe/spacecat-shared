@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.26.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.26.0...@adobe/spacecat-shared-http-utils-v1.26.1) (2026-05-05)
+
+### Bug Fixes
+
+* **http-utils:** allow readAll action in readOnlyAdminWrapper ([#1581](https://github.com/adobe/spacecat-shared/issues/1581)) ([02d1c0b](https://github.com/adobe/spacecat-shared/commit/02d1c0ba22ba2aa95cf4b2e14bf2c9adb01ddedd))
+
 ## [@adobe/spacecat-shared-http-utils-v1.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.25.2...@adobe/spacecat-shared-http-utils-v1.26.0) (2026-04-30)
 
 ### Features

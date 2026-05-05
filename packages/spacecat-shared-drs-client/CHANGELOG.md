@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.6.0...@adobe/spacecat-shared-drs-client-v1.7.0) (2026-05-05)
+
+
+### Features
+
+* **drs-client:** forward brandId on publishBrandPresenceAnalyze (LLMO-4716) ([#1586](https://github.com/adobe/spacecat-shared/issues/1586)) ([a6346cc](https://github.com/adobe/spacecat-shared/commit/a6346ccb550899a27122215a9e214de26a2c78c6))
+
 # [@adobe/spacecat-shared-drs-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.5.0...@adobe/spacecat-shared-drs-client-v1.6.0) (2026-04-30)
 
 

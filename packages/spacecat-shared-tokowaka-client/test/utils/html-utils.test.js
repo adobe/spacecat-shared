@@ -195,6 +195,7 @@ describe('HTML Utils', () => {
     });
 
     it('should use default warmup delay of 750ms for optimized HTML', async () => {
+      fetchStub.reset();
       fetchStub.resolves({
         ok: true,
         status: 200,

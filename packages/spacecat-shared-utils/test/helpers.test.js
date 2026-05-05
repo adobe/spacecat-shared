@@ -90,6 +90,113 @@ describe('resolveCustomerSecretsName', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(() => resolveCustomerSecretsName('not a valid url', ctx)).to.throw('Invalid baseURL: must be a valid URL');
   });
+
+  it('resolves unique secrets names for subpath sites on the same domain', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    const kingsURL = 'https://nba.com/kings';
+    const lakersURL = 'https://nba.com/lakers';
+
+    const kingsSecret = resolveCustomerSecretsName(kingsURL, ctx);
+    const lakersSecret = resolveCustomerSecretsName(lakersURL, ctx);
+
+    expect(kingsSecret).to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com__kings/1.0.0');
+    expect(lakersSecret).to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com__lakers/1.0.0');
+    expect(kingsSecret).to.not.equal(lakersSecret);
+  });
+
+  it('resolves the same secret name for root domain with and without trailing slash', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com/', ctx));
+  });
+
+  it('resolves the same secret name for subpath with and without trailing slash', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/kings', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com/kings/', ctx));
+  });
+
+  it('resolves unique secrets names for nested subpath sites', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/us/kings', ctx))
+      .to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com__us__kings/1.0.0');
+  });
+
+  it('resolves distinct secrets names for paths that differ only by separator type', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    const slashPath = resolveCustomerSecretsName('https://nba.com/us/kings', ctx);
+    const hyphenPath = resolveCustomerSecretsName('https://nba.com/us-kings', ctx);
+    expect(slashPath).to.not.equal(hyphenPath);
+  });
+
+  it('does not collide multi-segment paths with single-segment paths containing dots', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/us..kings', ctx))
+      .to.not.equal(resolveCustomerSecretsName('https://nba.com/us/kings', ctx));
+  });
+
+  it('does not collide multi-segment paths with single-segment paths containing underscores', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/us__kings', ctx))
+      .to.not.equal(resolveCustomerSecretsName('https://nba.com/us/kings', ctx));
+  });
+
+  it('normalizes percent-encoded path segments', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    // encoded and literal form of the same unicode segment must resolve identically
+    expect(resolveCustomerSecretsName('https://nba.com/k%C3%B6nig', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com/könig', ctx));
+    expect(resolveCustomerSecretsName('https://nba.com/k%C3%B6nig', ctx))
+      .to.match(/^\/helix-deploy\/spacecat-services\/customer-secrets\/nba_com__/);
+  });
+
+  it('case-folds path segments so /Kings and /kings resolve to the same key', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/Kings', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com/kings', ctx));
+  });
+
+  it('handles double slashes in paths correctly', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com//kings', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com/kings', ctx));
+  });
+
+  it('handles malformed percent-encoding in path segments without throwing', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(() => resolveCustomerSecretsName('https://nba.com/%ZZkings', ctx)).to.not.throw();
+  });
+
+  it('does not collide hostname with consecutive dots and a subpath with the same text', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com..foo', ctx))
+      .to.not.equal(resolveCustomerSecretsName('https://nba.com/foo', ctx));
+  });
+
+  it('produces the same key for URLs differing only by port', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/kings', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com:8443/kings', ctx));
+  });
+
+  it('throws error when baseURL has no hostname', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(() => resolveCustomerSecretsName('file:///etc/passwd', ctx))
+      .to.throw('Invalid baseURL: must be an http(s) URL with a hostname');
+  });
+
+  it('throws error when baseURL protocol is not http or https', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(() => resolveCustomerSecretsName('ftp://nba.com/kings', ctx))
+      .to.throw('Invalid baseURL: must be an http(s) URL with a hostname');
+  });
+
+  it('throws error when hostname reduces to empty after sanitization', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    // hostname consisting entirely of non-alnum chars sanitizes to empty
+    expect(() => resolveCustomerSecretsName('https://---/foo', ctx))
+      .to.throw('Invalid baseURL: hostname reduces to empty after sanitization');
+  });
 });
 
 describe('generateCSVFile', () => {

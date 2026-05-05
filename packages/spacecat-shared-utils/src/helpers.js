@@ -40,11 +40,19 @@ export function resolveSecretsName(opts, ctx, defaultPath) {
 /**
  * Resolves the name of the customer secrets based on the baseURL.
  *
- * The hostname and (if present) each URL path segment are percent-decoded,
- * individually sanitized (non-alphanumeric replaced with `_`, lowercased —
- * paths are case-folded deliberately so /Kings and /kings map to the same key),
- * and joined with `__` as a path-segment delimiter. The double-underscore
- * delimiter cannot appear in a sanitized segment, so distinct paths cannot collide.
+ * The hostname (per RFC 1035, case-insensitive) and each URL path segment are
+ * percent-decoded and individually sanitized: runs of non-alphanumeric characters
+ * are replaced with a single `_`, leading/trailing `_` are trimmed, and the
+ * result is lowercased. Segments that reduce to empty after sanitization are
+ * dropped. Sanitized parts are joined with `__` as the path-segment delimiter.
+ *
+ * The `__` delimiter cannot appear inside a sanitized segment (any run of
+ * non-alphanumeric characters — including `__` — collapses to a single `_`),
+ * so URLs that differ in path structure (different number of segments, or
+ * segments with different alphanumeric content) produce distinct keys. Note
+ * that path segments differing only in punctuation (e.g. `us-kings` vs
+ * `us_kings`) produce the same sanitized segment and therefore the same key;
+ * this is an inherent limitation of lossy sanitization.
  *
  * Key format: /helix-deploy/spacecat-services/customer-secrets/<host>[__<seg>...]/<version>
  *
@@ -53,28 +61,35 @@ export function resolveSecretsName(opts, ctx, defaultPath) {
  *   https://nba.com/kings     -> .../nba_com__kings/<version>
  *   https://nba.com/us/kings  -> .../nba_com__us__kings/<version>
  *
- * @param {string} baseURL - The base URL to resolve the customer secrets name from.
+ * @param {string} baseURL - The base URL (must be http(s) with a hostname).
  * @param {Object} ctx - The context object containing the function version.
  * @returns {string} - The resolved secret name.
+ * @since 2.x — key now includes URL path segments; prior versions used hostname
+ *   only, causing subpath sites on the same domain to share a secret. LLMO-4186.
  */
 export function resolveCustomerSecretsName(baseURL, ctx) {
   const basePath = '/helix-deploy/spacecat-services/customer-secrets';
-  let customer;
+  let url;
   try {
-    const url = new URL(baseURL);
-    const host = url.hostname.replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
-    const segments = url.pathname.split('/').filter(Boolean)
-      .map((seg) => {
-        let decoded = seg;
-        try {
-          decoded = decodeURIComponent(seg);
-        } catch { /* keep raw on malformed percent-encoding */ }
-        return decoded.replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
-      });
-    customer = segments.length > 0 ? `${host}__${segments.join('__')}` : host;
+    url = new URL(baseURL);
   } catch {
     throw new Error('Invalid baseURL: must be a valid URL');
   }
+  if (!url.hostname || !['http:', 'https:'].includes(url.protocol)) {
+    throw new Error('Invalid baseURL: must be an http(s) URL with a hostname');
+  }
+  const sanitize = (s) => s.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').toLowerCase();
+  const host = sanitize(url.hostname);
+  const segments = url.pathname.split('/').filter(Boolean)
+    .map((seg) => {
+      let decoded = seg;
+      try {
+        decoded = decodeURIComponent(seg);
+      } catch { /* keep raw on percent-encoded sequences that are not valid UTF-8 */ }
+      return sanitize(decoded);
+    })
+    .filter(Boolean);
+  const customer = segments.length > 0 ? `${host}__${segments.join('__')}` : host;
   return resolveSecretsName({}, ctx, `${basePath}/${customer}`);
 }
 

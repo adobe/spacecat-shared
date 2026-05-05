@@ -143,8 +143,11 @@ describe('resolveCustomerSecretsName', () => {
 
   it('normalizes percent-encoded path segments', () => {
     const ctx = { func: { version: '1.0.0' } };
+    // encoded and literal form of the same unicode segment must resolve identically
     expect(resolveCustomerSecretsName('https://nba.com/k%C3%B6nig', ctx))
-      .to.equal('/helix-deploy/spacecat-services/customer-secrets/nba_com__k_nig/1.0.0');
+      .to.equal(resolveCustomerSecretsName('https://nba.com/könig', ctx));
+    expect(resolveCustomerSecretsName('https://nba.com/k%C3%B6nig', ctx))
+      .to.match(/^\/helix-deploy\/spacecat-services\/customer-secrets\/nba_com__/);
   });
 
   it('case-folds path segments so /Kings and /kings resolve to the same key', () => {
@@ -168,6 +171,24 @@ describe('resolveCustomerSecretsName', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(resolveCustomerSecretsName('https://nba.com..foo', ctx))
       .to.not.equal(resolveCustomerSecretsName('https://nba.com/foo', ctx));
+  });
+
+  it('produces the same key for URLs differing only by port', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(resolveCustomerSecretsName('https://nba.com/kings', ctx))
+      .to.equal(resolveCustomerSecretsName('https://nba.com:8443/kings', ctx));
+  });
+
+  it('throws error when baseURL has no hostname', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(() => resolveCustomerSecretsName('file:///etc/passwd', ctx))
+      .to.throw('Invalid baseURL: must be an http(s) URL with a hostname');
+  });
+
+  it('throws error when baseURL protocol is not http or https', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(() => resolveCustomerSecretsName('ftp://nba.com/kings', ctx))
+      .to.throw('Invalid baseURL: must be an http(s) URL with a hostname');
   });
 });
 

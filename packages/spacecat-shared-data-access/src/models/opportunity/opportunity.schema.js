@@ -12,7 +12,9 @@
 
 /* c8 ignore start */
 
-import { isIsoDate, isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import {
+  isIsoDate, isNonEmptyObject, isValidUrl, isValidUUID,
+} from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import Opportunity from './opportunity.model.js';
@@ -66,10 +68,13 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
     validate: (value) => !value || isIsoDate(value),
   })
   .addAttribute('scopeType', {
-    type: Object.values(Opportunity.SCOPE_TYPES),
+    type: 'string',
+    validate: (value) => !value || Object.values(Opportunity.SCOPE_TYPES).includes(value),
   })
   .addAttribute('scopeId', {
     type: 'string',
-  });
+    validate: (value) => !value || isValidUUID(value),
+  })
+  .addIndex({ composite: ['scopeType'] }, { composite: ['scopeId'] });
 
 export default schema.build();

@@ -25,20 +25,18 @@ class OpportunityCollection extends BaseCollection {
   static COLLECTION_NAME = 'OpportunityCollection';
 
   /**
-   * Returns all opportunities with a given scope type and scope ID.
-   * Used to fetch brand-scoped opportunities directly by brandId
-   * without going through site association.
+   * Returns all opportunities matching a given scope type and scope ID.
    *
-   * @param {string} scopeType - The scope type (e.g. 'brand', 'site').
-   * @param {string} scopeId - The scope entity UUID (e.g. brand UUID).
+   * @param {string} scopeType - The scope type (e.g. 'brand').
+   * @param {string} scopeId - The scope entity UUID.
    * @returns {Promise<Opportunity[]>} The matching opportunities.
    */
-  async allByScopeId(scopeType, scopeId) {
+  async allByScope(scopeType, scopeId) {
     if (!hasText(scopeType)) {
-      throw new Error('scopeType is required');
+      throw new Error('allByScope: scopeType is required');
     }
     if (!hasText(scopeId)) {
-      throw new Error('scopeId is required');
+      throw new Error('allByScope: scopeId is required');
     }
     return this.allByIndexKeys({ scopeType, scopeId });
   }

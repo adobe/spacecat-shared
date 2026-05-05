@@ -419,8 +419,8 @@ describe('OpportunityModel', () => {
 
   describe('SCOPE_TYPES', () => {
     it('defines expected scope type constants', () => {
-      expect(Opportunity.SCOPE_TYPES.SITE).to.equal('site');
       expect(Opportunity.SCOPE_TYPES.BRAND).to.equal('brand');
+      expect(Opportunity.SCOPE_TYPES.SITE).to.be.undefined;
     });
   });
 });

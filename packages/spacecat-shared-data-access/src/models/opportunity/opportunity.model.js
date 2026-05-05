@@ -38,7 +38,6 @@ class Opportunity extends BaseModel {
   };
 
   static SCOPE_TYPES = {
-    SITE: 'site',
     BRAND: 'brand',
   };
 

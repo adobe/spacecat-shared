@@ -72,20 +72,20 @@ describe('OpportunityCollection', () => {
     });
   });
 
-  describe('allByScopeId', () => {
+  describe('allByScope', () => {
     it('throws an error if scopeType is not provided', async () => {
-      await expect(instance.allByScopeId()).to.be.rejectedWith('scopeType is required');
+      await expect(instance.allByScope()).to.be.rejectedWith('allByScope: scopeType is required');
     });
 
     it('throws an error if scopeId is not provided', async () => {
-      await expect(instance.allByScopeId('brand')).to.be.rejectedWith('scopeId is required');
+      await expect(instance.allByScope('brand')).to.be.rejectedWith('allByScope: scopeId is required');
     });
 
     it('delegates to allByIndexKeys with the correct arguments', async () => {
       const mockOpportunity = { getOpportunityId: () => 'op-111' };
       instance.allByIndexKeys = stub().resolves([mockOpportunity]);
 
-      const result = await instance.allByScopeId('brand', 'brand-uuid-123');
+      const result = await instance.allByScope('brand', 'brand-uuid-123');
 
       expect(instance.allByIndexKeys).to.have.been.calledOnceWith({
         scopeType: 'brand',
@@ -97,7 +97,7 @@ describe('OpportunityCollection', () => {
     it('returns an empty array when no opportunities match the scope', async () => {
       instance.allByIndexKeys = stub().resolves([]);
 
-      const result = await instance.allByScopeId('brand', 'brand-uuid-no-results');
+      const result = await instance.allByScope('brand', 'brand-uuid-no-results');
 
       expect(result).to.be.an('array').with.lengthOf(0);
     });

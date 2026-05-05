@@ -21,31 +21,31 @@ export interface Opportunity extends BaseModel {
   getAuditId(): string;
   getData(): object;
   getDescription(): string;
+  getFixEntities(): Promise<FixEntity[]>;
   getGuidance(): string;
+  getLastAuditedAt(): string;
   getOrigin(): string;
   getRunbook(): string;
+  getScopeId(): string | undefined;
+  getScopeType(): string | undefined;
   getSite(): Promise<Site>;
   getSiteId(): string;
   getStatus(): string;
-  getFixEntities(): Promise<FixEntity[]>;
   getSuggestions(): Promise<Suggestion[]>;
   getSuggestionsByStatus(status: string): Promise<Suggestion[]>;
   getSuggestionsByStatusAndRank(status: string, rank: string): Promise<Suggestion[]>;
-  getLastAuditedAt(): string;
   getTags(): string[];
   getTitle(): string;
   getType(): string;
-  getScopeId(): string | null;
-  getScopeType(): string | null;
-  setScopeId(scopeId: string): Opportunity;
-  setScopeType(scopeType: string): Opportunity;
   setAuditId(auditId: string): Opportunity;
   setData(data: object): Opportunity;
   setDescription(description: string): Opportunity;
-  setLastAuditedAt(lastAuditedAt: string): Opportunity;
   setGuidance(guidance: string): Opportunity;
+  setLastAuditedAt(lastAuditedAt: string): Opportunity;
   setOrigin(origin: string): Opportunity;
   setRunbook(runbook: string): Opportunity;
+  setScopeId(scopeId: string): Opportunity;
+  setScopeType(scopeType: 'brand'): Opportunity;
   setSiteId(siteId: string): Opportunity;
   setStatus(status: string): Opportunity;
   setTags(tags: string[]): Opportunity;
@@ -53,7 +53,7 @@ export interface Opportunity extends BaseModel {
 }
 
 export interface OpportunityCollection extends BaseCollection<Opportunity> {
-  allByScopeId(scopeType: string, scopeId: string): Promise<Opportunity[]>;
+  allByScope(scopeType: string, scopeId: string): Promise<Opportunity[]>;
   allByAuditId(auditId: string): Promise<Opportunity[]>;
   allByAuditIdAndUpdatedAt(auditId: string, updatedAt: string): Promise<Opportunity[]>;
   allBySiteId(siteId: string): Promise<Opportunity[]>;

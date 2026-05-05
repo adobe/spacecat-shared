@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.15.0...@adobe/spacecat-shared-tokowaka-client-v1.16.0) (2026-05-05)
+
+### Features
+
+* CM git clone also clones submodules ([#1583](https://github.com/adobe/spacecat-shared/issues/1583)) ([a1e67c3](https://github.com/adobe/spacecat-shared/commit/a1e67c36f9fb01dd65b501a2a1791f18a7432465))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.14.0...@adobe/spacecat-shared-tokowaka-client-v1.15.0) (2026-05-04)
+
+### Features
+
+* **AGENTCOM-634:** PDP enrichment does not correctly format on the AI visibility tool checker ([#1578](https://github.com/adobe/spacecat-shared/issues/1578)) ([b6140db](https://github.com/adobe/spacecat-shared/commit/b6140db8406ab2259dd3e91acdd31d91680e64ad))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.5...@adobe/spacecat-shared-tokowaka-client-v1.14.0) (2026-05-04)
+
+### Features
+
+* **tokowaka-client:** add checkWafConnectivity method ([#1552](https://github.com/adobe/spacecat-shared/issues/1552)) ([46f72e3](https://github.com/adobe/spacecat-shared/commit/46f72e39964d2e6906746e2d72f843a7d4a08428))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.13.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.4...@adobe/spacecat-shared-tokowaka-client-v1.13.5) (2026-05-04)
+
+### Bug Fixes
+
+* **deps:** update dependency uuid to v14 [security] ([#1555](https://github.com/adobe/spacecat-shared/issues/1555)) ([9c1fdda](https://github.com/adobe/spacecat-shared/commit/9c1fddab68014d16a6b5cc53965a08303345ed79))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.13.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.3...@adobe/spacecat-shared-tokowaka-client-v1.13.4) (2026-04-15)
 
 ### Bug Fixes

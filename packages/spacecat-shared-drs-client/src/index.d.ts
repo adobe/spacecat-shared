@@ -13,6 +13,9 @@
 interface DrsClientConfig {
   apiBaseUrl: string;
   apiKey: string;
+  s3Bucket?: string;
+  snsTopicArn?: string;
+  awsRegion?: string;
 }
 
 interface PromptGenerationParams {
@@ -66,6 +69,20 @@ export interface ScrapeLookupResponse {
   summary: ScrapeLookupSummary;
 }
 
+interface PublishBrandPresenceParams {
+  resultLocation: string;
+  jobId?: string;
+  webSearchProvider?: string;
+  configVersion?: string;
+  week?: number;
+  year?: number;
+  runFrequency?: 'daily' | 'weekly';
+  brand?: string;
+  imsOrgId?: string;
+  /** SpaceCat brand UUID; signals v2 onboarding to the DRS Fargate runner. */
+  brandId?: string;
+}
+
 interface BrandDetectionOptions {
   batchId?: string;
   priority?: string;
@@ -113,6 +130,9 @@ declare class DrsClient {
   static createFrom(context: { env: Record<string, string>; log?: Console }): DrsClient;
   constructor(config: DrsClientConfig, log?: Console);
   isConfigured(): boolean;
+  isS3Configured(): boolean;
+  uploadExcelToDrs(siteId: string, jobId: string, excelBuffer: Buffer | Uint8Array): Promise<string>;
+  publishBrandPresenceAnalyze(siteId: string, params: PublishBrandPresenceParams): Promise<string>;
   submitJob(params: Record<string, unknown>): Promise<DrsJobResult>;
   submitPromptGenerationJob(params: PromptGenerationParams): Promise<DrsJobResult>;
   submitScrapeJob(params: ScrapeJobParams): Promise<DrsJobResult>;

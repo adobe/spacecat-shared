@@ -103,6 +103,7 @@ describe('Index Exports', () => {
     'isoCalendarWeekMonday',
     'isoCalendarWeekSunday',
     'llmoConfig',
+    'LlmoConfigValidationError',
     'llmoStrategy',
     'logWrapper',
     'OPPORTUNITY_DEPENDENCY_MAP',

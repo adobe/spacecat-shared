@@ -94,6 +94,39 @@ describe('PlgOnboarding Schema', () => {
       expect(reviewsAttr.validate(reviews)).to.be.false;
     });
 
+    it('accepts valid reviews with CLOSED decision', () => {
+      const reviews = [{
+        reason: 'superseded by new onboarding',
+        decision: 'CLOSED',
+        reviewedBy: 'admin@adobe.com',
+        reviewedAt: '2026-04-29T10:00:00.000Z',
+        justification: 'new domain started for same org',
+      }];
+      expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+
+    it('accepts valid reviews with REOPENED decision', () => {
+      const reviews = [{
+        reason: 'Domain example.com manually transitioned from REJECTED to OUTDATED by admin.',
+        decision: 'REOPENED',
+        reviewedBy: 'admin@adobe.com',
+        reviewedAt: '2026-04-29T10:00:00.000Z',
+        justification: 'customer reapplied',
+      }];
+      expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+
+    it('accepts valid reviews with OFFBOARDED decision', () => {
+      const reviews = [{
+        reason: 'Domain example.com manually transitioned from ONBOARDED to OUTDATED by admin.',
+        decision: 'OFFBOARDED',
+        reviewedBy: 'admin@adobe.com',
+        reviewedAt: '2026-04-29T10:00:00.000Z',
+        justification: 'customer request',
+      }];
+      expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+
     it('accepts multiple reviews', () => {
       const reviews = [
         {
@@ -112,6 +145,77 @@ describe('PlgOnboarding Schema', () => {
         },
       ];
       expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+  });
+
+  describe('steps attribute', () => {
+    let stepsAttr;
+
+    before(() => {
+      const attributes = plgOnboardingSchema.getAttributes();
+      stepsAttr = attributes.steps;
+    });
+
+    it('should exist as a map type', () => {
+      expect(stepsAttr).to.exist;
+      expect(stepsAttr.type).to.equal('map');
+    });
+
+    it('should define all expected step keys', () => {
+      const keys = Object.keys(stepsAttr.properties);
+      const expected = [
+        'orgResolved',
+        'rumVerified',
+        'siteCreated',
+        'siteResolved',
+        'siteOrgReassigned',
+        'authorUrlResolved',
+        'hlxConfigSet',
+        'codeConfigResolved',
+        'configUpdated',
+        'auditsEnabled',
+        'deliveryConfigQueued',
+        'entitlementCreated',
+        'entitlementFailed',
+        'orgResolutionFailed',
+      ];
+      expect(keys).to.have.members(expected);
+    });
+
+    it('should not contain the removed siteOrgReassignmentFailed key', () => {
+      expect(stepsAttr.properties).to.not.have.property('siteOrgReassignmentFailed');
+    });
+
+    it('should define entitlementFailed as a boolean', () => {
+      expect(stepsAttr.properties.entitlementFailed).to.deep.equal({ type: 'boolean' });
+    });
+
+    it('should define all step properties as boolean type', () => {
+      Object.values(stepsAttr.properties).forEach((prop) => {
+        expect(prop).to.deep.equal({ type: 'boolean' });
+      });
+    });
+  });
+
+  describe('createdBy attribute', () => {
+    let createdByAttr;
+
+    before(() => {
+      const attributes = plgOnboardingSchema.getAttributes();
+      createdByAttr = attributes.createdBy;
+    });
+
+    it('should exist as an optional string attribute', () => {
+      expect(createdByAttr).to.exist;
+      expect(createdByAttr.type).to.equal('string');
+      expect(createdByAttr.required).to.not.be.true;
+    });
+
+    it('should have a default value of system', () => {
+      const defaultValue = typeof createdByAttr.default === 'function'
+        ? createdByAttr.default()
+        : createdByAttr.default;
+      expect(defaultValue).to.equal('system');
     });
   });
 });

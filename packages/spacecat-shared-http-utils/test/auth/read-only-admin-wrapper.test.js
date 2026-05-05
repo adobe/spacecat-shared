@@ -24,6 +24,7 @@ const routeCapabilities = {
   'DELETE /sites/:siteId': 'site:write',
   'GET /sites/:siteId/opportunities': 'opportunity:read',
   'POST /sites/:siteId/opportunities': 'opportunity:write',
+  'GET /organizations': 'organization:readAll',
 };
 
 describe('readOnlyAdminWrapper', () => {
@@ -223,6 +224,15 @@ describe('readOnlyAdminWrapper', () => {
 
     it('allows read-only admin on a read route (dynamic params)', async () => {
       context.pathInfo = { method: 'GET', suffix: '/sites/abc-123/opportunities' };
+      const wrapped = mockedWrapper(handler, { routeCapabilities });
+      const result = await wrapped({}, context);
+
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+    });
+
+    it('allows read-only admin on a readAll route', async () => {
+      context.pathInfo = { method: 'GET', suffix: '/organizations' };
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
 

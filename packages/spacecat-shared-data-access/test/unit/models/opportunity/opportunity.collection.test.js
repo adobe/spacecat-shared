@@ -118,11 +118,12 @@ describe('OpportunityCollection', () => {
       const mockOpportunity = { getOpportunityId: () => 'op-111' };
       instance.allByIndexKeys = stub().resolves([mockOpportunity]);
 
-      const result = await instance.allByScope('brand', 'brand-uuid-123');
+      const BRAND_UUID = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
+      const result = await instance.allByScope('brand', BRAND_UUID);
 
       expect(instance.allByIndexKeys).to.have.been.calledOnceWith({
         scopeType: 'brand',
-        scopeId: 'brand-uuid-123',
+        scopeId: BRAND_UUID,
       });
       expect(result).to.deep.equal([mockOpportunity]);
     });
@@ -130,7 +131,7 @@ describe('OpportunityCollection', () => {
     it('returns an empty array when no opportunities match the scope', async () => {
       instance.allByIndexKeys = stub().resolves([]);
 
-      const result = await instance.allByScope('brand', 'brand-uuid-no-results');
+      const result = await instance.allByScope('brand', 'cccccccc-cccc-4ccc-cccc-cccccccccccc');
 
       expect(result).to.be.an('array').with.lengthOf(0);
     });

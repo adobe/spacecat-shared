@@ -55,6 +55,7 @@ jobs:
         run: npm run semantic-release-dry
         env:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
+          SR_NO_NPM_AUTH: 'true'
 
   release:
     name: Release

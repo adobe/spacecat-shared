@@ -65,7 +65,7 @@ jobs:
           node-version: '24.14.1'
 
       - name: Update NPM
-        run: npm install -g npm@11
+        run: npm install -g npm@11.13.0
 
       - name: Configure Git auth for private Mysticat types repo
         run: |

@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-data-access-v3.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.57.0...@adobe/spacecat-shared-data-access-v3.58.0) (2026-05-05)
+
+### Features
+
+* **data-access:** forward customHeaders in SCRAPE_CLIENT payload ([#1585](https://github.com/adobe/spacecat-shared/issues/1585)) ([41f636e](https://github.com/adobe/spacecat-shared/commit/41f636ee03037f98db3838f487a3211a2ea716a4))
+
+## [@adobe/spacecat-shared-data-access-v3.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.56.1...@adobe/spacecat-shared-data-access-v3.57.0) (2026-05-05)
+
+### Features
+
+* added new status in PLG onboarding flow ([#1568](https://github.com/adobe/spacecat-shared/issues/1568)) ([e1d2be5](https://github.com/adobe/spacecat-shared/commit/e1d2be5242378ca8adb14a347dc46faf028801d7))
+
+## [@adobe/spacecat-shared-data-access-v3.56.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.56.0...@adobe/spacecat-shared-data-access-v3.56.1) (2026-05-04)
+
+### Bug Fixes
+
+* **data-access:** replace hard-coded IT hook timeout with shared constant ([#1579](https://github.com/adobe/spacecat-shared/issues/1579)) ([4fbc6e0](https://github.com/adobe/spacecat-shared/commit/4fbc6e0ce30e59525bd9c9136a5cf2215c9f186a)), closes [#1573](https://github.com/adobe/spacecat-shared/issues/1573)
+
+## [@adobe/spacecat-shared-data-access-v3.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.55.1...@adobe/spacecat-shared-data-access-v3.56.0) (2026-05-04)
+
+### Features
+
+* **data-access:** add readAll capability to Consumer.CAPABILITIES ([#1573](https://github.com/adobe/spacecat-shared/issues/1573)) ([4475928](https://github.com/adobe/spacecat-shared/commit/44759289abb95bc22c58d59327ff3e881d39c430))
+
+## [@adobe/spacecat-shared-data-access-v3.55.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.55.0...@adobe/spacecat-shared-data-access-v3.55.1) (2026-04-29)
+
+### Bug Fixes
+
+* BaseModel/Patcher record desync after save() causes silent sette… ([#1567](https://github.com/adobe/spacecat-shared/issues/1567)) ([c9c782d](https://github.com/adobe/spacecat-shared/commit/c9c782dab95d588852f8b2931405f0174965c346))
+
 ## [@adobe/spacecat-shared-data-access-v3.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.54.0...@adobe/spacecat-shared-data-access-v3.55.0) (2026-04-28)
 
 ### Features

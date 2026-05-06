@@ -38,6 +38,10 @@ const strategyGoalType = z.union([
   z.string(), // Catchall for future goal types
 ]);
 
+// Discriminator between Atomic (experiment-driven) and Evolving (iterative) strategies.
+// Existing pre-GA strategies have no `type` field and default to 'evolving' for backward compat.
+const strategyType = z.enum(['atomic', 'evolving']);
+
 /**
  * Library opportunity - user-created reusable opportunity template
  */
@@ -76,6 +80,7 @@ const strategyPromptSelection = z.object({
  */
 const strategy = z.object({
   id: nonEmptyString,
+  type: strategyType.default('evolving'),
   name: nonEmptyString,
   status: workflowStatus,
   url: z.union([z.string(), z.array(z.string())]),
@@ -90,6 +95,7 @@ const strategy = z.object({
   createdBy: z.string().optional(), // Email of strategy creator/owner
   completedAt: z.string().optional(), // ISO 8601 date string
   goalType: strategyGoalType.optional(),
+  experimentId: z.uuid().nullable().optional(),
 });
 
 /**
@@ -137,5 +143,38 @@ export const strategyWorkspaceData = z.object({
         });
       }
     });
+  });
+
+  // Validate type-based invariants (Atomic vs Evolving)
+  strategies.forEach((strat, strategyIndex) => {
+    // Atomic must have a non-null experimentId
+    if (strat.type === 'atomic' && (strat.experimentId === undefined || strat.experimentId === null)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['strategies', strategyIndex, 'experimentId'],
+        message: 'Atomic strategies require a non-null experimentId',
+      });
+    }
+
+    // Atomic must not carry selectedPrompts (those come from GeoExperiment)
+    if (strat.type === 'atomic' && Array.isArray(strat.selectedPrompts) && strat.selectedPrompts.length > 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['strategies', strategyIndex, 'selectedPrompts'],
+        message: 'Atomic strategies must not carry selectedPrompts (use GeoExperiment.promptsLocation)',
+      });
+    }
+
+    // Evolving: schema is intentionally permissive on `selectedPrompts`. Today's
+    // CreateStrategyDialog initializes selectedPrompts as `[]` for newly-created
+    // Evolving strategies (no prompt-selection UI yet). Enforcing "must be
+    // non-empty" at the schema would reject those in-flight reads + writes.
+    //
+    // The "newly-created Evolving strategies must include selectedPrompts" rule
+    // is deferred to the milestone where Evolving promotes out of co-innovation
+    // mode — at that point the schema tightens, the API layer (saveStrategy)
+    // adds the creation-time check, and the prompt-selection screen ships.
+    // All three land together. Until then, selectedPrompts on Evolving is
+    // structurally validated only.
   });
 });

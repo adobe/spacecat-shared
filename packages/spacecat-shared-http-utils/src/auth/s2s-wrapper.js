@@ -15,53 +15,7 @@ import { hasText, isNonEmptyArray, isObject } from '@adobe/spacecat-shared-utils
 
 import { getBearerToken } from './handlers/utils/bearer.js';
 import { loadPublicKey, validateToken } from './handlers/utils/token.js';
-
-/**
- * Matches pre-split request segments against a route pattern with :param segments.
- * e.g. ['sites', 'abc-123', 'audits'] matches 'GET /sites/:siteId/audits'
- */
-function matchRoute(method, requestSegments, routeKey) {
-  const spaceIdx = routeKey.indexOf(' ');
-  if (spaceIdx === -1) {
-    return false;
-  }
-
-  const routeMethod = routeKey.slice(0, spaceIdx);
-  if (routeMethod !== method) {
-    return false;
-  }
-
-  const routeSegments = routeKey.slice(spaceIdx + 1).split('/').filter(Boolean);
-  if (routeSegments.length !== requestSegments.length) {
-    return false;
-  }
-
-  return routeSegments.every(
-    (seg, i) => seg.charCodeAt(0) === 58 /* ':' */ || seg === requestSegments[i],
-  );
-}
-
-/**
- * Looks up the required capability for the current request from the
- * routeCapabilities map using the method and path from context.pathInfo.
- */
-function resolveCapability(context, routeCapabilities) {
-  const method = context.pathInfo?.method?.toUpperCase();
-  const path = context.pathInfo?.suffix;
-  if (!method || !path) {
-    return null;
-  }
-
-  const exactKey = `${method} ${path}`;
-  if (routeCapabilities[exactKey]) {
-    return routeCapabilities[exactKey];
-  }
-
-  const requestSegments = path.split('/').filter(Boolean);
-  const matchedKey = Object.keys(routeCapabilities)
-    .find((key) => matchRoute(method, requestSegments, key));
-  return matchedKey ? routeCapabilities[matchedKey] : null;
-}
+import { guardNonEmptyRouteCapabilities, resolveRouteCapability } from './route-utils.js';
 
 /**
  * S2S consumer auth wrapper for the helix-shared-wrap `.with()` chain.
@@ -81,9 +35,7 @@ function resolveCapability(context, routeCapabilities) {
  * @returns {Function} A wrapped handler.
  */
 export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
-  if (isObject(routeCapabilities) && Object.keys(routeCapabilities).length === 0) {
-    throw new Error('s2sAuthWrapper: routeCapabilities must not be an empty object — this would silently deny all S2S requests');
-  }
+  guardNonEmptyRouteCapabilities('s2sAuthWrapper', routeCapabilities);
 
   let publicKey;
 
@@ -155,7 +107,7 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
       }
 
       if (isObject(routeCapabilities)) {
-        const requiredCapability = resolveCapability(context, routeCapabilities);
+        const requiredCapability = resolveRouteCapability(context, routeCapabilities);
         if (!hasText(requiredCapability)) {
           log.warn(`[s2s] Route ${context.pathInfo?.method} ${context.pathInfo?.suffix} is not allowed for S2S consumers`);
           return new Response('Forbidden', { status: 403 });

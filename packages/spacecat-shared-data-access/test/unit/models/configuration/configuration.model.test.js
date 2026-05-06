@@ -245,6 +245,16 @@ describe('ConfigurationModel', () => {
       expect(instance.isHandlerEnabledForSite('org-disabled-handler', site)).to.be.false;
     });
 
+    it('returns true when site is in enabled.sites even if its org is in disabled.orgs', () => {
+      instance.addHandler('site-override-handler', {
+        enabledByDefault: true,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('site-override-handler', site)).to.be.true;
+    });
+
     it('updates handler orgs for a handler disabled by default with enabled', () => {
       instance.updateHandlerOrgs('lhs-mobile', org.getId(), true);
       expect(instance.getHandler('lhs-mobile').enabled.orgs).to.include(org.getId());

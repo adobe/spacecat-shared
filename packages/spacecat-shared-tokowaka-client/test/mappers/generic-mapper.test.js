@@ -17,7 +17,7 @@ import { expect } from 'chai';
 import GenericMapper from '../../src/mappers/generic-mapper.js';
 
 const filename = fileURLToPath(import.meta.url);
-const fixturesPath = join(dirname(filename), '../fixtures/semantic-value-visibility');
+const fixturesPath = join(dirname(filename), '../fixtures/image-enrichment');
 const carahsoftFixture = JSON.parse(
   readFileSync(join(fixturesPath, 'Carahsoft.json'), 'utf8'),
 );

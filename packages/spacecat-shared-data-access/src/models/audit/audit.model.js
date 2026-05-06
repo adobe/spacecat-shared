@@ -95,7 +95,9 @@ class Audit extends BaseModel {
     COMMERCE_PRODUCT_CATALOG_ENRICHMENT_AUTO_FIX: 'commerce-product-catalog-enrichment-auto-fix',
     CWV_TRENDS_AUDIT: 'cwv-trends-audit',
     OFFSITE_BRAND_PRESENCE: 'offsite-brand-presence',
-    SEMANTIC_VALUE_VISIBILITY: 'semantic-value-visibility',
+    IMAGE_ENRICHMENT: 'image-enrichment',
+    // @deprecated use IMAGE_ENRICHMENT — remove after producer cutover
+    SEMANTIC_VALUE_VISIBILITY: 'image-enrichment',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

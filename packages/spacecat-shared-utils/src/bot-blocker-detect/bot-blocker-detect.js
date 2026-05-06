@@ -29,7 +29,8 @@ const CONFIDENCE_HIGH = 0.99;
 const CONFIDENCE_MEDIUM = 0.95;
 const CONFIDENCE_ABSOLUTE = 1.0;
 const DEFAULT_TIMEOUT = 5000;
-const BODY_READ_TIMEOUT = 3000;
+export const BODY_READ_TIMEOUT = 3000;
+const BODY_READ_MAX_BYTES = 65536; // 64 KB — challenge markers appear in the first KB
 
 /**
  * SpaceCat bot identification constants
@@ -330,7 +331,7 @@ function analyzeError(error) {
  *   - confidence {number}: Confidence level (0.0-1.0, see confidence level constants)
  * @throws {Error} If baseUrl is invalid
  */
-export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT }) {
+export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log = console }) {
   if (!baseUrl || !isValidUrl(baseUrl)) {
     throw new Error('Invalid baseUrl');
   }
@@ -345,16 +346,21 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT }) {
     });
 
     let html = null;
-    try {
-      // Promise.race guards against servers that stream body slowly after headers arrive.
-      // tracingFetch clears its AbortSignal in finally{} before returning, so response.text()
-      // has no built-in timeout.
-      html = await Promise.race([
-        response.text(),
-        new Promise((_, reject) => { setTimeout(() => reject(new Error('body-read-timeout')), BODY_READ_TIMEOUT); }),
-      ]);
-    } catch {
-      // Body reading timed out or failed - fall back to header-only analysis
+    const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+    if (contentLength > 0 && contentLength > BODY_READ_MAX_BYTES) {
+      log.warn('detectBotBlocker: body too large, skipping body read', { fn: 'detectBotBlocker', url: baseUrl, contentLength });
+    } else {
+      try {
+        // Promise.race guards against servers that stream body slowly after headers arrive.
+        // tracingFetch clears its AbortSignal in finally{} before returning, so response.text()
+        // has no built-in timeout.
+        html = await Promise.race([
+          response.text(),
+          new Promise((_, reject) => { setTimeout(() => reject(new Error('body-read-timeout')), BODY_READ_TIMEOUT); }),
+        ]);
+      } catch (e) {
+        log.warn('detectBotBlocker: body read failed, using header-only analysis', { fn: 'detectBotBlocker', url: baseUrl, cause: e?.message });
+      }
     }
 
     return analyzeResponse(response, html);

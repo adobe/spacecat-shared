@@ -10,7 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import sinonChai from 'sinon-chai';
 import nock from 'nock';
 import sinon from 'sinon';
 import {
@@ -30,6 +31,8 @@ import {
   toggleWWWHostname,
   wwwUrlResolver,
 } from '../src/url-helpers.js';
+
+use(sinonChai);
 
 describe('URL Utility Functions', () => {
   describe('prependSchema', () => {
@@ -406,8 +409,7 @@ describe('URL Utility Functions', () => {
       expect(duration).to.be.below(11000); // Should complete well before timeout
     });
 
-    it('should use 15s timeout for GET requests', async () => {
-      // Verify GET request completes within timeout
+    it('should complete GET request well within the 7s total deadline', async () => {
       nock('https://example.com')
         .get('/')
         .reply(200);
@@ -417,12 +419,14 @@ describe('URL Utility Functions', () => {
       const duration = Date.now() - startTime;
 
       expect(result).to.equal('https://example.com/');
-      expect(duration).to.be.below(16000); // Should complete well before timeout
+      expect(duration).to.be.below(8000);
     });
 
     it('should return null immediately when total deadline has already passed', async () => {
-      const result = await resolveCanonicalUrl('https://example.com', 'HEAD', Date.now() - 1);
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD', Date.now() - 1, log);
       expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] deadline expired');
     });
 
     it('should handle AbortError from timeout and retry with GET for HEAD', async () => {

@@ -10,9 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import sinonChai from 'sinon-chai';
 import esmock from 'esmock';
 import nock from 'nock';
+import sinon from 'sinon';
 
 import {
   detectBotBlocker,
@@ -20,7 +22,10 @@ import {
   getSpacecatBotIps,
   formatAllowlistMessage,
   SPACECAT_BOT_USER_AGENT,
+  BODY_READ_TIMEOUT,
 } from '../../src/bot-blocker-detect/bot-blocker-detect.js';
+
+use(sinonChai);
 
 describe('Bot Blocker Detection', () => {
   const baseUrl = 'https://www.example.com';
@@ -404,7 +409,7 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(0.7);
     });
 
-    it('proceeds with header-only analysis when GET body cannot be read', async () => {
+    it('returns cloudflare-allowed for 200 with cf-ray and no challenge patterns in body', async () => {
       nock(baseUrl)
         .get('/')
         .reply(200, 'normal page content', { 'cf-ray': '123456789-CDG' });
@@ -413,6 +418,64 @@ describe('Bot Blocker Detection', () => {
 
       expect(result.crawlable).to.be.true;
       expect(result.type).to.equal('cloudflare-allowed');
+    });
+
+    it('skips body read and uses header-only analysis when Content-Length exceeds cap', async () => {
+      const headerMap = { 'content-length': '131072', 'cf-ray': '123-CDG' };
+      const mockHeaders = { get: (name) => headerMap[name] ?? null };
+      const textStub = sinon.stub().resolves('body content');
+      const mockResponse = { status: 200, headers: mockHeaders, text: textStub };
+
+      const { detectBotBlocker: detectBotBlockerMocked } = await esmock(
+        '../../src/bot-blocker-detect/bot-blocker-detect.js',
+        {
+          '../../src/tracing-fetch.js': {
+            tracingFetch: sinon.stub().resolves(mockResponse),
+            SPACECAT_USER_AGENT: 'test-agent',
+          },
+          '../../src/functions.js': { isValidUrl: sinon.stub().returns(true) },
+        },
+      );
+
+      const log = { warn: sinon.stub() };
+      const result = await detectBotBlockerMocked({ baseUrl, log });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+      expect(log.warn).to.have.been.calledWithMatch('body too large');
+      expect(textStub).not.to.have.been.called;
+    });
+
+    it('falls back to header-only analysis when body read exceeds BODY_READ_TIMEOUT', async () => {
+      const mockHeaders = { get: (name) => (name === 'cf-ray' ? '123-CDG' : null) };
+      // text() returns a promise that never resolves — simulates a slow-streaming body
+      const neverResolves = new Promise(() => {});
+      const mockResponse = {
+        status: 200, headers: mockHeaders, text: sinon.stub().returns(neverResolves),
+      };
+
+      // Resolve esmock before installing fake timers — esmock uses dynamic imports internally
+      const { detectBotBlocker: detectBotBlockerMocked } = await esmock(
+        '../../src/bot-blocker-detect/bot-blocker-detect.js',
+        {
+          '../../src/tracing-fetch.js': {
+            tracingFetch: sinon.stub().resolves(mockResponse),
+            SPACECAT_USER_AGENT: 'test-agent',
+          },
+          '../../src/functions.js': { isValidUrl: sinon.stub().returns(true) },
+        },
+      );
+
+      const clock = sinon.useFakeTimers();
+      const log = { warn: sinon.stub() };
+      const promise = detectBotBlockerMocked({ baseUrl, log });
+      await clock.tickAsync(BODY_READ_TIMEOUT + 1);
+      const result = await promise;
+      clock.restore();
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+      expect(log.warn).to.have.been.calledWithMatch('body read failed');
     });
 
     it('falls back to header-only analysis when response.text() throws', async () => {

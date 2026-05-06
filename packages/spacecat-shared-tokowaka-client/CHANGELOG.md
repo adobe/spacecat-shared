@@ -1,3 +1,13 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.0...@adobe/spacecat-shared-tokowaka-client-v1.16.1) (2026-05-06)
+
+### Bug Fixes
+
+* **tokowaka-client:** do not set edgeDeployed on domain-wide covered suggestions ([#1584](https://github.com/adobe/spacecat-shared/issues/1584)) ([51df852](https://github.com/adobe/spacecat-shared/commit/51df85231c74e8013e9ef7659f67584cbf239645))
+
+### Reverts
+
+* "feat: CM git clone also clones submodules ([#1583](https://github.com/adobe/spacecat-shared/issues/1583))" ([#1587](https://github.com/adobe/spacecat-shared/issues/1587)) ([2d9e34e](https://github.com/adobe/spacecat-shared/commit/2d9e34e68a0af6612891c61ec37e4304b7e9d912))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.15.0...@adobe/spacecat-shared-tokowaka-client-v1.16.0) (2026-05-05)
 
 ### Features

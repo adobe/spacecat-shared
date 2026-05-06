@@ -45,7 +45,6 @@ jobs:
         run: npm run semantic-release-dry
         env:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}
 
   release:
     name: Release
@@ -66,7 +65,7 @@ jobs:
           node-version: '24.14.1'
 
       - name: Update NPM
-        run: npm install -g npm@10.9.4
+        run: npm install -g npm@11
 
       - name: Configure Git auth for private Mysticat types repo
         run: |
@@ -81,4 +80,3 @@ jobs:
         run: npm run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}

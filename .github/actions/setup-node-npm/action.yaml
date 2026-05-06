@@ -30,7 +30,7 @@ runs:
           ${{ runner.os }}-node-
 
     - name: Update NPM (only if cache miss)
-      run: npm install -g npm@10.9.4
+      run: npm install -g npm@11
       shell: bash
 
     - name: Configure Git auth for private repos

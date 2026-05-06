@@ -12,6 +12,7 @@
 
 import { hasText } from '@adobe/spacecat-shared-utils';
 
+import { ValidationError } from '../../errors/index.js';
 import BaseCollection from '../base/base.collection.js';
 
 /**
@@ -23,6 +24,22 @@ import BaseCollection from '../base/base.collection.js';
  */
 class OpportunityCollection extends BaseCollection {
   static COLLECTION_NAME = 'OpportunityCollection';
+
+  /**
+   * Validates and creates a new Opportunity. Enforces that scopeType and scopeId
+   * must both be present or both be absent — a half-scoped record is invalid.
+   *
+   * @param {object} item - The opportunity data.
+   * @param {object} [options] - Optional create options (e.g. { upsert: true }).
+   * @returns {Promise<Opportunity>} The created opportunity instance.
+   */
+  async create(item, options) {
+    const { scopeType, scopeId } = item || {};
+    if (Boolean(scopeType) !== Boolean(scopeId)) {
+      throw new ValidationError('scopeType and scopeId must both be set or both be absent');
+    }
+    return super.create(item, options);
+  }
 
   /**
    * Returns all opportunities matching a given scope type and scope ID.

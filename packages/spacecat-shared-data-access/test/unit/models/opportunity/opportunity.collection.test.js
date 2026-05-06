@@ -72,6 +72,39 @@ describe('OpportunityCollection', () => {
     });
   });
 
+  describe('create', () => {
+    it('throws ValidationError when scopeType is set but scopeId is absent', async () => {
+      await expect(
+        instance.create({ type: 'content', scopeType: 'brand' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('throws ValidationError when scopeId is set but scopeType is absent', async () => {
+      await expect(
+        instance.create({ type: 'content', scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('passes co-presence check when both scopeType and scopeId are set', async () => {
+      // Co-presence check passes — mock create succeeds without complaining.
+      await expect(
+        instance.create({ scopeType: 'brand', scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.fulfilled;
+    });
+
+    it('passes co-presence check when neither scopeType nor scopeId is set', async () => {
+      // Neither present — co-presence check passes and mock create succeeds.
+      await expect(
+        instance.create({ type: 'content' }),
+      ).to.be.fulfilled;
+    });
+
+    it('handles null item gracefully by delegating to super.create', async () => {
+      // null item: co-presence check skips (both undefined → equal), super.create handles it.
+      await expect(instance.create(null)).to.be.rejectedWith(/Failed to create/);
+    });
+  });
+
   describe('allByScope', () => {
     it('throws an error if scopeType is not provided', async () => {
       await expect(instance.allByScope()).to.be.rejectedWith('allByScope: scopeType is required');

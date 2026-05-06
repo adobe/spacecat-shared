@@ -75,6 +75,6 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
     type: 'string',
     validate: (value) => !value || isValidUUID(value),
   })
-  .addIndex({ composite: ['scopeType'] }, { composite: ['scopeId'] });
+  .addIndex({ composite: ['scopeId'] }, { composite: ['scopeType'] });
 
 export default schema.build();

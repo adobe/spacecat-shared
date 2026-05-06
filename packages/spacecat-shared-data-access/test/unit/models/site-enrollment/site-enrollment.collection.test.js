@@ -162,4 +162,89 @@ describe('SiteEnrollmentCollection', () => {
       expect(mockLogger.error).to.have.been.called;
     });
   });
+
+  describe('allSiteIdsByTier', () => {
+    let fromStub;
+    let selectStub;
+    let firstEqStub;
+    let secondEqStub;
+
+    beforeEach(() => {
+      secondEqStub = sinon.stub();
+      firstEqStub = sinon.stub().returns({ eq: secondEqStub });
+      selectStub = sinon.stub().returns({ eq: firstEqStub });
+      fromStub = sinon.stub().returns({ select: selectStub });
+      instance.postgrestService.from = fromStub;
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('throws DataAccessError when tier is falsy', async () => {
+      await expect(instance.allSiteIdsByTier(null)).to.be.rejectedWith('tier is required');
+      await expect(instance.allSiteIdsByTier(undefined)).to.be.rejectedWith('tier is required');
+      await expect(instance.allSiteIdsByTier('')).to.be.rejectedWith('tier is required');
+    });
+
+    it('returns site IDs filtered by tier only when no productCode given', async () => {
+      firstEqStub.resolves({
+        data: [
+          { site_id: 'cfa88998-a0a0-4136-b21d-0ff2aa127443' },
+          { site_id: 'd1e2f3a4-b5c6-7890-abcd-ef1234567890' },
+        ],
+        error: null,
+      });
+
+      const result = await instance.allSiteIdsByTier('PAID');
+
+      expect(result).to.deep.equal([
+        'cfa88998-a0a0-4136-b21d-0ff2aa127443',
+        'd1e2f3a4-b5c6-7890-abcd-ef1234567890',
+      ]);
+      expect(fromStub).to.have.been.calledOnceWithExactly('site_enrollments');
+      expect(selectStub).to.have.been.calledOnceWithExactly('site_id, entitlements!inner(tier, product_code)');
+      expect(firstEqStub).to.have.been.calledOnceWithExactly('entitlements.tier', 'PAID');
+      expect(secondEqStub).to.not.have.been.called;
+    });
+
+    it('applies productCode filter when provided', async () => {
+      secondEqStub.resolves({
+        data: [{ site_id: 'cfa88998-a0a0-4136-b21d-0ff2aa127443' }],
+        error: null,
+      });
+
+      const result = await instance.allSiteIdsByTier('FREE_TRIAL', 'LLMO');
+
+      expect(result).to.deep.equal(['cfa88998-a0a0-4136-b21d-0ff2aa127443']);
+      expect(firstEqStub).to.have.been.calledOnceWithExactly('entitlements.tier', 'FREE_TRIAL');
+      expect(secondEqStub).to.have.been.calledOnceWithExactly('entitlements.product_code', 'LLMO');
+    });
+
+    it('returns empty array when no enrollments match', async () => {
+      firstEqStub.resolves({ data: [], error: null });
+
+      const result = await instance.allSiteIdsByTier('PLG');
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when data is null', async () => {
+      firstEqStub.resolves({ data: null, error: null });
+
+      const result = await instance.allSiteIdsByTier('PAID');
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('logs error and throws DataAccessError when query fails', async () => {
+      const dbError = new Error('DB connection failed');
+      firstEqStub.resolves({ data: null, error: dbError });
+
+      await expect(instance.allSiteIdsByTier('PAID'))
+        .to.be.rejectedWith('Failed to query site_enrollments by tier');
+
+      expect(mockLogger.error).to.have.been.called;
+    });
+  });
 });

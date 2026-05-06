@@ -29,7 +29,7 @@ runs:
         restore-keys: |
           ${{ runner.os }}-node-
 
-    - name: Update NPM (only if cache miss)
+    - name: Update NPM
       run: npm install -g npm@11.13.0
       shell: bash
 

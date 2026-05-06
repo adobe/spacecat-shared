@@ -331,9 +331,37 @@ function analyzeError(error) {
  *   - confidence {number}: Confidence level (0.0-1.0, see confidence level constants)
  * @throws {Error} If baseUrl is invalid
  */
+/**
+ * Returns true if the hostname resolves to a private, loopback, or link-local IP literal.
+ * Guards against SSRF when detectBotBlocker is called with attacker-supplied URLs.
+ * @param {string} urlString - URL to check
+ * @returns {boolean}
+ */
+function isPrivateIpUrl(urlString) {
+  try {
+    const { hostname } = new URL(urlString);
+    const parts = hostname.split('.');
+    if (parts.length !== 4 || parts.some((p) => Number.isNaN(Number(p)))) {
+      return false;
+    }
+    const [a, b] = parts.map(Number);
+    return a === 127 || a === 10
+      || (a === 172 && b >= 16 && b <= 31)
+      || (a === 192 && b === 168)
+      || (a === 169 && b === 254);
+  /* c8 ignore next 3 */
+  } catch {
+    return false;
+  }
+}
+
 export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log = console }) {
   if (!baseUrl || !isValidUrl(baseUrl)) {
     throw new Error('Invalid baseUrl');
+  }
+
+  if (isPrivateIpUrl(baseUrl)) {
+    throw new Error('Private IP addresses are not allowed');
   }
 
   try {
@@ -347,16 +375,20 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log
 
     let html = null;
     const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+    // Content-Length check is best-effort; chunked responses (no Content-Length header) are
+    // bounded by BODY_READ_TIMEOUT only.
     if (contentLength > 0 && contentLength > BODY_READ_MAX_BYTES) {
       log.warn('detectBotBlocker: body too large, skipping body read', { fn: 'detectBotBlocker', url: baseUrl, contentLength });
     } else {
       try {
         // Promise.race guards against servers that stream body slowly after headers arrive.
         // tracingFetch clears its AbortSignal in finally{} before returning, so response.text()
-        // has no built-in timeout.
+        // has no built-in timeout. clearTimeout prevents the timer handle from leaking when
+        // response.text() resolves before the deadline.
+        let timer;
         html = await Promise.race([
-          response.text(),
-          new Promise((_, reject) => { setTimeout(() => reject(new Error('body-read-timeout')), BODY_READ_TIMEOUT); }),
+          response.text().finally(() => clearTimeout(timer)),
+          new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('body-read-timeout')), BODY_READ_TIMEOUT); }),
         ]);
       } catch (e) {
         log.warn('detectBotBlocker: body read failed, using header-only analysis', { fn: 'detectBotBlocker', url: baseUrl, cause: e?.message });

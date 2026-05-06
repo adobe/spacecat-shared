@@ -448,8 +448,10 @@ describe('URL Utility Functions', () => {
         .get('/')
         .replyWithError('ECONNRESET');
 
-      const result = await resolveCanonicalUrl('https://example.com', 'GET');
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('https://example.com', 'GET', undefined, log);
       expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] GET request failed');
     });
   });
 

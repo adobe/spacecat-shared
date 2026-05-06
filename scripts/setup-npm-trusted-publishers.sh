@@ -38,6 +38,14 @@ if [ "$CURRENT_MAJOR" -lt "$MIN_NPM_MAJOR" ] || { [ "$CURRENT_MAJOR" -eq "$MIN_N
   exit 1
 fi
 
+CURRENT_REGISTRY=$(npm config get registry 2>/dev/null || echo "")
+EXPECTED_REGISTRY="https://registry.npmjs.org/"
+if [ "$CURRENT_REGISTRY" != "$EXPECTED_REGISTRY" ]; then
+  echo "ERROR: registry must be ${EXPECTED_REGISTRY} (currently: '${CURRENT_REGISTRY}')."
+  echo "       Run: npm config set registry ${EXPECTED_REGISTRY}"
+  exit 1
+fi
+
 CURRENT_USER=$(npm whoami 2>/dev/null || echo "")
 if [ "$CURRENT_USER" != "$EXPECTED_NPM_USER" ]; then
   echo "ERROR: Must be logged in as '${EXPECTED_NPM_USER}' (currently: '${CURRENT_USER}')."
@@ -45,7 +53,15 @@ if [ "$CURRENT_USER" != "$EXPECTED_NPM_USER" ]; then
   exit 1
 fi
 
-echo "npm ${CURRENT_NPM} / user ${CURRENT_USER} — preflight OK"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+REPO_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
+if [ ! -f "${REPO_ROOT}/.github/workflows/${WORKFLOW}" ]; then
+  echo "ERROR: workflow file not found: .github/workflows/${WORKFLOW}"
+  echo "       Update the WORKFLOW constant in this script if main.yaml was renamed."
+  exit 1
+fi
+
+echo "npm ${CURRENT_NPM} / user ${CURRENT_USER} / registry ${CURRENT_REGISTRY} — preflight OK"
 echo ""
 
 # --- Package list ---
@@ -85,13 +101,14 @@ FAILED=()
 
 for pkg in "${PACKAGES[@]}"; do
   echo "  Configuring: ${pkg}"
-  if npm trust github-actions "${pkg}" \
+  output=$(npm trust github-actions "${pkg}" \
       --repository "${REPO}" \
       --file "${WORKFLOW}" \
-      --yes 2>&1; then
-    true
-  else
-    echo "  ERROR: failed to configure ${pkg}"
+      --yes 2>&1)
+  rc=$?
+  echo "${output}" | sed 's/^/    /'
+  if [ "${rc}" -ne 0 ]; then
+    echo "    ERROR: npm trust exited ${rc} for ${pkg}"
     FAILED+=("${pkg}")
   fi
 done

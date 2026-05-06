@@ -1,8 +1,11 @@
 name: Build
 
-# IMPORTANT: npm Trusted Publisher bindings for all 23 @adobe/* packages point to this file
-# (adobe/spacecat-shared / .github/workflows/main.yaml). Renaming or moving this file
-# will break OIDC publishing for all packages. If renamed, re-run scripts/setup-npm-trusted-publishers.sh.
+# IMPORTANT: npm Trusted Publisher bindings for the 22 published @adobe/* packages point
+# to this file (adobe/spacecat-shared / .github/workflows/main.yaml). Renaming or moving
+# this file breaks OIDC publishing — re-run scripts/setup-npm-trusted-publishers.sh after.
+#
+# Trust binding security relies on branch protection: do NOT weaken protection on `main`,
+# or any contributor with push access could mint a publish-scoped npm token via OIDC.
 # See: https://docs.npmjs.com/trusted-publishers
 
 # No workflow-level permissions — each job declares only what it needs.

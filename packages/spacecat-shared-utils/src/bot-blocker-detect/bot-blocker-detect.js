@@ -332,14 +332,20 @@ function analyzeError(error) {
  * @throws {Error} If baseUrl is invalid
  */
 /**
- * Returns true if the hostname resolves to a private, loopback, or link-local IP literal.
- * Guards against SSRF when detectBotBlocker is called with attacker-supplied URLs.
+ * Returns true if the URL targets a non-public host: loopback, private-range IP literal,
+ * link-local, or localhost/IPv6-loopback. Guards against SSRF when detectBotBlocker is
+ * called with attacker-supplied URLs. DNS-based rebinding is out of scope.
  * @param {string} urlString - URL to check
  * @returns {boolean}
  */
-function isPrivateIpUrl(urlString) {
+function isNonPublicUrl(urlString) {
   try {
     const { hostname } = new URL(urlString);
+
+    if (hostname === 'localhost' || hostname === '[::1]') {
+      return true;
+    }
+
     const parts = hostname.split('.');
     if (parts.length !== 4 || parts.some((p) => Number.isNaN(Number(p)))) {
       return false;
@@ -360,7 +366,7 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log
     throw new Error('Invalid baseUrl');
   }
 
-  if (isPrivateIpUrl(baseUrl)) {
+  if (isNonPublicUrl(baseUrl)) {
     throw new Error('Private IP addresses are not allowed');
   }
 

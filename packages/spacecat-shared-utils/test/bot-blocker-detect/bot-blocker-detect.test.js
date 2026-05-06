@@ -63,6 +63,14 @@ describe('Bot Blocker Detection', () => {
       await expect(detectBotBlocker({ baseUrl: 'http://172.16.0.1/' })).to.be.rejectedWith('Private IP addresses are not allowed');
     });
 
+    it('throws an error for localhost', async () => {
+      await expect(detectBotBlocker({ baseUrl: 'http://localhost/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    });
+
+    it('throws an error for IPv6 loopback (::1)', async () => {
+      await expect(detectBotBlocker({ baseUrl: 'http://[::1]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    });
+
     it('detects Cloudflare blocking with 403 and cf-ray header', async () => {
       nock(baseUrl)
         .get('/')

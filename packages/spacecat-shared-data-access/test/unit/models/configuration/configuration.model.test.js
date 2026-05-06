@@ -235,6 +235,16 @@ describe('ConfigurationModel', () => {
       expect(isEnabled).to.be.true;
     });
 
+    it('returns false for a site whose org is in disabled.orgs and the site is not explicitly listed', () => {
+      instance.addHandler('org-disabled-handler', {
+        enabledByDefault: true,
+        enabled: { sites: [], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('org-disabled-handler', site)).to.be.false;
+    });
+
     it('updates handler orgs for a handler disabled by default with enabled', () => {
       instance.updateHandlerOrgs('lhs-mobile', org.getId(), true);
       expect(instance.getHandler('lhs-mobile').enabled.orgs).to.include(org.getId());

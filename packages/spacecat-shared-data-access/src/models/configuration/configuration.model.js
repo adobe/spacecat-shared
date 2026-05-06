@@ -174,6 +174,21 @@ class Configuration {
       .map((job) => job.type);
   }
 
+  /**
+   * Returns whether a handler is enabled for a given site.
+   *
+   * Precedence (highest to lowest):
+   *   1. disabled.sites includes siteId → false (site explicitly disabled)
+   *   2. enabled.sites includes siteId  → true  (site explicitly enabled; overrides org-level)
+   *   3. disabled.orgs includes orgId   → false (org disabled, no site-level override present)
+   *   4. enabledByDefault               → true
+   *   5. enabled.orgs includes orgId    → true
+   *   6. otherwise                      → false
+   *
+   * Note: disabled.sites and enabled.sites are assumed disjoint; disabled.sites wins if violated
+   * (see #updatedHandler which keeps these lists disjoint on every write).
+   * isHandlerEnabledForOrg uses a different (simpler) precedence — see its JSDoc.
+   */
   isHandlerEnabledForSite(type, site) {
     const handler = this.getHandlers()?.[type];
     if (!handler) {
@@ -195,6 +210,9 @@ class Configuration {
       return false;
     }
     if (enabledSites.includes(siteId)) {
+      if (disabledOrgs.includes(orgId)) {
+        this.log.debug('[isHandlerEnabledForSite] site-override: site in enabled.sites overrides org in disabled.orgs', { type, siteId, orgId });
+      }
       return true;
     }
 
@@ -207,6 +225,18 @@ class Configuration {
     return enabledOrgs.includes(orgId);
   }
 
+  /**
+   * Returns whether a handler is enabled for a given org.
+   *
+   * Precedence (highest to lowest):
+   *   1. disabled.orgs includes orgId → false
+   *   2. enabledByDefault             → true
+   *   3. enabled.orgs includes orgId  → true
+   *   4. otherwise                    → false
+   *
+   * Note: unlike isHandlerEnabledForSite, there is no site-level override here.
+   * An org in disabled.orgs is always disabled regardless of site-level entries.
+   */
   isHandlerEnabledForOrg(type, org) {
     const handler = this.getHandlers()?.[type];
     if (!handler) {
@@ -250,12 +280,10 @@ class Configuration {
       // Always remove from disabled first (handles re-enabling a previously disabled entry).
       handler.disabled[entityKey] = (handler.disabled[entityKey] || [])
         .filter((id) => id !== entityId);
-      if (!handler.enabledByDefault) {
-        // For non-default handlers, explicitly add to enabled list so isHandlerEnabledForSite
-        // can find the site in enabled.sites and return true even when org is in disabled.orgs.
-        handler.enabled[entityKey] = Array
-          .from(new Set([...(handler.enabled[entityKey] || []), entityId]));
-      }
+      // Always add to enabled so isHandlerEnabledForSite can find the site in enabled.sites
+      // and return true even when the org is in disabled.orgs (site-level override).
+      handler.enabled[entityKey] = Array
+        .from(new Set([...(handler.enabled[entityKey] || []), entityId]));
     } else if (handler.enabledByDefault) {
       handler.disabled[entityKey] = Array
         .from(new Set([...(handler.disabled[entityKey] || []), entityId]));

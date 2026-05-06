@@ -255,6 +255,42 @@ describe('ConfigurationModel', () => {
       expect(instance.isHandlerEnabledForSite('site-override-handler', site)).to.be.true;
     });
 
+    it('returns true for non-default handler when site is in enabled.sites and org is in disabled.orgs', () => {
+      instance.addHandler('paid-handler', {
+        enabledByDefault: false,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('paid-handler', site)).to.be.true;
+    });
+
+    it('removes site from disabled.sites when re-enabling for a non-default handler', () => {
+      instance.addHandler('cleanup-handler', {
+        enabledByDefault: false,
+        enabled: { sites: [], orgs: [] },
+        disabled: { sites: [site.getId()], orgs: [] },
+      });
+
+      instance.updateHandlerSites('cleanup-handler', site.getId(), true);
+
+      expect(instance.getHandler('cleanup-handler').disabled.sites).to.not.include(site.getId());
+      expect(instance.getHandler('cleanup-handler').enabled.sites).to.include(site.getId());
+    });
+
+    it('removes site from enabled.sites when disabling a default handler', () => {
+      instance.addHandler('default-cleanup-handler', {
+        enabledByDefault: true,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [], orgs: [] },
+      });
+
+      instance.updateHandlerSites('default-cleanup-handler', site.getId(), false);
+
+      expect(instance.getHandler('default-cleanup-handler').enabled.sites).to.not.include(site.getId());
+      expect(instance.getHandler('default-cleanup-handler').disabled.sites).to.include(site.getId());
+    });
+
     it('updates handler orgs for a handler disabled by default with enabled', () => {
       instance.updateHandlerOrgs('lhs-mobile', org.getId(), true);
       expect(instance.getHandler('lhs-mobile').enabled.orgs).to.include(org.getId());

@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.15.0...@adobe/spacecat-shared-tokowaka-client-v1.16.0) (2026-05-05)
+
+### Features
+
+* CM git clone also clones submodules ([#1583](https://github.com/adobe/spacecat-shared/issues/1583)) ([a1e67c3](https://github.com/adobe/spacecat-shared/commit/a1e67c36f9fb01dd65b501a2a1791f18a7432465))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.14.0...@adobe/spacecat-shared-tokowaka-client-v1.15.0) (2026-05-04)
+
+### Features
+
+* **AGENTCOM-634:** PDP enrichment does not correctly format on the AI visibility tool checker ([#1578](https://github.com/adobe/spacecat-shared/issues/1578)) ([b6140db](https://github.com/adobe/spacecat-shared/commit/b6140db8406ab2259dd3e91acdd31d91680e64ad))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.5...@adobe/spacecat-shared-tokowaka-client-v1.14.0) (2026-05-04)
 
 ### Features

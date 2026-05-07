@@ -52,27 +52,50 @@ export interface SubmodulesMetadata {
    */
   urls: string[];
   /**
-   * BYOG-only. Map of CM repository *name* → *numeric id* for every repo
-   * in the program, keyed by the last path segment of each CM repo's
-   * `url`/`proxyUrl` (the real repo name on the customer's git host —
-   * NOT the CM display name in the `repo` field).
+   * BYOG-only. Pre-resolved submodule rewrites for use at clone/pull time.
+   * Each entry says: "for the submodule whose `path` matches this entry,
+   * write `url` into `.git/config submodule.<path>.url` instead of letting
+   * git resolve the URL from `.gitmodules`."
    *
    * The CM repo service proxies BYOG clones through URLs of the form
    * `{CM_REPO_URL}/api/program/{programId}/repository/{numericId}.git`.
-   * When a customer's `.gitmodules` uses relative URLs like `../foo`,
-   * git resolves them against the parent's clone URL and produces
-   * `.../repository/foo` — which the proxy rejects because it only
-   * serves numeric ids. The CM client reads this map at clone/pull
-   * time to rewrite those URLs into the numeric-id form before
-   * running `git submodule update`.
+   * When a customer's `.gitmodules` uses relative URLs like `../foo` or
+   * SSH URLs like `git@github.com:org/foo.git`, git resolves them to
+   * paths the proxy can't serve. We bypass that by rewriting each
+   * submodule's URL in `.git/config` to a CM-reachable form before
+   * running `git submodule update`. `.gitmodules` itself is never
+   * modified — the working tree stays clean.
    *
-   * Populated at onboarding by calling
-   * `GET /api/program/{programId}/repositories` and indexing by the
-   * last path segment of each entry's `url`. Omit for `standard`
-   * repos — their relative URLs resolve natively on the customer's
-   * git host and don't need translation.
+   * URL form depends on the underlying repo type, decided at onboarding:
+   *   - BYOG (`github`/`gitlab`/`bitbucket`/`azure_devops`):
+   *       `{cmRepoUrl}/api/program/{programId}/repository/{numericId}.git`
+   *   - `standard`:
+   *       `https://git.cloudmanager.adobe.com/{orgName}/{repoName}/`
+   *
+   * The runtime picks the auth scope to apply by parsing each url's host.
+   * URLs on the CM proxy host get Bearer + x-api-key + x-gw-ims-org-id
+   * (via `http.{cmRepoUrl}.extraheader`). URLs on
+   * `https://git.cloudmanager.adobe.com/{orgName}/` get Basic auth from
+   * `CM_STANDARD_REPO_CREDENTIALS[programId]` (via the org-prefixed
+   * extraheader scope).
+   *
+   * Populated at onboarding from `GET /api/program/{pid}/repositories`
+   * + the parent's `.gitmodules`. The onboarding script does the name-
+   * matching and disambiguation (including short-name collisions where
+   * two repos in the same program share a last-path-segment but differ
+   * by `type`) so the runtime can iterate this list mechanically.
+   *
+   * Omit for `standard` parent programs — their relative submodule URLs
+   * resolve natively on the customer's git host without translation.
    */
-  cmProgramRepos?: Record<string, string>;
+  submoduleMap?: Array<{
+    /** Submodule path as declared in `.gitmodules` (the value of `path = …`). */
+    path: string;
+    /** URL to write into `.git/config submodule.<path>.url` at clone time —
+     *  proxy URL for BYOG-typed repos, `git.cloudmanager.adobe.com` URL for
+     *  standard-typed repos. */
+    url: string;
+  }>;
 }
 
 /**

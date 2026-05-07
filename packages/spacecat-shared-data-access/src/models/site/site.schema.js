@@ -88,9 +88,11 @@ const schema = new SchemaBuilder(Site, SiteCollection)
    *     an earlier import.
    *
    * Fields populated at onboarding (not by the importer):
-   *   - metadata.submodules.cmProgramRepos: BYOG-only name→id map
-   *     needed to translate relative submodule URLs into CM proxy URLs
-   *     the service can serve. See SubmodulesMetadata in index.d.ts.
+   *   - metadata.submodules.submoduleMap: BYOG-only list of pre-resolved
+   *     `{ path, url }` rewrites the cm-client applies to `.git/config`
+   *     at clone/pull time so submodules can fetch through the CM proxy
+   *     (or the standard-repo host, for standard submodules of BYOG
+   *     parents). See SubmodulesMetadata in index.d.ts.
    *
    * See CodeConfig in index.d.ts for the full TypeScript shape.
    */

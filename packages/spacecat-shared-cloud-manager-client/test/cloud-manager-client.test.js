@@ -443,7 +443,7 @@ describe('CloudManagerClient', () => {
       );
     });
 
-    // --- BYOG submodule rewrite flow ---
+    // --- BYOG submodule rewrite flow (driven by submoduleMap) ---
 
     it('BYOG: skips the rewrite pass when .gitmodules is absent', async () => {
       existsSyncStub.returns(false); // no .gitmodules at clone root
@@ -457,9 +457,8 @@ describe('CloudManagerClient', () => {
       expect(execFileSyncStub).to.have.been.calledOnce;
     });
 
-    it('BYOG: warns and proceeds without rewrites when cmProgramRepos map is missing', async () => {
+    it('BYOG: warns and proceeds when submoduleMap is missing', async () => {
       existsSyncStub.returns(true); // .gitmodules present
-      // submodule init + submodule update --recursive
       execFileSyncStub.returns('');
 
       const context = createContext();
@@ -472,100 +471,193 @@ describe('CloudManagerClient', () => {
       );
 
       expect(context.log.warn).to.have.been.calledWith(
-        sinon.match(/has \.gitmodules but no cmProgramRepos map/),
+        sinon.match(/has \.gitmodules but no submoduleMap/),
       );
-      // clone + submodule init + submodule update --recursive — no config reads/writes
+      // clone + submodule init + submodule update --force --recursive — no config writes
       expect(execFileSyncStub).to.have.callCount(3);
       const updateArgs = getGitArgs(execFileSyncStub.lastCall);
-      expect(updateArgs).to.include.members(['submodule', 'update', '--recursive']);
+      expect(updateArgs).to.include.members(['submodule', 'update', '--force', '--recursive']);
     });
 
-    it('BYOG: rewrites matching submodule URLs from name-form to numeric-id-form', async () => {
+    it('BYOG: pure-proxy submodules use a single Bearer auth scope', async () => {
+      // Parent and all submodules are BYOG-typed in the same program. Onboarding
+      // emits a submoduleMap with proxy URLs for each. Only the BYOG (Bearer)
+      // scope should be attached to submodule update — no standard-host scope.
       existsSyncStub.returns(true);
 
-      // Stub execFileSync in order:
-      // 0: clone (returns '')
-      // 1: submodule init (returns '')
-      // 2: config --get-regexp (returns 2 lines — one matches prefix, one is external)
-      const configOutput = [
-        'submodule.plenitude-internazionale-common.url https://cm-repo.example.com/api/program/123722/repository/plenitude-internazionale-common',
-        'submodule.external-one.url https://external.example.com/org/repo.git',
-      ].join('\n');
-
-      execFileSyncStub.onCall(0).returns(''); // clone
-      execFileSyncStub.onCall(1).returns(''); // submodule init
-      execFileSyncStub.onCall(2).returns(configOutput); // config --get-regexp
-      // 3: config --local submodule.plenitude-internazionale-common.url <new>
-      execFileSyncStub.onCall(3).returns('');
-      // 4: submodule update --recursive (with auth)
-      execFileSyncStub.onCall(4).returns('');
+      const submoduleMap = [
+        { path: 'sub-a', url: 'https://cm-repo.example.com/api/program/100/repository/201.git' },
+        { path: 'sub-b', url: 'https://cm-repo.example.com/api/program/100/repository/202.git' },
+      ];
 
       const context = createContext();
       const client = CloudManagerClient.createFrom(context);
 
-      await client.clone(
-        '123722',
-        '233725',
-        {
-          imsOrgId: TEST_IMS_ORG_ID,
-          cmProgramRepos: {
-            'plenitude-internazionale-common': '233726',
-          },
-        },
-      );
+      await client.clone('100', '200', {
+        imsOrgId: TEST_IMS_ORG_ID,
+        submoduleMap,
+      });
 
-      // 5 calls total: clone, init, get-regexp, config-set, update
+      // Calls: clone, submodule init, 2× config-set, submodule update
       expect(execFileSyncStub).to.have.callCount(5);
 
-      // The config-set call uses the numeric-id URL
-      const setArgs = getGitArgs(execFileSyncStub.getCall(3));
-      expect(setArgs).to.deep.equal([
+      const setCall0 = getGitArgs(execFileSyncStub.getCall(2));
+      expect(setCall0).to.deep.equal([
         'config', '--local',
-        'submodule.plenitude-internazionale-common.url',
-        'https://cm-repo.example.com/api/program/123722/repository/233726.git',
+        'submodule.sub-a.url',
+        'https://cm-repo.example.com/api/program/100/repository/201.git',
       ]);
 
-      // The final submodule update call carries the CM auth extraheaders
+      const setCall1 = getGitArgs(execFileSyncStub.getCall(3));
+      expect(setCall1).to.deep.equal([
+        'config', '--local',
+        'submodule.sub-b.url',
+        'https://cm-repo.example.com/api/program/100/repository/202.git',
+      ]);
+
+      // Final update has --force --recursive and ONLY the BYOG (Bearer) scope
       const updateArgStr = getGitArgsStr(execFileSyncStub.getCall(4));
-      expect(updateArgStr).to.include('submodule');
-      expect(updateArgStr).to.include('update');
-      expect(updateArgStr).to.include('--recursive');
+      expect(updateArgStr).to.include('submodule update --force --recursive');
       expect(updateArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
+      expect(updateArgStr).to.include('x-api-key: test-client-id');
+      expect(updateArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
+      // No standard-host extraheader since no entries point there
+      expect(updateArgStr).to.not.include('git.cloudmanager.adobe.com');
     });
 
-    it('BYOG: leaves non-proxy URLs untouched and warns for names missing from the map', async () => {
+    it('BYOG: mixed BYOG + standard submodules attaches both auth scopes', async () => {
+      // BYOG parent with a mix of BYOG and standard-typed submodules. The
+      // submodule update must carry BOTH the BYOG (Bearer) scope on the proxy
+      // host AND the standard (Basic) scope on the customer-org host.
       existsSyncStub.returns(true);
 
-      const configOutput = [
-        // Matches CM proxy prefix but name is unknown in the provided map
-        'submodule.unknown-sub.url https://cm-repo.example.com/api/program/123722/repository/unknown-sub',
-        // Absolute external URL — leave alone
-        'submodule.external-sub.url https://github.com/acme/external-sub.git',
-      ].join('\n');
+      const submoduleMap = [
+        { path: 'sub-byog', url: 'https://cm-repo.example.com/api/program/12345/repository/501.git' },
+        { path: 'sub-std-a', url: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-a/' },
+        { path: 'sub-std-b', url: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-b/' },
+        { path: 'sub-std-c', url: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-c/' },
+      ];
 
-      execFileSyncStub.onCall(0).returns(''); // clone
-      execFileSyncStub.onCall(1).returns(''); // submodule init
-      execFileSyncStub.onCall(2).returns(configOutput); // config --get-regexp
-      // Next call is submodule update (no rewrite happens because neither entry is rewritable)
-      execFileSyncStub.onCall(3).returns('');
+      // Need standard creds in env so the standard-scope extraheader can be built.
+      // TEST_PROGRAM_ID = '12345' is keyed in TEST_STANDARD_CREDENTIALS.
+      const context = createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS });
+      const client = CloudManagerClient.createFrom(context);
+
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, {
+        imsOrgId: TEST_IMS_ORG_ID,
+        submoduleMap,
+      });
+
+      // Calls: clone, submodule init, 4× config-set, submodule update
+      expect(execFileSyncStub).to.have.callCount(7);
+
+      // Last call is the submodule update — should carry BOTH auth scopes
+      const updateArgStr = getGitArgsStr(execFileSyncStub.getCall(6));
+      expect(updateArgStr).to.include('submodule update --force --recursive');
+
+      // BYOG scope (Bearer + x-api-key + x-gw-ims-org-id) on cm-repo.example.com
+      expect(updateArgStr).to.include(`http.https://cm-repo.example.com.extraheader=Authorization: Bearer ${TEST_TOKEN}`);
+      expect(updateArgStr).to.include('http.https://cm-repo.example.com.extraheader=x-api-key: test-client-id');
+      expect(updateArgStr).to.include(`http.https://cm-repo.example.com.extraheader=x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
+
+      // Standard scope (Basic) on git.cloudmanager.adobe.com/acme-org/
+      // base64('stduser:stdtoken123') == 'c3RkdXNlcjpzdGR0b2tlbjEyMw=='
+      expect(updateArgStr).to.include(
+        'http.https://git.cloudmanager.adobe.com/acme-org/.extraheader='
+        + 'Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==',
+      );
+
+      // Sanity: each scope appears separately, no header bleed
+      expect(updateArgStr).to.not.include('Bearer c3RkdXNlcjpz');
+      expect(updateArgStr).to.not.include('Basic test-access-token');
+    });
+
+    it('BYOG: skips invalid submoduleMap entries (missing path or url)', async () => {
+      existsSyncStub.returns(true);
+
+      const submoduleMap = [
+        { path: 'good-one', url: 'https://cm-repo.example.com/api/program/12345/repository/100.git' },
+        { path: 'no-url' /* missing url */ },
+        { /* missing path */ url: 'https://cm-repo.example.com/.../200.git' },
+        null,
+      ];
 
       const context = createContext();
       const client = CloudManagerClient.createFrom(context);
 
-      await client.clone(
-        '123722',
-        '233725',
-        {
-          imsOrgId: TEST_IMS_ORG_ID,
-          // Non-empty map, but doesn't contain 'unknown-sub'
-          cmProgramRepos: { 'some-other-sub': '999999' },
-        },
-      );
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, {
+        imsOrgId: TEST_IMS_ORG_ID,
+        submoduleMap,
+      });
 
-      // No config-set call happened — only clone, init, get-regexp, update
+      // Only the valid entry should produce a config-set call
+      // clone + init + 1× config-set + submodule update = 4
       expect(execFileSyncStub).to.have.callCount(4);
       expect(context.log.warn).to.have.been.calledWith(
-        sinon.match(/BYOG submodule 'unknown-sub' not found in cmProgramRepos map/),
+        sinon.match(/Skipping invalid submoduleMap entry/),
+      );
+
+      const setArgs = getGitArgs(execFileSyncStub.getCall(2));
+      expect(setArgs).to.deep.equal([
+        'config', '--local',
+        'submodule.good-one.url',
+        'https://cm-repo.example.com/api/program/12345/repository/100.git',
+      ]);
+    });
+
+    it('BYOG: ignores submoduleMap entries with unparseable URLs when computing auth scopes', async () => {
+      // Defensive — onboarding shouldn't produce these, but if one slips through
+      // we want the runtime to keep going. The bad entry still gets written to
+      // .git/config (since it has both path and url string-wise), but no host
+      // extraheader is added for it. Proxy-based entries still get auth.
+      existsSyncStub.returns(true);
+
+      const submoduleMap = [
+        { path: 'good', url: 'https://cm-repo.example.com/api/program/12345/repository/1.git' },
+        { path: 'weird', url: 'not a valid url' },
+      ];
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, {
+        imsOrgId: TEST_IMS_ORG_ID,
+        submoduleMap,
+      });
+
+      // clone + init + 2× config-set + update
+      expect(execFileSyncStub).to.have.callCount(5);
+
+      const updateArgStr = getGitArgsStr(execFileSyncStub.getCall(4));
+      expect(updateArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
+      expect(updateArgStr).to.not.include('git.cloudmanager.adobe.com');
+    });
+
+    it('BYOG: standard-scope pass tolerates an unparseable URL alongside a valid one', async () => {
+      // A valid standard URL forces us into the standard-scope branch; the
+      // malformed URL must be silently skipped during org enumeration without
+      // aborting the whole rewrite.
+      existsSyncStub.returns(true);
+
+      const submoduleMap = [
+        { path: 'std', url: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-a/' },
+        { path: 'weird', url: 'not a valid url' },
+      ];
+
+      const context = createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS });
+      const client = CloudManagerClient.createFrom(context);
+
+      await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, {
+        imsOrgId: TEST_IMS_ORG_ID,
+        submoduleMap,
+      });
+
+      // clone + init + 2× config-set + update = 5 calls
+      expect(execFileSyncStub).to.have.callCount(5);
+      const updateArgStr = getGitArgsStr(execFileSyncStub.getCall(4));
+      // Standard scope still attached for the good entry
+      expect(updateArgStr).to.include(
+        'http.https://git.cloudmanager.adobe.com/acme-org/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==',
       );
     });
 
@@ -587,51 +679,6 @@ describe('CloudManagerClient', () => {
       expect(context.log.warn).to.have.been.calledWith(
         sinon.match(/BYOG submodule init failed.*Continuing without submodule recursion/),
       );
-    });
-
-    it('BYOG: skips config lines without a space separator (defensive)', async () => {
-      existsSyncStub.returns(true);
-      execFileSyncStub.onCall(0).returns(''); // clone
-      execFileSyncStub.onCall(1).returns(''); // submodule init
-      // First line is malformed (no space), second is a valid external URL
-      execFileSyncStub.onCall(2).returns([
-        'malformedline',
-        'submodule.external.url https://github.com/acme/x.git',
-      ].join('\n'));
-      execFileSyncStub.onCall(3).returns(''); // submodule update
-
-      const client = CloudManagerClient.createFrom(createContext());
-      await client.clone(
-        TEST_PROGRAM_ID,
-        TEST_REPO_ID,
-        { imsOrgId: TEST_IMS_ORG_ID, cmProgramRepos: { foo: '1' } },
-      );
-
-      // No config-set — neither line triggers a rewrite
-      expect(execFileSyncStub).to.have.callCount(4);
-    });
-
-    it('BYOG: swallows config --get-regexp error when no submodule entries registered', async () => {
-      existsSyncStub.returns(true);
-      execFileSyncStub.onCall(0).returns(''); // clone
-      execFileSyncStub.onCall(1).returns(''); // submodule init
-      // config --get-regexp exits non-zero when no matches — simulate that
-      execFileSyncStub.onCall(2).throws(new Error('no matches'));
-      execFileSyncStub.onCall(3).returns(''); // submodule update --recursive
-
-      const client = CloudManagerClient.createFrom(createContext());
-
-      // Pass a valid map so the rewrite branch runs (and hits the try/catch)
-      await client.clone(
-        TEST_PROGRAM_ID,
-        TEST_REPO_ID,
-        { imsOrgId: TEST_IMS_ORG_ID, cmProgramRepos: { foo: '1' } },
-      );
-
-      // Should complete through to submodule update despite the config read failure
-      expect(execFileSyncStub).to.have.callCount(4);
-      const updateArgs = getGitArgs(execFileSyncStub.lastCall);
-      expect(updateArgs).to.include.members(['submodule', 'update', '--recursive']);
     });
 
     it('throws a clear message when git command times out', async () => {
@@ -1161,21 +1208,14 @@ describe('CloudManagerClient', () => {
       expect(pullArgStr).to.not.include('checkout');
     });
 
-    it('BYOG: runs the submodule rewrite pass after pull', async () => {
+    it('BYOG: runs the submoduleMap rewrite pass after pull', async () => {
       existsSyncStub.returns(true);
-
-      const configOutput = 'submodule.sub-a.url https://cm-repo.example.com/api/program/123/repository/sub-a';
 
       // 0: pull (parent only, no --recurse-submodules)
       // 1: submodule init
-      // 2: config --get-regexp
-      // 3: config --local (rewrite)
-      // 4: submodule update --recursive (with auth)
-      execFileSyncStub.onCall(0).returns('');
-      execFileSyncStub.onCall(1).returns('');
-      execFileSyncStub.onCall(2).returns(configOutput);
-      execFileSyncStub.onCall(3).returns('');
-      execFileSyncStub.onCall(4).returns('');
+      // 2: config --local (rewrite from submoduleMap)
+      // 3: submodule update --force --recursive (with auth)
+      execFileSyncStub.returns('');
 
       const client = CloudManagerClient.createFrom(createContext());
 
@@ -1185,7 +1225,9 @@ describe('CloudManagerClient', () => {
         TEST_REPO_ID,
         {
           imsOrgId: TEST_IMS_ORG_ID,
-          cmProgramRepos: { 'sub-a': '456' },
+          submoduleMap: [
+            { path: 'sub-a', url: 'https://cm-repo.example.com/api/program/123/repository/456.git' },
+          ],
         },
       );
 
@@ -1194,20 +1236,18 @@ describe('CloudManagerClient', () => {
       expect(pullArgStr).to.include('pull');
       expect(pullArgStr).to.not.include('--recurse-submodules');
 
-      // Final call is submodule update --recursive with auth
-      const updateArgStr = getGitArgsStr(execFileSyncStub.getCall(4));
-      expect(updateArgStr).to.include('submodule');
-      expect(updateArgStr).to.include('update');
-      expect(updateArgStr).to.include('--recursive');
-      expect(updateArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
-
-      // The rewrite wrote the numeric-id URL
-      const setArgs = getGitArgs(execFileSyncStub.getCall(3));
+      // The rewrite wrote the URL straight from the map (no name lookup)
+      const setArgs = getGitArgs(execFileSyncStub.getCall(2));
       expect(setArgs).to.deep.equal([
         'config', '--local',
         'submodule.sub-a.url',
         'https://cm-repo.example.com/api/program/123/repository/456.git',
       ]);
+
+      // Final call is submodule update --force --recursive with auth
+      const updateArgStr = getGitArgsStr(execFileSyncStub.getCall(3));
+      expect(updateArgStr).to.include('submodule update --force --recursive');
+      expect(updateArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
     });
   });
 

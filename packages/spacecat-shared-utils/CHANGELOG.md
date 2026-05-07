@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.115.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.1...@adobe/spacecat-shared-utils-v1.115.2) (2026-05-07)
+
+### Bug Fixes
+
+* **utils:** update calculateCPCValue S3 path from ahrefs to seo ([#1591](https://github.com/adobe/spacecat-shared/issues/1591)) ([3bf1fe5](https://github.com/adobe/spacecat-shared/commit/3bf1fe5ce9d257de5b30de4d7082f8af30035147)), closes [spacecat-shared#1499](https://github.com/adobe/spacecat-shared/issues/1499)
+
 ## [@adobe/spacecat-shared-utils-v1.115.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.0...@adobe/spacecat-shared-utils-v1.115.1) (2026-05-06)
 
 ### Bug Fixes

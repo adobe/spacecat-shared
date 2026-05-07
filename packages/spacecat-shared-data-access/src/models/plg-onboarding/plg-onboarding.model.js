@@ -24,7 +24,9 @@ class PlgOnboarding extends BaseModel {
 
   static IMS_ORG_ID_PATTERN = /^[a-z0-9]{24}@AdobeOrg$/i;
 
-  static DOMAIN_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
+  // Matches plain hostnames and subpath domains (e.g. nba.com, nba.com/kings).
+  // Rejects schemes (https://), IPv4 addresses, and query strings/fragments.
+  static DOMAIN_PATTERN = /^(?!\d+(\.\d+){3})[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*(\/[a-z0-9._~-]*)*$/;
 
   static STATUSES = {
     PRE_ONBOARDING: 'PRE_ONBOARDING',

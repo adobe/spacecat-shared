@@ -79,6 +79,45 @@ describe('PlgOnboardingModel', () => {
     });
   });
 
+  describe('DOMAIN_PATTERN', () => {
+    const { DOMAIN_PATTERN } = PlgOnboarding;
+
+    describe('valid values', () => {
+      [
+        'nba.com',
+        'www.nba.com',
+        'sub.domain.example.com',
+        'nba.com/kings',
+        'nba.com/us/kings',
+        'example.com/path/with-hyphens',
+        'example.com/path.with.dots',
+        'example.io/a/b/c',
+      ].forEach((value) => {
+        it(`accepts "${value}"`, () => {
+          expect(DOMAIN_PATTERN.test(value)).to.be.true;
+        });
+      });
+    });
+
+    describe('invalid values', () => {
+      [
+        ['empty string', ''],
+        ['scheme prefix', 'https://nba.com'],
+        ['scheme prefix http', 'http://nba.com'],
+        ['IPv4 address', '127.0.0.1'],
+        ['IPv4 address 8.8.8.8', '8.8.8.8'],
+        ['query string', 'nba.com?foo=bar'],
+        ['fragment', 'nba.com#section'],
+        ['path with query string', 'nba.com/kings?q=1'],
+        ['path with fragment', 'nba.com/kings#top'],
+      ].forEach(([label, value]) => {
+        it(`rejects ${label}: "${value}"`, () => {
+          expect(DOMAIN_PATTERN.test(value)).to.be.false;
+        });
+      });
+    });
+  });
+
   describe('REVIEW_DECISIONS', () => {
     it('defines all expected review decisions', () => {
       expect(PlgOnboarding.REVIEW_DECISIONS).to.deep.equal({

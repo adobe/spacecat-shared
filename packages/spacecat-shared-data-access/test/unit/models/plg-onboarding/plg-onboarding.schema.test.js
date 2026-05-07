@@ -14,6 +14,66 @@ import { expect } from 'chai';
 import plgOnboardingSchema from '../../../../src/models/plg-onboarding/plg-onboarding.schema.js';
 
 describe('PlgOnboarding Schema', () => {
+  describe('domain attribute', () => {
+    let domainAttr;
+
+    before(() => {
+      const attributes = plgOnboardingSchema.getAttributes();
+      domainAttr = attributes.domain;
+    });
+
+    it('is a required read-only string', () => {
+      expect(domainAttr.type).to.equal('string');
+      expect(domainAttr.required).to.be.true;
+      expect(domainAttr.readOnly).to.be.true;
+    });
+
+    it('has a validate function', () => {
+      expect(domainAttr.validate).to.be.a('function');
+    });
+
+    describe('valid values', () => {
+      [
+        'nba.com',
+        'www.nba.com',
+        'nba.com/kings',
+        'nba.com/us/kings',
+        'example.com/path-with-hyphens',
+      ].forEach((value) => {
+        it(`accepts "${value}"`, () => {
+          expect(domainAttr.validate(value)).to.be.true;
+        });
+      });
+    });
+
+    describe('invalid values', () => {
+      [
+        ['empty string', ''],
+        ['scheme prefix', 'https://nba.com'],
+        ['IPv4 address', '127.0.0.1'],
+        ['query string', 'nba.com?q=1'],
+        ['fragment', 'nba.com#top'],
+        ['hostname over 253 chars', `${'a'.repeat(250)}.com`],
+      ].forEach(([label, value]) => {
+        it(`rejects ${label}`, () => {
+          expect(domainAttr.validate(value)).to.be.false;
+        });
+      });
+    });
+
+    it('allows a subpath domain whose hostname is exactly 253 chars', () => {
+      const hostname = `${'a'.repeat(249)}.com`;
+      expect(hostname.length).to.equal(253);
+      expect(domainAttr.validate(`${hostname}/path`)).to.be.true;
+    });
+
+    it('rejects when only the hostname exceeds 253 chars (path does not inflate count)', () => {
+      const hostname = `${'a'.repeat(250)}.com`;
+      expect(hostname.length).to.equal(254);
+      expect(domainAttr.validate(`${hostname}/path`)).to.be.false;
+    });
+  });
+
   describe('reviews attribute', () => {
     let reviewsAttr;
 

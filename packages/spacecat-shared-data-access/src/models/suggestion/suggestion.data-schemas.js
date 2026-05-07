@@ -138,14 +138,16 @@ export const DATA_SCHEMAS = {
       },
     },
   },
-  // CWV has two implicit data shapes:
-  // 1. Page-level (type='url'): url and issues are present
-  // 2. Group-type (type='group'): url is absent, issues may be populated later via update
-  // Both shapes share the same schema; url and issues are optional to support both.
+  // CWV has three implicit data shapes:
+  // 1. Page-level bundled (type='url'): url and issues are present, all metrics in one suggestion
+  // 2. Page-level per-metric (type='url', metric='lcp'|'cls'|'inp'): one suggestion per metric
+  // 3. Group-type (type='group'): url is absent, issues may be populated later via update
+  // All shapes share the same schema; url, metric, and issues are optional to support all.
   [OPPORTUNITY_TYPES.CWV]: {
     schema: Joi.object({
       type: Joi.string().required(),
       url: Joi.string().uri().optional(),
+      metric: Joi.string().valid('lcp', 'cls', 'inp').optional(),
       pageviews: Joi.number().optional(),
       organic: Joi.number().optional(),
       metrics: Joi.array().items(
@@ -164,12 +166,13 @@ export const DATA_SCHEMAS = {
         }).unknown(true),
       ).required(),
       issues: Joi.array().items(Joi.object()).optional().default([]),
+      isCodeChangeAvailable: Joi.boolean().optional(),
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().allow(null).optional(),
     }).unknown(true),
     projections: {
       minimal: {
-        fields: ['url', 'type', 'metrics', 'issues'],
+        fields: ['url', 'type', 'metric', 'metrics', 'issues'],
         transformers: {
           metrics: 'filterCwvMetrics',
         },

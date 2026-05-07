@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.58.0...@adobe/spacecat-shared-data-access-v3.59.0) (2026-05-07)
+
+### Features
+
+* **data-access:** add Token.allBySiteId with optional tokenTypes/cycle filters ([#1572](https://github.com/adobe/spacecat-shared/issues/1572)) ([241607e](https://github.com/adobe/spacecat-shared/commit/241607e58c6b040eeaba134d51345ccd88910756))
+
 ## [@adobe/spacecat-shared-data-access-v3.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.57.0...@adobe/spacecat-shared-data-access-v3.58.0) (2026-05-05)
 
 ### Features

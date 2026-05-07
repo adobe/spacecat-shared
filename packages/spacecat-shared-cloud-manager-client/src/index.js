@@ -476,7 +476,9 @@ export default class CloudManagerClient {
           const u = new URL(entry.url);
           if (u.host === GIT_CLOUD_MANAGER_HOST) {
             const orgName = u.pathname.split('/').filter(Boolean)[0];
-            if (orgName) orgs.add(orgName);
+            if (orgName) {
+              orgs.add(orgName);
+            }
           }
         } catch { /* skip unparseable */ }
       }

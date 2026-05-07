@@ -1417,6 +1417,9 @@ class TokowakaClient {
               if (s.getData()?.isDomainWide === true) {
                 return false;
               }
+              if (s.getData()?.edgeDeployed) {
+                return false;
+              }
               const url = s.getData()?.url;
               return url && regexPatterns.some((r) => r.test(url));
             });
@@ -1427,7 +1430,6 @@ class TokowakaClient {
                 await Promise.all(covered.map(async (cs) => {
                   cs.setData({
                     ...cs.getData(),
-                    edgeDeployed: deploymentTimestamp,
                     coveredByDomainWide: suggestion.getId(),
                   });
                   cs.setUpdatedBy(updatedBy);
@@ -1450,11 +1452,9 @@ class TokowakaClient {
     // Mark same-batch skipped suggestions individually so a single save failure
     // surfaces as a per-item failure rather than swallowing the whole batch.
     if (skippedInBatch.length > 0) {
-      const deploymentTimestamp = Date.now();
       const results = await Promise.allSettled(skippedInBatch.map(async (s) => {
         s.setData({
           ...s.getData(),
-          edgeDeployed: deploymentTimestamp,
           coveredByDomainWide: 'same-batch-deployment',
           skippedInDeployment: true,
         });

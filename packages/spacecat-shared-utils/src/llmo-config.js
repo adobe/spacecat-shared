@@ -19,6 +19,31 @@ import { llmoConfig } from './schemas.js';
  */
 
 /**
+ * Thrown by `writeConfig` when the supplied LLMO configuration does not match
+ * the published Zod schema. Exposes the offending site and the Zod issue list
+ * so callers and log readers can identify the failing fields without
+ * re-parsing the error.
+ */
+export class LlmoConfigValidationError extends Error {
+  constructor(siteId, zodError) {
+    // Use issue `code` rather than `message` in the summary: Zod's default
+    // messages can echo received values, which may include user-supplied
+    // content (brand names, competitor URLs) on the api-service write path.
+    // The full message and value remain on `this.issues` for trusted callers.
+    const summary = zodError.issues
+      .map((i) => `${i.path.join('.')}: ${i.code}`)
+      .join('; ');
+    super(
+      `LLMO config for site ${siteId} failed schema validation: ${summary}`,
+      { cause: zodError },
+    );
+    this.name = 'LlmoConfigValidationError';
+    this.siteId = siteId;
+    this.issues = zodError.issues;
+  }
+}
+
+/**
  * @param {string} siteId The ID of the site to get the config directory for.
  * @returns {string} The configuration directory path for the given site ID.
  */
@@ -62,6 +87,10 @@ export function defaultConfig() {
  * Reads the LLMO configuration for a given site.
  * Returns an empty configuration if the configuration does not exist.
  *
+ * If the persisted config exists but fails schema validation, throws
+ * `LlmoConfigValidationError` so callers have a uniform error contract
+ * across read and write paths.
+ *
  * @param {string} sideId The ID of the site.
  * @param {S3Client} s3Client The S3 client to use for reading the configuration.
  * @param {object} [options]
@@ -70,6 +99,7 @@ export function defaultConfig() {
  * @param {string} [options.s3Bucket] Optional S3 bucket name.
  * @returns {Promise<{config: LLMOConfig, exists: boolean, version?: string}>} The configuration,
  *        a flag indicating if it existed, and the version ID if it exists.
+ * @throws {LlmoConfigValidationError} If the persisted config fails schema validation.
  * @throws {Error} If reading the configuration fails for reasons other than it not existing.
  */
 export async function readConfig(sideId, s3Client, options) {
@@ -97,20 +127,35 @@ export async function readConfig(sideId, s3Client, options) {
     throw new Error('LLMO config body is empty');
   }
   const text = await body.transformToString();
-  const config = llmoConfig.parse(JSON.parse(text));
-  return { config, exists: true, version: res.VersionId || undefined };
+  const result = llmoConfig.safeParse(JSON.parse(text));
+  if (!result.success) {
+    throw new LlmoConfigValidationError(sideId, result.error);
+  }
+  return { config: result.data, exists: true, version: res.VersionId || undefined };
 }
 
 /**
  * Writes the LLMO configuration for a given site.
+ *
+ * Validates `config` against the published Zod schema before issuing the S3
+ * `PutObject`. If validation fails, throws `LlmoConfigValidationError` and
+ * does not call S3, so invalid configs cannot reach the bucket through this
+ * function.
+ *
  * @param {string} siteId The ID of the site.
  * @param {LLMOConfig} config The configuration object to write.
  * @param {S3Client} s3Client The S3 client to use for reading the configuration.
  * @param {object} [options]
  * @param {string} [options.s3Bucket] Optional S3 bucket name.
  * @returns {Promise<{ version: string }>} The version of the configuration written.
+ * @throws {LlmoConfigValidationError} If `config` does not match the LLMO schema.
  */
 export async function writeConfig(siteId, config, s3Client, options) {
+  const result = llmoConfig.safeParse(config);
+  if (!result.success) {
+    throw new LlmoConfigValidationError(siteId, result.error);
+  }
+
   const s3Bucket = options?.s3Bucket || process.env.S3_BUCKET_NAME;
 
   const putObjectCommand = new PutObjectCommand({

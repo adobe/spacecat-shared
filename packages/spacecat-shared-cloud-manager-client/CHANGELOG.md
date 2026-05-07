@@ -1,3 +1,19 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.2.0...@adobe/spacecat-shared-cloud-manager-client-v1.2.1) (2026-05-05)
+
+### Bug Fixes
+
+* **cloud-manager-client:** re-publish after revert of submodule cloning ([#1583](https://github.com/adobe/spacecat-shared/issues/1583)) ([c22b933](https://github.com/adobe/spacecat-shared/commit/c22b93333391ef869d8194225be59a5e36c200ba))
+
+### Reverts
+
+* "feat: CM git clone also clones submodules ([#1583](https://github.com/adobe/spacecat-shared/issues/1583))" ([#1587](https://github.com/adobe/spacecat-shared/issues/1587)) ([2d9e34e](https://github.com/adobe/spacecat-shared/commit/2d9e34e68a0af6612891c61ec37e4304b7e9d912))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.1.5...@adobe/spacecat-shared-cloud-manager-client-v1.2.0) (2026-05-05)
+
+### Features
+
+* CM git clone also clones submodules ([#1583](https://github.com/adobe/spacecat-shared/issues/1583)) ([a1e67c3](https://github.com/adobe/spacecat-shared/commit/a1e67c36f9fb01dd65b501a2a1791f18a7432465))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.1.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.1.4...@adobe/spacecat-shared-cloud-manager-client-v1.1.5) (2026-04-20)
 
 ### Reverts

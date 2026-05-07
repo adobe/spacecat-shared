@@ -261,6 +261,45 @@ describe('Patcher', () => {
     expect(mockEntity.patch().go.notCalled).to.be.true;
   });
 
+  it('preserves the record reference after a collection-strategy save', async () => {
+    const applyUpdateWatchers = sinon.stub().returns({
+      record: { ...mockRecord, name: 'CollectionUpdated', watchedField: 'derived' },
+      updates: { name: 'CollectionUpdated', updatedAt: '2026-01-01T00:00:00.000Z' },
+    });
+    const updateByKeys = sinon.stub().resolves();
+    patcher.collection = { applyUpdateWatchers, updateByKeys };
+
+    const recordRefBefore = patcher.record;
+    patcher.patchValue('name', 'UpdatedName');
+    await patcher.save();
+
+    expect(patcher.record).to.equal(recordRefBefore);
+    expect(patcher.record).to.equal(mockRecord);
+    expect(patcher.record.name).to.equal('CollectionUpdated');
+    expect(patcher.record.watchedField).to.equal('derived');
+  });
+
+  it('reflects subsequent patches on the same record after a save', async () => {
+    const applyUpdateWatchers = sinon.stub().callsFake((record, updates) => ({
+      record: { ...record, ...updates },
+      updates: { ...updates, updatedAt: new Date().toISOString() },
+    }));
+    const updateByKeys = sinon.stub().resolves();
+    patcher.collection = { applyUpdateWatchers, updateByKeys };
+
+    patcher.patchValue('name', 'FirstCycle');
+    await patcher.save();
+
+    patcher.patchValue('name', 'SecondCycle');
+    expect(mockRecord.name).to.equal('SecondCycle');
+    expect(patcher.record.name).to.equal('SecondCycle');
+
+    await patcher.save();
+    expect(updateByKeys.calledTwice).to.be.true;
+    const secondCallUpdates = updateByKeys.secondCall.args[1];
+    expect(secondCallUpdates.name).to.equal('SecondCycle');
+  });
+
   it('throws when no persistence strategy is available', async () => {
     patcher.patchValue('name', 'UpdatedName');
     patcher.collection = undefined;

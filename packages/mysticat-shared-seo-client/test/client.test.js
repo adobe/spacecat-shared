@@ -1229,6 +1229,119 @@ describe('SeoClient', () => {
       expect(result.result.pages[0].top_keyword).to.equal('high-kw');
       expect(result.result.pages[0].top_keyword_best_position_title).to.equal('High Title');
     });
+
+    it('returns keywords[] with all expected fields per page', async () => {
+      nockPaidDatabases(BIG_MARKETS, paidKeywordsCsv, { targetDb: 'us' });
+
+      const result = await client.getPaidPages('adobe.com', { date: '2025-03-01', limit: 5 });
+      const topPage = result.result.pages[0];
+
+      // Pricing page has 2 keywords (both "adobe" rows)
+      expect(topPage.keywords).to.have.lengthOf(2);
+
+      const kw = topPage.keywords[0];
+      expect(kw).to.have.all.keys('keyword', 'traffic', 'cpc', 'serp_title', 'position', 'volume', 'country');
+      expect(kw.keyword).to.equal('adobe');
+      expect(kw.traffic).to.equal(47000);
+      expect(kw.cpc).to.equal(6.43);
+      expect(kw.serp_title).to.equal('Adobe® - Official Site');
+      expect(kw.position).to.equal(1);
+      expect(kw.volume).to.equal(1000000);
+      expect(kw.country).to.equal('US');
+
+      // Existing fields are unchanged
+      expect(topPage.top_keyword).to.equal('adobe');
+      expect(topPage.value).to.be.a('number');
+      expect(topPage.sum_traffic).to.equal(60000);
+    });
+
+    it('keywords[] length matches raw keyword count for multi-keyword page', async () => {
+      const csv = [
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
+        '"kw1";"https://example.com/p";"100";"500";"1.00";"2";"Title 1"',
+        '"kw2";"https://example.com/p";"200";"600";"2.00";"3";"Title 2"',
+        '"kw3";"https://example.com/p";"300";"700";"3.00";"1";"Title 3"',
+      ].join('\n');
+
+      nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
+
+      const result = await client.getPaidPages('example.com');
+      expect(result.result.pages[0].keywords).to.have.lengthOf(3);
+    });
+
+    it('returns cpc: null when Cp is empty (nullish coalescing)', async () => {
+      const csv = [
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
+        '"kw-no-cpc";"https://example.com/p";"100";"500";"";"3";"No CPC Title"',
+      ].join('\n');
+
+      nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
+
+      const result = await client.getPaidPages('example.com');
+      const kw = result.result.pages[0].keywords[0];
+      expect(kw.cpc).to.equal(null);
+      expect(kw.keyword).to.equal('kw-no-cpc');
+    });
+
+    it('returns cpc as float when Cp has a value', async () => {
+      const csv = [
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
+        '"kw-with-cpc";"https://example.com/p";"100";"500";"3.95";"2";"CPC Title"',
+      ].join('\n');
+
+      nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
+
+      const result = await client.getPaidPages('example.com');
+      const kw = result.result.pages[0].keywords[0];
+      expect(kw.cpc).to.equal(3.95);
+    });
+
+    it('keywords[] returns null for missing position/volume/cpc and derives country from database key', async () => {
+      const csv = [
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
+        '"kw-sparse";"https://example.com/p";"50";"";"";"";"Sparse"',
+      ].join('\n');
+
+      nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
+
+      const result = await client.getPaidPages('example.com');
+      const kw = result.result.pages[0].keywords[0];
+      expect(kw.position).to.equal(null);
+      expect(kw.volume).to.equal(null);
+      expect(kw.cpc).to.equal(null);
+      expect(kw.serp_title).to.equal('Sparse');
+      expect(kw.country).to.equal('US');
+    });
+
+    it('keywords[] from multiple databases carry their respective country codes', async () => {
+      const usCsv = [
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
+        '"shoes";"https://example.com/shoes";"100";"5000";"2.50";"1";"Buy Shoes"',
+      ].join('\n');
+      const gbCsv = [
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
+        '"trainers";"https://example.com/shoes";"80";"3000";"1.80";"3";"Buy Trainers"',
+      ].join('\n');
+
+      const csvByDb = { us: usCsv, uk: gbCsv };
+      for (const db of BIG_MARKETS) {
+        nock(config.apiBaseUrl)
+          .get('/')
+          .query((q) => q.type === 'domain_adwords' && q.database === db)
+          .reply(200, csvByDb[db] || emptyPaidCsv);
+      }
+
+      const result = await client.getPaidPages('example.com');
+      const page = result.result.pages[0];
+      expect(page.keywords).to.have.lengthOf(2);
+
+      const usKw = page.keywords.find((k) => k.keyword === 'shoes');
+      const gbKw = page.keywords.find((k) => k.keyword === 'trainers');
+      expect(usKw.country).to.equal('US');
+      expect(gbKw.country).to.equal('UK');
+      expect(usKw.traffic).to.equal(100);
+      expect(gbKw.traffic).to.equal(80);
+    });
   });
 
   // ===== getBrokenBacklinks =====

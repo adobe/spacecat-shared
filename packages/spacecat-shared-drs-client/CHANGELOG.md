@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-drs-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.6.0...@adobe/spacecat-shared-drs-client-v1.7.0) (2026-05-05)
+
+
+### Features
+
+* **drs-client:** forward brandId on publishBrandPresenceAnalyze (LLMO-4716) ([#1586](https://github.com/adobe/spacecat-shared/issues/1586)) ([a6346cc](https://github.com/adobe/spacecat-shared/commit/a6346ccb550899a27122215a9e214de26a2c78c6))
+
+# [@adobe/spacecat-shared-drs-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.5.0...@adobe/spacecat-shared-drs-client-v1.6.0) (2026-04-30)
+
+
+### Features
+
+* **drs-client:** add S3 upload and SNS publish for brand presence analysis ([#1553](https://github.com/adobe/spacecat-shared/issues/1553)) ([56b1266](https://github.com/adobe/spacecat-shared/commit/56b126686fc0be81253fb0a5f510a2913b2073cc))
+
+# [@adobe/spacecat-shared-drs-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.4.2...@adobe/spacecat-shared-drs-client-v1.5.0) (2026-04-28)
+
+
+### Features
+
+* **drs-client:** implement URL batching for scrape results lookup ([#1536](https://github.com/adobe/spacecat-shared/issues/1536)) ([786b561](https://github.com/adobe/spacecat-shared/commit/786b5610b784303aaa9506686dc903f6553b3601))
+
 # [@adobe/spacecat-shared-drs-client-v1.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.4.1...@adobe/spacecat-shared-drs-client-v1.4.2) (2026-04-06)
 
 

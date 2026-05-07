@@ -44,8 +44,8 @@ export interface Opportunity extends BaseModel {
   setLastAuditedAt(lastAuditedAt: string): Opportunity;
   setOrigin(origin: string): Opportunity;
   setRunbook(runbook: string): Opportunity;
-  setScopeId(scopeId: string): Opportunity;
-  setScopeType(scopeType: 'brand'): Opportunity;
+  setScopeId(scopeId: string | null | undefined): Opportunity;
+  setScopeType(scopeType: 'brand' | null | undefined): Opportunity;
   setSiteId(siteId: string): Opportunity;
   setStatus(status: string): Opportunity;
   setTags(tags: string[]): Opportunity;

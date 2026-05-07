@@ -105,6 +105,22 @@ describe('OpportunityCollection', () => {
     });
   });
 
+  describe('schema validate guards', () => {
+    it('rejects scopeType values not in SCOPE_TYPES', () => {
+      const { scopeType } = schema.getAttributes();
+      expect(scopeType.validate('page')).to.be.false;
+      expect(scopeType.validate('brand')).to.be.true;
+      expect(scopeType.validate(null)).to.be.true;
+    });
+
+    it('rejects scopeId values that are not valid UUIDs', () => {
+      const { scopeId } = schema.getAttributes();
+      expect(scopeId.validate('not-a-uuid')).to.be.false;
+      expect(scopeId.validate('11111111-1111-1111-1111-111111111111')).to.be.true;
+      expect(scopeId.validate(null)).to.be.true;
+    });
+  });
+
   describe('allByScope', () => {
     it('throws an error if scopeType is not provided', async () => {
       await expect(instance.allByScope()).to.be.rejectedWith('allByScope: scopeType is required');

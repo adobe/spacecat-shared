@@ -17,6 +17,8 @@ services:
 
   data-service:
     platform: ${MYSTICAT_DATA_SERVICE_PLATFORM:-linux/amd64}
+    # Default tag is bumped here whenever a new schema migration requires a matching data-service
+    # image. Override at runtime: export MYSTICAT_DATA_SERVICE_TAG=v<version> before npm run test:it.
     image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v5.1.1}
     depends_on:
       db:

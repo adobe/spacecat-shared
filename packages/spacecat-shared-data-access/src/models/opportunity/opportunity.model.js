@@ -10,6 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
+import { ValidationError } from '../../errors/index.js';
 import BaseModel from '../base/base.model.js';
 
 /**
@@ -40,6 +43,23 @@ class Opportunity extends BaseModel {
   static SCOPE_TYPES = {
     BRAND: 'brand',
   };
+
+  /**
+   * Overrides BaseModel.save() to enforce the co-presence invariant: scopeType and scopeId
+   * must both be set or both be absent. Guards the setter+save path in addition to create().
+   *
+   * @returns {Promise<Opportunity>} The saved opportunity.
+   * @throws {ValidationError} When only one of scopeType / scopeId is set.
+   */
+  async save() {
+    if (hasText(this.getScopeType()) !== hasText(this.getScopeId())) {
+      throw new ValidationError(
+        'scopeType and scopeId must both be set or both be absent',
+        this,
+      );
+    }
+    return super.save();
+  }
 
   /**
    * Adds the given suggestions to this Opportunity. Sets this opportunity as the parent

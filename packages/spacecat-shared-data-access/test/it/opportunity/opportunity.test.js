@@ -396,15 +396,22 @@ describe('Opportunity IT', async () => {
       updatedBy: 'system',
     };
 
-    it('returns only opportunities matching the given brandId', async () => {
+    let oppA;
+    let oppB;
+
+    after(async () => {
+      await Promise.all([oppA?.remove(), oppB?.remove()].filter(Boolean));
+    });
+
+    it('returns only opportunities matching the given scope', async () => {
       // Create one opp for brand-a and one for brand-b on the same site
-      const oppA = await Opportunity.create({
+      oppA = await Opportunity.create({
         ...scopedOpportunityBase,
         title: 'Brand A Opportunity',
         scopeType: 'brand',
         scopeId: BRAND_A_ID,
       });
-      const oppB = await Opportunity.create({
+      oppB = await Opportunity.create({
         ...scopedOpportunityBase,
         title: 'Brand B Opportunity',
         scopeType: 'brand',

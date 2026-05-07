@@ -423,4 +423,34 @@ describe('OpportunityModel', () => {
       expect(Opportunity.SCOPE_TYPES.SITE).to.be.undefined;
     });
   });
+
+  describe('save (scope co-presence)', () => {
+    it('throws ValidationError when scopeType is set but scopeId is absent', async () => {
+      instance.setScopeType('brand');
+      await expect(instance.save()).to.be.rejectedWith(
+        'scopeType and scopeId must both be set or both be absent',
+      );
+    });
+
+    it('throws ValidationError when scopeId is set but scopeType is absent', async () => {
+      instance.setScopeId('11111111-1111-1111-1111-111111111111');
+      await expect(instance.save()).to.be.rejectedWith(
+        'scopeType and scopeId must both be set or both be absent',
+      );
+    });
+
+    it('delegates to super.save() when both scopeType and scopeId are set', async () => {
+      instance.setScopeType('brand');
+      instance.setScopeId('11111111-1111-1111-1111-111111111111');
+      const patcherSaveStub = stub(instance.patcher, 'save').resolves();
+      await expect(instance.save()).to.be.fulfilled;
+      expect(patcherSaveStub.calledOnce).to.be.true;
+    });
+
+    it('delegates to super.save() when neither scopeType nor scopeId is set', async () => {
+      const patcherSaveStub = stub(instance.patcher, 'save').resolves();
+      await expect(instance.save()).to.be.fulfilled;
+      expect(patcherSaveStub.calledOnce).to.be.true;
+    });
+  });
 });

@@ -35,8 +35,8 @@ class OpportunityCollection extends BaseCollection {
    */
   async create(item, options) {
     const { scopeType, scopeId } = item || {};
-    if (Boolean(scopeType) !== Boolean(scopeId)) {
-      throw new ValidationError('scopeType and scopeId must both be set or both be absent');
+    if (hasText(scopeType) !== hasText(scopeId)) {
+      throw new ValidationError('scopeType and scopeId must both be set or both be absent', this);
     }
     return super.create(item, options);
   }

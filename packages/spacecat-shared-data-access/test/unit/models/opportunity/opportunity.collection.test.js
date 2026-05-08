@@ -138,6 +138,18 @@ describe('OpportunityCollection', () => {
       ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
     });
 
+    it('throws ValidationError when both keys are present but scopeId value is null', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: 'brand', scopeId: null }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('throws ValidationError when both keys are present but scopeType value is null', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: null, scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
     it('passes co-presence check when setting both scopeType and scopeId', async () => {
       await expect(
         instance.updateByKeys(KEYS, { scopeType: 'brand', scopeId: '11111111-1111-1111-1111-111111111111' }),

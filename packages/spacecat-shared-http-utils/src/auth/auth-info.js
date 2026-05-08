@@ -92,6 +92,10 @@ export default class AuthInfo {
 
   isReadOnlyAdmin() { return this.profile?.is_read_only_admin; }
 
+  getFacsPermissions() { return this.profile?.facs_permissions || []; }
+
+  hasFacsPermission(permission) { return this.getFacsPermissions().includes(permission); }
+
   hasOrganization(orgId) {
     const [id] = orgId.split('@');
     return this.profile?.tenants?.some(

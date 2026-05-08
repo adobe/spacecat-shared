@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,6 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-export const FF_READ_ONLY_ORG = 'FT_LLMO-3008';
-export const FF_MAC_FACS_PERMISSIONS = 'FT_MAC_FACS_PERMISSIONS';
-export const X_PRODUCT_HEADER = 'x-product';
+import MacGiverClient from './mac-giver-client.js';
+import { macGiverClientWrapper } from './mac-giver-client-wrapper.js';
+
+export {
+  MacGiverClient,
+  macGiverClientWrapper,
+};

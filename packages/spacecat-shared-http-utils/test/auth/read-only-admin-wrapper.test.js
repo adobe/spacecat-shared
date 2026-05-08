@@ -405,6 +405,22 @@ describe('readOnlyAdminWrapper', () => {
       expect(context.dataAccess.Organization.findById.calledWith('org-456')).to.be.true;
     });
 
+    it('blocks write when the organization is not found', async () => {
+      const orgRoutes = {
+        ...routeCapabilities,
+        'PATCH /organizations/:organizationId': 'organization:write',
+      };
+      context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-456' };
+      context.dataAccess = {
+        Organization: { findById: sinon.stub().resolves(null) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+    });
+
     it('blocks write on an organization the RO admin does not own', async () => {
       const orgRoutes = {
         ...routeCapabilities,
@@ -458,6 +474,71 @@ describe('readOnlyAdminWrapper', () => {
         { tag: 'ro-admin', err: dbError },
         'Error checking resource ownership for RO admin',
       )).to.be.true;
+    });
+
+    it('allows write when siteId is in context.data (no path param)', async () => {
+      const dataRoutes = {
+        ...routeCapabilities,
+        'POST /preflight/jobs': 'preflight:write',
+      };
+      context.pathInfo = { method: 'POST', suffix: '/preflight/jobs' };
+      context.data = { siteId: 'abc-123' };
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities: dataRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result).to.deep.equal({ status: 200 });
+      expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
+    });
+
+    it('blocks write when context.data siteId is present but user does not own it', async () => {
+      const dataRoutes = {
+        ...routeCapabilities,
+        'POST /preflight/jobs': 'preflight:write',
+      };
+      context.pathInfo = { method: 'POST', suffix: '/preflight/jobs' };
+      context.data = { siteId: 'abc-123' };
+      context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities: dataRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+    });
+
+    it('allows write when organizationId is in context.data (no path param)', async () => {
+      const dataRoutes = {
+        ...routeCapabilities,
+        'POST /some/org/action': 'organization:write',
+      };
+      context.pathInfo = { method: 'POST', suffix: '/some/org/action' };
+      context.data = { organizationId: 'org-456' };
+      context.dataAccess = {
+        Organization: { findById: sinon.stub().resolves(orgStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities: dataRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result).to.deep.equal({ status: 200 });
+      expect(context.dataAccess.Organization.findById.calledWith('org-456')).to.be.true;
+    });
+
+    it('path param takes precedence over context.data siteId', async () => {
+      context.pathInfo = { method: 'PATCH', suffix: '/sites/path-site-id' };
+      context.data = { siteId: 'data-site-id' };
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities });
+      await wrapped({}, context);
+
+      expect(context.dataAccess.Site.findById.calledWith('path-site-id')).to.be.true;
+      expect(context.dataAccess.Site.findById.calledWith('data-site-id')).to.be.false;
     });
 
     it('emits audit log when RO admin write on owned resource is allowed', async () => {

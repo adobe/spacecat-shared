@@ -47,7 +47,10 @@ async function isOwnerOfResource(context, authInfo, params) {
     return false;
   }
 
-  const { siteId, organizationId } = params;
+  // Prefer path params; fall back to request body when no ID is in the route
+  // (e.g. POST /preflight/jobs passes siteId in context.data, not the path).
+  const siteId = params.siteId ?? context.data?.siteId;
+  const organizationId = params.organizationId ?? context.data?.organizationId;
 
   try {
     if (siteId) {

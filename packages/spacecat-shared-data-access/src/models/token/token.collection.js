@@ -42,6 +42,21 @@ class TokenCollection extends BaseCollection {
    * @returns {Promise<import('./token.model.js').default|null>} Token instance
    *   (existing or newly created), or null when none exists and createIfNotFound is false.
    */
+  /**
+   * Finds the most recently created Token for a given siteId and tokenType,
+   * regardless of cycle. Returns null if no token exists.
+   *
+   * @param {string} siteId - Site ID (UUID).
+   * @param {string} tokenType - Token type (e.g. grant_cwv, grant_broken_backlinks).
+   * @returns {Promise<import('./token.model.js').default|null>} The last created Token, or null.
+   */
+  async findLastCreatedBySiteIdAndTokenType(siteId, tokenType) {
+    if (!hasText(siteId) || !hasText(tokenType)) {
+      throw new DataAccessError('TokenCollection.findLastCreatedBySiteIdAndTokenType: siteId and tokenType are required');
+    }
+    return this.findByIndexKeys({ siteId, tokenType }, { order: 'desc' });
+  }
+
   async findBySiteIdAndTokenType(siteId, tokenType, options = {}) {
     if (!hasText(siteId) || !hasText(tokenType)) {
       throw new DataAccessError('TokenCollection.findBySiteIdAndTokenType: siteId and tokenType are required');

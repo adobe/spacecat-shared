@@ -63,6 +63,38 @@ describe('TokenCollection', () => {
     });
   });
 
+  describe('findLastCreatedBySiteIdAndTokenType', () => {
+    it('returns the last created token when found', async () => {
+      instance.findByIndexKeys = stub().resolves(model);
+
+      const result = await instance.findLastCreatedBySiteIdAndTokenType('site-1', 'grant_cwv');
+
+      expect(result).to.equal(model);
+      expect(instance.findByIndexKeys).to.have.been.calledOnceWith(
+        { siteId: 'site-1', tokenType: 'grant_cwv' },
+        { order: 'desc' },
+      );
+    });
+
+    it('returns null when no token exists', async () => {
+      instance.findByIndexKeys = stub().resolves(null);
+
+      const result = await instance.findLastCreatedBySiteIdAndTokenType('site-1', 'grant_cwv');
+
+      expect(result).to.be.null;
+    });
+
+    it('throws if siteId is missing', async () => {
+      await expect(instance.findLastCreatedBySiteIdAndTokenType(undefined, 'grant_cwv'))
+        .to.be.rejectedWith(/siteId|required/);
+    });
+
+    it('throws if tokenType is missing', async () => {
+      await expect(instance.findLastCreatedBySiteIdAndTokenType('site-1', ''))
+        .to.be.rejectedWith(/tokenType|required/);
+    });
+  });
+
   describe('findBySiteIdAndTokenType', () => {
     let expectedCycle;
 

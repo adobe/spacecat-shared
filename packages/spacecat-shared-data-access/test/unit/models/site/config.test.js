@@ -3013,6 +3013,113 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('rumConfig', () => {
+    describe('getRumConfig', () => {
+      it('returns rumConfig when set', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        expect(config.getRumConfig()).to.deep.equal({
+          hasDomainKey: true,
+          lastCheckedAt: '2026-05-08T00:00:00.000Z',
+        });
+      });
+
+      it('returns undefined when rumConfig is absent', () => {
+        const config = Config({});
+        expect(config.getRumConfig()).to.be.undefined;
+      });
+    });
+
+    describe('hasRumDomainKey', () => {
+      it('returns true when hasDomainKey is true', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        expect(config.hasRumDomainKey()).to.be.true;
+      });
+
+      it('returns false when hasDomainKey is false', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: false, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        expect(config.hasRumDomainKey()).to.be.false;
+      });
+
+      it('returns false when rumConfig is absent', () => {
+        const config = Config({});
+        expect(config.hasRumDomainKey()).to.be.false;
+      });
+    });
+
+    describe('updateRumConfig', () => {
+      it('sets hasDomainKey to true and records lastCheckedAt', () => {
+        const before = new Date();
+        const config = Config({});
+        config.updateRumConfig(true);
+        const rum = config.getRumConfig();
+        expect(rum.hasDomainKey).to.be.true;
+        expect(new Date(rum.lastCheckedAt).getTime()).to.be.gte(before.getTime());
+      });
+
+      it('sets hasDomainKey to false and records lastCheckedAt', () => {
+        const config = Config({});
+        config.updateRumConfig(false);
+        expect(config.getRumConfig().hasDomainKey).to.be.false;
+        expect(config.getRumConfig().lastCheckedAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
+      });
+
+      it('overwrites a previous rumConfig value', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2025-01-01T00:00:00.000Z' },
+        });
+        config.updateRumConfig(false);
+        expect(config.hasRumDomainKey()).to.be.false;
+        expect(config.getRumConfig().lastCheckedAt).to.not.equal('2025-01-01T00:00:00.000Z');
+      });
+    });
+
+    describe('Joi schema validation', () => {
+      it('accepts a valid rumConfig', () => {
+        expect(() => Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        })).to.not.throw();
+      });
+
+      it('rejects rumConfig missing hasDomainKey', () => {
+        expect(() => validateConfiguration({
+          rumConfig: { lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        })).to.throw(/hasDomainKey/);
+      });
+
+      it('rejects rumConfig with invalid lastCheckedAt', () => {
+        expect(() => validateConfiguration({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: 'not-a-date' },
+        })).to.throw(/lastCheckedAt/);
+      });
+
+      it('treats absent rumConfig as valid (optional field)', () => {
+        expect(() => validateConfiguration({})).to.not.throw();
+      });
+    });
+
+    describe('toDynamoItem serialization', () => {
+      it('includes rumConfig when set', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        const item = Config.toDynamoItem(config);
+        expect(item.rumConfig).to.deep.equal(config.getRumConfig());
+      });
+
+      it('omits rumConfig from toDynamoItem when not set', () => {
+        const config = Config({});
+        const item = Config.toDynamoItem(config);
+        expect(item.rumConfig).to.be.undefined;
+      });
+    });
+  });
+
   describe('LLMO Well Known Tags', () => {
     const { extractWellKnownTags } = Config();
 

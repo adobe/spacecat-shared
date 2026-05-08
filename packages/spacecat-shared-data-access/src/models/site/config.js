@@ -407,6 +407,10 @@ export const configSchema = Joi.object({
       startTime: Joi.number().optional(),
     })).optional(),
   }).optional(),
+  rumConfig: Joi.object({
+    hasDomainKey: Joi.boolean().required(),
+    lastCheckedAt: Joi.string().isoDate().required(),
+  }).optional(),
   commerceLlmoConfig: Joi.object().pattern(
     Joi.string(),
     Joi.object({
@@ -542,6 +546,8 @@ export const Config = (data = {}) => {
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.getOnboardConfig = () => state?.onboardConfig;
   self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
+  self.getRumConfig = () => state?.rumConfig;
+  self.hasRumDomainKey = () => state?.rumConfig?.hasDomainKey === true;
   const AUDIT_TARGET_SOURCES = ['manual', 'moneyPages'];
   const auditTargetEntrySchema = Joi.object({
     url: Joi.string().uri().required(),
@@ -955,6 +961,13 @@ export const Config = (data = {}) => {
     state.commerceLlmoConfig = commerceLlmoConfig;
   };
 
+  self.updateRumConfig = (hasDomainKey) => {
+    state.rumConfig = {
+      hasDomainKey,
+      lastCheckedAt: new Date().toISOString(),
+    };
+  };
+
   return Object.freeze(self);
 };
 
@@ -974,6 +987,7 @@ Config.toDynamoItem = (config) => ({
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
   onboardConfig: config.getOnboardConfig?.(),
   commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
+  rumConfig: config.getRumConfig?.(),
   enableMoneyPageUrls: config.isMoneyPageUrlsEnabled?.() === false ? false : undefined,
   auditTargetURLs: config.getAuditTargetURLsConfig?.(),
 });

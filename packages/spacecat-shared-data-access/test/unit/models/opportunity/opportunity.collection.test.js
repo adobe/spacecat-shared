@@ -105,6 +105,58 @@ describe('OpportunityCollection', () => {
     });
   });
 
+  describe('updateByKeys', () => {
+    const KEYS = { opportunityId: 'op12345', siteId: 'site67890' };
+    let superUpdateByKeysStub;
+
+    beforeEach(() => {
+      // Stub the inherited updateByKeys so the ElectroDB patch chain is not invoked.
+      // The co-presence guard runs before super.updateByKeys, so stubbing the super
+      // lets us isolate the validation logic without needing a full ElectroDB mock.
+      superUpdateByKeysStub = stub(Object.getPrototypeOf(Object.getPrototypeOf(instance)), 'updateByKeys').resolves();
+    });
+
+    afterEach(() => {
+      superUpdateByKeysStub.restore();
+    });
+
+    it('throws ValidationError when updating scopeType without scopeId', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: 'brand' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('throws ValidationError when updating scopeId without scopeType', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('throws ValidationError when clearing only one scope field', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: null }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('passes co-presence check when setting both scopeType and scopeId', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: 'brand', scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.fulfilled;
+    });
+
+    it('passes co-presence check when clearing both scopeType and scopeId', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: null, scopeId: null }),
+      ).to.be.fulfilled;
+    });
+
+    it('passes co-presence check when update does not touch scope fields', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { title: 'Updated title' }),
+      ).to.be.fulfilled;
+    });
+  });
+
   describe('schema validate guards', () => {
     it('rejects scopeType values not in SCOPE_TYPES', () => {
       const { scopeType } = schema.getAttributes();

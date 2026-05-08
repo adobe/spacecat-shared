@@ -42,6 +42,32 @@ class OpportunityCollection extends BaseCollection {
   }
 
   /**
+   * Validates and updates an Opportunity by its keys. Enforces the scopeType/scopeId
+   * co-presence invariant: if either field appears in the update payload, both must
+   * be set or both must be absent — a half-scoped update is invalid.
+   *
+   * @param {object} keys - The key attributes identifying the record.
+   * @param {object} updates - The fields to update.
+   * @returns {Promise<void>}
+   */
+  async updateByKeys(keys, updates) {
+    const hasScopeType = updates != null && 'scopeType' in updates;
+    const hasScopeId = updates != null && 'scopeId' in updates;
+    // If either field is included in the update, both must be included together,
+    // and their combined values must satisfy co-presence (both set or both absent).
+    if (hasScopeType !== hasScopeId) {
+      throw new ValidationError('scopeType and scopeId must both be set or both be absent', this);
+    }
+    if (hasScopeType && hasScopeId) {
+      const { scopeType, scopeId } = updates;
+      if (hasText(scopeType) !== hasText(scopeId)) {
+        throw new ValidationError('scopeType and scopeId must both be set or both be absent', this);
+      }
+    }
+    return super.updateByKeys(keys, updates);
+  }
+
+  /**
    * Returns all opportunities matching a given scope type and scope ID.
    *
    * @param {string} scopeType - The scope type (e.g. 'brand').

@@ -30,13 +30,19 @@ function forbidden(message) {
 
 /**
  * Checks whether the authenticated read-only admin user owns the resource identified
- * by the path parameters. Ownership is determined by whether the user's IMS org matches
- * the organization that owns the referenced site or organization entity.
+ * by the path parameters or request body. Ownership is determined by whether the user's
+ * IMS org matches the organization that owns the referenced site or organization entity.
+ *
+ * ID resolution order:
+ * 1. Named path params (e.g. :siteId, :organizationId) — always preferred.
+ * 2. context.data (parsed request body) — used only when the matched route has no path
+ *    params at all (e.g. POST /preflight/jobs passes siteId in the body). Requires that
+ *    the body-parser wrapper runs before readOnlyAdminWrapper in the .with() chain.
  *
  * Fail-closed: returns false if dataAccess is unavailable, the entity is not found,
- * no recognizable ID param is present in the path, or any lookup throws.
+ * no recognizable ID can be resolved, or any lookup throws.
  *
- * @param {Object} context - Universal context (must have context.dataAccess)
+ * @param {Object} context - Universal context (must have context.dataAccess and context.log)
  * @param {Object} authInfo - The AuthInfo instance for the current user
  * @param {Object<string, string>} params - Named path params extracted from the route pattern
  * @returns {Promise<boolean>}
@@ -44,13 +50,18 @@ function forbidden(message) {
 async function isOwnerOfResource(context, authInfo, params) {
   const { dataAccess, log } = context;
   if (!dataAccess) {
+    log.error({ tag: 'ro-admin' }, 'isOwnerOfResource: dataAccess not on context — ensure dataAccessWrapper runs before readOnlyAdminWrapper');
     return false;
   }
 
-  // Prefer path params; fall back to request body when no ID is in the route
-  // (e.g. POST /preflight/jobs passes siteId in context.data, not the path).
-  const siteId = params.siteId ?? context.data?.siteId;
-  const organizationId = params.organizationId ?? context.data?.organizationId;
+  // Body fallback only when the route carries no path params at all (e.g. POST /preflight/jobs).
+  // When params has keys, the route does have path identifiers; relying on body data in that
+  // case could allow a caller to spoof ownership by naming params differently than :siteId.
+  const hasPathParams = Object.keys(params).length > 0;
+  const siteId = hasPathParams ? params.siteId : (params.siteId ?? context.data?.siteId);
+  const organizationId = hasPathParams
+    ? params.organizationId
+    : (params.organizationId ?? context.data?.organizationId);
 
   try {
     if (siteId) {
@@ -77,6 +88,11 @@ async function isOwnerOfResource(context, authInfo, params) {
     return false;
   }
 
+  log.warn({
+    tag: 'ro-admin',
+    method: context.pathInfo?.method,
+    suffix: context.pathInfo?.suffix,
+  }, 'isOwnerOfResource: no siteId or organizationId found in path params or context.data');
   return false;
 }
 
@@ -91,6 +107,7 @@ async function isOwnerOfResource(context, authInfo, params) {
  * @returns {Promise<boolean>}
  */
 async function evaluateFeatureFlag(context, authInfo) {
+  const { log } = context;
   try {
     const ldClient = LaunchDarklyClient.createFrom(context);
     if (!ldClient) {
@@ -105,7 +122,8 @@ async function evaluateFeatureFlag(context, authInfo) {
 
     const imsOrgId = `${ident}@AdobeOrg`;
     return await ldClient.isFlagEnabledForIMSOrg(FF_READ_ONLY_ORG, imsOrgId);
-  } catch {
+  } catch (err) {
+    log.error({ tag: 'ro-admin', err }, 'Feature flag evaluation failed for RO admin; defaulting to deny');
     return false;
   }
 }
@@ -119,8 +137,9 @@ async function evaluateFeatureFlag(context, authInfo) {
  *
  * 1. Evaluates the `FT_READ_ONLY_ORG` LaunchDarkly feature flag (fail-closed).
  * 2. Resolves the route's action from the routeCapabilities map and blocks
- *    write operations (or unmapped routes) for RO admins.
- * 3. Emits a structured audit log entry for allowed RO admin requests.
+ *    write operations (or unmapped routes) for RO admins, unless they own the resource.
+ * 3. Emits a structured audit log entry for all allowed RO admin requests, including
+ *    the resolved resource ID and whether it came from the path or request body.
  *
  * Non-RO-admin requests pass through untouched.
  *
@@ -159,7 +178,14 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
 
         if (action !== 'read' && action !== 'readAll') {
           // Allow the write if the RO admin owns the target resource.
-          const params = extractRouteParams(context, routeCapabilities);
+          let params;
+          try {
+            params = extractRouteParams(context, routeCapabilities);
+          } catch (err) {
+            log.error({ tag: 'ro-admin', err }, 'extractRouteParams failed; denying write access');
+            return forbidden('Forbidden');
+          }
+
           const isOwner = await isOwnerOfResource(context, authInfo, params);
           if (!isOwner) {
             log.warn({
@@ -171,6 +197,18 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
             }, 'Read-only admin blocked from route');
             return forbidden('Forbidden');
           }
+
+          const hasPathParams = Object.keys(params).length > 0;
+          log.info({
+            tag: 'ro-admin-write',
+            email: authInfo.getProfile?.()?.email,
+            method: context.pathInfo?.method,
+            suffix: context.pathInfo?.suffix,
+            org: authInfo.getTenantIds?.()[0],
+            resolvedSiteId: params.siteId ?? context.data?.siteId ?? null,
+            resolvedOrgId: params.organizationId ?? context.data?.organizationId ?? null,
+            idSource: hasPathParams ? 'path' : 'body',
+          }, 'RO admin write allowed on owned resource');
         }
       }
 

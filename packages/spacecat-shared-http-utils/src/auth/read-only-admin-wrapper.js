@@ -52,15 +52,21 @@ async function isOwnerOfResource(context, authInfo, params) {
   try {
     if (siteId) {
       const site = await dataAccess.Site?.findById(siteId);
-      if (!site) return false;
+      if (!site) {
+        return false;
+      }
       const org = await site.getOrganization();
-      if (!org) return false;
+      if (!org) {
+        return false;
+      }
       return authInfo.hasOrganization(org.getImsOrgId());
     }
 
     if (organizationId) {
       const org = await dataAccess.Organization?.findById(organizationId);
-      if (!org) return false;
+      if (!org) {
+        return false;
+      }
       return authInfo.hasOrganization(org.getImsOrgId());
     }
   } catch (err) {

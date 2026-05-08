@@ -4,8 +4,9 @@ name: Build
 # to this file (adobe/spacecat-shared / .github/workflows/main.yaml). Renaming or moving
 # this file breaks OIDC publishing — re-run scripts/setup-npm-trusted-publishers.sh after.
 #
-# Trust binding security relies on branch protection: do NOT weaken protection on `main`,
-# or any contributor with push access could mint a publish-scoped npm token via OIDC.
+# Trust binding security relies on the 'npm-publish' GitHub Environment, which must be
+# configured with a deployment branch policy that allows only `main`. Configure branch
+# protection on `main` as well (disallow direct push, require PR review).
 # See: https://docs.npmjs.com/trusted-publishers
 
 # No workflow-level permissions — each job declares only what it needs.
@@ -62,6 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main'
+    environment: npm-publish
     permissions:
       id-token: write   # npm OIDC Trusted Publishing
       contents: write

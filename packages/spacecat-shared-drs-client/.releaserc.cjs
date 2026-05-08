@@ -6,7 +6,7 @@ module.exports = {
     ["@semantic-release/changelog", {
       "changelogFile": "CHANGELOG.md",
     }],
-    ...(process.env.SR_NO_NPM_AUTH ? [] : ["@semantic-release/npm"]),
+    ...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : ["@semantic-release/npm"]),
     ["@semantic-release/git", {
       "assets": ["package.json", "CHANGELOG.md"],
       "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"

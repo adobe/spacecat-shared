@@ -15,8 +15,13 @@
 # If main.yaml is ever renamed, re-run this script with the updated WORKFLOW value
 # and update the warning comment at the top of .github/workflows/main.yaml.
 #
+# The --environment flag binds the trust to the 'npm-publish' GitHub Environment.
+# Configure that environment with a deployment branch policy that allows only `main`,
+# so only the main-branch release job can mint a publish-scoped OIDC token.
+#
 # When adding a new package to the monorepo:
-#   1. Do a token-based first publish (new packages cannot use OIDC for first publish)
+#   1. Do an interactive first publish (new packages cannot use OIDC for first publish):
+#      npm publish --access public  (from a developer machine logged in as adobe-bot)
 #   2. Add the package name to the PACKAGES array below
 #   3. Re-run this script for the new package only (safe to re-run: npm trust is idempotent)
 set -uo pipefail
@@ -26,6 +31,7 @@ MIN_NPM_MINOR=10
 EXPECTED_NPM_USER="adobe-bot"
 REPO="adobe/spacecat-shared"
 WORKFLOW="main.yaml"
+ENVIRONMENT="npm-publish"
 
 # --- Preflight checks ---
 
@@ -94,16 +100,17 @@ PACKAGES=(
 )
 
 echo "Configuring npm OIDC Trusted Publishers for ${#PACKAGES[@]} packages..."
-echo "Repository: ${REPO}, Workflow: ${WORKFLOW}"
+echo "Repository: ${REPO}, Workflow: ${WORKFLOW}, Environment: ${ENVIRONMENT}"
 echo ""
 
 FAILED=()
 
 for pkg in "${PACKAGES[@]}"; do
   echo "  Configuring: ${pkg}"
-  output=$(npm trust github-actions "${pkg}" \
+  output=$(npm trust github "${pkg}" \
       --repository "${REPO}" \
       --file "${WORKFLOW}" \
+      --environment "${ENVIRONMENT}" \
       --yes 2>&1)
   rc=$?
   echo "${output}" | sed 's/^/    /'

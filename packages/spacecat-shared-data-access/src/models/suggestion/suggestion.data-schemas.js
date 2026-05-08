@@ -27,6 +27,13 @@ import Joi from 'joi';
 import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
 
 /**
+ * Valid CWV metric types for per-metric suggestions.
+ * Referenced by the Joi schema (metric field) and the filterCwvMetrics transformer.
+ * Adding a new metric (e.g., 'ttfb', 'fcp') is a one-line change here.
+ */
+export const CWV_PER_METRIC_VALUES = ['lcp', 'cls', 'inp'];
+
+/**
  * Custom Joi validator that accepts malformed HTTP/HTTPS URLs and relative paths
  * while rejecting dangerous URI schemes (javascript:, data:, blob:, etc.).
  * Used for BROKEN_INTERNAL_LINKS where crawled content may contain malformed URLs.
@@ -147,7 +154,7 @@ export const DATA_SCHEMAS = {
     schema: Joi.object({
       type: Joi.string().required(),
       url: Joi.string().uri().optional(),
-      metric: Joi.string().valid('lcp', 'cls', 'inp').optional(),
+      metric: Joi.string().valid(...CWV_PER_METRIC_VALUES).optional(),
       pageviews: Joi.number().optional(),
       organic: Joi.number().optional(),
       metrics: Joi.array().items(

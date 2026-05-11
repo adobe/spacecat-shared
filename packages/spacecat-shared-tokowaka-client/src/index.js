@@ -1293,6 +1293,7 @@ class TokowakaClient {
   }) {
     const validSuggestions = [];
     const domainWideSuggestions = [];
+    const pathSuggestions = [];
 
     targetSuggestions.forEach((suggestion) => {
       const data = suggestion.getData();
@@ -1300,6 +1301,11 @@ class TokowakaClient {
         const { allowedRegexPatterns } = data;
         if (Array.isArray(allowedRegexPatterns) && allowedRegexPatterns.length > 0) {
           domainWideSuggestions.push({ suggestion, allowedRegexPatterns });
+        }
+      } else if (data?.pathType === true) {
+        const { allowedRegexPatterns } = data;
+        if (Array.isArray(allowedRegexPatterns) && allowedRegexPatterns.length > 0) {
+          pathSuggestions.push({ suggestion, allowedRegexPatterns });
         }
       } else if (isEdgeDeployableSuggestionStatus(suggestion.getStatus())) {
         validSuggestions.push(suggestion);

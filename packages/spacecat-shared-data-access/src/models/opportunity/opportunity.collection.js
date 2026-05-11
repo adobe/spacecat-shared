@@ -42,9 +42,36 @@ class OpportunityCollection extends BaseCollection {
   }
 
   /**
+   * Validates and bulk-creates Opportunities. Enforces the scopeType/scopeId
+   * co-presence invariant on every item — half-scoped records are invalid.
+   *
+   * Overrides BaseCollection.createMany() which would otherwise bypass the
+   * single-item create() guard and persist invalid scope tuples directly.
+   *
+   * @param {object[]} items - The opportunity items to create.
+   * @param {...*} rest - Additional arguments forwarded to BaseCollection.createMany.
+   * @returns {Promise<*>} The result from BaseCollection.createMany.
+   */
+  async createMany(items, ...rest) {
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        const { scopeType, scopeId } = item || {};
+        if (hasText(scopeType) !== hasText(scopeId)) {
+          throw new ValidationError('scopeType and scopeId must both be set or both be absent', this);
+        }
+      }
+    }
+    return super.createMany(items, ...rest);
+  }
+
+  /**
    * Validates and updates an Opportunity by its keys. Enforces the scopeType/scopeId
    * co-presence invariant: if either field appears in the update payload, both must
    * be set or both must be absent — a half-scoped update is invalid.
+   *
+   * Note: this guard enforces co-presence but allows scope re-attribution
+   * (moving an opportunity from one scopeId to another within the same scopeType).
+   * scopeId is the tenant boundary; callers must verify authorization before mutating it.
    *
    * @param {object} keys - The key attributes identifying the record.
    * @param {object} updates - The fields to update.

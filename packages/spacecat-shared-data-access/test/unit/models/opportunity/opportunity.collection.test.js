@@ -105,6 +105,56 @@ describe('OpportunityCollection', () => {
     });
   });
 
+  describe('createMany (scope co-presence)', () => {
+    let superCreateManyStub;
+
+    beforeEach(() => {
+      // Stub the inherited createMany so the ElectroDB batch chain is not invoked.
+      // The per-item co-presence guard runs before super.createMany, so stubbing
+      // the super lets us isolate the validation logic.
+      superCreateManyStub = stub(Object.getPrototypeOf(Object.getPrototypeOf(instance)), 'createMany').resolves({ createdItems: [] });
+    });
+
+    afterEach(() => {
+      superCreateManyStub.restore();
+    });
+
+    it('rejects when any item has scopeType set without scopeId', async () => {
+      await expect(
+        instance.createMany([
+          { type: 'content', scopeType: 'brand', scopeId: '11111111-1111-1111-1111-111111111111' },
+          { type: 'content', scopeType: 'brand' },
+        ]),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+      expect(superCreateManyStub).to.not.have.been.called;
+    });
+
+    it('rejects when any item has scopeId set without scopeType', async () => {
+      await expect(
+        instance.createMany([
+          { type: 'content', scopeId: '11111111-1111-1111-1111-111111111111' },
+        ]),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+      expect(superCreateManyStub).to.not.have.been.called;
+    });
+
+    it('delegates to super.createMany when all items pass co-presence', async () => {
+      const items = [
+        { type: 'content' },
+        { type: 'content', scopeType: 'brand', scopeId: '11111111-1111-1111-1111-111111111111' },
+      ];
+      await expect(instance.createMany(items)).to.be.fulfilled;
+      expect(superCreateManyStub).to.have.been.calledOnce;
+      expect(superCreateManyStub.firstCall.args[0]).to.equal(items);
+    });
+
+    it('delegates to super.createMany when items is not an array', async () => {
+      // Non-array input bypasses per-item validation and is handled by the super class.
+      await expect(instance.createMany(null)).to.be.fulfilled;
+      expect(superCreateManyStub).to.have.been.calledOnceWith(null);
+    });
+  });
+
   describe('updateByKeys', () => {
     const KEYS = { opportunityId: 'op12345', siteId: 'site67890' };
     let superUpdateByKeysStub;

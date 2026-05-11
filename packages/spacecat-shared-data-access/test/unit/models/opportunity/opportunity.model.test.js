@@ -452,5 +452,26 @@ describe('OpportunityModel', () => {
       await expect(instance.save()).to.be.fulfilled;
       expect(patcherSaveStub.calledOnce).to.be.true;
     });
+
+    it('throws ValidationError when a fully-scoped record has scopeId cleared', async () => {
+      // Realistic regression scenario: a record loaded from DB has both scope fields set,
+      // and a caller clears only scopeId via the setter. The save() guard must catch the
+      // half-scoped state before the patch reaches the DB.
+      instance.record.scopeType = 'brand';
+      instance.record.scopeId = '11111111-1111-1111-1111-111111111111';
+      instance.setScopeId(null);
+      await expect(instance.save()).to.be.rejectedWith(
+        'scopeType and scopeId must both be set or both be absent',
+      );
+    });
+
+    it('throws ValidationError when a fully-scoped record has scopeType cleared', async () => {
+      instance.record.scopeType = 'brand';
+      instance.record.scopeId = '11111111-1111-1111-1111-111111111111';
+      instance.setScopeType(null);
+      await expect(instance.save()).to.be.rejectedWith(
+        'scopeType and scopeId must both be set or both be absent',
+      );
+    });
   });
 });

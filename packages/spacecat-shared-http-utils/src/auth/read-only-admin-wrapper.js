@@ -57,11 +57,13 @@ async function isOwnerOfResource(context, authInfo, params) {
   // Body fallback only when the route carries no path params at all (e.g. POST /preflight/jobs).
   // When params has keys, the route does have path identifiers; relying on body data in that
   // case could allow a caller to spoof ownership by naming params differently than :siteId.
+  // spaceCatId is an alias for organizationId.
   const hasPathParams = Object.keys(params).length > 0;
   const siteId = hasPathParams ? params.siteId : (params.siteId ?? context.data?.siteId);
   const organizationId = hasPathParams
-    ? params.organizationId
-    : (params.organizationId ?? context.data?.organizationId);
+    ? (params.organizationId ?? params.spaceCatId)
+    : (params.organizationId ?? params.spaceCatId
+        ?? context.data?.organizationId ?? context.data?.spaceCatId);
 
   try {
     if (siteId) {
@@ -186,7 +188,7 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
               suffix: context.pathInfo?.suffix,
               org: authInfo.getTenantIds?.()[0],
               resolvedSiteId: params.siteId ?? null,
-              resolvedOrgId: params.organizationId ?? null,
+              resolvedOrgId: params.organizationId ?? params.spaceCatId ?? null,
               idSource: 'path',
             }, 'RO admin access allowed on owned resource');
           } else {
@@ -231,7 +233,7 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
               suffix: context.pathInfo?.suffix,
               org: authInfo.getTenantIds?.()[0],
               resolvedSiteId: context.data?.siteId ?? null,
-              resolvedOrgId: context.data?.organizationId ?? null,
+              resolvedOrgId: context.data?.organizationId ?? context.data?.spaceCatId ?? null,
               idSource: 'body',
             }, 'RO admin access allowed on owned resource');
           }

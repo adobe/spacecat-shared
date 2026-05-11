@@ -420,6 +420,41 @@ describe('readOnlyAdminWrapper', () => {
       expect(context.dataAccess.Organization.findById.calledWith('org-456')).to.be.true;
     });
 
+    it('allows write on an organization using spaceCatId alias (path param)', async () => {
+      const orgRoutes = {
+        ...routeCapabilities,
+        'PATCH /organizations/:spaceCatId': 'organization:write',
+      };
+      context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-456' };
+      context.params = { spaceCatId: 'org-456' };
+      context.dataAccess = {
+        Organization: { findById: sinon.stub().resolves(orgStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result).to.deep.equal({ status: 200 });
+      expect(context.dataAccess.Organization.findById.calledWith('org-456')).to.be.true;
+    });
+
+    it('allows write on an organization using spaceCatId alias (body fallback)', async () => {
+      const orgRoutes = {
+        ...routeCapabilities,
+        'POST /some/org/action': 'organization:write',
+      };
+      context.pathInfo = { method: 'POST', suffix: '/some/org/action' };
+      context.params = {};
+      context.data = { spaceCatId: 'org-456' };
+      context.dataAccess = {
+        Organization: { findById: sinon.stub().resolves(orgStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result).to.deep.equal({ status: 200 });
+      expect(context.dataAccess.Organization.findById.calledWith('org-456')).to.be.true;
+    });
+
     it('blocks write when the organization is not found', async () => {
       const orgRoutes = {
         ...routeCapabilities,

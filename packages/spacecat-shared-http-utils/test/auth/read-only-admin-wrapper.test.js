@@ -751,6 +751,28 @@ describe('readOnlyAdminWrapper', () => {
       expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
     });
 
+    it('emits drift-detection warn when an unmapped route is allowed via ownership', async () => {
+      // capability === null (route not in routeCapabilities) + ownership grants access.
+      // A log.warn with reason: 'unmapped-route-allowed' should be emitted as a drift signal.
+      context.pathInfo = { method: 'POST', suffix: '/jobs/preflight' };
+      context.data = { siteId: 'abc-123' };
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities });
+      await wrapped({}, context);
+
+      expect(logStub.warn.calledWithMatch(
+        {
+          tag: 'ro-admin',
+          reason: 'unmapped-route-allowed',
+          method: 'POST',
+          suffix: '/jobs/preflight',
+        },
+        'RO admin allowed on unmapped route via ownership — add this route to routeCapabilities',
+      )).to.be.true;
+    });
+
     it('blocks unmapped route for RO admin who does not own the resource', async () => {
       // Same unmapped route; body siteId present but user does not own it.
       context.pathInfo = { method: 'POST', suffix: '/jobs/preflight' };

@@ -216,6 +216,15 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
             // resource ID (no path param and no body siteId/organizationId) fail-closed.
             const isOwner = await isOwnerOfResource(context, authInfo, params);
             if (isOwner) {
+              if (capability === null) {
+                log.warn({
+                  tag: 'ro-admin',
+                  reason: 'unmapped-route-allowed',
+                  method: context.pathInfo?.method,
+                  suffix: context.pathInfo?.suffix,
+                  org: authInfo.getTenantIds?.()[0],
+                }, 'RO admin allowed on unmapped route via ownership — add this route to routeCapabilities');
+              }
               log.info({
                 tag: 'ro-admin-access',
                 email: authInfo.getProfile?.()?.email,

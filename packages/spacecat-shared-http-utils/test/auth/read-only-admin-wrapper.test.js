@@ -221,6 +221,9 @@ describe('readOnlyAdminWrapper', () => {
         },
       });
       mockedWrapper = mockedModule.readOnlyAdminWrapper;
+      // Provide a minimal dataAccess so write-route tests that now call isOwnerOfResource
+      // get a clean fail-closed result instead of a spurious dataAccess-missing error log.
+      context.dataAccess = { Site: { findById: sinon.stub().resolves(null) } };
     });
 
     it('allows read-only admin on a read route (exact match)', async () => {
@@ -264,17 +267,23 @@ describe('readOnlyAdminWrapper', () => {
 
     it('blocks read-only admin on a write route (PATCH)', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
+      // dataAccess.Site.findById returns null (from beforeEach) → isOwnerOfResource=false
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
 
       expect(result.status).to.equal(403);
       const body = await result.json();
       expect(body.message).to.equal('Forbidden');
+      expect(logStub.warn.calledWithMatch(
+        { tag: 'ro-admin', reason: 'not-owner' },
+        'Read-only admin blocked from route',
+      )).to.be.true;
       expect(handler.called).to.be.false;
     });
 
     it('blocks read-only admin on a write route (DELETE)', async () => {
       context.pathInfo = { method: 'DELETE', suffix: '/sites/abc-123' };
+      // dataAccess.Site.findById returns null (from beforeEach) → isOwnerOfResource=false
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
 
@@ -397,6 +406,45 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
+    });
+
+    it('blocks write and logs warn when the owning org has no imsOrgId (data-integrity guard)', async () => {
+      // Guards against hasOrganization(undefined) which throws TypeError in auth-info.js.
+      orgStub.getImsOrgId.returns(null);
+      context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities });
+      const result = await wrapped({}, context);
+
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.warn.calledWithMatch(
+        { tag: 'ro-admin', siteId: 'abc-123' },
+        'Owning organization has no imsOrgId; denying RO admin access',
+      )).to.be.true;
+    });
+
+    it('blocks write and logs warn when the organization has no imsOrgId (org path)', async () => {
+      const orgRoutes = {
+        ...routeCapabilities,
+        'PATCH /organizations/:organizationId': 'organization:write',
+      };
+      orgStub.getImsOrgId.returns(null);
+      context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-456' };
+      context.dataAccess = {
+        Organization: { findById: sinon.stub().resolves(orgStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.warn.calledWithMatch(
+        { tag: 'ro-admin', organizationId: 'org-456' },
+        'Organization has no imsOrgId; denying RO admin access',
+      )).to.be.true;
     });
 
     it('allows write on an organization the RO admin owns', async () => {
@@ -592,7 +640,7 @@ describe('readOnlyAdminWrapper', () => {
       expect(context.dataAccess.Site.findById.calledWith('data-site-id')).to.be.false;
     });
 
-    it('emits ro-admin-access log and audit log when access on owned resource is allowed', async () => {
+    it('emits ro-admin-access log when access on owned resource is allowed (no duplicate audit log)', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
@@ -607,9 +655,10 @@ describe('readOnlyAdminWrapper', () => {
         resolvedSiteId: 'abc-123',
         idSource: 'path',
       }, 'RO admin access allowed on owned resource')).to.be.true;
+      // accessLogged=true suppresses the audit log to prevent double-emit
       expect(logStub.info.calledWithMatch({
-        tag: 'ro-admin-audit', method: 'PATCH', suffix: '/sites/abc-123',
-      }, 'RO admin accessed route')).to.be.true;
+        tag: 'ro-admin-audit',
+      }, 'RO admin accessed route')).to.be.false;
     });
 
     it('emits ro-admin-access log with idSource body when context.data fallback is used', async () => {
@@ -687,8 +736,9 @@ describe('readOnlyAdminWrapper', () => {
     });
 
     it('allows access on unmapped route when siteId is supplied via body and RO admin owns it', async () => {
-      // extractRouteParams returns {} for unmapped routes; body fallback is used instead.
-      context.pathInfo = { method: 'PATCH', suffix: '/sites/some-unmapped-action' };
+      // Suffix POST /jobs/preflight has no entry in routeCapabilities → extractRouteParams
+      // returns {} → body fallback is used. Ownership of the body siteId grants access.
+      context.pathInfo = { method: 'POST', suffix: '/jobs/preflight' };
       context.data = { siteId: 'abc-123' };
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
@@ -698,10 +748,12 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result).to.deep.equal({ status: 200 });
       expect(handler.calledOnce).to.be.true;
+      expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
     });
 
     it('blocks unmapped route for RO admin who does not own the resource', async () => {
-      context.pathInfo = { method: 'PATCH', suffix: '/sites/some-unmapped-action' };
+      // Same unmapped route; body siteId present but user does not own it.
+      context.pathInfo = { method: 'POST', suffix: '/jobs/preflight' };
       context.data = { siteId: 'abc-123' };
       context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
       context.dataAccess = {
@@ -712,6 +764,32 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
+      expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
+    });
+
+    it('denies and logs error when an unexpected error occurs in the authorization block', async () => {
+      const routeError = new Error('unexpected route error');
+      const ldStub = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
+      const errorModule = await esmock('../../src/auth/read-only-admin-wrapper.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: { createFrom: sinon.stub().returns(ldStub) },
+        },
+        '../../src/auth/route-utils.js': {
+          extractRouteParams: sinon.stub().throws(routeError),
+          resolveRouteCapability: sinon.stub().returns(null),
+          guardNonEmptyRouteCapabilities: () => {},
+        },
+      });
+      context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
+      const wrapped = errorModule.readOnlyAdminWrapper(handler, { routeCapabilities });
+      const result = await wrapped({}, context);
+
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.error.calledWithMatch(
+        { tag: 'ro-admin', err: routeError },
+        'Unexpected error in RO admin authorization; denying access',
+      )).to.be.true;
     });
   });
 
@@ -750,6 +828,8 @@ describe('readOnlyAdminWrapper', () => {
 
     it('does not emit audit log when RO admin is blocked', async () => {
       context.pathInfo = { method: 'POST', suffix: '/sites' };
+      // Provide dataAccess so isOwnerOfResource fails cleanly (no siteId in params or body).
+      context.dataAccess = { Site: { findById: sinon.stub().resolves(null) } };
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       await wrapped({}, context);
 

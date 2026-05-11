@@ -129,6 +129,33 @@ describe('route-utils', () => {
       const context = {};
       expect(extractRouteParams(context, routeMap)).to.deep.equal({});
     });
+
+    it('extracts :spaceCatId alias used by /v2/orgs routes', () => {
+      const map = { 'PATCH /v2/orgs/:spaceCatId': 'organization:write' };
+      const context = { pathInfo: { method: 'PATCH', suffix: '/v2/orgs/org-456' } };
+      expect(extractRouteParams(context, map)).to.deep.equal({ spaceCatId: 'org-456' });
+    });
+
+    it('returns empty object when method does not match (PATCH vs POST)', () => {
+      const context = { pathInfo: { method: 'POST', suffix: '/sites/abc-123' } };
+      // routeMap has GET and PATCH for /sites/:siteId, not POST
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    });
+
+    it('uppercases request method before matching', () => {
+      const context = { pathInfo: { method: 'patch', suffix: '/sites/abc-123' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({ siteId: 'abc-123' });
+    });
+
+    it('returns empty object when request has more segments than route pattern', () => {
+      const context = { pathInfo: { method: 'PATCH', suffix: '/sites/abc-123/extra' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    });
+
+    it('matches route even when suffix has a trailing slash (filter(Boolean) strips empty segments)', () => {
+      const context = { pathInfo: { method: 'PATCH', suffix: '/sites/abc-123/' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({ siteId: 'abc-123' });
+    });
   });
 
   describe('guardNonEmptyRouteCapabilities', () => {

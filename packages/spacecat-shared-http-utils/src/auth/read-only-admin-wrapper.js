@@ -34,7 +34,9 @@ function forbidden(message) {
  * IMS org matches the organization that owns the referenced site or organization entity.
  *
  * ID resolution order:
- * 1. Named path params (e.g. :siteId, :organizationId) — always preferred.
+ * 1. Named path params (e.g. :siteId, :organizationId, :spaceCatId) — always preferred.
+ *    spaceCatId is an alias for organizationId used by /v2/orgs/:spaceCatId/* routes
+ *    in spacecat-api-service.
  * 2. context.data (parsed request body) — used only when the matched route has no path
  *    params at all (e.g. POST /preflight/jobs passes siteId in the body). Requires that
  *    the body-parser wrapper runs before readOnlyAdminWrapper in the .with() chain.
@@ -57,13 +59,11 @@ async function isOwnerOfResource(context, authInfo, params) {
   // Body fallback only when the route carries no path params at all (e.g. POST /preflight/jobs).
   // When params has keys, the route does have path identifiers; relying on body data in that
   // case could allow a caller to spoof ownership by naming params differently than :siteId.
-  // spaceCatId is an alias for organizationId.
   const hasPathParams = Object.keys(params).length > 0;
-  const siteId = hasPathParams ? params.siteId : (params.siteId ?? context.data?.siteId);
+  const siteId = hasPathParams ? params.siteId : context.data?.siteId;
   const organizationId = hasPathParams
     ? (params.organizationId ?? params.spaceCatId)
-    : (params.organizationId ?? params.spaceCatId
-        ?? context.data?.organizationId ?? context.data?.spaceCatId);
+    : (context.data?.organizationId ?? context.data?.spaceCatId);
 
   try {
     if (siteId) {
@@ -75,7 +75,12 @@ async function isOwnerOfResource(context, authInfo, params) {
       if (!org) {
         return false;
       }
-      return authInfo.hasOrganization(org.getImsOrgId());
+      const imsOrgId = org.getImsOrgId();
+      if (!imsOrgId) {
+        log.warn({ tag: 'ro-admin', siteId }, 'Owning organization has no imsOrgId; denying RO admin access');
+        return false;
+      }
+      return authInfo.hasOrganization(imsOrgId);
     }
 
     if (organizationId) {
@@ -83,7 +88,12 @@ async function isOwnerOfResource(context, authInfo, params) {
       if (!org) {
         return false;
       }
-      return authInfo.hasOrganization(org.getImsOrgId());
+      const imsOrgId = org.getImsOrgId();
+      if (!imsOrgId) {
+        log.warn({ tag: 'ro-admin', organizationId }, 'Organization has no imsOrgId; denying RO admin access');
+        return false;
+      }
+      return authInfo.hasOrganization(imsOrgId);
     }
   } catch (err) {
     log.error({ tag: 'ro-admin', err }, 'Error checking resource ownership for RO admin');
@@ -138,12 +148,28 @@ async function evaluateFeatureFlag(context, authInfo) {
  * If so it:
  *
  * 1. Evaluates the `FT_READ_ONLY_ORG` LaunchDarkly feature flag (fail-closed).
- * 2. Resolves the route's action from the routeCapabilities map and blocks
- *    write operations (or unmapped routes) for RO admins, unless they own the resource.
- * 3. Emits a structured audit log entry for all allowed RO admin requests, including
- *    the resolved resource ID and whether it came from the path or request body.
+ * 2. For read routes (capability 'read' or 'readAll'): allows immediately without an
+ *    ownership DB lookup — capability alone permits.
+ * 3. For write routes and unmapped routes (all non-read capabilities, including null):
+ *    performs an ownership check on the referenced resource. Ownership is resolved from
+ *    path params first (:siteId, :organizationId, :spaceCatId) and falls back to the
+ *    request body (context.data) only when the matched route has no path params at all.
+ *    This allows RO admins to operate on their own resources even when the specific
+ *    route has no entry in routeCapabilities — the key invariant is ownership, not
+ *    capability mapping. Routes with no resolvable resource ID are denied.
+ * 4. Emits a structured access log (tag: ro-admin-access) when an allowed write is
+ *    authorized by ownership. Emits an audit log (tag: ro-admin-audit) for all other
+ *    allowed RO admin requests where an access log was not already emitted.
  *
  * Non-RO-admin requests pass through untouched.
+ *
+ * Wiring requirements (ordering within the .with() chain):
+ * - `dataAccessWrapper` must run before this wrapper so context.dataAccess is available.
+ * - The body-parser wrapper must run before this wrapper for routes that authorize from
+ *   context.data (collection writes where siteId/organizationId is in the body).
+ * - Handlers behind body-fallback authorization MUST only mutate the declared
+ *   siteId/organizationId resource; the wrapper cannot verify what the handler does
+ *   with other fields in the request body.
  *
  * @param {Function} fn - The handler to wrap.
  * @param {{ routeCapabilities: Object<string, string> }} opts - Required map of route
@@ -172,81 +198,69 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
       }
 
       if (isObject(routeCapabilities)) {
-        const params = extractRouteParams(context, routeCapabilities);
-        const hasPathParams = Object.keys(params).length > 0;
-
-        if (hasPathParams) {
-          // Parameterized route: ownership is checked first. Owners may proceed even
-          // when the route is absent from routeCapabilities (unmapped), avoiding an
-          // incorrect fail-closed denial for resources the RO admin owns.
-          const isOwner = await isOwnerOfResource(context, authInfo, params);
-          if (isOwner) {
-            log.info({
-              tag: 'ro-admin-access',
-              email: authInfo.getProfile?.()?.email,
-              method: context.pathInfo?.method,
-              suffix: context.pathInfo?.suffix,
-              org: authInfo.getTenantIds?.()[0],
-              resolvedSiteId: params.siteId ?? null,
-              resolvedOrgId: params.organizationId ?? params.spaceCatId ?? null,
-              idSource: 'path',
-            }, 'RO admin access allowed on owned resource');
-          } else {
-            // Not the owner: fall back to capability — only reads are permitted.
-            // capability format: 'resource:action' (e.g. 'site:read', 'site:write').
-            // A missing/unmapped route yields undefined action, which is not a read
-            // and correctly denies the request.
-            const capability = resolveRouteCapability(context, routeCapabilities);
-            const action = capability?.split(':').pop();
-            if (action !== 'read' && action !== 'readAll') {
-              log.warn({
-                tag: 'ro-admin',
-                email: authInfo.getProfile?.()?.email,
-                method: context.pathInfo?.method,
-                suffix: context.pathInfo?.suffix,
-                org: authInfo.getTenantIds?.()[0],
-              }, 'Read-only admin blocked from route');
-              return forbidden('Forbidden');
-            }
-          }
-        } else {
-          // Collection/no-params route: capability check first (no path-based ownership
-          // to verify). For write actions, fall back to body-supplied resource id.
+        let accessLogged = false;
+        try {
+          const params = extractRouteParams(context, routeCapabilities);
+          const hasPathParams = Object.keys(params).length > 0;
           const capability = resolveRouteCapability(context, routeCapabilities);
+          // capability format: 'resource:action' (e.g. 'site:read', 'site:write').
+          // split(':').pop() extracts the action; a missing or malformed value yields
+          // undefined, which is not a read action and correctly triggers the ownership check.
           const action = capability?.split(':').pop();
+
           if (action !== 'read' && action !== 'readAll') {
+            // Write or unmapped route: verify ownership of the referenced resource.
+            // Ownership is the governing invariant — a null/absent capability is not an
+            // automatic deny; it means the route is not mapped, but RO admins who own
+            // the resource may still perform the operation. Routes with no resolvable
+            // resource ID (no path param and no body siteId/organizationId) fail-closed.
             const isOwner = await isOwnerOfResource(context, authInfo, params);
-            if (!isOwner) {
+            if (isOwner) {
+              log.info({
+                tag: 'ro-admin-access',
+                email: authInfo.getProfile?.()?.email,
+                method: context.pathInfo?.method,
+                suffix: context.pathInfo?.suffix,
+                org: authInfo.getTenantIds?.()[0],
+                resolvedSiteId: hasPathParams
+                  ? (params.siteId ?? null)
+                  : (context.data?.siteId ?? null),
+                resolvedOrgId: hasPathParams
+                  ? (params.organizationId ?? params.spaceCatId ?? null)
+                  : (context.data?.organizationId ?? context.data?.spaceCatId ?? null),
+                idSource: hasPathParams ? 'path' : 'body',
+              }, 'RO admin access allowed on owned resource');
+              accessLogged = true;
+            } else {
               log.warn({
                 tag: 'ro-admin',
                 email: authInfo.getProfile?.()?.email,
                 method: context.pathInfo?.method,
                 suffix: context.pathInfo?.suffix,
                 org: authInfo.getTenantIds?.()[0],
+                reason: 'not-owner',
               }, 'Read-only admin blocked from route');
               return forbidden('Forbidden');
             }
-            log.info({
-              tag: 'ro-admin-access',
-              email: authInfo.getProfile?.()?.email,
-              method: context.pathInfo?.method,
-              suffix: context.pathInfo?.suffix,
-              org: authInfo.getTenantIds?.()[0],
-              resolvedSiteId: context.data?.siteId ?? null,
-              resolvedOrgId: context.data?.organizationId ?? context.data?.spaceCatId ?? null,
-              idSource: 'body',
-            }, 'RO admin access allowed on owned resource');
           }
+          // Read action: capability alone permits — no ownership DB lookup needed.
+        } catch (err) {
+          log.error({ tag: 'ro-admin', err }, 'Unexpected error in RO admin authorization; denying access');
+          return forbidden('Forbidden');
+        }
+
+        // Emit audit log only when the richer access log was not already emitted
+        // (i.e. for reads and any path where ownership-based access was not recorded).
+        if (!accessLogged) {
+          log.info({
+            tag: 'ro-admin-audit',
+            email: authInfo.getProfile?.()?.email,
+            method: context.pathInfo?.method,
+            suffix: context.pathInfo?.suffix,
+            org: authInfo.getTenantIds?.()[0],
+          }, 'RO admin accessed route');
         }
       }
-
-      log.info({
-        tag: 'ro-admin-audit',
-        email: authInfo.getProfile?.()?.email,
-        method: context.pathInfo?.method,
-        suffix: context.pathInfo?.suffix,
-        org: authInfo.getTenantIds?.()[0],
-      }, 'RO admin accessed route');
     }
 
     return fn(request, context);

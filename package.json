@@ -6,7 +6,7 @@
   "type": "module",
   "engines": {
     "node": ">=22.0.0 <25.0.0",
-    "npm": ">=10.9.0 <12.0.0"
+    "npm": ">=11.5.1 <12.0.0"
   },
   "scripts": {
     "docs:api": "jsdoc2md -c .jsdoc.json --files packages/*/src/*.js > docs/API.md",

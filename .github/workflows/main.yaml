@@ -56,6 +56,9 @@ jobs:
         run: npm run semantic-release-dry
         env:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
+          # SR_NO_NPM_AUTH skips @semantic-release/npm in the plugin chain (see all .releaserc.cjs).
+          # Remove this env var AND the matching guard from every .releaserc.cjs after 2 successful
+          # OIDC releases on main confirm publishing works without a token (tracked in SITES-42702).
           SR_NO_NPM_AUTH: 'true'
 
   release:

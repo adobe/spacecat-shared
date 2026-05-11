@@ -72,7 +72,7 @@ echo ""
 
 # --- Package list ---
 # Keep in sync with packages/ directory. @adobe/spacecat-shared-example is intentionally
-# excluded — it is a template package not intended for automated publishing.
+# excluded — it is a template package, marked "private": true in its package.json.
 
 PACKAGES=(
   "@adobe/mysticat-shared-seo-client"
@@ -99,6 +99,43 @@ PACKAGES=(
   "@adobe/spacecat-shared-vault-secrets"
 )
 
+# --- Drift check: compare PACKAGES against publishable workspace packages ---
+# Surfaces a new package directory that was not added to PACKAGES before its first
+# release fails silently. Uses node (already required by the repo) — no jq needed.
+
+WORKSPACE_PACKAGES=$(node -e '
+  const fs = require("fs");
+  const path = require("path");
+  const dir = path.join(process.cwd(), "packages");
+  const names = fs.readdirSync(dir)
+    .map((d) => path.join(dir, d, "package.json"))
+    .filter((p) => fs.existsSync(p))
+    .map((p) => JSON.parse(fs.readFileSync(p, "utf8")))
+    .filter((pkg) => pkg.private !== true)
+    .map((pkg) => pkg.name)
+    .sort();
+  process.stdout.write(names.join("\n"));
+' 2>/dev/null)
+
+DRIFT=()
+while IFS= read -r ws_pkg; do
+  [ -z "$ws_pkg" ] && continue
+  found=0
+  for pkg in "${PACKAGES[@]}"; do
+    if [ "$pkg" = "$ws_pkg" ]; then found=1; break; fi
+  done
+  if [ "$found" -eq 0 ]; then DRIFT+=("$ws_pkg"); fi
+done <<< "$WORKSPACE_PACKAGES"
+
+if [ ${#DRIFT[@]} -gt 0 ]; then
+  echo "ERROR: PACKAGES array drift — publishable workspace packages missing from PACKAGES:"
+  for pkg in "${DRIFT[@]}"; do echo "  - ${pkg}"; done
+  echo ""
+  echo "Add them to the PACKAGES array (or mark the package private if it should not be"
+  echo "published), then re-run."
+  exit 1
+fi
+
 echo "Configuring npm OIDC Trusted Publishers for ${#PACKAGES[@]} packages..."
 echo "Repository: ${REPO}, Workflow: ${WORKFLOW}, Environment: ${ENVIRONMENT}"
 echo ""
@@ -118,6 +155,8 @@ for pkg in "${PACKAGES[@]}"; do
     echo "    ERROR: npm trust exited ${rc} for ${pkg}"
     FAILED+=("${pkg}")
   fi
+  # Pace requests to avoid registry rate-limit throttling on bulk trust binding.
+  sleep 2
 done
 
 echo ""
@@ -132,4 +171,22 @@ if [ ${#FAILED[@]} -gt 0 ]; then
   exit 1
 fi
 
+# --- Audit trail ---
+# Capture provenance for the trust-establishment ceremony. Paste into SITES-42702 so
+# there is a record of who registered the bindings, against which commit, and when.
+
+GIT_SHA=$(git -C "${REPO_ROOT}" rev-parse HEAD 2>/dev/null || echo "unknown")
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 echo "Done. All ${#PACKAGES[@]} packages configured for OIDC publishing."
+echo ""
+echo "--- Audit trail (attach to SITES-42702) ---"
+echo "  timestamp: ${TIMESTAMP}"
+echo "  git SHA:   ${GIT_SHA}"
+echo "  npm user:  ${CURRENT_USER}"
+echo "  npm ver:   ${CURRENT_NPM}"
+echo "  registry:  ${CURRENT_REGISTRY}"
+echo "  repo:      ${REPO}"
+echo "  workflow:  ${WORKFLOW}"
+echo "  env:       ${ENVIRONMENT}"
+echo "  packages:  ${#PACKAGES[@]}"

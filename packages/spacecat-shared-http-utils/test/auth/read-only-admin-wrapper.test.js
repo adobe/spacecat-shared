@@ -349,7 +349,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('allows write on a site the RO admin owns', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
-      context.params = { siteId: 'abc-123' };
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
       };
@@ -364,7 +363,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('blocks write on a site the RO admin does not own', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
-      context.params = { siteId: 'abc-123' };
       context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
@@ -378,7 +376,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('blocks write when the site is not found', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/not-exist' };
-      context.params = { siteId: 'not-exist' };
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(null) },
       };
@@ -391,7 +388,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('blocks write when the site has no organization', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
-      context.params = { siteId: 'abc-123' };
       siteStub.getOrganization.resolves(null);
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
@@ -409,7 +405,6 @@ describe('readOnlyAdminWrapper', () => {
         'PATCH /organizations/:organizationId': 'organization:write',
       };
       context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-456' };
-      context.params = { organizationId: 'org-456' };
       context.dataAccess = {
         Organization: { findById: sinon.stub().resolves(orgStub) },
       };
@@ -426,7 +421,6 @@ describe('readOnlyAdminWrapper', () => {
         'PATCH /organizations/:spaceCatId': 'organization:write',
       };
       context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-456' };
-      context.params = { spaceCatId: 'org-456' };
       context.dataAccess = {
         Organization: { findById: sinon.stub().resolves(orgStub) },
       };
@@ -443,7 +437,6 @@ describe('readOnlyAdminWrapper', () => {
         'POST /some/org/action': 'organization:write',
       };
       context.pathInfo = { method: 'POST', suffix: '/some/org/action' };
-      context.params = {};
       context.data = { spaceCatId: 'org-456' };
       context.dataAccess = {
         Organization: { findById: sinon.stub().resolves(orgStub) },
@@ -461,7 +454,6 @@ describe('readOnlyAdminWrapper', () => {
         'PATCH /organizations/:organizationId': 'organization:write',
       };
       context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-456' };
-      context.params = { organizationId: 'org-456' };
       context.dataAccess = {
         Organization: { findById: sinon.stub().resolves(null) },
       };
@@ -478,7 +470,6 @@ describe('readOnlyAdminWrapper', () => {
         'PATCH /organizations/:organizationId': 'organization:write',
       };
       context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-456' };
-      context.params = { organizationId: 'org-456' };
       context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
       context.dataAccess = {
         Organization: { findById: sinon.stub().resolves(orgStub) },
@@ -492,7 +483,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('blocks write when no siteId or organizationId in path or body and logs warn', async () => {
       context.pathInfo = { method: 'POST', suffix: '/sites' };
-      context.params = {};
       context.dataAccess = { Site: { findById: sinon.stub() } };
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
@@ -508,7 +498,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('blocks write when dataAccess is not present on context and logs error (fail-closed)', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
-      context.params = { siteId: 'abc-123' };
       delete context.dataAccess;
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
@@ -523,7 +512,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('blocks write when site lookup throws and logs the error (fail-closed)', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
-      context.params = { siteId: 'abc-123' };
       const dbError = new Error('DB error');
       context.dataAccess = {
         Site: { findById: sinon.stub().rejects(dbError) },
@@ -545,7 +533,6 @@ describe('readOnlyAdminWrapper', () => {
         'POST /preflight/jobs': 'preflight:write',
       };
       context.pathInfo = { method: 'POST', suffix: '/preflight/jobs' };
-      context.params = {};
       context.data = { siteId: 'abc-123' };
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
@@ -563,7 +550,6 @@ describe('readOnlyAdminWrapper', () => {
         'POST /preflight/jobs': 'preflight:write',
       };
       context.pathInfo = { method: 'POST', suffix: '/preflight/jobs' };
-      context.params = {};
       context.data = { siteId: 'abc-123' };
       context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
       context.dataAccess = {
@@ -582,7 +568,6 @@ describe('readOnlyAdminWrapper', () => {
         'POST /some/org/action': 'organization:write',
       };
       context.pathInfo = { method: 'POST', suffix: '/some/org/action' };
-      context.params = {};
       context.data = { organizationId: 'org-456' };
       context.dataAccess = {
         Organization: { findById: sinon.stub().resolves(orgStub) },
@@ -596,7 +581,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('path param takes precedence over context.data siteId', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/path-site-id' };
-      context.params = { siteId: 'path-site-id' };
       context.data = { siteId: 'data-site-id' };
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
@@ -610,7 +594,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('emits ro-admin-access log and audit log when access on owned resource is allowed', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
-      context.params = { siteId: 'abc-123' };
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
       };
@@ -632,7 +615,6 @@ describe('readOnlyAdminWrapper', () => {
     it('emits ro-admin-access log with idSource body when context.data fallback is used', async () => {
       const dataRoutes = { ...routeCapabilities, 'POST /preflight/jobs': 'preflight:write' };
       context.pathInfo = { method: 'POST', suffix: '/preflight/jobs' };
-      context.params = {};
       context.data = { siteId: 'abc-123' };
       context.dataAccess = { Site: { findById: sinon.stub().resolves(siteStub) } };
       const wrapped = mockedWrapper(handler, { routeCapabilities: dataRoutes });
@@ -647,10 +629,10 @@ describe('readOnlyAdminWrapper', () => {
 
     it('blocks write and ignores body siteId when route has path params with a different name', async () => {
       // Security: if route uses :id instead of :siteId, body siteId must NOT be used as fallback.
-      // context.params has { id } (not siteId), so hasPathParams is true and body is not consulted.
+      // extractRouteParams returns { id: 'site-b' } (not siteId), so hasPathParams is true
+      // and body is not consulted.
       const altRoutes = { 'PATCH /sites/:id': 'site:write' };
       context.pathInfo = { method: 'PATCH', suffix: '/sites/site-b' };
-      context.params = { id: 'site-b' }; // router extracted :id, not :siteId
       context.data = { siteId: 'site-a' }; // attacker owns site-a, not site-b
       context.dataAccess = { Site: { findById: sinon.stub().resolves(siteStub) } };
       const wrapped = mockedWrapper(handler, { routeCapabilities: altRoutes });
@@ -666,7 +648,6 @@ describe('readOnlyAdminWrapper', () => {
       const orgError = new Error('getOrganization failed');
       siteStub.getOrganization.rejects(orgError);
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
-      context.params = { siteId: 'abc-123' };
       context.dataAccess = { Site: { findById: sinon.stub().resolves(siteStub) } };
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
@@ -683,7 +664,6 @@ describe('readOnlyAdminWrapper', () => {
       const orgRoutes = { ...routeCapabilities, 'PATCH /organizations/:organizationId': 'organization:write' };
       const dbError = new Error('Org DB error');
       context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-456' };
-      context.params = { organizationId: 'org-456' };
       context.dataAccess = { Organization: { findById: sinon.stub().rejects(dbError) } };
       const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
       const result = await wrapped({}, context);
@@ -698,7 +678,6 @@ describe('readOnlyAdminWrapper', () => {
 
     it('blocks write when dataAccess has no Site property (fail-closed)', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
-      context.params = { siteId: 'abc-123' };
       context.dataAccess = {}; // Site accessor absent
       const wrapped = mockedWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
@@ -707,9 +686,10 @@ describe('readOnlyAdminWrapper', () => {
       expect(handler.called).to.be.false;
     });
 
-    it('allows write on owned resource even when route is not in routeCapabilities', async () => {
-      context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123/some-unmapped-action' };
-      context.params = { siteId: 'abc-123' };
+    it('allows access on unmapped route when siteId is supplied via body and RO admin owns it', async () => {
+      // extractRouteParams returns {} for unmapped routes; body fallback is used instead.
+      context.pathInfo = { method: 'PATCH', suffix: '/sites/some-unmapped-action' };
+      context.data = { siteId: 'abc-123' };
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
       };
@@ -721,8 +701,8 @@ describe('readOnlyAdminWrapper', () => {
     });
 
     it('blocks unmapped route for RO admin who does not own the resource', async () => {
-      context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123/some-unmapped-action' };
-      context.params = { siteId: 'abc-123' };
+      context.pathInfo = { method: 'PATCH', suffix: '/sites/some-unmapped-action' };
+      context.data = { siteId: 'abc-123' };
       context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },

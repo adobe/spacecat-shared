@@ -65,15 +65,41 @@ export function resolveRouteCapability(context, routeMap) {
 }
 
 /**
- * Returns the named path parameters already extracted by the router into context.params.
- * e.g. route 'PATCH /sites/:siteId', context.params = { siteId: 'abc-123' }
- * Returns an empty object when context.params is absent.
+ * Extracts named path parameters from the route pattern that matches the current request.
+ * e.g. route 'PATCH /sites/:siteId', suffix '/sites/abc-123' → { siteId: 'abc-123' }
+ * Returns an empty object when there is no match or the match has no parameters.
  *
- * @param {Object} context - Universal context with params populated by the router
+ * @param {Object} context - Universal context with pathInfo
+ * @param {Object<string, string>} routeMap - Route pattern to value map
  * @returns {Object<string, string>}
  */
-export function extractRouteParams(context) {
-  return context.params ?? {};
+export function extractRouteParams(context, routeMap) {
+  const method = context.pathInfo?.method?.toUpperCase();
+  const path = context.pathInfo?.suffix;
+  if (!method || !path) {
+    return {};
+  }
+
+  const exactKey = `${method} ${path}`;
+  if (routeMap[exactKey]) {
+    return {};
+  }
+
+  const requestSegments = path.split('/').filter(Boolean);
+  const matchedKey = Object.keys(routeMap)
+    .find((key) => matchRoute(method, requestSegments, key));
+  if (!matchedKey) {
+    return {};
+  }
+
+  const routeSegments = matchedKey.slice(matchedKey.indexOf(' ') + 1).split('/').filter(Boolean);
+  const params = {};
+  routeSegments.forEach((seg, i) => {
+    if (seg.charCodeAt(0) === 58 /* ':' */) {
+      params[seg.slice(1)] = requestSegments[i];
+    }
+  });
+  return params;
 }
 
 /**

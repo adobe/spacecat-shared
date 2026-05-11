@@ -172,7 +172,11 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
       }
 
       if (isObject(routeCapabilities)) {
-        const params = extractRouteParams(context);
+        const params = extractRouteParams(context, routeCapabilities);
+        // print params to the log
+        log.info({ tag: 'ro-admin', params }, 'params');
+        // print context.data to the log
+        log.info({ tag: 'ro-admin', data: context.data }, 'data');
         const hasPathParams = Object.keys(params).length > 0;
 
         if (hasPathParams) {

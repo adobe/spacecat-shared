@@ -1398,7 +1398,9 @@ class TokowakaClient {
           if (!metaconfig) {
             metaconfig = { siteId: site.getId() };
           }
-          metaconfig.prerender = { allowList: allowedRegexPatterns };
+          const existingAllowList = metaconfig.prerender?.allowList ?? [];
+          const mergedAllowList = [...new Set([...existingAllowList, ...allowedRegexPatterns])];
+          metaconfig.prerender = { allowList: mergedAllowList };
           // eslint-disable-next-line no-await-in-loop
           await this.uploadMetaconfig(baseURL, metaconfig);
 
@@ -1450,6 +1452,82 @@ class TokowakaClient {
         } catch (error) {
           this.log.error(`[edge-deploy] Error deploying domain-wide suggestion ${suggestion.getId()}: ${error.message}`, error);
           // statusCode 500 — deploy itself failed, not an eligibility issue
+          failedSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
+        }
+      }
+    }
+
+    // Deploy path suggestions — append-only semantics (one pattern per suggestion)
+    if (pathSuggestions.length > 0) {
+      const baseURL = site.getBaseURL();
+
+      for (const { suggestion, allowedRegexPatterns: pathPatterns } of pathSuggestions) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          let metaconfig = await this.fetchMetaconfig(baseURL);
+          if (!metaconfig) {
+            metaconfig = { siteId: site.getId() };
+          }
+          const existingAllowList = metaconfig.prerender?.allowList ?? [];
+          const newPattern = pathPatterns[0]; // pathSuggestions always have exactly one pattern
+          const mergedAllowList = [...new Set([...existingAllowList, newPattern])];
+
+          if (mergedAllowList.length === existingAllowList.length) {
+            this.log.info(`[edge-deploy] Path pattern ${newPattern} already in allowList, skipping CDN write`);
+          } else {
+            metaconfig.prerender = { allowList: mergedAllowList };
+            // eslint-disable-next-line no-await-in-loop
+            await this.uploadMetaconfig(baseURL, metaconfig);
+          }
+
+          const deploymentTimestamp = Date.now();
+          suggestion.setData({ ...suggestion.getData(), edgeDeployed: deploymentTimestamp });
+          suggestion.setUpdatedBy(updatedBy);
+          // eslint-disable-next-line no-await-in-loop
+          await suggestion.save();
+          succeededSuggestions.push(suggestion);
+
+          // Mark per-URL suggestions under this path as coveredByDomainWide
+          const pathPrefix = suggestion.getData().pathPattern?.replace(/\/\*$/, '') ?? '';
+          if (pathPrefix) {
+            const covered = allSuggestions.filter((s) => {
+              if (s.getId() === suggestion.getId()) {
+                return false;
+              }
+              if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
+                return false;
+              }
+              const sData = s.getData();
+              if (sData?.isDomainWide === true || sData?.pathType === true) {
+                return false;
+              }
+              if (sData?.edgeDeployed) {
+                return false;
+              }
+              const url = sData?.url;
+              try {
+                return url && new URL(url).pathname.startsWith(pathPrefix);
+              } catch {
+                return false;
+              }
+            });
+
+            if (covered.length > 0) {
+              try {
+                // eslint-disable-next-line no-await-in-loop
+                await Promise.all(covered.map(async (cs) => {
+                  cs.setData({ ...cs.getData(), coveredByDomainWide: suggestion.getId() });
+                  cs.setUpdatedBy(updatedBy);
+                  return cs.save();
+                }));
+                coveredSuggestions.push(...covered);
+              } catch (coverError) {
+                this.log.warn(`[edge-deploy] Failed to mark covered suggestions for path ${newPattern}: ${coverError.message}`);
+              }
+            }
+          }
+        } catch (error) {
+          this.log.error(`[edge-deploy] Error deploying path suggestion ${suggestion.getId()}: ${error.message}`, error);
           failedSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
         }
       }

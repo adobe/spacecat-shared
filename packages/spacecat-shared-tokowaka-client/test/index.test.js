@@ -4990,5 +4990,266 @@ describe('TokowakaClient', () => {
       const skippedInCovered = result.coveredSuggestions.filter((s) => s.getId() === 'r1');
       expect(skippedInCovered).to.have.length(1);
     });
+
+    it('domain-wide deploy merges /*  into existing allowList instead of replacing it', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['/\\*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/products/\\*'] } });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/\\*', '/\\*']);
+    });
+
+    it('domain-wide deploy deduplicates patterns already in allowList', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['/\\*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/\\*'] } });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/\\*']);
+    });
+
+    it('path deploy appends /products/* to an empty allowList', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        pathPattern: '/products/*',
+      });
+
+      fetchMetaconfigStub.resolves(null);
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(result.succeededSuggestions).to.include(path);
+      const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/\\*']);
+      expect(path.getData()).to.have.property('edgeDeployed');
+    });
+
+    it('path deploy appends /products/* when domain-wide /* is already in allowList', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        pathPattern: '/products/*',
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/\\*'] } });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/\\*', '/products/\\*']);
+    });
+
+    it('path deploy skips CDN write but still marks edgeDeployed when pattern already in allowList', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        pathPattern: '/products/*',
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/products/\\*'] } });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(uploadMetaconfigStub).to.not.have.been.called;
+      expect(result.succeededSuggestions).to.include(path);
+      expect(path.getData()).to.have.property('edgeDeployed');
+    });
+
+    it('path deploy does not call deploySuggestions (no per-URL S3 config)', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        pathPattern: '/products/*',
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(deploySuggestionsStub).to.not.have.been.called;
+    });
+
+    it('path deploy marks per-URL suggestions under the deployed path prefix as covered', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        pathPattern: '/products/*',
+      });
+      const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
+      const urlElsewhere = makeSuggestion('u2', { url: 'https://example.com/about' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, urlUnderPath, urlElsewhere],
+      });
+
+      expect(result.coveredSuggestions).to.include(urlUnderPath);
+      expect(urlUnderPath.getData()).to.have.property('coveredByDomainWide', 'p1');
+      expect(result.coveredSuggestions).to.not.include(urlElsewhere);
+    });
+
+    it('path deploy marks as failed with statusCode 500 when metaconfig upload fails', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        pathPattern: '/products/*',
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      uploadMetaconfigStub.rejects(new Error('upload failed'));
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(result.succeededSuggestions).to.not.include(path);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].statusCode).to.equal(500);
+      expect(result.failedSuggestions[0].reason).to.equal('upload failed');
+    });
+
+    it('path deploy with no pathPattern does not mark any covered suggestions', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        // no pathPattern field
+      });
+      const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, urlUnderPath],
+      });
+
+      expect(result.succeededSuggestions).to.include(path);
+      expect(result.coveredSuggestions).to.have.length(0);
+    });
+
+    it('path deploy does not mark non-NEW, domain-wide, pathType, or already-deployed candidates as covered', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        pathPattern: '/products/*',
+      });
+      // APPROVED — not a deployable status
+      const nonNew = makeSuggestion('u1', { url: 'https://example.com/products/a' }, 'APPROVED');
+      // isDomainWide — excluded
+      const dw = makeSuggestion('u2', { isDomainWide: true, url: 'https://example.com/products/b' });
+      // pathType — excluded
+      const otherPath = makeSuggestion('u3', { pathType: true, url: 'https://example.com/products/c' });
+      // already edgeDeployed — excluded
+      const deployed = makeSuggestion('u4', { url: 'https://example.com/products/d', edgeDeployed: 12345 });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, nonNew, dw, otherPath, deployed],
+      });
+
+      expect(result.coveredSuggestions).to.have.length(0);
+    });
+
+    it('path deploy silently skips covered-suggestion candidates with invalid URLs', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        pathPattern: '/products/*',
+      });
+      const badUrl = makeSuggestion('u1', { url: 'not-a-valid-url' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, badUrl],
+      });
+
+      // bad URL is not covered, but deploy itself still succeeds
+      expect(result.succeededSuggestions).to.include(path);
+      expect(result.coveredSuggestions).to.not.include(badUrl);
+    });
+
+    it('path deploy warns but continues when covered-suggestion save fails', async () => {
+      const path = makeSuggestion('p1', {
+        pathType: true,
+        allowedRegexPatterns: ['/products/\\*'],
+        pathPattern: '/products/*',
+      });
+      const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
+      urlUnderPath.save = sinon.stub().rejects(new Error('DB error'));
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, urlUnderPath],
+      });
+
+      // path suggestion itself still succeeded
+      expect(result.succeededSuggestions).to.include(path);
+      // covered is not in coveredSuggestions — error was swallowed with a warning
+      expect(result.coveredSuggestions).to.not.include(urlUnderPath);
+      expect(log.warn).to.have.been.called;
+    });
   });
 });

@@ -69,25 +69,26 @@ export function resolveRouteCapability(context, routeMap) {
  * e.g. route 'PATCH /sites/:siteId', suffix '/sites/abc-123' → { siteId: 'abc-123' }
  * Returns an empty object when there is no match or the match has no parameters.
  *
+ * When routeMap has no entry for the request's method+path, falls back to fallbackRoutes
+ * (the full internal route list) so ownership checks can still resolve path params for
+ * routes that are known to the service but not mapped in routeCapabilities.
+ *
  * @param {Object} context - Universal context with pathInfo
  * @param {Object<string, string>} routeMap - Route pattern to value map
+ * @param {string[]} [fallbackRoutes=[]] - Additional route patterns to try when routeMap has
+ *   no match (e.g. 'DELETE /sites/:siteId')
  * @returns {Object<string, string>}
  */
-export function extractRouteParams(context, routeMap) {
+export function extractRouteParams(context, routeMap, fallbackRoutes = []) {
   const method = context.pathInfo?.method?.toUpperCase();
   const path = context.pathInfo?.suffix;
   if (!method || !path) {
     return {};
   }
 
-  const exactKey = `${method} ${path}`;
-  if (routeMap[exactKey]) {
-    return {};
-  }
-
   const requestSegments = path.split('/').filter(Boolean);
-  const matchedKey = Object.keys(routeMap)
-    .find((key) => matchRoute(method, requestSegments, key));
+  const matchedKey = Object.keys(routeMap).find((key) => matchRoute(method, requestSegments, key))
+    || fallbackRoutes.find((route) => matchRoute(method, requestSegments, route));
   if (!matchedKey) {
     return {};
   }

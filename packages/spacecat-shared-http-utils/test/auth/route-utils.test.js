@@ -156,6 +156,33 @@ describe('route-utils', () => {
       const context = { pathInfo: { method: 'PATCH', suffix: '/sites/abc-123/' } };
       expect(extractRouteParams(context, routeMap)).to.deep.equal({ siteId: 'abc-123' });
     });
+
+    describe('fallbackRoutes', () => {
+      it('extracts params from fallbackRoutes when routeMap has no entry for the method', () => {
+        // DELETE is not in routeMap; the fallback list covers it so siteId can be resolved.
+        const context = { pathInfo: { method: 'DELETE', suffix: '/sites/abc-123' } };
+        const fallback = ['DELETE /sites/:siteId'];
+        expect(extractRouteParams(context, routeMap, fallback)).to.deep.equal({ siteId: 'abc-123' });
+      });
+
+      it('prefers routeMap over fallbackRoutes when both match', () => {
+        // PATCH /sites/:siteId is in routeMap; fallback should not interfere.
+        const context = { pathInfo: { method: 'PATCH', suffix: '/sites/abc-123' } };
+        const fallback = ['PATCH /sites/:otherId'];
+        expect(extractRouteParams(context, routeMap, fallback)).to.deep.equal({ siteId: 'abc-123' });
+      });
+
+      it('returns empty object when neither routeMap nor fallbackRoutes match', () => {
+        const context = { pathInfo: { method: 'DELETE', suffix: '/unknown/abc-123' } };
+        const fallback = ['DELETE /sites/:siteId'];
+        expect(extractRouteParams(context, routeMap, fallback)).to.deep.equal({});
+      });
+
+      it('returns empty object when fallbackRoutes is empty and routeMap has no method match', () => {
+        const context = { pathInfo: { method: 'DELETE', suffix: '/sites/abc-123' } };
+        expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+      });
+    });
   });
 
   describe('guardNonEmptyRouteCapabilities', () => {

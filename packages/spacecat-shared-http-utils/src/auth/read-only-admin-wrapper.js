@@ -172,11 +172,15 @@ async function evaluateFeatureFlag(context, authInfo) {
  *   with other fields in the request body.
  *
  * @param {Function} fn - The handler to wrap.
- * @param {{ routeCapabilities: Object<string, string> }} opts - Required map of route
- *   patterns (e.g. 'GET /sites/:siteId') to action strings ('read' | 'write').
+ * @param {{ routeCapabilities: Object<string, string>, internalRoutes?: string[] }} opts -
+ *   routeCapabilities: required map of route patterns to action strings ('read' | 'write').
+ *   internalRoutes: optional array of route pattern strings (e.g. 'DELETE /sites/:siteId')
+ *   for routes that exist in the service but are not listed in routeCapabilities. Used as a
+ *   fallback by extractRouteParams so ownership checks can still resolve path params for
+ *   unmapped routes instead of falling back to the request body.
  * @returns {Function} A wrapped handler.
  */
-export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
+export function readOnlyAdminWrapper(fn, { routeCapabilities, internalRoutes = [] } = {}) {
   if (!routeCapabilities) {
     throw new Error('readOnlyAdminWrapper: routeCapabilities is required');
   }
@@ -200,7 +204,7 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
       if (isObject(routeCapabilities)) {
         let accessLogged = false;
         try {
-          const params = extractRouteParams(context, routeCapabilities);
+          const params = extractRouteParams(context, routeCapabilities, internalRoutes);
           const hasPathParams = Object.keys(params).length > 0;
           const capability = resolveRouteCapability(context, routeCapabilities);
           // capability format: 'resource:action' (e.g. 'site:read', 'site:write').

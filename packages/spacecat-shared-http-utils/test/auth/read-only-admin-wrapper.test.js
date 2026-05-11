@@ -789,6 +789,39 @@ describe('readOnlyAdminWrapper', () => {
       expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
     });
 
+    it('allows write on owned resource when siteId resolved via internalRoutes fallback', async () => {
+      // PUT /sites/:siteId is NOT in routeCapabilities; internalRoutes covers it so
+      // extractRouteParams can still resolve { siteId: 'abc-123' } for the ownership check.
+      context.pathInfo = { method: 'PUT', suffix: '/sites/abc-123' };
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const internalRoutes = ['PUT /sites/:siteId'];
+      const wrapped = mockedWrapper(handler, { routeCapabilities, internalRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+      expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
+      // drift-detection warn fires since capability is null (PUT not in routeCapabilities)
+      expect(logStub.warn.calledWithMatch({ tag: 'ro-admin', reason: 'unmapped-route-allowed' })).to.be.true;
+    });
+
+    it('blocks write on unowned resource even when resolved via internalRoutes fallback', async () => {
+      context.pathInfo = { method: 'PUT', suffix: '/sites/abc-123' };
+      context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const internalRoutes = ['PUT /sites/:siteId'];
+      const wrapped = mockedWrapper(handler, { routeCapabilities, internalRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
+    });
+
     it('denies and logs error when an unexpected error occurs in the authorization block', async () => {
       const routeError = new Error('unexpected route error');
       const ldStub = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };

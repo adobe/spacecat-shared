@@ -862,7 +862,7 @@ describe('DrsClient', () => {
         s3Client,
       }, log);
 
-      const excelBuffer = Buffer.from('fake-excel-bytes');
+      const excelBuffer = Buffer.concat([Buffer.from([0x50, 0x4B, 0x03, 0x04]), Buffer.from('fake-excel-body')]);
       const result = await client.uploadExcelToDrs('site-1', 'job-abc', excelBuffer);
 
       expect(result).to.equal('s3://drs-bucket/external/spacecat/site-1/job-abc/source.xlsx');
@@ -915,6 +915,15 @@ describe('DrsClient', () => {
         .to.be.rejectedWith('excelBuffer is required and must be non-empty');
     });
 
+    it('throws when excelBuffer does not start with XLSX magic bytes', async () => {
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, s3Client,
+      }, log);
+      const htmlPage = Buffer.from('<!DOCTYPE html><html><body>error</body></html>');
+      await expect(client.uploadExcelToDrs('site-1', 'job-1', htmlPage))
+        .to.be.rejectedWith(`Refusing to upload non-XLSX content to S3 (size=${htmlPage.length})`);
+    });
+
     it('propagates S3 send errors', async () => {
       s3ClientStub.rejects(new Error('S3 access denied'));
 
@@ -926,7 +935,8 @@ describe('DrsClient', () => {
         s3Client,
       }, log);
 
-      await expect(client.uploadExcelToDrs('site-1', 'job-1', Buffer.from('x')))
+      const validXlsx = Buffer.concat([Buffer.from([0x50, 0x4B, 0x03, 0x04]), Buffer.from('body')]);
+      await expect(client.uploadExcelToDrs('site-1', 'job-1', validXlsx))
         .to.be.rejectedWith('S3 access denied');
     });
   });
@@ -962,6 +972,7 @@ describe('DrsClient', () => {
         runFrequency: 'weekly',
         brand: 'Acme',
         imsOrgId: 'org-123',
+        brandId: 'brand-uuid-1',
       });
 
       expect(jobId).to.be.a('string').and.match(/^spacecat-/);
@@ -981,6 +992,7 @@ describe('DrsClient', () => {
         web_search_provider: 'chatgpt',
         config_version: 'v1',
         run_frequency: 'weekly',
+        brand_id: 'brand-uuid-1',
       });
       expect(message.week).to.equal(12);
       expect(message.year).to.equal(2026);
@@ -1022,6 +1034,32 @@ describe('DrsClient', () => {
       expect(message).to.not.have.property('week');
       expect(message).to.not.have.property('year');
       expect(message.metadata).to.not.have.property('run_frequency');
+      expect(message.metadata).to.not.have.property('brand_id');
+    });
+
+    it('omits brand_id from metadata when brandId is null or empty', async () => {
+      snsClientStub.resolves({});
+
+      const client = new DrsClient({
+        s3Bucket: S3_BUCKET, snsTopicArn: SNS_TOPIC_ARN, snsClient,
+      }, log);
+
+      await client.publishBrandPresenceAnalyze('site-1', {
+        resultLocation: 's3://drs-bucket/external/spacecat/site-1/job-1/source.xlsx',
+        brandId: null,
+      });
+
+      const [cmdNull] = snsClientStub.args[0];
+      expect(JSON.parse(cmdNull.input.Message).metadata).to.not.have.property('brand_id');
+
+      snsClientStub.resetHistory();
+      await client.publishBrandPresenceAnalyze('site-1', {
+        resultLocation: 's3://drs-bucket/external/spacecat/site-1/job-1/source.xlsx',
+        brandId: '',
+      });
+
+      const [cmdEmpty] = snsClientStub.args[0];
+      expect(JSON.parse(cmdEmpty.input.Message).metadata).to.not.have.property('brand_id');
     });
 
     it('throws when not S3 configured', async () => {

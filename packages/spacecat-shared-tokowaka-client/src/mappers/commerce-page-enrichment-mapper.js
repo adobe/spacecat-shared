@@ -19,6 +19,18 @@ const EXCLUDED_FIELDS = new Set([
   'rationale',
 ]);
 
+// Array-typed keys rendered as <ul> that should NOT get a wrapping <section> + <h3>.
+const HEADING_EXCLUDED_KEYS = new Set([
+  'facts.feature_bullets',
+  'facts.description_plain',
+]);
+
+function deriveHeadingLabel(key) {
+  const lastSegment = key.split('.').pop();
+  const spaced = lastSegment.replace(/_/g, ' ');
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 // Fields rendered in fixed order at the top of the article.
 // Each entry: CSS class, display label, [source keys in priority order]
 const ORDERED_FIELDS = [
@@ -121,7 +133,12 @@ function enrichmentToHtml(enrichmentData) {
     const cls = sanitizeClassName(key);
     const html = renderValue(key, value, cls);
     if (html) {
-      parts.push(html);
+      if (Array.isArray(value) && !HEADING_EXCLUDED_KEYS.has(key)) {
+        const label = escapeHtml(deriveHeadingLabel(key));
+        parts.push(`<section class="${cls}"><h3 class="${cls}">${label}</h3>${html}</section>`);
+      } else {
+        parts.push(html);
+      }
     }
   }
 

@@ -23,6 +23,7 @@ import fixtures from '../../fixtures/index.fixtures.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/util.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -39,7 +40,7 @@ describe('Opportunity IT', async () => {
   let FixEntitySuggestion;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     mockLogger = {

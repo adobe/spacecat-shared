@@ -29,6 +29,10 @@ class Organization extends BaseModel {
   static LLM_BACKEND_BEDROCK = 'bedrock';
 
   static LLM_BACKENDS = ['azure', 'bedrock'];
+
+  getLlmBackend() {
+    return this.record.llmBackend ?? Organization.LLM_BACKEND_AZURE;
+  }
 }
 
 export default Organization;

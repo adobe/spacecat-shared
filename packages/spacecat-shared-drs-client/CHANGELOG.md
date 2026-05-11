@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.7.0...@adobe/spacecat-shared-drs-client-v1.7.1) (2026-05-07)
+
+
+### Bug Fixes
+
+* **drs-client:** reject non-XLSX uploads before writing to S3 ([#1589](https://github.com/adobe/spacecat-shared/issues/1589)) ([30d9662](https://github.com/adobe/spacecat-shared/commit/30d9662d1d006ca26a9df7502b20d3dd0d9eff70))
+
 # [@adobe/spacecat-shared-drs-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.6.0...@adobe/spacecat-shared-drs-client-v1.7.0) (2026-05-05)
 
 

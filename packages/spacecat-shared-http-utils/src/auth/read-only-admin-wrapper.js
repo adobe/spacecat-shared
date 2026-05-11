@@ -180,7 +180,7 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
           // Allow the write if the RO admin owns the target resource.
           let params;
           try {
-            params = extractRouteParams(context, routeCapabilities);
+            params = extractRouteParams(context);
           } catch (err) {
             log.error({ tag: 'ro-admin', err }, 'extractRouteParams failed; denying write access');
             return forbidden('Forbidden');

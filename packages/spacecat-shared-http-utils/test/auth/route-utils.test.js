@@ -81,53 +81,29 @@ describe('route-utils', () => {
   });
 
   describe('extractRouteParams', () => {
-    const routeMap = {
-      'GET /sites': 'site:read',
-      'POST /sites': 'site:write',
-      'GET /sites/:siteId': 'site:read',
-      'PATCH /sites/:siteId': 'site:write',
-      'GET /sites/:siteId/audits/:auditId': 'audit:read',
-      'GET /organizations/:organizationId': 'organization:read',
-    };
-
-    it('returns empty object for an exact match (no params)', () => {
-      const context = { pathInfo: { method: 'GET', suffix: '/sites' } };
-      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    it('returns context.params when present', () => {
+      const context = { params: { siteId: 'abc-123' } };
+      expect(extractRouteParams(context)).to.deep.equal({ siteId: 'abc-123' });
     });
 
-    it('returns extracted params for a single-param route', () => {
-      const context = { pathInfo: { method: 'PATCH', suffix: '/sites/abc-123' } };
-      expect(extractRouteParams(context, routeMap)).to.deep.equal({ siteId: 'abc-123' });
+    it('returns multiple params from context.params', () => {
+      const context = { params: { siteId: 'abc-123', auditId: 'def-456' } };
+      expect(extractRouteParams(context)).to.deep.equal({ siteId: 'abc-123', auditId: 'def-456' });
     });
 
-    it('returns multiple params from a nested parameterized route', () => {
-      const context = { pathInfo: { method: 'GET', suffix: '/sites/abc-123/audits/def-456' } };
-      expect(extractRouteParams(context, routeMap)).to.deep.equal({ siteId: 'abc-123', auditId: 'def-456' });
+    it('returns organizationId from context.params', () => {
+      const context = { params: { organizationId: 'org-789' } };
+      expect(extractRouteParams(context)).to.deep.equal({ organizationId: 'org-789' });
     });
 
-    it('returns organizationId from an org route', () => {
-      const context = { pathInfo: { method: 'GET', suffix: '/organizations/org-789' } };
-      expect(extractRouteParams(context, routeMap)).to.deep.equal({ organizationId: 'org-789' });
-    });
-
-    it('returns empty object for an unmatched route', () => {
-      const context = { pathInfo: { method: 'GET', suffix: '/unknown' } };
-      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
-    });
-
-    it('returns empty object when method is missing', () => {
-      const context = { pathInfo: { suffix: '/sites/abc-123' } };
-      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
-    });
-
-    it('returns empty object when suffix is missing', () => {
-      const context = { pathInfo: { method: 'PATCH' } };
-      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
-    });
-
-    it('returns empty object when pathInfo is missing', () => {
+    it('returns empty object when context.params is absent', () => {
       const context = {};
-      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+      expect(extractRouteParams(context)).to.deep.equal({});
+    });
+
+    it('returns empty object when context.params is undefined', () => {
+      const context = { params: undefined };
+      expect(extractRouteParams(context)).to.deep.equal({});
     });
   });
 

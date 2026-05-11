@@ -573,7 +573,7 @@ describe('readOnlyAdminWrapper', () => {
       expect(context.dataAccess.Site.findById.calledWith('data-site-id')).to.be.false;
     });
 
-    it('emits ro-admin-write log and audit log when write on owned resource is allowed', async () => {
+    it('emits ro-admin-access log and audit log when access on owned resource is allowed', async () => {
       context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
       context.params = { siteId: 'abc-123' };
       context.dataAccess = {
@@ -583,18 +583,18 @@ describe('readOnlyAdminWrapper', () => {
       await wrapped({}, context);
 
       expect(logStub.info.calledWithMatch({
-        tag: 'ro-admin-write',
+        tag: 'ro-admin-access',
         method: 'PATCH',
         suffix: '/sites/abc-123',
         resolvedSiteId: 'abc-123',
         idSource: 'path',
-      }, 'RO admin write allowed on owned resource')).to.be.true;
+      }, 'RO admin access allowed on owned resource')).to.be.true;
       expect(logStub.info.calledWithMatch({
         tag: 'ro-admin-audit', method: 'PATCH', suffix: '/sites/abc-123',
       }, 'RO admin accessed route')).to.be.true;
     });
 
-    it('emits ro-admin-write log with idSource body when context.data fallback is used', async () => {
+    it('emits ro-admin-access log with idSource body when context.data fallback is used', async () => {
       const dataRoutes = { ...routeCapabilities, 'POST /preflight/jobs': 'preflight:write' };
       context.pathInfo = { method: 'POST', suffix: '/preflight/jobs' };
       context.params = {};
@@ -604,10 +604,10 @@ describe('readOnlyAdminWrapper', () => {
       await wrapped({}, context);
 
       expect(logStub.info.calledWithMatch({
-        tag: 'ro-admin-write',
+        tag: 'ro-admin-access',
         resolvedSiteId: 'abc-123',
         idSource: 'body',
-      }, 'RO admin write allowed on owned resource')).to.be.true;
+      }, 'RO admin access allowed on owned resource')).to.be.true;
     });
 
     it('blocks write and ignores body siteId when route has path params with a different name', async () => {
@@ -672,32 +672,31 @@ describe('readOnlyAdminWrapper', () => {
       expect(handler.called).to.be.false;
     });
 
-    it('returns 403 and logs error when extractRouteParams throws (fail-closed)', async () => {
-      const routeError = new Error('route parse failure');
-      const throwRouteModule = await esmock('../../src/auth/read-only-admin-wrapper.js', {
-        '@adobe/spacecat-shared-launchdarkly-client': {
-          LaunchDarklyClient: {
-            createFrom: sinon.stub().returns({
-              isFlagEnabledForIMSOrg: sinon.stub().resolves(true),
-            }),
-          },
-        },
-        '../../src/auth/route-utils.js': {
-          extractRouteParams: sinon.stub().throws(routeError),
-          resolveRouteCapability: sinon.stub().returns('site:write'),
-          guardNonEmptyRouteCapabilities: sinon.stub(),
-        },
-      });
-      context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123' };
-      const wrapped = throwRouteModule.readOnlyAdminWrapper(handler, { routeCapabilities });
+    it('allows write on owned resource even when route is not in routeCapabilities', async () => {
+      context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123/some-unmapped-action' };
+      context.params = { siteId: 'abc-123' };
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities });
+      const result = await wrapped({}, context);
+
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+    });
+
+    it('blocks unmapped route for RO admin who does not own the resource', async () => {
+      context.pathInfo = { method: 'PATCH', suffix: '/sites/abc-123/some-unmapped-action' };
+      context.params = { siteId: 'abc-123' };
+      context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities });
       const result = await wrapped({}, context);
 
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
-      expect(logStub.error.calledWithMatch(
-        { tag: 'ro-admin', err: routeError },
-        'extractRouteParams failed; denying write access',
-      )).to.be.true;
     });
   });
 

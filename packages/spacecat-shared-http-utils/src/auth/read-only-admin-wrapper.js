@@ -170,45 +170,71 @@ export function readOnlyAdminWrapper(fn, { routeCapabilities } = {}) {
       }
 
       if (isObject(routeCapabilities)) {
-        const capability = resolveRouteCapability(context, routeCapabilities);
-        // capability format is 'resource:action' (e.g. 'site:read', 'site:readAll', 'site:write').
-        // split(':').pop() extracts the action; a missing or malformed value yields
-        // undefined, which is not a read action and correctly blocks the request.
-        const action = capability?.split(':').pop();
+        const params = extractRouteParams(context);
+        const hasPathParams = Object.keys(params).length > 0;
 
-        if (action !== 'read' && action !== 'readAll') {
-          // Allow the write if the RO admin owns the target resource.
-          let params;
-          try {
-            params = extractRouteParams(context);
-          } catch (err) {
-            log.error({ tag: 'ro-admin', err }, 'extractRouteParams failed; denying write access');
-            return forbidden('Forbidden');
-          }
-
+        if (hasPathParams) {
+          // Parameterized route: ownership is checked first. Owners may proceed even
+          // when the route is absent from routeCapabilities (unmapped), avoiding an
+          // incorrect fail-closed denial for resources the RO admin owns.
           const isOwner = await isOwnerOfResource(context, authInfo, params);
-          if (!isOwner) {
-            log.warn({
-              tag: 'ro-admin',
+          if (isOwner) {
+            log.info({
+              tag: 'ro-admin-access',
               email: authInfo.getProfile?.()?.email,
               method: context.pathInfo?.method,
               suffix: context.pathInfo?.suffix,
               org: authInfo.getTenantIds?.()[0],
-            }, 'Read-only admin blocked from route');
-            return forbidden('Forbidden');
+              resolvedSiteId: params.siteId ?? null,
+              resolvedOrgId: params.organizationId ?? null,
+              idSource: 'path',
+            }, 'RO admin access allowed on owned resource');
+          } else {
+            // Not the owner: fall back to capability — only reads are permitted.
+            // capability format: 'resource:action' (e.g. 'site:read', 'site:write').
+            // A missing/unmapped route yields undefined action, which is not a read
+            // and correctly denies the request.
+            const capability = resolveRouteCapability(context, routeCapabilities);
+            const action = capability?.split(':').pop();
+            if (action !== 'read' && action !== 'readAll') {
+              log.warn({
+                tag: 'ro-admin',
+                email: authInfo.getProfile?.()?.email,
+                method: context.pathInfo?.method,
+                suffix: context.pathInfo?.suffix,
+                org: authInfo.getTenantIds?.()[0],
+              }, 'Read-only admin blocked from route');
+              return forbidden('Forbidden');
+            }
           }
-
-          const hasPathParams = Object.keys(params).length > 0;
-          log.info({
-            tag: 'ro-admin-write',
-            email: authInfo.getProfile?.()?.email,
-            method: context.pathInfo?.method,
-            suffix: context.pathInfo?.suffix,
-            org: authInfo.getTenantIds?.()[0],
-            resolvedSiteId: params.siteId ?? context.data?.siteId ?? null,
-            resolvedOrgId: params.organizationId ?? context.data?.organizationId ?? null,
-            idSource: hasPathParams ? 'path' : 'body',
-          }, 'RO admin write allowed on owned resource');
+        } else {
+          // Collection/no-params route: capability check first (no path-based ownership
+          // to verify). For write actions, fall back to body-supplied resource id.
+          const capability = resolveRouteCapability(context, routeCapabilities);
+          const action = capability?.split(':').pop();
+          if (action !== 'read' && action !== 'readAll') {
+            const isOwner = await isOwnerOfResource(context, authInfo, params);
+            if (!isOwner) {
+              log.warn({
+                tag: 'ro-admin',
+                email: authInfo.getProfile?.()?.email,
+                method: context.pathInfo?.method,
+                suffix: context.pathInfo?.suffix,
+                org: authInfo.getTenantIds?.()[0],
+              }, 'Read-only admin blocked from route');
+              return forbidden('Forbidden');
+            }
+            log.info({
+              tag: 'ro-admin-access',
+              email: authInfo.getProfile?.()?.email,
+              method: context.pathInfo?.method,
+              suffix: context.pathInfo?.suffix,
+              org: authInfo.getTenantIds?.()[0],
+              resolvedSiteId: context.data?.siteId ?? null,
+              resolvedOrgId: context.data?.organizationId ?? null,
+              idSource: 'body',
+            }, 'RO admin access allowed on owned resource');
+          }
         }
       }
 

@@ -178,6 +178,7 @@ describe('PlgOnboarding Schema', () => {
         'entitlementCreated',
         'entitlementFailed',
         'orgResolutionFailed',
+        'preOnboarded',
       ];
       expect(keys).to.have.members(expected);
     });

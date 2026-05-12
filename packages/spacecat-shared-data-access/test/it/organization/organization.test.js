@@ -124,7 +124,13 @@ describe('Organization IT', async () => {
 
     expect(
       sanitizeIdAndAuditFields('Organization', organization.toJSON()),
-    ).to.eql(data);
+    ).to.eql({
+      ...data,
+      // Organization.getLlmBackend() defaults to 'azure' when the underlying
+      // record has no llmBackend set (see organization.model.js). toJSON()
+      // surfaces that default, so the assertion needs to include it.
+      llmBackend: 'azure',
+    });
   });
 
   it('updates an organization', async () => {

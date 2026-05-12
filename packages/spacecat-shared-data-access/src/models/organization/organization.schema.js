@@ -52,7 +52,9 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
     type: 'string',
     // Minimum guard: reject empty / whitespace-only strings. Full format
     // validation deferred until Semrush confirms the workspace-ID format.
-    validate: (value) => !value || hasText(value),
+    // Use value == null (loose) so undefined and null short-circuit, but
+    // empty string ('') falls through to hasText() which rejects it.
+    validate: (value) => value == null || hasText(value),
   })
   .addAllIndex(['imsOrgId'])
   // Uniqueness is enforced at the DB level via the UNIQUE constraint on

@@ -17,11 +17,15 @@ import { FF_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
 import { guardNonEmptyRouteCapabilities, resolveRouteCapability } from './route-utils.js';
 
 // Permanent bypass: Adobe internal IMS org IDs are never subject to FACS enforcement.
-// Keep in sync with ADMIN_GROUP_IDENT_BY_PRODUCT in spacecat-auth-service/src/ims/login.js.
-const INTERNAL_IMS_ORG_IDS = new Set([
-  '8C6043F15F43B6390A49401A', // Adobe internal — stag
-  '908936ED5D35CC220A495CD4', // Adobe internal — prod
-]);
+// Sourced from env var FACS_EXCEPTION_INTERNAL_ORGS (comma-separated). Keep in sync
+// with ADMIN_GROUP_IDENT_BY_PRODUCT in spacecat-auth-service/src/ims/login.js.
+function parseFacsExceptionInternalOrgs(env) {
+  const raw = env?.FACS_EXCEPTION_INTERNAL_ORGS;
+  if (!raw) {
+    return new Set();
+  }
+  return new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
+}
 
 function forbidden(message) {
   return new Response(JSON.stringify({ message }), {
@@ -75,22 +79,33 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       return fn(request, context);
     }
 
-    // Permanent bypass for Adobe internal IMS org IDs.
+    // Permanent bypass for Adobe internal IMS org IDs (configured via env).
     const orgId = authInfo.getTenantIds?.()?.[0];
-    if (orgId && INTERNAL_IMS_ORG_IDS.has(orgId)) {
+    const internalImsOrgIds = parseFacsExceptionInternalOrgs(context.env);
+    if (orgId && internalImsOrgIds.has(orgId)) {
       log.debug({ tag: 'facs', org: orgId }, 'Internal Adobe org — bypassing FACS');
       return fn(request, context);
     }
 
-    // Feature flag gate — controlled rollout per customer org.
-    if (orgId) {
+    // Per-product feature flag lookup. If the product has no flag entry, FACS is
+    // not yet rolled out for it — bypass entirely.
+    const productCode = context.pathInfo?.headers?.[X_PRODUCT_HEADER]?.toLowerCase();
+    const flagKey = productCode ? FF_MAC_FACS_PERMISSIONS[productCode.toUpperCase()] : undefined;
+
+    if (productCode && !flagKey) {
+      log.debug({ tag: 'facs', product: productCode }, 'No FACS flag configured for product — bypassing');
+      return fn(request, context);
+    }
+
+    // Feature flag gate — controlled rollout per customer org for this product.
+    if (orgId && flagKey) {
       const ldClient = LaunchDarklyClient.createFrom(context);
       const isFacsEnabled = ldClient
-        ? await ldClient.isFlagEnabledForIMSOrg(FF_MAC_FACS_PERMISSIONS, `${orgId}@AdobeOrg`).catch(() => false)
+        ? await ldClient.isFlagEnabledForIMSOrg(flagKey, `${orgId}@AdobeOrg`).catch(() => false)
         : false;
 
       if (!isFacsEnabled) {
-        log.debug({ tag: 'facs', org: orgId }, 'FT_MAC_FACS_PERMISSIONS disabled — bypassing');
+        log.debug({ tag: 'facs', org: orgId, product: productCode }, 'FACS flag disabled — bypassing');
         return fn(request, context);
       }
     }
@@ -107,8 +122,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       return forbidden('Forbidden');
     }
 
-    // Compose full FACS permission from x-product header + route action.
-    const productCode = context.pathInfo?.headers?.[X_PRODUCT_HEADER]?.toLowerCase();
+    // x-product is mandatory once we reach the permission check.
     if (!productCode) {
       log.warn({ tag: 'facs', requiredAction }, 'Missing x-product header for FACS-gated route');
       return badRequest('x-product header is required');

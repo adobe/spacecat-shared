@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.60.0...@adobe/spacecat-shared-data-access-v3.61.0) (2026-05-12)
+
+### Features
+
+* **data-access:** add scopeType and scopeId to Opportunity model ([#1576](https://github.com/adobe/spacecat-shared/issues/1576)) ([3f0f8f2](https://github.com/adobe/spacecat-shared/commit/3f0f8f25c058c5c885fd1f553dd43e4ed07b3d67)), closes [#32-42](https://github.com/adobe/spacecat-shared/issues/32-42)
+
 ## [@adobe/spacecat-shared-data-access-v3.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.59.0...@adobe/spacecat-shared-data-access-v3.60.0) (2026-05-11)
 
 ### Features

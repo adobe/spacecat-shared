@@ -188,7 +188,7 @@ describe('route-utils', () => {
   describe('guardNonEmptyRouteCapabilities', () => {
     it('throws when routeCapabilities is an empty object', () => {
       expect(() => guardNonEmptyRouteCapabilities('testWrapper', {}))
-        .to.throw('testWrapper: routeCapabilities must not be an empty object');
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
     });
 
     it('does not throw when routeCapabilities is a non-empty object', () => {
@@ -196,14 +196,24 @@ describe('route-utils', () => {
         .to.not.throw();
     });
 
-    it('does not throw when routeCapabilities is undefined', () => {
+    it('throws when routeCapabilities is undefined', () => {
       expect(() => guardNonEmptyRouteCapabilities('testWrapper', undefined))
-        .to.not.throw();
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
     });
 
-    it('does not throw when routeCapabilities is null', () => {
+    it('throws when routeCapabilities is null', () => {
       expect(() => guardNonEmptyRouteCapabilities('testWrapper', null))
-        .to.not.throw();
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
+    });
+
+    it('throws when routeCapabilities is an array', () => {
+      expect(() => guardNonEmptyRouteCapabilities('testWrapper', ['GET /sites']))
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
+    });
+
+    it('throws when routeCapabilities is a string', () => {
+      expect(() => guardNonEmptyRouteCapabilities('testWrapper', 'GET /sites'))
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
     });
   });
 });

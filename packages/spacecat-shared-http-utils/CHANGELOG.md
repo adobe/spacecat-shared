@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.27.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.27.0...@adobe/spacecat-shared-http-utils-v1.27.1) (2026-05-12)
+
+### Bug Fixes
+
+* **http-utils:** address RO admin wrapper review findings ([#1599](https://github.com/adobe/spacecat-shared/issues/1599)) ([ca66903](https://github.com/adobe/spacecat-shared/commit/ca669037096a9a5e4d211276473c3dbe69f1772b))
+
 ## [@adobe/spacecat-shared-http-utils-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.26.1...@adobe/spacecat-shared-http-utils-v1.27.0) (2026-05-12)
 
 ### Features

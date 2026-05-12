@@ -3,10 +3,13 @@ name: Build
 # IMPORTANT: npm Trusted Publisher bindings for the 22 published @adobe/* packages point
 # to this file (adobe/spacecat-shared / .github/workflows/main.yaml). Renaming or moving
 # this file breaks OIDC publishing — re-run scripts/setup-npm-trusted-publishers.sh after.
+# Renaming the 'npm-publish' GitHub Environment referenced below has the same silent-break
+# failure mode — re-run the setup script after.
 #
 # Trust binding security relies on the 'npm-publish' GitHub Environment, which must be
 # configured with a deployment branch policy that allows only `main`. Configure branch
-# protection on `main` as well (disallow direct push, require PR review).
+# protection on `main` as well (disallow direct push, require PR review). The setup
+# script preflight verifies both before registering trust bindings.
 # See: https://docs.npmjs.com/trusted-publishers
 
 # No workflow-level permissions — each job declares only what it needs.
@@ -23,7 +26,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     permissions:
-      id-token: write   # AWS ECR OIDC (data-access IT tests) + npm OIDC dry-run auth
+      id-token: write   # AWS ECR OIDC (data-access IT tests)
       contents: read
       issues: read
     steps:
@@ -31,6 +34,43 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: 'false'
+
+      - name: Verify SR_NO_NPM_AUTH guard consistency
+        # Tripwire to keep the @semantic-release/npm gate consistent across the 24
+        # .releaserc.cjs files until 2 successful OIDC releases on main let us remove
+        # the shim. After removal, single-file drift would become a silent no-op, so
+        # this check guards the entire shim lifecycle.
+        run: |
+          set -euo pipefail
+          missing=$(grep -L "SR_NO_NPM_AUTH === 'true'" .releaserc.cjs packages/*/.releaserc.cjs 2>/dev/null || true)
+          if [ -n "$missing" ]; then
+            echo "FAIL: SR_NO_NPM_AUTH guard missing in:"
+            echo "$missing"
+            echo ""
+            echo "Each .releaserc.cjs must gate @semantic-release/npm on:"
+            echo "  ...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : [\"@semantic-release/npm\"]),"
+            exit 1
+          fi
+          # Cleanup tripwire: when .npm-oidc-bootstrap-complete exists (placed by the
+          # release operator after 2 successful OIDC releases on main confirm publishing
+          # works without ADOBE_BOT_NPM_TOKEN), the SR_NO_NPM_AUTH shim and workflow
+          # env var must be fully removed. Fail CI until cleanup is done — forcing
+          # function for the lifecycle documented in main.yaml below.
+          if [ -f .npm-oidc-bootstrap-complete ]; then
+            still_using=$(grep -l "SR_NO_NPM_AUTH" .releaserc.cjs packages/*/.releaserc.cjs 2>/dev/null || true)
+            if [ -n "$still_using" ]; then
+              echo "FAIL: .npm-oidc-bootstrap-complete present but SR_NO_NPM_AUTH still referenced in:"
+              echo "$still_using"
+              echo ""
+              echo "Two OIDC releases succeeded (per marker file). Remove the shim from each"
+              echo ".releaserc.cjs and the SR_NO_NPM_AUTH env var from .github/workflows/main.yaml."
+              exit 1
+            fi
+            if grep -q "SR_NO_NPM_AUTH" .github/workflows/main.yaml 2>/dev/null; then
+              echo "FAIL: .npm-oidc-bootstrap-complete present but SR_NO_NPM_AUTH still referenced in main.yaml"
+              exit 1
+            fi
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -67,12 +107,23 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main'
     environment: npm-publish
+    timeout-minutes: 15
+    concurrency:
+      # Serialize releases on main so semantic-release's tag-then-publish flow
+      # (which assumes serialized execution) cannot race when two PRs land close
+      # together. cancel-in-progress: false — a half-completed release leaves
+      # inconsistent state on npm + git tags; let an in-flight one finish.
+      group: npm-publish-main
+      cancel-in-progress: false
     permissions:
       id-token: write   # npm OIDC Trusted Publishing
       contents: write
       issues: read
     env:
       MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
+      # NPM_CONFIG_PROVENANCE makes sigstore (status.sigstore.dev) a release prerequisite.
+      # Sigstore outage break-glass: temporarily set to 'false' to publish without
+      # provenance attestation for that release, then revert once sigstore recovers.
       NPM_CONFIG_PROVENANCE: 'true'
     steps:
       - name: Check out

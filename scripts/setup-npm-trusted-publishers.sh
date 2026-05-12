@@ -5,6 +5,10 @@
 #   - npm >= 11.10.0 (run: npm install -g npm@11.13.0)
 #   - Logged in as the adobe-bot npm account (run: npm login, then verify: npm whoami)
 #   - Publish rights on all @adobe/* packages listed below
+#   - gh CLI installed and authenticated (for GitHub Environment + branch-protection preflight)
+#   - The 'npm-publish' GitHub Environment exists on adobe/spacecat-shared with a
+#     main-only deployment_branch_policy AND branch protection is enabled on main
+#     (otherwise the trust binding's '--environment' filter has no enforceable boundary).
 #
 # Run this script BEFORE merging the OIDC workflow changes, then verify that
 # at least one release succeeds via OIDC before removing ADOBE_BOT_NPM_TOKEN
@@ -67,7 +71,45 @@ if [ ! -f "${REPO_ROOT}/.github/workflows/${WORKFLOW}" ]; then
   exit 1
 fi
 
-echo "npm ${CURRENT_NPM} / user ${CURRENT_USER} / registry ${CURRENT_REGISTRY} — preflight OK"
+# --- GitHub-side preflight ---
+# Verifies that the security boundary the trust binding claims to enforce actually
+# exists on the repo. Without these the '--environment npm-publish' filter on the
+# binding is decorative: an OIDC token from any branch can carry the environment
+# claim (since the claim is set by the workflow declaration, not validated by env
+# policy), and any repo writer can push code to main that mints publish tokens.
+
+if ! command -v gh >/dev/null 2>&1; then
+  echo "ERROR: gh CLI not installed (required for GitHub Environment + branch-protection preflight)."
+  echo "       Install: brew install gh, then gh auth login"
+  exit 1
+fi
+
+if ! gh api "repos/${REPO}/environments/${ENVIRONMENT}" >/dev/null 2>&1; then
+  echo "ERROR: GitHub Environment '${ENVIRONMENT}' does not exist on ${REPO}."
+  echo "       Create it (Settings → Environments) with a main-only deployment branch"
+  echo "       policy and required reviewers, then re-run."
+  exit 1
+fi
+
+ENV_POLICIES=$(gh api "repos/${REPO}/environments/${ENVIRONMENT}/deployment-branch-policies" \
+  --jq '[.branch_policies[].name] | sort' 2>/dev/null || echo "")
+if [ "$ENV_POLICIES" != '["main"]' ]; then
+  echo "ERROR: '${ENVIRONMENT}' deployment branch policy is not restricted to 'main' only."
+  echo "       Current policies: ${ENV_POLICIES:-<none>}"
+  echo "       Without a main-only policy the OIDC token's 'environment' claim has no"
+  echo "       server-enforced boundary."
+  exit 1
+fi
+
+if ! gh api "repos/${REPO}/branches/main/protection" >/dev/null 2>&1; then
+  echo "ERROR: branch protection on 'main' is not configured on ${REPO}."
+  echo "       Required: PR review, dismiss-stale-reviews, enforce-admins, require"
+  echo "       'Test' status check, disallow force-push + deletion."
+  exit 1
+fi
+
+echo "npm ${CURRENT_NPM} / user ${CURRENT_USER} / registry ${CURRENT_REGISTRY}"
+echo "GitHub Environment '${ENVIRONMENT}' (main-only policy) + branch protection on 'main' — preflight OK"
 echo ""
 
 # --- Package list ---
@@ -102,11 +144,14 @@ PACKAGES=(
 # --- Drift check: compare PACKAGES against publishable workspace packages ---
 # Surfaces a new package directory that was not added to PACKAGES before its first
 # release fails silently. Uses node (already required by the repo) — no jq needed.
+# Fail-closed: node errors and empty enumeration both abort. Without this, a node
+# failure (wrong cwd, malformed package.json, syntax error) silently passes the
+# drift check and the script proceeds to trust registration unverified.
 
-WORKSPACE_PACKAGES=$(node -e '
+if ! WORKSPACE_PACKAGES=$(REPO_ROOT="${REPO_ROOT}" node -e '
   const fs = require("fs");
   const path = require("path");
-  const dir = path.join(process.cwd(), "packages");
+  const dir = path.join(process.env.REPO_ROOT, "packages");
   const names = fs.readdirSync(dir)
     .map((d) => path.join(dir, d, "package.json"))
     .filter((p) => fs.existsSync(p))
@@ -115,8 +160,19 @@ WORKSPACE_PACKAGES=$(node -e '
     .map((pkg) => pkg.name)
     .sort();
   process.stdout.write(names.join("\n"));
-' 2>/dev/null)
+'); then
+  echo "ERROR: drift check failed to enumerate workspace packages (node exited non-zero)"
+  exit 1
+fi
 
+if [ -z "$WORKSPACE_PACKAGES" ]; then
+  echo "ERROR: workspace package enumeration returned empty — refusing to proceed"
+  echo "       (drift check cannot verify PACKAGES against an empty workspace)"
+  exit 1
+fi
+
+# Forward drift: publishable workspace packages missing from PACKAGES.
+# Catches a new package added without updating PACKAGES.
 DRIFT=()
 while IFS= read -r ws_pkg; do
   [ -z "$ws_pkg" ] && continue
@@ -134,6 +190,30 @@ if [ ${#DRIFT[@]} -gt 0 ]; then
   echo "Add them to the PACKAGES array (or mark the package private if it should not be"
   echo "published), then re-run."
   exit 1
+fi
+
+# Reverse drift: entries in PACKAGES that no longer exist in the workspace
+# (deleted, renamed, or flipped to private). These accumulate as orphaned npm
+# trust bindings on npmjs.com. Warn but don't block — orphans don't break this run.
+ORPHANS=()
+for pkg in "${PACKAGES[@]}"; do
+  found=0
+  while IFS= read -r ws_pkg; do
+    [ -z "$ws_pkg" ] && continue
+    if [ "$pkg" = "$ws_pkg" ]; then found=1; break; fi
+  done <<< "$WORKSPACE_PACKAGES"
+  if [ "$found" -eq 0 ]; then ORPHANS+=("$pkg"); fi
+done
+
+if [ ${#ORPHANS[@]} -gt 0 ]; then
+  echo "WARNING: PACKAGES contains entries no longer in the workspace:"
+  for pkg in "${ORPHANS[@]}"; do echo "  - ${pkg}"; done
+  echo ""
+  echo "Remove them from PACKAGES, and revoke their npm trust bindings with:"
+  echo "  npm trust revoke github <pkg> --repository ${REPO} --file ${WORKFLOW}"
+  echo ""
+  echo "Continuing — orphans are not blocking, but their bindings on npmjs.com are stale."
+  echo ""
 fi
 
 echo "Configuring npm OIDC Trusted Publishers for ${#PACKAGES[@]} packages..."
@@ -172,21 +252,32 @@ if [ ${#FAILED[@]} -gt 0 ]; then
 fi
 
 # --- Audit trail ---
-# Capture provenance for the trust-establishment ceremony. Paste into SITES-42702 so
-# there is a record of who registered the bindings, against which commit, and when.
+# Capture provenance for the trust-establishment ceremony. Written to both stdout
+# and a sibling log file so a piped/redirected run still leaves an artifact on disk.
+# Paste either into SITES-42702 to record who registered the bindings, against
+# which commit, and when.
 
 GIT_SHA=$(git -C "${REPO_ROOT}" rev-parse HEAD 2>/dev/null || echo "unknown")
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+AUDIT_FILE="${SCRIPT_DIR}/npm-trust-audit-${TIMESTAMP}.log"
+
+{
+  echo "--- npm OIDC Trusted Publisher setup audit trail (SITES-42702) ---"
+  echo "  timestamp: ${TIMESTAMP}"
+  echo "  git SHA:   ${GIT_SHA}"
+  echo "  npm user:  ${CURRENT_USER}"
+  echo "  npm ver:   ${CURRENT_NPM}"
+  echo "  registry:  ${CURRENT_REGISTRY}"
+  echo "  repo:      ${REPO}"
+  echo "  workflow:  ${WORKFLOW}"
+  echo "  env:       ${ENVIRONMENT}"
+  echo "  packages:  ${#PACKAGES[@]}"
+  echo "  registered:"
+  for pkg in "${PACKAGES[@]}"; do echo "    - ${pkg}"; done
+} | tee "${AUDIT_FILE}" >/dev/null
 
 echo "Done. All ${#PACKAGES[@]} packages configured for OIDC publishing."
 echo ""
-echo "--- Audit trail (attach to SITES-42702) ---"
-echo "  timestamp: ${TIMESTAMP}"
-echo "  git SHA:   ${GIT_SHA}"
-echo "  npm user:  ${CURRENT_USER}"
-echo "  npm ver:   ${CURRENT_NPM}"
-echo "  registry:  ${CURRENT_REGISTRY}"
-echo "  repo:      ${REPO}"
-echo "  workflow:  ${WORKFLOW}"
-echo "  env:       ${ENVIRONMENT}"
-echo "  packages:  ${#PACKAGES[@]}"
+cat "${AUDIT_FILE}"
+echo ""
+echo "Audit log also written to: ${AUDIT_FILE}"

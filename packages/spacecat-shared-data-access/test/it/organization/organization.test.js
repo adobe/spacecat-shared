@@ -85,6 +85,26 @@ describe('Organization IT', async () => {
     );
   });
 
+  // TODO: un-skip after adobe/mysticat-data-service#593 merges and the new
+  // Docker image is published. Then bump MYSTICAT_DATA_SERVICE_TAG default
+  // in test/it/postgrest/docker-compose.yml.
+  it.skip('gets an organization by Semrush workspace id', async () => {
+    const sampleOrganization = sampleData.organizations[0];
+    const organization = await Organization.findBySemrushWorkspaceId(
+      sampleOrganization.getSemrushWorkspaceId(),
+    );
+
+    delete sampleOrganization.record.config;
+    delete organization.record.config;
+
+    expect(organization).to.be.an('object');
+    expect(
+      sanitizeTimestamps(organization.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleOrganization.toJSON()),
+    );
+  });
+
   it('adds a new organization', async () => {
     const data = {
       name: 'New Organization',

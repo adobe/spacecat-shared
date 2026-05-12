@@ -137,12 +137,36 @@ function getSpacecatRequestHeaders() {
 const RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT = 7000;
 
 /**
+ * Returns true if the hostname resolves to a private, loopback, or link-local address.
+ * Used to prevent SSRF: callers should never fetch internal infrastructure URLs.
+ * @param {string} hostname - Parsed hostname (no protocol, no port).
+ * @returns {boolean}
+ */
+function isNonPublicHostname(hostname) {
+  if (hostname === 'localhost' || hostname === '[::1]') {
+    return true;
+  }
+  const parts = hostname.split('.');
+  if (parts.length !== 4 || parts.some((p) => Number.isNaN(Number(p)))) {
+    return false;
+  }
+  const [a, b] = parts.map(Number);
+  return a === 127 || a === 10
+    || (a === 172 && b >= 16 && b <= 31)
+    || (a === 192 && b === 168)
+    || (a === 169 && b === 254);
+}
+
+/**
  * Resolve canonical URL for a given URL string by following redirect chain.
  *
  * The `deadline` is a shared absolute timestamp across all attempts — HEAD, GET, and every
  * redirect hop all draw from the same budget. HEAD is tried first; on network error or non-2xx
  * the request is retried once with GET. GET is never retried — if it fails there is no further
  * fallback method.
+ *
+ * Private/loopback/link-local hostnames (10/8, 172.16/12, 192.168/16, 127/8, 169.254/16, ::1,
+ * localhost) are rejected on every hop — including redirect targets — to prevent SSRF.
  *
  * @param {string} urlString - The URL string to normalize.
  * @param {string} method - HTTP method to use ('HEAD' or 'GET').
@@ -156,6 +180,16 @@ async function resolveCanonicalUrl(
   deadline = Date.now() + RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT,
   log = console,
 ) {
+  try {
+    const { hostname } = new URL(urlString);
+    if (isNonPublicHostname(hostname)) {
+      log.warn('[resolveCanonicalUrl] private hostname rejected', { fn: 'resolveCanonicalUrl', url: urlString });
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
   const remaining = deadline - Date.now();
   if (remaining <= 0) {
     log.warn('[resolveCanonicalUrl] deadline expired', { fn: 'resolveCanonicalUrl', url: urlString, method });

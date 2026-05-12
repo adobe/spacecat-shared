@@ -453,6 +453,53 @@ describe('URL Utility Functions', () => {
       expect(result).to.be.null;
       expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] GET request failed');
     });
+
+    it('should return null for a malformed URL', async () => {
+      const result = await resolveCanonicalUrl('not a url at all');
+      expect(result).to.be.null;
+    });
+
+    it('should reject private IP addresses (10/8)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://10.0.0.1/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject link-local addresses (169.254/16)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://169.254.169.254/latest/meta-data/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject loopback (127.x.x.x)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://127.0.0.1/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject localhost', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://localhost/admin', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject RFC-1918 172.16/12 range', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://172.16.0.1/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject RFC-1918 192.168/16 range', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://192.168.1.1/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
   });
 
   describe('urlMatchesFilter', () => {

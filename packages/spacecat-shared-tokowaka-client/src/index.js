@@ -47,6 +47,11 @@ function isEdgeDeployableSuggestionStatus(status) {
   return status === 'NEW' || status === 'PENDING_VALIDATION';
 }
 
+/** Returns true if the suggestion is a path-level prerender suggestion. */
+function isPathSuggestion(suggestion) {
+  return !!suggestion.getData()?.pathType;
+}
+
 /**
  * Tokowaka Client - Manages edge optimization configurations
  */
@@ -821,11 +826,11 @@ class TokowakaClient {
     // from per-URL suggestions — each group is rolled back via a different code path.
     const metaconfigSuggestions = suggestions.filter((s) => {
       const d = s.getData();
-      return d?.pathType === true || d?.isDomainWide === true;
+      return isPathSuggestion(s) || d?.isDomainWide === true;
     });
     const perUrlSuggestions = suggestions.filter((s) => {
       const d = s.getData();
-      return d?.pathType !== true && d?.isDomainWide !== true;
+      return !isPathSuggestion(s) && d?.isDomainWide !== true;
     });
 
     // Validate which per-URL suggestions can be rolled back
@@ -1364,7 +1369,7 @@ class TokowakaClient {
         if (Array.isArray(allowedRegexPatterns) && allowedRegexPatterns.length > 0) {
           domainWideSuggestions.push({ suggestion, allowedRegexPatterns });
         }
-      } else if (data?.pathType === true) {
+      } else if (isPathSuggestion(suggestion)) {
         const { allowedRegexPatterns } = data;
         if (Array.isArray(allowedRegexPatterns) && allowedRegexPatterns.length > 0) {
           pathSuggestions.push({ suggestion, allowedRegexPatterns });
@@ -1560,7 +1565,7 @@ class TokowakaClient {
                 return false;
               }
               const sData = s.getData();
-              if (sData?.isDomainWide === true || sData?.pathType === true) {
+              if (sData?.isDomainWide === true || isPathSuggestion(s)) {
                 return false;
               }
               if (sData?.edgeDeployed) {

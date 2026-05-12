@@ -16,7 +16,9 @@
 - Step 3 = `spacecat-api-service` consumes the new shared-data-access version (separate plan)
 - Step 4 = `project-elmo-ui` consumes new `semrushWorkspaceId` from org response (separate plan)
 
-**Dependency on Step 1:** unit tests + schema + types + fixture changes can ship and merge independently. The integration test for `findBySemrushWorkspaceId` depends on the data-service Docker image (`MYSTICAT_DATA_SERVICE_TAG` in `test/it/postgrest/docker-compose.yml`, currently pinned to `v5.1.1`) being rebuilt with the new column. The IT test is added with `it.skip(...)` plus a TODO; once Step 1 merges and a new image is tagged, a small follow-up bumps the tag and un-skips the test.
+**Dependency on Step 1:** unit tests + schema + types + fixture changes need the IT Docker image to have the column. Step 1 (data-service PR #593) merged and published `v5.15.0` (now in dev/stage/prod). The IT image tag is bumped from `v5.1.1` to `v5.15.0` in this same PR; the IT test is included un-skipped from the start.
+
+**Note (post-mortem):** the initial CI on this branch failed because fixture[0] referenced `semrushWorkspaceId` while the IT image was still pinned to `v5.1.1` (no column). PostgREST rejected the org seed insert, the seed gracefully skipped organizations, and every downstream entity (sites, sentiment_topics, etc.) cascade-failed on `organization_id` NOT NULL constraints. The fix was simply to bump the image tag — Task 10 in the original plan, but pulled forward since the image was already available.
 
 **Workshop context:** Workshop is happening this week (Basel, May 2026). Step 1 PR is open. Step 2 can be authored and reviewed in parallel.
 

@@ -37,8 +37,12 @@ function forbidden(message) {
  * @returns {string|null} The resolved id, or null
  */
 function resolveId(source, canonical, aliases) {
-  if (!source) return null;
-  if (source[canonical] !== undefined) return source[canonical];
+  if (!source) {
+    return null;
+  }
+  if (source[canonical] !== undefined) {
+    return source[canonical];
+  }
   for (const [alias, target] of Object.entries(aliases)) {
     if (target === canonical && source[alias] !== undefined) {
       return source[alias];

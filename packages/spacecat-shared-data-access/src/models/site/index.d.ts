@@ -35,36 +35,51 @@ export interface HlxConfig {
 }
 
 /**
- * Detected submodule information captured during code import.
- * Omitted when the cloned repo has no `.gitmodules` file.
+ * One entry per submodule declared in the parent repo's `.gitmodules`.
+ * Each row carries both the importer-detected facts (declared section,
+ * original URL, external flag) and any onboarding-resolved CM URL the
+ * cm-client uses at clone/pull time to rewrite `.git/config`.
+ *
+ * Lifecycle:
+ *   - Importer-written fields (`sectionName`, `gitmodulesUrl`, `external`)
+ *     are refreshed on every import. Entries whose `sectionName` is no
+ *     longer present in the parent's `.gitmodules` are dropped.
+ *   - Onboarding-written fields (`resolvedUrl`) are preserved across
+ *     imports for surviving entries — the importer cannot re-derive
+ *     them (no CM Management API access from Lambda) and onboarding
+ *     refreshes them out-of-band.
  */
-export interface SubmodulesMetadata {
+export interface SubmoduleEntry {
   /**
-   * True when at least one submodule URL points to a host other than
-   * the parent repo's host. Relative URLs (`../foo.git`) and SSH URLs
-   * targeting the parent's host classify as internal.
+   * The `<X>` from `[submodule "<X>"]` in `.gitmodules`. Used by
+   * cm-client as the `.git/config` key when rewriting URLs (i.e.
+   * `submodule.<sectionName>.url`). In every customer `.gitmodules`
+   * we've seen this matches the `path = …` value, but git's lookup
+   * is by section name so we capture it here.
    */
-  external: boolean;
+  sectionName: string;
   /**
-   * Submodule URLs exactly as declared in `.gitmodules`, with
+   * The submodule URL exactly as declared in `.gitmodules`, with
    * basic-auth credentials stripped from https/http forms. Relative
    * (`../foo.git`) and SSH (`git@host:path`) forms are preserved as-is.
    */
-  urls: string[];
+  gitmodulesUrl: string;
   /**
-   * BYOG-only. Pre-resolved submodule rewrites for use at clone/pull time.
-   * Each entry says: "for the submodule whose `path` matches this entry,
-   * write `url` into `.git/config submodule.<path>.url` instead of letting
-   * git resolve the URL from `.gitmodules`."
+   * True when this submodule's URL points to a host other than the
+   * parent repo's host. Relative URLs (`../foo.git`) and SSH URLs
+   * targeting the parent's host classify as internal (`false`).
+   */
+  external: boolean;
+  /**
+   * BYOG-only. Onboarding-populated URL the cm-client writes into
+   * `.git/config submodule.<sectionName>.url` at clone/pull time.
    *
    * The CM repo service proxies BYOG clones through URLs of the form
    * `{CM_REPO_URL}/api/program/{programId}/repository/{numericId}.git`.
-   * When a customer's `.gitmodules` uses relative URLs like `../foo` or
-   * SSH URLs like `git@github.com:org/foo.git`, git resolves them to
-   * paths the proxy can't serve. We bypass that by rewriting each
-   * submodule's URL in `.git/config` to a CM-reachable form before
-   * running `git submodule update`. `.gitmodules` itself is never
-   * modified — the working tree stays clean.
+   * When `.gitmodules` uses relative or SSH URLs, git resolves them to
+   * paths the proxy can't serve. The cm-client rewrites each submodule's
+   * `.git/config` URL to a CM-reachable form before running
+   * `git submodule update`. `.gitmodules` itself is never modified.
    *
    * URL form depends on the underlying repo type, decided at onboarding:
    *   - BYOG (`github`/`gitlab`/`bitbucket`/`azure_devops`):
@@ -72,31 +87,30 @@ export interface SubmodulesMetadata {
    *   - `standard`:
    *       `https://git.cloudmanager.adobe.com/{orgName}/{repoName}/`
    *
-   * The runtime picks the auth scope to apply by parsing each url's host.
-   * URLs on the CM proxy host get Bearer + x-api-key + x-gw-ims-org-id
-   * (via `http.{cmRepoUrl}.extraheader`). URLs on
-   * `https://git.cloudmanager.adobe.com/{orgName}/` get Basic auth from
-   * `CM_STANDARD_REPO_CREDENTIALS[programId]` (via the org-prefixed
-   * extraheader scope).
+   * The cm-client picks the auth scope to apply by parsing each
+   * `resolvedUrl`'s host. URLs on the CM proxy host get
+   * Bearer + x-api-key + x-gw-ims-org-id; URLs on
+   * `https://git.cloudmanager.adobe.com/{orgName}/` get Basic auth
+   * from `CM_STANDARD_REPO_CREDENTIALS[programId]` scoped to the org
+   * prefix.
    *
-   * Populated at onboarding from `GET /api/program/{pid}/repositories`
-   * + the parent's `.gitmodules`. The onboarding script does the name-
-   * matching and disambiguation (including short-name collisions where
-   * two repos in the same program share a last-path-segment but differ
-   * by `type`) so the runtime can iterate this list mechanically.
+   * Absent when:
+   *   - the parent is `standard` (cm-client takes the native
+   *     `--recurse-submodules` path and ignores this array entirely),
+   *   - this submodule is `external` to a host outside CM's reach,
+   *   - onboarding hasn't run for this site yet.
    *
-   * Omit for `standard` parent programs — their relative submodule URLs
-   * resolve natively on the customer's git host without translation.
+   * When absent on a BYOG parent, cm-client logs a warning and skips
+   * that submodule during `submodule update`.
    */
-  submoduleMap?: Array<{
-    /** Submodule path as declared in `.gitmodules` (the value of `path = …`). */
-    path: string;
-    /** URL to write into `.git/config submodule.<path>.url` at clone time —
-     *  proxy URL for BYOG-typed repos, `git.cloudmanager.adobe.com` URL for
-     *  standard-typed repos. */
-    url: string;
-  }>;
+  resolvedUrl?: string;
 }
+
+/**
+ * Per-submodule list captured during code import. Empty array when the
+ * cloned repo has no `.gitmodules` file (and therefore no submodules).
+ */
+export type SubmodulesMetadata = SubmoduleEntry[];
 
 /**
  * Metadata extracted during code import. Consumers should assume an

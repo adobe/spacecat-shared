@@ -443,7 +443,7 @@ describe('CloudManagerClient', () => {
       );
     });
 
-    // --- BYOG submodule rewrite flow (driven by submoduleMap) ---
+    // --- BYOG submodule rewrite flow (driven by `submodules`) ---
 
     it('BYOG: skips the rewrite pass when .gitmodules is absent', async () => {
       existsSyncStub.returns(false); // no .gitmodules at clone root
@@ -457,7 +457,7 @@ describe('CloudManagerClient', () => {
       expect(execFileSyncStub).to.have.been.calledOnce;
     });
 
-    it('BYOG: warns and proceeds when submoduleMap is missing', async () => {
+    it('BYOG: warns and proceeds when no resolved submodule entries are provided', async () => {
       existsSyncStub.returns(true); // .gitmodules present
       execFileSyncStub.returns('');
 
@@ -471,7 +471,7 @@ describe('CloudManagerClient', () => {
       );
 
       expect(context.log.warn).to.have.been.calledWith(
-        sinon.match(/has \.gitmodules but no submoduleMap/),
+        sinon.match(/has \.gitmodules but no resolved submodule entries/),
       );
       // clone + submodule init + submodule update --force --recursive — no config writes
       expect(execFileSyncStub).to.have.callCount(3);
@@ -481,13 +481,23 @@ describe('CloudManagerClient', () => {
 
     it('BYOG: pure-proxy submodules use a single Bearer auth scope', async () => {
       // Parent and all submodules are BYOG-typed in the same program. Onboarding
-      // emits a submoduleMap with proxy URLs for each. Only the BYOG (Bearer)
+      // emits resolvedUrls pointing at proxy URLs. Only the BYOG (Bearer)
       // scope should be attached to submodule update — no standard-host scope.
       existsSyncStub.returns(true);
 
-      const submoduleMap = [
-        { path: 'sub-a', url: 'https://cm-repo.example.com/api/program/100/repository/201.git' },
-        { path: 'sub-b', url: 'https://cm-repo.example.com/api/program/100/repository/202.git' },
+      const submodules = [
+        {
+          sectionName: 'sub-a',
+          gitmodulesUrl: '../sub-a.git',
+          external: false,
+          resolvedUrl: 'https://cm-repo.example.com/api/program/100/repository/201.git',
+        },
+        {
+          sectionName: 'sub-b',
+          gitmodulesUrl: '../sub-b.git',
+          external: false,
+          resolvedUrl: 'https://cm-repo.example.com/api/program/100/repository/202.git',
+        },
       ];
 
       const context = createContext();
@@ -495,7 +505,7 @@ describe('CloudManagerClient', () => {
 
       await client.clone('100', '200', {
         imsOrgId: TEST_IMS_ORG_ID,
-        submoduleMap,
+        submodules,
       });
 
       // Calls: clone, submodule init, 2× config-set, submodule update
@@ -531,11 +541,31 @@ describe('CloudManagerClient', () => {
       // host AND the standard (Basic) scope on the customer-org host.
       existsSyncStub.returns(true);
 
-      const submoduleMap = [
-        { path: 'sub-byog', url: 'https://cm-repo.example.com/api/program/12345/repository/501.git' },
-        { path: 'sub-std-a', url: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-a/' },
-        { path: 'sub-std-b', url: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-b/' },
-        { path: 'sub-std-c', url: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-c/' },
+      const submodules = [
+        {
+          sectionName: 'sub-byog',
+          gitmodulesUrl: '../sub-byog.git',
+          external: false,
+          resolvedUrl: 'https://cm-repo.example.com/api/program/12345/repository/501.git',
+        },
+        {
+          sectionName: 'sub-std-a',
+          gitmodulesUrl: '../sub-std-a.git',
+          external: false,
+          resolvedUrl: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-a/',
+        },
+        {
+          sectionName: 'sub-std-b',
+          gitmodulesUrl: '../sub-std-b.git',
+          external: false,
+          resolvedUrl: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-b/',
+        },
+        {
+          sectionName: 'sub-std-c',
+          gitmodulesUrl: '../sub-std-c.git',
+          external: false,
+          resolvedUrl: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-c/',
+        },
       ];
 
       // Need standard creds in env so the standard-scope extraheader can be built.
@@ -545,7 +575,7 @@ describe('CloudManagerClient', () => {
 
       await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, {
         imsOrgId: TEST_IMS_ORG_ID,
-        submoduleMap,
+        submodules,
       });
 
       // Calls: clone, submodule init, 4× config-set, submodule update
@@ -572,13 +602,20 @@ describe('CloudManagerClient', () => {
       expect(updateArgStr).to.not.include('Basic test-access-token');
     });
 
-    it('BYOG: skips invalid submoduleMap entries (missing path or url)', async () => {
+    it('BYOG: skips entries without sectionName or resolvedUrl and warns per missing resolvedUrl', async () => {
       existsSyncStub.returns(true);
 
-      const submoduleMap = [
-        { path: 'good-one', url: 'https://cm-repo.example.com/api/program/12345/repository/100.git' },
-        { path: 'no-url' /* missing url */ },
-        { /* missing path */ url: 'https://cm-repo.example.com/.../200.git' },
+      const submodules = [
+        {
+          sectionName: 'good-one',
+          gitmodulesUrl: '../good-one.git',
+          external: false,
+          resolvedUrl: 'https://cm-repo.example.com/api/program/12345/repository/100.git',
+        },
+        // Has sectionName but no resolvedUrl — skipped + warned per-entry
+        { sectionName: 'no-resolved', gitmodulesUrl: '../no-resolved.git', external: false },
+        // No sectionName — silently dropped (no useful identifier to log)
+        { gitmodulesUrl: '../no-section.git', external: false, resolvedUrl: 'https://cm-repo.example.com/.../200.git' },
         null,
       ];
 
@@ -587,15 +624,12 @@ describe('CloudManagerClient', () => {
 
       await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, {
         imsOrgId: TEST_IMS_ORG_ID,
-        submoduleMap,
+        submodules,
       });
 
       // Only the valid entry should produce a config-set call
       // clone + init + 1× config-set + submodule update = 4
       expect(execFileSyncStub).to.have.callCount(4);
-      expect(context.log.warn).to.have.been.calledWith(
-        sinon.match(/Skipping invalid submoduleMap entry/),
-      );
 
       const setArgs = getGitArgs(execFileSyncStub.getCall(2));
       expect(setArgs).to.deep.equal([
@@ -603,18 +637,37 @@ describe('CloudManagerClient', () => {
         'submodule.good-one.url',
         'https://cm-repo.example.com/api/program/12345/repository/100.git',
       ]);
+
+      // Per-entry warning for the sectionName=present, resolvedUrl=missing case
+      expect(context.log.warn).to.have.been.calledWith(
+        sinon.match(/submodule "no-resolved" has no resolvedUrl/),
+      );
+      // No fully-empty "no resolved entries" warning here — at least one resolved
+      expect(context.log.warn).to.not.have.been.calledWith(
+        sinon.match(/has \.gitmodules but no resolved submodule entries/),
+      );
     });
 
-    it('BYOG: ignores submoduleMap entries with unparseable URLs when computing auth scopes', async () => {
+    it('BYOG: ignores entries with unparseable resolvedUrl when computing auth scopes', async () => {
       // Defensive — onboarding shouldn't produce these, but if one slips through
       // we want the runtime to keep going. The bad entry still gets written to
-      // .git/config (since it has both path and url string-wise), but no host
+      // .git/config (since both fields are non-empty strings), but no host
       // extraheader is added for it. Proxy-based entries still get auth.
       existsSyncStub.returns(true);
 
-      const submoduleMap = [
-        { path: 'good', url: 'https://cm-repo.example.com/api/program/12345/repository/1.git' },
-        { path: 'weird', url: 'not a valid url' },
+      const submodules = [
+        {
+          sectionName: 'good',
+          gitmodulesUrl: '../good.git',
+          external: false,
+          resolvedUrl: 'https://cm-repo.example.com/api/program/12345/repository/1.git',
+        },
+        {
+          sectionName: 'weird',
+          gitmodulesUrl: '../weird.git',
+          external: false,
+          resolvedUrl: 'not a valid url',
+        },
       ];
 
       const context = createContext();
@@ -622,7 +675,7 @@ describe('CloudManagerClient', () => {
 
       await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, {
         imsOrgId: TEST_IMS_ORG_ID,
-        submoduleMap,
+        submodules,
       });
 
       // clone + init + 2× config-set + update
@@ -639,9 +692,19 @@ describe('CloudManagerClient', () => {
       // aborting the whole rewrite.
       existsSyncStub.returns(true);
 
-      const submoduleMap = [
-        { path: 'std', url: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-a/' },
-        { path: 'weird', url: 'not a valid url' },
+      const submodules = [
+        {
+          sectionName: 'std',
+          gitmodulesUrl: '../sub-std-a.git',
+          external: false,
+          resolvedUrl: 'https://git.cloudmanager.adobe.com/acme-org/sub-std-a/',
+        },
+        {
+          sectionName: 'weird',
+          gitmodulesUrl: '../weird.git',
+          external: false,
+          resolvedUrl: 'not a valid url',
+        },
       ];
 
       const context = createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS });
@@ -649,7 +712,7 @@ describe('CloudManagerClient', () => {
 
       await client.clone(TEST_PROGRAM_ID, TEST_REPO_ID, {
         imsOrgId: TEST_IMS_ORG_ID,
-        submoduleMap,
+        submodules,
       });
 
       // clone + init + 2× config-set + update = 5 calls
@@ -1208,12 +1271,12 @@ describe('CloudManagerClient', () => {
       expect(pullArgStr).to.not.include('checkout');
     });
 
-    it('BYOG: runs the submoduleMap rewrite pass after pull', async () => {
+    it('BYOG: runs the submodules rewrite pass after pull', async () => {
       existsSyncStub.returns(true);
 
       // 0: pull (parent only, no --recurse-submodules)
       // 1: submodule init
-      // 2: config --local (rewrite from submoduleMap)
+      // 2: config --local (rewrite from `submodules`)
       // 3: submodule update --force --recursive (with auth)
       execFileSyncStub.returns('');
 
@@ -1225,8 +1288,13 @@ describe('CloudManagerClient', () => {
         TEST_REPO_ID,
         {
           imsOrgId: TEST_IMS_ORG_ID,
-          submoduleMap: [
-            { path: 'sub-a', url: 'https://cm-repo.example.com/api/program/123/repository/456.git' },
+          submodules: [
+            {
+              sectionName: 'sub-a',
+              gitmodulesUrl: '../sub-a.git',
+              external: false,
+              resolvedUrl: 'https://cm-repo.example.com/api/program/123/repository/456.git',
+            },
           ],
         },
       );

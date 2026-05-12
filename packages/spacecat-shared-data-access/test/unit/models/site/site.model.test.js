@@ -533,13 +533,18 @@ describe('SiteModel', () => {
 
     it('stores and retrieves metadata.submodules', () => {
       const metadata = {
-        submodules: {
-          external: true,
-          urls: [
-            '../internal-sub.git',
-            'https://gitlab.example.com/team/external-sub.git',
-          ],
-        },
+        submodules: [
+          {
+            sectionName: 'internal-sub',
+            gitmodulesUrl: '../internal-sub.git',
+            external: false,
+          },
+          {
+            sectionName: 'external-sub',
+            gitmodulesUrl: 'https://gitlab.example.com/team/external-sub.git',
+            external: true,
+          },
+        ],
       };
       const codeData = {
         type: 'github',
@@ -561,11 +566,13 @@ describe('SiteModel', () => {
         ref: 'main',
         url: 'https://github.com/adobe/spacecat',
         metadata: {
-          submodules: { external: false, urls: ['../sub.git'] },
+          submodules: [
+            { sectionName: 'sub', gitmodulesUrl: '../sub.git', external: false },
+          ],
         },
       };
       instance.setCode(firstImport);
-      expect(instance.getCode().metadata.submodules.urls).to.have.lengthOf(1);
+      expect(instance.getCode().metadata.submodules).to.have.lengthOf(1);
 
       instance.setCode({ ...instance.getCode(), metadata: {} });
       expect(instance.getCode().metadata).to.deep.equal({});

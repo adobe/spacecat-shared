@@ -82,19 +82,20 @@ const schema = new SchemaBuilder(Site, SiteCollection)
    *
    * Fields written by the importer after a successful clone:
    *   - s3StoragePath: S3 key (not full URL) of the imported repository ZIP
-   *   - metadata.submodules: `{ external, urls }` when the repo has a
-   *     `.gitmodules` file. The importer always overwrites `metadata` so
-   *     a re-import that finds no submodules clears stale entries from
-   *     an earlier import.
+   *   - metadata.submodules: per-submodule array. Each entry carries
+   *     `{ sectionName, gitmodulesUrl, external }` from the parent's
+   *     `.gitmodules`. Empty array when the repo has no `.gitmodules`.
+   *     The importer refreshes these fields on every import; entries whose
+   *     `sectionName` is no longer present are dropped.
    *
    * Fields populated at onboarding (not by the importer):
-   *   - metadata.submodules.submoduleMap: BYOG-only list of pre-resolved
-   *     `{ path, url }` rewrites the cm-client applies to `.git/config`
+   *   - metadata.submodules[].resolvedUrl: BYOG-only. Pre-resolved CM URL
+   *     the cm-client writes into `.git/config submodule.<sectionName>.url`
    *     at clone/pull time so submodules can fetch through the CM proxy
-   *     (or the standard-repo host, for standard submodules of BYOG
-   *     parents). See SubmodulesMetadata in index.d.ts.
+   *     (or `git.cloudmanager.adobe.com` for standard submodules of BYOG
+   *     parents). Preserved across re-imports for surviving sectionNames.
    *
-   * See CodeConfig in index.d.ts for the full TypeScript shape.
+   * See SubmoduleEntry / CodeConfig in index.d.ts for the full TypeScript shape.
    */
   .addAttribute('code', {
     type: 'any',

@@ -45,8 +45,8 @@ export const CM_REPO_TYPE = Object.freeze({
 
 /**
  * Host that serves Cloud Manager `standard`-type repositories. Used at
- * submodule rewrite time to recognise standard URLs in `submoduleMap` and
- * attach the corresponding Basic-auth extraheader scope.
+ * submodule rewrite time to recognise standard URLs in submodule entries
+ * and attach the corresponding Basic-auth extraheader scope.
  */
 export const GIT_CLOUD_MANAGER_HOST = 'git.cloudmanager.adobe.com';
 
@@ -54,9 +54,9 @@ export const GIT_CLOUD_MANAGER_HOST = 'git.cloudmanager.adobe.com';
  * Returns true for any repo type that tunnels through the CM repo service
  * proxy (i.e. anything other than STANDARD). BYOG repos need extra handling
  * for submodules because the proxy URL uses numeric repository IDs, not
- * names — relative and SSH URLs in `.gitmodules` must be rewritten via the
- * onboarding-populated `submoduleMap`
- * (`site.code.metadata.submodules.submoduleMap`).
+ * names — relative and SSH URLs in `.gitmodules` must be rewritten using
+ * the onboarding-populated `resolvedUrl` from each entry in
+ * `site.code.metadata.submodules`.
  *
  * @param {string} repoType
  * @returns {boolean}
@@ -334,7 +334,7 @@ export default class CloudManagerClient {
    *   resolve `.gitmodules` relative or SSH URLs against the CM proxy URL,
    *   producing name-based URLs the proxy rejects). Submodules are then
    *   populated in a second pass driven by the onboarding-populated
-   *   `submoduleMap` — see `#resolveByogSubmodules` for the algorithm.
+   *   `submodules` array — see `#resolveByogSubmodules` for the algorithm.
    *
    * If a ref is provided, the clone will be checked out to that ref after cloning.
    * Checkout failures are logged but do not cause the clone to fail, so the caller
@@ -347,17 +347,20 @@ export default class CloudManagerClient {
    * @param {string} config.repoType - Repository type ('standard' or VCS type)
    * @param {string} config.repoUrl - Repository URL
    * @param {string} [config.ref] - Optional. Git ref to checkout after clone (branch, tag, or SHA)
-   * @param {Array<{path: string, url: string}>} [config.submoduleMap] - Optional.
-   *   BYOG-only. Onboarding-populated list of submodule rewrites; each entry
-   *   says "for the submodule at `<path>` in `.gitmodules`, write `<url>`
-   *   into `.git/config submodule.<path>.url` instead of letting git
-   *   resolve from `.gitmodules`." `<url>` is either a CM proxy URL (BYOG-
-   *   typed submodule) or a `https://git.cloudmanager.adobe.com/{org}/...`
-   *   URL (standard-typed submodule). Ignored for STANDARD parent repos.
+   * @param {Array<{sectionName: string, gitmodulesUrl: string, external: boolean,
+   *                resolvedUrl?: string}>} [config.submodules] - Optional.
+   *   BYOG-only. Per-submodule entries from `site.code.metadata.submodules`.
+   *   For each entry that carries a `resolvedUrl`, the cm-client writes that
+   *   URL into `.git/config submodule.<sectionName>.url` instead of letting
+   *   git resolve the address from `.gitmodules`. `resolvedUrl` is either a
+   *   CM proxy URL (BYOG-typed submodule) or a
+   *   `https://git.cloudmanager.adobe.com/{org}/...` URL (standard-typed
+   *   submodule). Entries without `resolvedUrl` are skipped — git will try
+   *   the original `.gitmodules` URL for those. Ignored for STANDARD parent repos.
    * @returns {Promise<string>} The local clone path
    */
   async clone(programId, repositoryId, {
-    imsOrgId, repoType, repoUrl, ref, submoduleMap,
+    imsOrgId, repoType, repoUrl, ref, submodules,
   } = {}) {
     const clonePath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
     const byog = isBYOG(repoType);
@@ -368,7 +371,7 @@ export default class CloudManagerClient {
       const args = await this.#buildAuthGitArgs('clone', programId, repositoryId, { imsOrgId, repoType, repoUrl });
       // BYOG: skip auto-recursion so the initial clone doesn't try (and fail)
       // to fetch submodules via name-based proxy URLs. We populate them in a
-      // second pass below using the onboarding-populated submoduleMap.
+      // second pass below using the onboarding-populated `submodules` array.
       const recurseFlag = byog ? '--no-recurse-submodules' : '--recurse-submodules';
       this.#execGit([...args, recurseFlag, clonePath]);
       this.log.info(`Repository cloned to ${clonePath}`);
@@ -392,7 +395,7 @@ export default class CloudManagerClient {
       // - BYOG: always needed. The initial --no-recurse-submodules clone
       //   didn't populate any submodules on any branch.
       if (byog) {
-        await this.#resolveByogSubmodules(clonePath, programId, submoduleMap, { imsOrgId });
+        await this.#resolveByogSubmodules(clonePath, programId, submodules, { imsOrgId });
       } else if (hasText(ref)) {
         this.#initStandardSubmodules(clonePath);
       }
@@ -429,7 +432,7 @@ export default class CloudManagerClient {
 
   /**
    * Builds the dual-scope extraheader args needed to authenticate every
-   * outgoing submodule fetch in `submoduleMap`. Walks the map once, collects
+   * outgoing submodule fetch. Walks the resolved entries once, collects
    * the unique URL hosts, and emits one `-c http.<scope>.extraheader=...`
    * per scope:
    *
@@ -445,16 +448,17 @@ export default class CloudManagerClient {
    * standard fetches and vice versa. Both scopes coexist safely on a single
    * `git submodule update` invocation.
    *
-   * @param {Array<{path: string, url: string}>} submoduleMap
+   * @param {Array<{resolvedUrl?: string}>} resolvedEntries - entries from
+   *   `submodules` that carry a `resolvedUrl`. Other fields are unused here.
    * @param {string} programId - CM Program ID, used to look up standard creds
    * @param {string} imsOrgId - Customer's IMS Organization ID, for BYOG headers
    * @returns {Promise<string[]>} `-c` args ready to prepend to a git invocation
    */
-  async #buildSubmoduleAuthArgs(submoduleMap, programId, imsOrgId) {
+  async #buildSubmoduleAuthArgs(resolvedEntries, programId, imsOrgId) {
     const args = [];
-    const hosts = new Set(submoduleMap.map((e) => {
+    const hosts = new Set(resolvedEntries.map((e) => {
       try {
-        return new URL(e.url).host;
+        return new URL(e.resolvedUrl).host;
       } catch {
         return null;
       }
@@ -468,12 +472,12 @@ export default class CloudManagerClient {
       args.push(...byogArgs);
     }
 
-    // Standard scope — one per (orgName) seen in the map under git.cloudmanager.adobe.com
+    // Standard scope — one per (orgName) seen under git.cloudmanager.adobe.com
     if (hosts.has(GIT_CLOUD_MANAGER_HOST)) {
       const orgs = new Set();
-      for (const entry of submoduleMap) {
+      for (const entry of resolvedEntries) {
         try {
-          const u = new URL(entry.url);
+          const u = new URL(entry.resolvedUrl);
           if (u.host === GIT_CLOUD_MANAGER_HOST) {
             const orgName = u.pathname.split('/').filter(Boolean)[0];
             if (orgName) {
@@ -501,8 +505,8 @@ export default class CloudManagerClient {
 
   /**
    * For BYOG parents: populate submodules using the onboarding-precomputed
-   * `submoduleMap`. The map carries one entry per submodule with the
-   * runtime-ready URL — proxy URL for BYOG-typed submodules,
+   * `submodules` array. Each entry's `resolvedUrl` is the runtime-ready URL
+   * — proxy URL for BYOG-typed submodules,
    * `git.cloudmanager.adobe.com/{org}/{name}/` for standard-typed submodules
    * of the same parent. All name disambiguation, URL classification, and
    * collision handling is done at onboarding; runtime is purely mechanical.
@@ -511,9 +515,9 @@ export default class CloudManagerClient {
    *   1. `git submodule init` — registers default `.git/config` entries
    *      from `.gitmodules`. The initial URLs are wrong (proxy doesn't
    *      route by name) but we overwrite them in the next step.
-   *   2. For each entry in `submoduleMap`, write its `url` into
-   *      `.git/config submodule.<path>.url`. `.gitmodules` itself stays
-   *      untouched — the working tree remains clean.
+   *   2. For each entry that carries a `resolvedUrl`, write that URL into
+   *      `.git/config submodule.<sectionName>.url`. `.gitmodules` itself
+   *      stays untouched — the working tree remains clean.
    *   3. `git submodule update --force --recursive` with all relevant
    *      auth scopes. `--force` is essential: when the parent's pinned
    *      gitlink SHA is unreachable in the submodule (common when a
@@ -532,20 +536,21 @@ export default class CloudManagerClient {
    *
    * Graceful fallbacks:
    *   - No `.gitmodules`: nothing to do.
-   *   - Empty/missing `submoduleMap`: log a warning and run `submodule
+   *   - Empty/missing `submodules`: log a warning and run `submodule
    *     update --force` without rewrites — git will try the original
    *     `.gitmodules` URLs (most will fail through the CM proxy), but
    *     the parent clone itself is preserved.
-   *   - `.gitmodules` entries not in the map: their `.git/config` URL is
-   *     left as-is; `submodule update` will fail for those entries only,
-   *     and the rest still complete.
+   *   - Entries without `resolvedUrl`: their `.git/config` URL is left
+   *     as-is; `submodule update` will likely fail for those entries
+   *     only, and the rest still complete.
    *
    * @param {string} clonePath - Local clone of the BYOG parent
    * @param {string} programId - CM Program ID (for standard-cred lookup)
-   * @param {Array<{path: string, url: string}>} [submoduleMap]
+   * @param {Array<{sectionName: string, gitmodulesUrl: string, external: boolean,
+   *                resolvedUrl?: string}>} [submodules]
    * @param {{imsOrgId: string}} param3
    */
-  async #resolveByogSubmodules(clonePath, programId, submoduleMap, { imsOrgId } = {}) {
+  async #resolveByogSubmodules(clonePath, programId, submodules, { imsOrgId } = {}) {
     if (!existsSync(path.join(clonePath, '.gitmodules'))) {
       return;
     }
@@ -554,32 +559,45 @@ export default class CloudManagerClient {
       // Step 1: register submodules in .git/config (URLs will be wrong; we overwrite next)
       this.#execGit(['submodule', 'init'], { cwd: clonePath });
 
-      // Step 2: rewrite each submodule.<path>.url from the onboarding map
-      const hasMap = Array.isArray(submoduleMap) && submoduleMap.length > 0;
-      if (!hasMap) {
-        this.log.warn(
-          `BYOG program ${programId} has .gitmodules but no submoduleMap — `
-          + 'submodule URLs cannot be resolved through the CM proxy. '
-          + 'Populate site.code.metadata.submodules.submoduleMap at onboarding.',
-        );
-      } else {
-        for (const entry of submoduleMap) {
-          if (!entry || !hasText(entry.path) || !hasText(entry.url)) {
-            this.log.warn(`Skipping invalid submoduleMap entry: ${JSON.stringify(entry)}`);
+      // Step 2: rewrite each submodule.<sectionName>.url from onboarding-resolved entries.
+      // Entries without `resolvedUrl` are passed through to git as-is (which will
+      // try the original `.gitmodules` URL and most likely fail) — log a warning
+      // per such entry so onboarding gaps are visible in import-worker logs.
+      const allEntries = Array.isArray(submodules) ? submodules : [];
+      const resolved = [];
+      for (const entry of allEntries) {
+        if (entry && hasText(entry.sectionName)) {
+          if (hasText(entry.resolvedUrl)) {
+            resolved.push(entry);
           } else {
-            this.#execGit(
-              ['config', '--local', `submodule.${entry.path}.url`, entry.url],
-              { cwd: clonePath },
+            this.log.warn(
+              `BYOG program ${programId} submodule "${entry.sectionName}" has no resolvedUrl — `
+              + 'fetch via the CM proxy will likely fail for this entry. '
+              + `Populate site.code.metadata.submodules entry "${entry.sectionName}".resolvedUrl at onboarding.`,
             );
           }
         }
       }
+      if (resolved.length === 0) {
+        this.log.warn(
+          `BYOG program ${programId} has .gitmodules but no resolved submodule entries — `
+          + 'submodule URLs cannot be resolved through the CM proxy. '
+          + 'Populate site.code.metadata.submodules[].resolvedUrl at onboarding.',
+        );
+      } else {
+        for (const entry of resolved) {
+          this.#execGit(
+            ['config', '--local', `submodule.${entry.sectionName}.url`, entry.resolvedUrl],
+            { cwd: clonePath },
+          );
+        }
+      }
 
       // Step 3: fetch + check out submodules using the rewritten URLs.
-      // Build dual-scope auth (BYOG + standard) from the URLs in the map,
+      // Build dual-scope auth (BYOG + standard) from the resolved URLs,
       // and use --force to handle stale parent gitlinks.
-      const authArgs = hasMap
-        ? await this.#buildSubmoduleAuthArgs(submoduleMap, programId, imsOrgId)
+      const authArgs = resolved.length > 0
+        ? await this.#buildSubmoduleAuthArgs(resolved, programId, imsOrgId)
         : await this.#getCMRepoServiceCredentials(imsOrgId);
       this.#execGit(
         [...authArgs, 'submodule', 'update', '--force', '--recursive'],
@@ -820,10 +838,10 @@ export default class CloudManagerClient {
    *
    * Submodule handling differs by repo type:
    * - STANDARD: `pull --recurse-submodules` updates submodules in one step.
-   * - BYOG: pull the parent only, then re-run the submoduleMap-driven
+   * - BYOG: pull the parent only, then re-run the submodules-driven
    *   rewrite. This also picks up any new submodules the pull may have
    *   introduced, since the new entries will already be present in the
-   *   map (the map is per-program, not per-clone) provided onboarding has
+   *   array (it's per-program, not per-clone) provided onboarding has
    *   refreshed it.
    *
    * @param {string} clonePath - Path to the cloned repository
@@ -834,12 +852,13 @@ export default class CloudManagerClient {
    * @param {string} config.repoType - Repository type ('standard' or VCS type)
    * @param {string} config.repoUrl - Repository URL
    * @param {string} [config.ref] - Optional. Git ref to checkout before pull (branch, tag, or SHA)
-   * @param {Array<{path: string, url: string}>} [config.submoduleMap] - Optional.
+   * @param {Array<{sectionName: string, gitmodulesUrl: string, external: boolean,
+   *                resolvedUrl?: string}>} [config.submodules] - Optional.
    *   BYOG-only. Same shape as `clone()`. See `#resolveByogSubmodules` for
    *   details.
    */
   async pull(clonePath, programId, repositoryId, {
-    imsOrgId, repoType, repoUrl, ref, submoduleMap,
+    imsOrgId, repoType, repoUrl, ref, submodules,
   } = {}) {
     const byog = isBYOG(repoType);
 
@@ -851,7 +870,7 @@ export default class CloudManagerClient {
     const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
     // STANDARD: --recurse-submodules keeps submodules in sync during pull.
     // BYOG: pull the parent only; submodules are handled separately below
-    // because relative .gitmodules URLs need rewriting through submoduleMap.
+    // because relative .gitmodules URLs need rewriting through `submodules`.
     if (byog) {
       this.#execGit(pullArgs, { cwd: clonePath });
     } else {
@@ -863,10 +882,10 @@ export default class CloudManagerClient {
     // For BYOG, re-apply the rewrite after the pull in case the pulled commits
     // changed .gitmodules (new submodules, renamed ones, etc). The helper is
     // idempotent — existing .git/config entries are overwritten with the same
-    // value when the map hasn't changed, and new submodules pick up entries
-    // already present in the program-wide map.
+    // value when the entries haven't changed, and new submodules pick up
+    // entries already present in the program-wide list.
     if (byog) {
-      await this.#resolveByogSubmodules(clonePath, programId, submoduleMap, { imsOrgId });
+      await this.#resolveByogSubmodules(clonePath, programId, submodules, { imsOrgId });
     }
   }
 

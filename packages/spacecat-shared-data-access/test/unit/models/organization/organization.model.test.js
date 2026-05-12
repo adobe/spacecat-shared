@@ -94,4 +94,35 @@ describe('OrganizationModel', () => {
       expect(instance.getFulfillableItems()).to.deep.equal(['item3', 'item4']);
     });
   });
+
+  describe('llmBackend', () => {
+    it('defaults to azure', () => {
+      expect(instance.getLlmBackend()).to.equal('azure');
+    });
+
+    it('sets llmBackend to bedrock', () => {
+      instance.setLlmBackend('bedrock');
+      expect(instance.getLlmBackend()).to.equal('bedrock');
+    });
+
+    it('sets llmBackend back to azure', () => {
+      instance.setLlmBackend('bedrock');
+      instance.setLlmBackend('azure');
+      expect(instance.getLlmBackend()).to.equal('azure');
+    });
+  });
+
+  describe('LLM_BACKENDS constants', () => {
+    it('defines LLM_BACKEND_AZURE', () => {
+      expect(Organization.LLM_BACKEND_AZURE).to.equal('azure');
+    });
+
+    it('defines LLM_BACKEND_BEDROCK', () => {
+      expect(Organization.LLM_BACKEND_BEDROCK).to.equal('bedrock');
+    });
+
+    it('defines LLM_BACKENDS list', () => {
+      expect(Organization.LLM_BACKENDS).to.deep.equal(['azure', 'bedrock']);
+    });
+  });
 });

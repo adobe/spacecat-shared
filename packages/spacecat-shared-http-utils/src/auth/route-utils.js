@@ -104,15 +104,16 @@ export function extractRouteParams(context, routeMap, fallbackRoutes = []) {
 }
 
 /**
- * Throws at wrapper creation time if routeCapabilities is an empty object.
- * An empty map would silently deny/block all requests, so this is a
- * fail-fast guard against misconfiguration.
+ * Throws at wrapper creation time if routeCapabilities is not a non-empty plain object.
+ * Rejects undefined, null, arrays, strings, numbers, and empty objects so a caller
+ * cannot accidentally pass a shape the wrapper's `if (isObject(...))` check would skip,
+ * which would silently disable the auth block.
  *
  * @param {string} wrapperName - Name of the wrapper (for the error message)
  * @param {Object} routeCapabilities - The route capabilities map
  */
 export function guardNonEmptyRouteCapabilities(wrapperName, routeCapabilities) {
-  if (isObject(routeCapabilities) && Object.keys(routeCapabilities).length === 0) {
-    throw new Error(`${wrapperName}: routeCapabilities must not be an empty object`);
+  if (!isObject(routeCapabilities) || Object.keys(routeCapabilities).length === 0) {
+    throw new Error(`${wrapperName}: routeCapabilities must be a non-empty object`);
   }
 }

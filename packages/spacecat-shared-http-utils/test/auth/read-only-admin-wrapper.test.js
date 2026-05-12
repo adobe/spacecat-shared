@@ -58,7 +58,17 @@ describe('readOnlyAdminWrapper', () => {
 
   it('throws at creation time when routeCapabilities is an empty object', () => {
     expect(() => readOnlyAdminWrapper(handler, { routeCapabilities: {} }))
-      .to.throw('routeCapabilities must not be an empty object');
+      .to.throw('routeCapabilities must be a non-empty object');
+  });
+
+  it('throws at creation time when routeCapabilities is an array', () => {
+    expect(() => readOnlyAdminWrapper(handler, { routeCapabilities: ['GET /sites'] }))
+      .to.throw('routeCapabilities must be a non-empty object');
+  });
+
+  it('throws at creation time when routeCapabilities is a string', () => {
+    expect(() => readOnlyAdminWrapper(handler, { routeCapabilities: 'GET /sites' }))
+      .to.throw('routeCapabilities must be a non-empty object');
   });
 
   describe('non-RO-admin passthrough', () => {
@@ -154,7 +164,7 @@ describe('readOnlyAdminWrapper', () => {
       expect(body.message).to.equal('Forbidden');
       expect(handler.called).to.be.false;
       expect(logStub.error.calledWithMatch(
-        { tag: 'ro-admin', err: sdkError },
+        { tag: 'ro-admin', errMessage: 'SDK key missing', errName: 'Error' },
         'Feature flag evaluation failed for RO admin; defaulting to deny',
       )).to.be.true;
     });
@@ -170,7 +180,7 @@ describe('readOnlyAdminWrapper', () => {
       expect(body.message).to.equal('Forbidden');
       expect(handler.called).to.be.false;
       expect(logStub.error.calledWithMatch(
-        { tag: 'ro-admin', err: ldError },
+        { tag: 'ro-admin', errMessage: 'LD unavailable', errName: 'Error' },
         'Feature flag evaluation failed for RO admin; defaulting to deny',
       )).to.be.true;
     });
@@ -202,6 +212,20 @@ describe('readOnlyAdminWrapper', () => {
       const [flagKey, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
       expect(flagKey).to.equal('FT_LLMO-3008');
       expect(imsOrgId).to.equal('org-abc@AdobeOrg');
+    });
+
+    it('pins multi-tenant ordering: only the first tenant is checked (user-org gate semantics)', async () => {
+      // Order-dependent by design: this is a user-org gate, not a resource-org gate.
+      // Same user with reversed tenant list ['org-def', 'org-abc'] would be gated on org-def.
+      // This test exists to prevent a silent semantic flip in future changes.
+      context.attributes.authInfo.getTenantIds = () => ['org-def', 'org-abc'];
+      const wrapped = mockedWrapper(handler, { routeCapabilities });
+      await wrapped({}, context);
+
+      const [, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
+      expect(imsOrgId).to.equal('org-def@AdobeOrg');
+      // tenantIds[1] must NOT be consulted
+      expect(ldClient.isFlagEnabledForIMSOrg.calledOnce).to.be.true;
     });
   });
 
@@ -299,7 +323,11 @@ describe('readOnlyAdminWrapper', () => {
       expect(result.status).to.equal(403);
       const body = await result.json();
       expect(body.message).to.equal('Forbidden');
-      expect(logStub.warn.calledWithMatch({ tag: 'ro-admin' }, 'Read-only admin blocked from route')).to.be.true;
+      // Defense-in-depth: unmapped route + no path params → denied with explicit reason.
+      expect(logStub.warn.calledWithMatch(
+        { tag: 'ro-admin', reason: 'unmapped-no-path-params' },
+        'RO admin denied on unmapped route with no path params; add this route to routeCapabilities or internalRoutes',
+      )).to.be.true;
       expect(handler.called).to.be.false;
     });
 
@@ -326,12 +354,12 @@ describe('readOnlyAdminWrapper', () => {
   describe('no routeCapabilities provided', () => {
     it('throws at creation time when routeCapabilities is not provided', () => {
       expect(() => readOnlyAdminWrapper(handler))
-        .to.throw('readOnlyAdminWrapper: routeCapabilities is required');
+        .to.throw('readOnlyAdminWrapper: routeCapabilities must be a non-empty object');
     });
 
     it('throws at creation time when routeCapabilities is null', () => {
       expect(() => readOnlyAdminWrapper(handler, { routeCapabilities: null }))
-        .to.throw('readOnlyAdminWrapper: routeCapabilities is required');
+        .to.throw('readOnlyAdminWrapper: routeCapabilities must be a non-empty object');
     });
   });
 
@@ -472,7 +500,10 @@ describe('readOnlyAdminWrapper', () => {
       context.dataAccess = {
         Organization: { findById: sinon.stub().resolves(orgStub) },
       };
-      const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
+      const wrapped = mockedWrapper(handler, {
+        routeCapabilities: orgRoutes,
+        paramAliases: { spaceCatId: 'organizationId' },
+      });
       const result = await wrapped({}, context);
 
       expect(result).to.deep.equal({ status: 200 });
@@ -489,11 +520,56 @@ describe('readOnlyAdminWrapper', () => {
       context.dataAccess = {
         Organization: { findById: sinon.stub().resolves(orgStub) },
       };
-      const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
+      const wrapped = mockedWrapper(handler, {
+        routeCapabilities: orgRoutes,
+        paramAliases: { spaceCatId: 'organizationId' },
+      });
       const result = await wrapped({}, context);
 
       expect(result).to.deep.equal({ status: 200 });
       expect(context.dataAccess.Organization.findById.calledWith('org-456')).to.be.true;
+    });
+
+    it('prefers canonical organizationId over spaceCatId alias when both are present in body', async () => {
+      // organizationId (canonical) wins over spaceCatId (alias) per resolveId precedence.
+      const orgRoutes = {
+        ...routeCapabilities,
+        'POST /some/org/action': 'organization:write',
+      };
+      context.pathInfo = { method: 'POST', suffix: '/some/org/action' };
+      context.data = { organizationId: 'org-canonical', spaceCatId: 'org-alias' };
+      context.dataAccess = {
+        Organization: { findById: sinon.stub().resolves(orgStub) },
+      };
+      const wrapped = mockedWrapper(handler, {
+        routeCapabilities: orgRoutes,
+        paramAliases: { spaceCatId: 'organizationId' },
+      });
+      await wrapped({}, context);
+
+      expect(context.dataAccess.Organization.findById.calledWith('org-canonical')).to.be.true;
+      expect(context.dataAccess.Organization.findById.calledWith('org-alias')).to.be.false;
+    });
+
+    it('ignores spaceCatId in body when paramAliases is not configured', async () => {
+      // Default paramAliases is {}: without an explicit alias declaration, spaceCatId is
+      // not recognised as an organization id. Decouples the shared wrapper from
+      // spacecat-api-service routing conventions.
+      const orgRoutes = {
+        ...routeCapabilities,
+        'POST /some/org/action': 'organization:write',
+      };
+      context.pathInfo = { method: 'POST', suffix: '/some/org/action' };
+      context.data = { spaceCatId: 'org-456' };
+      context.dataAccess = {
+        Organization: { findById: sinon.stub().resolves(orgStub) },
+      };
+      const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
+      const result = await wrapped({}, context);
+
+      // No alias configured → spaceCatId is ignored → no resolvable id → denied
+      expect(result.status).to.equal(403);
+      expect(context.dataAccess.Organization.findById.called).to.be.false;
     });
 
     it('blocks write when the organization is not found', async () => {
@@ -570,7 +646,7 @@ describe('readOnlyAdminWrapper', () => {
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
       expect(logStub.error.calledWithMatch(
-        { tag: 'ro-admin', err: dbError },
+        { tag: 'ro-admin', errMessage: 'DB error', errName: 'Error' },
         'Error checking resource ownership for RO admin',
       )).to.be.true;
     });
@@ -672,7 +748,28 @@ describe('readOnlyAdminWrapper', () => {
       expect(logStub.info.calledWithMatch({
         tag: 'ro-admin-access',
         resolvedSiteId: 'abc-123',
+        resolvedOrgId: null,
         idSource: 'body',
+      }, 'RO admin access allowed on owned resource')).to.be.true;
+      // accessLogged=true suppresses the audit log on the body-fallback path too
+      expect(logStub.info.calledWithMatch(
+        { tag: 'ro-admin-audit' },
+        'RO admin accessed route',
+      )).to.be.false;
+    });
+
+    it('emits ro-admin-access log with resolvedOrgId when org route is authorized via path', async () => {
+      const orgRoutes = { ...routeCapabilities, 'PATCH /organizations/:organizationId': 'organization:write' };
+      context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-789' };
+      context.dataAccess = { Organization: { findById: sinon.stub().resolves(orgStub) } };
+      const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
+      await wrapped({}, context);
+
+      expect(logStub.info.calledWithMatch({
+        tag: 'ro-admin-access',
+        resolvedSiteId: null,
+        resolvedOrgId: 'org-789',
+        idSource: 'path',
       }, 'RO admin access allowed on owned resource')).to.be.true;
     });
 
@@ -704,7 +801,7 @@ describe('readOnlyAdminWrapper', () => {
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
       expect(logStub.error.calledWithMatch(
-        { tag: 'ro-admin', err: orgError },
+        { tag: 'ro-admin', errMessage: 'getOrganization failed', errName: 'Error' },
         'Error checking resource ownership for RO admin',
       )).to.be.true;
     });
@@ -720,7 +817,7 @@ describe('readOnlyAdminWrapper', () => {
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
       expect(logStub.error.calledWithMatch(
-        { tag: 'ro-admin', err: dbError },
+        { tag: 'ro-admin', errMessage: 'Org DB error', errName: 'Error' },
         'Error checking resource ownership for RO admin',
       )).to.be.true;
     });
@@ -733,51 +830,33 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
-    });
-
-    it('allows access on unmapped route when siteId is supplied via body and RO admin owns it', async () => {
-      // Suffix POST /jobs/preflight has no entry in routeCapabilities → extractRouteParams
-      // returns {} → body fallback is used. Ownership of the body siteId grants access.
-      context.pathInfo = { method: 'POST', suffix: '/jobs/preflight' };
-      context.data = { siteId: 'abc-123' };
-      context.dataAccess = {
-        Site: { findById: sinon.stub().resolves(siteStub) },
-      };
-      const wrapped = mockedWrapper(handler, { routeCapabilities });
-      const result = await wrapped({}, context);
-
-      expect(result).to.deep.equal({ status: 200 });
-      expect(handler.calledOnce).to.be.true;
-      expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
-    });
-
-    it('emits drift-detection warn when an unmapped route is allowed via ownership', async () => {
-      // capability === null (route not in routeCapabilities) + ownership grants access.
-      // A log.warn with reason: 'unmapped-route-allowed' should be emitted as a drift signal.
-      context.pathInfo = { method: 'POST', suffix: '/jobs/preflight' };
-      context.data = { siteId: 'abc-123' };
-      context.dataAccess = {
-        Site: { findById: sinon.stub().resolves(siteStub) },
-      };
-      const wrapped = mockedWrapper(handler, { routeCapabilities });
-      await wrapped({}, context);
-
-      expect(logStub.warn.calledWithMatch(
-        {
-          tag: 'ro-admin',
-          reason: 'unmapped-route-allowed',
-          method: 'POST',
-          suffix: '/jobs/preflight',
-        },
-        'RO admin allowed on unmapped route via ownership — add this route to routeCapabilities',
+      expect(logStub.error.calledWithMatch(
+        { tag: 'ro-admin' },
+        'isOwnerOfResource: dataAccess.Site accessor is missing',
       )).to.be.true;
     });
 
-    it('blocks unmapped route for RO admin who does not own the resource', async () => {
-      // Same unmapped route; body siteId present but user does not own it.
+    it('blocks write when dataAccess has no Organization property (fail-closed)', async () => {
+      const orgRoutes = { ...routeCapabilities, 'PATCH /organizations/:organizationId': 'organization:write' };
+      context.pathInfo = { method: 'PATCH', suffix: '/organizations/org-456' };
+      context.dataAccess = {}; // Organization accessor absent
+      const wrapped = mockedWrapper(handler, { routeCapabilities: orgRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.error.calledWithMatch(
+        { tag: 'ro-admin' },
+        'isOwnerOfResource: dataAccess.Organization accessor is missing',
+      )).to.be.true;
+    });
+
+    it('denies access on unmapped route with no path params even when body claims ownership (Critical fix)', async () => {
+      // Defense-in-depth: route not in routeCapabilities or internalRoutes → no path params
+      // → body fallback would have authorized against body siteId, but the wrapper has no
+      // record of the route and cannot constrain what the handler does. Deny up-front.
       context.pathInfo = { method: 'POST', suffix: '/jobs/preflight' };
       context.data = { siteId: 'abc-123' };
-      context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
       context.dataAccess = {
         Site: { findById: sinon.stub().resolves(siteStub) },
       };
@@ -786,7 +865,57 @@ describe('readOnlyAdminWrapper', () => {
 
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
+      // No DB lookup happens because the deny is up-front, before ownership check.
+      expect(context.dataAccess.Site.findById.called).to.be.false;
+      expect(logStub.warn.calledWithMatch(
+        { tag: 'ro-admin', reason: 'unmapped-no-path-params' },
+        'RO admin denied on unmapped route with no path params; add this route to routeCapabilities or internalRoutes',
+      )).to.be.true;
+    });
+
+    it('allows access on unmapped route resolved via internalRoutes path params and emits drift-detection warn', async () => {
+      // PUT /sites/:siteId is unmapped (not in routeCapabilities), but internalRoutes covers
+      // it so extractRouteParams returns { siteId: 'abc-123' }. Ownership check runs against
+      // path params (not body), capability is null, drift warn fires.
+      context.pathInfo = { method: 'PUT', suffix: '/sites/abc-123' };
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const internalRoutes = ['PUT /sites/:siteId'];
+      const wrapped = mockedWrapper(handler, { routeCapabilities, internalRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
       expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
+      expect(logStub.warn.calledWithMatch(
+        {
+          tag: 'ro-admin',
+          reason: 'unmapped-route-allowed',
+          method: 'PUT',
+          suffix: '/sites/abc-123',
+        },
+        'RO admin allowed on unmapped route via ownership — add this route to routeCapabilities',
+      )).to.be.true;
+    });
+
+    it('blocks unmapped route via internalRoutes path params when RO admin does not own the resource', async () => {
+      context.pathInfo = { method: 'PUT', suffix: '/sites/abc-123' };
+      context.attributes.authInfo.hasOrganization = sinon.stub().returns(false);
+      context.dataAccess = {
+        Site: { findById: sinon.stub().resolves(siteStub) },
+      };
+      const internalRoutes = ['PUT /sites/:siteId'];
+      const wrapped = mockedWrapper(handler, { routeCapabilities, internalRoutes });
+      const result = await wrapped({}, context);
+
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(context.dataAccess.Site.findById.calledWith('abc-123')).to.be.true;
+      expect(logStub.warn.calledWithMatch(
+        { tag: 'ro-admin', reason: 'not-owner' },
+        'Read-only admin blocked from route',
+      )).to.be.true;
     });
 
     it('allows write on owned resource when siteId resolved via internalRoutes fallback', async () => {
@@ -842,7 +971,7 @@ describe('readOnlyAdminWrapper', () => {
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
       expect(logStub.error.calledWithMatch(
-        { tag: 'ro-admin', err: routeError },
+        { tag: 'ro-admin', errMessage: 'unexpected route error', errName: 'Error' },
         'Unexpected error in RO admin authorization; denying access',
       )).to.be.true;
     });

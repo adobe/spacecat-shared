@@ -24,7 +24,7 @@ describe('macGiverClientWrapper', () => {
   it('creates a MacGiverClient and attaches it to context', async () => {
     const context = {
       env: { MACGIVER_BASE_URL: 'http://macgiver.test' },
-      imsClient: { getServiceToken: sandbox.stub() },
+      imsClient: { getServiceAccessToken: sandbox.stub() },
       log: console,
     };
     const fn = sandbox.stub().resolves('ok');

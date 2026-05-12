@@ -35,7 +35,7 @@ export default class MacGiverClient {
   async getPermissions({
     userId, imsOrgId, permissions, userToken,
   }) {
-    const serviceToken = await this.imsClient.getServiceToken();
+    const serviceToken = await this.imsClient.getServiceAccessToken();
 
     const headers = {
       'Content-Type': 'application/json',

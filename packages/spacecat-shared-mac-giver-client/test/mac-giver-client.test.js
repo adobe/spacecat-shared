@@ -25,7 +25,7 @@ describe('MacGiverClient', () => {
   let imsClient;
 
   beforeEach(() => {
-    imsClient = { getServiceToken: sandbox.stub().resolves('s2s-token') };
+    imsClient = { getServiceAccessToken: sandbox.stub().resolves('service-access-token') };
     nock.cleanAll();
   });
 
@@ -134,7 +134,7 @@ describe('MacGiverClient', () => {
         userToken: 'end-user-token',
       });
 
-      expect(capturedHeaders.authorization).to.include('Bearer s2s-token');
+      expect(capturedHeaders.authorization).to.include('Bearer service-access-token');
       expect(capturedHeaders['x-user-token']).to.include('end-user-token');
     });
 

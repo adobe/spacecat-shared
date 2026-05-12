@@ -101,10 +101,36 @@ if [ "$ENV_POLICIES" != '["main"]' ]; then
   exit 1
 fi
 
-if ! gh api "repos/${REPO}/branches/main/protection" >/dev/null 2>&1; then
-  echo "ERROR: branch protection on 'main' is not configured on ${REPO}."
-  echo "       Required: PR review, dismiss-stale-reviews, enforce-admins, require"
-  echo "       'Test' status check, disallow force-push + deletion."
+PROTECTION_STATE=$(gh api "repos/${REPO}/branches/main/protection" --jq '
+  if   (.required_pull_request_reviews.required_approving_review_count // 0) < 1   then "weak: required_approving_review_count < 1"
+  elif (.enforce_admins.enabled // false) != true                                   then "weak: enforce_admins disabled"
+  elif (.allow_force_pushes.enabled // false) != false                              then "weak: force-push allowed"
+  elif (.allow_deletions.enabled // false) != false                                 then "weak: deletion allowed"
+  elif ((.required_status_checks.contexts // []) | any(. == "Test")) | not          then "weak: Test not in required_status_checks"
+  else "OK" end
+' 2>/dev/null || echo "missing")
+
+if [ "$PROTECTION_STATE" != "OK" ]; then
+  echo "ERROR: branch protection on 'main' is missing or weaker than the trust-binding"
+  echo "       security model requires (status: ${PROTECTION_STATE})."
+  echo ""
+  echo "       Required:"
+  echo "         required_pull_request_reviews.required_approving_review_count >= 1"
+  echo "         enforce_admins.enabled == true"
+  echo "         allow_force_pushes.enabled == false"
+  echo "         allow_deletions.enabled == false"
+  echo "         required_status_checks.contexts contains 'Test'"
+  if [ "$PROTECTION_STATE" != "missing" ]; then
+    echo ""
+    echo "       Current state:"
+    gh api "repos/${REPO}/branches/main/protection" --jq '{
+      required_approvals: .required_pull_request_reviews.required_approving_review_count,
+      enforce_admins: .enforce_admins.enabled,
+      allow_force_pushes: .allow_force_pushes.enabled,
+      allow_deletions: .allow_deletions.enabled,
+      status_checks: .required_status_checks.contexts
+    }' 2>/dev/null | sed 's/^/         /'
+  fi
   exit 1
 fi
 
@@ -259,25 +285,38 @@ fi
 
 GIT_SHA=$(git -C "${REPO_ROOT}" rev-parse HEAD 2>/dev/null || echo "unknown")
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-AUDIT_FILE="${SCRIPT_DIR}/npm-trust-audit-${TIMESTAMP}.log"
+# PID suffix avoids same-second filename collision if the script is re-run quickly
+# (e.g. via a retry wrapper after a transient failure).
+AUDIT_FILE="${SCRIPT_DIR}/npm-trust-audit-${TIMESTAMP}-$$.log"
 
-{
-  echo "--- npm OIDC Trusted Publisher setup audit trail (SITES-42702) ---"
-  echo "  timestamp: ${TIMESTAMP}"
-  echo "  git SHA:   ${GIT_SHA}"
-  echo "  npm user:  ${CURRENT_USER}"
-  echo "  npm ver:   ${CURRENT_NPM}"
-  echo "  registry:  ${CURRENT_REGISTRY}"
-  echo "  repo:      ${REPO}"
-  echo "  workflow:  ${WORKFLOW}"
-  echo "  env:       ${ENVIRONMENT}"
-  echo "  packages:  ${#PACKAGES[@]}"
-  echo "  registered:"
-  for pkg in "${PACKAGES[@]}"; do echo "    - ${pkg}"; done
-} | tee "${AUDIT_FILE}" >/dev/null
+# Build the audit text in a variable so stdout printing is decoupled from file write.
+# Operator gets the trail on stdout unconditionally — file write is a non-blocking
+# artifact convenience, not a critical path.
+AUDIT_CONTENT="--- npm OIDC Trusted Publisher setup audit trail (SITES-42702) ---
+  timestamp: ${TIMESTAMP}
+  git SHA:   ${GIT_SHA}
+  npm user:  ${CURRENT_USER}
+  npm ver:   ${CURRENT_NPM}
+  registry:  ${CURRENT_REGISTRY}
+  repo:      ${REPO}
+  workflow:  ${WORKFLOW}
+  env:       ${ENVIRONMENT}
+  packages:  ${#PACKAGES[@]}
+  registered:"
+for pkg in "${PACKAGES[@]}"; do
+  AUDIT_CONTENT="${AUDIT_CONTENT}
+    - ${pkg}"
+done
 
 echo "Done. All ${#PACKAGES[@]} packages configured for OIDC publishing."
 echo ""
-cat "${AUDIT_FILE}"
+echo "${AUDIT_CONTENT}"
 echo ""
-echo "Audit log also written to: ${AUDIT_FILE}"
+
+if printf '%s\n' "${AUDIT_CONTENT}" > "${AUDIT_FILE}" 2>/dev/null && [ -s "${AUDIT_FILE}" ]; then
+  echo "Audit log also written to: ${AUDIT_FILE}"
+else
+  echo "WARNING: failed to write audit log to ${AUDIT_FILE}"
+  echo "         Trust bindings ARE registered. Capture the audit trail above manually"
+  echo "         for SITES-42702 — the file artifact could not be persisted."
+fi

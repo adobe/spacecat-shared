@@ -36,38 +36,48 @@ jobs:
           persist-credentials: 'false'
 
       - name: Verify SR_NO_NPM_AUTH guard consistency
-        # Tripwire to keep the @semantic-release/npm gate consistent across the 24
-        # .releaserc.cjs files until 2 successful OIDC releases on main let us remove
-        # the shim. After removal, single-file drift would become a silent no-op, so
-        # this check guards the entire shim lifecycle.
+        # The @semantic-release/npm gate (process.env.SR_NO_NPM_AUTH === 'true') must
+        # stay consistent across all .releaserc.cjs files while the workflow's
+        # SR_NO_NPM_AUTH env var is declared. After OIDC publishing is verified working
+        # (per SITES-42702 rollback policy: 2 successful releases), the cleanup PR
+        # atomically removes (a) the env var declaration below, (b) the strict guard
+        # from every .releaserc.cjs. Phase is auto-detected — no marker file required.
+        #
+        # Phase detection uses the YAML mapping pattern `<indent>SR_NO_NPM_AUTH: 'true'`,
+        # which is syntactically distinct from the JS strict-equality `=== 'true'` this
+        # step looks for in configs, so this check never self-references its own body.
         run: |
           set -euo pipefail
-          missing=$(grep -L "SR_NO_NPM_AUTH === 'true'" .releaserc.cjs packages/*/.releaserc.cjs 2>/dev/null || true)
-          if [ -n "$missing" ]; then
-            echo "FAIL: SR_NO_NPM_AUTH guard missing in:"
-            echo "$missing"
-            echo ""
-            echo "Each .releaserc.cjs must gate @semantic-release/npm on:"
-            echo "  ...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : [\"@semantic-release/npm\"]),"
+          shopt -s nullglob
+          files=(.releaserc.cjs packages/*/.releaserc.cjs)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "FAIL: no .releaserc.cjs files found — guard check cannot verify anything."
+            echo "      Has the monorepo layout changed? Update this step's file glob."
             exit 1
           fi
-          # Cleanup tripwire: when .npm-oidc-bootstrap-complete exists (placed by the
-          # release operator after 2 successful OIDC releases on main confirm publishing
-          # works without ADOBE_BOT_NPM_TOKEN), the SR_NO_NPM_AUTH shim and workflow
-          # env var must be fully removed. Fail CI until cleanup is done — forcing
-          # function for the lifecycle documented in main.yaml below.
-          if [ -f .npm-oidc-bootstrap-complete ]; then
-            still_using=$(grep -l "SR_NO_NPM_AUTH" .releaserc.cjs packages/*/.releaserc.cjs 2>/dev/null || true)
-            if [ -n "$still_using" ]; then
-              echo "FAIL: .npm-oidc-bootstrap-complete present but SR_NO_NPM_AUTH still referenced in:"
-              echo "$still_using"
+
+          if grep -qE "^[[:space:]]+SR_NO_NPM_AUTH:[[:space:]]+'true'" .github/workflows/main.yaml; then
+            # Phase 1 (shim active): every .releaserc.cjs must include the strict guard.
+            missing=$(grep -L "SR_NO_NPM_AUTH === 'true'" "${files[@]}" || true)
+            if [ -n "$missing" ]; then
+              echo "FAIL: SR_NO_NPM_AUTH guard missing in:"
+              echo "$missing"
               echo ""
-              echo "Two OIDC releases succeeded (per marker file). Remove the shim from each"
-              echo ".releaserc.cjs and the SR_NO_NPM_AUTH env var from .github/workflows/main.yaml."
+              echo "Each .releaserc.cjs must gate @semantic-release/npm on:"
+              echo "  ...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : [\"@semantic-release/npm\"]),"
               exit 1
             fi
-            if grep -q "SR_NO_NPM_AUTH" .github/workflows/main.yaml 2>/dev/null; then
-              echo "FAIL: .npm-oidc-bootstrap-complete present but SR_NO_NPM_AUTH still referenced in main.yaml"
+          else
+            # Phase 2 (shim removed from workflow): no .releaserc.cjs may still reference
+            # SR_NO_NPM_AUTH. Catches a partial cleanup that leaves leftover guards in
+            # some configs after the env var was removed.
+            leftover=$(grep -l "SR_NO_NPM_AUTH" "${files[@]}" || true)
+            if [ -n "$leftover" ]; then
+              echo "FAIL: SR_NO_NPM_AUTH removed from workflow env but still referenced in:"
+              echo "$leftover"
+              echo ""
+              echo "Cleanup is partial. Remove every SR_NO_NPM_AUTH reference from these"
+              echo "files to complete the OIDC bootstrap cleanup."
               exit 1
             fi
           fi

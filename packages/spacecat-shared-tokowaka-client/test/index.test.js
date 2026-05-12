@@ -2944,6 +2944,243 @@ describe('TokowakaClient', () => {
       const command = s3Client.send.firstCall.args[0];
       expect(command.constructor.name).to.equal('PutObjectCommand');
     });
+
+    it('path rollback removes only the matching pattern and leaves /* intact', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          pathType: true,
+          allowedRegexPatterns: ['/products/\\*'],
+          pathPattern: '/products/*',
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/\\*', '/products/\\*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(pathSuggestion);
+      expect(result.failedSuggestions).to.have.length(0);
+      const uploadedConfig = uploadStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/\\*']);
+    });
+
+    it('path rollback of last remaining pattern deletes prerender key entirely', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          pathType: true,
+          allowedRegexPatterns: ['/products/\\*'],
+          pathPattern: '/products/*',
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/products/\\*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(pathSuggestion);
+      const uploadedConfig = uploadStub.firstCall.args[1];
+      expect(uploadedConfig).to.not.have.property('prerender');
+    });
+
+    it('domain-wide rollback removes only /* from metaconfig allowList', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/\\*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/\\*', '/products/\\*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(dwSuggestion);
+      const uploadedConfig = uploadStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/\\*']);
+    });
+
+    it('path rollback marks suggestion ineligible when allowedRegexPatterns is missing', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({ pathType: true }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123' });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions[0].suggestion).to.equal(pathSuggestion);
+      expect(result.failedSuggestions[0].reason).to.equal('Missing allowedRegexPatterns');
+    });
+
+    it('path rollback marks suggestion ineligible when no metaconfig exists', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          pathType: true,
+          allowedRegexPatterns: ['/products/\\*'],
+          pathPattern: '/products/*',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves(null);
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions[0].reason).to.equal('No metaconfig found');
+    });
+
+    it('path rollback skips CDN write when metaconfig has no prerender key', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          pathType: true,
+          allowedRegexPatterns: ['/products/\\*'],
+          pathPattern: '/products/*',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123' });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(pathSuggestion);
+      expect(uploadStub).to.not.have.been.called;
+    });
+
+    it('path rollback skips CDN write when pattern is not in allowList', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          pathType: true,
+          allowedRegexPatterns: ['/blog/\\*'],
+          pathPattern: '/blog/*',
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/\\*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(pathSuggestion);
+      expect(uploadStub).to.not.have.been.called;
+    });
+
+    it('path rollback marks suggestion as failed when metaconfig upload throws', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          pathType: true,
+          allowedRegexPatterns: ['/products/\\*'],
+          pathPattern: '/products/*',
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/products/\\*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').rejects(new Error('S3 failure'));
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.not.include(pathSuggestion);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].statusCode).to.equal(500);
+    });
   });
 
   describe('previewSuggestions', () => {

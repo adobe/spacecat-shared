@@ -817,19 +817,31 @@ class TokowakaClient {
       );
     }
 
-    // Validate which suggestions can be rolled back
+    // Separate metaconfig-based suggestions (path and domain-wide allowList entries)
+    // from per-URL suggestions — each group is rolled back via a different code path.
+    const metaconfigSuggestions = suggestions.filter((s) => {
+      const d = s.getData();
+      return d?.pathType === true || d?.isDomainWide === true;
+    });
+    const perUrlSuggestions = suggestions.filter((s) => {
+      const d = s.getData();
+      return d?.pathType !== true && d?.isDomainWide !== true;
+    });
+
+    // Validate which per-URL suggestions can be rolled back
     // For rollback, we use the same canDeploy check to ensure data integrity
     const {
       eligible: eligibleSuggestions,
       ineligible: ineligibleSuggestions,
-    } = filterEligibleSuggestions(suggestions, mapper);
+    } = filterEligibleSuggestions(perUrlSuggestions, mapper);
 
     this.log.debug(
       `Rolling back ${eligibleSuggestions.length} eligible suggestions `
-      + `(${ineligibleSuggestions.length} ineligible)`,
+      + `(${ineligibleSuggestions.length} ineligible), `
+      + `${metaconfigSuggestions.length} metaconfig suggestions`,
     );
 
-    if (eligibleSuggestions.length === 0) {
+    if (eligibleSuggestions.length === 0 && metaconfigSuggestions.length === 0) {
       this.log.warn('No eligible suggestions to rollback');
       return {
         succeededSuggestions: [],
@@ -837,13 +849,14 @@ class TokowakaClient {
       };
     }
 
-    // Group suggestions by URL
+    // Group per-URL suggestions by URL
     const suggestionsByUrl = groupSuggestionsByUrlPath(eligibleSuggestions, baseURL, this.log);
 
     // Process each URL separately
     const s3Paths = [];
     const rolledBackUrls = []; // Track URLs for batch CDN invalidation
     let totalRemovedCount = 0;
+    const failedMetaconfigSuggestions = [];
 
     for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
       const fullUrl = new URL(urlPath, baseURL).toString();
@@ -917,6 +930,55 @@ class TokowakaClient {
 
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
 
+    // Roll back metaconfig-based suggestions (path and domain-wide) using remove-one semantics:
+    // remove only the specific pattern from allowList; delete prerender key when list empties.
+    const succeededMetaconfigSuggestions = [];
+    for (const suggestion of metaconfigSuggestions) {
+      const data = suggestion.getData();
+      const patternToRemove = data?.allowedRegexPatterns?.[0];
+      if (!patternToRemove) {
+        this.log.warn(`[edge-rollback] Suggestion ${suggestion.getId()} has no allowedRegexPatterns, skipping`);
+        ineligibleSuggestions.push({ suggestion, reason: 'Missing allowedRegexPatterns' });
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const metaconfig = await this.fetchMetaconfig(baseURL);
+        if (!metaconfig) {
+          this.log.warn(`[edge-rollback] No metaconfig found for ${baseURL}, skipping`);
+          ineligibleSuggestions.push({ suggestion, reason: 'No metaconfig found' });
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
+        const existingAllowList = metaconfig.prerender?.allowList ?? [];
+        const updatedAllowList = existingAllowList.filter((p) => p !== patternToRemove);
+
+        if (updatedAllowList.length !== existingAllowList.length) {
+          if (updatedAllowList.length === 0) {
+            delete metaconfig.prerender;
+          } else {
+            metaconfig.prerender = { allowList: updatedAllowList };
+          }
+          // eslint-disable-next-line no-await-in-loop
+          await this.uploadMetaconfig(baseURL, metaconfig);
+        } else {
+          this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
+        }
+
+        suggestion.setData({ ...data, edgeDeployed: undefined });
+        suggestion.setUpdatedBy('edge-rollback');
+        // eslint-disable-next-line no-await-in-loop
+        await suggestion.save();
+        succeededMetaconfigSuggestions.push(suggestion);
+      } catch (error) {
+        this.log.error(`[edge-rollback] Error rolling back suggestion ${suggestion.getId()}: ${error.message}`, error);
+        failedMetaconfigSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
+      }
+    }
+
     // Batch invalidate CDN cache for all rolled back URLs at once
     // (much more efficient than individual invalidations)
     const cdnInvalidations = await this.invalidateCdnCache({ urls: rolledBackUrls });
@@ -924,8 +986,8 @@ class TokowakaClient {
     return {
       s3Paths,
       cdnInvalidations,
-      succeededSuggestions: eligibleSuggestions,
-      failedSuggestions: ineligibleSuggestions,
+      succeededSuggestions: [...eligibleSuggestions, ...succeededMetaconfigSuggestions],
+      failedSuggestions: [...ineligibleSuggestions, ...failedMetaconfigSuggestions],
       removedPatchesCount: totalRemovedCount,
     };
   }

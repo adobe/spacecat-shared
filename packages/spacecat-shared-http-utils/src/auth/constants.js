@@ -11,5 +11,9 @@
  */
 
 export const FF_READ_ONLY_ORG = 'FT_LLMO-3008';
-export const FF_MAC_FACS_PERMISSIONS = 'FT_MAC_FACS_PERMISSIONS';
+// FACS feature flag per product code (from x-product header, uppercased).
+// Products absent from this map are treated as "FACS not yet rolled out" and bypass enforcement.
+export const FF_MAC_FACS_PERMISSIONS = {
+  LLMO: 'FT_LLMO-3026',
+};
 export const X_PRODUCT_HEADER = 'x-product';

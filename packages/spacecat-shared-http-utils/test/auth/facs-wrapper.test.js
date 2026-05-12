@@ -125,6 +125,12 @@ describe('facsWrapper', () => {
   });
 
   describe('internal org bypass', () => {
+    beforeEach(() => {
+      context.env = {
+        FACS_EXCEPTION_INTERNAL_ORGS: '8C6043F15F43B6390A49401A, 908936ED5D35CC220A495CD4',
+      };
+    });
+
     it('bypasses for Adobe internal stag org ID', async () => {
       context.attributes.authInfo = makeAuthInfo({
         getTenantIds: () => ['8C6043F15F43B6390A49401A'],
@@ -164,7 +170,7 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
-      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'FT_MAC_FACS_PERMISSIONS disabled — bypassing')).to.be.true;
+      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'FACS flag disabled — bypassing')).to.be.true;
     });
 
     it('bypasses when ldClient is null (fail-open on flag unavailability)', async () => {
@@ -201,8 +207,17 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
       const [flagKey, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
-      expect(flagKey).to.equal('FT_MAC_FACS_PERMISSIONS');
+      expect(flagKey).to.equal('FT_LLMO-3026');
       expect(imsOrgId).to.equal('ORG-ABC@AdobeOrg');
+    });
+
+    it('bypasses (without calling LD) when product has no FACS flag configured', async () => {
+      context.pathInfo.headers = { 'x-product': 'unmapped-product' };
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(ldClient.isFlagEnabledForIMSOrg.called).to.be.false;
+      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'No FACS flag configured for product — bypassing')).to.be.true;
     });
   });
 
@@ -264,10 +279,10 @@ describe('facsWrapper', () => {
           return true;
         },
       });
-      context.pathInfo = { method: 'POST', suffix: '/configurations', headers: { 'x-product': 'aso' } };
+      context.pathInfo = { method: 'POST', suffix: '/configurations', headers: { 'x-product': 'llmo' } };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
-      expect(capturedPermission).to.equal('aso/can_manage');
+      expect(capturedPermission).to.equal('llmo/can_manage');
     });
 
     it('lowercases the product code from the x-product header', async () => {

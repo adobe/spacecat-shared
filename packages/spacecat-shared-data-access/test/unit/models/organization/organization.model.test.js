@@ -93,6 +93,13 @@ describe('OrganizationModel', () => {
       instance.setSemrushWorkspaceId('ws_new_value');
       expect(instance.getSemrushWorkspaceId()).to.equal('ws_new_value');
     });
+
+    it('returns undefined when semrushWorkspaceId is absent on the record', () => {
+      const recordWithoutSemrush = { ...sampleOrganization };
+      delete recordWithoutSemrush.semrushWorkspaceId;
+      const { model: instanceWithout } = createElectroMocks(Organization, recordWithoutSemrush);
+      expect(instanceWithout.getSemrushWorkspaceId()).to.equal(undefined);
+    });
   });
 
   describe('fulfillableItems', () => {

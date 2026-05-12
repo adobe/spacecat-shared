@@ -1,6 +1,5 @@
 # `spacecat-shared-data-access`: Add `semrushWorkspaceId` to Organization - Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a top-level `semrushWorkspaceId` string attribute to the `Organization` model in `spacecat-shared-data-access`, with auto-generated `findBySemrushWorkspaceId` / `allBySemrushWorkspaceId` collection accessors via `addAllIndex`. Mirrors the `imsOrgId` pattern.
 
@@ -20,8 +19,6 @@
 
 **Note (post-mortem):** the initial CI on this branch failed because fixture[0] referenced `semrushWorkspaceId` while the IT image was still pinned to `v5.1.1` (no column). PostgREST rejected the org seed insert, the seed gracefully skipped organizations, and every downstream entity (sites, sentiment_topics, etc.) cascade-failed on `organization_id` NOT NULL constraints. The fix was simply to bump the image tag — Task 10 in the original plan, but pulled forward since the image was already available.
 
-**Workshop context:** Workshop is happening this week (Basel, May 2026). Step 1 PR is open. Step 2 can be authored and reviewed in parallel.
-
 ---
 
 ### Task 1: Branch off `origin/main`
@@ -31,7 +28,6 @@
 - [ ] **Step 1: Verify clean working tree**
 
 ```bash
-cd /Users/dj/adobe/github/adobe/spacecat-shared
 git status
 git fetch origin main
 ```

@@ -65,6 +65,45 @@ export function resolveRouteCapability(context, routeMap) {
 }
 
 /**
+ * Extracts named path parameters from the route pattern that matches the current request.
+ * e.g. route 'PATCH /sites/:siteId', suffix '/sites/abc-123' → { siteId: 'abc-123' }
+ * Returns an empty object when there is no match or the match has no parameters.
+ *
+ * When routeMap has no entry for the request's method+path, falls back to fallbackRoutes
+ * (the full internal route list) so ownership checks can still resolve path params for
+ * routes that are known to the service but not mapped in routeCapabilities.
+ *
+ * @param {Object} context - Universal context with pathInfo
+ * @param {Object<string, string>} routeMap - Route pattern to value map
+ * @param {string[]} [fallbackRoutes=[]] - Additional route patterns to try when routeMap has
+ *   no match (e.g. 'DELETE /sites/:siteId')
+ * @returns {Object<string, string>}
+ */
+export function extractRouteParams(context, routeMap, fallbackRoutes = []) {
+  const method = context.pathInfo?.method?.toUpperCase();
+  const path = context.pathInfo?.suffix;
+  if (!method || !path) {
+    return {};
+  }
+
+  const requestSegments = path.split('/').filter(Boolean);
+  const matchedKey = Object.keys(routeMap).find((key) => matchRoute(method, requestSegments, key))
+    || fallbackRoutes.find((route) => matchRoute(method, requestSegments, route));
+  if (!matchedKey) {
+    return {};
+  }
+
+  const routeSegments = matchedKey.slice(matchedKey.indexOf(' ') + 1).split('/').filter(Boolean);
+  const params = {};
+  routeSegments.forEach((seg, i) => {
+    if (seg.charCodeAt(0) === 58 /* ':' */) {
+      params[seg.slice(1)] = requestSegments[i];
+    }
+  });
+  return params;
+}
+
+/**
  * Throws at wrapper creation time if routeCapabilities is an empty object.
  * An empty map would silently deny/block all requests, so this is a
  * fail-fast guard against misconfiguration.

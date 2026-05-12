@@ -48,6 +48,10 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),
   })
-  .addAllIndex(['imsOrgId']);
+  .addAttribute('semrushWorkspaceId', {
+    type: 'string',
+  })
+  .addAllIndex(['imsOrgId'])
+  .addAllIndex(['semrushWorkspaceId']);
 
 export default schema.build();

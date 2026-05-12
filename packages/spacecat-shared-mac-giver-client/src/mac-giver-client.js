@@ -56,10 +56,14 @@ export default class MacGiverClient {
       }),
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      return [];
+    }
 
     const json = await res.json();
-    if (json.status !== 'SUCCESS' || !json.results) return [];
+    if (json.status !== 'SUCCESS' || !json.results) {
+      return [];
+    }
 
     return Object.entries(json.results)
       .filter(([, v]) => v?.allowed === true)

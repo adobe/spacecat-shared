@@ -265,6 +265,19 @@ describe('ConfigurationModel', () => {
       expect(instance.isHandlerEnabledForSite('paid-handler', site)).to.be.true;
     });
 
+    it('enables a paid handler for a site whose org is in disabled.orgs (free-trial -> paid)', () => {
+      instance.addHandler('paid-handler', {
+        enabledByDefault: false,
+        enabled: { sites: [], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('paid-handler', site)).to.be.false;
+      instance.updateHandlerSites('paid-handler', site.getId(), true);
+      expect(instance.isHandlerEnabledForSite('paid-handler', site)).to.be.true;
+      expect(instance.getHandler('paid-handler').enabled.sites).to.include(site.getId());
+    });
+
     it('removes site from disabled.sites when re-enabling for a non-default handler', () => {
       instance.addHandler('cleanup-handler', {
         enabledByDefault: false,
@@ -289,6 +302,29 @@ describe('ConfigurationModel', () => {
 
       expect(instance.getHandler('default-cleanup-handler').enabled.sites).to.not.include(site.getId());
       expect(instance.getHandler('default-cleanup-handler').disabled.sites).to.include(site.getId());
+    });
+
+    it('returns false when site is in both enabled.sites and disabled.sites (disabled.sites wins)', () => {
+      instance.addHandler('conflict-handler', {
+        enabledByDefault: false,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [site.getId()], orgs: [] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('conflict-handler', site)).to.be.false;
+    });
+
+    it('enables a site idempotently (repeated enable does not grow enabled.sites)', () => {
+      instance.addHandler('idempotent-handler', {
+        enabledByDefault: false,
+        enabled: { sites: [], orgs: [] },
+        disabled: { sites: [], orgs: [] },
+      });
+
+      instance.updateHandlerSites('idempotent-handler', site.getId(), true);
+      instance.updateHandlerSites('idempotent-handler', site.getId(), true);
+
+      expect(instance.getHandler('idempotent-handler').enabled.sites.length).to.equal(1);
     });
 
     it('updates handler orgs for a handler disabled by default with enabled', () => {
@@ -348,8 +384,10 @@ describe('ConfigurationModel', () => {
 
     it('disables a handler for a site', () => {
       instance.enableHandlerForSite('organic-keywords', site);
+      expect(instance.getHandler('organic-keywords').enabled.sites).to.include(site.getId());
       instance.disableHandlerForSite('organic-keywords', site);
       expect(instance.getHandler('organic-keywords').disabled.sites).to.not.include(site.getId());
+      expect(instance.getHandler('organic-keywords').enabled.sites).to.not.include(site.getId());
     });
 
     it('enables a handler for an organization', () => {

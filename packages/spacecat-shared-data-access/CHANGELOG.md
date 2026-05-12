@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.59.0...@adobe/spacecat-shared-data-access-v3.60.0) (2026-05-11)
+
+### Features
+
+* **data-access:** add llmBackend field to Organization entity ([#1588](https://github.com/adobe/spacecat-shared/issues/1588)) ([ebccbe5](https://github.com/adobe/spacecat-shared/commit/ebccbe55688fb4b8fb3ffd76cc29650c2cc2fc65)), closes [mysticat-data-service#534](https://github.com/adobe/mysticat-data-service/issues/534)
+
 ## [@adobe/spacecat-shared-data-access-v3.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.58.0...@adobe/spacecat-shared-data-access-v3.59.0) (2026-05-07)
 
 ### Features

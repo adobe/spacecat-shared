@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.26.1...@adobe/spacecat-shared-http-utils-v1.27.0) (2026-05-12)
+
+### Features
+
+* **http-utils:** allow RO admin write ops on resources they own ([#1595](https://github.com/adobe/spacecat-shared/issues/1595)) ([e0e6783](https://github.com/adobe/spacecat-shared/commit/e0e6783a24cc5138d478a45cde85a01df3b057b0))
+
 ## [@adobe/spacecat-shared-http-utils-v1.26.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.26.0...@adobe/spacecat-shared-http-utils-v1.26.1) (2026-05-05)
 
 ### Bug Fixes

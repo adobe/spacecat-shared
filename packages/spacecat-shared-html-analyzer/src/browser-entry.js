@@ -32,6 +32,8 @@ import {
   countLines,
   diffTokens,
   generateDiffReport,
+  calculateVisibilityScore,
+  calculateVisibilityScoreFromText,
   htmlToMarkdown,
   markdownToHtml,
   htmlToMarkdownToHtml,
@@ -67,6 +69,10 @@ const HTMLAnalyzer = {
   // Diff engine functions
   diffTokens,
   generateDiffReport,
+
+  // Visibility score functions
+  calculateVisibilityScore,
+  calculateVisibilityScoreFromText,
 
   // Markdown conversion functions
   htmlToMarkdown,

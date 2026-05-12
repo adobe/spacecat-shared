@@ -19,6 +19,7 @@ import { stripTagsToText } from './html-filter.js';
 import { tokenize } from './tokenizer.js';
 import { generateDiffReport } from './diff-engine.js';
 import { hashDJB2, pct } from './utils.js';
+import { calculateVisibilityScore, calculateVisibilityScoreFromText } from './visibility-score.js';
 
 /**
  * Comprehensive text-only analysis between initial and final HTML
@@ -50,6 +51,9 @@ export async function analyzeTextComparison(
   const wordDiff = generateDiffReport(initText, finText, 'word');
   const lineDiff = generateDiffReport(initText, finText, 'line');
 
+  // Calculate improved visibility score from pre-extracted text
+  const visibilityScore = calculateVisibilityScoreFromText(initText, finText);
+
   return {
     initialText: initText,
     finalText: finText,
@@ -61,6 +65,7 @@ export async function analyzeTextComparison(
     lineDiff,
     initialTextHash: hashDJB2(initText),
     finalTextHash: hashDJB2(finText),
+    visibilityScore,
   };
 }
 
@@ -103,8 +108,12 @@ export async function calculateStats(
   }
 
   // Calculate citation readability (percentage of original content available in current)
+  // Retained for backwards compatibility.
   const citationReadability = currentTokens.length > 0
     ? Math.min(100, (originalTokens.length / currentTokens.length) * 100) : 100;
+
+  // Calculate improved composite visibility score
+  const visibilityScore = calculateVisibilityScoreFromText(originalText, currentText);
 
   return {
     wordCountBefore,
@@ -112,6 +121,7 @@ export async function calculateStats(
     wordDiff,
     contentIncreaseRatio: Math.round(contentIncreaseRatio * 100) / 100, // Round to 1 decimal place
     citationReadability: Math.round(citationReadability),
+    visibilityScore,
   };
 }
 
@@ -150,6 +160,7 @@ export async function calculateBothScenarioStats(
       wordDiff: statsIgnored.wordDiff,
       contentIncreaseRatio: statsIgnored.contentIncreaseRatio,
       citationReadability: statsIgnored.citationReadability,
+      visibilityScore: statsIgnored.visibilityScore,
       contentGain: `${Math.round(statsIgnored.contentIncreaseRatio * 10) / 10}x`,
       missingWords: statsIgnored.wordDiff,
     },
@@ -159,6 +170,7 @@ export async function calculateBothScenarioStats(
       wordDiff: statsNotIgnored.wordDiff,
       contentIncreaseRatio: statsNotIgnored.contentIncreaseRatio,
       citationReadability: statsNotIgnored.citationReadability,
+      visibilityScore: statsNotIgnored.visibilityScore,
       contentGain: `${Math.round(statsNotIgnored.contentIncreaseRatio * 10) / 10}x`,
       missingWords: statsNotIgnored.wordDiff,
     },

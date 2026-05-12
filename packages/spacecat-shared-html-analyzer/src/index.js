@@ -41,6 +41,11 @@ export {
 } from './analyzer.js';
 
 export {
+  calculateVisibilityScore,
+  calculateVisibilityScoreFromText,
+} from './visibility-score.js';
+
+export {
   htmlToMarkdown,
   markdownToHtml,
   htmlToMarkdownToHtml,

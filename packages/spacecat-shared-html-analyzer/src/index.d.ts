@@ -70,8 +70,6 @@ interface DiffReport {
   summary: string;
 }
 
-// HtmlDiff interface removed - was unused
-
 /**
  * Generate LCS-based diff between two strings
  */
@@ -82,8 +80,6 @@ export function diffTokens(aStr: string, bStr: string, mode?: "word" | "line"): 
  */
 export function generateDiffReport(initText: string, finText: string, mode?: "word" | "line"): DiffReport;
 
-
-// generateHtmlDiff() removed - was unused
 
 /** HTML FILTERING FUNCTIONS */
 
@@ -122,6 +118,70 @@ export function extractWordCount(
  */
 export function filterNavigationAndFooterBrowser(element: Element): void;
 
+/** VISIBILITY SCORE FUNCTIONS */
+
+/**
+ * Result of a visibility score calculation.
+ */
+export interface VisibilityScoreResult {
+  /** Composite visibility score (0–100). Higher is better. */
+  score: number;
+  /**
+   * LCS-based fraction of user-visible tokens present in the agent view (0–100).
+   * Weight: 40 %.
+   */
+  contentRecall: number;
+  /**
+   * Fraction of unique meaningful user terms found in the agent view (0–100).
+   * Weight: 30 %.
+   */
+  vocabularyCoverage: number;
+  /**
+   * Fraction of structural HTML elements (headings, lists, etc.) preserved
+   * in the agent view relative to the user view (0–100). Weight: 15 %.
+   */
+  structuralCompleteness: number;
+  /**
+   * Similarity of meaningful-word density between agent and user views (0–100).
+   * Weight: 15 %.
+   */
+  contentDensityParity: number;
+  /** Human-readable label: 'Excellent' | 'Good' | 'Fair' | 'Poor' | 'Critical'. */
+  scoreLabel: 'Excellent' | 'Good' | 'Fair' | 'Poor' | 'Critical';
+}
+
+export interface VisibilityScoreOptions {
+  /** Strip nav/footer before scoring (default: true). */
+  ignoreNavFooter?: boolean;
+  /** Include noscript elements in agent text extraction (default: false). */
+  includeNoscript?: boolean;
+}
+
+/**
+ * Calculate an improved, multi-dimensional Visibility Score from raw HTML.
+ *
+ * Compares the "agent view" (initial / server-side HTML) against the
+ * "user view" (final / client-side HTML).  Asynchronous because text
+ * extraction uses cheerio in Node.js environments.
+ */
+export function calculateVisibilityScore(
+  agentHtml: string,
+  userHtml: string,
+  options?: VisibilityScoreOptions
+): Promise<VisibilityScoreResult>;
+
+/**
+ * Calculate an improved, multi-dimensional Visibility Score from pre-extracted
+ * plain text.  Synchronous — works in both browser and Node.js.
+ *
+ * Note: structuralCompleteness is always 100 in this variant because raw HTML
+ * is not available for tag counting.
+ */
+export function calculateVisibilityScoreFromText(
+  agentText: string,
+  userText: string
+): VisibilityScoreResult;
+
 /** ANALYSIS FUNCTIONS (Original Chrome Extension Logic) */
 
 interface TextComparison {
@@ -135,6 +195,8 @@ interface TextComparison {
   lineDiff: DiffReport;
   initialTextHash: string;
   finalTextHash: string;
+  /** Improved composite visibility score. */
+  visibilityScore: VisibilityScoreResult;
 }
 
 interface BasicStats {
@@ -142,7 +204,10 @@ interface BasicStats {
   wordCountAfter: number;
   wordDiff: number;
   contentIncreaseRatio: number;
+  /** @deprecated Use visibilityScore.score for a more accurate measurement. */
   citationReadability: number;
+  /** Improved composite visibility score. */
+  visibilityScore: VisibilityScoreResult;
 }
 
 interface ScenarioStats {
@@ -150,7 +215,10 @@ interface ScenarioStats {
   wordCountAfter: number;
   wordDiff: number;
   contentIncreaseRatio: number;
+  /** @deprecated Use visibilityScore.score for a more accurate measurement. */
   citationReadability: number;
+  /** Improved composite visibility score. */
+  visibilityScore: VisibilityScoreResult;
   contentGain: string;
   missingWords: number;
 }
@@ -247,4 +315,3 @@ export function generateMarkdownDiff(
   currentHtml: string,
   ignoreNavFooter?: boolean
 ): Promise<{ originalRenderedHtml: string; currentRenderedHtml: string }>;
-

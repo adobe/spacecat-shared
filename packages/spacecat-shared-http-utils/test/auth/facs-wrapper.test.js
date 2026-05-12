@@ -74,7 +74,7 @@ describe('facsWrapper', () => {
 
     it('throws when routeFacsCapabilities is an empty object', () => {
       expect(() => facsWrapper(handler, { routeFacsCapabilities: {} }))
-        .to.throw('facsWrapper: routeCapabilities must not be an empty object');
+        .to.throw('facsWrapper: routeCapabilities must be a non-empty object');
     });
   });
 

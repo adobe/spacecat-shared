@@ -161,13 +161,23 @@ done
 
 Recovery, depending on which side made progress:
 
-- **Git tag exists, some packages didn't publish**: the `chore(release):`
-  commit is already on `main`. Re-trigger via the GitHub Actions UI:
-  Actions → `Build` workflow → "Run workflow" → branch `main` → Run.
-  This uses the `workflow_dispatch:` trigger declared in `main.yaml`
-  (requires repo write access; the `npm-publish` environment's required
-  reviewers still gate the actual publish step). semantic-release skips
-  already-published versions and publishes the missing ones.
+- **Per-package tag exists at HEAD for some packages, missing for others**:
+  the `chore(release):` commit(s) for the successful packages are already
+  on `main` (semantic-release-monorepo writes one commit + one tag per
+  package, like `@adobe/spacecat-shared-utils-v1.106.0`). Re-trigger via
+  the GitHub Actions UI: Actions → `Build` workflow → "Run workflow" →
+  branch `main` → Run. This uses the `workflow_dispatch:` trigger declared
+  in `main.yaml` (requires repo write access; the `npm-publish` environment's
+  required reviewers still gate the actual publish step).
+
+  Recovery semantics per package on the re-run:
+
+  - If the package's tag (`@adobe/<pkg>-v<version>`) is at HEAD,
+    `commit-analyzer` reports no new commits and the package is skipped
+    *before* the `@semantic-release/npm` plugin runs — no double-publish
+    attempt.
+  - If the package's tag is at an older commit, `commit-analyzer` computes
+    the next version and the package publishes normally.
 
   CLI equivalent:
 

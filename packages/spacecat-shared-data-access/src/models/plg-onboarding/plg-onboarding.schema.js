@@ -68,6 +68,7 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       entitlementCreated: { type: 'boolean' },
       entitlementFailed: { type: 'boolean' },
       orgResolutionFailed: { type: 'boolean' },
+      preOnboarded: { type: 'boolean' },
     },
   })
   .addAttribute('error', {

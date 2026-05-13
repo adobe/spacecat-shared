@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-data-access-v3.62.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.61.0...@adobe/spacecat-shared-data-access-v3.62.0) (2026-05-12)
+
+### Features
+
+* **data-access:** add semrushWorkspaceId attribute to Organization ([#1602](https://github.com/adobe/spacecat-shared/issues/1602)) ([79a5d82](https://github.com/adobe/spacecat-shared/commit/79a5d825c2a3cb436d894f5bea90a0a4e230167b))
+
+## [@adobe/spacecat-shared-data-access-v3.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.60.0...@adobe/spacecat-shared-data-access-v3.61.0) (2026-05-12)
+
+### Features
+
+* **data-access:** add scopeType and scopeId to Opportunity model ([#1576](https://github.com/adobe/spacecat-shared/issues/1576)) ([3f0f8f2](https://github.com/adobe/spacecat-shared/commit/3f0f8f25c058c5c885fd1f553dd43e4ed07b3d67)), closes [#32-42](https://github.com/adobe/spacecat-shared/issues/32-42)
+
+## [@adobe/spacecat-shared-data-access-v3.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.59.0...@adobe/spacecat-shared-data-access-v3.60.0) (2026-05-11)
+
+### Features
+
+* **data-access:** add llmBackend field to Organization entity ([#1588](https://github.com/adobe/spacecat-shared/issues/1588)) ([ebccbe5](https://github.com/adobe/spacecat-shared/commit/ebccbe55688fb4b8fb3ffd76cc29650c2cc2fc65)), closes [mysticat-data-service#534](https://github.com/adobe/mysticat-data-service/issues/534)
+
 ## [@adobe/spacecat-shared-data-access-v3.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.58.0...@adobe/spacecat-shared-data-access-v3.59.0) (2026-05-07)
 
 ### Features

@@ -97,7 +97,6 @@ export const DATA_SCHEMAS = {
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().optional(),
       patchContent: Joi.string().optional(),
-      isCodeChangeAvailable: Joi.boolean().optional(),
     }).unknown(true),
     projections: {
       minimal: {
@@ -127,7 +126,6 @@ export const DATA_SCHEMAS = {
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().optional(),
       patchContent: Joi.string().optional(),
-      isCodeChangeAvailable: Joi.boolean().optional(),
     }).unknown(true),
     projections: {
       minimal: {
@@ -139,9 +137,9 @@ export const DATA_SCHEMAS = {
     },
   },
   // CWV has two implicit data shapes:
-  // 1. Page-level (type='url'): url and issues are present, all metrics in one suggestion
+  // 1. Page-level (type='url'): url and issues are present
   // 2. Group-type (type='group'): url is absent, issues may be populated later via update
-  // All shapes share the same schema; url and issues are optional to support all.
+  // Both shapes share the same schema; url and issues are optional to support both.
   [OPPORTUNITY_TYPES.CWV]: {
     schema: Joi.object({
       type: Joi.string().required(),
@@ -164,7 +162,6 @@ export const DATA_SCHEMAS = {
         }).unknown(true),
       ).required(),
       issues: Joi.array().items(Joi.object()).optional().default([]),
-      isCodeChangeAvailable: Joi.boolean().optional(),
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().allow(null).optional(),
     }).unknown(true),
@@ -267,7 +264,6 @@ export const DATA_SCHEMAS = {
         }).unknown(true),
       ).required(),
       jiraLink: Joi.string().uri().allow(null).optional(),
-      isCodeChangeAvailable: Joi.boolean().optional(),
       patchContent: Joi.string().optional(),
       aggregationKey: Joi.string().optional(),
     }).unknown(true),

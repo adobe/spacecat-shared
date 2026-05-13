@@ -38,7 +38,7 @@ describe('Suggestion Projection Utils', () => {
     });
 
     describe('filterCwvMetrics', () => {
-      it('filters metrics to essential CWV fields (bundled suggestion)', () => {
+      it('filters metrics to essential CWV fields', () => {
         const metrics = [
           {
             deviceType: 'mobile',
@@ -67,34 +67,6 @@ describe('Suggestion Projection Utils', () => {
           {
             deviceType: 'desktop', lcp: 1800, inp: 100, cls: 0.05,
           },
-        ]);
-      });
-
-      it('omits null/undefined metric values', () => {
-        const metrics = [
-          {
-            deviceType: 'mobile', lcp: 4500, inp: null, cls: undefined,
-          },
-          { deviceType: 'desktop', lcp: 2800 },
-        ];
-
-        const result = FIELD_TRANSFORMERS.filterCwvMetrics(metrics);
-
-        expect(result).to.deep.equal([
-          { deviceType: 'mobile', lcp: 4500 },
-          { deviceType: 'desktop', lcp: 2800 },
-        ]);
-      });
-
-      it('includes zero metric values (zero is a valid measurement)', () => {
-        const metrics = [
-          { deviceType: 'mobile', cls: 0, lcp: null },
-        ];
-
-        const result = FIELD_TRANSFORMERS.filterCwvMetrics(metrics);
-
-        expect(result).to.deep.equal([
-          { deviceType: 'mobile', cls: 0 },
         ]);
       });
 

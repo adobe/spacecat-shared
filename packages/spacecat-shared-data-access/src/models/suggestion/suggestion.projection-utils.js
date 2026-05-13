@@ -47,22 +47,17 @@ export const FIELD_TRANSFORMERS = {
   /**
    * Filters metrics array to only include essential CWV fields.
    * Used for Core Web Vitals opportunity type.
-   * Handles both bundled (all metrics present) and per-metric (single metric) formats.
-   * Omits null/undefined metric values to keep the payload clean for per-metric suggestions.
    */
   filterCwvMetrics: (metrics) => {
     if (!Array.isArray(metrics)) {
       return metrics;
     }
-    return metrics.map((m) => {
-      const filtered = { deviceType: m.deviceType };
-      for (const key of ['lcp', 'cls', 'inp']) {
-        if (m[key] != null) {
-          filtered[key] = m[key];
-        }
-      }
-      return filtered;
-    });
+    return metrics.map((metric) => ({
+      deviceType: metric.deviceType,
+      lcp: metric.lcp,
+      inp: metric.inp,
+      cls: metric.cls,
+    }));
   },
   /**
    * Extracts essential fields from recommendations array for alt-text opportunities.

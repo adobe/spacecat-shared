@@ -71,6 +71,101 @@ describe('Bot Blocker Detection', () => {
       await expect(detectBotBlocker({ baseUrl: 'http://[::1]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
     });
 
+    it('throws an error for INADDR_ANY (0.0.0.0)', async () => {
+      await expect(detectBotBlocker({ baseUrl: 'http://0.0.0.0/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    });
+
+    it('throws an error for IPv6 INADDR_ANY (::)', async () => {
+      await expect(detectBotBlocker({ baseUrl: 'http://[::]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    });
+
+    it('throws an error for IPv6 link-local (fe80::1)', async () => {
+      await expect(detectBotBlocker({ baseUrl: 'http://[fe80::1]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    });
+
+    it('throws an error for IPv6 ULA (fc00::1)', async () => {
+      await expect(detectBotBlocker({ baseUrl: 'http://[fc00::1]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    });
+
+    it('throws an error for IPv4-mapped IPv6 loopback (::ffff:127.0.0.1)', async () => {
+      await expect(detectBotBlocker({ baseUrl: 'http://[::ffff:127.0.0.1]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    });
+
+    it('throws an error for localhost with trailing dot', async () => {
+      await expect(detectBotBlocker({ baseUrl: 'http://localhost./' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    });
+
+    it('does not block 172.15.255.255 (just outside private range)', async () => {
+      nock('http://172.15.255.255').get('/').reply(200, '');
+      const result = await detectBotBlocker({ baseUrl: 'http://172.15.255.255/' });
+      expect(result.crawlable).to.be.true;
+    });
+
+    it('does not block 172.32.0.1 (just outside private range)', async () => {
+      nock('http://172.32.0.1').get('/').reply(200, '');
+      const result = await detectBotBlocker({ baseUrl: 'http://172.32.0.1/' });
+      expect(result.crawlable).to.be.true;
+    });
+
+    it('blocks redirect to private IP before connecting', async () => {
+      nock('https://www.example.com')
+        .get('/')
+        .reply(302, undefined, { location: 'http://127.0.0.1/' });
+      // the 127.0.0.1 nock is never registered — redirect is blocked before the connection
+
+      const log = { warn: sinon.stub() };
+      const result = await detectBotBlocker({ baseUrl, log });
+      expect(result.crawlable).to.be.false;
+      expect(log.warn).to.have.been.calledWithMatch('redirect to private hostname blocked');
+    });
+
+    it('follows a safe redirect and analyses the final response', async () => {
+      nock('https://www.example.com')
+        .get('/')
+        .reply(301, undefined, { location: 'https://www.example.com/final' });
+      nock('https://www.example.com')
+        .get('/final')
+        .reply(200, '');
+
+      const result = await detectBotBlocker({ baseUrl });
+      expect(result.crawlable).to.be.true;
+    });
+
+    it('handles redirect with unparseable Location header gracefully', async () => {
+      // Stub tracingFetch to return a 302 whose Location value is invalid enough
+      // that new URL(location, currentUrl) throws — covering the catch { break } path.
+      const mockHeaders = new Headers({ location: 'http://' }); // scheme with no host — new URL() throws
+      const redirectResp = { status: 302, headers: mockHeaders, text: sinon.stub().resolves('') };
+      const finalResp = { status: 200, headers: new Headers({}), text: sinon.stub().resolves('') };
+      const fetchStub = sinon.stub();
+      fetchStub.onFirstCall().resolves(redirectResp);
+      fetchStub.onSecondCall().resolves(finalResp);
+
+      const { detectBotBlocker: detectBotBlockerMocked } = await esmock(
+        '../../src/bot-blocker-detect/bot-blocker-detect.js',
+        {
+          '../../src/tracing-fetch.js': {
+            tracingFetch: fetchStub,
+            SPACECAT_USER_AGENT: 'test-agent',
+          },
+          '../../src/functions.js': { isValidUrl: sinon.stub().returns(true) },
+          '../../src/network-policy.js': { isNonPublicHostname: sinon.stub().returns(false) },
+        },
+      );
+
+      const result = await detectBotBlockerMocked({ baseUrl });
+      expect(result).to.be.an('object');
+    });
+
+    it('handles redirect with no Location header gracefully', async () => {
+      nock('https://www.example.com')
+        .get('/')
+        .reply(302, undefined, {});
+
+      const result = await detectBotBlocker({ baseUrl });
+      expect(result).to.be.an('object');
+    });
+
     it('detects Cloudflare blocking with 403 and cf-ray header', async () => {
       nock(baseUrl)
         .get('/')

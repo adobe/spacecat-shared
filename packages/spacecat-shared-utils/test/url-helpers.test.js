@@ -500,6 +500,72 @@ describe('URL Utility Functions', () => {
       expect(result).to.be.null;
       expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
     });
+
+    it('should reject IPv6 loopback (::1)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://[::1]/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject IPv6 INADDR_ANY (::)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://[::]/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject INADDR_ANY (0.0.0.0)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://0.0.0.0/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject IPv6 link-local (fe80::1)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://[fe80::1]/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject localhost with trailing dot', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://localhost./', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should not block 172.15.255.255 (just outside private range)', async () => {
+      nock('http://172.15.255.255').head('/').reply(200);
+      const result = await resolveCanonicalUrl('http://172.15.255.255/');
+      expect(result).to.equal('https://172.15.255.255/');
+    });
+
+    it('should not block 172.32.0.1 (just outside private range)', async () => {
+      nock('http://172.32.0.1').head('/').reply(200);
+      const result = await resolveCanonicalUrl('http://172.32.0.1/');
+      expect(result).to.equal('https://172.32.0.1/');
+    });
+
+    it('should log warning for invalid URL', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('not-a-url', 'GET', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] invalid URL');
+    });
+
+    it('should block redirect to private IP before connecting', async () => {
+      // redirect: 'manual' means nock intercepts the 302; the 127.0.0.1 nock is never hit
+      nock('https://example.com')
+        .head('/')
+        .reply(302, undefined, { Location: 'http://127.0.0.1/' });
+
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
   });
 
   describe('urlMatchesFilter', () => {

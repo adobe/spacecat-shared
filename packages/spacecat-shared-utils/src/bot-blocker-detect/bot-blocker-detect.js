@@ -12,6 +12,7 @@
 
 import { tracingFetch, SPACECAT_USER_AGENT } from '../tracing-fetch.js';
 import { isValidUrl } from '../functions.js';
+import { isNonPublicHostname } from '../network-policy.js';
 
 /**
  * Confidence levels used in bot blocker detection:
@@ -331,53 +332,60 @@ function analyzeError(error) {
  *   - confidence {number}: Confidence level (0.0-1.0, see confidence level constants)
  * @throws {Error} If baseUrl is invalid
  */
-/**
- * Returns true if the URL targets a non-public host: loopback, private-range IP literal,
- * link-local, or localhost/IPv6-loopback. Guards against SSRF when detectBotBlocker is
- * called with attacker-supplied URLs. DNS-based rebinding is out of scope.
- * @param {string} urlString - URL to check
- * @returns {boolean}
- */
-function isNonPublicUrl(urlString) {
-  try {
-    const { hostname } = new URL(urlString);
-
-    if (hostname === 'localhost' || hostname === '[::1]') {
-      return true;
-    }
-
-    const parts = hostname.split('.');
-    if (parts.length !== 4 || parts.some((p) => Number.isNaN(Number(p)))) {
-      return false;
-    }
-    const [a, b] = parts.map(Number);
-    return a === 127 || a === 10
-      || (a === 172 && b >= 16 && b <= 31)
-      || (a === 192 && b === 168)
-      || (a === 169 && b === 254);
-  /* c8 ignore next 3 */
-  } catch {
-    return false;
-  }
-}
-
 export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log = console }) {
   if (!baseUrl || !isValidUrl(baseUrl)) {
     throw new Error('Invalid baseUrl');
   }
 
-  if (isNonPublicUrl(baseUrl)) {
-    throw new Error('Private IP addresses are not allowed');
+  try {
+    const { hostname } = new URL(baseUrl);
+    if (isNonPublicHostname(hostname)) {
+      throw new Error('Private IP addresses are not allowed');
+    }
+  /* c8 ignore next 6 */
+  } catch (e) {
+    if (e.message === 'Private IP addresses are not allowed') {
+      throw e;
+    }
+    throw new Error('Invalid baseUrl');
   }
 
   try {
-    const response = await tracingFetch(baseUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': SPACECAT_USER_AGENT,
-      },
-      timeout,
-    });
+    // Follow redirects manually so the SSRF guard runs on every hop before connecting.
+    const MAX_REDIRECTS = 10;
+    let currentUrl = baseUrl;
+    let response;
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+      response = await tracingFetch(currentUrl, { // eslint-disable-line no-await-in-loop
+        method: 'GET',
+        headers: { 'User-Agent': SPACECAT_USER_AGENT },
+        redirect: 'manual',
+        timeout,
+      });
+
+      if (response.status < 300 || response.status >= 400) {
+        break;
+      }
+
+      const location = response.headers.get('location');
+      if (!location) {
+        break;
+      }
+
+      let redirectUrl;
+      try {
+        redirectUrl = new URL(location, currentUrl).toString();
+      } catch {
+        break;
+      }
+
+      const { hostname: rHost } = new URL(redirectUrl);
+      if (isNonPublicHostname(rHost)) {
+        log.warn('detectBotBlocker: redirect to private hostname blocked', { fn: 'detectBotBlocker', url: redirectUrl });
+        return { crawlable: false, type: 'ssrf-redirect-blocked', confidence: CONFIDENCE_ABSOLUTE };
+      }
+      currentUrl = redirectUrl;
+    }
 
     let html = null;
     const contentLength = parseInt(response.headers.get('content-length') || '0', 10);

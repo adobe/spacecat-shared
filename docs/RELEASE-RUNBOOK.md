@@ -64,22 +64,9 @@ Symptoms:
 - `npm publish` errors with one of: `403 OIDC trust binding mismatch`,
   `401 unauthenticated`, or `sigstore: token mint failed`.
 
-Recovery (revert and resume token-based publishing). Two paths depending on
-who is responding:
+Recovery (revert and resume token-based publishing).
 
-**Path A — responder holds `adobe-bot` GitHub credentials** (release infra):
-
-```bash
-git revert <merge-sha-of-this-PR>
-# adobe-bot is on the branch-protection bypass list, so the push succeeds:
-git push origin main
-```
-
-**Path B — human on-call without `adobe-bot` credentials**:
-
-A direct push to `main` is rejected for any human (branch protection requires
-PR + approval; `adobe-bot` is the only bypass actor). Use a fast-tracked
-revert PR instead:
+**Recommended path — fast-tracked revert PR** (works for any responder):
 
 ```bash
 git checkout -b hotfix/revert-oidc-migration-pr-1592 origin/main
@@ -95,6 +82,38 @@ Re-investigation in a fresh PR after this lands."
 Request expedited review from `@spacecat-admins`. Once merged (one approver
 + `Test` passing, ~10–15 min), the next release publishes via the restored
 `NPM_TOKEN`.
+
+**Conflict during revert?** If a subsequent commit has touched the same files
+(`.github/workflows/main.yaml`, the 24 `.releaserc.cjs` files, or
+`scripts/setup-npm-trusted-publishers.sh`), `git revert` will report a
+conflict. Resolve in favor of the pre-PR state of the conflicting file
+(`git show <PR-merge-sha>^:<path>`), then continue the revert. The revert PR
+may legitimately include other resolved conflicts.
+
+**Alternative — direct push by `adobe-bot`** (release infra only, advanced):
+
+`adobe-bot` is on `main`'s `bypass_pull_request_allowances.users` list, which
+exempts it from the PR review requirement. **However**, classic branch
+protection's `required_status_checks` may still apply to bypass actors — a
+direct push of a freshly-created commit (no `Test` status check attached)
+could be rejected by GitHub with a "required status check missing" error.
+Behavior here is environment-specific; if you're uncertain, use the
+fast-tracked revert PR above. If you've previously verified direct pushes
+work for this configuration (e.g. semantic-release's `chore(release)`
+commits are landing successfully), the direct-push form is:
+
+```bash
+git revert <merge-sha-of-this-PR>
+git push origin main
+```
+
+**Do NOT partially re-apply the OIDC migration.** The PR is internally
+coupled: workflow declarations + 24 `.releaserc.cjs` guards + setup script
++ npm-side trust bindings must move together. Re-applying e.g.
+`environment: npm-publish` to the workflow without restoring `NPM_TOKEN`
+removal and the SR_NO_NPM_AUTH guards leaves an intermediate state where
+the release job has no working publish auth. The OIDC migration must come
+back as a single PR equivalent in scope to #1592.
 
 `ADOBE_BOT_NPM_TOKEN` is intentionally retained in GitHub repo secrets for
 ≥ 2 successful release cycles (per SITES-42702). The revert re-adds
@@ -170,6 +189,11 @@ Recovery, depending on which side made progress:
   in `main.yaml` (requires repo write access; the `npm-publish` environment's
   required reviewers still gate the actual publish step).
 
+  **Expected timing on the re-trigger**: ~20–30 min total. `Test` runs
+  again (~10 min), then the release job queues for `spacecat-admins`
+  environment approval, then the actual publish + tag + GitHub release
+  flow. This is not "re-trigger and immediately resume."
+
   Recovery semantics per package on the re-run:
 
   - If the package's tag (`@adobe/<pkg>-v<version>`) is at HEAD,
@@ -202,16 +226,69 @@ Recovery, depending on which side made progress:
   `403 You cannot publish over the previously published versions`, and the
   workflow fails. Recovery for that specific package:
 
+  semantic-release's `@semantic-release/git` plugin writes one
+  `chore(release): <version> [skip ci]` commit per package as part of the
+  same per-package run. If publish succeeded for the package, *that
+  commit* contains the `package.json` + `CHANGELOG.md` update for the
+  published version. If even that commit didn't make it to `main`, you'll
+  need to cherry-pick / recreate the version bump in a fast-tracked PR
+  before the tag can point at it.
+
   ```bash
-  # Push the missing per-package tag manually (replace versions accordingly):
-  git tag "@adobe/<pkg>-v<X+1>" <merge-sha-of-this-release>
-  git push origin "@adobe/<pkg>-v<X+1>"
-  # then re-run via workflow_dispatch; semantic-release now sees the tag and skips.
+  # 1. Find the chore(release) commit for the missing-tag package. Look on
+  #    main for the most recent commit touching that package's package.json
+  #    whose version matches what's now live on npm:
+  PKG=@adobe/spacecat-shared-<pkg>
+  LIVE_VERSION=$(npm view "$PKG" version)
+  CHORE_SHA=$(git log --format='%H' -G "\"version\": \"${LIVE_VERSION}\"" \
+                -- "packages/spacecat-shared-<pkg>/package.json" | head -1)
+
+  # 2. Verify the commit actually declares that version (sanity check):
+  git show "${CHORE_SHA}:packages/spacecat-shared-<pkg>/package.json" \
+    | jq -r .version
+  # Expect: ${LIVE_VERSION}
+
+  # 3. Create + push the per-package tag pointing at that commit. You need
+  #    adobe-bot credentials (tag push to a protected branch's tag namespace
+  #    is bot-gated) OR a fast-tracked PR.
+  git tag "${PKG}-v${LIVE_VERSION}" "${CHORE_SHA}"
+  git push origin "${PKG}-v${LIVE_VERSION}"
+
+  # 4. Re-trigger via workflow_dispatch; semantic-release now sees the tag
+  #    at the matching commit and skips this package, publishing only the
+  #    remaining un-tagged ones.
+  gh workflow run Build --ref main
   ```
+
+  If step 1 returns nothing, the `chore(release):` commit for that package
+  was never pushed and you'll need to cherry-pick the version bump into a
+  fast-tracked PR before tagging.
 
 Pre-emption: for releases touching > 10 packages, monitor the job. If a
 single-PR release is unusually large, consider a one-off PR bumping
 `timeout-minutes` to 20 or 25 for that release window.
+
+### Queue management when multiple releases stack up
+
+The release job is in concurrency group `npm-publish-main` with
+`cancel-in-progress: false`. If several PRs merge to `main` close together
+while no `spacecat-admins` reviewer is online to approve the env gate, the
+queue grows — each subsequent merge queues its own release job that holds
+the concurrency lock waiting for approval.
+
+Approve the *latest* queued run, not the oldest:
+
+- semantic-release-monorepo iterates over every workspace package on each
+  run and publishes any whose tag is not at the current `HEAD`. So the
+  most recent run will pick up every package that needs a bump from every
+  merge since the last successful release.
+- Once the latest run is approved and completes, cancel the older queued
+  runs from the Actions UI or via `gh run cancel <run-id>` — they will
+  otherwise re-publish nothing (no untagged packages) but still page a
+  reviewer.
+
+Canceling a queued run has no npm-side effect because the publish step has
+not run yet.
 
 ## Failure mode 4: Workflow file or environment renamed
 
@@ -288,6 +365,40 @@ configuration. Reference the security model required:
 If a setting is wrong, fix it in repo settings (`Settings → Branches` for
 branch protection, `Settings → Environments → npm-publish` for the env),
 then re-run the script.
+
+## Failure mode 6: Release job stuck "Waiting for approval"
+
+Symptoms:
+
+- Release job in the Actions UI shows status "Waiting" with the
+  `npm-publish` environment gate pending an approver from `spacecat-admins`.
+- No `spacecat-admins` reviewer is online (off-hours / vacation / sev-1
+  elsewhere in the org).
+- Downstream consumer repos (`spacecat-api-service`, `spacecat-audit-worker`,
+  etc.) are blocked on the new version.
+
+GitHub Actions does not auto-timeout a job waiting on an environment
+approval — it can sit indefinitely (subject to the 30-day max workflow
+lifetime). `timeout-minutes: 15` on the release job applies only after the
+job starts running, not while it waits on the gate.
+
+Recovery options:
+
+- **Reach a reviewer**: page the `spacecat-admins` team via your normal
+  on-call channel. Approving the run resumes from "Waiting" with no state
+  loss.
+- **Cancel and retry later**: `gh run cancel <run-id>` (or Actions UI →
+  Cancel workflow). Canceling has *no* npm-side effect because the publish
+  step has not run. Once an approver is available, re-trigger via
+  `gh workflow run Build --ref main`.
+- **Promote a substitute reviewer**: if `spacecat-admins` is unreachable
+  for > 2 hours, a repo admin can temporarily add another team / user to
+  the environment's required-reviewers list (`Settings → Environments →
+  npm-publish`). Revert the change after the release lands. Note: this
+  weakens the gate temporarily — log the decision in SITES-42702.
+
+**Do not** disable `prevent_self_review` to unblock — that defeats the
+human gate's purpose. Use the cancel-and-retry path instead.
 
 ---
 

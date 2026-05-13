@@ -328,8 +328,11 @@ if [ ${#ORPHANS[@]} -gt 0 ]; then
   echo "WARNING: PACKAGES contains entries no longer in the workspace:"
   for pkg in "${ORPHANS[@]}"; do echo "  - ${pkg}"; done
   echo ""
-  echo "Remove them from PACKAGES, and revoke their npm trust bindings with:"
-  echo "  npm trust revoke github <pkg> --repository ${REPO} --file ${WORKFLOW}"
+  echo "Remove them from PACKAGES, and revoke their npm trust bindings:"
+  echo "  npm trust list <pkg>                  # find the trust-id of the stale binding"
+  echo "  npm trust revoke <pkg> --id <trust-id>"
+  echo "(npm 11 revoke takes <package> + --id only — not the --repository/--file flags"
+  echo " used to register, see docs/RELEASE-RUNBOOK.md FM-4.)"
   echo ""
   echo "Continuing — orphans are not blocking, but their bindings on npmjs.com are stale."
   echo ""

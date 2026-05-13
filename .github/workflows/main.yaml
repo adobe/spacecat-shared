@@ -132,7 +132,11 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main'
+    # Skip on the chore(release) commits semantic-release pushes back to main.
+    # GitHub Actions does not honor the [skip ci] convention natively, so an
+    # explicit guard is needed — otherwise every release triggers a follow-up
+    # workflow run that pages the spacecat-admins reviewer for nothing.
+    if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
     environment: npm-publish
     timeout-minutes: 15
     concurrency:
@@ -161,7 +165,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '24.14.1'
+          # Single source of truth — keeps the release job's Node version in
+          # lockstep with the test job's (which pulls from .nvmrc via the
+          # setup-node-npm composite action). A future .nvmrc bump no longer
+          # has to be applied in two places.
+          node-version-file: '.nvmrc'
 
       - name: Update NPM
         run: npm install -g npm@11.13.0
@@ -179,3 +187,25 @@ jobs:
         run: npm run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
+
+      - name: Surface failure pointer to release runbook
+        # On any failure in the release job, write a pointer to the runbook into
+        # $GITHUB_STEP_SUMMARY so the on-call sees the recovery procedures in the
+        # PR check UI rather than having to remember where the runbook lives.
+        if: failure()
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## Release failed
+
+          See [`docs/RELEASE-RUNBOOK.md`](../blob/main/docs/RELEASE-RUNBOOK.md):
+          - **FM-1** — First OIDC release fails (revert path)
+          - **FM-2** — Sigstore unavailable (break-glass: `NPM_CONFIG_PROVENANCE: 'false'`)
+          - **FM-3** — Partial publish (15-min timeout / mid-flow failure)
+          - **FM-4** — Workflow / environment renamed
+          - **FM-5** — Setup-script preflight refused to register bindings
+          - **FM-6** — Env-approval stall
+
+          Trust binding: `{repo: adobe/spacecat-shared, workflow: main.yaml, environment: npm-publish}`.
+          Tracking: SITES-42702.
+          EOF

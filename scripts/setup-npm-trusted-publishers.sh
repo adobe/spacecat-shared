@@ -39,7 +39,17 @@ ENVIRONMENT="npm-publish"
 
 # --- Preflight checks ---
 
-CURRENT_NPM=$(npm --version 2>/dev/null || echo "0.0.0")
+CURRENT_NPM_RAW=$(npm --version 2>/dev/null || echo "0.0.0")
+# Some npm distributions emit a leading 'v' (e.g. 'v11.13.0'); strip it before
+# integer comparison. Reject anything that doesn't match X.Y.Z afterwards rather
+# than fall through (an unparsed prefix would make `cut` yield 'v11', `[ X -lt N ]`
+# would error, and the negated test would evaluate false — preflight bypass).
+CURRENT_NPM="${CURRENT_NPM_RAW#v}"
+if ! [[ "$CURRENT_NPM" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+  echo "ERROR: could not parse npm version (got: '${CURRENT_NPM_RAW}')."
+  echo "       Expected semver X.Y.Z. Run: npm install -g npm@11.13.0"
+  exit 1
+fi
 CURRENT_MAJOR=$(echo "$CURRENT_NPM" | cut -d. -f1)
 CURRENT_MINOR=$(echo "$CURRENT_NPM" | cut -d. -f2)
 if [ "$CURRENT_MAJOR" -lt "$MIN_NPM_MAJOR" ] || { [ "$CURRENT_MAJOR" -eq "$MIN_NPM_MAJOR" ] && [ "$CURRENT_MINOR" -lt "$MIN_NPM_MINOR" ]; }; then
@@ -84,6 +94,12 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! gh auth status >/dev/null 2>&1; then
+  echo "ERROR: gh CLI is not authenticated."
+  echo "       Run: gh auth login"
+  exit 1
+fi
+
 if ! gh api "repos/${REPO}/environments/${ENVIRONMENT}" >/dev/null 2>&1; then
   echo "ERROR: GitHub Environment '${ENVIRONMENT}' does not exist on ${REPO}."
   echo "       Create it (Settings → Environments) with a main-only deployment branch"
@@ -101,36 +117,56 @@ if [ "$ENV_POLICIES" != '["main"]' ]; then
   exit 1
 fi
 
-PROTECTION_STATE=$(gh api "repos/${REPO}/branches/main/protection" --jq '
-  if   (.required_pull_request_reviews.required_approving_review_count // 0) < 1   then "weak: required_approving_review_count < 1"
-  elif (.enforce_admins.enabled // false) != true                                   then "weak: enforce_admins disabled"
-  elif (.allow_force_pushes.enabled // false) != false                              then "weak: force-push allowed"
-  elif (.allow_deletions.enabled // false) != false                                 then "weak: deletion allowed"
-  elif ((.required_status_checks.contexts // []) | any(. == "Test")) | not          then "weak: Test not in required_status_checks"
-  else "OK" end
-' 2>/dev/null || echo "missing")
+EXPECTED_BYPASS_USER="adobe-bot"
+# Aggregator: report every policy weakness in one pass instead of one-at-a-time.
+# The dismiss_stale_reviews check closes a real attack chain (approve clean PR,
+# force-push malicious commit to the PR branch, stale approval still satisfies
+# the merge gate). The bypass-actor check fires if anyone beyond the expected
+# adobe-bot semantic-release identity is allowed to skip PR review.
+PROTECTION_WEAKNESSES=$(gh api "repos/${REPO}/branches/main/protection" --jq "
+  [ (if (.required_pull_request_reviews.required_approving_review_count // 0) < 1 then \"required_approving_review_count < 1\" else empty end),
+    (if (.required_pull_request_reviews.dismiss_stale_reviews // false) != true then \"dismiss_stale_reviews disabled\" else empty end),
+    (if (.enforce_admins.enabled // false) != true then \"enforce_admins disabled\" else empty end),
+    (if (.allow_force_pushes.enabled // false) != false then \"force-push allowed\" else empty end),
+    (if (.allow_deletions.enabled // false) != false then \"deletion allowed\" else empty end),
+    (if ((.required_status_checks.contexts // []) | any(. == \"Test\")) | not then \"Test not in required_status_checks\" else empty end),
+    (if ((.required_pull_request_reviews.bypass_pull_request_allowances.users // []) +
+         (.required_pull_request_reviews.bypass_pull_request_allowances.teams // []) +
+         (.required_pull_request_reviews.bypass_pull_request_allowances.apps // []) | length) > 1
+       then \"unexpected bypass actors beyond ${EXPECTED_BYPASS_USER} (more than 1 actor on bypass list)\" else empty end)
+  ] | join(\"; \")
+" 2>/dev/null || echo "__MISSING__")
 
-if [ "$PROTECTION_STATE" != "OK" ]; then
-  echo "ERROR: branch protection on 'main' is missing or weaker than the trust-binding"
-  echo "       security model requires (status: ${PROTECTION_STATE})."
-  echo ""
+if [ "$PROTECTION_WEAKNESSES" = "__MISSING__" ]; then
+  echo "ERROR: branch protection on 'main' is not configured (or unreadable) on ${REPO}."
   echo "       Required:"
   echo "         required_pull_request_reviews.required_approving_review_count >= 1"
+  echo "         required_pull_request_reviews.dismiss_stale_reviews == true"
   echo "         enforce_admins.enabled == true"
   echo "         allow_force_pushes.enabled == false"
   echo "         allow_deletions.enabled == false"
   echo "         required_status_checks.contexts contains 'Test'"
-  if [ "$PROTECTION_STATE" != "missing" ]; then
-    echo ""
-    echo "       Current state:"
-    gh api "repos/${REPO}/branches/main/protection" --jq '{
-      required_approvals: .required_pull_request_reviews.required_approving_review_count,
-      enforce_admins: .enforce_admins.enabled,
-      allow_force_pushes: .allow_force_pushes.enabled,
-      allow_deletions: .allow_deletions.enabled,
-      status_checks: .required_status_checks.contexts
-    }' 2>/dev/null | sed 's/^/         /'
-  fi
+  echo "         bypass_pull_request_allowances total actors <= 1 (only ${EXPECTED_BYPASS_USER})"
+  exit 1
+fi
+
+if [ -n "$PROTECTION_WEAKNESSES" ]; then
+  echo "ERROR: branch protection on 'main' is weaker than the trust-binding security"
+  echo "       model requires. Weaknesses found:"
+  echo "         ${PROTECTION_WEAKNESSES}"
+  echo ""
+  echo "       Current state:"
+  gh api "repos/${REPO}/branches/main/protection" --jq '{
+    required_approvals: .required_pull_request_reviews.required_approving_review_count,
+    dismiss_stale_reviews: .required_pull_request_reviews.dismiss_stale_reviews,
+    enforce_admins: .enforce_admins.enabled,
+    allow_force_pushes: .allow_force_pushes.enabled,
+    allow_deletions: .allow_deletions.enabled,
+    status_checks: .required_status_checks.contexts,
+    bypass_users: [.required_pull_request_reviews.bypass_pull_request_allowances.users[]?.login],
+    bypass_teams: [.required_pull_request_reviews.bypass_pull_request_allowances.teams[]?.slug],
+    bypass_apps: [.required_pull_request_reviews.bypass_pull_request_allowances.apps[]?.slug]
+  }' 2>/dev/null | sed 's/^/         /'
   exit 1
 fi
 
@@ -313,9 +349,17 @@ echo ""
 echo "${AUDIT_CONTENT}"
 echo ""
 
-if printf '%s\n' "${AUDIT_CONTENT}" > "${AUDIT_FILE}" 2>/dev/null && [ -s "${AUDIT_FILE}" ]; then
+# Atomic write via mktemp + mv: a partial write (disk full mid-stream) leaves the
+# tempfile, and the rename never happens — operator sees the WARNING and the
+# final-named file does not exist (no "looks complete but is truncated" failure).
+TMP_AUDIT=$(mktemp -t npm-trust-audit.XXXXXX 2>/dev/null || mktemp 2>/dev/null || echo "")
+if [ -n "${TMP_AUDIT}" ] \
+   && printf '%s\n' "${AUDIT_CONTENT}" > "${TMP_AUDIT}" 2>/dev/null \
+   && [ -s "${TMP_AUDIT}" ] \
+   && mv "${TMP_AUDIT}" "${AUDIT_FILE}" 2>/dev/null; then
   echo "Audit log also written to: ${AUDIT_FILE}"
 else
+  [ -n "${TMP_AUDIT}" ] && rm -f "${TMP_AUDIT}" 2>/dev/null
   echo "WARNING: failed to write audit log to ${AUDIT_FILE}"
   echo "         Trust bindings ARE registered. Capture the audit trail above manually"
   echo "         for SITES-42702 — the file artifact could not be persisted."

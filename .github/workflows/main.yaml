@@ -43,9 +43,11 @@ jobs:
         # atomically removes (a) the env var declaration below, (b) the strict guard
         # from every .releaserc.cjs. Phase is auto-detected — no marker file required.
         #
-        # Phase detection uses the YAML mapping pattern `<indent>SR_NO_NPM_AUTH: 'true'`,
-        # which is syntactically distinct from the JS strict-equality `=== 'true'` this
-        # step looks for in configs, so this check never self-references its own body.
+        # Phase detection uses a YAML-key-anchored regex on the SR_NO_NPM_AUTH env var
+        # declaration. The pattern (indented key + 'true' | "true" | true) is robust to
+        # quote-style reformatting from Prettier/yamllint and is syntactically distinct
+        # from the JS strict-equality this step looks for in configs, so it cannot
+        # self-reference. The JS guard pattern likewise accepts both quote styles.
         run: |
           set -euo pipefail
           shopt -s nullglob
@@ -55,10 +57,19 @@ jobs:
             echo "      Has the monorepo layout changed? Update this step's file glob."
             exit 1
           fi
+          # Per-file existence assertion: catches a stale glob expansion or a
+          # symlink-to-nowhere that would otherwise turn into grep exit code 2
+          # (silently swallowed by `|| true` below).
+          for f in "${files[@]}"; do
+            [ -f "$f" ] || { echo "FAIL: expected config not found or not a regular file: $f"; exit 1; }
+          done
 
-          if grep -qE "^[[:space:]]+SR_NO_NPM_AUTH:[[:space:]]+'true'" .github/workflows/main.yaml; then
+          # Phase 1 anchor: YAML mapping `<indent>SR_NO_NPM_AUTH: 'true' | "true" | true`
+          # at end-of-value (no trailing chars that would denote a different key/value).
+          if grep -qE "^[[:space:]]+SR_NO_NPM_AUTH:[[:space:]]+('true'|\"true\"|true)[[:space:]]*\$" .github/workflows/main.yaml; then
             # Phase 1 (shim active): every .releaserc.cjs must include the strict guard.
-            missing=$(grep -L "SR_NO_NPM_AUTH === 'true'" "${files[@]}" || true)
+            # Accept both JS quote styles so Prettier reformats don't cause spurious fails.
+            missing=$(grep -L -E "SR_NO_NPM_AUTH === ['\"]true['\"]" "${files[@]}" || true)
             if [ -n "$missing" ]; then
               echo "FAIL: SR_NO_NPM_AUTH guard missing in:"
               echo "$missing"

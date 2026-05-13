@@ -211,6 +211,7 @@ class Configuration {
     }
     if (enabledSites.includes(siteId)) {
       if (disabledOrgs.includes(orgId)) {
+        // TODO(SITES-44467): demote to debug after 30-day canary window
         this.log.info('[isHandlerEnabledForSite] site-override: site in enabled.sites overrides org in disabled.orgs', { type, siteId, orgId });
       }
       return true;
@@ -237,13 +238,12 @@ class Configuration {
    * Note: unlike isHandlerEnabledForSite, there is no site-level override here.
    * An org in disabled.orgs is always disabled regardless of site-level entries.
    *
-   * Cross-system consequence: this method is the gate for org-scoped fan-out
-   * (e.g. report digests keyed on orgId in spacecat-jobs-dispatcher and
-   * spacecat-reporting-worker). A paid site in enabled.sites whose org is in
-   * disabled.orgs will receive site-targeted handler evaluation (true via
-   * isHandlerEnabledForSite) but will NOT receive org-level digest payloads
-   * (false here). This asymmetry is intentional: org-level reports follow org
-   * policy; site-level overrides do not propagate to org-scoped fan-out.
+   * Cross-system consequence: callers that fan out on org policy (e.g. org-scoped
+   * digests or batch jobs keyed on orgId) use this method as their gate. A site in
+   * enabled.sites whose org is in disabled.orgs will pass site-level evaluation
+   * (true via isHandlerEnabledForSite) but will NOT pass org-level evaluation
+   * (false here). This asymmetry is intentional: org-scoped fan-out follows org
+   * policy; site-level overrides do not propagate to org-scoped callers.
    */
   isHandlerEnabledForOrg(type, org) {
     const handler = this.getHandlers()?.[type];

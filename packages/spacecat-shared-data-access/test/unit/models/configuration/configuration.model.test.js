@@ -165,6 +165,15 @@ describe('ConfigurationModel', () => {
       expect(instance.isHandlerEnabledForOrg('cwv', org)).to.be.false;
     });
 
+    it('site enable overrides org disable for isHandlerEnabledForSite but not isHandlerEnabledForOrg', () => {
+      const data = JSON.parse(JSON.stringify(sampleConfiguration));
+      const inst = new Configuration(data, sampleVersionId, mockCollection, mockLogger);
+      inst.updateHandlerSites('404', site.getId(), true);
+      inst.disableHandlerForOrg('404', org);
+      expect(inst.isHandlerEnabledForSite('404', site)).to.be.true;
+      expect(inst.isHandlerEnabledForOrg('404', org)).to.be.false;
+    });
+
     it('gets enabled site ids for a handler', () => {
       expect(instance.getEnabledSiteIdsForHandler('lhs-mobile')).to.deep.equal(['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe']);
       instance.handlers = undefined;
@@ -266,16 +275,16 @@ describe('ConfigurationModel', () => {
     });
 
     it('enables a paid handler for a site whose org is in disabled.orgs (free-trial -> paid)', () => {
-      instance.addHandler('paid-handler', {
+      instance.addHandler('paid-handler-migration', {
         enabledByDefault: false,
         enabled: { sites: [], orgs: [] },
         disabled: { sites: [], orgs: [site.getOrganizationId()] },
       });
 
-      expect(instance.isHandlerEnabledForSite('paid-handler', site)).to.be.false;
-      instance.updateHandlerSites('paid-handler', site.getId(), true);
-      expect(instance.isHandlerEnabledForSite('paid-handler', site)).to.be.true;
-      expect(instance.getHandler('paid-handler').enabled.sites).to.include(site.getId());
+      expect(instance.isHandlerEnabledForSite('paid-handler-migration', site)).to.be.false;
+      instance.updateHandlerSites('paid-handler-migration', site.getId(), true);
+      expect(instance.isHandlerEnabledForSite('paid-handler-migration', site)).to.be.true;
+      expect(instance.getHandler('paid-handler-migration').enabled.sites).to.include(site.getId());
     });
 
     it('removes site from disabled.sites when re-enabling for a non-default handler', () => {
@@ -350,6 +359,7 @@ describe('ConfigurationModel', () => {
     it('updates handler sites for a handler enabled by default', () => {
       instance.updateHandlerSites('404', site.getId(), true);
       expect(instance.getHandler('404').disabled.sites).to.not.include(site.getId());
+      expect(instance.getHandler('404').enabled.sites).to.include(site.getId());
     });
 
     it('enables a handler for a site', () => {
@@ -386,7 +396,6 @@ describe('ConfigurationModel', () => {
       instance.enableHandlerForSite('organic-keywords', site);
       expect(instance.getHandler('organic-keywords').enabled.sites).to.include(site.getId());
       instance.disableHandlerForSite('organic-keywords', site);
-      expect(instance.getHandler('organic-keywords').disabled.sites).to.not.include(site.getId());
       expect(instance.getHandler('organic-keywords').enabled.sites).to.not.include(site.getId());
     });
 

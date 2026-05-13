@@ -97,6 +97,7 @@ export const DATA_SCHEMAS = {
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().optional(),
       patchContent: Joi.string().optional(),
+      isCodeChangeAvailable: Joi.boolean().optional(),
     }).unknown(true),
     projections: {
       minimal: {
@@ -126,6 +127,7 @@ export const DATA_SCHEMAS = {
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().optional(),
       patchContent: Joi.string().optional(),
+      isCodeChangeAvailable: Joi.boolean().optional(),
     }).unknown(true),
     projections: {
       minimal: {
@@ -264,6 +266,7 @@ export const DATA_SCHEMAS = {
         }).unknown(true),
       ).required(),
       jiraLink: Joi.string().uri().allow(null).optional(),
+      isCodeChangeAvailable: Joi.boolean().optional(),
       patchContent: Joi.string().optional(),
       aggregationKey: Joi.string().optional(),
     }).unknown(true),

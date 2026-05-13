@@ -84,13 +84,13 @@ describe('Metrics Store', () => {
     it('should return metrics when retrieval is successful', async () => {
       const expectedMetrics = [{
         siteId: '123',
-        source: 'ahrefs',
+        source: 'seo',
         time: '2023-03-12T00:00:00Z',
         name: 'organic-traffic',
         value: 100,
       }, {
         siteId: '123',
-        source: 'ahrefs',
+        source: 'seo',
         time: '2023-03-13T00:00:00Z',
         name: 'organic-traffic',
         value: 200,
@@ -159,13 +159,13 @@ describe('Metrics Store', () => {
     it('should return file path when upload is successful', async () => {
       const content = [{
         siteId: '123',
-        source: 'ahrefs',
+        source: 'seo',
         time: '2023-03-12T00:00:00Z',
         name: 'organic-traffic',
         value: 100,
       }, {
         siteId: '123',
-        source: 'ahrefs',
+        source: 'seo',
         time: '2023-03-13T00:00:00Z',
         name: 'organic-traffic',
         value: 200,
@@ -188,13 +188,13 @@ describe('Metrics Store', () => {
     it('should throw error when upload fails', async () => {
       const content = [{
         siteId: '123',
-        source: 'ahrefs',
+        source: 'seo',
         time: '2023-03-12T00:00:00Z',
         name: 'organic-traffic',
         value: 100,
       }, {
         siteId: '123',
-        source: 'ahrefs',
+        source: 'seo',
         time: '2023-03-13T00:00:00Z',
         name: 'organic-traffic',
         value: 200,
@@ -247,7 +247,7 @@ describe('Metrics Store', () => {
       expect(getObjectFromKeyStub).to.have.been.calledWith(
         context.s3Client,
         'test-bucket',
-        'metrics/test-site/ahrefs/organic-traffic.json',
+        'metrics/test-site/seo/organic-traffic.json',
         context.log,
       );
     });

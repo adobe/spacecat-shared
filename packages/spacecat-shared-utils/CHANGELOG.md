@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-utils-v1.115.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.1...@adobe/spacecat-shared-utils-v1.115.2) (2026-05-07)
+
+### Bug Fixes
+
+* **utils:** update calculateCPCValue S3 path from ahrefs to seo ([#1591](https://github.com/adobe/spacecat-shared/issues/1591)) ([3bf1fe5](https://github.com/adobe/spacecat-shared/commit/3bf1fe5ce9d257de5b30de4d7082f8af30035147)), closes [spacecat-shared#1499](https://github.com/adobe/spacecat-shared/issues/1499)
+
+## [@adobe/spacecat-shared-utils-v1.115.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.0...@adobe/spacecat-shared-utils-v1.115.1) (2026-05-06)
+
+### Bug Fixes
+
+* **utils:** include subpath in resolveCustomerSecretsName to prevent credential collisions ([#1577](https://github.com/adobe/spacecat-shared/issues/1577)) ([db95707](https://github.com/adobe/spacecat-shared/commit/db95707796c53d0fbe22c4fc40fed9ab271dd59c))
+
 ## [@adobe/spacecat-shared-utils-v1.115.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.114.0...@adobe/spacecat-shared-utils-v1.115.0) (2026-05-04)
 
 ### Features

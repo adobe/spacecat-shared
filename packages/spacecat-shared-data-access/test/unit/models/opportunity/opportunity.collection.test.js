@@ -12,6 +12,7 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import Opportunity from '../../../../src/models/opportunity/opportunity.model.js';
@@ -68,6 +69,201 @@ describe('OpportunityCollection', () => {
       expect(instance.log).to.equal(mockLogger);
 
       expect(model).to.be.an('object');
+    });
+  });
+
+  describe('create', () => {
+    it('throws ValidationError when scopeType is set but scopeId is absent', async () => {
+      await expect(
+        instance.create({ type: 'content', scopeType: 'brand' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('throws ValidationError when scopeId is set but scopeType is absent', async () => {
+      await expect(
+        instance.create({ type: 'content', scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('passes co-presence check when both scopeType and scopeId are set', async () => {
+      // Co-presence check passes — mock create succeeds without complaining.
+      await expect(
+        instance.create({ scopeType: 'brand', scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.fulfilled;
+    });
+
+    it('passes co-presence check when neither scopeType nor scopeId is set', async () => {
+      // Neither present — co-presence check passes and mock create succeeds.
+      await expect(
+        instance.create({ type: 'content' }),
+      ).to.be.fulfilled;
+    });
+
+    it('handles null item gracefully by delegating to super.create', async () => {
+      // null item: co-presence check skips (both undefined → equal), super.create handles it.
+      await expect(instance.create(null)).to.be.rejectedWith(/Failed to create/);
+    });
+  });
+
+  describe('createMany (scope co-presence)', () => {
+    let superCreateManyStub;
+
+    beforeEach(() => {
+      // Stub the inherited createMany so the ElectroDB batch chain is not invoked.
+      // The per-item co-presence guard runs before super.createMany, so stubbing
+      // the super lets us isolate the validation logic.
+      superCreateManyStub = stub(Object.getPrototypeOf(Object.getPrototypeOf(instance)), 'createMany').resolves({ createdItems: [] });
+    });
+
+    afterEach(() => {
+      superCreateManyStub.restore();
+    });
+
+    it('rejects when any item has scopeType set without scopeId', async () => {
+      await expect(
+        instance.createMany([
+          { type: 'content', scopeType: 'brand', scopeId: '11111111-1111-1111-1111-111111111111' },
+          { type: 'content', scopeType: 'brand' },
+        ]),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+      expect(superCreateManyStub).to.not.have.been.called;
+    });
+
+    it('rejects when any item has scopeId set without scopeType', async () => {
+      await expect(
+        instance.createMany([
+          { type: 'content', scopeId: '11111111-1111-1111-1111-111111111111' },
+        ]),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+      expect(superCreateManyStub).to.not.have.been.called;
+    });
+
+    it('delegates to super.createMany when all items pass co-presence', async () => {
+      const items = [
+        { type: 'content' },
+        { type: 'content', scopeType: 'brand', scopeId: '11111111-1111-1111-1111-111111111111' },
+      ];
+      await expect(instance.createMany(items)).to.be.fulfilled;
+      expect(superCreateManyStub).to.have.been.calledOnce;
+      expect(superCreateManyStub.firstCall.args[0]).to.equal(items);
+    });
+
+    it('delegates to super.createMany when items is not an array', async () => {
+      // Non-array input bypasses per-item validation and is handled by the super class.
+      await expect(instance.createMany(null)).to.be.fulfilled;
+      expect(superCreateManyStub).to.have.been.calledOnceWith(null);
+    });
+  });
+
+  describe('updateByKeys', () => {
+    const KEYS = { opportunityId: 'op12345', siteId: 'site67890' };
+    let superUpdateByKeysStub;
+
+    beforeEach(() => {
+      // Stub the inherited updateByKeys so the ElectroDB patch chain is not invoked.
+      // The co-presence guard runs before super.updateByKeys, so stubbing the super
+      // lets us isolate the validation logic without needing a full ElectroDB mock.
+      superUpdateByKeysStub = stub(Object.getPrototypeOf(Object.getPrototypeOf(instance)), 'updateByKeys').resolves();
+    });
+
+    afterEach(() => {
+      superUpdateByKeysStub.restore();
+    });
+
+    it('throws ValidationError when updating scopeType without scopeId', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: 'brand' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('throws ValidationError when updating scopeId without scopeType', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('throws ValidationError when clearing only one scope field', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: null }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('throws ValidationError when both keys are present but scopeId value is null', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: 'brand', scopeId: null }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('throws ValidationError when both keys are present but scopeType value is null', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: null, scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('passes co-presence check when setting both scopeType and scopeId', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: 'brand', scopeId: '11111111-1111-1111-1111-111111111111' }),
+      ).to.be.fulfilled;
+    });
+
+    it('passes co-presence check when clearing both scopeType and scopeId', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { scopeType: null, scopeId: null }),
+      ).to.be.fulfilled;
+    });
+
+    it('passes co-presence check when update does not touch scope fields', async () => {
+      await expect(
+        instance.updateByKeys(KEYS, { title: 'Updated title' }),
+      ).to.be.fulfilled;
+    });
+  });
+
+  describe('schema validate guards', () => {
+    it('rejects scopeType values not in SCOPE_TYPES', () => {
+      const { scopeType } = schema.getAttributes();
+      expect(scopeType.validate('page')).to.be.false;
+      expect(scopeType.validate('brand')).to.be.true;
+      expect(scopeType.validate(null)).to.be.true;
+    });
+
+    it('rejects scopeId values that are not valid UUIDs', () => {
+      const { scopeId } = schema.getAttributes();
+      expect(scopeId.validate('not-a-uuid')).to.be.false;
+      expect(scopeId.validate('11111111-1111-1111-1111-111111111111')).to.be.true;
+      expect(scopeId.validate(null)).to.be.true;
+    });
+  });
+
+  describe('allByScope', () => {
+    it('throws an error if scopeType is not provided', async () => {
+      await expect(instance.allByScope()).to.be.rejectedWith('allByScope: scopeType is required');
+    });
+
+    it('throws an error if scopeId is not provided', async () => {
+      await expect(instance.allByScope('brand')).to.be.rejectedWith('allByScope: scopeId is required');
+    });
+
+    it('delegates to allByIndexKeys with the correct arguments', async () => {
+      const mockOpportunity = { getOpportunityId: () => 'op-111' };
+      instance.allByIndexKeys = stub().resolves([mockOpportunity]);
+
+      const BRAND_UUID = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
+      const result = await instance.allByScope('brand', BRAND_UUID);
+
+      expect(instance.allByIndexKeys).to.have.been.calledOnceWith({
+        scopeType: 'brand',
+        scopeId: BRAND_UUID,
+      });
+      expect(result).to.deep.equal([mockOpportunity]);
+    });
+
+    it('returns an empty array when no opportunities match the scope', async () => {
+      instance.allByIndexKeys = stub().resolves([]);
+
+      const result = await instance.allByScope('brand', 'cccccccc-cccc-4ccc-cccc-cccccccccccc');
+
+      expect(result).to.be.an('array').with.lengthOf(0);
     });
   });
 });

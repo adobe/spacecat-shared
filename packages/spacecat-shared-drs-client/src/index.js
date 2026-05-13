@@ -17,6 +17,8 @@ import { randomUUID } from 'crypto';
 
 const EXTERNAL_SPACECAT_PROVIDER_ID = 'external_spacecat';
 const DRS_S3_KEY_PREFIX = 'external/spacecat';
+// XLSX files are ZIP archives; all valid .xlsx start with PK\x03\x04
+const XLSX_MAGIC = Buffer.from([0x50, 0x4B, 0x03, 0x04]);
 
 export const EXPERIMENT_PHASES = Object.freeze({
   PRE: 'pre',
@@ -468,6 +470,9 @@ export default class DrsClient {
     }
     if (!excelBuffer || excelBuffer.length === 0) {
       throw new Error('excelBuffer is required and must be non-empty');
+    }
+    if (!Buffer.from(excelBuffer.subarray(0, 4)).equals(XLSX_MAGIC)) {
+      throw new Error(`Refusing to upload non-XLSX content to S3 (size=${excelBuffer.length})`);
     }
 
     const key = `${DRS_S3_KEY_PREFIX}/${siteId}/${jobId}/source.xlsx`;

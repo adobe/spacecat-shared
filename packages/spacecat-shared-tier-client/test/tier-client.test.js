@@ -1183,21 +1183,21 @@ describe('TierClient', () => {
       expect(mockDataAccess.Site.findById).to.not.have.been.called;
     });
 
-    it('should return nulls when no enrollments exist', async () => {
+    it('should return entitlement with null enrollment and site when no enrollments exist', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([]);
 
       const result = await tierClient.getFirstEnrollment();
 
       expect(result).to.deep.equal({
-        entitlement: null,
+        entitlement: mockEntitlement,
         enrollment: null,
         site: null,
       });
       expect(mockDataAccess.Site.findById).to.not.have.been.called;
     });
 
-    it('should skip enrollment when site not found and return nulls', async () => {
+    it('should return entitlement with null enrollment and site when site not found for enrollment', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.allByEntitlementId.resolves([mockSiteEnrollment]);
       mockDataAccess.Site.findById.resolves(null);
@@ -1212,7 +1212,7 @@ describe('TierClient', () => {
       const result = await tierClientWithoutSite.getFirstEnrollment();
 
       expect(result).to.deep.equal({
-        entitlement: null,
+        entitlement: mockEntitlement,
         enrollment: null,
         site: null,
       });
@@ -1259,7 +1259,7 @@ describe('TierClient', () => {
       expect(mockDataAccess.Site.batchGetByKeys).to.not.have.been.called;
     });
 
-    it('should return nulls when site-specific client has no matching enrollment', async () => {
+    it('should return entitlement with null enrollment and site when site-specific client has no matching enrollment', async () => {
       const nonMatchingEnrollment = {
         getId: () => 'enrollment-999',
         getSiteId: () => 'other-site-id',
@@ -1272,7 +1272,7 @@ describe('TierClient', () => {
       const result = await tierClient.getFirstEnrollment();
 
       expect(result).to.deep.equal({
-        entitlement: null,
+        entitlement: mockEntitlement,
         enrollment: null,
         site: null,
       });

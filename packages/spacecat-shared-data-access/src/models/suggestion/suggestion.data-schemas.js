@@ -27,6 +27,85 @@ import Joi from 'joi';
 import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
 
 /**
+ * Status and skip-reason values for per-issue lifecycle inside `data.issues[]`.
+ *
+ * Exported for consumers that need to construct or validate per-issue values
+ * (audit-worker, autofix-worker, api-service controllers, Mystique).
+ *
+ * Duplicated from `Suggestion.STATUSES` / `Suggestion.SKIP_REASONS` (suggestion.model.js)
+ * to avoid a circular import — the model already imports DATA_SCHEMAS from this file.
+ * Keep in sync if either set ever changes.
+ */
+export const ISSUE_STATUSES = [
+  'NEW',
+  'APPROVED',
+  'IN_PROGRESS',
+  'SKIPPED',
+  'FIXED',
+  'ERROR',
+  'OUTDATED',
+  'PENDING_VALIDATION',
+  'REJECTED',
+];
+
+export const ISSUE_SKIP_REASONS = [
+  'ALREADY_IMPLEMENTED',
+  'INACCURATE_OR_INCOMPLETE',
+  'TOO_RISKY',
+  'NO_REASON',
+  'OTHER',
+];
+
+/**
+ * Allowed CWV metric types for `data.issues[].type`.
+ * Exported so audit-worker / Mystique / api-service can reuse the same source of truth.
+ */
+export const CWV_METRIC_TYPES = ['lcp', 'cls', 'inp'];
+
+/**
+ * Strict per-issue schema for `data.issues[]` on CWV suggestions.
+ *
+ * All fields are optional initially so existing prod rows (issues without `id` / `type` /
+ * `status`) keep validating. Tighten to required after a backfill populates `id` and `type`
+ * on every existing issue.
+ *
+ * Field ownership:
+ * - `id`, `type`, `value`, `title`, `cwvValue`, `patchContent`, `isCodeChangeAvailable`,
+ *   initial `status: 'NEW'` — written by Mystique (guidance + code-fix tasks).
+ * - `status` transitions (APPROVED/REJECTED/SKIPPED/IN_PROGRESS) — written by api-service
+ *   via the existing PATCH /suggestions/:id endpoint (UI does read-modify-write of the
+ *   whole `data` payload).
+ * - `status: FIXED | ERROR` — written by autofix-worker after PR creation.
+ * - `status: OUTDATED` — written by audit-worker `handleOutdatedSuggestions` on re-audit.
+ * - `fixEntityId` — written by autofix-worker (or Mystique `_create_fix_entity`).
+ * - `jiraLink` — written by whichever service files the Jira ticket (today: UI or api-service).
+ * - `skipReason`, `skipDetail` — written by api-service when `status` transitions to SKIPPED.
+ */
+const CWV_ISSUE_SCHEMA = Joi.object({
+  // Identity
+  id: Joi.string().optional(),
+
+  // Semantic
+  type: Joi.string().valid(...CWV_METRIC_TYPES).optional(),
+  title: Joi.string().optional(),
+  value: Joi.string().optional(),
+  cwvValue: Joi.number().optional(),
+
+  // Patch
+  patchContent: Joi.string().allow('').optional(),
+  isCodeChangeAvailable: Joi.boolean().optional(),
+
+  // Lifecycle
+  status: Joi.string().valid(...ISSUE_STATUSES).optional(),
+  skipReason: Joi.string().valid(...ISSUE_SKIP_REASONS).optional(),
+  skipDetail: Joi.string().max(1000).optional(),
+
+  // Linkage
+  jiraLink: Joi.string().uri().allow(null).optional(),
+  fixEntityId: Joi.string().uuid().optional(),
+}).unknown(true);
+
+/**
  * Custom Joi validator that accepts malformed HTTP/HTTPS URLs and relative paths
  * while rejecting dangerous URI schemes (javascript:, data:, blob:, etc.).
  * Used for BROKEN_INTERNAL_LINKS where crawled content may contain malformed URLs.
@@ -163,7 +242,7 @@ export const DATA_SCHEMAS = {
           organic: Joi.number().optional(),
         }).unknown(true),
       ).required(),
-      issues: Joi.array().items(Joi.object()).optional().default([]),
+      issues: Joi.array().items(CWV_ISSUE_SCHEMA).optional().default([]),
       jiraLink: Joi.string().uri().allow(null).optional(),
       aggregationKey: Joi.string().allow(null).optional(),
     }).unknown(true),

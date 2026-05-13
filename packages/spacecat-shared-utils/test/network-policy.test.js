@@ -135,4 +135,33 @@ describe('isNonPublicHostname', () => {
   it('allows example.com. (trailing dot on public domain)', () => {
     expect(isNonPublicHostname('example.com.')).to.be.false;
   });
+
+  // New ranges added for broader SSRF coverage
+  it('blocks 100.64.0.1 (carrier-grade NAT)', () => {
+    expect(isNonPublicHostname('100.64.0.1')).to.be.true;
+  });
+
+  it('blocks 224.0.0.1 (multicast)', () => {
+    expect(isNonPublicHostname('224.0.0.1')).to.be.true;
+  });
+
+  it('blocks 240.0.0.1 (reserved)', () => {
+    expect(isNonPublicHostname('240.0.0.1')).to.be.true;
+  });
+
+  it('blocks 255.255.255.255 (broadcast)', () => {
+    expect(isNonPublicHostname('255.255.255.255')).to.be.true;
+  });
+
+  it('blocks [2002::1] (6to4)', () => {
+    expect(isNonPublicHostname('[2002::1]')).to.be.true;
+  });
+
+  it('blocks [2001::1] (teredo)', () => {
+    expect(isNonPublicHostname('[2001::1]')).to.be.true;
+  });
+
+  it('blocks [64:ff9b::101:101] (rfc6052 NAT64)', () => {
+    expect(isNonPublicHostname('[64:ff9b::101:101]')).to.be.true;
+  });
 });

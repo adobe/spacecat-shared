@@ -30,6 +30,9 @@ use(sinonChai);
 describe('Bot Blocker Detection', () => {
   const baseUrl = 'https://www.example.com';
 
+  before(() => nock.disableNetConnect());
+  after(() => nock.enableNetConnect());
+
   afterEach(() => {
     nock.cleanAll();
   });
@@ -216,7 +219,8 @@ describe('Bot Blocker Detection', () => {
       );
 
       const result = await detectBotBlockerMocked({ baseUrl });
-      expect(result).to.be.an('object');
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.5);
     });
 
     it('handles redirect with no Location header gracefully', async () => {
@@ -225,7 +229,8 @@ describe('Bot Blocker Detection', () => {
         .reply(302, undefined, {});
 
       const result = await detectBotBlocker({ baseUrl });
-      expect(result).to.be.an('object');
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.5);
     });
 
     it('detects Cloudflare blocking with 403 and cf-ray header', async () => {

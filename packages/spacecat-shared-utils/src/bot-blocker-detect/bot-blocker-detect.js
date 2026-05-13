@@ -343,9 +343,9 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log
   }
 
   let hostname;
-  /* c8 ignore next 5 */
   try {
     ({ hostname } = new URL(baseUrl));
+  /* c8 ignore next 3 */
   } catch {
     throw new Error('Invalid baseUrl');
   }
@@ -358,6 +358,7 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log
     const MAX_REDIRECTS = 10;
     let currentUrl = baseUrl;
     let response;
+    let exitedViaLimit = true;
     for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
       response = await tracingFetch(currentUrl, { // eslint-disable-line no-await-in-loop
         method: 'GET',
@@ -367,11 +368,13 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log
       });
 
       if (response.status < 300 || response.status >= 400) {
+        exitedViaLimit = false;
         break;
       }
 
       const location = response.headers.get('location');
       if (!location) {
+        exitedViaLimit = false;
         break;
       }
 
@@ -379,6 +382,7 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log
       try {
         redirectUrl = new URL(location, currentUrl).toString();
       } catch {
+        exitedViaLimit = false;
         break;
       }
 
@@ -390,7 +394,7 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log
       currentUrl = redirectUrl;
     }
 
-    if (response.status >= 300 && response.status < 400) {
+    if (exitedViaLimit && response.status >= 300 && response.status < 400) {
       log.warn('detectBotBlocker: redirect limit exceeded', { fn: 'detectBotBlocker', url: baseUrl, limit: MAX_REDIRECTS });
       return { crawlable: false, type: 'redirect-limit-exceeded', confidence: CONFIDENCE_HIGH };
     }

@@ -283,15 +283,29 @@ function toggleWWWHostname(hostname) {
   return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
 }
 
-async function isHttpsReachable(hostname) {
+const HTTPS_REACHABLE_CACHE = new Map();
+const HTTPS_REACHABLE_TTL_MS = 60 * 60 * 1000; // 1 hour — SSL state changes on the order of months
+
+async function isHttpsReachable(hostname, log) {
+  const cached = HTTPS_REACHABLE_CACHE.get(hostname);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.result;
+  }
   try {
     await fetch(`https://${hostname}`, {
       method: 'HEAD',
       signal: AbortSignal.timeout(5000),
       redirect: 'manual',
     });
+    const expiresAt = Date.now() + HTTPS_REACHABLE_TTL_MS;
+    HTTPS_REACHABLE_CACHE.set(hostname, { result: true, expiresAt });
     return true;
-  } catch {
+  } catch (e) {
+    log.warn(`isHttpsReachable: ${hostname} unreachable`, {
+      fn: 'isHttpsReachable', hostname, errorName: e.name, errorMessage: e.message,
+    });
+    const expiresAt = Date.now() + HTTPS_REACHABLE_TTL_MS;
+    HTTPS_REACHABLE_CACHE.set(hostname, { result: false, expiresAt });
     return false;
   }
 }
@@ -323,7 +337,7 @@ async function wwwUrlResolver(site, rumApiClient, log) {
   try {
     const wwwToggledHostname = toggleWWWHostname(hostname);
     await rumApiClient.retrieveDomainkey(wwwToggledHostname);
-    if (await isHttpsReachable(wwwToggledHostname)) {
+    if (await isHttpsReachable(wwwToggledHostname, log)) {
       log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
       return wwwToggledHostname;
     }
@@ -394,4 +408,5 @@ export {
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  HTTPS_REACHABLE_CACHE,
 };

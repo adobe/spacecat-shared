@@ -29,6 +29,7 @@ import {
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  HTTPS_REACHABLE_CACHE,
 } from '../src/url-helpers.js';
 
 describe('URL Utility Functions', () => {
@@ -686,6 +687,7 @@ describe('URL Utility Functions', () => {
     afterEach(() => {
       sandbox.restore();
       nock.cleanAll();
+      HTTPS_REACHABLE_CACHE.clear();
     });
 
     it('should return overrideBaseURL when configured with https', async () => {
@@ -907,6 +909,50 @@ describe('URL Utility Functions', () => {
       expect(log.debug).to.have.been.calledWith(
         'Fallback to www.example.com for URL resolution for https://www.example.com',
       );
+    });
+
+    it('should log errorName and errorMessage for TLS failure in isHttpsReachable', async () => {
+      // Use a plain TLD+1 domain so URI parses www as subdomain, not multi-part subdomain
+      site.getBaseURL.returns('https://www.tlsfailhost.com');
+      rumApiClient.retrieveDomainkey.withArgs('tlsfailhost.com').resolves('domain-key');
+      rumApiClient.retrieveDomainkey.withArgs('www.tlsfailhost.com').rejects(new Error('No key'));
+      nock('https://tlsfailhost.com').head('/').replyWithError('certificate verify failed');
+
+      await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(log.warn).to.have.been.calledWith(
+        sinon.match('tlsfailhost.com unreachable'),
+        sinon.match.has('errorName').and(sinon.match.has('errorMessage')),
+      );
+    });
+
+    it('should log errorName and errorMessage for network timeout in isHttpsReachable', async () => {
+      site.getBaseURL.returns('https://www.timeouthost.com');
+      rumApiClient.retrieveDomainkey.withArgs('timeouthost.com').resolves('domain-key');
+      rumApiClient.retrieveDomainkey.withArgs('www.timeouthost.com').rejects(new Error('No key'));
+      nock('https://timeouthost.com').head('/').replyWithError('ETIMEDOUT');
+
+      await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(log.warn).to.have.been.calledWith(
+        sinon.match('timeouthost.com unreachable'),
+        sinon.match.has('errorName').and(sinon.match.has('errorMessage')),
+      );
+    });
+
+    it('should return cached HTTPS reachability result without a second HTTP request', async () => {
+      const toggledHostname = 'www.cachetest.com';
+      // Pre-populate cache to exercise the cache-hit path (lines 292-293 in url-helpers.js)
+      HTTPS_REACHABLE_CACHE.set(toggledHostname, { result: true, expiresAt: Date.now() + 60000 });
+
+      site.getBaseURL.returns('https://cachetest.com');
+      rumApiClient.retrieveDomainkey.withArgs(toggledHostname).resolves('domain-key');
+      // No nock needed — cache prevents the HTTP request entirely
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal(toggledHostname);
+      expect(HTTPS_REACHABLE_CACHE.get(toggledHostname).result).to.be.true;
     });
   });
 

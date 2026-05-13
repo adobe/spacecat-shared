@@ -123,14 +123,17 @@ fi
 ENV_WEAKNESSES=$(gh api "repos/${REPO}/environments/${ENVIRONMENT}" --jq '
   [ (if .can_admins_bypass != false then "can_admins_bypass not strictly false" else empty end),
     (if ((.protection_rules // []) | map(select(.type == "required_reviewers" and ((.reviewers // []) | length) > 0)) | length) == 0
-       then "no required_reviewers rule, or rule has empty reviewers list" else empty end)
+       then "no required_reviewers rule, or rule has empty reviewers list" else empty end),
+    (if ((.protection_rules // []) | map(select(.type == "required_reviewers")) | first | .prevent_self_review) != true
+       then "required_reviewers.prevent_self_review not strictly true (env gate would allow same-actor rubber stamp)" else empty end)
   ] | join("; ")
 ' 2>/dev/null || echo "__MISSING__")
 
 if [ "$ENV_WEAKNESSES" = "__MISSING__" ]; then
   echo "ERROR: GitHub Environment '${ENVIRONMENT}' does not exist on ${REPO}."
   echo "       Create it (Settings → Environments) with: can_admins_bypass=false,"
-  echo "       required reviewers (non-empty), main-only deployment branch policy."
+  echo "       required reviewers (non-empty), prevent_self_review=true,"
+  echo "       main-only deployment branch policy."
   exit 1
 fi
 
@@ -140,6 +143,7 @@ if [ -n "$ENV_WEAKNESSES" ]; then
   echo "       Required:"
   echo "         can_admins_bypass == false"
   echo "         at least one required_reviewers rule with a non-empty reviewer list"
+  echo "         required_reviewers.prevent_self_review == true"
   exit 1
 fi
 
@@ -175,6 +179,7 @@ fi
 PROTECTION_WEAKNESSES=$(gh api "repos/${REPO}/branches/main/protection" --jq '
   [ (if (.required_pull_request_reviews.required_approving_review_count // 0) < 1 then "required_approving_review_count < 1" else empty end),
     (if .required_pull_request_reviews.dismiss_stale_reviews != true then "dismiss_stale_reviews not strictly true" else empty end),
+    (if .required_pull_request_reviews.require_last_push_approval != true then "require_last_push_approval not strictly true (allows reviewer-as-pusher self-approval after dismiss_stale)" else empty end),
     (if .enforce_admins.enabled != true then "enforce_admins not strictly true" else empty end),
     (if .allow_force_pushes.enabled != false then "force-push allowed" else empty end),
     (if .allow_deletions.enabled != false then "deletion allowed" else empty end),
@@ -193,11 +198,12 @@ if [ "$PROTECTION_WEAKNESSES" = "__MISSING__" ]; then
   echo "       Required:"
   echo "         required_pull_request_reviews.required_approving_review_count >= 1"
   echo "         required_pull_request_reviews.dismiss_stale_reviews == true"
+  echo "         required_pull_request_reviews.require_last_push_approval == true"
   echo "         enforce_admins.enabled == true"
   echo "         allow_force_pushes.enabled == false"
   echo "         allow_deletions.enabled == false"
   echo "         required_status_checks.contexts contains 'Test'"
-  echo "         bypass_pull_request_allowances total actors <= 1 (only ${EXPECTED_BYPASS_USER})"
+  echo "         bypass_pull_request_allowances.users == [\"${EXPECTED_BYPASS_USER}\"], no teams, no apps"
   exit 1
 fi
 

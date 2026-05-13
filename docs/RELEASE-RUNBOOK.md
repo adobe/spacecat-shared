@@ -274,14 +274,16 @@ configuration. Reference the security model required:
 | Env `deployment_branch_policy` | `["main"]` only |
 | Env `can_admins_bypass` | `false` |
 | Env required reviewers | non-empty (`spacecat-admins`) |
+| Env `prevent_self_review` | `true` (else env gate degrades to same-actor rubber stamp) |
 | Branch protection on `main` | exists |
 | `required_approving_review_count` | ≥ 1 |
 | `dismiss_stale_reviews` | `true` |
+| `require_last_push_approval` | `true` (else a reviewer who later pushes can self-approve their own push) |
 | `enforce_admins` | `true` |
 | `allow_force_pushes` | `false` |
 | `allow_deletions` | `false` |
 | `required_status_checks.contexts` | contains `Test` |
-| Bypass actors (users + teams + apps) | ≤ 1 (only `adobe-bot`) |
+| Bypass actors | exactly `["adobe-bot"]`, no teams, no apps |
 
 If a setting is wrong, fix it in repo settings (`Settings → Branches` for
 branch protection, `Settings → Environments → npm-publish` for the env),

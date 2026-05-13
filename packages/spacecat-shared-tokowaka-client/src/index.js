@@ -12,7 +12,9 @@
 
 import crypto from 'crypto';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { hasText, isNonEmptyObject, tracingFetch } from '@adobe/spacecat-shared-utils';
+import {
+  hasText, isNonEmptyObject, prependSchema, tracingFetch,
+} from '@adobe/spacecat-shared-utils';
 import { v4 as uuidv4 } from 'uuid';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
@@ -26,6 +28,12 @@ import {
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
+import {
+  EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT,
+  PRIVATE_HOST_RE,
+  WAF_PROBE_TIMEOUT_MS,
+  classifyProbeResponse,
+} from './utils/waf-probe-utils.js';
 
 export { FastlyKVClient } from './fastly-kv-client.js';
 export { calculateForwardedHost } from './utils/custom-html-utils.js';
@@ -1210,6 +1218,55 @@ class TokowakaClient {
   }
 
   /**
+   * Probes whether a WAF or Bot Manager is blocking AdobeEdgeOptimize/1.0 traffic
+   * for the site.
+   *
+   * Probe outcomes:
+   * - Hard block: HTTP 401/403/406/429/503 → `{ reachable: false, blocked: true }`
+   * - CF challenge: cf-mitigated: challenge header → `{ reachable: false, blocked: true }`
+   * - Soft block: 2xx with bot-challenge HTML → `{ reachable: false, blocked: true }`
+   * - Pass: 2xx with real content → `{ reachable: true, blocked: false }`
+   * - Network/timeout error → `{ reachable: false, blocked: null }`
+   *
+   * This method never throws — all errors are captured into the return value.
+   * Use the separate edge-optimize status API to determine if edge optimize is active.
+   *
+   * @param {Object} site - Site entity with a `getBaseURL()` method.
+   * @returns {Promise<Object>} WAF probe result.
+   */
+  async checkWafConnectivity(site) {
+    const siteBaseUrl = site.getBaseURL();
+    let probeResult = { probedUrl: String(siteBaseUrl) };
+
+    try {
+      const normalizedUrl = prependSchema(siteBaseUrl);
+      const { host: targetHost, hostname, href: probedUrl } = new URL(normalizedUrl);
+      probeResult = { probedUrl };
+
+      if (PRIVATE_HOST_RE.test(hostname)) {
+        this.log.warn(`[edge-optimize-probe] Refusing to probe private/loopback host: ${hostname}`);
+        return { ...probeResult, reachable: false, blocked: null };
+      }
+
+      this.log.info(`[edge-optimize-probe] Probing ${targetHost} via edge optimize proxy`);
+
+      const response = await tracingFetch(EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT, {
+        method: 'GET',
+        headers: { 'x-forwarded-host': targetHost },
+        signal: AbortSignal.timeout(WAF_PROBE_TIMEOUT_MS),
+      });
+
+      const classification = await classifyProbeResponse(response, targetHost, this.log);
+      probeResult = { ...probeResult, ...classification };
+    } catch (error) {
+      this.log.warn(`[edge-optimize-probe] Probe failed for ${siteBaseUrl}: ${error.message}`);
+      probeResult = { ...probeResult, reachable: false, blocked: null };
+    }
+
+    return probeResult;
+  }
+
+  /**
    * Deploys suggestions to edge, handling both regular and domain-wide suggestions.
    *
    * Regular suggestions are deployed via deploySuggestions(). Domain-wide suggestions
@@ -1360,6 +1417,9 @@ class TokowakaClient {
               if (s.getData()?.isDomainWide === true) {
                 return false;
               }
+              if (s.getData()?.edgeDeployed) {
+                return false;
+              }
               const url = s.getData()?.url;
               return url && regexPatterns.some((r) => r.test(url));
             });
@@ -1370,7 +1430,6 @@ class TokowakaClient {
                 await Promise.all(covered.map(async (cs) => {
                   cs.setData({
                     ...cs.getData(),
-                    edgeDeployed: deploymentTimestamp,
                     coveredByDomainWide: suggestion.getId(),
                   });
                   cs.setUpdatedBy(updatedBy);
@@ -1393,11 +1452,9 @@ class TokowakaClient {
     // Mark same-batch skipped suggestions individually so a single save failure
     // surfaces as a per-item failure rather than swallowing the whole batch.
     if (skippedInBatch.length > 0) {
-      const deploymentTimestamp = Date.now();
       const results = await Promise.allSettled(skippedInBatch.map(async (s) => {
         s.setData({
           ...s.getData(),
-          edgeDeployed: deploymentTimestamp,
           coveredByDomainWide: 'same-batch-deployment',
           skippedInDeployment: true,
         });

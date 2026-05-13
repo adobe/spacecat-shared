@@ -195,7 +195,6 @@ await client.cleanup(clonePath);
 
 *Note*: For Cloud Manager Standard Repositories, pull requests aren't supported, as there's no upstream.
 
-
 ## API overview
 
 - **`clone(programId, repositoryId, config)`** – Clone repo to a unique temp directory. Config: `{ imsOrgId, repoType, repoUrl, ref }`. Optional `ref` checks out a specific branch/tag after clone (failure to checkout does not fail the clone).

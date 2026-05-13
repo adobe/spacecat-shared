@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-drs-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.7.0...@adobe/spacecat-shared-drs-client-v1.7.1) (2026-05-07)
+
+
+### Bug Fixes
+
+* **drs-client:** reject non-XLSX uploads before writing to S3 ([#1589](https://github.com/adobe/spacecat-shared/issues/1589)) ([30d9662](https://github.com/adobe/spacecat-shared/commit/30d9662d1d006ca26a9df7502b20d3dd0d9eff70))
+
+# [@adobe/spacecat-shared-drs-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.6.0...@adobe/spacecat-shared-drs-client-v1.7.0) (2026-05-05)
+
+
+### Features
+
+* **drs-client:** forward brandId on publishBrandPresenceAnalyze (LLMO-4716) ([#1586](https://github.com/adobe/spacecat-shared/issues/1586)) ([a6346cc](https://github.com/adobe/spacecat-shared/commit/a6346ccb550899a27122215a9e214de26a2c78c6))
+
+# [@adobe/spacecat-shared-drs-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.5.0...@adobe/spacecat-shared-drs-client-v1.6.0) (2026-04-30)
+
+
+### Features
+
+* **drs-client:** add S3 upload and SNS publish for brand presence analysis ([#1553](https://github.com/adobe/spacecat-shared/issues/1553)) ([56b1266](https://github.com/adobe/spacecat-shared/commit/56b126686fc0be81253fb0a5f510a2913b2073cc))
+
 # [@adobe/spacecat-shared-drs-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.4.2...@adobe/spacecat-shared-drs-client-v1.5.0) (2026-04-28)
 
 

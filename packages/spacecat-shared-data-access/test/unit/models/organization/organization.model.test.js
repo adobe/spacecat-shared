@@ -84,6 +84,24 @@ describe('OrganizationModel', () => {
     });
   });
 
+  describe('semrushWorkspaceId', () => {
+    it('gets semrushWorkspaceId', () => {
+      expect(instance.getSemrushWorkspaceId()).to.equal('ws_fixture_001');
+    });
+
+    it('sets semrushWorkspaceId', () => {
+      instance.setSemrushWorkspaceId('ws_new_value');
+      expect(instance.getSemrushWorkspaceId()).to.equal('ws_new_value');
+    });
+
+    it('returns undefined when semrushWorkspaceId is absent on the record', () => {
+      const recordWithoutSemrush = { ...sampleOrganization };
+      delete recordWithoutSemrush.semrushWorkspaceId;
+      const { model: instanceWithout } = createElectroMocks(Organization, recordWithoutSemrush);
+      expect(instanceWithout.getSemrushWorkspaceId()).to.equal(undefined);
+    });
+  });
+
   describe('fulfillableItems', () => {
     it('gets fulfillableItems', () => {
       expect(instance.getFulfillableItems()).to.deep.equal(undefined);
@@ -92,6 +110,37 @@ describe('OrganizationModel', () => {
     it('sets fulfillableItems', () => {
       instance.setFulfillableItems(['item3', 'item4']);
       expect(instance.getFulfillableItems()).to.deep.equal(['item3', 'item4']);
+    });
+  });
+
+  describe('llmBackend', () => {
+    it('defaults to azure', () => {
+      expect(instance.getLlmBackend()).to.equal('azure');
+    });
+
+    it('sets llmBackend to bedrock', () => {
+      instance.setLlmBackend('bedrock');
+      expect(instance.getLlmBackend()).to.equal('bedrock');
+    });
+
+    it('sets llmBackend back to azure', () => {
+      instance.setLlmBackend('bedrock');
+      instance.setLlmBackend('azure');
+      expect(instance.getLlmBackend()).to.equal('azure');
+    });
+  });
+
+  describe('LLM_BACKENDS constants', () => {
+    it('defines LLM_BACKEND_AZURE', () => {
+      expect(Organization.LLM_BACKEND_AZURE).to.equal('azure');
+    });
+
+    it('defines LLM_BACKEND_BEDROCK', () => {
+      expect(Organization.LLM_BACKEND_BEDROCK).to.equal('bedrock');
+    });
+
+    it('defines LLM_BACKENDS list', () => {
+      expect(Organization.LLM_BACKENDS).to.deep.equal(['azure', 'bedrock']);
     });
   });
 });

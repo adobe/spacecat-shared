@@ -16,6 +16,7 @@ import sinon from 'sinon';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -27,7 +28,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
   let mockLogger;
 
   beforeEach(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
     mockLogger = {
       debug: sinon.stub(),

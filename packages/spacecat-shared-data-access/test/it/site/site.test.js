@@ -23,6 +23,7 @@ import { sanitizeTimestamps } from '../../../src/util/util.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 import { Config } from '../../../src/models/site/config.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -49,7 +50,7 @@ describe('Site IT', async () => {
   let Site;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -499,6 +500,31 @@ describe('Site IT', async () => {
     expect(updatedSite.getIsSandbox()).to.equal(updates.isSandbox);
     expect(updatedSite.getOrganizationId()).to.equal(updates.organizationId);
     expect(updatedSite.getName()).to.equal(updates.name);
+  });
+
+  it('reflects setter writes via getters after a prior save on the same instance', async () => {
+    const orgA = sampleData.organizations[0].getId();
+    const orgB = sampleData.organizations[1].getId();
+
+    const site = await Site.findById(sampleData.sites[1].getId());
+    site.setOrganizationId(orgA);
+    site.setName('first-cycle-name');
+    await site.save();
+
+    expect(site.getOrganizationId()).to.equal(orgA);
+    expect(site.getName()).to.equal('first-cycle-name');
+
+    site.setOrganizationId(orgB);
+    site.setName('second-cycle-name');
+
+    expect(site.getOrganizationId()).to.equal(orgB);
+    expect(site.getName()).to.equal('second-cycle-name');
+
+    await site.save();
+
+    const reloaded = await Site.findById(site.getId());
+    expect(reloaded.getOrganizationId()).to.equal(orgB);
+    expect(reloaded.getName()).to.equal('second-cycle-name');
   });
 
   it('reads config of a site', async () => {

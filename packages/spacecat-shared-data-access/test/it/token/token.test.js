@@ -95,6 +95,63 @@ describe('Token IT', () => {
     });
   });
 
+  describe('findLastCreatedBySiteIdAndTokenType', () => {
+    // sites[2] — no tokens seeded for this site, so tests start clean
+    const siteId = '56a691db-d32e-4308-ac99-a21de0580557';
+    const tokenType = 'grant_cwv';
+
+    it('returns null when no token exists for the site and token type', async () => {
+      const token = await Token.findLastCreatedBySiteIdAndTokenType(siteId, tokenType);
+      expect(token).to.be.null;
+    });
+
+    it('returns the token when exactly one cycle exists', async () => {
+      const created = await Token.create({
+        siteId,
+        tokenType,
+        cycle: '2025-01',
+        total: 3,
+        used: 0,
+      });
+
+      const found = await Token.findLastCreatedBySiteIdAndTokenType(siteId, tokenType);
+
+      expect(found).to.be.an('object');
+      expect(found.getSiteId()).to.equal(siteId);
+      expect(found.getTokenType()).to.equal(tokenType);
+      expect(found.getCycle()).to.equal('2025-01');
+      expect(found.getId()).to.equal(created.getId());
+    });
+
+    it('returns the most recent cycle when multiple cycles exist', async () => {
+      // '2025-01' already created above; add a newer cycle
+      await Token.create({
+        siteId,
+        tokenType,
+        cycle: '2025-06',
+        total: 5,
+        used: 1,
+      });
+
+      const found = await Token.findLastCreatedBySiteIdAndTokenType(siteId, tokenType);
+
+      expect(found.getCycle()).to.equal('2025-06');
+      expect(found.getTotal()).to.equal(5);
+    });
+
+    it('throws when siteId is missing', async () => {
+      await expect(
+        Token.findLastCreatedBySiteIdAndTokenType('', tokenType),
+      ).to.be.rejectedWith(/required/);
+    });
+
+    it('throws when tokenType is missing', async () => {
+      await expect(
+        Token.findLastCreatedBySiteIdAndTokenType(siteId, ''),
+      ).to.be.rejectedWith(/required/);
+    });
+  });
+
   describe('allBySiteId', () => {
     // fixtures.sites[1].siteId — isolated from findBySiteIdAndTokenType /
     // grantSuggestions tests so seeded historical-cycle rows do not leak into

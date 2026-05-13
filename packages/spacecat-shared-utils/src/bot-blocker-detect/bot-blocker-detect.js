@@ -306,7 +306,8 @@ function analyzeError(error) {
 
 /**
  * Detects bot blocker technology on a website.
- * Makes a single HEAD request and analyzes the response for blocking patterns.
+ * Makes a GET request (following up to 10 redirects manually) and analyzes the response.
+ * Each redirect hop is checked against the SSRF guard before connecting.
  *
  * Currently detects:
  * - Cloudflare bot blocking (403 + cf-ray header)
@@ -315,6 +316,8 @@ function analyzeError(error) {
  * - Fastly (403 + x-served-by or fastly-io-info headers)
  * - AWS CloudFront (403 + x-amz-cf-id or via: CloudFront header)
  * - HTTP/2 stream errors (NGHTTP2_INTERNAL_ERROR, ERR_HTTP2_STREAM_ERROR)
+ * - Redirect chains exceeding MAX_REDIRECTS ('redirect-limit-exceeded')
+ * - SSRF: private/non-public hostnames in initial URL or redirect targets ('ssrf-redirect-blocked')
  *
  * Also detects infrastructure presence on successful requests (200 OK):
  * - Returns 'cloudflare-allowed', 'imperva-allowed', 'akamai-allowed',
@@ -324,30 +327,30 @@ function analyzeError(error) {
  * @param {Object} config - Configuration object
  * @param {string} config.baseUrl - The base URL to check
  * @param {number} [config.timeout=5000] - Request timeout in milliseconds
+ * @param {Object} [config.log=console] - Logger with warn/debug methods
  * @returns {Promise<Object>} Detection result with:
  *   - crawlable {boolean}: Whether the site can be crawled by bots
  *   - type {string}: Blocker type ('cloudflare', 'imperva', 'akamai', 'fastly',
- *     'cloudfront', 'http2-block', 'cloudflare-allowed', 'imperva-allowed',
- *     'akamai-allowed', 'fastly-allowed', 'cloudfront-allowed', 'none', 'unknown')
+ *     'cloudfront', 'http2-block', 'redirect-limit-exceeded', 'ssrf-redirect-blocked',
+ *     'cloudflare-allowed', 'imperva-allowed', 'akamai-allowed', 'fastly-allowed',
+ *     'cloudfront-allowed', 'none', 'unknown')
  *   - confidence {number}: Confidence level (0.0-1.0, see confidence level constants)
- * @throws {Error} If baseUrl is invalid
+ * @throws {Error} If baseUrl is not a valid URL
  */
 export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log = console }) {
   if (!baseUrl || !isValidUrl(baseUrl)) {
     throw new Error('Invalid baseUrl');
   }
 
+  let hostname;
+  /* c8 ignore next 5 */
   try {
-    const { hostname } = new URL(baseUrl);
-    if (isNonPublicHostname(hostname)) {
-      throw new Error('Private IP addresses are not allowed');
-    }
-  /* c8 ignore next 6 */
-  } catch (e) {
-    if (e.message === 'Private IP addresses are not allowed') {
-      throw e;
-    }
+    ({ hostname } = new URL(baseUrl));
+  } catch {
     throw new Error('Invalid baseUrl');
+  }
+  if (isNonPublicHostname(hostname)) {
+    return { crawlable: false, type: 'ssrf-redirect-blocked', confidence: CONFIDENCE_ABSOLUTE };
   }
 
   try {
@@ -385,6 +388,11 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log
         return { crawlable: false, type: 'ssrf-redirect-blocked', confidence: CONFIDENCE_ABSOLUTE };
       }
       currentUrl = redirectUrl;
+    }
+
+    if (response.status >= 300 && response.status < 400) {
+      log.warn('detectBotBlocker: redirect limit exceeded', { fn: 'detectBotBlocker', url: baseUrl, limit: MAX_REDIRECTS });
+      return { crawlable: false, type: 'redirect-limit-exceeded', confidence: CONFIDENCE_HIGH };
     }
 
     let html = null;

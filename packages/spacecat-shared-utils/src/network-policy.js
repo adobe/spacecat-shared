@@ -22,6 +22,13 @@ const BLOCKED_RANGES = new Set([
   'linkLocal', // 169.254/16, fe80::/10
   'uniqueLocal', // fc00::/7 (IPv6 ULA)
   'unspecified', // 0.0.0.0, ::
+  'carrierGradeNat', // 100.64.0.0/10
+  'broadcast', // 255.255.255.255/32
+  'multicast', // 224.0.0.0/4, ff00::/8
+  'reserved', // 240.0.0.0/4
+  '6to4', // 2002::/16
+  'teredo', // 2001::/32
+  'rfc6052', // 64:ff9b::/96
 ]);
 
 /**

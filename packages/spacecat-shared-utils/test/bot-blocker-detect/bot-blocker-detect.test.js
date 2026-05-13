@@ -43,56 +43,101 @@ describe('Bot Blocker Detection', () => {
       await expect(detectBotBlocker({ baseUrl: 'invalid-url' })).to.be.rejectedWith('Invalid baseUrl');
     });
 
-    it('throws an error for loopback IP (127.0.0.1)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://127.0.0.1/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks loopback IP (127.0.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://127.0.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+      expect(result.confidence).to.equal(1.0);
     });
 
-    it('throws an error for private IP (10.x.x.x)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://10.0.0.1/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks private IP (10.x.x.x) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://10.0.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for private IP (192.168.x.x)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://192.168.1.1/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks private IP (192.168.x.x) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://192.168.1.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for link-local IP (169.254.169.254)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://169.254.169.254/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks link-local IP (169.254.169.254) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://169.254.169.254/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for private IP (172.16.x.x)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://172.16.0.1/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks private IP (172.16.x.x) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://172.16.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for localhost', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://localhost/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks localhost with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://localhost/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for IPv6 loopback (::1)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://[::1]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks IPv6 loopback (::1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[::1]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for INADDR_ANY (0.0.0.0)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://0.0.0.0/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks INADDR_ANY (0.0.0.0) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://0.0.0.0/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for IPv6 INADDR_ANY (::)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://[::]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks IPv6 INADDR_ANY (::) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[::]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for IPv6 link-local (fe80::1)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://[fe80::1]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks IPv6 link-local (fe80::1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[fe80::1]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for IPv6 ULA (fc00::1)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://[fc00::1]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks IPv6 ULA (fc00::1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[fc00::1]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for IPv4-mapped IPv6 loopback (::ffff:127.0.0.1)', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://[::ffff:127.0.0.1]/' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks IPv4-mapped IPv6 loopback (::ffff:127.0.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[::ffff:127.0.0.1]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
-    it('throws an error for localhost with trailing dot', async () => {
-      await expect(detectBotBlocker({ baseUrl: 'http://localhost./' })).to.be.rejectedWith('Private IP addresses are not allowed');
+    it('blocks localhost with trailing dot with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://localhost./' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks carrier-grade NAT IP (100.64.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://100.64.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks multicast IP (224.0.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://224.0.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks reserved IP (240.0.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://240.0.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
     });
 
     it('does not block 172.15.255.255 (just outside private range)', async () => {
@@ -116,6 +161,7 @@ describe('Bot Blocker Detection', () => {
       const log = { warn: sinon.stub() };
       const result = await detectBotBlocker({ baseUrl, log });
       expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
       expect(log.warn).to.have.been.calledWithMatch('redirect to private hostname blocked');
     });
 
@@ -129,6 +175,22 @@ describe('Bot Blocker Detection', () => {
 
       const result = await detectBotBlocker({ baseUrl });
       expect(result.crawlable).to.be.true;
+    });
+
+    it('returns redirect-limit-exceeded when redirect chain exceeds MAX_REDIRECTS', async () => {
+      // Register 11 hops of 302 redirects (MAX_REDIRECTS=10, loop runs 0..10 inclusive)
+      for (let i = 0; i <= 10; i += 1) {
+        nock('https://www.example.com')
+          .get(`/r${i}`)
+          .reply(302, undefined, { location: `https://www.example.com/r${i + 1}` });
+      }
+
+      const log = { warn: sinon.stub() };
+      const result = await detectBotBlocker({ baseUrl: 'https://www.example.com/r0', log });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('redirect-limit-exceeded');
+      expect(result.confidence).to.equal(0.99);
+      expect(log.warn).to.have.been.calledWithMatch('redirect limit exceeded');
     });
 
     it('handles redirect with unparseable Location header gracefully', async () => {

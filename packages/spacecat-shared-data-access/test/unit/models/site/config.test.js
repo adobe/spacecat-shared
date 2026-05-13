@@ -3029,6 +3029,15 @@ describe('Config Tests', () => {
         const config = Config({});
         expect(config.getRumConfig()).to.be.undefined;
       });
+
+      it('returns a copy so mutating the result does not affect internal state', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        const copy = config.getRumConfig();
+        copy.hasDomainKey = false;
+        expect(config.hasRumDomainKey()).to.be.true;
+      });
     });
 
     describe('hasRumDomainKey', () => {
@@ -3054,28 +3063,38 @@ describe('Config Tests', () => {
 
     describe('updateRumConfig', () => {
       it('sets hasDomainKey to true and records lastCheckedAt', () => {
-        const before = new Date();
+        const now = new Date('2026-05-08T12:00:00.000Z');
         const config = Config({});
-        config.updateRumConfig(true);
+        config.updateRumConfig(true, now);
         const rum = config.getRumConfig();
         expect(rum.hasDomainKey).to.be.true;
-        expect(new Date(rum.lastCheckedAt).getTime()).to.be.gte(before.getTime());
+        expect(rum.lastCheckedAt).to.equal('2026-05-08T12:00:00.000Z');
       });
 
       it('sets hasDomainKey to false and records lastCheckedAt', () => {
+        const now = new Date('2026-05-08T12:00:00.000Z');
         const config = Config({});
-        config.updateRumConfig(false);
+        config.updateRumConfig(false, now);
         expect(config.getRumConfig().hasDomainKey).to.be.false;
-        expect(config.getRumConfig().lastCheckedAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
+        expect(config.getRumConfig().lastCheckedAt).to.equal('2026-05-08T12:00:00.000Z');
       });
 
       it('overwrites a previous rumConfig value', () => {
+        const now = new Date('2026-05-08T12:00:00.000Z');
         const config = Config({
           rumConfig: { hasDomainKey: true, lastCheckedAt: '2025-01-01T00:00:00.000Z' },
         });
-        config.updateRumConfig(false);
+        config.updateRumConfig(false, now);
         expect(config.hasRumDomainKey()).to.be.false;
-        expect(config.getRumConfig().lastCheckedAt).to.not.equal('2025-01-01T00:00:00.000Z');
+        expect(config.getRumConfig().lastCheckedAt).to.equal('2026-05-08T12:00:00.000Z');
+      });
+
+      it('throws TypeError when hasDomainKey is not a boolean', () => {
+        const config = Config({});
+        expect(() => config.updateRumConfig(null)).to.throw(TypeError, /hasDomainKey must be a boolean/);
+        expect(() => config.updateRumConfig(undefined)).to.throw(TypeError, /hasDomainKey must be a boolean/);
+        expect(() => config.updateRumConfig('true')).to.throw(TypeError, /hasDomainKey must be a boolean/);
+        expect(() => config.updateRumConfig(1)).to.throw(TypeError, /hasDomainKey must be a boolean/);
       });
     });
 

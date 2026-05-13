@@ -100,42 +100,93 @@ if ! gh auth status >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! gh api "repos/${REPO}/environments/${ENVIRONMENT}" >/dev/null 2>&1; then
-  echo "ERROR: GitHub Environment '${ENVIRONMENT}' does not exist on ${REPO}."
-  echo "       Create it (Settings → Environments) with a main-only deployment branch"
-  echo "       policy and required reviewers, then re-run."
+EXPECTED_BYPASS_USER="adobe-bot"
+# Validate the constant is shell- and jq-safe before string-interpolating it into
+# the protection jq below. gh api does not support --arg (only standalone jq does),
+# so we inline-substitute — but only after asserting the value is alphanumeric+hyphen
+# so a future edit can't accidentally introduce a quote-injection bug.
+if ! [[ "$EXPECTED_BYPASS_USER" =~ ^[a-zA-Z0-9-]+$ ]]; then
+  echo "ERROR: EXPECTED_BYPASS_USER must match ^[a-zA-Z0-9-]+\$ (got: '${EXPECTED_BYPASS_USER}')"
   exit 1
 fi
 
+# Environment-side aggregator: every weakness reported in one pass.
+# Mirrors the protection-side aggregator below and the security model documented
+# in docs/RELEASE-RUNBOOK.md "Failure mode 5". Without can_admins_bypass=false,
+# any repo admin could approve their own release; without required_reviewers the
+# environment approval gate is vacuous; without main-only branch policy the
+# OIDC token's 'environment' claim has no server-enforced boundary.
+#
+# Note: do NOT use jq's `// true` to default can_admins_bypass — `//` treats
+# `false` as absent and falls through to the default, so `false // true` is
+# `true`. Compare directly with `!= false` instead.
+ENV_WEAKNESSES=$(gh api "repos/${REPO}/environments/${ENVIRONMENT}" --jq '
+  [ (if .can_admins_bypass != false then "can_admins_bypass not strictly false" else empty end),
+    (if ((.protection_rules // []) | map(select(.type == "required_reviewers" and ((.reviewers // []) | length) > 0)) | length) == 0
+       then "no required_reviewers rule, or rule has empty reviewers list" else empty end)
+  ] | join("; ")
+' 2>/dev/null || echo "__MISSING__")
+
+if [ "$ENV_WEAKNESSES" = "__MISSING__" ]; then
+  echo "ERROR: GitHub Environment '${ENVIRONMENT}' does not exist on ${REPO}."
+  echo "       Create it (Settings → Environments) with: can_admins_bypass=false,"
+  echo "       required reviewers (non-empty), main-only deployment branch policy."
+  exit 1
+fi
+
+if [ -n "$ENV_WEAKNESSES" ]; then
+  echo "ERROR: '${ENVIRONMENT}' environment is weaker than required: ${ENV_WEAKNESSES}"
+  echo ""
+  echo "       Required:"
+  echo "         can_admins_bypass == false"
+  echo "         at least one required_reviewers rule with a non-empty reviewer list"
+  exit 1
+fi
+
+# Branch-policy check: filter by type == "branch" so a tag policy named "main"
+# cannot satisfy the assertion (defense in depth — admins would have to add a
+# tag policy named "main" deliberately for this to matter, but the filter costs
+# nothing).
 ENV_POLICIES=$(gh api "repos/${REPO}/environments/${ENVIRONMENT}/deployment-branch-policies" \
-  --jq '[.branch_policies[].name] | sort' 2>/dev/null || echo "")
+  --jq '[.branch_policies[] | select(.type == "branch") | .name] | sort' 2>/dev/null || echo "")
 if [ "$ENV_POLICIES" != '["main"]' ]; then
   echo "ERROR: '${ENVIRONMENT}' deployment branch policy is not restricted to 'main' only."
-  echo "       Current policies: ${ENV_POLICIES:-<none>}"
+  echo "       Current branch-type policies: ${ENV_POLICIES:-<none>}"
   echo "       Without a main-only policy the OIDC token's 'environment' claim has no"
   echo "       server-enforced boundary."
   exit 1
 fi
 
-EXPECTED_BYPASS_USER="adobe-bot"
 # Aggregator: report every policy weakness in one pass instead of one-at-a-time.
 # The dismiss_stale_reviews check closes a real attack chain (approve clean PR,
 # force-push malicious commit to the PR branch, stale approval still satisfies
 # the merge gate). The bypass-actor check fires if anyone beyond the expected
 # adobe-bot semantic-release identity is allowed to skip PR review.
-PROTECTION_WEAKNESSES=$(gh api "repos/${REPO}/branches/main/protection" --jq "
-  [ (if (.required_pull_request_reviews.required_approving_review_count // 0) < 1 then \"required_approving_review_count < 1\" else empty end),
-    (if (.required_pull_request_reviews.dismiss_stale_reviews // false) != true then \"dismiss_stale_reviews disabled\" else empty end),
-    (if (.enforce_admins.enabled // false) != true then \"enforce_admins disabled\" else empty end),
-    (if (.allow_force_pushes.enabled // false) != false then \"force-push allowed\" else empty end),
-    (if (.allow_deletions.enabled // false) != false then \"deletion allowed\" else empty end),
-    (if ((.required_status_checks.contexts // []) | any(. == \"Test\")) | not then \"Test not in required_status_checks\" else empty end),
-    (if ((.required_pull_request_reviews.bypass_pull_request_allowances.users // []) +
-         (.required_pull_request_reviews.bypass_pull_request_allowances.teams // []) +
-         (.required_pull_request_reviews.bypass_pull_request_allowances.apps // []) | length) > 1
-       then \"unexpected bypass actors beyond ${EXPECTED_BYPASS_USER} (more than 1 actor on bypass list)\" else empty end)
-  ] | join(\"; \")
-" 2>/dev/null || echo "__MISSING__")
+# Identity assertion (replaces the prior cardinality check, which would have
+# passed if 'adobe-bot' had been swapped with another single actor — admin-side
+# configuration drift attack).
+#
+# Note: gh api does NOT support --arg (only the standalone jq CLI does). We
+# inline-substitute EXPECTED_BYPASS_USER into the jq string after asserting
+# it matches ^[a-zA-Z0-9-]+$ above, so the interpolation cannot inject quotes.
+# Also: prefer direct `!= true` / `!= false` over `// false` / `// true`
+# defaults — jq's `//` treats false as absent and would mis-evaluate boolean
+# checks (see comment on ENV_WEAKNESSES above).
+PROTECTION_WEAKNESSES=$(gh api "repos/${REPO}/branches/main/protection" --jq '
+  [ (if (.required_pull_request_reviews.required_approving_review_count // 0) < 1 then "required_approving_review_count < 1" else empty end),
+    (if .required_pull_request_reviews.dismiss_stale_reviews != true then "dismiss_stale_reviews not strictly true" else empty end),
+    (if .enforce_admins.enabled != true then "enforce_admins not strictly true" else empty end),
+    (if .allow_force_pushes.enabled != false then "force-push allowed" else empty end),
+    (if .allow_deletions.enabled != false then "deletion allowed" else empty end),
+    (if ((.required_status_checks.contexts // []) | any(. == "Test")) | not then "Test not in required_status_checks" else empty end),
+    (if (((.required_pull_request_reviews.bypass_pull_request_allowances.users // []) | map(.login)) != ["'"${EXPECTED_BYPASS_USER}"'"])
+       then "bypass.users is \((.required_pull_request_reviews.bypass_pull_request_allowances.users // []) | map(.login) | tojson) (expected [\"'"${EXPECTED_BYPASS_USER}"'\"])" else empty end),
+    (if (((.required_pull_request_reviews.bypass_pull_request_allowances.teams // []) | length) > 0)
+       then "unexpected bypass.teams entries" else empty end),
+    (if (((.required_pull_request_reviews.bypass_pull_request_allowances.apps // []) | length) > 0)
+       then "unexpected bypass.apps entries" else empty end)
+  ] | join("; ")
+' 2>/dev/null || echo "__MISSING__")
 
 if [ "$PROTECTION_WEAKNESSES" = "__MISSING__" ]; then
   echo "ERROR: branch protection on 'main' is not configured (or unreadable) on ${REPO}."
@@ -352,7 +403,10 @@ echo ""
 # Atomic write via mktemp + mv: a partial write (disk full mid-stream) leaves the
 # tempfile, and the rename never happens — operator sees the WARNING and the
 # final-named file does not exist (no "looks complete but is truncated" failure).
-TMP_AUDIT=$(mktemp -t npm-trust-audit.XXXXXX 2>/dev/null || mktemp 2>/dev/null || echo "")
+# Tempfile is created in the same directory as AUDIT_FILE so the mv is an in-fs
+# rename (truly atomic). mktemp -t / $TMPDIR could land on a tmpfs while
+# AUDIT_FILE is on disk; cross-fs mv falls back to copy+unlink (not atomic).
+TMP_AUDIT=$(mktemp "${SCRIPT_DIR}/npm-trust-audit.XXXXXX" 2>/dev/null || echo "")
 if [ -n "${TMP_AUDIT}" ] \
    && printf '%s\n' "${AUDIT_CONTENT}" > "${TMP_AUDIT}" 2>/dev/null \
    && [ -s "${TMP_AUDIT}" ] \

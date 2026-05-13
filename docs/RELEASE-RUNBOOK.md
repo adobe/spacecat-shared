@@ -3,10 +3,39 @@
 On-call procedures for the npm OIDC-based publish path
 (`.github/workflows/main.yaml` release job).
 
-The release job publishes all 22 `@adobe/*` packages to npmjs.com via the
-`npm-publish` GitHub Environment with sigstore provenance. Trust binding
-recorded on npmjs.com: `{repo: adobe/spacecat-shared, workflow: main.yaml,
-environment: npm-publish}`. Authentication uses OIDC (no `NPM_TOKEN`).
+The release job publishes the 22 published `@adobe/*` packages (the 24
+`.releaserc.cjs` files in this monorepo split into: 1 root config + 22
+publishable packages + 1 `spacecat-shared-example` template marked
+`private: true`) to npmjs.com via the `npm-publish` GitHub Environment
+with sigstore provenance. Trust binding recorded on npmjs.com:
+`{repo: adobe/spacecat-shared, workflow: main.yaml, environment: npm-publish}`.
+Authentication uses OIDC (no `NPM_TOKEN`).
+
+## Detection and ownership
+
+Surface a release problem from any of these:
+
+- **GitHub Actions**: failed run on the `Build` workflow, `main` branch.
+  https://github.com/adobe/spacecat-shared/actions/workflows/main.yaml
+- **PR `BEHIND` blockage**: downstream PRs to consumer repos
+  (`spacecat-api-service`, `spacecat-audit-worker`, etc.) fail at `npm install`
+  with a missing version.
+- **npm-side staleness**: `npm view @adobe/spacecat-shared-utils dist.tags.latest`
+  against the merge-commit SHA — staleness > 30 min after a successful merge
+  to `main` indicates the release job failed or is queued waiting for env
+  approval.
+
+Expected time-to-detect:
+
+- < 15 min via Actions failure
+- 30–60 min via downstream consumer failure
+- Indeterminate without a release-watch alert
+
+Owner / first responder: `@spacecat-admins` GitHub team.
+Escalation path: Adobe Sites infrastructure on-call (TODO: replace with the
+team-specific escalation channel + paging policy).
+Slack: `#spacecat-releases` (TODO: confirm webhook is configured for
+workflow-failure notifications; if not, file a follow-up to add it).
 
 ## Normal release flow
 
@@ -35,12 +64,37 @@ Symptoms:
 - `npm publish` errors with one of: `403 OIDC trust binding mismatch`,
   `401 unauthenticated`, or `sigstore: token mint failed`.
 
-Recovery (revert and resume token-based publishing):
+Recovery (revert and resume token-based publishing). Two paths depending on
+who is responding:
+
+**Path A — responder holds `adobe-bot` GitHub credentials** (release infra):
 
 ```bash
 git revert <merge-sha-of-this-PR>
-git push origin main   # bot is on branch-protection bypass, this succeeds
+# adobe-bot is on the branch-protection bypass list, so the push succeeds:
+git push origin main
 ```
+
+**Path B — human on-call without `adobe-bot` credentials**:
+
+A direct push to `main` is rejected for any human (branch protection requires
+PR + approval; `adobe-bot` is the only bypass actor). Use a fast-tracked
+revert PR instead:
+
+```bash
+git checkout -b hotfix/revert-oidc-migration-pr-1592 origin/main
+git revert <merge-sha-of-this-PR>
+git push origin hotfix/revert-oidc-migration-pr-1592
+gh pr create --base main \
+  --title "revert: OIDC migration (release broken — RELEASE-RUNBOOK FM-1)" \
+  --body "Triggering rollback to token-based publishing per RELEASE-RUNBOOK.md FM-1.
+The OIDC release after #1592 failed; reverting restores NPM_TOKEN-based publish.
+Re-investigation in a fresh PR after this lands."
+```
+
+Request expedited review from `@spacecat-admins`. Once merged (one approver
++ `Test` passing, ~10–15 min), the next release publishes via the restored
+`NPM_TOKEN`.
 
 `ADOBE_BOT_NPM_TOKEN` is intentionally retained in GitHub repo secrets for
 ≥ 2 successful release cycles (per SITES-42702). The revert re-adds
@@ -108,13 +162,42 @@ done
 Recovery, depending on which side made progress:
 
 - **Git tag exists, some packages didn't publish**: the `chore(release):`
-  commit is already on `main`. Re-trigger the release job from the Actions UI
-  (Run workflow → Release). semantic-release skips already-published versions
-  and publishes the missing ones.
-- **Git tag missing**: revert the in-progress `chore(release):` commit (if it
-  was pushed before timeout), then push a no-op commit to `main` to retrigger
-  the release.
-- **Both missing**: re-trigger the release job; semantic-release starts fresh.
+  commit is already on `main`. Re-trigger via the GitHub Actions UI:
+  Actions → `Build` workflow → "Run workflow" → branch `main` → Run.
+  This uses the `workflow_dispatch:` trigger declared in `main.yaml`
+  (requires repo write access; the `npm-publish` environment's required
+  reviewers still gate the actual publish step). semantic-release skips
+  already-published versions and publishes the missing ones.
+
+  CLI equivalent:
+
+  ```bash
+  gh workflow run Build --ref main
+  ```
+
+- **Git tag missing, no `chore(release):` commit pushed**: re-trigger via
+  the same workflow_dispatch path — semantic-release will start fresh.
+
+- **Git tag missing but a partial `chore(release):` commit was pushed**:
+  open a fast-tracked revert PR (same shape as FM-1 Path B) reverting the
+  partial release commit, get it merged, then either let the next merge
+  trigger a release or re-trigger via workflow_dispatch. A direct
+  no-op push to `main` is blocked by branch protection for non-bot actors.
+
+- **Edge case — npm publish succeeded for a package but git tag-push failed**
+  (rare; semantic-release runs `@semantic-release/npm` before
+  `@semantic-release/git`, so the inverse — tag pushed but publish failed —
+  cannot happen by plugin order). On re-run, semantic-release will try to
+  re-publish the same version, npm will reject with
+  `403 You cannot publish over the previously published versions`, and the
+  workflow fails. Recovery for that specific package:
+
+  ```bash
+  # Push the missing per-package tag manually (replace versions accordingly):
+  git tag "@adobe/<pkg>-v<X+1>" <merge-sha-of-this-release>
+  git push origin "@adobe/<pkg>-v<X+1>"
+  # then re-run via workflow_dispatch; semantic-release now sees the tag and skips.
+  ```
 
 Pre-emption: for releases touching > 10 packages, monitor the job. If a
 single-PR release is unusually large, consider a one-off PR bumping
@@ -131,18 +214,34 @@ Recovery:
 
 1. Update the `WORKFLOW` or `ENVIRONMENT` constant in
    `scripts/setup-npm-trusted-publishers.sh` to the new name.
-2. Re-run the script as `adobe-bot`. `npm trust` is idempotent, so existing
-   bindings under the old name remain but the new ones are registered.
-3. Revoke the old bindings manually so they don't accumulate as orphaned
-   trust:
+2. Re-run the script as `adobe-bot`. `npm trust` is idempotent for adds,
+   so existing bindings under the old name remain in place while the new
+   ones are registered.
+3. Revoke each old binding manually. `npm trust revoke` takes a trust-id
+   discovered via `npm trust list`, not the `--repository/--file` flags
+   used to register:
 
    ```bash
-   for pkg in @adobe/spacecat-shared-data-access ...; do
-     npm trust revoke github "$pkg" \
-       --repository adobe/spacecat-shared \
-       --file <old-workflow-filename>
+   # For each package, list trust bindings, identify the stale entry
+   # (matching the old workflow filename), and revoke it by id:
+   for pkg in $(grep -E '^\s+"@adobe/' scripts/setup-npm-trusted-publishers.sh \
+                  | tr -d '",' | awk '{print $1}'); do
+     echo "=== $pkg ==="
+     npm trust list "$pkg"   # outputs each binding with a trust-id
+     # then for the row whose workflow_ref points at the OLD filename:
+     # npm trust revoke "$pkg" --id <trust-id>
    done
    ```
+
+   `npm trust list <package>` displays each registered binding with its
+   `trust-id`, repository, workflow filename, and environment. Identify
+   the row whose workflow_ref points at the old filename and revoke it:
+
+   ```bash
+   npm trust revoke @adobe/spacecat-shared-utils --id <trust-id-from-list>
+   ```
+
+   Repeat for all 22 packages.
 
 The workflow header comment and the setup-script preflight both warn about
 this hazard, but a renamer six months from now may not read either — keep

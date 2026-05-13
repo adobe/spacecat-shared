@@ -15,7 +15,13 @@ name: Build
 # No workflow-level permissions — each job declares only what it needs.
 permissions: {}
 
-on: [push]
+on:
+  push:
+  # workflow_dispatch enables manual re-trigger for incident recovery
+  # (see docs/RELEASE-RUNBOOK.md "Failure mode 3"). The release job's
+  # `if: github.ref == 'refs/heads/main'` and `environment: npm-publish`
+  # (with required reviewers + main-only branch policy) still gate publish.
+  workflow_dispatch:
 
 env:
   CI_BUILD_NUM: ${{ github.run_id }}

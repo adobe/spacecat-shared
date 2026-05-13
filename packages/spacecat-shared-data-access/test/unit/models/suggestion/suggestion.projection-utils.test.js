@@ -70,7 +70,7 @@ describe('Suggestion Projection Utils', () => {
         ]);
       });
 
-      it('omits null/undefined metric values for per-metric suggestions', () => {
+      it('omits null/undefined metric values', () => {
         const metrics = [
           {
             deviceType: 'mobile', lcp: 4500, inp: null, cls: undefined,

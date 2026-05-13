@@ -194,7 +194,6 @@ describe('SuggestionModel', () => {
         expect(projection).to.be.an('object');
         expect(projection.fields).to.be.an('array');
         expect(projection.fields).to.include('url');
-        expect(projection.fields).to.include('metric');
       });
 
       it('returns fallback projection for undefined opportunity type', () => {
@@ -280,58 +279,6 @@ describe('SuggestionModel', () => {
               { deviceType: 'mobile', lcp: 2454, cls: 0.27 },
             ],
             issues: [],
-          };
-          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
-        });
-      });
-
-      describe('CWV per-metric suggestion', () => {
-        it('passes with metric field for per-metric suggestion', () => {
-          const suggestionData = {
-            type: 'url',
-            url: 'https://www.example.com/page',
-            metric: 'lcp',
-            metrics: [
-              { deviceType: 'mobile', lcp: 4500 },
-              { deviceType: 'desktop', lcp: 2800 },
-            ],
-            issues: [{ type: 'lcp', value: 'Optimize hero image', patchContent: 'diff...' }],
-            isCodeChangeAvailable: true,
-          };
-          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
-        });
-
-        it('passes without metric field (backward compat with bundled suggestions)', () => {
-          const suggestionData = {
-            type: 'url',
-            url: 'https://www.example.com/page',
-            metrics: [
-              {
-                deviceType: 'mobile', lcp: 2701, cls: 0.05, inp: 300,
-              },
-            ],
-            issues: [],
-          };
-          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
-        });
-
-        it('rejects invalid metric value', () => {
-          const suggestionData = {
-            type: 'url',
-            url: 'https://www.example.com/page',
-            metric: 'ttfb',
-            metrics: [{ deviceType: 'mobile', ttfb: 500 }],
-          };
-          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
-        });
-
-        it('passes with isCodeChangeAvailable field', () => {
-          const suggestionData = {
-            type: 'url',
-            url: 'https://www.example.com/page',
-            metric: 'cls',
-            metrics: [{ deviceType: 'mobile', cls: 0.2 }],
-            isCodeChangeAvailable: false,
           };
           expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
         });

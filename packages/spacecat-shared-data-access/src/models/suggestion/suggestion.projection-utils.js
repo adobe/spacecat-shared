@@ -14,8 +14,6 @@
  * @fileoverview Utility functions and configurations for suggestion data projections.
  */
 
-import { CWV_PER_METRIC_VALUES } from './suggestion.data-schemas.js';
-
 /**
  * Reusable field transformation functions for projecting suggestion data.
  * Referenced by name in DATA_SCHEMAS transformer configurations.
@@ -58,7 +56,7 @@ export const FIELD_TRANSFORMERS = {
     }
     return metrics.map((m) => {
       const filtered = { deviceType: m.deviceType };
-      for (const key of CWV_PER_METRIC_VALUES) {
+      for (const key of ['lcp', 'cls', 'inp']) {
         if (m[key] != null) {
           filtered[key] = m[key];
         }

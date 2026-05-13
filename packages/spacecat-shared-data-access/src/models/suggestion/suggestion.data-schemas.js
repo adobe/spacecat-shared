@@ -27,13 +27,6 @@ import Joi from 'joi';
 import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
 
 /**
- * Valid CWV metric types for per-metric suggestions.
- * Referenced by the Joi schema (metric field) and the filterCwvMetrics transformer.
- * Adding a new metric (e.g., 'ttfb', 'fcp') is a one-line change here.
- */
-export const CWV_PER_METRIC_VALUES = ['lcp', 'cls', 'inp'];
-
-/**
  * Custom Joi validator that accepts malformed HTTP/HTTPS URLs and relative paths
  * while rejecting dangerous URI schemes (javascript:, data:, blob:, etc.).
  * Used for BROKEN_INTERNAL_LINKS where crawled content may contain malformed URLs.
@@ -145,16 +138,14 @@ export const DATA_SCHEMAS = {
       },
     },
   },
-  // CWV has three implicit data shapes:
-  // 1. Page-level bundled (type='url'): url and issues are present, all metrics in one suggestion
-  // 2. Page-level per-metric (type='url', metric='lcp'|'cls'|'inp'): one suggestion per metric
-  // 3. Group-type (type='group'): url is absent, issues may be populated later via update
-  // All shapes share the same schema; url, metric, and issues are optional to support all.
+  // CWV has two implicit data shapes:
+  // 1. Page-level (type='url'): url and issues are present, all metrics in one suggestion
+  // 2. Group-type (type='group'): url is absent, issues may be populated later via update
+  // All shapes share the same schema; url and issues are optional to support all.
   [OPPORTUNITY_TYPES.CWV]: {
     schema: Joi.object({
       type: Joi.string().required(),
       url: Joi.string().uri().optional(),
-      metric: Joi.string().valid(...CWV_PER_METRIC_VALUES).optional(),
       pageviews: Joi.number().optional(),
       organic: Joi.number().optional(),
       metrics: Joi.array().items(
@@ -179,7 +170,7 @@ export const DATA_SCHEMAS = {
     }).unknown(true),
     projections: {
       minimal: {
-        fields: ['url', 'type', 'metric', 'metrics', 'issues'],
+        fields: ['url', 'type', 'metrics', 'issues'],
         transformers: {
           metrics: 'filterCwvMetrics',
         },

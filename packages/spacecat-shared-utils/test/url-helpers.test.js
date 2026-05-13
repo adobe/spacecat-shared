@@ -671,6 +671,7 @@ describe('URL Utility Functions', () => {
 
       log = {
         debug: sandbox.stub(),
+        warn: sandbox.stub(),
         error: sandbox.stub(),
       };
 
@@ -684,6 +685,7 @@ describe('URL Utility Functions', () => {
 
     afterEach(() => {
       sandbox.restore();
+      nock.cleanAll();
     });
 
     it('should return overrideBaseURL when configured with https', async () => {
@@ -720,6 +722,7 @@ describe('URL Utility Functions', () => {
       });
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://www.example.com').head('/').reply(200);
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -740,6 +743,7 @@ describe('URL Utility Functions', () => {
     it('should check RUM for www subdomain (not return early)', async () => {
       site.getBaseURL.returns('https://www.example.com');
       rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+      nock('https://example.com').head('/').reply(200);
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -750,6 +754,7 @@ describe('URL Utility Functions', () => {
     it('should check RUM for no subdomain (not return early)', async () => {
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://www.example.com').head('/').reply(200);
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -760,6 +765,7 @@ describe('URL Utility Functions', () => {
     it('should prioritize www-toggled version (www added) when it has RUM data', async () => {
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://www.example.com').head('/').reply(200);
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -771,6 +777,7 @@ describe('URL Utility Functions', () => {
     it('should prioritize www-toggled version (www removed) when it has RUM data', async () => {
       site.getBaseURL.returns('https://www.example.com');
       rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+      nock('https://example.com').head('/').reply(200);
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -851,6 +858,7 @@ describe('URL Utility Functions', () => {
       });
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://www.example.com').head('/').reply(200);
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -861,10 +869,44 @@ describe('URL Utility Functions', () => {
       site.getConfig.returns(null);
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://www.example.com').head('/').reply(200);
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
       expect(result).to.equal('www.example.com');
+    });
+
+    it('should skip www-toggled hostname with RUM key but bad SSL and use original hostname', async () => {
+      // krisshop.com.au scenario: site is www.krisshop.com.au, toggled apex has RUM key but bad SSL
+      site.getBaseURL.returns('https://www.krisshop.com.au');
+      rumApiClient.retrieveDomainkey.withArgs('krisshop.com.au').resolves('domain-key');
+      rumApiClient.retrieveDomainkey.withArgs('www.krisshop.com.au').resolves('domain-key');
+      nock('https://krisshop.com.au').head('/').replyWithError('CERT_AUTHORITY_INVALID');
+      nock('https://www.krisshop.com.au').head('/').reply(200);
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.krisshop.com.au');
+      expect(log.warn).to.have.been.calledWith(
+        'RUM key found for krisshop.com.au but HTTPS check failed; trying www.krisshop.com.au',
+      );
+    });
+
+    it('should skip www-toggled hostname with bad SSL and fall back to www when original has no RUM key', async () => {
+      site.getBaseURL.returns('https://www.example.com');
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').rejects(new Error('No domain key'));
+      nock('https://example.com').head('/').replyWithError('CERT_AUTHORITY_INVALID');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(log.warn).to.have.been.calledWith(
+        'RUM key found for example.com but HTTPS check failed; trying www.example.com',
+      );
+      expect(log.debug).to.have.been.calledWith(
+        'Fallback to www.example.com for URL resolution for https://www.example.com',
+      );
     });
   });
 

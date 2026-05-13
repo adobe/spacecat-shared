@@ -283,12 +283,25 @@ function toggleWWWHostname(hostname) {
   return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
 }
 
+async function isHttpsReachable(hostname) {
+  try {
+    await fetch(`https://${hostname}`, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000),
+      redirect: 'manual',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Resolves the correct URL for a site by checking RUM data availability.
  * Tries www-toggled version first, then falls back to original.
  * @param {object} site - The site object with getBaseURL() and getConfig() methods.
  * @param {object} rumApiClient - The RUM API client instance with retrieveDomainkey method.
- * @param {object} log - Logger instance with debug() and error() methods.
+ * @param {object} log - Logger instance with debug(), warn(), and error() methods.
  * @returns {Promise<string>} - The resolved hostname without protocol.
  */
 async function wwwUrlResolver(site, rumApiClient, log) {
@@ -310,8 +323,11 @@ async function wwwUrlResolver(site, rumApiClient, log) {
   try {
     const wwwToggledHostname = toggleWWWHostname(hostname);
     await rumApiClient.retrieveDomainkey(wwwToggledHostname);
-    log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
-    return wwwToggledHostname;
+    if (await isHttpsReachable(wwwToggledHostname)) {
+      log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
+      return wwwToggledHostname;
+    }
+    log.warn(`RUM key found for ${wwwToggledHostname} but HTTPS check failed; trying ${hostname}`);
   } catch (e) {
     log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
   }

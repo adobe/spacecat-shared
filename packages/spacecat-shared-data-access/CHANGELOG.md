@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.62.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.61.0...@adobe/spacecat-shared-data-access-v3.62.0) (2026-05-12)
+
+### Features
+
+* **data-access:** add semrushWorkspaceId attribute to Organization ([#1602](https://github.com/adobe/spacecat-shared/issues/1602)) ([79a5d82](https://github.com/adobe/spacecat-shared/commit/79a5d825c2a3cb436d894f5bea90a0a4e230167b))
+
 ## [@adobe/spacecat-shared-data-access-v3.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.60.0...@adobe/spacecat-shared-data-access-v3.61.0) (2026-05-12)
 
 ### Features

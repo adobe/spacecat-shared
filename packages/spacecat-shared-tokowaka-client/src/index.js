@@ -67,7 +67,9 @@ function isPatternSuggestion(suggestion) {
  * @returns {((url: string) => boolean)|null}
  */
 function buildUrlMatcher(pattern) {
-  if (typeof pattern !== 'string' || pattern.length === 0) return null;
+  if (typeof pattern !== 'string' || pattern.length === 0) {
+    return null;
+  }
   if (pattern.endsWith('/*')) {
     const prefix = pattern.slice(0, -2); // '/products/*' → '/products', '/*' → ''
     return (url) => {
@@ -1514,11 +1516,21 @@ class TokowakaClient {
           });
           if (matchers.length > 0) {
             const covered = allSuggestions.filter((s) => {
-              if (s.getId() === suggestion.getId()) return false;
-              if (skippedInBatchIds.has(s.getId())) return false;
-              if (!isEdgeDeployableSuggestionStatus(s.getStatus())) return false;
-              if (isPatternSuggestion(s)) return false;
-              if (s.getData()?.edgeDeployed) return false;
+              if (s.getId() === suggestion.getId()) {
+                return false;
+              }
+              if (skippedInBatchIds.has(s.getId())) {
+                return false;
+              }
+              if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
+                return false;
+              }
+              if (isPatternSuggestion(s)) {
+                return false;
+              }
+              if (s.getData()?.edgeDeployed) {
+                return false;
+              }
               const url = s.getData()?.url;
               return url && matchers.some((match) => match(url));
             });

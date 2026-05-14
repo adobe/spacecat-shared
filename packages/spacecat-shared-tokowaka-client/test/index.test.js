@@ -2950,9 +2950,7 @@ describe('TokowakaClient', () => {
       const pathSuggestion = {
         getId: () => 'path-1',
         getData: () => ({
-          pathType: true,
-          allowedRegexPatterns: ['/products/\\*'],
-          pathPattern: '/products/*',
+          allowedRegexPatterns: ['/products/*'],
           edgeDeployed: Date.now(),
         }),
         setData: sinon.stub(),
@@ -2962,7 +2960,7 @@ describe('TokowakaClient', () => {
 
       sinon.stub(client, 'fetchMetaconfig').resolves({
         siteId: 'site-123',
-        prerender: { allowList: ['/\\*', '/products/\\*'] },
+        prerender: { allowList: ['/*', '/products/*'] },
       });
       const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
 
@@ -2975,7 +2973,7 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.include(pathSuggestion);
       expect(result.failedSuggestions).to.have.length(0);
       const uploadedConfig = uploadStub.firstCall.args[1];
-      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/\\*']);
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/*']);
     });
 
     it('path rollback of last remaining pattern deletes prerender key entirely', async () => {
@@ -2983,9 +2981,7 @@ describe('TokowakaClient', () => {
       const pathSuggestion = {
         getId: () => 'path-1',
         getData: () => ({
-          pathType: true,
-          allowedRegexPatterns: ['/products/\\*'],
-          pathPattern: '/products/*',
+          allowedRegexPatterns: ['/products/*'],
           edgeDeployed: Date.now(),
         }),
         setData: sinon.stub(),
@@ -2995,7 +2991,7 @@ describe('TokowakaClient', () => {
 
       sinon.stub(client, 'fetchMetaconfig').resolves({
         siteId: 'site-123',
-        prerender: { allowList: ['/products/\\*'] },
+        prerender: { allowList: ['/products/*'] },
       });
       const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
 
@@ -3016,7 +3012,7 @@ describe('TokowakaClient', () => {
         getId: () => 'dw-1',
         getData: () => ({
           isDomainWide: true,
-          allowedRegexPatterns: ['/\\*'],
+          allowedRegexPatterns: ['/*'],
           edgeDeployed: Date.now(),
         }),
         setData: sinon.stub(),
@@ -3026,7 +3022,7 @@ describe('TokowakaClient', () => {
 
       sinon.stub(client, 'fetchMetaconfig').resolves({
         siteId: 'site-123',
-        prerender: { allowList: ['/\\*', '/products/\\*'] },
+        prerender: { allowList: ['/*', '/products/*'] },
       });
       const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
 
@@ -3038,14 +3034,14 @@ describe('TokowakaClient', () => {
 
       expect(result.succeededSuggestions).to.include(dwSuggestion);
       const uploadedConfig = uploadStub.firstCall.args[1];
-      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/\\*']);
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/*']);
     });
 
-    it('path rollback marks suggestion ineligible when allowedRegexPatterns is missing', async () => {
+    it('path rollback marks suggestion ineligible when allowedRegexPatterns contains no valid pattern', async () => {
       const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
       const pathSuggestion = {
         getId: () => 'path-1',
-        getData: () => ({ pathType: true }),
+        getData: () => ({ allowedRegexPatterns: [null] }),
         setData: sinon.stub(),
         setUpdatedBy: sinon.stub(),
         save: sinon.stub().resolves(),
@@ -3070,9 +3066,7 @@ describe('TokowakaClient', () => {
       const pathSuggestion = {
         getId: () => 'path-1',
         getData: () => ({
-          pathType: true,
-          allowedRegexPatterns: ['/products/\\*'],
-          pathPattern: '/products/*',
+          allowedRegexPatterns: ['/products/*'],
         }),
         setData: sinon.stub(),
         setUpdatedBy: sinon.stub(),
@@ -3097,9 +3091,7 @@ describe('TokowakaClient', () => {
       const pathSuggestion = {
         getId: () => 'path-1',
         getData: () => ({
-          pathType: true,
-          allowedRegexPatterns: ['/products/\\*'],
-          pathPattern: '/products/*',
+          allowedRegexPatterns: ['/products/*'],
         }),
         setData: sinon.stub(),
         setUpdatedBy: sinon.stub(),
@@ -3124,9 +3116,7 @@ describe('TokowakaClient', () => {
       const pathSuggestion = {
         getId: () => 'path-1',
         getData: () => ({
-          pathType: true,
-          allowedRegexPatterns: ['/blog/\\*'],
-          pathPattern: '/blog/*',
+          allowedRegexPatterns: ['/blog/*'],
           edgeDeployed: Date.now(),
         }),
         setData: sinon.stub(),
@@ -3136,7 +3126,7 @@ describe('TokowakaClient', () => {
 
       sinon.stub(client, 'fetchMetaconfig').resolves({
         siteId: 'site-123',
-        prerender: { allowList: ['/\\*'] },
+        prerender: { allowList: ['/*'] },
       });
       const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
 
@@ -3155,9 +3145,7 @@ describe('TokowakaClient', () => {
       const pathSuggestion = {
         getId: () => 'path-1',
         getData: () => ({
-          pathType: true,
-          allowedRegexPatterns: ['/products/\\*'],
-          pathPattern: '/products/*',
+          allowedRegexPatterns: ['/products/*'],
           edgeDeployed: Date.now(),
         }),
         setData: sinon.stub(),
@@ -3167,7 +3155,7 @@ describe('TokowakaClient', () => {
 
       sinon.stub(client, 'fetchMetaconfig').resolves({
         siteId: 'site-123',
-        prerender: { allowList: ['/products/\\*'] },
+        prerender: { allowList: ['/products/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').rejects(new Error('S3 failure'));
 
@@ -5075,6 +5063,24 @@ describe('TokowakaClient', () => {
       expect(uploadMetaconfigStub).to.not.have.been.called;
     });
 
+    it('should warn and skip empty string patterns', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: [''],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(result.succeededSuggestions).to.include(path);
+      expect(log.warn).to.have.been.called;
+    });
+
     it('should warn and skip invalid regex patterns for domain-wide', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
@@ -5231,10 +5237,10 @@ describe('TokowakaClient', () => {
     it('domain-wide deploy merges /*  into existing allowList instead of replacing it', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
-        allowedRegexPatterns: ['/\\*'],
+        allowedRegexPatterns: ['/*'],
       });
 
-      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/products/\\*'] } });
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/products/*'] } });
 
       await client.deployToEdge({
         site: mockSite,
@@ -5244,16 +5250,16 @@ describe('TokowakaClient', () => {
       });
 
       const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
-      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/\\*', '/\\*']);
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/*', '/*']);
     });
 
     it('domain-wide deploy deduplicates patterns already in allowList', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
-        allowedRegexPatterns: ['/\\*'],
+        allowedRegexPatterns: ['/*'],
       });
 
-      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/\\*'] } });
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/*'] } });
 
       await client.deployToEdge({
         site: mockSite,
@@ -5262,15 +5268,12 @@ describe('TokowakaClient', () => {
         allSuggestions: [dw],
       });
 
-      const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
-      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/\\*']);
+      expect(uploadMetaconfigStub).to.not.have.been.called;
     });
 
     it('path deploy appends /products/* to an empty allowList', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        pathPattern: '/products/*',
+        allowedRegexPatterns: ['/products/*'],
       });
 
       fetchMetaconfigStub.resolves(null);
@@ -5284,18 +5287,16 @@ describe('TokowakaClient', () => {
 
       expect(result.succeededSuggestions).to.include(path);
       const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
-      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/\\*']);
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/*']);
       expect(path.getData()).to.have.property('edgeDeployed');
     });
 
     it('path deploy appends /products/* when domain-wide /* is already in allowList', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        pathPattern: '/products/*',
+        allowedRegexPatterns: ['/products/*'],
       });
 
-      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/\\*'] } });
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/*'] } });
 
       await client.deployToEdge({
         site: mockSite,
@@ -5305,17 +5306,15 @@ describe('TokowakaClient', () => {
       });
 
       const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
-      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/\\*', '/products/\\*']);
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/*', '/products/*']);
     });
 
     it('path deploy skips CDN write but still marks edgeDeployed when pattern already in allowList', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        pathPattern: '/products/*',
+        allowedRegexPatterns: ['/products/*'],
       });
 
-      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/products/\\*'] } });
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/products/*'] } });
 
       const result = await client.deployToEdge({
         site: mockSite,
@@ -5331,9 +5330,7 @@ describe('TokowakaClient', () => {
 
     it('path deploy does not call deploySuggestions (no per-URL S3 config)', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        pathPattern: '/products/*',
+        allowedRegexPatterns: ['/products/*'],
       });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
@@ -5350,9 +5347,7 @@ describe('TokowakaClient', () => {
 
     it('path deploy marks per-URL suggestions under the deployed path prefix as covered', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        pathPattern: '/products/*',
+        allowedRegexPatterns: ['/products/*'],
       });
       const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
       const urlElsewhere = makeSuggestion('u2', { url: 'https://example.com/about' });
@@ -5367,15 +5362,13 @@ describe('TokowakaClient', () => {
       });
 
       expect(result.coveredSuggestions).to.include(urlUnderPath);
-      expect(urlUnderPath.getData()).to.have.property('coveredByDomainWide', 'p1');
+      expect(urlUnderPath.getData()).to.have.property('coveredByPattern', 'p1');
       expect(result.coveredSuggestions).to.not.include(urlElsewhere);
     });
 
     it('path deploy marks as failed with statusCode 500 when metaconfig upload fails', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        pathPattern: '/products/*',
+        allowedRegexPatterns: ['/products/*'],
       });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
@@ -5394,11 +5387,10 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions[0].reason).to.equal('upload failed');
     });
 
-    it('path deploy with no pathPattern does not mark any covered suggestions', async () => {
+    it('path deploy marks coverage via allowedRegexPatterns even when pathPattern field is absent', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        // no pathPattern field
+        allowedRegexPatterns: ['/products/*'],
+        // no pathPattern field — coverage is derived from allowedRegexPatterns
       });
       const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
 
@@ -5412,21 +5404,20 @@ describe('TokowakaClient', () => {
       });
 
       expect(result.succeededSuggestions).to.include(path);
-      expect(result.coveredSuggestions).to.have.length(0);
+      expect(result.coveredSuggestions).to.include(urlUnderPath);
+      expect(urlUnderPath.getData()).to.have.property('coveredByPattern', 'p1');
     });
 
-    it('path deploy does not mark non-NEW, domain-wide, pathType, or already-deployed candidates as covered', async () => {
+    it('path deploy does not mark non-NEW, pattern, or already-deployed candidates as covered', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        pathPattern: '/products/*',
+        allowedRegexPatterns: ['/products/*'],
       });
       // APPROVED — not a deployable status
       const nonNew = makeSuggestion('u1', { url: 'https://example.com/products/a' }, 'APPROVED');
-      // isDomainWide — excluded
-      const dw = makeSuggestion('u2', { isDomainWide: true, url: 'https://example.com/products/b' });
-      // pathType — excluded
-      const otherPath = makeSuggestion('u3', { pathType: true, url: 'https://example.com/products/c' });
+      // isDomainWide pattern — excluded (isPatternSuggestion)
+      const dw = makeSuggestion('u2', { isDomainWide: true, allowedRegexPatterns: ['/*'], url: 'https://example.com/products/b' });
+      // another path pattern — excluded (isPatternSuggestion)
+      const otherPath = makeSuggestion('u3', { allowedRegexPatterns: ['/products/*'], url: 'https://example.com/products/c' });
       // already edgeDeployed — excluded
       const deployed = makeSuggestion('u4', { url: 'https://example.com/products/d', edgeDeployed: 12345 });
 
@@ -5444,9 +5435,7 @@ describe('TokowakaClient', () => {
 
     it('path deploy silently skips covered-suggestion candidates with invalid URLs', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        pathPattern: '/products/*',
+        allowedRegexPatterns: ['/products/*'],
       });
       const badUrl = makeSuggestion('u1', { url: 'not-a-valid-url' });
 
@@ -5466,9 +5455,7 @@ describe('TokowakaClient', () => {
 
     it('path deploy warns but continues when covered-suggestion save fails', async () => {
       const path = makeSuggestion('p1', {
-        pathType: true,
-        allowedRegexPatterns: ['/products/\\*'],
-        pathPattern: '/products/*',
+        allowedRegexPatterns: ['/products/*'],
       });
       const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
       urlUnderPath.save = sinon.stub().rejects(new Error('DB error'));

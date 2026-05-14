@@ -47,9 +47,43 @@ function isEdgeDeployableSuggestionStatus(status) {
   return status === 'NEW' || status === 'PENDING_VALIDATION';
 }
 
-/** Returns true if the suggestion is a path-level prerender suggestion. */
-function isPathSuggestion(suggestion) {
-  return !!suggestion.getData()?.pathType;
+/**
+ * Returns true if this suggestion uses pattern-based allow-list deploy (domain-wide or path-level).
+ * Detected by the presence of a non-empty allowedRegexPatterns array, or by isDomainWide: true
+ * (which may have an empty array when malformed — handled gracefully in the deploy loop).
+ */
+function isPatternSuggestion(suggestion) {
+  const data = suggestion.getData();
+  return data?.isDomainWide === true
+    || (Array.isArray(data?.allowedRegexPatterns) && data.allowedRegexPatterns.length > 0);
+}
+
+/**
+ * Builds a URL matcher function for a given allowedRegexPatterns entry.
+ * Patterns ending with `/*` use pathname prefix matching (e.g. `/products/*` matches `/products/`).
+ * Other patterns are compiled as regular expressions for backward compatibility.
+ * Returns null for patterns that cannot be compiled.
+ * @param {string} pattern
+ * @returns {((url: string) => boolean)|null}
+ */
+function buildUrlMatcher(pattern) {
+  if (typeof pattern !== 'string' || pattern.length === 0) return null;
+  if (pattern.endsWith('/*')) {
+    const prefix = pattern.slice(0, -2); // '/products/*' → '/products', '/*' → ''
+    return (url) => {
+      try {
+        return new URL(url).pathname.startsWith(prefix);
+      } catch {
+        return false;
+      }
+    };
+  }
+  try {
+    const regex = new RegExp(pattern);
+    return (url) => regex.test(url);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -822,16 +856,10 @@ class TokowakaClient {
       );
     }
 
-    // Separate metaconfig-based suggestions (path and domain-wide allowList entries)
+    // Separate pattern-based suggestions (path and domain-wide allowList entries)
     // from per-URL suggestions — each group is rolled back via a different code path.
-    const metaconfigSuggestions = suggestions.filter((s) => {
-      const d = s.getData();
-      return isPathSuggestion(s) || d?.isDomainWide === true;
-    });
-    const perUrlSuggestions = suggestions.filter((s) => {
-      const d = s.getData();
-      return !isPathSuggestion(s) && d?.isDomainWide !== true;
-    });
+    const patternSuggestions = suggestions.filter(isPatternSuggestion);
+    const perUrlSuggestions = suggestions.filter((s) => !isPatternSuggestion(s));
 
     // Validate which per-URL suggestions can be rolled back
     // For rollback, we use the same canDeploy check to ensure data integrity
@@ -843,10 +871,10 @@ class TokowakaClient {
     this.log.debug(
       `Rolling back ${eligibleSuggestions.length} eligible suggestions `
       + `(${ineligibleSuggestions.length} ineligible), `
-      + `${metaconfigSuggestions.length} metaconfig suggestions`,
+      + `${patternSuggestions.length} pattern suggestions`,
     );
 
-    if (eligibleSuggestions.length === 0 && metaconfigSuggestions.length === 0) {
+    if (eligibleSuggestions.length === 0 && patternSuggestions.length === 0) {
       this.log.warn('No eligible suggestions to rollback');
       return {
         succeededSuggestions: [],
@@ -861,7 +889,7 @@ class TokowakaClient {
     const s3Paths = [];
     const rolledBackUrls = []; // Track URLs for batch CDN invalidation
     let totalRemovedCount = 0;
-    const failedMetaconfigSuggestions = [];
+    const failedPatternSuggestions = [];
 
     for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
       const fullUrl = new URL(urlPath, baseURL).toString();
@@ -935,10 +963,10 @@ class TokowakaClient {
 
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
 
-    // Roll back metaconfig-based suggestions (path and domain-wide) using remove-one semantics:
+    // Roll back pattern-based suggestions (path and domain-wide) using remove-one semantics:
     // remove only the specific pattern from allowList; delete prerender key when list empties.
-    const succeededMetaconfigSuggestions = [];
-    for (const suggestion of metaconfigSuggestions) {
+    const succeededPatternSuggestions = [];
+    for (const suggestion of patternSuggestions) {
       const data = suggestion.getData();
       const patternToRemove = data?.allowedRegexPatterns?.[0];
       if (!patternToRemove) {
@@ -977,10 +1005,10 @@ class TokowakaClient {
         suggestion.setUpdatedBy('edge-rollback');
         // eslint-disable-next-line no-await-in-loop
         await suggestion.save();
-        succeededMetaconfigSuggestions.push(suggestion);
+        succeededPatternSuggestions.push(suggestion);
       } catch (error) {
         this.log.error(`[edge-rollback] Error rolling back suggestion ${suggestion.getId()}: ${error.message}`, error);
-        failedMetaconfigSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
+        failedPatternSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
       }
     }
 
@@ -991,8 +1019,8 @@ class TokowakaClient {
     return {
       s3Paths,
       cdnInvalidations,
-      succeededSuggestions: [...eligibleSuggestions, ...succeededMetaconfigSuggestions],
-      failedSuggestions: [...ineligibleSuggestions, ...failedMetaconfigSuggestions],
+      succeededSuggestions: [...eligibleSuggestions, ...succeededPatternSuggestions],
+      failedSuggestions: [...ineligibleSuggestions, ...failedPatternSuggestions],
       removedPatchesCount: totalRemovedCount,
     };
   }
@@ -1359,58 +1387,49 @@ class TokowakaClient {
     updatedBy = 'edge-deploy',
   }) {
     const validSuggestions = [];
-    const domainWideSuggestions = [];
-    const pathSuggestions = [];
+    const patternSuggestions = [];
 
+    // Classify suggestions: pattern-based (domain-wide or path-level) vs per-URL.
+    // isPatternSuggestion detects both using allowedRegexPatterns presence — no separate
+    // isDomainWide / pathType discriminator needed at the classification step.
     targetSuggestions.forEach((suggestion) => {
       const data = suggestion.getData();
-      if (data?.isDomainWide === true) {
-        const { allowedRegexPatterns } = data;
-        if (Array.isArray(allowedRegexPatterns) && allowedRegexPatterns.length > 0) {
-          domainWideSuggestions.push({ suggestion, allowedRegexPatterns });
-        }
-      } else if (isPathSuggestion(suggestion)) {
-        const { allowedRegexPatterns } = data;
-        if (Array.isArray(allowedRegexPatterns) && allowedRegexPatterns.length > 0) {
-          pathSuggestions.push({ suggestion, allowedRegexPatterns });
-        }
+      if (isPatternSuggestion(suggestion)) {
+        patternSuggestions.push({ suggestion, allowedRegexPatterns: data.allowedRegexPatterns });
       } else if (isEdgeDeployableSuggestionStatus(suggestion.getStatus())) {
         validSuggestions.push(suggestion);
       }
     });
 
-    // Filter valid suggestions that are covered by domain-wide patterns in the same batch
+    // Filter per-URL suggestions that are covered by a pattern in the same batch.
+    // buildUrlMatcher handles both path-glob (/*) and legacy full-URL regex patterns.
     const skippedInBatch = [];
-    if (domainWideSuggestions.length > 0 && validSuggestions.length > 0) {
-      const allPatterns = [];
-      domainWideSuggestions.forEach(({ allowedRegexPatterns }) => {
-        allowedRegexPatterns.forEach((pattern) => {
-          try {
-            allPatterns.push(new RegExp(pattern));
-          } catch {
-            this.log.warn(`[edge-deploy] Skipping domain-wide pattern ${pattern} - invalid regex`);
+    if (patternSuggestions.length > 0 && validSuggestions.length > 0) {
+      const allMatchers = patternSuggestions
+        .flatMap(({ allowedRegexPatterns }) => allowedRegexPatterns)
+        .map(buildUrlMatcher)
+        .filter(Boolean);
+
+      if (allMatchers.length > 0) {
+        const remaining = [];
+        validSuggestions.forEach((s) => {
+          const url = s.getData()?.url;
+          if (url && allMatchers.some((match) => match(url))) {
+            skippedInBatch.push(s);
+            this.log.info(`[edge-deploy] Skipping suggestion ${s.getId()} - covered by pattern`);
+          } else {
+            remaining.push(s);
           }
         });
-      });
-
-      const remaining = [];
-      validSuggestions.forEach((s) => {
-        const url = s.getData()?.url;
-        if (url && allPatterns.some((regex) => regex.test(url))) {
-          skippedInBatch.push(s);
-          this.log.info(`[edge-deploy] Skipping suggestion ${s.getId()} - covered by domain-wide pattern`);
-        } else {
-          remaining.push(s);
-        }
-      });
-      validSuggestions.length = 0;
-      validSuggestions.push(...remaining);
+        validSuggestions.length = 0;
+        validSuggestions.push(...remaining);
+      }
     }
 
     let succeededSuggestions = [];
     const failedSuggestions = [];
 
-    // Deploy regular suggestions via tokowaka
+    // Deploy regular per-URL suggestions via tokowaka
     if (validSuggestions.length > 0) {
       try {
         const result = await this.deploySuggestions(site, opportunity, validSuggestions);
@@ -1441,23 +1460,24 @@ class TokowakaClient {
       }
     }
 
-    // Deploy domain-wide suggestions via metaconfig
+    // Deploy pattern suggestions (domain-wide and path-level) via metaconfig allowList.
+    // Both types use append-and-deduplicate semantics; CDN write is skipped when no change.
+    // Domain-wide coverage uses the legacy coveredByDomainWide field for backward compatibility;
+    // path-level coverage uses coveredByPattern.
     const coveredSuggestions = [];
-    if (domainWideSuggestions.length > 0) {
+    if (patternSuggestions.length > 0) {
       const baseURL = site.getBaseURL();
       const skippedInBatchIds = new Set(skippedInBatch.map((s) => s.getId()));
 
-      for (const { suggestion, allowedRegexPatterns } of domainWideSuggestions) {
-        // Fix #1: compile + validate regexes before any upload/save so a bad pattern
-        // never causes a suggestion to land in both succeeded and failed lists.
-        const regexPatterns = [];
-        for (const pattern of allowedRegexPatterns) {
-          try {
-            regexPatterns.push(new RegExp(pattern));
-          } catch {
-            this.log.warn(`[edge-deploy] Invalid regex pattern "${pattern}" for domain-wide suggestion ${suggestion.getId()}, skipping`);
-          }
+      for (const { suggestion, allowedRegexPatterns } of patternSuggestions) {
+        if (!allowedRegexPatterns || allowedRegexPatterns.length === 0) {
+          this.log.warn(`[edge-deploy] Pattern suggestion ${suggestion.getId()} has no allowedRegexPatterns, skipping`);
+          // eslint-disable-next-line no-continue
+          continue;
         }
+
+        const data = suggestion.getData();
+        const coverageField = data?.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
 
         try {
           // eslint-disable-next-line no-await-in-loop
@@ -1467,84 +1487,13 @@ class TokowakaClient {
           }
           const existingAllowList = metaconfig.prerender?.allowList ?? [];
           const mergedAllowList = [...new Set([...existingAllowList, ...allowedRegexPatterns])];
-          metaconfig.prerender = { allowList: mergedAllowList };
-          // eslint-disable-next-line no-await-in-loop
-          await this.uploadMetaconfig(baseURL, metaconfig);
 
-          const deploymentTimestamp = Date.now();
-          suggestion.setData({ ...suggestion.getData(), edgeDeployed: deploymentTimestamp });
-          suggestion.setUpdatedBy(updatedBy);
-          // eslint-disable-next-line no-await-in-loop
-          await suggestion.save();
-          succeededSuggestions.push(suggestion);
-
-          if (regexPatterns.length > 0) {
-            const covered = allSuggestions.filter((s) => {
-              if (s.getId() === suggestion.getId()) {
-                return false;
-              }
-              if (skippedInBatchIds.has(s.getId())) {
-                return false;
-              }
-              if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
-                return false;
-              }
-              if (s.getData()?.isDomainWide === true) {
-                return false;
-              }
-              if (s.getData()?.edgeDeployed) {
-                return false;
-              }
-              const url = s.getData()?.url;
-              return url && regexPatterns.some((r) => r.test(url));
-            });
-
-            if (covered.length > 0) {
-              try {
-                // eslint-disable-next-line no-await-in-loop
-                await Promise.all(covered.map(async (cs) => {
-                  cs.setData({
-                    ...cs.getData(),
-                    coveredByDomainWide: suggestion.getId(),
-                  });
-                  cs.setUpdatedBy(updatedBy);
-                  return cs.save();
-                }));
-                coveredSuggestions.push(...covered);
-              } catch (coverError) {
-                this.log.warn(`[edge-deploy] Failed to mark covered suggestions for domain-wide ${suggestion.getId()}: ${coverError.message}`);
-              }
-            }
-          }
-        } catch (error) {
-          this.log.error(`[edge-deploy] Error deploying domain-wide suggestion ${suggestion.getId()}: ${error.message}`, error);
-          // statusCode 500 — deploy itself failed, not an eligibility issue
-          failedSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
-        }
-      }
-    }
-
-    // Deploy path suggestions — append-only semantics (one pattern per suggestion)
-    if (pathSuggestions.length > 0) {
-      const baseURL = site.getBaseURL();
-
-      for (const { suggestion, allowedRegexPatterns: pathPatterns } of pathSuggestions) {
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          let metaconfig = await this.fetchMetaconfig(baseURL);
-          if (!metaconfig) {
-            metaconfig = { siteId: site.getId() };
-          }
-          const existingAllowList = metaconfig.prerender?.allowList ?? [];
-          const newPattern = pathPatterns[0]; // pathSuggestions always have exactly one pattern
-          const mergedAllowList = [...new Set([...existingAllowList, newPattern])];
-
-          if (mergedAllowList.length === existingAllowList.length) {
-            this.log.info(`[edge-deploy] Path pattern ${newPattern} already in allowList, skipping CDN write`);
-          } else {
+          if (mergedAllowList.length !== existingAllowList.length) {
             metaconfig.prerender = { allowList: mergedAllowList };
             // eslint-disable-next-line no-await-in-loop
             await this.uploadMetaconfig(baseURL, metaconfig);
+          } else {
+            this.log.info(`[edge-deploy] Patterns already in allowList for suggestion ${suggestion.getId()}, skipping CDN write`);
           }
 
           const deploymentTimestamp = Date.now();
@@ -1554,47 +1503,42 @@ class TokowakaClient {
           await suggestion.save();
           succeededSuggestions.push(suggestion);
 
-          // Mark per-URL suggestions under this path as coveredByDomainWide
-          const pathPrefix = suggestion.getData().pathPattern?.replace(/\/\*$/, '') ?? '';
-          if (pathPrefix) {
+          // Mark per-URL suggestions covered by this pattern.
+          // buildUrlMatcher handles path-glob (/*) and legacy full-URL regex patterns.
+          const matchers = allowedRegexPatterns.flatMap((p) => {
+            const m = buildUrlMatcher(p);
+            if (!m) {
+              this.log.warn(`[edge-deploy] Pattern '${p}' for suggestion ${suggestion.getId()} is invalid, skipping`);
+            }
+            return m ? [m] : [];
+          });
+          if (matchers.length > 0) {
             const covered = allSuggestions.filter((s) => {
-              if (s.getId() === suggestion.getId()) {
-                return false;
-              }
-              if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
-                return false;
-              }
-              const sData = s.getData();
-              if (sData?.isDomainWide === true || isPathSuggestion(s)) {
-                return false;
-              }
-              if (sData?.edgeDeployed) {
-                return false;
-              }
-              const url = sData?.url;
-              try {
-                return url && new URL(url).pathname.startsWith(pathPrefix);
-              } catch {
-                return false;
-              }
+              if (s.getId() === suggestion.getId()) return false;
+              if (skippedInBatchIds.has(s.getId())) return false;
+              if (!isEdgeDeployableSuggestionStatus(s.getStatus())) return false;
+              if (isPatternSuggestion(s)) return false;
+              if (s.getData()?.edgeDeployed) return false;
+              const url = s.getData()?.url;
+              return url && matchers.some((match) => match(url));
             });
 
             if (covered.length > 0) {
               try {
                 // eslint-disable-next-line no-await-in-loop
                 await Promise.all(covered.map(async (cs) => {
-                  cs.setData({ ...cs.getData(), coveredByDomainWide: suggestion.getId() });
+                  cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
                   cs.setUpdatedBy(updatedBy);
                   return cs.save();
                 }));
                 coveredSuggestions.push(...covered);
               } catch (coverError) {
-                this.log.warn(`[edge-deploy] Failed to mark covered suggestions for path ${newPattern}: ${coverError.message}`);
+                this.log.warn(`[edge-deploy] Failed to mark covered suggestions for pattern suggestion ${suggestion.getId()}: ${coverError.message}`);
               }
             }
           }
         } catch (error) {
-          this.log.error(`[edge-deploy] Error deploying path suggestion ${suggestion.getId()}: ${error.message}`, error);
+          this.log.error(`[edge-deploy] Error deploying pattern suggestion ${suggestion.getId()}: ${error.message}`, error);
           failedSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
         }
       }

@@ -1426,15 +1426,12 @@ class TokowakaClient {
 
             if (covered.length > 0) {
               try {
-                // eslint-disable-next-line no-await-in-loop
-                await Promise.all(covered.map(async (cs) => {
-                  cs.setData({
-                    ...cs.getData(),
-                    coveredByDomainWide: suggestion.getId(),
-                  });
+                covered.forEach((cs) => {
+                  cs.setData({ ...cs.getData(), coveredByDomainWide: suggestion.getId() });
                   cs.setUpdatedBy(updatedBy);
-                  return cs.save();
-                }));
+                });
+                // eslint-disable-next-line no-await-in-loop
+                await covered[0].collection.saveMany(covered);
                 coveredSuggestions.push(...covered);
               } catch (coverError) {
                 this.log.warn(`[edge-deploy] Failed to mark covered suggestions for domain-wide ${suggestion.getId()}: ${coverError.message}`);

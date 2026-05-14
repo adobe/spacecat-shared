@@ -4534,6 +4534,7 @@ describe('TokowakaClient', () => {
     function makeSuggestion(id, data, status = 'NEW') {
       let storedData = { ...data };
       let storedUpdatedBy;
+      const collection = { saveMany: sinon.stub().resolves() };
       return {
         getId: () => id,
         getStatus: () => status,
@@ -4542,6 +4543,7 @@ describe('TokowakaClient', () => {
         setUpdatedBy: (v) => { storedUpdatedBy = v; },
         getUpdatedBy: () => storedUpdatedBy,
         save: sinon.stub().resolves(),
+        collection,
       };
     }
 
@@ -4760,7 +4762,7 @@ describe('TokowakaClient', () => {
         allowedRegexPatterns: ['^https://example\\.com/.*'],
       });
       const covered = makeSuggestion('covered1', { url: 'https://example.com/page1' });
-      covered.save = sinon.stub().rejects(new Error('DB error'));
+      covered.collection.saveMany = sinon.stub().rejects(new Error('DB error'));
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
 

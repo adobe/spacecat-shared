@@ -92,9 +92,9 @@ describe('PlgOnboardingModel', () => {
         'example.com/path/with-hyphens',
         'example.com/path.with.dots',
         'example.io/a/b/c',
-        'NBA.COM',
-        'nba.com/Kings',
-        'example.com/en-US',
+        'example.com/en-us',
+        'example.com/case_studies',
+        'xn--nba-6na.com',
       ].forEach((value) => {
         it(`accepts "${value}"`, () => {
           expect(DOMAIN_PATTERN.test(value)).to.be.true;
@@ -124,11 +124,33 @@ describe('PlgOnboardingModel', () => {
         ['path traversal dot', 'nba.com/./x'],
         ['path traversal dot-dot at end', 'nba.com/..'],
         ['path traversal dot at end', 'nba.com/.'],
+        ['leading dot in path segment', 'nba.com/.hidden'],
+        ['leading double-dot prefix in segment', 'nba.com/..foo'],
+        ['trailing dot fqdn', 'nba.com.'],
+        ['single-label hostname', 'localhost'],
+        ['single-label intranet hostname', 'intranet'],
+        ['uppercase hostname', 'NBA.COM'],
+        ['uppercase path segment', 'nba.com/Kings'],
+        ['uppercase locale path', 'example.com/en-US'],
+        ['IPv6 bracketed', '[::1]'],
+        ['IPv6 unbracketed', '2001:db8::1'],
+        ['percent-encoded path', 'nba.com/path%20with%20space'],
       ].forEach(([label, value]) => {
         it(`rejects ${label}: "${value}"`, () => {
           expect(DOMAIN_PATTERN.test(value)).to.be.false;
         });
       });
+    });
+  });
+
+  describe('normalizeDomain', () => {
+    it('lowercases a string value', () => {
+      expect(PlgOnboarding.normalizeDomain('NBA.COM/Kings')).to.equal('nba.com/kings');
+    });
+
+    it('returns non-string values unchanged', () => {
+      expect(PlgOnboarding.normalizeDomain(null)).to.be.null;
+      expect(PlgOnboarding.normalizeDomain(undefined)).to.be.undefined;
     });
   });
 

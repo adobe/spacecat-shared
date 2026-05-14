@@ -39,9 +39,9 @@ describe('PlgOnboarding Schema', () => {
         'nba.com/kings',
         'nba.com/us/kings',
         'example.com/path-with-hyphens',
-        'NBA.COM',
-        'nba.com/Kings',
-        'example.com/en-US',
+        'example.com/en-us',
+        'example.com/case_studies',
+        'xn--nba-6na.com',
       ].forEach((value) => {
         it(`accepts "${value}"`, () => {
           expect(domainAttr.validate(value)).to.be.true;
@@ -54,17 +54,38 @@ describe('PlgOnboarding Schema', () => {
         ['empty string', ''],
         ['scheme prefix', 'https://nba.com'],
         ['IPv4 address', '127.0.0.1'],
+        ['short-form IPv4', '127.1'],
+        ['decimal IPv4', '2130706433'],
         ['query string', 'nba.com?q=1'],
         ['fragment', 'nba.com#top'],
         ['hostname over 253 chars', `${'a'.repeat(250)}.com`],
         ['trailing hyphen in label', 'nba-.com'],
         ['trailing slash', 'nba.com/kings/'],
         ['path traversal', 'nba.com/../etc'],
+        ['leading dot in path segment', 'nba.com/.hidden'],
+        ['leading double-dot prefix in segment', 'nba.com/..foo'],
+        ['trailing dot fqdn', 'nba.com.'],
+        ['single-label hostname', 'localhost'],
+        ['uppercase hostname', 'NBA.COM'],
+        ['uppercase path segment', 'nba.com/Kings'],
+        ['uppercase locale path', 'example.com/en-US'],
       ].forEach(([label, value]) => {
         it(`rejects ${label}`, () => {
           expect(domainAttr.validate(value)).to.be.false;
         });
       });
+    });
+
+    it('allows a plain hostname of exactly 253 chars', () => {
+      const hostname = `${'a'.repeat(249)}.com`;
+      expect(hostname.length).to.equal(253);
+      expect(domainAttr.validate(hostname)).to.be.true;
+    });
+
+    it('rejects a plain hostname exceeding 253 chars', () => {
+      const hostname = `${'a'.repeat(250)}.com`;
+      expect(hostname.length).to.equal(254);
+      expect(domainAttr.validate(hostname)).to.be.false;
     });
 
     it('allows a subpath domain whose hostname is exactly 253 chars', () => {
@@ -77,6 +98,18 @@ describe('PlgOnboarding Schema', () => {
       const hostname = `${'a'.repeat(250)}.com`;
       expect(hostname.length).to.equal(254);
       expect(domainAttr.validate(`${hostname}/path`)).to.be.false;
+    });
+
+    it('accepts a domain of exactly 2048 chars', () => {
+      const longPath = `nba.com/${'a'.repeat(2040)}`;
+      expect(longPath.length).to.equal(2048);
+      expect(domainAttr.validate(longPath)).to.be.true;
+    });
+
+    it('rejects a domain of exactly 2049 chars', () => {
+      const longPath = `nba.com/${'a'.repeat(2041)}`;
+      expect(longPath.length).to.equal(2049);
+      expect(domainAttr.validate(longPath)).to.be.false;
     });
 
     it('rejects when total domain length exceeds 2048 chars', () => {

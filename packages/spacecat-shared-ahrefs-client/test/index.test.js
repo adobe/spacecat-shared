@@ -204,7 +204,6 @@ describe('AhrefsAPIClient', () => {
   });
 
   afterEach(() => {
-    sinon.restore();
     nock.cleanAll();
   });
 

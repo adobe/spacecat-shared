@@ -73,9 +73,9 @@
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
     "@types/validator": "^13.15.2",
-    "esbuild": "0.28.0",
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
+    "esbuild": "0.28.0",
     "esmock": "2.7.5",
     "husky": "9.1.7",
     "nock": "14.0.15",
@@ -91,6 +91,7 @@
     "cheerio": "1.2.0",
     "date-fns": "4.1.0",
     "franc-min": "6.2.0",
+    "ipaddr.js": "^2.2.0",
     "iso-639-3": "3.0.1",
     "urijs": "1.19.11",
     "validator": "^13.15.15",

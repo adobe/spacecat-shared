@@ -227,19 +227,23 @@ export const DATA_SCHEMAS = {
       url: Joi.string().uri().optional(),
       pageviews: Joi.number().optional(),
       organic: Joi.number().optional(),
+      // RUM metrics are nullable in practice. INP requires user interaction events,
+      // so devices/pages without interactions report `inp: null`. The *Count fields
+      // similarly are null when the source RUM bundle has no sample for that metric.
+      // Mirror the existing `.allow(null)` already on lcp/ttfb/cls.
       metrics: Joi.array().items(
         Joi.object({
           deviceType: Joi.string().optional(),
-          pageviews: Joi.number().optional(),
-          clsCount: Joi.number().optional(),
-          ttfbCount: Joi.number().optional(),
+          pageviews: Joi.number().allow(null).optional(),
+          clsCount: Joi.number().allow(null).optional(),
+          ttfbCount: Joi.number().allow(null).optional(),
           lcp: Joi.number().allow(null).optional(),
-          inpCount: Joi.number().optional(),
-          inp: Joi.number().optional(),
+          inpCount: Joi.number().allow(null).optional(),
+          inp: Joi.number().allow(null).optional(),
           ttfb: Joi.number().allow(null).optional(),
           cls: Joi.number().allow(null).optional(),
-          lcpCount: Joi.number().optional(),
-          organic: Joi.number().optional(),
+          lcpCount: Joi.number().allow(null).optional(),
+          organic: Joi.number().allow(null).optional(),
         }).unknown(true),
       ).required(),
       issues: Joi.array().items(CWV_ISSUE_SCHEMA).optional().default([]),

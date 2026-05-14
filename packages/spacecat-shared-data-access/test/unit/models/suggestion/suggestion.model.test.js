@@ -283,6 +283,40 @@ describe('SuggestionModel', () => {
           expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
         });
 
+        it('passes with null inp and null *Count fields (RUM legitimately reports these)', () => {
+          const suggestionData = {
+            type: 'url',
+            url: 'https://www.example.com/page',
+            metrics: [
+              {
+                deviceType: 'mobile',
+                lcp: 3200,
+                cls: 0.15,
+                inp: 250,
+                pageviews: 6200,
+                lcpCount: 1,
+                clsCount: 1,
+                inpCount: 1,
+                ttfbCount: 1,
+              },
+              {
+                // No interaction events on this device — inp + counts come back null
+                deviceType: 'desktop',
+                lcp: 1800,
+                cls: 0.05,
+                inp: null,
+                pageviews: null,
+                lcpCount: null,
+                clsCount: null,
+                inpCount: null,
+                ttfbCount: null,
+              },
+            ],
+            issues: [],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+        });
+
         describe('per-issue lifecycle fields', () => {
           const baseData = {
             type: 'url',

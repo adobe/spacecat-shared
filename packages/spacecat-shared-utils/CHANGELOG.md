@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.115.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.3...@adobe/spacecat-shared-utils-v1.115.4) (2026-05-14)
+
+### Bug Fixes
+
+* onboard flow fixes around bot detection and resolve canonical urls for some sites ([#1556](https://github.com/adobe/spacecat-shared/issues/1556)) ([6209834](https://github.com/adobe/spacecat-shared/commit/620983412260634b3ac2651d03ddb3b9ac079c01))
+
 ## [@adobe/spacecat-shared-utils-v1.115.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.2...@adobe/spacecat-shared-utils-v1.115.3) (2026-05-14)
 
 ### Bug Fixes

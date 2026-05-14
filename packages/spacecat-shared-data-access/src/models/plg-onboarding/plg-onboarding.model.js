@@ -24,9 +24,15 @@ class PlgOnboarding extends BaseModel {
 
   static IMS_ORG_ID_PATTERN = /^[a-z0-9]{24}@AdobeOrg$/i;
 
-  // Matches plain hostnames and subpath domains (e.g. nba.com, nba.com/kings).
-  // Rejects schemes (https://), IPv4 addresses, and query strings/fragments.
-  static DOMAIN_PATTERN = /^(?!\d+(\.\d+){3})[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*(\/[a-z0-9._~-]*)*$/;
+  // Matches plain hostnames and optional subpath (e.g. nba.com, nba.com/kings).
+  // Rejects: schemes (https://), bare IPv4 (127.0.0.1), ports (:8080),
+  //   query strings, fragments, empty/trailing path segments, and dot-traversal (/./ and /../).
+  // Case-insensitive; callers must normalize to lowercase before storage to avoid
+  //   duplicate records for logically identical sites (nba.com/Kings vs nba.com/kings).
+  // Path-qualified domains (nba.com/kings) are distinct sort-key values from the
+  //   bare hostname; canonicalize before calling findByImsOrgIdAndDomain.
+  // Labels must not start or end with a hyphen (RFC 1035).
+  static DOMAIN_PATTERN = /^(?!\d+(\.\d+){3})[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*(\/(?!\.{1,2}(\/|$))[a-z0-9._~-]+)*$/i;
 
   static STATUSES = {
     PRE_ONBOARDING: 'PRE_ONBOARDING',

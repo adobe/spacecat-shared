@@ -39,6 +39,9 @@ describe('PlgOnboarding Schema', () => {
         'nba.com/kings',
         'nba.com/us/kings',
         'example.com/path-with-hyphens',
+        'NBA.COM',
+        'nba.com/Kings',
+        'example.com/en-US',
       ].forEach((value) => {
         it(`accepts "${value}"`, () => {
           expect(domainAttr.validate(value)).to.be.true;
@@ -54,6 +57,9 @@ describe('PlgOnboarding Schema', () => {
         ['query string', 'nba.com?q=1'],
         ['fragment', 'nba.com#top'],
         ['hostname over 253 chars', `${'a'.repeat(250)}.com`],
+        ['trailing hyphen in label', 'nba-.com'],
+        ['trailing slash', 'nba.com/kings/'],
+        ['path traversal', 'nba.com/../etc'],
       ].forEach(([label, value]) => {
         it(`rejects ${label}`, () => {
           expect(domainAttr.validate(value)).to.be.false;
@@ -71,6 +77,12 @@ describe('PlgOnboarding Schema', () => {
       const hostname = `${'a'.repeat(250)}.com`;
       expect(hostname.length).to.equal(254);
       expect(domainAttr.validate(`${hostname}/path`)).to.be.false;
+    });
+
+    it('rejects when total domain length exceeds 2048 chars', () => {
+      const longPath = `nba.com/${'a'.repeat(2042)}`;
+      expect(longPath.length).to.be.above(2048);
+      expect(domainAttr.validate(longPath)).to.be.false;
     });
   });
 

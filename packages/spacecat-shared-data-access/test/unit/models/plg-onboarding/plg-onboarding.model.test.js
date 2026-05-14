@@ -92,6 +92,9 @@ describe('PlgOnboardingModel', () => {
         'example.com/path/with-hyphens',
         'example.com/path.with.dots',
         'example.io/a/b/c',
+        'NBA.COM',
+        'nba.com/Kings',
+        'example.com/en-US',
       ].forEach((value) => {
         it(`accepts "${value}"`, () => {
           expect(DOMAIN_PATTERN.test(value)).to.be.true;
@@ -106,10 +109,21 @@ describe('PlgOnboardingModel', () => {
         ['scheme prefix http', 'http://nba.com'],
         ['IPv4 address', '127.0.0.1'],
         ['IPv4 address 8.8.8.8', '8.8.8.8'],
+        ['IPv4 with path', '127.0.0.1/path'],
         ['query string', 'nba.com?foo=bar'],
         ['fragment', 'nba.com#section'],
         ['path with query string', 'nba.com/kings?q=1'],
         ['path with fragment', 'nba.com/kings#top'],
+        ['trailing hyphen in label', 'nba-.com'],
+        ['trailing hyphen in subdomain', 'foo-.nba.com'],
+        ['trailing slash', 'nba.com/'],
+        ['trailing slash after path', 'nba.com/kings/'],
+        ['double slash', 'nba.com//kings'],
+        ['port number', 'nba.com:8080'],
+        ['path traversal dot-dot', 'nba.com/../etc'],
+        ['path traversal dot', 'nba.com/./x'],
+        ['path traversal dot-dot at end', 'nba.com/..'],
+        ['path traversal dot at end', 'nba.com/.'],
       ].forEach(([label, value]) => {
         it(`rejects ${label}: "${value}"`, () => {
           expect(DOMAIN_PATTERN.test(value)).to.be.false;

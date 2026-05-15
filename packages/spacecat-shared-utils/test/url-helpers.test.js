@@ -10,7 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import sinonChai from 'sinon-chai';
 import nock from 'nock';
 import sinon from 'sinon';
 import {
@@ -30,6 +31,8 @@ import {
   toggleWWWHostname,
   wwwUrlResolver,
 } from '../src/url-helpers.js';
+
+use(sinonChai);
 
 describe('URL Utility Functions', () => {
   describe('prependSchema', () => {
@@ -406,8 +409,7 @@ describe('URL Utility Functions', () => {
       expect(duration).to.be.below(11000); // Should complete well before timeout
     });
 
-    it('should use 20s timeout for GET requests', async () => {
-      // Verify GET request completes within timeout
+    it('should complete GET request well within the 7s total deadline', async () => {
       nock('https://example.com')
         .get('/')
         .reply(200);
@@ -417,7 +419,14 @@ describe('URL Utility Functions', () => {
       const duration = Date.now() - startTime;
 
       expect(result).to.equal('https://example.com/');
-      expect(duration).to.be.below(21000); // Should complete well before timeout
+      expect(duration).to.be.below(8000);
+    });
+
+    it('should return null immediately when total deadline has already passed', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD', Date.now() - 1, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] deadline expired');
     });
 
     it('should handle AbortError from timeout and retry with GET for HEAD', async () => {
@@ -432,6 +441,130 @@ describe('URL Utility Functions', () => {
 
       const result = await resolveCanonicalUrl('https://example.com', 'HEAD');
       expect(result).to.equal('https://example.com/');
+    });
+
+    it('should return null when GET request errors (does not retry unlike HEAD)', async () => {
+      nock('https://example.com')
+        .get('/')
+        .replyWithError('ECONNRESET');
+
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('https://example.com', 'GET', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] GET request failed');
+    });
+
+    it('should return null for a malformed URL', async () => {
+      const result = await resolveCanonicalUrl('not a url at all');
+      expect(result).to.be.null;
+    });
+
+    it('should reject private IP addresses (10/8)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://10.0.0.1/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject link-local addresses (169.254/16)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://169.254.169.254/latest/meta-data/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject loopback (127.x.x.x)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://127.0.0.1/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject localhost', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://localhost/admin', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject RFC-1918 172.16/12 range', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://172.16.0.1/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject RFC-1918 192.168/16 range', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://192.168.1.1/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject IPv6 loopback (::1)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://[::1]/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject IPv6 INADDR_ANY (::)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://[::]/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject INADDR_ANY (0.0.0.0)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://0.0.0.0/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject IPv6 link-local (fe80::1)', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://[fe80::1]/', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should reject localhost with trailing dot', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('http://localhost./', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
+    });
+
+    it('should not block 172.15.255.255 (just outside private range)', async () => {
+      nock('http://172.15.255.255').head('/').reply(200);
+      const result = await resolveCanonicalUrl('http://172.15.255.255/');
+      expect(result).to.equal('https://172.15.255.255/');
+    });
+
+    it('should not block 172.32.0.1 (just outside private range)', async () => {
+      nock('http://172.32.0.1').head('/').reply(200);
+      const result = await resolveCanonicalUrl('http://172.32.0.1/');
+      expect(result).to.equal('https://172.32.0.1/');
+    });
+
+    it('should log warning for invalid URL', async () => {
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('not-a-url', 'GET', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] invalid URL');
+    });
+
+    it('should block redirect to private IP before connecting', async () => {
+      // redirect: 'manual' means nock intercepts the 302; the 127.0.0.1 nock is never hit
+      nock('https://example.com')
+        .head('/')
+        .reply(302, undefined, { Location: 'http://127.0.0.1/' });
+
+      const log = { warn: sinon.stub() };
+      const result = await resolveCanonicalUrl('https://example.com', 'HEAD', undefined, log);
+      expect(result).to.be.null;
+      expect(log.warn).to.have.been.calledWithMatch('[resolveCanonicalUrl] private hostname rejected');
     });
   });
 

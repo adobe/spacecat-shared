@@ -40,9 +40,29 @@ From `adobe/spacecat-shared` post-PR-#1592:
 3. **`docs/RELEASE-RUNBOOK.md`** (templatable: 5 failure-mode procedures,
    detection section, rotation sequence)
 
-## Two viable shapes
+## Two viable shapes — recommendation: Option A
 
-### Option A — npm tool
+For an operation that registers OIDC trust bindings on npmjs.com (a
+security-critical, provider-neutral configuration), **Option A is the
+recommended shape**:
+
+- Provider-neutral — any operator with `npm` and a token can run it, no
+  Claude/agent runtime required.
+- Version-pinnable — `npx @adobe/oidc-trusted-publishers-setup@1.2.3`
+  gives a reproducible, auditable execution.
+- Auditable — the tarball's contents on npmjs.com become part of the
+  supply-chain attestation surface (provenance metadata for the tool
+  itself).
+- Composes with CI — the workflow tripwire becomes a versioned composite
+  action callable by every sibling repo.
+
+Option B is kept as a documented alternative for the case where the
+extraction is gated on org-wide skill availability — it's lower-friction
+for operators already running Claude Code, but it adds a runtime dependency
+on the skill harness for a flow whose entire purpose is to eliminate
+runtime dependencies.
+
+### Option A — npm tool (RECOMMENDED)
 
 Publish `@adobe/oidc-trusted-publishers-setup`. Each repo's
 `scripts/setup-npm-trusted-publishers.sh` becomes a 5-line wrapper:
@@ -59,7 +79,7 @@ exec npx @adobe/oidc-trusted-publishers-setup@latest \
 The CI tripwire becomes a composite action under
 `adobe/oidc-trusted-publishers-setup/.github/actions/verify-sr-no-npm-auth-guard@v1`.
 
-### Option B — aem-sites-architecture skill
+### Option B — aem-sites-architecture skill (alternative)
 
 A Claude Code skill that codifies the migration as a series of agent-driven
 steps. Operator runs the skill in each repo; the skill enforces the same

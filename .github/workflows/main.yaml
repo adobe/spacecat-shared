@@ -132,11 +132,15 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     needs: test
-    # Skip on the chore(release) commits semantic-release pushes back to main.
-    # GitHub Actions does not honor the [skip ci] convention natively, so an
-    # explicit guard is needed — otherwise every release triggers a follow-up
-    # workflow run that pages the spacecat-admins reviewer for nothing.
-    if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
+    # Skip the release job on the chore(release) commits semantic-release pushes
+    # back to main. The guard matches semantic-release-monorepo's actual commit
+    # subject prefix (`chore(release):`) rather than the substring `[skip ci]`
+    # anywhere in the message — a substring match misfires on any commit whose
+    # body or PR description quotes the skip-ci convention (which trapped this
+    # PR's own commit 395f4921; see commit 2475850e for the workaround).
+    # Belt-and-suspenders: also AND with [skip ci] presence so a future
+    # chore(release): subject without [skip ci] does not get silently skipped.
+    if: github.ref == 'refs/heads/main' && !(startsWith(github.event.head_commit.message, 'chore(release)') && contains(github.event.head_commit.message, '[skip ci]'))
     environment: npm-publish
     timeout-minutes: 15
     concurrency:
@@ -189,23 +193,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
 
       - name: Surface failure pointer to release runbook
-        # On any failure in the release job, write a pointer to the runbook into
-        # $GITHUB_STEP_SUMMARY so the on-call sees the recovery procedures in the
-        # PR check UI rather than having to remember where the runbook lives.
-        if: failure()
+        # On failure OR cancellation in the release job, write a pointer to the
+        # runbook into $GITHUB_STEP_SUMMARY so the on-call sees the recovery
+        # procedures in the PR check UI rather than having to remember where
+        # the runbook lives. cancelled() covers the FM-6 env-approval stall
+        # recovery path where the operator cancels a waiting run.
+        if: failure() || cancelled()
         shell: bash
+        env:
+          # Absolute URL — relative `../blob/main/...` from an Actions run page
+          # would resolve to /<owner>/<repo>/actions/blob/main/... (404).
+          RUNBOOK_URL: ${{ github.server_url }}/${{ github.repository }}/blob/main/docs/RELEASE-RUNBOOK.md
         run: |
-          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
-          ## Release failed
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## Release job did not complete successfully
 
-          See [`docs/RELEASE-RUNBOOK.md`](../blob/main/docs/RELEASE-RUNBOOK.md):
+          See [\`docs/RELEASE-RUNBOOK.md\`](${RUNBOOK_URL}):
           - **FM-1** — First OIDC release fails (revert path)
-          - **FM-2** — Sigstore unavailable (break-glass: `NPM_CONFIG_PROVENANCE: 'false'`)
+          - **FM-2** — Sigstore unavailable (break-glass: \`NPM_CONFIG_PROVENANCE: 'false'\`)
           - **FM-3** — Partial publish (15-min timeout / mid-flow failure)
           - **FM-4** — Workflow / environment renamed
           - **FM-5** — Setup-script preflight refused to register bindings
           - **FM-6** — Env-approval stall
 
-          Trust binding: `{repo: adobe/spacecat-shared, workflow: main.yaml, environment: npm-publish}`.
+          Trust binding: \`{repo: ${{ github.repository }}, workflow: main.yaml, environment: npm-publish}\`.
           Tracking: SITES-42702.
           EOF

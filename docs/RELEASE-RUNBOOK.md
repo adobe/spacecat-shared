@@ -237,10 +237,12 @@ Recovery, depending on which side made progress:
   ```bash
   # 1. Find the chore(release) commit for the missing-tag package. Look on
   #    main for the most recent commit touching that package's package.json
-  #    whose version matches what's now live on npm:
+  #    whose version matches what's now live on npm. -S uses a fixed-string
+  #    match (no regex), so dots in the version string don't expand to "any
+  #    character" and produce false positives.
   PKG=@adobe/spacecat-shared-<pkg>
   LIVE_VERSION=$(npm view "$PKG" version)
-  CHORE_SHA=$(git log --format='%H' -G "\"version\": \"${LIVE_VERSION}\"" \
+  CHORE_SHA=$(git log --format='%H' -S "\"version\": \"${LIVE_VERSION}\"" \
                 -- "packages/spacecat-shared-<pkg>/package.json" | head -1)
 
   # 2. Verify the commit actually declares that version (sanity check):
@@ -248,9 +250,13 @@ Recovery, depending on which side made progress:
     | jq -r .version
   # Expect: ${LIVE_VERSION}
 
-  # 3. Create + push the per-package tag pointing at that commit. You need
-  #    adobe-bot credentials (tag push to a protected branch's tag namespace
-  #    is bot-gated) OR a fast-tracked PR.
+  # 3. Create + push the per-package tag pointing at that commit.
+  #    Pushing tags to a protected-branch namespace is gated by branch
+  #    protection — direct push works only for `adobe-bot` (on the bypass
+  #    list). A human responder cannot push the tag directly; the workaround
+  #    is to ask whoever holds adobe-bot credentials to run these two lines,
+  #    OR to file a fast-tracked PR that cherry-picks the chore(release)
+  #    commit forward and have an authorized actor tag the merged result.
   git tag "${PKG}-v${LIVE_VERSION}" "${CHORE_SHA}"
   git push origin "${PKG}-v${LIVE_VERSION}"
 
@@ -262,7 +268,7 @@ Recovery, depending on which side made progress:
 
   If step 1 returns nothing, the `chore(release):` commit for that package
   was never pushed and you'll need to cherry-pick the version bump into a
-  fast-tracked PR before tagging.
+  fast-tracked PR (FM-1 Path B shape) before tagging.
 
 Pre-emption: for releases touching > 10 packages, monitor the job. If a
 single-PR release is unusually large, consider a one-off PR bumping

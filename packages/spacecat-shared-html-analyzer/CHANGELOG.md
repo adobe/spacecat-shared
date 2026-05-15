@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.2.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.11...@adobe/spacecat-shared-html-analyzer-v1.2.12) (2026-05-15)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1534](https://github.com/adobe/spacecat-shared/issues/1534)) ([e280a8d](https://github.com/adobe/spacecat-shared/commit/e280a8d20b763168b8608220b3d35b6c2cc5eabf))
+
 ## [@adobe/spacecat-shared-html-analyzer-v1.2.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.10...@adobe/spacecat-shared-html-analyzer-v1.2.11) (2026-05-14)
 
 ### Bug Fixes

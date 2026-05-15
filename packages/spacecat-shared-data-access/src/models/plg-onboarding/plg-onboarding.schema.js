@@ -29,10 +29,14 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
     required: true,
     readOnly: true,
     validate: (value) => {
-      if (typeof value !== 'string' || value !== value.toLowerCase()) return false;
+      if (typeof value !== 'string' || value !== value.toLowerCase()) {
+        return false;
+      }
       const hostname = value.split('/')[0];
       // Reject all-numeric hostname forms (short-form IPs: 127.1, 2130706433).
-      if (/^[\d.]+$/.test(hostname)) return false;
+      if (/^[\d.]+$/.test(hostname)) {
+        return false;
+      }
       return PlgOnboarding.DOMAIN_PATTERN.test(value)
         && hostname.length <= PlgOnboarding.MAX_HOSTNAME_LENGTH
         && value.length <= PlgOnboarding.MAX_DOMAIN_LENGTH;

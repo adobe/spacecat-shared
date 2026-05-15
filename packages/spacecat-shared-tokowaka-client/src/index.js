@@ -965,52 +965,62 @@ class TokowakaClient {
 
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
 
-    // Roll back pattern-based suggestions (path and domain-wide) using remove-one semantics:
-    // remove only the specific pattern from allowList; delete prerender key when list empties.
+    // Roll back pattern-based suggestions (path and domain-wide): fetch metaconfig once,
+    // remove all patterns in a single in-memory pass, upload once, then save each suggestion.
     const succeededPatternSuggestions = [];
-    for (const suggestion of patternSuggestions) {
-      const data = suggestion.getData();
-      const patternToRemove = data?.allowedRegexPatterns?.[0];
-      if (!patternToRemove) {
-        this.log.warn(`[edge-rollback] Suggestion ${suggestion.getId()} has no allowedRegexPatterns, skipping`);
-        ineligibleSuggestions.push({ suggestion, reason: 'Missing allowedRegexPatterns' });
-        // eslint-disable-next-line no-continue
-        continue;
-      }
+    if (patternSuggestions.length > 0) {
+      const metaconfig = await this.fetchMetaconfig(baseURL);
+      if (!metaconfig) {
+        this.log.warn(`[edge-rollback] No metaconfig found for ${baseURL}, skipping all pattern suggestions`);
+        patternSuggestions.forEach((s) => ineligibleSuggestions.push({ suggestion: s, reason: 'No metaconfig found' }));
+      } else {
+        const toSave = [];
+        let metaconfigChanged = false;
 
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        const metaconfig = await this.fetchMetaconfig(baseURL);
-        if (!metaconfig) {
-          this.log.warn(`[edge-rollback] No metaconfig found for ${baseURL}, skipping`);
-          ineligibleSuggestions.push({ suggestion, reason: 'No metaconfig found' });
-          // eslint-disable-next-line no-continue
-          continue;
-        }
-
-        const existingAllowList = metaconfig.prerender?.allowList ?? [];
-        const updatedAllowList = existingAllowList.filter((p) => p !== patternToRemove);
-
-        if (updatedAllowList.length !== existingAllowList.length) {
-          if (updatedAllowList.length === 0) {
-            delete metaconfig.prerender;
-          } else {
-            metaconfig.prerender = { allowList: updatedAllowList };
+        for (const suggestion of patternSuggestions) {
+          const data = suggestion.getData();
+          const patternToRemove = data?.allowedRegexPatterns?.[0];
+          if (!patternToRemove) {
+            this.log.warn(`[edge-rollback] Suggestion ${suggestion.getId()} has no allowedRegexPatterns, skipping`);
+            ineligibleSuggestions.push({ suggestion, reason: 'Missing allowedRegexPatterns' });
+            // eslint-disable-next-line no-continue
+            continue;
           }
-          // eslint-disable-next-line no-await-in-loop
-          await this.uploadMetaconfig(baseURL, metaconfig);
-        } else {
-          this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
+
+          const existingAllowList = metaconfig.prerender?.allowList ?? [];
+          const updatedAllowList = existingAllowList.filter((p) => p !== patternToRemove);
+
+          if (updatedAllowList.length !== existingAllowList.length) {
+            if (updatedAllowList.length === 0) {
+              delete metaconfig.prerender;
+            } else {
+              metaconfig.prerender = { allowList: updatedAllowList };
+            }
+            metaconfigChanged = true;
+          } else {
+            this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
+          }
+
+          suggestion.setData({ ...data, edgeDeployed: undefined });
+          suggestion.setUpdatedBy('edge-rollback');
+          toSave.push(suggestion);
         }
 
-        suggestion.setData({ ...data, edgeDeployed: undefined });
-        suggestion.setUpdatedBy('edge-rollback');
-        // eslint-disable-next-line no-await-in-loop
-        await suggestion.save();
-        succeededPatternSuggestions.push(suggestion);
-      } catch (error) {
-        this.log.error(`[edge-rollback] Error rolling back suggestion ${suggestion.getId()}: ${error.message}`, error);
-        failedPatternSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
+        try {
+          if (metaconfigChanged) {
+            await this.uploadMetaconfig(baseURL, metaconfig);
+          }
+          for (const suggestion of toSave) {
+            // eslint-disable-next-line no-await-in-loop
+            await suggestion.save();
+            succeededPatternSuggestions.push(suggestion);
+          }
+        } catch (error) {
+          this.log.error(`[edge-rollback] Error rolling back pattern suggestions: ${error.message}`, error);
+          toSave.forEach((s) => failedPatternSuggestions.push({
+            suggestion: s, reason: error.message, statusCode: 500,
+          }));
+        }
       }
     }
 

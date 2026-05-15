@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.64.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.63.0...@adobe/spacecat-shared-data-access-v3.64.0) (2026-05-15)
+
+### Features
+
+* strict schema for data.issues[] with per-issue lifecycle fields       ([#1594](https://github.com/adobe/spacecat-shared/issues/1594)) ([d101db4](https://github.com/adobe/spacecat-shared/commit/d101db4e6407cfe9cbb742d54b500439cf62b64f))
+
 ## [@adobe/spacecat-shared-data-access-v3.63.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.62.0...@adobe/spacecat-shared-data-access-v3.63.0) (2026-05-14)
 
 ### Features

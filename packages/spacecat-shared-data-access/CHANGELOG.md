@@ -1,3 +1,93 @@
+## [@adobe/spacecat-shared-data-access-v3.64.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.63.0...@adobe/spacecat-shared-data-access-v3.64.0) (2026-05-15)
+
+### Features
+
+* strict schema for data.issues[] with per-issue lifecycle fields       ([#1594](https://github.com/adobe/spacecat-shared/issues/1594)) ([d101db4](https://github.com/adobe/spacecat-shared/commit/d101db4e6407cfe9cbb742d54b500439cf62b64f))
+
+## [@adobe/spacecat-shared-data-access-v3.63.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.62.0...@adobe/spacecat-shared-data-access-v3.63.0) (2026-05-14)
+
+### Features
+
+* add rumConfig to Site config for deterministic RUM availability signal ([#1596](https://github.com/adobe/spacecat-shared/issues/1596)) ([3b16cdf](https://github.com/adobe/spacecat-shared/commit/3b16cdf7d66ddddc4b4b62aae4428feba3ef7f04))
+* **data-access:** add preOnboarded flag to PLG onboarding steps schema ([#1601](https://github.com/adobe/spacecat-shared/issues/1601)) ([6f18f71](https://github.com/adobe/spacecat-shared/commit/6f18f71d112d5f409a545a3720ca8b7d9e3a13d7))
+
+### Bug Fixes
+
+* adds a function to get latest token by createdAt ([#1597](https://github.com/adobe/spacecat-shared/issues/1597)) ([fb4d5f9](https://github.com/adobe/spacecat-shared/commit/fb4d5f91dc7bf674cff4f9855d3f630aa4807b5a))
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
+## [@adobe/spacecat-shared-data-access-v3.62.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.61.0...@adobe/spacecat-shared-data-access-v3.62.0) (2026-05-12)
+
+### Features
+
+* **data-access:** add semrushWorkspaceId attribute to Organization ([#1602](https://github.com/adobe/spacecat-shared/issues/1602)) ([79a5d82](https://github.com/adobe/spacecat-shared/commit/79a5d825c2a3cb436d894f5bea90a0a4e230167b))
+
+## [@adobe/spacecat-shared-data-access-v3.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.60.0...@adobe/spacecat-shared-data-access-v3.61.0) (2026-05-12)
+
+### Features
+
+* **data-access:** add scopeType and scopeId to Opportunity model ([#1576](https://github.com/adobe/spacecat-shared/issues/1576)) ([3f0f8f2](https://github.com/adobe/spacecat-shared/commit/3f0f8f25c058c5c885fd1f553dd43e4ed07b3d67)), closes [#32-42](https://github.com/adobe/spacecat-shared/issues/32-42)
+
+## [@adobe/spacecat-shared-data-access-v3.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.59.0...@adobe/spacecat-shared-data-access-v3.60.0) (2026-05-11)
+
+### Features
+
+* **data-access:** add llmBackend field to Organization entity ([#1588](https://github.com/adobe/spacecat-shared/issues/1588)) ([ebccbe5](https://github.com/adobe/spacecat-shared/commit/ebccbe55688fb4b8fb3ffd76cc29650c2cc2fc65)), closes [mysticat-data-service#534](https://github.com/adobe/mysticat-data-service/issues/534)
+
+## [@adobe/spacecat-shared-data-access-v3.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.58.0...@adobe/spacecat-shared-data-access-v3.59.0) (2026-05-07)
+
+### Features
+
+* **data-access:** add Token.allBySiteId with optional tokenTypes/cycle filters ([#1572](https://github.com/adobe/spacecat-shared/issues/1572)) ([241607e](https://github.com/adobe/spacecat-shared/commit/241607e58c6b040eeaba134d51345ccd88910756))
+
+## [@adobe/spacecat-shared-data-access-v3.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.57.0...@adobe/spacecat-shared-data-access-v3.58.0) (2026-05-05)
+
+### Features
+
+* **data-access:** forward customHeaders in SCRAPE_CLIENT payload ([#1585](https://github.com/adobe/spacecat-shared/issues/1585)) ([41f636e](https://github.com/adobe/spacecat-shared/commit/41f636ee03037f98db3838f487a3211a2ea716a4))
+
+## [@adobe/spacecat-shared-data-access-v3.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.56.1...@adobe/spacecat-shared-data-access-v3.57.0) (2026-05-05)
+
+### Features
+
+* added new status in PLG onboarding flow ([#1568](https://github.com/adobe/spacecat-shared/issues/1568)) ([e1d2be5](https://github.com/adobe/spacecat-shared/commit/e1d2be5242378ca8adb14a347dc46faf028801d7))
+
+## [@adobe/spacecat-shared-data-access-v3.56.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.56.0...@adobe/spacecat-shared-data-access-v3.56.1) (2026-05-04)
+
+### Bug Fixes
+
+* **data-access:** replace hard-coded IT hook timeout with shared constant ([#1579](https://github.com/adobe/spacecat-shared/issues/1579)) ([4fbc6e0](https://github.com/adobe/spacecat-shared/commit/4fbc6e0ce30e59525bd9c9136a5cf2215c9f186a)), closes [#1573](https://github.com/adobe/spacecat-shared/issues/1573)
+
+## [@adobe/spacecat-shared-data-access-v3.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.55.1...@adobe/spacecat-shared-data-access-v3.56.0) (2026-05-04)
+
+### Features
+
+* **data-access:** add readAll capability to Consumer.CAPABILITIES ([#1573](https://github.com/adobe/spacecat-shared/issues/1573)) ([4475928](https://github.com/adobe/spacecat-shared/commit/44759289abb95bc22c58d59327ff3e881d39c430))
+
+## [@adobe/spacecat-shared-data-access-v3.55.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.55.0...@adobe/spacecat-shared-data-access-v3.55.1) (2026-04-29)
+
+### Bug Fixes
+
+* BaseModel/Patcher record desync after save() causes silent sette… ([#1567](https://github.com/adobe/spacecat-shared/issues/1567)) ([c9c782d](https://github.com/adobe/spacecat-shared/commit/c9c782dab95d588852f8b2931405f0174965c346))
+
+## [@adobe/spacecat-shared-data-access-v3.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.54.0...@adobe/spacecat-shared-data-access-v3.55.0) (2026-04-28)
+
+### Features
+
+* **data-access:** add semantic-value-visibility audit type ([#1545](https://github.com/adobe/spacecat-shared/issues/1545)) ([e49aa54](https://github.com/adobe/spacecat-shared/commit/e49aa54ab3e9ad59d7c44b83b25c81477c6a497d))
+
+## [@adobe/spacecat-shared-data-access-v3.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.53.0...@adobe/spacecat-shared-data-access-v3.54.0) (2026-04-28)
+
+### Features
+
+* **data-access:** align detectedCdn Joi schema with CDN_TYPES taxonomy ([#1563](https://github.com/adobe/spacecat-shared/issues/1563)) ([bf02ca1](https://github.com/adobe/spacecat-shared/commit/bf02ca1f265c5e6de05512c07a742ce52388bb62)), closes [#1559](https://github.com/adobe/spacecat-shared/issues/1559) [adobe/spacecat-api-service#2245](https://github.com/adobe/spacecat-api-service/issues/2245)
+
+## [@adobe/spacecat-shared-data-access-v3.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.52.0...@adobe/spacecat-shared-data-access-v3.53.0) (2026-04-27)
+
+### Features
+
+* **data-access:** widen detectedCdn Joi schema to LLMO-supported tokens ([#1559](https://github.com/adobe/spacecat-shared/issues/1559)) ([f6e08e9](https://github.com/adobe/spacecat-shared/commit/f6e08e9e94cef4e230f0d892cc73d5e78395c492))
+
 ## [@adobe/spacecat-shared-data-access-v3.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.51.0...@adobe/spacecat-shared-data-access-v3.52.0) (2026-04-10)
 
 ### Features

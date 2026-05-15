@@ -95,6 +95,7 @@ class Audit extends BaseModel {
     COMMERCE_PRODUCT_CATALOG_ENRICHMENT_AUTO_FIX: 'commerce-product-catalog-enrichment-auto-fix',
     CWV_TRENDS_AUDIT: 'cwv-trends-audit',
     OFFSITE_BRAND_PRESENCE: 'offsite-brand-presence',
+    SEMANTIC_VALUE_VISIBILITY: 'semantic-value-visibility',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
@@ -221,6 +222,10 @@ class Audit extends BaseModel {
             },
           },
         };
+
+        if (stepResult.customHeaders) {
+          payload.customHeaders = stepResult.customHeaders;
+        }
 
         // Propagate traceId for cross-worker tracing continuity
         // This allows the scrape client to maintain the same trace across multiple workers

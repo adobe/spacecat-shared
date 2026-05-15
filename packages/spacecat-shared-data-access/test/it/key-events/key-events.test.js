@@ -15,6 +15,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -22,7 +23,7 @@ describe('KeyEvent IT', async () => {
   let KeyEvent;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     await seedDatabase();
 
     const dataAccess = getDataAccess();

@@ -42,6 +42,7 @@ describe('PlgOnboardingModel', () => {
       createdAt: '2026-03-09T12:00:00.000Z',
       updatedAt: '2026-03-09T12:00:00.000Z',
       updatedBy: 'system',
+      createdBy: 'ese@adobe.com',
     };
 
     ({
@@ -72,6 +73,8 @@ describe('PlgOnboardingModel', () => {
         WAITING_FOR_IP_ALLOWLISTING: 'WAITING_FOR_IP_ALLOWLISTING',
         WAITLISTED: 'WAITLISTED',
         INACTIVE: 'INACTIVE',
+        REJECTED: 'REJECTED',
+        OUTDATED: 'OUTDATED',
       });
     });
   });
@@ -81,6 +84,9 @@ describe('PlgOnboardingModel', () => {
       expect(PlgOnboarding.REVIEW_DECISIONS).to.deep.equal({
         BYPASSED: 'BYPASSED',
         UPHELD: 'UPHELD',
+        CLOSED: 'CLOSED',
+        REOPENED: 'REOPENED',
+        OFFBOARDED: 'OFFBOARDED',
       });
     });
   });
@@ -139,6 +145,10 @@ describe('PlgOnboardingModel', () => {
 
     it('gets completedAt', () => {
       expect(instance.getCompletedAt()).to.be.null;
+    });
+
+    it('gets createdBy', () => {
+      expect(instance.getCreatedBy()).to.equal('ese@adobe.com');
     });
   });
 

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-tokowaka-client",
-  "version": "1.13.3",
+  "version": "1.16.2",
   "description": "Tokowaka Client for SpaceCat - Edge optimization config management",
   "type": "module",
   "engines": {
@@ -35,21 +35,21 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "@aws-sdk/client-cloudfront": "3.1024.0",
-    "@aws-sdk/client-s3": "3.1024.0",
+    "@aws-sdk/client-cloudfront": "3.1045.0",
+    "@aws-sdk/client-s3": "3.1045.0",
     "hast-util-from-html": "2.0.3",
     "mdast-util-from-markdown": "2.0.3",
     "mdast-util-to-hast": "13.2.1",
-    "uuid": "13.0.0"
+    "uuid": "14.0.0"
   },
   "devDependencies": {
     "aws-sdk-client-mock": "4.1.0",
     "c8": "11.0.0",
     "chai": "6.2.2",
-    "esmock": "2.7.3",
+    "esmock": "2.7.5",
     "mocha": "11.7.5",
-    "nock": "14.0.10",
-    "sinon": "21.0.3",
+    "nock": "14.0.15",
+    "sinon": "21.1.2",
     "sinon-chai": "4.0.1"
   }
 }

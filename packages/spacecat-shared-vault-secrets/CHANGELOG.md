@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-vault-secrets-v1.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.3.4...@adobe/spacecat-shared-vault-secrets-v1.3.5) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
+## [@adobe/spacecat-shared-vault-secrets-v1.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.3.3...@adobe/spacecat-shared-vault-secrets-v1.3.4) (2026-04-15)
+
+### Bug Fixes
+
+* **vault-secrets:** revert to dedicated noCache() fetch context ([#1543](https://github.com/adobe/spacecat-shared/issues/1543)) ([ca25526](https://github.com/adobe/spacecat-shared/commit/ca255260a513109fcbf2284e613eaa48bc57a789)), closes [#1538](https://github.com/adobe/spacecat-shared/issues/1538) [#1538](https://github.com/adobe/spacecat-shared/issues/1538)
+
 ## [@adobe/spacecat-shared-vault-secrets-v1.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-vault-secrets-v1.3.2...@adobe/spacecat-shared-vault-secrets-v1.3.3) (2026-04-15)
 
 ### Bug Fixes

@@ -1,3 +1,45 @@
+## [@adobe/spacecat-shared-utils-v1.115.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.3...@adobe/spacecat-shared-utils-v1.115.4) (2026-05-14)
+
+### Bug Fixes
+
+* onboard flow fixes around bot detection and resolve canonical urls for some sites ([#1556](https://github.com/adobe/spacecat-shared/issues/1556)) ([6209834](https://github.com/adobe/spacecat-shared/commit/620983412260634b3ac2651d03ddb3b9ac079c01))
+
+## [@adobe/spacecat-shared-utils-v1.115.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.2...@adobe/spacecat-shared-utils-v1.115.3) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
+## [@adobe/spacecat-shared-utils-v1.115.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.1...@adobe/spacecat-shared-utils-v1.115.2) (2026-05-07)
+
+### Bug Fixes
+
+* **utils:** update calculateCPCValue S3 path from ahrefs to seo ([#1591](https://github.com/adobe/spacecat-shared/issues/1591)) ([3bf1fe5](https://github.com/adobe/spacecat-shared/commit/3bf1fe5ce9d257de5b30de4d7082f8af30035147)), closes [spacecat-shared#1499](https://github.com/adobe/spacecat-shared/issues/1499)
+
+## [@adobe/spacecat-shared-utils-v1.115.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.0...@adobe/spacecat-shared-utils-v1.115.1) (2026-05-06)
+
+### Bug Fixes
+
+* **utils:** include subpath in resolveCustomerSecretsName to prevent credential collisions ([#1577](https://github.com/adobe/spacecat-shared/issues/1577)) ([db95707](https://github.com/adobe/spacecat-shared/commit/db95707796c53d0fbe22c4fc40fed9ab271dd59c))
+
+## [@adobe/spacecat-shared-utils-v1.115.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.114.0...@adobe/spacecat-shared-utils-v1.115.0) (2026-05-04)
+
+### Features
+
+* **strategy:** add type discriminator and experimentId for Atomic strategies | LLMO-4643 ([#1571](https://github.com/adobe/spacecat-shared/issues/1571)) ([0151ff5](https://github.com/adobe/spacecat-shared/commit/0151ff510f7643021e6c1ccf21298f6d3c07034b))
+
+## [@adobe/spacecat-shared-utils-v1.114.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.113.0...@adobe/spacecat-shared-utils-v1.114.0) (2026-05-04)
+
+### Features
+
+* **llmo-config:** fail-closed writeConfig validation (SITES-43238) ([#1574](https://github.com/adobe/spacecat-shared/issues/1574)) ([a177743](https://github.com/adobe/spacecat-shared/commit/a177743a7def37dd3fabb026241d0e0ea9e9bac3))
+
+## [@adobe/spacecat-shared-utils-v1.113.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.5...@adobe/spacecat-shared-utils-v1.113.0) (2026-04-29)
+
+### Features
+
+* **utils/sqs:** add MessageDeduplicationId support for FIFO sends ([#1566](https://github.com/adobe/spacecat-shared/issues/1566)) ([b3b9511](https://github.com/adobe/spacecat-shared/commit/b3b95112d14ac9f07dcfae8baa1599c1429ea1f7))
+
 ## [@adobe/spacecat-shared-utils-v1.112.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.112.4...@adobe/spacecat-shared-utils-v1.112.5) (2026-04-10)
 
 ### Bug Fixes

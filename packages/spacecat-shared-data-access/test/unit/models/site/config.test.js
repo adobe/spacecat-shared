@@ -2581,6 +2581,44 @@ describe('Config Tests', () => {
       config.updateLlmoDetectedCdn('other');
       expect(config.getLlmoDetectedCdn()).to.equal('other');
     });
+
+    [
+      'aem-cs-fastly',
+      'commerce-fastly',
+      'byocdn-fastly',
+      'byocdn-akamai',
+      'byocdn-cloudfront',
+      'byocdn-cloudflare',
+      'byocdn-imperva',
+      'byocdn-other',
+      'ams-cloudfront',
+      'ams-frontdoor',
+      'other',
+    ].forEach((token) => {
+      it(`accepts detectedCdn token "${token}" via validateConfiguration`, () => {
+        const config = {
+          llmo: {
+            dataFolder: '/test',
+            brand: 'testBrand',
+            detectedCdn: token,
+          },
+        };
+        const validated = validateConfiguration(config);
+        expect(validated.llmo.detectedCdn).to.equal(token);
+      });
+    });
+
+    it('rejects unknown detectedCdn token via validateConfiguration', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          detectedCdn: 'byocdn-unknown',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw(/Configuration validation error: "llmo\.detectedCdn" must be one of/);
+    });
   });
 
   describe('Tokowaka Config', () => {
@@ -2972,6 +3010,132 @@ describe('Config Tests', () => {
       });
       const dynamoItem = Config.toDynamoItem(data);
       expect(dynamoItem.commerceLlmoConfig).to.deep.equal(data.getCommerceLlmoConfig());
+    });
+  });
+
+  describe('rumConfig', () => {
+    describe('getRumConfig', () => {
+      it('returns rumConfig when set', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        expect(config.getRumConfig()).to.deep.equal({
+          hasDomainKey: true,
+          lastCheckedAt: '2026-05-08T00:00:00.000Z',
+        });
+      });
+
+      it('returns undefined when rumConfig is absent', () => {
+        const config = Config({});
+        expect(config.getRumConfig()).to.be.undefined;
+      });
+
+      it('returns a copy so mutating the result does not affect internal state', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        const copy = config.getRumConfig();
+        copy.hasDomainKey = false;
+        expect(config.hasRumDomainKey()).to.be.true;
+      });
+    });
+
+    describe('hasRumDomainKey', () => {
+      it('returns true when hasDomainKey is true', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        expect(config.hasRumDomainKey()).to.be.true;
+      });
+
+      it('returns false when hasDomainKey is false', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: false, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        expect(config.hasRumDomainKey()).to.be.false;
+      });
+
+      it('returns false when rumConfig is absent', () => {
+        const config = Config({});
+        expect(config.hasRumDomainKey()).to.be.false;
+      });
+    });
+
+    describe('updateRumConfig', () => {
+      it('sets hasDomainKey to true and records lastCheckedAt', () => {
+        const now = new Date('2026-05-08T12:00:00.000Z');
+        const config = Config({});
+        config.updateRumConfig(true, now);
+        const rum = config.getRumConfig();
+        expect(rum.hasDomainKey).to.be.true;
+        expect(rum.lastCheckedAt).to.equal('2026-05-08T12:00:00.000Z');
+      });
+
+      it('sets hasDomainKey to false and records lastCheckedAt', () => {
+        const now = new Date('2026-05-08T12:00:00.000Z');
+        const config = Config({});
+        config.updateRumConfig(false, now);
+        expect(config.getRumConfig().hasDomainKey).to.be.false;
+        expect(config.getRumConfig().lastCheckedAt).to.equal('2026-05-08T12:00:00.000Z');
+      });
+
+      it('overwrites a previous rumConfig value', () => {
+        const now = new Date('2026-05-08T12:00:00.000Z');
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2025-01-01T00:00:00.000Z' },
+        });
+        config.updateRumConfig(false, now);
+        expect(config.hasRumDomainKey()).to.be.false;
+        expect(config.getRumConfig().lastCheckedAt).to.equal('2026-05-08T12:00:00.000Z');
+      });
+
+      it('throws TypeError when hasDomainKey is not a boolean', () => {
+        const config = Config({});
+        expect(() => config.updateRumConfig(null)).to.throw(TypeError, /hasDomainKey must be a boolean/);
+        expect(() => config.updateRumConfig(undefined)).to.throw(TypeError, /hasDomainKey must be a boolean/);
+        expect(() => config.updateRumConfig('true')).to.throw(TypeError, /hasDomainKey must be a boolean/);
+        expect(() => config.updateRumConfig(1)).to.throw(TypeError, /hasDomainKey must be a boolean/);
+      });
+    });
+
+    describe('Joi schema validation', () => {
+      it('accepts a valid rumConfig', () => {
+        expect(() => Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        })).to.not.throw();
+      });
+
+      it('rejects rumConfig missing hasDomainKey', () => {
+        expect(() => validateConfiguration({
+          rumConfig: { lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        })).to.throw(/hasDomainKey/);
+      });
+
+      it('rejects rumConfig with invalid lastCheckedAt', () => {
+        expect(() => validateConfiguration({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: 'not-a-date' },
+        })).to.throw(/lastCheckedAt/);
+      });
+
+      it('treats absent rumConfig as valid (optional field)', () => {
+        expect(() => validateConfiguration({})).to.not.throw();
+      });
+    });
+
+    describe('toDynamoItem serialization', () => {
+      it('includes rumConfig when set', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        const item = Config.toDynamoItem(config);
+        expect(item.rumConfig).to.deep.equal(config.getRumConfig());
+      });
+
+      it('omits rumConfig from toDynamoItem when not set', () => {
+        const config = Config({});
+        const item = Config.toDynamoItem(config);
+        expect(item.rumConfig).to.be.undefined;
+      });
     });
   });
 

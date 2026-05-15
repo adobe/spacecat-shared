@@ -1,3 +1,49 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.1...@adobe/spacecat-shared-tokowaka-client-v1.16.2) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.0...@adobe/spacecat-shared-tokowaka-client-v1.16.1) (2026-05-06)
+
+### Bug Fixes
+
+* **tokowaka-client:** do not set edgeDeployed on domain-wide covered suggestions ([#1584](https://github.com/adobe/spacecat-shared/issues/1584)) ([51df852](https://github.com/adobe/spacecat-shared/commit/51df85231c74e8013e9ef7659f67584cbf239645))
+
+### Reverts
+
+* "feat: CM git clone also clones submodules ([#1583](https://github.com/adobe/spacecat-shared/issues/1583))" ([#1587](https://github.com/adobe/spacecat-shared/issues/1587)) ([2d9e34e](https://github.com/adobe/spacecat-shared/commit/2d9e34e68a0af6612891c61ec37e4304b7e9d912))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.15.0...@adobe/spacecat-shared-tokowaka-client-v1.16.0) (2026-05-05)
+
+### Features
+
+* CM git clone also clones submodules ([#1583](https://github.com/adobe/spacecat-shared/issues/1583)) ([a1e67c3](https://github.com/adobe/spacecat-shared/commit/a1e67c36f9fb01dd65b501a2a1791f18a7432465))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.14.0...@adobe/spacecat-shared-tokowaka-client-v1.15.0) (2026-05-04)
+
+### Features
+
+* **AGENTCOM-634:** PDP enrichment does not correctly format on the AI visibility tool checker ([#1578](https://github.com/adobe/spacecat-shared/issues/1578)) ([b6140db](https://github.com/adobe/spacecat-shared/commit/b6140db8406ab2259dd3e91acdd31d91680e64ad))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.5...@adobe/spacecat-shared-tokowaka-client-v1.14.0) (2026-05-04)
+
+### Features
+
+* **tokowaka-client:** add checkWafConnectivity method ([#1552](https://github.com/adobe/spacecat-shared/issues/1552)) ([46f72e3](https://github.com/adobe/spacecat-shared/commit/46f72e39964d2e6906746e2d72f843a7d4a08428))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.13.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.4...@adobe/spacecat-shared-tokowaka-client-v1.13.5) (2026-05-04)
+
+### Bug Fixes
+
+* **deps:** update dependency uuid to v14 [security] ([#1555](https://github.com/adobe/spacecat-shared/issues/1555)) ([9c1fdda](https://github.com/adobe/spacecat-shared/commit/9c1fddab68014d16a6b5cc53965a08303345ed79))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.13.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.3...@adobe/spacecat-shared-tokowaka-client-v1.13.4) (2026-04-15)
+
+### Bug Fixes
+
+* **cm-client:** preserve broken symlinks when zipping repositories ([#1468](https://github.com/adobe/spacecat-shared/issues/1468)) ([943662a](https://github.com/adobe/spacecat-shared/commit/943662ac5d3765ee2a289355b9bf1e23c6c88230))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.13.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.13.2...@adobe/spacecat-shared-tokowaka-client-v1.13.3) (2026-04-09)
 
 ### Bug Fixes

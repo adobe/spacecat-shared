@@ -286,37 +286,32 @@ describe('CloudManagerClient', () => {
       expect(cloneArgsStr).to.not.include('Bearer');
     });
 
-    it('uses --recurse-submodules for STANDARD repos so submodules clone natively', async () => {
-      const client = CloudManagerClient.createFrom(
+    it('uses --no-recurse-submodules for both STANDARD and BYOG so submodule failures cannot abort the parent clone', async () => {
+      // STANDARD
+      const standardClient = CloudManagerClient.createFrom(
         createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
       );
-
-      await client.clone(
+      await standardClient.clone(
         TEST_PROGRAM_ID,
         TEST_REPO_ID,
         { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
       );
+      const standardCloneArgs = getGitArgs(execFileSyncStub.firstCall);
+      expect(standardCloneArgs).to.include('--no-recurse-submodules');
+      expect(standardCloneArgs).to.not.include('--recurse-submodules');
 
-      const gitArgs = getGitArgs(execFileSyncStub.firstCall);
-      expect(gitArgs).to.include('--recurse-submodules');
-      expect(gitArgs).to.not.include('--no-recurse-submodules');
-    });
+      execFileSyncStub.resetHistory();
 
-    it('uses --no-recurse-submodules for BYOG repos so submodules can be rewritten first', async () => {
-      // BYOG .gitmodules URLs are relative and would resolve against the CM
-      // proxy URL, producing name-based URLs the proxy rejects. We suppress
-      // auto-recursion so we can rewrite URLs before fetching submodules.
-      const client = CloudManagerClient.createFrom(createContext());
-
-      await client.clone(
+      // BYOG
+      const byogClient = CloudManagerClient.createFrom(createContext());
+      await byogClient.clone(
         TEST_PROGRAM_ID,
         TEST_REPO_ID,
         { imsOrgId: TEST_IMS_ORG_ID },
       );
-
-      const gitArgs = getGitArgs(execFileSyncStub.firstCall);
-      expect(gitArgs).to.include('--no-recurse-submodules');
-      expect(gitArgs).to.not.include('--recurse-submodules');
+      const byogCloneArgs = getGitArgs(execFileSyncStub.firstCall);
+      expect(byogCloneArgs).to.include('--no-recurse-submodules');
+      expect(byogCloneArgs).to.not.include('--recurse-submodules');
     });
 
     it('throws when standard credentials not found for programId', async () => {
@@ -340,7 +335,11 @@ describe('CloudManagerClient', () => {
       expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-repo-$/);
     });
 
-    it('STANDARD: checks out ref and runs sync + update --init --recursive', async () => {
+    it('STANDARD: runs sync + update --init --recursive whenever .gitmodules is present', async () => {
+      // existsSync(.gitmodules) → true so #initStandardSubmodules enters the
+      // submodule path; default false would early-return.
+      existsSyncStub.returns(true);
+
       const client = CloudManagerClient.createFrom(
         createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
       );
@@ -370,6 +369,50 @@ describe('CloudManagerClient', () => {
       const updateArgs = getGitArgs(execFileSyncStub.getCall(3));
       expect(updateArgs).to.deep.equal(['submodule', 'update', '--init', '--recursive']);
       expect(execFileSyncStub.getCall(3).args[2]).to.have.property('cwd', EXPECTED_CLONE_PATH);
+    });
+
+    it('STANDARD: runs sync + update even without a ref switch when .gitmodules is present', async () => {
+      // Previously the submodule init pass only fired after a ref switch
+      // (because --recurse-submodules at clone time handled the default
+      // branch). With the parent clone now unconditionally using
+      // --no-recurse-submodules, the init pass must also fire for the
+      // default-branch case so STANDARD submodules still populate.
+      existsSyncStub.returns(true);
+
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+
+      await client.clone(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+      );
+
+      // clone, submodule sync, submodule update --init --recursive
+      expect(execFileSyncStub).to.have.callCount(3);
+      expect(getGitArgs(execFileSyncStub.secondCall))
+        .to.deep.equal(['submodule', 'sync', '--recursive']);
+      expect(getGitArgs(execFileSyncStub.thirdCall))
+        .to.deep.equal(['submodule', 'update', '--init', '--recursive']);
+    });
+
+    it('STANDARD: skips submodule init pass entirely when .gitmodules is absent', async () => {
+      // Default existsSyncStub returns false. #initStandardSubmodules
+      // returns immediately so non-submodule standard repos see zero
+      // submodule-related git commands.
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+
+      await client.clone(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+      );
+
+      // Only the clone call
+      expect(execFileSyncStub).to.have.been.calledOnce;
     });
 
     it('does not checkout when ref is not provided', async () => {
@@ -404,8 +447,9 @@ describe('CloudManagerClient', () => {
       );
     });
 
-    it('STANDARD: does not fail clone when post-checkout submodule init fails', async () => {
+    it('STANDARD: does not fail clone when submodule init fails', async () => {
       // clone + checkout succeed; submodule sync fails
+      existsSyncStub.returns(true);
       execFileSyncStub.onFirstCall().returns(''); // clone
       execFileSyncStub.onSecondCall().returns(''); // checkout
       execFileSyncStub.onThirdCall().throws(new Error('Git command failed: submodule sync failed'));
@@ -1208,7 +1252,11 @@ describe('CloudManagerClient', () => {
       expect(execFileSyncStub.firstCall.args[2]).to.have.property('cwd', '/tmp/cm-repo-test');
     });
 
-    it('pulls standard repo with basic auth in URL', async () => {
+    it('pulls standard repo with basic auth in URL and no --recurse-submodules', async () => {
+      // existsSync(.gitmodules) defaults to false here so the follow-up
+      // #initStandardSubmodules early-returns; the pull itself must still
+      // omit --recurse-submodules so a submodule failure can't take down
+      // the parent pull.
       const client = CloudManagerClient.createFrom(
         createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
       );
@@ -1224,11 +1272,52 @@ describe('CloudManagerClient', () => {
 
       const pullArgStr = getGitArgsStr(execFileSyncStub.firstCall);
       expect(pullArgStr).to.include('pull');
-      expect(pullArgStr).to.include('--recurse-submodules');
+      expect(pullArgStr).to.not.include('--recurse-submodules');
       expect(pullArgStr).to.include('http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==');
       expect(pullArgStr).to.include(TEST_STANDARD_REPO_URL);
       expect(pullArgStr).to.not.include('stduser:stdtoken123@');
       expect(pullArgStr).to.not.include('Bearer');
+    });
+
+    it('STANDARD: runs sync + update after pull when .gitmodules is present', async () => {
+      existsSyncStub.returns(true);
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+
+      await client.pull(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+      );
+
+      // pull, submodule sync --recursive, submodule update --init --recursive
+      expect(execFileSyncStub).to.have.callCount(3);
+      expect(getGitArgs(execFileSyncStub.secondCall))
+        .to.deep.equal(['submodule', 'sync', '--recursive']);
+      expect(getGitArgs(execFileSyncStub.thirdCall))
+        .to.deep.equal(['submodule', 'update', '--init', '--recursive']);
+    });
+
+    it('STANDARD: does not fail pull when submodule init fails', async () => {
+      existsSyncStub.returns(true);
+      execFileSyncStub.onFirstCall().returns(''); // pull
+      execFileSyncStub.onSecondCall().throws(new Error('Git command failed: submodule sync failed'));
+
+      const context = createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS });
+      const client = CloudManagerClient.createFrom(context);
+
+      await client.pull(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+      );
+
+      expect(context.log.warn).to.have.been.calledWith(
+        sinon.match(/Standard submodule init failed.*Continuing without submodule recursion/),
+      );
     });
 
     it('checks out ref before pulling when ref is provided', async () => {

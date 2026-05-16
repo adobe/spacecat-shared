@@ -325,16 +325,19 @@ export default class CloudManagerClient {
    * - BYOG repos: Bearer token + API key + IMS org ID via CM Repo URL
    * - Standard repos: Basic auth header via the repo URL
    *
-   * Submodule handling differs by repo type:
-   * - STANDARD: `--recurse-submodules` at clone time. `.gitmodules` URLs
-   *   resolve against the customer's real git host (the same host the
-   *   parent was cloned from), so the existing org-scoped Basic-auth
-   *   extraheader covers every submodule transparently.
-   * - BYOG: `--no-recurse-submodules` at clone time (auto-recursion would
-   *   resolve `.gitmodules` relative or SSH URLs against the CM proxy URL,
-   *   producing name-based URLs the proxy rejects). Submodules are then
-   *   populated in a second pass driven by the onboarding-populated
-   *   `submodules` array — see `#resolveByogSubmodules` for the algorithm.
+   * Submodule handling is decoupled from the parent clone so a submodule
+   * failure can never take down the parent: both repo types clone with
+   * `--no-recurse-submodules` and populate submodules in a second pass
+   * whose errors are caught and logged.
+   * - STANDARD: post-clone `submodule sync --recursive` + `submodule update
+   *   --init --recursive`. `.gitmodules` URLs resolve against the customer's
+   *   real git host (the same host the parent was cloned from), so the
+   *   existing org-scoped Basic-auth extraheader covers every submodule
+   *   transparently. See `#initStandardSubmodules`.
+   * - BYOG: post-clone rewrite driven by the onboarding-populated
+   *   `submodules` array — relative or SSH `.gitmodules` URLs resolve
+   *   against the CM proxy URL otherwise, producing name-based URLs the
+   *   proxy rejects. See `#resolveByogSubmodules`.
    *
    * If a ref is provided, the clone will be checked out to that ref after cloning.
    * Checkout failures are logged but do not cause the clone to fail, so the caller
@@ -369,11 +372,10 @@ export default class CloudManagerClient {
       this.log.info(`Cloning CM repository: program=${programId}, repo=${repositoryId}, type=${repoType}`);
 
       const args = await this.#buildAuthGitArgs('clone', programId, repositoryId, { imsOrgId, repoType, repoUrl });
-      // BYOG: skip auto-recursion so the initial clone doesn't try (and fail)
-      // to fetch submodules via name-based proxy URLs. We populate them in a
-      // second pass below using the onboarding-populated `submodules` array.
-      const recurseFlag = byog ? '--no-recurse-submodules' : '--recurse-submodules';
-      this.#execGit([...args, recurseFlag, clonePath]);
+      // Always --no-recurse-submodules so a submodule failure can't take
+      // down the parent clone. Submodules are populated below in a path
+      // whose errors are caught and logged (parent stands either way).
+      this.#execGit([...args, '--no-recurse-submodules', clonePath]);
       this.log.info(`Repository cloned to ${clonePath}`);
       this.#logTmpDiskUsage('clone');
 
@@ -387,16 +389,11 @@ export default class CloudManagerClient {
         }
       }
 
-      // Populate submodules for the current ref.
-      // - STANDARD: only needed when we switched ref above. The initial
-      //   --recurse-submodules clone handled the default branch already;
-      //   sync+update picks up any new/changed submodules introduced by the
-      //   ref switch.
-      // - BYOG: always needed. The initial --no-recurse-submodules clone
-      //   didn't populate any submodules on any branch.
+      // Populate submodules. Both paths swallow errors internally — a
+      // broken submodule never aborts the parent import.
       if (byog) {
         await this.#resolveByogSubmodules(clonePath, programId, submodules, { imsOrgId });
-      } else if (hasText(ref)) {
+      } else {
         this.#initStandardSubmodules(clonePath);
       }
 
@@ -408,19 +405,29 @@ export default class CloudManagerClient {
   }
 
   /**
-   * For STANDARD repos after a ref checkout: pick up any submodules the ref
-   * declares but weren't initialized by the initial `--recurse-submodules`
-   * clone. Uses `sync` to refresh any URL changes between branches and
-   * `update --init --recursive` to actually fetch and check them out.
+   * For STANDARD repos: populate submodules in a separate pass after the
+   * parent clone/pull so a submodule failure can't fail the whole git
+   * command. `submodule sync --recursive` refreshes any URL changes the
+   * current ref introduces; `submodule update --init --recursive` fetches
+   * and checks them out.
    *
-   * Safe for standard repos because .gitmodules URLs resolve to the
+   * Safe for standard repos because `.gitmodules` URLs resolve to the
    * customer's real git host — which is exactly what we want git to use.
+   * The org-scoped Basic-auth extraheader already in place on the parent
+   * covers every same-org submodule transparently.
    *
-   * NOTE: do NOT call this on the BYOG path. BYOG .gitmodules URLs are
+   * Errors are caught and logged at `warn`. The parent clone/pull stands;
+   * the submodule working trees may be empty until the underlying issue is
+   * fixed at the customer / onboarding side.
+   *
+   * NOTE: do NOT call this on the BYOG path. BYOG `.gitmodules` URLs are
    * name-based and require rewriting first; `sync` would overwrite the
-   * rewritten entries in .git/config.
+   * rewritten entries in `.git/config`.
    */
   #initStandardSubmodules(clonePath) {
+    if (!existsSync(path.join(clonePath, '.gitmodules'))) {
+      return;
+    }
     try {
       this.#execGit(['submodule', 'sync', '--recursive'], { cwd: clonePath });
       this.#execGit(['submodule', 'update', '--init', '--recursive'], { cwd: clonePath });
@@ -836,13 +843,15 @@ export default class CloudManagerClient {
    * If a ref is provided, the ref is checked out before pulling so that
    * the pull updates the correct branch.
    *
-   * Submodule handling differs by repo type:
-   * - STANDARD: `pull --recurse-submodules` updates submodules in one step.
-   * - BYOG: pull the parent only, then re-run the submodules-driven
-   *   rewrite. This also picks up any new submodules the pull may have
-   *   introduced, since the new entries will already be present in the
-   *   array (it's per-program, not per-clone) provided onboarding has
-   *   refreshed it.
+   * Submodule handling: parent pull never carries `--recurse-submodules`
+   * so a submodule failure can't fail the parent pull. Submodules are
+   * populated in a separate pass whose errors are caught and logged.
+   * - STANDARD: post-pull `submodule sync --recursive` + `update --init
+   *   --recursive`. See `#initStandardSubmodules`.
+   * - BYOG: post-pull rewrite driven by `submodules[].resolvedUrl`. Also
+   *   picks up any new submodules the pull may have introduced, since
+   *   the new entries will already be present in the array (it's
+   *   per-program, not per-clone) provided onboarding has refreshed it.
    *
    * @param {string} clonePath - Path to the cloned repository
    * @param {string} programId - CM Program ID
@@ -868,24 +877,20 @@ export default class CloudManagerClient {
     }
 
     const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
-    // STANDARD: --recurse-submodules keeps submodules in sync during pull.
-    // BYOG: pull the parent only; submodules are handled separately below
-    // because relative .gitmodules URLs need rewriting through `submodules`.
-    if (byog) {
-      this.#execGit(pullArgs, { cwd: clonePath });
-    } else {
-      this.#execGit([...pullArgs, '--recurse-submodules'], { cwd: clonePath });
-    }
+    // Always pull the parent only — never `--recurse-submodules` — so a
+    // submodule failure can't take down the parent pull. Submodules are
+    // populated below in a path whose errors are caught and logged.
+    this.#execGit(pullArgs, { cwd: clonePath });
     this.log.info('Changes pulled successfully');
     this.#logTmpDiskUsage('pull');
 
-    // For BYOG, re-apply the rewrite after the pull in case the pulled commits
-    // changed .gitmodules (new submodules, renamed ones, etc). The helper is
-    // idempotent — existing .git/config entries are overwritten with the same
-    // value when the entries haven't changed, and new submodules pick up
-    // entries already present in the program-wide list.
+    // Re-populate submodules after the pull in case the pulled commits
+    // changed `.gitmodules` (new submodules, renamed ones, etc). Both
+    // helpers are idempotent and swallow submodule errors internally.
     if (byog) {
       await this.#resolveByogSubmodules(clonePath, programId, submodules, { imsOrgId });
+    } else {
+      this.#initStandardSubmodules(clonePath);
     }
   }
 

@@ -240,15 +240,17 @@ import CloudManagerClient, {
 
 ## Submodule handling
 
-Both `clone()` and `pull()` populate submodules automatically, but the path differs by parent repo type because the CM repo service proxy only serves repositories by numeric id, while customer `.gitmodules` files reference submodules by name (relative or SSH form).
+Both `clone()` and `pull()` populate submodules in a separate pass after the parent git operation completes. Submodule failures are caught and logged at `warn` — they **never** abort the parent clone/pull/import. The parent repository is always usable; submodule working trees may be empty until the underlying issue is fixed (customer-side or onboarding-side).
+
+The implementation differs by parent repo type because the CM repo service proxy only serves repositories by numeric id, while customer `.gitmodules` files reference submodules by name (relative or SSH form).
 
 ### Standard parent
 
-`git clone --recurse-submodules` (and `pull --recurse-submodules`) just works. Customer `.gitmodules` URLs resolve against the same host as the parent (`git.cloudmanager.adobe.com/{orgName}/...`), and the existing org-scoped Basic-auth extraheader covers every submodule transparently. No additional configuration needed.
+`clone()` and `pull()` always use `--no-recurse-submodules` on the parent operation, then run `git submodule sync --recursive` + `git submodule update --init --recursive` in a second pass. `.gitmodules` URLs resolve against the same host as the parent (`git.cloudmanager.adobe.com/{orgName}/...`), and the existing org-scoped Basic-auth extraheader covers every submodule transparently. No additional configuration needed. If a submodule fails to fetch, the parent stands and a warning is logged.
 
 ### BYOG parent — `submodules` required
 
-For BYOG parents the proxy cannot serve relative or SSH `.gitmodules` URLs (they resolve to name-based paths the proxy rejects). The client therefore clones with `--no-recurse-submodules` and replays the onboarding-precomputed per-submodule entries to rewrite each submodule's URL in `.git/config` before running `submodule update --force --recursive`. `.gitmodules` itself is never modified — the working tree stays clean.
+For BYOG parents the proxy cannot serve relative or SSH `.gitmodules` URLs (they resolve to name-based paths the proxy rejects). The client clones with `--no-recurse-submodules` and replays the onboarding-precomputed per-submodule entries to rewrite each submodule's URL in `.git/config` before running `submodule update --force --recursive`. `.gitmodules` itself is never modified — the working tree stays clean.
 
 `submodules` is an array of entries; the importer writes `sectionName`, `gitmodulesUrl`, and `external`, and onboarding adds `resolvedUrl`:
 

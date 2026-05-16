@@ -19,6 +19,7 @@ export interface Organization extends BaseModel {
   getFulfillableItems(): object;
   getImsOrgId(): string;
   getName(): string;
+  getSemrushWorkspaceId(): string;
   getSites(): Promise<Site[]>;
   getProjects(): Promise<Project[]>;
   getEntitlements(): Promise<Entitlement[]>;
@@ -28,9 +29,12 @@ export interface Organization extends BaseModel {
   setFulfillableItems(fulfillableItems: object): Organization;
   setImsOrgId(imsOrgId: string): Organization;
   setName(name: string): Organization;
+  setSemrushWorkspaceId(semrushWorkspaceId: string): Organization;
 }
 
 export interface OrganizationCollection extends BaseCollection<Organization> {
   allByImsOrgId(imsOrgId: string): Promise<Organization[]>;
+  allBySemrushWorkspaceId(semrushWorkspaceId: string): Promise<Organization[]>;
   findByImsOrgId(imsOrgId: string): Promise<Organization | null>;
+  findBySemrushWorkspaceId(semrushWorkspaceId: string): Promise<Organization | null>;
 }

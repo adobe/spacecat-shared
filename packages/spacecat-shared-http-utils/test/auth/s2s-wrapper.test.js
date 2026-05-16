@@ -93,7 +93,17 @@ describe('s2sAuthWrapper', () => {
 
   it('throws at creation time when routeCapabilities is an empty object', () => {
     expect(() => s2sAuthWrapper(handler, { routeCapabilities: {} }))
-      .to.throw('routeCapabilities must not be an empty object');
+      .to.throw('routeCapabilities must be a non-empty object');
+  });
+
+  it('throws at creation time when routeCapabilities is missing', () => {
+    expect(() => s2sAuthWrapper(handler))
+      .to.throw('routeCapabilities must be a non-empty object');
+  });
+
+  it('throws at creation time when routeCapabilities is an array', () => {
+    expect(() => s2sAuthWrapper(handler, { routeCapabilities: ['GET /sites'] }))
+      .to.throw('routeCapabilities must be a non-empty object');
   });
 
   it('passes through when no bearer token is provided', async () => {
@@ -353,18 +363,11 @@ describe('s2sAuthWrapper', () => {
       expect(handler.called).to.be.false;
     });
 
-    it('passes through when no routeCapabilities is provided', async () => {
-      const token = await createToken(createTokenPayload(s2sTokenPayload));
-      context.pathInfo = {
-        method: 'GET',
-        suffix: '/sites',
-        headers: { authorization: `Bearer ${token}` },
-      };
-      const wrapped = s2sAuthWrapper(handler);
-      const result = await wrapped({}, context);
-
-      expect(result).to.deep.equal({ status: 200 });
-      expect(handler.calledOnce).to.be.true;
+    it('requires routeCapabilities at construction time (no implicit pass-through)', () => {
+      // Tightened guard: passing no routeCapabilities throws immediately so a
+      // misconfigured wrapper cannot silently bypass capability checks.
+      expect(() => s2sAuthWrapper(handler))
+        .to.throw('routeCapabilities must be a non-empty object');
     });
 
     it('returns 403 when pathInfo is missing method or suffix', async () => {

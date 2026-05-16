@@ -20,3 +20,11 @@ export {
 
 // Export DATA_SCHEMAS for api-service to reference
 export const { DATA_SCHEMAS } = Suggestion;
+
+// Re-export per-issue lifecycle constants so consumers (audit-worker, autofix-worker,
+// api-service, Mystique) can validate per-issue values without duplicating enum lists.
+export {
+  CWV_METRIC_TYPES,
+  ISSUE_STATUSES,
+  ISSUE_SKIP_REASONS,
+} from './suggestion.data-schemas.js';

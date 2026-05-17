@@ -302,20 +302,40 @@ export default class CloudManagerClient {
    */
   async #buildAuthGitArgs(command, programId, repositoryId, { imsOrgId, repoType, repoUrl } = {}) {
     if (repoType === CM_REPO_TYPE.STANDARD) {
-      const credentials = this.#getStandardRepoCredentials(programId);
-      const basicAuth = Buffer.from(credentials).toString('base64');
-      const parsedUrl = new URL(repoUrl);
-      const orgName = parsedUrl.pathname.split('/')[1];
-      const repoOrgPrefix = `${parsedUrl.origin}/${orgName}/`;
-      return [
-        '-c', `http.${repoOrgPrefix}.extraheader=Authorization: Basic ${basicAuth}`,
-        command, repoUrl,
-      ];
+      const authArgs = this.#buildStandardAuthArgs(programId, repoUrl);
+      return [...authArgs, command, repoUrl];
     }
 
     const cmRepoServiceCredentials = await this.#getCMRepoServiceCredentials(imsOrgId);
     const byogRepoUrl = this.#getRepoUrl(programId, repositoryId);
     return [...cmRepoServiceCredentials, command, byogRepoUrl];
+  }
+
+  /**
+   * Builds the credentials-only `-c http.<orgPrefix>.extraheader=...` args
+   * for a STANDARD repo, scoped to the org-prefix of the parent repo URL.
+   *
+   * The same args feed both the parent git command (clone/pull/push) and
+   * any subsequent submodule git commands run inside the clone. Submodules
+   * in the same `git.cloudmanager.adobe.com/{org}/` org reuse this scope
+   * transparently — one credential covers every repo in that customer org.
+   *
+   * Credentials are never written to `.git/config`; they only ever travel
+   * as process-scoped `-c` flags on a single git invocation, so an
+   * inspector who opens the cloned repo's `.git/config` finds nothing.
+   *
+   * @param {string} programId - CM Program ID
+   * @param {string} repoUrl - Parent repository URL (used to derive the
+   *   org-scoped extraheader prefix)
+   * @returns {string[]} `-c` args ready to prepend to a git invocation
+   */
+  #buildStandardAuthArgs(programId, repoUrl) {
+    const credentials = this.#getStandardRepoCredentials(programId);
+    const basicAuth = Buffer.from(credentials).toString('base64');
+    const parsedUrl = new URL(repoUrl);
+    const orgName = parsedUrl.pathname.split('/')[1];
+    const repoOrgPrefix = `${parsedUrl.origin}/${orgName}/`;
+    return ['-c', `http.${repoOrgPrefix}.extraheader=Authorization: Basic ${basicAuth}`];
   }
 
   /**
@@ -394,7 +414,11 @@ export default class CloudManagerClient {
       if (byog) {
         await this.#resolveByogSubmodules(clonePath, programId, submodules, { imsOrgId });
       } else {
-        this.#initStandardSubmodules(clonePath);
+        // Re-derive the same `-c http.<orgPrefix>.extraheader=Basic ...` args
+        // we used for the parent clone, so the submodule fetches authenticate
+        // against the same org without persisting any credentials to disk.
+        const standardAuthArgs = this.#buildStandardAuthArgs(programId, repoUrl);
+        this.#initStandardSubmodules(clonePath, standardAuthArgs);
       }
 
       return clonePath;
@@ -413,8 +437,11 @@ export default class CloudManagerClient {
    *
    * Safe for standard repos because `.gitmodules` URLs resolve to the
    * customer's real git host — which is exactly what we want git to use.
-   * The org-scoped Basic-auth extraheader already in place on the parent
-   * covers every same-org submodule transparently.
+   * The caller passes the parent's org-scoped Basic-auth `-c` extraheader
+   * args; they're forwarded to every submodule git command so authenticated
+   * fetches against `git.cloudmanager.adobe.com/{org}/...` succeed without
+   * ever persisting credentials to `.git/config`. (Git's `-c key=value`
+   * is process-scoped — it never writes to disk.)
    *
    * Errors are caught and logged at `warn`. The parent clone/pull stands;
    * the submodule working trees may be empty until the underlying issue is
@@ -423,14 +450,19 @@ export default class CloudManagerClient {
    * NOTE: do NOT call this on the BYOG path. BYOG `.gitmodules` URLs are
    * name-based and require rewriting first; `sync` would overwrite the
    * rewritten entries in `.git/config`.
+   *
+   * @param {string} clonePath - Local clone of the STANDARD parent
+   * @param {string[]} [authArgs] - Optional `-c http.<orgPrefix>.extraheader=...`
+   *   args to prepend to every submodule git command. Omit only when the
+   *   caller has already established credentials another way (tests do this).
    */
-  #initStandardSubmodules(clonePath) {
+  #initStandardSubmodules(clonePath, authArgs = []) {
     if (!existsSync(path.join(clonePath, '.gitmodules'))) {
       return;
     }
     try {
-      this.#execGit(['submodule', 'sync', '--recursive'], { cwd: clonePath });
-      this.#execGit(['submodule', 'update', '--init', '--recursive'], { cwd: clonePath });
+      this.#execGit([...authArgs, 'submodule', 'sync', '--recursive'], { cwd: clonePath });
+      this.#execGit([...authArgs, 'submodule', 'update', '--init', '--recursive'], { cwd: clonePath });
       this.log.info(`Initialized submodules for standard repo at ${clonePath}`);
     } catch (submoduleError) {
       this.log.warn(`Standard submodule init failed: ${submoduleError.message}. Continuing without submodule recursion.`);
@@ -890,7 +922,10 @@ export default class CloudManagerClient {
     if (byog) {
       await this.#resolveByogSubmodules(clonePath, programId, submodules, { imsOrgId });
     } else {
-      this.#initStandardSubmodules(clonePath);
+      // Same org-scoped extraheader as the parent pull — passed via `-c`,
+      // never persisted to `.git/config`.
+      const standardAuthArgs = this.#buildStandardAuthArgs(programId, repoUrl);
+      this.#initStandardSubmodules(clonePath, standardAuthArgs);
     }
   }
 

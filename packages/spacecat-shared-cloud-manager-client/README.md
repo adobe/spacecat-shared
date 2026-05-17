@@ -246,7 +246,7 @@ The implementation differs by parent repo type because the CM repo service proxy
 
 ### Standard parent
 
-`clone()` and `pull()` always use `--no-recurse-submodules` on the parent operation, then run `git submodule sync --recursive` + `git submodule update --init --recursive` in a second pass. `.gitmodules` URLs resolve against the same host as the parent (`git.cloudmanager.adobe.com/{orgName}/...`), and the existing org-scoped Basic-auth extraheader covers every submodule transparently. No additional configuration needed. If a submodule fails to fetch, the parent stands and a warning is logged.
+`clone()` and `pull()` always use `--no-recurse-submodules` on the parent operation, then run `git submodule sync --recursive` + `git submodule update --init --recursive` in a second pass. Each of those follow-up git invocations carries the same `-c http.<orgPrefix>.extraheader=Authorization: Basic …` flag the parent operation used — re-derived from `CM_STANDARD_REPO_CREDENTIALS[programId]` at call time and passed in-process to git. `.git/config` is **never** written to with credential material; the org-scoped extraheader exists only for the duration of each git invocation. `.gitmodules` URLs resolve against the same host as the parent (`git.cloudmanager.adobe.com/{orgName}/...`), so the same scope covers every same-org submodule. If a submodule fails to fetch, the parent stands and a warning is logged.
 
 ### BYOG parent — `submodules` required
 

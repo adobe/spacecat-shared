@@ -335,7 +335,7 @@ describe('CloudManagerClient', () => {
       expect(mkdtempSyncStub.firstCall.args[0]).to.match(/cm-repo-$/);
     });
 
-    it('STANDARD: runs sync + update --init --recursive whenever .gitmodules is present', async () => {
+    it('STANDARD: runs sync + update --init --recursive with the same -c extraheader the parent clone used', async () => {
       // existsSync(.gitmodules) → true so #initStandardSubmodules enters the
       // submodule path; default false would early-return.
       existsSyncStub.returns(true);
@@ -362,21 +362,30 @@ describe('CloudManagerClient', () => {
       expect(checkoutArgs).to.deep.equal(['checkout', 'release/5.11']);
       expect(execFileSyncStub.secondCall.args[2]).to.have.property('cwd', EXPECTED_CLONE_PATH);
 
+      // The submodule git invocations carry the same `-c http.<org>.extraheader=Basic ...`
+      // args used for the parent clone, scoped to the parent's org prefix.
+      // base64('stduser:stdtoken123') == 'c3RkdXNlcjpzdGR0b2tlbjEyMw=='
+      const expectedAuthArgs = [
+        '-c',
+        'http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==',
+      ];
+
       const syncArgs = getGitArgs(execFileSyncStub.thirdCall);
-      expect(syncArgs).to.deep.equal(['submodule', 'sync', '--recursive']);
+      expect(syncArgs).to.deep.equal([...expectedAuthArgs, 'submodule', 'sync', '--recursive']);
       expect(execFileSyncStub.thirdCall.args[2]).to.have.property('cwd', EXPECTED_CLONE_PATH);
 
       const updateArgs = getGitArgs(execFileSyncStub.getCall(3));
-      expect(updateArgs).to.deep.equal(['submodule', 'update', '--init', '--recursive']);
+      expect(updateArgs).to.deep.equal([...expectedAuthArgs, 'submodule', 'update', '--init', '--recursive']);
       expect(execFileSyncStub.getCall(3).args[2]).to.have.property('cwd', EXPECTED_CLONE_PATH);
     });
 
-    it('STANDARD: runs sync + update even without a ref switch when .gitmodules is present', async () => {
+    it('STANDARD: runs sync + update with auth even without a ref switch when .gitmodules is present', async () => {
       // Previously the submodule init pass only fired after a ref switch
       // (because --recurse-submodules at clone time handled the default
       // branch). With the parent clone now unconditionally using
       // --no-recurse-submodules, the init pass must also fire for the
-      // default-branch case so STANDARD submodules still populate.
+      // default-branch case so STANDARD submodules still populate — and
+      // it must carry the parent's `-c` extraheader too.
       existsSyncStub.returns(true);
 
       const client = CloudManagerClient.createFrom(
@@ -391,10 +400,50 @@ describe('CloudManagerClient', () => {
 
       // clone, submodule sync, submodule update --init --recursive
       expect(execFileSyncStub).to.have.callCount(3);
+      const expectedAuthArgs = [
+        '-c',
+        'http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==',
+      ];
       expect(getGitArgs(execFileSyncStub.secondCall))
-        .to.deep.equal(['submodule', 'sync', '--recursive']);
+        .to.deep.equal([...expectedAuthArgs, 'submodule', 'sync', '--recursive']);
       expect(getGitArgs(execFileSyncStub.thirdCall))
-        .to.deep.equal(['submodule', 'update', '--init', '--recursive']);
+        .to.deep.equal([...expectedAuthArgs, 'submodule', 'update', '--init', '--recursive']);
+    });
+
+    it('STANDARD: never persists credentials to .git/config — only ever via -c', async () => {
+      // Belt-and-braces safety check: walk every git invocation issued by
+      // clone() and verify no 'config' subcommand ever sets an extraheader.
+      // Credentials should only ever travel as process-scoped `-c key=value`
+      // flags (which git resolves in-memory and never writes to disk).
+      existsSyncStub.returns(true);
+
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+
+      await client.clone(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
+      );
+
+      for (const call of execFileSyncStub.getCalls()) {
+        const args = getGitArgs(call);
+        // Walk past every `-c <key=value>` pair (process-scoped, fine);
+        // then if a positional `config` subcommand follows, it must not
+        // mention `extraheader` or any credential material in its operands.
+        for (let i = 0; i < args.length; i += 1) {
+          if (args[i] === '-c') {
+            i += 1; // skip the value too
+          } else if (args[i] === 'config') {
+            const operands = args.slice(i + 1).join(' ');
+            expect(operands).to.not.include('extraheader');
+            expect(operands).to.not.include('Basic ');
+            expect(operands).to.not.include('Bearer ');
+            break;
+          }
+        }
+      }
     });
 
     it('STANDARD: skips submodule init pass entirely when .gitmodules is absent', async () => {
@@ -1294,10 +1343,17 @@ describe('CloudManagerClient', () => {
 
       // pull, submodule sync --recursive, submodule update --init --recursive
       expect(execFileSyncStub).to.have.callCount(3);
+      // Submodule git invocations carry the same `-c` extraheader the parent
+      // pull used, so submodule fetches authenticate without persisting any
+      // credentials to `.git/config`.
+      const expectedAuthArgs = [
+        '-c',
+        'http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==',
+      ];
       expect(getGitArgs(execFileSyncStub.secondCall))
-        .to.deep.equal(['submodule', 'sync', '--recursive']);
+        .to.deep.equal([...expectedAuthArgs, 'submodule', 'sync', '--recursive']);
       expect(getGitArgs(execFileSyncStub.thirdCall))
-        .to.deep.equal(['submodule', 'update', '--init', '--recursive']);
+        .to.deep.equal([...expectedAuthArgs, 'submodule', 'update', '--init', '--recursive']);
     });
 
     it('STANDARD: does not fail pull when submodule init fails', async () => {

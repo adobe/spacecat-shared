@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.3.0...@adobe/spacecat-shared-cloud-manager-client-v1.3.1) (2026-05-17)
+
+### Bug Fixes
+
+* **cloud-manager-client:** forward parent extraheader to STANDARD submodule init ([#1607](https://github.com/adobe/spacecat-shared/issues/1607)) ([18b96bd](https://github.com/adobe/spacecat-shared/commit/18b96bd1c89f0c47b6573a20a26529a115cc959d))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.2.2...@adobe/spacecat-shared-cloud-manager-client-v1.3.0) (2026-05-16)
 
 ### Features

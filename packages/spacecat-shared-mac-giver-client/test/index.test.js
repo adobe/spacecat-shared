@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,11 +10,15 @@
  * governing permissions and limitations under the License.
  */
 
-export const FF_READ_ONLY_ORG = 'FT_LLMO-3008';
-// FACS feature flag per product code (from x-product header, uppercased).
-// Products absent from this map are treated as "FACS not yet rolled out" and bypass enforcement.
-export const FF_MAC_FACS_PERMISSIONS = {
-  LLMO: 'FF_LLMO-3026',
-  ASO: 'FT_SITES-44631',
-};
-export const X_PRODUCT_HEADER = 'x-product';
+import { expect } from 'chai';
+import { MacGiverClient, macGiverClientWrapper } from '../src/index.js';
+
+describe('index', () => {
+  it('exports MacGiverClient', () => {
+    expect(MacGiverClient).to.be.a('function');
+  });
+
+  it('exports macGiverClientWrapper', () => {
+    expect(macGiverClientWrapper).to.be.a('function');
+  });
+});

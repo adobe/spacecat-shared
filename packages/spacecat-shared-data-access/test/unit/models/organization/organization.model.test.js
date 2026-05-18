@@ -94,4 +94,16 @@ describe('OrganizationModel', () => {
       expect(instance.getFulfillableItems()).to.deep.equal(['item3', 'item4']);
     });
   });
+
+  describe('defaultSiteId', () => {
+    it('gets defaultSiteId as undefined when not set', () => {
+      expect(instance.getDefaultSiteId()).to.equal(undefined);
+    });
+
+    it('sets and gets defaultSiteId', () => {
+      const siteId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+      instance.setDefaultSiteId(siteId);
+      expect(instance.getDefaultSiteId()).to.equal(siteId);
+    });
+  });
 });

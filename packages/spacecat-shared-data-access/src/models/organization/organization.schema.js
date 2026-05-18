@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import { Config, DEFAULT_CONFIG, validateConfiguration } from '../site/config.js';
 import SchemaBuilder from '../base/schema.builder.js';
@@ -43,6 +43,10 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
   .addAttribute('fulfillableItems', {
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),
+  })
+  .addAttribute('defaultSiteId', {
+    type: 'string',
+    validate: (value) => !value || isValidUUID(value),
   })
   .addAllIndex(['imsOrgId']);
 

@@ -105,22 +105,31 @@ describe('facsWrapper', () => {
     });
   });
 
-  describe('unauthenticated requests', () => {
-    it('returns 403 when authInfo is absent', async () => {
+  describe('missing authInfo on non-OPTIONS', () => {
+    it('does not crash; bypasses via no-x-product when no auth is present', async () => {
       delete context.attributes;
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: {} };
       const wrapped = facsWrapper(handler, { routeFacsCapabilities });
-      const result = await wrapped({}, context);
-      expect(result.status).to.equal(403);
-      expect(handler.called).to.be.false;
-      expect(logStub.warn.calledWithMatch({ tag: 'facs' }, 'Unauthenticated request reached facsWrapper — denying')).to.be.true;
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
     });
+  });
 
-    it('returns 403 when isAuthenticated returns false', async () => {
-      context.attributes.authInfo = makeAuthInfo({ isAuthenticated: () => false });
+  describe('CORS preflight bypass', () => {
+    it('bypasses OPTIONS even when x-product is present and route is unmapped', async () => {
+      // Reproduces the deployment behaviour where Fastly forwards x-product
+      // on the preflight. Without the OPTIONS bypass, this request would
+      // reach deny-by-default (OPTIONS verb isn't in the product map).
+      delete context.attributes;
+      context.pathInfo = {
+        method: 'OPTIONS',
+        suffix: '/v2/regions',
+        headers: { 'x-product': 'llmo' },
+      };
       const wrapped = facsWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
-      expect(result.status).to.equal(403);
-      expect(handler.called).to.be.false;
+      expect(handler.calledOnce).to.be.true;
+      expect(result).to.deep.equal({ status: 200 });
     });
   });
 
@@ -322,7 +331,7 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
       const [flagKey, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
-      expect(flagKey).to.equal('FT_LLMO-3026');
+      expect(flagKey).to.equal('FF_LLMO-3026');
       expect(imsOrgId).to.equal('ORG-ABC@AdobeOrg');
     });
 
@@ -380,15 +389,6 @@ describe('facsWrapper', () => {
       expect(handler.calledOnce).to.be.true;
     });
 
-    it('emits a validation-grant log when the permission is granted', async () => {
-      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
-      await wrapped({}, context);
-      expect(logStub.info.calledWithMatch(
-        { tag: 'facs', permission: 'llmo/can_read' },
-        'FACS permission granted — allowing route',
-      )).to.be.true;
-    });
-
     it('uses the full permission from the product map as-is (no runtime composition)', async () => {
       let capturedPermission;
       context.attributes.authInfo = makeAuthInfo({
@@ -437,6 +437,65 @@ describe('facsWrapper', () => {
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });
       expect(handler.calledOnce).to.be.true;
+    });
+  });
+
+  describe('user identifier resolution in logs', () => {
+    let ldClient;
+    let mockedWrapper;
+    let captured;
+
+    beforeEach(async () => {
+      ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
+      const mod = await esmock('../../src/auth/facs-wrapper.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: { createFrom: sinon.stub().returns(ldClient) },
+        },
+      });
+      mockedWrapper = mod.facsWrapper;
+      captured = {};
+      logStub.warn = (obj) => {
+        captured.warn = obj;
+      };
+    });
+
+    async function runDenied(profile) {
+      context.attributes.authInfo = makeAuthInfo({
+        getProfile: () => profile,
+        hasFacsPermission: () => false,
+      });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+    }
+
+    it('prefers profile.sub when present (JWT session token)', async () => {
+      await runDenied({ sub: 'ABC123@orgId', email: 'ravverma@adobe.com' });
+      expect(captured.warn.user).to.equal('ABC123@orgId');
+    });
+
+    it('falls back to profile.email when sub is missing (IMS bearer token)', async () => {
+      await runDenied({ email: 'ABC123@AdobeID' });
+      expect(captured.warn.user).to.equal('ABC123@AdobeID');
+    });
+
+    it('returns undefined when no identifier field is present', async () => {
+      await runDenied({});
+      expect(captured.warn.user).to.equal(undefined);
+    });
+
+    it('returns undefined when authInfo.getProfile is missing', async () => {
+      context.attributes.authInfo = {
+        isAuthenticated: () => true,
+        isAdmin: () => false,
+        isS2SAdmin: () => false,
+        isS2SConsumer: () => false,
+        isReadOnlyAdmin: () => false,
+        getTenantIds: () => ['CUST-ORG-123'],
+        hasFacsPermission: () => false,
+      };
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(captured.warn.user).to.equal(undefined);
     });
   });
 });

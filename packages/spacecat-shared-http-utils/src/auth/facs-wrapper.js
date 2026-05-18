@@ -27,6 +27,22 @@ function parseFacsExceptionInternalOrgs(env) {
   return new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
 }
 
+/**
+ * Pulls a stable user identifier out of the auth profile for log lines.
+ *
+ * Both auth paths SpaceCat uses set one of these two fields:
+ *   - JWT (JwtHandler, session token):  `sub` (= userId, e.g. `ABC123@<orgId>`),
+ *                                        `email` (= userId in current login.js).
+ *   - IMS (AdobeImsHandler):            `email` (= user_id, set by transformProfile).
+ *
+ * `sub` is preferred when present (standard JWT semantics); `email` is the
+ * always-available fallback across both paths.
+ */
+function resolveUserIdent(authInfo) {
+  const profile = authInfo?.getProfile?.() || {};
+  return profile.sub || profile.email || undefined;
+}
+
 function forbidden(message) {
   return new Response(JSON.stringify({ message }), {
     status: 403,
@@ -67,16 +83,18 @@ function forbidden(message) {
  *
  * ## Bypass rules (in order)
  *
- * 1. Unauthenticated requests are denied with 403. By the time `facsWrapper`
- *    runs, `authWrapper` upstream has already established identity; an
- *    unauthenticated request reaching this layer means no auth handler claimed
- *    it, which is not a legitimate FACS-governed call.
- * 2. Internal identities (`is_admin`, `is_s2s_admin`, `is_s2s_consumer`,
+ * 0. CORS preflight (`OPTIONS`) requests bypass. The browser sends them
+ *    without credentials but, in this deployment, Fastly forwards
+ *    `x-product` on the preflight — so the "no x-product" bypass below
+ *    cannot be relied on to short-circuit them. Without this rule, every
+ *    preflight reaches deny-by-default and the browser blocks the real
+ *    follow-up request.
+ * 1. Internal identities (`is_admin`, `is_s2s_admin`, `is_s2s_consumer`,
  *    `is_read_only_admin`) bypass.
- * 3. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) bypass.
- * 4. Requests without `x-product` header bypass (treated as not enrolled).
- * 5. Products with no sub-map (or empty sub-map) bypass.
- * 6. Per-product LaunchDarkly flag missing or disabled → bypass.
+ * 2. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) bypass.
+ * 3. Requests without `x-product` header bypass (treated as not enrolled).
+ * 4. Products with no sub-map (or empty sub-map) bypass.
+ * 5. Per-product LaunchDarkly flag missing or disabled → bypass.
  *
  * Otherwise: route lookup in the product map. Missing route → 403 (deny by
  * default; this is what gates external customers off admin/S2S/infrastructure
@@ -102,53 +120,48 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
 
   return async (request, context) => {
     const { log } = context;
-    const authInfo = context.attributes?.authInfo;
 
-    // (1) Unauthenticated → deny. authWrapper upstream is responsible for
-    // establishing identity; if authInfo is missing or not authenticated by
-    // the time we reach this layer, the request is not a legitimate
-    // FACS-governed call.
-    if (!authInfo?.isAuthenticated()) {
-      log.warn({
-        tag: 'facs',
-        method: context.pathInfo?.method,
-        suffix: context.pathInfo?.suffix,
-      }, 'Unauthenticated request reached facsWrapper — denying');
-      return forbidden('Forbidden');
+    // (0) CORS preflight — Fastly forwards `x-product` on OPTIONS in this
+    // deployment, so the "no x-product" bypass below would NOT catch it.
+    // Preflight has no credentials and no business intent; bypass early.
+    if (context.pathInfo?.method === 'OPTIONS') {
+      return fn(request, context);
     }
 
-    // (2) Internal identities — FACS applies to external customer users only.
+    const authInfo = context.attributes?.authInfo;
+
+    // (1) Internal identities — FACS applies to external customer users only.
     if (
-      authInfo.isAdmin()
-      || authInfo.isS2SAdmin()
-      || authInfo.isS2SConsumer()
-      || authInfo.isReadOnlyAdmin()
+      authInfo?.isAdmin?.()
+      || authInfo?.isS2SAdmin?.()
+      || authInfo?.isS2SConsumer?.()
+      || authInfo?.isReadOnlyAdmin?.()
     ) {
       return fn(request, context);
     }
 
-    // (3) Adobe internal IMS org IDs — permanent bypass (env-configured).
-    const orgId = authInfo.getTenantIds?.()?.[0];
+    // (2) Adobe internal IMS org IDs — permanent bypass (env-configured).
+    const orgId = authInfo?.getTenantIds?.()?.[0];
     const internalImsOrgIds = parseFacsExceptionInternalOrgs(context.env);
     if (orgId && internalImsOrgIds.has(orgId)) {
       log.debug({ tag: 'facs', org: orgId }, 'Internal Adobe org — bypassing FACS');
       return fn(request, context);
     }
 
-    // (4) No x-product header → not enrolled in FACS → bypass.
+    // (3) No x-product header → not enrolled in FACS → bypass.
     const productCode = context.pathInfo?.headers?.[X_PRODUCT_HEADER]?.toLowerCase();
     if (!productCode) {
       return fn(request, context);
     }
 
-    // (5) Product not enrolled (no sub-map or empty sub-map) → bypass.
+    // (4) Product not enrolled (no sub-map or empty sub-map) → bypass.
     const productMap = productsRoutes[productCode.toUpperCase()];
     if (!productMap || Object.keys(productMap).length === 0) {
       log.debug({ tag: 'facs', product: productCode }, 'Product not enrolled in FACS — bypassing');
       return fn(request, context);
     }
 
-    // (6) Per-product LaunchDarkly flag gate. If no flag is wired for this
+    // (5) Per-product LaunchDarkly flag gate. If no flag is wired for this
     // product, or the flag is off for this org, bypass.
     const flagKey = FF_MAC_FACS_PERMISSIONS[productCode.toUpperCase()];
     if (!flagKey) {
@@ -189,31 +202,19 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
         tag: 'facs',
         method: context.pathInfo?.method,
         suffix: context.pathInfo?.suffix,
-        user: authInfo.getProfile?.()?.sub,
+        user: resolveUserIdent(authInfo),
       }, 'Route not in PRODUCTS_ROUTES — denying FACS user');
       return forbidden('Forbidden');
     }
 
-    if (!authInfo.hasFacsPermission(requiredPermission)) {
+    if (!authInfo?.hasFacsPermission?.(requiredPermission)) {
       log.warn({
         tag: 'facs',
         permission: requiredPermission,
-        user: authInfo.getProfile?.()?.sub,
+        user: resolveUserIdent(authInfo),
       }, 'FACS permission denied');
       return forbidden('Forbidden');
     }
-
-    // TEMPORARY: validation-only log to confirm permission grants land on
-    // the expected routes during MAC rollout. Remove once enforcement is
-    // stable and dashboarded via the upstream warn() denial signal.
-    log.info({
-      tag: 'facs',
-      method: context.pathInfo?.method,
-      suffix: context.pathInfo?.suffix,
-      product: productCode,
-      permission: requiredPermission,
-      user: authInfo.getProfile?.()?.sub,
-    }, 'FACS permission granted — allowing route');
 
     return fn(request, context);
   };

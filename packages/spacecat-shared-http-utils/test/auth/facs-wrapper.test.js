@@ -16,10 +16,26 @@ import esmock from 'esmock';
 
 import { facsWrapper } from '../../src/auth/facs-wrapper.js';
 
+// New top-level shape: { INTERNAL_ROUTES, PRODUCTS_ROUTES }.
+// Each product map's values are fully-qualified permission strings — no
+// runtime composition.
 const routeFacsCapabilities = {
-  'GET /insights': 'can_read',
-  'GET /insights/:insightId': 'can_read',
-  'POST /configurations': 'can_manage',
+  INTERNAL_ROUTES: [
+    'GET /admin/users/:userId',
+    'POST /configurations/audits',
+  ],
+  PRODUCTS_ROUTES: {
+    LLMO: {
+      'GET /insights': 'llmo/can_read',
+      'GET /insights/:insightId': 'llmo/can_read',
+      'POST /configurations': 'llmo/can_manage',
+    },
+    // ACO is populated but absent from FF_MAC_FACS_PERMISSIONS — used to
+    // exercise the "no flag configured for product" bypass.
+    ACO: {
+      'GET /insights': 'aco/view',
+    },
+  },
 };
 
 function makeAuthInfo(overrides = {}) {
@@ -64,7 +80,8 @@ describe('facsWrapper', () => {
 
   describe('creation-time guards', () => {
     it('throws when routeFacsCapabilities is not provided', () => {
-      expect(() => facsWrapper(handler)).to.throw('facsWrapper: routeFacsCapabilities is required');
+      expect(() => facsWrapper(handler))
+        .to.throw('facsWrapper: routeFacsCapabilities is required');
     });
 
     it('throws when routeFacsCapabilities is null', () => {
@@ -72,25 +89,38 @@ describe('facsWrapper', () => {
         .to.throw('facsWrapper: routeFacsCapabilities is required');
     });
 
-    it('throws when routeFacsCapabilities is an empty object', () => {
-      expect(() => facsWrapper(handler, { routeFacsCapabilities: {} }))
-        .to.throw('facsWrapper: routeCapabilities must be a non-empty object');
+    it('throws when PRODUCTS_ROUTES is missing', () => {
+      expect(() => facsWrapper(handler, { routeFacsCapabilities: { INTERNAL_ROUTES: [] } }))
+        .to.throw('facsWrapper: routeFacsCapabilities.PRODUCTS_ROUTES is required');
+    });
+
+    it('throws when PRODUCTS_ROUTES is not an object', () => {
+      expect(() => facsWrapper(handler, { routeFacsCapabilities: { PRODUCTS_ROUTES: 'oops' } }))
+        .to.throw('facsWrapper: routeFacsCapabilities.PRODUCTS_ROUTES is required');
+    });
+
+    it('accepts a config with PRODUCTS_ROUTES and no INTERNAL_ROUTES', () => {
+      expect(() => facsWrapper(handler, { routeFacsCapabilities: { PRODUCTS_ROUTES: {} } }))
+        .to.not.throw();
     });
   });
 
-  describe('unauthenticated passthrough', () => {
-    it('passes through when authInfo is absent', async () => {
+  describe('unauthenticated requests', () => {
+    it('returns 403 when authInfo is absent', async () => {
       delete context.attributes;
       const wrapped = facsWrapper(handler, { routeFacsCapabilities });
-      await wrapped({}, context);
-      expect(handler.calledOnce).to.be.true;
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.warn.calledWithMatch({ tag: 'facs' }, 'Unauthenticated request reached facsWrapper — denying')).to.be.true;
     });
 
-    it('passes through when isAuthenticated returns false', async () => {
+    it('returns 403 when isAuthenticated returns false', async () => {
       context.attributes.authInfo = makeAuthInfo({ isAuthenticated: () => false });
       const wrapped = facsWrapper(handler, { routeFacsCapabilities });
-      await wrapped({}, context);
-      expect(handler.calledOnce).to.be.true;
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
     });
   });
 
@@ -151,6 +181,73 @@ describe('facsWrapper', () => {
     });
   });
 
+  describe('INTERNAL_ROUTES is accepted but not acted on', () => {
+    // The wrapper accepts INTERNAL_ROUTES (callers use it for a coverage
+    // invariant elsewhere) but does NOT bypass on it. External customers
+    // hitting an internal route fall through to deny-by-default; internal
+    // identities are already covered by the identity / org bypass above.
+
+    it('does not bypass an external customer hitting a route listed in INTERNAL_ROUTES', async () => {
+      const ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
+      const mod = await esmock('../../src/auth/facs-wrapper.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: { createFrom: sinon.stub().returns(ldClient) },
+        },
+      });
+      context.pathInfo = {
+        method: 'POST',
+        suffix: '/configurations/audits', // listed in INTERNAL_ROUTES above
+        headers: { 'x-product': 'llmo' },
+      };
+      const wrapped = mod.facsWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+    });
+
+    it('still bypasses for an internal identity hitting a route listed in INTERNAL_ROUTES', async () => {
+      context.attributes.authInfo = makeAuthInfo({ isAdmin: () => true });
+      context.pathInfo = {
+        method: 'POST',
+        suffix: '/configurations/audits',
+        headers: { 'x-product': 'llmo' },
+      };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+    });
+  });
+
+  describe('missing x-product header', () => {
+    it('bypasses (treats request as not enrolled in FACS)', async () => {
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: {} };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(result).to.deep.equal({ status: 200 });
+    });
+  });
+
+  describe('product not enrolled', () => {
+    it('bypasses when the product is absent from PRODUCTS_ROUTES', async () => {
+      context.pathInfo.headers = { 'x-product': 'unknown-product' };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'Product not enrolled in FACS — bypassing')).to.be.true;
+    });
+
+    it('bypasses when the product map is empty', async () => {
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        PRODUCTS_ROUTES: { LLMO: {} },
+      };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+    });
+  });
+
   describe('feature flag gate', () => {
     let ldClient;
     let mockedWrapper;
@@ -184,6 +281,24 @@ describe('facsWrapper', () => {
       expect(handler.calledOnce).to.be.true;
     });
 
+    it('bypasses when LaunchDarklyClient.createFrom throws (fail-open on missing LD config)', async () => {
+      // IT environments and many test harnesses do not configure
+      // LD_SDK_KEY; `createFrom` throws in that case. Must not crash the
+      // wrapper — treat as flag unavailable → bypass.
+      const mod = await esmock('../../src/auth/facs-wrapper.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: {
+            createFrom: sinon.stub().throws(new Error('LaunchDarkly SDK key is required')),
+          },
+        },
+      });
+      const wrapped = mod.facsWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(result).to.deep.equal({ status: 200 });
+      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'LaunchDarkly client unavailable — bypassing FACS flag check')).to.be.true;
+    });
+
     it('bypasses when isFlagEnabledForIMSOrg rejects (fail-open on flag unavailability)', async () => {
       ldClient.isFlagEnabledForIMSOrg.rejects(new Error('LD unavailable'));
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
@@ -212,7 +327,8 @@ describe('facsWrapper', () => {
     });
 
     it('bypasses (without calling LD) when product has no FACS flag configured', async () => {
-      context.pathInfo.headers = { 'x-product': 'unmapped-product' };
+      // ACO is in PRODUCTS_ROUTES but absent from FF_MAC_FACS_PERMISSIONS.
+      context.pathInfo.headers = { 'x-product': 'aco' };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
@@ -235,23 +351,16 @@ describe('facsWrapper', () => {
       mockedWrapper = mod.facsWrapper;
     });
 
-    it('returns 403 for an unmapped route', async () => {
-      context.pathInfo = { method: 'DELETE', suffix: '/unknown', headers: { 'x-product': 'llmo' } };
+    it('returns 403 for an unmapped route within an enrolled product', async () => {
+      context.pathInfo = {
+        method: 'DELETE',
+        suffix: '/unknown',
+        headers: { 'x-product': 'llmo' },
+      };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
       expect(result.status).to.equal(403);
-      expect(logStub.warn.calledWithMatch({ tag: 'facs' }, 'Route not in routeFacsCapabilities — denying FACS user')).to.be.true;
-      expect(handler.called).to.be.false;
-    });
-
-    it('returns 400 when x-product header is missing', async () => {
-      context.pathInfo = { method: 'GET', suffix: '/insights', headers: {} };
-      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
-      const result = await wrapped({}, context);
-      expect(result.status).to.equal(400);
-      const body = await result.json();
-      expect(body.message).to.equal('x-product header is required');
-      expect(logStub.warn.calledWithMatch({ tag: 'facs' }, 'Missing x-product header for FACS-gated route')).to.be.true;
+      expect(logStub.warn.calledWithMatch({ tag: 'facs' }, 'Route not in PRODUCTS_ROUTES — denying FACS user')).to.be.true;
       expect(handler.called).to.be.false;
     });
 
@@ -271,7 +380,16 @@ describe('facsWrapper', () => {
       expect(handler.calledOnce).to.be.true;
     });
 
-    it('composes permission as <product>/<action> from header and route map', async () => {
+    it('emits a validation-grant log when the permission is granted', async () => {
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', permission: 'llmo/can_read' },
+        'FACS permission granted — allowing route',
+      )).to.be.true;
+    });
+
+    it('uses the full permission from the product map as-is (no runtime composition)', async () => {
       let capturedPermission;
       context.attributes.authInfo = makeAuthInfo({
         hasFacsPermission: (p) => {
@@ -279,13 +397,19 @@ describe('facsWrapper', () => {
           return true;
         },
       });
-      context.pathInfo = { method: 'POST', suffix: '/configurations', headers: { 'x-product': 'llmo' } };
+      context.pathInfo = {
+        method: 'POST',
+        suffix: '/configurations',
+        headers: { 'x-product': 'llmo' },
+      };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
+      // The value stored in PRODUCTS_ROUTES.LLMO['POST /configurations'] is
+      // 'llmo/can_manage' — passed through verbatim, not composed at runtime.
       expect(capturedPermission).to.equal('llmo/can_manage');
     });
 
-    it('lowercases the product code from the x-product header', async () => {
+    it('looks up the product in PRODUCTS_ROUTES case-insensitively (UPPER vs lower)', async () => {
       let capturedPermission;
       context.attributes.authInfo = makeAuthInfo({
         hasFacsPermission: (p) => {
@@ -293,14 +417,22 @@ describe('facsWrapper', () => {
           return true;
         },
       });
-      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'LLMO' } };
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/insights',
+        headers: { 'x-product': 'LLMO' },
+      };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
       expect(capturedPermission).to.equal('llmo/can_read');
     });
 
     it('resolves parameterised routes correctly', async () => {
-      context.pathInfo = { method: 'GET', suffix: '/insights/abc-123', headers: { 'x-product': 'llmo' } };
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/insights/abc-123',
+        headers: { 'x-product': 'llmo' },
+      };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });

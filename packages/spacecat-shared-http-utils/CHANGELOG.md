@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-http-utils-v1.27.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.27.1...@adobe/spacecat-shared-http-utils-v1.27.2) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
+## [@adobe/spacecat-shared-http-utils-v1.27.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.27.0...@adobe/spacecat-shared-http-utils-v1.27.1) (2026-05-12)
+
+### Bug Fixes
+
+* **http-utils:** address RO admin wrapper review findings ([#1599](https://github.com/adobe/spacecat-shared/issues/1599)) ([ca66903](https://github.com/adobe/spacecat-shared/commit/ca669037096a9a5e4d211276473c3dbe69f1772b))
+
+## [@adobe/spacecat-shared-http-utils-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.26.1...@adobe/spacecat-shared-http-utils-v1.27.0) (2026-05-12)
+
+### Features
+
+* **http-utils:** allow RO admin write ops on resources they own ([#1595](https://github.com/adobe/spacecat-shared/issues/1595)) ([e0e6783](https://github.com/adobe/spacecat-shared/commit/e0e6783a24cc5138d478a45cde85a01df3b057b0))
+
 ## [@adobe/spacecat-shared-http-utils-v1.26.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.26.0...@adobe/spacecat-shared-http-utils-v1.26.1) (2026-05-05)
 
 ### Bug Fixes

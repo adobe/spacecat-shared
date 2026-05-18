@@ -28,7 +28,26 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
     type: 'string',
     required: true,
     readOnly: true,
-    validate: (value) => PlgOnboarding.DOMAIN_PATTERN.test(value) && value.length <= 253,
+    validate: (value) => {
+      if (typeof value !== 'string' || value !== value.toLowerCase()) {
+        return false;
+      }
+      if (/[^\x21-\x7e]/.test(value)) {
+        return false;
+      }
+      const [hostname, ...pathParts] = value.split('/');
+      // Reject all-numeric hostname forms (short-form IPs: 127.1, 2130706433).
+      if (/^[\d.]+$/.test(hostname)) {
+        return false;
+      }
+      // Reject path segments that are purely dots or end with a dot (e.g. foo., foo.., foo../bar).
+      if (pathParts.some((seg) => /\.$/.test(seg))) {
+        return false;
+      }
+      return PlgOnboarding.DOMAIN_PATTERN.test(value)
+        && hostname.length <= PlgOnboarding.MAX_HOSTNAME_LENGTH
+        && value.length <= PlgOnboarding.MAX_DOMAIN_LENGTH;
+    },
   })
   .addAttribute('baseURL', {
     type: 'string',

@@ -24,7 +24,32 @@ class PlgOnboarding extends BaseModel {
 
   static IMS_ORG_ID_PATTERN = /^[a-z0-9]{24}@AdobeOrg$/i;
 
-  static DOMAIN_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
+  static MAX_HOSTNAME_LENGTH = 253; // RFC 1035 DNS name limit
+
+  // Practical cap covering common browser (2000-2083) and CDN limits.
+  static MAX_DOMAIN_LENGTH = 2048;
+
+  // Matches lowercase hostnames (at least one dot required) and an optional subpath
+  //   (e.g. nba.com, nba.com/kings, nba.com/us/kings).
+  // Rejects: uppercase letters (use normalizeDomain() first), schemes (https://),
+  //   bare/short-form IPv4 (127.0.0.1; see schema validator for all-numeric hostname
+  //   check covering short forms like 127.1), ports (:8080), single-label hostnames
+  //   (localhost, metadata), query strings, fragments, empty/trailing path segments,
+  //   and any path segment starting with a dot (blocks ./, ../, .hidden, ..foo, etc.).
+  // Path-qualified domains (nba.com/kings) are distinct sort-key values from the bare
+  //   hostname; callers must call normalizeDomain() before findByImsOrgIdAndDomain.
+  // Labels must not start or end with a hyphen (RFC 1035).
+  // Raw Unicode / IDN must be punycode-encoded before validation (xn-- form is accepted).
+  // Percent-encoded path characters (%20 etc.) are not accepted; decode before validation.
+  // Underscore is allowed in path segments but not in hostname labels.
+  static DOMAIN_PATTERN = /^(?!\d+(\.\d+){3})[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(\/(?!\.)[a-z0-9._~-]+)*$/;
+
+  // Returns the canonical form of a domain value: lowercased.
+  // Must be called on any user-supplied value before passing it to the domain
+  // attribute validator or to findByImsOrgIdAndDomain to prevent duplicate records.
+  static normalizeDomain(value) {
+    return typeof value === 'string' ? value.toLowerCase() : value;
+  }
 
   static STATUSES = {
     PRE_ONBOARDING: 'PRE_ONBOARDING',

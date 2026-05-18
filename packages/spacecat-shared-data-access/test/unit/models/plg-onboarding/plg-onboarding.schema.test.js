@@ -14,6 +14,120 @@ import { expect } from 'chai';
 import plgOnboardingSchema from '../../../../src/models/plg-onboarding/plg-onboarding.schema.js';
 
 describe('PlgOnboarding Schema', () => {
+  describe('domain attribute', () => {
+    let domainAttr;
+
+    before(() => {
+      const attributes = plgOnboardingSchema.getAttributes();
+      domainAttr = attributes.domain;
+    });
+
+    it('is a required read-only string', () => {
+      expect(domainAttr.type).to.equal('string');
+      expect(domainAttr.required).to.be.true;
+      expect(domainAttr.readOnly).to.be.true;
+    });
+
+    it('has a validate function', () => {
+      expect(domainAttr.validate).to.be.a('function');
+    });
+
+    describe('valid values', () => {
+      [
+        'nba.com',
+        'www.nba.com',
+        'nba.com/kings',
+        'nba.com/us/kings',
+        'example.com/path-with-hyphens',
+        'example.com/en-us',
+        'example.com/case_studies',
+        'xn--nba-6na.com',
+        'example.com/foo_bar',
+        'example.com/us/foo_bar',
+      ].forEach((value) => {
+        it(`accepts "${value}"`, () => {
+          expect(domainAttr.validate(value)).to.be.true;
+        });
+      });
+    });
+
+    describe('invalid values', () => {
+      [
+        ['empty string', ''],
+        ['scheme prefix', 'https://nba.com'],
+        ['IPv4 address', '127.0.0.1'],
+        ['short-form IPv4', '127.1'],
+        ['decimal IPv4', '2130706433'],
+        ['query string', 'nba.com?q=1'],
+        ['fragment', 'nba.com#top'],
+        ['hostname over 253 chars', `${'a'.repeat(250)}.com`],
+        ['trailing hyphen in label', 'nba-.com'],
+        ['trailing slash', 'nba.com/kings/'],
+        ['path traversal', 'nba.com/../etc'],
+        ['leading dot in path segment', 'nba.com/.hidden'],
+        ['leading double-dot prefix in segment', 'nba.com/..foo'],
+        ['trailing dot fqdn', 'nba.com.'],
+        ['single-label hostname', 'localhost'],
+        ['uppercase hostname', 'NBA.COM'],
+        ['uppercase path segment', 'nba.com/Kings'],
+        ['uppercase locale path', 'example.com/en-US'],
+        ['underscore in hostname label', 'foo_bar.com'],
+        ['underscore in subdomain label', 'foo_bar.example.com'],
+        ['trailing dot in path segment', 'nba.com/foo.'],
+        ['trailing double-dot in path segment', 'nba.com/foo..'],
+        ['dot-dot mid-path segment', 'nba.com/foo../bar'],
+        ['null byte in domain', 'nba.com\x00/evil'],
+        ['control character in path', 'nba.com/ki\x01ngs'],
+      ].forEach(([label, value]) => {
+        it(`rejects ${label}`, () => {
+          expect(domainAttr.validate(value)).to.be.false;
+        });
+      });
+    });
+
+    it('allows a plain hostname of exactly 253 chars', () => {
+      const hostname = `${'a'.repeat(249)}.com`;
+      expect(hostname.length).to.equal(253);
+      expect(domainAttr.validate(hostname)).to.be.true;
+    });
+
+    it('rejects a plain hostname exceeding 253 chars', () => {
+      const hostname = `${'a'.repeat(250)}.com`;
+      expect(hostname.length).to.equal(254);
+      expect(domainAttr.validate(hostname)).to.be.false;
+    });
+
+    it('allows a subpath domain whose hostname is exactly 253 chars', () => {
+      const hostname = `${'a'.repeat(249)}.com`;
+      expect(hostname.length).to.equal(253);
+      expect(domainAttr.validate(`${hostname}/path`)).to.be.true;
+    });
+
+    it('rejects when only the hostname exceeds 253 chars (path does not inflate count)', () => {
+      const hostname = `${'a'.repeat(250)}.com`;
+      expect(hostname.length).to.equal(254);
+      expect(domainAttr.validate(`${hostname}/path`)).to.be.false;
+    });
+
+    it('accepts a domain of exactly 2048 chars', () => {
+      const longPath = `nba.com/${'a'.repeat(2040)}`;
+      expect(longPath.length).to.equal(2048);
+      expect(domainAttr.validate(longPath)).to.be.true;
+    });
+
+    it('rejects a domain of exactly 2049 chars', () => {
+      const longPath = `nba.com/${'a'.repeat(2041)}`;
+      expect(longPath.length).to.equal(2049);
+      expect(domainAttr.validate(longPath)).to.be.false;
+    });
+
+    it('rejects when total domain length exceeds 2048 chars', () => {
+      const longPath = `nba.com/${'a'.repeat(2042)}`;
+      expect(longPath.length).to.be.above(2048);
+      expect(domainAttr.validate(longPath)).to.be.false;
+    });
+  });
+
   describe('reviews attribute', () => {
     let reviewsAttr;
 

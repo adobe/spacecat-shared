@@ -15,5 +15,6 @@ export const FF_READ_ONLY_ORG = 'FT_LLMO-3008';
 // Products absent from this map are treated as "FACS not yet rolled out" and bypass enforcement.
 export const FF_MAC_FACS_PERMISSIONS = {
   LLMO: 'FT_LLMO-3026',
+  ASO: 'FT_SITES-44631',
 };
 export const X_PRODUCT_HEADER = 'x-product';

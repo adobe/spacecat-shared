@@ -87,6 +87,9 @@ describe('TokowakaClient', () => {
             selector: 'h1',
           },
         }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
       },
       {
         getId: () => 'sugg-2',
@@ -100,6 +103,9 @@ describe('TokowakaClient', () => {
             selector: 'h2',
           },
         }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
       },
     ];
   });
@@ -2568,6 +2574,9 @@ describe('TokowakaClient', () => {
           getData: () => ({
             url: 'https://example.com/page1',
           }),
+          setData: sinon.stub(),
+          setUpdatedBy: sinon.stub(),
+          save: sinon.stub().resolves(),
         },
       ];
 
@@ -2798,6 +2807,9 @@ describe('TokowakaClient', () => {
               selector: 'h1',
             },
           }),
+          setData: sinon.stub(),
+          setUpdatedBy: sinon.stub(),
+          save: sinon.stub().resolves(),
         },
         {
           getId: () => 'sugg-2',
@@ -2811,6 +2823,9 @@ describe('TokowakaClient', () => {
               selector: 'h1',
             },
           }),
+          setData: sinon.stub(),
+          setUpdatedBy: sinon.stub(),
+          save: sinon.stub().resolves(),
         },
       ];
 
@@ -2900,6 +2915,9 @@ describe('TokowakaClient', () => {
             selector: 'body',
           },
         }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
       };
 
       const existingConfig = {
@@ -2943,6 +2961,651 @@ describe('TokowakaClient', () => {
       // Code uploads empty config instead of deleting
       const command = s3Client.send.firstCall.args[0];
       expect(command.constructor.name).to.equal('PutObjectCommand');
+    });
+
+    it('path rollback removes only the matching pattern and leaves /* intact', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/*', '/products/*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(pathSuggestion);
+      expect(result.failedSuggestions).to.have.length(0);
+      const uploadedConfig = uploadStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/*']);
+    });
+
+    it('path rollback of last remaining pattern deletes prerender key entirely', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/products/*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(pathSuggestion);
+      const uploadedConfig = uploadStub.firstCall.args[1];
+      expect(uploadedConfig).to.not.have.property('prerender');
+    });
+
+    it('domain-wide rollback removes only /* from metaconfig allowList', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/*', '/products/*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(dwSuggestion);
+      const uploadedConfig = uploadStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/*']);
+    });
+
+    it('cleans up covered suggestions (coveredByDomainWide) when rolling back a pattern suggestion', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+          tokowakaDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredSuggestion = {
+        getId: () => 'covered-1',
+        getData: () => ({
+          url: 'https://example.com/page1',
+          edgeDeployed: Date.now(),
+          coveredByDomainWide: 'dw-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, coveredSuggestion], updatedBy: 'test@example.com' },
+      );
+
+      expect(result.succeededSuggestions).to.include(dwSuggestion);
+
+      // Verify domain-wide suggestion was updated and saved
+      expect(dwSuggestion.setUpdatedBy.calledWith('test@example.com')).to.be.true;
+      expect(dwSuggestion.save.calledOnce).to.be.true;
+      const dwData = dwSuggestion.setData.firstCall.args[0];
+      expect(dwData).to.not.have.property('edgeDeployed');
+      expect(dwData).to.not.have.property('tokowakaDeployed');
+
+      // Verify covered suggestion was also cleaned up
+      expect(coveredSuggestion.save.calledOnce).to.be.true;
+      expect(coveredSuggestion.setUpdatedBy.calledWith('test@example.com')).to.be.true;
+      const coveredData = coveredSuggestion.setData.firstCall.args[0];
+      expect(coveredData).to.not.have.property('edgeDeployed');
+      expect(coveredData).to.not.have.property('coveredByDomainWide');
+    });
+
+    it('cleans up covered suggestions (coveredByPattern) when rolling back a path-level pattern', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredSuggestion = {
+        getId: () => 'covered-2',
+        getData: () => ({
+          url: 'https://example.com/products/item',
+          edgeDeployed: Date.now(),
+          coveredByPattern: 'path-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+        { allSuggestions: [pathSuggestion, coveredSuggestion] },
+      );
+
+      expect(coveredSuggestion.save.calledOnce).to.be.true;
+      const coveredData = coveredSuggestion.setData.firstCall.args[0];
+      expect(coveredData).to.not.have.property('edgeDeployed');
+      expect(coveredData).to.not.have.property('coveredByPattern');
+    });
+
+    it('uses domain-wide-rollback fallback for covered suggestions when updatedBy is not provided (domain-wide parent)', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredSuggestion = {
+        getId: () => 'covered-1',
+        getData: () => ({
+          url: 'https://example.com/page1',
+          edgeDeployed: Date.now(),
+          coveredByDomainWide: 'dw-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      // No updatedBy passed — shared client should use context-specific fallbacks
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, coveredSuggestion] },
+      );
+
+      // The domain-wide suggestion itself uses 'tokowaka-rollback'
+      expect(dwSuggestion.setUpdatedBy.calledWith('tokowaka-rollback')).to.be.true;
+      // The covered suggestion uses 'domain-wide-rollback'
+      expect(coveredSuggestion.setUpdatedBy.calledWith('domain-wide-rollback')).to.be.true;
+    });
+
+    it('uses path-rollback fallback for covered suggestions when updatedBy is not provided (path parent)', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredSuggestion = {
+        getId: () => 'covered-2',
+        getData: () => ({
+          url: 'https://example.com/products/item',
+          edgeDeployed: Date.now(),
+          coveredByPattern: 'path-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+        { allSuggestions: [pathSuggestion, coveredSuggestion] },
+      );
+
+      // The path suggestion itself uses 'tokowaka-rollback'
+      expect(pathSuggestion.setUpdatedBy.calledWith('tokowaka-rollback')).to.be.true;
+      // The covered suggestion uses 'path-rollback'
+      expect(coveredSuggestion.setUpdatedBy.calledWith('path-rollback')).to.be.true;
+    });
+
+    it('cascades domain-wide rollback to deployed path suggestions and their covered entries', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const deployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const pathCoveredSuggestion = {
+        getId: () => 'covered-path-1',
+        getData: () => ({
+          url: 'https://example.com/products/item',
+          edgeDeployed: Date.now(),
+          coveredByPattern: 'path-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      const fetchStub = sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*', '/products/*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, deployedPathSuggestion, pathCoveredSuggestion] },
+      );
+
+      // Domain-wide suggestion was rolled back
+      expect(result.succeededSuggestions).to.include(dwSuggestion);
+
+      // Cascade: deployed path suggestion was cleaned up
+      expect(deployedPathSuggestion.save.calledOnce).to.be.true;
+      expect(deployedPathSuggestion.setUpdatedBy.calledWith('domain-wide-rollback-cascade')).to.be.true;
+      const pathData = deployedPathSuggestion.setData.firstCall.args[0];
+      expect(pathData).to.not.have.property('edgeDeployed');
+
+      // Cascade: covered per-URL suggestion under the path was also cleaned up
+      expect(pathCoveredSuggestion.save.calledOnce).to.be.true;
+      expect(pathCoveredSuggestion.setUpdatedBy.calledWith('domain-wide-rollback-cascade')).to.be.true;
+
+      // The cascade path pattern was removed from metaconfig — upload was called again
+      expect(fetchStub.calledOnce).to.be.true;
+      expect(uploadStub.called).to.be.true;
+    });
+
+    it('cascade uses provided email for all suggestions when updatedBy is set', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const deployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*', '/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, deployedPathSuggestion], updatedBy: 'user@example.com' },
+      );
+
+      expect(dwSuggestion.setUpdatedBy.calledWith('user@example.com')).to.be.true;
+      expect(deployedPathSuggestion.setUpdatedBy.calledWith('user@example.com')).to.be.true;
+    });
+
+    it('cascade updates metaconfig with remaining patterns when other allowList entries exist after cascade', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const deployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+      // Three entries: domain-wide '/*', cascade '/products/*', plus an unrelated '/blog/*'
+      // After removing '/*' (domain-wide) and '/products/*' (cascade), '/blog/*' remains.
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*', '/products/*', '/blog/*'] },
+      });
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
+      );
+
+      // Both the domain-wide and cascade patterns were removed; '/blog/*' remains
+      const { lastCall } = uploadStub;
+      expect(lastCall.args[1].prerender.allowList).to.deep.equal(['/blog/*']);
+    });
+
+    it('cascade skips metaconfig re-upload when prerender section was already cleared by domain-wide rollback', async () => {
+      // Scenario: allowList had only the domain-wide pattern. After domain-wide rollback,
+      // metaconfig.prerender is deleted. The cascade path suggestion has no more allowList
+      // to remove its pattern from, so no extra upload should happen.
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const deployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      // Only the domain-wide '/*' was in allowList — no path pattern entry
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
+      );
+
+      // Domain-wide upload happened, but no extra upload for the cascade (pattern not found)
+      expect(uploadStub.callCount).to.equal(1);
+      // The cascade path suggestion was still cleaned up in DB
+      expect(deployedPathSuggestion.save.calledOnce).to.be.true;
+    });
+
+    it('is a no-op cascade when no path suggestions are deployed', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const undeployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          // No edgeDeployed — should not be cascaded
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, undeployedPathSuggestion] },
+      );
+
+      // Undeployed path suggestion was not touched
+      expect(undeployedPathSuggestion.save.called).to.be.false;
+      expect(undeployedPathSuggestion.setUpdatedBy.called).to.be.false;
+    });
+
+    it('path rollback marks suggestion ineligible when allowedRegexPatterns contains no valid pattern', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({ allowedRegexPatterns: [null] }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123' });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions[0].suggestion).to.equal(pathSuggestion);
+      expect(result.failedSuggestions[0].reason).to.equal('Missing allowedRegexPatterns');
+    });
+
+    it('path rollback marks suggestion ineligible when no metaconfig exists', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves(null);
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions[0].reason).to.equal('No metaconfig found');
+    });
+
+    it('path rollback skips CDN write when metaconfig has no prerender key', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123' });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(pathSuggestion);
+      expect(uploadStub).to.not.have.been.called;
+    });
+
+    it('path rollback skips CDN write when pattern is not in allowList', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/blog/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.include(pathSuggestion);
+      expect(uploadStub).to.not.have.been.called;
+    });
+
+    it('path rollback marks suggestion as failed when metaconfig upload throws', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').rejects(new Error('S3 failure'));
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.not.include(pathSuggestion);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].statusCode).to.equal(500);
     });
   });
 
@@ -4838,6 +5501,24 @@ describe('TokowakaClient', () => {
       expect(uploadMetaconfigStub).to.not.have.been.called;
     });
 
+    it('should warn and skip empty string patterns', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: [''],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(result.succeededSuggestions).to.include(path);
+      expect(log.warn).to.have.been.called;
+    });
+
     it('should warn and skip invalid regex patterns for domain-wide', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
@@ -4989,6 +5670,248 @@ describe('TokowakaClient', () => {
       // but NOT doubly added via the per-suggestion covered-marking path
       const skippedInCovered = result.coveredSuggestions.filter((s) => s.getId() === 'r1');
       expect(skippedInCovered).to.have.length(1);
+    });
+
+    it('domain-wide deploy merges /*  into existing allowList instead of replacing it', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['/*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/products/*'] } });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/*', '/*']);
+    });
+
+    it('domain-wide deploy deduplicates patterns already in allowList', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['/*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/*'] } });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      expect(uploadMetaconfigStub).to.not.have.been.called;
+    });
+
+    it('path deploy appends /products/* to an empty allowList', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+
+      fetchMetaconfigStub.resolves(null);
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(result.succeededSuggestions).to.include(path);
+      const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/*']);
+      expect(path.getData()).to.have.property('edgeDeployed');
+    });
+
+    it('path deploy appends /products/* when domain-wide /* is already in allowList', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/*'] } });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
+      expect(uploadedConfig.prerender.allowList).to.deep.equal(['/*', '/products/*']);
+    });
+
+    it('path deploy skips CDN write but still marks edgeDeployed when pattern already in allowList', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123', prerender: { allowList: ['/products/*'] } });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(uploadMetaconfigStub).to.not.have.been.called;
+      expect(result.succeededSuggestions).to.include(path);
+      expect(path.getData()).to.have.property('edgeDeployed');
+    });
+
+    it('path deploy does not call deploySuggestions (no per-URL S3 config)', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(deploySuggestionsStub).to.not.have.been.called;
+    });
+
+    it('path deploy marks per-URL suggestions under the deployed path prefix as covered', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+      const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
+      const urlElsewhere = makeSuggestion('u2', { url: 'https://example.com/about' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, urlUnderPath, urlElsewhere],
+      });
+
+      expect(result.coveredSuggestions).to.include(urlUnderPath);
+      expect(urlUnderPath.getData()).to.have.property('coveredByPattern', 'p1');
+      expect(result.coveredSuggestions).to.not.include(urlElsewhere);
+    });
+
+    it('path deploy marks as failed with statusCode 500 when metaconfig upload fails', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      uploadMetaconfigStub.rejects(new Error('upload failed'));
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path],
+      });
+
+      expect(result.succeededSuggestions).to.not.include(path);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].statusCode).to.equal(500);
+      expect(result.failedSuggestions[0].reason).to.equal('upload failed');
+    });
+
+    it('path deploy marks coverage via allowedRegexPatterns even when pathPattern field is absent', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+        // no pathPattern field — coverage is derived from allowedRegexPatterns
+      });
+      const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, urlUnderPath],
+      });
+
+      expect(result.succeededSuggestions).to.include(path);
+      expect(result.coveredSuggestions).to.include(urlUnderPath);
+      expect(urlUnderPath.getData()).to.have.property('coveredByPattern', 'p1');
+    });
+
+    it('path deploy does not mark non-NEW, pattern, or already-deployed candidates as covered', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+      // APPROVED — not a deployable status
+      const nonNew = makeSuggestion('u1', { url: 'https://example.com/products/a' }, 'APPROVED');
+      // isDomainWide pattern — excluded (isPatternSuggestion)
+      const dw = makeSuggestion('u2', { isDomainWide: true, allowedRegexPatterns: ['/*'], url: 'https://example.com/products/b' });
+      // another path pattern — excluded (isPatternSuggestion)
+      const otherPath = makeSuggestion('u3', { allowedRegexPatterns: ['/products/*'], url: 'https://example.com/products/c' });
+      // already edgeDeployed — excluded
+      const deployed = makeSuggestion('u4', { url: 'https://example.com/products/d', edgeDeployed: 12345 });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, nonNew, dw, otherPath, deployed],
+      });
+
+      expect(result.coveredSuggestions).to.have.length(0);
+    });
+
+    it('path deploy silently skips covered-suggestion candidates with invalid URLs', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+      const badUrl = makeSuggestion('u1', { url: 'not-a-valid-url' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, badUrl],
+      });
+
+      // bad URL is not covered, but deploy itself still succeeds
+      expect(result.succeededSuggestions).to.include(path);
+      expect(result.coveredSuggestions).to.not.include(badUrl);
+    });
+
+    it('path deploy warns but continues when covered-suggestion save fails', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+      const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
+      urlUnderPath.save = sinon.stub().rejects(new Error('DB error'));
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, urlUnderPath],
+      });
+
+      // path suggestion itself still succeeded
+      expect(result.succeededSuggestions).to.include(path);
+      // covered is not in coveredSuggestions — error was swallowed with a warning
+      expect(result.coveredSuggestions).to.not.include(urlUnderPath);
+      expect(log.warn).to.have.been.called;
     });
   });
 });

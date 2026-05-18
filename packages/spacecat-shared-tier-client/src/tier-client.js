@@ -312,7 +312,7 @@ class TierClient {
       const allEnrollments = await this.SiteEnrollment.allByEntitlementId(entitlement.getId());
 
       if (!allEnrollments || allEnrollments.length === 0) {
-        return { entitlement: null, enrollment: null, site: null };
+        return { entitlement, enrollment: null, site: null };
       }
 
       // When a specific site is set, find its enrollment in memory — no fetch needed.
@@ -324,7 +324,7 @@ class TierClient {
         if (matchingEnrollment) {
           return { entitlement, enrollment: matchingEnrollment, site: this.site };
         }
-        return { entitlement: null, enrollment: null, site: null };
+        return { entitlement, enrollment: null, site: null };
       }
 
       // Org-only: iterate enrollments, fetch site one at a time, return first org match.
@@ -339,7 +339,7 @@ class TierClient {
         }
       }
 
-      return { entitlement: null, enrollment: null, site: null };
+      return { entitlement, enrollment: null, site: null };
     } catch (error) {
       this.log.error(`Error getting first enrollment: ${error.message}`);
       throw error;

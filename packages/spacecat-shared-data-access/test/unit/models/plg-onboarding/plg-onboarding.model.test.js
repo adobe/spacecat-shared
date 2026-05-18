@@ -87,7 +87,12 @@ describe('PlgOnboardingModel', () => {
         CLOSED: 'CLOSED',
         REOPENED: 'REOPENED',
         OFFBOARDED: 'OFFBOARDED',
+        PENDING: 'PENDING',
       });
+    });
+
+    it('includes PENDING for ESEs marking a waitlisted record as actively handled', () => {
+      expect(PlgOnboarding.REVIEW_DECISIONS.PENDING).to.equal('PENDING');
     });
   });
 

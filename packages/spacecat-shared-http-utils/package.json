@@ -44,6 +44,6 @@
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
     "esmock": "2.7.5",
-    "sinon": "21.1.2"
+    "sinon": "22.0.0"
   }
 }

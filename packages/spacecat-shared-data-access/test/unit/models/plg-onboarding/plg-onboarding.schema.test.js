@@ -42,6 +42,8 @@ describe('PlgOnboarding Schema', () => {
         'example.com/en-us',
         'example.com/case_studies',
         'xn--nba-6na.com',
+        'example.com/foo_bar',
+        'example.com/us/foo_bar',
       ].forEach((value) => {
         it(`accepts "${value}"`, () => {
           expect(domainAttr.validate(value)).to.be.true;
@@ -69,6 +71,13 @@ describe('PlgOnboarding Schema', () => {
         ['uppercase hostname', 'NBA.COM'],
         ['uppercase path segment', 'nba.com/Kings'],
         ['uppercase locale path', 'example.com/en-US'],
+        ['underscore in hostname label', 'foo_bar.com'],
+        ['underscore in subdomain label', 'foo_bar.example.com'],
+        ['trailing dot in path segment', 'nba.com/foo.'],
+        ['trailing double-dot in path segment', 'nba.com/foo..'],
+        ['dot-dot mid-path segment', 'nba.com/foo../bar'],
+        ['null byte in domain', 'nba.com\x00/evil'],
+        ['control character in path', 'nba.com/ki\x01ngs'],
       ].forEach(([label, value]) => {
         it(`rejects ${label}`, () => {
           expect(domainAttr.validate(value)).to.be.false;

@@ -32,9 +32,16 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
       if (typeof value !== 'string' || value !== value.toLowerCase()) {
         return false;
       }
-      const hostname = value.split('/')[0];
+      if (/[^\x21-\x7e]/.test(value)) {
+        return false;
+      }
+      const [hostname, ...pathParts] = value.split('/');
       // Reject all-numeric hostname forms (short-form IPs: 127.1, 2130706433).
       if (/^[\d.]+$/.test(hostname)) {
+        return false;
+      }
+      // Reject path segments that are purely dots or end with a dot (e.g. foo., foo.., foo../bar).
+      if (pathParts.some((seg) => /\.$/.test(seg))) {
         return false;
       }
       return PlgOnboarding.DOMAIN_PATTERN.test(value)

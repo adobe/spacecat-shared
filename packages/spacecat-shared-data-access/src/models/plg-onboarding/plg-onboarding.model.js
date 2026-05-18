@@ -42,7 +42,7 @@ class PlgOnboarding extends BaseModel {
   // Raw Unicode / IDN must be punycode-encoded before validation (xn-- form is accepted).
   // Percent-encoded path characters (%20 etc.) are not accepted; decode before validation.
   // Underscore is allowed in path segments but not in hostname labels.
-  static DOMAIN_PATTERN = /^(?!\d+(\.\d+){3})[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(\/(?!\.)[a-z0-9._~_-]+)*$/;
+  static DOMAIN_PATTERN = /^(?!\d+(\.\d+){3})[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(\/(?!\.)[a-z0-9._~-]+)*$/;
 
   // Returns the canonical form of a domain value: lowercased.
   // Must be called on any user-supplied value before passing it to the domain

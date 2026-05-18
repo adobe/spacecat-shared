@@ -3154,6 +3154,327 @@ describe('TokowakaClient', () => {
       expect(coveredData).to.not.have.property('coveredByPattern');
     });
 
+    it('uses domain-wide-rollback fallback for covered suggestions when updatedBy is not provided (domain-wide parent)', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredSuggestion = {
+        getId: () => 'covered-1',
+        getData: () => ({
+          url: 'https://example.com/page1',
+          edgeDeployed: Date.now(),
+          coveredByDomainWide: 'dw-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      // No updatedBy passed — shared client should use context-specific fallbacks
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, coveredSuggestion] },
+      );
+
+      // The domain-wide suggestion itself uses 'tokowaka-rollback'
+      expect(dwSuggestion.setUpdatedBy.calledWith('tokowaka-rollback')).to.be.true;
+      // The covered suggestion uses 'domain-wide-rollback'
+      expect(coveredSuggestion.setUpdatedBy.calledWith('domain-wide-rollback')).to.be.true;
+    });
+
+    it('uses path-rollback fallback for covered suggestions when updatedBy is not provided (path parent)', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredSuggestion = {
+        getId: () => 'covered-2',
+        getData: () => ({
+          url: 'https://example.com/products/item',
+          edgeDeployed: Date.now(),
+          coveredByPattern: 'path-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+        { allSuggestions: [pathSuggestion, coveredSuggestion] },
+      );
+
+      // The path suggestion itself uses 'tokowaka-rollback'
+      expect(pathSuggestion.setUpdatedBy.calledWith('tokowaka-rollback')).to.be.true;
+      // The covered suggestion uses 'path-rollback'
+      expect(coveredSuggestion.setUpdatedBy.calledWith('path-rollback')).to.be.true;
+    });
+
+    it('cascades domain-wide rollback to deployed path suggestions and their covered entries', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const deployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const pathCoveredSuggestion = {
+        getId: () => 'covered-path-1',
+        getData: () => ({
+          url: 'https://example.com/products/item',
+          edgeDeployed: Date.now(),
+          coveredByPattern: 'path-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      const fetchStub = sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*', '/products/*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, deployedPathSuggestion, pathCoveredSuggestion] },
+      );
+
+      // Domain-wide suggestion was rolled back
+      expect(result.succeededSuggestions).to.include(dwSuggestion);
+
+      // Cascade: deployed path suggestion was cleaned up
+      expect(deployedPathSuggestion.save.calledOnce).to.be.true;
+      expect(deployedPathSuggestion.setUpdatedBy.calledWith('domain-wide-rollback-cascade')).to.be.true;
+      const pathData = deployedPathSuggestion.setData.firstCall.args[0];
+      expect(pathData).to.not.have.property('edgeDeployed');
+
+      // Cascade: covered per-URL suggestion under the path was also cleaned up
+      expect(pathCoveredSuggestion.save.calledOnce).to.be.true;
+      expect(pathCoveredSuggestion.setUpdatedBy.calledWith('domain-wide-rollback-cascade')).to.be.true;
+
+      // The cascade path pattern was removed from metaconfig — upload was called again
+      expect(fetchStub.calledOnce).to.be.true;
+      expect(uploadStub.called).to.be.true;
+    });
+
+    it('cascade uses provided email for all suggestions when updatedBy is set', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const deployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*', '/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, deployedPathSuggestion], updatedBy: 'user@example.com' },
+      );
+
+      expect(dwSuggestion.setUpdatedBy.calledWith('user@example.com')).to.be.true;
+      expect(deployedPathSuggestion.setUpdatedBy.calledWith('user@example.com')).to.be.true;
+    });
+
+    it('cascade updates metaconfig with remaining patterns when other allowList entries exist after cascade', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const deployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+      // Three entries: domain-wide '/*', cascade '/products/*', plus an unrelated '/blog/*'
+      // After removing '/*' (domain-wide) and '/products/*' (cascade), '/blog/*' remains.
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*', '/products/*', '/blog/*'] },
+      });
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
+      );
+
+      // Both the domain-wide and cascade patterns were removed; '/blog/*' remains
+      const { lastCall } = uploadStub;
+      expect(lastCall.args[1].prerender.allowList).to.deep.equal(['/blog/*']);
+    });
+
+    it('cascade skips metaconfig re-upload when prerender section was already cleared by domain-wide rollback', async () => {
+      // Scenario: allowList had only the domain-wide pattern. After domain-wide rollback,
+      // metaconfig.prerender is deleted. The cascade path suggestion has no more allowList
+      // to remove its pattern from, so no extra upload should happen.
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const deployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      // Only the domain-wide '/*' was in allowList — no path pattern entry
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
+      );
+
+      // Domain-wide upload happened, but no extra upload for the cascade (pattern not found)
+      expect(uploadStub.callCount).to.equal(1);
+      // The cascade path suggestion was still cleaned up in DB
+      expect(deployedPathSuggestion.save.calledOnce).to.be.true;
+    });
+
+    it('is a no-op cascade when no path suggestions are deployed', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const undeployedPathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          // No edgeDeployed — should not be cascaded
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, undeployedPathSuggestion] },
+      );
+
+      // Undeployed path suggestion was not touched
+      expect(undeployedPathSuggestion.save.called).to.be.false;
+      expect(undeployedPathSuggestion.setUpdatedBy.called).to.be.false;
+    });
+
     it('path rollback marks suggestion ineligible when allowedRegexPatterns contains no valid pattern', async () => {
       const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
       const pathSuggestion = {

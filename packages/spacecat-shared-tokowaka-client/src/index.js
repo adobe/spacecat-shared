@@ -853,10 +853,16 @@ class TokowakaClient {
    * @param {Object} [options] - Optional parameters
    * @param {Array} [options.allSuggestions=[]] - All suggestions for the opportunity,
    *   used to clean up suggestions covered by a domain-wide or path-level pattern rollback
-   * @param {string} [options.updatedBy='edge-rollback'] - Value for updatedBy on saved suggestions
+   * @param {string} [options.updatedBy] - Actor identity (e.g. profile email). When undefined,
+   *   context-specific fallback strings are used: 'tokowaka-rollback' for direct suggestions,
+   *   'domain-wide-rollback' for per-URL suggestions covered by a domain-wide pattern,
+   *   'path-rollback' for per-URL suggestions covered by a path pattern, and
+   *   'domain-wide-rollback-cascade' for path suggestions and their covered entries that are
+   *   cleaned up as part of a domain-wide rollback.
    * @returns {Promise<Object>} - Rollback result with succeeded/failed suggestions
    */
-  async rollbackSuggestions(site, opportunity, suggestions, { allSuggestions = [], updatedBy = 'edge-rollback' } = {}) {
+  // eslint-disable-next-line max-len
+  async rollbackSuggestions(site, opportunity, suggestions, { allSuggestions = [], updatedBy } = {}) {
     const opportunityType = opportunity.getType();
     const baseURL = getEffectiveBaseURL(site);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
@@ -980,7 +986,7 @@ class TokowakaClient {
     const savedEligibleSuggestions = await Promise.all(
       eligibleSuggestions.map(async (suggestion) => {
         suggestion.setData(omitKeys(suggestion.getData(), ['edgeDeployed', 'tokowakaDeployed']));
-        suggestion.setUpdatedBy(updatedBy);
+        suggestion.setUpdatedBy(updatedBy ?? 'tokowaka-rollback');
         await suggestion.save();
         return suggestion;
       }),
@@ -1024,7 +1030,7 @@ class TokowakaClient {
           }
 
           suggestion.setData(omitKeys(data, ['edgeDeployed', 'tokowakaDeployed']));
-          suggestion.setUpdatedBy(updatedBy);
+          suggestion.setUpdatedBy(updatedBy ?? 'tokowaka-rollback');
           toSave.push(suggestion);
         }
 
@@ -1033,12 +1039,17 @@ class TokowakaClient {
             await this.uploadMetaconfig(baseURL, metaconfig);
           }
           for (const suggestion of toSave) {
+            const suggData = suggestion.getData();
+            const isDomainWide = suggData?.isDomainWide === true;
+
             // eslint-disable-next-line no-await-in-loop
             await suggestion.save();
             succeededPatternSuggestions.push(suggestion);
 
-            // Clean up suggestions that were covered by this pattern deployment
-            // (coveredByDomainWide for legacy domain-wide, coveredByPattern for path-level)
+            // Clean up per-URL suggestions that were directly covered by this pattern deployment.
+            // Use a different fallback depending on whether the parent is domain-wide or path-level
+            // so that automated audit trails remain meaningful when no actor email is available.
+            const coveredFallback = isDomainWide ? 'domain-wide-rollback' : 'path-rollback';
             const covered = allSuggestions.filter(
               (s) => s.getData()?.coveredByDomainWide === suggestion.getId()
                 || s.getData()?.coveredByPattern === suggestion.getId(),
@@ -1048,9 +1059,64 @@ class TokowakaClient {
               // eslint-disable-next-line no-await-in-loop
               await Promise.all(covered.map(async (cs) => {
                 cs.setData(omitKeys(cs.getData(), ['edgeDeployed', 'tokowakaDeployed', 'coveredByDomainWide', 'coveredByPattern']));
-                cs.setUpdatedBy(updatedBy);
+                cs.setUpdatedBy(updatedBy ?? coveredFallback);
                 return cs.save();
               }));
+            }
+
+            // Domain-wide cascade: when a domain-wide suggestion is rolled back, also clean up
+            // any path suggestions (and their covered per-URL entries) that were deployed while
+            // the domain-wide was active. These are identified by being pattern suggestions
+            // (non-domain-wide) that still carry an edgeDeployed marker.
+            if (isDomainWide) {
+              const cascadePathSuggestions = allSuggestions.filter(
+                (s) => s !== suggestion
+                  && isPatternSuggestion(s)
+                  && !s.getData()?.isDomainWide
+                  && s.getData()?.edgeDeployed,
+              );
+              if (cascadePathSuggestions.length > 0) {
+                this.log.info(`[edge-rollback] Cascading domain-wide rollback to ${cascadePathSuggestions.length} path suggestion(s)`);
+              }
+              for (const cascadeSuggestion of cascadePathSuggestions) {
+                const cascadeData = cascadeSuggestion.getData();
+                const cascadePattern = cascadeData?.allowedRegexPatterns?.[0];
+
+                // Remove the cascade path's pattern from metaconfig (already in-memory)
+                if (cascadePattern) {
+                  const currentAllowList = metaconfig.prerender?.allowList ?? [];
+                  const trimmedAllowList = currentAllowList.filter((p) => p !== cascadePattern);
+                  if (trimmedAllowList.length !== currentAllowList.length) {
+                    if (trimmedAllowList.length === 0) {
+                      delete metaconfig.prerender;
+                    } else {
+                      metaconfig.prerender = { allowList: trimmedAllowList };
+                    }
+                    // Mark that the metaconfig needs to be re-uploaded
+                    // (already uploaded above; this ensures a second upload happens if needed)
+                    // eslint-disable-next-line no-await-in-loop
+                    await this.uploadMetaconfig(baseURL, metaconfig);
+                  }
+                }
+
+                cascadeSuggestion.setData(omitKeys(cascadeData, ['edgeDeployed', 'tokowakaDeployed']));
+                cascadeSuggestion.setUpdatedBy(updatedBy ?? 'domain-wide-rollback-cascade');
+                // eslint-disable-next-line no-await-in-loop
+                await cascadeSuggestion.save();
+
+                // Clean up per-URL suggestions covered by the cascaded path suggestion
+                const cascadeCovered = allSuggestions.filter(
+                  (s) => s.getData()?.coveredByPattern === cascadeSuggestion.getId(),
+                );
+                if (cascadeCovered.length > 0) {
+                  // eslint-disable-next-line no-await-in-loop
+                  await Promise.all(cascadeCovered.map(async (cs) => {
+                    cs.setData(omitKeys(cs.getData(), ['edgeDeployed', 'tokowakaDeployed', 'coveredByPattern']));
+                    cs.setUpdatedBy(updatedBy ?? 'domain-wide-rollback-cascade');
+                    return cs.save();
+                  }));
+                }
+              }
             }
           }
         } catch (error) {

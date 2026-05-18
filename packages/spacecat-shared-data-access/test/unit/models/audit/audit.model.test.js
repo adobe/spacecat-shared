@@ -165,6 +165,7 @@ describe('AuditModel', () => {
       CANONICAL: 'canonical',
       REDIRECT_CHAINS: 'redirect-chains',
       BROKEN_BACKLINKS: 'broken-backlinks',
+      BROKEN_EXTERNAL_LINKS: 'broken-external-links',
       BROKEN_INTERNAL_LINKS: 'broken-internal-links',
       CONTENT_FRAGMENT_UNUSED: 'content-fragment-unused',
       CONTENT_FRAGMENT_UNUSED_AUTO_FIX: 'content-fragment-unused-auto-fix',

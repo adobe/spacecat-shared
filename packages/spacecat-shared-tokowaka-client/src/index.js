@@ -42,6 +42,12 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
 
+/** Returns a shallow copy of obj with the specified keys removed. */
+function omitKeys(obj, keys) {
+  const keySet = new Set(keys);
+  return Object.fromEntries(Object.entries(obj).filter(([k]) => !keySet.has(k)));
+}
+
 /** Matches SpaceCat API eligibility for edge deploy (non-domain-wide). */
 function isEdgeDeployableSuggestionStatus(status) {
   return status === 'NEW' || status === 'PENDING_VALIDATION';
@@ -844,9 +850,13 @@ class TokowakaClient {
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
    * @param {Array} suggestions - Array of suggestion entities to rollback
+   * @param {Object} [options] - Optional parameters
+   * @param {Array} [options.allSuggestions=[]] - All suggestions for the opportunity,
+   *   used to clean up suggestions covered by a domain-wide or path-level pattern rollback
+   * @param {string} [options.updatedBy='edge-rollback'] - Value for updatedBy on saved suggestions
    * @returns {Promise<Object>} - Rollback result with succeeded/failed suggestions
    */
-  async rollbackSuggestions(site, opportunity, suggestions) {
+  async rollbackSuggestions(site, opportunity, suggestions, { allSuggestions = [], updatedBy = 'edge-rollback' } = {}) {
     const opportunityType = opportunity.getType();
     const baseURL = getEffectiveBaseURL(site);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
@@ -965,8 +975,20 @@ class TokowakaClient {
 
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
 
+    // Save all eligible per-URL suggestions, removing deployment markers so the DB
+    // reflects the rolled-back state.
+    const savedEligibleSuggestions = await Promise.all(
+      eligibleSuggestions.map(async (suggestion) => {
+        suggestion.setData(omitKeys(suggestion.getData(), ['edgeDeployed', 'tokowakaDeployed']));
+        suggestion.setUpdatedBy(updatedBy);
+        await suggestion.save();
+        return suggestion;
+      }),
+    );
+
     // Roll back pattern-based suggestions (path and domain-wide): fetch metaconfig once,
     // remove all patterns in a single in-memory pass, upload once, then save each suggestion.
+    // After each pattern suggestion is saved, clean up any suggestions that were covered by it.
     const succeededPatternSuggestions = [];
     if (patternSuggestions.length > 0) {
       const metaconfig = await this.fetchMetaconfig(baseURL);
@@ -1001,8 +1023,8 @@ class TokowakaClient {
             this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
           }
 
-          suggestion.setData({ ...data, edgeDeployed: undefined });
-          suggestion.setUpdatedBy('edge-rollback');
+          suggestion.setData(omitKeys(data, ['edgeDeployed', 'tokowakaDeployed']));
+          suggestion.setUpdatedBy(updatedBy);
           toSave.push(suggestion);
         }
 
@@ -1014,6 +1036,22 @@ class TokowakaClient {
             // eslint-disable-next-line no-await-in-loop
             await suggestion.save();
             succeededPatternSuggestions.push(suggestion);
+
+            // Clean up suggestions that were covered by this pattern deployment
+            // (coveredByDomainWide for legacy domain-wide, coveredByPattern for path-level)
+            const covered = allSuggestions.filter(
+              (s) => s.getData()?.coveredByDomainWide === suggestion.getId()
+                || s.getData()?.coveredByPattern === suggestion.getId(),
+            );
+            if (covered.length > 0) {
+              this.log.info(`[edge-rollback] Cleaning up ${covered.length} suggestion(s) covered by pattern ${suggestion.getId()}`);
+              // eslint-disable-next-line no-await-in-loop
+              await Promise.all(covered.map(async (cs) => {
+                cs.setData(omitKeys(cs.getData(), ['edgeDeployed', 'tokowakaDeployed', 'coveredByDomainWide', 'coveredByPattern']));
+                cs.setUpdatedBy(updatedBy);
+                return cs.save();
+              }));
+            }
           }
         } catch (error) {
           this.log.error(`[edge-rollback] Error rolling back pattern suggestions: ${error.message}`, error);
@@ -1031,7 +1069,7 @@ class TokowakaClient {
     return {
       s3Paths,
       cdnInvalidations,
-      succeededSuggestions: [...eligibleSuggestions, ...succeededPatternSuggestions],
+      succeededSuggestions: [...savedEligibleSuggestions, ...succeededPatternSuggestions],
       failedSuggestions: [...ineligibleSuggestions, ...failedPatternSuggestions],
       removedPatchesCount: totalRemovedCount,
     };

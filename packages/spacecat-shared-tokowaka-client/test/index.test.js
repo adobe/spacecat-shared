@@ -87,6 +87,9 @@ describe('TokowakaClient', () => {
             selector: 'h1',
           },
         }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
       },
       {
         getId: () => 'sugg-2',
@@ -100,6 +103,9 @@ describe('TokowakaClient', () => {
             selector: 'h2',
           },
         }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
       },
     ];
   });
@@ -2568,6 +2574,9 @@ describe('TokowakaClient', () => {
           getData: () => ({
             url: 'https://example.com/page1',
           }),
+          setData: sinon.stub(),
+          setUpdatedBy: sinon.stub(),
+          save: sinon.stub().resolves(),
         },
       ];
 
@@ -2798,6 +2807,9 @@ describe('TokowakaClient', () => {
               selector: 'h1',
             },
           }),
+          setData: sinon.stub(),
+          setUpdatedBy: sinon.stub(),
+          save: sinon.stub().resolves(),
         },
         {
           getId: () => 'sugg-2',
@@ -2811,6 +2823,9 @@ describe('TokowakaClient', () => {
               selector: 'h1',
             },
           }),
+          setData: sinon.stub(),
+          setUpdatedBy: sinon.stub(),
+          save: sinon.stub().resolves(),
         },
       ];
 
@@ -2900,6 +2915,9 @@ describe('TokowakaClient', () => {
             selector: 'body',
           },
         }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
       };
 
       const existingConfig = {
@@ -3035,6 +3053,105 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.include(dwSuggestion);
       const uploadedConfig = uploadStub.firstCall.args[1];
       expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/*']);
+    });
+
+    it('cleans up covered suggestions (coveredByDomainWide) when rolling back a pattern suggestion', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+          tokowakaDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredSuggestion = {
+        getId: () => 'covered-1',
+        getData: () => ({
+          url: 'https://example.com/page1',
+          edgeDeployed: Date.now(),
+          coveredByDomainWide: 'dw-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, coveredSuggestion], updatedBy: 'test@example.com' },
+      );
+
+      expect(result.succeededSuggestions).to.include(dwSuggestion);
+
+      // Verify domain-wide suggestion was updated and saved
+      expect(dwSuggestion.setUpdatedBy.calledWith('test@example.com')).to.be.true;
+      expect(dwSuggestion.save.calledOnce).to.be.true;
+      const dwData = dwSuggestion.setData.firstCall.args[0];
+      expect(dwData).to.not.have.property('edgeDeployed');
+      expect(dwData).to.not.have.property('tokowakaDeployed');
+
+      // Verify covered suggestion was also cleaned up
+      expect(coveredSuggestion.save.calledOnce).to.be.true;
+      expect(coveredSuggestion.setUpdatedBy.calledWith('test@example.com')).to.be.true;
+      const coveredData = coveredSuggestion.setData.firstCall.args[0];
+      expect(coveredData).to.not.have.property('edgeDeployed');
+      expect(coveredData).to.not.have.property('coveredByDomainWide');
+    });
+
+    it('cleans up covered suggestions (coveredByPattern) when rolling back a path-level pattern', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredSuggestion = {
+        getId: () => 'covered-2',
+        getData: () => ({
+          url: 'https://example.com/products/item',
+          edgeDeployed: Date.now(),
+          coveredByPattern: 'path-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+        { allSuggestions: [pathSuggestion, coveredSuggestion] },
+      );
+
+      expect(coveredSuggestion.save.calledOnce).to.be.true;
+      const coveredData = coveredSuggestion.setData.firstCall.args[0];
+      expect(coveredData).to.not.have.property('edgeDeployed');
+      expect(coveredData).to.not.have.property('coveredByPattern');
     });
 
     it('path rollback marks suggestion ineligible when allowedRegexPatterns contains no valid pattern', async () => {

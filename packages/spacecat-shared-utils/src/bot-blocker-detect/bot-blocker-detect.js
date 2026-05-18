@@ -12,6 +12,7 @@
 
 import { tracingFetch, SPACECAT_USER_AGENT } from '../tracing-fetch.js';
 import { isValidUrl } from '../functions.js';
+import { isNonPublicHostname } from '../network-policy.js';
 
 /**
  * Confidence levels used in bot blocker detection:
@@ -29,6 +30,8 @@ const CONFIDENCE_HIGH = 0.99;
 const CONFIDENCE_MEDIUM = 0.95;
 const CONFIDENCE_ABSOLUTE = 1.0;
 const DEFAULT_TIMEOUT = 5000;
+export const BODY_READ_TIMEOUT = 3000;
+const BODY_READ_MAX_BYTES = 65536; // 64 KB — challenge markers appear in the first KB
 
 /**
  * SpaceCat bot identification constants
@@ -303,7 +306,8 @@ function analyzeError(error) {
 
 /**
  * Detects bot blocker technology on a website.
- * Makes a single HEAD request and analyzes the response for blocking patterns.
+ * Makes a GET request (following up to 10 redirects manually) and analyzes the response.
+ * Each redirect hop is checked against the SSRF guard before connecting.
  *
  * Currently detects:
  * - Cloudflare bot blocking (403 + cf-ray header)
@@ -312,6 +316,8 @@ function analyzeError(error) {
  * - Fastly (403 + x-served-by or fastly-io-info headers)
  * - AWS CloudFront (403 + x-amz-cf-id or via: CloudFront header)
  * - HTTP/2 stream errors (NGHTTP2_INTERNAL_ERROR, ERR_HTTP2_STREAM_ERROR)
+ * - Redirect chains exceeding MAX_REDIRECTS ('redirect-limit-exceeded')
+ * - SSRF: private/non-public hostnames in initial URL or redirect targets ('ssrf-redirect-blocked')
  *
  * Also detects infrastructure presence on successful requests (200 OK):
  * - Returns 'cloudflare-allowed', 'imperva-allowed', 'akamai-allowed',
@@ -321,29 +327,101 @@ function analyzeError(error) {
  * @param {Object} config - Configuration object
  * @param {string} config.baseUrl - The base URL to check
  * @param {number} [config.timeout=5000] - Request timeout in milliseconds
+ * @param {Object} [config.log=console] - Logger with warn/debug methods
  * @returns {Promise<Object>} Detection result with:
  *   - crawlable {boolean}: Whether the site can be crawled by bots
  *   - type {string}: Blocker type ('cloudflare', 'imperva', 'akamai', 'fastly',
- *     'cloudfront', 'http2-block', 'cloudflare-allowed', 'imperva-allowed',
- *     'akamai-allowed', 'fastly-allowed', 'cloudfront-allowed', 'none', 'unknown')
+ *     'cloudfront', 'http2-block', 'redirect-limit-exceeded', 'ssrf-redirect-blocked',
+ *     'cloudflare-allowed', 'imperva-allowed', 'akamai-allowed', 'fastly-allowed',
+ *     'cloudfront-allowed', 'none', 'unknown')
  *   - confidence {number}: Confidence level (0.0-1.0, see confidence level constants)
- * @throws {Error} If baseUrl is invalid
+ * @throws {Error} If baseUrl is not a valid URL
  */
-export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT }) {
+export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log = console }) {
   if (!baseUrl || !isValidUrl(baseUrl)) {
     throw new Error('Invalid baseUrl');
   }
 
+  let hostname;
   try {
-    const response = await tracingFetch(baseUrl, {
-      method: 'HEAD',
-      headers: {
-        'User-Agent': SPACECAT_USER_AGENT,
-      },
-      signal: AbortSignal.timeout(timeout),
-    });
+    ({ hostname } = new URL(baseUrl));
+  /* c8 ignore next 3 */
+  } catch {
+    throw new Error('Invalid baseUrl');
+  }
+  if (isNonPublicHostname(hostname)) {
+    return { crawlable: false, type: 'ssrf-redirect-blocked', confidence: CONFIDENCE_ABSOLUTE };
+  }
 
-    return analyzeResponse(response);
+  try {
+    // Follow redirects manually so the SSRF guard runs on every hop before connecting.
+    const MAX_REDIRECTS = 10;
+    let currentUrl = baseUrl;
+    let response;
+    let exitedViaLimit = true;
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+      response = await tracingFetch(currentUrl, { // eslint-disable-line no-await-in-loop
+        method: 'GET',
+        headers: { 'User-Agent': SPACECAT_USER_AGENT },
+        redirect: 'manual',
+        timeout,
+      });
+
+      if (response.status < 300 || response.status >= 400) {
+        exitedViaLimit = false;
+        break;
+      }
+
+      const location = response.headers.get('location');
+      if (!location) {
+        exitedViaLimit = false;
+        break;
+      }
+
+      let redirectUrl;
+      try {
+        redirectUrl = new URL(location, currentUrl).toString();
+      } catch {
+        exitedViaLimit = false;
+        break;
+      }
+
+      const { hostname: rHost } = new URL(redirectUrl);
+      if (isNonPublicHostname(rHost)) {
+        log.warn('detectBotBlocker: redirect to private hostname blocked', { fn: 'detectBotBlocker', url: redirectUrl });
+        return { crawlable: false, type: 'ssrf-redirect-blocked', confidence: CONFIDENCE_ABSOLUTE };
+      }
+      currentUrl = redirectUrl;
+    }
+
+    if (exitedViaLimit && response.status >= 300 && response.status < 400) {
+      log.warn('detectBotBlocker: redirect limit exceeded', { fn: 'detectBotBlocker', url: baseUrl, limit: MAX_REDIRECTS });
+      return { crawlable: false, type: 'redirect-limit-exceeded', confidence: CONFIDENCE_HIGH };
+    }
+
+    let html = null;
+    const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+    // Content-Length check is best-effort; chunked responses (no Content-Length header) are
+    // bounded by BODY_READ_TIMEOUT only.
+    if (contentLength > 0 && contentLength > BODY_READ_MAX_BYTES) {
+      log.warn('detectBotBlocker: body too large, skipping body read', { fn: 'detectBotBlocker', url: baseUrl, contentLength });
+    } else {
+      try {
+        // Promise.race guards against servers that stream body slowly after headers arrive.
+        // tracingFetch clears its AbortSignal in finally{} before returning, so response.text()
+        // has no built-in timeout. clearTimeout prevents the timer handle from leaking when
+        // response.text() resolves before the deadline.
+        let timer;
+        html = await Promise.race([
+          response.text().finally(() => clearTimeout(timer)),
+          new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('body-read-timeout')), BODY_READ_TIMEOUT); }),
+        ]);
+      } catch (e) {
+        log.warn('detectBotBlocker: body read failed, using header-only analysis', { fn: 'detectBotBlocker', url: baseUrl, cause: e?.message });
+      }
+    }
+
+    return analyzeResponse(response, html);
   } catch (error) {
     return analyzeError(error);
   }

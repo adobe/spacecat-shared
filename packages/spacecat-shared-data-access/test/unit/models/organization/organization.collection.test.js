@@ -56,4 +56,14 @@ describe('OrganizationCollection', () => {
       expect(model).to.be.an('object');
     });
   });
+
+  describe('semrushWorkspaceId index', () => {
+    it('exposes findBySemrushWorkspaceId from addAllIndex', () => {
+      expect(instance.findBySemrushWorkspaceId).to.be.a('function');
+    });
+
+    it('exposes allBySemrushWorkspaceId from addAllIndex', () => {
+      expect(instance.allBySemrushWorkspaceId).to.be.a('function');
+    });
+  });
 });

@@ -172,6 +172,25 @@ The `deliveryConfig` object on a Site stores delivery infrastructure details. It
 | `preferContentApi` | boolean | Whether to prefer the Content API for content retrieval |
 | `contentSourcePath` | string | AEM content root path for a site. Used to disambiguate multiple sites that share the same Cloud Manager program and environment. Corresponds to `/content/<site-name>` in the AEM repository. |
 
+## Site rumConfig
+
+The `rumConfig` object on a Site tracks Real User Monitoring (RUM) domain key availability. It is set automatically on site creation and refreshed weekly by the `rum-config-refresh` audit handler.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `hasDomainKey` | boolean | Whether the site's domain has an active RUM domain key registered |
+| `lastCheckedAt` | string (ISO 8601) | Timestamp of the most recent RUM domain key check |
+
+### Config model methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getRumConfig()` | `{ hasDomainKey, lastCheckedAt } \| undefined` | Returns the current rumConfig, or `undefined` if not yet set |
+| `hasRumDomainKey()` | `boolean` | Returns `true` if a RUM domain key is active, `false` otherwise |
+| `updateRumConfig(hasDomainKey)` | `void` | Sets `hasDomainKey` and updates `lastCheckedAt` to the current time |
+
+Sites created before the `rum-config-refresh` handler ran will have no `rumConfig` key — callers must treat `undefined` as "unknown" rather than "not set up".
+
 ## Architecture
 
 ```

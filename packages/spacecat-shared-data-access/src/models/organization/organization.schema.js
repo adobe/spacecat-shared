@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import { Config, DEFAULT_CONFIG, validateConfiguration } from '../site/config.js';
 import SchemaBuilder from '../base/schema.builder.js';
@@ -55,6 +55,10 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
     // Use value == null (loose) so undefined and null short-circuit, but
     // empty string ('') falls through to hasText() which rejects it.
     validate: (value) => value == null || hasText(value),
+  })
+  .addAttribute('defaultSiteId', {
+    type: 'string',
+    validate: (value) => !value || isValidUUID(value),
   })
   .addAllIndex(['imsOrgId'])
   // Uniqueness is enforced at the DB level via the UNIQUE constraint on

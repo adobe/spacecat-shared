@@ -326,12 +326,69 @@ function toggleWWWHostname(hostname) {
   return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
 }
 
+const HTTPS_REACHABLE_CACHE = new Map();
+const HTTPS_REACHABLE_TTL_POSITIVE_MS = 60 * 60 * 1000; // 1 hour for reachable hosts
+// 5 min for unreachable — allow quick recovery from transient failures
+const HTTPS_REACHABLE_TTL_NEGATIVE_MS = 5 * 60 * 1000;
+
+/**
+ * Probes whether a hostname is reachable over HTTPS by performing a TLS handshake.
+ * Returns true if the TLS handshake succeeds, regardless of HTTP status (4xx/5xx
+ * are treated as reachable). Only TLS or network-level errors return false.
+ * Uses `redirect: 'manual'` to avoid following redirects to a different host.
+ * Results are cached: 1 hour for positive, 5 minutes for negative (asymmetric
+ * so transient failures self-heal quickly).
+ * @param {string} hostname - Hostname to probe (without protocol).
+ * @param {object} log - Logger instance with warn() and debug() methods.
+ * @returns {Promise<boolean>} True if TLS handshake succeeds.
+ */
+async function isHttpsReachable(hostname, log) {
+  const cached = HTTPS_REACHABLE_CACHE.get(hostname);
+  if (cached && Date.now() < cached.expiresAt) {
+    if (!cached.result) {
+      const remainingSec = Math.round((cached.expiresAt - Date.now()) / 1000);
+      log.debug(`isHttpsReachable: ${hostname} cached as unreachable, expires in ${remainingSec}s`);
+    }
+    return cached.result;
+  }
+  try {
+    // Probe TLS handshake only; redirect: 'manual' prevents following redirects
+    // to a different host which could mask a failure on the original hostname.
+    await fetch(`https://${hostname}`, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000),
+      redirect: 'manual',
+    });
+    HTTPS_REACHABLE_CACHE.set(hostname, {
+      result: true,
+      expiresAt: Date.now() + HTTPS_REACHABLE_TTL_POSITIVE_MS,
+    });
+    return true;
+  } catch (e) {
+    log.warn(`isHttpsReachable: ${hostname} unreachable`, {
+      fn: 'isHttpsReachable', hostname, errorName: e.name, errorMessage: e.message,
+    });
+    HTTPS_REACHABLE_CACHE.set(hostname, {
+      result: false,
+      expiresAt: Date.now() + HTTPS_REACHABLE_TTL_NEGATIVE_MS,
+    });
+    return false;
+  }
+}
+
+/**
+ * Clears the HTTPS reachability cache. Intended for test isolation only.
+ */
+function resetHttpsReachableCacheForTests() {
+  HTTPS_REACHABLE_CACHE.clear();
+}
+
 /**
  * Resolves the correct URL for a site by checking RUM data availability.
  * Tries www-toggled version first, then falls back to original.
  * @param {object} site - The site object with getBaseURL() and getConfig() methods.
  * @param {object} rumApiClient - The RUM API client instance with retrieveDomainkey method.
- * @param {object} log - Logger instance with debug() and error() methods.
+ * @param {object} log - Logger instance with debug(), warn(), and error() methods.
  * @returns {Promise<string>} - The resolved hostname without protocol.
  */
 async function wwwUrlResolver(site, rumApiClient, log) {
@@ -353,8 +410,11 @@ async function wwwUrlResolver(site, rumApiClient, log) {
   try {
     const wwwToggledHostname = toggleWWWHostname(hostname);
     await rumApiClient.retrieveDomainkey(wwwToggledHostname);
-    log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
-    return wwwToggledHostname;
+    if (await isHttpsReachable(wwwToggledHostname, log)) {
+      log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
+      return wwwToggledHostname;
+    }
+    log.warn(`RUM key found for ${wwwToggledHostname} but HTTPS check failed; trying ${hostname}`);
   } catch (e) {
     log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
   }
@@ -367,6 +427,9 @@ async function wwwUrlResolver(site, rumApiClient, log) {
     log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
   }
 
+  // Fallback: trust the customer-registered URL. If neither the toggled nor the
+  // original hostname has a RUM domain key, prefer www (or keep www if already present).
+  // This is safer than guessing — the customer-registered URL is the authoritative source.
   const fallback = hostname.startsWith('www.') ? hostname : `www.${hostname}`;
   log.debug(`Fallback to ${fallback} for URL resolution for ${baseURL}`);
   return fallback;
@@ -421,4 +484,5 @@ export {
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  resetHttpsReachableCacheForTests,
 };

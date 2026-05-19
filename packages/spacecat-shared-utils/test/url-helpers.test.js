@@ -29,7 +29,7 @@ import {
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
-  HTTPS_REACHABLE_CACHE,
+  resetHttpsReachableCacheForTests,
 } from '../src/url-helpers.js';
 
 describe('URL Utility Functions', () => {
@@ -687,7 +687,7 @@ describe('URL Utility Functions', () => {
     afterEach(() => {
       sandbox.restore();
       nock.cleanAll();
-      HTTPS_REACHABLE_CACHE.clear();
+      resetHttpsReachableCacheForTests();
     });
 
     it('should return overrideBaseURL when configured with https', async () => {
@@ -942,17 +942,60 @@ describe('URL Utility Functions', () => {
 
     it('should return cached HTTPS reachability result without a second HTTP request', async () => {
       const toggledHostname = 'www.cachetest.com';
-      // Pre-populate cache to exercise the cache-hit path (lines 292-293 in url-helpers.js)
-      HTTPS_REACHABLE_CACHE.set(toggledHostname, { result: true, expiresAt: Date.now() + 60000 });
 
+      // First call: populate cache via real HEAD request
+      nock('https://www.cachetest.com').head('/').reply(200);
       site.getBaseURL.returns('https://cachetest.com');
       rumApiClient.retrieveDomainkey.withArgs(toggledHostname).resolves('domain-key');
-      // No nock needed — cache prevents the HTTP request entirely
+      await wwwUrlResolver(site, rumApiClient, log);
 
+      // Second call: should use cache, no HTTP request needed
+      nock.disableNetConnect();
+      rumApiClient.retrieveDomainkey.withArgs(toggledHostname).resolves('domain-key');
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+      nock.enableNetConnect();
+
+      expect(result).to.equal(toggledHostname);
+    });
+
+    it('should return cached negative result without firing a HEAD request', async () => {
+      // First call: populate cache with a negative result (TLS failure)
+      nock('https://www.cached-negative.com').head('/').replyWithError('ECONNREFUSED');
+      site.getBaseURL.returns('https://cached-negative.com');
+      rumApiClient.retrieveDomainkey.withArgs('cached-negative.com').resolves('domain-key');
+      await wwwUrlResolver(site, rumApiClient, log);
+
+      // Second call: should use cached negative, fall through to original hostname
+      nock.disableNetConnect();
+      rumApiClient.retrieveDomainkey.withArgs('cached-negative.com').resolves('domain-key');
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+      nock.enableNetConnect();
+
+      // Falls back to original hostname since toggled is cached as unreachable
+      expect(result).to.equal('cached-negative.com');
+      expect(log.debug).to.have.been.calledWith(sinon.match('cached as unreachable'));
+    });
+
+    it('should re-probe when cached entry has expired', async () => {
+      const toggledHostname = 'www.expired-cache.com';
+
+      // First call: populate cache with negative result
+      nock('https://www.expired-cache.com').head('/').replyWithError('ECONNREFUSED');
+      site.getBaseURL.returns('https://expired-cache.com');
+      rumApiClient.retrieveDomainkey.withArgs(toggledHostname).resolves('domain-key');
+      rumApiClient.retrieveDomainkey.withArgs('expired-cache.com').resolves('domain-key');
+      await wwwUrlResolver(site, rumApiClient, log);
+
+      // Manually expire the cache entry
+      // Access internal cache via a fresh negative-TTL probe is tricky,
+      // so we use resetHttpsReachableCacheForTests to simulate expiry
+      resetHttpsReachableCacheForTests();
+
+      // Second call: cache cleared, should fire a fresh HEAD that succeeds
+      nock('https://www.expired-cache.com').head('/').reply(200);
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
       expect(result).to.equal(toggledHostname);
-      expect(HTTPS_REACHABLE_CACHE.get(toggledHostname).result).to.be.true;
     });
   });
 

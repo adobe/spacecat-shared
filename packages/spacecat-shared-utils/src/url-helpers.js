@@ -14,6 +14,7 @@ import { context as h2, h1 } from '@adobe/fetch';
 import URI from 'urijs';
 import { hasText, isValidUrl } from './functions.js';
 import { SPACECAT_USER_AGENT } from './tracing-fetch.js';
+import { isNonPublicHostname } from './network-policy.js';
 
 /* c8 ignore next 3 */
 export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
@@ -134,46 +135,88 @@ function getSpacecatRequestHeaders() {
   };
 }
 
+const RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT = 7000;
+
 /**
  * Resolve canonical URL for a given URL string by following redirect chain.
+ *
+ * The `deadline` is a shared absolute timestamp across all attempts — HEAD, GET, and every
+ * redirect hop all draw from the same budget. HEAD is tried first; on network error or non-2xx
+ * the request is retried once with GET. GET is never retried — if it fails there is no further
+ * fallback method.
+ *
+ * Redirects are followed manually (redirect: 'manual') so the SSRF guard runs on every hop
+ * before the network connection is made. Auto-follow would connect first, guard second.
+ *
+ * Non-public hostnames (private IPs, loopback, link-local, localhost, IPv6 ULA, INADDR_ANY)
+ * are rejected on every hop including redirect targets to prevent SSRF.
+ * See network-policy.js for the full list of blocked ranges.
+ *
  * @param {string} urlString - The URL string to normalize.
  * @param {string} method - HTTP method to use ('HEAD' or 'GET').
+ * @param {number} deadline - Absolute timestamp (ms) by which all attempts must finish.
+ * @param {object} [log=console] - Logger with a warn() method for observability.
  * @returns {Promise<string|null>} A Promise that resolves to the canonical URL or null if failed.
  */
-async function resolveCanonicalUrl(urlString, method = 'HEAD') {
+async function resolveCanonicalUrl(
+  urlString,
+  method = 'HEAD',
+  deadline = Date.now() + RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT,
+  log = console,
+) {
+  try {
+    const { hostname } = new URL(urlString);
+    if (isNonPublicHostname(hostname)) {
+      log.warn('[resolveCanonicalUrl] private hostname rejected', { fn: 'resolveCanonicalUrl', url: urlString });
+      return null;
+    }
+  } catch (e) {
+    log.warn('[resolveCanonicalUrl] invalid URL', { fn: 'resolveCanonicalUrl', url: urlString, cause: e?.message });
+    return null;
+  }
+
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) {
+    log.warn('[resolveCanonicalUrl] deadline expired', { fn: 'resolveCanonicalUrl', url: urlString, method });
+    return null;
+  }
+
   const headers = getSpacecatRequestHeaders();
-  let resp;
 
   try {
-    const timeout = method === 'HEAD' ? 10000 : 20000; // 10s for HEAD, 20s for GET
-    resp = await fetch(urlString, {
+    const resp = await fetch(urlString, {
       headers,
       method,
-      signal: AbortSignal.timeout(timeout),
+      redirect: 'manual',
+      signal: AbortSignal.timeout(remaining),
+      decode: false,
     });
 
     if (resp.ok) {
       return ensureHttps(resp.url);
     }
 
-    // Handle redirect chains
-    if (urlString !== resp.url) {
-      return resolveCanonicalUrl(resp.url, method);
+    // Manual redirect: extract Location and recurse so the guard runs on each hop
+    if (resp.status >= 300 && resp.status < 400) {
+      const location = resp.headers.get('location');
+      if (location) {
+        const redirectUrl = new URL(location, urlString).toString();
+        return resolveCanonicalUrl(redirectUrl, method, deadline, log);
+      }
     }
 
     if (method === 'HEAD') {
-      return resolveCanonicalUrl(urlString, 'GET');
+      return resolveCanonicalUrl(urlString, 'GET', deadline, log);
     }
 
-    // If the URL is not found and we've tried both HEAD and GET, return null
     return null;
-  } catch {
-    // If HEAD failed with network error and we haven't tried GET yet, retry with GET
+  } catch (e) {
+    // HEAD retries with GET on any error; GET does not retry — there is no further fallback method.
     if (method === 'HEAD') {
-      return resolveCanonicalUrl(urlString, 'GET');
+      return resolveCanonicalUrl(urlString, 'GET', deadline, log);
     }
 
-    // For all errors (both HTTP status and network), return null
+    log.warn('[resolveCanonicalUrl] GET request failed', { fn: 'resolveCanonicalUrl', url: urlString, cause: e?.message });
     return null;
   }
 }

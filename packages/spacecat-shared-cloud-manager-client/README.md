@@ -197,8 +197,8 @@ await client.cleanup(clonePath);
 
 ## API overview
 
-- **`clone(programId, repositoryId, config)`** – Clone repo to a unique temp directory. Config: `{ imsOrgId, repoType, repoUrl, ref }`. Optional `ref` checks out a specific branch/tag after clone (failure to checkout does not fail the clone).
-- **`pull(clonePath, programId, repositoryId, config)`** – Pull latest changes into an existing clone. Config: `{ imsOrgId, repoType, repoUrl, ref }`. Optional `ref` checks out the branch before pulling.
+- **`clone(programId, repositoryId, config)`** – Clone repo to a unique temp directory. Config: `{ imsOrgId, repoType, repoUrl, ref, submodules }`. Optional `ref` checks out a specific branch/tag after clone (failure to checkout does not fail the clone). Optional `submodules` is BYOG-only and drives the submodule rewrite — see "Submodule handling" below.
+- **`pull(clonePath, programId, repositoryId, config)`** – Pull latest changes into an existing clone. Config: `{ imsOrgId, repoType, repoUrl, ref, submodules }`. Optional `ref` checks out the branch before pulling. `submodules` follows the same shape as `clone()`.
 - **`push(clonePath, programId, repositoryId, config)`** – Push a ref to the remote. Config: `{ imsOrgId, repoType, repoUrl, ref }`. The `ref` is **required** and specifies the branch to push.
 - **`checkout(clonePath, ref)`** – Checkout a specific git ref (branch, tag, or SHA) in an existing clone. Unlike the optional checkout in `clone()`, this throws on failure.
 - **`zipRepository(clonePath)`** – Zip the clone (including `.git` history) and return a Buffer.
@@ -215,14 +215,137 @@ await client.cleanup(clonePath);
 Repository type constants (for use when passing `repoType` or checking repo type):
 
 ```js
-import CloudManagerClient, { CM_REPO_TYPE } from '@adobe/spacecat-shared-cloud-manager-client';
+import CloudManagerClient, {
+  CM_REPO_TYPE,
+  GIT_CLOUD_MANAGER_HOST,
+  isBYOG,
+} from '@adobe/spacecat-shared-cloud-manager-client';
 
-// CM_REPO_TYPE.GITHUB      → 'github'
+// CM_REPO_TYPE.GITHUB       → 'github'
 // CM_REPO_TYPE.BITBUCKET    → 'bitbucket'
 // CM_REPO_TYPE.GITLAB       → 'gitlab'
 // CM_REPO_TYPE.AZURE_DEVOPS → 'azure_devops'
 // CM_REPO_TYPE.STANDARD     → 'standard'
+
+// GIT_CLOUD_MANAGER_HOST    → 'git.cloudmanager.adobe.com'
+// Host that serves Cloud Manager standard-type repositories. Used at submodule
+// rewrite time to recognise standard URLs in `submodules[].resolvedUrl` and
+// attach the corresponding Basic-auth extraheader scope.
+
+// isBYOG(repoType: string)  → boolean
+// Returns true for any repo type that tunnels through the CM repo service
+// proxy (i.e. anything other than STANDARD). BYOG repos need extra handling
+// for submodules — see "Submodule handling" below.
 ```
+
+## Submodule handling
+
+Both `clone()` and `pull()` populate submodules in a separate pass after the parent git operation completes. Submodule failures are caught and logged at `warn` — they **never** abort the parent clone/pull/import. The parent repository is always usable; submodule working trees may be empty until the underlying issue is fixed (customer-side or onboarding-side).
+
+The implementation differs by parent repo type because the CM repo service proxy only serves repositories by numeric id, while customer `.gitmodules` files reference submodules by name (relative or SSH form).
+
+### Standard parent
+
+`clone()` and `pull()` always use `--no-recurse-submodules` on the parent operation, then run `git submodule sync --recursive` + `git submodule update --init --recursive` in a second pass. Each of those follow-up git invocations carries the same `-c http.<orgPrefix>.extraheader=Authorization: Basic …` flag the parent operation used — re-derived from `CM_STANDARD_REPO_CREDENTIALS[programId]` at call time and passed in-process to git. `.git/config` is **never** written to with credential material; the org-scoped extraheader exists only for the duration of each git invocation. `.gitmodules` URLs resolve against the same host as the parent (`git.cloudmanager.adobe.com/{orgName}/...`), so the same scope covers every same-org submodule. If a submodule fails to fetch, the parent stands and a warning is logged.
+
+### BYOG parent — `submodules` required
+
+For BYOG parents the proxy cannot serve relative or SSH `.gitmodules` URLs (they resolve to name-based paths the proxy rejects). The client clones with `--no-recurse-submodules` and replays the onboarding-precomputed per-submodule entries to rewrite each submodule's URL in `.git/config` before running `submodule update --force --recursive`. `.gitmodules` itself is never modified — the working tree stays clean.
+
+`submodules` is an array of entries; the importer writes `sectionName`, `gitmodulesUrl`, and `external`, and onboarding adds `resolvedUrl`:
+
+```js
+[
+  // BYOG-typed submodule of a BYOG parent (same program) — proxy URL:
+  {
+    sectionName:   'sub-byog',
+    gitmodulesUrl: '../sub-byog.git',
+    external:      false,
+    resolvedUrl:   'https://cm-repo.example.com/api/program/12345/repository/501.git',
+  },
+
+  // standard-typed submodule of a BYOG parent — direct CM-served URL:
+  {
+    sectionName:   'sub-standard',
+    gitmodulesUrl: '../sub-standard.git',
+    external:      false,
+    resolvedUrl:   'https://git.cloudmanager.adobe.com/acme-org/sub-standard/',
+  },
+]
+```
+
+For each entry that carries a `resolvedUrl`, the client writes that URL into `.git/config submodule.<sectionName>.url` so git fetches via the CM proxy (or standard-repo host) instead of the original `.gitmodules` URL. `sectionName` is the `<X>` from `[submodule "<X>"]` in `.gitmodules` — git's lookup key. The `resolvedUrl` decides which auth scope is applied at fetch time:
+
+- URLs on the CM proxy host (the `CM_REPO_URL` host) get the BYOG triple — Bearer + `x-api-key` + `x-gw-ims-org-id`.
+- URLs on `https://git.cloudmanager.adobe.com/{orgName}/` get a Basic-auth header sourced from `CM_STANDARD_REPO_CREDENTIALS[programId]`, scoped to the org prefix so it covers every standard repo in the same customer org.
+
+Both scopes coexist on a single `git submodule update` invocation; git applies each scope's headers only when the outgoing URL prefix matches.
+
+`resolvedUrl` is populated at onboarding by walking the parent's `.gitmodules` plus `GET /api/program/{pid}/repositories`, doing all name disambiguation up front so the runtime can iterate mechanically. See `SubmoduleEntry` in `@adobe/spacecat-shared-data-access` for the full data contract.
+
+## Known limitations
+
+The submodule pipeline doesn't cover every BYOG configuration. The cases below are documented so callers can detect them and raise warnings to operators — implementing first-class support for any of them is out of scope for the current client and would land as a separate PR.
+
+### `resolvedUrl` not yet populated
+
+For BYOG parents with submodules, if no entries carry a `resolvedUrl`:
+
+- A warning is logged: *"BYOG program `{programId}` has .gitmodules but no resolved submodule entries …"*
+- `submodule init` runs, then `submodule update --force --recursive` is invoked with the BYOG-only auth scope.
+- The submodule fetches will fail (the proxy can't serve the name-based URLs), but the **parent clone is preserved** and downstream code can still operate on the parent.
+
+Onboarding must populate `site.code.metadata.submodules[].resolvedUrl` before BYOG submodules can clone successfully. The onboarding script itself is **out of scope for this package** — it lives upstream in the import-worker / onboarding tooling. The client merely consumes the precomputed entries.
+
+### Out-of-program submodules
+
+`.gitmodules` entries that reference repositories not onboarded to CM at all.
+
+- Onboarding cannot produce a `resolvedUrl` for them.
+- `submodule update` fails for those entries only; the rest still complete.
+- **Remediation is customer-side** (onboard the missing repo, or remove the stale `.gitmodules` entry). No code change can rescue this case.
+
+### Broken BYOG connections in CM
+
+Repositories listed as `status: ready` in the program listing whose proxy returns HTTP 404 on `info/refs` — typically a revoked PAT, deleted upstream repo, or stale BYOG connector.
+
+- The entry may carry a `resolvedUrl` (the repo looks healthy in the listing).
+- `submodule update` fails for that single entry; other submodules complete normally.
+- **Customer-side data fix** required. Worth surfacing as a data-quality warning during onboarding (probe each entry's `info/refs` and flag failures).
+
+### Stale parent gitlinks
+
+When a submodule is migrated between BYOG and standard, or its history is rewritten, the parent's pinned commit SHAs may not exist in the submodule's current commit graph.
+
+- The client uses `git submodule update --force` to handle this — git resets the submodule's working tree to whatever `HEAD` points at after the fetch (typically branch tip) instead of failing silently with an empty working tree.
+- **Trade-off:** `git submodule status` will show `+<sha>` (working tree differs from parent's pinned gitlink) and `git status` will show modified submodule pointers. This matches what the CM build runner does and is the only way to materialise the working tree when the pin is unreachable. Downstream consumers should expect submodule pointer dirtiness on these clones.
+
+### Recursive submodule depth > 1
+
+`git submodule update --recursive` will descend into nested submodules, but each level needs its own resolved entries (different parent program, different rewrite rules). The current implementation only consumes a single list for the top-level parent. Inner-level submodules will fail to clone if they require rewriting.
+
+### Cross-org standard submodules
+
+A BYOG parent whose entries point at standard URLs under multiple `git.cloudmanager.adobe.com/{orgName}/` paths (i.e. submodules belonging to a different customer org than the parent).
+
+- The client emits a separate `http.{scope}.extraheader` per org, but both scopes use the same `CM_STANDARD_REPO_CREDENTIALS[programId]` Basic-auth value. If different orgs require different credentials, the second org's fetches will return 401.
+- Workaround if needed: extend `CM_STANDARD_REPO_CREDENTIALS` to a per-`{programId, orgName}` shape and have the client look up the right cred per scope.
+
+### Submodules on third-party hosts not behind the CM proxy
+
+A submodule whose `.gitmodules` URL points at a host the CM proxy cannot serve (private GitHub Enterprise, self-hosted GitLab, etc.).
+
+- Onboarding has nothing useful to put in `resolvedUrl` for these — the proxy can't reach them, and the standard host doesn't host them either.
+- Would require per-host auth injection (customer-supplied PAT scoped to the third-party host). Out of scope.
+
+### `resolvedUrl` drift between imports
+
+If a customer adds, removes, or renames submodules between imports without onboarding refreshing the entries:
+
+- New submodule → no `resolvedUrl` → fetch will fail for that entry (proxy can't serve the default name-based URL).
+- Removed submodule → its entry is dropped on re-import (importer refreshes the array against the current `.gitmodules`).
+
+Refresh `resolvedUrl`s whenever the parent's `.gitmodules` is suspected to have changed.
 
 ## Testing
 

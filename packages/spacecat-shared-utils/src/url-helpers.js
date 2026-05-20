@@ -326,6 +326,9 @@ function toggleWWWHostname(hostname) {
   return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
 }
 
+// Per-process lifetime cache: relies on Lambda container churn for eviction.
+// Not designed for long-lived processes — entries are never actively evicted,
+// only expired on next access (positive TTL: 1 h; negative TTL: 5 min).
 const HTTPS_REACHABLE_CACHE = new Map();
 const HTTPS_REACHABLE_TTL_POSITIVE_MS = 60 * 60 * 1000; // 1 hour for reachable hosts
 // 5 min for unreachable — allow quick recovery from transient failures
@@ -343,6 +346,10 @@ const HTTPS_REACHABLE_TTL_NEGATIVE_MS = 5 * 60 * 1000;
  * @returns {Promise<boolean>} True if TLS handshake succeeds.
  */
 async function isHttpsReachable(hostname, log) {
+  if (isNonPublicHostname(hostname)) {
+    log.warn(`isHttpsReachable: ${hostname} is non-public; refusing probe`, { fn: 'isHttpsReachable', hostname });
+    return false;
+  }
   const cached = HTTPS_REACHABLE_CACHE.get(hostname);
   if (cached && Date.now() < cached.expiresAt) {
     if (!cached.result) {

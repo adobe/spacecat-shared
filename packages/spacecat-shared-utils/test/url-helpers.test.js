@@ -1110,25 +1110,44 @@ describe('URL Utility Functions', () => {
     });
 
     it('should re-probe when cached entry has expired', async () => {
+      const clock = sandbox.useFakeTimers({ now: Date.now(), toFake: ['Date'] });
       const toggledHostname = 'www.expired-cache.com';
-
-      // First call: populate cache with negative result
-      nock('https://www.expired-cache.com').head('/').replyWithError('ECONNREFUSED');
       site.getBaseURL.returns('https://expired-cache.com');
       rumApiClient.retrieveDomainkey.withArgs(toggledHostname).resolves('domain-key');
       rumApiClient.retrieveDomainkey.withArgs('expired-cache.com').resolves('domain-key');
-      await wwwUrlResolver(site, rumApiClient, log);
 
-      // Manually expire the cache entry
-      // Access internal cache via a fresh negative-TTL probe is tricky,
-      // so we use resetHttpsReachableCacheForTests to simulate expiry
-      resetHttpsReachableCacheForTests();
+      // 1) populate a negative entry (expiresAt = now + 5 min)
+      nock('https://www.expired-cache.com').head('/').replyWithError('ECONNREFUSED');
+      const first = await wwwUrlResolver(site, rumApiClient, log);
+      expect(first).to.equal('expired-cache.com'); // negative → falls through
 
-      // Second call: cache cleared, should fire a fresh HEAD that succeeds
+      // 2) advance past the 5-min negative TTL so the entry is stale-but-present;
+      //    cached is truthy AND Date.now() >= expiresAt → expiry branch fires
+      clock.tick(5 * 60 * 1000 + 1);
+
+      // 3) re-probe succeeds
       nock('https://www.expired-cache.com').head('/').reply(200);
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
       expect(result).to.equal(toggledHostname);
+      // Confirm a real re-probe fired, not a stale cached value
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith(toggledHostname);
+    });
+
+    it('should refuse to probe non-public hostnames', async () => {
+      // www.localhost toggles to localhost — isNonPublicHostname blocks the fetch
+      site.getBaseURL.returns('https://www.localhost');
+      rumApiClient.retrieveDomainkey.withArgs('localhost').resolves('domain-key');
+      rumApiClient.retrieveDomainkey.withArgs('www.localhost').rejects(new Error('no key'));
+
+      nock.disableNetConnect();
+      await wwwUrlResolver(site, rumApiClient, log);
+      nock.enableNetConnect();
+
+      expect(log.warn).to.have.been.calledWith(
+        sinon.match('is non-public; refusing probe'),
+        sinon.match.has('fn', 'isHttpsReachable'),
+      );
     });
   });
 

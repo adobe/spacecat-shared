@@ -499,8 +499,9 @@ describe('facsWrapper', () => {
     });
   });
 
-  describe('Phase 2 state-layer check (stateLayerReader hook)', () => {
+  describe('Phase 2 state-layer check (direct postgrestClient)', () => {
     let ldClient;
+    let findFacsAccessMappingStub;
     let mockedWrapper;
     const phase2Config = {
       ...routeFacsCapabilities,
@@ -517,49 +518,50 @@ describe('facsWrapper', () => {
         LLMO: { brand: ['brandId'] },
       },
     };
+    const dummyPostgrest = { from: () => {} }; // not called, just present.
 
     beforeEach(async () => {
       ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
+      findFacsAccessMappingStub = sinon.stub();
       const mod = await esmock('../../src/auth/facs-wrapper.js', {
         '@adobe/spacecat-shared-launchdarkly-client': {
           LaunchDarklyClient: { createFrom: sinon.stub().returns(ldClient) },
         },
+        '../../src/auth/facs-state-layer.js': {
+          findFacsAccessMapping: findFacsAccessMappingStub,
+        },
       });
       mockedWrapper = mod.facsWrapper;
+      context.dataAccess = { services: { postgrestClient: dummyPostgrest } };
     });
 
     it('does not call the state-layer reader when route has no resolvable resource', async () => {
-      const stateLayerReader = sinon.stub().resolves({ id: 'm1' });
+      findFacsAccessMappingStub.resolves({ id: 'm1' });
       context.pathInfo = {
         method: 'GET',
         suffix: '/insights',
         headers: { 'x-product': 'llmo' },
       };
-      const wrapped = mockedWrapper(handler, {
-        routeFacsCapabilities: phase2Config,
-        stateLayerReader,
-      });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
-      expect(stateLayerReader.called).to.be.false;
+      expect(findFacsAccessMappingStub.called).to.be.false;
     });
 
-    it('allows when the state-layer reader finds a user-scoped mapping', async () => {
-      const stateLayerReader = sinon.stub().resolves({ id: 'm1' });
+    it('allows when a user-scoped mapping is found', async () => {
+      findFacsAccessMappingStub.resolves({ id: 'm1' });
       context.pathInfo = {
         method: 'GET',
         suffix: '/brands/abc-123',
         headers: { 'x-product': 'llmo' },
         params: { brandId: 'abc-123' },
       };
-      const wrapped = mockedWrapper(handler, {
-        routeFacsCapabilities: phase2Config,
-        stateLayerReader,
-      });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });
-      expect(stateLayerReader.calledOnce).to.be.true;
-      const keys = stateLayerReader.firstCall.args[1];
+      expect(findFacsAccessMappingStub.calledOnce).to.be.true;
+      const [pg, keys] = findFacsAccessMappingStub.firstCall.args;
+      expect(pg).to.equal(dummyPostgrest);
       expect(keys.subjectType).to.equal('user');
       expect(keys.resourceType).to.equal('brand');
       expect(keys.resourceId).to.equal('abc-123');
@@ -567,37 +569,30 @@ describe('facsWrapper', () => {
     });
 
     it('falls back to org-scoped mapping when user-scoped is missing', async () => {
-      const stateLayerReader = sinon.stub();
-      stateLayerReader.onCall(0).resolves(null);
-      stateLayerReader.onCall(1).resolves({ id: 'm2' });
+      findFacsAccessMappingStub.onCall(0).resolves(null);
+      findFacsAccessMappingStub.onCall(1).resolves({ id: 'm2' });
       context.pathInfo = {
         method: 'GET',
         suffix: '/brands/abc-123',
         headers: { 'x-product': 'llmo' },
         params: { brandId: 'abc-123' },
       };
-      const wrapped = mockedWrapper(handler, {
-        routeFacsCapabilities: phase2Config,
-        stateLayerReader,
-      });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
-      expect(stateLayerReader.calledTwice).to.be.true;
-      expect(stateLayerReader.secondCall.args[1].subjectType).to.equal('org');
+      expect(findFacsAccessMappingStub.calledTwice).to.be.true;
+      expect(findFacsAccessMappingStub.secondCall.args[1].subjectType).to.equal('org');
     });
 
     it('denies with 403 when neither user-scoped nor org-scoped mapping exists', async () => {
-      const stateLayerReader = sinon.stub().resolves(null);
+      findFacsAccessMappingStub.resolves(null);
       context.pathInfo = {
         method: 'GET',
         suffix: '/brands/abc-123',
         headers: { 'x-product': 'llmo' },
         params: { brandId: 'abc-123' },
       };
-      const wrapped = mockedWrapper(handler, {
-        routeFacsCapabilities: phase2Config,
-        stateLayerReader,
-      });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       const result = await wrapped({}, context);
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
@@ -607,18 +602,15 @@ describe('facsWrapper', () => {
       )).to.be.true;
     });
 
-    it('fails closed (403) when the state-layer reader throws', async () => {
-      const stateLayerReader = sinon.stub().rejects(new Error('postgrest down'));
+    it('fails closed (403) when the state-layer read throws', async () => {
+      findFacsAccessMappingStub.rejects(new Error('postgrest down'));
       context.pathInfo = {
         method: 'GET',
         suffix: '/brands/abc-123',
         headers: { 'x-product': 'llmo' },
         params: { brandId: 'abc-123' },
       };
-      const wrapped = mockedWrapper(handler, {
-        routeFacsCapabilities: phase2Config,
-        stateLayerReader,
-      });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       const result = await wrapped({}, context);
       expect(result.status).to.equal(403);
       expect(handler.called).to.be.false;
@@ -629,7 +621,7 @@ describe('facsWrapper', () => {
     });
 
     it('resolves resource from body when route has no ReBAC URL params', async () => {
-      const stateLayerReader = sinon.stub().resolves({ id: 'm3' });
+      findFacsAccessMappingStub.resolves({ id: 'm3' });
       context.pathInfo = {
         method: 'POST',
         suffix: '/brands',
@@ -637,32 +629,15 @@ describe('facsWrapper', () => {
         params: {},
       };
       context.data = { brandId: 'b-from-body' };
-      const wrapped = mockedWrapper(handler, {
-        routeFacsCapabilities: phase2Config,
-        stateLayerReader,
-      });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       await wrapped({}, context);
-      const keys = stateLayerReader.firstCall.args[1];
+      const keys = findFacsAccessMappingStub.firstCall.args[1];
       expect(keys.resourceType).to.equal('brand');
       expect(keys.resourceId).to.equal('b-from-body');
     });
 
-    it('skips state-layer check entirely when stateLayerReader is not provided', async () => {
-      context.pathInfo = {
-        method: 'GET',
-        suffix: '/brands/abc-123',
-        headers: { 'x-product': 'llmo' },
-        params: { brandId: 'abc-123' },
-      };
-      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
-      const result = await wrapped({}, context);
-      // Phase 1 only: hasFacsPermission grants in the default mock authInfo → 200.
-      expect(result).to.deep.equal({ status: 200 });
-    });
-
     it('skips user-scoped lookup when no user identifier is resolvable; checks only org-scoped', async () => {
-      const stateLayerReader = sinon.stub().resolves({ id: 'm4' });
-      // authInfo with no sub/email/userId field → resolveUserIdent returns undefined.
+      findFacsAccessMappingStub.resolves({ id: 'm4' });
       context.attributes.authInfo = makeAuthInfo({
         getProfile: () => ({}),
         getTenantIds: () => ['CUST-ORG-123'],
@@ -673,14 +648,28 @@ describe('facsWrapper', () => {
         headers: { 'x-product': 'llmo' },
         params: { brandId: 'abc-123' },
       };
-      const wrapped = mockedWrapper(handler, {
-        routeFacsCapabilities: phase2Config,
-        stateLayerReader,
-      });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       await wrapped({}, context);
-      // Only one call — the user-scoped branch is skipped entirely.
-      expect(stateLayerReader.calledOnce).to.be.true;
-      expect(stateLayerReader.firstCall.args[1].subjectType).to.equal('org');
+      expect(findFacsAccessMappingStub.calledOnce).to.be.true;
+      expect(findFacsAccessMappingStub.firstCall.args[1].subjectType).to.equal('org');
+    });
+
+    it('skips the state-layer check when postgrestClient is not on context', async () => {
+      delete context.dataAccess;
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(findFacsAccessMappingStub.called).to.be.false;
+      expect(logStub.debug.calledWithMatch(
+        { tag: 'facs' },
+        'postgrestClient not on context — skipping state-layer check',
+      )).to.be.true;
     });
 
     it('throws at wrapper construction if an alias is declared under multiple resources for a product', () => {

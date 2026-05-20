@@ -16,6 +16,7 @@ import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 import { FF_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
 import { findMatchedRouteKey, resolveRouteCapability } from './route-utils.js';
 import { buildAliasLookupsPerProduct, resolveFacsResource } from './facs-resource-resolver.js';
+import { findFacsAccessMapping } from './facs-state-layer.js';
 
 // Permanent bypass: Adobe internal IMS org IDs are never subject to FACS enforcement.
 // Sourced from env var FACS_EXCEPTION_INTERNAL_ORGS (comma-separated). Keep in sync
@@ -101,38 +102,30 @@ function forbidden(message) {
  * default; this is what gates external customers off admin/S2S/infrastructure
  * routes). Caller missing the required FACS permission → 403.
  *
- * ## Phase 2 hook
+ * ## Phase 2 state-layer (ReBAC) check
  *
- * When the caller passes `stateLayerReader`, the wrapper additionally resolves
- * the request's ReBAC resource (via `resolveFacsResource`) and asks the reader
- * for a (user-scoped OR org-scoped) access mapping. Missing mapping → 403.
- * Routes without a resolvable resource (listing endpoints, queries) skip the
- * state-layer check entirely.
+ * After the JWT claim check passes, the wrapper resolves the request's
+ * ReBAC resource (via `resolveFacsResource`) and looks up `facs_access_mappings`
+ * via PostgREST for a user-scoped OR org-scoped grant. Missing mapping → 403.
+ * Routes without a resolvable resource (listing endpoints, queries, the
+ * management endpoints themselves) skip the state-layer check entirely.
  *
- * `stateLayerReader` is a callback so this package stays DB/PostgREST-agnostic:
- * api-service owns the PostgREST helper (`findFacsAccessMapping`) and wires it
- * up. When `stateLayerReader` is not supplied, the wrapper behaves exactly as
- * in Phase 1 — only the JWT claim check runs.
+ * The wrapper reads `postgrestClient` from `context.dataAccess.services` —
+ * the same contract every other SpaceCat consumer of the data-access wrapper
+ * uses. When the postgrest client is absent (no `dataAccess` wrapper upstream
+ * in the chain), the state-layer step is skipped. Phase 2 only fires when
+ * `PRODUCTS_FACS_RESOURCE_PARAM_ALIASES` declares a ReBAC scope for the
+ * request's product AND postgrestClient is available.
  *
  * @param {Function} fn - The handler to wrap.
- * @param {{
- *   routeFacsCapabilities: {
- *     INTERNAL_ROUTES?: string[],
- *     PRODUCTS_ROUTES: Object<string, Object<string, string>>,
- *     PRODUCTS_FACS_RESOURCE_PARAM_ALIASES?: Object<string, Object<string, string[]>>,
- *   },
- *   stateLayerReader?: (context: Object, keys: {
- *     subjectType: 'user' | 'org',
- *     subjectId: string,
- *     facsPermission: string,
- *     resourceType: string,
- *     resourceId: string,
- *     imsOrgId: string,
- *   }) => Promise<Object|null>,
- * }} opts
+ * @param {{ routeFacsCapabilities: {
+ *   INTERNAL_ROUTES?: string[],
+ *   PRODUCTS_ROUTES: Object<string, Object<string, string>>,
+ *   PRODUCTS_FACS_RESOURCE_PARAM_ALIASES?: Object<string, Object<string, string[]>>,
+ * }}} opts
  * @returns {Function} A wrapped handler.
  */
-export function facsWrapper(fn, { routeFacsCapabilities, stateLayerReader } = {}) {
+export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
   if (!routeFacsCapabilities || typeof routeFacsCapabilities !== 'object') {
     throw new Error('facsWrapper: routeFacsCapabilities is required');
   }
@@ -248,73 +241,79 @@ export function facsWrapper(fn, { routeFacsCapabilities, stateLayerReader } = {}
 
     // Phase 2: state-layer (ReBAC) check.
     //
-    // When the caller wired up a `stateLayerReader`, resolve the request's
-    // resource and require a matching mapping (user-scoped OR org-scoped).
-    // Routes without a resolvable resource (listings, global queries, the
-    // /facs/access-mappings management endpoints themselves) skip this step —
-    // Phase 1 was sufficient.
-    if (stateLayerReader) {
-      const routePattern = findMatchedRouteKey(context, productMap);
-      const resource = resolveFacsResource({
-        productCode: productCode.toUpperCase(),
-        routePattern,
-        params: context.pathInfo?.params,
-        body: context.data,
-        aliasLookupsPerProduct,
-      });
-      if (resource) {
-        const subjectUserId = resolveUserIdent(authInfo);
-        // Try user-scoped grant first, then fall back to an org-wide grant.
-        // Either is sufficient — they are deliberately stored in the same
-        // table so the read path treats them symmetrically.
-        let mapping = null;
-        try {
-          mapping = subjectUserId
-            ? await stateLayerReader(context, {
-              subjectType: 'user',
-              subjectId: subjectUserId,
-              facsPermission: requiredPermission,
-              resourceType: resource.resourceType,
-              resourceId: resource.resourceId,
-              imsOrgId: orgId,
-            })
-            : null;
-          if (!mapping && orgId) {
-            mapping = await stateLayerReader(context, {
-              subjectType: 'org',
-              subjectId: orgId,
-              facsPermission: requiredPermission,
-              resourceType: resource.resourceType,
-              resourceId: resource.resourceId,
-              imsOrgId: orgId,
-            });
-          }
-        } catch (e) {
-          // Fail closed — if the state-layer read errors, deny rather than
-          // silently letting the request through. Surface the error so an
-          // operator can diagnose; do not leak the message to the client.
-          log.error({
-            tag: 'facs',
-            permission: requiredPermission,
+    // Resolve the request's resource and require a matching mapping
+    // (user-scoped OR org-scoped). Routes without a resolvable resource
+    // (listings, global queries, the /facs/access-mappings management
+    // endpoints themselves) skip this step — Phase 1 was sufficient.
+    const routePattern = findMatchedRouteKey(context, productMap);
+    const resource = resolveFacsResource({
+      productCode: productCode.toUpperCase(),
+      routePattern,
+      params: context.pathInfo?.params,
+      body: context.data,
+      aliasLookupsPerProduct,
+    });
+    if (resource) {
+      const postgrestClient = context.dataAccess?.services?.postgrestClient;
+      if (!postgrestClient) {
+        // No data-access wrapper in the chain → cannot read state layer.
+        // Skip silently so non-postgrest deployments aren't affected; the
+        // dataAccessWrapper is required upstream of facsWrapper for any
+        // service that wants Phase 2 enforcement.
+        log.debug({ tag: 'facs' }, 'postgrestClient not on context — skipping state-layer check');
+        return fn(request, context);
+      }
+
+      const subjectUserId = resolveUserIdent(authInfo);
+      // Try user-scoped grant first, fall back to org-scoped. Either is
+      // sufficient — they're stored in the same table and read symmetrically.
+      let mapping = null;
+      try {
+        mapping = subjectUserId
+          ? await findFacsAccessMapping(postgrestClient, {
+            subjectType: 'user',
+            subjectId: subjectUserId,
+            facsPermission: requiredPermission,
             resourceType: resource.resourceType,
             resourceId: resource.resourceId,
-            user: subjectUserId,
-            err: e.message,
-          }, 'FACS state-layer read failed — denying');
-          return forbidden('Forbidden');
-        }
-        if (!mapping) {
-          log.warn({
-            tag: 'facs',
-            permission: requiredPermission,
+            imsOrgId: orgId,
+          })
+          : null;
+        if (!mapping && orgId) {
+          mapping = await findFacsAccessMapping(postgrestClient, {
+            subjectType: 'org',
+            subjectId: orgId,
+            facsPermission: requiredPermission,
             resourceType: resource.resourceType,
             resourceId: resource.resourceId,
-            via: resource.source,
-            user: subjectUserId,
-            org: orgId,
-          }, 'FACS state-layer mapping not found — denying');
-          return forbidden('Forbidden');
+            imsOrgId: orgId,
+          });
         }
+      } catch (e) {
+        // Fail closed — if the state-layer read errors, deny rather than
+        // silently letting the request through. Surface the error so an
+        // operator can diagnose; do not leak the message to the client.
+        log.error({
+          tag: 'facs',
+          permission: requiredPermission,
+          resourceType: resource.resourceType,
+          resourceId: resource.resourceId,
+          user: subjectUserId,
+          err: e.message,
+        }, 'FACS state-layer read failed — denying');
+        return forbidden('Forbidden');
+      }
+      if (!mapping) {
+        log.warn({
+          tag: 'facs',
+          permission: requiredPermission,
+          resourceType: resource.resourceType,
+          resourceId: resource.resourceId,
+          via: resource.source,
+          user: subjectUserId,
+          org: orgId,
+        }, 'FACS state-layer mapping not found — denying');
+        return forbidden('Forbidden');
       }
     }
 

@@ -1,6 +1,6 @@
 name: Build
 
-# IMPORTANT: npm Trusted Publisher bindings for the 22 published @adobe/* packages point
+# IMPORTANT: npm Trusted Publisher bindings for the 21 published @adobe/* packages point
 # to this file (adobe/spacecat-shared / .github/workflows/main.yaml). Renaming or moving
 # this file breaks OIDC publishing — re-run scripts/setup-npm-trusted-publishers.sh after.
 # Renaming the 'npm-publish' GitHub Environment referenced below has the same silent-break
@@ -193,11 +193,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
 
       - name: Surface failure pointer to release runbook
-        # On failure OR cancellation in the release job, write a pointer to the
-        # runbook into $GITHUB_STEP_SUMMARY so the on-call sees the recovery
-        # procedures in the PR check UI rather than having to remember where
-        # the runbook lives. cancelled() covers the FM-6 env-approval stall
-        # recovery path where the operator cancels a waiting run.
+        # On failure OR in-progress cancellation, write a pointer to the runbook
+        # into $GITHUB_STEP_SUMMARY so the on-call sees the recovery procedures
+        # in the PR check UI rather than having to remember where the runbook
+        # lives. cancelled() covers a mid-flight cancel (e.g. operator cancels
+        # during `npm publish`) — it does NOT fire for an FM-6 env-approval
+        # stall, since a job cancelled while still "Waiting for approval" never
+        # runs any step. The runbook itself does not depend on this pointer for
+        # FM-6 recovery.
         if: failure() || cancelled()
         shell: bash
         env:

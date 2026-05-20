@@ -3,8 +3,8 @@
 On-call procedures for the npm OIDC-based publish path
 (`.github/workflows/main.yaml` release job).
 
-The release job publishes the 22 published `@adobe/*` packages (the 24
-`.releaserc.cjs` files in this monorepo split into: 1 root config + 22
+The release job publishes the 21 published `@adobe/*` packages (the 23
+`.releaserc.cjs` files in this monorepo split into: 1 root config + 21
 publishable packages + 1 `spacecat-shared-example` template marked
 `private: true`) to npmjs.com via the `npm-publish` GitHub Environment
 with sigstore provenance. Trust binding recorded on npmjs.com:
@@ -84,7 +84,7 @@ Request expedited review from `@spacecat-admins`. Once merged (one approver
 `NPM_TOKEN`.
 
 **Conflict during revert?** If a subsequent commit has touched the same files
-(`.github/workflows/main.yaml`, the 24 `.releaserc.cjs` files, or
+(`.github/workflows/main.yaml`, the 23 `.releaserc.cjs` files, or
 `scripts/setup-npm-trusted-publishers.sh`), `git revert` will report a
 conflict. Resolve in favor of the pre-PR state of the conflicting file
 (`git show <PR-merge-sha>^:<path>`), then continue the revert. The revert PR
@@ -108,7 +108,7 @@ git push origin main
 ```
 
 **Do NOT partially re-apply the OIDC migration.** The PR is internally
-coupled: workflow declarations + 24 `.releaserc.cjs` guards + setup script
+coupled: workflow declarations + 23 `.releaserc.cjs` guards + setup script
 + npm-side trust bindings must move together. Re-applying e.g.
 `environment: npm-publish` to the workflow without restoring `NPM_TOKEN`
 removal and the SR_NO_NPM_AUTH guards leaves an intermediate state where
@@ -165,7 +165,7 @@ the gain from immediate publish outweighs the temporary loss of attestation.
 
 Symptoms:
 
-- Release job killed after 15 min — some of the 22 packages on npmjs.com at
+- Release job killed after 15 min — some of the 21 packages on npmjs.com at
   version `X+1`, others still at `X`.
 - Git tag may or may not have been pushed depending on whether
   semantic-release reached the `@semantic-release/git` plugin step.
@@ -300,7 +300,7 @@ not run yet.
 
 Trust bindings on npmjs.com reference `{repo, workflow filename, environment}`.
 Renaming `.github/workflows/main.yaml` or the `npm-publish` GitHub Environment
-silently invalidates all 22 bindings — the first release after the rename
+silently invalidates all 21 bindings — the first release after the rename
 fails with `OIDC trust binding mismatch`.
 
 Recovery:
@@ -334,7 +334,7 @@ Recovery:
    npm trust revoke @adobe/spacecat-shared-utils --id <trust-id-from-list>
    ```
 
-   Repeat for all 22 packages.
+   Repeat for all 21 packages.
 
 The workflow header comment and the setup-script preflight both warn about
 this hazard, but a renamer six months from now may not read either — keep
@@ -421,7 +421,7 @@ validates atomicity of step 3):
 3. In a single PR: remove the `SR_NO_NPM_AUTH: 'true'` env var from
    `.github/workflows/main.yaml` AND remove the strict guard
    (`...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : ["@semantic-release/npm"]),`)
-   from all 24 `.releaserc.cjs` files. The CI step
+   from all 23 `.releaserc.cjs` files. The CI step
    `Verify SR_NO_NPM_AUTH guard consistency` auto-detects this transition
    and validates that the cleanup is complete (it would fail if env var is
    removed while some configs still reference `SR_NO_NPM_AUTH`).

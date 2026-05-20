@@ -1,7 +1,7 @@
 # Extract OIDC Trusted Publisher setup tooling before propagating to sibling repos
 
 Status: proposed (PR #1592 follow-up)
-Tracking issue: TBD (to be filed under adobe/spacecat-shared issues)
+Tracking issue: to be filed in the follow-up PR; SITES-42702 is the proxy until then.
 Driver: solaris007 round-3 review of PR #1592
 
 ## Context
@@ -39,6 +39,17 @@ From `adobe/spacecat-shared` post-PR-#1592:
 
 3. **`docs/RELEASE-RUNBOOK.md`** (templatable: 5 failure-mode procedures,
    detection section, rotation sequence)
+
+4. **Skip-ci guard expression on the release job's `if:` predicate** —
+   the belt-and-suspenders form
+   `!(startsWith(github.event.head_commit.message, 'chore(release)') && contains(github.event.head_commit.message, '[skip ci]'))`
+   is load-bearing: it is the safety net against the release-loop regression
+   that trapped commit `395f4921` on PR #1592 (a substring-only guard misfired
+   on a commit body that quoted the convention). Each sibling repo
+   copy-pasting the same expression is its own drift surface — extract it
+   alongside the workflow tripwire so all repos move in lockstep when the
+   shape changes (e.g. if semantic-release ever varies its `chore(release):`
+   subject prefix).
 
 ## Two viable shapes — recommendation: Option A
 
@@ -78,6 +89,15 @@ exec npx @adobe/oidc-trusted-publishers-setup@latest \
 
 The CI tripwire becomes a composite action under
 `adobe/oidc-trusted-publishers-setup/.github/actions/verify-sr-no-npm-auth-guard@v1`.
+
+**Bootstrap caveat**: `@adobe/oidc-trusted-publishers-setup` is itself an npm
+package, so the tool that registers OIDC trust bindings cannot use OIDC for
+its own first publish — it needs the same one-time interactive bootstrap
+that this PR's setup-script preamble documents for new packages (a
+developer-machine `npm publish` from an account logged in as `adobe-bot`).
+Subsequent versions publish via OIDC once the binding is registered. Not a
+blocker for choosing Option A, but the rollout plan needs to account for
+one manual ceremony before the tool can self-host.
 
 ### Option B — aem-sites-architecture skill (alternative)
 

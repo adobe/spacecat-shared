@@ -453,7 +453,7 @@ describe('BrandGovernanceClient', () => {
         validSiteBaseUrl,
         validImsOrgId,
         { clientId: 'id', clientCode: 'code', clientSecret: 'secret' },
-      )).to.be.rejectedWith('Invalid IMS Config');
+      )).to.be.rejectedWith('Invalid IMS Config: missing fields [host]');
     });
 
     it('throws error when IMS config clientId is missing', async () => {
@@ -462,7 +462,7 @@ describe('BrandGovernanceClient', () => {
         validSiteBaseUrl,
         validImsOrgId,
         { host: 'https://ims-gov-host', clientCode: 'code', clientSecret: 'secret' },
-      )).to.be.rejectedWith('Invalid IMS Config');
+      )).to.be.rejectedWith('Invalid IMS Config: missing fields [clientId]');
     });
 
     it('throws error when IMS config clientCode is missing', async () => {
@@ -471,7 +471,7 @@ describe('BrandGovernanceClient', () => {
         validSiteBaseUrl,
         validImsOrgId,
         { host: 'https://ims-gov-host', clientId: 'id', clientSecret: 'secret' },
-      )).to.be.rejectedWith('Invalid IMS Config');
+      )).to.be.rejectedWith('Invalid IMS Config: missing fields [clientCode]');
     });
 
     it('throws error when IMS config clientSecret is missing', async () => {
@@ -480,7 +480,7 @@ describe('BrandGovernanceClient', () => {
         validSiteBaseUrl,
         validImsOrgId,
         { host: 'https://ims-gov-host', clientId: 'id', clientCode: 'code' },
-      )).to.be.rejectedWith('Invalid IMS Config');
+      )).to.be.rejectedWith('Invalid IMS Config: missing fields [clientSecret]');
     });
 
     it('throws error when IMS token response is empty', async () => {

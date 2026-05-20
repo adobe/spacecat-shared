@@ -98,11 +98,10 @@ export class BrandGovernanceClient {
     if (!isValidIMSOrgId(imsOrgId)) {
       throw this.#createError(`Invalid IMS Org ID: ${imsOrgId}`, HTTP_BAD_REQUEST);
     }
-    const {
-      host, clientId, clientCode, clientSecret,
-    } = imsConfig;
-    if (!hasText(host) || !hasText(clientId) || !hasText(clientCode) || !hasText(clientSecret)) {
-      throw this.#createError(`Invalid IMS Config: ${JSON.stringify(imsConfig)}`, HTTP_BAD_REQUEST);
+    const missingFields = ['host', 'clientId', 'clientCode', 'clientSecret']
+      .filter((k) => !hasText(imsConfig[k]));
+    if (missingFields.length > 0) {
+      throw this.#createError(`Invalid IMS Config: missing fields [${missingFields.join(', ')}]`, HTTP_BAD_REQUEST);
     }
 
     const imsAccessToken = await this.#getImsAccessToken(imsConfig);

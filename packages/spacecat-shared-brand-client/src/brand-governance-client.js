@@ -75,7 +75,11 @@ export class BrandGovernanceClient {
     };
     const imsClient = ImsClient.createFrom(imsContext);
     const response = await imsClient.getServiceAccessToken();
-    return response?.access_token;
+    const token = response?.access_token;
+    if (!hasText(token)) {
+      throw this.#createError('Failed to obtain IMS access token', HTTP_BAD_REQUEST);
+    }
+    return token;
   }
 
   /**

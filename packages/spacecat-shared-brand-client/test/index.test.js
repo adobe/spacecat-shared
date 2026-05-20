@@ -483,6 +483,17 @@ describe('BrandGovernanceClient', () => {
       )).to.be.rejectedWith('Invalid IMS Config');
     });
 
+    it('throws error when IMS token response is empty', async () => {
+      const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
+
+      nock('https://ims-gov-host')
+        .post('/ims/token/v4')
+        .reply(200, {});
+
+      await expect(client.getBrandGuidelinesForUrl(validSiteBaseUrl, validImsOrgId, validGovImsConfig))
+        .to.be.rejectedWith('Failed to obtain IMS access token');
+    });
+
     it('throws error when brand URL lookup returns non-404 error', async () => {
       const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
 

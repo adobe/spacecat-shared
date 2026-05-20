@@ -504,11 +504,12 @@ describe('BrandGovernanceClient', () => {
         .to.be.rejectedWith(`Error fetching brand checks for brand ${mockBrand.id}: 503`);
     });
 
-    it('reuses cached IMS access token on subsequent calls', async () => {
+    it('fetches a fresh IMS token on every call to avoid stale token errors on warm Lambdas', async () => {
       const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
 
-      const imsMock = nock('https://ims-gov-host')
+      nock('https://ims-gov-host')
         .post('/ims/token/v4')
+        .twice()
         .reply(200, { access_token: 'gov-service-token' });
 
       nock(validGovApiBaseUrl)
@@ -526,7 +527,7 @@ describe('BrandGovernanceClient', () => {
       await client.getBrandGuidelinesForUrl(validSiteBaseUrl, validImsOrgId, validGovImsConfig);
       await client.getBrandGuidelinesForUrl(validSiteBaseUrl, validImsOrgId, validGovImsConfig);
 
-      expect(imsMock.isDone()).to.equal(true);
+      expect(nock.isDone()).to.equal(true);
     });
   });
 });

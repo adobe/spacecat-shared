@@ -52,7 +52,6 @@ export class BrandGovernanceClient {
     }
     this.apiBaseUrl = apiBaseUrl;
     this.apiKey = apiKey;
-    this.serviceAccessToken = null;
   }
 
   #createError(message, status) {
@@ -62,9 +61,6 @@ export class BrandGovernanceClient {
   }
 
   async #getImsAccessToken(imsConfig) {
-    if (this.serviceAccessToken) {
-      return this.serviceAccessToken;
-    }
     const {
       host, clientId, clientCode, clientSecret,
     } = imsConfig;
@@ -79,8 +75,7 @@ export class BrandGovernanceClient {
     };
     const imsClient = ImsClient.createFrom(imsContext);
     const response = await imsClient.getServiceAccessToken();
-    this.serviceAccessToken = response?.access_token;
-    return this.serviceAccessToken;
+    return response?.access_token;
   }
 
   /**

@@ -14,7 +14,8 @@ import { Response } from '@adobe/fetch';
 import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 
 import { FF_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
-import { resolveRouteCapability } from './route-utils.js';
+import { findMatchedRouteKey, resolveRouteCapability } from './route-utils.js';
+import { buildAliasLookupsPerProduct, resolveFacsResource } from './facs-resource-resolver.js';
 
 // Permanent bypass: Adobe internal IMS org IDs are never subject to FACS enforcement.
 // Sourced from env var FACS_EXCEPTION_INTERNAL_ORGS (comma-separated). Keep in sync
@@ -100,14 +101,38 @@ function forbidden(message) {
  * default; this is what gates external customers off admin/S2S/infrastructure
  * routes). Caller missing the required FACS permission → 403.
  *
+ * ## Phase 2 hook
+ *
+ * When the caller passes `stateLayerReader`, the wrapper additionally resolves
+ * the request's ReBAC resource (via `resolveFacsResource`) and asks the reader
+ * for a (user-scoped OR org-scoped) access mapping. Missing mapping → 403.
+ * Routes without a resolvable resource (listing endpoints, queries) skip the
+ * state-layer check entirely.
+ *
+ * `stateLayerReader` is a callback so this package stays DB/PostgREST-agnostic:
+ * api-service owns the PostgREST helper (`findFacsAccessMapping`) and wires it
+ * up. When `stateLayerReader` is not supplied, the wrapper behaves exactly as
+ * in Phase 1 — only the JWT claim check runs.
+ *
  * @param {Function} fn - The handler to wrap.
- * @param {{ routeFacsCapabilities: {
- *   INTERNAL_ROUTES?: string[],
- *   PRODUCTS_ROUTES: Object<string, Object<string, string>>,
- * }}} opts - Required FACS capabilities config.
+ * @param {{
+ *   routeFacsCapabilities: {
+ *     INTERNAL_ROUTES?: string[],
+ *     PRODUCTS_ROUTES: Object<string, Object<string, string>>,
+ *     PRODUCTS_FACS_RESOURCE_PARAM_ALIASES?: Object<string, Object<string, string[]>>,
+ *   },
+ *   stateLayerReader?: (context: Object, keys: {
+ *     subjectType: 'user' | 'org',
+ *     subjectId: string,
+ *     facsPermission: string,
+ *     resourceType: string,
+ *     resourceId: string,
+ *     imsOrgId: string,
+ *   }) => Promise<Object|null>,
+ * }} opts
  * @returns {Function} A wrapped handler.
  */
-export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
+export function facsWrapper(fn, { routeFacsCapabilities, stateLayerReader } = {}) {
   if (!routeFacsCapabilities || typeof routeFacsCapabilities !== 'object') {
     throw new Error('facsWrapper: routeFacsCapabilities is required');
   }
@@ -117,6 +142,11 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
   }
 
   const productsRoutes = routeFacsCapabilities.PRODUCTS_ROUTES;
+  // Built once. Throws if a product declares the same alias under two
+  // different resources — surfaces config typos at startup, not at request time.
+  const aliasLookupsPerProduct = buildAliasLookupsPerProduct(
+    routeFacsCapabilities.PRODUCTS_FACS_RESOURCE_PARAM_ALIASES,
+  );
 
   return async (request, context) => {
     const { log } = context;
@@ -214,6 +244,78 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
         user: resolveUserIdent(authInfo),
       }, 'FACS permission denied');
       return forbidden('Forbidden');
+    }
+
+    // Phase 2: state-layer (ReBAC) check.
+    //
+    // When the caller wired up a `stateLayerReader`, resolve the request's
+    // resource and require a matching mapping (user-scoped OR org-scoped).
+    // Routes without a resolvable resource (listings, global queries, the
+    // /facs/access-mappings management endpoints themselves) skip this step —
+    // Phase 1 was sufficient.
+    if (stateLayerReader) {
+      const routePattern = findMatchedRouteKey(context, productMap);
+      const resource = resolveFacsResource({
+        productCode: productCode.toUpperCase(),
+        routePattern,
+        params: context.pathInfo?.params,
+        body: context.data,
+        aliasLookupsPerProduct,
+      });
+      if (resource) {
+        const subjectUserId = resolveUserIdent(authInfo);
+        // Try user-scoped grant first, then fall back to an org-wide grant.
+        // Either is sufficient — they are deliberately stored in the same
+        // table so the read path treats them symmetrically.
+        let mapping = null;
+        try {
+          mapping = subjectUserId
+            ? await stateLayerReader(context, {
+              subjectType: 'user',
+              subjectId: subjectUserId,
+              facsPermission: requiredPermission,
+              resourceType: resource.resourceType,
+              resourceId: resource.resourceId,
+              imsOrgId: orgId,
+            })
+            : null;
+          if (!mapping && orgId) {
+            mapping = await stateLayerReader(context, {
+              subjectType: 'org',
+              subjectId: orgId,
+              facsPermission: requiredPermission,
+              resourceType: resource.resourceType,
+              resourceId: resource.resourceId,
+              imsOrgId: orgId,
+            });
+          }
+        } catch (e) {
+          // Fail closed — if the state-layer read errors, deny rather than
+          // silently letting the request through. Surface the error so an
+          // operator can diagnose; do not leak the message to the client.
+          log.error({
+            tag: 'facs',
+            permission: requiredPermission,
+            resourceType: resource.resourceType,
+            resourceId: resource.resourceId,
+            user: subjectUserId,
+            err: e.message,
+          }, 'FACS state-layer read failed — denying');
+          return forbidden('Forbidden');
+        }
+        if (!mapping) {
+          log.warn({
+            tag: 'facs',
+            permission: requiredPermission,
+            resourceType: resource.resourceType,
+            resourceId: resource.resourceId,
+            via: resource.source,
+            user: subjectUserId,
+            org: orgId,
+          }, 'FACS state-layer mapping not found — denying');
+          return forbidden('Forbidden');
+        }
+      }
     }
 
     return fn(request, context);

@@ -498,4 +498,200 @@ describe('facsWrapper', () => {
       expect(captured.warn.user).to.equal(undefined);
     });
   });
+
+  describe('Phase 2 state-layer check (stateLayerReader hook)', () => {
+    let ldClient;
+    let mockedWrapper;
+    const phase2Config = {
+      ...routeFacsCapabilities,
+      PRODUCTS_ROUTES: {
+        ...routeFacsCapabilities.PRODUCTS_ROUTES,
+        LLMO: {
+          ...routeFacsCapabilities.PRODUCTS_ROUTES.LLMO,
+          'GET /brands/:brandId': 'llmo/can_read',
+          'POST /brands': 'llmo/can_manage',
+          'GET /insights': 'llmo/can_read',
+        },
+      },
+      PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
+        LLMO: { brand: ['brandId'] },
+      },
+    };
+
+    beforeEach(async () => {
+      ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
+      const mod = await esmock('../../src/auth/facs-wrapper.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: { createFrom: sinon.stub().returns(ldClient) },
+        },
+      });
+      mockedWrapper = mod.facsWrapper;
+    });
+
+    it('does not call the state-layer reader when route has no resolvable resource', async () => {
+      const stateLayerReader = sinon.stub().resolves({ id: 'm1' });
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/insights',
+        headers: { 'x-product': 'llmo' },
+      };
+      const wrapped = mockedWrapper(handler, {
+        routeFacsCapabilities: phase2Config,
+        stateLayerReader,
+      });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(stateLayerReader.called).to.be.false;
+    });
+
+    it('allows when the state-layer reader finds a user-scoped mapping', async () => {
+      const stateLayerReader = sinon.stub().resolves({ id: 'm1' });
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, {
+        routeFacsCapabilities: phase2Config,
+        stateLayerReader,
+      });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(stateLayerReader.calledOnce).to.be.true;
+      const keys = stateLayerReader.firstCall.args[1];
+      expect(keys.subjectType).to.equal('user');
+      expect(keys.resourceType).to.equal('brand');
+      expect(keys.resourceId).to.equal('abc-123');
+      expect(keys.facsPermission).to.equal('llmo/can_read');
+    });
+
+    it('falls back to org-scoped mapping when user-scoped is missing', async () => {
+      const stateLayerReader = sinon.stub();
+      stateLayerReader.onCall(0).resolves(null);
+      stateLayerReader.onCall(1).resolves({ id: 'm2' });
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, {
+        routeFacsCapabilities: phase2Config,
+        stateLayerReader,
+      });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(stateLayerReader.calledTwice).to.be.true;
+      expect(stateLayerReader.secondCall.args[1].subjectType).to.equal('org');
+    });
+
+    it('denies with 403 when neither user-scoped nor org-scoped mapping exists', async () => {
+      const stateLayerReader = sinon.stub().resolves(null);
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, {
+        routeFacsCapabilities: phase2Config,
+        stateLayerReader,
+      });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.warn.calledWithMatch(
+        { tag: 'facs' },
+        'FACS state-layer mapping not found — denying',
+      )).to.be.true;
+    });
+
+    it('fails closed (403) when the state-layer reader throws', async () => {
+      const stateLayerReader = sinon.stub().rejects(new Error('postgrest down'));
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, {
+        routeFacsCapabilities: phase2Config,
+        stateLayerReader,
+      });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.error.calledWithMatch(
+        { tag: 'facs' },
+        'FACS state-layer read failed — denying',
+      )).to.be.true;
+    });
+
+    it('resolves resource from body when route has no ReBAC URL params', async () => {
+      const stateLayerReader = sinon.stub().resolves({ id: 'm3' });
+      context.pathInfo = {
+        method: 'POST',
+        suffix: '/brands',
+        headers: { 'x-product': 'llmo' },
+        params: {},
+      };
+      context.data = { brandId: 'b-from-body' };
+      const wrapped = mockedWrapper(handler, {
+        routeFacsCapabilities: phase2Config,
+        stateLayerReader,
+      });
+      await wrapped({}, context);
+      const keys = stateLayerReader.firstCall.args[1];
+      expect(keys.resourceType).to.equal('brand');
+      expect(keys.resourceId).to.equal('b-from-body');
+    });
+
+    it('skips state-layer check entirely when stateLayerReader is not provided', async () => {
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
+      const result = await wrapped({}, context);
+      // Phase 1 only: hasFacsPermission grants in the default mock authInfo → 200.
+      expect(result).to.deep.equal({ status: 200 });
+    });
+
+    it('skips user-scoped lookup when no user identifier is resolvable; checks only org-scoped', async () => {
+      const stateLayerReader = sinon.stub().resolves({ id: 'm4' });
+      // authInfo with no sub/email/userId field → resolveUserIdent returns undefined.
+      context.attributes.authInfo = makeAuthInfo({
+        getProfile: () => ({}),
+        getTenantIds: () => ['CUST-ORG-123'],
+      });
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, {
+        routeFacsCapabilities: phase2Config,
+        stateLayerReader,
+      });
+      await wrapped({}, context);
+      // Only one call — the user-scoped branch is skipped entirely.
+      expect(stateLayerReader.calledOnce).to.be.true;
+      expect(stateLayerReader.firstCall.args[1].subjectType).to.equal('org');
+    });
+
+    it('throws at wrapper construction if an alias is declared under multiple resources for a product', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          ...routeFacsCapabilities,
+          PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
+            LLMO: { brand: ['brandId'], site: ['brandId'] },
+          },
+        },
+      })).to.throw(/declared under multiple resources for product 'LLMO'/);
+    });
+  });
 });

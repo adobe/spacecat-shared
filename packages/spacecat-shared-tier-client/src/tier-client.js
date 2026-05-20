@@ -297,6 +297,15 @@ class TierClient {
    * Gets the first enrollment and its site, filtered by productCode.
    * - If site is provided: finds matching enrollment and returns this.site directly
    * - If org-only: iterates enrollments, fetches sites one at a time, returns first org match
+   *
+   * Returns one of three shapes:
+   * - `{ entitlement, enrollment, site }` — full match found
+   * - `{ entitlement, enrollment: null, site: null }` — entitlement exists but no matching
+   *   enrollment/site found (org has paid access but no SiteEnrollment rows, or none match
+   *   this site/org). The PLG paywall in /sites-resolve depends on this non-null entitlement
+   *   to distinguish paid-but-unenrolled orgs from orgs with no entitlement at all.
+   * - `{ entitlement: null, enrollment: null, site: null }` — no entitlement found
+   *
    * @returns {Promise<object>} Object with entitlement, enrollment, and site.
    */
   async getFirstEnrollment() {

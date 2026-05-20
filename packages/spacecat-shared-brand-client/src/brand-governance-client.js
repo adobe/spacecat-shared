@@ -27,15 +27,15 @@ const API_GET_BRAND_CHECKS = (brandId) => `/api/v1/brands/${brandId}/checks?stat
  */
 export class BrandGovernanceClient {
   static createFrom(context) {
+    if (context.brandGovernanceClient) {
+      return context.brandGovernanceClient;
+    }
+
     const { env, log = console } = context;
     const {
       BRAND_GOV_API_BASE_URL: apiBaseUrl,
       BRAND_GOV_API_KEY: apiKey,
     } = env;
-
-    if (context.brandGovernanceClient) {
-      return context.brandGovernanceClient;
-    }
 
     const client = new BrandGovernanceClient({ apiBaseUrl, apiKey }, log);
     context.brandGovernanceClient = client;

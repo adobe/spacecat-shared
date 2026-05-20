@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.65.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.64.0...@adobe/spacecat-shared-data-access-v3.65.0) (2026-05-16)
+
+### Features
+
+* submodule support — reinstate clone, fix pull, add hasSubmodules flag ([#1550](https://github.com/adobe/spacecat-shared/issues/1550)) ([3329ff8](https://github.com/adobe/spacecat-shared/commit/3329ff82740c2311545bd7a1ab693eb92ecb8f5d))
+
 ## [@adobe/spacecat-shared-data-access-v3.64.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.63.0...@adobe/spacecat-shared-data-access-v3.64.0) (2026-05-15)
 
 ### Features

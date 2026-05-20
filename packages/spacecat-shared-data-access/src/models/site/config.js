@@ -407,6 +407,10 @@ export const configSchema = Joi.object({
       startTime: Joi.number().optional(),
     })).optional(),
   }).optional(),
+  rumConfig: Joi.object({
+    hasDomainKey: Joi.boolean().required(),
+    lastCheckedAt: Joi.string().isoDate().required(),
+  }).optional(),
   commerceLlmoConfig: Joi.object().pattern(
     Joi.string(),
     Joi.object({
@@ -542,6 +546,18 @@ export const Config = (data = {}) => {
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.getOnboardConfig = () => state?.onboardConfig;
   self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
+  /**
+   * Returns the RUM configuration for the site, or undefined if not set.
+   * Returns a shallow copy to prevent callers from mutating internal state.
+   * @returns {{ hasDomainKey: boolean, lastCheckedAt: string } | undefined}
+   */
+  self.getRumConfig = () => (state?.rumConfig ? { ...state.rumConfig } : undefined);
+
+  /**
+   * Returns true if RUM data collection is confirmed active for this site.
+   * @returns {boolean}
+   */
+  self.hasRumDomainKey = () => state?.rumConfig?.hasDomainKey === true;
   const AUDIT_TARGET_SOURCES = ['manual', 'moneyPages'];
   const auditTargetEntrySchema = Joi.object({
     url: Joi.string().uri().required(),
@@ -955,6 +971,22 @@ export const Config = (data = {}) => {
     state.commerceLlmoConfig = commerceLlmoConfig;
   };
 
+  /**
+   * Records the outcome of a RUM domain-key check and updates the timestamp.
+   * @param {boolean} hasDomainKey - Whether the site has an active RUM domain key.
+   * @param {Date} [now=new Date()] - Timestamp for lastCheckedAt; injectable for tests.
+   * @throws {Error} if hasDomainKey is not a boolean.
+   */
+  self.updateRumConfig = (hasDomainKey, now = new Date()) => {
+    if (typeof hasDomainKey !== 'boolean') {
+      throw new TypeError(`updateRumConfig: hasDomainKey must be a boolean, got ${typeof hasDomainKey}`);
+    }
+    state.rumConfig = {
+      hasDomainKey,
+      lastCheckedAt: now.toISOString(),
+    };
+  };
+
   return Object.freeze(self);
 };
 
@@ -974,6 +1006,7 @@ Config.toDynamoItem = (config) => ({
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
   onboardConfig: config.getOnboardConfig?.(),
   commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
+  rumConfig: config.getRumConfig?.(),
   enableMoneyPageUrls: config.isMoneyPageUrlsEnabled?.() === false ? false : undefined,
   auditTargetURLs: config.getAuditTargetURLsConfig?.(),
 });

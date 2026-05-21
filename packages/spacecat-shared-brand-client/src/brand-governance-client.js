@@ -128,9 +128,6 @@ export class BrandGovernanceClient {
       );
     }
     const brand = await brandResponse.json();
-    // Org scoping is enforced server-side by the Brand Governance Agent via the
-    // x-gw-ims-org-id request header. Unlike BrandClient, the BrandResponse schema
-    // does not include an org_id field, so client-side org verification is not possible.
     if (!hasText(brand.id)) {
       throw this.#createError(`Brand resolved for URL ${siteBaseUrl} has no id`, HTTP_NOT_FOUND);
     }

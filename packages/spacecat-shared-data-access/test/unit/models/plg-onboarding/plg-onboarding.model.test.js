@@ -95,6 +95,10 @@ describe('PlgOnboardingModel', () => {
         'example.com/en-us',
         'example.com/case_studies',
         'xn--nba-6na.com',
+        // IPv4 lookahead is anchored to slash/end-of-string; hostnames that merely
+        // begin with a dotted-quad remain valid (covers nip.io-style wildcard DNS).
+        '1.2.3.4.example.com',
+        '192.168.1.1.nip.io',
       ].forEach((value) => {
         it(`accepts "${value}"`, () => {
           expect(DOMAIN_PATTERN.test(value)).to.be.true;
@@ -153,6 +157,10 @@ describe('PlgOnboardingModel', () => {
         'example.com/en-us',
         'example.com/case_studies',
         'xn--nba-6na.com',
+        // Hostnames that start with a dotted-quad but continue with non-IP labels:
+        // the IPv4 lookahead is anchored to slash/end-of-string so these are valid.
+        '1.2.3.4.example.com',
+        '192.168.1.1.nip.io',
       ].forEach((value) => {
         it(`accepts "${value}"`, () => {
           expect(PlgOnboarding.isValidDomain(value)).to.be.true;

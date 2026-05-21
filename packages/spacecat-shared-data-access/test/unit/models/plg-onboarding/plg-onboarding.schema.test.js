@@ -44,6 +44,8 @@ describe('PlgOnboarding Schema', () => {
         'xn--nba-6na.com',
         'example.com/foo_bar',
         'example.com/us/foo_bar',
+        '1.2.3.4.example.com',
+        '192.168.1.1.nip.io',
       ].forEach((value) => {
         it(`accepts "${value}"`, () => {
           expect(domainAttr.validate(value)).to.be.true;

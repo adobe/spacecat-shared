@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.68.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.67.0...@adobe/spacecat-shared-data-access-v3.68.0) (2026-05-21)
+
+### Features
+
+* added pending decision in PLG onboarding ([#1610](https://github.com/adobe/spacecat-shared/issues/1610)) ([cf8a1c4](https://github.com/adobe/spacecat-shared/commit/cf8a1c4cc4f43e5d0c792adc69e7593162257f77))
+
 ## [@adobe/spacecat-shared-data-access-v3.67.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.66.0...@adobe/spacecat-shared-data-access-v3.67.0) (2026-05-21)
 
 ### Features

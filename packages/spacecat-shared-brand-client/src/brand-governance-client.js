@@ -50,7 +50,7 @@ export class BrandGovernanceClient {
       throw this.#createError(`Invalid Brand Governance API Base URL: ${apiBaseUrl}`, HTTP_BAD_REQUEST);
     }
     if (!hasText(apiKey)) {
-      throw this.#createError(`Invalid Brand Governance API Key: ${apiKey}`, HTTP_BAD_REQUEST);
+      throw this.#createError('Invalid Brand Governance API Key', HTTP_BAD_REQUEST);
     }
     this.apiBaseUrl = apiBaseUrl;
     this.apiKey = apiKey;

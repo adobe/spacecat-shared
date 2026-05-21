@@ -16,6 +16,7 @@ export type * from './async-job';
 export type * from './audit';
 export type * from './audit-url';
 export type * from './base';
+export type * from './brand-to-semrush-project';
 export type * from './configuration';
 export type * from './consumer';
 export type * from './entitlement';

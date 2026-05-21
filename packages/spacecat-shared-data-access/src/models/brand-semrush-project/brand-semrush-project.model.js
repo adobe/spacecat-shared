@@ -13,16 +13,16 @@
 import BaseModel from '../base/base.model.js';
 
 /**
- * BrandToSemrushProject - mapping between an Adobe brand and a Semrush AIO
+ * BrandSemrushProject - mapping between an Adobe brand and a Semrush AIO
  * project. One row per (brand, semrushLocationId, language) slice. The Semrush
  * workspace is reachable via brand -> organization.getSemrushWorkspaceId() and
  * is not duplicated on this entity.
  *
- * @class BrandToSemrushProject
+ * @class BrandSemrushProject
  * @extends BaseModel
  */
-class BrandToSemrushProject extends BaseModel {
-  static ENTITY_NAME = 'BrandToSemrushProject';
+class BrandSemrushProject extends BaseModel {
+  static ENTITY_NAME = 'BrandSemrushProject';
 }
 
-export default BrandToSemrushProject;
+export default BrandSemrushProject;

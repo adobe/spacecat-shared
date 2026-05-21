@@ -17,6 +17,10 @@ const DEFAULT_PAGE_SIZE = 1000;
 const ENTITY_TABLE_OVERRIDES = {
   LatestAudit: 'audits',
   SuggestionGrant: 'suggestion_grants',
+  // Entity renamed from BrandToSemrushProject -> BrandSemrushProject during
+  // PR review. The DB table name was kept as `brand_to_semrush_projects` to
+  // avoid a follow-up migration in mysticat-data-service.
+  BrandSemrushProject: 'brand_to_semrush_projects',
 };
 
 const camelToSnake = (value) => value.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();

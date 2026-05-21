@@ -15,16 +15,16 @@ import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import BrandToSemrushProject from '../../../../src/models/brand-to-semrush-project/brand-to-semrush-project.model.js';
-import brandToSemrushProjectFixtures from '../../../fixtures/brand-to-semrush-projects.fixture.js';
+import BrandSemrushProject from '../../../../src/models/brand-semrush-project/brand-semrush-project.model.js';
+import brandSemrushProjectFixtures from '../../../fixtures/brand-semrush-projects.fixture.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const sampleRow = brandToSemrushProjectFixtures[0];
+const sampleRow = brandSemrushProjectFixtures[0];
 
-describe('BrandToSemrushProjectModel', () => {
+describe('BrandSemrushProjectModel', () => {
   let instance;
 
   let mockElectroService;
@@ -36,20 +36,20 @@ describe('BrandToSemrushProjectModel', () => {
     ({
       mockElectroService,
       model: instance,
-    } = createElectroMocks(BrandToSemrushProject, mockRecord));
+    } = createElectroMocks(BrandSemrushProject, mockRecord));
 
     mockElectroService.entities.patch = stub().returns({ set: stub() });
   });
 
   describe('constructor', () => {
-    it('initializes the BrandToSemrushProject instance correctly', () => {
+    it('initializes the BrandSemrushProject instance correctly', () => {
       expect(instance).to.be.an('object');
       expect(instance.record).to.deep.equal(mockRecord);
     });
   });
 
-  describe('brandToSemrushProjectId', () => {
-    it('gets brandToSemrushProjectId', () => {
+  describe('brandSemrushProjectId', () => {
+    it('gets brandSemrushProjectId', () => {
       expect(instance.getId()).to.equal('5b1e2d6a-7c5f-4a91-9b32-8e34ad11d201');
     });
   });

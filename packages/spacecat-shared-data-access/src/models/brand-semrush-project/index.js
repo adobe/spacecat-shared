@@ -10,6 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-export { default as BrandToSemrushProject } from './brand-to-semrush-project.model.js';
-export { default as BrandToSemrushProjectCollection } from './brand-to-semrush-project.collection.js';
-export { default as BrandToSemrushProjectSchema } from './brand-to-semrush-project.schema.js';
+export { default as BrandSemrushProject } from './brand-semrush-project.model.js';
+export { default as BrandSemrushProjectCollection } from './brand-semrush-project.collection.js';
+export { default as BrandSemrushProjectSchema } from './brand-semrush-project.schema.js';

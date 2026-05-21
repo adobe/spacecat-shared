@@ -13,13 +13,13 @@
 import BaseCollection from '../base/base.collection.js';
 
 /**
- * BrandToSemrushProjectCollection - collection of BrandToSemrushProject rows.
+ * BrandSemrushProjectCollection - collection of BrandSemrushProject rows.
  *
- * @class BrandToSemrushProjectCollection
+ * @class BrandSemrushProjectCollection
  * @extends BaseCollection
  */
-class BrandToSemrushProjectCollection extends BaseCollection {
-  static COLLECTION_NAME = 'BrandToSemrushProjectCollection';
+class BrandSemrushProjectCollection extends BaseCollection {
+  static COLLECTION_NAME = 'BrandSemrushProjectCollection';
 
   /**
    * Find the single row for a (brand, semrushLocationId, language) slice, or
@@ -29,11 +29,11 @@ class BrandToSemrushProjectCollection extends BaseCollection {
    * @param {string} brandId
    * @param {number} semrushLocationId
    * @param {string} language
-   * @returns {Promise<BrandToSemrushProject|null>}
+   * @returns {Promise<BrandSemrushProject|null>}
    */
   async findBySlice(brandId, semrushLocationId, language) {
     return this.findByIndexKeys({ brandId, semrushLocationId, language });
   }
 }
 
-export default BrandToSemrushProjectCollection;
+export default BrandSemrushProjectCollection;

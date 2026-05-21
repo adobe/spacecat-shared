@@ -13,10 +13,19 @@
 import { hasText } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import BrandToSemrushProject from './brand-to-semrush-project.model.js';
-import BrandToSemrushProjectCollection from './brand-to-semrush-project.collection.js';
+import BrandSemrushProject from './brand-semrush-project.model.js';
+import BrandSemrushProjectCollection from './brand-semrush-project.collection.js';
 
-const schema = new SchemaBuilder(BrandToSemrushProject, BrandToSemrushProjectCollection)
+// Mirrors the CHECK constraint on brand_to_semrush_projects.language
+// (db/migrations/20260528000000_brand_to_semrush_projects.sql). The slice
+// uniqueness gate is an exact DB string match, so inconsistent casing or
+// format between callers would silently bypass the 409 and bill a duplicate
+// Semrush project. Accepts BCP-47-shaped tags: 2/3-letter primary subtag
+// (`en`, `de`, `zho`) optionally followed by a 2-4-letter region/script
+// subtag (`de-ch`, `pt-br`, `zh-hant`). All lowercase by contract.
+const LANGUAGE_TAG_REGEX = /^[a-z]{2,3}(-[a-z]{2,4})?$/;
+
+const schema = new SchemaBuilder(BrandSemrushProject, BrandSemrushProjectCollection)
   // Reference to Brand (many-to-one). The owning organization and Semrush
   // workspace are reachable via Brand -> Organization.
   .addReference('belongs_to', 'Brand')
@@ -33,7 +42,7 @@ const schema = new SchemaBuilder(BrandToSemrushProject, BrandToSemrushProjectCol
   .addAttribute('language', {
     type: 'string',
     required: true,
-    validate: (value) => hasText(value),
+    validate: (value) => hasText(value) && LANGUAGE_TAG_REGEX.test(value),
   })
   .addAllIndex(['semrushProjectId']);
 

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.67.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.66.0...@adobe/spacecat-shared-data-access-v3.67.0) (2026-05-21)
+
+### Features
+
+* **data-access:** add BrandSemrushProject entity ([#1615](https://github.com/adobe/spacecat-shared/issues/1615)) ([f2c6a0c](https://github.com/adobe/spacecat-shared/commit/f2c6a0c678f000da9900d135effa37ad17e08e8f))
+
 ## [@adobe/spacecat-shared-data-access-v3.66.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.65.0...@adobe/spacecat-shared-data-access-v3.66.0) (2026-05-21)
 
 ### Features

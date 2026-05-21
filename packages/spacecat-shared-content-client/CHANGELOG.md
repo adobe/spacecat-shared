@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-content-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.24...@adobe/spacecat-shared-content-client-v1.9.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-content-client-v1.8.24](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.23...@adobe/spacecat-shared-content-client-v1.8.24) (2026-05-14)
 
 ### Bug Fixes

@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-data-access-v3.68.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.67.0...@adobe/spacecat-shared-data-access-v3.68.0) (2026-05-21)
+
+### Features
+
+* added pending decision in PLG onboarding ([#1610](https://github.com/adobe/spacecat-shared/issues/1610)) ([cf8a1c4](https://github.com/adobe/spacecat-shared/commit/cf8a1c4cc4f43e5d0c792adc69e7593162257f77))
+
+## [@adobe/spacecat-shared-data-access-v3.67.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.66.0...@adobe/spacecat-shared-data-access-v3.67.0) (2026-05-21)
+
+### Features
+
+* **data-access:** add BrandSemrushProject entity ([#1615](https://github.com/adobe/spacecat-shared/issues/1615)) ([f2c6a0c](https://github.com/adobe/spacecat-shared/commit/f2c6a0c678f000da9900d135effa37ad17e08e8f))
+
+## [@adobe/spacecat-shared-data-access-v3.66.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.65.0...@adobe/spacecat-shared-data-access-v3.66.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-data-access-v3.65.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.64.0...@adobe/spacecat-shared-data-access-v3.65.0) (2026-05-16)
 
 ### Features

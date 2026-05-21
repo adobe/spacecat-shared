@@ -6,10 +6,18 @@ name: Build
 # Renaming the 'npm-publish' GitHub Environment referenced below has the same silent-break
 # failure mode — re-run the setup script after.
 #
-# Trust binding security relies on the 'npm-publish' GitHub Environment, which must be
-# configured with a deployment branch policy that allows only `main`. Configure branch
-# protection on `main` as well (disallow direct push, require PR review). The setup
-# script preflight verifies both before registering trust bindings.
+# Trust binding security relies on the 'npm-publish' GitHub Environment having a
+# deployment_branch_policy that allows only `main`. That branch policy is the server-side
+# enforcement of the OIDC token's `environment` claim — without it, the binding's
+# `--environment npm-publish` filter is decorative. Branch protection on `main` (PR review
+# required, disallow direct push) is the second leg of the security model.
+#
+# Required reviewers on the 'npm-publish' environment are INTENTIONALLY disabled to
+# avoid a single-timezone bottleneck on routine releases (semantic-release auto-publishes
+# every meaningful merge to `main`). To re-enable a human gate, see "Re-enabling the
+# environment approval gate" in docs/RELEASE-RUNBOOK.md. Branch protection on `main`
+# remains the load-bearing PR review gate; the env approval is a release-stamp on
+# something already approved at PR time.
 # See: https://docs.npmjs.com/trusted-publishers
 
 # No workflow-level permissions — each job declares only what it needs.
@@ -20,7 +28,8 @@ on:
   # workflow_dispatch enables manual re-trigger for incident recovery
   # (see docs/RELEASE-RUNBOOK.md "Failure mode 3"). The release job's
   # `if: github.ref == 'refs/heads/main'` and `environment: npm-publish`
-  # (with required reviewers + main-only branch policy) still gate publish.
+  # (deployment_branch_policy: main-only, no required reviewers — see header)
+  # still gate publish.
   workflow_dispatch:
 
 env:

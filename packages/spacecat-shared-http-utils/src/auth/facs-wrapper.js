@@ -120,8 +120,9 @@ function forbidden(message) {
  * @param {Function} fn - The handler to wrap.
  * @param {{ routeFacsCapabilities: {
  *   INTERNAL_ROUTES?: string[],
- *   PRODUCTS_ROUTES: Object<string, Object<string, string>>,
+ *   PRODUCTS_ROUTES: Object<string, Object<string, string[]>>,
  *   PRODUCTS_FACS_RESOURCE_PARAM_ALIASES?: Object<string, Object<string, string[]>>,
+ *   PRODUCTS_FACS_STATE_LAYER_EXEMPT_PERMISSIONS?: Object<string, string[]>,
  * }}} opts
  * @returns {Function} A wrapped handler.
  */
@@ -135,11 +136,44 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
   }
 
   const productsRoutes = routeFacsCapabilities.PRODUCTS_ROUTES;
+
+  // Validate every route value is a non-empty array of strings at construction
+  // time — the wrapper never has to branch on `Array.isArray(...)` per request,
+  // and a misconfigured map fails at startup rather than at the first request.
+  for (const [product, routes] of Object.entries(productsRoutes)) {
+    for (const [route, value] of Object.entries(routes || {})) {
+      if (!Array.isArray(value) || value.length === 0) {
+        throw new Error(
+          `facsWrapper: ${product} '${route}' must be a non-empty array of permission strings`,
+        );
+      }
+      for (const perm of value) {
+        if (typeof perm !== 'string' || !perm.includes('/')) {
+          throw new Error(
+            `facsWrapper: ${product} '${route}' has invalid permission ${JSON.stringify(perm)} `
+            + '(expected fully-qualified \'<product>/<action>\')',
+          );
+        }
+      }
+    }
+  }
+
   // Built once. Throws if a product declares the same alias under two
   // different resources — surfaces config typos at startup, not at request time.
   const aliasLookupsPerProduct = buildAliasLookupsPerProduct(
     routeFacsCapabilities.PRODUCTS_FACS_RESOURCE_PARAM_ALIASES,
   );
+
+  // Per-product set of permissions that bypass the Phase 2 state-layer check.
+  // Held-permission matches against this set skip the resource lookup
+  // entirely (e.g. llmo/can_view_all is global by design; llmo/can_manage_user
+  // gates the management endpoints and must not recurse into the state layer).
+  const exemptByProduct = new Map();
+  for (const [product, perms] of Object.entries(
+    routeFacsCapabilities.PRODUCTS_FACS_STATE_LAYER_EXEMPT_PERMISSIONS || {},
+  )) {
+    exemptByProduct.set(product.toUpperCase(), new Set(perms || []));
+  }
 
   return async (request, context) => {
     const { log } = context;
@@ -217,10 +251,10 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     }
 
     // Deny by default: unmapped routes within an enrolled product return 403.
-    // `productMap` values are already full permission strings (e.g. `'llmo/can_view'`);
-    // no runtime composition.
-    const requiredPermission = resolveRouteCapability(context, productMap);
-    if (!requiredPermission) {
+    // Route values are always a non-empty `string[]` (validated at wrapper
+    // construction above), with any-of semantics.
+    const requiredPermissions = resolveRouteCapability(context, productMap);
+    if (!requiredPermissions) {
       log.warn({
         tag: 'facs',
         method: context.pathInfo?.method,
@@ -230,10 +264,28 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       return forbidden('Forbidden');
     }
 
-    if (!authInfo?.hasFacsPermission?.(requiredPermission)) {
+    // Held-permission resolution prefers a state-layer-exempt permission
+    // when the user holds one — regardless of the route's listing order.
+    // Without this, a user who legitimately holds both an exempt and a
+    // brand-scoped permission (e.g. `llmo_manager` holds both `can_view_all`
+    // and `can_view`) could be incorrectly forced through the state-layer
+    // check if `can_view` happened to be listed first, denying the
+    // universal access their exempt permission grants.
+    //
+    // The exempt set is per-product; missing or empty exempt sets reduce
+    // this to plain first-match-wins.
+    const exemptPermissions = exemptByProduct.get(productCode.toUpperCase());
+    const heldExemptPermission = exemptPermissions?.size
+      ? requiredPermissions.find(
+        (p) => exemptPermissions.has(p) && authInfo?.hasFacsPermission?.(p),
+      )
+      : undefined;
+    const heldPermission = heldExemptPermission
+      ?? requiredPermissions.find((p) => authInfo?.hasFacsPermission?.(p));
+    if (!heldPermission) {
       log.warn({
         tag: 'facs',
-        permission: requiredPermission,
+        permissions: requiredPermissions,
         user: resolveUserIdent(authInfo),
       }, 'FACS permission denied');
       return forbidden('Forbidden');
@@ -241,10 +293,21 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
 
     // Phase 2: state-layer (ReBAC) check.
     //
-    // Resolve the request's resource and require a matching mapping
+    // Short-circuit when the held permission is in the per-product exempt
+    // list (e.g. llmo/can_view_all is global by design; llmo/can_manage_user
+    // gates the management endpoints and must not recurse into the state
+    // layer it manages). When the held permission was resolved by the exempt-
+    // preference logic above, this `has(...)` check is guaranteed to be true;
+    // it also catches the case where a non-exempt-prefers route happens to
+    // resolve to an exempt held permission via plain first-match.
+    if (exemptPermissions?.has(heldPermission)) {
+      return fn(request, context);
+    }
+
+    // Otherwise resolve the request's resource and require a matching mapping
     // (user-scoped OR org-scoped). Routes without a resolvable resource
-    // (listings, global queries, the /facs/access-mappings management
-    // endpoints themselves) skip this step — Phase 1 was sufficient.
+    // (listings, global queries) skip the state-layer check entirely —
+    // Phase 1 was sufficient.
     const routePattern = findMatchedRouteKey(context, productMap);
     const resource = resolveFacsResource({
       productCode: productCode.toUpperCase(),
@@ -273,7 +336,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
           ? await findFacsAccessMapping(postgrestClient, {
             subjectType: 'user',
             subjectId: subjectUserId,
-            facsPermission: requiredPermission,
+            facsPermission: heldPermission,
             resourceType: resource.resourceType,
             resourceId: resource.resourceId,
             imsOrgId: orgId,
@@ -283,7 +346,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
           mapping = await findFacsAccessMapping(postgrestClient, {
             subjectType: 'org',
             subjectId: orgId,
-            facsPermission: requiredPermission,
+            facsPermission: heldPermission,
             resourceType: resource.resourceType,
             resourceId: resource.resourceId,
             imsOrgId: orgId,
@@ -295,7 +358,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
         // operator can diagnose; do not leak the message to the client.
         log.error({
           tag: 'facs',
-          permission: requiredPermission,
+          permission: heldPermission,
           resourceType: resource.resourceType,
           resourceId: resource.resourceId,
           user: subjectUserId,
@@ -306,7 +369,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       if (!mapping) {
         log.warn({
           tag: 'facs',
-          permission: requiredPermission,
+          permission: heldPermission,
           resourceType: resource.resourceType,
           resourceId: resource.resourceId,
           via: resource.source,

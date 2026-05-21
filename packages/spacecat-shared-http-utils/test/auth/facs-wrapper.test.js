@@ -26,14 +26,14 @@ const routeFacsCapabilities = {
   ],
   PRODUCTS_ROUTES: {
     LLMO: {
-      'GET /insights': 'llmo/can_read',
-      'GET /insights/:insightId': 'llmo/can_read',
-      'POST /configurations': 'llmo/can_manage',
+      'GET /insights': ['llmo/can_read'],
+      'GET /insights/:insightId': ['llmo/can_read'],
+      'POST /configurations': ['llmo/can_manage'],
     },
     // ACO is populated but absent from FF_MAC_FACS_PERMISSIONS — used to
     // exercise the "no flag configured for product" bypass.
     ACO: {
-      'GET /insights': 'aco/view',
+      'GET /insights': ['aco/view'],
     },
   },
 };
@@ -378,7 +378,7 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
       expect(result.status).to.equal(403);
-      expect(logStub.warn.calledWithMatch({ tag: 'facs', permission: 'llmo/can_read' }, 'FACS permission denied')).to.be.true;
+      expect(logStub.warn.calledWithMatch({ tag: 'facs' }, 'FACS permission denied')).to.be.true;
       expect(handler.called).to.be.false;
     });
 
@@ -509,9 +509,9 @@ describe('facsWrapper', () => {
         ...routeFacsCapabilities.PRODUCTS_ROUTES,
         LLMO: {
           ...routeFacsCapabilities.PRODUCTS_ROUTES.LLMO,
-          'GET /brands/:brandId': 'llmo/can_read',
-          'POST /brands': 'llmo/can_manage',
-          'GET /insights': 'llmo/can_read',
+          'GET /brands/:brandId': ['llmo/can_read'],
+          'POST /brands': ['llmo/can_manage'],
+          'GET /insights': ['llmo/can_read'],
         },
       },
       PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
@@ -681,6 +681,242 @@ describe('facsWrapper', () => {
           },
         },
       })).to.throw(/declared under multiple resources for product 'LLMO'/);
+    });
+  });
+
+  describe('construction-time validation of PRODUCTS_ROUTES values', () => {
+    it('throws when a route value is a plain string (not an array)', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          PRODUCTS_ROUTES: { LLMO: { 'GET /x': 'llmo/can_read' } },
+        },
+      })).to.throw(/must be a non-empty array of permission strings/);
+    });
+
+    it('throws when a route value is an empty array', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          PRODUCTS_ROUTES: { LLMO: { 'GET /x': [] } },
+        },
+      })).to.throw(/must be a non-empty array of permission strings/);
+    });
+
+    it('throws when an array entry is missing the product prefix', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          PRODUCTS_ROUTES: { LLMO: { 'GET /x': ['can_read'] } },
+        },
+      })).to.throw(/invalid permission/);
+    });
+
+    it('throws when an array entry is not a string', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          PRODUCTS_ROUTES: { LLMO: { 'GET /x': [42] } },
+        },
+      })).to.throw(/invalid permission/);
+    });
+
+    it('tolerates undefined / null product sub-maps and exempt entries', () => {
+      // Defensive guards: undefined product routes + undefined exempt
+      // permissions for a product shouldn't crash construction.
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          PRODUCTS_ROUTES: { LLMO: undefined, ASO: { 'GET /x': ['aso/view'] } },
+          PRODUCTS_FACS_STATE_LAYER_EXEMPT_PERMISSIONS: { ASO: undefined },
+        },
+      })).to.not.throw();
+    });
+  });
+
+  describe('any-of permissions (held-permission resolution)', () => {
+    let ldClient;
+    let mockedWrapper;
+    const anyOfConfig = {
+      ...routeFacsCapabilities,
+      PRODUCTS_ROUTES: {
+        LLMO: {
+          // Two-permission route. Order matters: brand-scoped first,
+          // global second.
+          'GET /brands/:brandId': ['llmo/can_view', 'llmo/can_view_all'],
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
+      const mod = await esmock('../../src/auth/facs-wrapper.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: { createFrom: sinon.stub().returns(ldClient) },
+        },
+      });
+      mockedWrapper = mod.facsWrapper;
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+    });
+
+    it('picks the first listed permission the JWT satisfies', async () => {
+      let captured;
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: (p) => p === 'llmo/can_view',
+        getProfile: () => ({ sub: 'u1' }),
+      });
+      const wrapped = mockedWrapper((req, ctx) => {
+        captured = ctx;
+        return { status: 200 };
+      }, { routeFacsCapabilities: anyOfConfig });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(captured).to.equal(context);
+    });
+
+    it('falls through to the second permission when the first is not held', async () => {
+      // User holds can_view_all only; route lists [can_view, can_view_all].
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: (p) => p === 'llmo/can_view_all',
+      });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: anyOfConfig });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+    });
+
+    it('denies when the JWT satisfies none of the required permissions', async () => {
+      context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => false });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: anyOfConfig });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+    });
+  });
+
+  describe('state-layer exempt permissions', () => {
+    let ldClient;
+    let findFacsAccessMappingStub;
+    let mockedWrapper;
+    const exemptConfig = {
+      ...routeFacsCapabilities,
+      PRODUCTS_ROUTES: {
+        LLMO: {
+          'GET /brands/:brandId': ['llmo/can_view', 'llmo/can_view_all'],
+          'POST /facs/access-mappings': ['llmo/can_manage_user'],
+        },
+      },
+      PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
+        LLMO: { brand: ['brandId'] },
+      },
+      PRODUCTS_FACS_STATE_LAYER_EXEMPT_PERMISSIONS: {
+        LLMO: ['llmo/can_view_all', 'llmo/can_manage_user'],
+      },
+    };
+    const dummyPostgrest = { from: () => {} };
+
+    beforeEach(async () => {
+      ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
+      findFacsAccessMappingStub = sinon.stub();
+      const mod = await esmock('../../src/auth/facs-wrapper.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: { createFrom: sinon.stub().returns(ldClient) },
+        },
+        '../../src/auth/facs-state-layer.js': {
+          findFacsAccessMapping: findFacsAccessMappingStub,
+        },
+      });
+      mockedWrapper = mod.facsWrapper;
+      context.dataAccess = { services: { postgrestClient: dummyPostgrest } };
+    });
+
+    it('skips the state-layer check when the held permission is exempt (can_view_all)', async () => {
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: (p) => p === 'llmo/can_view_all',
+      });
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(findFacsAccessMappingStub.called).to.be.false;
+    });
+
+    it('still performs the state-layer check when the held permission is NOT exempt', async () => {
+      findFacsAccessMappingStub.resolves({ id: 'm1' });
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: (p) => p === 'llmo/can_view', // not exempt
+      });
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
+      await wrapped({}, context);
+      expect(findFacsAccessMappingStub.calledOnce).to.be.true;
+      expect(findFacsAccessMappingStub.firstCall.args[1].facsPermission).to.equal('llmo/can_view');
+    });
+
+    it('skips the state-layer check on can_manage_user (management endpoint)', async () => {
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: (p) => p === 'llmo/can_manage_user',
+      });
+      context.pathInfo = {
+        method: 'POST',
+        suffix: '/facs/access-mappings',
+        headers: { 'x-product': 'llmo' },
+      };
+      context.data = { brandId: 'b-from-body' }; // would otherwise hit body fallback
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(findFacsAccessMappingStub.called).to.be.false;
+    });
+
+    it('prefers an exempt held permission even when a brand-scoped permission is listed first', async () => {
+      // Critical regression guard: route lists [can_view, can_view_all]
+      // (brand-scoped first), but the user is llmo_manager and holds BOTH.
+      // Plain first-match-wins would resolve to can_view → state-layer →
+      // 403 (no row for the manager). Exempt-preference resolution must
+      // pick can_view_all → bypass.
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: (p) => (
+          p === 'llmo/can_view' || p === 'llmo/can_view_all'
+        ),
+      });
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(findFacsAccessMappingStub.called).to.be.false;
+    });
+
+    it('still resolves to the brand-scoped permission when the user holds only it', async () => {
+      // Same route ([can_view, can_view_all]) but user holds only the
+      // non-exempt one — should land on state-layer enforcement.
+      findFacsAccessMappingStub.resolves({ id: 'm1' });
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: (p) => p === 'llmo/can_view',
+      });
+      context.pathInfo = {
+        method: 'GET',
+        suffix: '/brands/abc-123',
+        headers: { 'x-product': 'llmo' },
+        params: { brandId: 'abc-123' },
+      };
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
+      await wrapped({}, context);
+      expect(findFacsAccessMappingStub.calledOnce).to.be.true;
+      expect(findFacsAccessMappingStub.firstCall.args[1].facsPermission).to.equal('llmo/can_view');
     });
   });
 });

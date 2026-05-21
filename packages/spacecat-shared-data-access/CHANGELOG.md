@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.66.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.65.0...@adobe/spacecat-shared-data-access-v3.66.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-data-access-v3.65.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.64.0...@adobe/spacecat-shared-data-access-v3.65.0) (2026-05-16)
 
 ### Features

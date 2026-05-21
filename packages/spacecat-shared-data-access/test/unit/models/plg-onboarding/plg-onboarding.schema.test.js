@@ -76,6 +76,8 @@ describe('PlgOnboarding Schema', () => {
         ['trailing dot in path segment', 'nba.com/foo.'],
         ['trailing double-dot in path segment', 'nba.com/foo..'],
         ['dot-dot mid-path segment', 'nba.com/foo../bar'],
+        ['consecutive dots mid path segment', 'nba.com/v1..0'],
+        ['consecutive dots in middle of segment', 'nba.com/foo..bar'],
         ['null byte in domain', 'nba.com\x00/evil'],
         ['control character in path', 'nba.com/ki\x01ngs'],
       ].forEach(([label, value]) => {

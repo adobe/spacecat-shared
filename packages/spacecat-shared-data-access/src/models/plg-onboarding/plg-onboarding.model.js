@@ -51,6 +51,35 @@ class PlgOnboarding extends BaseModel {
     return typeof value === 'string' ? value.toLowerCase() : value;
   }
 
+  // Complete domain validator used by the schema and intended for external consumers.
+  // Layers a typeof guard, case-canonical check, control-character rejection,
+  // all-numeric-hostname rejection (covers short-form IPs like 127.1 and 2130706433),
+  // trailing-dot path-segment rejection, DOMAIN_PATTERN test, and length caps.
+  // Note: DOMAIN_PATTERN alone is not sufficient — always prefer this method.
+  // This is a syntactic / data-integrity validator, not an SSRF gate. Callers that
+  // make outbound fetches must layer their own private-IP and DNS-resolution checks.
+  static isValidDomain(value) {
+    if (typeof value !== 'string' || value !== value.toLowerCase()) {
+      return false;
+    }
+    if (/[^\x21-\x7e]/.test(value)) {
+      return false;
+    }
+    const [hostname, ...pathParts] = value.split('/');
+    if (/^[\d.]+$/.test(hostname)) {
+      return false;
+    }
+    // Reject path segments that are purely dots, end with a dot, or contain
+    // consecutive dots (foo., foo.., foo../bar, v1..0). DOMAIN_PATTERN's
+    // negative lookahead only blocks segments STARTING with a dot.
+    if (pathParts.some((seg) => /\.$/.test(seg) || seg.includes('..'))) {
+      return false;
+    }
+    return PlgOnboarding.DOMAIN_PATTERN.test(value)
+      && hostname.length <= PlgOnboarding.MAX_HOSTNAME_LENGTH
+      && value.length <= PlgOnboarding.MAX_DOMAIN_LENGTH;
+  }
+
   static STATUSES = {
     PRE_ONBOARDING: 'PRE_ONBOARDING',
     IN_PROGRESS: 'IN_PROGRESS',

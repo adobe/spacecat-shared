@@ -143,6 +143,109 @@ describe('PlgOnboardingModel', () => {
     });
   });
 
+  describe('isValidDomain', () => {
+    describe('valid values', () => {
+      [
+        'nba.com',
+        'www.nba.com',
+        'nba.com/kings',
+        'nba.com/us/kings',
+        'example.com/en-us',
+        'example.com/case_studies',
+        'xn--nba-6na.com',
+      ].forEach((value) => {
+        it(`accepts "${value}"`, () => {
+          expect(PlgOnboarding.isValidDomain(value)).to.be.true;
+        });
+      });
+    });
+
+    describe('invalid values', () => {
+      [
+        ['empty string', ''],
+        ['scheme prefix', 'https://nba.com'],
+        ['IPv4 address', '127.0.0.1'],
+        ['short-form IPv4', '127.1'],
+        ['decimal IPv4', '2130706433'],
+        ['uppercase hostname', 'NBA.COM'],
+        ['uppercase path segment', 'nba.com/Kings'],
+        ['null byte in domain', 'nba.com\x00/evil'],
+        ['control character in path', 'nba.com/ki\x01ngs'],
+        ['trailing dot path segment', 'nba.com/foo.'],
+        ['trailing dot fqdn', 'nba.com.'],
+        ['consecutive dots mid path segment', 'nba.com/v1..0'],
+        ['consecutive dots mid path segment 2', 'nba.com/foo..bar'],
+      ].forEach(([label, value]) => {
+        it(`rejects ${label}`, () => {
+          expect(PlgOnboarding.isValidDomain(value)).to.be.false;
+        });
+      });
+    });
+
+    describe('non-string inputs', () => {
+      [
+        ['null', null],
+        ['undefined', undefined],
+        ['number', 123],
+        ['boolean', true],
+        ['object', { domain: 'nba.com' }],
+        ['array', ['nba.com']],
+      ].forEach(([label, value]) => {
+        it(`rejects ${label}`, () => {
+          expect(PlgOnboarding.isValidDomain(value)).to.be.false;
+        });
+      });
+    });
+
+    describe('length boundaries', () => {
+      it('accepts a hostname of exactly 253 chars', () => {
+        const hostname = `${'a'.repeat(249)}.com`;
+        expect(hostname.length).to.equal(253);
+        expect(PlgOnboarding.isValidDomain(hostname)).to.be.true;
+      });
+
+      it('rejects a hostname exceeding 253 chars', () => {
+        const hostname = `${'a'.repeat(250)}.com`;
+        expect(hostname.length).to.equal(254);
+        expect(PlgOnboarding.isValidDomain(hostname)).to.be.false;
+      });
+
+      it('accepts a domain of exactly 2048 chars', () => {
+        const value = `nba.com/${'a'.repeat(2040)}`;
+        expect(value.length).to.equal(2048);
+        expect(PlgOnboarding.isValidDomain(value)).to.be.true;
+      });
+
+      it('rejects a domain exceeding 2048 chars', () => {
+        const value = `nba.com/${'a'.repeat(2041)}`;
+        expect(value.length).to.equal(2049);
+        expect(PlgOnboarding.isValidDomain(value)).to.be.false;
+      });
+    });
+
+    describe('regression: DOMAIN_PATTERN alone is insufficient', () => {
+      // Pinning tests: these inputs pass the bare regex but are correctly rejected
+      // by the full validator. They exist to prevent regressions if a future caller
+      // is tempted to import DOMAIN_PATTERN directly instead of isValidDomain.
+      it('DOMAIN_PATTERN accepts short-form IPv4 "127.1" but isValidDomain rejects it', () => {
+        expect(PlgOnboarding.DOMAIN_PATTERN.test('127.1')).to.be.true;
+        expect(PlgOnboarding.isValidDomain('127.1')).to.be.false;
+      });
+
+      it('DOMAIN_PATTERN accepts trailing-dot path segment but isValidDomain rejects it', () => {
+        expect(PlgOnboarding.DOMAIN_PATTERN.test('nba.com/foo.')).to.be.true;
+        expect(PlgOnboarding.isValidDomain('nba.com/foo.')).to.be.false;
+      });
+
+      it('DOMAIN_PATTERN has no length cap but isValidDomain enforces 2048', () => {
+        const tooLong = `nba.com/${'a'.repeat(2041)}`;
+        expect(tooLong.length).to.equal(2049);
+        expect(PlgOnboarding.DOMAIN_PATTERN.test(tooLong)).to.be.true;
+        expect(PlgOnboarding.isValidDomain(tooLong)).to.be.false;
+      });
+    });
+  });
+
   describe('normalizeDomain', () => {
     it('lowercases a string value', () => {
       expect(PlgOnboarding.normalizeDomain('NBA.COM/Kings')).to.equal('nba.com/kings');

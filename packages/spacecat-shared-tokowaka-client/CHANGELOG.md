@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.2...@adobe/spacecat-shared-tokowaka-client-v1.17.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.16.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.1...@adobe/spacecat-shared-tokowaka-client-v1.16.2) (2026-05-14)
 
 ### Bug Fixes

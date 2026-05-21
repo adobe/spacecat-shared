@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-rum-api-client-v2.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.13...@adobe/spacecat-shared-rum-api-client-v2.41.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-rum-api-client-v2.40.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.12...@adobe/spacecat-shared-rum-api-client-v2.40.13) (2026-05-14)
 
 ### Bug Fixes

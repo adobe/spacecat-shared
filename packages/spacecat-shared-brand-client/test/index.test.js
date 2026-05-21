@@ -394,6 +394,16 @@ describe('BrandGovernanceClient', () => {
       expect(result).to.be.null;
     });
 
+    it('throws when brand resolved by URL has no id (guards against /brands/undefined/checks)', async () => {
+      const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
+
+      mockImsToken();
+      mockBrandFromUrl({ name: 'No ID Brand' });
+
+      await expect(client.getBrandGuidelinesForUrl(validSiteBaseUrl, validImsOrgId, validGovImsConfig))
+        .to.be.rejectedWith(`Brand resolved for URL ${validSiteBaseUrl} has no id`);
+    });
+
     it('returns empty guidelines when checks response has no data property', async () => {
       const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
 

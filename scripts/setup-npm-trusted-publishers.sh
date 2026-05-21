@@ -124,15 +124,17 @@ fi
 # Note: do NOT use jq's `// true` to default can_admins_bypass — `//` treats
 # `false` as absent and falls through to the default, so `false // true` is
 # `true`. Compare directly with `!= false` instead.
-ENV_STATE=$(gh api "repos/${REPO}/environments/${ENVIRONMENT}" --jq '
-  {
-    can_admins_bypass_strictly_false: (.can_admins_bypass == false),
-    has_required_reviewers: (((.protection_rules // []) | map(select(.type == "required_reviewers" and ((.reviewers // []) | length) > 0)) | length) > 0),
-    prevent_self_review_true: (((.protection_rules // []) | map(select(.type == "required_reviewers")) | first | .prevent_self_review) == true)
-  }
+# Single gh api call returning tab-separated yes/no for each check, parsed
+# inline in bash. Avoids three node-eval round-trips and keeps the parsing
+# in the same jq pipeline that already powers the other env/protection checks.
+ENV_FLAGS=$(gh api "repos/${REPO}/environments/${ENVIRONMENT}" --jq '
+  [ (if .can_admins_bypass == false then "yes" else "no" end),
+    (if ((.protection_rules // []) | map(select(.type == "required_reviewers" and ((.reviewers // []) | length) > 0)) | length) > 0 then "yes" else "no" end),
+    (if (((.protection_rules // []) | map(select(.type == "required_reviewers")) | first | .prevent_self_review) == true) then "yes" else "no" end)
+  ] | @tsv
 ' 2>/dev/null || echo "__MISSING__")
 
-if [ "$ENV_STATE" = "__MISSING__" ]; then
+if [ "$ENV_FLAGS" = "__MISSING__" ]; then
   echo "ERROR: GitHub Environment '${ENVIRONMENT}' does not exist on ${REPO}."
   echo "       Create it (Settings → Environments) with: can_admins_bypass=false,"
   echo "       main-only deployment branch policy. Required reviewers are OPTIONAL"
@@ -140,15 +142,14 @@ if [ "$ENV_STATE" = "__MISSING__" ]; then
   exit 1
 fi
 
-ENV_BYPASS_OK=$(echo "$ENV_STATE" | node -e 'const o=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(o.can_admins_bypass_strictly_false ? "yes" : "no");')
+IFS=$'\t' read -r ENV_BYPASS_OK ENV_HAS_REVIEWERS ENV_PSR_OK <<< "$ENV_FLAGS"
+
 if [ "$ENV_BYPASS_OK" != "yes" ]; then
   echo "ERROR: '${ENVIRONMENT}' environment has can_admins_bypass != false."
   echo "       Required: can_admins_bypass == false (admins must NOT be able to skip the env policy)."
   exit 1
 fi
 
-ENV_HAS_REVIEWERS=$(echo "$ENV_STATE" | node -e 'const o=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(o.has_required_reviewers ? "yes" : "no");')
-ENV_PSR_OK=$(echo "$ENV_STATE" | node -e 'const o=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(o.prevent_self_review_true ? "yes" : "no");')
 if [ "$ENV_HAS_REVIEWERS" = "yes" ] && [ "$ENV_PSR_OK" != "yes" ]; then
   echo "ERROR: '${ENVIRONMENT}' has required_reviewers but prevent_self_review != true."
   echo "       If reviewers are configured at all, prevent_self_review MUST be true,"

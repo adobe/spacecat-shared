@@ -17,8 +17,10 @@ import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
 
+const CHECKS_PAGE_SIZE = 100;
+
 const API_GET_BRAND_FROM_URL = (url) => `/api/v1/brands/from-url?url=${encodeURIComponent(url)}`;
-const API_GET_BRAND_CHECKS = (brandId) => `/api/v1/brands/${brandId}/checks?status=ACTIVE&type=BRAND&pageSize=100`;
+const API_GET_BRAND_CHECKS = (brandId, page) => `/api/v1/brands/${brandId}/checks?status=ACTIVE&type=BRAND&scope=COPY&pageSize=${CHECKS_PAGE_SIZE}&page=${page}`;
 
 /**
  * Client for the Adobe Brand Governance Agent API.
@@ -127,22 +129,31 @@ export class BrandGovernanceClient {
     }
     const brand = await brandResponse.json();
 
-    const checksResponse = await fetch(
-      `${this.apiBaseUrl}${API_GET_BRAND_CHECKS(brand.id)}`,
-      { headers },
-    );
-    if (!checksResponse.ok) {
-      throw this.#createError(
-        `Error fetching brand checks for brand ${brand.id}: ${checksResponse.status}`,
-        checksResponse.status,
+    const allChecks = [];
+    let page = 1;
+    do {
+      // eslint-disable-next-line no-await-in-loop
+      const checksResponse = await fetch(
+        `${this.apiBaseUrl}${API_GET_BRAND_CHECKS(brand.id, page)}`,
+        { headers },
       );
-    }
-    const checksResult = await checksResponse.json();
-    const checks = checksResult.data || [];
+      if (!checksResponse.ok) {
+        throw this.#createError(
+          `Error fetching brand checks for brand ${brand.id}: ${checksResponse.status}`,
+          checksResponse.status,
+        );
+      }
+      // eslint-disable-next-line no-await-in-loop
+      const { data = [] } = await checksResponse.json();
+      allChecks.push(...data);
+      if (data.length < CHECKS_PAGE_SIZE) {
+        break;
+      }
+      page += 1;
+    // eslint-disable-next-line no-constant-condition
+    } while (true);
 
-    const guidelines = checks
-      .filter((check) => Array.isArray(check.scopes) && check.scopes.includes('COPY'))
-      .map((check) => ({ name: check.name, text: check.rule }));
+    const guidelines = allChecks.map((check) => ({ name: check.name, text: check.rule }));
 
     return {
       id: brand.id,

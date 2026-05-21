@@ -309,10 +309,12 @@ describe('BrandGovernanceClient', () => {
     return status === 200 ? scope.reply(200, brand) : scope.reply(status);
   };
 
-  const mockBrandChecks = (brandId, checks, status = 200) => {
+  const mockBrandChecks = (brandId, checks, status = 200, page = 1) => {
     const scope = nock(validGovApiBaseUrl)
       .get(`/api/v1/brands/${brandId}/checks`)
-      .query({ status: 'ACTIVE', type: 'BRAND', pageSize: '100' });
+      .query({
+        status: 'ACTIVE', type: 'BRAND', scope: 'COPY', pageSize: '100', page: String(page),
+      });
     return status === 200 ? scope.reply(200, { data: checks }) : scope.reply(status);
   };
 
@@ -356,12 +358,11 @@ describe('BrandGovernanceClient', () => {
   });
 
   describe('getBrandGuidelinesForUrl', () => {
-    it('fetches guidelines and returns only COPY-scoped checks', async () => {
+    it('fetches COPY-scoped guidelines via server-side scope filter and maps to name/text', async () => {
       const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
       const checks = [
-        { name: 'Sophisticated Voice', rule: 'Use sensory language', scopes: ['COPY'] },
-        { name: 'Color Palette', rule: 'Use brand colors', scopes: ['IMAGES'] },
-        { name: 'Mixed Rule', rule: 'Applies broadly', scopes: ['COPY', 'IMAGES'] },
+        { name: 'Sophisticated Voice', rule: 'Use sensory language' },
+        { name: 'Mixed Rule', rule: 'Applies broadly' },
       ];
 
       mockImsToken();
@@ -400,39 +401,29 @@ describe('BrandGovernanceClient', () => {
       mockBrandFromUrl(mockBrand);
       nock(validGovApiBaseUrl)
         .get(`/api/v1/brands/${mockBrand.id}/checks`)
-        .query({ status: 'ACTIVE', type: 'BRAND', pageSize: '100' })
+        .query({
+          status: 'ACTIVE', type: 'BRAND', scope: 'COPY', pageSize: '100', page: '1',
+        })
         .reply(200, {});
 
       const result = await client.getBrandGuidelinesForUrl(validSiteBaseUrl, validImsOrgId, validGovImsConfig);
       expect(result.guidelines).to.deep.equal([]);
     });
 
-    it('excludes checks with null scopes', async () => {
+    it('paginates through all pages until the last page has fewer than pageSize results', async () => {
       const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
+      const page1Checks = Array.from({ length: 100 }, (_, i) => ({ name: `Rule ${i + 1}`, rule: `Text ${i + 1}` }));
+      const page2Checks = [{ name: 'Rule 101', rule: 'Text 101' }];
 
       mockImsToken();
       mockBrandFromUrl(mockBrand);
-      mockBrandChecks(mockBrand.id, [
-        { name: 'No Scope Rule', rule: 'Has no scope', scopes: null },
-      ]);
+      mockBrandChecks(mockBrand.id, page1Checks, 200, 1);
+      mockBrandChecks(mockBrand.id, page2Checks, 200, 2);
 
       const result = await client.getBrandGuidelinesForUrl(validSiteBaseUrl, validImsOrgId, validGovImsConfig);
-      expect(result.guidelines).to.deep.equal([]);
-    });
-
-    it('excludes checks with empty scopes array', async () => {
-      const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
-
-      mockImsToken();
-      mockBrandFromUrl(mockBrand);
-      mockBrandChecks(mockBrand.id, [
-        { name: 'Empty Scope', rule: 'No scope assigned', scopes: [] },
-        { name: 'Images Only', rule: 'Visual rule', scopes: ['IMAGES'] },
-        { name: 'Copy Rule', rule: 'Text rule', scopes: ['COPY'] },
-      ]);
-
-      const result = await client.getBrandGuidelinesForUrl(validSiteBaseUrl, validImsOrgId, validGovImsConfig);
-      expect(result.guidelines).to.deep.equal([{ name: 'Copy Rule', text: 'Text rule' }]);
+      expect(result.guidelines).to.have.length(101);
+      expect(result.guidelines[0]).to.deep.equal({ name: 'Rule 1', text: 'Text 1' });
+      expect(result.guidelines[100]).to.deep.equal({ name: 'Rule 101', text: 'Text 101' });
     });
 
     it('throws error for invalid site base URL', async () => {
@@ -531,7 +522,9 @@ describe('BrandGovernanceClient', () => {
 
       nock(validGovApiBaseUrl)
         .get(`/api/v1/brands/${mockBrand.id}/checks`)
-        .query({ status: 'ACTIVE', type: 'BRAND', pageSize: '100' })
+        .query({
+          status: 'ACTIVE', type: 'BRAND', scope: 'COPY', pageSize: '100', page: '1',
+        })
         .twice()
         .reply(200, { data: [] });
 

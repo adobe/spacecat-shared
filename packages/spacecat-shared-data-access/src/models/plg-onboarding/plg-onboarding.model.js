@@ -44,6 +44,7 @@ class PlgOnboarding extends BaseModel {
     CLOSED: 'CLOSED',
     REOPENED: 'REOPENED',
     OFFBOARDED: 'OFFBOARDED',
+    PENDING: 'PENDING',
   };
 }
 

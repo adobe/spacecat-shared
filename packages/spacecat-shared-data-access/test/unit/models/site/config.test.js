@@ -568,6 +568,31 @@ describe('Config Tests', () => {
       config.updateCdnLogsConfig(data.cdnLogsConfig);
       expect(config.getCdnLogsConfig()).to.deep.equal(data.cdnLogsConfig);
     });
+
+    it('creates a Config with scraperConfig property', () => {
+      const data = {
+        scraperConfig: {
+          customHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
+          injectDefaults: true,
+        },
+      };
+      const config = Config(data);
+      expect(config.getScraperConfig()).to.deep.equal(data.scraperConfig);
+    });
+
+    it('returns undefined for scraperConfig when not provided', () => {
+      const config = Config({});
+      expect(config.getScraperConfig()).to.be.undefined;
+    });
+
+    it('updates scraperConfig', () => {
+      const scraperConfig = {
+        customHeaders: { 'Accept-Language': 'fr-FR,fr;q=0.9' },
+      };
+      const config = Config({});
+      config.updateScraperConfig(scraperConfig);
+      expect(config.getScraperConfig()).to.deep.equal(scraperConfig);
+    });
   });
 
   describe('Grouped URLs option', () => {

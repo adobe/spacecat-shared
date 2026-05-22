@@ -379,6 +379,10 @@ export const configSchema = Joi.object({
     ).optional(),
     outputLocation: Joi.string().required(),
   }).optional(),
+  scraperConfig: Joi.object({
+    customHeaders: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
+    injectDefaults: Joi.boolean().optional(),
+  }).optional(),
   tokowakaConfig: Joi.object({
     apiKey: Joi.string().optional(),
     forwardedHost: Joi.string().optional(),
@@ -529,6 +533,7 @@ export const Config = (data = {}) => {
   self.getBrandConfig = () => state?.brandConfig;
   self.getBrandProfile = () => state?.brandProfile;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
+  self.getScraperConfig = () => state?.scraperConfig;
   self.getLlmoConfig = () => state?.llmo;
   self.getLlmoDataFolder = () => state?.llmo?.dataFolder;
   self.getLlmoBrand = () => state?.llmo?.brand;
@@ -949,6 +954,10 @@ export const Config = (data = {}) => {
     state.cdnLogsConfig = cdnLogsConfig;
   };
 
+  self.updateScraperConfig = (scraperConfig) => {
+    state.scraperConfig = scraperConfig;
+  };
+
   self.updateTokowakaConfig = (tokowakaConfig) => {
     state.tokowakaConfig = tokowakaConfig;
   };
@@ -1003,6 +1012,7 @@ Config.toDynamoItem = (config) => ({
   brandConfig: config.getBrandConfig(),
   brandProfile: config.getBrandProfile(),
   cdnLogsConfig: config.getCdnLogsConfig(),
+  scraperConfig: config.getScraperConfig?.(),
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),

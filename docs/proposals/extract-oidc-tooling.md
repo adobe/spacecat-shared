@@ -30,9 +30,9 @@ From `adobe/spacecat-shared` post-PR-#1592:
    - `PACKAGES` array (auto-derivable from `packages/*/package.json` via the
      existing drift check)
    - Branch-protection policy schema (10-attribute aggregator jq)
-   - Environment policy schema (`can_admins_bypass=false`,
-     `required_reviewers` non-empty, `prevent_self_review=true`, main-only
-     deployment policy)
+   - Environment policy schema (`can_admins_bypass=false`, main-only
+     deployment policy as the load-bearing security; `required_reviewers`
+     optional, but if present, `prevent_self_review` must be true)
 
 2. **`.github/workflows/main.yaml` "Verify SR_NO_NPM_AUTH guard consistency"
    step** (~60 lines with the YAML-key-anchored phase-detection regex)

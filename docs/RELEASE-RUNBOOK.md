@@ -187,12 +187,13 @@ Recovery, depending on which side made progress:
   the GitHub Actions UI: Actions → `Build` workflow → "Run workflow" →
   branch `main` → Run. This uses the `workflow_dispatch:` trigger declared
   in `main.yaml` (requires repo write access; the `npm-publish` environment's
-  required reviewers still gate the actual publish step).
+  `main`-only `deployment_branch_policy` still gates the OIDC token mint).
 
-  **Expected timing on the re-trigger**: ~20–30 min total. `Test` runs
-  again (~10 min), then the release job queues for `spacecat-admins`
-  environment approval, then the actual publish + tag + GitHub release
-  flow. This is not "re-trigger and immediately resume."
+  **Expected timing on the re-trigger**: ~20–25 min total. `Test` runs
+  again (~10 min), then the release job runs the publish + tag + GitHub
+  release flow (~10–15 min). If the env approval gate is enabled (see
+  "Re-enabling the environment approval gate"), add the queue-for-approval
+  time. This is not "re-trigger and immediately resume."
 
   Recovery semantics per package on the re-run:
 
@@ -354,10 +355,9 @@ configuration. Reference the security model required:
 | Setting | Required value |
 |---|---|
 | Environment `npm-publish` exists | yes |
-| Env `deployment_branch_policy` | `["main"]` only |
+| Env `deployment_branch_policy` | `["main"]` only — **load-bearing**: this is the server-side enforcement of the OIDC token's `environment` claim |
 | Env `can_admins_bypass` | `false` |
-| Env required reviewers | non-empty (`spacecat-admins`) |
-| Env `prevent_self_review` | `true` (else env gate degrades to same-actor rubber stamp) |
+| Env required reviewers | **optional** — disabled by default to avoid a single-timezone release bottleneck (see "Re-enabling the environment approval gate" below). If configured, `prevent_self_review` MUST be `true`. |
 | Branch protection on `main` | exists |
 | `required_approving_review_count` | ≥ 1 |
 | `dismiss_stale_reviews` | `true` |
@@ -374,12 +374,15 @@ then re-run the script.
 
 ## Failure mode 6: Release job stuck "Waiting for approval"
 
-Symptoms:
+By default this repo's `npm-publish` environment has **no required reviewers**
+— releases auto-publish on every meaningful merge to `main`. FM-6 only applies
+if you have re-enabled the env approval gate (see next section).
+
+Symptoms (only relevant when the gate is enabled):
 
 - Release job in the Actions UI shows status "Waiting" with the
-  `npm-publish` environment gate pending an approver from `spacecat-admins`.
-- No `spacecat-admins` reviewer is online (off-hours / vacation / sev-1
-  elsewhere in the org).
+  `npm-publish` environment gate pending an approver.
+- No reviewer is online (off-hours / vacation / sev-1 elsewhere in the org).
 - Downstream consumer repos (`spacecat-api-service`, `spacecat-audit-worker`,
   etc.) are blocked on the new version.
 
@@ -390,21 +393,57 @@ job starts running, not while it waits on the gate.
 
 Recovery options:
 
-- **Reach a reviewer**: page the `spacecat-admins` team via your normal
+- **Reach a reviewer**: page the configured reviewer team via your normal
   on-call channel. Approving the run resumes from "Waiting" with no state
   loss.
 - **Cancel and retry later**: `gh run cancel <run-id>` (or Actions UI →
   Cancel workflow). Canceling has *no* npm-side effect because the publish
   step has not run. Once an approver is available, re-trigger via
   `gh workflow run Build --ref main`.
-- **Promote a substitute reviewer**: if `spacecat-admins` is unreachable
-  for > 2 hours, a repo admin can temporarily add another team / user to
-  the environment's required-reviewers list (`Settings → Environments →
-  npm-publish`). Revert the change after the release lands. Note: this
-  weakens the gate temporarily — log the decision in SITES-42702.
+- **Remove the gate temporarily**: a repo admin can drop the reviewer
+  requirement by PUTting the env config with `reviewers: []` (see commands
+  in "Re-enabling the environment approval gate" below, just inverted). The
+  pending deployment auto-advances. Re-add reviewers afterwards if the
+  gate is still desired. Log the decision in SITES-42702.
 
-**Do not** disable `prevent_self_review` to unblock — that defeats the
-human gate's purpose. Use the cancel-and-retry path instead.
+**Do not** disable `prevent_self_review` to unblock if the gate is active —
+that defeats the human gate's purpose. Use cancel-and-retry or temporary
+removal instead.
+
+## Re-enabling the environment approval gate
+
+Status today: **the `npm-publish` environment has no required reviewers** —
+releases auto-publish on `main`. The load-bearing security is branch
+protection (PR review required to reach `main`) plus the env's `main`-only
+`deployment_branch_policy` (server-side enforcement of the OIDC token's
+`environment` claim). The reviewer gate is an optional second-stamp.
+
+If you decide a human gate is warranted (e.g. for a freeze window, a high-risk
+release, or a permanent policy change), add it back without redeploying:
+
+```bash
+# As a repo admin with gh CLI auth:
+cat <<'EOF' | gh api -X PUT repos/adobe/spacecat-shared/environments/npm-publish --input -
+{
+  "wait_timer": 0,
+  "prevent_self_review": true,
+  "reviewers": [
+    { "type": "Team", "id": 10268844 }   // spacecat-admins (look up via: gh api orgs/adobe/teams/spacecat-admins --jq .id)
+  ],
+  "deployment_branch_policy": {
+    "protected_branches": false,
+    "custom_branch_policies": true
+  }
+}
+EOF
+```
+
+Then re-run the setup script — its preflight will detect the new reviewers
+rule and re-verify `prevent_self_review` is true. The script's `--environment`
+binding on npmjs.com does not need to be re-registered (the binding's
+environment claim is independent of reviewer policy).
+
+To revert (drop the gate again), repeat the PUT with `"reviewers": []`.
 
 ---
 

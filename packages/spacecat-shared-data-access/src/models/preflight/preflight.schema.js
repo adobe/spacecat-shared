@@ -18,7 +18,6 @@ import Preflight from './preflight.model.js';
 import PreflightCollection from './preflight.collection.js';
 
 const schema = new SchemaBuilder(Preflight, PreflightCollection)
-  .withRecordExpiry(7)
   .addReference('belongs_to', 'Site', [], { required: true })
   .addAttribute('asyncJobId', {
     type: 'string',

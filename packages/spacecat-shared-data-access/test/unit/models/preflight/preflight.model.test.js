@@ -38,7 +38,6 @@ describe('PreflightModel', () => {
       endedAt: null,
       result: null,
       error: null,
-      recordExpiresAt: 1767484800,
       createdAt: '2025-06-01T10:00:00.000Z',
       updatedAt: '2025-06-01T10:00:00.000Z',
     };
@@ -154,12 +153,6 @@ describe('PreflightModel', () => {
       const error = { code: 'ERR_SCAN_TIMEOUT', message: 'Scan timed out after 60s' };
       instance.setError(error);
       expect(instance.getError()).to.deep.equal(error);
-    });
-  });
-
-  describe('recordExpiresAt', () => {
-    it('gets recordExpiresAt', () => {
-      expect(instance.getRecordExpiresAt()).to.equal(1767484800);
     });
   });
 

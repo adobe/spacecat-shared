@@ -36,7 +36,6 @@ const preflights = [
     startedAt: '2025-06-01T11:00:01.000Z',
     endedAt: '2025-06-01T11:05:00.000Z',
     result: { opportunities: [{ type: 'broken-backlinks', count: 3 }] },
-    recordExpiresAt: 1767484800,
   },
   {
     preflightId: 'a1b2c3d4-0003-4000-8000-000000000003',
@@ -50,7 +49,6 @@ const preflights = [
     startedAt: '2025-06-02T09:00:01.000Z',
     endedAt: '2025-06-02T09:01:00.000Z',
     error: { code: 'ERR_SCAN_TIMEOUT', message: 'Scan timed out after 60s' },
-    recordExpiresAt: 1767571200,
   },
 ];
 

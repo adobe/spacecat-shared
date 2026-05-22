@@ -139,6 +139,12 @@ describe('PlgOnboardingModel', () => {
         ['IPv6 bracketed', '[::1]'],
         ['IPv6 unbracketed', '2001:db8::1'],
         ['percent-encoded path', 'nba.com/path%20with%20space'],
+        // IP-literal forms rejected via the alphabetic/punycode TLD requirement.
+        ['hex IPv4', '0x7f.0.0.1'],
+        ['hex IPv4 (IMDS)', '0xa9.254.169.254'],
+        ['octal IPv4', '0177.0.0.1'],
+        ['short-form IPv4', '127.1'],
+        ['numeric TLD', 'foo.1'],
       ].forEach(([label, value]) => {
         it(`rejects ${label}: "${value}"`, () => {
           expect(DOMAIN_PATTERN.test(value)).to.be.false;
@@ -183,6 +189,13 @@ describe('PlgOnboardingModel', () => {
         ['trailing dot fqdn', 'nba.com.'],
         ['consecutive dots mid path segment', 'nba.com/v1..0'],
         ['consecutive dots mid path segment 2', 'nba.com/foo..bar'],
+        // Hex-encoded IPv4 literals (WHATWG URL canonicalizes these to dotted-quad,
+        // bypassing denylist-based SSRF gates that match raw strings).
+        ['hex IPv4', '0x7f.0.0.1'],
+        ['hex IPv4 (IMDS)', '0xa9.254.169.254'],
+        ['hex IPv4 all hex', '0xa9.0xfe.0xa9.0xfe'],
+        ['octal IPv4', '0177.0.0.1'],
+        ['numeric TLD', 'foo.1'],
       ].forEach(([label, value]) => {
         it(`rejects ${label}`, () => {
           expect(PlgOnboarding.isValidDomain(value)).to.be.false;
@@ -235,14 +248,14 @@ describe('PlgOnboardingModel', () => {
       // Pinning tests: these inputs pass the bare regex but are correctly rejected
       // by the full validator. They exist to prevent regressions if a future caller
       // is tempted to import DOMAIN_PATTERN directly instead of isValidDomain.
-      it('DOMAIN_PATTERN accepts short-form IPv4 "127.1" but isValidDomain rejects it', () => {
-        expect(PlgOnboarding.DOMAIN_PATTERN.test('127.1')).to.be.true;
-        expect(PlgOnboarding.isValidDomain('127.1')).to.be.false;
-      });
-
       it('DOMAIN_PATTERN accepts trailing-dot path segment but isValidDomain rejects it', () => {
         expect(PlgOnboarding.DOMAIN_PATTERN.test('nba.com/foo.')).to.be.true;
         expect(PlgOnboarding.isValidDomain('nba.com/foo.')).to.be.false;
+      });
+
+      it('DOMAIN_PATTERN accepts consecutive-dot path segment but isValidDomain rejects it', () => {
+        expect(PlgOnboarding.DOMAIN_PATTERN.test('nba.com/v1..0')).to.be.true;
+        expect(PlgOnboarding.isValidDomain('nba.com/v1..0')).to.be.false;
       });
 
       it('DOMAIN_PATTERN has no length cap but isValidDomain enforces 2048', () => {
@@ -250,6 +263,24 @@ describe('PlgOnboardingModel', () => {
         expect(tooLong.length).to.equal(2049);
         expect(PlgOnboarding.DOMAIN_PATTERN.test(tooLong)).to.be.true;
         expect(PlgOnboarding.isValidDomain(tooLong)).to.be.false;
+      });
+    });
+
+    describe('SSRF defense: IP-literal hostnames rejected via TLD requirement', () => {
+      // These would canonicalize to private/loopback IPs via WHATWG URL parsing
+      // (new URL('https://0xa9.254.169.254').hostname → '169.254.169.254').
+      // The alphabetic/punycode TLD requirement in DOMAIN_PATTERN rejects them at
+      // the structural level so downstream raw-string denylists cannot be bypassed.
+      [
+        ['hex IPv4 loopback', '0x7f.0.0.1', '127.0.0.1'],
+        ['hex IPv4 IMDS', '0xa9.254.169.254', '169.254.169.254'],
+        ['hex IPv4 all hex', '0xa9.0xfe.0xa9.0xfe', '169.254.169.254'],
+        ['hex IPv4 RFC1918', '0xa.0.0.1', '10.0.0.1'],
+        ['octal IPv4', '0177.0.0.1', '127.0.0.1'],
+      ].forEach(([label, input]) => {
+        it(`isValidDomain rejects ${label} (${input})`, () => {
+          expect(PlgOnboarding.isValidDomain(input)).to.be.false;
+        });
       });
     });
   });

@@ -31,21 +31,23 @@ class PlgOnboarding extends BaseModel {
 
   // Matches lowercase hostnames (at least one dot required) and an optional subpath
   //   (e.g. nba.com, nba.com/kings, nba.com/us/kings).
+  // The final label (TLD) must be alphabetic (>= 2 chars) or punycode (xn--*). This
+  //   structurally rejects every IP-literal form: dotted-quad (127.0.0.1), short-form
+  //   (127.1), decimal (2130706433), hex (0x7f.0.0.1, 0xa9.254.169.254 → AWS IMDS),
+  //   and octal (0177.0.0.1) — and also blocks foo.1-style typos. WHATWG URL would
+  //   otherwise canonicalize hex/decimal IPs to their dotted-quad form, bypassing
+  //   denylist-based SSRF gates downstream.
   // Rejects: uppercase letters (use normalizeDomain() first), schemes (https://),
-  //   bare IPv4 hostnames (127.0.0.1, 127.0.0.1/path — the negative lookahead is
-  //   anchored to slash/end-of-string so legitimate hosts like 1.2.3.4.example.com
-  //   and nip.io-style wildcard DNS (192.168.1.1.nip.io) are still accepted; see
-  //   schema validator for all-numeric hostname check covering short forms like
-  //   127.1), ports (:8080), single-label hostnames (localhost, metadata), query
-  //   strings, fragments, empty/trailing path segments, and any path segment
-  //   starting with a dot (blocks ./, ../, .hidden, ..foo, etc.).
+  //   ports (:8080), single-label hostnames (localhost, metadata), query strings,
+  //   fragments, empty/trailing path segments, and any path segment starting with
+  //   a dot (blocks ./, ../, .hidden, ..foo, etc.).
   // Path-qualified domains (nba.com/kings) are distinct sort-key values from the bare
   //   hostname; callers must call normalizeDomain() before findByImsOrgIdAndDomain.
   // Labels must not start or end with a hyphen (RFC 1035).
   // Raw Unicode / IDN must be punycode-encoded before validation (xn-- form is accepted).
   // Percent-encoded path characters (%20 etc.) are not accepted; decode before validation.
   // Underscore is allowed in path segments but not in hostname labels.
-  static DOMAIN_PATTERN = /^(?!\d+(\.\d+){3}(?:\/|$))[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(\/(?!\.)[a-z0-9._~-]+)*$/;
+  static DOMAIN_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.(?:[a-z]{2,}|xn--[a-z0-9-]+)(\/(?!\.)[a-z0-9._~-]+)*$/;
 
   // Returns the canonical form of a domain value: lowercased.
   // Must be called on any user-supplied value before passing it to the domain
@@ -56,7 +58,8 @@ class PlgOnboarding extends BaseModel {
 
   // Complete domain validator used by the schema and intended for external consumers.
   // Layers a typeof guard, case-canonical check, control-character rejection,
-  // all-numeric-hostname rejection (covers short-form IPs like 127.1 and 2130706433),
+  // all-numeric-hostname rejection (defense-in-depth; DOMAIN_PATTERN's alphabetic-TLD
+  // requirement already rejects dotted-quad, short-form, decimal, hex, and octal IPs),
   // trailing-dot path-segment rejection, DOMAIN_PATTERN test, and length caps.
   // Note: DOMAIN_PATTERN alone is not sufficient — always prefer this method.
   // Lowercase-only (host AND path) is intentional canonicalization, not a bug. The

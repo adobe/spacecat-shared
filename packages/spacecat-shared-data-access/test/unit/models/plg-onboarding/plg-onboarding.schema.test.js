@@ -82,6 +82,10 @@ describe('PlgOnboarding Schema', () => {
         ['consecutive dots in middle of segment', 'nba.com/foo..bar'],
         ['null byte in domain', 'nba.com\x00/evil'],
         ['control character in path', 'nba.com/ki\x01ngs'],
+        ['hex IPv4 loopback', '0x7f.0.0.1'],
+        ['hex IPv4 IMDS', '0xa9.254.169.254'],
+        ['octal IPv4', '0177.0.0.1'],
+        ['numeric TLD', 'foo.1'],
       ].forEach(([label, value]) => {
         it(`rejects ${label}`, () => {
           expect(domainAttr.validate(value)).to.be.false;

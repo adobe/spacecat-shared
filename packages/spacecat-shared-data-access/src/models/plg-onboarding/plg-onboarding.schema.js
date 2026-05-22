@@ -28,7 +28,7 @@ const schema = new SchemaBuilder(PlgOnboarding, PlgOnboardingCollection)
     type: 'string',
     required: true,
     readOnly: true,
-    validate: (value) => PlgOnboarding.DOMAIN_PATTERN.test(value) && value.length <= 253,
+    validate: (value) => PlgOnboarding.isValidDomain(value),
   })
   .addAttribute('baseURL', {
     type: 'string',

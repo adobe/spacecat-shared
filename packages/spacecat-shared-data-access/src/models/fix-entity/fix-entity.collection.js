@@ -188,6 +188,17 @@ class FixEntityCollection extends BaseCollection {
     }
   }
 
+  /**
+   * Gets all fixes with their suggestions for a specific opportunity.
+   *
+   * @async
+   * @param {string} opportunityId - The ID of the opportunity.
+   * @returns {Promise<Array>} - A promise that resolves to an array of objects containing:
+   *   - fixEntity: The FixEntity model
+   *   - suggestions: Array of associated Suggestion models
+   * @throws {DataAccessError} - Throws an error if the query fails.
+   * @throws {ValidationError} - Throws an error if opportunityId is not provided.
+   */
   async getAllFixesWithSuggestionsByOpportunityId(opportunityId) {
     guardId('opportunityId', opportunityId, 'FixEntityCollection');
 

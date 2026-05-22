@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import BrandSemrushProject from './brand-semrush-project.model.js';
@@ -26,9 +26,31 @@ import BrandSemrushProjectCollection from './brand-semrush-project.collection.js
 const LANGUAGE_TAG_REGEX = /^[a-z]{2,3}(-[a-z]{2,4})?$/;
 
 const schema = new SchemaBuilder(BrandSemrushProject, BrandSemrushProjectCollection)
-  // Reference to Brand (many-to-one). The owning organization and Semrush
-  // workspace are reachable via Brand -> Organization.
-  .addReference('belongs_to', 'Brand')
+  // brandId is the FK to the brands table in mysticat-data-service. We do
+  // NOT model it as `.addReference('belongs_to', 'Brand')` here because
+  // spacecat-shared-data-access does not (yet) ship a Brand entity — no
+  // Brand model or collection is registered in entity.registry.js. With a
+  // `belongs_to: Brand` reference in place, every BrandSemrushProject
+  // instantiation throws "Collection BrandCollection not found" from
+  // base.model.js's eager reference resolution (reference.js
+  // #toAccessorConfigs), which 500s every spacecat-api-service /semrush/*
+  // route in production.
+  //
+  // The attribute + addAllIndex pair below mirrors what `addReference(
+  // 'belongs_to', 'Brand')` would have produced internally (see
+  // schema.builder.js#addReference) — same UUID-validated `brandId`
+  // attribute and same `allByBrandId` collection accessor that the semrush
+  // handlers depend on (spacecat-api-service:
+  // src/support/semrush/handlers/prompts.js). When/if a Brand entity is
+  // added, this block can be replaced with `.addReference('belongs_to',
+  // 'Brand')`, which additionally yields the navigation accessor
+  // `getBrand()` on the model side.
+  .addAttribute('brandId', {
+    type: 'string',
+    required: true,
+    validate: (value) => isValidUUID(value),
+  })
+  .addAllIndex(['brandId'])
   .addAttribute('semrushProjectId', {
     type: 'string',
     required: true,

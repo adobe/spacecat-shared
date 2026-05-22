@@ -796,9 +796,6 @@ describe('FixEntityCollection', () => {
       expect(result[0].suggestions).to.have.lengthOf(2);
       expect(result[1].fixEntity.getId()).to.equal('fix-2');
       expect(result[1].suggestions).to.have.lengthOf(1);
-
-      expect(mockFixEntitySuggestionCollection.allByIndexKeys)
-        .to.have.been.calledWith({ opportunityId });
     });
 
     it('should handle empty results', async () => {

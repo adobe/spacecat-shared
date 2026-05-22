@@ -87,6 +87,7 @@ describe('PlgOnboardingModel', () => {
         CLOSED: 'CLOSED',
         REOPENED: 'REOPENED',
         OFFBOARDED: 'OFFBOARDED',
+        PENDING: 'PENDING',
       });
     });
   });

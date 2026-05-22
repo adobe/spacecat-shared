@@ -524,6 +524,7 @@ export const Config = (data = {}) => {
   self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
   self.getGroupedURLs = (type) => state?.handlers?.[type]?.groupedURLs;
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
+  self.getDefaults = () => state?.defaults;
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
   self.getBrandProfile = () => state?.brandProfile;
@@ -995,6 +996,7 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
   handlers: config.getHandlers(),
+  defaults: config.getDefaults?.(),
   contentAiConfig: config.getContentAiConfig(),
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),

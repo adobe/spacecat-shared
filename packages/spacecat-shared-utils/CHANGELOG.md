@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-utils-v1.116.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.0...@adobe/spacecat-shared-utils-v1.116.1) (2026-05-22)
+
+### Bug Fixes
+
+* **utils:** normalize $LATEST function version in resolveSecretsName ([#1614](https://github.com/adobe/spacecat-shared/issues/1614)) ([86c55b9](https://github.com/adobe/spacecat-shared/commit/86c55b9c53faf9a3ca5cb98b7181d3ca269af238)), closes [adobe/spacecat-scrape-job-manager#177](https://github.com/adobe/spacecat-scrape-job-manager/issues/177) [adobe/spacecat-content-scraper#886](https://github.com/adobe/spacecat-content-scraper/issues/886)
+
+## [@adobe/spacecat-shared-utils-v1.116.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.4...@adobe/spacecat-shared-utils-v1.116.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-utils-v1.115.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.3...@adobe/spacecat-shared-utils-v1.115.4) (2026-05-14)
 
 ### Bug Fixes

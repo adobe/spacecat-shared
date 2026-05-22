@@ -249,6 +249,68 @@ describe('PlgOnboarding Schema', () => {
       expect(reviewsAttr.validate(reviews)).to.be.true;
     });
 
+    it('accepts valid reviews with PENDING decision', () => {
+      const reviews = [{
+        reason: 'Domain is not an AEM site',
+        decision: 'PENDING',
+        reviewedBy: 'ese@adobe.com',
+        reviewedAt: '2026-05-18T10:00:00.000Z',
+        justification: 'Emailed customer, awaiting response',
+      }];
+      expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+
+    it('accepts multiple PENDING reviews appended over time', () => {
+      const reviews = [
+        {
+          reason: 'Domain is not an AEM site',
+          decision: 'PENDING',
+          reviewedBy: 'ese@adobe.com',
+          reviewedAt: '2026-05-18T10:00:00.000Z',
+          justification: 'First contact attempt',
+        },
+        {
+          reason: 'Domain is not an AEM site',
+          decision: 'PENDING',
+          reviewedBy: 'ese@adobe.com',
+          reviewedAt: '2026-05-19T10:00:00.000Z',
+          justification: 'Second follow-up sent',
+        },
+      ];
+      expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+
+    it('rejects an unknown decision value', () => {
+      const reviews = [{
+        reason: 'test',
+        decision: 'INACTIVATED',
+        reviewedBy: 'ese@adobe.com',
+        reviewedAt: '2026-05-18T10:00:00.000Z',
+        justification: 'test',
+      }];
+      expect(reviewsAttr.validate(reviews)).to.be.false;
+    });
+
+    it('accepts PENDING followed by a terminal decision', () => {
+      const reviews = [
+        {
+          reason: 'test',
+          decision: 'PENDING',
+          reviewedBy: 'ese@adobe.com',
+          reviewedAt: '2026-05-18T10:00:00.000Z',
+          justification: 'First contact',
+        },
+        {
+          reason: 'test',
+          decision: 'UPHELD',
+          reviewedBy: 'ese@adobe.com',
+          reviewedAt: '2026-05-19T10:00:00.000Z',
+          justification: 'Confirmed non-AEM',
+        },
+      ];
+      expect(reviewsAttr.validate(reviews)).to.be.true;
+    });
+
     it('accepts multiple reviews', () => {
       const reviews = [
         {

@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.3.1...@adobe/spacecat-shared-cloud-manager-client-v1.4.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.3.0...@adobe/spacecat-shared-cloud-manager-client-v1.3.1) (2026-05-17)
+
+### Bug Fixes
+
+* **cloud-manager-client:** forward parent extraheader to STANDARD submodule init ([#1607](https://github.com/adobe/spacecat-shared/issues/1607)) ([18b96bd](https://github.com/adobe/spacecat-shared/commit/18b96bd1c89f0c47b6573a20a26529a115cc959d))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.2.2...@adobe/spacecat-shared-cloud-manager-client-v1.3.0) (2026-05-16)
+
+### Features
+
+* submodule support — reinstate clone, fix pull, add hasSubmodules flag ([#1550](https://github.com/adobe/spacecat-shared/issues/1550)) ([3329ff8](https://github.com/adobe/spacecat-shared/commit/3329ff82740c2311545bd7a1ab693eb92ecb8f5d))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.2.1...@adobe/spacecat-shared-cloud-manager-client-v1.2.2) (2026-05-14)
 
 ### Bug Fixes

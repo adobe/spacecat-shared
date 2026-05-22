@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.12...@adobe/spacecat-shared-html-analyzer-v1.3.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-html-analyzer-v1.2.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.11...@adobe/spacecat-shared-html-analyzer-v1.2.12) (2026-05-15)
 
 ### Bug Fixes

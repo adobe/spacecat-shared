@@ -128,7 +128,9 @@ export default class DrsClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`DRS ${method} ${path} failed: ${response.status} - ${errorText}`);
+      const error = new Error(`DRS ${method} ${path} failed: ${response.status} - ${errorText}`);
+      error.status = response.status;
+      throw error;
     }
 
     const contentType = response.headers.get('content-type') || '';

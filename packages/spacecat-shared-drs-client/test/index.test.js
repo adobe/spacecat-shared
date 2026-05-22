@@ -122,14 +122,19 @@ describe('DrsClient', () => {
         .to.be.rejectedWith('DRS client is not configured');
     });
 
-    it('throws on HTTP error', async () => {
+    it('throws on HTTP error with status property', async () => {
       const scope = nock(DRS_API_URL)
         .post('/jobs')
         .reply(400, 'Bad request');
 
       const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
-      await expect(client.submitJob({ provider_id: 'test' }))
-        .to.be.rejectedWith('DRS POST /jobs failed: 400');
+      try {
+        await client.submitJob({ provider_id: 'test' });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.message).to.include('DRS POST /jobs failed: 400');
+        expect(err.status).to.equal(400);
+      }
       scope.done();
     });
   });

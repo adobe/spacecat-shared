@@ -95,8 +95,10 @@ describe('PlgOnboardingModel', () => {
         'example.com/en-us',
         'example.com/case_studies',
         'xn--nba-6na.com',
-        // IPv4 lookahead is anchored to slash/end-of-string; hostnames that merely
-        // begin with a dotted-quad remain valid (covers nip.io-style wildcard DNS).
+        // Hostnames that begin with a dotted-quad-shaped prefix but end in an
+        // alphabetic TLD remain valid — IP literals are blocked by the TLD
+        // requirement (final label must be [a-z]{2,} or xn--*), not by a
+        // lookahead. Covers nip.io-style wildcard DNS.
         '1.2.3.4.example.com',
         '192.168.1.1.nip.io',
       ].forEach((value) => {
@@ -164,7 +166,8 @@ describe('PlgOnboardingModel', () => {
         'example.com/case_studies',
         'xn--nba-6na.com',
         // Hostnames that start with a dotted-quad but continue with non-IP labels:
-        // the IPv4 lookahead is anchored to slash/end-of-string so these are valid.
+        // IP literals are rejected via the alphabetic/punycode TLD requirement,
+        // not via a hostname-prefix lookahead, so these legitimate hosts pass.
         '1.2.3.4.example.com',
         '192.168.1.1.nip.io',
       ].forEach((value) => {

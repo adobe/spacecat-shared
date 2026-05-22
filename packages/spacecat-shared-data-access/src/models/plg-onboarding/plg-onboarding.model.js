@@ -26,9 +26,17 @@ class PlgOnboarding extends BaseModel {
 
   static MAX_HOSTNAME_LENGTH = 253; // RFC 1035 DNS name limit
 
-  // Practical cap covering common browser (2000-2083) and CDN limits.
+  // Practical cap, chosen for storage and sort-key index depth rather than for any
+  // specific browser/URL-bar limit (the domain field is a stored identifier, not a URL).
   static MAX_DOMAIN_LENGTH = 2048;
 
+  // **WARNING for external consumers: do NOT use DOMAIN_PATTERN directly.**
+  // This regex is incomplete on its own — it has no length cap, no control-character
+  // rejection, no all-numeric-hostname check, no trailing-dot/consecutive-dot path
+  // rejection, and no typeof guard. Always call `PlgOnboarding.isValidDomain(value)`
+  // which composes this regex with the rest of the validator. The regex is exported
+  // only for legacy callers and may become module-private in a future major release.
+  //
   // Matches lowercase hostnames (at least one dot required) and an optional subpath
   //   (e.g. nba.com, nba.com/kings, nba.com/us/kings).
   // The final label (TLD) must be alphabetic (>= 2 chars) or punycode (xn--*). This
@@ -50,8 +58,11 @@ class PlgOnboarding extends BaseModel {
   static DOMAIN_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.(?:[a-z]{2,}|xn--[a-z0-9-]+)(\/(?!\.)[a-z0-9._~-]+)*$/;
 
   // Returns the canonical form of a domain value: lowercased.
-  // Must be called on any user-supplied value before passing it to the domain
-  // attribute validator or to findByImsOrgIdAndDomain to prevent duplicate records.
+  // Note: non-string inputs (null/undefined/number/object) are returned unchanged.
+  // Callers MUST also run `isValidDomain(value)` before using the result — calling
+  // `normalizeDomain` alone does not guarantee the value is a string or safe to
+  // pass to `findByImsOrgIdAndDomain` (which would otherwise treat a non-string
+  // sort key as something it isn't).
   static normalizeDomain(value) {
     return typeof value === 'string' ? value.toLowerCase() : value;
   }
@@ -72,10 +83,20 @@ class PlgOnboarding extends BaseModel {
     if (typeof value !== 'string' || value !== value.toLowerCase()) {
       return false;
     }
+    // Length caps run BEFORE the regex test so a multi-MB pathological input is
+    // rejected in O(1) rather than driving a multi-MB regex scan. The regex itself
+    // is linear (no overlapping quantifiers) but external consumers may not bound
+    // input size upstream.
+    if (value.length > PlgOnboarding.MAX_DOMAIN_LENGTH) {
+      return false;
+    }
     if (/[^\x21-\x7e]/.test(value)) {
       return false;
     }
     const [hostname, ...pathParts] = value.split('/');
+    if (hostname.length > PlgOnboarding.MAX_HOSTNAME_LENGTH) {
+      return false;
+    }
     if (/^[\d.]+$/.test(hostname)) {
       return false;
     }
@@ -85,9 +106,7 @@ class PlgOnboarding extends BaseModel {
     if (pathParts.some((seg) => /\.$/.test(seg) || seg.includes('..'))) {
       return false;
     }
-    return PlgOnboarding.DOMAIN_PATTERN.test(value)
-      && hostname.length <= PlgOnboarding.MAX_HOSTNAME_LENGTH
-      && value.length <= PlgOnboarding.MAX_DOMAIN_LENGTH;
+    return PlgOnboarding.DOMAIN_PATTERN.test(value);
   }
 
   static STATUSES = {

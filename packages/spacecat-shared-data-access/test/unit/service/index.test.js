@@ -13,7 +13,11 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { createDataAccess, createFetchCompat } from '../../../src/service/index.js';
+import {
+  createDataAccess,
+  createFetchCompat,
+  resetDataAccessConnections,
+} from '../../../src/service/index.js';
 
 describe('service/index', () => {
   it('uses provided PostgREST client and does not require postgrestUrl', () => {
@@ -113,6 +117,13 @@ describe('service/index', () => {
       await wrappedFetch('http://example.com');
 
       expect(mockFetch).to.have.been.calledOnceWith('http://example.com', undefined);
+    });
+  });
+
+  describe('resetDataAccessConnections', () => {
+    it('resolves and is idempotent', async () => {
+      await resetDataAccessConnections();
+      await resetDataAccessConnections();
     });
   });
 });

@@ -103,3 +103,5 @@ export function createDataAccess(
   logger: object,
   client?: object,
 ): DataAccess;
+
+export function resetDataAccessConnections(): Promise<void>;

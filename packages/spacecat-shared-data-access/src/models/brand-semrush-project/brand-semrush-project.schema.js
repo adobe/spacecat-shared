@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import BrandSemrushProject from './brand-semrush-project.model.js';
@@ -26,9 +26,20 @@ import BrandSemrushProjectCollection from './brand-semrush-project.collection.js
 const LANGUAGE_TAG_REGEX = /^[a-z]{2,3}(-[a-z]{2,4})?$/;
 
 const schema = new SchemaBuilder(BrandSemrushProject, BrandSemrushProjectCollection)
-  // Reference to Brand (many-to-one). The owning organization and Semrush
-  // workspace are reachable via Brand -> Organization.
-  .addReference('belongs_to', 'Brand')
+  // brandId is the FK to the brands table in mysticat-data-service. Declared
+  // explicitly (rather than via `.addReference('belongs_to', 'Brand')`)
+  // because this package does not ship a Brand entity — `belongs_to` would
+  // throw "Collection BrandCollection not found" at model instantiation
+  // (reference.js#toAccessorConfigs). The (brandId, updatedAt) index below
+  // produces the same `allByBrandId` accessor `belongs_to` would have.
+  // Swap back to `.addReference('belongs_to', 'Brand')` once Brand is
+  // registered.
+  .addAttribute('brandId', {
+    type: 'string',
+    required: true,
+    validate: (value) => isValidUUID(value),
+  })
+  .addIndex({ composite: ['brandId'] }, { composite: ['updatedAt'] })
   .addAttribute('semrushProjectId', {
     type: 'string',
     required: true,

@@ -728,6 +728,127 @@ describe('FixEntityCollection', () => {
     });
   });
 
+  describe('getAllFixesWithSuggestionsByOpportunityId', () => {
+    it('should get all fixes with suggestions for an opportunity', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+
+      const mockFixEntitySuggestions = [
+        {
+          getFixEntityId: () => 'fix-1',
+          getSuggestionId: () => 'suggestion-1',
+        },
+        {
+          getFixEntityId: () => 'fix-1',
+          getSuggestionId: () => 'suggestion-2',
+        },
+        {
+          getFixEntityId: () => 'fix-2',
+          getSuggestionId: () => 'suggestion-3',
+        },
+      ];
+
+      const mockFixEntities = {
+        data: [
+          {
+            getId: () => 'fix-1',
+            getCreatedAt: () => '2024-01-15T10:30:00.000Z',
+          },
+          {
+            getId: () => 'fix-2',
+            getCreatedAt: () => '2024-01-15T09:30:00.000Z',
+          },
+        ],
+      };
+
+      const mockSuggestionsData = {
+        data: [
+          { getId: () => 'suggestion-1', title: 'Suggestion 1' },
+          { getId: () => 'suggestion-2', title: 'Suggestion 2' },
+          { getId: () => 'suggestion-3', title: 'Suggestion 3' },
+        ],
+      };
+
+      const mockFixEntitySuggestionCollection = {
+        allByIndexKeys: stub().resolves(mockFixEntitySuggestions),
+      };
+
+      const mockSuggestionCollection = {
+        batchGetByKeys: stub().resolves(mockSuggestionsData),
+        idName: 'suggestionId',
+      };
+
+      fixEntityCollection.batchGetByKeys = stub().resolves(mockFixEntities);
+      fixEntityCollection.idName = 'fixEntityId';
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+      mockEntityRegistry.getCollection
+        .withArgs('SuggestionCollection')
+        .returns(mockSuggestionCollection);
+
+      const result = await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(
+        opportunityId,
+      );
+
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].fixEntity.getId()).to.equal('fix-1');
+      expect(result[0].suggestions).to.have.lengthOf(2);
+      expect(result[1].fixEntity.getId()).to.equal('fix-2');
+      expect(result[1].suggestions).to.have.lengthOf(1);
+
+      expect(mockFixEntitySuggestionCollection.allByIndexKeys)
+        .to.have.been.calledWith({ opportunityId });
+    });
+
+    it('should handle empty results', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+
+      const mockFixEntitySuggestionCollection = {
+        allByIndexKeys: stub().resolves([]),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      const result = await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(
+        opportunityId,
+      );
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should validate required parameters', async () => {
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(null);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error.message).to.include('opportunityId must be a valid UUID');
+      }
+    });
+
+    it('should handle errors gracefully', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+
+      const mockFixEntitySuggestionCollection = {
+        allByIndexKeys: stub().rejects(new Error('Database error')),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(opportunityId);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.be.instanceOf(DataAccessError);
+        expect(error.message).to.include('Failed to get all fixes with suggestions by opportunity ID');
+      }
+    });
+  });
+
   describe('FixEntity model constants', () => {
     it('has ORIGINS enum with correct values', () => {
       expect(FixEntity.ORIGINS).to.be.an('object');

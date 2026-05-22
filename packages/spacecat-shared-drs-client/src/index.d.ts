@@ -37,6 +37,7 @@ interface ScrapeJobParams {
   urls: string[];
   priority?: 'HIGH' | 'LOW';
   daysBack?: number;
+  spacecatOrgId?: string;
 }
 
 interface ScrapeLookupParams {

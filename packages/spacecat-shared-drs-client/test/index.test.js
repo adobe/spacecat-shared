@@ -397,6 +397,45 @@ describe('DrsClient', () => {
         daysBack: 7,
       })).to.be.rejectedWith('daysBack is only supported for reddit_comments dataset');
     });
+
+    it('includes spacecat_org_id in job body when spacecatOrgId is provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.spacecat_org_id).to.equal('org-abc-123');
+          expect(body.provider_id).to.equal('brightdata');
+          expect(body.parameters.dataset_id).to.equal(SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS);
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-org' });
+
+      const result = await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: ['https://youtube.com/watch?v=abc'],
+        spacecatOrgId: 'org-abc-123',
+      });
+
+      expect(result.job_id).to.equal('scrape-org');
+      scope.done();
+    });
+
+    it('omits spacecat_org_id from job body when spacecatOrgId is not provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body).to.not.have.property('spacecat_org_id');
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-no-org' });
+
+      const result = await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: ['https://youtube.com/watch?v=abc'],
+      });
+
+      expect(result.job_id).to.equal('scrape-no-org');
+      scope.done();
+    });
   });
 
   describe('lookupScrapeResults', () => {

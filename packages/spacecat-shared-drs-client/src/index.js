@@ -206,6 +206,7 @@ export default class DrsClient {
    * @param {string[]} params.urls - URLs to scrape
    * @param {string} [params.priority='HIGH'] - Job priority (HIGH or LOW)
    * @param {number} [params.daysBack] - Number of days back to scrape (reddit_comments only)
+   * @param {string} [params.spacecatOrgId] - SpaceCat organization ID
    * @returns {Promise<object>} Job result with job_id
    */
   async submitScrapeJob({
@@ -214,6 +215,7 @@ export default class DrsClient {
     urls,
     priority = 'HIGH',
     daysBack,
+    spacecatOrgId,
   }) {
     if (!VALID_SCRAPE_DATASET_IDS.has(datasetId)) {
       throw new Error(`Invalid dataset_id "${datasetId}". Must be one of: ${[...VALID_SCRAPE_DATASET_IDS].join(', ')}`);
@@ -239,11 +241,16 @@ export default class DrsClient {
       parameters.days_back = daysBack;
     }
 
-    return this.submitJob({
+    const jobParams = {
       provider_id: 'brightdata',
       priority,
       parameters,
-    });
+    };
+    if (spacecatOrgId) {
+      jobParams.spacecat_org_id = spacecatOrgId;
+    }
+
+    return this.submitJob(jobParams);
   }
 
   /**

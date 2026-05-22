@@ -572,8 +572,7 @@ describe('Config Tests', () => {
     it('creates a Config with scraperConfig property', () => {
       const data = {
         scraperConfig: {
-          customHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
-          injectDefaults: true,
+          headers: { 'Accept-Language': 'en-US,en;q=0.9' },
         },
       };
       const config = Config(data);
@@ -587,7 +586,7 @@ describe('Config Tests', () => {
 
     it('updates scraperConfig', () => {
       const scraperConfig = {
-        customHeaders: { 'Accept-Language': 'fr-FR,fr;q=0.9' },
+        headers: { 'Accept-Language': 'fr-FR,fr;q=0.9' },
       };
       const config = Config({});
       config.updateScraperConfig(scraperConfig);
@@ -597,21 +596,21 @@ describe('Config Tests', () => {
     it('rejects non-string header values via updateScraperConfig', () => {
       const config = Config({});
       expect(
-        () => config.updateScraperConfig({ customHeaders: { 'Accept-Language': 42 } }),
+        () => config.updateScraperConfig({ headers: { 'Accept-Language': 42 } }),
       ).to.throw(/Configuration validation error/);
     });
 
     it('rejects CRLF in header values via updateScraperConfig', () => {
       const config = Config({});
       expect(
-        () => config.updateScraperConfig({ customHeaders: { 'X-Foo': 'a\r\nX-Injected: b' } }),
+        () => config.updateScraperConfig({ headers: { 'X-Foo': 'a\r\nX-Injected: b' } }),
       ).to.throw(/Configuration validation error/);
     });
 
     it('rejects invalid header names via updateScraperConfig', () => {
       const config = Config({});
       expect(
-        () => config.updateScraperConfig({ customHeaders: { 'X Bad Name': 'v' } }),
+        () => config.updateScraperConfig({ headers: { 'X Bad Name': 'v' } }),
       ).to.throw(/Configuration validation error/);
     });
 
@@ -623,8 +622,7 @@ describe('Config Tests', () => {
     it('serializes scraperConfig via toDynamoItem', () => {
       const data = {
         scraperConfig: {
-          customHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
-          injectDefaults: true,
+          headers: { 'Accept-Language': 'en-US,en;q=0.9' },
         },
       };
       const config = Config(data);

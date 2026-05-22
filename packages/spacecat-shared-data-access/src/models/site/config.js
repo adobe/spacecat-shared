@@ -382,16 +382,12 @@ export const configSchema = Joi.object({
   /**
    * Per-site configuration consumed by the content scraper.
    *
-   * `customHeaders` is forwarded verbatim by the scraper as HTTP headers on outbound
+   * `headers` is forwarded verbatim by the scraper as HTTP headers on outbound
    * requests, so values are bounded and restricted to printable ASCII to avoid
    * header-injection (CR/LF) and oversized-payload hazards.
-   *
-   * `injectDefaults` is an opt-in flag reserved for future consumer logic
-   * (e.g. inject a sensible default `Accept-Language` when none is supplied).
-   * It has no consumer yet; semantics will be pinned by the first consumer that uses it.
    */
   scraperConfig: Joi.object({
-    customHeaders: Joi.object()
+    headers: Joi.object()
       // RFC 7230 token characters for header names
       .pattern(
         Joi.string().pattern(/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/).max(64),
@@ -400,7 +396,6 @@ export const configSchema = Joi.object({
       )
       .max(32)
       .optional(),
-    injectDefaults: Joi.boolean().optional(),
   }).optional(),
   tokowakaConfig: Joi.object({
     apiKey: Joi.string().optional(),

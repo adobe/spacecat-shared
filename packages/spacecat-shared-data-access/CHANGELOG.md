@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.70.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.69.0...@adobe/spacecat-shared-data-access-v3.70.0) (2026-05-22)
+
+### Features
+
+* **data-access:** extend DOMAIN_PATTERN to support subpath domains (LLMO-4187) ([#1593](https://github.com/adobe/spacecat-shared/issues/1593)) ([f6cd505](https://github.com/adobe/spacecat-shared/commit/f6cd505da6c61936538a39b26465c2bdc1c3863b))
+
 ## [@adobe/spacecat-shared-data-access-v3.69.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.68.0...@adobe/spacecat-shared-data-access-v3.69.0) (2026-05-22)
 
 ### Features

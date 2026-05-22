@@ -593,6 +593,44 @@ describe('Config Tests', () => {
       config.updateScraperConfig(scraperConfig);
       expect(config.getScraperConfig()).to.deep.equal(scraperConfig);
     });
+
+    it('rejects non-string header values via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ customHeaders: { 'Accept-Language': 42 } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects CRLF in header values via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ customHeaders: { 'X-Foo': 'a\r\nX-Injected: b' } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects invalid header names via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ customHeaders: { 'X Bad Name': 'v' } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects non-object scraperConfig via updateScraperConfig', () => {
+      const config = Config({});
+      expect(() => config.updateScraperConfig('oops')).to.throw(/Configuration validation error/);
+    });
+
+    it('serializes scraperConfig via toDynamoItem', () => {
+      const data = {
+        scraperConfig: {
+          customHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
+          injectDefaults: true,
+        },
+      };
+      const config = Config(data);
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.scraperConfig).to.deep.equal(data.scraperConfig);
+    });
   });
 
   describe('Grouped URLs option', () => {

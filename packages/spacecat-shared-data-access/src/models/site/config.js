@@ -379,8 +379,27 @@ export const configSchema = Joi.object({
     ).optional(),
     outputLocation: Joi.string().required(),
   }).optional(),
+  /**
+   * Per-site configuration consumed by the content scraper.
+   *
+   * `customHeaders` is forwarded verbatim by the scraper as HTTP headers on outbound
+   * requests, so values are bounded and restricted to printable ASCII to avoid
+   * header-injection (CR/LF) and oversized-payload hazards.
+   *
+   * `injectDefaults` is an opt-in flag reserved for future consumer logic
+   * (e.g. inject a sensible default `Accept-Language` when none is supplied).
+   * It has no consumer yet; semantics will be pinned by the first consumer that uses it.
+   */
   scraperConfig: Joi.object({
-    customHeaders: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
+    customHeaders: Joi.object()
+      // RFC 7230 token characters for header names
+      .pattern(
+        Joi.string().pattern(/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/).max(64),
+        // Visible ASCII + tab, no CR/LF/NUL
+        Joi.string().pattern(/^[\t\x20-\x7E]*$/).max(1024),
+      )
+      .max(32)
+      .optional(),
     injectDefaults: Joi.boolean().optional(),
   }).optional(),
   tokowakaConfig: Joi.object({
@@ -955,6 +974,9 @@ export const Config = (data = {}) => {
   };
 
   self.updateScraperConfig = (scraperConfig) => {
+    // Validate against the canonical schema so bad input is rejected at the setter
+    // rather than silently round-tripping through Dynamo.
+    validateConfiguration({ ...state, scraperConfig });
     state.scraperConfig = scraperConfig;
   };
 
@@ -1012,7 +1034,7 @@ Config.toDynamoItem = (config) => ({
   brandConfig: config.getBrandConfig(),
   brandProfile: config.getBrandProfile(),
   cdnLogsConfig: config.getCdnLogsConfig(),
-  scraperConfig: config.getScraperConfig?.(),
+  scraperConfig: config.getScraperConfig(),
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),

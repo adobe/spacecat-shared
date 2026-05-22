@@ -110,41 +110,57 @@ if ! [[ "$EXPECTED_BYPASS_USER" =~ ^[a-zA-Z0-9-]+$ ]]; then
   exit 1
 fi
 
-# Environment-side aggregator: every weakness reported in one pass.
-# Mirrors the protection-side aggregator below and the security model documented
-# in docs/RELEASE-RUNBOOK.md "Failure mode 5". Without can_admins_bypass=false,
-# any repo admin could approve their own release; without required_reviewers the
-# environment approval gate is vacuous; without main-only branch policy the
-# OIDC token's 'environment' claim has no server-enforced boundary.
+# Environment-side checks split into two tiers:
+#   - HARD requirements (script aborts): can_admins_bypass=false + the env exists.
+#     Without can_admins_bypass=false any admin could approve their own deployment,
+#     which would defeat both the branch-policy gate and any future approval gate.
+#   - SOFT recommendations (warn only): required_reviewers presence + prevent_self_review.
+#     The required_reviewers rule was removed by design to avoid a single-timezone
+#     bottleneck on routine releases (see workflow header + RELEASE-RUNBOOK.md
+#     "Re-enabling the environment approval gate"). The load-bearing security
+#     boundary is the deployment_branch_policy (checked below): no token can mint
+#     with the 'environment' claim unless ref==main.
 #
 # Note: do NOT use jq's `// true` to default can_admins_bypass — `//` treats
 # `false` as absent and falls through to the default, so `false // true` is
 # `true`. Compare directly with `!= false` instead.
-ENV_WEAKNESSES=$(gh api "repos/${REPO}/environments/${ENVIRONMENT}" --jq '
-  [ (if .can_admins_bypass != false then "can_admins_bypass not strictly false" else empty end),
-    (if ((.protection_rules // []) | map(select(.type == "required_reviewers" and ((.reviewers // []) | length) > 0)) | length) == 0
-       then "no required_reviewers rule, or rule has empty reviewers list" else empty end),
-    (if ((.protection_rules // []) | map(select(.type == "required_reviewers")) | first | .prevent_self_review) != true
-       then "required_reviewers.prevent_self_review not strictly true (env gate would allow same-actor rubber stamp)" else empty end)
-  ] | join("; ")
+# Single gh api call returning tab-separated yes/no for each check, parsed
+# inline in bash. Avoids three node-eval round-trips and keeps the parsing
+# in the same jq pipeline that already powers the other env/protection checks.
+ENV_FLAGS=$(gh api "repos/${REPO}/environments/${ENVIRONMENT}" --jq '
+  [ (if .can_admins_bypass == false then "yes" else "no" end),
+    (if ((.protection_rules // []) | map(select(.type == "required_reviewers" and ((.reviewers // []) | length) > 0)) | length) > 0 then "yes" else "no" end),
+    (if (((.protection_rules // []) | map(select(.type == "required_reviewers")) | first | .prevent_self_review) == true) then "yes" else "no" end)
+  ] | @tsv
 ' 2>/dev/null || echo "__MISSING__")
 
-if [ "$ENV_WEAKNESSES" = "__MISSING__" ]; then
+if [ "$ENV_FLAGS" = "__MISSING__" ]; then
   echo "ERROR: GitHub Environment '${ENVIRONMENT}' does not exist on ${REPO}."
   echo "       Create it (Settings → Environments) with: can_admins_bypass=false,"
-  echo "       required reviewers (non-empty), prevent_self_review=true,"
-  echo "       main-only deployment branch policy."
+  echo "       main-only deployment branch policy. Required reviewers are OPTIONAL"
+  echo "       (see workflow header for the steady-state policy)."
   exit 1
 fi
 
-if [ -n "$ENV_WEAKNESSES" ]; then
-  echo "ERROR: '${ENVIRONMENT}' environment is weaker than required: ${ENV_WEAKNESSES}"
-  echo ""
-  echo "       Required:"
-  echo "         can_admins_bypass == false"
-  echo "         at least one required_reviewers rule with a non-empty reviewer list"
-  echo "         required_reviewers.prevent_self_review == true"
+IFS=$'\t' read -r ENV_BYPASS_OK ENV_HAS_REVIEWERS ENV_PSR_OK <<< "$ENV_FLAGS"
+
+if [ "$ENV_BYPASS_OK" != "yes" ]; then
+  echo "ERROR: '${ENVIRONMENT}' environment has can_admins_bypass != false."
+  echo "       Required: can_admins_bypass == false (admins must NOT be able to skip the env policy)."
   exit 1
+fi
+
+if [ "$ENV_HAS_REVIEWERS" = "yes" ] && [ "$ENV_PSR_OK" != "yes" ]; then
+  echo "ERROR: '${ENVIRONMENT}' has required_reviewers but prevent_self_review != true."
+  echo "       If reviewers are configured at all, prevent_self_review MUST be true,"
+  echo "       otherwise a PR author could approve their own release."
+  exit 1
+fi
+if [ "$ENV_HAS_REVIEWERS" != "yes" ]; then
+  echo "INFO: '${ENVIRONMENT}' has no required_reviewers rule — releases auto-publish on main."
+  echo "      This is the intended steady state for this repo (see workflow header)."
+  echo "      To re-enable a human gate, see docs/RELEASE-RUNBOOK.md ('Re-enabling the"
+  echo "      environment approval gate')."
 fi
 
 # Branch-policy check: filter by type == "branch" so a tag policy named "main"

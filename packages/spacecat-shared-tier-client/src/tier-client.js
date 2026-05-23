@@ -148,8 +148,9 @@ class TierClient {
       if (existing.entitlement) {
         const currentTier = existing.entitlement.getTier();
 
-        // If currentTier doesn't match with given tier and is not PAID, update it
-        if (currentTier !== tier && currentTier !== ENTITLEMENT_TIERS.PAID) {
+        // Only upgrade the tier when the customer is becoming PAID; otherwise keep as-is.
+        // Tiers: PRE_ONBOARD, PLG, FREE_TRIAL, PAID.
+        if (tier === ENTITLEMENT_TIERS.PAID && currentTier !== ENTITLEMENT_TIERS.PAID) {
           existing.entitlement.setTier(tier);
           await existing.entitlement.save();
         }

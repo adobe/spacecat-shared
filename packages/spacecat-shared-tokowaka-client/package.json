@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "@aws-sdk/client-cloudfront": "3.1045.0",
-    "@aws-sdk/client-s3": "3.1045.0",
+    "@aws-sdk/client-cloudfront": "3.1053.0",
+    "@aws-sdk/client-s3": "3.1053.0",
     "hast-util-from-html": "2.0.3",
     "mdast-util-from-markdown": "2.0.3",
     "mdast-util-to-hast": "13.2.1",
@@ -47,7 +47,7 @@
     "c8": "11.0.0",
     "chai": "6.2.2",
     "esmock": "2.7.5",
-    "mocha": "11.7.5",
+    "mocha": "11.7.6",
     "nock": "14.0.15",
     "sinon": "21.1.2",
     "sinon-chai": "4.0.1"

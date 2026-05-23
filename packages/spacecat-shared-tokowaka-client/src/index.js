@@ -892,7 +892,9 @@ class TokowakaClient {
    * @private
    */
   async #cleanupCoveredSuggestions(covered, actorFallback, updatedBy) {
-    if (covered.length === 0) return;
+    if (covered.length === 0) {
+      return;
+    }
     await Promise.all(covered.map(async (cs) => {
       cs.setData(omitKeys(cs.getData(), [
         'edgeDeployed', 'tokowakaDeployed', 'coveredByDomainWide', 'coveredByPattern',
@@ -1691,14 +1693,26 @@ class TokowakaClient {
       return m ? [m] : [];
     });
 
-    if (matchers.length === 0) return;
+    if (matchers.length === 0) {
+      return;
+    }
 
     const covered = allSuggestions.filter((s) => {
-      if (s.getId() === suggestion.getId()) return false;
-      if (skippedInBatchIds.has(s.getId())) return false;
-      if (!isEdgeDeployableSuggestionStatus(s.getStatus())) return false;
-      if (isPatternSuggestion(s)) return false;
-      if (s.getData()?.edgeDeployed) return false;
+      if (s.getId() === suggestion.getId()) {
+        return false;
+      }
+      if (skippedInBatchIds.has(s.getId())) {
+        return false;
+      }
+      if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
+        return false;
+      }
+      if (isPatternSuggestion(s)) {
+        return false;
+      }
+      if (s.getData()?.edgeDeployed) {
+        return false;
+      }
       const url = s.getData()?.url;
       return url && matchers.some((match) => match(url));
     });

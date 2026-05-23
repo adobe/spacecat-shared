@@ -41,7 +41,7 @@
   "devDependencies": {
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
-    "mocha": "11.7.5",
+    "mocha": "11.7.6",
     "mocha-multi-reporters": "1.5.1",
     "nock": "14.0.15",
     "sinon": "21.1.2",

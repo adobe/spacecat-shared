@@ -10,11 +10,16 @@
  * governing permissions and limitations under the License.
  */
 
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import sinonChai from 'sinon-chai';
 import nock from 'nock';
 import sinon from 'sinon';
 
 import MacGiverClient from '../src/mac-giver-client.js';
+
+use(chaiAsPromised);
+use(sinonChai);
 
 const CHECK_PATH = '/api/facs/permissions/check';
 
@@ -156,19 +161,31 @@ describe('MacGiverClient', () => {
       expect(capturedHeaders['x-user-token']).to.be.undefined;
     });
 
-    it('returns [] when MacGiver responds with a non-ok status code', async () => {
+    it('throws and logs when MacGiver responds with a non-ok status code', async () => {
+      const logWarn = sinon.spy();
+      const failingClient = new MacGiverClient({
+        macGiverBaseUrl: 'http://localhost:8080',
+        imsClient,
+        log: { warn: logWarn, info: () => {}, debug: () => {} },
+      });
+
       nock('http://localhost:8080')
         .post(CHECK_PATH)
         .reply(503);
 
-      const result = await client.getPermissions({
+      await expect(failingClient.getPermissions({
         userId: 'u',
         imsOrgId: 'o',
         permissions: ['llmo/can_read'],
         userToken: 'tok',
-      });
+      })).to.be.rejectedWith('MacGiver returned 503');
 
-      expect(result).to.deep.equal([]);
+      expect(logWarn).to.have.been.calledOnce;
+      const [logFields, logMessage] = logWarn.firstCall.args;
+      expect(logFields).to.include({
+        tag: 'macgiver', status: 503, userId: 'u', imsOrgId: 'o',
+      });
+      expect(logMessage).to.match(/non-2xx/i);
     });
 
     it('returns [] when response status is not SUCCESS', async () => {

@@ -28,9 +28,24 @@ export default class MacGiverClient {
 
   /**
    * Checks a list of FACS permissions for a (user, org) pair in one round-trip.
-   * Returns the subset of the requested permissions where allowed === true.
-   * Fails closed: returns [] on any non-SUCCESS response.
-   * userToken is optional per the MacGiver API.
+   * Returns the subset of the requested permissions where `allowed === true`.
+   *
+   * Two outcomes are reported distinctly:
+   *
+   * - **Evaluated, no permissions granted** — MacGiver returned 2xx with
+   *   `status: 'SUCCESS'` and no `allowed: true` entries (or `status` !==
+   *   'SUCCESS'). Returns `[]`. The caller treats this as "user has no
+   *   FACS roles for the requested permission set".
+   * - **Could not evaluate** — MacGiver returned a non-2xx status, or the
+   *   request failed at the transport layer. The method **throws** so the
+   *   outer try/catch in login.js fires and omits the `facs_permissions`
+   *   claim from the JWT (fail-safe at login). The caller never sees an
+   *   empty array confused with an outage.
+   *
+   * Logging at the non-2xx path is tagged so operations alerting can
+   * surface MacGiver health regressions independently of the login flow.
+   *
+   * `userToken` is optional per the MacGiver API.
    */
   async getPermissions({
     userId, imsOrgId, permissions, userToken,
@@ -57,7 +72,17 @@ export default class MacGiverClient {
     });
 
     if (!res.ok) {
-      return [];
+      // Distinguish "could not evaluate" from "evaluated, none". Login wraps
+      // this call in a try/catch that logs and omits facs_permissions, so a
+      // throw here is the right shape: the user still logs in, but without
+      // FACS perms, and ops gets a tagged signal that MacGiver is degraded.
+      this.log.warn(
+        {
+          tag: 'macgiver', status: res.status, userId, imsOrgId,
+        },
+        'MacGiver permission lookup returned non-2xx',
+      );
+      throw new Error(`MacGiver returned ${res.status}`);
     }
 
     const json = await res.json();
@@ -72,14 +97,27 @@ export default class MacGiverClient {
 
   /**
    * Checks a single FACS permission for a (user, org) pair.
-   * Returns true if the permission is allowed, false otherwise (fail-closed).
+   *
+   * Boolean convenience wrapper around getPermissions. Returns true when
+   * MacGiver reports the permission as allowed, false otherwise — including
+   * the cases where getPermissions throws because MacGiver could not be
+   * evaluated. Callers that need to distinguish "denied" from "could not
+   * evaluate" must use getPermissions directly and handle the throw.
    */
   async checkPermission({
     userId, imsOrgId, permission, userToken,
   }) {
-    const permitted = await this.getPermissions({
-      userId, imsOrgId, permissions: [permission], userToken,
-    });
-    return permitted.includes(permission);
+    try {
+      const permitted = await this.getPermissions({
+        userId, imsOrgId, permissions: [permission], userToken,
+      });
+      return permitted.includes(permission);
+    } catch {
+      // getPermissions already logged the underlying cause with a
+      // `tag: 'macgiver'` warning; collapsing to false here preserves the
+      // boolean fail-closed contract for callers that don't care about
+      // the distinction.
+      return false;
+    }
   }
 }

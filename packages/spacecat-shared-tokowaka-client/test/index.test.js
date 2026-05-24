@@ -5913,5 +5913,49 @@ describe('TokowakaClient', () => {
       expect(result.coveredSuggestions).to.not.include(urlUnderPath);
       expect(log.warn).to.have.been.called;
     });
+
+    it('batch filter is a no-op when all pattern matchers are invalid', async () => {
+      const invalidPattern = {
+        getId: () => 'bad-pattern',
+        getStatus: () => 'NEW',
+        getData: () => ({
+          allowedRegexPatterns: [''],
+          url: 'https://example.com/*',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const perUrl = {
+        getId: () => 'url-1',
+        getStatus: () => 'NEW',
+        getData: () => ({
+          url: 'https://example.com/page1',
+          contentGainRatio: 1.5,
+          wordCountBefore: 100,
+          wordCountAfter: 200,
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [perUrl],
+        failedSuggestions: [],
+      });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [invalidPattern, perUrl],
+        allSuggestions: [invalidPattern, perUrl],
+      });
+
+      // per-URL not skipped (invalid matchers → no filtering)
+      expect(result.succeededSuggestions).to.include(perUrl);
+      expect(result.succeededSuggestions).to.include(invalidPattern);
+    });
   });
 });

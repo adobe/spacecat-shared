@@ -164,6 +164,12 @@ export function internalServerError(message = 'internal server error', headers =
 export { authWrapper } from './auth/auth-wrapper.js';
 export { facsWrapper } from './auth/facs-wrapper.js';
 export { readOnlyAdminWrapper } from './auth/read-only-admin-wrapper.js';
+
+// Shared FACS rollout constants. Re-exported so consumers (e.g.
+// spacecat-auth-service login.js) can use the same flag table as
+// facsWrapper without re-declaring it. The constant name uses the FT_
+// prefix to match the LaunchDarkly key naming convention.
+export { FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './auth/constants.js';
 export { s2sAuthWrapper } from './auth/s2s-wrapper.js';
 export { enrichPathInfo } from './enrich-path-info-wrapper.js';
 export { compressResponse } from './compression-wrapper.js';

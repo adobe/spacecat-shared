@@ -106,12 +106,26 @@ describe('facsWrapper', () => {
   });
 
   describe('missing authInfo on non-OPTIONS', () => {
-    it('does not crash; bypasses via no-x-product when no auth is present', async () => {
+    it('does not crash; fails closed (403) when no auth and route is FACS-governed', async () => {
+      // Under the new fail-closed contract: route IS in some product map
+      // (GET /insights is in LLMO + ACO) but request has no x-product →
+      // 403, not bypass. Test asserts the wrapper survives missing authInfo
+      // and reaches the fail-closed branch without crashing.
       delete context.attributes;
       context.pathInfo = { method: 'GET', suffix: '/insights', headers: {} };
       const wrapped = facsWrapper(handler, { routeFacsCapabilities });
-      await wrapped({}, context);
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+    });
+
+    it('does not crash; bypasses when no auth and route is not FACS-governed', async () => {
+      delete context.attributes;
+      context.pathInfo = { method: 'GET', suffix: '/non-facs/path', headers: {} };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
+      expect(result).to.deep.equal({ status: 200 });
     });
   });
 
@@ -163,6 +177,42 @@ describe('facsWrapper', () => {
     });
   });
 
+  describe('tenant assertion', () => {
+    it('fails closed (500) when authInfo.getTenantIds() returns more than one tenant', async () => {
+      context.attributes.authInfo = makeAuthInfo({
+        getTenantIds: () => ['ORG-A', 'ORG-B'],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(500);
+      expect(handler.called).to.be.false;
+      expect(logStub.error.calledWithMatch(
+        { tag: 'facs', tenantCount: 2 },
+        'authInfo.getTenantIds() returned more than one tenant — failing closed',
+      )).to.be.true;
+    });
+
+    it('proceeds normally when getTenantIds() returns exactly one tenant', async () => {
+      // Sanity check that the assertion is one-sided (only > 1 fails).
+      context.attributes.authInfo = makeAuthInfo({
+        getTenantIds: () => ['ORG-A'],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      // Exact downstream outcome depends on LD, but the assertion did not fire.
+      expect(result.status).to.not.equal(500);
+    });
+
+    it('proceeds normally when getTenantIds() returns an empty array', async () => {
+      context.attributes.authInfo = makeAuthInfo({
+        getTenantIds: () => [],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(result.status).to.not.equal(500);
+    });
+  });
+
   describe('internal org bypass', () => {
     beforeEach(() => {
       context.env = {
@@ -190,13 +240,15 @@ describe('facsWrapper', () => {
     });
   });
 
-  describe('INTERNAL_ROUTES is accepted but not acted on', () => {
-    // The wrapper accepts INTERNAL_ROUTES (callers use it for a coverage
-    // invariant elsewhere) but does NOT bypass on it. External customers
-    // hitting an internal route fall through to deny-by-default; internal
-    // identities are already covered by the identity / org bypass above.
+  describe('INTERNAL_ROUTES — controllers gate, wrapper bypasses', () => {
+    // INTERNAL_ROUTES is disjoint from every product sub-map (coverage
+    // invariant enforced by the api-service capability test). Under the
+    // new fail-closed bypass ladder, a route that's not in any product
+    // map — including every INTERNAL_ROUTES entry — bypasses the wrapper.
+    // Controllers gate via hasAdminAccess / equivalent (see mac-state-layer.md
+    // §"Controllers are not modified by this design").
 
-    it('does not bypass an external customer hitting a route listed in INTERNAL_ROUTES', async () => {
+    it('bypasses an external customer hitting a route listed in INTERNAL_ROUTES (controllers gate)', async () => {
       const ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
       const mod = await esmock('../../src/auth/facs-wrapper.js', {
         '@adobe/spacecat-shared-launchdarkly-client': {
@@ -205,16 +257,18 @@ describe('facsWrapper', () => {
       });
       context.pathInfo = {
         method: 'POST',
-        suffix: '/configurations/audits', // listed in INTERNAL_ROUTES above
+        suffix: '/configurations/audits', // listed in INTERNAL_ROUTES above, NOT in any product map
         headers: { 'x-product': 'llmo' },
       };
       const wrapped = mod.facsWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
-      expect(result.status).to.equal(403);
-      expect(handler.called).to.be.false;
+      // Wrapper bypasses; the controller's hasAdminAccess / equivalent is
+      // expected to deny the external customer downstream.
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
     });
 
-    it('still bypasses for an internal identity hitting a route listed in INTERNAL_ROUTES', async () => {
+    it('bypasses an internal identity hitting a route listed in INTERNAL_ROUTES', async () => {
       context.attributes.authInfo = makeAuthInfo({ isAdmin: () => true });
       context.pathInfo = {
         method: 'POST',
@@ -227,30 +281,48 @@ describe('facsWrapper', () => {
     });
   });
 
-  describe('missing x-product header', () => {
-    it('bypasses (treats request as not enrolled in FACS)', async () => {
+  describe('missing x-product header — fail-closed', () => {
+    it('returns 403 when route IS in some product map but x-product is absent', async () => {
+      // GET /insights is in PRODUCTS_ROUTES.LLMO and PRODUCTS_ROUTES.ACO.
+      // No x-product means the wrapper can't pick a policy → fail-closed.
       context.pathInfo = { method: 'GET', suffix: '/insights', headers: {} };
       const wrapped = facsWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
-      expect(handler.calledOnce).to.be.true;
-      expect(result).to.deep.equal({ status: 200 });
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.warn.calledWithMatch(
+        { tag: 'facs' },
+        'FACS-governed route called without matching x-product — denying',
+      )).to.be.true;
     });
-  });
 
-  describe('product not enrolled', () => {
-    it('bypasses when the product is absent from PRODUCTS_ROUTES', async () => {
-      context.pathInfo.headers = { 'x-product': 'unknown-product' };
+    it('bypasses when route is NOT in any product map and x-product is absent', async () => {
+      context.pathInfo = { method: 'GET', suffix: '/non-facs/path', headers: {} };
       const wrapped = facsWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
-      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'Product not enrolled in FACS — bypassing')).to.be.true;
+    });
+  });
+
+  describe('unknown / wrong x-product — fail-closed when route is FACS-governed', () => {
+    it('returns 403 when x-product names an unknown product but route IS in some other product map', async () => {
+      // GET /insights IS in LLMO + ACO. x-product='unknown-product' means
+      // the wrapper can't pick a policy → fail-closed.
+      context.pathInfo.headers = { 'x-product': 'unknown-product' };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
     });
 
-    it('bypasses when the product map is empty', async () => {
+    it('bypasses when route map for the named product is empty AND no other product claims the route', async () => {
+      // Empty LLMO sub-map means LLMO is not enrolled; no other product
+      // claims this route either → not FACS-governed → bypass.
       const cfg = {
         INTERNAL_ROUTES: [],
         PRODUCTS_ROUTES: { LLMO: {} },
       };
+      context.pathInfo = { method: 'GET', suffix: '/anything', headers: { 'x-product': 'llmo' } };
       const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
@@ -279,21 +351,11 @@ describe('facsWrapper', () => {
       expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'FACS flag disabled — bypassing')).to.be.true;
     });
 
-    it('bypasses when ldClient is null (fail-open on flag unavailability)', async () => {
-      const mod = await esmock('../../src/auth/facs-wrapper.js', {
-        '@adobe/spacecat-shared-launchdarkly-client': {
-          LaunchDarklyClient: { createFrom: sinon.stub().returns(null) },
-        },
-      });
-      const wrapped = mod.facsWrapper(handler, { routeFacsCapabilities });
-      await wrapped({}, context);
-      expect(handler.calledOnce).to.be.true;
-    });
-
-    it('bypasses when LaunchDarklyClient.createFrom throws (fail-open on missing LD config)', async () => {
+    it('returns 503 (fail-closed) when LaunchDarklyClient.createFrom throws', async () => {
       // IT environments and many test harnesses do not configure
-      // LD_SDK_KEY; `createFrom` throws in that case. Must not crash the
-      // wrapper — treat as flag unavailable → bypass.
+      // LD_SDK_KEY. Under the new fail-closed contract, the wrapper cannot
+      // determine flag state, so it cannot make a defensible decision —
+      // return 503 rather than silently downgrading enforcement.
       const mod = await esmock('../../src/auth/facs-wrapper.js', {
         '@adobe/spacecat-shared-launchdarkly-client': {
           LaunchDarklyClient: {
@@ -303,19 +365,42 @@ describe('facsWrapper', () => {
       });
       const wrapped = mod.facsWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
-      expect(handler.calledOnce).to.be.true;
-      expect(result).to.deep.equal({ status: 200 });
-      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'LaunchDarkly client unavailable — bypassing FACS flag check')).to.be.true;
+      expect(result.status).to.equal(503);
+      expect(handler.called).to.be.false;
+      expect(logStub.error.calledWithMatch(
+        { tag: 'facs' },
+        'LaunchDarkly client unavailable — failing closed',
+      )).to.be.true;
     });
 
-    it('bypasses when isFlagEnabledForIMSOrg rejects (fail-open on flag unavailability)', async () => {
+    it('returns 503 (fail-closed) when createFrom returns null and the flag eval throws', async () => {
+      // `createFrom` returning null without throwing is rare but possible
+      // in misconfigured deployments. The next-line .isFlagEnabledForIMSOrg
+      // call will then throw, which the wrapper catches as fail-closed.
+      const mod = await esmock('../../src/auth/facs-wrapper.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: { createFrom: sinon.stub().returns(null) },
+        },
+      });
+      const wrapped = mod.facsWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(503);
+      expect(handler.called).to.be.false;
+    });
+
+    it('returns 503 (fail-closed) when isFlagEnabledForIMSOrg rejects', async () => {
       ldClient.isFlagEnabledForIMSOrg.rejects(new Error('LD unavailable'));
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
-      await wrapped({}, context);
-      expect(handler.calledOnce).to.be.true;
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(503);
+      expect(handler.called).to.be.false;
+      expect(logStub.error.calledWithMatch(
+        { tag: 'facs' },
+        'LD flag evaluation failed — failing closed',
+      )).to.be.true;
     });
 
-    it('skips flag check and enforces when orgId is absent', async () => {
+    it('denies (403) when no tenant is available for FACS evaluation', async () => {
       context.attributes.authInfo = makeAuthInfo({
         getTenantIds: () => [],
         hasFacsPermission: () => false,
@@ -335,14 +420,23 @@ describe('facsWrapper', () => {
       expect(imsOrgId).to.equal('ORG-ABC@AdobeOrg');
     });
 
-    it('bypasses (without calling LD) when product has no FACS flag configured', async () => {
+    it('skips LD evaluation and proceeds to enforcement when flag entry is absent (retired)', async () => {
       // ACO is in PRODUCTS_ROUTES but absent from FT_MAC_FACS_PERMISSIONS.
+      // Per the design's "Flag retirement" semantic: removing the entry
+      // means "enforcement universal for the product" — bypass the
+      // rollout gate but DO proceed to the permission / state-layer checks.
       context.pathInfo.headers = { 'x-product': 'aco' };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
-      await wrapped({}, context);
-      expect(handler.calledOnce).to.be.true;
+      const result = await wrapped({}, context);
       expect(ldClient.isFlagEnabledForIMSOrg.called).to.be.false;
-      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'No FACS flag configured for product — bypassing')).to.be.true;
+      // makeAuthInfo's hasFacsPermission returns true for any permission,
+      // so enforcement admits the request and the handler runs.
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.debug.calledWithMatch(
+        { tag: 'facs' },
+        'No LD flag entry for product — flag retired, enforcement universal',
+      )).to.be.true;
     });
   });
 
@@ -360,7 +454,12 @@ describe('facsWrapper', () => {
       mockedWrapper = mod.facsWrapper;
     });
 
-    it('returns 403 for an unmapped route within an enrolled product', async () => {
+    it('bypasses an unmapped route that no product claims (not FACS-governed)', async () => {
+      // Under the new fail-closed bypass ladder, a route that is not in any
+      // product map AND not in INTERNAL_ROUTES bypasses the wrapper (it is
+      // not FACS-governed). The coverage invariant in api-service ensures
+      // every real route is consciously classified into one bucket, so
+      // "stray" routes only happen during route-author work-in-progress.
       context.pathInfo = {
         method: 'DELETE',
         suffix: '/unknown',
@@ -368,9 +467,8 @@ describe('facsWrapper', () => {
       };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
-      expect(result.status).to.equal(403);
-      expect(logStub.warn.calledWithMatch({ tag: 'facs' }, 'Route not in PRODUCTS_ROUTES — denying FACS user')).to.be.true;
-      expect(handler.called).to.be.false;
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
     });
 
     it('returns 403 when the user lacks the required FACS permission', async () => {
@@ -468,14 +566,21 @@ describe('facsWrapper', () => {
       await wrapped({}, context);
     }
 
-    it('prefers profile.sub when present (JWT session token)', async () => {
-      await runDenied({ sub: 'ABC123@orgId', email: 'ravverma@adobe.com' });
-      expect(captured.warn.user).to.equal('ABC123@orgId');
+    it('uses profile.sub (auth-service canonicalizes sub === email === userId)', async () => {
+      // After login.js canonicalization, all three fields are byte-equal.
+      // The wrapper picks sub. Test asserts the picked value, not a
+      // preference logic, because there's no longer a fallback to `email`.
+      await runDenied({ sub: 'ABC123@AdobeID', email: 'ABC123@AdobeID' });
+      expect(captured.warn.user).to.equal('ABC123@AdobeID');
     });
 
-    it('falls back to profile.email when sub is missing (IMS bearer token)', async () => {
+    it('returns undefined when profile.sub is missing (login canonicalization not applied)', async () => {
+      // Defensive: a JWT issued before the canonicalization rolled out, or
+      // by a different auth path, won't have sub set. The wrapper reports
+      // undefined rather than reaching for email — auth-service is now the
+      // single canonicalizer.
       await runDenied({ email: 'ABC123@AdobeID' });
-      expect(captured.warn.user).to.equal('ABC123@AdobeID');
+      expect(captured.warn.user).to.equal(undefined);
     });
 
     it('returns undefined when no identifier field is present', async () => {

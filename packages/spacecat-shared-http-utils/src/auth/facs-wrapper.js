@@ -30,19 +30,16 @@ function parseFacsExceptionInternalOrgs(env) {
 }
 
 /**
- * Pulls a stable user identifier out of the auth profile for log lines.
+ * Pulls the canonical subject identifier out of the JWT profile.
  *
- * Both auth paths SpaceCat uses set one of these two fields:
- *   - JWT (JwtHandler, session token):  `sub` (= userId, e.g. `ABC123@<orgId>`),
- *                                        `email` (= userId in current login.js).
- *   - IMS (AdobeImsHandler):            `email` (= user_id, set by transformProfile).
- *
- * `sub` is preferred when present (standard JWT semantics); `email` is the
- * always-available fallback across both paths.
+ * `spacecat-auth-service/src/ims/login.js` canonicalizes `profile.userId`,
+ * `profile.sub`, and `profile.email` to the same `<ident>@<authSrc>` value
+ * before signing the JWT (see Identifiers and flags table in
+ * mac-state-layer.md). They are byte-equal by construction, so this helper
+ * picks `sub` — set on JWT session tokens and on IMS-bearer-token paths.
  */
 function resolveUserIdent(authInfo) {
-  const profile = authInfo?.getProfile?.() || {};
-  return profile.sub || profile.email || undefined;
+  return authInfo?.getProfile?.()?.sub;
 }
 
 function forbidden(message) {
@@ -50,6 +47,38 @@ function forbidden(message) {
     status: 403,
     headers: { 'Content-Type': 'application/json; charset=utf-8', 'x-error': message },
   });
+}
+
+function serviceUnavailable(message) {
+  return new Response(JSON.stringify({ message }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'x-error': message },
+  });
+}
+
+function internalServerError(message) {
+  return new Response(JSON.stringify({ message }), {
+    status: 500,
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'x-error': message },
+  });
+}
+
+/**
+ * Checks whether the request matches a route in ANY product's sub-map.
+ * Used to distinguish "FACS-governed route called without the right
+ * x-product header" (deny) from "non-FACS route" (bypass).
+ *
+ * Per-request cost is bounded by the number of products (typically <5);
+ * each call to resolveRouteCapability is an O(routes-in-product) hash check.
+ */
+function routeMatchesAnyProductMap(context, productsRoutes) {
+  for (const productMap of Object.values(productsRoutes)) {
+    if (productMap && Object.keys(productMap).length > 0
+        && resolveRouteCapability(context, productMap) !== null) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -83,24 +112,28 @@ function forbidden(message) {
  *   for callers permitted to reach them, and by deny-by-default below for
  *   external customers (any route absent from the product map → 403).
  *
- * ## Bypass rules (in order)
+ * ## Bypass rules (fail-closed)
  *
- * 0. CORS preflight (`OPTIONS`) requests bypass. The browser sends them
- *    without credentials but, in this deployment, Fastly forwards
- *    `x-product` on the preflight — so the "no x-product" bypass below
- *    cannot be relied on to short-circuit them. Without this rule, every
- *    preflight reaches deny-by-default and the browser blocks the real
- *    follow-up request.
+ * 0. CORS preflight (`OPTIONS`) → bypass.
  * 1. Internal identities (`is_admin`, `is_s2s_admin`, `is_s2s_consumer`,
- *    `is_read_only_admin`) bypass.
- * 2. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) bypass.
- * 3. Requests without `x-product` header bypass (treated as not enrolled).
- * 4. Products with no sub-map (or empty sub-map) bypass.
- * 5. Per-product LaunchDarkly flag missing or disabled → bypass.
+ *    `is_read_only_admin`) → bypass.
+ * 2. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) → bypass.
+ * 3. Route NOT in any product map → bypass (not FACS-governed, e.g.
+ *    `/heartbeat`, S2S-only paths).
+ *    Route IS in some product map but `x-product` is missing or names a
+ *    product whose sub-map doesn't list it → **403** (fail-closed; can't
+ *    pick the right policy without the header).
+ * 4. Per-product LaunchDarkly flag gate:
+ *    - flag entry present + returns true  → proceed to enforcement
+ *    - flag entry present + returns false → bypass (rollout off for org)
+ *    - flag entry absent (retirement)     → bypass the rollout gate,
+ *      proceed to enforcement (universal)
+ *    - LD ctor failure or eval rejection  → **503** (fail-closed)
  *
- * Otherwise: route lookup in the product map. Missing route → 403 (deny by
- * default; this is what gates external customers off admin/S2S/infrastructure
- * routes). Caller missing the required FACS permission → 403.
+ * Otherwise: route lookup in the product map. Missing required permission
+ * → 403. Per-product `PRODUCTS_FACS_ADMIN_PERMISSIONS` holder → bypass.
+ * Held permission in `PRODUCTS_FACS_STATE_LAYER_EXEMPT_PERMISSIONS` →
+ * bypass. Otherwise, state-layer binding lookup; missing binding → 403.
  *
  * ## Phase 2 state-layer (ReBAC) check
  *
@@ -197,72 +230,131 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       return fn(request, context);
     }
 
+    // Tenant scoping — see Identifiers and flags table in mac-state-layer.md.
+    // getTenantIds() returns an array because the underlying claim is multi-
+    // valued, but the SpaceCat login flow always populates exactly one entry.
+    // A length > 1 is a configuration violation that the login flow shouldn't
+    // have produced; fail closed with a 500 so it surfaces in alerting rather
+    // than silently picking one tenant.
+    const tenantIds = authInfo?.getTenantIds?.() || [];
+    if (tenantIds.length > 1) {
+      log.error({
+        tag: 'facs',
+        tenantCount: tenantIds.length,
+      }, 'authInfo.getTenantIds() returned more than one tenant — failing closed');
+      return internalServerError('Multi-tenant sessions are not supported');
+    }
+    const orgId = tenantIds[0];
+
     // (2) Adobe internal IMS org IDs — permanent bypass (env-configured).
-    const orgId = authInfo?.getTenantIds?.()?.[0];
     const internalImsOrgIds = parseFacsExceptionInternalOrgs(context.env);
     if (orgId && internalImsOrgIds.has(orgId)) {
       log.debug({ tag: 'facs', org: orgId }, 'Internal Adobe org — bypassing FACS');
       return fn(request, context);
     }
 
-    // (3) No x-product header → not enrolled in FACS → bypass.
+    // (3) FACS-governance gate based on x-product header + route membership.
+    //
+    // Three cases:
+    //   (a) Route NOT in any product map and x-product missing/unknown
+    //       → bypass (not FACS-governed; e.g. /heartbeat, S2S admin paths).
+    //   (b) Route IS in some product map but x-product is missing or names
+    //       a product whose sub-map doesn't list this route → 403
+    //       (fail-closed; we can't pick the right policy without the header).
+    //   (c) Route IS in the product map matching x-product → proceed to LD.
     const productCode = context.pathInfo?.headers?.[X_PRODUCT_HEADER]?.toLowerCase();
-    if (!productCode) {
+    const productMap = productCode ? productsRoutes[productCode.toUpperCase()] : undefined;
+    const routeInThisProduct = productMap && Object.keys(productMap).length > 0
+      && resolveRouteCapability(context, productMap) !== null;
+
+    if (!routeInThisProduct) {
+      // Either no x-product, an unknown product, or a product whose sub-map
+      // doesn't list this route. Decide between (a) and (b) by checking
+      // whether ANY other product's sub-map claims the route.
+      if (routeMatchesAnyProductMap(context, productsRoutes)) {
+        log.warn({
+          tag: 'facs',
+          method: context.pathInfo?.method,
+          suffix: context.pathInfo?.suffix,
+          xProduct: productCode || null,
+        }, 'FACS-governed route called without matching x-product — denying');
+        return forbidden('x-product header required for FACS-governed routes');
+      }
+      // Truly non-FACS route → bypass.
+      log.debug({
+        tag: 'facs',
+        product: productCode || null,
+      }, 'Route not FACS-governed — bypassing');
       return fn(request, context);
     }
 
-    // (4) Product not enrolled (no sub-map or empty sub-map) → bypass.
-    const productMap = productsRoutes[productCode.toUpperCase()];
-    if (!productMap || Object.keys(productMap).length === 0) {
-      log.debug({ tag: 'facs', product: productCode }, 'Product not enrolled in FACS — bypassing');
-      return fn(request, context);
-    }
-
-    // (5) Per-product LaunchDarkly flag gate. If no flag is wired for this
-    // product, or the flag is off for this org, bypass.
+    // (4) Per-product LaunchDarkly flag gate.
+    //
+    // Three outcomes:
+    //   (a) flagKey present + LD returns true  → proceed to enforcement
+    //   (b) flagKey present + LD returns false → bypass (rollout off for org)
+    //   (c) flagKey absent                     → bypass the rollout gate and
+    //       proceed to enforcement (flag retirement: enforcement is universal
+    //       for the product — see "Flag retirement" in mac-state-layer.md)
+    //
+    // LD ctor failure or eval rejection is fail-closed (503) — the wrapper
+    // cannot determine flag state, so cannot make a defensible decision.
+    // This is the opposite of the previous "fail-open bypass" behaviour
+    // which would silently downgrade enforcement on LD outages.
     const flagKey = FT_MAC_FACS_PERMISSIONS[productCode.toUpperCase()];
-    if (!flagKey) {
-      log.debug({ tag: 'facs', product: productCode }, 'No FACS flag configured for product — bypassing');
-      return fn(request, context);
-    }
-    if (orgId) {
-      // `LaunchDarklyClient.createFrom` throws when the LD SDK key is not
-      // configured (typical for IT environments and test harnesses). Treat
-      // any failure to construct the client as "flag unavailable" → bypass
-      // (fail-open). The flag is a controlled-rollout switch, not a security
-      // gate; the security gate is the FACS permission check below.
-      let ldClient = null;
+    if (flagKey) {
+      if (!orgId) {
+        log.warn({
+          tag: 'facs',
+          product: productCode,
+        }, 'No tenant on authInfo for FACS evaluation — denying');
+        return forbidden('Tenant required for FACS evaluation');
+      }
+      let ldClient;
       try {
         ldClient = LaunchDarklyClient.createFrom(context);
       } catch (e) {
-        log.debug({ tag: 'facs', err: e.message }, 'LaunchDarkly client unavailable — bypassing FACS flag check');
+        log.error({
+          tag: 'facs', err: e.message,
+        }, 'LaunchDarkly client unavailable — failing closed');
+        return serviceUnavailable('FACS enforcement temporarily unavailable');
       }
-      const isFacsEnabled = ldClient
-        ? await ldClient.isFlagEnabledForIMSOrg(flagKey, `${orgId}@AdobeOrg`).catch(() => false)
-        : false;
+      let isFacsEnabled;
+      try {
+        // The `@AdobeOrg` suffix is the LaunchDarkly contract; auth-service
+        // derives the real suffix from org.orgRef.authSrc at login time and
+        // the tenant id at this layer is the bare ident. Hardcoded for now
+        // (matches existing precedent in readOnlyAdminWrapper); follow-on
+        // change extends this to use the canonical suffix end-to-end.
+        isFacsEnabled = await ldClient.isFlagEnabledForIMSOrg(flagKey, `${orgId}@AdobeOrg`);
+      } catch (e) {
+        log.error({
+          tag: 'facs', flagKey, org: orgId, err: e.message,
+        }, 'LD flag evaluation failed — failing closed');
+        return serviceUnavailable('FACS enforcement temporarily unavailable');
+      }
       if (!isFacsEnabled) {
         log.debug({
-          tag: 'facs',
-          org: orgId,
-          product: productCode,
+          tag: 'facs', org: orgId, product: productCode,
         }, 'FACS flag disabled — bypassing');
         return fn(request, context);
       }
+    } else {
+      log.debug({
+        tag: 'facs',
+        product: productCode,
+      }, 'No LD flag entry for product — flag retired, enforcement universal');
     }
 
-    // Deny by default: unmapped routes within an enrolled product return 403.
-    // Route values are always a non-empty `string[]` (validated at wrapper
-    // construction above), with any-of semantics.
+    // By the time we reach here, step 3 above has already established that
+    // the route is in `productMap` (that's how `routeInThisProduct` became
+    // true and we proceeded past the fail-closed gate). So the lookup must
+    // succeed; if it ever didn't, the wrapper would have already bypassed
+    // or 403'd above. resolveRouteCapability is called once more to hand
+    // the matched permission array forward to the held-permission step.
+    // Route values are validated at wrapper construction to be non-empty
+    // `string[]` with any-of semantics.
     const requiredPermissions = resolveRouteCapability(context, productMap);
-    if (!requiredPermissions) {
-      log.warn({
-        tag: 'facs',
-        method: context.pathInfo?.method,
-        suffix: context.pathInfo?.suffix,
-        user: resolveUserIdent(authInfo),
-      }, 'Route not in PRODUCTS_ROUTES — denying FACS user');
-      return forbidden('Forbidden');
-    }
 
     // Held-permission resolution prefers a state-layer-exempt permission
     // when the user holds one — regardless of the route's listing order.

@@ -70,10 +70,13 @@ export function buildAliasLookupsPerProduct(productsResourceParamAliases) {
  *     wins. For `/v2/orgs/:spaceCatId/brands/:brandId/prompts/:promptId`,
  *     `promptId` is non-resource → falls back to `brandId` (the next param
  *     to its left that IS in the alias lookup for this product).
- *  2. **Body fallback** — only when the route has zero ReBAC-relevant URL
- *     params for this product. Routes with ReBAC params in the URL never
- *     consult the body (prevents body-based spoofing — same safety
- *     rationale as `readOnlyAdminWrapper`).
+ *  2. **Body fallback** — only when the route declares **zero** URL params
+ *     at all. Routes that carry any path param (ReBAC-relevant or not)
+ *     never consult the body. This matches the stricter anti-spoofing
+ *     precondition used by `readOnlyAdminWrapper`: the presence of any
+ *     URL-bound identity in the path establishes the resource boundary,
+ *     and reading a sibling resource id from the body would re-open the
+ *     spoofing surface the URL was meant to close.
  *
  * Returns `null` when:
  *  - the product has no ReBAC scope (no entry in `aliasLookupsPerProduct`,
@@ -120,10 +123,11 @@ export function resolveFacsResource({
     }
   }
 
-  // (2) Body fallback — only when the route has zero ReBAC-relevant URL params
-  // for this product. Routes with such params in the URL never look at the body.
-  const hasUrlReBacParam = routeParams.some((n) => aliasLookup.has(n));
-  if (hasUrlReBacParam) {
+  // (2) Body fallback — only when the route declares NO URL params at all.
+  // Matches the anti-spoofing precondition used by readOnlyAdminWrapper:
+  // a route with any path params, ReBAC-relevant or not, must NOT read a
+  // resource id from the body.
+  if (routeParams.length > 0) {
     return null;
   }
 

@@ -11,7 +11,15 @@
  */
 
 /**
- * Point-read against `facs_access_mappings` used by `facsWrapper` Phase 2.
+ * Resource-binding check against `facs_access_mappings` used by `facsWrapper`
+ * Phase 2. Returns the active mapping row when the subject is scoped to the
+ * resource within the supplied org, otherwise `null`.
+ *
+ * The state layer does NOT store capability — capability is decided by FACS /
+ * MacGiver at login and embedded in the JWT `facs_permissions` claim. This
+ * helper answers the orthogonal scope question only: *is this subject bound
+ * to this resource in this org?* Both must be true for the wrapper to admit
+ * the request (JWT permission + active binding).
  *
  * Lives next to the wrapper (and not in api-service) because every service
  * that mounts `facsWrapper` issues the exact same query against the exact
@@ -19,41 +27,40 @@
  * One source of truth here keeps the wrapper-side authorisation logic in
  * lock-step with the table shape.
  *
- * Single composite index on
- * `(ims_org_id, subject_type, subject_id, facs_permission,
- *   resource_type, resource_id)` makes this O(log n).
+ * Backed by the partial active-row index
+ * `facs_access_mappings_active_by_subject` on
+ * `(ims_org_id, subject_type, subject_id) WHERE revoked_at IS NULL`, so
+ * tombstones don't bloat the lookup and this is an O(log n) point read.
  *
  * @param {object} postgrestClient - From `context.dataAccess.services.postgrestClient`.
  * @param {object} keys
  * @param {string} keys.imsOrgId
  * @param {'user'|'org'} keys.subjectType
  * @param {string} keys.subjectId
- * @param {string} keys.facsPermission - Fully-qualified, e.g. `'llmo/can_configure'`.
- * @param {string} keys.resourceType   - Canonical, e.g. `'brand'`.
+ * @param {string} keys.resourceType - Canonical, e.g. `'brand'`.
  * @param {string} keys.resourceId
- * @returns {Promise<object|null>}
+ * @returns {Promise<{id: string}|null>} Row when an active binding exists, otherwise `null`.
  */
-export async function findFacsAccessMapping(postgrestClient, {
+export async function findFacsResourceBinding(postgrestClient, {
   imsOrgId,
   subjectType,
   subjectId,
-  facsPermission,
   resourceType,
   resourceId,
 }) {
   const { data, error } = await postgrestClient
     .from('facs_access_mappings')
-    .select('*')
+    .select('id')
     .eq('ims_org_id', imsOrgId)
     .eq('subject_type', subjectType)
     .eq('subject_id', subjectId)
-    .eq('facs_permission', facsPermission)
     .eq('resource_type', resourceType)
     .eq('resource_id', resourceId)
+    .is('revoked_at', null)
     .limit(1)
     .maybeSingle();
   if (error) {
-    throw new Error(`findFacsAccessMapping failed: ${error.message}`);
+    throw new Error(`findFacsResourceBinding failed: ${error.message}`);
   }
   return data ?? null;
 }

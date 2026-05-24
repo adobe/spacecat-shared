@@ -13,16 +13,17 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { findFacsAccessMapping } from '../../src/auth/facs-state-layer.js';
+import { findFacsResourceBinding } from '../../src/auth/facs-state-layer.js';
 
 /**
- * Builds a chained PostgREST-style stub. Each `.eq(...)` returns the same
- * builder; the terminal `.maybeSingle()` resolves to `{ data, error }`.
+ * Builds a chained PostgREST-style stub. Each `.eq(...)` / `.is(...)` returns
+ * the same builder; the terminal `.maybeSingle()` resolves to `{ data, error }`.
  */
 function fakePostgrestClient(result) {
   const builder = {
     select: sinon.stub().returnsThis(),
     eq: sinon.stub().returnsThis(),
+    is: sinon.stub().returnsThis(),
     limit: sinon.stub().returnsThis(),
     maybeSingle: sinon.stub().resolves(result),
   };
@@ -32,47 +33,57 @@ function fakePostgrestClient(result) {
   };
 }
 
-describe('findFacsAccessMapping', () => {
+describe('findFacsResourceBinding', () => {
   const keys = {
-    imsOrgId: 'org-1',
+    imsOrgId: 'ACME-ORG@AdobeOrg',
     subjectType: 'user',
     subjectId: 'ABC123@AdobeID',
-    facsPermission: 'llmo/can_view',
     resourceType: 'brand',
     resourceId: 'brand-abc',
   };
 
-  it('returns the row when PostgREST resolves data', async () => {
+  it('returns the row when PostgREST resolves data (active binding exists)', async () => {
     const client = fakePostgrestClient({ data: { id: 'row-1' }, error: null });
-    const out = await findFacsAccessMapping(client, keys);
+    const out = await findFacsResourceBinding(client, keys);
     expect(out).to.deep.equal({ id: 'row-1' });
     expect(client.from.calledOnceWithExactly('facs_access_mappings')).to.be.true;
   });
 
-  it('returns null when PostgREST resolves data: null', async () => {
+  it('selects only the id column (existence check, no payload)', async () => {
+    const client = fakePostgrestClient({ data: { id: 'row-1' }, error: null });
+    await findFacsResourceBinding(client, keys);
+    expect(client.builder.select.calledOnceWithExactly('id')).to.be.true;
+  });
+
+  it('returns null when PostgREST resolves data: null (no active binding)', async () => {
     const client = fakePostgrestClient({ data: null, error: null });
-    const out = await findFacsAccessMapping(client, keys);
+    const out = await findFacsResourceBinding(client, keys);
     expect(out).to.equal(null);
   });
 
   it('returns null when PostgREST resolves data: undefined', async () => {
     const client = fakePostgrestClient({ data: undefined, error: null });
-    const out = await findFacsAccessMapping(client, keys);
+    const out = await findFacsResourceBinding(client, keys);
     expect(out).to.equal(null);
   });
 
-  it('passes every key as an .eq() filter in the expected column-name shape', async () => {
+  it('passes every binding key as an .eq() filter — NO facs_permission column', async () => {
     const client = fakePostgrestClient({ data: null, error: null });
-    await findFacsAccessMapping(client, keys);
+    await findFacsResourceBinding(client, keys);
     const eqCalls = client.builder.eq.getCalls().map((c) => c.args);
     expect(eqCalls).to.deep.equal([
-      ['ims_org_id', 'org-1'],
+      ['ims_org_id', 'ACME-ORG@AdobeOrg'],
       ['subject_type', 'user'],
       ['subject_id', 'ABC123@AdobeID'],
-      ['facs_permission', 'llmo/can_view'],
       ['resource_type', 'brand'],
       ['resource_id', 'brand-abc'],
     ]);
+  });
+
+  it('filters on revoked_at IS NULL so tombstones never match', async () => {
+    const client = fakePostgrestClient({ data: null, error: null });
+    await findFacsResourceBinding(client, keys);
+    expect(client.builder.is.calledOnceWithExactly('revoked_at', null)).to.be.true;
   });
 
   it('throws with a meaningful message when PostgREST returns an error', async () => {
@@ -81,10 +92,10 @@ describe('findFacsAccessMapping', () => {
       error: { message: 'connection refused' },
     });
     try {
-      await findFacsAccessMapping(client, keys);
+      await findFacsResourceBinding(client, keys);
       throw new Error('expected to throw');
     } catch (e) {
-      expect(e.message).to.equal('findFacsAccessMapping failed: connection refused');
+      expect(e.message).to.equal('findFacsResourceBinding failed: connection refused');
     }
   });
 });

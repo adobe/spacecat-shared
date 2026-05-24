@@ -166,11 +166,11 @@ describe('resolveFacsResource', () => {
   });
 
   describe('body fallback', () => {
-    it('reads from body when the route has zero ReBAC params in the URL', () => {
+    it('reads from body when the route declares NO URL params at all', () => {
       const result = resolveFacsResource({
         productCode: 'LLMO',
-        routePattern: 'POST /v2/orgs/:spaceCatId/brands',
-        params: { spaceCatId: 'o1' },
+        routePattern: 'POST /v2/brands',
+        params: {},
         body: { brandId: 'b-from-body' },
         aliasLookupsPerProduct,
       });
@@ -188,6 +188,21 @@ describe('resolveFacsResource', () => {
         productCode: 'LLMO',
         routePattern: 'GET /brands/:brandId',
         params: { /* brandId missing */ },
+        body: { brandId: 'b-from-body' },
+        aliasLookupsPerProduct,
+      });
+      expect(result).to.equal(null);
+    });
+
+    it('does NOT fall back to body when the URL declares ANY param, even a non-ReBAC one', () => {
+      // Stricter precondition matching readOnlyAdminWrapper: any URL path
+      // param (ReBAC-relevant or not) establishes the resource boundary
+      // from the path. Re-opening it via a sibling body field would widen
+      // the spoofing surface the URL was meant to close.
+      const result = resolveFacsResource({
+        productCode: 'LLMO',
+        routePattern: 'POST /v2/orgs/:spaceCatId/brands',
+        params: { spaceCatId: 'o1' },
         body: { brandId: 'b-from-body' },
         aliasLookupsPerProduct,
       });

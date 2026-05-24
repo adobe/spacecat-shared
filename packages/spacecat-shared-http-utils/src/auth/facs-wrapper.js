@@ -13,10 +13,10 @@
 import { Response } from '@adobe/fetch';
 import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 
-import { FF_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
+import { FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
 import { findMatchedRouteKey, resolveRouteCapability } from './route-utils.js';
 import { buildAliasLookupsPerProduct, resolveFacsResource } from './facs-resource-resolver.js';
-import { findFacsAccessMapping } from './facs-state-layer.js';
+import { findFacsResourceBinding } from './facs-state-layer.js';
 
 // Permanent bypass: Adobe internal IMS org IDs are never subject to FACS enforcement.
 // Sourced from env var FACS_EXCEPTION_INTERNAL_ORGS (comma-separated). Keep in sync
@@ -220,7 +220,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
 
     // (5) Per-product LaunchDarkly flag gate. If no flag is wired for this
     // product, or the flag is off for this org, bypass.
-    const flagKey = FF_MAC_FACS_PERMISSIONS[productCode.toUpperCase()];
+    const flagKey = FT_MAC_FACS_PERMISSIONS[productCode.toUpperCase()];
     if (!flagKey) {
       log.debug({ tag: 'facs', product: productCode }, 'No FACS flag configured for product — bypassing');
       return fn(request, context);
@@ -328,25 +328,26 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       }
 
       const subjectUserId = resolveUserIdent(authInfo);
-      // Try user-scoped grant first, fall back to org-scoped. Either is
+      // Try user-scoped binding first, fall back to org-scoped. Either is
       // sufficient — they're stored in the same table and read symmetrically.
+      // The lookup carries no capability; capability was already established
+      // by the Phase 1 JWT check. heldPermission is kept in forensic logs
+      // (below) but is not part of the binding key.
       let mapping = null;
       try {
         mapping = subjectUserId
-          ? await findFacsAccessMapping(postgrestClient, {
+          ? await findFacsResourceBinding(postgrestClient, {
             subjectType: 'user',
             subjectId: subjectUserId,
-            facsPermission: heldPermission,
             resourceType: resource.resourceType,
             resourceId: resource.resourceId,
             imsOrgId: orgId,
           })
           : null;
         if (!mapping && orgId) {
-          mapping = await findFacsAccessMapping(postgrestClient, {
+          mapping = await findFacsResourceBinding(postgrestClient, {
             subjectType: 'org',
             subjectId: orgId,
-            facsPermission: heldPermission,
             resourceType: resource.resourceType,
             resourceId: resource.resourceId,
             imsOrgId: orgId,

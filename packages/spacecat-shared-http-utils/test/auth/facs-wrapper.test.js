@@ -30,7 +30,7 @@ const routeFacsCapabilities = {
       'GET /insights/:insightId': ['llmo/can_read'],
       'POST /configurations': ['llmo/can_manage'],
     },
-    // ACO is populated but absent from FF_MAC_FACS_PERMISSIONS — used to
+    // ACO is populated but absent from FT_MAC_FACS_PERMISSIONS — used to
     // exercise the "no flag configured for product" bypass.
     ACO: {
       'GET /insights': ['aco/view'],
@@ -336,7 +336,7 @@ describe('facsWrapper', () => {
     });
 
     it('bypasses (without calling LD) when product has no FACS flag configured', async () => {
-      // ACO is in PRODUCTS_ROUTES but absent from FF_MAC_FACS_PERMISSIONS.
+      // ACO is in PRODUCTS_ROUTES but absent from FT_MAC_FACS_PERMISSIONS.
       context.pathInfo.headers = { 'x-product': 'aco' };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
@@ -501,7 +501,7 @@ describe('facsWrapper', () => {
 
   describe('Phase 2 state-layer check (direct postgrestClient)', () => {
     let ldClient;
-    let findFacsAccessMappingStub;
+    let findFacsResourceBindingStub;
     let mockedWrapper;
     const phase2Config = {
       ...routeFacsCapabilities,
@@ -522,13 +522,13 @@ describe('facsWrapper', () => {
 
     beforeEach(async () => {
       ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
-      findFacsAccessMappingStub = sinon.stub();
+      findFacsResourceBindingStub = sinon.stub();
       const mod = await esmock('../../src/auth/facs-wrapper.js', {
         '@adobe/spacecat-shared-launchdarkly-client': {
           LaunchDarklyClient: { createFrom: sinon.stub().returns(ldClient) },
         },
         '../../src/auth/facs-state-layer.js': {
-          findFacsAccessMapping: findFacsAccessMappingStub,
+          findFacsResourceBinding: findFacsResourceBindingStub,
         },
       });
       mockedWrapper = mod.facsWrapper;
@@ -536,7 +536,7 @@ describe('facsWrapper', () => {
     });
 
     it('does not call the state-layer reader when route has no resolvable resource', async () => {
-      findFacsAccessMappingStub.resolves({ id: 'm1' });
+      findFacsResourceBindingStub.resolves({ id: 'm1' });
       context.pathInfo = {
         method: 'GET',
         suffix: '/insights',
@@ -545,11 +545,11 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
-      expect(findFacsAccessMappingStub.called).to.be.false;
+      expect(findFacsResourceBindingStub.called).to.be.false;
     });
 
     it('allows when a user-scoped mapping is found', async () => {
-      findFacsAccessMappingStub.resolves({ id: 'm1' });
+      findFacsResourceBindingStub.resolves({ id: 'm1' });
       context.pathInfo = {
         method: 'GET',
         suffix: '/brands/abc-123',
@@ -559,18 +559,20 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });
-      expect(findFacsAccessMappingStub.calledOnce).to.be.true;
-      const [pg, keys] = findFacsAccessMappingStub.firstCall.args;
+      expect(findFacsResourceBindingStub.calledOnce).to.be.true;
+      const [pg, keys] = findFacsResourceBindingStub.firstCall.args;
       expect(pg).to.equal(dummyPostgrest);
       expect(keys.subjectType).to.equal('user');
       expect(keys.resourceType).to.equal('brand');
       expect(keys.resourceId).to.equal('abc-123');
-      expect(keys.facsPermission).to.equal('llmo/can_read');
+      // The binding lookup carries NO capability — capability is established
+      // by the Phase 1 JWT check. The lookup key is (subject, resource, org).
+      expect(keys).to.not.have.property('facsPermission');
     });
 
     it('falls back to org-scoped mapping when user-scoped is missing', async () => {
-      findFacsAccessMappingStub.onCall(0).resolves(null);
-      findFacsAccessMappingStub.onCall(1).resolves({ id: 'm2' });
+      findFacsResourceBindingStub.onCall(0).resolves(null);
+      findFacsResourceBindingStub.onCall(1).resolves({ id: 'm2' });
       context.pathInfo = {
         method: 'GET',
         suffix: '/brands/abc-123',
@@ -580,12 +582,12 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
-      expect(findFacsAccessMappingStub.calledTwice).to.be.true;
-      expect(findFacsAccessMappingStub.secondCall.args[1].subjectType).to.equal('org');
+      expect(findFacsResourceBindingStub.calledTwice).to.be.true;
+      expect(findFacsResourceBindingStub.secondCall.args[1].subjectType).to.equal('org');
     });
 
     it('denies with 403 when neither user-scoped nor org-scoped mapping exists', async () => {
-      findFacsAccessMappingStub.resolves(null);
+      findFacsResourceBindingStub.resolves(null);
       context.pathInfo = {
         method: 'GET',
         suffix: '/brands/abc-123',
@@ -603,7 +605,7 @@ describe('facsWrapper', () => {
     });
 
     it('fails closed (403) when the state-layer read throws', async () => {
-      findFacsAccessMappingStub.rejects(new Error('postgrest down'));
+      findFacsResourceBindingStub.rejects(new Error('postgrest down'));
       context.pathInfo = {
         method: 'GET',
         suffix: '/brands/abc-123',
@@ -621,7 +623,7 @@ describe('facsWrapper', () => {
     });
 
     it('resolves resource from body when route has no ReBAC URL params', async () => {
-      findFacsAccessMappingStub.resolves({ id: 'm3' });
+      findFacsResourceBindingStub.resolves({ id: 'm3' });
       context.pathInfo = {
         method: 'POST',
         suffix: '/brands',
@@ -631,13 +633,13 @@ describe('facsWrapper', () => {
       context.data = { brandId: 'b-from-body' };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       await wrapped({}, context);
-      const keys = findFacsAccessMappingStub.firstCall.args[1];
+      const keys = findFacsResourceBindingStub.firstCall.args[1];
       expect(keys.resourceType).to.equal('brand');
       expect(keys.resourceId).to.equal('b-from-body');
     });
 
     it('skips user-scoped lookup when no user identifier is resolvable; checks only org-scoped', async () => {
-      findFacsAccessMappingStub.resolves({ id: 'm4' });
+      findFacsResourceBindingStub.resolves({ id: 'm4' });
       context.attributes.authInfo = makeAuthInfo({
         getProfile: () => ({}),
         getTenantIds: () => ['CUST-ORG-123'],
@@ -650,8 +652,8 @@ describe('facsWrapper', () => {
       };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       await wrapped({}, context);
-      expect(findFacsAccessMappingStub.calledOnce).to.be.true;
-      expect(findFacsAccessMappingStub.firstCall.args[1].subjectType).to.equal('org');
+      expect(findFacsResourceBindingStub.calledOnce).to.be.true;
+      expect(findFacsResourceBindingStub.firstCall.args[1].subjectType).to.equal('org');
     });
 
     it('skips the state-layer check when postgrestClient is not on context', async () => {
@@ -665,7 +667,7 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: phase2Config });
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });
-      expect(findFacsAccessMappingStub.called).to.be.false;
+      expect(findFacsResourceBindingStub.called).to.be.false;
       expect(logStub.debug.calledWithMatch(
         { tag: 'facs' },
         'postgrestClient not on context — skipping state-layer check',
@@ -794,7 +796,7 @@ describe('facsWrapper', () => {
 
   describe('state-layer exempt permissions', () => {
     let ldClient;
-    let findFacsAccessMappingStub;
+    let findFacsResourceBindingStub;
     let mockedWrapper;
     const exemptConfig = {
       ...routeFacsCapabilities,
@@ -815,13 +817,13 @@ describe('facsWrapper', () => {
 
     beforeEach(async () => {
       ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(true) };
-      findFacsAccessMappingStub = sinon.stub();
+      findFacsResourceBindingStub = sinon.stub();
       const mod = await esmock('../../src/auth/facs-wrapper.js', {
         '@adobe/spacecat-shared-launchdarkly-client': {
           LaunchDarklyClient: { createFrom: sinon.stub().returns(ldClient) },
         },
         '../../src/auth/facs-state-layer.js': {
-          findFacsAccessMapping: findFacsAccessMappingStub,
+          findFacsResourceBinding: findFacsResourceBindingStub,
         },
       });
       mockedWrapper = mod.facsWrapper;
@@ -841,11 +843,11 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });
-      expect(findFacsAccessMappingStub.called).to.be.false;
+      expect(findFacsResourceBindingStub.called).to.be.false;
     });
 
     it('still performs the state-layer check when the held permission is NOT exempt', async () => {
-      findFacsAccessMappingStub.resolves({ id: 'm1' });
+      findFacsResourceBindingStub.resolves({ id: 'm1' });
       context.attributes.authInfo = makeAuthInfo({
         hasFacsPermission: (p) => p === 'llmo/can_view', // not exempt
       });
@@ -857,8 +859,8 @@ describe('facsWrapper', () => {
       };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
       await wrapped({}, context);
-      expect(findFacsAccessMappingStub.calledOnce).to.be.true;
-      expect(findFacsAccessMappingStub.firstCall.args[1].facsPermission).to.equal('llmo/can_view');
+      expect(findFacsResourceBindingStub.calledOnce).to.be.true;
+      expect(findFacsResourceBindingStub.firstCall.args[1]).to.not.have.property('facsPermission');
     });
 
     it('skips the state-layer check on can_manage_user (management endpoint)', async () => {
@@ -874,7 +876,7 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });
-      expect(findFacsAccessMappingStub.called).to.be.false;
+      expect(findFacsResourceBindingStub.called).to.be.false;
     });
 
     it('prefers an exempt held permission even when a brand-scoped permission is listed first', async () => {
@@ -897,13 +899,13 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });
-      expect(findFacsAccessMappingStub.called).to.be.false;
+      expect(findFacsResourceBindingStub.called).to.be.false;
     });
 
     it('still resolves to the brand-scoped permission when the user holds only it', async () => {
       // Same route ([can_view, can_view_all]) but user holds only the
       // non-exempt one — should land on state-layer enforcement.
-      findFacsAccessMappingStub.resolves({ id: 'm1' });
+      findFacsResourceBindingStub.resolves({ id: 'm1' });
       context.attributes.authInfo = makeAuthInfo({
         hasFacsPermission: (p) => p === 'llmo/can_view',
       });
@@ -915,8 +917,8 @@ describe('facsWrapper', () => {
       };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities: exemptConfig });
       await wrapped({}, context);
-      expect(findFacsAccessMappingStub.calledOnce).to.be.true;
-      expect(findFacsAccessMappingStub.firstCall.args[1].facsPermission).to.equal('llmo/can_view');
+      expect(findFacsResourceBindingStub.calledOnce).to.be.true;
+      expect(findFacsResourceBindingStub.firstCall.args[1]).to.not.have.property('facsPermission');
     });
   });
 });

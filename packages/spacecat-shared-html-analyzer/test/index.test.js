@@ -228,6 +228,59 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Just a container with neutral text.');
     });
 
+    it('should remove Video.js player container and its control text', async () => {
+      const html = `<html><body>
+        <h1>NetBanking</h1>
+        <p>Bank from home 24x7</p>
+        <div class="video-js vjs-default-skin">
+          <video class="vjs-tech" src="demo.mp4"></video>
+          <div class="vjs-control-bar">
+            <button class="vjs-play-control">
+              <span class="vjs-control-text">Play Video</span>
+            </button>
+            <div class="vjs-current-time-display">Current Time 0:00</div>
+            <div class="vjs-duration-display">Duration 0:00</div>
+            <div class="vjs-progress-control">Loaded: 0%</div>
+          </div>
+          <div class="vjs-modal-dialog">
+            <div class="vjs-modal-dialog-content">
+              TextColorWhiteBlackRedGreenBlueYellowMagentaCyanOpacityOpaqueSemi-Transparent
+              Font Size50%75%100%125%150%175%200%300%400%
+            </div>
+          </div>
+          <p>Video Player is loading.</p>
+        </div>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('NetBanking');
+      expect(text).to.include('Bank from home 24x7');
+      expect(text).to.not.include('Play Video');
+      expect(text).to.not.include('Current Time');
+      expect(text).to.not.include('Video Player is loading');
+      expect(text).to.not.include('TextColor');
+      expect(text).to.not.include('Font Size');
+    });
+
+    it('should remove other video player containers (plyr, jwplayer, mejs)', async () => {
+      const html = `<html><body>
+        <h1>Content</h1>
+        <div class="plyr plyr--video"><div class="plyr__controls">Play Mute Fullscreen</div></div>
+        <div class="jwplayer"><div class="jw-controls">Play Stop</div></div>
+        <div class="mejs-container"><div class="mejs-controls">Play Pause</div></div>
+        <p>Real content here</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Content');
+      expect(text).to.include('Real content here');
+      expect(text).to.not.include('Play Mute Fullscreen');
+      expect(text).to.not.include('Play Stop');
+      expect(text).to.not.include('Play Pause');
+    });
+
     it('should remove noscript elements by default', async () => {
       const html = '<html><body><h1>Title</h1><noscript>Please enable JavaScript</noscript><p>Content</p></body></html>';
       const text = await stripTagsToText(html);

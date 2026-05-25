@@ -966,69 +966,17 @@ class TokowakaClient {
   }
 
   /**
-   * Handles the domain-wide cascade step: when a domain-wide pattern suggestion is rolled back,
-   * also removes path-level pattern suggestions (and their covered per-URL entries) that were
-   * deployed AFTER the domain-wide was deployed. Path suggestions deployed before the
-   * domain-wide are independent and are preserved so the customer retains their granular config.
-   * @param {Object} metaconfig - Metaconfig object (mutated in place, re-uploaded if changed)
-   * @param {Object} domainWideSuggestion - The domain-wide suggestion being rolled back
-   * @param {Array} allSuggestions - Full suggestion list for the opportunity
-   * @param {string} baseURL
-   * @param {string|undefined} updatedBy
-   * @returns {Promise<void>}
+   * Domain-wide cascade step — intentionally a no-op.
+   * Path suggestions are always independent of domain-wide: the UI prevents
+   * deploying new paths while DW is active (path rows vanish), so any deployed
+   * path predates DW and must survive a DW rollback. DW rollback only clears
+   * coveredByDomainWide on per-URL suggestions; path edgeDeployed and
+   * coveredByPattern are preserved.
    * @private
    */
-  // eslint-disable-next-line max-len
+  // eslint-disable-next-line class-methods-use-this, no-unused-vars, max-len
   async #rollbackDomainWideCascade(metaconfig, domainWideSuggestion, allSuggestions, baseURL, updatedBy) {
-    const cascadeTargets = allSuggestions.filter((s) => {
-      if (s === domainWideSuggestion) {
-        return false;
-      }
-      if (!isPatternSuggestion(s)) {
-        return false;
-      }
-      if (s.getData()?.isDomainWide) {
-        return false;
-      }
-      const pathDeployedAt = s.getData()?.edgeDeployed;
-      if (!pathDeployedAt) {
-        return false;
-      }
-      // Path suggestions are always independent — never cascade.
-      // The UI prevents deploying new paths while DW is active
-      // (path rows vanish), so any deployed path was deployed
-      // before DW and should survive the rollback.
-      return false;
-    });
-
-    if (cascadeTargets.length > 0) {
-      this.log.info(
-        `[rollback] CASCADE: domain-wide rollback cascading to ${cascadeTargets.length} `
-        + `path suggestion(s): ${cascadeTargets.map((s) => s.getData()?.allowedRegexPatterns?.[0]).join(', ')}`,
-      );
-    }
-
-    for (const cascadeSuggestion of cascadeTargets) {
-      const cascadeData = cascadeSuggestion.getData();
-      const cascadePattern = cascadeData?.allowedRegexPatterns?.[0];
-
-      if (cascadePattern) {
-        const changed = this.#removePatternFromMetaconfig(metaconfig, cascadePattern);
-        if (changed) {
-          // eslint-disable-next-line no-await-in-loop
-          await this.uploadMetaconfig(baseURL, metaconfig);
-        }
-      }
-
-      // eslint-disable-next-line no-await-in-loop
-      await this.#stripAndSaveSuggestion(cascadeSuggestion, 'domain-wide-rollback-cascade', updatedBy);
-
-      const cascadeCovered = allSuggestions.filter(
-        (s) => s.getData()?.coveredByPattern === cascadeSuggestion.getId(),
-      );
-      // eslint-disable-next-line no-await-in-loop
-      await this.#cleanupCoveredSuggestions(cascadeCovered, 'domain-wide-rollback-cascade', updatedBy);
-    }
+    // No-op: path suggestions are never cascaded.
   }
 
   /**

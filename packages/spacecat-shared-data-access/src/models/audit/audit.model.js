@@ -186,11 +186,15 @@ class Audit extends BaseModel {
        * @param {string} stepResult.siteId - The site ID. Will be used as the job ID.
        * @param {string} stepResult.options - The options for the scraper.
        * @param {string} stepResult.processingType - The scraping processing type to trigger.
-       * @param {object} [stepResult.customHeaders] - Explicit override for the
-       *   HTTP headers forwarded to the scraper. When unset, the dispatcher
-       *   auto-loads from `context.site.getConfig().getScraperConfig()?.headers`.
+       * @param {Object<string,string>} [stepResult.customHeaders] - Explicit
+       *   override for the HTTP headers forwarded to the scraper. When unset,
+       *   the dispatcher auto-loads from `context.site.getConfig().getScraperConfig()?.headers`.
        * @param {object} auditContext - The audit context.
-       * @param {object} context - The context object, including the loaded `site` model.
+       * @param {object} context - The context object. `context.site` is the
+       *   loaded site model when available; the auto-load uses optional
+       *   chaining so older code paths that have not yet attached a site to
+       *   context (or sites whose Config predates the scraperConfig getter)
+       *   degrade to "no headers" rather than throwing.
        * @param {object} auditContext.next - The next audit step to run.
        * @param {string} auditContext.auditId - The audit ID.
        * @param {string} auditContext.auditType - The audit type.
@@ -214,7 +218,8 @@ class Audit extends BaseModel {
         const customHeaders = stepResult.customHeaders
           ?? context?.site?.getConfig?.()?.getScraperConfig?.()?.headers;
 
-        if (customHeaders) {
+        // Reject empty object so the scraper does not receive `customHeaders: {}`.
+        if (customHeaders && Object.keys(customHeaders).length > 0) {
           payload.customHeaders = customHeaders;
         }
 

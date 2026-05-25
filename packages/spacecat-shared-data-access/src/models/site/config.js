@@ -46,18 +46,19 @@ export const IMPORT_SOURCES = {
   RUM: 'rum',
 };
 
-// HTTP header names that may not be set via `scraperConfig.headers` (case-insensitive).
-// These are owned by the scraper, its HTTP client, or its auth flow; persisting them as
-// per-site overrides would either be stripped at scrape time or open a credential /
-// fingerprint surface that is outside the scope of this feature.
+// HTTP header names that must not be set via `scraperConfig.headers`
+// (case-insensitive). These are owned by the scraper, its HTTP client, or its
+// auth flow; persisting them as per-site overrides would either be stripped at
+// scrape time or open a security surface outside the per-site config contract.
 const RESERVED_SCRAPER_HEADER_NAMES = new Set([
-  // Credential / identity surface.
+  // Credential / authentication headers.
   'authorization',
   'cookie',
   'proxy-authorization',
+  // Routing / fingerprint headers the scraper or its environment owns.
   'host',
   'user-agent',
-  // Connection-management / hop-by-hop headers (RFC 7230 section 6.1).
+  // Hop-by-hop / connection-management headers (RFC 7230 section 6.1).
   'content-length',
   'transfer-encoding',
   'connection',
@@ -401,15 +402,11 @@ export const configSchema = Joi.object({
     outputLocation: Joi.string().required(),
   }).optional(),
   /**
-   * Per-site configuration consumed by the content scraper.
-   *
-   * `headers` is forwarded by the scraper as HTTP headers on outbound requests.
-   * Values are bounded and restricted to printable ASCII to avoid header-injection
-   * (CR/LF) and oversized-payload hazards. Header names are restricted to RFC 7230
-   * token characters. A reserved-name denylist blocks credential / framing / fingerprint
-   * headers that the scraper, its HTTP client, or its auth flow owns; persisting
-   * those here would either be stripped at scrape time or open a security surface
-   * outside the scope of this feature.
+   * Per-site configuration intended to be forwarded by the content scraper as
+   * HTTP headers on outbound requests. Values are bounded and restricted to
+   * printable ASCII to avoid header-injection (CR/LF) and oversized-payload
+   * hazards. Header names are restricted to RFC 7230 token characters.
+   * Reserved names (see `RESERVED_SCRAPER_HEADER_NAMES`) are rejected.
    *
    * Enforcement lives at the schema layer (rather than at each consumer or API
    * boundary) so any writer using `updateScraperConfig` -- API endpoint,
@@ -418,20 +415,26 @@ export const configSchema = Joi.object({
   scraperConfig: Joi.object({
     headers: Joi.object()
       .pattern(
-        // RFC 7230 token characters for header names, 64 chars max, with a
-        // case-insensitive denylist for credential / framing / hop-by-hop names.
-        Joi.string()
-          .pattern(/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/)
-          .max(64)
-          .custom((value, helpers) => (
-            RESERVED_SCRAPER_HEADER_NAMES.has(value.toLowerCase())
-              ? helpers.error('any.invalid')
-              : value
-          )),
-        // Visible ASCII + tab, no CR/LF/NUL, 1024 chars max.
-        Joi.string().pattern(/^[\t\x20-\x7E]*$/).max(1024),
+        // RFC 7230 token characters for header names, 64 chars max.
+        Joi.string().pattern(/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/).max(64),
+        // Visible ASCII + tab, no CR/LF/NUL, 1 to 1024 chars (empty rejected).
+        Joi.string().pattern(/^[\t\x20-\x7E]+$/).max(1024),
       )
       .max(32)
+      // Case-insensitive denylist for credential / routing / hop-by-hop names.
+      // Done as an object-level custom validator (rather than on the key
+      // pattern) so the error message names the offending header instead of
+      // surfacing as Joi's generic "is not allowed" pattern-object error.
+      .custom((value, helpers) => {
+        for (const key of Object.keys(value)) {
+          if (RESERVED_SCRAPER_HEADER_NAMES.has(key.toLowerCase())) {
+            return helpers.message(
+              `"${key}" is a reserved scraper header name and cannot be set via scraperConfig.headers`,
+            );
+          }
+        }
+        return value;
+      })
       .optional(),
   }).optional(),
   tokowakaConfig: Joi.object({
@@ -1006,10 +1009,18 @@ export const Config = (data = {}) => {
   };
 
   self.updateScraperConfig = (scraperConfig) => {
-    // Validate against the canonical schema so bad input is rejected at the setter
-    // rather than silently round-tripping through Dynamo.
-    validateConfiguration({ ...state, scraperConfig });
-    state.scraperConfig = scraperConfig;
+    // Validate eagerly (unlike neighboring setters) so bad input is rejected
+    // at the setter rather than silently round-tripping through Dynamo. This
+    // eagerness is the contract every writer relies on for scraperConfig;
+    // do not "harmonize" with cdnLogs/tokowaka setters.
+    //
+    // Use the sanitized value Joi returns so any future `default()` or
+    // `lowercase()` on the schema applies here too — assigning raw input
+    // would silently drift from what validation guarantees.
+    const { scraperConfig: validated } = validateConfiguration(
+      { ...state, scraperConfig },
+    );
+    state.scraperConfig = validated;
   };
 
   self.updateTokowakaConfig = (tokowakaConfig) => {

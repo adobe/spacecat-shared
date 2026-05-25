@@ -614,19 +614,92 @@ describe('Config Tests', () => {
       ).to.throw(/Configuration validation error/);
     });
 
-    it('rejects reserved header names via updateScraperConfig (case-insensitive)', () => {
+    it('rejects every reserved header name via updateScraperConfig (case-insensitive)', () => {
       const config = Config({});
-      // Exact-cased reserved name.
+      // Locks the full denylist. Mix of casings covers the case-insensitivity
+      // contract; the names cover all three categories
+      // (credential, routing/fingerprint, hop-by-hop).
+      const reserved = [
+        // Credential / auth.
+        'Authorization',
+        'cookie',
+        'Proxy-Authorization',
+        // Routing / fingerprint.
+        'Host',
+        'user-agent',
+        // Hop-by-hop / connection-management.
+        'Content-Length',
+        'Transfer-Encoding',
+        'Connection',
+        'keep-alive',
+        'Upgrade',
+        'TE',
+        'Trailer',
+      ];
+      reserved.forEach((name) => {
+        expect(
+          () => config.updateScraperConfig({ headers: { [name]: 'v' } }),
+          `expected reserved name ${name} to be rejected`,
+        ).to.throw(/Configuration validation error/);
+      });
+    });
+
+    it('reserved-name rejection message names the offending header', () => {
+      const config = Config({});
+      // The custom validator emits an explicit message including the rejected
+      // header name. Locks the contract so a future Joi upgrade or message
+      // override does not silently degrade to "contains an invalid value".
       expect(
         () => config.updateScraperConfig({ headers: { Authorization: 'Bearer x' } }),
-      ).to.throw(/Configuration validation error/);
-      // Lowercase variant — the denylist is case-insensitive.
+      ).to.throw(/Authorization.*reserved scraper header/);
+    });
+
+    it('rejects empty string header values', () => {
+      // Empty values are rarely intentional and often a sign of a UI bug.
+      const config = Config({});
       expect(
-        () => config.updateScraperConfig({ headers: { cookie: 'session=abc' } }),
+        () => config.updateScraperConfig({ headers: { 'Accept-Language': '' } }),
       ).to.throw(/Configuration validation error/);
-      // Hop-by-hop framing header.
+    });
+
+    it('accepts boundary cases (32 entries, 64-char name, 1024-char value)', () => {
+      const config = Config({});
+      const headers = {};
+      // Use a name that's exactly 64 chars and a value exactly 1024 chars,
+      // with 32 entries to lock all three boundaries at once.
+      const longName64 = 'X-'.padEnd(64, 'A');
+      const longValue1024 = 'a'.repeat(1024);
+      headers[longName64] = longValue1024;
+      for (let i = 1; i < 32; i += 1) {
+        headers[`X-H${i}`] = String(i);
+      }
+      expect(() => config.updateScraperConfig({ headers })).to.not.throw();
+    });
+
+    it('rejects 33 entries (one over the size cap)', () => {
+      const config = Config({});
+      const headers = {};
+      for (let i = 0; i < 33; i += 1) {
+        headers[`X-H${i}`] = String(i);
+      }
       expect(
-        () => config.updateScraperConfig({ headers: { 'Transfer-Encoding': 'chunked' } }),
+        () => config.updateScraperConfig({ headers }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects 65-char header name (one over the length cap)', () => {
+      const config = Config({});
+      const tooLongName = 'X-'.padEnd(65, 'A');
+      expect(
+        () => config.updateScraperConfig({ headers: { [tooLongName]: 'v' } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects 1025-char header value (one over the length cap)', () => {
+      const config = Config({});
+      const tooLongValue = 'a'.repeat(1025);
+      expect(
+        () => config.updateScraperConfig({ headers: { 'X-Long': tooLongValue } }),
       ).to.throw(/Configuration validation error/);
     });
 

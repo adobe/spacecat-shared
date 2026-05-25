@@ -385,6 +385,47 @@ describe('AuditModel', () => {
 
       expect(formattedPayload).to.not.have.property('customHeaders');
     });
+
+    it('step-supplied customHeaders win when site also has headers', () => {
+      // Locks override-precedence: when both the step and the site provide
+      // customHeaders, the step value forwards verbatim.
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+        customHeaders: { 'User-Agent': 'StepUA/1.0' },
+      };
+      const site = {
+        getConfig: () => ({
+          getScraperConfig: () => ({ headers: { 'Accept-Language': 'en-US' } }),
+        }),
+      };
+      const context = { env: { AUDIT_JOBS_QUEUE_URL: 'q' }, site };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, {}, context);
+
+      // Site's Accept-Language is not merged in; step value forwarded as-is.
+      expect(formattedPayload.customHeaders).to.deep.equal({ 'User-Agent': 'StepUA/1.0' });
+    });
+
+    it('omits customHeaders when the resolved map is empty', () => {
+      // Guards against a payload like `customHeaders: {}` reaching the scraper.
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+      };
+      const site = {
+        getConfig: () => ({
+          getScraperConfig: () => ({ headers: {} }),
+        }),
+      };
+      const context = { env: { AUDIT_JOBS_QUEUE_URL: 'q' }, site };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, {}, context);
+
+      expect(formattedPayload).to.not.have.property('customHeaders');
+    });
     it('formats scrape client payload correctly', () => {
       const stepResult = {
         urls: [{ url: 'someUrl' }],

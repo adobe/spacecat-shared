@@ -46,6 +46,27 @@ export const IMPORT_SOURCES = {
   RUM: 'rum',
 };
 
+// HTTP header names that may not be set via `scraperConfig.headers` (case-insensitive).
+// These are owned by the scraper, its HTTP client, or its auth flow; persisting them as
+// per-site overrides would either be stripped at scrape time or open a credential /
+// fingerprint surface that is outside the scope of this feature.
+const RESERVED_SCRAPER_HEADER_NAMES = new Set([
+  // Credential / identity surface.
+  'authorization',
+  'cookie',
+  'proxy-authorization',
+  'host',
+  'user-agent',
+  // Connection-management / hop-by-hop headers (RFC 7230 section 6.1).
+  'content-length',
+  'transfer-encoding',
+  'connection',
+  'keep-alive',
+  'upgrade',
+  'te',
+  'trailer',
+]);
+
 const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
 const AWS_REGION_PATTERN = /^[a-z]{2}(?:-[a-z]+)+-\d+$/i;
 const LLMO_TAG = Joi.alternatives()
@@ -382,16 +403,32 @@ export const configSchema = Joi.object({
   /**
    * Per-site configuration consumed by the content scraper.
    *
-   * `headers` is forwarded verbatim by the scraper as HTTP headers on outbound
-   * requests, so values are bounded and restricted to printable ASCII to avoid
-   * header-injection (CR/LF) and oversized-payload hazards.
+   * `headers` is forwarded by the scraper as HTTP headers on outbound requests.
+   * Values are bounded and restricted to printable ASCII to avoid header-injection
+   * (CR/LF) and oversized-payload hazards. Header names are restricted to RFC 7230
+   * token characters. A reserved-name denylist blocks credential / framing / fingerprint
+   * headers that the scraper, its HTTP client, or its auth flow owns; persisting
+   * those here would either be stripped at scrape time or open a security surface
+   * outside the scope of this feature.
+   *
+   * Enforcement lives at the schema layer (rather than at each consumer or API
+   * boundary) so any writer using `updateScraperConfig` -- API endpoint,
+   * internal tool, Slack command -- inherits the same checks.
    */
   scraperConfig: Joi.object({
     headers: Joi.object()
-      // RFC 7230 token characters for header names
       .pattern(
-        Joi.string().pattern(/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/).max(64),
-        // Visible ASCII + tab, no CR/LF/NUL
+        // RFC 7230 token characters for header names, 64 chars max, with a
+        // case-insensitive denylist for credential / framing / hop-by-hop names.
+        Joi.string()
+          .pattern(/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/)
+          .max(64)
+          .custom((value, helpers) => (
+            RESERVED_SCRAPER_HEADER_NAMES.has(value.toLowerCase())
+              ? helpers.error('any.invalid')
+              : value
+          )),
+        // Visible ASCII + tab, no CR/LF/NUL, 1024 chars max.
         Joi.string().pattern(/^[\t\x20-\x7E]*$/).max(1024),
       )
       .max(32)

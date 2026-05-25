@@ -331,6 +331,60 @@ describe('AuditModel', () => {
         auditContext: { some: 'context' },
       });
     });
+
+    it('forwards customHeaders in content scraper payload when set explicitly by the step', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+        customHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
+      };
+      const context = {
+        env: { AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url' },
+      };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, {}, context);
+
+      expect(formattedPayload.customHeaders).to.deep.equal({
+        'Accept-Language': 'en-US,en;q=0.9',
+      });
+    });
+
+    it('auto-loads customHeaders from context.site when step did not set them', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+      };
+      const site = {
+        getConfig: () => ({
+          getScraperConfig: () => ({ headers: { 'Accept-Language': 'en-US,en;q=0.9' } }),
+        }),
+      };
+      const context = {
+        env: { AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url' },
+        site,
+      };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, {}, context);
+
+      expect(formattedPayload.customHeaders).to.deep.equal({
+        'Accept-Language': 'en-US,en;q=0.9',
+      });
+    });
+
+    it('omits customHeaders when neither the step nor the site provides any', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+      };
+      const context = { env: { AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url' } };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, {}, context);
+
+      expect(formattedPayload).to.not.have.property('customHeaders');
+    });
     it('formats scrape client payload correctly', () => {
       const stepResult = {
         urls: [{ url: 'someUrl' }],

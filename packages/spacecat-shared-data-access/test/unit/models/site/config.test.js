@@ -614,6 +614,22 @@ describe('Config Tests', () => {
       ).to.throw(/Configuration validation error/);
     });
 
+    it('rejects reserved header names via updateScraperConfig (case-insensitive)', () => {
+      const config = Config({});
+      // Exact-cased reserved name.
+      expect(
+        () => config.updateScraperConfig({ headers: { Authorization: 'Bearer x' } }),
+      ).to.throw(/Configuration validation error/);
+      // Lowercase variant — the denylist is case-insensitive.
+      expect(
+        () => config.updateScraperConfig({ headers: { cookie: 'session=abc' } }),
+      ).to.throw(/Configuration validation error/);
+      // Hop-by-hop framing header.
+      expect(
+        () => config.updateScraperConfig({ headers: { 'Transfer-Encoding': 'chunked' } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
     it('rejects non-object scraperConfig via updateScraperConfig', () => {
       const config = Config({});
       expect(() => config.updateScraperConfig('oops')).to.throw(/Configuration validation error/);

@@ -173,14 +173,24 @@ class Audit extends BaseModel {
       getQueueUrl: (context) => context.env?.CONTENT_SCRAPER_QUEUE_URL,
       /**
        * Formats the payload for the content scraper queue.
+       *
+       * Per-site scraper headers (configured via the site's `scraperConfig.headers`)
+       * are auto-injected into the SQS payload's `customHeaders`, reusing the
+       * `site` already loaded by the audit framework on the context — no extra
+       * Site.findById is performed. Steps that need a different value can set
+       * `stepResult.customHeaders` explicitly to forward it verbatim instead.
+       *
        * @param {object} stepResult - The result of the audit step.
        * @param {object[]} stepResult.urls - The list of URLs to scrape.
        * @param {string} stepResult.urls[].url - The URL to scrape.
        * @param {string} stepResult.siteId - The site ID. Will be used as the job ID.
        * @param {string} stepResult.options - The options for the scraper.
        * @param {string} stepResult.processingType - The scraping processing type to trigger.
+       * @param {object} [stepResult.customHeaders] - Explicit override for the
+       *   HTTP headers forwarded to the scraper. When unset, the dispatcher
+       *   auto-loads from `context.site.getConfig().getScraperConfig()?.headers`.
        * @param {object} auditContext - The audit context.
-       * @param {object} context - The context object.
+       * @param {object} context - The context object, including the loaded `site` model.
        * @param {object} auditContext.next - The next audit step to run.
        * @param {string} auditContext.auditId - The audit ID.
        * @param {string} auditContext.auditType - The audit type.
@@ -188,16 +198,28 @@ class Audit extends BaseModel {
        *
        * @returns {object} - The formatted payload.
        */
-      formatPayload: (stepResult, auditContext, context) => ({
-        urls: stepResult.urls,
-        jobId: stepResult.siteId,
-        processingType: stepResult.processingType || 'default',
-        skipMessage: false,
-        allowCache: isBoolean(stepResult.allowCache) ? stepResult.allowCache : true,
-        options: stepResult.options || {},
-        completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
-        auditContext,
-      }),
+      formatPayload: (stepResult, auditContext, context) => {
+        const payload = {
+          urls: stepResult.urls,
+          jobId: stepResult.siteId,
+          processingType: stepResult.processingType || 'default',
+          skipMessage: false,
+          allowCache: isBoolean(stepResult.allowCache) ? stepResult.allowCache : true,
+          options: stepResult.options || {},
+          completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
+          auditContext,
+        };
+
+        // Prefer step-supplied customHeaders; otherwise auto-load from site config.
+        const customHeaders = stepResult.customHeaders
+          ?? context?.site?.getConfig?.()?.getScraperConfig?.()?.headers;
+
+        if (customHeaders) {
+          payload.customHeaders = customHeaders;
+        }
+
+        return payload;
+      },
     },
     [Audit.AUDIT_STEP_DESTINATIONS.SCRAPE_CLIENT]: {
       /**

@@ -17,7 +17,20 @@ services:
 
   data-service:
     platform: ${MYSTICAT_DATA_SERVICE_PLATFORM:-linux/amd64}
-    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v1.61.0}
+    # Default tag is bumped here whenever a new schema migration requires a matching data-service
+    # image. The tag is supplemented by an immutable digest so CI cannot silently consume a
+    # re-pushed tag — if ECR re-publishes v5.15.0 with a different binary, the digest mismatch
+    # causes a hard pull failure instead of silent drift.
+    #
+    # To obtain or refresh the digest:
+    #   aws ecr describe-images \
+    #     --profile <your-profile> --region us-east-1 \
+    #     --repository-name mysticat-data-service \
+    #     --image-ids imageTag=v5.15.0 \
+    #     --query 'imageDetails[0].imageDigest' --output text
+    # Then export MYSTICAT_DATA_SERVICE_DIGEST=sha256:<the-digest> before npm run test:it,
+    # or set it in the .env file consumed by docker compose. Leave unset for local dev.
+    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v5.15.0}${MYSTICAT_DATA_SERVICE_DIGEST:+@${MYSTICAT_DATA_SERVICE_DIGEST}}
     depends_on:
       db:
         condition: service_healthy

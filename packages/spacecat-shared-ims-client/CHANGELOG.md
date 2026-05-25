@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-ims-client-v1.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.13.0...@adobe/spacecat-shared-ims-client-v1.13.1) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+## [@adobe/spacecat-shared-ims-client-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.12.7...@adobe/spacecat-shared-ims-client-v1.13.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-ims-client-v1.12.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.12.6...@adobe/spacecat-shared-ims-client-v1.12.7) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
 ## [@adobe/spacecat-shared-ims-client-v1.12.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.12.5...@adobe/spacecat-shared-ims-client-v1.12.6) (2026-04-10)
 
 ### Bug Fixes

@@ -24,6 +24,7 @@ import {
   customerConfigV2Path,
   readCustomerConfigV2,
   writeCustomerConfigV2,
+  LlmoConfigValidationError,
 } from '../src/llmo-config.js';
 
 use(sinonChai);
@@ -160,13 +161,25 @@ describe('llmo-config utilities', () => {
       await expect(readConfig(siteId, s3Client)).rejectedWith(SyntaxError);
     });
 
-    it('throws when the configuration fails schema validation', async () => {
+    it('throws LlmoConfigValidationError when the persisted config fails schema validation', async () => {
       const body = {
         transformToString: sinon.stub().resolves(JSON.stringify({ entities: {} })),
       };
       s3Client.send.resolves({ Body: body });
 
-      await expect(readConfig(siteId, s3Client)).rejectedWith(Error);
+      let caught;
+      try {
+        await readConfig(siteId, s3Client);
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(caught).instanceOf(LlmoConfigValidationError);
+      expect(caught.name).equals('LlmoConfigValidationError');
+      expect(caught.siteId).equals(siteId);
+      expect(caught.issues).to.be.an('array').with.length.greaterThan(0);
+      expect(caught.cause).to.exist;
+      expect(caught.cause.issues).to.equal(caught.issues);
     });
   });
 
@@ -199,6 +212,57 @@ describe('llmo-config utilities', () => {
       s3Client.send.resolves({});
 
       await expect(writeConfig(siteId, validConfig, s3Client)).rejectedWith('Failed to get version ID after writing LLMO config');
+    });
+
+    it('throws LlmoConfigValidationError when category region is invalid', async () => {
+      const invalidConfig = {
+        ...validConfig,
+        categories: {
+          '550e8400-e29b-41d4-a716-446655440000': { name: 'brand', region: 'en-us' },
+        },
+      };
+
+      await expect(writeConfig(siteId, invalidConfig, s3Client))
+        .rejectedWith(LlmoConfigValidationError);
+      expect(s3Client.send).not.called;
+    });
+
+    it('throws LlmoConfigValidationError when a required field is missing', async () => {
+      const invalidConfig = { ...validConfig };
+      delete invalidConfig.entities;
+
+      await expect(writeConfig(siteId, invalidConfig, s3Client))
+        .rejectedWith(LlmoConfigValidationError);
+      expect(s3Client.send).not.called;
+    });
+
+    it('LlmoConfigValidationError carries siteId, name, Zod issues, and cause', async () => {
+      const invalidConfig = {
+        ...validConfig,
+        categories: {
+          '550e8400-e29b-41d4-a716-446655440000': { name: 'brand', region: 'en-us' },
+        },
+      };
+
+      let caught;
+      try {
+        await writeConfig(siteId, invalidConfig, s3Client);
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(caught).instanceOf(LlmoConfigValidationError);
+      expect(caught.name).equals('LlmoConfigValidationError');
+      expect(caught.siteId).equals(siteId);
+      expect(caught.issues).to.be.an('array').with.length.greaterThan(0);
+
+      // Message format: "...failed schema validation: <path>: <code>"
+      expect(caught.message).to.include(siteId);
+      expect(caught.message).to.match(/categories\..+\.region/);
+
+      // Original ZodError preserved as cause for stack-chain debugging.
+      expect(caught.cause).to.exist;
+      expect(caught.cause.issues).to.equal(caught.issues);
     });
   });
 

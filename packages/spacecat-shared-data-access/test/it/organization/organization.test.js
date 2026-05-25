@@ -16,6 +16,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/util.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 
@@ -24,7 +25,7 @@ describe('Organization IT', async () => {
   let Organization;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -84,6 +85,23 @@ describe('Organization IT', async () => {
     );
   });
 
+  it('gets an organization by Semrush workspace id', async () => {
+    const sampleOrganization = sampleData.organizations[0];
+    const organization = await Organization.findBySemrushWorkspaceId(
+      sampleOrganization.getSemrushWorkspaceId(),
+    );
+
+    delete sampleOrganization.record.config;
+    delete organization.record.config;
+
+    expect(organization).to.be.an('object');
+    expect(
+      sanitizeTimestamps(organization.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleOrganization.toJSON()),
+    );
+  });
+
   it('adds a new organization', async () => {
     const data = {
       name: 'New Organization',
@@ -106,7 +124,13 @@ describe('Organization IT', async () => {
 
     expect(
       sanitizeIdAndAuditFields('Organization', organization.toJSON()),
-    ).to.eql(data);
+    ).to.eql({
+      ...data,
+      // Organization.getLlmBackend() defaults to 'azure' when the underlying
+      // record has no llmBackend set (see organization.model.js). toJSON()
+      // surfaces that default, so the assertion needs to include it.
+      llmBackend: 'azure',
+    });
   });
 
   it('updates an organization', async () => {

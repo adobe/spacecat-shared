@@ -568,6 +568,156 @@ describe('Config Tests', () => {
       config.updateCdnLogsConfig(data.cdnLogsConfig);
       expect(config.getCdnLogsConfig()).to.deep.equal(data.cdnLogsConfig);
     });
+
+    it('creates a Config with scraperConfig property', () => {
+      const data = {
+        scraperConfig: {
+          headers: { 'Accept-Language': 'en-US,en;q=0.9' },
+        },
+      };
+      const config = Config(data);
+      expect(config.getScraperConfig()).to.deep.equal(data.scraperConfig);
+    });
+
+    it('returns undefined for scraperConfig when not provided', () => {
+      const config = Config({});
+      expect(config.getScraperConfig()).to.be.undefined;
+    });
+
+    it('updates scraperConfig', () => {
+      const scraperConfig = {
+        headers: { 'Accept-Language': 'fr-FR,fr;q=0.9' },
+      };
+      const config = Config({});
+      config.updateScraperConfig(scraperConfig);
+      expect(config.getScraperConfig()).to.deep.equal(scraperConfig);
+    });
+
+    it('rejects non-string header values via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ headers: { 'Accept-Language': 42 } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects CRLF in header values via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ headers: { 'X-Foo': 'a\r\nX-Injected: b' } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects invalid header names via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ headers: { 'X Bad Name': 'v' } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects every reserved header name via updateScraperConfig (case-insensitive)', () => {
+      const config = Config({});
+      // Locks the full denylist. Mix of casings covers the case-insensitivity
+      // contract; the names cover all three categories
+      // (credential, routing/fingerprint, hop-by-hop).
+      const reserved = [
+        // Credential / auth.
+        'Authorization',
+        'cookie',
+        'Proxy-Authorization',
+        // Routing / fingerprint.
+        'Host',
+        'user-agent',
+        // Hop-by-hop / connection-management.
+        'Content-Length',
+        'Transfer-Encoding',
+        'Connection',
+        'keep-alive',
+        'Upgrade',
+        'TE',
+        'Trailer',
+      ];
+      reserved.forEach((name) => {
+        expect(
+          () => config.updateScraperConfig({ headers: { [name]: 'v' } }),
+          `expected reserved name ${name} to be rejected`,
+        ).to.throw(/Configuration validation error/);
+      });
+    });
+
+    it('reserved-name rejection message names the offending header', () => {
+      const config = Config({});
+      // The custom validator emits an explicit message including the rejected
+      // header name. Locks the contract so a future Joi upgrade or message
+      // override does not silently degrade to "contains an invalid value".
+      expect(
+        () => config.updateScraperConfig({ headers: { Authorization: 'Bearer x' } }),
+      ).to.throw(/Authorization.*reserved scraper header/);
+    });
+
+    it('rejects empty string header values', () => {
+      // Empty values are rarely intentional and often a sign of a UI bug.
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ headers: { 'Accept-Language': '' } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('accepts boundary cases (32 entries, 64-char name, 1024-char value)', () => {
+      const config = Config({});
+      const headers = {};
+      // Use a name that's exactly 64 chars and a value exactly 1024 chars,
+      // with 32 entries to lock all three boundaries at once.
+      const longName64 = 'X-'.padEnd(64, 'A');
+      const longValue1024 = 'a'.repeat(1024);
+      headers[longName64] = longValue1024;
+      for (let i = 1; i < 32; i += 1) {
+        headers[`X-H${i}`] = String(i);
+      }
+      expect(() => config.updateScraperConfig({ headers })).to.not.throw();
+    });
+
+    it('rejects 33 entries (one over the size cap)', () => {
+      const config = Config({});
+      const headers = {};
+      for (let i = 0; i < 33; i += 1) {
+        headers[`X-H${i}`] = String(i);
+      }
+      expect(
+        () => config.updateScraperConfig({ headers }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects 65-char header name (one over the length cap)', () => {
+      const config = Config({});
+      const tooLongName = 'X-'.padEnd(65, 'A');
+      expect(
+        () => config.updateScraperConfig({ headers: { [tooLongName]: 'v' } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects 1025-char header value (one over the length cap)', () => {
+      const config = Config({});
+      const tooLongValue = 'a'.repeat(1025);
+      expect(
+        () => config.updateScraperConfig({ headers: { 'X-Long': tooLongValue } }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects non-object scraperConfig via updateScraperConfig', () => {
+      const config = Config({});
+      expect(() => config.updateScraperConfig('oops')).to.throw(/Configuration validation error/);
+    });
+
+    it('serializes scraperConfig via toDynamoItem', () => {
+      const data = {
+        scraperConfig: {
+          headers: { 'Accept-Language': 'en-US,en;q=0.9' },
+        },
+      };
+      const config = Config(data);
+      const dynamoItem = Config.toDynamoItem(config);
+      expect(dynamoItem.scraperConfig).to.deep.equal(data.scraperConfig);
+    });
   });
 
   describe('Grouped URLs option', () => {
@@ -2581,6 +2731,44 @@ describe('Config Tests', () => {
       config.updateLlmoDetectedCdn('other');
       expect(config.getLlmoDetectedCdn()).to.equal('other');
     });
+
+    [
+      'aem-cs-fastly',
+      'commerce-fastly',
+      'byocdn-fastly',
+      'byocdn-akamai',
+      'byocdn-cloudfront',
+      'byocdn-cloudflare',
+      'byocdn-imperva',
+      'byocdn-other',
+      'ams-cloudfront',
+      'ams-frontdoor',
+      'other',
+    ].forEach((token) => {
+      it(`accepts detectedCdn token "${token}" via validateConfiguration`, () => {
+        const config = {
+          llmo: {
+            dataFolder: '/test',
+            brand: 'testBrand',
+            detectedCdn: token,
+          },
+        };
+        const validated = validateConfiguration(config);
+        expect(validated.llmo.detectedCdn).to.equal(token);
+      });
+    });
+
+    it('rejects unknown detectedCdn token via validateConfiguration', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          detectedCdn: 'byocdn-unknown',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw(/Configuration validation error: "llmo\.detectedCdn" must be one of/);
+    });
   });
 
   describe('Tokowaka Config', () => {
@@ -2972,6 +3160,132 @@ describe('Config Tests', () => {
       });
       const dynamoItem = Config.toDynamoItem(data);
       expect(dynamoItem.commerceLlmoConfig).to.deep.equal(data.getCommerceLlmoConfig());
+    });
+  });
+
+  describe('rumConfig', () => {
+    describe('getRumConfig', () => {
+      it('returns rumConfig when set', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        expect(config.getRumConfig()).to.deep.equal({
+          hasDomainKey: true,
+          lastCheckedAt: '2026-05-08T00:00:00.000Z',
+        });
+      });
+
+      it('returns undefined when rumConfig is absent', () => {
+        const config = Config({});
+        expect(config.getRumConfig()).to.be.undefined;
+      });
+
+      it('returns a copy so mutating the result does not affect internal state', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        const copy = config.getRumConfig();
+        copy.hasDomainKey = false;
+        expect(config.hasRumDomainKey()).to.be.true;
+      });
+    });
+
+    describe('hasRumDomainKey', () => {
+      it('returns true when hasDomainKey is true', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        expect(config.hasRumDomainKey()).to.be.true;
+      });
+
+      it('returns false when hasDomainKey is false', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: false, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        expect(config.hasRumDomainKey()).to.be.false;
+      });
+
+      it('returns false when rumConfig is absent', () => {
+        const config = Config({});
+        expect(config.hasRumDomainKey()).to.be.false;
+      });
+    });
+
+    describe('updateRumConfig', () => {
+      it('sets hasDomainKey to true and records lastCheckedAt', () => {
+        const now = new Date('2026-05-08T12:00:00.000Z');
+        const config = Config({});
+        config.updateRumConfig(true, now);
+        const rum = config.getRumConfig();
+        expect(rum.hasDomainKey).to.be.true;
+        expect(rum.lastCheckedAt).to.equal('2026-05-08T12:00:00.000Z');
+      });
+
+      it('sets hasDomainKey to false and records lastCheckedAt', () => {
+        const now = new Date('2026-05-08T12:00:00.000Z');
+        const config = Config({});
+        config.updateRumConfig(false, now);
+        expect(config.getRumConfig().hasDomainKey).to.be.false;
+        expect(config.getRumConfig().lastCheckedAt).to.equal('2026-05-08T12:00:00.000Z');
+      });
+
+      it('overwrites a previous rumConfig value', () => {
+        const now = new Date('2026-05-08T12:00:00.000Z');
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2025-01-01T00:00:00.000Z' },
+        });
+        config.updateRumConfig(false, now);
+        expect(config.hasRumDomainKey()).to.be.false;
+        expect(config.getRumConfig().lastCheckedAt).to.equal('2026-05-08T12:00:00.000Z');
+      });
+
+      it('throws TypeError when hasDomainKey is not a boolean', () => {
+        const config = Config({});
+        expect(() => config.updateRumConfig(null)).to.throw(TypeError, /hasDomainKey must be a boolean/);
+        expect(() => config.updateRumConfig(undefined)).to.throw(TypeError, /hasDomainKey must be a boolean/);
+        expect(() => config.updateRumConfig('true')).to.throw(TypeError, /hasDomainKey must be a boolean/);
+        expect(() => config.updateRumConfig(1)).to.throw(TypeError, /hasDomainKey must be a boolean/);
+      });
+    });
+
+    describe('Joi schema validation', () => {
+      it('accepts a valid rumConfig', () => {
+        expect(() => Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        })).to.not.throw();
+      });
+
+      it('rejects rumConfig missing hasDomainKey', () => {
+        expect(() => validateConfiguration({
+          rumConfig: { lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        })).to.throw(/hasDomainKey/);
+      });
+
+      it('rejects rumConfig with invalid lastCheckedAt', () => {
+        expect(() => validateConfiguration({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: 'not-a-date' },
+        })).to.throw(/lastCheckedAt/);
+      });
+
+      it('treats absent rumConfig as valid (optional field)', () => {
+        expect(() => validateConfiguration({})).to.not.throw();
+      });
+    });
+
+    describe('toDynamoItem serialization', () => {
+      it('includes rumConfig when set', () => {
+        const config = Config({
+          rumConfig: { hasDomainKey: true, lastCheckedAt: '2026-05-08T00:00:00.000Z' },
+        });
+        const item = Config.toDynamoItem(config);
+        expect(item.rumConfig).to.deep.equal(config.getRumConfig());
+      });
+
+      it('omits rumConfig from toDynamoItem when not set', () => {
+        const config = Config({});
+        const item = Config.toDynamoItem(config);
+        expect(item.rumConfig).to.be.undefined;
+      });
     });
   });
 

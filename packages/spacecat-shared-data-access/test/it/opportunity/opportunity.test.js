@@ -23,6 +23,7 @@ import fixtures from '../../fixtures/index.fixtures.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/util.js';
+import { IT_HOOK_TIMEOUT } from '../util/util.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -39,7 +40,7 @@ describe('Opportunity IT', async () => {
   let FixEntitySuggestion;
 
   before(async function () {
-    this.timeout(10000);
+    this.timeout(IT_HOOK_TIMEOUT);
     sampleData = await seedDatabase();
 
     mockLogger = {
@@ -380,6 +381,74 @@ describe('Opportunity IT', async () => {
 
     expect(record1).to.eql(data[0]);
     expect(record2).to.eql(data[1]);
+  });
+
+  describe('allByScope', () => {
+    const BRAND_A_ID = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
+    const BRAND_B_ID = 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
+
+    const scopedOpportunityBase = {
+      siteId,
+      title: 'Scoped Opportunity',
+      description: 'Test for allByScope',
+      type: 'prerender',
+      origin: 'AI',
+      status: 'NEW',
+      updatedBy: 'system',
+    };
+
+    let oppA;
+    let oppB;
+
+    after(async () => {
+      await Promise.all([oppA?.remove(), oppB?.remove()].filter(Boolean));
+    });
+
+    it('returns only opportunities matching the given scope', async () => {
+      // Create one opp for brand-a and one for brand-b on the same site
+      oppA = await Opportunity.create({
+        ...scopedOpportunityBase,
+        title: 'Brand A Opportunity',
+        scopeType: 'brand',
+        scopeId: BRAND_A_ID,
+      });
+      oppB = await Opportunity.create({
+        ...scopedOpportunityBase,
+        title: 'Brand B Opportunity',
+        scopeType: 'brand',
+        scopeId: BRAND_B_ID,
+      });
+
+      const resultA = await Opportunity.allByScope('brand', BRAND_A_ID);
+      const resultB = await Opportunity.allByScope('brand', BRAND_B_ID);
+
+      const idSetA = resultA.map((o) => o.getId());
+      const idSetB = resultB.map((o) => o.getId());
+
+      expect(idSetA).to.include(oppA.getId());
+      expect(idSetA).to.not.include(oppB.getId());
+
+      expect(idSetB).to.include(oppB.getId());
+      expect(idSetB).to.not.include(oppA.getId());
+    });
+
+    it('returns an empty array when no opportunities match the scopeId', async () => {
+      const UNKNOWN_BRAND_ID = 'cccccccc-cccc-4ccc-cccc-cccccccccccc';
+      const result = await Opportunity.allByScope('brand', UNKNOWN_BRAND_ID);
+      expect(result).to.be.an('array').with.length(0);
+    });
+
+    it('rejects co-presence violation: scopeType set without scopeId', async () => {
+      await expect(
+        Opportunity.create({ ...scopedOpportunityBase, scopeType: 'brand' }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
+
+    it('rejects co-presence violation: scopeId set without scopeType', async () => {
+      await expect(
+        Opportunity.create({ ...scopedOpportunityBase, scopeId: BRAND_A_ID }),
+      ).to.be.rejectedWith('scopeType and scopeId must both be set or both be absent');
+    });
   });
 
   describe('addFixEntities', () => {

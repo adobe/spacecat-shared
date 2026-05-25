@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v3.71.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.70.2...@adobe/spacecat-shared-data-access-v3.71.0) (2026-05-25)
+
+### Features
+
+* add scraperConfig to SiteConfig ([#1618](https://github.com/adobe/spacecat-shared/issues/1618)) ([8e3707b](https://github.com/adobe/spacecat-shared/commit/8e3707b505a2834c9351c50a965d838b3bad6123))
+
+## [@adobe/spacecat-shared-data-access-v3.70.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.70.1...@adobe/spacecat-shared-data-access-v3.70.2) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
 ## [@adobe/spacecat-shared-data-access-v3.70.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.70.0...@adobe/spacecat-shared-data-access-v3.70.1) (2026-05-22)
 
 ### Bug Fixes

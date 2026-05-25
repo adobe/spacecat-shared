@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-data-access-v3.70.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.70.1...@adobe/spacecat-shared-data-access-v3.70.2) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+## [@adobe/spacecat-shared-data-access-v3.70.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.70.0...@adobe/spacecat-shared-data-access-v3.70.1) (2026-05-22)
+
+### Bug Fixes
+
+* **data-access:** drop dangling belongs_to: Brand on BrandSemrushProject ([#1617](https://github.com/adobe/spacecat-shared/issues/1617)) ([b52d815](https://github.com/adobe/spacecat-shared/commit/b52d815a2e0e86af63464c71b899b5d1057236b0))
+
+## [@adobe/spacecat-shared-data-access-v3.70.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.69.0...@adobe/spacecat-shared-data-access-v3.70.0) (2026-05-22)
+
+### Features
+
+* **data-access:** extend DOMAIN_PATTERN to support subpath domains (LLMO-4187) ([#1593](https://github.com/adobe/spacecat-shared/issues/1593)) ([f6cd505](https://github.com/adobe/spacecat-shared/commit/f6cd505da6c61936538a39b26465c2bdc1c3863b))
+
 ## [@adobe/spacecat-shared-data-access-v3.69.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.68.0...@adobe/spacecat-shared-data-access-v3.69.0) (2026-05-22)
 
 ### Features

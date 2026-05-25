@@ -963,8 +963,9 @@ class TokowakaClient {
 
   /**
    * Handles the domain-wide cascade step: when a domain-wide pattern suggestion is rolled back,
-   * also removes any path-level pattern suggestions (and their covered per-URL entries) that
-   * were deployed while the domain-wide was active.
+   * also removes path-level pattern suggestions (and their covered per-URL entries) that were
+   * deployed AFTER the domain-wide was deployed. Path suggestions deployed before the
+   * domain-wide are independent and are preserved so the customer retains their granular config.
    * @param {Object} metaconfig - Metaconfig object (mutated in place, re-uploaded if changed)
    * @param {Object} domainWideSuggestion - The domain-wide suggestion being rolled back
    * @param {Array} allSuggestions - Full suggestion list for the opportunity
@@ -975,12 +976,29 @@ class TokowakaClient {
    */
   // eslint-disable-next-line max-len
   async #rollbackDomainWideCascade(metaconfig, domainWideSuggestion, allSuggestions, baseURL, updatedBy) {
-    const cascadeTargets = allSuggestions.filter(
-      (s) => s !== domainWideSuggestion
-        && isPatternSuggestion(s)
-        && !s.getData()?.isDomainWide
-        && s.getData()?.edgeDeployed,
-    );
+    const dwDeployedAt = domainWideSuggestion.getData()?.edgeDeployed;
+    const cascadeTargets = allSuggestions.filter((s) => {
+      if (s === domainWideSuggestion) {
+        return false;
+      }
+      if (!isPatternSuggestion(s)) {
+        return false;
+      }
+      if (s.getData()?.isDomainWide) {
+        return false;
+      }
+      const pathDeployedAt = s.getData()?.edgeDeployed;
+      if (!pathDeployedAt) {
+        return false;
+      }
+      // Only cascade to path suggestions deployed AFTER domain-wide.
+      // Paths deployed before DW are independent and should survive the rollback.
+      if (typeof dwDeployedAt === 'number' && typeof pathDeployedAt === 'number'
+        && pathDeployedAt < dwDeployedAt) {
+        return false;
+      }
+      return true;
+    });
 
     if (cascadeTargets.length > 0) {
       this.log.info(

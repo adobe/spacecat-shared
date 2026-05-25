@@ -1077,7 +1077,7 @@ Config.toDynamoItem = (config) => ({
   brandConfig: config.getBrandConfig(),
   brandProfile: config.getBrandProfile(),
   cdnLogsConfig: config.getCdnLogsConfig(),
-  scraperConfig: config.getScraperConfig(),
+  scraperConfig: config.getScraperConfig?.(),
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),

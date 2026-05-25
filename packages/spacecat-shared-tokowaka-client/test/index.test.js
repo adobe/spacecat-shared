@@ -3609,6 +3609,259 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions).to.have.length(1);
       expect(result.failedSuggestions[0].statusCode).to.equal(500);
     });
+
+    // --- Edge case tests for deploy/rollback interaction scenarios ---
+
+    it('DW rollback preserves coveredByPattern on suggestions covered by both DW and path', async () => {
+      // Scenario: URL covered by both DW and a path. DW rollback should
+      // only strip coveredByDomainWide; coveredByPattern must survive.
+      const prerenderOpportunity = {
+        getId: () => 'opp-dw',
+        getType: () => 'prerender',
+      };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const doubleCoveredSuggestion = {
+        getId: () => 'url-1',
+        getData: () => ({
+          url: 'https://example.com/products/item',
+          coveredByDomainWide: 'dw-1',
+          coveredByPattern: 'path-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        {
+          allSuggestions: [
+            dwSuggestion,
+            doubleCoveredSuggestion,
+          ],
+        },
+      );
+
+      expect(doubleCoveredSuggestion.save.calledOnce).to.be.true;
+      const data = doubleCoveredSuggestion.setData.firstCall.args[0];
+      expect(data).to.not.have.property('coveredByDomainWide');
+      expect(data).to.have.property('coveredByPattern', 'path-1');
+    });
+
+    it('path rollback preserves coveredByDomainWide on suggestions covered by both DW and path', async () => {
+      // Scenario: URL covered by both DW and a path. Path rollback should
+      // only strip coveredByPattern; coveredByDomainWide must survive.
+      const prerenderOpportunity = {
+        getId: () => 'opp-p',
+        getType: () => 'prerender',
+      };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const doubleCoveredSuggestion = {
+        getId: () => 'url-1',
+        getData: () => ({
+          url: 'https://example.com/products/item',
+          coveredByDomainWide: 'dw-1',
+          coveredByPattern: 'path-1',
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+        {
+          allSuggestions: [
+            pathSuggestion,
+            doubleCoveredSuggestion,
+          ],
+        },
+      );
+
+      expect(doubleCoveredSuggestion.save.calledOnce).to.be.true;
+      const data = doubleCoveredSuggestion.setData.firstCall.args[0];
+      expect(data).to.not.have.property('coveredByPattern');
+      expect(data).to.not.have.property('edgeDeployed');
+      expect(data).to.have.property('coveredByDomainWide', 'dw-1');
+    });
+
+    it('DW rollback cascade skips path deployed before DW', async () => {
+      // Scenario: path deployed at t=100, DW deployed at t=200.
+      // DW rollback should NOT cascade to the pre-existing path.
+      const prerenderOpportunity = {
+        getId: () => 'opp-dw',
+        getType: () => 'prerender',
+      };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: 200,
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const preExistingPath = {
+        getId: () => 'path-pre',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: 100, // deployed BEFORE DW
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*', '/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        {
+          allSuggestions: [dwSuggestion, preExistingPath],
+        },
+      );
+
+      // Pre-existing path was NOT cascaded
+      expect(preExistingPath.save.called).to.be.false;
+      expect(preExistingPath.setData.called).to.be.false;
+    });
+
+    it('DW rollback cascade includes path deployed after DW', async () => {
+      // Scenario: DW deployed at t=100, path deployed at t=200.
+      // DW rollback SHOULD cascade to the path deployed while DW was active.
+      const prerenderOpportunity = {
+        getId: () => 'opp-dw',
+        getType: () => 'prerender',
+      };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: 100,
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const laterPath = {
+        getId: () => 'path-later',
+        getData: () => ({
+          allowedRegexPatterns: ['/blog/*'],
+          edgeDeployed: 200, // deployed AFTER DW
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*', '/blog/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, laterPath] },
+      );
+
+      // Path deployed after DW WAS cascaded
+      expect(laterPath.save.calledOnce).to.be.true;
+      const data = laterPath.setData.firstCall.args[0];
+      expect(data).to.not.have.property('edgeDeployed');
+    });
+
+    it('DW rollback does not affect URL suggestions without coveredByDomainWide', async () => {
+      // Scenario: a URL suggestion with only coveredByPattern
+      // should not be touched by DW rollback.
+      const prerenderOpportunity = {
+        getId: () => 'opp-dw',
+        getType: () => 'prerender',
+      };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const pathOnlyCovered = {
+        getId: () => 'url-path-only',
+        getData: () => ({
+          url: 'https://example.com/products/item',
+          coveredByPattern: 'path-1',
+          // No coveredByDomainWide
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        {
+          allSuggestions: [dwSuggestion, pathOnlyCovered],
+        },
+      );
+
+      // URL with only coveredByPattern was NOT touched
+      expect(pathOnlyCovered.save.called).to.be.false;
+      expect(pathOnlyCovered.setData.called).to.be.false;
+    });
   });
 
   describe('previewSuggestions', () => {

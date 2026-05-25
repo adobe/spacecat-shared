@@ -175,6 +175,24 @@ describe('facsWrapper', () => {
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
     });
+
+    it('bypasses for legacyApiKey auth type (api-keys are internal trust)', async () => {
+      // Legacy api-key handler sets withType('legacyApiKey') and a profile
+      // like { user_id: 'admin' } — NO is_admin flag. Without the auth-type
+      // bypass this would fall through to the FACS-governance gate and 403
+      // on every FACS-mapped route.
+      context.attributes.authInfo = makeAuthInfo({ getType: () => 'legacyApiKey' });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+    });
+
+    it('bypasses for scopedApiKey auth type', async () => {
+      context.attributes.authInfo = makeAuthInfo({ getType: () => 'scopedApiKey' });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+    });
   });
 
   describe('tenant assertion', () => {

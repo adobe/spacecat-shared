@@ -116,7 +116,8 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  *
  * 0. CORS preflight (`OPTIONS`) → bypass.
  * 1. Internal identities (`is_admin`, `is_s2s_admin`, `is_s2s_consumer`,
- *    `is_read_only_admin`) → bypass.
+ *    `is_read_only_admin`, and api-key auth types `legacyApiKey` /
+ *    `scopedApiKey`) → bypass.
  * 2. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) → bypass.
  * 3. Route NOT in any product map → bypass (not FACS-governed, e.g.
  *    `/heartbeat`, S2S-only paths).
@@ -221,11 +222,24 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     const authInfo = context.attributes?.authInfo;
 
     // (1) Internal identities — FACS applies to external customer users only.
+    //
+    // Includes API-key auth surfaces (`legacyApiKey`, `scopedApiKey`): these
+    // are issued to Adobe-controlled services and operators, never to
+    // customer end-users. The legacy api-key handler doesn't set
+    // `is_admin: true` on its profile (it sets `user_id: 'admin'` or
+    // `'legacy-user'`), so without an explicit getType() check api-key
+    // requests would fall through to the FACS-governance gate and 403 on
+    // FACS-mapped routes — even though they were never the target audience.
+    // Matches how `is_s2s_admin` / `is_s2s_consumer` are bypassed: same
+    // intent (internal trust), different transport.
+    const authType = authInfo?.getType?.();
     if (
       authInfo?.isAdmin?.()
       || authInfo?.isS2SAdmin?.()
       || authInfo?.isS2SConsumer?.()
       || authInfo?.isReadOnlyAdmin?.()
+      || authType === 'legacyApiKey'
+      || authType === 'scopedApiKey'
     ) {
       return fn(request, context);
     }

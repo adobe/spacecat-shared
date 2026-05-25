@@ -14,7 +14,7 @@ import { Response } from '@adobe/fetch';
 import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 
 import { FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
-import { findMatchedRouteKey, resolveRouteCapability } from './route-utils.js';
+import { extractRouteParams, findMatchedRouteKey, resolveRouteCapability } from './route-utils.js';
 import { buildAliasLookupsPerProduct, resolveFacsResource } from './facs-resource-resolver.js';
 import { findFacsResourceBinding } from './facs-state-layer.js';
 
@@ -465,10 +465,18 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     // (listings, global queries) skip the state-layer check entirely —
     // Phase 1 was sufficient.
     const routePattern = findMatchedRouteKey(context, productMap);
+    // `enrichPathInfo` (helix middleware) does NOT populate `pathInfo.params` —
+    // it only sets method / headers / route / suffix. Path-param extraction is
+    // done by the route matcher AFTER all middleware completes, so reading
+    // `context.pathInfo?.params` here yields `undefined` and Phase 2 would
+    // miss every URL-bound resource. Extract params from the matched route
+    // pattern + the request suffix ourselves so the LIFO scan in
+    // `resolveFacsResource` actually has values to consume.
+    const routeParams = extractRouteParams(context, productMap);
     const resource = resolveFacsResource({
       productCode: productCode.toUpperCase(),
       routePattern,
-      params: context.pathInfo?.params,
+      params: routeParams,
       body: context.data,
       aliasLookupsPerProduct,
     });

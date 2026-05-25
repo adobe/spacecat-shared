@@ -212,10 +212,22 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
   return async (request, context) => {
     const { log } = context;
 
+    // Route identity included in every bypass/grant log so operators can grep
+    // for "what did FACS do with `POST /sites/123/audits`" without correlating
+    // by request id.
+    const method = context.pathInfo?.method;
+    const suffix = context.pathInfo?.suffix;
+
     // (0) CORS preflight — Fastly forwards `x-product` on OPTIONS in this
     // deployment, so the "no x-product" bypass below would NOT catch it.
     // Preflight has no credentials and no business intent; bypass early.
-    if (context.pathInfo?.method === 'OPTIONS') {
+    if (method === 'OPTIONS') {
+      log.info({
+        tag: 'facs',
+        bypass: 'options-preflight',
+        method,
+        suffix,
+      }, 'FACS bypass: CORS preflight');
       return fn(request, context);
     }
 
@@ -241,6 +253,17 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       || authType === 'legacyApiKey'
       || authType === 'scopedApiKey'
     ) {
+      log.info({
+        tag: 'facs',
+        bypass: 'internal-identity',
+        method,
+        suffix,
+        authType,
+        isAdmin: !!authInfo?.isAdmin?.(),
+        isS2SAdmin: !!authInfo?.isS2SAdmin?.(),
+        isS2SConsumer: !!authInfo?.isS2SConsumer?.(),
+        isReadOnlyAdmin: !!authInfo?.isReadOnlyAdmin?.(),
+      }, 'FACS bypass: internal identity');
       return fn(request, context);
     }
 
@@ -263,7 +286,13 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     // (2) Adobe internal IMS org IDs — permanent bypass (env-configured).
     const internalImsOrgIds = parseFacsExceptionInternalOrgs(context.env);
     if (orgId && internalImsOrgIds.has(orgId)) {
-      log.debug({ tag: 'facs', org: orgId }, 'Internal Adobe org — bypassing FACS');
+      log.info({
+        tag: 'facs',
+        bypass: 'internal-adobe-org',
+        method,
+        suffix,
+        org: orgId,
+      }, 'FACS bypass: Adobe internal IMS org');
       return fn(request, context);
     }
 
@@ -288,17 +317,20 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       if (routeMatchesAnyProductMap(context, productsRoutes)) {
         log.warn({
           tag: 'facs',
-          method: context.pathInfo?.method,
-          suffix: context.pathInfo?.suffix,
+          method,
+          suffix,
           xProduct: productCode || null,
         }, 'FACS-governed route called without matching x-product — denying');
         return forbidden('x-product header required for FACS-governed routes');
       }
       // Truly non-FACS route → bypass.
-      log.debug({
+      log.info({
         tag: 'facs',
+        bypass: 'route-not-facs-governed',
+        method,
+        suffix,
         product: productCode || null,
-      }, 'Route not FACS-governed — bypassing');
+      }, 'FACS bypass: route not FACS-governed');
       return fn(request, context);
     }
 
@@ -348,16 +380,24 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
         return serviceUnavailable('FACS enforcement temporarily unavailable');
       }
       if (!isFacsEnabled) {
-        log.debug({
-          tag: 'facs', org: orgId, product: productCode,
-        }, 'FACS flag disabled — bypassing');
+        log.info({
+          tag: 'facs',
+          bypass: 'ld-flag-off',
+          method,
+          suffix,
+          flagKey,
+          org: orgId,
+          product: productCode,
+        }, 'FACS bypass: LaunchDarkly flag disabled for org');
         return fn(request, context);
       }
     } else {
-      log.debug({
+      log.info({
         tag: 'facs',
+        method,
+        suffix,
         product: productCode,
-      }, 'No LD flag entry for product — flag retired, enforcement universal');
+      }, 'FACS: no LD flag entry for product — flag retired, enforcement universal');
     }
 
     // By the time we reach here, step 3 above has already established that
@@ -407,6 +447,16 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     // it also catches the case where a non-exempt-prefers route happens to
     // resolve to an exempt held permission via plain first-match.
     if (exemptPermissions?.has(heldPermission)) {
+      log.info({
+        tag: 'facs',
+        grant: 'state-layer-exempt',
+        method,
+        suffix,
+        permission: heldPermission,
+        product: productCode,
+        org: orgId,
+        user: resolveUserIdent(authInfo),
+      }, 'FACS grant: state-layer-exempt permission held');
       return fn(request, context);
     }
 
@@ -429,7 +479,16 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
         // Skip silently so non-postgrest deployments aren't affected; the
         // dataAccessWrapper is required upstream of facsWrapper for any
         // service that wants Phase 2 enforcement.
-        log.debug({ tag: 'facs' }, 'postgrestClient not on context — skipping state-layer check');
+        log.info({
+          tag: 'facs',
+          grant: 'no-postgrest-client',
+          method,
+          suffix,
+          permission: heldPermission,
+          product: productCode,
+          org: orgId,
+          user: resolveUserIdent(authInfo),
+        }, 'FACS grant: postgrestClient absent — skipping state-layer check');
         return fn(request, context);
       }
 
@@ -485,6 +544,30 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
         }, 'FACS state-layer mapping not found — denying');
         return forbidden('Forbidden');
       }
+      log.info({
+        tag: 'facs',
+        grant: 'state-layer-binding',
+        method,
+        suffix,
+        permission: heldPermission,
+        product: productCode,
+        resourceType: resource.resourceType,
+        resourceId: resource.resourceId,
+        via: resource.source,
+        user: subjectUserId,
+        org: orgId,
+      }, 'FACS grant: state-layer binding matched');
+    } else {
+      log.info({
+        tag: 'facs',
+        grant: 'no-resolvable-resource',
+        method,
+        suffix,
+        permission: heldPermission,
+        product: productCode,
+        org: orgId,
+        user: resolveUserIdent(authInfo),
+      }, 'FACS grant: no resolvable resource — JWT permission check sufficient');
     }
 
     return fn(request, context);

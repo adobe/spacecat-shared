@@ -245,7 +245,7 @@ describe('facsWrapper', () => {
       const wrapped = facsWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
-      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'Internal Adobe org — bypassing FACS')).to.be.true;
+      expect(logStub.info.calledWithMatch({ tag: 'facs' }, 'FACS bypass: Adobe internal IMS org')).to.be.true;
     });
 
     it('bypasses for Adobe internal prod org ID', async () => {
@@ -366,7 +366,7 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
-      expect(logStub.debug.calledWithMatch({ tag: 'facs' }, 'FACS flag disabled — bypassing')).to.be.true;
+      expect(logStub.info.calledWithMatch({ tag: 'facs' }, 'FACS bypass: LaunchDarkly flag disabled for org')).to.be.true;
     });
 
     it('returns 503 (fail-closed) when LaunchDarklyClient.createFrom throws', async () => {
@@ -451,9 +451,9 @@ describe('facsWrapper', () => {
       // so enforcement admits the request and the handler runs.
       expect(result).to.deep.equal({ status: 200 });
       expect(handler.calledOnce).to.be.true;
-      expect(logStub.debug.calledWithMatch(
+      expect(logStub.info.calledWithMatch(
         { tag: 'facs' },
-        'No LD flag entry for product — flag retired, enforcement universal',
+        'FACS: no LD flag entry for product — flag retired, enforcement universal',
       )).to.be.true;
     });
   });
@@ -791,9 +791,9 @@ describe('facsWrapper', () => {
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });
       expect(findFacsResourceBindingStub.called).to.be.false;
-      expect(logStub.debug.calledWithMatch(
+      expect(logStub.info.calledWithMatch(
         { tag: 'facs' },
-        'postgrestClient not on context — skipping state-layer check',
+        'FACS grant: postgrestClient absent — skipping state-layer check',
       )).to.be.true;
     });
 

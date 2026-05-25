@@ -3862,6 +3862,53 @@ describe('TokowakaClient', () => {
       expect(pathOnlyCovered.save.called).to.be.false;
       expect(pathOnlyCovered.setData.called).to.be.false;
     });
+
+    it('DW rollback cascade skips other domain-wide suggestions in allSuggestions', async () => {
+      // Covers the isDomainWide guard inside the cascade filter.
+      // A second DW suggestion in allSuggestions must not be cascaded.
+      const prerenderOpportunity = {
+        getId: () => 'opp-dw',
+        getType: () => 'prerender',
+      };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: 100,
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const otherDw = {
+        getId: () => 'dw-2',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: 200,
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, otherDw] },
+      );
+
+      // The other DW suggestion was not cascaded
+      expect(otherDw.save.called).to.be.false;
+      expect(otherDw.setData.called).to.be.false;
+    });
   });
 
   describe('previewSuggestions', () => {

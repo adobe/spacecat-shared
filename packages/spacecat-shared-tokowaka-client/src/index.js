@@ -975,13 +975,11 @@ class TokowakaClient {
    * @param {Array} allSuggestions - Full suggestion list for the opportunity
    * @param {string} baseURL
    * @param {string|undefined} updatedBy
-   * @param {number|undefined} dwDeployedAt - Original edgeDeployed
-   *   timestamp (captured before strip)
    * @returns {Promise<void>}
    * @private
    */
   // eslint-disable-next-line max-len
-  async #rollbackDomainWideCascade(metaconfig, domainWideSuggestion, allSuggestions, baseURL, updatedBy, dwDeployedAt) {
+  async #rollbackDomainWideCascade(metaconfig, domainWideSuggestion, allSuggestions, baseURL, updatedBy) {
     const cascadeTargets = allSuggestions.filter((s) => {
       if (s === domainWideSuggestion) {
         return false;
@@ -996,13 +994,11 @@ class TokowakaClient {
       if (!pathDeployedAt) {
         return false;
       }
-      // Only cascade to path suggestions deployed AFTER domain-wide.
-      // Paths deployed before DW are independent and should survive the rollback.
-      if (typeof dwDeployedAt === 'number' && typeof pathDeployedAt === 'number'
-        && pathDeployedAt < dwDeployedAt) {
-        return false;
-      }
-      return true;
+      // Path suggestions are always independent — never cascade.
+      // The UI prevents deploying new paths while DW is active
+      // (path rows vanish), so any deployed path was deployed
+      // before DW and should survive the rollback.
+      return false;
     });
 
     if (cascadeTargets.length > 0) {
@@ -1154,12 +1150,9 @@ class TokowakaClient {
             this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
           }
 
-          // Capture edgeDeployed before stripping — needed by
-          // the DW cascade to compare deployment timestamps.
-          const savedEdgeDeployed = data?.edgeDeployed;
           suggestion.setData(omitKeys(data, ['edgeDeployed', 'tokowakaDeployed']));
           suggestion.setUpdatedBy(updatedBy ?? 'tokowaka-rollback');
-          toSave.push({ suggestion, savedEdgeDeployed });
+          toSave.push(suggestion);
         }
 
         // Pass 2: upload the mutated metaconfig once, then save each suggestion and clean up.
@@ -1168,7 +1161,7 @@ class TokowakaClient {
             await this.uploadMetaconfig(baseURL, metaconfig);
           }
 
-          for (const { suggestion, savedEdgeDeployed } of toSave) {
+          for (const suggestion of toSave) {
             const suggData = suggestion.getData();
             const isDomainWide = suggData?.isDomainWide === true;
 
@@ -1198,12 +1191,12 @@ class TokowakaClient {
 
             if (isDomainWide) {
               // eslint-disable-next-line no-await-in-loop, max-len
-              await this.#rollbackDomainWideCascade(metaconfig, suggestion, allSuggestions, baseURL, updatedBy, savedEdgeDeployed);
+              await this.#rollbackDomainWideCascade(metaconfig, suggestion, allSuggestions, baseURL, updatedBy);
             }
           }
         } catch (error) {
           this.log.error(`[edge-rollback] Error rolling back pattern suggestions: ${error.message}`, error);
-          toSave.forEach(({ suggestion: s }) => failedPatternSuggestions.push({
+          toSave.forEach((s) => failedPatternSuggestions.push({
             suggestion: s, reason: error.message, statusCode: 500,
           }));
         }

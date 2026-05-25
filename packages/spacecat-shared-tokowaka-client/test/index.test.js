@@ -3242,7 +3242,7 @@ describe('TokowakaClient', () => {
       expect(coveredSuggestion.setUpdatedBy.calledWith('path-rollback')).to.be.true;
     });
 
-    it('cascades domain-wide rollback to deployed path suggestions and their covered entries', async () => {
+    it('DW rollback does NOT cascade to deployed path suggestions (paths are independent)', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3277,10 +3277,10 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      const fetchStub = sinon.stub(client, 'fetchMetaconfig').resolves({
+      sinon.stub(client, 'fetchMetaconfig').resolves({
         prerender: { allowList: ['/*', '/products/*'] },
       });
-      const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
+      sinon.stub(client, 'uploadMetaconfig').resolves();
 
       const result = await client.rollbackSuggestions(
         mockSite,
@@ -3292,62 +3292,16 @@ describe('TokowakaClient', () => {
       // Domain-wide suggestion was rolled back
       expect(result.succeededSuggestions).to.include(dwSuggestion);
 
-      // Cascade: deployed path suggestion was cleaned up
-      expect(deployedPathSuggestion.save.calledOnce).to.be.true;
-      expect(deployedPathSuggestion.setUpdatedBy.calledWith('domain-wide-rollback-cascade')).to.be.true;
-      const pathData = deployedPathSuggestion.setData.firstCall.args[0];
-      expect(pathData).to.not.have.property('edgeDeployed');
+      // Path suggestion was NOT cascaded — it is independent
+      expect(deployedPathSuggestion.save.called).to.be.false;
+      expect(deployedPathSuggestion.setData.called).to.be.false;
 
-      // Cascade: covered per-URL suggestion under the path was also cleaned up
-      expect(pathCoveredSuggestion.save.calledOnce).to.be.true;
-      expect(pathCoveredSuggestion.setUpdatedBy.calledWith('domain-wide-rollback-cascade')).to.be.true;
-
-      // The cascade path pattern was removed from metaconfig — upload was called again
-      expect(fetchStub.calledOnce).to.be.true;
-      expect(uploadStub.called).to.be.true;
+      // Covered per-URL suggestion under the path was NOT touched
+      expect(pathCoveredSuggestion.save.called).to.be.false;
+      expect(pathCoveredSuggestion.setData.called).to.be.false;
     });
 
-    it('cascade uses provided email for all suggestions when updatedBy is set', async () => {
-      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
-      const dwSuggestion = {
-        getId: () => 'dw-1',
-        getData: () => ({
-          isDomainWide: true,
-          allowedRegexPatterns: ['/*'],
-          edgeDeployed: Date.now(),
-        }),
-        setData: sinon.stub(),
-        setUpdatedBy: sinon.stub(),
-        save: sinon.stub().resolves(),
-      };
-      const deployedPathSuggestion = {
-        getId: () => 'path-1',
-        getData: () => ({
-          allowedRegexPatterns: ['/products/*'],
-          edgeDeployed: Date.now(),
-        }),
-        setData: sinon.stub(),
-        setUpdatedBy: sinon.stub(),
-        save: sinon.stub().resolves(),
-      };
-
-      sinon.stub(client, 'fetchMetaconfig').resolves({
-        prerender: { allowList: ['/*', '/products/*'] },
-      });
-      sinon.stub(client, 'uploadMetaconfig').resolves();
-
-      await client.rollbackSuggestions(
-        mockSite,
-        prerenderOpportunity,
-        [dwSuggestion],
-        { allSuggestions: [dwSuggestion, deployedPathSuggestion], updatedBy: 'user@example.com' },
-      );
-
-      expect(dwSuggestion.setUpdatedBy.calledWith('user@example.com')).to.be.true;
-      expect(deployedPathSuggestion.setUpdatedBy.calledWith('user@example.com')).to.be.true;
-    });
-
-    it('cascade updates metaconfig with remaining patterns when other allowList entries exist after cascade', async () => {
+    it('DW rollback preserves deployed path in metaconfig allowList (no cascade)', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3372,8 +3326,6 @@ describe('TokowakaClient', () => {
       };
 
       const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
-      // Three entries: domain-wide '/*', cascade '/products/*', plus an unrelated '/blog/*'
-      // After removing '/*' (domain-wide) and '/products/*' (cascade), '/blog/*' remains.
       sinon.stub(client, 'fetchMetaconfig').resolves({
         prerender: { allowList: ['/*', '/products/*', '/blog/*'] },
       });
@@ -3385,15 +3337,17 @@ describe('TokowakaClient', () => {
         { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
       );
 
-      // Both the domain-wide and cascade patterns were removed; '/blog/*' remains
+      // Only '/*' removed; '/products/*' and '/blog/*' preserved
       const { lastCall } = uploadStub;
-      expect(lastCall.args[1].prerender.allowList).to.deep.equal(['/blog/*']);
+      expect(lastCall.args[1].prerender.allowList).to.include('/products/*');
+      expect(lastCall.args[1].prerender.allowList).to.include('/blog/*');
+      expect(lastCall.args[1].prerender.allowList).to.not.include('/*');
+
+      // Path suggestion was NOT touched
+      expect(deployedPathSuggestion.save.called).to.be.false;
     });
 
-    it('cascade skips metaconfig re-upload when prerender section was already cleared by domain-wide rollback', async () => {
-      // Scenario: allowList had only the domain-wide pattern. After domain-wide rollback,
-      // metaconfig.prerender is deleted. The cascade path suggestion has no more allowList
-      // to remove its pattern from, so no extra upload should happen.
+    it('DW rollback with only DW in allowList — single upload, path untouched', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3417,7 +3371,6 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      // Only the domain-wide '/*' was in allowList — no path pattern entry
       sinon.stub(client, 'fetchMetaconfig').resolves({
         prerender: { allowList: ['/*'] },
       });
@@ -3430,10 +3383,10 @@ describe('TokowakaClient', () => {
         { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
       );
 
-      // Domain-wide upload happened, but no extra upload for the cascade (pattern not found)
+      // One upload for DW removal only
       expect(uploadStub.callCount).to.equal(1);
-      // The cascade path suggestion was still cleaned up in DB
-      expect(deployedPathSuggestion.save.calledOnce).to.be.true;
+      // Path suggestion was NOT touched
+      expect(deployedPathSuggestion.save.called).to.be.false;
     });
 
     it('is a no-op cascade when no path suggestions are deployed', async () => {
@@ -3767,9 +3720,9 @@ describe('TokowakaClient', () => {
       expect(preExistingPath.setData.called).to.be.false;
     });
 
-    it('DW rollback cascade includes path deployed after DW', async () => {
+    it('DW rollback does NOT cascade to path deployed after DW (paths always independent)', async () => {
       // Scenario: DW deployed at t=100, path deployed at t=200.
-      // DW rollback SHOULD cascade to the path deployed while DW was active.
+      // Path is still independent — cascade is disabled.
       const prerenderOpportunity = {
         getId: () => 'opp-dw',
         getType: () => 'prerender',
@@ -3789,7 +3742,7 @@ describe('TokowakaClient', () => {
         getId: () => 'path-later',
         getData: () => ({
           allowedRegexPatterns: ['/blog/*'],
-          edgeDeployed: 200, // deployed AFTER DW
+          edgeDeployed: 200,
         }),
         setData: sinon.stub(),
         setUpdatedBy: sinon.stub(),
@@ -3808,10 +3761,9 @@ describe('TokowakaClient', () => {
         { allSuggestions: [dwSuggestion, laterPath] },
       );
 
-      // Path deployed after DW WAS cascaded
-      expect(laterPath.save.calledOnce).to.be.true;
-      const data = laterPath.setData.firstCall.args[0];
-      expect(data).to.not.have.property('edgeDeployed');
+      // Path was NOT cascaded
+      expect(laterPath.save.called).to.be.false;
+      expect(laterPath.setData.called).to.be.false;
     });
 
     it('DW rollback does not affect URL suggestions without coveredByDomainWide', async () => {

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.71.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.71.0...@adobe/spacecat-shared-data-access-v3.71.1) (2026-05-25)
+
+### Bug Fixes
+
+* **data-access:** make Config.toDynamoItem tolerant of mocks missing ([#1626](https://github.com/adobe/spacecat-shared/issues/1626)) ([4e5b583](https://github.com/adobe/spacecat-shared/commit/4e5b583757fda39a2928f6da34f082f18460be86))
+
 ## [@adobe/spacecat-shared-data-access-v3.71.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.70.2...@adobe/spacecat-shared-data-access-v3.71.0) (2026-05-25)
 
 ### Features

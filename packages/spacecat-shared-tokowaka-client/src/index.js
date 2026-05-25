@@ -975,12 +975,13 @@ class TokowakaClient {
    * @param {Array} allSuggestions - Full suggestion list for the opportunity
    * @param {string} baseURL
    * @param {string|undefined} updatedBy
+   * @param {number|undefined} dwDeployedAt - Original edgeDeployed
+   *   timestamp (captured before strip)
    * @returns {Promise<void>}
    * @private
    */
   // eslint-disable-next-line max-len
-  async #rollbackDomainWideCascade(metaconfig, domainWideSuggestion, allSuggestions, baseURL, updatedBy) {
-    const dwDeployedAt = domainWideSuggestion.getData()?.edgeDeployed;
+  async #rollbackDomainWideCascade(metaconfig, domainWideSuggestion, allSuggestions, baseURL, updatedBy, dwDeployedAt) {
     const cascadeTargets = allSuggestions.filter((s) => {
       if (s === domainWideSuggestion) {
         return false;
@@ -1153,9 +1154,12 @@ class TokowakaClient {
             this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
           }
 
+          // Capture edgeDeployed before stripping — needed by
+          // the DW cascade to compare deployment timestamps.
+          const savedEdgeDeployed = data?.edgeDeployed;
           suggestion.setData(omitKeys(data, ['edgeDeployed', 'tokowakaDeployed']));
           suggestion.setUpdatedBy(updatedBy ?? 'tokowaka-rollback');
-          toSave.push(suggestion);
+          toSave.push({ suggestion, savedEdgeDeployed });
         }
 
         // Pass 2: upload the mutated metaconfig once, then save each suggestion and clean up.
@@ -1164,7 +1168,7 @@ class TokowakaClient {
             await this.uploadMetaconfig(baseURL, metaconfig);
           }
 
-          for (const suggestion of toSave) {
+          for (const { suggestion, savedEdgeDeployed } of toSave) {
             const suggData = suggestion.getData();
             const isDomainWide = suggData?.isDomainWide === true;
 
@@ -1194,12 +1198,12 @@ class TokowakaClient {
 
             if (isDomainWide) {
               // eslint-disable-next-line no-await-in-loop, max-len
-              await this.#rollbackDomainWideCascade(metaconfig, suggestion, allSuggestions, baseURL, updatedBy);
+              await this.#rollbackDomainWideCascade(metaconfig, suggestion, allSuggestions, baseURL, updatedBy, savedEdgeDeployed);
             }
           }
         } catch (error) {
           this.log.error(`[edge-rollback] Error rolling back pattern suggestions: ${error.message}`, error);
-          toSave.forEach((s) => failedPatternSuggestions.push({
+          toSave.forEach(({ suggestion: s }) => failedPatternSuggestions.push({
             suggestion: s, reason: error.message, statusCode: 500,
           }));
         }

@@ -3103,11 +3103,13 @@ describe('TokowakaClient', () => {
       expect(dwData).to.not.have.property('edgeDeployed');
       expect(dwData).to.not.have.property('tokowakaDeployed');
 
-      // Verify covered suggestion was also cleaned up
+      // Verify covered suggestion was also cleaned up.
+      // DW rollback only strips coveredByDomainWide — edgeDeployed is
+      // preserved because it represents an independent per-URL deployment.
       expect(coveredSuggestion.save.calledOnce).to.be.true;
       expect(coveredSuggestion.setUpdatedBy.calledWith('test@example.com')).to.be.true;
       const coveredData = coveredSuggestion.setData.firstCall.args[0];
-      expect(coveredData).to.not.have.property('edgeDeployed');
+      expect(coveredData).to.have.property('edgeDeployed');
       expect(coveredData).to.not.have.property('coveredByDomainWide');
     });
 

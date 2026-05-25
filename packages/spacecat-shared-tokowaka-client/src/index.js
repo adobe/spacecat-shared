@@ -885,20 +885,24 @@ class TokowakaClient {
 
   /**
    * Clears coverage and deployment markers from suggestions that were covered by a pattern.
+   * Only strips the fields relevant to the rollback type so independent coverage layers
+   * are preserved. For example, rolling back domain-wide should only clear
+   * coveredByDomainWide — not coveredByPattern (which belongs to a separate path deploy).
    * @param {Array} covered - Covered suggestion entities
    * @param {string} actorFallback - Fallback updatedBy string
    * @param {string|undefined} updatedBy - Explicit actor
+   * @param {string[]} [fieldsToStrip] - Specific fields to remove. Defaults to all coverage fields.
    * @returns {Promise<void>}
    * @private
    */
-  async #cleanupCoveredSuggestions(covered, actorFallback, updatedBy) {
+  async #cleanupCoveredSuggestions(covered, actorFallback, updatedBy, fieldsToStrip) {
     if (covered.length === 0) {
       return;
     }
+    const keysToRemove = fieldsToStrip
+      || ['edgeDeployed', 'tokowakaDeployed', 'coveredByDomainWide', 'coveredByPattern'];
     await Promise.all(covered.map(async (cs) => {
-      cs.setData(omitKeys(cs.getData(), [
-        'edgeDeployed', 'tokowakaDeployed', 'coveredByDomainWide', 'coveredByPattern',
-      ]));
+      cs.setData(omitKeys(cs.getData(), keysToRemove));
       cs.setUpdatedBy(updatedBy ?? actorFallback);
       return cs.save();
     }));
@@ -1169,15 +1173,24 @@ class TokowakaClient {
             succeededPatternSuggestions.push(suggestion);
 
             const coveredFallback = isDomainWide ? 'domain-wide-rollback' : 'path-rollback';
+            // DW rollback only clears coveredByDomainWide;
+            // path rollback only clears coveredByPattern.
+            // Preserves independent coverage layers.
+            const coverageField = isDomainWide
+              ? 'coveredByDomainWide' : 'coveredByPattern';
             const covered = allSuggestions.filter(
-              (s) => s.getData()?.coveredByDomainWide === suggestion.getId()
-                || s.getData()?.coveredByPattern === suggestion.getId(),
+              (s) => s.getData()?.[coverageField] === suggestion.getId(),
             );
+            const fieldsToStrip = isDomainWide
+              ? ['coveredByDomainWide']
+              : ['edgeDeployed', 'tokowakaDeployed',
+                'coveredByPattern'];
             if (covered.length > 0) {
+              // eslint-disable-next-line max-len
               this.log.info(`[rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
             }
-            // eslint-disable-next-line no-await-in-loop
-            await this.#cleanupCoveredSuggestions(covered, coveredFallback, updatedBy);
+            // eslint-disable-next-line no-await-in-loop, max-len
+            await this.#cleanupCoveredSuggestions(covered, coveredFallback, updatedBy, fieldsToStrip);
 
             if (isDomainWide) {
               // eslint-disable-next-line no-await-in-loop, max-len

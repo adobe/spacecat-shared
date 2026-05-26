@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.10.0...@adobe/spacecat-shared-drs-client-v1.11.0) (2026-05-26)
+
+
+### Features
+
+* add spacecatOrgId to ScrapeJobParams ([#1620](https://github.com/adobe/spacecat-shared/issues/1620)) ([f521408](https://github.com/adobe/spacecat-shared/commit/f521408c7903923a0a4679c29c779c32b695ae9c))
+
 # [@adobe/spacecat-shared-drs-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.9.0...@adobe/spacecat-shared-drs-client-v1.10.0) (2026-05-26)
 
 

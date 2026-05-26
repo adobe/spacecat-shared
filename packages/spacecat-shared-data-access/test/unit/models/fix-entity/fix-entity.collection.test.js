@@ -726,6 +726,30 @@ describe('FixEntityCollection', () => {
         expect(error.message).to.include('Failed to get all fixes with suggestions by created date');
       }
     });
+
+    it('should re-throw DataAccessError without wrapping', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+      const fixEntityCreatedDate = '2024-01-15';
+      const innerError = new DataAccessError('inner failure');
+
+      const mockFixEntitySuggestionCollection = {
+        allByOpportunityIdAndFixEntityCreatedDate: stub().rejects(innerError),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionByCreatedAt(
+          opportunityId,
+          fixEntityCreatedDate,
+        );
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.equal(innerError);
+      }
+    });
   });
 
   describe('getAllFixesWithSuggestionsByOpportunityId', () => {
@@ -844,6 +868,26 @@ describe('FixEntityCollection', () => {
       } catch (error) {
         expect(error).to.be.instanceOf(DataAccessError);
         expect(error.message).to.include('Failed to get all fixes with suggestions by opportunity ID');
+      }
+    });
+
+    it('should re-throw DataAccessError without wrapping', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+      const innerError = new DataAccessError('inner failure');
+
+      const mockFixEntitySuggestionCollection = {
+        allByIndexKeys: stub().rejects(innerError),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(opportunityId);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.equal(innerError);
       }
     });
   });

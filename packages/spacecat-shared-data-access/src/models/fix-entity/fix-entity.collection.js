@@ -183,6 +183,9 @@ class FixEntityCollection extends BaseCollection {
 
       return this.#buildFixesWithSuggestions(fixEntitySuggestions);
     } catch (error) {
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
       this.log.error('Failed to get all fixes with suggestions by created date', error);
       throw new DataAccessError('Failed to get all fixes with suggestions by created date', this, error);
     }
@@ -210,6 +213,9 @@ class FixEntityCollection extends BaseCollection {
 
       return this.#buildFixesWithSuggestions(fixEntitySuggestions);
     } catch (error) {
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
       this.log.error('Failed to get all fixes with suggestions by opportunity ID', error);
       throw new DataAccessError('Failed to get all fixes with suggestions by opportunity ID', this, error);
     }

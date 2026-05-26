@@ -26,8 +26,8 @@ class PreflightCollection extends BaseCollection {
 
   /**
    * Returns all preflights for a site, optionally filtered by URL.
-   * URL filtering is applied in-memory; the 7-day TTL bounds per-site volume to a manageable
-   * size, making a composite (site_id, url) index unnecessary at this stage.
+   * URL filtering is applied in-memory; volume is bounded by AsyncJob lifecycle
+   * (preflights cascade-delete when their backing AsyncJob is removed).
    *
    * @param {string} siteId - The site ID to query.
    * @param {string} [url] - Optional URL to filter by.

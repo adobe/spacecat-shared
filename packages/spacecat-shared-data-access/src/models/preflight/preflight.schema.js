@@ -11,7 +11,7 @@
  */
 
 import {
-  isObject, isValidUrl, isIsoDate, isValidUUID,
+  isObject, isValidUrl, isIsoDate,
 } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
 import Preflight from './preflight.model.js';
@@ -19,16 +19,11 @@ import PreflightCollection from './preflight.collection.js';
 
 const schema = new SchemaBuilder(Preflight, PreflightCollection)
   .addReference('belongs_to', 'Site', [], { required: true })
-  .addAttribute('asyncJobId', {
-    type: 'string',
-    required: true,
-    hidden: true,
-    validate: (value) => isValidUUID(value),
-  })
+  .addReference('belongs_to', 'AsyncJob', [], { required: true })
   .addAttribute('url', {
     type: 'string',
     required: true,
-    validate: (value) => isValidUrl(value),
+    validate: (value) => isValidUrl(value) && value.length <= 2048,
   })
   .addAttribute('status', {
     type: Object.values(Preflight.Status),
@@ -38,11 +33,7 @@ const schema = new SchemaBuilder(Preflight, PreflightCollection)
   .addAttribute('createdBy', {
     type: 'map',
     required: true,
-    properties: {
-      email: { type: 'string' },
-      displayName: { type: 'string' },
-    },
-    validate: (value) => !value || (isObject(value) && !!value.email),
+    validate: (value) => !value || (isObject(value) && typeof value.email === 'string' && value.email.length > 0),
   })
   .addAttribute('startedAt', {
     type: 'string',
@@ -58,10 +49,6 @@ const schema = new SchemaBuilder(Preflight, PreflightCollection)
   })
   .addAttribute('error', {
     type: 'map',
-    properties: {
-      code: { type: 'string' },
-      message: { type: 'string' },
-    },
     validate: (value) => !value || (isObject(value) && value.code && value.message),
   });
 

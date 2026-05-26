@@ -15,6 +15,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
+import AsyncJob from '../../../../src/models/async-job/async-job.model.js';
 import Preflight from '../../../../src/models/preflight/preflight.model.js';
 import { createElectroMocks } from '../../util.js';
 
@@ -61,6 +62,10 @@ describe('PreflightModel', () => {
         FAILED: 'FAILED',
         CANCELLED: 'CANCELLED',
       });
+    });
+
+    it('matches AsyncJob.Status to prevent enum drift', () => {
+      expect(Preflight.Status).to.deep.equal(AsyncJob.Status);
     });
   });
 

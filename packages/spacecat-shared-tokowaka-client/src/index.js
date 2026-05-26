@@ -965,20 +965,6 @@ class TokowakaClient {
   }
 
   /**
-   * Domain-wide cascade step — intentionally a no-op.
-   * Path suggestions are always independent of domain-wide: the UI prevents
-   * deploying new paths while DW is active (path rows vanish), so any deployed
-   * path predates DW and must survive a DW rollback. DW rollback only clears
-   * coveredByDomainWide on per-URL suggestions; path edgeDeployed and
-   * coveredByPattern are preserved.
-   * @private
-   */
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars, max-len
-  async #rollbackDomainWideCascade(metaconfig, domainWideSuggestion, allSuggestions, baseURL, updatedBy) {
-    // No-op: path suggestions are never cascaded.
-  }
-
-  /**
    * Rolls back deployed suggestions by removing their patches from the configuration
    * Now updates one file per URL instead of a single file with all URLs
    * @param {Object} site - Site entity
@@ -1135,11 +1121,6 @@ class TokowakaClient {
             }
             // eslint-disable-next-line no-await-in-loop, max-len
             await this.#cleanupCoveredSuggestions(covered, coveredFallback, updatedBy, fieldsToStrip);
-
-            if (isDomainWide) {
-              // eslint-disable-next-line no-await-in-loop, max-len
-              await this.#rollbackDomainWideCascade(metaconfig, suggestion, allSuggestions, baseURL, updatedBy);
-            }
           }
         } catch (error) {
           this.log.error(`[edge-rollback] Error rolling back pattern suggestions: ${error.message}`, error);

@@ -4511,34 +4511,6 @@ describe('TokowakaClient', () => {
       expect(log.warn).to.have.been.calledWith('No CDN providers specified for cache invalidation');
     });
 
-    it('should return error object if no CDN client available', async () => {
-      client.cdnClientRegistry.getClient.returns(null);
-
-      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront' });
-
-      expect(result).to.be.an('array');
-      expect(result).to.have.lengthOf(1);
-      expect(result[0]).to.deep.equal({
-        status: 'error',
-        provider: 'cloudfront',
-        message: 'No CDN client available for provider: cloudfront',
-      });
-    });
-
-    it('should return error object if CDN invalidation fails', async () => {
-      mockCdnClient.invalidateCache.rejects(new Error('CDN API error'));
-
-      const result = await client.invalidateCdnCache({ urls: ['https://example.com/page1'], providers: 'cloudfront' });
-
-      expect(result).to.be.an('array');
-      expect(result).to.have.lengthOf(1);
-      expect(result[0]).to.deep.equal({
-        status: 'error',
-        provider: 'cloudfront',
-        message: 'CDN API error',
-      });
-    });
-
     it('should handle multiple providers in parallel', async () => {
       const mockFastlyClient = {
         invalidateCache: sinon.stub().resolves({

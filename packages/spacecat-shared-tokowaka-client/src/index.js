@@ -1642,6 +1642,7 @@ class TokowakaClient {
     );
 
     if (mergedAllowList.length !== existingAllowList.length) {
+      // eslint-disable-next-line no-param-reassign
       metaconfig.prerender = { ...metaconfig.prerender, allowList: mergedAllowList };
       await this.uploadMetaconfig(baseURL, metaconfig);
       this.log.info(`[deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(mergedAllowList)}`);

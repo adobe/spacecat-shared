@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.9.0...@adobe/spacecat-shared-drs-client-v1.10.0) (2026-05-26)
+
+
+### Features
+
+* **drs-client:** export REDDIT_COMMENTS_SORT_BY_VALUES allowlist ([#1629](https://github.com/adobe/spacecat-shared/issues/1629)) ([c1540b5](https://github.com/adobe/spacecat-shared/commit/c1540b54c20b419cac07cb03b18810ece848e995)), closes [#1628](https://github.com/adobe/spacecat-shared/issues/1628)
+
 # [@adobe/spacecat-shared-drs-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.8.1...@adobe/spacecat-shared-drs-client-v1.9.0) (2026-05-26)
 
 

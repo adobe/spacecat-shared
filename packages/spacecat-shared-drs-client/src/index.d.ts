@@ -160,4 +160,10 @@ export declare const SCRAPE_DATASET_IDS: Readonly<{
   WIKIPEDIA: 'wikipedia';
 }>;
 
+/**
+ * Allowlist of valid `sortBy` values for the `reddit_comments` dataset.
+ * Exported so callers can validate input at their own boundary.
+ */
+export declare const REDDIT_COMMENTS_SORT_BY_VALUES: ReadonlySet<RedditSortBy>;
+
 export default DrsClient;

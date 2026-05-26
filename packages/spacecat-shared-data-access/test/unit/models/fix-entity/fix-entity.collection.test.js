@@ -792,10 +792,12 @@ describe('FixEntityCollection', () => {
       );
 
       expect(result).to.have.lengthOf(2);
-      expect(result[0].fixEntity.getId()).to.equal('fix-1');
-      expect(result[0].suggestions).to.have.lengthOf(2);
-      expect(result[1].fixEntity.getId()).to.equal('fix-2');
-      expect(result[1].suggestions).to.have.lengthOf(1);
+      const ids = result.map((r) => r.fixEntity.getId());
+      expect(ids).to.include.members(['fix-1', 'fix-2']);
+      const fix1 = result.find((r) => r.fixEntity.getId() === 'fix-1');
+      const fix2 = result.find((r) => r.fixEntity.getId() === 'fix-2');
+      expect(fix1.suggestions).to.have.lengthOf(2);
+      expect(fix2.suggestions).to.have.lengthOf(1);
     });
 
     it('should handle empty results', async () => {

@@ -193,6 +193,9 @@ class FixEntityCollection extends BaseCollection {
 
   /**
    * Gets all fixes with their suggestions for a specific opportunity.
+   * Fetches all junction records for the opportunity, then batch-loads
+   * fix entities and suggestions. Actual PostgREST call count is
+   * 1 + ceil(N/50) + ceil(M/50) due to batchGetByKeys chunking.
    *
    * @async
    * @param {string} opportunityId - The ID of the opportunity.

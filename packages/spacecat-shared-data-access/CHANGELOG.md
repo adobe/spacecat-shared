@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.71.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.71.1...@adobe/spacecat-shared-data-access-v3.71.2) (2026-05-26)
+
+### Bug Fixes
+
+*  (data-access) batch getAllFixesWithSuggestionsByOpportunityId (SITES-45307) ([#1619](https://github.com/adobe/spacecat-shared/issues/1619)) ([608f4cd](https://github.com/adobe/spacecat-shared/commit/608f4cda59af41c701426b8b53c29770efd42a1c))
+
 ## [@adobe/spacecat-shared-data-access-v3.71.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.71.0...@adobe/spacecat-shared-data-access-v3.71.1) (2026-05-25)
 
 ### Bug Fixes

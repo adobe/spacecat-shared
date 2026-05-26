@@ -726,6 +726,170 @@ describe('FixEntityCollection', () => {
         expect(error.message).to.include('Failed to get all fixes with suggestions by created date');
       }
     });
+
+    it('should re-throw DataAccessError without wrapping', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+      const fixEntityCreatedDate = '2024-01-15';
+      const innerError = new DataAccessError('inner failure');
+
+      const mockFixEntitySuggestionCollection = {
+        allByOpportunityIdAndFixEntityCreatedDate: stub().rejects(innerError),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionByCreatedAt(
+          opportunityId,
+          fixEntityCreatedDate,
+        );
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.equal(innerError);
+      }
+    });
+  });
+
+  describe('getAllFixesWithSuggestionsByOpportunityId', () => {
+    it('should get all fixes with suggestions for an opportunity', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+
+      const mockFixEntitySuggestions = [
+        {
+          getFixEntityId: () => 'fix-1',
+          getSuggestionId: () => 'suggestion-1',
+        },
+        {
+          getFixEntityId: () => 'fix-1',
+          getSuggestionId: () => 'suggestion-2',
+        },
+        {
+          getFixEntityId: () => 'fix-2',
+          getSuggestionId: () => 'suggestion-3',
+        },
+      ];
+
+      const mockFixEntities = {
+        data: [
+          {
+            getId: () => 'fix-1',
+            getCreatedAt: () => '2024-01-15T10:30:00.000Z',
+          },
+          {
+            getId: () => 'fix-2',
+            getCreatedAt: () => '2024-01-15T09:30:00.000Z',
+          },
+        ],
+      };
+
+      const mockSuggestionsData = {
+        data: [
+          { getId: () => 'suggestion-1', title: 'Suggestion 1' },
+          { getId: () => 'suggestion-2', title: 'Suggestion 2' },
+          { getId: () => 'suggestion-3', title: 'Suggestion 3' },
+        ],
+      };
+
+      const mockFixEntitySuggestionCollection = {
+        allByIndexKeys: stub().resolves(mockFixEntitySuggestions),
+      };
+
+      const mockSuggestionCollection = {
+        batchGetByKeys: stub().resolves(mockSuggestionsData),
+        idName: 'suggestionId',
+      };
+
+      fixEntityCollection.batchGetByKeys = stub().resolves(mockFixEntities);
+      fixEntityCollection.idName = 'fixEntityId';
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+      mockEntityRegistry.getCollection
+        .withArgs('SuggestionCollection')
+        .returns(mockSuggestionCollection);
+
+      const result = await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(
+        opportunityId,
+      );
+
+      expect(result).to.have.lengthOf(2);
+      const ids = result.map((r) => r.fixEntity.getId());
+      expect(ids).to.include.members(['fix-1', 'fix-2']);
+      const fix1 = result.find((r) => r.fixEntity.getId() === 'fix-1');
+      const fix2 = result.find((r) => r.fixEntity.getId() === 'fix-2');
+      expect(fix1.suggestions).to.have.lengthOf(2);
+      expect(fix2.suggestions).to.have.lengthOf(1);
+    });
+
+    it('should handle empty results', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+
+      const mockFixEntitySuggestionCollection = {
+        allByIndexKeys: stub().resolves([]),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      const result = await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(
+        opportunityId,
+      );
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should validate required parameters', async () => {
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(null);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error.message).to.include('opportunityId must be a valid UUID');
+      }
+    });
+
+    it('should handle errors gracefully', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+
+      const mockFixEntitySuggestionCollection = {
+        allByIndexKeys: stub().rejects(new Error('Database error')),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(opportunityId);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.be.instanceOf(DataAccessError);
+        expect(error.message).to.include('Failed to get all fixes with suggestions by opportunity ID');
+      }
+    });
+
+    it('should re-throw DataAccessError without wrapping', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+      const innerError = new DataAccessError('inner failure');
+
+      const mockFixEntitySuggestionCollection = {
+        allByIndexKeys: stub().rejects(innerError),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionsByOpportunityId(opportunityId);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.equal(innerError);
+      }
+    });
   });
 
   describe('FixEntity model constants', () => {

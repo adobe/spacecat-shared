@@ -3561,6 +3561,103 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.not.include(pathSuggestion);
       expect(result.failedSuggestions).to.have.length(1);
       expect(result.failedSuggestions[0].statusCode).to.equal(500);
+      // Suggestion save should not have been called when metaconfig upload failed
+      expect(pathSuggestion.save).to.not.have.been.called;
+    });
+
+    it('rollback continues cleaning other covered suggestions when one save fails', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredOk = {
+        getId: () => 'covered-ok',
+        getData: () => ({
+          url: 'https://example.com/page1',
+          coveredByDomainWide: 'dw-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const coveredFail = {
+        getId: () => 'covered-fail',
+        getData: () => ({
+          url: 'https://example.com/page2',
+          coveredByDomainWide: 'dw-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().rejects(new Error('DB error')),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, coveredOk, coveredFail] },
+      );
+
+      // Both covered suggestions were attempted (Promise.allSettled, not Promise.all)
+      expect(coveredOk.save.calledOnce).to.be.true;
+      expect(coveredFail.save.calledOnce).to.be.true;
+      // The failure was logged as a warning
+      expect(log.warn).to.have.been.calledWithMatch(/Failed to clean covered suggestion covered-fail/);
+    });
+
+    it('rollback per-suggestion error isolation: first succeeds, second fails', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathA = {
+        getId: () => 'path-a',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const pathB = {
+        getId: () => 'path-b',
+        getData: () => ({
+          allowedRegexPatterns: ['/blog/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().rejects(new Error('save failed')),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/products/*', '/blog/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathA, pathB],
+      );
+
+      // A succeeded, B failed - they must be in disjoint lists
+      expect(result.succeededSuggestions).to.include(pathA);
+      expect(result.succeededSuggestions).to.not.include(pathB);
+      expect(result.failedSuggestions.some((f) => f.suggestion === pathB)).to.be.true;
+      expect(result.failedSuggestions.some((f) => f.suggestion === pathA)).to.be.false;
     });
 
     // --- Edge case tests for deploy/rollback interaction scenarios ---

@@ -5885,6 +5885,28 @@ describe('TokowakaClient', () => {
       expect(deploySuggestionsStub).to.not.have.been.called;
     });
 
+    it('same-batch skip with path-level pattern sets coveredByPattern, not coveredByDomainWide', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+      const regular = makeSuggestion('r1', { url: 'https://example.com/products/item' });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path, regular],
+        allSuggestions: [path, regular],
+      });
+
+      expect(result.coveredSuggestions).to.include(regular);
+      expect(regular.getData()).to.have.property('coveredByPattern', 'same-batch-deployment');
+      expect(regular.getData()).to.not.have.property('coveredByDomainWide');
+      expect(regular.getData()).to.have.property('skippedInDeployment', true);
+      expect(deploySuggestionsStub).to.not.have.been.called;
+    });
+
     it('should surface same-batch save failures as failed suggestions with statusCode 500', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,

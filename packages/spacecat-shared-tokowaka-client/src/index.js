@@ -1529,12 +1529,16 @@ class TokowakaClient {
       return { remaining: validSuggestions, skippedInBatch: [] };
     }
 
-    const allMatchers = patternSuggestions
-      .flatMap(({ allowedRegexPatterns }) => allowedRegexPatterns)
-      .map(buildUrlMatcher)
-      .filter(Boolean);
+    // Build matchers per pattern suggestion so we can track which type covered each URL.
+    const matcherEntries = patternSuggestions.flatMap(({ suggestion, allowedRegexPatterns }) => {
+      const isDomainWide = suggestion.getData()?.isDomainWide === true;
+      return allowedRegexPatterns
+        .map(buildUrlMatcher)
+        .filter(Boolean)
+        .map((matcher) => ({ matcher, isDomainWide }));
+    });
 
-    if (allMatchers.length === 0) {
+    if (matcherEntries.length === 0) {
       return { remaining: validSuggestions, skippedInBatch: [] };
     }
 
@@ -1542,8 +1546,9 @@ class TokowakaClient {
     const skippedInBatch = [];
     validSuggestions.forEach((s) => {
       const url = s.getData()?.url;
-      if (url && allMatchers.some((match) => match(url))) {
-        skippedInBatch.push(s);
+      const match = url && matcherEntries.find(({ matcher }) => matcher(url));
+      if (match) {
+        skippedInBatch.push({ suggestion: s, isDomainWide: match.isDomainWide });
         this.log.info(`[edge-deploy] Skipping suggestion ${s.getId()} - covered by pattern`);
       } else {
         remaining.push(s);
@@ -1754,7 +1759,7 @@ class TokowakaClient {
     // Step 4: deploy pattern suggestions via metaconfig allowList.
     const coveredSuggestions = [];
     if (patternSuggestions.length > 0) {
-      const skippedInBatchIds = new Set(skippedInBatch.map((s) => s.getId()));
+      const skippedInBatchIds = new Set(skippedInBatch.map((item) => item.suggestion.getId()));
 
       for (const { suggestion, allowedRegexPatterns } of patternSuggestions) {
         if (!allowedRegexPatterns || allowedRegexPatterns.length === 0) {
@@ -1785,19 +1790,20 @@ class TokowakaClient {
     // Step 5: mark same-batch skipped suggestions individually so a single save failure
     // surfaces as a per-item failure rather than swallowing the whole batch.
     if (skippedInBatch.length > 0) {
-      const results = await Promise.allSettled(skippedInBatch.map(async (s) => {
-        s.setData({
-          ...s.getData(),
-          coveredByDomainWide: 'same-batch-deployment',
+      const results = await Promise.allSettled(skippedInBatch.map(async (item) => {
+        const coverageField = item.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
+        item.suggestion.setData({
+          ...item.suggestion.getData(),
+          [coverageField]: 'same-batch-deployment',
           skippedInDeployment: true,
         });
-        s.setUpdatedBy(updatedBy);
-        await s.save();
-        return s;
+        item.suggestion.setUpdatedBy(updatedBy);
+        await item.suggestion.save();
+        return item.suggestion;
       }));
 
       results.forEach((result, i) => {
-        const s = skippedInBatch[i];
+        const s = skippedInBatch[i].suggestion;
         if (result.status === 'fulfilled') {
           succeededSuggestions.push(s);
           coveredSuggestions.push(s);
@@ -1806,7 +1812,7 @@ class TokowakaClient {
             `[edge-deploy] Failed to mark same-batch skipped suggestion ${s.getId()}`
             + ` - ${result.reason?.message}`,
           );
-          failedSuggestions.push({ suggestion: s, reason: 'Failed to mark as covered by domain-wide', statusCode: 500 });
+          failedSuggestions.push({ suggestion: s, reason: 'Failed to mark as covered', statusCode: 500 });
         }
       });
     }

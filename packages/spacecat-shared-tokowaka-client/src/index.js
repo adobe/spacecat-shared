@@ -863,7 +863,7 @@ class TokowakaClient {
       delete metaconfig.prerender;
     } else {
       // eslint-disable-next-line no-param-reassign
-      metaconfig.prerender = { allowList: updated };
+      metaconfig.prerender = { ...metaconfig.prerender, allowList: updated };
     }
     return true;
   }
@@ -1643,7 +1643,7 @@ class TokowakaClient {
     );
 
     if (mergedAllowList.length !== existingAllowList.length) {
-      metaconfig.prerender = { allowList: mergedAllowList };
+      metaconfig.prerender = { ...metaconfig.prerender, allowList: mergedAllowList };
       await this.uploadMetaconfig(baseURL, metaconfig);
       this.log.info(`[deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(mergedAllowList)}`);
     } else {

@@ -40,6 +40,7 @@ interface ScrapeJobParams {
   priority?: 'HIGH' | 'LOW';
   /** Time-window filter in days (reddit_comments only). */
   daysBack?: number;
+  spacecatOrgId?: string;
   /** Max comments per thread (reddit_comments only). Defaults to 150 if omitted. */
   commentLimit?: number;
   /** Sort order for Bright Data (reddit_comments only). Defaults to 'Best' if omitted. */

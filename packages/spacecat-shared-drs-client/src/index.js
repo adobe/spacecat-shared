@@ -145,7 +145,9 @@ export default class DrsClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`DRS ${method} ${path} failed: ${response.status} - ${errorText}`);
+      const error = new Error(`DRS ${method} ${path} failed: ${response.status} - ${errorText}`);
+      error.status = response.status;
+      throw error;
     }
 
     const contentType = response.headers.get('content-type') || '';
@@ -229,6 +231,7 @@ export default class DrsClient {
    * @param {string} params.siteId - SpaceCat site ID
    * @param {string[]} params.urls - URLs to scrape
    * @param {string} [params.priority='HIGH'] - Job priority (HIGH or LOW)
+   * @param {string} [params.spacecatOrgId] - SpaceCat organization ID
    * @param {number} [params.daysBack] - Time-window filter in days (reddit_comments only)
    * @param {number} [params.commentLimit=150] - Max comments per thread (reddit_comments only)
    * @param {('Best'|'Top'|'New'|'Controversial'|'Old'|'Q&A')} [params.sortBy='Best']
@@ -243,6 +246,7 @@ export default class DrsClient {
     urls,
     priority = 'HIGH',
     daysBack,
+    spacecatOrgId,
     commentLimit,
     sortBy,
     loadAllReplies,
@@ -303,11 +307,16 @@ export default class DrsClient {
       }
     }
 
-    return this.submitJob({
+    const jobParams = {
       provider_id: 'brightdata',
       priority,
       parameters,
-    });
+    };
+    if (spacecatOrgId) {
+      jobParams.spacecat_org_id = spacecatOrgId;
+    }
+
+    return this.submitJob(jobParams);
   }
 
   /**

@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v3.71.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.71.0...@adobe/spacecat-shared-data-access-v3.71.1) (2026-05-25)
+
+### Bug Fixes
+
+* **data-access:** make Config.toDynamoItem tolerant of mocks missing ([#1626](https://github.com/adobe/spacecat-shared/issues/1626)) ([4e5b583](https://github.com/adobe/spacecat-shared/commit/4e5b583757fda39a2928f6da34f082f18460be86))
+
+## [@adobe/spacecat-shared-data-access-v3.71.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.70.2...@adobe/spacecat-shared-data-access-v3.71.0) (2026-05-25)
+
+### Features
+
+* add scraperConfig to SiteConfig ([#1618](https://github.com/adobe/spacecat-shared/issues/1618)) ([8e3707b](https://github.com/adobe/spacecat-shared/commit/8e3707b505a2834c9351c50a965d838b3bad6123))
+
 ## [@adobe/spacecat-shared-data-access-v3.70.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.70.1...@adobe/spacecat-shared-data-access-v3.70.2) (2026-05-23)
 
 ### Bug Fixes

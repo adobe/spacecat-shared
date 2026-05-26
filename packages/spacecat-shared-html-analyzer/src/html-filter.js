@@ -86,6 +86,19 @@ const ACCESSIBILITY_SELECTORS = [
   '#digiAccess',
 ];
 
+// Video player container selectors — these wrappers are injected client-side by JS video
+// player libraries and contain extensive control/accessibility text (play/pause labels,
+// caption settings dialogs, playback rate menus, etc.) that has no content value for AI
+// citation but significantly inflates word counts and markdown diffs.
+const VIDEO_PLAYER_SELECTORS = [
+  '.video-js', // Video.js (videojs) — most common, used by HDFC and others
+  '[data-vjs-player]', // Video.js alternate mount point
+  '.plyr', // Plyr.io
+  '.jwplayer', // JW Player
+  '.mejs-container', // MediaElement.js
+  '.flowplayer', // Flowplayer
+].join(', ');
+
 /**
  * Validates if an element is likely a cookie banner based on text content
  * Optimized: Set lookup + early exit for common keywords (3x faster)
@@ -263,6 +276,10 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNosc
   const mediaSelector = 'img,video,audio,picture,svg,canvas,embed,object,iframe';
   documentElement.querySelectorAll(mediaSelector).forEach((n) => n.remove());
 
+  // Remove video player containers — JS-injected wrappers (e.g. Video.js) that render
+  // control text (play/pause, caption settings, playback rate, etc.) client-side only
+  documentElement.querySelectorAll(VIDEO_PLAYER_SELECTORS).forEach((n) => n.remove());
+
   // Remove consent banners with intelligent detection
   removeCookieBanners(documentElement);
 
@@ -341,6 +358,10 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
 
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   $('img, video, audio, picture, svg, canvas, embed, object, iframe').remove();
+
+  // Remove video player containers — JS-injected wrappers (e.g. Video.js) that render
+  // control text (play/pause, caption settings, playback rate, etc.) client-side only
+  $(VIDEO_PLAYER_SELECTORS).remove();
 
   // Remove cookie banners with comprehensive detection
   removeCookieBannersCheerio($);

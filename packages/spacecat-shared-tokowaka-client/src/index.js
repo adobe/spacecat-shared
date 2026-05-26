@@ -899,8 +899,7 @@ class TokowakaClient {
     if (covered.length === 0) {
       return;
     }
-    const keysToRemove = fieldsToStrip
-      || ['edgeDeployed', 'tokowakaDeployed', 'coveredByDomainWide', 'coveredByPattern'];
+    const keysToRemove = fieldsToStrip;
     await Promise.all(covered.map(async (cs) => {
       cs.setData(omitKeys(cs.getData(), keysToRemove));
       cs.setUpdatedBy(updatedBy ?? actorFallback);

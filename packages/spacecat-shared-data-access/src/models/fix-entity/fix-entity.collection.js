@@ -171,6 +171,73 @@ class FixEntityCollection extends BaseCollection {
    * @throws {ValidationError} - Throws an error if opportunityId or
    *   fixEntityCreatedDate is not provided.
    */
+  /**
+   * Gets all fixes with their suggestions for a specific opportunity.
+   *
+   * @async
+   * @param {string} opportunityId - The ID of the opportunity.
+   * @returns {Promise<Array>} - A promise that resolves to an array of objects containing:
+   *   - fixEntity: The FixEntity model
+   *   - suggestions: Array of associated Suggestion models
+   * @throws {DataAccessError} - Throws an error if the query fails.
+   * @throws {ValidationError} - Throws an error if opportunityId is not provided.
+   */
+  async getAllFixesWithSuggestionsByOpportunityId(opportunityId) {
+    guardId('opportunityId', opportunityId, 'FixEntityCollection');
+
+    try {
+      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
+      const suggestionCollection = this.entityRegistry.getCollection('SuggestionCollection');
+
+      const fixEntitySuggestions = await fixEntitySuggestionCollection
+        .allByIndexKeys({ opportunityId });
+
+      if (fixEntitySuggestions.length === 0) {
+        return [];
+      }
+
+      const suggestionsByFixEntityId = {};
+      const fixEntityIds = new Set();
+
+      for (const fixEntitySuggestion of fixEntitySuggestions) {
+        const fixEntityId = fixEntitySuggestion.getFixEntityId();
+        const suggestionId = fixEntitySuggestion.getSuggestionId();
+
+        fixEntityIds.add(fixEntityId);
+
+        if (!suggestionsByFixEntityId[fixEntityId]) {
+          suggestionsByFixEntityId[fixEntityId] = [];
+        }
+        suggestionsByFixEntityId[fixEntityId].push(suggestionId);
+      }
+
+      const fixEntities = await this.batchGetByKeys(
+        Array.from(fixEntityIds).map((id) => ({ [this.idName]: id })),
+      );
+
+      const allSuggestionIds = Object.values(suggestionsByFixEntityId).flat();
+      const suggestions = await suggestionCollection.batchGetByKeys(
+        allSuggestionIds.map((id) => ({ [suggestionCollection.idName]: id })),
+      );
+
+      const suggestionsById = {};
+      for (const suggestion of suggestions.data) {
+        suggestionsById[suggestion.getId()] = suggestion;
+      }
+
+      return fixEntities.data.map((fixEntity) => {
+        const suggestionIds = suggestionsByFixEntityId[fixEntity.getId()] || [];
+        return {
+          fixEntity,
+          suggestions: suggestionIds.map((id) => suggestionsById[id]).filter(Boolean),
+        };
+      });
+    } catch (error) {
+      this.log.error('Failed to get all fixes with suggestions by opportunity ID', error);
+      throw new DataAccessError('Failed to get all fixes with suggestions by opportunity ID', this, error);
+    }
+  }
+
   async getAllFixesWithSuggestionByCreatedAt(opportunityId, fixEntityCreatedDate) {
     guardId('opportunityId', opportunityId, 'FixEntityCollection');
     guardString('fixEntityCreatedDate', fixEntityCreatedDate, 'FixEntityCollection');

@@ -980,10 +980,8 @@ class TokowakaClient {
    *   used to clean up suggestions covered by a domain-wide or path-level pattern rollback
    * @param {string} [options.updatedBy] - Actor identity (e.g. profile email). When undefined,
    *   context-specific fallback strings are used: 'tokowaka-rollback' for direct suggestions,
-   *   'domain-wide-rollback' for per-URL suggestions covered by a domain-wide pattern,
-   *   'path-rollback' for per-URL suggestions covered by a path pattern, and
-   *   'domain-wide-rollback-cascade' for path suggestions and their covered entries that are
-   *   cleaned up as part of a domain-wide rollback.
+   *   'domain-wide-rollback' for per-URL suggestions covered by a domain-wide pattern, and
+   *   'path-rollback' for per-URL suggestions covered by a path pattern.
    * @returns {Promise<Object>} - Rollback result with succeeded/failed suggestions
    */
   // eslint-disable-next-line max-len
@@ -1614,7 +1612,8 @@ class TokowakaClient {
    * with edgeDeployed, and marks qualifying per-URL suggestions as covered.
    * @param {Object} suggestion - The pattern suggestion entity
    * @param {Array<string>} allowedRegexPatterns
-   * @param {Object} site
+   * @param {Object} metaconfig - Metaconfig object (mutated in place)
+   * @param {string} baseURL
    * @param {Set<string>} skippedInBatchIds - IDs already handled as same-batch skips
    * @param {Array} allSuggestions - Full opportunity suggestion list
    * @param {string} updatedBy
@@ -1625,7 +1624,8 @@ class TokowakaClient {
   async #deployPatternSuggestion(
     suggestion,
     allowedRegexPatterns,
-    site,
+    metaconfig,
+    baseURL,
     skippedInBatchIds,
     allSuggestions,
     updatedBy,
@@ -1633,12 +1633,6 @@ class TokowakaClient {
   ) {
     const data = suggestion.getData();
     const coverageField = data?.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
-    const baseURL = site.getBaseURL();
-
-    let metaconfig = await this.fetchMetaconfig(baseURL);
-    if (!metaconfig) {
-      metaconfig = { siteId: site.getId() };
-    }
 
     const existingAllowList = metaconfig.prerender?.allowList ?? [];
     const mergedAllowList = [...new Set([...existingAllowList, ...allowedRegexPatterns])];
@@ -1765,6 +1759,11 @@ class TokowakaClient {
     const coveredSuggestions = [];
     if (patternSuggestions.length > 0) {
       const skippedInBatchIds = new Set(skippedInBatch.map((item) => item.suggestion.getId()));
+      const baseURL = site.getBaseURL();
+      let metaconfig = await this.fetchMetaconfig(baseURL);
+      if (!metaconfig) {
+        metaconfig = { siteId: site.getId() };
+      }
 
       for (const { suggestion, allowedRegexPatterns } of patternSuggestions) {
         if (!allowedRegexPatterns || allowedRegexPatterns.length === 0) {
@@ -1778,7 +1777,8 @@ class TokowakaClient {
           await this.#deployPatternSuggestion(
             suggestion,
             allowedRegexPatterns,
-            site,
+            metaconfig,
+            baseURL,
             skippedInBatchIds,
             allSuggestions,
             updatedBy,

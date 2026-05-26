@@ -1093,8 +1093,17 @@ class TokowakaClient {
           if (metaconfigChanged) {
             await this.uploadMetaconfig(baseURL, metaconfig);
           }
+        } catch (error) {
+          this.log.error(`[edge-rollback] Metaconfig upload failed: ${error.message}`, error);
+          toSave.forEach((s) => failedPatternSuggestions.push({
+            suggestion: s, reason: error.message, statusCode: 500,
+          }));
+          // Skip per-suggestion saves when metaconfig upload failed
+          toSave.length = 0;
+        }
 
-          for (const suggestion of toSave) {
+        for (const suggestion of toSave) {
+          try {
             const suggData = suggestion.getData();
             const isDomainWide = suggData?.isDomainWide === true;
 
@@ -1121,12 +1130,12 @@ class TokowakaClient {
             }
             // eslint-disable-next-line no-await-in-loop, max-len
             await this.#cleanupCoveredSuggestions(covered, coveredFallback, updatedBy, fieldsToStrip);
+          } catch (error) {
+            this.log.error(`[edge-rollback] Error rolling back pattern suggestion ${suggestion.getId()}: ${error.message}`, error);
+            failedPatternSuggestions.push({
+              suggestion, reason: error.message, statusCode: 500,
+            });
           }
-        } catch (error) {
-          this.log.error(`[edge-rollback] Error rolling back pattern suggestions: ${error.message}`, error);
-          toSave.forEach((s) => failedPatternSuggestions.push({
-            suggestion: s, reason: error.message, statusCode: 500,
-          }));
         }
       }
     }

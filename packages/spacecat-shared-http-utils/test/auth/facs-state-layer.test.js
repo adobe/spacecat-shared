@@ -13,7 +13,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { findFacsResourceBinding } from '../../src/auth/facs-state-layer.js';
+import { findFacsResourceBinding, normalizeImsOrgId } from '../../src/auth/facs-state-layer.js';
 
 /**
  * Builds a chained PostgREST-style stub. Each `.eq(...)` / `.is(...)` returns
@@ -97,5 +97,39 @@ describe('findFacsResourceBinding', () => {
     } catch (e) {
       expect(e.message).to.equal('findFacsResourceBinding failed: connection refused');
     }
+  });
+});
+
+describe('normalizeImsOrgId', () => {
+  it('appends @AdobeOrg to a bare ident (the common case from getTenantIds()[0])', () => {
+    expect(normalizeImsOrgId('ACME-ORG')).to.equal('ACME-ORG@AdobeOrg');
+  });
+
+  it('is idempotent on a value already in <ident>@<authSrc> form', () => {
+    expect(normalizeImsOrgId('ACME-ORG@AdobeOrg')).to.equal('ACME-ORG@AdobeOrg');
+  });
+
+  it('honours an explicit authSrc override', () => {
+    expect(normalizeImsOrgId('ACME-ORG', 'AdobeIDInt')).to.equal('ACME-ORG@AdobeIDInt');
+  });
+
+  it('does not re-suffix when the input already has any @<authSrc>', () => {
+    expect(normalizeImsOrgId('ACME-ORG@AdobeIDInt', 'AdobeOrg')).to.equal('ACME-ORG@AdobeIDInt');
+  });
+
+  it('returns null unchanged (callers chain without branching)', () => {
+    expect(normalizeImsOrgId(null)).to.equal(null);
+  });
+
+  it('returns undefined unchanged', () => {
+    expect(normalizeImsOrgId(undefined)).to.equal(undefined);
+  });
+
+  it('returns the empty string unchanged (falsy short-circuit)', () => {
+    expect(normalizeImsOrgId('')).to.equal('');
+  });
+
+  it('returns non-string inputs unchanged (defensive — caller error)', () => {
+    expect(normalizeImsOrgId(12345)).to.equal(12345);
   });
 });

@@ -11,6 +11,49 @@
  */
 
 /**
+ * Default IMS authentication source suffix used when normalising bare tenant
+ * idents into the canonical `<ident>@<authSrc>` form expected on
+ * `facs_access_mappings.ims_org_id`. This matches the hardcoded `@AdobeOrg`
+ * suffix already used elsewhere in the codebase (see `readOnlyAdminWrapper`
+ * and the `LaunchDarklyClient.isFlagEnabledForIMSOrg` call site in
+ * `facs-wrapper.js`). When the org's `org.orgRef.authSrc` is available
+ * (typically only in flows that load the `Organization` model), prefer
+ * passing it explicitly via the second argument.
+ */
+const DEFAULT_IMS_AUTH_SRC = 'AdobeOrg';
+
+/**
+ * Normalises a tenant ident into the canonical `<ident>@<authSrc>` form the
+ * state-layer schema stores in `facs_access_mappings.ims_org_id` (see
+ * `platform/decisions/mac-state-layer.md` §"Org identifier"). `getTenantIds()`
+ * returns the bare ident, so every state-layer read / write must pass through
+ * this helper first; without it the lookup filter never matches the stored
+ * rows and brand-scoped Phase 2 requests fail-closed with a 403 even though
+ * a binding exists.
+ *
+ * Idempotent: when the input already carries an `@<authSrc>` suffix (e.g. the
+ * canonical subject identifier `<ident>@AdobeID`), it is returned unchanged.
+ * Returns `null` / `undefined` unchanged so callers can chain without
+ * branching on emptiness.
+ *
+ * @param {string|null|undefined} orgIdent - Either the bare ident from
+ *   `authInfo.getTenantIds()[0]`, or an already-canonical `<ident>@<authSrc>`.
+ * @param {string} [authSrc=DEFAULT_IMS_AUTH_SRC] - The IMS auth source
+ *   (defaults to `'AdobeOrg'`).
+ * @returns {string|null|undefined} Canonical org id, or the input unchanged
+ *   when it's already canonical / empty.
+ */
+export function normalizeImsOrgId(orgIdent, authSrc = DEFAULT_IMS_AUTH_SRC) {
+  if (!orgIdent) {
+    return orgIdent;
+  }
+  if (typeof orgIdent !== 'string') {
+    return orgIdent;
+  }
+  return orgIdent.includes('@') ? orgIdent : `${orgIdent}@${authSrc}`;
+}
+
+/**
  * Resource-binding check against `facs_access_mappings` used by `facsWrapper`
  * Phase 2. Returns the active mapping row when the subject is scoped to the
  * resource within the supplied org, otherwise `null`.

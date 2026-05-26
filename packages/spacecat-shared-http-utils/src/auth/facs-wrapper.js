@@ -16,7 +16,7 @@ import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 import { FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
 import { extractRouteParams, findMatchedRouteKey, resolveRouteCapability } from './route-utils.js';
 import { buildAliasLookupsPerProduct, resolveFacsResource } from './facs-resource-resolver.js';
-import { findFacsResourceBinding } from './facs-state-layer.js';
+import { findFacsResourceBinding, normalizeImsOrgId } from './facs-state-layer.js';
 
 // Permanent bypass: Adobe internal IMS org IDs are never subject to FACS enforcement.
 // Sourced from env var FACS_EXCEPTION_INTERNAL_ORGS (comma-separated). Keep in sync
@@ -501,6 +501,11 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       }
 
       const subjectUserId = resolveUserIdent(authInfo);
+      // Normalise the bare tenant ident into the canonical `<ident>@<authSrc>`
+      // form the state-layer schema stores (see normalizeImsOrgId / the
+      // mac-state-layer.md "Org identifier" subsection). Both filters AND
+      // the org-scoped subjectId use the same canonical value.
+      const canonicalImsOrgId = normalizeImsOrgId(orgId);
       // Try user-scoped binding first, fall back to org-scoped. Either is
       // sufficient — they're stored in the same table and read symmetrically.
       // The lookup carries no capability; capability was already established
@@ -514,16 +519,16 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
             subjectId: subjectUserId,
             resourceType: resource.resourceType,
             resourceId: resource.resourceId,
-            imsOrgId: orgId,
+            imsOrgId: canonicalImsOrgId,
           })
           : null;
-        if (!mapping && orgId) {
+        if (!mapping && canonicalImsOrgId) {
           mapping = await findFacsResourceBinding(postgrestClient, {
             subjectType: 'org',
-            subjectId: orgId,
+            subjectId: canonicalImsOrgId,
             resourceType: resource.resourceType,
             resourceId: resource.resourceId,
-            imsOrgId: orgId,
+            imsOrgId: canonicalImsOrgId,
           });
         }
       } catch (e) {
@@ -563,7 +568,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
         resourceId: resource.resourceId,
         via: resource.source,
         user: subjectUserId,
-        org: orgId,
+        org: canonicalImsOrgId,
       }, 'FACS grant: state-layer binding matched');
     } else {
       log.info({

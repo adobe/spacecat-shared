@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.8.1...@adobe/spacecat-shared-drs-client-v1.9.0) (2026-05-26)
+
+
+### Features
+
+* **drs-client:** add new reddit_comments scrape specific parameters (LLMO-4464) ([#1628](https://github.com/adobe/spacecat-shared/issues/1628)) ([8d0e271](https://github.com/adobe/spacecat-shared/commit/8d0e271d0c9bd0113fd37c008414778bc7e18668))
+
 # [@adobe/spacecat-shared-drs-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.8.0...@adobe/spacecat-shared-drs-client-v1.8.1) (2026-05-23)
 
 

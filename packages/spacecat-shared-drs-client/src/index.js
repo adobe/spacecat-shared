@@ -41,7 +41,14 @@ const VALID_SCRAPE_DATASET_IDS = new Set(Object.values(SCRAPE_DATASET_IDS));
 const URL_LOOKUP_BATCH_SIZE = 100;
 
 // Reddit-comments specific scrape parameters.
-export const REDDIT_COMMENTS_SORT_BY_VALUES = new Set(['Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A']);
+// Exported so callers can validate `sortBy` at their own boundary without
+// duplicating the allowlist. Frozen for consistency with the sibling
+// EXPERIMENT_PHASES / SCRAPE_DATASET_IDS exports (note: Object.freeze does
+// not actually prevent Set mutation methods — the ReadonlySet<> type in the
+// .d.ts is what guards TypeScript consumers).
+export const REDDIT_COMMENTS_SORT_BY_VALUES = Object.freeze(
+  new Set(['Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A']),
+);
 const REDDIT_COMMENTS_DEFAULT_COMMENT_LIMIT = 150;
 const REDDIT_COMMENTS_DEFAULT_SORT_BY = 'Best';
 const REDDIT_COMMENTS_ONLY_PARAMS = ['daysBack', 'commentLimit', 'sortBy', 'loadAllReplies'];

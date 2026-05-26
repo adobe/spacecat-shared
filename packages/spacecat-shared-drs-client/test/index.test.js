@@ -258,6 +258,10 @@ describe('DrsClient', () => {
         'Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A',
       ]);
     });
+
+    it('is frozen', () => {
+      expect(Object.isFrozen(REDDIT_COMMENTS_SORT_BY_VALUES)).to.be.true;
+    });
   });
 
   describe('submitScrapeJob', () => {

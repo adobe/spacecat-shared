@@ -40,8 +40,8 @@ const VALID_SCRAPE_DATASET_IDS = new Set(Object.values(SCRAPE_DATASET_IDS));
 
 const URL_LOOKUP_BATCH_SIZE = 100;
 
-// Reddit-comments specific scrape parameters
-const VALID_REDDIT_SORT_BY = new Set(['Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A']);
+// Reddit-comments specific scrape parameters.
+export const REDDIT_COMMENTS_SORT_BY_VALUES = new Set(['Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A']);
 const REDDIT_COMMENTS_DEFAULT_COMMENT_LIMIT = 150;
 const REDDIT_COMMENTS_DEFAULT_SORT_BY = 'Best';
 const REDDIT_COMMENTS_ONLY_PARAMS = ['daysBack', 'commentLimit', 'sortBy', 'loadAllReplies'];
@@ -268,8 +268,8 @@ export default class DrsClient {
     if (commentLimit !== undefined && !isPositiveInteger(commentLimit)) {
       throw new Error('commentLimit must be a positive integer');
     }
-    if (sortBy !== undefined && !VALID_REDDIT_SORT_BY.has(sortBy)) {
-      throw new Error(`Invalid sortBy "${sortBy}". Must be one of: ${[...VALID_REDDIT_SORT_BY].join(', ')}`);
+    if (sortBy !== undefined && !REDDIT_COMMENTS_SORT_BY_VALUES.has(sortBy)) {
+      throw new Error(`Invalid sortBy "${sortBy}". Must be one of: ${[...REDDIT_COMMENTS_SORT_BY_VALUES].join(', ')}`);
     }
     if (loadAllReplies !== undefined && typeof loadAllReplies !== 'boolean') {
       throw new Error('loadAllReplies must be a boolean');

@@ -15,7 +15,11 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
-import DrsClient, { SCRAPE_DATASET_IDS, EXPERIMENT_PHASES } from '../src/index.js';
+import DrsClient, {
+  SCRAPE_DATASET_IDS,
+  EXPERIMENT_PHASES,
+  REDDIT_COMMENTS_SORT_BY_VALUES,
+} from '../src/index.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -245,6 +249,14 @@ describe('DrsClient', () => {
 
     it('is frozen', () => {
       expect(Object.isFrozen(SCRAPE_DATASET_IDS)).to.be.true;
+    });
+  });
+
+  describe('REDDIT_COMMENTS_SORT_BY_VALUES', () => {
+    it('exports the allowlist of reddit_comments sortBy values', () => {
+      expect([...REDDIT_COMMENTS_SORT_BY_VALUES]).to.have.members([
+        'Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A',
+      ]);
     });
   });
 

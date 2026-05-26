@@ -900,11 +900,16 @@ class TokowakaClient {
       return;
     }
     const keysToRemove = fieldsToStrip;
-    await Promise.all(covered.map(async (cs) => {
+    const results = await Promise.allSettled(covered.map(async (cs) => {
       cs.setData(omitKeys(cs.getData(), keysToRemove));
       cs.setUpdatedBy(updatedBy ?? actorFallback);
       return cs.save();
     }));
+    results.forEach((result, i) => {
+      if (result.status === 'rejected') {
+        this.log.warn(`[rollback] Failed to clean covered suggestion ${covered[i].getId()}: ${result.reason?.message}`);
+      }
+    });
   }
 
   /**

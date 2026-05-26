@@ -397,6 +397,188 @@ describe('DrsClient', () => {
         daysBack: 7,
       })).to.be.rejectedWith('daysBack is only supported for reddit_comments dataset');
     });
+
+    it('applies reddit_comments defaults (comment_limit=150, sort_by=Best) when omitted', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters.dataset_id).to.equal(SCRAPE_DATASET_IDS.REDDIT_COMMENTS);
+          expect(body.parameters.comment_limit).to.equal(150);
+          expect(body.parameters.sort_by).to.equal('Best');
+          expect(body.parameters).to.not.have.property('days_back');
+          expect(body.parameters).to.not.have.property('load_all_replies');
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-defaults' });
+
+      await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+      });
+
+      scope.done();
+    });
+
+    it('forwards all reddit_comments params when provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters.comment_limit).to.equal(300);
+          expect(body.parameters.sort_by).to.equal('Top');
+          expect(body.parameters.days_back).to.equal(7);
+          expect(body.parameters.load_all_replies).to.equal(true);
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-all-reddit-params' });
+
+      await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+        commentLimit: 300,
+        sortBy: 'Top',
+        daysBack: 7,
+        loadAllReplies: true,
+      });
+
+      scope.done();
+    });
+
+    it('does not add reddit-comments defaults to non-reddit_comments datasets', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters).to.not.have.property('comment_limit');
+          expect(body.parameters).to.not.have.property('sort_by');
+          expect(body.parameters).to.not.have.property('days_back');
+          expect(body.parameters).to.not.have.property('load_all_replies');
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-non-reddit' });
+
+      await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_POSTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+      });
+
+      scope.done();
+    });
+
+    it('forwards load_all_replies=false explicitly when provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters.load_all_replies).to.equal(false);
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-false' });
+
+      await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+        loadAllReplies: false,
+      });
+
+      scope.done();
+    });
+
+    it('throws when commentLimit is used with a non-reddit_comments dataset', async () => {
+      await expect(client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: ['https://youtube.com/watch?v=abc'],
+        commentLimit: 100,
+      })).to.be.rejectedWith('commentLimit is only supported for reddit_comments dataset');
+    });
+
+    it('throws when sortBy is used with a non-reddit_comments dataset', async () => {
+      await expect(client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_POSTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+        sortBy: 'Top',
+      })).to.be.rejectedWith('sortBy is only supported for reddit_comments dataset');
+    });
+
+    it('throws when loadAllReplies is used with a non-reddit_comments dataset', async () => {
+      await expect(client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.WIKIPEDIA,
+        siteId: 'site-1',
+        urls: ['https://en.wikipedia.org/wiki/Test'],
+        loadAllReplies: true,
+      })).to.be.rejectedWith('loadAllReplies is only supported for reddit_comments dataset');
+    });
+
+    it('throws when daysBack is not a positive integer', async () => {
+      const base = {
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+      };
+      await expect(client.submitScrapeJob({ ...base, daysBack: 0 }))
+        .to.be.rejectedWith('daysBack must be a positive integer');
+      await expect(client.submitScrapeJob({ ...base, daysBack: -1 }))
+        .to.be.rejectedWith('daysBack must be a positive integer');
+      await expect(client.submitScrapeJob({ ...base, daysBack: 1.5 }))
+        .to.be.rejectedWith('daysBack must be a positive integer');
+      await expect(client.submitScrapeJob({ ...base, daysBack: 'seven' }))
+        .to.be.rejectedWith('daysBack must be a positive integer');
+    });
+
+    it('throws when commentLimit is not a positive integer', async () => {
+      const base = {
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+      };
+      await expect(client.submitScrapeJob({ ...base, commentLimit: 0 }))
+        .to.be.rejectedWith('commentLimit must be a positive integer');
+      await expect(client.submitScrapeJob({ ...base, commentLimit: -5 }))
+        .to.be.rejectedWith('commentLimit must be a positive integer');
+      await expect(client.submitScrapeJob({ ...base, commentLimit: 2.5 }))
+        .to.be.rejectedWith('commentLimit must be a positive integer');
+      await expect(client.submitScrapeJob({ ...base, commentLimit: 'lots' }))
+        .to.be.rejectedWith('commentLimit must be a positive integer');
+    });
+
+    it('throws on invalid sortBy value', async () => {
+      await expect(client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+        sortBy: 'hot',
+      })).to.be.rejectedWith('Invalid sortBy "hot". Must be one of:');
+    });
+
+    it('accepts all valid sortBy values', async () => {
+      const valid = ['Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A'];
+      for (const sortBy of valid) {
+        const scope = nock(DRS_API_URL)
+          .post('/jobs', (body) => body.parameters.sort_by === sortBy)
+          .reply(200, { job_id: `job-${sortBy}` });
+
+        // eslint-disable-next-line no-await-in-loop
+        await client.submitScrapeJob({
+          datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+          siteId: 'site-1',
+          urls: ['https://reddit.com/r/test/comments/abc'],
+          sortBy,
+        });
+
+        scope.done();
+      }
+    });
+
+    it('throws when loadAllReplies is not a boolean', async () => {
+      const base = {
+        datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+        siteId: 'site-1',
+        urls: ['https://reddit.com/r/test/comments/abc'],
+      };
+      await expect(client.submitScrapeJob({ ...base, loadAllReplies: 'true' }))
+        .to.be.rejectedWith('loadAllReplies must be a boolean');
+      await expect(client.submitScrapeJob({ ...base, loadAllReplies: 1 }))
+        .to.be.rejectedWith('loadAllReplies must be a boolean');
+    });
   });
 
   describe('lookupScrapeResults', () => {

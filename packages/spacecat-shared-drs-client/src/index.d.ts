@@ -31,12 +31,21 @@ interface PromptGenerationParams {
 
 export type ScrapeDatasetId = typeof SCRAPE_DATASET_IDS[keyof typeof SCRAPE_DATASET_IDS];
 
+export type RedditSortBy = 'Best' | 'Top' | 'New' | 'Controversial' | 'Old' | 'Q&A';
+
 interface ScrapeJobParams {
   datasetId: ScrapeDatasetId;
   siteId: string;
   urls: string[];
   priority?: 'HIGH' | 'LOW';
+  /** Time-window filter in days (reddit_comments only). */
   daysBack?: number;
+  /** Max comments per thread (reddit_comments only). Defaults to 150 if omitted. */
+  commentLimit?: number;
+  /** Sort order for Bright Data (reddit_comments only). Defaults to 'Best' if omitted. */
+  sortBy?: RedditSortBy;
+  /** Whether to expand all reply trees (reddit_comments only). */
+  loadAllReplies?: boolean;
 }
 
 interface ScrapeLookupParams {

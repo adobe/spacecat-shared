@@ -123,6 +123,7 @@ describe('ContactSalesLead IT', async () => {
     checkContactSalesLead(lead);
 
     expect(isValidUUID(lead.getId())).to.be.true;
+    expect(lead.getId().charAt(14)).to.equal('7');
     expect(lead.getOrganizationId()).to.equal(data.organizationId);
     expect(lead.getSiteId()).to.equal(data.siteId);
     expect(lead.getName()).to.equal(data.name);
@@ -144,6 +145,7 @@ describe('ContactSalesLead IT', async () => {
     checkContactSalesLead(lead);
 
     expect(isValidUUID(lead.getId())).to.be.true;
+    expect(lead.getId().charAt(14)).to.equal('7');
     expect(lead.getOrganizationId()).to.equal(data.organizationId);
     expect(lead.getName()).to.equal(data.name);
     expect(lead.getEmail()).to.equal(data.email);

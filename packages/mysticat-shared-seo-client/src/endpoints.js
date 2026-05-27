@@ -39,7 +39,7 @@ export const ENDPOINTS = {
   paidPages: {
     type: 'domain_adwords',
     path: API_PATHS.root,
-    columns: 'Ph,Ur,Tg,Nq,Cp,Po,Tt',
+    columns: 'Ph,Ur,Tg,Nq,Cp,Po,Tt,Ds,Vu',
     defaultParams: { display_sort: 'tg_desc', export_escape: 1 },
   },
   metrics: {

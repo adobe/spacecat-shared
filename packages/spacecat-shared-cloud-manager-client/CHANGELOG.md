@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.0...@adobe/spacecat-shared-cloud-manager-client-v1.4.1) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.3.1...@adobe/spacecat-shared-cloud-manager-client-v1.4.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.3.0...@adobe/spacecat-shared-cloud-manager-client-v1.3.1) (2026-05-17)
+
+### Bug Fixes
+
+* **cloud-manager-client:** forward parent extraheader to STANDARD submodule init ([#1607](https://github.com/adobe/spacecat-shared/issues/1607)) ([18b96bd](https://github.com/adobe/spacecat-shared/commit/18b96bd1c89f0c47b6573a20a26529a115cc959d))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.2.2...@adobe/spacecat-shared-cloud-manager-client-v1.3.0) (2026-05-16)
+
+### Features
+
+* submodule support — reinstate clone, fix pull, add hasSubmodules flag ([#1550](https://github.com/adobe/spacecat-shared/issues/1550)) ([3329ff8](https://github.com/adobe/spacecat-shared/commit/3329ff82740c2311545bd7a1ab693eb92ecb8f5d))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.2.1...@adobe/spacecat-shared-cloud-manager-client-v1.2.2) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.2.0...@adobe/spacecat-shared-cloud-manager-client-v1.2.1) (2026-05-05)
 
 ### Bug Fixes

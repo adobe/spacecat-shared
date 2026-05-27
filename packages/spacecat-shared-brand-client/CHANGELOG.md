@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-brand-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.2.0...@adobe/spacecat-shared-brand-client-v1.2.1) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+## [@adobe/spacecat-shared-brand-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.42...@adobe/spacecat-shared-brand-client-v1.2.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-brand-client-v1.1.42](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.41...@adobe/spacecat-shared-brand-client-v1.1.42) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
 ## [@adobe/spacecat-shared-brand-client-v1.1.41](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.40...@adobe/spacecat-shared-brand-client-v1.1.41) (2026-04-09)
 
 ### Bug Fixes

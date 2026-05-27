@@ -1,3 +1,31 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.17.0...@adobe/spacecat-shared-tokowaka-client-v1.17.1) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.2...@adobe/spacecat-shared-tokowaka-client-v1.17.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.1...@adobe/spacecat-shared-tokowaka-client-v1.16.2) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.0...@adobe/spacecat-shared-tokowaka-client-v1.16.1) (2026-05-06)
+
+### Bug Fixes
+
+* **tokowaka-client:** do not set edgeDeployed on domain-wide covered suggestions ([#1584](https://github.com/adobe/spacecat-shared/issues/1584)) ([51df852](https://github.com/adobe/spacecat-shared/commit/51df85231c74e8013e9ef7659f67584cbf239645))
+
+### Reverts
+
+* "feat: CM git clone also clones submodules ([#1583](https://github.com/adobe/spacecat-shared/issues/1583))" ([#1587](https://github.com/adobe/spacecat-shared/issues/1587)) ([2d9e34e](https://github.com/adobe/spacecat-shared/commit/2d9e34e68a0af6612891c61ec37e4304b7e9d912))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.15.0...@adobe/spacecat-shared-tokowaka-client-v1.16.0) (2026-05-05)
 
 ### Features

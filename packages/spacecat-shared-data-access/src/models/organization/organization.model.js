@@ -24,7 +24,15 @@ class Organization extends BaseModel {
 
   static IMS_ORG_ID_REGEX = /[a-z0-9]{24}@AdobeOrg/i;
 
-  // add your custom methods or overrides here
+  static LLM_BACKEND_AZURE = 'azure';
+
+  static LLM_BACKEND_BEDROCK = 'bedrock';
+
+  static LLM_BACKENDS = ['azure', 'bedrock'];
+
+  getLlmBackend() {
+    return this.record.llmBackend ?? Organization.LLM_BACKEND_AZURE;
+  }
 }
 
 export default Organization;

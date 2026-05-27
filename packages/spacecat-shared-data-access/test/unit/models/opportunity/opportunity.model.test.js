@@ -384,4 +384,94 @@ describe('OpportunityModel', () => {
       expect(instance.record.data).to.deep.equal({ newInfo: 'updatedInfo' });
     });
   });
+
+  describe('getScopeType and setScopeType', () => {
+    it('returns undefined when scopeType is not set', () => {
+      expect(instance.getScopeType()).to.be.undefined;
+    });
+
+    it('returns the scopeType value', () => {
+      mockRecord.scopeType = 'brand';
+      expect(instance.getScopeType()).to.equal('brand');
+    });
+
+    it('sets the scopeType value', () => {
+      instance.setScopeType('brand');
+      expect(instance.record.scopeType).to.equal('brand');
+    });
+  });
+
+  describe('getScopeId and setScopeId', () => {
+    it('returns undefined when scopeId is not set', () => {
+      expect(instance.getScopeId()).to.be.undefined;
+    });
+
+    it('returns the scopeId value', () => {
+      mockRecord.scopeId = 'brand-uuid-123';
+      expect(instance.getScopeId()).to.equal('brand-uuid-123');
+    });
+
+    it('sets the scopeId value', () => {
+      instance.setScopeId('brand-uuid-456');
+      expect(instance.record.scopeId).to.equal('brand-uuid-456');
+    });
+  });
+
+  describe('SCOPE_TYPES', () => {
+    it('defines expected scope type constants', () => {
+      expect(Opportunity.SCOPE_TYPES.BRAND).to.equal('brand');
+      expect(Opportunity.SCOPE_TYPES.SITE).to.be.undefined;
+    });
+  });
+
+  describe('save (scope co-presence)', () => {
+    it('throws ValidationError when scopeType is set but scopeId is absent', async () => {
+      instance.setScopeType('brand');
+      await expect(instance.save()).to.be.rejectedWith(
+        'scopeType and scopeId must both be set or both be absent',
+      );
+    });
+
+    it('throws ValidationError when scopeId is set but scopeType is absent', async () => {
+      instance.setScopeId('11111111-1111-1111-1111-111111111111');
+      await expect(instance.save()).to.be.rejectedWith(
+        'scopeType and scopeId must both be set or both be absent',
+      );
+    });
+
+    it('delegates to super.save() when both scopeType and scopeId are set', async () => {
+      instance.setScopeType('brand');
+      instance.setScopeId('11111111-1111-1111-1111-111111111111');
+      const patcherSaveStub = stub(instance.patcher, 'save').resolves();
+      await expect(instance.save()).to.be.fulfilled;
+      expect(patcherSaveStub.calledOnce).to.be.true;
+    });
+
+    it('delegates to super.save() when neither scopeType nor scopeId is set', async () => {
+      const patcherSaveStub = stub(instance.patcher, 'save').resolves();
+      await expect(instance.save()).to.be.fulfilled;
+      expect(patcherSaveStub.calledOnce).to.be.true;
+    });
+
+    it('throws ValidationError when a fully-scoped record has scopeId cleared', async () => {
+      // Realistic regression scenario: a record loaded from DB has both scope fields set,
+      // and a caller clears only scopeId via the setter. The save() guard must catch the
+      // half-scoped state before the patch reaches the DB.
+      instance.record.scopeType = 'brand';
+      instance.record.scopeId = '11111111-1111-1111-1111-111111111111';
+      instance.setScopeId(null);
+      await expect(instance.save()).to.be.rejectedWith(
+        'scopeType and scopeId must both be set or both be absent',
+      );
+    });
+
+    it('throws ValidationError when a fully-scoped record has scopeType cleared', async () => {
+      instance.record.scopeType = 'brand';
+      instance.record.scopeId = '11111111-1111-1111-1111-111111111111';
+      instance.setScopeType(null);
+      await expect(instance.save()).to.be.rejectedWith(
+        'scopeType and scopeId must both be set or both be absent',
+      );
+    });
+  });
 });

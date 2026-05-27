@@ -177,69 +177,104 @@ class FixEntityCollection extends BaseCollection {
 
     try {
       const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
-      const suggestionCollection = this.entityRegistry.getCollection('SuggestionCollection');
 
-      // Query fix entity suggestions by opportunity ID and created date
       const fixEntitySuggestions = await fixEntitySuggestionCollection
         .allByOpportunityIdAndFixEntityCreatedDate(opportunityId, fixEntityCreatedDate);
 
-      if (fixEntitySuggestions.length === 0) {
-        return [];
-      }
-
-      // Group suggestions by fix entity ID
-      const suggestionsByFixEntityId = {};
-      const fixEntityIds = new Set();
-
-      for (const fixEntitySuggestion of fixEntitySuggestions) {
-        const fixEntityId = fixEntitySuggestion.getFixEntityId();
-        const suggestionId = fixEntitySuggestion.getSuggestionId();
-
-        fixEntityIds.add(fixEntityId);
-
-        if (!suggestionsByFixEntityId[fixEntityId]) {
-          suggestionsByFixEntityId[fixEntityId] = [];
-        }
-        suggestionsByFixEntityId[fixEntityId].push(suggestionId);
-      }
-
-      // Get all fix entities
-      const fixEntities = await this.batchGetByKeys(
-        Array.from(fixEntityIds).map((id) => ({ [this.idName]: id })),
-      );
-
-      // Get all suggestions
-      const allSuggestionIds = Object.values(suggestionsByFixEntityId).flat();
-      const suggestions = await suggestionCollection.batchGetByKeys(
-        allSuggestionIds.map((id) => ({ [suggestionCollection.idName]: id })),
-      );
-
-      // Create a map of suggestions by ID for quick lookup
-      const suggestionsById = {};
-      for (const suggestion of suggestions.data) {
-        suggestionsById[suggestion.getId()] = suggestion;
-      }
-
-      // Combine fix entities with their suggestions
-      const result = [];
-      for (const fixEntity of fixEntities.data) {
-        const fixEntityId = fixEntity.getId();
-        const suggestionIds = suggestionsByFixEntityId[fixEntityId] || [];
-        const suggestionsForFixEntity = suggestionIds
-          .map((id) => suggestionsById[id])
-          .filter(Boolean);
-
-        result.push({
-          fixEntity,
-          suggestions: suggestionsForFixEntity,
-        });
-      }
-
-      return result;
+      return this.#buildFixesWithSuggestions(fixEntitySuggestions);
     } catch (error) {
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
       this.log.error('Failed to get all fixes with suggestions by created date', error);
       throw new DataAccessError('Failed to get all fixes with suggestions by created date', this, error);
     }
+  }
+
+  /**
+   * Gets all fixes with their suggestions for a specific opportunity.
+   * Fetches all junction records for the opportunity, then batch-loads
+   * fix entities and suggestions. Actual PostgREST call count is
+   * 1 + ceil(N/50) + ceil(M/50) due to batchGetByKeys chunking.
+   *
+   * @async
+   * @param {string} opportunityId - The ID of the opportunity.
+   * @returns {Promise<Array>} - A promise that resolves to an array of objects containing:
+   *   - fixEntity: The FixEntity model
+   *   - suggestions: Array of associated Suggestion models
+   * @throws {DataAccessError} - Throws an error if the query fails.
+   * @throws {ValidationError} - Throws an error if opportunityId is not provided.
+   */
+  async getAllFixesWithSuggestionsByOpportunityId(opportunityId) {
+    guardId('opportunityId', opportunityId, 'FixEntityCollection');
+
+    try {
+      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
+
+      const fixEntitySuggestions = await fixEntitySuggestionCollection
+        .allByIndexKeys({ opportunityId });
+
+      return this.#buildFixesWithSuggestions(fixEntitySuggestions);
+    } catch (error) {
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
+      this.log.error('Failed to get all fixes with suggestions by opportunity ID', error);
+      throw new DataAccessError('Failed to get all fixes with suggestions by opportunity ID', this, error);
+    }
+  }
+
+  async #buildFixesWithSuggestions(fixEntitySuggestions) {
+    if (fixEntitySuggestions.length === 0) {
+      return [];
+    }
+
+    const suggestionCollection = this.entityRegistry.getCollection('SuggestionCollection');
+
+    const suggestionsByFixEntityId = {};
+    const fixEntityIds = new Set();
+
+    for (const fixEntitySuggestion of fixEntitySuggestions) {
+      const fixEntityId = fixEntitySuggestion.getFixEntityId();
+      const suggestionId = fixEntitySuggestion.getSuggestionId();
+
+      fixEntityIds.add(fixEntityId);
+
+      if (!suggestionsByFixEntityId[fixEntityId]) {
+        suggestionsByFixEntityId[fixEntityId] = [];
+      }
+      suggestionsByFixEntityId[fixEntityId].push(suggestionId);
+    }
+
+    const fixEntities = await this.batchGetByKeys(
+      Array.from(fixEntityIds).map((id) => ({ [this.idName]: id })),
+    );
+
+    const allSuggestionIds = Object.values(suggestionsByFixEntityId).flat();
+    const suggestions = await suggestionCollection.batchGetByKeys(
+      allSuggestionIds.map((id) => ({ [suggestionCollection.idName]: id })),
+    );
+
+    const suggestionsById = {};
+    for (const suggestion of suggestions.data) {
+      suggestionsById[suggestion.getId()] = suggestion;
+    }
+
+    const result = [];
+    for (const fixEntity of fixEntities.data) {
+      const fixEntityId = fixEntity.getId();
+      const suggestionIds = suggestionsByFixEntityId[fixEntityId] || [];
+      const suggestionsForFixEntity = suggestionIds
+        .map((id) => suggestionsById[id])
+        .filter(Boolean);
+
+      result.push({
+        fixEntity,
+        suggestions: suggestionsForFixEntity,
+      });
+    }
+
+    return result;
   }
 }
 

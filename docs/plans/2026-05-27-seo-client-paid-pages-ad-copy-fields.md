@@ -1,6 +1,6 @@
 # Feature: Surface Semrush ad-copy fields (`Ds`, `Vu`) on `getPaidPages` keywords
 
-**Package:** `@adobe/mysticat-shared-seo-client` (current v1.3.0 → next minor v1.4.0)
+**Package:** `@adobe/mysticat-shared-seo-client` (current v1.4.0 → next minor v1.5.0)
 **Date:** 2026-05-27
 **Author:** Daniel Huser
 **Branch:** `feat/seo-client-paid-pages-ad-copy-fields`
@@ -93,7 +93,7 @@ No new types in `src/index.d.ts` are needed — the per-keyword shape is not dec
 
 - **Conventional commit** (semantic-release will publish a minor version on merge):
   - `feat(mysticat-shared-seo-client): include ad description and visible URL in getPaidPages keywords`
-- semantic-release's `semantic-release-monorepo` config will bump `@adobe/mysticat-shared-seo-client` from `1.3.0` → `1.4.0` automatically on merge to `main`.
+- semantic-release's `semantic-release-monorepo` config will bump `@adobe/mysticat-shared-seo-client` from `1.4.0` → `1.5.0` automatically on merge to `main`.
 
 ## Downstream work (NOT in this PR — tracked for the chain)
 
@@ -120,7 +120,7 @@ After this package is published, the following repos need follow-up PRs to surfa
 ## Backwards compatibility & rollout
 
 - **Existing consumers** of `getPaidPages` (import-worker `seo.js` mapper, anyone calling the client directly) will receive two new fields they don't read. The import-worker mapper explicitly allowlists fields, so the new fields are silently dropped there until step 1 above lands — i.e., publishing this package alone changes nothing downstream.
-- **Pinned consumers** (`spacecat-import-worker/package.json` currently pins `@adobe/mysticat-shared-seo-client: 1.3.0`) won't even see the new fields until they bump the dep. Bumping is deliberate per downstream PR.
+- **Pinned consumers** (e.g. `spacecat-import-worker/package.json` pins a specific `@adobe/mysticat-shared-seo-client` version) won't even see the new fields until they bump the dep. Bumping is deliberate per downstream PR.
 - **No rollback risk** for downstream consumers — even if mystique's `adAnalysis` emission is delayed, the UI's `CurrentAdCard` render is conditional on `cluster.adAnalysis?.adPromise` having text (hide-when-missing pattern, same as `resolvedPageHeading`).
 
 ## Open questions for the downstream PRs (NOT blockers for this PR)

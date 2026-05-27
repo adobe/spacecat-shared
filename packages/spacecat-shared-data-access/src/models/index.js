@@ -43,6 +43,7 @@ export * from './site/index.js';
 export * from './suggestion/index.js';
 export * from './suggestion-grant/index.js';
 export * from './page-intent/index.js';
+export * from './preflight/index.js';
 export * from './report/index.js';
 export * from './trial-user/index.js';
 export * from './trial-user-activity/index.js';

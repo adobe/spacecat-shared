@@ -32,6 +32,8 @@ const SEED_PRIORITY = [
   'organizations',
   'projects',
   'sites',
+  'asyncJobs',
+  'preflights',
   'entitlements',
   'trialUsers',
   'siteEnrollments',

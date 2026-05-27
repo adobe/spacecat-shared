@@ -13,7 +13,6 @@
 import {
   hasText, isBoolean, isInteger, isNonEmptyArray, isNonEmptyObject, isValidUUID,
 } from '@adobe/spacecat-shared-utils';
-import { v7 as uuidv7 } from 'uuid';
 
 import { SchemaBuilderError } from '../../errors/index.js';
 import {
@@ -33,15 +32,6 @@ const DEFAULT_SERVICE_NAME = 'SpaceCat';
 /**
  * ID attribute configuration object.
  * Ensures a UUID-based "primary key".
- *
- * Produces **UUID v7** (sortable, time-encoded). The underlying Aurora
- * schema (`mysticat-data-service`) has been v7-by-design since migration
- * #1 (Jan 2025) — every `sites.id`, `opportunities.id`, `suggestions.id`
- * column has `DEFAULT uuid_generate_v7()`. This client-side default keeps
- * the ORM-stamped id aligned with what the DB would have produced if the
- * column default fired, so all writer paths converge on the same UUID
- * version. See SITES-45653.
- *
  * @type {object}
  */
 const ID_ATTRIBUTE_DATA = {
@@ -49,7 +39,7 @@ const ID_ATTRIBUTE_DATA = {
   postgrestField: 'id',
   required: true,
   readOnly: true,
-  default: () => uuidv7(),
+  default: () => crypto.randomUUID(),
   validate: (value) => isValidUUID(value),
 };
 

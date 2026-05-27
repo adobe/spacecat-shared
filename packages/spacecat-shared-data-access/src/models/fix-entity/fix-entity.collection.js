@@ -193,15 +193,15 @@ class FixEntityCollection extends BaseCollection {
 
   /**
    * Gets all fixes with their suggestions for a specific opportunity.
-   * Fetches all junction records for the opportunity, then batch-loads
-   * fix entities and suggestions. Actual PostgREST call count is
-   * 1 + ceil(N/50) + ceil(M/50) due to batchGetByKeys chunking.
+   * Fetches fix entities and mapping records in parallel, then batch-loads
+   * suggestions. Fixes without mapping records are included with
+   * suggestions: [].
    *
    * @async
    * @param {string} opportunityId - The ID of the opportunity.
    * @returns {Promise<Array>} - A promise that resolves to an array of objects containing:
    *   - fixEntity: The FixEntity model
-   *   - suggestions: Array of associated Suggestion models
+   *   - suggestions: Array of associated Suggestion models (empty if none mapped)
    * @throws {DataAccessError} - Throws an error if the query fails.
    * @throws {ValidationError} - Throws an error if opportunityId is not provided.
    */
@@ -211,10 +211,12 @@ class FixEntityCollection extends BaseCollection {
     try {
       const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
 
-      const fixEntitySuggestions = await fixEntitySuggestionCollection
-        .allByIndexKeys({ opportunityId });
+      const [allFixEntities, fixEntitySuggestions] = await Promise.all([
+        this.allByOpportunityId(opportunityId),
+        fixEntitySuggestionCollection.allByIndexKeys({ opportunityId }),
+      ]);
 
-      return this.#buildFixesWithSuggestions(fixEntitySuggestions);
+      return this.#buildAllFixesWithSuggestions(allFixEntities, fixEntitySuggestions);
     } catch (error) {
       if (error instanceof DataAccessError) {
         throw error;
@@ -275,6 +277,44 @@ class FixEntityCollection extends BaseCollection {
     }
 
     return result;
+  }
+
+  async #buildAllFixesWithSuggestions(allFixEntities, fixEntitySuggestions) {
+    if (allFixEntities.length === 0) {
+      return [];
+    }
+
+    const suggestionIdsByFixEntityId = {};
+    for (const junction of fixEntitySuggestions) {
+      const fixEntityId = junction.getFixEntityId();
+      const suggestionId = junction.getSuggestionId();
+      if (!suggestionIdsByFixEntityId[fixEntityId]) {
+        suggestionIdsByFixEntityId[fixEntityId] = [];
+      }
+      suggestionIdsByFixEntityId[fixEntityId].push(suggestionId);
+    }
+
+    const allSuggestionIds = Object.values(suggestionIdsByFixEntityId).flat();
+    const suggestionsById = {};
+
+    if (allSuggestionIds.length > 0) {
+      const suggestionCollection = this.entityRegistry.getCollection('SuggestionCollection');
+      const suggestions = await suggestionCollection.batchGetByKeys(
+        allSuggestionIds.map((id) => ({ [suggestionCollection.idName]: id })),
+      );
+      for (const suggestion of suggestions.data) {
+        suggestionsById[suggestion.getId()] = suggestion;
+      }
+    }
+
+    return allFixEntities.map((fixEntity) => {
+      const fixEntityId = fixEntity.getId();
+      const suggestionIds = suggestionIdsByFixEntityId[fixEntityId] || [];
+      const suggestions = suggestionIds
+        .map((id) => suggestionsById[id])
+        .filter(Boolean);
+      return { fixEntity, suggestions };
+    });
   }
 }
 

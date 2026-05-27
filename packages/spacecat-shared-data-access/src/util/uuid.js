@@ -18,7 +18,9 @@ import { randomBytes } from 'crypto';
 // schema has been v7-by-design since Jan 2025; this keeps the ORM aligned.
 /* eslint-disable no-bitwise */
 function uuidv7() {
-  const bytes = Buffer.alloc(16);
+  // Every byte is overwritten below (0-5 from the timestamp, 6-15 from
+  // randomBytes), so allocUnsafe avoids the zero-fill that alloc would do.
+  const bytes = Buffer.allocUnsafe(16);
   const ms = BigInt(Date.now());
 
   bytes[0] = Number((ms >> 40n) & 0xffn);

@@ -349,6 +349,32 @@ describe('Shared functions', () => {
     it('returns true for valid UUID', async () => {
       expect(isValidUUID('123e4567-e89b-12d3-a456-426614174000')).to.be.true;
     });
+
+    // SITES-45653: tightened to RFC 4122/9562-allocated versions (v1..v8).
+    it('returns true for UUID v4', () => {
+      expect(isValidUUID('550e8400-e29b-41d4-a716-446655440000')).to.be.true;
+    });
+
+    it('returns true for UUID v7 (RFC 9562 sortable)', () => {
+      expect(isValidUUID('019cde0c-fe79-76b2-bc50-a40e1b1b1c36')).to.be.true;
+    });
+
+    it('returns false for UUID with reserved version 0', () => {
+      expect(isValidUUID('550e8400-e29b-01d4-a716-446655440000')).to.be.false;
+    });
+
+    it('returns false for UUID with unallocated version 9', () => {
+      expect(isValidUUID('550e8400-e29b-91d4-a716-446655440000')).to.be.false;
+    });
+
+    it('returns false for UUID with unallocated version f', () => {
+      expect(isValidUUID('550e8400-e29b-f1d4-a716-446655440000')).to.be.false;
+    });
+
+    it('returns false for UUID with non-RFC variant nibble', () => {
+      // variant nibble (start of 4th group) must be [89abAB] per RFC 10xx variant.
+      expect(isValidUUID('550e8400-e29b-41d4-0716-446655440000')).to.be.false;
+    });
   });
 
   describe('isValidHelixPreviewUrl', () => {

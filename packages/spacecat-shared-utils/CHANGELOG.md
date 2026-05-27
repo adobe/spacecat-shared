@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.116.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.2...@adobe/spacecat-shared-utils-v1.116.3) (2026-05-27)
+
+### Bug Fixes
+
+* **data-access:** mint UUID v7 ids to match DB schema default ([#1633](https://github.com/adobe/spacecat-shared/issues/1633)) ([5c8f6fc](https://github.com/adobe/spacecat-shared/commit/5c8f6fcd454975703b4f670c0f560f43a768736a))
+
 ## [@adobe/spacecat-shared-utils-v1.116.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.1...@adobe/spacecat-shared-utils-v1.116.2) (2026-05-23)
 
 ### Bug Fixes

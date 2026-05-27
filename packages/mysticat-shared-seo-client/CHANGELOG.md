@@ -1,3 +1,9 @@
+## [@adobe/mysticat-shared-seo-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.4.0...@adobe/mysticat-shared-seo-client-v1.5.0) (2026-05-27)
+
+### Features
+
+* **seo-client:** add ad description and visible URL to paid keywords ([#1631](https://github.com/adobe/spacecat-shared/issues/1631)) ([474e200](https://github.com/adobe/spacecat-shared/commit/474e2004c684ed614ddd2a28d87e3e461f5c280d))
+
 ## [@adobe/mysticat-shared-seo-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.3.1...@adobe/mysticat-shared-seo-client-v1.4.0) (2026-05-21)
 
 ### Features

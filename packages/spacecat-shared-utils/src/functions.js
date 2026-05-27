@@ -14,7 +14,14 @@
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
 const IMS_ORG_ID_REGEX = /[a-z0-9]{24}@AdobeOrg/i;
-const UUID_V4_REGEX = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
+// Accepts any RFC 4122 / 9562 UUID — version-agnostic by design. The
+// underlying Aurora schema mints v7 (sortable) while existing rows from
+// the ORM's pre-SITES-45653 v4 default coexist; both must validate.
+// Previous name `UUID_V4_REGEX` was misleading — the regex never pinned
+// the version nibble. Old name kept as a deprecated alias below.
+const UUID_REGEX = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
+/** @deprecated Use {@link UUID_REGEX}. The original name implied v4-only matching but the regex is version-agnostic. Kept for backward compatibility; will be removed in a future major. */
+const UUID_V4_REGEX = UUID_REGEX;
 
 /**
  * Determines if the given parameter is an array.
@@ -220,7 +227,7 @@ function isValidUrl(urlString) {
  * @return {boolean} True if the given string is a valid UUID.
  */
 function isValidUUID(uuid) {
-  return UUID_V4_REGEX.test(uuid);
+  return UUID_REGEX.test(uuid);
 }
 
 /**

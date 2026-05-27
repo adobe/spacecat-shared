@@ -33,7 +33,7 @@ const schema = new SchemaBuilder(Preflight, PreflightCollection)
   .addAttribute('createdBy', {
     type: 'map',
     required: true,
-    validate: (value) => !value || (isObject(value) && typeof value.email === 'string' && value.email.length > 0),
+    validate: (value) => isObject(value) && typeof value.email === 'string' && value.email.length > 0,
   })
   .addAttribute('startedAt', {
     type: 'string',
@@ -49,7 +49,7 @@ const schema = new SchemaBuilder(Preflight, PreflightCollection)
   })
   .addAttribute('error', {
     type: 'map',
-    validate: (value) => !value || (isObject(value) && value.code && value.message),
+    validate: (value) => !value || (isObject(value) && typeof value.code === 'string' && value.code.length > 0 && typeof value.message === 'string' && value.message.length > 0),
   });
 
 export default schema.build();

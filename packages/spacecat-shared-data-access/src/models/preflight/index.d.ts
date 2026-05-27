@@ -26,7 +26,7 @@ export interface Preflight extends BaseModel {
     getError(): { code: string; message: string } | null;
 
     setUrl(url: string): Preflight;
-    setStatus(status: string): Preflight;
+    setStatus(status: 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED'): Preflight;
     setCreatedBy(createdBy: { email: string; displayName?: string }): Preflight;
     setStartedAt(startedAt: string): Preflight;
     setEndedAt(endedAt: string): Preflight;

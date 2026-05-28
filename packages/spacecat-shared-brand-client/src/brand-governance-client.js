@@ -18,6 +18,7 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
 
 const CHECKS_PAGE_SIZE = 100;
+const MAX_PAGES = 20;
 
 const API_GET_BRAND_FROM_URL = (url) => `/api/v1/brands/from-url?url=${encodeURIComponent(url)}`;
 const API_GET_BRAND_CHECKS = (brandId, page) => `/api/v1/brands/${brandId}/checks?status=ACTIVE&type=BRAND&scope=COPY&pageSize=${CHECKS_PAGE_SIZE}&page=${page}`;
@@ -88,6 +89,12 @@ export class BrandGovernanceClient {
    * Fetches brand guidelines for a site URL from the Brand Governance Agent.
    * Returns null if the brand is not registered (404), allowing callers to fall back.
    *
+   * Org/tenant scoping for the domain lookup is enforced server-side by the Agent via the
+   * x-gw-ims-org-id request header. BrandResponse carries no org_id field, so the
+   * client-side ownership check performed by BrandClient is not possible here. Note that
+   * the imsOrgId field in the returned object is the requested org echoed for shape-parity
+   * with BrandClient — it is not a verified owner of the resolved brand.
+   *
    * @param {string} siteBaseUrl - The site's base URL to resolve brand by domain
    * @param {string} imsOrgId - The IMS org ID sent as x-gw-ims-org-id header
    * @param {object} imsConfig - IMS auth config: { host, clientId, clientCode, clientSecret }
@@ -153,6 +160,12 @@ export class BrandGovernanceClient {
         break;
       }
       page += 1;
+      if (page > MAX_PAGES) {
+        throw this.#createError(
+          `Brand checks pagination exceeded ${MAX_PAGES} pages for brand ${brand.id}`,
+          HTTP_BAD_REQUEST,
+        );
+      }
     // eslint-disable-next-line no-constant-condition
     } while (true);
 

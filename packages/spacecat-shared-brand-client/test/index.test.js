@@ -420,6 +420,49 @@ describe('BrandGovernanceClient', () => {
       expect(result.guidelines).to.deep.equal([]);
     });
 
+    it('throws when pagination exceeds the maximum page limit (prevents runaway loop)', async () => {
+      const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
+      const fullPage = Array.from({ length: 100 }, (_, i) => ({ name: `Rule ${i + 1}`, rule: `Text ${i + 1}` }));
+
+      mockImsToken();
+      mockBrandFromUrl(mockBrand);
+      // MAX_PAGES is 20 — mock all 20 full pages; the loop must bail before requesting page 21
+      for (let i = 1; i <= 20; i += 1) {
+        mockBrandChecks(mockBrand.id, fullPage, 200, i);
+      }
+
+      await expect(client.getBrandGuidelinesForUrl(validSiteBaseUrl, validImsOrgId, validGovImsConfig))
+        .to.be.rejectedWith('Brand checks pagination exceeded 20 pages for brand');
+    });
+
+    it('sends x-gw-ims-org-id, x-api-key, and Authorization headers on all requests', async () => {
+      const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
+
+      nock('https://ims-gov-host')
+        .post('/ims/token/v4')
+        .reply(200, { access_token: 'gov-service-token' });
+
+      nock(validGovApiBaseUrl)
+        .get('/api/v1/brands/from-url')
+        .query({ url: validSiteBaseUrl })
+        .matchHeader('x-gw-ims-org-id', validImsOrgId)
+        .matchHeader('x-api-key', validGovApiKey)
+        .matchHeader('Authorization', 'Bearer gov-service-token')
+        .reply(200, mockBrand);
+
+      nock(validGovApiBaseUrl)
+        .get(`/api/v1/brands/${mockBrand.id}/checks`)
+        .query({
+          status: 'ACTIVE', type: 'BRAND', scope: 'COPY', pageSize: '100', page: '1',
+        })
+        .matchHeader('x-gw-ims-org-id', validImsOrgId)
+        .reply(200, { data: [] });
+
+      const result = await client.getBrandGuidelinesForUrl(validSiteBaseUrl, validImsOrgId, validGovImsConfig);
+      expect(result).to.not.be.null;
+      expect(nock.isDone()).to.equal(true);
+    });
+
     it('paginates through all pages until the last page has fewer than pageSize results', async () => {
       const client = new BrandGovernanceClient({ apiBaseUrl: validGovApiBaseUrl, apiKey: validGovApiKey }, mockLog);
       const page1Checks = Array.from({ length: 100 }, (_, i) => ({ name: `Rule ${i + 1}`, rule: `Text ${i + 1}` }));

@@ -957,7 +957,7 @@ class TokowakaClient {
     // from per-URL suggestions — each group is rolled back via a different code path.
     const patternSuggestions = suggestions.filter(isPatternSuggestion);
     const perUrlSuggestions = suggestions.filter((s) => !isPatternSuggestion(s));
-    this.log.info(`[rollback] Site: ${baseURL}, total: ${suggestions.length}, pattern: ${patternSuggestions.length}, perUrl: ${perUrlSuggestions.length}, allSuggestions: ${allSuggestions.length}`);
+    this.log.info(`[edge-rollback] Site: ${baseURL}, total: ${suggestions.length}, pattern: ${patternSuggestions.length}, perUrl: ${perUrlSuggestions.length}, allSuggestions: ${allSuggestions.length}`);
 
     const {
       eligible: eligibleSuggestions,
@@ -1035,7 +1035,7 @@ class TokowakaClient {
           const existingAllowList = metaconfig.prerender?.allowList ?? [];
           const changed = this.#removePatternFromMetaconfig(metaconfig, patternToRemove);
           const updatedAllowList = metaconfig.prerender?.allowList ?? [];
-          this.log.info(`[rollback] Pattern ${patternToRemove}: allowList before=${JSON.stringify(existingAllowList)}, after=${JSON.stringify(updatedAllowList)}`);
+          this.log.info(`[edge-rollback] Pattern ${patternToRemove}: allowList before=${JSON.stringify(existingAllowList)}, after=${JSON.stringify(updatedAllowList)}`);
           if (changed) {
             metaconfigChanged = true;
           } else {
@@ -1085,7 +1085,7 @@ class TokowakaClient {
                 'coveredByPattern'];
             if (covered.length > 0) {
               // eslint-disable-next-line max-len
-              this.log.info(`[rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
+              this.log.info(`[edge-rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
             }
             // eslint-disable-next-line no-await-in-loop, max-len
             await this.#cleanupCoveredSuggestions(covered, coveredFallback, updatedBy, fieldsToStrip);
@@ -1463,7 +1463,7 @@ class TokowakaClient {
       const data = suggestion.getData();
       if (isPatternSuggestion(suggestion)) {
         this.log.info(
-          `[deploy] Classified as PATTERN: ${suggestion.getId()} `
+          `[edge-deploy] Classified as PATTERN: ${suggestion.getId()} `
           + `patterns=${JSON.stringify(data.allowedRegexPatterns)} isDomainWide=${data?.isDomainWide}`,
         );
         patternSuggestions.push({ suggestion, allowedRegexPatterns: data.allowedRegexPatterns });
@@ -1593,7 +1593,7 @@ class TokowakaClient {
     const existingAllowList = metaconfig.prerender?.allowList ?? [];
     const mergedAllowList = [...new Set([...existingAllowList, ...allowedRegexPatterns])];
     this.log.info(
-      `[deploy] Pattern ${suggestion.getId()}: allowList before=${JSON.stringify(existingAllowList)}, `
+      `[edge-deploy] Pattern ${suggestion.getId()}: allowList before=${JSON.stringify(existingAllowList)}, `
       + `after=${JSON.stringify(mergedAllowList)}`,
     );
 
@@ -1601,9 +1601,9 @@ class TokowakaClient {
       // eslint-disable-next-line no-param-reassign
       metaconfig.prerender = { ...metaconfig.prerender, allowList: mergedAllowList };
       await this.uploadMetaconfig(baseURL, metaconfig);
-      this.log.info(`[deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(mergedAllowList)}`);
+      this.log.info(`[edge-deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(mergedAllowList)}`);
     } else {
-      this.log.info(`[deploy] Patterns already in allowList for suggestion ${suggestion.getId()}, skipping CDN write`);
+      this.log.info(`[edge-deploy] Patterns already in allowList for suggestion ${suggestion.getId()}, skipping CDN write`);
     }
 
     suggestion.setData({ ...suggestion.getData(), edgeDeployed: Date.now() });
@@ -1643,7 +1643,7 @@ class TokowakaClient {
       return url && matchers.some((match) => match(url));
     });
 
-    this.log.info(`[deploy] Pattern ${suggestion.getId()}: found ${covered.length} coverable per-URL suggestions (field=${coverageField})`);
+    this.log.info(`[edge-deploy] Pattern ${suggestion.getId()}: found ${covered.length} coverable per-URL suggestions (field=${coverageField})`);
 
     if (covered.length > 0) {
       try {
@@ -1653,7 +1653,7 @@ class TokowakaClient {
           return cs.save();
         }));
         coveredSuggestions.push(...covered);
-        this.log.info(`[deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
+        this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
       } catch (coverError) {
         this.log.warn(
           '[edge-deploy] Failed to mark covered suggestions for pattern suggestion '
@@ -1692,7 +1692,7 @@ class TokowakaClient {
     const { patternSuggestions, validSuggestions: classified } = this
       .#classifySuggestions(targetSuggestions);
     this.log.info(
-      `[deploy] Classification: pattern=${patternSuggestions.length},`
+      `[edge-deploy] Classification: pattern=${patternSuggestions.length},`
       + ` perUrl=${classified.length}, allSuggestions=${allSuggestions.length}`,
     );
 

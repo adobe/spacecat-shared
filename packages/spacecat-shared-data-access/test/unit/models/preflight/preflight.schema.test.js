@@ -20,6 +20,24 @@ describe('Preflight Schema', () => {
     attributes = preflightSchema.getAttributes();
   });
 
+  // ElectroDB's `map` type requires a `properties` schema. Declaring a Map
+  // attribute without `properties` (as the original Preflight schema did for
+  // `createdBy` and `error`) throws `InvalidAttributeDefinition` at
+  // `new Service(...)` time, which silently breaks any downstream test or
+  // runtime path that instantiates the full entity registry via electrodb's
+  // v1 Service constructor (e.g. spacecat-api-service `fixes.test.js`). The
+  // `validate` function already enforces the precise shape, so `any` is the
+  // minimal correct type here — matching the neighbor `result` attribute.
+  describe('attribute types (regression guard for ElectroDB Service construction)', () => {
+    it('declares createdBy as type "any" (not "map") so Service construction succeeds', () => {
+      expect(attributes.createdBy.type).to.equal('any');
+    });
+
+    it('declares error as type "any" (not "map") so Service construction succeeds', () => {
+      expect(attributes.error.type).to.equal('any');
+    });
+  });
+
   describe('createdBy attribute', () => {
     it('accepts a valid object with email and displayName', () => {
       expect(attributes.createdBy.validate({ email: 'user@example.com', displayName: 'User' })).to.be.true;

@@ -30,8 +30,16 @@ const schema = new SchemaBuilder(Preflight, PreflightCollection)
     required: true,
     default: Preflight.Status.IN_PROGRESS,
   })
+  // `createdBy` and `error` use type 'any' (matching neighbor `result`) because
+  // ElectroDB's `map` type requires a `properties` schema for every sub-key,
+  // and the validate function below already enforces the precise shape — a
+  // duplicate `properties` declaration adds nothing. Declaring `type: 'map'`
+  // here without `properties` was the original definition and throws
+  // `InvalidAttributeDefinition` at Service construction, blocking any
+  // downstream consumer that builds a v1 `new Service(EntityRegistry.getEntities())`
+  // (e.g. spacecat-api-service `fixes.test.js`).
   .addAttribute('createdBy', {
-    type: 'map',
+    type: 'any',
     required: true,
     validate: (value) => isObject(value) && typeof value.email === 'string' && value.email.length > 0,
   })
@@ -48,7 +56,7 @@ const schema = new SchemaBuilder(Preflight, PreflightCollection)
     validate: (value) => !value || isObject(value),
   })
   .addAttribute('error', {
-    type: 'map',
+    type: 'any',
     validate: (value) => !value || (isObject(value) && typeof value.code === 'string' && value.code.length > 0 && typeof value.message === 'string' && value.message.length > 0),
   });
 

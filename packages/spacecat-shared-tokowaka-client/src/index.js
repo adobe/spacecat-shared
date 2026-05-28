@@ -74,6 +74,7 @@ class TokowakaClient {
       previewBucketName,
       s3Client: s3?.s3Client ?? context.s3Client,
       env,
+      dataAccess: context.dataAccess,
     }, log);
     context.tokowakaClient = client;
     return client;
@@ -86,10 +87,11 @@ class TokowakaClient {
    * @param {string} config.previewBucketName - S3 bucket name for preview configs
    * @param {Object} config.s3Client - AWS S3 client
    * @param {Object} config.env - Environment variables (for CDN credentials)
+   * @param {Object} [config.dataAccess] - Data access layer (provides Suggestion.saveMany for batch saves)
    * @param {Object} log - Logger instance
    */
   constructor({
-    bucketName, previewBucketName, s3Client, env = {},
+    bucketName, previewBucketName, s3Client, env = {}, dataAccess,
   }, log) {
     this.log = log;
 
@@ -105,9 +107,28 @@ class TokowakaClient {
     this.previewBucketName = previewBucketName;
     this.s3Client = s3Client;
     this.env = env;
+    this.dataAccess = dataAccess;
 
     this.mapperRegistry = new MapperRegistry(log);
     this.cdnClientRegistry = new CdnClientRegistry(env, log);
+  }
+
+  /**
+   * Batch-saves suggestions via dataAccess.Suggestion.saveMany when available,
+   * falling back to individual save() calls otherwise.
+   * @param {Array} suggestions - Suggestion entities to save
+   * @returns {Promise<void>}
+   * @private
+   */
+  async #saveSuggestions(suggestions) {
+    if (suggestions.length === 0) {
+      return;
+    }
+    if (this.dataAccess?.Suggestion) {
+      await this.dataAccess.Suggestion.saveMany(suggestions);
+    } else {
+      await Promise.all(suggestions.map((s) => s.save()));
+    }
   }
 
   #createError(message, status) {
@@ -824,17 +845,18 @@ class TokowakaClient {
   }
 
   /**
-   * Strips deployment markers from a suggestion's data, sets updatedBy, and saves it.
+   * Strips deployment markers from a suggestion's data and sets updatedBy.
+   * Does not save — caller is responsible for batching saves via #saveSuggestions.
    * @param {Object} suggestion - Suggestion entity
    * @param {string} actorFallback - Fallback string when updatedBy is undefined
    * @param {string|undefined} updatedBy - Explicit actor (overrides fallback when defined)
-   * @returns {Promise<Object>} The saved suggestion
+   * @returns {Object} The mutated suggestion (not yet persisted)
    * @private
    */
-  async #stripAndSaveSuggestion(suggestion, actorFallback, updatedBy) {
+  // eslint-disable-next-line class-methods-use-this
+  #stripSuggestion(suggestion, actorFallback, updatedBy) {
     suggestion.setData(omitKeys(suggestion.getData(), ['edgeDeployed', 'tokowakaDeployed']));
     suggestion.setUpdatedBy(updatedBy ?? actorFallback);
-    await suggestion.save();
     return suggestion;
   }
 
@@ -855,16 +877,14 @@ class TokowakaClient {
       return;
     }
     const keysToRemove = fieldsToStrip;
-    const results = await Promise.allSettled(covered.map(async (cs) => {
+    covered.forEach((cs) => {
       cs.setData(omitKeys(cs.getData(), keysToRemove));
       cs.setUpdatedBy(updatedBy ?? actorFallback);
-      return cs.save();
-    }));
-    const failures = results
-      .map((result, i) => (result.status === 'rejected' ? { id: covered[i].getId(), reason: result.reason?.message } : null))
-      .filter(Boolean);
-    if (failures.length > 0) {
-      this.log.error(`[edge-rollback-failed] Failed to clean ${failures.length}/${covered.length} covered suggestion(s): ${failures.map((f) => `${f.id}: ${f.reason}`).join(', ')}`);
+    });
+    try {
+      await this.#saveSuggestions(covered);
+    } catch (error) {
+      this.log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
     }
   }
 
@@ -1002,10 +1022,10 @@ class TokowakaClient {
 
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
 
-    // Save all eligible per-URL suggestions, stripping deployment markers.
-    const savedEligibleSuggestions = await Promise.all(
-      eligibleSuggestions.map((s) => this.#stripAndSaveSuggestion(s, 'tokowaka-rollback', updatedBy)),
-    );
+    // Strip deployment markers and batch-save all eligible per-URL suggestions.
+    const savedEligibleSuggestions = eligibleSuggestions
+      .map((s) => this.#stripSuggestion(s, 'tokowaka-rollback', updatedBy));
+    await this.#saveSuggestions(savedEligibleSuggestions);
 
     // Roll back pattern suggestions: fetch metaconfig once, remove all patterns in a single
     // in-memory pass, upload once, then save each suggestion and clean up its covered entries.
@@ -1533,19 +1553,17 @@ class TokowakaClient {
       const result = await this.deploySuggestions(site, opportunity, validSuggestions);
       const deploymentTimestamp = Date.now();
 
-      const succeeded = await Promise.all(
-        result.succeededSuggestions.map(async (s) => {
-          const currentData = s.getData();
-          const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
-          if (updated.edgeOptimizeStatus === 'STALE') {
-            delete updated.edgeOptimizeStatus;
-          }
-          s.setData(updated);
-          s.setUpdatedBy(updatedBy);
-          await s.save();
-          return s;
-        }),
-      );
+      const succeeded = result.succeededSuggestions.map((s) => {
+        const currentData = s.getData();
+        const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
+        if (updated.edgeOptimizeStatus === 'STALE') {
+          delete updated.edgeOptimizeStatus;
+        }
+        s.setData(updated);
+        s.setUpdatedBy(updatedBy);
+        return s;
+      });
+      await this.#saveSuggestions(succeeded);
 
       const failed = result.failedSuggestions.map((item) => {
         this.log.info(
@@ -1647,11 +1665,11 @@ class TokowakaClient {
 
     if (covered.length > 0) {
       try {
-        await Promise.all(covered.map(async (cs) => {
+        covered.forEach((cs) => {
           cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
           cs.setUpdatedBy(updatedBy);
-          return cs.save();
-        }));
+        });
+        await this.#saveSuggestions(covered);
         coveredSuggestions.push(...covered);
         this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
       } catch (coverError) {
@@ -1749,10 +1767,9 @@ class TokowakaClient {
       }
     }
 
-    // Step 5: mark same-batch skipped suggestions individually so a single save failure
-    // surfaces as a per-item failure rather than swallowing the whole batch.
+    // Step 5: mark same-batch skipped suggestions, then batch-save.
     if (skippedInBatch.length > 0) {
-      const results = await Promise.allSettled(skippedInBatch.map(async (item) => {
+      const skippedSuggestions = skippedInBatch.map((item) => {
         const coverageField = item.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
         item.suggestion.setData({
           ...item.suggestion.getData(),
@@ -1760,23 +1777,19 @@ class TokowakaClient {
           skippedInDeployment: true,
         });
         item.suggestion.setUpdatedBy(updatedBy);
-        await item.suggestion.save();
         return item.suggestion;
-      }));
-
-      results.forEach((result, i) => {
-        const s = skippedInBatch[i].suggestion;
-        if (result.status === 'fulfilled') {
-          succeededSuggestions.push(s);
-          coveredSuggestions.push(s);
-        } else {
-          this.log.warn(
-            `[edge-deploy] Failed to mark same-batch skipped suggestion ${s.getId()}`
-            + ` - ${result.reason?.message}`,
-          );
-          failedSuggestions.push({ suggestion: s, reason: 'Failed to mark as covered', statusCode: 500 });
-        }
       });
+
+      try {
+        await this.#saveSuggestions(skippedSuggestions);
+        succeededSuggestions.push(...skippedSuggestions);
+        coveredSuggestions.push(...skippedSuggestions);
+      } catch (error) {
+        this.log.warn(`[edge-deploy] Failed to save same-batch skipped suggestions: ${error.message}`);
+        skippedSuggestions.forEach((s) => {
+          failedSuggestions.push({ suggestion: s, reason: 'Failed to mark as covered', statusCode: 500 });
+        });
+      }
     }
 
     return { succeededSuggestions, failedSuggestions, coveredSuggestions };

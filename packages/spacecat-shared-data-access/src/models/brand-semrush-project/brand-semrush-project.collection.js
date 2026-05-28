@@ -22,17 +22,17 @@ class BrandSemrushProjectCollection extends BaseCollection {
   static COLLECTION_NAME = 'BrandSemrushProjectCollection';
 
   /**
-   * Find the single row for a (brand, semrushLocationId, language) slice, or
-   * null. Used by spacecat-api-service POST /v2/orgs/.../semrush/projects to
-   * 409 on a duplicate slice before calling Semrush.
+   * Find the single row for a (brand, geoTargetId, languageCode) slice, or
+   * null. Used by spacecat-api-service POST /v2/orgs/.../serenity/markets to
+   * 409 on a duplicate slice before calling the upstream.
    *
    * @param {string} brandId
-   * @param {number} semrushLocationId
-   * @param {string} language
+   * @param {number} geoTargetId Google Ads Geo Target ID.
+   * @param {string} languageCode BCP-47 primary subtag.
    * @returns {Promise<BrandSemrushProject|null>}
    */
-  async findBySlice(brandId, semrushLocationId, language) {
-    return this.findByIndexKeys({ brandId, semrushLocationId, language });
+  async findBySlice(brandId, geoTargetId, languageCode) {
+    return this.findByIndexKeys({ brandId, geoTargetId, languageCode });
   }
 }
 

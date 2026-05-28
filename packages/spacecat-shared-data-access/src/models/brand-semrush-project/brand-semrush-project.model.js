@@ -13,10 +13,12 @@
 import BaseModel from '../base/base.model.js';
 
 /**
- * BrandSemrushProject - mapping between an Adobe brand and a Semrush AIO
- * project. One row per (brand, semrushLocationId, language) slice. The Semrush
- * workspace is reachable via brand -> organization.getSemrushWorkspaceId() and
- * is not duplicated on this entity.
+ * BrandSemrushProject - mapping between an Adobe brand and an upstream
+ * Semrush AIO project. One row per (brand, geoTargetId, languageCode) slice.
+ * The Semrush workspace is reachable via
+ * brand -> organization.getSemrushWorkspaceId() and is not duplicated on this
+ * entity. Entity + table names retain the `Semrush` prefix as internal
+ * storage identifiers; the public JS accessors do not.
  *
  * @class BrandSemrushProject
  * @extends BaseModel

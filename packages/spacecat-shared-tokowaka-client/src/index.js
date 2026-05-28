@@ -39,6 +39,7 @@ import {
 } from './utils/suggestion-utils.js';
 import { buildUrlMatcher } from './utils/pattern-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
+import { removePatternFromMetaconfig, addPatternsToMetaconfig } from './utils/metaconfig-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
 import {
   EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT,
@@ -814,30 +815,6 @@ class TokowakaClient {
   }
 
   /**
-   * Removes a single pattern from the metaconfig's prerender allowList in-place.
-   * Deletes the prerender key entirely when the resulting list would be empty.
-   * @param {Object} metaconfig - Metaconfig object (mutated in place)
-   * @param {string} pattern - Pattern to remove
-   * @returns {boolean} True if the allowList was changed
-   * @private
-   */
-  #removePatternFromMetaconfig(metaconfig, pattern) {
-    const existing = metaconfig.prerender?.allowList ?? [];
-    const updated = existing.filter((p) => p !== pattern);
-    if (updated.length === existing.length) {
-      return false;
-    }
-    if (updated.length === 0) {
-      // eslint-disable-next-line no-param-reassign
-      delete metaconfig.prerender;
-    } else {
-      // eslint-disable-next-line no-param-reassign
-      metaconfig.prerender = { ...metaconfig.prerender, allowList: updated };
-    }
-    return true;
-  }
-
-  /**
    * Rolls back a single URL's S3 config by removing the relevant patches.
    * Returns the number of patches removed, or 0 if nothing changed.
    * Pushes the uploaded S3 path into s3Paths and the URL into rolledBackUrls on success.
@@ -1007,7 +984,7 @@ class TokowakaClient {
           }
 
           const existingAllowList = metaconfig.prerender?.allowList ?? [];
-          const changed = this.#removePatternFromMetaconfig(metaconfig, patternToRemove);
+          const changed = removePatternFromMetaconfig(metaconfig, patternToRemove);
           const updatedAllowList = metaconfig.prerender?.allowList ?? [];
           // eslint-disable-next-line max-len
           this.log.info(`[edge-rollback] Pattern ${patternToRemove}: allowList before=${JSON.stringify(existingAllowList)}, after=${JSON.stringify(updatedAllowList)}`);
@@ -1508,20 +1485,18 @@ class TokowakaClient {
     const data = suggestion.getData();
     const coverageField = data?.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
 
-    const existingAllowList = metaconfig.prerender?.allowList ?? [];
-    const mergedAllowList = [...new Set([...existingAllowList, ...allowedRegexPatterns])];
+    const beforeAllowList = metaconfig.prerender?.allowList ?? [];
+    const changed = addPatternsToMetaconfig(metaconfig, allowedRegexPatterns);
+    const afterAllowList = changed ? metaconfig.prerender.allowList : beforeAllowList;
     this.log.info(
       // eslint-disable-next-line max-len
-      `[edge-deploy] Pattern ${suggestion.getId()}: allowList before=${JSON.stringify(existingAllowList)}, `
-      + `after=${JSON.stringify(mergedAllowList)}`,
+      `[edge-deploy] Pattern ${suggestion.getId()}: allowList before=${JSON.stringify(beforeAllowList)}, after=${JSON.stringify(afterAllowList)}`,
     );
 
-    if (mergedAllowList.length !== existingAllowList.length) {
-      // eslint-disable-next-line no-param-reassign
-      metaconfig.prerender = { ...metaconfig.prerender, allowList: mergedAllowList };
+    if (changed) {
       await this.uploadMetaconfig(baseURL, metaconfig);
       // eslint-disable-next-line max-len
-      this.log.info(`[edge-deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(mergedAllowList)}`);
+      this.log.info(`[edge-deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(afterAllowList)}`);
     } else {
       // eslint-disable-next-line max-len
       this.log.info(`[edge-deploy] Patterns already in allowList for suggestion ${suggestion.getId()}, skipping CDN write`);

@@ -32,6 +32,8 @@ import {
   groupSuggestionsByUrlPath,
   filterEligibleSuggestions,
   saveSuggestions,
+  classifySuggestions,
+  filterBatchCoveredSuggestions,
 } from './utils/suggestion-utils.js';
 import { buildUrlMatcher } from './utils/pattern-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
@@ -1459,77 +1461,6 @@ class TokowakaClient {
   }
 
   /**
-   * Classifies a batch of target suggestions into pattern-based and per-URL buckets.
-   * Pattern suggestions (domain-wide or path-level) are returned as
-   * `{ suggestion, allowedRegexPatterns }` objects; per-URL suggestions are filtered
-   * to only those with a deployable status.
-   * @param {Array} targetSuggestions
-   * @returns {{ patternSuggestions: Array, validSuggestions: Array }}
-   * @private
-   */
-  #classifySuggestions(targetSuggestions) {
-    const patternSuggestions = [];
-    const validSuggestions = [];
-
-    targetSuggestions.forEach((suggestion) => {
-      const data = suggestion.getData();
-      if (isPatternSuggestion(suggestion)) {
-        this.log.info(
-          `[edge-deploy] Classified as PATTERN: ${suggestion.getId()} `
-          + `patterns=${JSON.stringify(data.allowedRegexPatterns)} isDomainWide=${data?.isDomainWide}`,
-        );
-        patternSuggestions.push({ suggestion, allowedRegexPatterns: data.allowedRegexPatterns });
-      } else if (isEdgeDeployableSuggestionStatus(suggestion.getStatus())) {
-        validSuggestions.push(suggestion);
-      }
-    });
-
-    return { patternSuggestions, validSuggestions };
-  }
-
-  /**
-   * Splits validSuggestions into those covered by an in-batch pattern and those that are not.
-   * Returns the two arrays; validSuggestions itself is not mutated.
-   * @param {Array} validSuggestions - Per-URL suggestions
-   * @param {Array} patternSuggestions - Pattern suggestions in the same batch
-   * @returns {{ remaining: Array, skippedInBatch: Array }}
-   * @private
-   */
-  #filterBatchCoveredSuggestions(validSuggestions, patternSuggestions) {
-    if (patternSuggestions.length === 0 || validSuggestions.length === 0) {
-      return { remaining: validSuggestions, skippedInBatch: [] };
-    }
-
-    // Build matchers per pattern suggestion so we can track which type covered each URL.
-    const matcherEntries = patternSuggestions.flatMap(({ suggestion, allowedRegexPatterns }) => {
-      const isDomainWide = suggestion.getData()?.isDomainWide === true;
-      return allowedRegexPatterns
-        .map(buildUrlMatcher)
-        .filter(Boolean)
-        .map((matcher) => ({ matcher, isDomainWide }));
-    });
-
-    if (matcherEntries.length === 0) {
-      return { remaining: validSuggestions, skippedInBatch: [] };
-    }
-
-    const remaining = [];
-    const skippedInBatch = [];
-    validSuggestions.forEach((s) => {
-      const url = s.getData()?.url;
-      const match = url && matcherEntries.find(({ matcher }) => matcher(url));
-      if (match) {
-        skippedInBatch.push({ suggestion: s, isDomainWide: match.isDomainWide });
-        this.log.info(`[edge-deploy] Skipping suggestion ${s.getId()} - covered by pattern`);
-      } else {
-        remaining.push(s);
-      }
-    });
-
-    return { remaining, skippedInBatch };
-  }
-
-  /**
    * Deploys per-URL suggestions via deploySuggestions(), stamps them with edgeDeployed,
    * and returns { succeededSuggestions, failedSuggestions }.
    * Throws if the underlying deployment throws.
@@ -1699,16 +1630,14 @@ class TokowakaClient {
     updatedBy = 'edge-deploy',
   }) {
     // Step 1: classify suggestions into pattern vs per-URL buckets.
-    const { patternSuggestions, validSuggestions: classified } = this
-      .#classifySuggestions(targetSuggestions);
+    const { patternSuggestions, validSuggestions: classified } = classifySuggestions(targetSuggestions, this.log);
     this.log.info(
       `[edge-deploy] Classification: pattern=${patternSuggestions.length},`
       + ` perUrl=${classified.length}, allSuggestions=${allSuggestions.length}`,
     );
 
     // Step 2: remove per-URL suggestions already covered by a pattern in this batch.
-    const { remaining: validSuggestions, skippedInBatch } = this
-      .#filterBatchCoveredSuggestions(classified, patternSuggestions);
+    const { remaining: validSuggestions, skippedInBatch } = filterBatchCoveredSuggestions(classified, patternSuggestions, this.log);
 
     let succeededSuggestions = [];
     const failedSuggestions = [];

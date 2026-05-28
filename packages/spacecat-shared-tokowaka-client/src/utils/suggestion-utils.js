@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { buildUrlMatcher } from './pattern-utils.js';
+
 /** Returns a shallow copy of obj with the specified keys removed. */
 export function omitKeys(obj, keys) {
   const keySet = new Set(keys);
@@ -106,4 +108,75 @@ export async function saveSuggestions(dataAccess, suggestions) {
   } else {
     await Promise.all(suggestions.map((s) => s.save()));
   }
+}
+
+/**
+ * Classifies a batch of target suggestions into pattern-based and per-URL buckets.
+ * Pattern suggestions (domain-wide or path-level) are returned as
+ * `{ suggestion, allowedRegexPatterns }` objects; per-URL suggestions are filtered
+ * to only those with a deployable status.
+ * @param {Array} targetSuggestions
+ * @param {Object} log - Logger instance
+ * @returns {{ patternSuggestions: Array, validSuggestions: Array }}
+ */
+export function classifySuggestions(targetSuggestions, log) {
+  const patternSuggestions = [];
+  const validSuggestions = [];
+
+  targetSuggestions.forEach((suggestion) => {
+    const data = suggestion.getData();
+    if (isPatternSuggestion(suggestion)) {
+      log.info(
+        `[edge-deploy] Classified as PATTERN: ${suggestion.getId()} `
+        + `patterns=${JSON.stringify(data.allowedRegexPatterns)} isDomainWide=${data?.isDomainWide}`,
+      );
+      patternSuggestions.push({ suggestion, allowedRegexPatterns: data.allowedRegexPatterns });
+    } else if (isEdgeDeployableSuggestionStatus(suggestion.getStatus())) {
+      validSuggestions.push(suggestion);
+    }
+  });
+
+  return { patternSuggestions, validSuggestions };
+}
+
+/**
+ * Splits validSuggestions into those covered by an in-batch pattern and those that are not.
+ * Returns the two arrays; validSuggestions itself is not mutated.
+ * @param {Array} validSuggestions - Per-URL suggestions
+ * @param {Array} patternSuggestions - Pattern suggestions in the same batch
+ * @param {Object} log - Logger instance
+ * @returns {{ remaining: Array, skippedInBatch: Array }}
+ */
+export function filterBatchCoveredSuggestions(validSuggestions, patternSuggestions, log) {
+  if (patternSuggestions.length === 0 || validSuggestions.length === 0) {
+    return { remaining: validSuggestions, skippedInBatch: [] };
+  }
+
+  // Build matchers per pattern suggestion so we can track which type covered each URL.
+  const matcherEntries = patternSuggestions.flatMap(({ suggestion, allowedRegexPatterns }) => {
+    const isDomainWide = suggestion.getData()?.isDomainWide === true;
+    return allowedRegexPatterns
+      .map(buildUrlMatcher)
+      .filter(Boolean)
+      .map((matcher) => ({ matcher, isDomainWide }));
+  });
+
+  if (matcherEntries.length === 0) {
+    return { remaining: validSuggestions, skippedInBatch: [] };
+  }
+
+  const remaining = [];
+  const skippedInBatch = [];
+  validSuggestions.forEach((s) => {
+    const url = s.getData()?.url;
+    const match = url && matcherEntries.find(({ matcher }) => matcher(url));
+    if (match) {
+      skippedInBatch.push({ suggestion: s, isDomainWide: match.isDomainWide });
+      log.info(`[edge-deploy] Skipping suggestion ${s.getId()} - covered by pattern`);
+    } else {
+      remaining.push(s);
+    }
+  });
+
+  return { remaining, skippedInBatch };
 }

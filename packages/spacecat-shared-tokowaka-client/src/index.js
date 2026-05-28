@@ -31,6 +31,7 @@ import {
   isPatternSuggestion,
   groupSuggestionsByUrlPath,
   filterEligibleSuggestions,
+  saveSuggestions,
 } from './utils/suggestion-utils.js';
 import { buildUrlMatcher } from './utils/pattern-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
@@ -111,24 +112,6 @@ class TokowakaClient {
 
     this.mapperRegistry = new MapperRegistry(log);
     this.cdnClientRegistry = new CdnClientRegistry(env, log);
-  }
-
-  /**
-   * Batch-saves suggestions via dataAccess.Suggestion.saveMany when available,
-   * falling back to individual save() calls otherwise.
-   * @param {Array} suggestions - Suggestion entities to save
-   * @returns {Promise<void>}
-   * @private
-   */
-  async #saveSuggestions(suggestions) {
-    if (suggestions.length === 0) {
-      return;
-    }
-    if (this.dataAccess?.Suggestion) {
-      await this.dataAccess.Suggestion.saveMany(suggestions);
-    } else {
-      await Promise.all(suggestions.map((s) => s.save()));
-    }
   }
 
   #createError(message, status) {
@@ -846,7 +829,7 @@ class TokowakaClient {
 
   /**
    * Strips deployment markers from a suggestion's data and sets updatedBy.
-   * Does not save — caller is responsible for batching saves via #saveSuggestions.
+   * Does not save — caller is responsible for batching saves via saveSuggestions.
    * @param {Object} suggestion - Suggestion entity
    * @param {string} actorFallback - Fallback string when updatedBy is undefined
    * @param {string|undefined} updatedBy - Explicit actor (overrides fallback when defined)
@@ -882,7 +865,7 @@ class TokowakaClient {
       cs.setUpdatedBy(updatedBy ?? actorFallback);
     });
     try {
-      await this.#saveSuggestions(covered);
+      await saveSuggestions(this.dataAccess,covered);
     } catch (error) {
       this.log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
     }
@@ -1025,7 +1008,7 @@ class TokowakaClient {
     // Strip deployment markers and batch-save all eligible per-URL suggestions.
     const savedEligibleSuggestions = eligibleSuggestions
       .map((s) => this.#stripSuggestion(s, 'tokowaka-rollback', updatedBy));
-    await this.#saveSuggestions(savedEligibleSuggestions);
+    await saveSuggestions(this.dataAccess,savedEligibleSuggestions);
 
     // Roll back pattern suggestions: fetch metaconfig once, remove all patterns in a single
     // in-memory pass, upload once, then save each suggestion and clean up its covered entries.
@@ -1563,7 +1546,7 @@ class TokowakaClient {
         s.setUpdatedBy(updatedBy);
         return s;
       });
-      await this.#saveSuggestions(succeeded);
+      await saveSuggestions(this.dataAccess,succeeded);
 
       const failed = result.failedSuggestions.map((item) => {
         this.log.info(
@@ -1669,7 +1652,7 @@ class TokowakaClient {
           cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
           cs.setUpdatedBy(updatedBy);
         });
-        await this.#saveSuggestions(covered);
+        await saveSuggestions(this.dataAccess,covered);
         coveredSuggestions.push(...covered);
         this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
       } catch (coverError) {
@@ -1781,7 +1764,7 @@ class TokowakaClient {
       });
 
       try {
-        await this.#saveSuggestions(skippedSuggestions);
+        await saveSuggestions(this.dataAccess,skippedSuggestions);
         succeededSuggestions.push(...skippedSuggestions);
         coveredSuggestions.push(...skippedSuggestions);
       } catch (error) {

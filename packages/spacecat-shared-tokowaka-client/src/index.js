@@ -1104,11 +1104,20 @@ class TokowakaClient {
 
     const cdnInvalidations = await this.invalidateCdnCache({ urls: rolledBackUrls });
 
+    const allSucceeded = [...savedEligibleSuggestions, ...succeededPatternSuggestions];
+    const allFailed = [...ineligibleSuggestions, ...failedPatternSuggestions];
+    const total = allSucceeded.length + allFailed.length;
+
+    if (allFailed.length > 0) {
+      // eslint-disable-next-line max-len
+      this.log.error(`[edge-rollback-failed] ${allFailed.length} out of ${total} suggestion(s) failed to rollback for ${baseURL}`);
+    }
+
     return {
       s3Paths,
       cdnInvalidations,
-      succeededSuggestions: [...savedEligibleSuggestions, ...succeededPatternSuggestions],
-      failedSuggestions: [...ineligibleSuggestions, ...failedPatternSuggestions],
+      succeededSuggestions: allSucceeded,
+      failedSuggestions: allFailed,
       removedPatchesCount: totalRemovedCount,
     };
   }

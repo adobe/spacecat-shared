@@ -145,6 +145,7 @@ export async function cleanupCoveredSuggestions(
   try {
     await saveSuggestions(dataAccess, covered);
   } catch (error) {
+    // eslint-disable-next-line max-len
     log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
   }
 }
@@ -167,7 +168,8 @@ export function classifySuggestions(targetSuggestions, log) {
     if (isPatternSuggestion(suggestion)) {
       log.info(
         `[edge-deploy] Classified as PATTERN: ${suggestion.getId()} `
-        + `patterns=${JSON.stringify(data.allowedRegexPatterns)} isDomainWide=${data?.isDomainWide}`,
+        + `patterns=${JSON.stringify(data.allowedRegexPatterns)} `
+        + `isDomainWide=${data?.isDomainWide}`,
       );
       patternSuggestions.push({ suggestion, allowedRegexPatterns: data.allowedRegexPatterns });
     } else if (isEdgeDeployableSuggestionStatus(suggestion.getStatus())) {
@@ -192,6 +194,7 @@ export function filterBatchCoveredSuggestions(validSuggestions, patternSuggestio
   }
 
   // Build matchers per pattern suggestion so we can track which type covered each URL.
+  // eslint-disable-next-line max-len
   const matcherEntries = patternSuggestions.flatMap(({ suggestion, allowedRegexPatterns }) => {
     const isDomainWide = suggestion.getData()?.isDomainWide === true;
     return allowedRegexPatterns

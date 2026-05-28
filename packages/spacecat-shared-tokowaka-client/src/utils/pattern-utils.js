@@ -13,7 +13,8 @@
 /**
  * Builds a URL matcher function for a given allowedRegexPatterns entry.
  * Patterns ending with `/*` use pathname prefix matching (e.g. `/products/*` matches `/products/`).
- * When the pattern is `/*`, the prefix becomes '' and matches all URLs (intentional for domain-wide).
+ * When the pattern is `/*`, the prefix becomes '' and matches all URLs
+ * (intentional for domain-wide).
  * Other patterns are compiled as regular expressions for backward compatibility.
  * Returns null for patterns that cannot be compiled.
  * @param {string} pattern

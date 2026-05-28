@@ -92,6 +92,7 @@ class TokowakaClient {
    * @param {string} config.previewBucketName - S3 bucket name for preview configs
    * @param {Object} config.s3Client - AWS S3 client
    * @param {Object} config.env - Environment variables (for CDN credentials)
+   // eslint-disable-next-line max-len
    * @param {Object} [config.dataAccess] - Data access layer (provides Suggestion.saveMany for batch saves)
    * @param {Object} log - Logger instance
    */
@@ -277,6 +278,7 @@ class TokowakaClient {
       const bodyContents = await response.Body.transformToString();
       const metaconfig = JSON.parse(bodyContents);
 
+      // eslint-disable-next-line max-len
       this.log.debug(`Successfully fetched metaconfig from s3://${bucketName}/${s3Path} in ${Date.now() - fetchStartTime}ms`);
 
       return {
@@ -489,6 +491,7 @@ class TokowakaClient {
       const command = new PutObjectCommand(putObjectParams);
 
       await this.s3Client.send(command);
+      // eslint-disable-next-line max-len
       this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path} in ${Date.now() - uploadStartTime}ms`);
 
       // Invalidate CDN cache for the metaconfig (both CloudFront and Fastly)
@@ -527,6 +530,7 @@ class TokowakaClient {
       const bodyContents = await response.Body.transformToString();
       const config = JSON.parse(bodyContents);
 
+      // eslint-disable-next-line max-len
       this.log.debug(`Successfully fetched existing Tokowaka config from s3://${bucketName}/${s3Path} in ${Date.now() - fetchStartTime}ms`);
       return config;
     } catch (error) {
@@ -607,6 +611,7 @@ class TokowakaClient {
       });
 
       await this.s3Client.send(command);
+      // eslint-disable-next-line max-len
       this.log.info(`Successfully uploaded Tokowaka config to s3://${bucketName}/${s3Path} in ${Date.now() - uploadStartTime}ms`);
 
       return s3Path;
@@ -694,6 +699,7 @@ class TokowakaClient {
         });
       }
     }
+    // eslint-disable-next-line max-len
     this.log.info(`CDN cache invalidation completed in total ${Date.now() - invalidationStartTime}ms`);
     return results;
   }
@@ -920,6 +926,7 @@ class TokowakaClient {
     // from per-URL suggestions — each group is rolled back via a different code path.
     const patternSuggestions = suggestions.filter(isPatternSuggestion);
     const perUrlSuggestions = suggestions.filter((s) => !isPatternSuggestion(s));
+    // eslint-disable-next-line max-len
     this.log.info(`[edge-rollback] Site: ${baseURL}, total: ${suggestions.length}, pattern: ${patternSuggestions.length}, perUrl: ${perUrlSuggestions.length}, allSuggestions: ${allSuggestions.length}`);
 
     const {
@@ -963,6 +970,7 @@ class TokowakaClient {
       totalRemovedCount += removed;
     }
 
+    // eslint-disable-next-line max-len
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
 
     // Strip deployment markers and batch-save all eligible per-URL suggestions.
@@ -978,7 +986,9 @@ class TokowakaClient {
     if (patternSuggestions.length > 0) {
       const metaconfig = await this.fetchMetaconfig(baseURL);
       if (!metaconfig) {
+        // eslint-disable-next-line max-len
         this.log.warn(`[edge-rollback] No metaconfig found for ${baseURL}, skipping all pattern suggestions`);
+        // eslint-disable-next-line max-len
         patternSuggestions.forEach((s) => ineligibleSuggestions.push({ suggestion: s, reason: 'No metaconfig found' }));
       } else {
         // Pass 1: remove all patterns from the in-memory metaconfig, stage suggestions for saving.
@@ -989,6 +999,7 @@ class TokowakaClient {
           const data = suggestion.getData();
           const patternToRemove = data?.allowedRegexPatterns?.[0];
           if (!patternToRemove) {
+            // eslint-disable-next-line max-len
             this.log.warn(`[edge-rollback] Suggestion ${suggestion.getId()} has no allowedRegexPatterns, skipping`);
             ineligibleSuggestions.push({ suggestion, reason: 'Missing allowedRegexPatterns' });
             // eslint-disable-next-line no-continue
@@ -998,10 +1009,12 @@ class TokowakaClient {
           const existingAllowList = metaconfig.prerender?.allowList ?? [];
           const changed = this.#removePatternFromMetaconfig(metaconfig, patternToRemove);
           const updatedAllowList = metaconfig.prerender?.allowList ?? [];
+          // eslint-disable-next-line max-len
           this.log.info(`[edge-rollback] Pattern ${patternToRemove}: allowList before=${JSON.stringify(existingAllowList)}, after=${JSON.stringify(updatedAllowList)}`);
           if (changed) {
             metaconfigChanged = true;
           } else {
+            // eslint-disable-next-line max-len
             this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
           }
 
@@ -1053,6 +1066,7 @@ class TokowakaClient {
             // eslint-disable-next-line no-await-in-loop, max-len
             await cleanupCoveredSuggestions(this.dataAccess, covered, coveredFallback, updatedBy, fieldsToStrip, this.log);
           } catch (error) {
+            // eslint-disable-next-line max-len
             this.log.error(`[edge-rollback] Error rolling back pattern suggestion ${suggestion.getId()}: ${error.message}`, error);
             failedPatternSuggestions.push({
               suggestion, reason: error.message, statusCode: 500,
@@ -1215,6 +1229,7 @@ class TokowakaClient {
     }
 
     // Upload to preview S3 path for this URL
+    // eslint-disable-next-line max-len
     this.log.info(`Uploading preview Tokowaka config with ${eligibleSuggestions.length} new suggestions`);
     const s3Path = await this.uploadConfig(previewUrl, config, true);
 
@@ -1246,6 +1261,7 @@ class TokowakaClient {
       ]);
       /* c8 ignore start */
       if (!originalHtml || !optimizedHtml) {
+        // eslint-disable-next-line max-len
         throw this.#createError('Failed to fetch original or optimized HTML', HTTP_INTERNAL_SERVER_ERROR);
       }
       /* c8 ignore stop */
@@ -1308,12 +1324,14 @@ class TokowakaClient {
 
     while (attempt <= maxRetries) {
       try {
+        // eslint-disable-next-line max-len
         this.log.debug(`Attempt ${attempt + 1}/${maxRetries + 1}: Checking edge optimize status for ${targetUrl}`);
 
         // eslint-disable-next-line no-await-in-loop
         const response = await tracingFetch(targetUrl, {
           method: 'GET',
           headers: {
+            // eslint-disable-next-line max-len
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
             'fastly-debug': '1',
           },
@@ -1334,6 +1352,7 @@ class TokowakaClient {
         const isTimeout = error?.code === 'ETIMEOUT';
 
         if (isTimeout) {
+          // eslint-disable-next-line max-len
           this.log.warn(`Request timed out after ${REQUEST_TIMEOUT_MS}ms for ${targetUrl}, returning edgeOptimizeEnabled: false`);
           return { edgeOptimizeEnabled: false };
         }
@@ -1492,6 +1511,7 @@ class TokowakaClient {
     const existingAllowList = metaconfig.prerender?.allowList ?? [];
     const mergedAllowList = [...new Set([...existingAllowList, ...allowedRegexPatterns])];
     this.log.info(
+      // eslint-disable-next-line max-len
       `[edge-deploy] Pattern ${suggestion.getId()}: allowList before=${JSON.stringify(existingAllowList)}, `
       + `after=${JSON.stringify(mergedAllowList)}`,
     );
@@ -1500,8 +1520,10 @@ class TokowakaClient {
       // eslint-disable-next-line no-param-reassign
       metaconfig.prerender = { ...metaconfig.prerender, allowList: mergedAllowList };
       await this.uploadMetaconfig(baseURL, metaconfig);
+      // eslint-disable-next-line max-len
       this.log.info(`[edge-deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(mergedAllowList)}`);
     } else {
+      // eslint-disable-next-line max-len
       this.log.info(`[edge-deploy] Patterns already in allowList for suggestion ${suggestion.getId()}, skipping CDN write`);
     }
 
@@ -1513,6 +1535,7 @@ class TokowakaClient {
     const matchers = allowedRegexPatterns.flatMap((p) => {
       const m = buildUrlMatcher(p);
       if (!m) {
+        // eslint-disable-next-line max-len
         this.log.warn(`[edge-deploy] Pattern '${p}' for suggestion ${suggestion.getId()} is invalid, skipping`);
       }
       return m ? [m] : [];
@@ -1542,6 +1565,7 @@ class TokowakaClient {
       return url && matchers.some((match) => match(url));
     });
 
+    // eslint-disable-next-line max-len
     this.log.info(`[edge-deploy] Pattern ${suggestion.getId()}: found ${covered.length} coverable per-URL suggestions (field=${coverageField})`);
 
     if (covered.length > 0) {
@@ -1552,6 +1576,7 @@ class TokowakaClient {
         });
         await saveSuggestions(this.dataAccess,covered);
         coveredSuggestions.push(...covered);
+        // eslint-disable-next-line max-len
         this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
       } catch (coverError) {
         this.log.warn(
@@ -1588,6 +1613,7 @@ class TokowakaClient {
     updatedBy = 'edge-deploy',
   }) {
     // Step 1: classify suggestions into pattern vs per-URL buckets.
+    // eslint-disable-next-line max-len
     const { patternSuggestions, validSuggestions: classified } = classifySuggestions(targetSuggestions, this.log);
     this.log.info(
       `[edge-deploy] Classification: pattern=${patternSuggestions.length},`
@@ -1595,6 +1621,7 @@ class TokowakaClient {
     );
 
     // Step 2: remove per-URL suggestions already covered by a pattern in this batch.
+    // eslint-disable-next-line max-len
     const { remaining: validSuggestions, skippedInBatch } = filterBatchCoveredSuggestions(classified, patternSuggestions, this.log);
 
     let succeededSuggestions = [];
@@ -1621,6 +1648,7 @@ class TokowakaClient {
 
       for (const { suggestion, allowedRegexPatterns } of patternSuggestions) {
         if (!allowedRegexPatterns || allowedRegexPatterns.length === 0) {
+          // eslint-disable-next-line max-len
           this.log.warn(`[edge-deploy] Pattern suggestion ${suggestion.getId()} has no allowedRegexPatterns, skipping`);
           // eslint-disable-next-line no-continue
           continue;
@@ -1640,6 +1668,7 @@ class TokowakaClient {
           );
           succeededSuggestions.push(suggestion);
         } catch (error) {
+          // eslint-disable-next-line max-len
           this.log.error(`[edge-deploy] Error deploying pattern suggestion ${suggestion.getId()}: ${error.message}`, error);
           failedSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
         }
@@ -1664,8 +1693,10 @@ class TokowakaClient {
         succeededSuggestions.push(...skippedSuggestions);
         coveredSuggestions.push(...skippedSuggestions);
       } catch (error) {
+        // eslint-disable-next-line max-len
         this.log.warn(`[edge-deploy] Failed to save same-batch skipped suggestions: ${error.message}`);
         skippedSuggestions.forEach((s) => {
+          // eslint-disable-next-line max-len
           failedSuggestions.push({ suggestion: s, reason: 'Failed to mark as covered', statusCode: 500 });
         });
       }

@@ -93,8 +93,7 @@ export function filterEligibleSuggestions(suggestions, mapper) {
 }
 
 /**
- * Batch-saves suggestions via dataAccess.Suggestion.saveMany when available,
- * falling back to individual save() calls otherwise.
+ * Batch-saves suggestions via dataAccess.Suggestion.saveMany with chunked bulk upsert.
  * @param {Object} dataAccess - Data access layer
  * @param {Array} suggestions - Suggestion entities to save
  * @returns {Promise<void>}
@@ -103,11 +102,7 @@ export async function saveSuggestions(dataAccess, suggestions) {
   if (suggestions.length === 0) {
     return;
   }
-  if (dataAccess?.Suggestion) {
-    await dataAccess.Suggestion.saveMany(suggestions);
-  } else {
-    await Promise.all(suggestions.map((s) => s.save()));
-  }
+  await dataAccess.Suggestion.saveMany(suggestions, { chunkSize: 100 });
 }
 
 /**

@@ -145,7 +145,7 @@ export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallba
     await saveSuggestions(dataAccess, covered);
   } catch (error) {
     // eslint-disable-next-line max-len
-    log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
+    log.error(`[edge-rollback-error] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
   }
 }
 

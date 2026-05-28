@@ -124,7 +124,9 @@ export function stripSuggestion(suggestion, actorFallback, updatedBy) {
  * Only strips the fields relevant to the rollback type so independent coverage layers
  * are preserved. For example, rolling back domain-wide should only clear
  * coveredByDomainWide — not coveredByPattern (which belongs to a separate path deploy).
- * @param {Object} dataAccess - Data access layer
+ *
+ * Uses Promise.allSettled with individual .save() calls (not saveMany) because these
+ * are triggered by domain-wide/path suggestion deploy or rollback.
  * @param {Array} covered - Covered suggestion entities
  * @param {string} actorFallback - Fallback updatedBy string
  * @param {string|undefined} updatedBy - Explicit actor
@@ -133,7 +135,7 @@ export function stripSuggestion(suggestion, actorFallback, updatedBy) {
  * @returns {Promise<void>}
  */
 // eslint-disable-next-line max-len
-export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log) {
+export async function cleanupCoveredSuggestions(covered, actorFallback, updatedBy, fieldsToStrip, log) {
   if (covered.length === 0) {
     return;
   }
@@ -141,11 +143,11 @@ export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallba
     cs.setData(omitKeys(cs.getData(), fieldsToStrip));
     cs.setUpdatedBy(updatedBy ?? actorFallback);
   });
-  try {
-    await saveSuggestions(dataAccess, covered);
-  } catch (error) {
+  const results = await Promise.allSettled(covered.map((cs) => cs.save()));
+  const failed = results.filter((r) => r.status === 'rejected');
+  if (failed.length > 0) {
     // eslint-disable-next-line max-len
-    log.error(`[edge-rollback-error] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
+    log.error(`[edge-rollback-error] Failed to clean ${failed.length} of ${covered.length} covered suggestion(s): ${failed[0].reason?.message}`);
   }
 }
 

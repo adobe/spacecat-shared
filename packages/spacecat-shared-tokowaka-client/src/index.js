@@ -1049,7 +1049,7 @@ class TokowakaClient {
             this.log.info(`[edge-rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
           }
           // eslint-disable-next-line no-await-in-loop, max-len
-          await cleanupCoveredSuggestions(this.dataAccess, covered, coveredFallback, updatedBy, fieldsToStrip, this.log);
+          await cleanupCoveredSuggestions(covered, coveredFallback, updatedBy, fieldsToStrip, this.log);
         }
       }
     }
@@ -1545,19 +1545,20 @@ class TokowakaClient {
     this.log.info(`[edge-deploy] Pattern ${suggestion.getId()}: found ${covered.length} coverable per-URL suggestions (field=${coverageField})`);
 
     if (covered.length > 0) {
-      try {
-        covered.forEach((cs) => {
-          cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
-          cs.setUpdatedBy(updatedBy);
-        });
-        await saveSuggestions(this.dataAccess, covered);
-        coveredSuggestions.push(...covered);
-        // eslint-disable-next-line max-len
-        this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
-      } catch (coverError) {
+      covered.forEach((cs) => {
+        cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
+        cs.setUpdatedBy(updatedBy);
+      });
+      const saveResults = await Promise.allSettled(covered.map((cs) => cs.save()));
+      const succeeded = covered.filter((_, i) => saveResults[i].status === 'fulfilled');
+      const failedCount = saveResults.filter((r) => r.status === 'rejected').length;
+      coveredSuggestions.push(...succeeded);
+      // eslint-disable-next-line max-len
+      this.log.info(`[edge-deploy] Marked ${succeeded.length} suggestions as ${coverageField}=${suggestion.getId()}`);
+      if (failedCount > 0) {
         this.log.warn(
-          '[edge-deploy] Failed to mark covered suggestions for pattern suggestion '
-          + `${suggestion.getId()}: ${coverError.message}`,
+          `[edge-deploy] Failed to mark ${failedCount} covered suggestions`
+          + ` for pattern suggestion ${suggestion.getId()}`,
         );
       }
     }

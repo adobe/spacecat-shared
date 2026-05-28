@@ -15,15 +15,15 @@ const brandSemrushProjects = [
     brandSemrushProjectId: '5b1e2d6a-7c5f-4a91-9b32-8e34ad11d201',
     brandId: 'c3e1a4b6-2a8e-4d61-8b03-7d0a1d6b3201',
     semrushProjectId: 'proj-fixture-us-en',
-    semrushLocationId: 2840,
-    language: 'en',
+    geoTargetId: 2840,
+    languageCode: 'en',
   },
   {
     brandSemrushProjectId: '6c2f3e7b-8d6a-4b02-aa43-9f45be22e312',
     brandId: 'c3e1a4b6-2a8e-4d61-8b03-7d0a1d6b3201',
     semrushProjectId: 'proj-fixture-de-de',
-    semrushLocationId: 2276,
-    language: 'de',
+    geoTargetId: 2276,
+    languageCode: 'de',
   },
 ];
 

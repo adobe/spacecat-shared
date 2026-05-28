@@ -34,8 +34,8 @@ describe('BrandSemrushProjectCollection', () => {
   const mockRecord = {
     brandId: 'c3e1a4b6-2a8e-4d61-8b03-7d0a1d6b3201',
     semrushProjectId: 'proj-collection-test',
-    semrushLocationId: 2840,
-    language: 'en',
+    geoTargetId: 2840,
+    languageCode: 'en',
     updatedBy: 'system',
   };
 
@@ -73,15 +73,15 @@ describe('BrandSemrushProjectCollection', () => {
 
       const result = await instance.findBySlice(
         mockRecord.brandId,
-        mockRecord.semrushLocationId,
-        mockRecord.language,
+        mockRecord.geoTargetId,
+        mockRecord.languageCode,
       );
 
       expect(result).to.equal(expected);
       expect(findStub).to.have.been.calledOnceWithExactly({
         brandId: mockRecord.brandId,
-        semrushLocationId: mockRecord.semrushLocationId,
-        language: mockRecord.language,
+        geoTargetId: mockRecord.geoTargetId,
+        languageCode: mockRecord.languageCode,
       });
     });
 
@@ -90,8 +90,8 @@ describe('BrandSemrushProjectCollection', () => {
 
       const result = await instance.findBySlice(
         mockRecord.brandId,
-        mockRecord.semrushLocationId,
-        mockRecord.language,
+        mockRecord.geoTargetId,
+        mockRecord.languageCode,
       );
 
       expect(result).to.equal(null);

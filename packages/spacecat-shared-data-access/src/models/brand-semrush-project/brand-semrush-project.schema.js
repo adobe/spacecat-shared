@@ -20,7 +20,7 @@ import BrandSemrushProjectCollection from './brand-semrush-project.collection.js
 // (db/migrations/20260528000000_brand_to_semrush_projects.sql). The slice
 // uniqueness gate is an exact DB string match, so inconsistent casing or
 // format between callers would silently bypass the 409 and bill a duplicate
-// Semrush project. Accepts BCP-47-shaped tags: 2/3-letter primary subtag
+// upstream project. Accepts BCP-47-shaped tags: 2/3-letter primary subtag
 // (`en`, `de`, `zho`) optionally followed by a 2-4-letter region/script
 // subtag (`de-ch`, `pt-br`, `zh-hant`). All lowercase by contract.
 const LANGUAGE_TAG_REGEX = /^[a-z]{2,3}(-[a-z]{2,4})?$/;
@@ -45,15 +45,23 @@ const schema = new SchemaBuilder(BrandSemrushProject, BrandSemrushProjectCollect
     required: true,
     validate: (value) => hasText(value),
   })
-  .addAttribute('semrushLocationId', {
+  // Google Ads Geo Target ID (criterion_id for the country). Semrush re-uses
+  // it as their location identifier; the value is owned by Google Ads, not
+  // Semrush. DB column stays `semrush_location_id` — the table layout is
+  // subject to change independently (see LLMO-5190 plan §Context).
+  .addAttribute('geoTargetId', {
     type: 'number',
     required: true,
     validate: (value) => Number.isInteger(value) && value > 0,
+    postgrestField: 'semrush_location_id',
   })
-  .addAttribute('language', {
+  // BCP-47 primary subtag (`en`, `de`, `fr`), optionally with a region/script
+  // subtag (`de-ch`, `pt-br`, `zh-hant`). DB column stays `language`.
+  .addAttribute('languageCode', {
     type: 'string',
     required: true,
     validate: (value) => hasText(value) && LANGUAGE_TAG_REGEX.test(value),
+    postgrestField: 'language',
   })
   .addAllIndex(['semrushProjectId']);
 

@@ -1008,7 +1008,7 @@ class TokowakaClient {
         } catch (error) {
           this.log.error(`[edge-rollback] Metaconfig upload failed: ${error.message}`, error);
           toSave.forEach((s) => failedPatternSuggestions.push({
-            suggestion: s, reason: error.message, statusCode: 500,
+            suggestion: s, reason: 'Internal server error', statusCode: 500,
           }));
           // Skip per-suggestion saves when metaconfig upload failed
           toSave.length = 0;
@@ -1025,7 +1025,7 @@ class TokowakaClient {
               // eslint-disable-next-line max-len
               this.log.error(`[edge-rollback] Error saving pattern suggestion ${suggestion.getId()}: ${result.reason?.message}`);
               failedPatternSuggestions.push({
-                suggestion, reason: result.reason?.message, statusCode: 500,
+                suggestion, reason: 'Internal server error', statusCode: 500,
               });
             }
           });
@@ -1648,7 +1648,7 @@ class TokowakaClient {
         } catch (error) {
           // eslint-disable-next-line max-len
           this.log.error(`[edge-deploy] Error deploying pattern suggestion ${suggestion.getId()}: ${error.message}`, error);
-          failedSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
+          failedSuggestions.push({ suggestion, reason: 'Internal server error', statusCode: 500 });
         }
       }
 
@@ -1665,7 +1665,7 @@ class TokowakaClient {
             const msg = result.reason?.message;
             // eslint-disable-next-line max-len
             this.log.error(`[edge-deploy] Failed to save pattern suggestion ${s.getId()}: ${msg}`);
-            failedSuggestions.push({ suggestion: s, reason: msg, statusCode: 500 });
+            failedSuggestions.push({ suggestion: s, reason: 'Internal server error', statusCode: 500 });
           }
         });
       }

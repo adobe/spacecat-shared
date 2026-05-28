@@ -5781,7 +5781,7 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.not.include(dw);
       expect(result.failedSuggestions).to.have.length(1);
       expect(result.failedSuggestions[0].statusCode).to.equal(500);
-      expect(result.failedSuggestions[0].reason).to.equal('upload failed');
+      expect(result.failedSuggestions[0].reason).to.equal('Internal server error');
     });
 
     it('should skip invalid regex in same-batch pattern filtering without throwing', async () => {
@@ -6166,7 +6166,7 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.not.include(path);
       expect(result.failedSuggestions).to.have.length(1);
       expect(result.failedSuggestions[0].statusCode).to.equal(500);
-      expect(result.failedSuggestions[0].reason).to.equal('upload failed');
+      expect(result.failedSuggestions[0].reason).to.equal('Internal server error');
     });
 
     it('path deploy marks coverage via allowedRegexPatterns even when pathPattern field is absent', async () => {
@@ -6324,7 +6324,7 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions).to.have.length(1);
       expect(result.failedSuggestions[0].suggestion).to.equal(dw);
       expect(result.failedSuggestions[0].statusCode).to.equal(500);
-      expect(result.failedSuggestions[0].reason).to.equal('save failed');
+      expect(result.failedSuggestions[0].reason).to.equal('Internal server error');
       expect(log.error).to.have.been.called;
     });
   });

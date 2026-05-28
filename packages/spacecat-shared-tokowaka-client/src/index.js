@@ -860,11 +860,12 @@ class TokowakaClient {
       cs.setUpdatedBy(updatedBy ?? actorFallback);
       return cs.save();
     }));
-    results.forEach((result, i) => {
-      if (result.status === 'rejected') {
-        this.log.warn(`[rollback] Failed to clean covered suggestion ${covered[i].getId()}: ${result.reason?.message}`);
-      }
-    });
+    const failures = results
+      .map((result, i) => (result.status === 'rejected' ? { id: covered[i].getId(), reason: result.reason?.message } : null))
+      .filter(Boolean);
+    if (failures.length > 0) {
+      this.log.error(`[edge-rollback-failed] Failed to clean ${failures.length}/${covered.length} covered suggestion(s): ${failures.map((f) => `${f.id}: ${f.reason}`).join(', ')}`);
+    }
   }
 
   /**

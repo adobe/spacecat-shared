@@ -3614,8 +3614,8 @@ describe('TokowakaClient', () => {
       // Both covered suggestions were attempted (Promise.allSettled, not Promise.all)
       expect(coveredOk.save.calledOnce).to.be.true;
       expect(coveredFail.save.calledOnce).to.be.true;
-      // The failure was logged as a warning
-      expect(log.warn).to.have.been.calledWithMatch(/Failed to clean covered suggestion covered-fail/);
+      // The failure was logged as a consolidated error for alerting
+      expect(log.error).to.have.been.calledWithMatch(/\[edge-rollback-failed\].*covered-fail/);
     });
 
     it('rollback per-suggestion error isolation: first succeeds, second fails', async () => {

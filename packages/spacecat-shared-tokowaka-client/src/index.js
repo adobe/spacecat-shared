@@ -92,8 +92,8 @@ class TokowakaClient {
    * @param {string} config.previewBucketName - S3 bucket name for preview configs
    * @param {Object} config.s3Client - AWS S3 client
    * @param {Object} config.env - Environment variables (for CDN credentials)
-   // eslint-disable-next-line max-len
-   * @param {Object} [config.dataAccess] - Data access layer (provides Suggestion.saveMany for batch saves)
+   * @param {Object} [config.dataAccess] - Data access layer
+   *   (provides Suggestion.saveMany for batch saves)
    * @param {Object} log - Logger instance
    */
   constructor({
@@ -976,7 +976,7 @@ class TokowakaClient {
     // Strip deployment markers and batch-save all eligible per-URL suggestions.
     const savedEligibleSuggestions = eligibleSuggestions
       .map((s) => stripSuggestion(s, 'tokowaka-rollback', updatedBy));
-    await saveSuggestions(this.dataAccess,savedEligibleSuggestions);
+    await saveSuggestions(this.dataAccess, savedEligibleSuggestions);
 
     // Roll back pattern suggestions: fetch metaconfig once, remove all patterns in a single
     // in-memory pass, upload once, then save each suggestion and clean up its covered entries.
@@ -1463,7 +1463,7 @@ class TokowakaClient {
         s.setUpdatedBy(updatedBy);
         return s;
       });
-      await saveSuggestions(this.dataAccess,succeeded);
+      await saveSuggestions(this.dataAccess, succeeded);
 
       const failed = result.failedSuggestions.map((item) => {
         this.log.info(
@@ -1574,7 +1574,7 @@ class TokowakaClient {
           cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
           cs.setUpdatedBy(updatedBy);
         });
-        await saveSuggestions(this.dataAccess,covered);
+        await saveSuggestions(this.dataAccess, covered);
         coveredSuggestions.push(...covered);
         // eslint-disable-next-line max-len
         this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
@@ -1689,7 +1689,7 @@ class TokowakaClient {
       });
 
       try {
-        await saveSuggestions(this.dataAccess,skippedSuggestions);
+        await saveSuggestions(this.dataAccess, skippedSuggestions);
         succeededSuggestions.push(...skippedSuggestions);
         coveredSuggestions.push(...skippedSuggestions);
       } catch (error) {

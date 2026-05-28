@@ -132,9 +132,8 @@ export function stripSuggestion(suggestion, actorFallback, updatedBy) {
  * @param {Object} log - Logger instance
  * @returns {Promise<void>}
  */
-export async function cleanupCoveredSuggestions(
-  dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log,
-) {
+// eslint-disable-next-line max-len
+export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log) {
   if (covered.length === 0) {
     return;
   }

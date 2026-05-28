@@ -113,24 +113,6 @@ class TokowakaClient {
     this.cdnClientRegistry = new CdnClientRegistry(env, log);
   }
 
-  /**
-   * Batch-saves suggestions via dataAccess.Suggestion.saveMany when available,
-   * falling back to individual save() calls otherwise.
-   * @param {Array} suggestions - Suggestion entities to save
-   * @returns {Promise<void>}
-   * @private
-   */
-  async #saveSuggestions(suggestions) {
-    if (suggestions.length === 0) {
-      return;
-    }
-    if (this.dataAccess?.Suggestion) {
-      await this.dataAccess.Suggestion.saveMany(suggestions);
-    } else {
-      await Promise.all(suggestions.map((s) => s.save()));
-    }
-  }
-
   #createError(message, status) {
     const error = Object.assign(new Error(message), { status });
     this.log.error(error.message);
@@ -846,7 +828,7 @@ class TokowakaClient {
 
   /**
    * Strips deployment markers from a suggestion's data and sets updatedBy.
-   * Does not save — caller is responsible for batching saves via #saveSuggestions.
+   * Does not save — caller is responsible for batching saves via Suggestion.saveMany.
    * @param {Object} suggestion - Suggestion entity
    * @param {string} actorFallback - Fallback string when updatedBy is undefined
    * @param {string|undefined} updatedBy - Explicit actor (overrides fallback when defined)
@@ -872,7 +854,7 @@ class TokowakaClient {
    * @returns {Promise<void>}
    * @private
    */
-  async #cleanupCoveredSuggestions(covered, actorFallback, updatedBy, fieldsToStrip) {
+  async #cleanupCoveredSuggestions(covered, actorFallback, updatedBy, fieldsToStrip, Suggestion) {
     if (covered.length === 0) {
       return;
     }
@@ -882,7 +864,7 @@ class TokowakaClient {
       cs.setUpdatedBy(updatedBy ?? actorFallback);
     });
     try {
-      await this.#saveSuggestions(covered);
+      await Suggestion.saveMany(covered);
     } catch (error) {
       this.log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
     }
@@ -962,6 +944,7 @@ class TokowakaClient {
    */
   // eslint-disable-next-line max-len
   async rollbackSuggestions(site, opportunity, suggestions, { allSuggestions = [], updatedBy } = {}) {
+    const { Suggestion } = this.dataAccess;
     const opportunityType = opportunity.getType();
     const baseURL = getEffectiveBaseURL(site);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
@@ -1025,7 +1008,7 @@ class TokowakaClient {
     // Strip deployment markers and batch-save all eligible per-URL suggestions.
     const savedEligibleSuggestions = eligibleSuggestions
       .map((s) => this.#stripSuggestion(s, 'tokowaka-rollback', updatedBy));
-    await this.#saveSuggestions(savedEligibleSuggestions);
+    await Suggestion.saveMany(savedEligibleSuggestions);
 
     // Roll back pattern suggestions: fetch metaconfig once, remove all patterns in a single
     // in-memory pass, upload once, then save each suggestion and clean up its covered entries.
@@ -1108,7 +1091,7 @@ class TokowakaClient {
               this.log.info(`[edge-rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
             }
             // eslint-disable-next-line no-await-in-loop, max-len
-            await this.#cleanupCoveredSuggestions(covered, coveredFallback, updatedBy, fieldsToStrip);
+            await this.#cleanupCoveredSuggestions(covered, coveredFallback, updatedBy, fieldsToStrip, Suggestion);
           } catch (error) {
             this.log.error(`[edge-rollback] Error rolling back pattern suggestion ${suggestion.getId()}: ${error.message}`, error);
             failedPatternSuggestions.push({
@@ -1548,7 +1531,7 @@ class TokowakaClient {
    * @returns {Promise<{ succeededSuggestions: Array, failedSuggestions: Array }>}
    * @private
    */
-  async #deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy) {
+  async #deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, Suggestion) {
     try {
       const result = await this.deploySuggestions(site, opportunity, validSuggestions);
       const deploymentTimestamp = Date.now();
@@ -1563,7 +1546,7 @@ class TokowakaClient {
         s.setUpdatedBy(updatedBy);
         return s;
       });
-      await this.#saveSuggestions(succeeded);
+      await Suggestion.saveMany(succeeded);
 
       const failed = result.failedSuggestions.map((item) => {
         this.log.info(
@@ -1604,6 +1587,7 @@ class TokowakaClient {
     allSuggestions,
     updatedBy,
     coveredSuggestions,
+    Suggestion,
   ) {
     const data = suggestion.getData();
     const coverageField = data?.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
@@ -1669,7 +1653,7 @@ class TokowakaClient {
           cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
           cs.setUpdatedBy(updatedBy);
         });
-        await this.#saveSuggestions(covered);
+        await Suggestion.saveMany(covered);
         coveredSuggestions.push(...covered);
         this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
       } catch (coverError) {
@@ -1706,6 +1690,8 @@ class TokowakaClient {
     allSuggestions,
     updatedBy = 'edge-deploy',
   }) {
+    const { Suggestion } = this.dataAccess;
+
     // Step 1: classify suggestions into pattern vs per-URL buckets.
     const { patternSuggestions, validSuggestions: classified } = this
       .#classifySuggestions(targetSuggestions);
@@ -1724,7 +1710,7 @@ class TokowakaClient {
     // Step 3: deploy per-URL suggestions via S3.
     if (validSuggestions.length > 0) {
       // eslint-disable-next-line max-len
-      const result = await this.#deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy);
+      const result = await this.#deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, Suggestion);
       const { succeededSuggestions: perUrlSucceeded, failedSuggestions: perUrlFailed } = result;
       succeededSuggestions = perUrlSucceeded;
       failedSuggestions.push(...perUrlFailed);
@@ -1758,6 +1744,7 @@ class TokowakaClient {
             allSuggestions,
             updatedBy,
             coveredSuggestions,
+            Suggestion,
           );
           succeededSuggestions.push(suggestion);
         } catch (error) {
@@ -1781,7 +1768,7 @@ class TokowakaClient {
       });
 
       try {
-        await this.#saveSuggestions(skippedSuggestions);
+        await Suggestion.saveMany(skippedSuggestions);
         succeededSuggestions.push(...skippedSuggestions);
         coveredSuggestions.push(...skippedSuggestions);
       } catch (error) {

@@ -25,7 +25,14 @@ import {
   getHostName,
   normalizePath,
 } from './utils/s3-utils.js';
-import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
+import {
+  omitKeys,
+  isEdgeDeployableSuggestionStatus,
+  isPatternSuggestion,
+  groupSuggestionsByUrlPath,
+  filterEligibleSuggestions,
+} from './utils/suggestion-utils.js';
+import { buildUrlMatcher } from './utils/pattern-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
 import {
@@ -41,58 +48,6 @@ export { calculateForwardedHost } from './utils/custom-html-utils.js';
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
-
-/** Returns a shallow copy of obj with the specified keys removed. */
-function omitKeys(obj, keys) {
-  const keySet = new Set(keys);
-  return Object.fromEntries(Object.entries(obj).filter(([k]) => !keySet.has(k)));
-}
-
-/** Matches SpaceCat API eligibility for edge deploy (non-domain-wide). */
-function isEdgeDeployableSuggestionStatus(status) {
-  return status === 'NEW' || status === 'PENDING_VALIDATION';
-}
-
-/**
- * Returns true if this suggestion uses pattern-based allow-list deploy (domain-wide or path-level).
- * Detected by the presence of a non-empty allowedRegexPatterns array, or by isDomainWide: true
- * (which may have an empty array when malformed — handled gracefully in the deploy loop).
- */
-function isPatternSuggestion(suggestion) {
-  const data = suggestion.getData();
-  return data?.isDomainWide === true
-    || (Array.isArray(data?.allowedRegexPatterns) && data.allowedRegexPatterns.length > 0);
-}
-
-/**
- * Builds a URL matcher function for a given allowedRegexPatterns entry.
- * Patterns ending with `/*` use pathname prefix matching (e.g. `/products/*` matches `/products/`).
- * Other patterns are compiled as regular expressions for backward compatibility.
- * Returns null for patterns that cannot be compiled.
- * @param {string} pattern
- * @returns {((url: string) => boolean)|null}
- */
-function buildUrlMatcher(pattern) {
-  if (typeof pattern !== 'string' || pattern.length === 0) {
-    return null;
-  }
-  if (pattern.endsWith('/*')) {
-    const prefix = pattern.slice(0, -2); // '/products/*' → '/products', '/*' → ''
-    return (url) => {
-      try {
-        return new URL(url).pathname.startsWith(prefix);
-      } catch {
-        return false;
-      }
-    };
-  }
-  try {
-    const regex = new RegExp(pattern);
-    return (url) => regex.test(url);
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Tokowaka Client - Manages edge optimization configurations

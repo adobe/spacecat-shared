@@ -10,6 +10,28 @@
  * governing permissions and limitations under the License.
  */
 
+/** Returns a shallow copy of obj with the specified keys removed. */
+export function omitKeys(obj, keys) {
+  const keySet = new Set(keys);
+  return Object.fromEntries(Object.entries(obj).filter(([k]) => !keySet.has(k)));
+}
+
+/** Matches SpaceCat API eligibility for edge deploy (non-domain-wide). */
+export function isEdgeDeployableSuggestionStatus(status) {
+  return status === 'NEW' || status === 'PENDING_VALIDATION';
+}
+
+/**
+ * Returns true if this suggestion uses pattern-based allow-list deploy (domain-wide or path-level).
+ * Detected by the presence of a non-empty allowedRegexPatterns array, or by isDomainWide: true
+ * (which may have an empty array when malformed — handled gracefully in the deploy loop).
+ */
+export function isPatternSuggestion(suggestion) {
+  const data = suggestion.getData();
+  return data?.isDomainWide === true
+    || (Array.isArray(data?.allowedRegexPatterns) && data.allowedRegexPatterns.length > 0);
+}
+
 /**
  * Groups suggestions by URL pathname
  * @param {Array} suggestions - Array of suggestion entities

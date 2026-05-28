@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.73.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.72.1...@adobe/spacecat-shared-data-access-v3.73.0) (2026-05-28)
+
+### Features
+
+* **data-access:** rename BrandSemrushProject accessors (LLMO-5190) ([#1635](https://github.com/adobe/spacecat-shared/issues/1635)) ([f97b09d](https://github.com/adobe/spacecat-shared/commit/f97b09df6f15323baa74ede7aa1f431ba7d68293))
+
 ## [@adobe/spacecat-shared-data-access-v3.72.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.72.0...@adobe/spacecat-shared-data-access-v3.72.1) (2026-05-28)
 
 ### Bug Fixes

@@ -16,6 +16,11 @@ import SchemaBuilder from '../base/schema.builder.js';
 import BrandSemrushProject from './brand-semrush-project.model.js';
 import BrandSemrushProjectCollection from './brand-semrush-project.collection.js';
 
+// "upstream" in the comments below refers to Semrush AIO — the entity name,
+// table name, and `semrushProjectId` accessor stay because the value IS the
+// upstream identifier. The public API surface decouples via the LLMO-5190
+// rename plan (see the schema attributes' `postgrestField` overrides).
+
 // Mirrors the CHECK constraint on brand_to_semrush_projects.language
 // (db/migrations/20260528000000_brand_to_semrush_projects.sql). The slice
 // uniqueness gate is an exact DB string match, so inconsistent casing or

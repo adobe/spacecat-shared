@@ -111,6 +111,50 @@ export async function saveSuggestions(dataAccess, suggestions) {
 }
 
 /**
+ * Strips deployment markers from a suggestion's data and sets updatedBy.
+ * Does not save — caller is responsible for batching saves via saveSuggestions.
+ * @param {Object} suggestion - Suggestion entity
+ * @param {string} actorFallback - Fallback string when updatedBy is undefined
+ * @param {string|undefined} updatedBy - Explicit actor (overrides fallback when defined)
+ * @returns {Object} The mutated suggestion (not yet persisted)
+ */
+export function stripSuggestion(suggestion, actorFallback, updatedBy) {
+  suggestion.setData(omitKeys(suggestion.getData(), ['edgeDeployed', 'tokowakaDeployed']));
+  suggestion.setUpdatedBy(updatedBy ?? actorFallback);
+  return suggestion;
+}
+
+/**
+ * Clears coverage and deployment markers from suggestions that were covered by a pattern.
+ * Only strips the fields relevant to the rollback type so independent coverage layers
+ * are preserved. For example, rolling back domain-wide should only clear
+ * coveredByDomainWide — not coveredByPattern (which belongs to a separate path deploy).
+ * @param {Object} dataAccess - Data access layer
+ * @param {Array} covered - Covered suggestion entities
+ * @param {string} actorFallback - Fallback updatedBy string
+ * @param {string|undefined} updatedBy - Explicit actor
+ * @param {string[]} fieldsToStrip - Specific fields to remove
+ * @param {Object} log - Logger instance
+ * @returns {Promise<void>}
+ */
+export async function cleanupCoveredSuggestions(
+  dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log,
+) {
+  if (covered.length === 0) {
+    return;
+  }
+  covered.forEach((cs) => {
+    cs.setData(omitKeys(cs.getData(), fieldsToStrip));
+    cs.setUpdatedBy(updatedBy ?? actorFallback);
+  });
+  try {
+    await saveSuggestions(dataAccess, covered);
+  } catch (error) {
+    log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
+  }
+}
+
+/**
  * Classifies a batch of target suggestions into pattern-based and per-URL buckets.
  * Pattern suggestions (domain-wide or path-level) are returned as
  * `{ suggestion, allowedRegexPatterns }` objects; per-URL suggestions are filtered

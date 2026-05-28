@@ -32,6 +32,8 @@ import {
   groupSuggestionsByUrlPath,
   filterEligibleSuggestions,
   saveSuggestions,
+  stripSuggestion,
+  cleanupCoveredSuggestions,
   classifySuggestions,
   filterBatchCoveredSuggestions,
 } from './utils/suggestion-utils.js';
@@ -830,50 +832,6 @@ class TokowakaClient {
   }
 
   /**
-   * Strips deployment markers from a suggestion's data and sets updatedBy.
-   * Does not save — caller is responsible for batching saves via saveSuggestions.
-   * @param {Object} suggestion - Suggestion entity
-   * @param {string} actorFallback - Fallback string when updatedBy is undefined
-   * @param {string|undefined} updatedBy - Explicit actor (overrides fallback when defined)
-   * @returns {Object} The mutated suggestion (not yet persisted)
-   * @private
-   */
-  // eslint-disable-next-line class-methods-use-this
-  #stripSuggestion(suggestion, actorFallback, updatedBy) {
-    suggestion.setData(omitKeys(suggestion.getData(), ['edgeDeployed', 'tokowakaDeployed']));
-    suggestion.setUpdatedBy(updatedBy ?? actorFallback);
-    return suggestion;
-  }
-
-  /**
-   * Clears coverage and deployment markers from suggestions that were covered by a pattern.
-   * Only strips the fields relevant to the rollback type so independent coverage layers
-   * are preserved. For example, rolling back domain-wide should only clear
-   * coveredByDomainWide — not coveredByPattern (which belongs to a separate path deploy).
-   * @param {Array} covered - Covered suggestion entities
-   * @param {string} actorFallback - Fallback updatedBy string
-   * @param {string|undefined} updatedBy - Explicit actor
-   * @param {string[]} [fieldsToStrip] - Specific fields to remove. Defaults to all coverage fields.
-   * @returns {Promise<void>}
-   * @private
-   */
-  async #cleanupCoveredSuggestions(covered, actorFallback, updatedBy, fieldsToStrip) {
-    if (covered.length === 0) {
-      return;
-    }
-    const keysToRemove = fieldsToStrip;
-    covered.forEach((cs) => {
-      cs.setData(omitKeys(cs.getData(), keysToRemove));
-      cs.setUpdatedBy(updatedBy ?? actorFallback);
-    });
-    try {
-      await saveSuggestions(this.dataAccess,covered);
-    } catch (error) {
-      this.log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
-    }
-  }
-
-  /**
    * Rolls back a single URL's S3 config by removing the relevant patches.
    * Returns the number of patches removed, or 0 if nothing changed.
    * Pushes the uploaded S3 path into s3Paths and the URL into rolledBackUrls on success.
@@ -1009,7 +967,7 @@ class TokowakaClient {
 
     // Strip deployment markers and batch-save all eligible per-URL suggestions.
     const savedEligibleSuggestions = eligibleSuggestions
-      .map((s) => this.#stripSuggestion(s, 'tokowaka-rollback', updatedBy));
+      .map((s) => stripSuggestion(s, 'tokowaka-rollback', updatedBy));
     await saveSuggestions(this.dataAccess,savedEligibleSuggestions);
 
     // Roll back pattern suggestions: fetch metaconfig once, remove all patterns in a single
@@ -1093,7 +1051,7 @@ class TokowakaClient {
               this.log.info(`[edge-rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
             }
             // eslint-disable-next-line no-await-in-loop, max-len
-            await this.#cleanupCoveredSuggestions(covered, coveredFallback, updatedBy, fieldsToStrip);
+            await cleanupCoveredSuggestions(this.dataAccess, covered, coveredFallback, updatedBy, fieldsToStrip, this.log);
           } catch (error) {
             this.log.error(`[edge-rollback] Error rolling back pattern suggestion ${suggestion.getId()}: ${error.message}`, error);
             failedPatternSuggestions.push({

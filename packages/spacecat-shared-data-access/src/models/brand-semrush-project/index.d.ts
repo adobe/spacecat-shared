@@ -22,11 +22,11 @@ import type {
 export interface BrandSemrushProject extends BaseModel {
   getBrandId(): string;
   getSemrushProjectId(): string;
-  getSemrushLocationId(): number;
-  getLanguage(): string;
+  getGeoTargetId(): number;
+  getLanguageCode(): string;
   setSemrushProjectId(value: string): BrandSemrushProject;
-  setSemrushLocationId(value: number): BrandSemrushProject;
-  setLanguage(value: string): BrandSemrushProject;
+  setGeoTargetId(value: number): BrandSemrushProject;
+  setLanguageCode(value: string): BrandSemrushProject;
 }
 
 export interface BrandSemrushProjectCollection extends
@@ -37,7 +37,7 @@ export interface BrandSemrushProjectCollection extends
   findBySemrushProjectId(semrushProjectId: string): Promise<BrandSemrushProject | null>;
   findBySlice(
     brandId: string,
-    semrushLocationId: number,
-    language: string,
+    geoTargetId: number,
+    languageCode: string,
   ): Promise<BrandSemrushProject | null>;
 }

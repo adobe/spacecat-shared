@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -13,18 +13,28 @@
 import BaseModel from '../base/base.model.js';
 
 /**
- * BrandSemrushProject - mapping between an Adobe brand and an upstream
- * Semrush AIO project. One row per (brand, geoTargetId, languageCode) slice.
- * The Semrush workspace is reachable via
- * brand -> organization.getSemrushWorkspaceId() and is not duplicated on this
- * entity. Entity + table names retain the `Semrush` prefix as internal
- * storage identifiers; the public JS accessors do not.
+ * Preflight - A class representing a Preflight entity.
+ * Provides methods to access and manipulate Preflight-specific data.
  *
- * @class BrandSemrushProject
+ * @class Preflight
  * @extends BaseModel
  */
-class BrandSemrushProject extends BaseModel {
-  static ENTITY_NAME = 'BrandSemrushProject';
+class Preflight extends BaseModel {
+  static ENTITY_NAME = 'Preflight';
+
+  static Status = {
+    IN_PROGRESS: 'IN_PROGRESS',
+    COMPLETED: 'COMPLETED',
+    FAILED: 'FAILED',
+    CANCELLED: 'CANCELLED',
+  };
+
+  toJSON() {
+    const json = super.toJSON();
+    // asyncJobId is an internal FK reference — never exposed to API consumers
+    delete json.asyncJobId;
+    return json;
+  }
 }
 
-export default BrandSemrushProject;
+export default Preflight;

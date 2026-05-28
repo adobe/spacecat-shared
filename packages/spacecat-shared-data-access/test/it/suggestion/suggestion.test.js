@@ -211,6 +211,7 @@ describe('Suggestion IT', async () => {
 
       expect(suggestion.getOpportunityId()).to.equal(opportunity.getId());
       expect(isValidUUID(suggestion.getId())).to.be.true;
+      expect(suggestion.getId().charAt(14)).to.equal('7');
       expect(isIsoDate(suggestion.getCreatedAt())).to.be.true;
       expect(isIsoDate(suggestion.getUpdatedAt())).to.be.true;
 

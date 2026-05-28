@@ -1,3 +1,25 @@
+## [@adobe/spacecat-shared-data-access-v3.72.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.72.0...@adobe/spacecat-shared-data-access-v3.72.1) (2026-05-28)
+
+### Bug Fixes
+
+* (data-access) include all fixes in getAllFixesWithSuggestionsByOpportunityId (SITES-45307) ([#1634](https://github.com/adobe/spacecat-shared/issues/1634)) ([49e073e](https://github.com/adobe/spacecat-shared/commit/49e073e9e79813597fb11a922fc9f561136ce1d8))
+
+## [@adobe/spacecat-shared-data-access-v3.72.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.71.2...@adobe/spacecat-shared-data-access-v3.72.0) (2026-05-27)
+
+### Features
+
+* **data-access:** add Preflight entity with AsyncJob relationship (SITES-45417) ([2b57e6a](https://github.com/adobe/spacecat-shared/commit/2b57e6a1af8de07cee588409faab0ec4827a5a7d))
+
+### Bug Fixes
+
+* **data-access:** mint UUID v7 ids to match DB schema default ([#1633](https://github.com/adobe/spacecat-shared/issues/1633)) ([5c8f6fc](https://github.com/adobe/spacecat-shared/commit/5c8f6fcd454975703b4f670c0f560f43a768736a))
+
+## [@adobe/spacecat-shared-data-access-v3.71.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.71.1...@adobe/spacecat-shared-data-access-v3.71.2) (2026-05-26)
+
+### Bug Fixes
+
+*  (data-access) batch getAllFixesWithSuggestionsByOpportunityId (SITES-45307) ([#1619](https://github.com/adobe/spacecat-shared/issues/1619)) ([608f4cd](https://github.com/adobe/spacecat-shared/commit/608f4cda59af41c701426b8b53c29770efd42a1c))
+
 ## [@adobe/spacecat-shared-data-access-v3.71.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.71.0...@adobe/spacecat-shared-data-access-v3.71.1) (2026-05-25)
 
 ### Bug Fixes

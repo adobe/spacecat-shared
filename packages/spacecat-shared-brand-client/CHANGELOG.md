@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-brand-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.2.1...@adobe/spacecat-shared-brand-client-v1.3.0) (2026-05-28)
+
+### Features
+
+* **brand-client:** add BrandGovernanceClient for Brand Governance Agent API (LLMO-4920) ([#1605](https://github.com/adobe/spacecat-shared/issues/1605)) ([e472d46](https://github.com/adobe/spacecat-shared/commit/e472d46badde10b7701b2c68b689c9b229873f08))
+
 ## [@adobe/spacecat-shared-brand-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.2.0...@adobe/spacecat-shared-brand-client-v1.2.1) (2026-05-23)
 
 ### Bug Fixes

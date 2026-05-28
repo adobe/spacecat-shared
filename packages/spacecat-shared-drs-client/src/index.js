@@ -40,8 +40,15 @@ const VALID_SCRAPE_DATASET_IDS = new Set(Object.values(SCRAPE_DATASET_IDS));
 
 const URL_LOOKUP_BATCH_SIZE = 100;
 
-// Reddit-comments specific scrape parameters
-const VALID_REDDIT_SORT_BY = new Set(['Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A']);
+// Reddit-comments specific scrape parameters.
+// Exported so callers can validate `sortBy` at their own boundary without
+// duplicating the allowlist. Frozen for consistency with the sibling
+// EXPERIMENT_PHASES / SCRAPE_DATASET_IDS exports (note: Object.freeze does
+// not actually prevent Set mutation methods — the ReadonlySet<> type in the
+// .d.ts is what guards TypeScript consumers).
+export const REDDIT_COMMENTS_SORT_BY_VALUES = Object.freeze(
+  new Set(['Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A']),
+);
 const REDDIT_COMMENTS_DEFAULT_COMMENT_LIMIT = 150;
 const REDDIT_COMMENTS_DEFAULT_SORT_BY = 'Best';
 const REDDIT_COMMENTS_ONLY_PARAMS = ['daysBack', 'commentLimit', 'sortBy', 'loadAllReplies'];
@@ -138,7 +145,9 @@ export default class DrsClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`DRS ${method} ${path} failed: ${response.status} - ${errorText}`);
+      const error = new Error(`DRS ${method} ${path} failed: ${response.status} - ${errorText}`);
+      error.status = response.status;
+      throw error;
     }
 
     const contentType = response.headers.get('content-type') || '';
@@ -222,6 +231,7 @@ export default class DrsClient {
    * @param {string} params.siteId - SpaceCat site ID
    * @param {string[]} params.urls - URLs to scrape
    * @param {string} [params.priority='HIGH'] - Job priority (HIGH or LOW)
+   * @param {string} [params.spacecatOrgId] - SpaceCat organization ID
    * @param {number} [params.daysBack] - Time-window filter in days (reddit_comments only)
    * @param {number} [params.commentLimit=150] - Max comments per thread (reddit_comments only)
    * @param {('Best'|'Top'|'New'|'Controversial'|'Old'|'Q&A')} [params.sortBy='Best']
@@ -236,6 +246,7 @@ export default class DrsClient {
     urls,
     priority = 'HIGH',
     daysBack,
+    spacecatOrgId,
     commentLimit,
     sortBy,
     loadAllReplies,
@@ -268,8 +279,8 @@ export default class DrsClient {
     if (commentLimit !== undefined && !isPositiveInteger(commentLimit)) {
       throw new Error('commentLimit must be a positive integer');
     }
-    if (sortBy !== undefined && !VALID_REDDIT_SORT_BY.has(sortBy)) {
-      throw new Error(`Invalid sortBy "${sortBy}". Must be one of: ${[...VALID_REDDIT_SORT_BY].join(', ')}`);
+    if (sortBy !== undefined && !REDDIT_COMMENTS_SORT_BY_VALUES.has(sortBy)) {
+      throw new Error(`Invalid sortBy "${sortBy}". Must be one of: ${[...REDDIT_COMMENTS_SORT_BY_VALUES].join(', ')}`);
     }
     if (loadAllReplies !== undefined && typeof loadAllReplies !== 'boolean') {
       throw new Error('loadAllReplies must be a boolean');
@@ -296,11 +307,16 @@ export default class DrsClient {
       }
     }
 
-    return this.submitJob({
+    const jobParams = {
       provider_id: 'brightdata',
       priority,
       parameters,
-    });
+    };
+    if (spacecatOrgId) {
+      jobParams.spacecat_org_id = spacecatOrgId;
+    }
+
+    return this.submitJob(jobParams);
   }
 
   /**

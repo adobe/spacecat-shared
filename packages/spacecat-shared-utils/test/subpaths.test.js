@@ -28,7 +28,7 @@ const EXPECTED_CORE_EXPORTS = [
   'isArray', 'isBoolean', 'isInteger', 'isIsoDate', 'isIsoTimeOffsetsDate',
   'isNonEmptyArray', 'isNonEmptyObject', 'isNumber', 'isObject', 'isString',
   'isValidDate', 'isValidHelixPreviewUrl', 'isValidIMSOrgId', 'isValidUrl',
-  'isValidUUID', 'toBoolean',
+  'isValidUUID', 'toBoolean', 'UUID_REGEX', 'UUID_V4_REGEX',
 ];
 
 const EXPECTED_AWS_EXPORTS = [

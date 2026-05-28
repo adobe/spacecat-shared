@@ -3599,7 +3599,8 @@ describe('TokowakaClient', () => {
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
       // Make saveMany fail for covered suggestions cleanup
-      client.dataAccess.Suggestion.saveMany.onSecondCall().rejects(new Error('DB error'));
+      // First saveMany call is for covered cleanup (no per-URL suggestions in this test)
+      client.dataAccess.Suggestion.saveMany.rejects(new Error('DB error'));
 
       await client.rollbackSuggestions(
         mockSite,

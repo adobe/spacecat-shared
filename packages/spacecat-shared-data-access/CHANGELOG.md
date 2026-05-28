@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.73.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.73.0...@adobe/spacecat-shared-data-access-v3.73.1) (2026-05-28)
+
+### Bug Fixes
+
+* **data-access:** declare Preflight createdBy/error as 'any' so Service construction succeeds ([#1636](https://github.com/adobe/spacecat-shared/issues/1636)) ([4097963](https://github.com/adobe/spacecat-shared/commit/40979638bc65c6e29a1b9cd7b25608ad376161ed)), closes [adobe/spacecat-shared#1601](https://github.com/adobe/spacecat-shared/issues/1601)
+
 ## [@adobe/spacecat-shared-data-access-v3.73.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.72.1...@adobe/spacecat-shared-data-access-v3.73.0) (2026-05-28)
 
 ### Features

@@ -6305,5 +6305,30 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.include(perUrl);
       expect(result.succeededSuggestions).to.include(invalidPattern);
     });
+
+    it('should surface pattern suggestion save failure via Promise.allSettled', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      // Make the suggestion's own .save() reject
+      dw.save.rejects(new Error('save failed'));
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw],
+      });
+
+      expect(result.succeededSuggestions).to.not.include(dw);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].suggestion).to.equal(dw);
+      expect(result.failedSuggestions[0].statusCode).to.equal(500);
+      expect(result.failedSuggestions[0].reason).to.equal('save failed');
+      expect(log.error).to.have.been.called;
+    });
   });
 });

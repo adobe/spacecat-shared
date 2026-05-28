@@ -48,12 +48,17 @@ describe('TokowakaClient', () => {
       }),
     };
 
+    const dataAccess = {
+      Suggestion: { saveMany: sinon.stub().resolves() },
+    };
+
     client = new TokowakaClient(
       {
         bucketName: 'test-bucket',
         previewBucketName: 'test-preview-bucket',
         s3Client,
         env,
+        dataAccess,
       },
       log,
     );
@@ -3106,7 +3111,7 @@ describe('TokowakaClient', () => {
       // Verify covered suggestion was also cleaned up.
       // DW rollback only strips coveredByDomainWide — edgeDeployed is
       // preserved because it represents an independent per-URL deployment.
-      expect(coveredSuggestion.save.calledOnce).to.be.true;
+      expect(coveredSuggestion.setData.calledOnce).to.be.true;
       expect(coveredSuggestion.setUpdatedBy.calledWith('test@example.com')).to.be.true;
       const coveredData = coveredSuggestion.setData.firstCall.args[0];
       expect(coveredData).to.have.property('edgeDeployed');
@@ -3150,7 +3155,7 @@ describe('TokowakaClient', () => {
         { allSuggestions: [pathSuggestion, coveredSuggestion] },
       );
 
-      expect(coveredSuggestion.save.calledOnce).to.be.true;
+      expect(coveredSuggestion.setData.calledOnce).to.be.true;
       const coveredData = coveredSuggestion.setData.firstCall.args[0];
       expect(coveredData).to.not.have.property('edgeDeployed');
       expect(coveredData).to.not.have.property('coveredByPattern');
@@ -3565,7 +3570,7 @@ describe('TokowakaClient', () => {
       expect(pathSuggestion.save).to.not.have.been.called;
     });
 
-    it('rollback continues cleaning other covered suggestions when one save fails', async () => {
+    it('rollback logs error when covered suggestion saveMany fails', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3578,8 +3583,8 @@ describe('TokowakaClient', () => {
         setUpdatedBy: sinon.stub(),
         save: sinon.stub().resolves(),
       };
-      const coveredOk = {
-        getId: () => 'covered-ok',
+      const covered = {
+        getId: () => 'covered-1',
         getData: () => ({
           url: 'https://example.com/page1',
           coveredByDomainWide: 'dw-1',
@@ -3588,34 +3593,26 @@ describe('TokowakaClient', () => {
         setUpdatedBy: sinon.stub(),
         save: sinon.stub().resolves(),
       };
-      const coveredFail = {
-        getId: () => 'covered-fail',
-        getData: () => ({
-          url: 'https://example.com/page2',
-          coveredByDomainWide: 'dw-1',
-        }),
-        setData: sinon.stub(),
-        setUpdatedBy: sinon.stub(),
-        save: sinon.stub().rejects(new Error('DB error')),
-      };
 
       sinon.stub(client, 'fetchMetaconfig').resolves({
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
+      // Make saveMany fail for covered suggestions cleanup
+      client.dataAccess.Suggestion.saveMany.onSecondCall().rejects(new Error('DB error'));
 
       await client.rollbackSuggestions(
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, coveredOk, coveredFail] },
+        { allSuggestions: [dwSuggestion, covered] },
       );
 
-      // Both covered suggestions were attempted (Promise.allSettled, not Promise.all)
-      expect(coveredOk.save.calledOnce).to.be.true;
-      expect(coveredFail.save.calledOnce).to.be.true;
+      // Covered suggestion was mutated before saveMany
+      expect(covered.setData.calledOnce).to.be.true;
       // The failure was logged as a consolidated error for alerting
-      expect(log.error).to.have.been.calledWithMatch(/\[edge-rollback-failed\].*covered-fail/);
+      // eslint-disable-next-line max-len
+      expect(log.error).to.have.been.calledWithMatch(/\[edge-rollback-failed\].*covered suggestion/);
     });
 
     it('rollback per-suggestion error isolation: first succeeds, second fails', async () => {
@@ -3709,7 +3706,7 @@ describe('TokowakaClient', () => {
         },
       );
 
-      expect(doubleCoveredSuggestion.save.calledOnce).to.be.true;
+      expect(doubleCoveredSuggestion.setData.calledOnce).to.be.true;
       const data = doubleCoveredSuggestion.setData.firstCall.args[0];
       expect(data).to.not.have.property('coveredByDomainWide');
       expect(data).to.have.property('coveredByPattern', 'path-1');
@@ -3762,7 +3759,7 @@ describe('TokowakaClient', () => {
         },
       );
 
-      expect(doubleCoveredSuggestion.save.calledOnce).to.be.true;
+      expect(doubleCoveredSuggestion.setData.calledOnce).to.be.true;
       const data = doubleCoveredSuggestion.setData.firstCall.args[0];
       expect(data).to.not.have.property('coveredByPattern');
       expect(data).to.not.have.property('edgeDeployed');
@@ -4799,6 +4796,7 @@ describe('TokowakaClient', () => {
           previewBucketName: 'test-preview-bucket',
           s3Client: { send: sinon.stub().resolves() },
           env,
+          dataAccess: { Suggestion: { saveMany: sinon.stub().resolves() } },
         },
         log,
       );
@@ -5350,6 +5348,7 @@ describe('TokowakaClient', () => {
             TOKOWAKA_CDN_PROVIDER: 'cloudfront',
             TOKOWAKA_CDN_CONFIG: JSON.stringify({ cloudfront: { distributionId: 'E123456', region: 'us-east-1' } }),
           },
+          dataAccess: { Suggestion: { saveMany: sinon.stub().resolves() } },
         },
         log,
       );

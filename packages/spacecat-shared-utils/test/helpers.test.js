@@ -41,6 +41,12 @@ describe('resolveSecretsName', () => {
     expect(resolveSecretsName({}, ctx, defaultPath)).to.equal('secretPath/ci');
   });
 
+  it('normalizes $LATEST to latest (unqualified ARN invocations)', () => {
+    const ctx = { func: { version: '$LATEST' } };
+    const defaultPath = 'secretPath';
+    expect(resolveSecretsName({}, ctx, defaultPath)).to.equal('secretPath/latest');
+  });
+
   it('throws error when ctx is undefined', () => {
     expect(() => resolveSecretsName({}, undefined, 'defaultPath')).to.throw('Invalid context: func.version is required and must be a string');
   });

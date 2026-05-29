@@ -442,6 +442,8 @@ export default class SeoClient {
             traffic: kw.kwTraffic,
             cpc: coerceValue(kw.Cp, 'float') ?? null,
             serp_title: kw.Tt || null,
+            serp_description: kw.Ds || null,
+            visible_url: kw.Vu || null,
             position: coerceValue(kw.Po, 'int') ?? null,
             volume: coerceValue(kw.Nq, 'int') ?? null,
             country: kw.db.toUpperCase(),

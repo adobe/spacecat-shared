@@ -34,6 +34,92 @@ export interface HlxConfig {
   };
 }
 
+/**
+ * One entry per submodule declared in the parent repo's `.gitmodules`.
+ * Each row carries both the importer-detected facts (declared section,
+ * original URL, external flag) and any onboarding-resolved CM URL the
+ * cm-client uses at clone/pull time to rewrite `.git/config`.
+ *
+ * Lifecycle:
+ *   - Importer-written fields (`sectionName`, `gitmodulesUrl`, `external`)
+ *     are refreshed on every import. Entries whose `sectionName` is no
+ *     longer present in the parent's `.gitmodules` are dropped.
+ *   - Onboarding-written fields (`resolvedUrl`) are preserved across
+ *     imports for surviving entries — the importer cannot re-derive
+ *     them (no CM Management API access from Lambda) and onboarding
+ *     refreshes them out-of-band.
+ */
+export interface SubmoduleEntry {
+  /**
+   * The `<X>` from `[submodule "<X>"]` in `.gitmodules`. Used by
+   * cm-client as the `.git/config` key when rewriting URLs (i.e.
+   * `submodule.<sectionName>.url`). In every customer `.gitmodules`
+   * we've seen this matches the `path = …` value, but git's lookup
+   * is by section name so we capture it here.
+   */
+  sectionName: string;
+  /**
+   * The submodule URL exactly as declared in `.gitmodules`, with
+   * basic-auth credentials stripped from https/http forms. Relative
+   * (`../foo.git`) and SSH (`git@host:path`) forms are preserved as-is.
+   */
+  gitmodulesUrl: string;
+  /**
+   * True when this submodule's URL points to a host other than the
+   * parent repo's host. Relative URLs (`../foo.git`) and SSH URLs
+   * targeting the parent's host classify as internal (`false`).
+   */
+  external: boolean;
+  /**
+   * BYOG-only. Onboarding-populated URL the cm-client writes into
+   * `.git/config submodule.<sectionName>.url` at clone/pull time.
+   *
+   * The CM repo service proxies BYOG clones through URLs of the form
+   * `{CM_REPO_URL}/api/program/{programId}/repository/{numericId}.git`.
+   * When `.gitmodules` uses relative or SSH URLs, git resolves them to
+   * paths the proxy can't serve. The cm-client rewrites each submodule's
+   * `.git/config` URL to a CM-reachable form before running
+   * `git submodule update`. `.gitmodules` itself is never modified.
+   *
+   * URL form depends on the underlying repo type, decided at onboarding:
+   *   - BYOG (`github`/`gitlab`/`bitbucket`/`azure_devops`):
+   *       `{cmRepoUrl}/api/program/{programId}/repository/{numericId}.git`
+   *   - `standard`:
+   *       `https://git.cloudmanager.adobe.com/{orgName}/{repoName}/`
+   *
+   * The cm-client picks the auth scope to apply by parsing each
+   * `resolvedUrl`'s host. URLs on the CM proxy host get
+   * Bearer + x-api-key + x-gw-ims-org-id; URLs on
+   * `https://git.cloudmanager.adobe.com/{orgName}/` get Basic auth
+   * from `CM_STANDARD_REPO_CREDENTIALS[programId]` scoped to the org
+   * prefix.
+   *
+   * Absent when:
+   *   - the parent is `standard` (cm-client takes the native
+   *     `--recurse-submodules` path and ignores this array entirely),
+   *   - this submodule is `external` to a host outside CM's reach,
+   *   - onboarding hasn't run for this site yet.
+   *
+   * When absent on a BYOG parent, cm-client logs a warning and skips
+   * that submodule during `submodule update`.
+   */
+  resolvedUrl?: string;
+}
+
+/**
+ * Per-submodule list captured during code import. Empty array when the
+ * cloned repo has no `.gitmodules` file (and therefore no submodules).
+ */
+export type SubmodulesMetadata = SubmoduleEntry[];
+
+/**
+ * Metadata extracted during code import. Consumers should assume an
+ * empty object when a field is absent.
+ */
+export interface CodeMetadata {
+  submodules?: SubmodulesMetadata;
+}
+
 export interface CodeConfig {
   type: string;
   owner: string;
@@ -41,7 +127,17 @@ export interface CodeConfig {
   ref: string;
   installationId?: string;
   url: string;
+  /**
+   * S3 key (not full URL) where the imported repository ZIP is stored.
+   * Written by the code importer after successful ingestion.
+   */
   s3StoragePath?: string;
+  /**
+   * Metadata extracted from the cloned repository. Always overwritten
+   * on each successful import — a re-import that finds no submodules
+   * clears any submodule entries from an earlier import.
+   */
+  metadata?: CodeMetadata;
 }
 
 export interface DeliveryConfig {

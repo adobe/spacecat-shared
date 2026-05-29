@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.116.3",
+  "version": "1.116.4",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "exports": {
@@ -79,7 +79,7 @@
     "esmock": "2.7.5",
     "husky": "9.1.7",
     "nock": "14.0.15",
-    "sinon": "21.1.2",
+    "sinon": "22.0.0",
     "sinon-chai": "4.0.1"
   },
   "dependencies": {

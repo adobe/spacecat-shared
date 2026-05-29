@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.11.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.11.0...@adobe/spacecat-shared-drs-client-v1.11.1) (2026-05-29)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
 # [@adobe/spacecat-shared-drs-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.10.0...@adobe/spacecat-shared-drs-client-v1.11.0) (2026-05-26)
 
 

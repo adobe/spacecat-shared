@@ -1014,21 +1014,18 @@ class TokowakaClient {
           toSave.length = 0;
         }
 
-        // Save all pattern suggestions in parallel via Promise.allSettled.
+        // Batch-save all pattern suggestions.
         if (toSave.length > 0) {
-          const saveResults = await Promise.allSettled(toSave.map((s) => s.save()));
-          saveResults.forEach((result, i) => {
-            const suggestion = toSave[i];
-            if (result.status === 'fulfilled') {
-              succeededPatternSuggestions.push(suggestion);
-            } else {
-              // eslint-disable-next-line max-len
-              this.log.error(`[edge-rollback] Error saving pattern suggestion ${suggestion.getId()}: ${result.reason?.message}`);
-              failedPatternSuggestions.push({
-                suggestion, reason: 'Internal server error', statusCode: 500,
-              });
-            }
-          });
+          try {
+            await saveSuggestions(this.dataAccess, toSave);
+            succeededPatternSuggestions.push(...toSave);
+          } catch (error) {
+            // eslint-disable-next-line max-len
+            this.log.error(`[edge-rollback] Error saving pattern suggestions: ${error.message}`);
+            toSave.forEach((s) => failedPatternSuggestions.push({
+              suggestion: s, reason: 'Internal server error', statusCode: 500,
+            }));
+          }
         }
 
         // Clean up covered suggestions for each succeeded pattern suggestion.
@@ -1049,7 +1046,7 @@ class TokowakaClient {
             this.log.info(`[edge-rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
           }
           // eslint-disable-next-line no-await-in-loop, max-len
-          await cleanupCoveredSuggestions(covered, coveredFallback, updatedBy, fieldsToStrip, this.log);
+          await cleanupCoveredSuggestions(this.dataAccess, covered, coveredFallback, updatedBy, fieldsToStrip, this.log);
         }
       }
     }
@@ -1505,7 +1502,7 @@ class TokowakaClient {
 
     suggestion.setData({ ...suggestion.getData(), edgeDeployed: Date.now() });
     suggestion.setUpdatedBy(updatedBy);
-    // suggestion.save() is deferred — caller batches saves via Promise.allSettled.
+    // suggestion.save() is deferred — caller batches saves via saveSuggestions.
 
     // Mark per-URL suggestions covered by this pattern.
     const matchers = allowedRegexPatterns.flatMap((p) => {
@@ -1549,16 +1546,15 @@ class TokowakaClient {
         cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
         cs.setUpdatedBy(updatedBy);
       });
-      const saveResults = await Promise.allSettled(covered.map((cs) => cs.save()));
-      const succeeded = covered.filter((_, i) => saveResults[i].status === 'fulfilled');
-      const failedCount = saveResults.filter((r) => r.status === 'rejected').length;
-      coveredSuggestions.push(...succeeded);
-      // eslint-disable-next-line max-len
-      this.log.info(`[edge-deploy] Marked ${succeeded.length} suggestions as ${coverageField}=${suggestion.getId()}`);
-      if (failedCount > 0) {
+      try {
+        await saveSuggestions(this.dataAccess, covered);
+        coveredSuggestions.push(...covered);
+        // eslint-disable-next-line max-len
+        this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
+      } catch (coverError) {
         this.log.warn(
-          `[edge-deploy] Failed to mark ${failedCount} covered suggestions`
-          + ` for pattern suggestion ${suggestion.getId()}`,
+          '[edge-deploy] Failed to mark covered suggestions for pattern suggestion '
+          + `${suggestion.getId()}: ${coverError.message}`,
         );
       }
     }
@@ -1652,22 +1648,18 @@ class TokowakaClient {
         }
       }
 
-      // Batch-save all pattern suggestions via Promise.allSettled.
+      // Batch-save all pattern suggestions.
       if (deployedPatternSuggestions.length > 0) {
-        const results = await Promise.allSettled(
-          deployedPatternSuggestions.map((s) => s.save()),
-        );
-        results.forEach((result, i) => {
-          const s = deployedPatternSuggestions[i];
-          if (result.status === 'fulfilled') {
-            succeededSuggestions.push(s);
-          } else {
-            const msg = result.reason?.message;
-            // eslint-disable-next-line max-len
-            this.log.error(`[edge-deploy] Failed to save pattern suggestion ${s.getId()}: ${msg}`);
+        try {
+          await saveSuggestions(this.dataAccess, deployedPatternSuggestions);
+          succeededSuggestions.push(...deployedPatternSuggestions);
+        } catch (error) {
+          // eslint-disable-next-line max-len
+          this.log.error(`[edge-deploy] Failed to save pattern suggestions: ${error.message}`);
+          deployedPatternSuggestions.forEach((s) => {
             failedSuggestions.push({ suggestion: s, reason: 'Internal server error', statusCode: 500 });
-          }
-        });
+          });
+        }
       }
     }
 

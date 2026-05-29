@@ -3101,9 +3101,8 @@ describe('TokowakaClient', () => {
 
       expect(result.succeededSuggestions).to.include(dwSuggestion);
 
-      // Verify domain-wide suggestion was updated and saved
+      // Verify domain-wide suggestion was updated and batch-saved
       expect(dwSuggestion.setUpdatedBy.calledWith('test@example.com')).to.be.true;
-      expect(dwSuggestion.save.calledOnce).to.be.true;
       const dwData = dwSuggestion.setData.firstCall.args[0];
       expect(dwData).to.not.have.property('edgeDeployed');
       expect(dwData).to.not.have.property('tokowakaDeployed');
@@ -3570,7 +3569,7 @@ describe('TokowakaClient', () => {
       expect(pathSuggestion.save).to.not.have.been.called;
     });
 
-    it('rollback logs error when covered suggestion save fails', async () => {
+    it('rollback logs error when covered suggestion saveMany fails', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3591,13 +3590,17 @@ describe('TokowakaClient', () => {
         }),
         setData: sinon.stub(),
         setUpdatedBy: sinon.stub(),
-        save: sinon.stub().rejects(new Error('DB error')),
+        save: sinon.stub().resolves(),
       };
 
       sinon.stub(client, 'fetchMetaconfig').resolves({
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
+      // First saveMany succeeds (pattern suggestion save), second fails (covered cleanup)
+      client.dataAccess.Suggestion.saveMany
+        .onFirstCall().resolves()
+        .onSecondCall().rejects(new Error('DB error'));
 
       await client.rollbackSuggestions(
         mockSite,
@@ -3606,14 +3609,14 @@ describe('TokowakaClient', () => {
         { allSuggestions: [dwSuggestion, covered] },
       );
 
-      // Covered suggestion was mutated before save
+      // Covered suggestion was mutated before saveMany
       expect(covered.setData.calledOnce).to.be.true;
       // The failure was logged as a consolidated error for alerting
       // eslint-disable-next-line max-len
       expect(log.error).to.have.been.calledWithMatch(/\[edge-rollback-error\].*covered suggestion/);
     });
 
-    it('rollback per-suggestion error isolation: first succeeds, second fails', async () => {
+    it('rollback marks all pattern suggestions as failed when saveMany throws', async () => {
       const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
       const pathA = {
         getId: () => 'path-a',
@@ -3633,7 +3636,7 @@ describe('TokowakaClient', () => {
         }),
         setData: sinon.stub(),
         setUpdatedBy: sinon.stub(),
-        save: sinon.stub().rejects(new Error('save failed')),
+        save: sinon.stub().resolves(),
       };
 
       sinon.stub(client, 'fetchMetaconfig').resolves({
@@ -3641,6 +3644,7 @@ describe('TokowakaClient', () => {
         prerender: { allowList: ['/products/*', '/blog/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
+      client.dataAccess.Suggestion.saveMany.rejects(new Error('DB error'));
 
       const result = await client.rollbackSuggestions(
         mockSite,
@@ -3648,11 +3652,10 @@ describe('TokowakaClient', () => {
         [pathA, pathB],
       );
 
-      // A succeeded, B failed - they must be in disjoint lists
-      expect(result.succeededSuggestions).to.include(pathA);
-      expect(result.succeededSuggestions).to.not.include(pathB);
+      // Both fail when saveMany throws
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions.some((f) => f.suggestion === pathA)).to.be.true;
       expect(result.failedSuggestions.some((f) => f.suggestion === pathB)).to.be.true;
-      expect(result.failedSuggestions.some((f) => f.suggestion === pathA)).to.be.false;
     });
 
     // --- Edge case tests for deploy/rollback interaction scenarios ---
@@ -5737,16 +5740,19 @@ describe('TokowakaClient', () => {
       expect(result.coveredSuggestions).to.not.include(approved);
     });
 
-    it('should warn but continue when covered-suggestion save fails', async () => {
+    it('should warn but continue when covered-suggestion saveMany fails', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['^https://example\\.com/.*'],
       });
       const covered = makeSuggestion('covered1', { url: 'https://example.com/page1' });
-      // Make the covered suggestion's individual .save() reject
-      covered.save.rejects(new Error('DB error'));
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      // First saveMany call is for covered suggestions (fails),
+      // second is for pattern suggestions batch save (succeeds)
+      client.dataAccess.Suggestion.saveMany
+        .onFirstCall().rejects(new Error('DB error'))
+        .onSecondCall().resolves();
 
       const result = await client.deployToEdge({
         site: mockSite,
@@ -5757,7 +5763,7 @@ describe('TokowakaClient', () => {
 
       // domain-wide itself still succeeded
       expect(result.succeededSuggestions).to.include(dw);
-      // covered is not in coveredSuggestions — save error was swallowed
+      // covered is not in coveredSuggestions — saveMany error was swallowed
       expect(result.coveredSuggestions).to.not.include(covered);
       expect(log.warn).to.have.been.called;
     });
@@ -6235,15 +6241,18 @@ describe('TokowakaClient', () => {
       expect(result.coveredSuggestions).to.not.include(badUrl);
     });
 
-    it('path deploy warns but continues when covered-suggestion save fails', async () => {
+    it('path deploy warns but continues when covered-suggestion saveMany fails', async () => {
       const path = makeSuggestion('p1', {
         allowedRegexPatterns: ['/products/*'],
       });
       const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
-      // Make the covered suggestion's individual .save() reject
-      urlUnderPath.save.rejects(new Error('DB error'));
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      // First saveMany call is for covered suggestions (fails),
+      // second is for pattern suggestions batch save (succeeds)
+      client.dataAccess.Suggestion.saveMany
+        .onFirstCall().rejects(new Error('DB error'))
+        .onSecondCall().resolves();
 
       const result = await client.deployToEdge({
         site: mockSite,
@@ -6254,7 +6263,7 @@ describe('TokowakaClient', () => {
 
       // path suggestion itself still succeeded
       expect(result.succeededSuggestions).to.include(path);
-      // covered is not in coveredSuggestions — save error was swallowed
+      // covered is not in coveredSuggestions — saveMany error was swallowed
       expect(result.coveredSuggestions).to.not.include(urlUnderPath);
       expect(log.warn).to.have.been.called;
     });
@@ -6303,15 +6312,15 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.include(invalidPattern);
     });
 
-    it('should surface pattern suggestion save failure via Promise.allSettled', async () => {
+    it('should surface pattern suggestion saveMany failure', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['^https://example\\.com/.*'],
       });
-      // Make the suggestion's own .save() reject
-      dw.save.rejects(new Error('save failed'));
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      // Make saveMany fail for pattern suggestion batch save
+      client.dataAccess.Suggestion.saveMany.rejects(new Error('DB error'));
 
       const result = await client.deployToEdge({
         site: mockSite,

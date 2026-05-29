@@ -102,7 +102,7 @@ export async function saveSuggestions(dataAccess, suggestions) {
   if (suggestions.length === 0) {
     return;
   }
-  await dataAccess.Suggestion.saveMany(suggestions, { chunkSize: 100 });
+  await dataAccess.Suggestion.saveMany(suggestions, { chunkSize: 25 });
 }
 
 /**

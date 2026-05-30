@@ -43,7 +43,7 @@
     "@adobe/helix-shared-wrap": "2.0.2",
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
-    "esmock": "2.7.5",
+    "esmock": "2.7.6",
     "sinon": "22.0.0"
   }
 }

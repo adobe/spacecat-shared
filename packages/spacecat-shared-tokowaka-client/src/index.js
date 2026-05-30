@@ -1147,7 +1147,7 @@ class TokowakaClient {
     const baseURL = getEffectiveBaseURL(site);
     const targetUrl = new URL(path, baseURL).toString();
 
-    this.log.info(`Checking edge optimize status for ${targetUrl}`);
+    this.log.info(`[edge-optimize-status] Checking edge optimize status for ${targetUrl}`);
 
     const maxRetries = 3;
     let attempt = 0;
@@ -1156,7 +1156,7 @@ class TokowakaClient {
 
     while (attempt <= maxRetries) {
       try {
-        this.log.debug(`Attempt ${attempt + 1}/${maxRetries + 1}: Checking edge optimize status for ${targetUrl}`);
+        this.log.debug(`[edge-optimize-status] Attempt ${attempt + 1}/${maxRetries + 1}: Checking edge optimize status for ${targetUrl}`);
 
         // eslint-disable-next-line no-await-in-loop
         const response = await tracingFetch(targetUrl, {
@@ -1168,12 +1168,12 @@ class TokowakaClient {
           timeout: REQUEST_TIMEOUT_MS,
         });
 
-        this.log.debug(`Response status: ${response.status}`);
+        this.log.info(`[edge-optimize-status] Response status: ${response.status} for ${targetUrl}`);
 
         const edgeOptimizeEnabled = response.headers.get('x-tokowaka-request-id') !== null
           || response.headers.get('x-edgeoptimize-request-id') !== null;
 
-        this.log.debug(`Edge optimize headers found: ${edgeOptimizeEnabled}`);
+        this.log.info(`[edge-optimize-status] Edge optimize headers found: ${edgeOptimizeEnabled} for ${targetUrl}`);
 
         return {
           edgeOptimizeEnabled,
@@ -1182,7 +1182,7 @@ class TokowakaClient {
         const isTimeout = error?.code === 'ETIMEOUT';
 
         if (isTimeout) {
-          this.log.warn(`Request timed out after ${REQUEST_TIMEOUT_MS}ms for ${targetUrl}, returning edgeOptimizeEnabled: false`);
+          this.log.warn(`[edge-optimize-status] Request timed out after ${REQUEST_TIMEOUT_MS}ms for ${targetUrl}, returning edgeOptimizeEnabled: false`);
           return { edgeOptimizeEnabled: false };
         }
 
@@ -1190,7 +1190,7 @@ class TokowakaClient {
 
         if (attempt > maxRetries) {
           // All retries exhausted
-          this.log.error(`Failed after ${maxRetries + 1} attempts: ${error.message}`);
+          this.log.error(`[edge-optimize-status] Failed after ${maxRetries + 1} attempts: ${error.message} for ${targetUrl}`);
           throw this.#createError(
             `Failed to check edge optimize status: ${error.message}`,
             HTTP_INTERNAL_SERVER_ERROR,
@@ -1200,7 +1200,7 @@ class TokowakaClient {
         // Exponential backoff: 200ms, 400ms, 800ms
         const delay = 100 * (2 ** attempt);
         this.log.warn(
-          `Attempt ${attempt} to fetch failed: ${error.message}. Retrying in ${delay}ms...`,
+          `[edge-optimize-status] Attempt ${attempt} to fetch failed: ${error.message}. Retrying in ${delay}ms... for ${targetUrl}`,
         );
         // eslint-disable-next-line no-await-in-loop
         await new Promise((res) => {

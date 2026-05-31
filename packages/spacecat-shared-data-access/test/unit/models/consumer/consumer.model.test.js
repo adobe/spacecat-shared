@@ -82,8 +82,13 @@ describe('ConsumerModel', () => {
       expect(Consumer.IMS_ORG_ID_REGEX.test('1234567890ABCDEF12345678@AdobeOrgsuffix')).to.be.false;
     });
 
-    it('has ADMIN_GRANTS with CREATE_SITE key', () => {
-      expect(Consumer.ADMIN_GRANTS).to.deep.equal({ CREATE_SITE: 'CREATE_SITE' });
+    it('has ADMIN_GRANTS as a frozen object with identity-mapped string keys', () => {
+      expect(Object.isFrozen(Consumer.ADMIN_GRANTS)).to.be.true;
+      expect(Object.keys(Consumer.ADMIN_GRANTS).length).to.be.greaterThan(0);
+      Object.entries(Consumer.ADMIN_GRANTS).forEach(([k, v]) => {
+        expect(k).to.be.a('string').and.not.equal('');
+        expect(v).to.equal(k);
+      });
     });
 
     it('has VALID_ADMIN_GRANTS derived from ADMIN_GRANTS', () => {

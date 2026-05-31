@@ -219,7 +219,7 @@ describe('ConsumerCollection', () => {
       });
 
       const result = await instance.create(item);
-      expect(result).to.not.be.null;
+      expect(result.getAdminGrants()).to.deep.equal({ CREATE_SITE: true });
       instance.findByClientId.restore();
     });
 

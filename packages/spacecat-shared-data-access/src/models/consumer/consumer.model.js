@@ -59,7 +59,15 @@ class Consumer extends BaseModel {
    */
   static CAPABILITIES = ['read', 'write', 'delete', 'readAll'];
 
-  static VALID_ADMIN_GRANTS = new Set(['CREATE_SITE']);
+  /**
+   * Named admin-bypass operation keys. Values are the canonical string identifiers
+   * used in the adminGrants map on Consumer records and in controller-level hasAdminGrant()
+   * checks. Defining them here is the single source of truth — consuming services
+   * import these rather than re-defining the strings locally.
+   */
+  static ADMIN_GRANTS = Object.freeze({ CREATE_SITE: 'CREATE_SITE' });
+
+  static VALID_ADMIN_GRANTS = new Set(Object.values(Consumer.ADMIN_GRANTS));
 
   static IMS_ORG_ID_REGEX = /^[a-z0-9]{24}@AdobeOrg$/i;
 

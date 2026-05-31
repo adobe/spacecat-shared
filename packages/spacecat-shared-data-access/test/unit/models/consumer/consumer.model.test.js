@@ -82,7 +82,11 @@ describe('ConsumerModel', () => {
       expect(Consumer.IMS_ORG_ID_REGEX.test('1234567890ABCDEF12345678@AdobeOrgsuffix')).to.be.false;
     });
 
-    it('has VALID_ADMIN_GRANTS', () => {
+    it('has ADMIN_GRANTS with CREATE_SITE key', () => {
+      expect(Consumer.ADMIN_GRANTS).to.deep.equal({ CREATE_SITE: 'CREATE_SITE' });
+    });
+
+    it('has VALID_ADMIN_GRANTS derived from ADMIN_GRANTS', () => {
       expect(Consumer.VALID_ADMIN_GRANTS).to.be.instanceOf(Set);
       expect(Consumer.VALID_ADMIN_GRANTS.has('CREATE_SITE')).to.be.true;
     });

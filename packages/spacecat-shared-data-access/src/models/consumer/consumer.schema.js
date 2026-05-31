@@ -47,6 +47,9 @@ const schema = new SchemaBuilder(Consumer, ConsumerCollection)
     type: 'string',
     validate: (value) => !value || isIsoDate(value),
   })
+  .addAttribute('adminGrants', {
+    type: 'any',
+  })
   .addAttribute('imsOrgId', {
     type: 'string',
     required: true,

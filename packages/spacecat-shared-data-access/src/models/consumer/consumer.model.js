@@ -48,6 +48,7 @@ class Consumer extends BaseModel {
    */
   async save() {
     this.collection.validateCapabilities(this.getCapabilities());
+    this.collection.validateAdminGrants(this.getAdminGrants());
     return super.save();
   }
 
@@ -57,6 +58,8 @@ class Consumer extends BaseModel {
    * (`site` and `organization`). Schema validity does not imply a reachable route.
    */
   static CAPABILITIES = ['read', 'write', 'delete', 'readAll'];
+
+  static VALID_ADMIN_GRANTS = new Set(['CREATE_SITE']);
 
   static IMS_ORG_ID_REGEX = /^[a-z0-9]{24}@AdobeOrg$/i;
 

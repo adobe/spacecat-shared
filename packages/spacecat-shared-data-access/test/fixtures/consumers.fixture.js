@@ -18,6 +18,7 @@ const consumers = [
     consumerName: 'consumer-456-def',
     status: 'ACTIVE',
     capabilities: ['site:read', 'site:write', 'site:delete'],
+    adminGrants: { CREATE_SITE: true },
     imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
   },
   {

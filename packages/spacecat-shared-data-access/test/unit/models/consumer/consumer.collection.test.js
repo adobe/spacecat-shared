@@ -202,7 +202,7 @@ describe('ConsumerCollection', () => {
       instance.findByClientId.restore();
     });
 
-    it('calls validateAdminGrants during create', async () => {
+    it('create succeeds with valid adminGrants', async () => {
       const item = {
         clientId: 'client-new',
         technicalAccountId: 'AABB00112233445566778899@techacct.adobe.com',
@@ -220,6 +220,23 @@ describe('ConsumerCollection', () => {
 
       const result = await instance.create(item);
       expect(result).to.not.be.null;
+      instance.findByClientId.restore();
+    });
+
+    it('throws ValidationError for invalid adminGrants during create', async () => {
+      const item = {
+        clientId: 'client-new2',
+        technicalAccountId: 'BBCC00112233445566778899@techacct.adobe.com',
+        consumerName: 'consumer-new2',
+        status: 'ACTIVE',
+        capabilities: ['site:read'],
+        adminGrants: { UNKNOWN_OP: true },
+        imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
+      };
+
+      stub(instance, 'findByClientId').resolves(null);
+
+      await expect(instance.create(item)).to.be.rejectedWith('Invalid admin grant key: "UNKNOWN_OP"');
       instance.findByClientId.restore();
     });
 
@@ -313,6 +330,10 @@ describe('ConsumerCollection', () => {
 
     it('passes for valid { CREATE_SITE: true }', () => {
       expect(() => instance.validateAdminGrants({ CREATE_SITE: true })).to.not.throw();
+    });
+
+    it('passes for empty object (zero iterations — no grants, semantically equivalent to null)', () => {
+      expect(() => instance.validateAdminGrants({})).to.not.throw();
     });
   });
 

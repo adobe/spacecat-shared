@@ -49,6 +49,7 @@ const schema = new SchemaBuilder(Consumer, ConsumerCollection)
   })
   .addAttribute('adminGrants', {
     type: 'any',
+    validate: (value) => value == null || (typeof value === 'object' && !Array.isArray(value)),
   })
   .addAttribute('imsOrgId', {
     type: 'string',

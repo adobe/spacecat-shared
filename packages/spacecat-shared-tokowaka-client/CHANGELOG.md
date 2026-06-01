@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.17.3...@adobe/spacecat-shared-tokowaka-client-v1.18.0) (2026-06-01)
+
+### Features
+
+* add path-level prerender deploy support to tokowaka-client ([#1598](https://github.com/adobe/spacecat-shared/issues/1598)) ([9632f0e](https://github.com/adobe/spacecat-shared/commit/9632f0e7c9a3feef7eb6a4d013fa2047a733ff13))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.17.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.17.2...@adobe/spacecat-shared-tokowaka-client-v1.17.3) (2026-05-30)
 
 ### Bug Fixes

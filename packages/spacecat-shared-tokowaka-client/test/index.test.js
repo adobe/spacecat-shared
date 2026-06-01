@@ -3613,7 +3613,7 @@ describe('TokowakaClient', () => {
       expect(covered.setData.calledOnce).to.be.true;
       // The failure was logged as a consolidated error for alerting
       // eslint-disable-next-line max-len
-      expect(log.error).to.have.been.calledWithMatch(/\[edge-rollback-error\].*covered suggestion/);
+      expect(log.error).to.have.been.calledWithMatch(/\[edge-rollback-failed\].*covered suggestion/);
     });
 
     it('rollback marks all pattern suggestions as failed when saveMany throws', async () => {

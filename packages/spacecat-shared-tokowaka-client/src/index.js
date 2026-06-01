@@ -1059,7 +1059,7 @@ class TokowakaClient {
 
     if (allFailed.length > 0) {
       // eslint-disable-next-line max-len
-      this.log.error(`[edge-rollback-error] ${allFailed.length} out of ${total} suggestion(s) failed to rollback for ${baseURL}`);
+      this.log.error(`[edge-rollback-failed] ${allFailed.length} out of ${total} suggestion(s) failed to rollback for ${baseURL}`);
     }
 
     return {

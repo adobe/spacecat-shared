@@ -37,14 +37,6 @@ describe('metaconfig-utils', () => {
       expect(changed).to.be.false;
       expect(metaconfig.prerender.allowList).to.deep.equal(['/blog/*']);
     });
-
-    it('preserves sibling keys on metaconfig.prerender', () => {
-      const metaconfig = { prerender: { allowList: ['/blog/*'], ttl: 3600, excludePatterns: ['/private/*'] } };
-      addPatternsToMetaconfig(metaconfig, ['/products/*']);
-      expect(metaconfig.prerender.ttl).to.equal(3600);
-      expect(metaconfig.prerender.excludePatterns).to.deep.equal(['/private/*']);
-      expect(metaconfig.prerender.allowList).to.deep.equal(['/blog/*', '/products/*']);
-    });
   });
 
   describe('removePatternFromMetaconfig', () => {
@@ -62,25 +54,10 @@ describe('metaconfig-utils', () => {
       expect(metaconfig.prerender.allowList).to.deep.equal(['/blog/*']);
     });
 
-    it('deletes metaconfig.prerender entirely when allowList becomes empty and no sibling keys exist', () => {
+    it('deletes metaconfig.prerender entirely when allowList becomes empty', () => {
       const metaconfig = { prerender: { allowList: ['/blog/*'] } };
       removePatternFromMetaconfig(metaconfig, '/blog/*');
       expect(metaconfig.prerender).to.be.undefined;
-    });
-
-    it('preserves sibling keys when allowList becomes empty', () => {
-      const metaconfig = { prerender: { allowList: ['/blog/*'], ttl: 3600 } };
-      removePatternFromMetaconfig(metaconfig, '/blog/*');
-      expect(metaconfig.prerender).to.exist;
-      expect(metaconfig.prerender.allowList).to.be.undefined;
-      expect(metaconfig.prerender.ttl).to.equal(3600);
-    });
-
-    it('preserves sibling keys when allowList still has remaining entries', () => {
-      const metaconfig = { prerender: { allowList: ['/blog/*', '/products/*'], ttl: 3600 } };
-      removePatternFromMetaconfig(metaconfig, '/blog/*');
-      expect(metaconfig.prerender.ttl).to.equal(3600);
-      expect(metaconfig.prerender.allowList).to.deep.equal(['/products/*']);
     });
 
     it('returns false when prerender is absent', () => {

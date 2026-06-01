@@ -93,13 +93,33 @@ export function filterEligibleSuggestions(suggestions, mapper) {
 }
 
 /**
- * Batch-saves suggestions via dataAccess.Suggestion.saveMany with chunked bulk upsert.
+ * Batch-saves suggestions using the optimal strategy based on count.
+ *
+ * - <= 2200: sequential chunked upsert via saveMany (chunkSize 25).
+ *   ~4s for 2200 suggestions from the DB layer, but ~11s observed end-to-end
+ *   from the API due to serialization, network, and Lambda overhead.
+ * - > 2200: parallel individual .save() via Promise.allSettled to avoid
+ *   sequential chunk bottleneck at scale.
+ *
  * @param {Object} dataAccess - Data access layer
  * @param {Array} suggestions - Suggestion entities to save
  * @returns {Promise<void>}
  */
+const PARALLEL_SAVE_THRESHOLD = 2200;
+
 export async function saveSuggestions(dataAccess, suggestions) {
   if (suggestions.length === 0) {
+    return;
+  }
+  if (suggestions.length > PARALLEL_SAVE_THRESHOLD) {
+    const results = await Promise.allSettled(suggestions.map((s) => s.save()));
+    const failed = results.filter((r) => r.status === 'rejected');
+    if (failed.length > 0) {
+      throw new Error(
+        `${failed.length} of ${suggestions.length} suggestions failed to save: `
+        + `${failed[0].reason?.message}`,
+      );
+    }
     return;
   }
   await dataAccess.Suggestion.saveMany(suggestions, { chunkSize: 25 });

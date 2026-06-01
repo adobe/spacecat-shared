@@ -95,17 +95,17 @@ export function filterEligibleSuggestions(suggestions, mapper) {
 /**
  * Batch-saves suggestions using the optimal strategy based on count.
  *
- * - <= 2200: sequential chunked upsert via saveMany (chunkSize 25).
- *   ~4s for 2200 suggestions from the DB layer, but ~11s observed end-to-end
+ * - <= 1700: sequential chunked upsert via saveMany (chunkSize 25).
+ *   ~4s for 1700 suggestions from the DB layer, but ~11s observed end-to-end
  *   from the API due to serialization, network, and Lambda overhead.
- * - > 2200: parallel individual .save() via Promise.allSettled to avoid
+ * - > 1700: parallel individual .save() via Promise.allSettled to avoid
  *   sequential chunk bottleneck at scale.
  *
  * @param {Object} dataAccess - Data access layer
  * @param {Array} suggestions - Suggestion entities to save
  * @returns {Promise<void>}
  */
-const PARALLEL_SAVE_THRESHOLD = 2200;
+const PARALLEL_SAVE_THRESHOLD = 1700;
 
 export async function saveSuggestions(dataAccess, suggestions) {
   if (suggestions.length === 0) {

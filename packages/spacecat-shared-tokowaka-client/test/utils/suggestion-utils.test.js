@@ -191,7 +191,7 @@ describe('Suggestion Utils', () => {
       expect(dataAccess.Suggestion.saveMany.called).to.be.false;
     });
 
-    it('should use saveMany for <= 2200 suggestions', async () => {
+    it('should use saveMany for <= 1700 suggestions', async () => {
       const dataAccess = { Suggestion: { saveMany: sinon.stub().resolves() } };
       const items = [{ save: sinon.stub().resolves() }];
       await saveSuggestions(dataAccess, items);
@@ -199,18 +199,18 @@ describe('Suggestion Utils', () => {
       expect(items[0].save.called).to.be.false;
     });
 
-    it('should use Promise.allSettled for > 2200 suggestions', async () => {
+    it('should use Promise.allSettled for > 1700 suggestions', async () => {
       const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
-      const items = Array.from({ length: 2201 }, () => ({ save: sinon.stub().resolves() }));
+      const items = Array.from({ length: 1701 }, () => ({ save: sinon.stub().resolves() }));
       await saveSuggestions(dataAccess, items);
       expect(dataAccess.Suggestion.saveMany.called).to.be.false;
       expect(items[0].save.calledOnce).to.be.true;
-      expect(items[2200].save.calledOnce).to.be.true;
+      expect(items[1700].save.calledOnce).to.be.true;
     });
 
     it('should throw when Promise.allSettled has failures', async () => {
       const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
-      const items = Array.from({ length: 2201 }, (_, i) => ({
+      const items = Array.from({ length: 1701 }, (_, i) => ({
         save: i === 0
           ? sinon.stub().rejects(new Error('DB error'))
           : sinon.stub().resolves(),
@@ -219,7 +219,7 @@ describe('Suggestion Utils', () => {
         await saveSuggestions(dataAccess, items);
         expect.fail('should have thrown');
       } catch (error) {
-        expect(error.message).to.include('1 of 2201 suggestions failed');
+        expect(error.message).to.include('1 of 1701 suggestions failed');
         expect(error.message).to.include('DB error');
       }
     });

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.18.0...@adobe/spacecat-shared-tokowaka-client-v1.18.1) (2026-06-01)
+
+### Bug Fixes
+
+* tighten buildUrlMatcher boundary check and add dedicated unit tests ([#1646](https://github.com/adobe/spacecat-shared/issues/1646)) ([e24495a](https://github.com/adobe/spacecat-shared/commit/e24495af9c646700edde86cba1e85441cc07bf31)), closes [#1598](https://github.com/adobe/spacecat-shared/issues/1598)
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.17.3...@adobe/spacecat-shared-tokowaka-client-v1.18.0) (2026-06-01)
 
 ### Features

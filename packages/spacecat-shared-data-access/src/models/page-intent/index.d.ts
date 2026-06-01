@@ -17,12 +17,10 @@ export interface PageIntent extends BaseModel {
     getSite(): Promise<Site>;
     getUrl(): string;
     getPageIntent(): string;
-    getTopic(): string;
 
     setSiteId(siteId: string): PageIntent;
     setUrl(url: string): PageIntent;
     setPageIntent(pageIntent: string): PageIntent;
-    setTopic(topic: string): PageIntent;
 }
 
 export interface PageIntentCollection extends BaseCollection<PageIntent> {

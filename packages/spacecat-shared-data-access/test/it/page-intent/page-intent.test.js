@@ -25,7 +25,6 @@ function checkPageIntent(pi) {
   expect(pi.getUrl()).to.be.a('string');
   expect(pi.getSiteId()).to.be.a('string');
   expect(pi.getPageIntent()).to.be.a('string');
-  expect(pi.getTopic()).to.be.a('string');
   expect(pi.getCreatedAt()).to.be.a('string');
   expect(pi.getUpdatedAt()).to.be.a('string');
 }
@@ -67,7 +66,6 @@ describe('PageIntent IT', async () => {
       url: 'https://www.example.com/new-page',
       siteId: sampleData.sites[0].getId(),
       pageIntent: 'INFORMATIONAL',
-      topic: 'example-topic',
     };
     const pi = await PageIntent.create(data);
 
@@ -76,7 +74,6 @@ describe('PageIntent IT', async () => {
     expect(pi.getUrl()).to.equal(data.url);
     expect(pi.getSiteId()).to.equal(data.siteId);
     expect(pi.getPageIntent()).to.equal(data.pageIntent);
-    expect(pi.getTopic()).to.equal(data.topic);
   });
 
   it('updates a page intent', async () => {
@@ -85,7 +82,6 @@ describe('PageIntent IT', async () => {
       url: 'https://www.updated.com/page',
       siteId: sampleData.sites[1].getId(),
       pageIntent: 'TRANSACTIONAL',
-      topic: 'updated-topic',
       updatedBy: 'test-user',
     };
 
@@ -94,7 +90,6 @@ describe('PageIntent IT', async () => {
     pi.setUrl(updates.url);
     pi.setSiteId(updates.siteId);
     pi.setPageIntent(updates.pageIntent);
-    pi.setTopic(updates.topic);
     pi.setUpdatedBy(updates.updatedBy);
 
     await pi.save();
@@ -104,7 +99,6 @@ describe('PageIntent IT', async () => {
     expect(pi.getUrl()).to.equal(updates.url);
     expect(pi.getSiteId()).to.equal(updates.siteId);
     expect(pi.getPageIntent()).to.equal(updates.pageIntent);
-    expect(pi.getTopic()).to.equal(updates.topic);
     expect(pi.getUpdatedBy()).to.equal(updates.updatedBy);
   });
 });

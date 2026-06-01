@@ -13,7 +13,7 @@
 import BaseModel from '../base/base.model.js';
 
 /**
- * PageIntent - Represents a page’s intent & topic within a site.
+ * PageIntent - Represents a page’s intent within a site.
  *
  * @class PageIntent
  * @extends BaseModel

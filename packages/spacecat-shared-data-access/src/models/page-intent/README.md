@@ -2,15 +2,14 @@
 
 ## Use Case
 
-The `PageIntent` entity captures the intent and topical classification of individual pages within a site.
+The `PageIntent` entity captures the intent classification of individual pages within a site.
 
 - **Page intent** (`INFORMATIONAL`, `NAVIGATIONAL`, `TRANSACTIONAL`, `COMMERCIAL`) helps determine how users interact with each page.
-- **Topic** (arbitrary string, changes per site, like `firefly`, `photoshop`, `express`) groups pages into thematic buckets.
 
 You can:
 1. **Record page metadata** as pages are discovered or crawled.
 2. **Query all pages** for a given site (`siteId`) to analyze overall content strategy.
-3. **Fetch a single page** by its unique URL to inspect or update its intent/topic.
+3. **Fetch a single page** by its unique URL to inspect or update its intent.
 
 ## PageIntent Schema Overview
 
@@ -24,7 +23,6 @@ The `PageIntent` entity persists each page’s metadata. Key attributes include:
     - `NAVIGATIONAL`
     - `TRANSACTIONAL`
     - `COMMERCIAL`
-- **`topic`** (string) – arbitrary topic label for the page.
 - **`createdAt`, `updatedAt`** (ISO timestamp) – automatically maintained by the framework.
 
 ## Best Practices
@@ -48,7 +46,6 @@ const pi = await PageIntent.create({
   siteId:     'b1ec63c4-87de-4500-bbc9-276039e4bc10',
   url:        'https://www.adobe.com/firefly/overview.html',
   pageIntent: 'INFORMATIONAL',
-  topic:      'firefly',
 });
 
 // 2. Query all pages for a site
@@ -57,9 +54,8 @@ console.log(`Found ${all.length} pages for this site`);
 
 // 3. Fetch a single page by URL
 const single = await PageIntent.findByUrl(pi.getUrl());
-console.log(`Intent: ${single.getPageIntent()}, Topic: ${single.getTopic()}`);
+console.log(`Intent: ${single.getPageIntent()}`);
 
-// 4. Update a page’s intent/topic
+// 4. Update a page’s intent
 single.setPageIntent('NAVIGATIONAL');
-single.setTopic('firefly-navigation');
 await single.save();

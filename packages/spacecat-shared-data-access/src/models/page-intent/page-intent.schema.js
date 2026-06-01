@@ -33,12 +33,6 @@ const schema = new SchemaBuilder(PageIntent, PageIntentCollection)
     required: true,
   })
 
-  // arbitrary topic string like “firefly” or “photoshop”
-  .addAttribute('topic', {
-    type: 'string',
-    required: true,
-  })
-
   // optionally track who last updated
   .addAttribute('updatedBy', {
     type: 'string',

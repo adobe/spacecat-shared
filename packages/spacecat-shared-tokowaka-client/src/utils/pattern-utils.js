@@ -12,11 +12,17 @@
 
 /**
  * Builds a URL matcher function for a given allowedRegexPatterns entry.
- * Patterns ending with `/*` use pathname prefix matching (e.g. `/products/*` matches `/products/`).
- * When the pattern is `/*`, the prefix becomes '' and matches all URLs
- * (intentional for domain-wide).
- * Other patterns are compiled as regular expressions for backward compatibility.
- * Returns null for patterns that cannot be compiled.
+ *
+ * - Patterns ending with `/*` use pathname prefix matching against the URL's pathname.
+ *   `/products/*` matches `/products`, `/products/`, `/products/item` but NOT `/productsabc`.
+ *   `/*` matches all URLs (intentional for domain-wide).
+ * - All other patterns are compiled as regular expressions and matched against the **full URL
+ *   string** (e.g. `https://example.com/page`). This is intentional for backward compatibility
+ *   with callers that supply full-URL regexes such as `^https://example\\.com/.*`.
+ *   Note: a pathname-only regex like `^/blog` will never match via this path because the URL
+ *   string always starts with a scheme. Use the `/*` suffix form for pathname-only matching.
+ * - Returns null for non-string, empty, or invalid-regex inputs.
+ *
  * @param {string} pattern
  * @returns {((url: string) => boolean)|null}
  */
@@ -28,7 +34,9 @@ export function buildUrlMatcher(pattern) {
     const prefix = pattern.slice(0, -2); // '/products/*' → '/products', '/*' → ''
     return (url) => {
       try {
-        return new URL(url).pathname.startsWith(prefix);
+        const { pathname } = new URL(url);
+        // Empty prefix means '/*' — match everything
+        return prefix === '' || pathname === prefix || pathname.startsWith(`${prefix}/`);
       } catch {
         return false;
       }

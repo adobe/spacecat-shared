@@ -17,8 +17,7 @@ const consumers = [
     technicalAccountId: '09132356697B3F170A495EE8@techacct.adobe.com',
     consumerName: 'consumer-456-def',
     status: 'ACTIVE',
-    capabilities: ['site:read', 'site:write', 'site:delete'],
-    adminGrants: { CREATE_SITE: true },
+    capabilities: ['site:read', 'site:write', 'site:delete', 'site:create'],
     imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
   },
   {

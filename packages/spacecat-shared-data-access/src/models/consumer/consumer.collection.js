@@ -70,37 +70,6 @@ class ConsumerCollection extends BaseCollection {
   }
 
   /**
-   * Validates that the given adminGrants map contains only known operation keys with boolean true
-   * values. Called during both create() and save() to prevent invalid admin grant escalation.
-   * @param {object|null|undefined} adminGrants - The adminGrants map to validate.
-   * @throws {ValidationError} - Throws if adminGrants is invalid.
-   */
-  validateAdminGrants(adminGrants) {
-    if (adminGrants == null) {
-      return;
-    }
-
-    if (typeof adminGrants !== 'object' || Array.isArray(adminGrants)) {
-      throw new ValidationError('adminGrants must be a plain object', this);
-    }
-
-    for (const [key, value] of Object.entries(adminGrants)) {
-      if (!Consumer.VALID_ADMIN_GRANTS.has(key)) {
-        throw new ValidationError(
-          `Invalid admin grant key: "${key}". Valid keys: [${[...Consumer.VALID_ADMIN_GRANTS].join(', ')}]`,
-          this,
-        );
-      }
-      if (value !== true) {
-        throw new ValidationError(
-          `adminGrants values must be boolean true. Got "${key}": ${JSON.stringify(value)}`,
-          this,
-        );
-      }
-    }
-  }
-
-  /**
    * Validates that the given imsOrgId is in the allowed list from config.
    * @param {string} imsOrgId - The IMS Org ID to validate.
    * @throws {ValidationError} - Throws if the imsOrgId is not in the allowed list.
@@ -161,7 +130,6 @@ class ConsumerCollection extends BaseCollection {
   async create(item, options = {}) {
     this.#validateImsOrgId(item?.imsOrgId);
     this.validateCapabilities(item?.capabilities);
-    this.validateAdminGrants(item?.adminGrants);
     await this.#validateClientIdUniqueness(item?.clientId);
     return super.create(item, options);
   }

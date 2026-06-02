@@ -48,26 +48,15 @@ class Consumer extends BaseModel {
    */
   async save() {
     this.collection.validateCapabilities(this.getCapabilities());
-    this.collection.validateAdminGrants(this.getAdminGrants());
     return super.save();
   }
 
   /**
-   * Valid capability actions. `readAll` is a scope+verb hybrid — it grants enumeration
-   * across all tenants and is only meaningful on routes that explicitly opt in
-   * (`site` and `organization`). Schema validity does not imply a reachable route.
+   * Valid capability actions. `readAll` grants cross-tenant enumeration on routes that
+   * explicitly opt in. `create` grants admin-gated write operations (e.g. POST /sites)
+   * on routes that explicitly opt in. Schema validity does not imply a reachable route.
    */
-  static CAPABILITIES = ['read', 'write', 'delete', 'readAll'];
-
-  /**
-   * Named admin-bypass operation keys. Values are the canonical string identifiers
-   * used in the adminGrants map on Consumer records and in controller-level hasAdminGrant()
-   * checks. Defining them here is the single source of truth — consuming services
-   * import these rather than re-defining the strings locally.
-   */
-  static ADMIN_GRANTS = Object.freeze({ CREATE_SITE: 'CREATE_SITE' });
-
-  static VALID_ADMIN_GRANTS = new Set(Object.values(Consumer.ADMIN_GRANTS));
+  static CAPABILITIES = ['read', 'write', 'delete', 'readAll', 'create'];
 
   static IMS_ORG_ID_REGEX = /^[a-z0-9]{24}@AdobeOrg$/i;
 

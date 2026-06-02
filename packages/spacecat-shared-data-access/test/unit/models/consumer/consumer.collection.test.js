@@ -202,44 +202,6 @@ describe('ConsumerCollection', () => {
       instance.findByClientId.restore();
     });
 
-    it('create succeeds with valid adminGrants', async () => {
-      const item = {
-        clientId: 'client-new',
-        technicalAccountId: 'AABB00112233445566778899@techacct.adobe.com',
-        consumerName: 'consumer-new',
-        status: 'ACTIVE',
-        capabilities: ['site:read'],
-        adminGrants: { CREATE_SITE: true },
-        imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
-      };
-
-      stub(instance, 'findByClientId').resolves(null);
-      mockElectroService.entities.consumer.create.returns({
-        go: () => Promise.resolve({ data: sampleConsumer }),
-      });
-
-      const result = await instance.create(item);
-      expect(result.getAdminGrants()).to.deep.equal({ CREATE_SITE: true });
-      instance.findByClientId.restore();
-    });
-
-    it('throws ValidationError for invalid adminGrants during create', async () => {
-      const item = {
-        clientId: 'client-new2',
-        technicalAccountId: 'BBCC00112233445566778899@techacct.adobe.com',
-        consumerName: 'consumer-new2',
-        status: 'ACTIVE',
-        capabilities: ['site:read'],
-        adminGrants: { UNKNOWN_OP: true },
-        imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
-      };
-
-      stub(instance, 'findByClientId').resolves(null);
-
-      await expect(instance.create(item)).to.be.rejectedWith('Invalid admin grant key: "UNKNOWN_OP"');
-      instance.findByClientId.restore();
-    });
-
     it('throws ValidationError when clientId is not provided', async () => {
       const item = {
         technicalAccountId: 'AABB00112233445566778899@techacct.adobe.com',
@@ -292,48 +254,6 @@ describe('ConsumerCollection', () => {
       );
 
       expect(mockElectroService.entities.consumer.create).to.not.have.been.called;
-    });
-  });
-
-  describe('validateAdminGrants', () => {
-    it('no-ops for null', () => {
-      expect(() => instance.validateAdminGrants(null)).to.not.throw();
-    });
-
-    it('no-ops for undefined', () => {
-      expect(() => instance.validateAdminGrants(undefined)).to.not.throw();
-    });
-
-    it('throws for non-object (string)', () => {
-      expect(() => instance.validateAdminGrants('string')).to.throw(
-        'adminGrants must be a plain object',
-      );
-    });
-
-    it('throws for array', () => {
-      expect(() => instance.validateAdminGrants(['CREATE_SITE'])).to.throw(
-        'adminGrants must be a plain object',
-      );
-    });
-
-    it('throws for unknown key', () => {
-      expect(() => instance.validateAdminGrants({ UNKNOWN_OP: true })).to.throw(
-        'Invalid admin grant key: "UNKNOWN_OP"',
-      );
-    });
-
-    it('throws for non-true value', () => {
-      expect(() => instance.validateAdminGrants({ CREATE_SITE: false })).to.throw(
-        'adminGrants values must be boolean true. Got "CREATE_SITE": false',
-      );
-    });
-
-    it('passes for valid { CREATE_SITE: true }', () => {
-      expect(() => instance.validateAdminGrants({ CREATE_SITE: true })).to.not.throw();
-    });
-
-    it('passes for empty object (zero iterations — no grants, semantically equivalent to null)', () => {
-      expect(() => instance.validateAdminGrants({})).to.not.throw();
     });
   });
 

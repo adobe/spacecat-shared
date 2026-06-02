@@ -62,7 +62,11 @@ describe('ConsumerModel', () => {
     });
 
     it('has CAPABILITIES', () => {
-      expect(Consumer.CAPABILITIES).to.deep.equal(['read', 'write', 'delete', 'readAll']);
+      expect(Consumer.CAPABILITIES).to.deep.equal(['read', 'write', 'delete', 'readAll', 'create']);
+    });
+
+    it('has CAPABILITIES including create', () => {
+      expect(Consumer.CAPABILITIES).to.include('create');
     });
 
     it('has TECHNICAL_ACCOUNT_ID_REGEX', () => {
@@ -82,19 +86,6 @@ describe('ConsumerModel', () => {
       expect(Consumer.IMS_ORG_ID_REGEX.test('1234567890ABCDEF12345678@AdobeOrgsuffix')).to.be.false;
     });
 
-    it('has ADMIN_GRANTS as a frozen object with identity-mapped string keys', () => {
-      expect(Object.isFrozen(Consumer.ADMIN_GRANTS)).to.be.true;
-      expect(Object.keys(Consumer.ADMIN_GRANTS).length).to.be.greaterThan(0);
-      Object.entries(Consumer.ADMIN_GRANTS).forEach(([k, v]) => {
-        expect(k).to.be.a('string').and.not.equal('');
-        expect(v).to.equal(k);
-      });
-    });
-
-    it('has VALID_ADMIN_GRANTS derived from ADMIN_GRANTS', () => {
-      expect(Consumer.VALID_ADMIN_GRANTS).to.be.instanceOf(Set);
-      expect(Consumer.VALID_ADMIN_GRANTS.has('CREATE_SITE')).to.be.true;
-    });
   });
 
   describe('getters', () => {
@@ -125,10 +116,6 @@ describe('ConsumerModel', () => {
     it('gets revokedAt', () => {
       expect(instance.getRevokedAt()).to.be.undefined;
     });
-
-    it('gets adminGrants', () => {
-      expect(instance.getAdminGrants()).to.deep.equal({ CREATE_SITE: true });
-    });
   });
 
   describe('isRevoked', () => {
@@ -156,7 +143,6 @@ describe('ConsumerModel', () => {
   describe('save', () => {
     it('validates capabilities before saving', async () => {
       instance.collection.validateCapabilities = stub();
-      instance.collection.validateAdminGrants = stub();
       instance.patcher = { save: stub().resolves() };
 
       await instance.save();
@@ -171,41 +157,11 @@ describe('ConsumerModel', () => {
       instance.collection.validateCapabilities = stub().throws(
         new Error('Invalid capabilities: [admin:nuke]'),
       );
-      instance.collection.validateAdminGrants = stub();
       instance.patcher = { save: stub().resolves() };
 
       instance.record.capabilities = ['admin:nuke'];
 
       await expect(instance.save()).to.be.rejectedWith('Invalid capabilities: [admin:nuke]');
-      expect(instance.patcher.save).to.not.have.been.called;
-    });
-  });
-
-  describe('validateAdminGrants in save', () => {
-    it('calls this.collection.validateAdminGrants with adminGrants on save', async () => {
-      instance.collection.validateCapabilities = stub();
-      instance.collection.validateAdminGrants = stub();
-      instance.patcher = { save: stub().resolves() };
-
-      await instance.save();
-
-      expect(instance.collection.validateAdminGrants).to.have.been.calledOnceWith(
-        sampleConsumer.adminGrants,
-      );
-    });
-
-    it('rejects when adminGrants are invalid', async () => {
-      instance.collection.validateCapabilities = stub();
-      instance.collection.validateAdminGrants = stub().throws(
-        new Error('adminGrants values must be boolean true. Got "CREATE_SITE": false'),
-      );
-      instance.patcher = { save: stub().resolves() };
-
-      instance.record.adminGrants = { CREATE_SITE: false };
-
-      await expect(instance.save()).to.be.rejectedWith(
-        'adminGrants values must be boolean true. Got "CREATE_SITE": false',
-      );
       expect(instance.patcher.save).to.not.have.been.called;
     });
   });

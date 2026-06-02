@@ -214,13 +214,20 @@ class Audit extends BaseModel {
           auditContext,
         };
 
+        const siteScraperConfig = context?.site?.getConfig?.()?.getScraperConfig?.();
+
         // Prefer step-supplied customHeaders; otherwise auto-load from site config.
-        const customHeaders = stepResult.customHeaders
-          ?? context?.site?.getConfig?.()?.getScraperConfig?.()?.headers;
+        const customHeaders = stepResult.customHeaders ?? siteScraperConfig?.headers;
 
         // Reject empty object so the scraper does not receive `customHeaders: {}`.
         if (customHeaders && Object.keys(customHeaders).length > 0) {
           payload.customHeaders = customHeaders;
+        }
+
+        // Forward per-site browser-level options (e.g. protocolTimeout) when set.
+        const { protocolTimeout } = siteScraperConfig || {};
+        if (protocolTimeout !== undefined) {
+          payload.scraperOptions = { protocolTimeout };
         }
 
         return payload;

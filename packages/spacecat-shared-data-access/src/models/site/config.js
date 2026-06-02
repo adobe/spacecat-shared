@@ -436,6 +436,14 @@ export const configSchema = Joi.object({
         return value;
       })
       .optional(),
+    // Puppeteer CDP-level protocol timeout (ms). Sites behind heavy bot-protection
+    // (e.g. Akamai, Cloudflare) that cause Runtime.callFunctionOn to time out at
+    // the default 20 s can raise this limit per-site without a code deploy.
+    // Bounds: 5 s minimum (below that page evaluation is unlikely to succeed),
+    // 120 s maximum (Lambda function timeout is typically 15 min but the scraper
+    // Lambda is configured for far less; 120 s is a safe ceiling).
+    protocolTimeout: Joi.number().integer().min(5000).max(120000)
+      .optional(),
   }).optional(),
   tokowakaConfig: Joi.object({
     apiKey: Joi.string().optional(),

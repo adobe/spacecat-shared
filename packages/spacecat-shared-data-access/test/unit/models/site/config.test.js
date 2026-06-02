@@ -708,6 +708,52 @@ describe('Config Tests', () => {
       expect(() => config.updateScraperConfig('oops')).to.throw(/Configuration validation error/);
     });
 
+    it('accepts valid protocolTimeout via updateScraperConfig', () => {
+      const config = Config({});
+      config.updateScraperConfig({ protocolTimeout: 60000 });
+      expect(config.getScraperConfig()).to.deep.equal({ protocolTimeout: 60000 });
+    });
+
+    it('accepts protocolTimeout alongside headers via updateScraperConfig', () => {
+      const config = Config({});
+      config.updateScraperConfig({
+        headers: { 'Accept-Language': 'en-US,en;q=0.9' },
+        protocolTimeout: 45000,
+      });
+      expect(config.getScraperConfig()).to.deep.equal({
+        headers: { 'Accept-Language': 'en-US,en;q=0.9' },
+        protocolTimeout: 45000,
+      });
+    });
+
+    it('rejects protocolTimeout below minimum (5000) via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ protocolTimeout: 4999 }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects protocolTimeout above maximum (120000) via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ protocolTimeout: 120001 }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects non-integer protocolTimeout via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ protocolTimeout: 30000.5 }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects non-number protocolTimeout via updateScraperConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateScraperConfig({ protocolTimeout: '60000' }),
+      ).to.throw(/Configuration validation error/);
+    });
+
     it('serializes scraperConfig via toDynamoItem', () => {
       const data = {
         scraperConfig: {

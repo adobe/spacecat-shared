@@ -426,6 +426,78 @@ describe('AuditModel', () => {
 
       expect(formattedPayload).to.not.have.property('customHeaders');
     });
+
+    it('forwards scraperOptions.protocolTimeout from site scraperConfig', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+      };
+      const site = {
+        getConfig: () => ({
+          getScraperConfig: () => ({ protocolTimeout: 60000 }),
+        }),
+      };
+      const context = { env: { AUDIT_JOBS_QUEUE_URL: 'q' }, site };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, {}, context);
+
+      expect(formattedPayload.scraperOptions).to.deep.equal({ protocolTimeout: 60000 });
+    });
+
+    it('omits scraperOptions when site scraperConfig has no protocolTimeout', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+      };
+      const site = {
+        getConfig: () => ({
+          getScraperConfig: () => ({ headers: { 'Accept-Language': 'en-US' } }),
+        }),
+      };
+      const context = { env: { AUDIT_JOBS_QUEUE_URL: 'q' }, site };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, {}, context);
+
+      expect(formattedPayload).to.not.have.property('scraperOptions');
+    });
+
+    it('forwards both customHeaders and scraperOptions when site has both', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+      };
+      const site = {
+        getConfig: () => ({
+          getScraperConfig: () => ({
+            headers: { 'Accept-Language': 'en-US,en;q=0.9' },
+            protocolTimeout: 60000,
+          }),
+        }),
+      };
+      const context = { env: { AUDIT_JOBS_QUEUE_URL: 'q' }, site };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, {}, context);
+
+      expect(formattedPayload.customHeaders).to.deep.equal({ 'Accept-Language': 'en-US,en;q=0.9' });
+      expect(formattedPayload.scraperOptions).to.deep.equal({ protocolTimeout: 60000 });
+    });
+
+    it('omits scraperOptions when no site is on context', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+      };
+      const context = { env: { AUDIT_JOBS_QUEUE_URL: 'q' } };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, {}, context);
+
+      expect(formattedPayload).to.not.have.property('scraperOptions');
+    });
+
     it('formats scrape client payload correctly', () => {
       const stepResult = {
         urls: [{ url: 'someUrl' }],

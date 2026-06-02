@@ -5035,6 +5035,104 @@ describe('TokowakaClient', () => {
         expect(userAgent).to.include('Mozilla/5.0');
       });
 
+      it('should ignore custom User-Agent from scraperConfig — default takes priority', async () => {
+        const customSite = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({
+            getEdgeOptimizeConfig: () => undefined,
+            getScraperConfig: () => ({ headers: { 'User-Agent': 'AllowListedBot/1.0' } }),
+          }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(customSite, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['User-Agent']).to.include('Tokowaka-AI');
+        expect(fetchOptions.headers['User-Agent']).to.not.include('AllowListedBot/1.0');
+      });
+
+      it('should add extra custom headers while defaults always win on collision', async () => {
+        const customSite = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({
+            getEdgeOptimizeConfig: () => undefined,
+            getScraperConfig: () => ({ headers: { 'x-allowlist-token': 'secret123', 'fastly-debug': 'custom' } }),
+          }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(customSite, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['x-allowlist-token']).to.equal('secret123');
+        expect(fetchOptions.headers['fastly-debug']).to.equal('1');
+        expect(fetchOptions.headers['User-Agent']).to.include('Mozilla/5.0');
+      });
+
+      it('should use default probe headers when scraperConfig has no headers', async () => {
+        const noHeadersSite = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({
+            getEdgeOptimizeConfig: () => undefined,
+            getScraperConfig: () => ({}),
+          }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(noHeadersSite, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['User-Agent']).to.include('Tokowaka-AI');
+        expect(fetchOptions.headers['fastly-debug']).to.equal('1');
+      });
+
+      it('should use default probe headers when getScraperConfig is not present on config', async () => {
+        const noScraperSite = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = {
+          status: 200,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(noScraperSite, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['User-Agent']).to.include('AdobeEdgeOptimize-AI');
+        expect(fetchOptions.headers['fastly-debug']).to.equal('1');
+      });
+
       it('should pass timeout option to tracingFetch', async () => {
         const mockResponse = {
           status: 200,
@@ -5168,7 +5266,7 @@ describe('TokowakaClient', () => {
         await promise;
 
         expect(log.warn).to.have.been.calledWith(
-          sinon.match(/Attempt 1 to fetch failed.*Connection refused.*Retrying in 200ms/),
+          sinon.match(/\[edge-optimize-status\] Attempt 1 to fetch failed.*Connection refused.*Retrying in 200ms/),
         );
       });
 
@@ -5182,7 +5280,7 @@ describe('TokowakaClient', () => {
         expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
         expect(tracingFetchStub).to.have.been.calledOnce;
         expect(log.warn).to.have.been.calledWith(
-          sinon.match(/Request timed out after 5000ms for https:\/\/example.com\/, returning edgeOptimizeEnabled: false/),
+          sinon.match(/\[edge-optimize-status\] Request timed out after 5000ms for https:\/\/example.com\/, returning edgeOptimizeEnabled: false/),
         );
       });
     });

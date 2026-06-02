@@ -5133,6 +5133,67 @@ describe('TokowakaClient', () => {
         expect(fetchOptions.headers['fastly-debug']).to.equal('1');
       });
 
+      it('should use default probe headers when getScraperConfig returns null', async () => {
+        const nullScraperSite = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({
+            getEdgeOptimizeConfig: () => undefined,
+            getScraperConfig: () => null,
+          }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = { status: 200, headers: new Map() };
+        mockResponse.headers.get = () => null;
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(nullScraperSite, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['User-Agent']).to.include('Tokowaka-AI');
+        expect(fetchOptions.headers['fastly-debug']).to.equal('1');
+      });
+
+      it('should use default probe headers when getConfig returns null', async () => {
+        const nullConfigSite = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => null,
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = { status: 200, headers: new Map() };
+        mockResponse.headers.get = () => null;
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(nullConfigSite, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['User-Agent']).to.include('Tokowaka-AI');
+        expect(fetchOptions.headers['fastly-debug']).to.equal('1');
+      });
+
+      it('should use default probe headers when scraperConfig has an empty headers object', async () => {
+        const emptyHeadersSite = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({
+            getEdgeOptimizeConfig: () => undefined,
+            getScraperConfig: () => ({ headers: {} }),
+          }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = { status: 200, headers: new Map() };
+        mockResponse.headers.get = () => null;
+        tracingFetchStub.resolves(mockResponse);
+
+        await esmockClient.checkEdgeOptimizeStatus(emptyHeadersSite, '/');
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['User-Agent']).to.include('Tokowaka-AI');
+        expect(fetchOptions.headers['fastly-debug']).to.equal('1');
+        expect(Object.keys(fetchOptions.headers)).to.have.lengthOf(2);
+      });
+
       it('should pass timeout option to tracingFetch', async () => {
         const mockResponse = {
           status: 200,
@@ -5282,6 +5343,35 @@ describe('TokowakaClient', () => {
         expect(log.warn).to.have.been.calledWith(
           sinon.match(/\[edge-optimize-status\] Request timed out after 5000ms for https:\/\/example.com\/, returning edgeOptimizeEnabled: false/),
         );
+      });
+
+      it('should send the same custom headers on every retry attempt', async () => {
+        const customSite = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({
+            getEdgeOptimizeConfig: () => undefined,
+            getScraperConfig: () => ({ headers: { 'x-allowlist-token': 'secret123' } }),
+          }),
+          getDeliveryType: () => 'aem_edge',
+        };
+        const mockResponse = { status: 200, headers: new Map() };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.onFirstCall().rejects(new Error('Temporary failure'));
+        tracingFetchStub.onSecondCall().resolves(mockResponse);
+
+        const promise = esmockClient.checkEdgeOptimizeStatus(customSite, '/');
+        await clock.tickAsync(200);
+        await promise;
+
+        expect(tracingFetchStub).to.have.been.calledTwice;
+        const firstCallHeaders = tracingFetchStub.firstCall.args[1].headers;
+        const secondCallHeaders = tracingFetchStub.secondCall.args[1].headers;
+        expect(firstCallHeaders['x-allowlist-token']).to.equal('secret123');
+        expect(secondCallHeaders['x-allowlist-token']).to.equal('secret123');
+        expect(firstCallHeaders['User-Agent']).to.include('Tokowaka-AI');
+        expect(secondCallHeaders['User-Agent']).to.include('Tokowaka-AI');
       });
     });
 

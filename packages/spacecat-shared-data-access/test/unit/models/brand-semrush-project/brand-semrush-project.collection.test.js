@@ -34,8 +34,8 @@ describe('BrandSemrushProjectCollection', () => {
   const mockRecord = {
     brandId: 'c3e1a4b6-2a8e-4d61-8b03-7d0a1d6b3201',
     semrushProjectId: 'proj-collection-test',
-    semrushLocationId: 2840,
-    language: 'en',
+    geoTargetId: 2840,
+    languageCode: 'en',
     updatedBy: 'system',
   };
 
@@ -73,15 +73,15 @@ describe('BrandSemrushProjectCollection', () => {
 
       const result = await instance.findBySlice(
         mockRecord.brandId,
-        mockRecord.semrushLocationId,
-        mockRecord.language,
+        mockRecord.geoTargetId,
+        mockRecord.languageCode,
       );
 
       expect(result).to.equal(expected);
       expect(findStub).to.have.been.calledOnceWithExactly({
         brandId: mockRecord.brandId,
-        semrushLocationId: mockRecord.semrushLocationId,
-        language: mockRecord.language,
+        geoTargetId: mockRecord.geoTargetId,
+        languageCode: mockRecord.languageCode,
       });
     });
 
@@ -90,8 +90,8 @@ describe('BrandSemrushProjectCollection', () => {
 
       const result = await instance.findBySlice(
         mockRecord.brandId,
-        mockRecord.semrushLocationId,
-        mockRecord.language,
+        mockRecord.geoTargetId,
+        mockRecord.languageCode,
       );
 
       expect(result).to.equal(null);
@@ -99,7 +99,7 @@ describe('BrandSemrushProjectCollection', () => {
   });
 
   // Smoke + delegation tests for the accessors that SchemaBuilder auto-generates
-  // from `addReference('belongs_to', 'Brand')` and `addAllIndex(['semrushProjectId'])`.
+  // from the `(brandId, updatedAt)` index and `addAllIndex(['semrushProjectId'])`.
   // These cover the regression case where a schema typo would silently drop
   // the method from the public surface with no other test catching it.
   describe('auto-generated index accessors', () => {
@@ -108,6 +108,15 @@ describe('BrandSemrushProjectCollection', () => {
       expect(instance.findByBrandId).to.be.a('function');
       expect(instance.allBySemrushProjectId).to.be.a('function');
       expect(instance.findBySemrushProjectId).to.be.a('function');
+    });
+
+    it('exposes the (brandId, updatedAt) composite-key variants', () => {
+      // The (brandId, updatedAt) index produces an additional accessor pair
+      // beyond the single-key forms above. Asserting both shapes catches a
+      // future regression where the sort-key composite is accidentally
+      // dropped (which would not be caught by the single-key tests alone).
+      expect(instance.allByBrandIdAndUpdatedAt).to.be.a('function');
+      expect(instance.findByBrandIdAndUpdatedAt).to.be.a('function');
     });
 
     it('allByBrandId delegates to allByIndexKeys with { brandId }', async () => {

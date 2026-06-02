@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.1...@adobe/spacecat-shared-html-analyzer-v1.3.2) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-html-analyzer-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.0...@adobe/spacecat-shared-html-analyzer-v1.3.1) (2026-05-25)
+
+### Bug Fixes
+
+* filter video player containers to prevent false prerender diffs (LLMO-5107) ([#1625](https://github.com/adobe/spacecat-shared/issues/1625)) ([2169af7](https://github.com/adobe/spacecat-shared/commit/2169af747fd23df90950643881d7871241be7d4f))
+
 ## [@adobe/spacecat-shared-html-analyzer-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.2.12...@adobe/spacecat-shared-html-analyzer-v1.3.0) (2026-05-21)
 
 ### Features

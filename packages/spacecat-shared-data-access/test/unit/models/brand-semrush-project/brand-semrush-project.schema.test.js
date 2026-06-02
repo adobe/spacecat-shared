@@ -44,90 +44,102 @@ describe('BrandSemrushProject Schema', () => {
     });
   });
 
-  describe('semrushLocationId attribute', () => {
+  describe('geoTargetId attribute', () => {
     it('is required with a positive-integer validator', () => {
-      const attr = attributes.semrushLocationId;
+      const attr = attributes.geoTargetId;
       expect(attr).to.exist;
       expect(attr.required).to.be.true;
       expect(attr.validate).to.be.a('function');
+    });
+
+    // postgrestField override preserves the DB column name (`semrush_location_id`)
+    // even though the JS attribute is now `geoTargetId`. Asserted here so a
+    // future accidental column rename in the model layer would fail the test
+    // before silently breaking the projector / data-service readers.
+    it('maps to the semrush_location_id DB column via postgrestField', () => {
+      expect(attributes.geoTargetId.postgrestField).to.equal('semrush_location_id');
     });
 
     it('accepts positive integers', () => {
-      expect(attributes.semrushLocationId.validate(2840)).to.be.true;
-      expect(attributes.semrushLocationId.validate(1)).to.be.true;
+      expect(attributes.geoTargetId.validate(2840)).to.be.true;
+      expect(attributes.geoTargetId.validate(1)).to.be.true;
     });
 
     it('rejects zero and negative integers', () => {
-      expect(attributes.semrushLocationId.validate(0)).to.be.false;
-      expect(attributes.semrushLocationId.validate(-1)).to.be.false;
+      expect(attributes.geoTargetId.validate(0)).to.be.false;
+      expect(attributes.geoTargetId.validate(-1)).to.be.false;
     });
 
     it('rejects non-integer numbers', () => {
-      expect(attributes.semrushLocationId.validate(1.5)).to.be.false;
-      expect(attributes.semrushLocationId.validate(Number.NaN)).to.be.false;
-      expect(attributes.semrushLocationId.validate(Infinity)).to.be.false;
+      expect(attributes.geoTargetId.validate(1.5)).to.be.false;
+      expect(attributes.geoTargetId.validate(Number.NaN)).to.be.false;
+      expect(attributes.geoTargetId.validate(Infinity)).to.be.false;
     });
 
     it('rejects numeric strings (no coercion)', () => {
-      expect(attributes.semrushLocationId.validate('2840')).to.be.false;
+      expect(attributes.geoTargetId.validate('2840')).to.be.false;
     });
   });
 
-  describe('language attribute', () => {
+  describe('languageCode attribute', () => {
     it('is required with a BCP-47-shaped validator', () => {
-      const attr = attributes.language;
+      const attr = attributes.languageCode;
       expect(attr).to.exist;
       expect(attr.required).to.be.true;
       expect(attr.validate).to.be.a('function');
     });
 
+    it('maps to the language DB column via postgrestField', () => {
+      expect(attributes.languageCode.postgrestField).to.equal('language');
+    });
+
     it('accepts 2-letter lowercase ISO 639-1 tags', () => {
-      expect(attributes.language.validate('en')).to.be.true;
-      expect(attributes.language.validate('de')).to.be.true;
-      expect(attributes.language.validate('it')).to.be.true;
+      expect(attributes.languageCode.validate('en')).to.be.true;
+      expect(attributes.languageCode.validate('de')).to.be.true;
+      expect(attributes.languageCode.validate('it')).to.be.true;
     });
 
     it('accepts 3-letter lowercase ISO 639-3 tags', () => {
-      expect(attributes.language.validate('zho')).to.be.true;
-      expect(attributes.language.validate('cmn')).to.be.true;
+      expect(attributes.languageCode.validate('zho')).to.be.true;
+      expect(attributes.languageCode.validate('cmn')).to.be.true;
     });
 
     it('accepts primary subtag with a 2-4 letter region/script subtag', () => {
-      expect(attributes.language.validate('de-ch')).to.be.true;
-      expect(attributes.language.validate('pt-br')).to.be.true;
-      expect(attributes.language.validate('zh-hant')).to.be.true;
+      expect(attributes.languageCode.validate('de-ch')).to.be.true;
+      expect(attributes.languageCode.validate('pt-br')).to.be.true;
+      expect(attributes.languageCode.validate('zh-hant')).to.be.true;
     });
 
     it('rejects uppercase and mixed case', () => {
-      expect(attributes.language.validate('EN')).to.be.false;
-      expect(attributes.language.validate('En')).to.be.false;
-      expect(attributes.language.validate('en-US')).to.be.false;
-      expect(attributes.language.validate('zh-Hant')).to.be.false;
+      expect(attributes.languageCode.validate('EN')).to.be.false;
+      expect(attributes.languageCode.validate('En')).to.be.false;
+      expect(attributes.languageCode.validate('en-US')).to.be.false;
+      expect(attributes.languageCode.validate('zh-Hant')).to.be.false;
     });
 
     it('rejects values that do not match the BCP-47 shape', () => {
-      expect(attributes.language.validate('english')).to.be.false;
-      expect(attributes.language.validate('e')).to.be.false;
-      expect(attributes.language.validate('en-')).to.be.false;
-      expect(attributes.language.validate('en-u')).to.be.false;
-      expect(attributes.language.validate('en-toolong')).to.be.false;
-      expect(attributes.language.validate('en_us')).to.be.false;
-      expect(attributes.language.validate(' en')).to.be.false;
-      expect(attributes.language.validate('en ')).to.be.false;
+      expect(attributes.languageCode.validate('english')).to.be.false;
+      expect(attributes.languageCode.validate('e')).to.be.false;
+      expect(attributes.languageCode.validate('en-')).to.be.false;
+      expect(attributes.languageCode.validate('en-u')).to.be.false;
+      expect(attributes.languageCode.validate('en-toolong')).to.be.false;
+      expect(attributes.languageCode.validate('en_us')).to.be.false;
+      expect(attributes.languageCode.validate(' en')).to.be.false;
+      expect(attributes.languageCode.validate('en ')).to.be.false;
     });
 
     it('rejects empty string and whitespace-only strings', () => {
-      expect(attributes.language.validate('')).to.be.false;
-      expect(attributes.language.validate('   ')).to.be.false;
+      expect(attributes.languageCode.validate('')).to.be.false;
+      expect(attributes.languageCode.validate('   ')).to.be.false;
     });
 
     it('rejects nullish values', () => {
-      expect(attributes.language.validate(null)).to.be.false;
-      expect(attributes.language.validate(undefined)).to.be.false;
+      expect(attributes.languageCode.validate(null)).to.be.false;
+      expect(attributes.languageCode.validate(undefined)).to.be.false;
     });
   });
 
-  describe('brandId attribute (auto-generated by belongs_to Brand)', () => {
+  describe('brandId attribute (explicit FK to brands table)', () => {
     it('is required with a UUID validator', () => {
       const attr = attributes.brandId;
       expect(attr).to.exist;

@@ -34,6 +34,7 @@ import suggestions from './suggestions.fixture.js';
 import fixEntities from './fix-entity.fixture.js';
 import fixEntitySuggestions from './fix-entity-suggestions.fixture.js';
 import pageIntents from './page-intents.fixture.js';
+import preflights from './preflights.fixture.js';
 import reports from './reports.fixture.js';
 import entitlements from './entitlements.fixture.js';
 import trialUsers from './trial-users.fixture.js';
@@ -70,6 +71,7 @@ export default {
   scrapeJobs,
   scrapeUrls,
   pageIntents,
+  preflights,
   reports,
   entitlements,
   trialUsers,

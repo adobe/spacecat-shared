@@ -85,7 +85,6 @@ describe('ConsumerModel', () => {
       expect(Consumer.IMS_ORG_ID_REGEX.test('prefix1234567890ABCDEF12345678@AdobeOrg')).to.be.false;
       expect(Consumer.IMS_ORG_ID_REGEX.test('1234567890ABCDEF12345678@AdobeOrgsuffix')).to.be.false;
     });
-
   });
 
   describe('getters', () => {

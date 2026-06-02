@@ -214,15 +214,14 @@ describe('AEM Detection', () => {
     });
 
     describe('AEM Headless detection', () => {
-      it('should detect AEM Headless via aem-headless pattern', () => {
+      it('should detect AEM Headless via aem-headless string alone', () => {
         const htmlSource = `
           <html>
             <head>
               <meta name="generator" content="aem-headless">
             </head>
             <body>
-              <div class="content">Headless content</div>
-              <img src="/content/dam/mysite/images/hero.jpg" alt="Hero Image">
+              <div id="root"></div>
             </body>
           </html>
         `;
@@ -230,18 +229,72 @@ describe('AEM Detection', () => {
         expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
       });
 
-      it('should detect AEM Headless via /content/dam/ pattern', () => {
+      it('should detect AEM Headless via AEM Headless JS SDK reference', () => {
         const htmlSource = `
           <html>
+            <head>
+              <script src="/static/js/main.chunk.js"></script>
+            </head>
             <body>
-              <img src="/content/dam/mysite/images/hero.jpg" alt="Hero Image">
-              <a href="/content/dam/mysite/documents/brochure.pdf">Download Brochure</a>
-              <div class="aem-headless-component">Headless content</div>
+              <div id="root"></div>
+              <script>
+                // bundle includes @adobe/aem-headless-client-js
+                const client = new AEMHeadless({ serviceURL: 'https://author.example.com' });
+              </script>
             </body>
           </html>
         `;
         const result = detectAEMVersion(htmlSource);
         expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should detect AEM Headless via persisted GraphQL query URL pattern', () => {
+        const htmlSource = `
+          <html>
+            <body>
+              <div id="app"></div>
+              <script>
+                fetch('/graphql/execute.json/my-project/my-query')
+                  .then(res => res.json());
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should detect AEM Headless via _cq_graphql endpoint reference', () => {
+        const htmlSource = `
+          <html>
+            <body>
+              <div id="root"></div>
+              <script>
+                const endpoint = '/content/_cq_graphql/global/endpoint.json';
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT detect a CS site with /content/dam/ images as headless', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-abc123-lc.min.css">
+            </head>
+            <body>
+              <div class="cmp-image" data-cmp-is="image">
+                <img src="/content/dam/mysite/images/hero.jpg" alt="Hero">
+              </div>
+              <div class="cmp-text" data-cmp-is="text">Text</div>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_CS);
       });
     });
 

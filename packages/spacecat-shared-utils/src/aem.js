@@ -107,8 +107,16 @@ export function detectAEMVersion(htmlSource, headers = {}) {
   ];
 
   const aemHeadlessPatterns = [
+    // Explicit headless string references
     /aem-headless/i,
-    /\/content\/dam\//i,
+    // Official AEM Headless JS SDK package reference (in bundles or inline scripts)
+    /@adobe\/aem-headless-client/i,
+    // Broader SDK reference without scoped package name
+    /aem-headless-client/i,
+    // Persisted GraphQL query URL pattern
+    /graphql\/execute\.json/i,
+    // AEM GraphQL endpoint reference (ad-hoc queries)
+    /content\/_cq_graphql\//i,
   ];
 
   // Count matches for each type
@@ -188,6 +196,27 @@ export function detectAEMVersion(htmlSource, headers = {}) {
 
   if (/data-routing="[^"]*cs=([^,"]*)/i.test(normalizedHtml)) {
     csMatches += 5;
+  }
+
+  // Give extra weight to strong headless indicators
+  // 'aem-headless' alone exceeds threshold (+2 on top of pattern match = 3 total)
+  if (/aem-headless/i.test(normalizedHtml)) {
+    aemHeadlessMatches += 2;
+  }
+
+  // Official SDK reference is very distinctive — highly reliable signal
+  if (/@adobe\/aem-headless-client/i.test(normalizedHtml)) {
+    aemHeadlessMatches += 3;
+  }
+
+  // GraphQL persisted query URL is a definitive AEM Headless signal
+  if (/graphql\/execute\.json/i.test(normalizedHtml)) {
+    aemHeadlessMatches += 2;
+  }
+
+  // AEM GraphQL endpoint reference is a definitive AEM Headless signal
+  if (/content\/_cq_graphql\//i.test(normalizedHtml)) {
+    aemHeadlessMatches += 2;
   }
 
   // Determine the most likely version based on match counts

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.74.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.73.3...@adobe/spacecat-shared-data-access-v3.74.0) (2026-06-02)
+
+### Features
+
+* **consumer:** add adminGrants field for per-operation admin-bypass grants ([#1644](https://github.com/adobe/spacecat-shared/issues/1644)) ([b37b4d8](https://github.com/adobe/spacecat-shared/commit/b37b4d8efb5bbff838fc98d6384f62095be6d00c))
+
 ## [@adobe/spacecat-shared-data-access-v3.73.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.73.2...@adobe/spacecat-shared-data-access-v3.73.3) (2026-05-30)
 
 ### Bug Fixes

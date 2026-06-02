@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.18.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.18.1...@adobe/spacecat-shared-tokowaka-client-v1.18.2) (2026-06-02)
+
+### Bug Fixes
+
+* **tokowaka-client:** use scraperConfig headers in edge optimize probe (LLMO-5280) ([#1647](https://github.com/adobe/spacecat-shared/issues/1647)) ([6be14a1](https://github.com/adobe/spacecat-shared/commit/6be14a153ea8d9de010880afaa1c3c9290a32f13))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.18.0...@adobe/spacecat-shared-tokowaka-client-v1.18.1) (2026-06-01)
 
 ### Bug Fixes

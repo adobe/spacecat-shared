@@ -3117,6 +3117,50 @@ describe('TokowakaClient', () => {
       expect(coveredData).to.not.have.property('coveredByDomainWide');
     });
 
+    it('cleans up coveredByDomainWide on path-level suggestions when rolling back domain-wide', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          coveredByDomainWide: 'dw-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, pathSuggestion], updatedBy: 'test@example.com' },
+      );
+
+      expect(result.succeededSuggestions).to.include(dwSuggestion);
+      expect(pathSuggestion.setData.calledOnce).to.be.true;
+      const pathData = pathSuggestion.setData.firstCall.args[0];
+      expect(pathData).to.not.have.property('coveredByDomainWide');
+      expect(pathData).to.have.property('allowedRegexPatterns');
+    });
+
     it('cleans up covered suggestions (coveredByPattern) when rolling back a path-level pattern', async () => {
       const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
       const pathSuggestion = {
@@ -5907,6 +5951,51 @@ describe('TokowakaClient', () => {
 
       // dw2 is domain-wide so should not appear in coveredSuggestions
       expect(result.coveredSuggestions).to.not.include(dw2);
+    });
+
+    it('should mark path-level pattern suggestions as coveredByDomainWide when domain-wide is deployed', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const pathLevel = makeSuggestion('path1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw, pathLevel],
+      });
+
+      expect(result.coveredSuggestions).to.include(pathLevel);
+      expect(pathLevel.getData()).to.have.property('coveredByDomainWide', 'dw1');
+    });
+
+    it('should not mark already-deployed path-level suggestions as coveredByDomainWide', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const pathLevel = makeSuggestion('path1', {
+        allowedRegexPatterns: ['/products/*'],
+        edgeDeployed: Date.now(),
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw, pathLevel],
+      });
+
+      expect(result.coveredSuggestions).to.not.include(pathLevel);
+      expect(pathLevel.getData()).to.not.have.property('coveredByDomainWide');
     });
 
     it('should not mark non-NEW suggestions as covered', async () => {

@@ -133,6 +133,8 @@ describe('Index Exports', () => {
     'toggleWWWHostname',
     'tracingFetch',
     'urlMatchesFilter',
+    'UUID_REGEX',
+    'UUID_V4_REGEX',
     'wwwUrlResolver',
   ];
 

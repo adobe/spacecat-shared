@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-http-utils",
-  "version": "1.27.1",
+  "version": "1.28.2",
   "description": "Shared modules of the Spacecat Services - HTTP Utils",
   "type": "module",
   "engines": {
@@ -37,13 +37,13 @@
     "@adobe/fetch": "4.3.0",
     "@adobe/spacecat-shared-launchdarkly-client": "1.0.4",
     "@adobe/spacecat-shared-utils": "1.81.1",
-    "jose": "6.2.2"
+    "jose": "6.2.3"
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
-    "esmock": "2.7.3",
-    "sinon": "21.0.3"
+    "esmock": "2.7.6",
+    "sinon": "22.0.0"
   }
 }

@@ -15,6 +15,7 @@ import {
 } from '@adobe/spacecat-shared-utils';
 
 import { SchemaBuilderError } from '../../errors/index.js';
+import { uuidv7 } from '../../util/uuid.js';
 import {
   decapitalize,
   entityNameToAllPKValue,
@@ -29,17 +30,15 @@ import Schema from './schema.js';
 
 const DEFAULT_SERVICE_NAME = 'SpaceCat';
 
-/**
- * ID attribute configuration object.
- * Ensures a UUID-based "primary key".
- * @type {object}
- */
+// The DB column default is `uuid_generate_v7()` (mysticat-data-service migration
+// 20250130000001_initial_setup.sql). We mint v7 client-side so the in-memory
+// record matches what the DB would have minted — sortable, locality-friendly.
 const ID_ATTRIBUTE_DATA = {
   type: 'string',
   postgrestField: 'id',
   required: true,
   readOnly: true,
-  default: () => crypto.randomUUID(),
+  default: () => uuidv7(),
   validate: (value) => isValidUUID(value),
 };
 

@@ -14,7 +14,12 @@
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
 const IMS_ORG_ID_REGEX = /[a-z0-9]{24}@AdobeOrg/i;
-const UUID_V4_REGEX = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
+// Matches any RFC 4122 / 9562 UUID variant (v1 through v8). Named `UUID_REGEX`
+// rather than `UUID_V4_REGEX` because the pattern was never v4-specific — the
+// database mints v7 ids since mysticat-data-service migration #1 (Jan 2025).
+const UUID_REGEX = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
+// Deprecated alias retained so older callers don't break. Prefer `UUID_REGEX`.
+const UUID_V4_REGEX = UUID_REGEX;
 
 /**
  * Determines if the given parameter is an array.
@@ -220,7 +225,7 @@ function isValidUrl(urlString) {
  * @return {boolean} True if the given string is a valid UUID.
  */
 function isValidUUID(uuid) {
-  return UUID_V4_REGEX.test(uuid);
+  return UUID_REGEX.test(uuid);
 }
 
 /**
@@ -345,4 +350,6 @@ export {
   isValidIMSOrgId,
   isValidHelixPreviewUrl,
   toBoolean,
+  UUID_REGEX,
+  UUID_V4_REGEX,
 };

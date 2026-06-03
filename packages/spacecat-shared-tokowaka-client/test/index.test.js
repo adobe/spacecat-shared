@@ -3159,6 +3159,11 @@ describe('TokowakaClient', () => {
       const pathData = pathSuggestion.setData.firstCall.args[0];
       expect(pathData).to.not.have.property('coveredByDomainWide');
       expect(pathData).to.have.property('allowedRegexPatterns');
+      // Verify the cleaned-up path suggestion was actually persisted via saveMany
+      expect(client.dataAccess.Suggestion.saveMany).to.have.been.calledWith(
+        sinon.match((arr) => arr.includes(pathSuggestion)),
+        sinon.match.any,
+      );
     });
 
     it('cleans up covered suggestions (coveredByPattern) when rolling back a path-level pattern', async () => {

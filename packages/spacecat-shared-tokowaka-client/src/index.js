@@ -1532,11 +1532,13 @@ class TokowakaClient {
       if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
         return false;
       }
-      if (isPatternSuggestion(s)) {
-        return false;
-      }
       if (s.getData()?.edgeDeployed) {
         return false;
+      }
+      // Path-level pattern suggestions (not domain-wide) are fully covered by a
+      // domain-wide deployment. Other pattern suggestions (including other DW ones) are not.
+      if (isPatternSuggestion(s)) {
+        return coverageField === 'coveredByDomainWide' && !s.getData()?.isDomainWide;
       }
       const url = s.getData()?.url;
       return url && matchers.some((match) => match(url));

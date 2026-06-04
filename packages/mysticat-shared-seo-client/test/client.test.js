@@ -1351,7 +1351,12 @@ describe('SeoClient', () => {
   // ===== getBrokenBacklinks =====
 
   describe('getBrokenBacklinks', () => {
+    // Expected filter string sent to Semrush for Call A (backlinks_pages):
+    //   404 OR 410, follow-only, text-only, no lostlinks
+    const EXPECTED_FILTER = '+|responsecode|Eq|404|Or|responsecode|Eq|410|+|type||follow|+|type||text|-|type||lostlink';
+
     // Real API fixtures (adobe.com, April 2026)
+    // Includes a 410 row to verify those are now captured alongside 404s.
     const brokenPagesCsv = [
       'source_url;response_code;backlinks_num;domains_num',
       'https://www.adobe.com/error-pages/404.html;404;2265988;11065',
@@ -1374,11 +1379,26 @@ describe('SeoClient', () => {
       ';http://www.acrobat.com/;https://www.adobe.com/404.html;75;3',
     ].join('\n');
 
+    it('sends correct quality filters to Semrush (404+410, follow, text, no lostlinks)', async () => {
+      let capturedFilter;
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => {
+          capturedFilter = q.display_filter;
+          return q.type === 'backlinks_pages';
+        })
+        .reply(200, 'source_url;response_code;backlinks_num;domains_num');
+
+      await client.getBrokenBacklinks('adobe.com');
+
+      expect(capturedFilter).to.equal(EXPECTED_FILTER);
+    });
+
     it('returns one high-quality backlink per broken page with full diversity', async () => {
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
         .query((q) => q.type === 'backlinks_pages'
-          && q.display_filter === '+|responsecode|Eq|404')
+          && q.display_filter === EXPECTED_FILTER)
         .reply(200, brokenPagesCsv);
 
       nock(config.apiBaseUrl)

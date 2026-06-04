@@ -744,16 +744,24 @@ export default class SeoClient {
     const epLinks = ENDPOINTS.brokenBacklinks;
     const effectiveLimit = getLimit(limit, 100);
 
-    // Step 1: Find broken (404) target pages, sorted by referring domains
+    // Step 1: Find broken (404/410) target pages with quality filters:
+    //   - 404 OR 410 response codes (gone pages)
+    //   - follow links only (nofollow links carry no SEO value)
+    //   - text links only (more actionable than image/frame links)
+    //   - exclude lostlinks (only active broken backlinks, not already-removed ones)
     const { body: pagesBody, fullAuditRef } = await this.sendRawRequest({
       type: epPages.type,
       target: url,
       target_type: 'domain',
       export_columns: epPages.columns,
       display_limit: effectiveLimit,
-      display_filter: buildFilter([{
-        sign: '+', field: 'responsecode', op: 'Eq', value: '404',
-      }]),
+      display_filter: buildFilter([
+        { sign: '+', field: 'responsecode', op: 'Eq', value: '404' },
+        { sign: 'Or', field: 'responsecode', op: 'Eq', value: '410' },
+        { sign: '+', field: 'type', op: '', value: 'follow' },
+        { sign: '+', field: 'type', op: '', value: 'text' },
+        { sign: '-', field: 'type', op: '', value: 'lostlink' },
+      ]),
       ...epPages.defaultParams,
     }, epPages.path);
     const brokenPages = parseCsvResponse(pagesBody);

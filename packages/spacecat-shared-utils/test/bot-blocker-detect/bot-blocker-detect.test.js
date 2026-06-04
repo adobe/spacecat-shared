@@ -959,6 +959,20 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(0.7);
     });
 
+    it('does not false-positive on "pressure" and "placeholder" in normal page content', () => {
+      const html = '<html><body><p>Monitor your blood pressure at home.</p><input placeholder="Enter value"></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('none');
+    });
+
     it('detects GeeTest interactive challenge', () => {
       const html = '<html><body><div class="geetest_challenge"></div></body></html>';
       const headers = {};

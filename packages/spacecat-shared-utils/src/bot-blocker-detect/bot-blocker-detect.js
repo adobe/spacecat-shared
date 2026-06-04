@@ -326,6 +326,9 @@ function analyzeError(error) {
  *
  * @param {Object} config - Configuration object
  * @param {string} config.baseUrl - The base URL to check
+ * @param {Object} [config.headers={}] - Extra request headers to send alongside the
+ *   probe (e.g. per-site `scraperConfig.headers` so the probe mirrors what the
+ *   real scraper sends). `User-Agent` is always overridden with SPACECAT_USER_AGENT.
  * @param {number} [config.timeout=5000] - Request timeout in milliseconds
  * @param {Object} [config.log=console] - Logger with warn/debug methods
  * @returns {Promise<Object>} Detection result with:
@@ -337,7 +340,12 @@ function analyzeError(error) {
  *   - confidence {number}: Confidence level (0.0-1.0, see confidence level constants)
  * @throws {Error} If baseUrl is not a valid URL
  */
-export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log = console }) {
+export async function detectBotBlocker({
+  baseUrl,
+  headers = {},
+  timeout = DEFAULT_TIMEOUT,
+  log = console,
+}) {
   if (!baseUrl || !isValidUrl(baseUrl)) {
     throw new Error('Invalid baseUrl');
   }
@@ -362,7 +370,11 @@ export async function detectBotBlocker({ baseUrl, timeout = DEFAULT_TIMEOUT, log
     for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
       response = await tracingFetch(currentUrl, { // eslint-disable-line no-await-in-loop
         method: 'GET',
-        headers: { 'User-Agent': SPACECAT_USER_AGENT },
+        // Caller headers first, scraper-owned UA last so it always wins on conflict.
+        // The schema in @adobe/spacecat-shared-data-access already blocks User-Agent
+        // and other reserved names from `scraperConfig.headers`; this ordering is a
+        // belt-and-braces defense for any older callers.
+        headers: { ...headers, 'User-Agent': SPACECAT_USER_AGENT },
         redirect: 'manual',
         timeout,
       });

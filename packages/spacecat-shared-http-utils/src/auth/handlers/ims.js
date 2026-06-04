@@ -85,10 +85,14 @@ function mergeAdminGroupIdents(...groupMaps) {
   );
 }
 
-const IMS_ADMIN_GROUP_IDENT = mergeAdminGroupIdents(
-  ASO_ADMIN_GROUP_IDENT,
-  LLMO_ADMIN_GROUP_IDENT,
+const IMS_ADMIN_GROUP_IDENT = Object.freeze(
+  Object.fromEntries(
+    Object.entries(
+      mergeAdminGroupIdents(ASO_ADMIN_GROUP_IDENT, LLMO_ADMIN_GROUP_IDENT),
+    ).map(([orgIdent, groupIdents]) => [orgIdent, Object.freeze(groupIdents)]),
+  ),
 );
+
 const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {

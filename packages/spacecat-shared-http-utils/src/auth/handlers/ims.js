@@ -129,7 +129,7 @@ function getTenants(organizations) {
  * True when the user belongs to an ASO or LLMO IMS admin group for any org.
  * Used with @adobe.com email to grant the admin scope (hasAdminReadAccess bypass).
  */
-function isUserImsAdmin(organizations) {
+function isUserASOorLLMOAdmin(organizations) {
   if (!organizations) {
     throw new Error('organizations param is required.');
   }
@@ -258,7 +258,7 @@ export default class AdobeImsHandler extends AbstractHandler {
         this.log('User belongs to a read-only org, blocking IMS authentication', 'warn');
         throw new Error('Unauthorized');
       }
-      const isAdmin = isUserImsAdmin(organizations);
+      const isAdmin = isUserASOorLLMOAdmin(organizations);
       const scopes = [];
       if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {
         scopes.push({ name: 'admin' });

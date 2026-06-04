@@ -233,6 +233,41 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(0.5);
     });
 
+    it('forwards caller-supplied headers on the probe request', async () => {
+      // Mirrors the scraper allowlist case (e.g. Akamai Bot Manager requiring
+      // `Accept-Language`): the probe must send the same custom headers the
+      // real scraper sends, otherwise it reports a false-positive block.
+      nock(baseUrl)
+        .matchHeader('Accept-Language', 'en-US')
+        .matchHeader('X-Foo', 'bar')
+        .get('/')
+        .reply(200, '<html></html>');
+
+      const result = await detectBotBlocker({
+        baseUrl,
+        headers: { 'Accept-Language': 'en-US', 'X-Foo': 'bar' },
+      });
+
+      expect(result.crawlable).to.be.true;
+    });
+
+    it('overrides caller-supplied User-Agent with SPACECAT_USER_AGENT', async () => {
+      // The schema in @adobe/spacecat-shared-data-access blocks User-Agent at
+      // write time, but defend in depth: if a caller somehow passes one, the
+      // probe must still identify as the scraper UA.
+      nock(baseUrl)
+        .matchHeader('User-Agent', (v) => v && v !== 'attacker-ua')
+        .get('/')
+        .reply(200, '<html></html>');
+
+      const result = await detectBotBlocker({
+        baseUrl,
+        headers: { 'User-Agent': 'attacker-ua' },
+      });
+
+      expect(result.crawlable).to.be.true;
+    });
+
     it('detects Cloudflare blocking with 403 and cf-ray header', async () => {
       nock(baseUrl)
         .get('/')
@@ -957,6 +992,20 @@ describe('Bot Blocker Detection', () => {
       expect(result.crawlable).to.be.false;
       expect(result.type).to.equal('unknown');
       expect(result.confidence).to.equal(0.7);
+    });
+
+    it('does not false-positive on "pressure" and "placeholder" in normal page content', () => {
+      const html = '<html><body><p>Monitor your blood pressure at home.</p><input placeholder="Enter value"></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('none');
     });
 
     it('detects GeeTest interactive challenge', () => {

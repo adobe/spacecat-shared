@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.18.2...@adobe/spacecat-shared-tokowaka-client-v1.19.0) (2026-06-03)
+
+### Features
+
+* **tokowaka-client:** mark path-level suggestions as coveredByDomainWide on domain-wide deploy ([#1648](https://github.com/adobe/spacecat-shared/issues/1648)) ([9cc5992](https://github.com/adobe/spacecat-shared/commit/9cc5992bb98acf9da48a432fedfbec694d30fe23))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.18.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.18.1...@adobe/spacecat-shared-tokowaka-client-v1.18.2) (2026-06-02)
 
 ### Bug Fixes

@@ -64,7 +64,7 @@ const LLMO_ADMIN_GROUP_IDENT = {
   ],
   '908936ED5D35CC220A495CD4': [
     964401320, // LLMO admin group for prod
-    901092291, // on call engineers (shared with ASO)
+    901092291,
   ],
 };
 
@@ -73,16 +73,16 @@ function mergeAdminGroupIdents(...groupMaps) {
   for (const map of groupMaps) {
     for (const [orgIdent, groupIdents] of Object.entries(map)) {
       if (!merged[orgIdent]) {
-        merged[orgIdent] = [];
+        merged[orgIdent] = new Set();
       }
       for (const groupIdent of groupIdents) {
-        if (!merged[orgIdent].includes(groupIdent)) {
-          merged[orgIdent].push(groupIdent);
-        }
+        merged[orgIdent].add(groupIdent);
       }
     }
   }
-  return merged;
+  return Object.fromEntries(
+    Object.entries(merged).map(([orgIdent, groupSet]) => [orgIdent, [...groupSet]]),
+  );
 }
 
 const IMS_ADMIN_GROUP_IDENT = mergeAdminGroupIdents(
@@ -126,10 +126,10 @@ function getTenants(organizations) {
 }
 
 /**
- * True when the user belongs to an ASO or LLMO IMS admin group for any org.
+ * True when the user belongs to a platform IMS admin group (ASO, LLMO, etc.) for any org.
  * Used with @adobe.com email to grant the admin scope (hasAdminReadAccess bypass).
  */
-function isUserASOorLLMOAdmin(organizations) {
+function isUserPlatformAdmin(organizations) {
   if (!organizations) {
     throw new Error('organizations param is required.');
   }
@@ -258,7 +258,7 @@ export default class AdobeImsHandler extends AbstractHandler {
         this.log('User belongs to a read-only org, blocking IMS authentication', 'warn');
         throw new Error('Unauthorized');
       }
-      const isAdmin = isUserASOorLLMOAdmin(organizations);
+      const isAdmin = isUserPlatformAdmin(organizations);
       const scopes = [];
       if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {
         scopes.push({ name: 'admin' });

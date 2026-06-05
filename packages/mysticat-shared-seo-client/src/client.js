@@ -770,7 +770,9 @@ export default class SeoClient {
       ...parseCsvResponse(pages410Body),
     ]
       .filter((p) => {
-        if (seenUrls.has(p.source_url)) { return false; }
+        if (seenUrls.has(p.source_url)) {
+          return false;
+        }
         seenUrls.add(p.source_url);
         return true;
       })

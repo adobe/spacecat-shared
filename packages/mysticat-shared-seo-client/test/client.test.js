@@ -1401,7 +1401,9 @@ describe('SeoClient', () => {
         .get('/analytics/v1/')
         .times(3)
         .query((q) => {
-          if (q.type === 'backlinks') { capturedLinksFilter = q.display_filter; }
+          if (q.type === 'backlinks') {
+            capturedLinksFilter = q.display_filter;
+          }
           return q.type === 'backlinks';
         })
         .reply(200, backlinkForPage1Csv);

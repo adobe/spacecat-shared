@@ -1464,14 +1464,16 @@ describe('SeoClient', () => {
       expect(result.fullAuditRef).to.include('type=backlinks_pages');
     });
 
-    it('merges 410 pages with 404 pages and sorts by domains_num', async () => {
+    it('merges 410 pages with 404 pages, deduplicates shared URLs, and sorts by domains_num', async () => {
       const pages404Csv = [
         'source_url;response_code;backlinks_num;domains_num',
         'https://example.com/gone404;404;100;50',
+        'https://example.com/shared;404;80;40',
       ].join('\n');
       const pages410Csv = [
         'source_url;response_code;backlinks_num;domains_num',
         'https://example.com/gone410;410;200;100',
+        'https://example.com/shared;410;80;40',
       ].join('\n');
       nockBrokenPages(pages404Csv, pages410Csv);
 
@@ -1485,12 +1487,19 @@ describe('SeoClient', () => {
         .query((q) => q.type === 'backlinks' && q.target === 'https://example.com/gone404')
         .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref2.com;https://example.com/gone404;60;5');
 
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks' && q.target === 'https://example.com/shared')
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref3.com;https://example.com/shared;40;5');
+
       const result = await client.getBrokenBacklinks('example.com', 50);
 
-      expect(result.result.backlinks).to.have.lengthOf(2);
-      // 410 page has higher domains_num → sorted first
+      // shared URL appears in both 404 and 410 — deduplicated to 3 unique pages, not 4
+      expect(result.result.backlinks).to.have.lengthOf(3);
+      // sorted by domains_num: gone410 (100), gone404 (50), shared (40)
       expect(result.result.backlinks[0].url_to).to.equal('https://example.com/gone410');
       expect(result.result.backlinks[1].url_to).to.equal('https://example.com/gone404');
+      expect(result.result.backlinks[2].url_to).to.equal('https://example.com/shared');
     });
 
     it('parallelizes across multiple batches when limit exceeds batch size', async () => {

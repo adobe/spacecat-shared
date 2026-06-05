@@ -756,11 +756,21 @@ export default class SeoClient {
       export_columns: epPages.columns,
       display_limit: effectiveLimit,
       display_filter: buildFilter([
-        { sign: '+', field: 'responsecode', op: 'Eq', value: '404' },
-        { sign: 'Or', field: 'responsecode', op: 'Eq', value: '410' },
-        { sign: '+', field: 'type', op: '', value: 'follow' },
-        { sign: '+', field: 'type', op: '', value: 'text' },
-        { sign: '-', field: 'type', op: '', value: 'lostlink' },
+        {
+          sign: '+', field: 'responsecode', op: 'Eq', value: '404',
+        },
+        {
+          sign: 'Or', field: 'responsecode', op: 'Eq', value: '410',
+        },
+        {
+          sign: '+', field: 'type', op: '', value: 'follow',
+        },
+        {
+          sign: '+', field: 'type', op: '', value: 'text',
+        },
+        {
+          sign: '-', field: 'type', op: '', value: 'lostlink',
+        },
       ]),
       ...epPages.defaultParams,
     }, epPages.path);

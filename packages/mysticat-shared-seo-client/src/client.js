@@ -744,24 +744,55 @@ export default class SeoClient {
     const epLinks = ENDPOINTS.brokenBacklinks;
     const effectiveLimit = getLimit(limit, 100);
 
-    // Step 1: Find broken (404/410) target pages with quality filters:
-    //   - 404 OR 410 response codes (gone pages)
-    //   - follow links only (nofollow links carry no SEO value)
-    //   - text links only (more actionable than image/frame links)
-    //   - exclude lostlinks (only active broken backlinks, not already-removed ones)
-    const { body: pagesBody, fullAuditRef } = await this.sendRawRequest({
+    // Step 1: Find broken target pages — 404 and 410 in parallel (Semrush does not support OR
+    // within a single display_filter, so we issue two requests and merge the results).
+    const pageParams = (code) => ({
       type: epPages.type,
       target: url,
       target_type: 'domain',
       export_columns: epPages.columns,
       display_limit: effectiveLimit,
+      display_filter: buildFilter([{
+        sign: '+', field: 'responsecode', op: 'Eq', value: code,
+      }]),
+      ...epPages.defaultParams,
+    });
+
+    const [{ body: pages404Body, fullAuditRef }, { body: pages410Body }] = await Promise.all([
+      this.sendRawRequest(pageParams('404'), epPages.path),
+      this.sendRawRequest(pageParams('410'), epPages.path),
+    ]);
+
+    // Merge, deduplicate by source_url, re-sort by domains_num descending, cap at limit.
+    const seenUrls = new Set();
+    const brokenPages = [
+      ...parseCsvResponse(pages404Body),
+      ...parseCsvResponse(pages410Body),
+    ]
+      .filter((p) => {
+        if (seenUrls.has(p.source_url)) return false;
+        seenUrls.add(p.source_url);
+        return true;
+      })
+      .sort((a, b) => Number(b.domains_num) - Number(a.domains_num))
+      .slice(0, effectiveLimit);
+
+    if (brokenPages.length === 0) {
+      return { result: { backlinks: [] }, fullAuditRef };
+    }
+
+    // Step 2: For each broken page, fetch the top backlink by authority score with quality filters:
+    //   - follow links only (nofollow links carry no SEO value)
+    //   - text links only (more actionable than image/frame links)
+    //   - exclude lostlinks (only active broken backlinks, not already-removed ones)
+    const brokenUrls = brokenPages.map((p) => p.source_url);
+    const linkResults = await this.fanOut(brokenUrls, (brokenUrl) => this.sendRawRequest({
+      type: epLinks.type,
+      target: brokenUrl,
+      target_type: 'url',
+      export_columns: epLinks.columns,
+      display_limit: 1,
       display_filter: buildFilter([
-        {
-          sign: '+', field: 'responsecode', op: 'Eq', value: '404',
-        },
-        {
-          sign: 'Or', field: 'responsecode', op: 'Eq', value: '410',
-        },
         {
           sign: '+', field: 'type', op: '', value: 'follow',
         },
@@ -772,22 +803,6 @@ export default class SeoClient {
           sign: '-', field: 'type', op: '', value: 'lostlink',
         },
       ]),
-      ...epPages.defaultParams,
-    }, epPages.path);
-    const brokenPages = parseCsvResponse(pagesBody);
-
-    if (brokenPages.length === 0) {
-      return { result: { backlinks: [] }, fullAuditRef };
-    }
-
-    // Step 2: For each broken page, fetch the top backlink by authority score.
-    const brokenUrls = brokenPages.map((p) => p.source_url);
-    const linkResults = await this.fanOut(brokenUrls, (brokenUrl) => this.sendRawRequest({
-      type: epLinks.type,
-      target: brokenUrl,
-      target_type: 'url',
-      export_columns: epLinks.columns,
-      display_limit: 1,
       ...epLinks.defaultParams,
     }, epLinks.path), 'getBrokenBacklinks');
 

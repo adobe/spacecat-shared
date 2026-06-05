@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-utils-v1.117.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.6...@adobe/spacecat-shared-utils-v1.117.0) (2026-06-04)
+
+### Features
+
+* **utils:** accept optional headers in detectBotBlocker ([#1650](https://github.com/adobe/spacecat-shared/issues/1650)) ([e5464d3](https://github.com/adobe/spacecat-shared/commit/e5464d3d4832f685d1540c86262ce6e6f2572740))
+
+## [@adobe/spacecat-shared-utils-v1.116.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.5...@adobe/spacecat-shared-utils-v1.116.6) (2026-06-04)
+
+### Bug Fixes
+
+* tighten press/click.*hold regex to prevent false positives on normal page content ([#1649](https://github.com/adobe/spacecat-shared/issues/1649)) ([96e9c83](https://github.com/adobe/spacecat-shared/commit/96e9c835774a269a1cb120d96819dec10586f908))
+
+## [@adobe/spacecat-shared-utils-v1.116.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.4...@adobe/spacecat-shared-utils-v1.116.5) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
+## [@adobe/spacecat-shared-utils-v1.116.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.3...@adobe/spacecat-shared-utils-v1.116.4) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
 ## [@adobe/spacecat-shared-utils-v1.116.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.2...@adobe/spacecat-shared-utils-v1.116.3) (2026-05-27)
 
 ### Bug Fixes

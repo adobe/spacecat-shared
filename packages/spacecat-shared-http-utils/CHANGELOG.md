@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-http-utils-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.2...@adobe/spacecat-shared-http-utils-v1.29.0) (2026-06-04)
+
+### Features
+
+* add llmo-admin IMS group for admin check ([#1651](https://github.com/adobe/spacecat-shared/issues/1651)) ([0cc647d](https://github.com/adobe/spacecat-shared/commit/0cc647d0a4d3b027c4d61ec80bdbabfcd8c90e06))
+
+## [@adobe/spacecat-shared-http-utils-v1.28.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.1...@adobe/spacecat-shared-http-utils-v1.28.2) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
+## [@adobe/spacecat-shared-http-utils-v1.28.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.0...@adobe/spacecat-shared-http-utils-v1.28.1) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
 ## [@adobe/spacecat-shared-http-utils-v1.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.27.2...@adobe/spacecat-shared-http-utils-v1.28.0) (2026-05-21)
 
 ### Features

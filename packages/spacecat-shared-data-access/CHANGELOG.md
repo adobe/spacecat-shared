@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-data-access-v3.74.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.73.3...@adobe/spacecat-shared-data-access-v3.74.0) (2026-06-02)
+
+### Features
+
+* **consumer:** add adminGrants field for per-operation admin-bypass grants ([#1644](https://github.com/adobe/spacecat-shared/issues/1644)) ([b37b4d8](https://github.com/adobe/spacecat-shared/commit/b37b4d8efb5bbff838fc98d6384f62095be6d00c))
+
+## [@adobe/spacecat-shared-data-access-v3.73.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.73.2...@adobe/spacecat-shared-data-access-v3.73.3) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
+## [@adobe/spacecat-shared-data-access-v3.73.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.73.1...@adobe/spacecat-shared-data-access-v3.73.2) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-data-access-v3.73.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.73.0...@adobe/spacecat-shared-data-access-v3.73.1) (2026-05-28)
+
+### Bug Fixes
+
+* **data-access:** declare Preflight createdBy/error as 'any' so Service construction succeeds ([#1636](https://github.com/adobe/spacecat-shared/issues/1636)) ([4097963](https://github.com/adobe/spacecat-shared/commit/40979638bc65c6e29a1b9cd7b25608ad376161ed)), closes [adobe/spacecat-shared#1601](https://github.com/adobe/spacecat-shared/issues/1601)
+
+## [@adobe/spacecat-shared-data-access-v3.73.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.72.1...@adobe/spacecat-shared-data-access-v3.73.0) (2026-05-28)
+
+### Features
+
+* **data-access:** rename BrandSemrushProject accessors (LLMO-5190) ([#1635](https://github.com/adobe/spacecat-shared/issues/1635)) ([f97b09d](https://github.com/adobe/spacecat-shared/commit/f97b09df6f15323baa74ede7aa1f431ba7d68293))
+
 ## [@adobe/spacecat-shared-data-access-v3.72.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.72.0...@adobe/spacecat-shared-data-access-v3.72.1) (2026-05-28)
 
 ### Bug Fixes

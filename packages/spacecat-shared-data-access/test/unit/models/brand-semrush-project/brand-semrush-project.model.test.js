@@ -77,25 +77,25 @@ describe('BrandSemrushProjectModel', () => {
     });
   });
 
-  describe('semrushLocationId', () => {
-    it('gets semrushLocationId', () => {
-      expect(instance.getSemrushLocationId()).to.equal(2840);
+  describe('geoTargetId', () => {
+    it('gets geoTargetId', () => {
+      expect(instance.getGeoTargetId()).to.equal(2840);
     });
 
-    it('sets semrushLocationId', () => {
-      instance.setSemrushLocationId(2826);
-      expect(instance.getSemrushLocationId()).to.equal(2826);
+    it('sets geoTargetId', () => {
+      instance.setGeoTargetId(2826);
+      expect(instance.getGeoTargetId()).to.equal(2826);
     });
   });
 
-  describe('language', () => {
-    it('gets language', () => {
-      expect(instance.getLanguage()).to.equal('en');
+  describe('languageCode', () => {
+    it('gets languageCode', () => {
+      expect(instance.getLanguageCode()).to.equal('en');
     });
 
-    it('sets language', () => {
-      instance.setLanguage('de');
-      expect(instance.getLanguage()).to.equal('de');
+    it('sets languageCode', () => {
+      instance.setLanguageCode('de');
+      expect(instance.getLanguageCode()).to.equal('de');
     });
   });
 });

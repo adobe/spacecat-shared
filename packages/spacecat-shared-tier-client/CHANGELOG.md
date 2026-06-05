@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-tier-client-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.6.2...@adobe/spacecat-shared-tier-client-v1.6.3) (2026-06-03)
+
+### Bug Fixes
+
+* TierClient.getFirstEnrollment() to return entitlement for paid o… ([#1603](https://github.com/adobe/spacecat-shared/issues/1603)) ([f322ae0](https://github.com/adobe/spacecat-shared/commit/f322ae0ec5d007f64c83fc88c958c739842a6d08))
+
+## [@adobe/spacecat-shared-tier-client-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.6.1...@adobe/spacecat-shared-tier-client-v1.6.2) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
 ## [@adobe/spacecat-shared-tier-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.6.0...@adobe/spacecat-shared-tier-client-v1.6.1) (2026-05-23)
 
 ### Bug Fixes

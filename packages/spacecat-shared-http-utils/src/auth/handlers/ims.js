@@ -37,7 +37,11 @@ const IGNORED_PROFILE_PROPS = [
   'aa_id',
 ];
 
-const ADMIN_GROUP_IDENT = {
+/**
+ * ASO (Sites Optimizer) IMS admin groups.
+ * Keep in sync with auth-service ADMIN_GROUP_IDENT_BY_PRODUCT.ASO.
+ */
+const ASO_ADMIN_GROUP_IDENT = {
   '8C6043F15F43B6390A49401A': [ // IMS admin group for stag
     635541219,
   ],
@@ -52,6 +56,43 @@ const ADMIN_GROUP_IDENT = {
     945802231, // IMS admin group for AEM Showcase org users
   ],
 };
+
+/** LLMO IMS admin groups — keep in sync with auth-service ADMIN_GROUP_IDENT_BY_PRODUCT.LLMO */
+const LLMO_ADMIN_GROUP_IDENT = {
+  '8C6043F15F43B6390A49401A': [ // LLMO admin group for stag
+    748308943,
+  ],
+  '908936ED5D35CC220A495CD4': [
+    964401320, // LLMO admin group for prod
+    901092291,
+  ],
+};
+
+function mergeAdminGroupIdents(...groupMaps) {
+  const merged = {};
+  for (const map of groupMaps) {
+    for (const [orgIdent, groupIdents] of Object.entries(map)) {
+      if (!merged[orgIdent]) {
+        merged[orgIdent] = new Set();
+      }
+      for (const groupIdent of groupIdents) {
+        merged[orgIdent].add(groupIdent);
+      }
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(merged).map(([orgIdent, groupSet]) => [orgIdent, [...groupSet]]),
+  );
+}
+
+const IMS_ADMIN_GROUP_IDENT = Object.freeze(
+  Object.fromEntries(
+    Object.entries(
+      mergeAdminGroupIdents(ASO_ADMIN_GROUP_IDENT, LLMO_ADMIN_GROUP_IDENT),
+    ).map(([orgIdent, groupIdents]) => [orgIdent, Object.freeze(groupIdents)]),
+  ),
+);
+
 const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {
@@ -88,13 +129,17 @@ function getTenants(organizations) {
   }));
 }
 
-function isUserASOAdmin(organizations) {
+/**
+ * True when the user belongs to a platform IMS admin group (ASO, LLMO, etc.) for any org.
+ * Used with @adobe.com email to grant the admin scope (hasAdminReadAccess bypass).
+ */
+function isUserPlatformAdmin(organizations) {
   if (!organizations) {
     throw new Error('organizations param is required.');
   }
 
   return organizations.some((org) => {
-    const adminGroupsForOrg = ADMIN_GROUP_IDENT[org.orgRef.ident];
+    const adminGroupsForOrg = IMS_ADMIN_GROUP_IDENT[org.orgRef.ident];
     if (!adminGroupsForOrg) {
       return false;
     }
@@ -217,7 +262,7 @@ export default class AdobeImsHandler extends AbstractHandler {
         this.log('User belongs to a read-only org, blocking IMS authentication', 'warn');
         throw new Error('Unauthorized');
       }
-      const isAdmin = isUserASOAdmin(organizations);
+      const isAdmin = isUserPlatformAdmin(organizations);
       const scopes = [];
       if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {
         scopes.push({ name: 'admin' });

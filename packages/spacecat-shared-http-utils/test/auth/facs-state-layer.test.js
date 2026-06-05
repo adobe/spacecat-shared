@@ -36,23 +36,33 @@ function fakePostgrestClient(result) {
 describe('findFacsResourceBinding', () => {
   const keys = {
     imsOrgId: 'ACME-ORG@AdobeOrg',
+    product: 'LLMO',
     subjectType: 'user',
     subjectId: 'ABC123@AdobeID',
     resourceType: 'brand',
     resourceId: 'brand-abc',
   };
 
-  it('returns the row when PostgREST resolves data (active binding exists)', async () => {
-    const client = fakePostgrestClient({ data: { id: 'row-1' }, error: null });
+  it('returns the row (id + granted_capabilities) when PostgREST resolves data', async () => {
+    const client = fakePostgrestClient({
+      data: { id: 'row-1', granted_capabilities: ['llmo/can_configure'] },
+      error: null,
+    });
     const out = await findFacsResourceBinding(client, keys);
-    expect(out).to.deep.equal({ id: 'row-1' });
+    expect(out).to.deep.equal({
+      id: 'row-1',
+      granted_capabilities: ['llmo/can_configure'],
+    });
     expect(client.from.calledOnceWithExactly('facs_access_mappings')).to.be.true;
   });
 
-  it('selects only the id column (existence check, no payload)', async () => {
-    const client = fakePostgrestClient({ data: { id: 'row-1' }, error: null });
+  it('selects id and granted_capabilities columns', async () => {
+    const client = fakePostgrestClient({
+      data: { id: 'row-1', granted_capabilities: [] },
+      error: null,
+    });
     await findFacsResourceBinding(client, keys);
-    expect(client.builder.select.calledOnceWithExactly('id')).to.be.true;
+    expect(client.builder.select.calledOnceWithExactly('id, granted_capabilities')).to.be.true;
   });
 
   it('returns null when PostgREST resolves data: null (no active binding)', async () => {
@@ -67,12 +77,13 @@ describe('findFacsResourceBinding', () => {
     expect(out).to.equal(null);
   });
 
-  it('passes every binding key as an .eq() filter — NO facs_permission column', async () => {
+  it('passes every binding key as an .eq() filter — including product', async () => {
     const client = fakePostgrestClient({ data: null, error: null });
     await findFacsResourceBinding(client, keys);
     const eqCalls = client.builder.eq.getCalls().map((c) => c.args);
     expect(eqCalls).to.deep.equal([
       ['ims_org_id', 'ACME-ORG@AdobeOrg'],
+      ['product', 'LLMO'],
       ['subject_type', 'user'],
       ['subject_id', 'ABC123@AdobeID'],
       ['resource_type', 'brand'],

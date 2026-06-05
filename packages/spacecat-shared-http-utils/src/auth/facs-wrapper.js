@@ -67,9 +67,6 @@ function internalServerError(message) {
  * Checks whether the request matches a route in ANY product's sub-map.
  * Used to distinguish "FACS-governed route called without the right
  * x-product header" (deny) from "non-FACS route" (bypass).
- *
- * Per-request cost is bounded by the number of products (typically <5);
- * each call to resolveRouteCapability is an O(routes-in-product) hash check.
  */
 function routeMatchesAnyProductMap(context, productsRoutes) {
   for (const productMap of Object.values(productsRoutes)) {
@@ -84,79 +81,77 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
 /**
  * FACS authorization wrapper for the helix-shared-wrap `.with()` chain.
  *
- * Enforces FACS permissions for external customer users on a route-by-route basis,
- * gated by per-product LaunchDarkly feature flags. Internal identities
- * (admin / S2S / read-only admin) and Adobe internal IMS orgs always bypass.
+ * Implements the **hybrid permission model** (see
+ * `mysticat-architecture/platform/decisions/rebac-hybrid-permission-model.md`
+ * and `mac-state-layer.md` §"State Layer Evaluation Engine"):
  *
- * ## Expected `routeFacsCapabilities` shape
+ *     effectiveCapabilities(user, resource, product) =
+ *         facsGrants(user, product)                    -- from JWT
+ *       ∪ stateGrants(user, resource, product)         -- from facs_access_mappings
+ *
+ * The route's required capability must be a member of the effective set.
+ * Grants are additive and grant-only — there is no deny record and no role
+ * bundle; each capability is evaluated individually.
+ *
+ * ## `routeFacsCapabilities` shape
  *
  * ```
  * {
- *   INTERNAL_ROUTES: ['METHOD /path', ...],   // accepted, ignored by the wrapper
+ *   INTERNAL_ROUTES: ['METHOD /path', ...],   // informational, ignored
  *   PRODUCTS_ROUTES: {
- *     LLMO: { 'METHOD /path': 'llmo/can_*', ... },   // values are FULL permissions
+ *     LLMO: { 'METHOD /path': 'llmo/can_configure', ... }, // value: capability
  *     ASO:  { ... },
- *     ACO:  { ... },
- *   }
+ *   },
+ *   PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
+ *     LLMO: { brand: ['brandId'] },
+ *     ASO:  { site:  ['siteId']  },
+ *   },
  * }
  * ```
  *
- * - `PRODUCTS_ROUTES[<PRODUCT>]` holds the customer-facing route → permission
- *   map for that product. Values are fully-qualified permission strings
- *   (e.g. `'llmo/can_view'`); the wrapper does NOT compose `<product>/<action>`
- *   at runtime — each product authors its own role/permission vocabulary.
- * - `INTERNAL_ROUTES` is informational only (callers use it to assert a
- *   coverage invariant: `routes(product) ∪ INTERNAL_ROUTES = all_routes`).
- *   The wrapper does not act on it: internal endpoints are already covered by
- *   the identity bypass (admin / S2S / read-only admin / Adobe internal org)
- *   for callers permitted to reach them, and by deny-by-default below for
- *   external customers (any route absent from the product map → 403).
+ * - Each route value is a single fully-qualified `<product>/<capability>`
+ *   string. The hybrid model collapsed the previous any-of array semantics:
+ *   one route guards one capability.
+ * - The previous `PRODUCTS_FACS_ADMIN_PERMISSIONS` and
+ *   `PRODUCTS_FACS_STATE_LAYER_EXEMPT_PERMISSIONS` config keys are removed.
+ *   Universal grants flow through the JWT claim; product-admin bypass and
+ *   exempt lists are no longer part of the model.
  *
  * ## Bypass rules (fail-closed)
  *
- * 0. CORS preflight (`OPTIONS`) → bypass.
- * 1. Internal identities (`is_admin`, `is_s2s_admin`, `is_s2s_consumer`,
- *    `is_read_only_admin`, and api-key auth types `legacyApiKey` /
- *    `scopedApiKey`) → bypass.
- * 2. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) → bypass.
- * 3. Route NOT in any product map → bypass (not FACS-governed, e.g.
- *    `/heartbeat`, S2S-only paths).
- *    Route IS in some product map but `x-product` is missing or names a
- *    product whose sub-map doesn't list it → **403** (fail-closed; can't
- *    pick the right policy without the header).
- * 4. Per-product LaunchDarkly flag gate:
- *    - flag entry present + returns true  → proceed to enforcement
- *    - flag entry present + returns false → bypass (rollout off for org)
- *    - flag entry absent (retirement)     → bypass the rollout gate,
- *      proceed to enforcement (universal)
- *    - LD ctor failure or eval rejection  → **503** (fail-closed)
+ *   0. CORS preflight (`OPTIONS`) → bypass.
+ *   1. Internal identities (admin, S2S, read-only admin, api-key) → bypass.
+ *   2. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) → bypass.
+ *   3. Route NOT in any product map → bypass.
+ *      Route IS in some product map but `x-product` is missing / mismatched
+ *      → 403 (can't pick the right policy without the header).
+ *   4. Per-product LaunchDarkly flag gate (off → bypass; ctor / eval fail
+ *      → 503).
  *
- * Otherwise: route lookup in the product map. Missing required permission
- * → 403. Per-product `PRODUCTS_FACS_ADMIN_PERMISSIONS` holder → bypass.
- * Held permission in `PRODUCTS_FACS_STATE_LAYER_EXEMPT_PERMISSIONS` →
- * bypass. Otherwise, state-layer binding lookup; missing binding → 403.
+ * After bypasses, the wrapper:
  *
- * ## Phase 2 state-layer (ReBAC) check
+ *   5. Resolves the request's ReBAC resource via `resolveFacsResource`. When
+ *      the resolver returns `null` — either the product has no ReBAC scope,
+ *      or the route is not scoped to a ReBAC entity — the wrapper **defers
+ *      to the controller** (calls `fn(request, context)` unchanged). This
+ *      handles both "no resource present" and "resource present but not
+ *      ReBAC-scoped" symmetrically: the controller is the only layer with
+ *      enough context to police those routes, and a deny here would block
+ *      legitimate non-ReBAC traffic (e.g. LLMO suggestion writes that LLMO
+ *      doesn't model as ReBAC entities).
  *
- * After the JWT claim check passes, the wrapper resolves the request's
- * ReBAC resource (via `resolveFacsResource`) and looks up `facs_access_mappings`
- * via PostgREST for a user-scoped OR org-scoped grant. Missing mapping → 403.
- * Routes without a resolvable resource (listing endpoints, queries, the
- * management endpoints themselves) skip the state-layer check entirely.
+ *   6. Reads the active `facs_access_mappings` row for
+ *      `(user, resource, org, product)`, then `(org, resource, org, product)`.
+ *      Either is sufficient. The row's `granted_capabilities` are unioned
+ *      with the JWT's `facs_permissions` to form the effective set.
  *
- * The wrapper reads `postgrestClient` from `context.dataAccess.services` —
- * the same contract every other SpaceCat consumer of the data-access wrapper
- * uses. When the postgrest client is absent (no `dataAccess` wrapper upstream
- * in the chain), the state-layer step is skipped. Phase 2 only fires when
- * `PRODUCTS_FACS_RESOURCE_PARAM_ALIASES` declares a ReBAC scope for the
- * request's product AND postgrestClient is available.
+ *   7. Requires `routeCapability ∈ effectiveSet`. Missing → 403.
  *
  * @param {Function} fn - The handler to wrap.
  * @param {{ routeFacsCapabilities: {
  *   INTERNAL_ROUTES?: string[],
- *   PRODUCTS_ROUTES: Object<string, Object<string, string[]>>,
+ *   PRODUCTS_ROUTES: Object<string, Object<string, string>>,
  *   PRODUCTS_FACS_RESOURCE_PARAM_ALIASES?: Object<string, Object<string, string[]>>,
- *   PRODUCTS_FACS_STATE_LAYER_EXEMPT_PERMISSIONS?: Object<string, string[]>,
  * }}} opts
  * @returns {Function} A wrapped handler.
  */
@@ -171,23 +166,15 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
 
   const productsRoutes = routeFacsCapabilities.PRODUCTS_ROUTES;
 
-  // Validate every route value is a non-empty array of strings at construction
-  // time — the wrapper never has to branch on `Array.isArray(...)` per request,
-  // and a misconfigured map fails at startup rather than at the first request.
+  // Validate every route value is a fully-qualified `<product>/<capability>`
+  // string. Misconfigured maps fail at startup rather than the first request.
   for (const [product, routes] of Object.entries(productsRoutes)) {
     for (const [route, value] of Object.entries(routes || {})) {
-      if (!Array.isArray(value) || value.length === 0) {
+      if (typeof value !== 'string' || !value.includes('/')) {
         throw new Error(
-          `facsWrapper: ${product} '${route}' must be a non-empty array of permission strings`,
+          `facsWrapper: ${product} '${route}' must be a fully-qualified `
+          + `'<product>/<capability>' string, got ${JSON.stringify(value)}`,
         );
-      }
-      for (const perm of value) {
-        if (typeof perm !== 'string' || !perm.includes('/')) {
-          throw new Error(
-            `facsWrapper: ${product} '${route}' has invalid permission ${JSON.stringify(perm)} `
-            + '(expected fully-qualified \'<product>/<action>\')',
-          );
-        }
       }
     }
   }
@@ -198,52 +185,23 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     routeFacsCapabilities.PRODUCTS_FACS_RESOURCE_PARAM_ALIASES,
   );
 
-  // Per-product set of permissions that bypass the Phase 2 state-layer check.
-  // Held-permission matches against this set skip the resource lookup
-  // entirely (e.g. llmo/can_view_all is global by design; llmo/can_manage_user
-  // gates the management endpoints and must not recurse into the state layer).
-  const exemptByProduct = new Map();
-  for (const [product, perms] of Object.entries(
-    routeFacsCapabilities.PRODUCTS_FACS_STATE_LAYER_EXEMPT_PERMISSIONS || {},
-  )) {
-    exemptByProduct.set(product.toUpperCase(), new Set(perms || []));
-  }
-
   return async (request, context) => {
     const { log } = context;
 
-    // Route identity included in every bypass/grant log so operators can grep
-    // for "what did FACS do with `POST /sites/123/audits`" without correlating
-    // by request id.
     const method = context.pathInfo?.method;
     const suffix = context.pathInfo?.suffix;
 
-    // (0) CORS preflight — Fastly forwards `x-product` on OPTIONS in this
-    // deployment, so the "no x-product" bypass below would NOT catch it.
-    // Preflight has no credentials and no business intent; bypass early.
+    // (0) CORS preflight bypass.
     if (method === 'OPTIONS') {
       log.info({
-        tag: 'facs',
-        bypass: 'options-preflight',
-        method,
-        suffix,
+        tag: 'facs', bypass: 'options-preflight', method, suffix,
       }, 'FACS bypass: CORS preflight');
       return fn(request, context);
     }
 
     const authInfo = context.attributes?.authInfo;
 
-    // (1) Internal identities — FACS applies to external customer users only.
-    //
-    // Includes API-key auth surfaces (`legacyApiKey`, `scopedApiKey`): these
-    // are issued to Adobe-controlled services and operators, never to
-    // customer end-users. The legacy api-key handler doesn't set
-    // `is_admin: true` on its profile (it sets `user_id: 'admin'` or
-    // `'legacy-user'`), so without an explicit getType() check api-key
-    // requests would fall through to the FACS-governance gate and 403 on
-    // FACS-mapped routes — even though they were never the target audience.
-    // Matches how `is_s2s_admin` / `is_s2s_consumer` are bypassed: same
-    // intent (internal trust), different transport.
+    // (1) Internal identities bypass — FACS applies to external customers only.
     const authType = authInfo?.getType?.();
     if (
       authInfo?.isAdmin?.()
@@ -267,17 +225,12 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       return fn(request, context);
     }
 
-    // Tenant scoping — see Identifiers and flags table in mac-state-layer.md.
-    // getTenantIds() returns an array because the underlying claim is multi-
-    // valued, but the SpaceCat login flow always populates exactly one entry.
-    // A length > 1 is a configuration violation that the login flow shouldn't
-    // have produced; fail closed with a 500 so it surfaces in alerting rather
-    // than silently picking one tenant.
+    // Tenant scoping. getTenantIds() is multi-valued by claim but always
+    // single-entry in the SpaceCat login flow; >1 is a misconfiguration.
     const tenantIds = authInfo?.getTenantIds?.() || [];
     if (tenantIds.length > 1) {
       log.error({
-        tag: 'facs',
-        tenantCount: tenantIds.length,
+        tag: 'facs', tenantCount: tenantIds.length,
       }, 'authInfo.getTenantIds() returned more than one tenant — failing closed');
       return internalServerError('Multi-tenant sessions are not supported');
     }
@@ -287,43 +240,24 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     const internalImsOrgIds = parseFacsExceptionInternalOrgs(context.env);
     if (orgId && internalImsOrgIds.has(orgId)) {
       log.info({
-        tag: 'facs',
-        bypass: 'internal-adobe-org',
-        method,
-        suffix,
-        org: orgId,
+        tag: 'facs', bypass: 'internal-adobe-org', method, suffix, org: orgId,
       }, 'FACS bypass: Adobe internal IMS org');
       return fn(request, context);
     }
 
     // (3) FACS-governance gate based on x-product header + route membership.
-    //
-    // Three cases:
-    //   (a) Route NOT in any product map and x-product missing/unknown
-    //       → bypass (not FACS-governed; e.g. /heartbeat, S2S admin paths).
-    //   (b) Route IS in some product map but x-product is missing or names
-    //       a product whose sub-map doesn't list this route → 403
-    //       (fail-closed; we can't pick the right policy without the header).
-    //   (c) Route IS in the product map matching x-product → proceed to LD.
     const productCode = context.pathInfo?.headers?.[X_PRODUCT_HEADER]?.toLowerCase();
     const productMap = productCode ? productsRoutes[productCode.toUpperCase()] : undefined;
     const routeInThisProduct = productMap && Object.keys(productMap).length > 0
       && resolveRouteCapability(context, productMap) !== null;
 
     if (!routeInThisProduct) {
-      // Either no x-product, an unknown product, or a product whose sub-map
-      // doesn't list this route. Decide between (a) and (b) by checking
-      // whether ANY other product's sub-map claims the route.
       if (routeMatchesAnyProductMap(context, productsRoutes)) {
         log.warn({
-          tag: 'facs',
-          method,
-          suffix,
-          xProduct: productCode || null,
+          tag: 'facs', method, suffix, xProduct: productCode || null,
         }, 'FACS-governed route called without matching x-product — denying');
         return forbidden('x-product header required for FACS-governed routes');
       }
-      // Truly non-FACS route → bypass.
       log.info({
         tag: 'facs',
         bypass: 'route-not-facs-governed',
@@ -335,24 +269,11 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     }
 
     // (4) Per-product LaunchDarkly flag gate.
-    //
-    // Three outcomes:
-    //   (a) flagKey present + LD returns true  → proceed to enforcement
-    //   (b) flagKey present + LD returns false → bypass (rollout off for org)
-    //   (c) flagKey absent                     → bypass the rollout gate and
-    //       proceed to enforcement (flag retirement: enforcement is universal
-    //       for the product — see "Flag retirement" in mac-state-layer.md)
-    //
-    // LD ctor failure or eval rejection is fail-closed (503) — the wrapper
-    // cannot determine flag state, so cannot make a defensible decision.
-    // This is the opposite of the previous "fail-open bypass" behaviour
-    // which would silently downgrade enforcement on LD outages.
     const flagKey = FT_MAC_FACS_PERMISSIONS[productCode.toUpperCase()];
     if (flagKey) {
       if (!orgId) {
         log.warn({
-          tag: 'facs',
-          product: productCode,
+          tag: 'facs', product: productCode,
         }, 'No tenant on authInfo for FACS evaluation — denying');
         return forbidden('Tenant required for FACS evaluation');
       }
@@ -367,11 +288,6 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       }
       let isFacsEnabled;
       try {
-        // The `@AdobeOrg` suffix is the LaunchDarkly contract; auth-service
-        // derives the real suffix from org.orgRef.authSrc at login time and
-        // the tenant id at this layer is the bare ident. Hardcoded for now
-        // (matches existing precedent in readOnlyAdminWrapper); follow-on
-        // change extends this to use the canonical suffix end-to-end.
         isFacsEnabled = await ldClient.isFlagEnabledForIMSOrg(flagKey, `${orgId}@AdobeOrg`);
       } catch (e) {
         log.error({
@@ -393,195 +309,152 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       }
     } else {
       log.info({
-        tag: 'facs',
-        method,
-        suffix,
-        product: productCode,
+        tag: 'facs', method, suffix, product: productCode,
       }, 'FACS: no LD flag entry for product — flag retired, enforcement universal');
     }
 
-    // By the time we reach here, step 3 above has already established that
-    // the route is in `productMap` (that's how `routeInThisProduct` became
-    // true and we proceeded past the fail-closed gate). So the lookup must
-    // succeed; if it ever didn't, the wrapper would have already bypassed
-    // or 403'd above. resolveRouteCapability is called once more to hand
-    // the matched permission array forward to the held-permission step.
-    // Route values are validated at wrapper construction to be non-empty
-    // `string[]` with any-of semantics.
-    const requiredPermissions = resolveRouteCapability(context, productMap);
+    // Route is in this product's sub-map (step 3 established this); the
+    // lookup must succeed.
+    const routeCapability = resolveRouteCapability(context, productMap);
+    const upperProduct = productCode.toUpperCase();
 
-    // Held-permission resolution prefers a state-layer-exempt permission
-    // when the user holds one — regardless of the route's listing order.
-    // Without this, a user who legitimately holds both an exempt and a
-    // brand-scoped permission (e.g. `llmo_manager` holds both `can_view_all`
-    // and `can_view`) could be incorrectly forced through the state-layer
-    // check if `can_view` happened to be listed first, denying the
-    // universal access their exempt permission grants.
-    //
-    // The exempt set is per-product; missing or empty exempt sets reduce
-    // this to plain first-match-wins.
-    const exemptPermissions = exemptByProduct.get(productCode.toUpperCase());
-    const heldExemptPermission = exemptPermissions?.size
-      ? requiredPermissions.find(
-        (p) => exemptPermissions.has(p) && authInfo?.hasFacsPermission?.(p),
-      )
-      : undefined;
-    const heldPermission = heldExemptPermission
-      ?? requiredPermissions.find((p) => authInfo?.hasFacsPermission?.(p));
-    if (!heldPermission) {
-      log.warn({
-        tag: 'facs',
-        permissions: requiredPermissions,
-        user: resolveUserIdent(authInfo),
-      }, 'FACS permission denied');
-      return forbidden('Forbidden');
-    }
-
-    // Phase 2: state-layer (ReBAC) check.
-    //
-    // Short-circuit when the held permission is in the per-product exempt
-    // list (e.g. llmo/can_view_all is global by design; llmo/can_manage_user
-    // gates the management endpoints and must not recurse into the state
-    // layer it manages). When the held permission was resolved by the exempt-
-    // preference logic above, this `has(...)` check is guaranteed to be true;
-    // it also catches the case where a non-exempt-prefers route happens to
-    // resolve to an exempt held permission via plain first-match.
-    if (exemptPermissions?.has(heldPermission)) {
-      log.info({
-        tag: 'facs',
-        grant: 'state-layer-exempt',
-        method,
-        suffix,
-        permission: heldPermission,
-        product: productCode,
-        org: orgId,
-        user: resolveUserIdent(authInfo),
-      }, 'FACS grant: state-layer-exempt permission held');
-      return fn(request, context);
-    }
-
-    // Otherwise resolve the request's resource and require a matching mapping
-    // (user-scoped OR org-scoped). Routes without a resolvable resource
-    // (listings, global queries) skip the state-layer check entirely —
-    // Phase 1 was sufficient.
+    // (5) Resolve the ReBAC resource. When the resolver returns null — the
+    // product has no ReBAC scope, or the route doesn't carry a ReBAC entity —
+    // defer to the controller. We don't deny here: a route may legitimately
+    // operate on entities the product hasn't modelled as ReBAC (e.g. LLMO
+    // doesn't ReBAC-scope suggestions), and the controller is the only layer
+    // with enough context to police those.
     const routePattern = findMatchedRouteKey(context, productMap);
-    // `enrichPathInfo` (helix middleware) does NOT populate `pathInfo.params` —
-    // it only sets method / headers / route / suffix. Path-param extraction is
-    // done by the route matcher AFTER all middleware completes, so reading
-    // `context.pathInfo?.params` here yields `undefined` and Phase 2 would
-    // miss every URL-bound resource. Extract params from the matched route
-    // pattern + the request suffix ourselves so the LIFO scan in
-    // `resolveFacsResource` actually has values to consume.
     const routeParams = extractRouteParams(context, productMap);
     const resource = resolveFacsResource({
-      productCode: productCode.toUpperCase(),
+      productCode: upperProduct,
       routePattern,
       params: routeParams,
       body: context.data,
+      query: context.pathInfo?.searchParams,
       aliasLookupsPerProduct,
     });
-    if (resource) {
-      const postgrestClient = context.dataAccess?.services?.postgrestClient;
-      if (!postgrestClient) {
-        // No data-access wrapper in the chain → cannot read state layer.
-        // Skip silently so non-postgrest deployments aren't affected; the
-        // dataAccessWrapper is required upstream of facsWrapper for any
-        // service that wants Phase 2 enforcement.
+
+    if (!resource) {
+      log.info({
+        tag: 'facs',
+        defer: 'no-resolvable-resource',
+        method,
+        suffix,
+        capability: routeCapability,
+        product: productCode,
+        org: orgId,
+        user: resolveUserIdent(authInfo),
+      }, 'FACS defer-to-controller: no ReBAC-scoped resource for this request');
+      return fn(request, context);
+    }
+
+    // (6) State-layer read — additive to the JWT. Tries user-scoped first,
+    // then org-scoped; either is sufficient and they're stored symmetrically.
+    const postgrestClient = context.dataAccess?.services?.postgrestClient;
+    if (!postgrestClient) {
+      // No data-access wrapper in the chain → cannot read state layer.
+      // Fall back to the JWT-only effective set. The dataAccessWrapper is
+      // required upstream of facsWrapper for any service that wants the
+      // state-layer grants visible.
+      const facsOnlyGranted = !!authInfo?.hasFacsPermission?.(routeCapability);
+      if (facsOnlyGranted) {
         log.info({
           tag: 'facs',
-          grant: 'no-postgrest-client',
+          grant: 'jwt-only-no-postgrest',
           method,
           suffix,
-          permission: heldPermission,
+          capability: routeCapability,
           product: productCode,
           org: orgId,
           user: resolveUserIdent(authInfo),
-        }, 'FACS grant: postgrestClient absent — skipping state-layer check');
+        }, 'FACS grant: JWT carries capability; postgrestClient absent, state layer skipped');
         return fn(request, context);
       }
-
-      const subjectUserId = resolveUserIdent(authInfo);
-      // Normalise the bare tenant ident into the canonical `<ident>@<authSrc>`
-      // form the state-layer schema stores (see normalizeImsOrgId / the
-      // mac-state-layer.md "Org identifier" subsection). Both filters AND
-      // the org-scoped subjectId use the same canonical value.
-      const canonicalImsOrgId = normalizeImsOrgId(orgId);
-      // Try user-scoped binding first, fall back to org-scoped. Either is
-      // sufficient — they're stored in the same table and read symmetrically.
-      // The lookup carries no capability; capability was already established
-      // by the Phase 1 JWT check. heldPermission is kept in forensic logs
-      // (below) but is not part of the binding key.
-      let mapping = null;
-      try {
-        mapping = subjectUserId
-          ? await findFacsResourceBinding(postgrestClient, {
-            subjectType: 'user',
-            subjectId: subjectUserId,
-            resourceType: resource.resourceType,
-            resourceId: resource.resourceId,
-            imsOrgId: canonicalImsOrgId,
-          })
-          : null;
-        if (!mapping && canonicalImsOrgId) {
-          mapping = await findFacsResourceBinding(postgrestClient, {
-            subjectType: 'org',
-            subjectId: canonicalImsOrgId,
-            resourceType: resource.resourceType,
-            resourceId: resource.resourceId,
-            imsOrgId: canonicalImsOrgId,
-          });
-        }
-      } catch (e) {
-        // Fail closed — if the state-layer read errors, deny rather than
-        // silently letting the request through. Surface the error so an
-        // operator can diagnose; do not leak the message to the client.
-        log.error({
-          tag: 'facs',
-          permission: heldPermission,
-          resourceType: resource.resourceType,
-          resourceId: resource.resourceId,
-          user: subjectUserId,
-          err: e.message,
-        }, 'FACS state-layer read failed — denying');
-        return forbidden('Forbidden');
-      }
-      if (!mapping) {
-        log.warn({
-          tag: 'facs',
-          permission: heldPermission,
-          resourceType: resource.resourceType,
-          resourceId: resource.resourceId,
-          via: resource.source,
-          user: subjectUserId,
-          org: orgId,
-        }, 'FACS state-layer mapping not found — denying');
-        return forbidden('Forbidden');
-      }
-      log.info({
+      log.warn({
         tag: 'facs',
-        grant: 'state-layer-binding',
-        method,
-        suffix,
-        permission: heldPermission,
+        capability: routeCapability,
+        product: productCode,
+        resourceType: resource.resourceType,
+        resourceId: resource.resourceId,
+        user: resolveUserIdent(authInfo),
+      }, 'FACS denied: postgrestClient absent and JWT does not carry the route capability');
+      return forbidden('Forbidden');
+    }
+
+    const subjectUserId = resolveUserIdent(authInfo);
+    const canonicalImsOrgId = normalizeImsOrgId(orgId);
+    let stateGrants = [];
+    try {
+      const lookupKey = {
+        product: upperProduct,
+        resourceType: resource.resourceType,
+        resourceId: resource.resourceId,
+        imsOrgId: canonicalImsOrgId,
+      };
+      const userMapping = subjectUserId
+        ? await findFacsResourceBinding(postgrestClient, {
+          ...lookupKey,
+          subjectType: 'user',
+          subjectId: subjectUserId,
+        })
+        : null;
+      const orgMapping = canonicalImsOrgId
+        ? await findFacsResourceBinding(postgrestClient, {
+          ...lookupKey,
+          subjectType: 'org',
+          subjectId: canonicalImsOrgId,
+        })
+        : null;
+      stateGrants = [
+        ...(userMapping?.granted_capabilities || []),
+        ...(orgMapping?.granted_capabilities || []),
+      ];
+    } catch (e) {
+      // Fail closed on state-layer read errors.
+      log.error({
+        tag: 'facs',
+        capability: routeCapability,
+        product: productCode,
+        resourceType: resource.resourceType,
+        resourceId: resource.resourceId,
+        user: subjectUserId,
+        err: e.message,
+      }, 'FACS state-layer read failed — denying');
+      return forbidden('Forbidden');
+    }
+
+    // (7) Effective set: JWT facs_permissions ∪ state-layer granted_capabilities.
+    const jwtGrants = !!authInfo?.hasFacsPermission?.(routeCapability);
+    const stateGranted = stateGrants.includes(routeCapability);
+    if (!jwtGrants && !stateGranted) {
+      log.warn({
+        tag: 'facs',
+        capability: routeCapability,
         product: productCode,
         resourceType: resource.resourceType,
         resourceId: resource.resourceId,
         via: resource.source,
         user: subjectUserId,
         org: canonicalImsOrgId,
-      }, 'FACS grant: state-layer binding matched');
-    } else {
-      log.info({
-        tag: 'facs',
-        grant: 'no-resolvable-resource',
-        method,
-        suffix,
-        permission: heldPermission,
-        product: productCode,
-        org: orgId,
-        user: resolveUserIdent(authInfo),
-      }, 'FACS grant: no resolvable resource — JWT permission check sufficient');
+        stateGrantsCount: stateGrants.length,
+      }, 'FACS denied: capability not in effective set (JWT ∪ state-layer)');
+      return forbidden('Forbidden');
     }
+
+    log.info({
+      tag: 'facs',
+      grant: jwtGrants ? 'jwt' : 'state-layer',
+      method,
+      suffix,
+      capability: routeCapability,
+      product: productCode,
+      resourceType: resource.resourceType,
+      resourceId: resource.resourceId,
+      via: resource.source,
+      user: subjectUserId,
+      org: canonicalImsOrgId,
+    }, 'FACS grant: capability is in effective set');
 
     return fn(request, context);
   };

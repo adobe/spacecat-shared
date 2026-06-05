@@ -231,4 +231,70 @@ describe('resolveFacsResource', () => {
       expect(result).to.equal(null);
     });
   });
+
+  describe('query fallback', () => {
+    it('reads from query when route has no URL params and body has no matching alias', () => {
+      const result = resolveFacsResource({
+        productCode: 'LLMO',
+        routePattern: 'GET /state/access-mappings',
+        params: {},
+        body: undefined,
+        query: { brandId: 'b-from-query' },
+        aliasLookupsPerProduct,
+      });
+      expect(result).to.deep.equal({
+        resourceType: 'brand',
+        resourceId: 'b-from-query',
+        source: 'query',
+      });
+    });
+
+    it('prefers body over query when both carry a matching alias', () => {
+      const result = resolveFacsResource({
+        productCode: 'LLMO',
+        routePattern: 'POST /state/access-mappings',
+        params: {},
+        body: { brandId: 'b-from-body' },
+        query: { brandId: 'b-from-query' },
+        aliasLookupsPerProduct,
+      });
+      expect(result.source).to.equal('body');
+      expect(result.resourceId).to.equal('b-from-body');
+    });
+
+    it('does NOT consult query when the URL declares any param', () => {
+      const result = resolveFacsResource({
+        productCode: 'LLMO',
+        routePattern: 'GET /v2/orgs/:spaceCatId/state/access-mappings',
+        params: { spaceCatId: 'o1' },
+        query: { brandId: 'b-from-query' },
+        aliasLookupsPerProduct,
+      });
+      expect(result).to.equal(null);
+    });
+
+    it('handles non-object query without crashing', () => {
+      const result = resolveFacsResource({
+        productCode: 'LLMO',
+        routePattern: 'GET /state/access-mappings',
+        params: {},
+        body: undefined,
+        query: 'not-an-object',
+        aliasLookupsPerProduct,
+      });
+      expect(result).to.equal(null);
+    });
+
+    it('returns null when query has no resource-aliased fields', () => {
+      const result = resolveFacsResource({
+        productCode: 'LLMO',
+        routePattern: 'GET /state/access-mappings',
+        params: {},
+        body: undefined,
+        query: { offset: '0' },
+        aliasLookupsPerProduct,
+      });
+      expect(result).to.equal(null);
+    });
+  });
 });

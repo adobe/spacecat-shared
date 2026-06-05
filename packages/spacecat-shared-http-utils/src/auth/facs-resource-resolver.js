@@ -70,13 +70,16 @@ export function buildAliasLookupsPerProduct(productsResourceParamAliases) {
  *     wins. For `/v2/orgs/:spaceCatId/brands/:brandId/prompts/:promptId`,
  *     `promptId` is non-resource → falls back to `brandId` (the next param
  *     to its left that IS in the alias lookup for this product).
- *  2. **Body fallback** — only when the route declares **zero** URL params
- *     at all. Routes that carry any path param (ReBAC-relevant or not)
- *     never consult the body. This matches the stricter anti-spoofing
+ *  2. **Body / query fallback** — only when the route declares **zero** URL
+ *     params at all. Routes that carry any path param (ReBAC-relevant or not)
+ *     never consult body or query. This matches the stricter anti-spoofing
  *     precondition used by `readOnlyAdminWrapper`: the presence of any
  *     URL-bound identity in the path establishes the resource boundary,
  *     and reading a sibling resource id from the body would re-open the
- *     spoofing surface the URL was meant to close.
+ *     spoofing surface the URL was meant to close. The body is tried first;
+ *     the query string is consulted only when the body carries no matching
+ *     alias (matches the `/state/access-mappings` URL grammar, which carries
+ *     the resource in body on writes and in query on listings).
  *
  * Returns `null` when:
  *  - the product has no ReBAC scope (no entry in `aliasLookupsPerProduct`,
@@ -92,14 +95,19 @@ export function buildAliasLookupsPerProduct(productsResourceParamAliases) {
  *   e.g. `'PATCH /sites/:siteId/llmo/config'`.
  * @param {Object<string, string>} [args.params] - Extracted URL params.
  * @param {Object} [args.body] - Parsed request body, if any.
+ * @param {Object<string, string>} [args.query] - Parsed query-string params,
+ *   if any. Used as a final fallback when the route declares no URL params
+ *   and the body carries no matching alias.
  * @param {Map<string, Map<string, string>>} args.aliasLookupsPerProduct
- * @returns {{ resourceType: string, resourceId: string, source: 'param' | 'body' } | null}
+ * @returns {{ resourceType: string, resourceId: string,
+ *             source: 'param' | 'body' | 'query' } | null}
  */
 export function resolveFacsResource({
   productCode,
   routePattern,
   params,
   body,
+  query,
   aliasLookupsPerProduct,
 }) {
   if (!productCode || !routePattern || !aliasLookupsPerProduct) {
@@ -136,6 +144,18 @@ export function resolveFacsResource({
       const value = body[alias];
       if (value) {
         return { resourceType, resourceId: String(value), source: 'body' };
+      }
+    }
+  }
+
+  // (3) Query fallback — same anti-spoofing precondition (no URL params on the
+  // route). Used by listing endpoints under the `/state/access-mappings` URL
+  // grammar, which carries the scoping resource id in the query string.
+  if (query && typeof query === 'object') {
+    for (const [alias, resourceType] of aliasLookup) {
+      const value = query[alias];
+      if (value) {
+        return { resourceType, resourceId: String(value), source: 'query' };
       }
     }
   }

@@ -16,9 +16,7 @@
  * `facs_access_mappings.ims_org_id`. This matches the hardcoded `@AdobeOrg`
  * suffix already used elsewhere in the codebase (see `readOnlyAdminWrapper`
  * and the `LaunchDarklyClient.isFlagEnabledForIMSOrg` call site in
- * `facs-wrapper.js`). When the org's `org.orgRef.authSrc` is available
- * (typically only in flows that load the `Organization` model), prefer
- * passing it explicitly via the second argument.
+ * `facs-wrapper.js`).
  */
 const DEFAULT_IMS_AUTH_SRC = 'AdobeOrg';
 
@@ -28,20 +26,11 @@ const DEFAULT_IMS_AUTH_SRC = 'AdobeOrg';
  * `platform/decisions/mac-state-layer.md` §"Org identifier"). `getTenantIds()`
  * returns the bare ident, so every state-layer read / write must pass through
  * this helper first; without it the lookup filter never matches the stored
- * rows and brand-scoped Phase 2 requests fail-closed with a 403 even though
- * a binding exists.
+ * rows and resource-scoped requests fail-closed even though a binding exists.
  *
- * Idempotent: when the input already carries an `@<authSrc>` suffix (e.g. the
- * canonical subject identifier `<ident>@AdobeID`), it is returned unchanged.
- * Returns `null` / `undefined` unchanged so callers can chain without
- * branching on emptiness.
- *
- * @param {string|null|undefined} orgIdent - Either the bare ident from
- *   `authInfo.getTenantIds()[0]`, or an already-canonical `<ident>@<authSrc>`.
- * @param {string} [authSrc=DEFAULT_IMS_AUTH_SRC] - The IMS auth source
- *   (defaults to `'AdobeOrg'`).
- * @returns {string|null|undefined} Canonical org id, or the input unchanged
- *   when it's already canonical / empty.
+ * Idempotent: when the input already carries an `@<authSrc>` suffix it is
+ * returned unchanged. Returns empty / null inputs unchanged so callers can
+ * chain without branching.
  */
 export function normalizeImsOrgId(orgIdent, authSrc = DEFAULT_IMS_AUTH_SRC) {
   if (!orgIdent) {
@@ -54,38 +43,35 @@ export function normalizeImsOrgId(orgIdent, authSrc = DEFAULT_IMS_AUTH_SRC) {
 }
 
 /**
- * Resource-binding check against `facs_access_mappings` used by `facsWrapper`
- * Phase 2. Returns the active mapping row when the subject is scoped to the
- * resource within the supplied org, otherwise `null`.
+ * Resource-binding lookup against `facs_access_mappings` used by `facsWrapper`
+ * under the hybrid permission model. Returns the active mapping row's
+ * `granted_capabilities` when the subject is bound to the resource within the
+ * supplied org and product, otherwise `null`.
  *
- * The state layer does NOT store capability — capability is decided by FACS /
- * MacGiver at login and embedded in the JWT `facs_permissions` claim. This
- * helper answers the orthogonal scope question only: *is this subject bound
- * to this resource in this org?* Both must be true for the wrapper to admit
- * the request (JWT permission + active binding).
- *
- * Lives next to the wrapper (and not in api-service) because every service
- * that mounts `facsWrapper` issues the exact same query against the exact
- * same table — the schema lives in `mysticat-data-service` and is fixed.
- * One source of truth here keeps the wrapper-side authorisation logic in
- * lock-step with the table shape.
+ * Under the hybrid model the state layer DOES carry capability: each row
+ * stores `granted_capabilities text[]` (e.g.
+ * `['llmo/can_configure', 'llmo/can_deploy']`). The wrapper unions these with
+ * the JWT `facs_permissions` claim to compute the effective capability set
+ * for the request (see `mac-state-layer.md` §"State Layer Evaluation Engine").
  *
  * Backed by the partial active-row index
  * `facs_access_mappings_active_by_subject` on
- * `(ims_org_id, subject_type, subject_id) WHERE revoked_at IS NULL`, so
- * tombstones don't bloat the lookup and this is an O(log n) point read.
+ * `(ims_org_id, product, subject_type, subject_id) WHERE revoked_at IS NULL`,
+ * so the read is an index-only O(log n) point read.
  *
  * @param {object} postgrestClient - From `context.dataAccess.services.postgrestClient`.
  * @param {object} keys
- * @param {string} keys.imsOrgId
+ * @param {string} keys.imsOrgId - Canonical `<ident>@<authSrc>` form.
+ * @param {string} keys.product - Upper-cased product code, e.g. `'LLMO'`.
  * @param {'user'|'org'} keys.subjectType
  * @param {string} keys.subjectId
  * @param {string} keys.resourceType - Canonical, e.g. `'brand'`.
  * @param {string} keys.resourceId
- * @returns {Promise<{id: string}|null>} Row when an active binding exists, otherwise `null`.
+ * @returns {Promise<{id: string, granted_capabilities: string[]}|null>}
  */
 export async function findFacsResourceBinding(postgrestClient, {
   imsOrgId,
+  product,
   subjectType,
   subjectId,
   resourceType,
@@ -93,8 +79,9 @@ export async function findFacsResourceBinding(postgrestClient, {
 }) {
   const { data, error } = await postgrestClient
     .from('facs_access_mappings')
-    .select('id')
+    .select('id, granted_capabilities')
     .eq('ims_org_id', imsOrgId)
+    .eq('product', product)
     .eq('subject_type', subjectType)
     .eq('subject_id', subjectId)
     .eq('resource_type', resourceType)

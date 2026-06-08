@@ -128,24 +128,31 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  *   4. Per-product LaunchDarkly flag gate (off → bypass; ctor / eval fail
  *      → 503).
  *
- * After bypasses, the wrapper:
+ * The union is evaluated lazily: the JWT is checked first and the state
+ * layer is only consulted when the JWT is insufficient. After bypasses, the
+ * wrapper:
  *
- *   5. Resolves the request's ReBAC resource via `resolveFacsResource`. When
- *      the resolver returns `null` — either the product has no ReBAC scope,
- *      or the route is not scoped to a ReBAC entity — the wrapper **defers
- *      to the controller** (calls `fn(request, context)` unchanged). This
- *      handles both "no resource present" and "resource present but not
- *      ReBAC-scoped" symmetrically: the controller is the only layer with
- *      enough context to police those routes, and a deny here would block
- *      legitimate non-ReBAC traffic (e.g. LLMO suggestion writes that LLMO
- *      doesn't model as ReBAC entities).
+ *   5. **JWT short-circuit.** If the JWT's `facs_permissions` already contains
+ *      the route capability, the effective set contains it regardless of the
+ *      state layer → admit immediately. The resource resolver and the
+ *      state-layer reads are skipped — they cannot change the outcome, so the
+ *      DB round-trips are avoided.
  *
- *   6. Reads the active `facs_access_mappings` row for
+ *   6. Otherwise resolve the request's ReBAC resource via `resolveFacsResource`.
+ *      When the resolver returns `null` — the product has no ReBAC scope, or
+ *      the route is not scoped to a ReBAC entity — the wrapper **defers to the
+ *      controller** (calls `fn(request, context)` unchanged). The controller is
+ *      the only layer with enough context to police those routes, and a deny
+ *      here would block legitimate non-ReBAC traffic (e.g. LLMO suggestion
+ *      writes that LLMO doesn't model as ReBAC entities).
+ *
+ *   7. Reads the active `facs_access_mappings` row for
  *      `(user, resource, org, product)`, then `(org, resource, org, product)`.
- *      Either is sufficient. The row's `granted_capabilities` are unioned
- *      with the JWT's `facs_permissions` to form the effective set.
- *
- *   7. Requires `routeCapability ∈ effectiveSet`. Missing → 403.
+ *      Either is sufficient. Because the JWT was already ruled out in step 5,
+ *      the capability is granted iff one of these rows' `granted_capabilities`
+ *      contains it. Missing → 403. (No `postgrestClient` and no JWT grant →
+ *      403: the state layer is the only remaining admit path and it's
+ *      unreachable.)
  *
  * @param {Function} fn - The handler to wrap.
  * @param {{ routeFacsCapabilities: {
@@ -317,8 +324,33 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     // lookup must succeed.
     const routeCapability = resolveRouteCapability(context, productMap);
     const upperProduct = productCode.toUpperCase();
+    const subjectUserId = resolveUserIdent(authInfo);
 
-    // (5) Resolve the ReBAC resource. When the resolver returns null — the
+    // (5) JWT short-circuit. The effective set is `JWT ∪ state-layer`, so if
+    // the JWT already carries the route capability the union contains it and
+    // the result is decided — admit immediately. Both the resource resolver
+    // and the state-layer reads are skipped: they cannot change the outcome
+    // and the DB round-trips would be pure overhead. The state layer is only
+    // consulted in the additive case below, where the JWT is insufficient and
+    // a per-resource grant is the only remaining admit path.
+    if (authInfo?.hasFacsPermission?.(routeCapability)) {
+      log.info({
+        tag: 'facs',
+        grant: 'jwt',
+        method,
+        suffix,
+        capability: routeCapability,
+        product: productCode,
+        org: orgId,
+        user: subjectUserId,
+      }, 'FACS grant: JWT carries capability; resource + state layer skipped');
+      return fn(request, context);
+    }
+
+    // The JWT does not carry the capability. The only way to admit now is a
+    // per-resource grant in the state layer.
+
+    // (6) Resolve the ReBAC resource. When the resolver returns null — the
     // product has no ReBAC scope, or the route doesn't carry a ReBAC entity —
     // defer to the controller. We don't deny here: a route may legitimately
     // operate on entities the product hasn't modelled as ReBAC (e.g. LLMO
@@ -344,45 +376,31 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
         capability: routeCapability,
         product: productCode,
         org: orgId,
-        user: resolveUserIdent(authInfo),
+        user: subjectUserId,
       }, 'FACS defer-to-controller: no ReBAC-scoped resource for this request');
       return fn(request, context);
     }
 
-    // (6) State-layer read — additive to the JWT. Tries user-scoped first,
-    // then org-scoped; either is sufficient and they're stored symmetrically.
+    // (7) State-layer read. Without a postgrestClient the state layer is
+    // unreachable; the JWT already failed to grant the capability (step 5),
+    // so no admit path remains → deny. (The dataAccessWrapper must sit
+    // upstream of facsWrapper for any service that relies on state-layer
+    // grants.)
     const postgrestClient = context.dataAccess?.services?.postgrestClient;
     if (!postgrestClient) {
-      // No data-access wrapper in the chain → cannot read state layer.
-      // Fall back to the JWT-only effective set. The dataAccessWrapper is
-      // required upstream of facsWrapper for any service that wants the
-      // state-layer grants visible.
-      const facsOnlyGranted = !!authInfo?.hasFacsPermission?.(routeCapability);
-      if (facsOnlyGranted) {
-        log.info({
-          tag: 'facs',
-          grant: 'jwt-only-no-postgrest',
-          method,
-          suffix,
-          capability: routeCapability,
-          product: productCode,
-          org: orgId,
-          user: resolveUserIdent(authInfo),
-        }, 'FACS grant: JWT carries capability; postgrestClient absent, state layer skipped');
-        return fn(request, context);
-      }
       log.warn({
         tag: 'facs',
         capability: routeCapability,
         product: productCode,
         resourceType: resource.resourceType,
         resourceId: resource.resourceId,
-        user: resolveUserIdent(authInfo),
+        user: subjectUserId,
       }, 'FACS denied: postgrestClient absent and JWT does not carry the route capability');
       return forbidden('Forbidden');
     }
 
-    const subjectUserId = resolveUserIdent(authInfo);
+    // Tries user-scoped first, then org-scoped; either is sufficient and
+    // they're stored symmetrically.
     const canonicalImsOrgId = normalizeImsOrgId(orgId);
     let stateGrants = [];
     try {
@@ -424,10 +442,9 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       return forbidden('Forbidden');
     }
 
-    // (7) Effective set: JWT facs_permissions ∪ state-layer granted_capabilities.
-    const jwtGrants = !!authInfo?.hasFacsPermission?.(routeCapability);
-    const stateGranted = stateGrants.includes(routeCapability);
-    if (!jwtGrants && !stateGranted) {
+    // (8) The JWT was already ruled out in step 5, so the capability is
+    // granted iff the state layer carries it.
+    if (!stateGrants.includes(routeCapability)) {
       log.warn({
         tag: 'facs',
         capability: routeCapability,
@@ -444,7 +461,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
 
     log.info({
       tag: 'facs',
-      grant: jwtGrants ? 'jwt' : 'state-layer',
+      grant: 'state-layer',
       method,
       suffix,
       capability: routeCapability,
@@ -454,7 +471,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       via: resource.source,
       user: subjectUserId,
       org: canonicalImsOrgId,
-    }, 'FACS grant: capability is in effective set');
+    }, 'FACS grant: capability granted by state layer');
 
     return fn(request, context);
   };

@@ -462,6 +462,10 @@ describe('facsWrapper', () => {
         suffix: '/insights',
         headers: { 'x-product': 'llmo' },
       };
+      // JWT must not grant the capability, otherwise the wrapper short-circuits
+      // at step 5 (grant: 'jwt') before the resolver runs. The defer-to-
+      // controller path is only reachable when the JWT is insufficient.
+      context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => false });
       context.dataAccess = { services: { postgrestClient: { from: () => {} } } };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
@@ -610,6 +614,9 @@ describe('facsWrapper', () => {
 
     it('returns 403 when state-layer read throws', async () => {
       findFacsResourceBindingStub.rejects(new Error('postgrest down'));
+      // JWT must not grant, otherwise step 5 short-circuits before the
+      // state-layer read that we want to observe throwing.
+      context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => false });
       brandReq();
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
@@ -660,6 +667,7 @@ describe('facsWrapper', () => {
 
     it('resolves resource from body when route has no URL params', async () => {
       findFacsResourceBindingStub.resolves({ id: 'm', granted_capabilities: ['llmo/can_manage'] });
+      context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => false });
       context.pathInfo = {
         method: 'POST',
         suffix: '/brands',
@@ -675,6 +683,7 @@ describe('facsWrapper', () => {
 
     it('resolves resource from query when route has no URL params and body has no alias', async () => {
       findFacsResourceBindingStub.resolves({ id: 'm', granted_capabilities: ['llmo/can_read'] });
+      context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => false });
       context.pathInfo = {
         method: 'GET',
         suffix: '/state/access-mappings',
@@ -716,8 +725,11 @@ describe('facsWrapper', () => {
       const result = await wrapped({}, context);
       expect(result).to.deep.equal({ status: 200 });
       expect(handler.calledOnce).to.be.true;
+      // The JWT short-circuit (step 5) admits before the postgrest check is
+      // even reached — the grant is logged as 'jwt', not a no-postgrest
+      // fallback. The state layer is never consulted when the JWT suffices.
       expect(logStub.info.calledWithMatch(
-        { tag: 'facs', grant: 'jwt-only-no-postgrest' },
+        { tag: 'facs', grant: 'jwt' },
       )).to.be.true;
     });
 

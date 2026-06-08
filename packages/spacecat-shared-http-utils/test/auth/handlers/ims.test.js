@@ -402,6 +402,62 @@ describe('AdobeImsHandler', () => {
       expect(result.authenticated).to.be.true;
       expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
     });
+
+    it('gives admin scope to @adobe.com users in LLMO Admin group without ASO admin group', async () => {
+      const token = await createToken({
+        user_id: 'llmo-admin@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'llmo-admin@adobe.com',
+      });
+      mockImsClient.getImsUserOrganizations.resolves([
+        {
+          orgRef: { ident: '908936ED5D35CC220A495CD4' },
+          groups: [{ ident: 964401320 }],
+        },
+      ]);
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
+    });
+
+    it('does not give admin scope when user has only LLMO Admin group and non-adobe email', async () => {
+      const token = await createToken({
+        user_id: 'customer@example.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'customer@example.com',
+      });
+      mockImsClient.getImsUserOrganizations.resolves([
+        {
+          orgRef: { ident: '908936ED5D35CC220A495CD4' },
+          groups: [{ ident: 964401320 }],
+        },
+      ]);
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([{
+        name: 'user',
+        domains: ['908936ED5D35CC220A495CD4'],
+        subScopes: ['dx_aem_perf_auto_suggest', 'dx_aem_perf_auto_fix'],
+      }]);
+    });
   });
 
   describe('read-only org feature flag gate', () => {

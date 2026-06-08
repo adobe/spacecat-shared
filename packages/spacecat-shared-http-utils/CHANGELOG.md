@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.2...@adobe/spacecat-shared-http-utils-v1.29.0) (2026-06-04)
+
+### Features
+
+* add llmo-admin IMS group for admin check ([#1651](https://github.com/adobe/spacecat-shared/issues/1651)) ([0cc647d](https://github.com/adobe/spacecat-shared/commit/0cc647d0a4d3b027c4d61ec80bdbabfcd8c90e06))
+
 ## [@adobe/spacecat-shared-http-utils-v1.28.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.1...@adobe/spacecat-shared-http-utils-v1.28.2) (2026-05-30)
 
 ### Bug Fixes

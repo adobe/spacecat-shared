@@ -1351,6 +1351,14 @@ describe('SeoClient', () => {
   // ===== getBrokenBacklinks =====
 
   describe('getBrokenBacklinks', () => {
+    // Semrush does not support OR within display_filter, so 404 and 410 are fetched
+    // in two separate backlinks_pages requests and merged client-side.
+    const FILTER_404 = '+|responsecode|Eq|404';
+    const FILTER_410 = '+|responsecode|Eq|410';
+    // type/follow/text/lostlink are backlink-level attributes sent on the backlinks call.
+    const LINKS_FILTER = '+|type||follow|+|type||text|-|type||lostlink';
+    const EMPTY_PAGES_CSV = 'source_url;response_code;backlinks_num;domains_num';
+
     // Real API fixtures (adobe.com, April 2026)
     const brokenPagesCsv = [
       'source_url;response_code;backlinks_num;domains_num',
@@ -1374,12 +1382,39 @@ describe('SeoClient', () => {
       ';http://www.acrobat.com/;https://www.adobe.com/404.html;75;3',
     ].join('\n');
 
-    it('returns one high-quality backlink per broken page with full diversity', async () => {
+    // Helper: register both backlinks_pages interceptors (404 and 410 are always parallel).
+    function nockBrokenPages(csv404 = EMPTY_PAGES_CSV, csv410 = EMPTY_PAGES_CSV) {
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages'
-          && q.display_filter === '+|responsecode|Eq|404')
-        .reply(200, brokenPagesCsv);
+        .query((q) => q.type === 'backlinks_pages' && q.display_filter === FILTER_404)
+        .reply(200, csv404);
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks_pages' && q.display_filter === FILTER_410)
+        .reply(200, csv410);
+    }
+
+    it('sends correct quality filters to Semrush (404+410 on pages; follow, text, no lostlinks on backlinks)', async () => {
+      let capturedLinksFilter;
+      nockBrokenPages(brokenPagesCsv);
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .times(3)
+        .query((q) => {
+          if (q.type === 'backlinks') {
+            capturedLinksFilter = q.display_filter;
+          }
+          return q.type === 'backlinks';
+        })
+        .reply(200, backlinkForPage1Csv);
+
+      await client.getBrokenBacklinks('adobe.com', 3);
+
+      expect(capturedLinksFilter).to.equal(LINKS_FILTER);
+    });
+
+    it('returns one high-quality backlink per broken page with full diversity', async () => {
+      nockBrokenPages(brokenPagesCsv);
 
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
@@ -1429,15 +1464,50 @@ describe('SeoClient', () => {
       expect(result.fullAuditRef).to.include('type=backlinks_pages');
     });
 
+    it('merges 410 pages with 404 pages, deduplicates shared URLs, and sorts by domains_num', async () => {
+      const pages404Csv = [
+        'source_url;response_code;backlinks_num;domains_num',
+        'https://example.com/gone404;404;100;50',
+        'https://example.com/shared;404;80;40',
+      ].join('\n');
+      const pages410Csv = [
+        'source_url;response_code;backlinks_num;domains_num',
+        'https://example.com/gone410;410;200;100',
+        'https://example.com/shared;410;80;40',
+      ].join('\n');
+      nockBrokenPages(pages404Csv, pages410Csv);
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks' && q.target === 'https://example.com/gone410')
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref.com;https://example.com/gone410;80;5');
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks' && q.target === 'https://example.com/gone404')
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref2.com;https://example.com/gone404;60;5');
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks' && q.target === 'https://example.com/shared')
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref3.com;https://example.com/shared;40;5');
+
+      const result = await client.getBrokenBacklinks('example.com', 50);
+
+      // shared URL appears in both 404 and 410 — deduplicated to 3 unique pages, not 4
+      expect(result.result.backlinks).to.have.lengthOf(3);
+      // sorted by domains_num: gone410 (100), gone404 (50), shared (40)
+      expect(result.result.backlinks[0].url_to).to.equal('https://example.com/gone410');
+      expect(result.result.backlinks[1].url_to).to.equal('https://example.com/gone404');
+      expect(result.result.backlinks[2].url_to).to.equal('https://example.com/shared');
+    });
+
     it('parallelizes across multiple batches when limit exceeds batch size', async () => {
       // 12 broken pages → 2 batches (10 + 2)
       const pages = Array.from({ length: 12 }, (_, i) => `https://example.com/page${i};404;${100 - i};${50 - i}`);
       const pagesCsv = ['source_url;response_code;backlinks_num;domains_num', ...pages].join('\n');
 
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, pagesCsv);
+      nockBrokenPages(pagesCsv);
 
       // Mock backlinks response for each of the 12 pages
       for (let i = 0; i < 12; i += 1) {
@@ -1454,21 +1524,15 @@ describe('SeoClient', () => {
       expect(uniqueTargets.size).to.equal(12);
     });
 
-    it('returns empty backlinks when no 404 pages found', async () => {
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, 'source_url;response_code;backlinks_num;domains_num');
+    it('returns empty backlinks when no broken pages found', async () => {
+      nockBrokenPages();
 
       const result = await client.getBrokenBacklinks('no-broken-pages.com');
       expect(result.result.backlinks).to.deep.equal([]);
     });
 
     it('handles no-data responses for individual backlink fetches gracefully', async () => {
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, brokenPagesCsv);
+      nockBrokenPages(brokenPagesCsv);
 
       // First page returns backlink, second has no data, third returns backlink
       nock(config.apiBaseUrl)
@@ -1498,10 +1562,7 @@ describe('SeoClient', () => {
     });
 
     it('handles broken page with no backlinks', async () => {
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, 'source_url;response_code;backlinks_num;domains_num\nhttps://example.com/gone;404;0;0');
+      nockBrokenPages('source_url;response_code;backlinks_num;domains_num\nhttps://example.com/gone;404;0;0');
 
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
@@ -1513,10 +1574,7 @@ describe('SeoClient', () => {
     });
 
     it('respects upper limit of 100', async () => {
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages' && q.display_limit === '100')
-        .reply(200, 'source_url;response_code;backlinks_num;domains_num');
+      nockBrokenPages();
 
       await client.getBrokenBacklinks('adobe.com', 500);
     });
@@ -1526,18 +1584,12 @@ describe('SeoClient', () => {
     });
 
     it('handles null title in backlink response', async () => {
-      const pagesCsv = 'source_url;response_code;backlinks_num;domains_num\nhttps://t.com/p;404;1;1';
-      const linkCsv = 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref.com;https://t.com/p;50;10';
-
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, pagesCsv);
+      nockBrokenPages('source_url;response_code;backlinks_num;domains_num\nhttps://t.com/p;404;1;1');
 
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
         .query((q) => q.type === 'backlinks')
-        .reply(200, linkCsv);
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref.com;https://t.com/p;50;10');
 
       const result = await client.getBrokenBacklinks('t.com', 1);
       expect(result.result.backlinks[0].title).to.equal(null);

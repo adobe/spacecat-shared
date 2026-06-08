@@ -1,3 +1,9 @@
+## [@adobe/mysticat-shared-seo-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.5.1...@adobe/mysticat-shared-seo-client-v1.6.0) (2026-06-08)
+
+### Features
+
+* **seo-client:** add quality filters to broken-backlinks Semrush call (404+410, follow, text, no lostlinks) ([#1652](https://github.com/adobe/spacecat-shared/issues/1652)) ([875d92c](https://github.com/adobe/spacecat-shared/commit/875d92c4ceb306b5010118e29287bc81906e980e))
+
 ## [@adobe/mysticat-shared-seo-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.5.0...@adobe/mysticat-shared-seo-client-v1.5.1) (2026-05-29)
 
 ### Bug Fixes

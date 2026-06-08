@@ -15,7 +15,6 @@ import notfound from './functions/404.js';
 import notfoundInternalLinks from './functions/404-internal-links.js';
 import cwv from './functions/cwv.js';
 import formVitals from './functions/form-vitals.js';
-import formFieldVitals from './functions/form-field-vitals.js';
 import experiment from './functions/experiment.js';
 import trafficAcquisition from './functions/traffic-acquisition.js';
 import totalMetrics from './functions/total-metrics.js';
@@ -38,7 +37,6 @@ const HANDLERS = {
   '404-internal-links': notfoundInternalLinks,
   cwv,
   'form-vitals': formVitals,
-  'form-field-vitals': formFieldVitals,
   experiment,
   'traffic-acquisition': trafficAcquisition,
   variant,

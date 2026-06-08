@@ -18,7 +18,7 @@ import highInorganicHighBounce from '../src/functions/opportunities/high-inorgan
 import highOrganicLowCTR from '../src/functions/opportunities/high-organic-low-ctr.js';
 import variant from '../src/functions/variant.js';
 import formVitals from '../src/functions/form-vitals.js';
-import formFieldVitals from '../src/functions/form-field-vitals.js';
+import { computeFieldEngagement } from '../src/functions/form-field-engagement.js';
 import pageviews from '../src/functions/pageviews.js';
 import trafficAnalysis from '../src/functions/traffic-analysis.js';
 import bundles from './fixtures/bundles.json' with { type: 'json' };
@@ -41,6 +41,33 @@ describe('Query functions', () => {
   it('crunches form vitals', async () => {
     const formVitalsResult = await formVitals.handler(bundlesWithForm.rumBundles);
     expect(expectedFormVitalsResult).to.deep.members(formVitalsResult);
+  });
+
+  it('attaches fieldEngagement to each form vitals entry', async () => {
+    const formVitalsResult = await formVitals.handler(bundlesWithForm.rumBundles);
+    // every entry carries a fieldEngagement array (like trafficacquisition)
+    expect(formVitalsResult.every((e) => Array.isArray(e.fieldEngagement))).to.be.true;
+    // the form#abc form on the jp magento-commerce URL has per-field engagement
+    const entry = formVitalsResult.find(
+      (e) => e.formsource === 'form#abc'
+        && e.url === 'https://business.adobe.com/jp/products/magento/magento-commerce.html'
+        && e.fieldEngagement.length > 0,
+    );
+    expect(entry).to.exist;
+    const ageField = entry.fieldEngagement.find((f) => f.source === 'form#abc input[type=number] age');
+    expect(ageField).to.deep.equal({
+      source: 'form#abc input[type=number] age',
+      clicks: 0,
+      fills: 100,
+      avg_time_spend: '0.34',
+    });
+    const nameField = entry.fieldEngagement.find((f) => f.source === 'form#abc input[type=text] firstName');
+    expect(nameField).to.deep.equal({
+      source: 'form#abc input[type=text] firstName',
+      clicks: 200,
+      fills: 0,
+      avg_time_spend: '0.00',
+    });
   });
 
   it('crunches 404 data', async () => {
@@ -107,42 +134,8 @@ describe('Query functions', () => {
     expect(expectedTrafficAnalysisResult).to.eql(trafficAnalysisResult);
   });
 
-  it('crunches form field vitals from existing fixture', () => {
-    const result = formFieldVitals.handler(bundlesWithForm.rumBundles);
-    // The fixture has fill+click events for form#abc on the jp magento-commerce URL
-    const entry = result.find((r) => r.formsource === 'form#abc');
-    expect(entry).to.exist;
-    expect(entry.url).to.equal('https://business.adobe.com/jp/products/magento/magento-commerce.html');
-    const ageField = entry.fields.find((f) => f.source === 'form#abc input[type=number] age');
-    expect(ageField).to.exist;
-    expect(ageField.fills).to.equal(100);
-    expect(ageField.clicks).to.equal(0);
-    // avg_time_spend: diff to next event in bundle (ms) / 1000 → seconds, formatted to 2dp
-    // age fill at 2662ms; next event in bundle at 2662+344=3006ms → diff=344ms → 0.344s → '0.34'
-    expect(ageField.avg_time_spend).to.equal('0.34');
-    const nameField = entry.fields.find((f) => f.source === 'form#abc input[type=text] firstName');
-    expect(nameField).to.exist;
-    expect(nameField.clicks).to.equal(200);
-    expect(nameField.fills).to.equal(0);
-    expect(nameField.avg_time_spend).to.equal('0.00');
-    expect(entry.fields[0].source).to.equal('form#abc input[type=number] age');
-    expect(entry.fields[1].source).to.equal('form#abc input[type=text] firstName');
-  });
-
-  it('returns empty array when bundles have no form field events', () => {
-    const minimalBundles = [{
-      id: 'x1',
-      url: 'https://example.com/page',
-      weight: 100,
-      userAgent: 'desktop:windows',
-      events: [{ checkpoint: 'viewblock', source: 'form.contact', timeDelta: 500 }],
-    }];
-    const result = formFieldVitals.handler(minimalBundles);
-    expect(result).to.deep.equal([]);
-  });
-
-  it('groups per-field click and fill counts, weighted by bundle weight', () => {
-    const testBundles = [
+  it('computeFieldEngagement: groups per-field click and fill counts, weighted by bundle weight', () => {
+    const urlBundles = [
       {
         id: 'b1',
         url: 'https://example.com/contact',
@@ -165,27 +158,35 @@ describe('Query functions', () => {
         ],
       },
     ];
-    const result = formFieldVitals.handler(testBundles);
-    expect(result).to.have.lengthOf(1);
-    const entry = result[0];
-    expect(entry.url).to.equal('https://example.com/contact');
-    expect(entry.formsource).to.equal('form.contact');
-    const emailField = entry.fields.find((f) => f.source === 'form.contact input[name="email"]');
+    const fields = computeFieldEngagement(urlBundles, 'contact');
+    const emailField = fields.find((f) => f.source === 'form.contact input[name="email"]');
     expect(emailField.fills).to.equal(150);
     expect(emailField.clicks).to.equal(0);
+    // b2: fill@4000, next click@8000 → diff=4000ms → 4s → '4.00' (b1 fill is last event, no diff)
     expect(emailField.avg_time_spend).to.equal('4.00');
-    const submitField = entry.fields.find((f) => f.source === 'form.contact button[type="submit"]');
+    const submitField = fields.find((f) => f.source === 'form.contact button[type="submit"]');
     expect(submitField.clicks).to.equal(50);
     expect(submitField.fills).to.equal(0);
     // submit click@8000 is last event in b2 → no diff → 0s → '0.00'
     expect(submitField.avg_time_spend).to.equal('0.00');
     // fields sorted by avg_time_spend descending (email=4.00 > submit=0.00)
-    expect(entry.fields[0].source).to.equal('form.contact input[name="email"]');
-    expect(entry.fields[1].source).to.equal('form.contact button[type="submit"]');
+    expect(fields[0].source).to.equal('form.contact input[name="email"]');
+    expect(fields[1].source).to.equal('form.contact button[type="submit"]');
   });
 
-  it('excludes events not matching the form source', () => {
-    const testBundles = [{
+  it('computeFieldEngagement: returns empty array when no form field events', () => {
+    const urlBundles = [{
+      id: 'x1',
+      url: 'https://example.com/page',
+      weight: 100,
+      userAgent: 'desktop:windows',
+      events: [{ checkpoint: 'viewblock', source: 'form.contact', timeDelta: 500 }],
+    }];
+    expect(computeFieldEngagement(urlBundles, 'contact')).to.deep.equal([]);
+  });
+
+  it('computeFieldEngagement: excludes events not matching the form source', () => {
+    const urlBundles = [{
       id: 'b1',
       url: 'https://example.com/contact',
       weight: 100,
@@ -196,14 +197,13 @@ describe('Query functions', () => {
         { checkpoint: 'fill', source: 'form.contact input[name="email"]', timeDelta: 3000 },
       ],
     }];
-    const result = formFieldVitals.handler(testBundles);
-    expect(result).to.have.lengthOf(1);
-    expect(result[0].fields).to.have.lengthOf(1);
-    expect(result[0].fields[0].source).to.equal('form.contact input[name="email"]');
+    const fields = computeFieldEngagement(urlBundles, 'contact');
+    expect(fields).to.have.lengthOf(1);
+    expect(fields[0].source).to.equal('form.contact input[name="email"]');
   });
 
-  it('strips dialog prefix from formsource', () => {
-    const testBundles = [{
+  it('computeFieldEngagement: matches generic form fields with unknown form key', () => {
+    const urlBundles = [{
       id: 'b1',
       url: 'https://example.com/page',
       weight: 100,
@@ -213,26 +213,8 @@ describe('Query functions', () => {
         { checkpoint: 'fill', source: 'form input[name="email"]', timeDelta: 3000 },
       ],
     }];
-    const result = formFieldVitals.handler(testBundles);
-    expect(result).to.have.lengthOf(1);
-    expect(result[0].formsource).to.equal('form');
-  });
-
-  it('excludes entries whose fields are empty (no matching events)', () => {
-    const testBundles = [{
-      id: 'b1',
-      url: 'https://example.com/contact',
-      weight: 100,
-      userAgent: 'desktop:windows',
-      events: [
-        { checkpoint: 'viewblock', source: 'form.contact', timeDelta: 200 },
-        { checkpoint: 'viewblock', source: 'form.other', timeDelta: 300 },
-        { checkpoint: 'fill', source: 'form.contact input[name="email"]', timeDelta: 3000 },
-      ],
-    }];
-    const result = formFieldVitals.handler(testBundles);
-    // form.other has no field events → excluded; only form.contact is in results
-    expect(result.every((r) => r.fields.length > 0)).to.be.true;
-    expect(result.find((r) => r.formsource === 'form.other')).to.not.exist;
+    const fields = computeFieldEngagement(urlBundles, 'unknown');
+    expect(fields).to.have.lengthOf(1);
+    expect(fields[0].source).to.equal('form input[name="email"]');
   });
 });

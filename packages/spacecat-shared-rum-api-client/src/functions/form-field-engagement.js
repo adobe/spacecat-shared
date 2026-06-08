@@ -10,10 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-// Checkpoints fetched from the RUM bundler. Broad set so the "next event" used to
-// measure dwell time (avg_time_spend) can be any interaction type (navigate, formsubmit,
-// …) — mirrors the Python time_spent_in_seconds, which considers every event in a bundle.
-const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia', 'experiment'];
+// Per-field form engagement helper. NOT a RUM query — invoked from form-vitals.js to
+// attach a `fieldEngagement` property to each form-vitals entry (like trafficacquisition).
+
 const KEYWORDS_TO_FILTER = ['search'];
 
 const average = (nums) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0);
@@ -98,50 +97,27 @@ function getFieldSelectors(urlBundles, formSourceKey) {
   return [...selectors];
 }
 
-function handler(bundles) {
-  // Map each page URL to the set of form sources seen in its viewblock events.
-  const formSourcesByUrl = new Map();
-  for (const bundle of bundles) {
-    for (const event of bundle.events) {
-      if (event.checkpoint === 'viewblock' && event.source) {
-        if (!formSourcesByUrl.has(bundle.url)) {
-          formSourcesByUrl.set(bundle.url, new Set());
-        }
-        formSourcesByUrl.get(bundle.url).add(event.source);
-      }
-    }
-  }
+/**
+ * Computes per-field engagement for a single form on a page.
+ *
+ * @param {Array} urlBundles - RUM bundles already filtered to the form's page URL
+ * @param {string} formSourceKey - form key extracted from the form source (e.g. 'abc'
+ *   for 'form#abc'), or 'unknown'
+ * @returns {Array<{source: string, clicks: number, fills: number, avg_time_spend: string}>}
+ *   fields ordered by avg_time_spend descending
+ */
+export function computeFieldEngagement(urlBundles, formSourceKey) {
+  const fields = getFieldSelectors(urlBundles, formSourceKey)
+    .map((source) => ({
+      source,
+      clicks: weightedCount(urlBundles, 'click', source),
+      fills: weightedCount(urlBundles, 'fill', source),
+      avg_time_spend: timeSpentInSeconds(urlBundles, source).toFixed(2),
+    }))
+    // order fields by when users interacted with them (natural form sequence)
+    .sort((a, b) => avgInteractionTime(urlBundles, a.source)
+      - avgInteractionTime(urlBundles, b.source));
 
-  const results = [];
-  for (const [url, fullSources] of formSourcesByUrl) {
-    const urlBundles = bundles.filter((b) => b.url === url);
-
-    for (const fullSource of fullSources) {
-      // Extract the key used for matching field events (mirrors form-vitals.js).
-      const match = fullSource.match(/form[#.]((?:\\[0-9a-fA-F]{1,6}\s?|\w|-)+)/);
-      const formSourceKey = match ? match[1] : 'unknown';
-      // Strip 'dialog ' prefix to match the formsource stored in formVitals (formcalc.js).
-      const formsource = fullSource.startsWith('dialog') ? fullSource.replace('dialog ', '') : fullSource;
-
-      const fields = getFieldSelectors(urlBundles, formSourceKey)
-        .map((source) => ({
-          source,
-          clicks: weightedCount(urlBundles, 'click', source),
-          fills: weightedCount(urlBundles, 'fill', source),
-          avg_time_spend: timeSpentInSeconds(urlBundles, source).toFixed(2),
-        }))
-        // order fields by when users interacted with them (natural form sequence)
-        .sort((a, b) => avgInteractionTime(urlBundles, a.source)
-          - avgInteractionTime(urlBundles, b.source));
-
-      if (fields.length > 0) {
-        fields.sort((a, b) => b.avg_time_spend - a.avg_time_spend);
-        results.push({ url, formsource, fields });
-      }
-    }
-  }
-
-  return results;
+  fields.sort((a, b) => b.avg_time_spend - a.avg_time_spend);
+  return fields;
 }
-
-export default { handler, checkpoints: CHECKPOINTS };

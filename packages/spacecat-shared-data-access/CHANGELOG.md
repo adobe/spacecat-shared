@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.74.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.0...@adobe/spacecat-shared-data-access-v3.74.1) (2026-06-09)
+
+### Bug Fixes
+
+* site-level handler overrides were ignored, org-level disable always won ([#1590](https://github.com/adobe/spacecat-shared/issues/1590)) ([cfeca81](https://github.com/adobe/spacecat-shared/commit/cfeca81266351c7523d939cb3a2f50831599b927)), closes [#updatedHandler](https://github.com/adobe/spacecat-shared/issues/updatedHandler)
+
 ## [@adobe/spacecat-shared-data-access-v3.74.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.73.3...@adobe/spacecat-shared-data-access-v3.74.0) (2026-06-02)
 
 ### Features

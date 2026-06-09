@@ -165,3 +165,6 @@ export {
 } from './opportunity/opportunity-titles.js';
 
 export { computeAuditCompletion } from './opportunity/audit-completion.js';
+
+export { registerCalculator, getCalculators, clearRegistry } from './experiment-success/registry.js';
+export { default as BaseMeasurement } from './experiment-success/base-measurement.js';

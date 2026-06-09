@@ -326,9 +326,32 @@ function toggleWWWHostname(hostname) {
   return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
 }
 
+const RUM_BUNDLER_BASE_URL = 'https://bundles.aem.page';
+
+async function hasBundleData(hostname, domainkey, log) {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = (now.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = now.getUTCDate().toString().padStart(2, '0');
+  const url = `${RUM_BUNDLER_BASE_URL}/bundles/${hostname}/${year}/${month}/${day}?domainkey=${domainkey}`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      return false;
+    }
+    const { rumBundles } = await resp.json();
+    return Array.isArray(rumBundles) && rumBundles.length > 0;
+    /* c8 ignore next 3 */
+  } catch (e) {
+    log.warn(`[wwwUrlResolver] bundle probe failed for ${hostname}: ${e.message}`);
+    return false;
+  }
+}
+
 /**
  * Resolves the correct URL for a site by checking RUM data availability.
- * Tries www-toggled version first, then falls back to original.
+ * Tries www-toggled version first (only if actual bundle data exists there),
+ * then falls back to original hostname.
  * @param {object} site - The site object with getBaseURL() and getConfig() methods.
  * @param {object} rumApiClient - The RUM API client instance with retrieveDomainkey method.
  * @param {object} log - Logger instance with debug() and error() methods.
@@ -352,9 +375,13 @@ async function wwwUrlResolver(site, rumApiClient, log) {
 
   try {
     const wwwToggledHostname = toggleWWWHostname(hostname);
-    await rumApiClient.retrieveDomainkey(wwwToggledHostname);
-    log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
-    return wwwToggledHostname;
+    const domainkey = await rumApiClient.retrieveDomainkey(wwwToggledHostname);
+    if (await hasBundleData(wwwToggledHostname, domainkey, log)) {
+      log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
+      return wwwToggledHostname;
+    }
+    /* c8 ignore next */
+    log.debug(`[wwwUrlResolver] ${wwwToggledHostname} has key but no bundle data, trying ${hostname}`);
   } catch (e) {
     log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
   }

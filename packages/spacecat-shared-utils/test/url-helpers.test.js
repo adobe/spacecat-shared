@@ -817,6 +817,7 @@ describe('URL Utility Functions', () => {
 
     afterEach(() => {
       sandbox.restore();
+      nock.cleanAll();
     });
 
     it('should return overrideBaseURL when configured with https', async () => {
@@ -853,6 +854,9 @@ describe('URL Utility Functions', () => {
       });
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -873,6 +877,9 @@ describe('URL Utility Functions', () => {
     it('should check RUM for www subdomain (not return early)', async () => {
       site.getBaseURL.returns('https://www.example.com');
       rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -883,6 +890,9 @@ describe('URL Utility Functions', () => {
     it('should check RUM for no subdomain (not return early)', async () => {
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -893,6 +903,9 @@ describe('URL Utility Functions', () => {
     it('should prioritize www-toggled version (www added) when it has RUM data', async () => {
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -904,6 +917,9 @@ describe('URL Utility Functions', () => {
     it('should prioritize www-toggled version (www removed) when it has RUM data', async () => {
       site.getBaseURL.returns('https://www.example.com');
       rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -984,6 +1000,9 @@ describe('URL Utility Functions', () => {
       });
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -994,10 +1013,55 @@ describe('URL Utility Functions', () => {
       site.getConfig.returns(null);
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
       expect(result).to.equal('www.example.com');
+    });
+
+    it('should fall back to original hostname when www-toggled has a key but no bundle data (ghost key)', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('ghost-key');
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('real-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [] });
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('www.example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('example.com');
+      expect(log.debug).to.have.been.calledWith('Resolved URL example.com for https://example.com using RUM API Client');
+    });
+
+    it('should fall back to original hostname when bundle probe returns non-200', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('some-key');
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('real-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(500);
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('example.com');
+    });
+
+    it('should fall back to original hostname when bundle probe throws a network error', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('some-key');
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('real-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .replyWithError('network failure');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('example.com');
     });
   });
 

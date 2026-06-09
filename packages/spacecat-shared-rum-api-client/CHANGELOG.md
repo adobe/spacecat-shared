@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-rum-api-client-v2.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.41.1...@adobe/spacecat-shared-rum-api-client-v2.42.0) (2026-06-09)
+
+### Features
+
+* Add per-field engagement metrics for forms ([#1653](https://github.com/adobe/spacecat-shared/issues/1653)) ([b6dba5b](https://github.com/adobe/spacecat-shared/commit/b6dba5bd9abb623aecf2d3f5d8e1e36bf427a919))
+
 ## [@adobe/spacecat-shared-rum-api-client-v2.41.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.41.0...@adobe/spacecat-shared-rum-api-client-v2.41.1) (2026-05-29)
 
 ### Bug Fixes

@@ -22,13 +22,13 @@ export const FORM_KEYWORDS_TO_FILTER = ['search'];
  * Checks whether a bundle event's source belongs to the given form source key.
  * Shared between form-vitals.js and form-field-engagement.js.
  */
-export function isFormSource(formSourceKey, eventSource) {
+export function isFormSource(source, eventSource) {
   const excludeSrc = ['form.', 'form#'];
-  if (formSourceKey === 'unknown') {
-    return /\bform\b/.test(eventSource?.toLowerCase())
-      && !excludeSrc.some((exclude) => eventSource?.includes(exclude));
+  if (source === 'unknown') {
+    return /\bform\b/.test(eventSource?.toLowerCase()) && !excludeSrc.some((exclude) => eventSource?.includes(exclude));
+  } else {
+    return eventSource?.includes(source);
   }
-  return eventSource?.includes(formSourceKey);
 }
 
 export const generateKey = (...keys) => keys.join(DELIMITER);

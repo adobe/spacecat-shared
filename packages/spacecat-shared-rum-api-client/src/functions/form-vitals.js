@@ -13,7 +13,9 @@
 import { DataChunks, facets } from '@adobe/rum-distiller';
 import trafficAcquisition from './traffic-acquisition.js';
 import { computeFieldEngagement } from './form-field-engagement.js';
-import { DELIMITER, generateKey, loadBundles } from '../utils.js';
+import {
+  DELIMITER, generateKey, loadBundles, isFormSource,
+} from '../utils.js';
 
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
 const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia', 'experiment'];
@@ -52,15 +54,6 @@ function filterEvents(bundles) {
         );
     }),
   }));
-}
-
-function isFormSource(source, eventSource) {
-  const excludeSrc = ['form.', 'form#'];
-  if (source === 'unknown') {
-    return /\bform\b/.test(eventSource?.toLowerCase()) && !excludeSrc.some((exclude) => eventSource?.includes(exclude));
-  } else {
-    return eventSource?.includes(source);
-  }
 }
 
 const metricFns = {

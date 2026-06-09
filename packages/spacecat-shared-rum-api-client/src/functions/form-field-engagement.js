@@ -13,26 +13,13 @@
 // Per-field form engagement helper. NOT a RUM query — invoked from form-vitals.js to
 // attach a `fieldEngagement` property to each form-vitals entry (like trafficacquisition).
 
-const KEYWORDS_TO_FILTER = ['search'];
+import { FORM_KEYWORDS_TO_FILTER, isFormSource } from '../utils.js';
 
 const average = (nums) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0);
 
-const isSearchEvent = (event) => KEYWORDS_TO_FILTER.some(
+const isSearchEvent = (event) => FORM_KEYWORDS_TO_FILTER.some(
   (kw) => event.source?.toLowerCase().includes(kw) || event.target?.toLowerCase().includes(kw),
 );
-
-/**
- * Checks whether an event's source belongs to the given form source key.
- * Mirrors the isFormSource logic used in form-vitals.js.
- */
-function isFormSource(formSourceKey, eventSource) {
-  const excludeSrc = ['form.', 'form#'];
-  if (formSourceKey === 'unknown') {
-    return /\bform\b/.test(eventSource?.toLowerCase())
-      && !excludeSrc.some((exclude) => eventSource?.includes(exclude));
-  }
-  return eventSource?.includes(formSourceKey);
-}
 
 /**
  * Average time (in seconds) spent on a field before the next interaction.
@@ -52,20 +39,7 @@ function timeSpentInSeconds(urlBundles, selector) {
       }
     }
   }
-  return average(deltaDiffs) / 1000;
-}
-
-/** Weighted count of events of a given checkpoint on a selector. */
-function weightedCount(urlBundles, checkpoint, selector) {
-  let total = 0;
-  for (const bundle of urlBundles) {
-    for (const event of bundle.events) {
-      if (event.checkpoint === checkpoint && event.source === selector) {
-        total += bundle.weight;
-      }
-    }
-  }
-  return total;
+  return Math.round((average(deltaDiffs) / 1000) * 100) / 100;
 }
 
 /** Average absolute timeDelta of a field's click/fill events — used for output ordering. */
@@ -82,19 +56,30 @@ function avgInteractionTime(urlBundles, selector) {
   return average(times);
 }
 
-/** Unique field selectors (click/fill sources) belonging to a form on this page. */
-function getFieldSelectors(urlBundles, formSourceKey) {
-  const selectors = new Set();
+/**
+ * Single-traversal collection of weighted click/fill counts per field selector.
+ * Returns a Map<source, { clicks, fills }> for all form-scoped field events.
+ */
+function getFieldMetrics(urlBundles, formSourceKey) {
+  const metricsMap = new Map();
   for (const bundle of urlBundles) {
     for (const event of bundle.events) {
       if ((event.checkpoint === 'click' || event.checkpoint === 'fill')
         && event.source && !isSearchEvent(event)
         && isFormSource(formSourceKey, event.source)) {
-        selectors.add(event.source);
+        if (!metricsMap.has(event.source)) {
+          metricsMap.set(event.source, { clicks: 0, fills: 0 });
+        }
+        const metrics = metricsMap.get(event.source);
+        if (event.checkpoint === 'click') {
+          metrics.clicks += bundle.weight;
+        } else {
+          metrics.fills += bundle.weight;
+        }
       }
     }
   }
-  return [...selectors];
+  return metricsMap;
 }
 
 /**
@@ -103,21 +88,19 @@ function getFieldSelectors(urlBundles, formSourceKey) {
  * @param {Array} urlBundles - RUM bundles already filtered to the form's page URL
  * @param {string} formSourceKey - form key extracted from the form source (e.g. 'abc'
  *   for 'form#abc'), or 'unknown'
- * @returns {Array<{source: string, clicks: number, fills: number, avg_time_spend: string}>}
- *   fields ordered by avg_time_spend descending
+ * @returns {Array<{source: string, clicks: number, fills: number, avg_time_spend: number}>}
+ *   fields ordered by average absolute timeDelta (natural form interaction order)
  */
 export function computeFieldEngagement(urlBundles, formSourceKey) {
-  const fields = getFieldSelectors(urlBundles, formSourceKey)
+  const fieldMetrics = getFieldMetrics(urlBundles, formSourceKey);
+
+  return [...fieldMetrics.keys()]
     .map((source) => ({
       source,
-      clicks: weightedCount(urlBundles, 'click', source),
-      fills: weightedCount(urlBundles, 'fill', source),
-      avg_time_spend: timeSpentInSeconds(urlBundles, source).toFixed(2),
+      clicks: fieldMetrics.get(source).clicks,
+      fills: fieldMetrics.get(source).fills,
+      avg_time_spend: timeSpentInSeconds(urlBundles, source),
     }))
-    // order fields by when users interacted with them (natural form sequence)
     .sort((a, b) => avgInteractionTime(urlBundles, a.source)
       - avgInteractionTime(urlBundles, b.source));
-
-  fields.sort((a, b) => b.avg_time_spend - a.avg_time_spend);
-  return fields;
 }

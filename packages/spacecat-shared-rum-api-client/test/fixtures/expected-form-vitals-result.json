@@ -140,13 +140,13 @@
         "source": "form#abc input[type=number] age",
         "clicks": 0,
         "fills": 100,
-        "avg_time_spend": "0.34"
+        "avg_time_spend": 0.34
       },
       {
         "source": "form#abc input[type=text] firstName",
         "clicks": 200,
         "fills": 0,
-        "avg_time_spend": "0.00"
+        "avg_time_spend": 0
       }
     ]
   },

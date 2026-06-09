@@ -59,14 +59,14 @@ describe('Query functions', () => {
       source: 'form#abc input[type=number] age',
       clicks: 0,
       fills: 100,
-      avg_time_spend: '0.34',
+      avg_time_spend: 0.34,
     });
     const nameField = entry.fieldEngagement.find((f) => f.source === 'form#abc input[type=text] firstName');
     expect(nameField).to.deep.equal({
       source: 'form#abc input[type=text] firstName',
       clicks: 200,
       fills: 0,
-      avg_time_spend: '0.00',
+      avg_time_spend: 0,
     });
   });
 
@@ -162,14 +162,14 @@ describe('Query functions', () => {
     const emailField = fields.find((f) => f.source === 'form.contact input[name="email"]');
     expect(emailField.fills).to.equal(150);
     expect(emailField.clicks).to.equal(0);
-    // b2: fill@4000, next click@8000 → diff=4000ms → 4s → '4.00' (b1 fill is last event, no diff)
-    expect(emailField.avg_time_spend).to.equal('4.00');
+    // b2: fill@4000, next click@8000 → diff=4000ms → 4s (b1 fill is last event, no diff)
+    expect(emailField.avg_time_spend).to.equal(4);
     const submitField = fields.find((f) => f.source === 'form.contact button[type="submit"]');
     expect(submitField.clicks).to.equal(50);
     expect(submitField.fills).to.equal(0);
-    // submit click@8000 is last event in b2 → no diff → 0s → '0.00'
-    expect(submitField.avg_time_spend).to.equal('0.00');
-    // fields sorted by avg_time_spend descending (email=4.00 > submit=0.00)
+    // submit click@8000 is last event in b2 → no diff → 0s
+    expect(submitField.avg_time_spend).to.equal(0);
+    // fields sorted by avg interaction time ascending (email avg=3500ms < submit avg=8000ms)
     expect(fields[0].source).to.equal('form.contact input[name="email"]');
     expect(fields[1].source).to.equal('form.contact button[type="submit"]');
   });

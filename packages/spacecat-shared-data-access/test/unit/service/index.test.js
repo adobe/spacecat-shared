@@ -102,12 +102,10 @@ describe('service/index', () => {
   describe('EbusyRetryStrategy', () => {
     let EbusyRetryStrategy;
     let strategy;
-    let mockNext;
-    let mockArgs;
+    let mockToken;
+    let superRefreshStub;
 
     before(async () => {
-      // Import the class from the module
-      const serviceModule = await import('../../../src/service/index.js');
       // Access the class through createS3Service execution
       const dataAccess = createDataAccess({
         postgrestUrl: 'http://localhost:3000',
@@ -123,132 +121,143 @@ describe('service/index', () => {
     });
 
     beforeEach(() => {
-      mockNext = sinon.stub().resolves({ success: true });
-      mockArgs = {
-        response: {},
-      };
+      mockToken = { retryCount: 0 };
+      // Stub the parent's refreshRetryTokenForRetry method
+      superRefreshStub = sinon.stub(Object.getPrototypeOf(Object.getPrototypeOf(strategy)), 'refreshRetryTokenForRetry')
+        .resolves({ retryCount: 1 });
     });
 
-    it('marks EBUSY errors with code as retryable', async () => {
+    afterEach(() => {
+      superRefreshStub.restore();
+    });
+
+    it('reclassifies EBUSY errors with code as TRANSIENT', async () => {
       const ebusyError = new Error('getaddrinfo EBUSY');
       ebusyError.code = 'EBUSY';
 
-      mockArgs.response = { error: ebusyError };
+      const errorInfo = { error: ebusyError };
 
-      await strategy.retry(mockNext, mockArgs);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      // Verify error was marked retryable
-      expect(mockArgs.response.error.$retryable).to.exist;
-      expect(mockNext).to.have.been.called;
+      // Verify super was called with TRANSIENT errorType
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [token, modifiedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(token).to.equal(mockToken);
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
+      expect(modifiedErrorInfo.error).to.equal(ebusyError);
     });
 
-    it('marks EBUSY errors with getaddrinfo message as retryable', async () => {
+    it('reclassifies EBUSY errors with getaddrinfo message as TRANSIENT', async () => {
       const ebusyDnsError = new Error('getaddrinfo EBUSY spacecat-prod-importer.s3.us-east-1.amazonaws.com');
       // No code set, only message matching
 
-      mockArgs.response = { error: ebusyDnsError };
+      const errorInfo = { error: ebusyDnsError };
 
-      await strategy.retry(mockNext, mockArgs);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      // Verify error was marked retryable
-      expect(mockArgs.response.error.$retryable).to.exist;
-      expect(mockNext).to.have.been.called;
+      // Verify super was called with TRANSIENT errorType
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, modifiedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
     });
 
-    it('does not mark non-EBUSY errors as retryable', async () => {
+    it('does not reclassify non-EBUSY errors', async () => {
       const randomError = new Error('Some other error');
       randomError.code = 'EOTHER';
 
-      mockArgs.response = { error: randomError };
+      const errorInfo = { error: randomError, errorType: 'THROTTLING' };
 
-      await strategy.retry(mockNext, mockArgs);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      // Verify error was NOT marked retryable
-      expect(mockArgs.response.error.$retryable).to.be.undefined;
-      expect(mockNext).to.have.been.called;
+      // Verify super was called with original errorInfo unchanged
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.equal('THROTTLING');
+      expect(passedErrorInfo.error).to.equal(randomError);
     });
 
-    it('handles errors with ECONNRESET code without marking as retryable', async () => {
+    it('does not reclassify ECONNRESET (already handled by SDK)', async () => {
       const connResetError = new Error('Connection reset');
       connResetError.code = 'ECONNRESET';
 
-      mockArgs.response = { error: connResetError };
+      const errorInfo = { error: connResetError };
 
-      await strategy.retry(mockNext, mockArgs);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      // SDK already handles ECONNRESET, we should not mark it
-      expect(mockArgs.response.error.$retryable).to.be.undefined;
-      expect(mockNext).to.have.been.called;
+      // Verify errorType was NOT set to TRANSIENT
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.be.undefined;
     });
 
-    it('handles errors with ETIMEDOUT code without marking as retryable', async () => {
+    it('does not reclassify ETIMEDOUT (already handled by SDK)', async () => {
       const timeoutError = new Error('Timeout');
       timeoutError.code = 'ETIMEDOUT';
 
-      mockArgs.response = { error: timeoutError };
+      const errorInfo = { error: timeoutError };
 
-      await strategy.retry(mockNext, mockArgs);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      // SDK already handles ETIMEDOUT, we should not mark it
-      expect(mockArgs.response.error.$retryable).to.be.undefined;
-      expect(mockNext).to.have.been.called;
+      // Verify errorType was NOT set to TRANSIENT
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.be.undefined;
     });
 
-    it('handles errors with ENOTFOUND code without marking as retryable', async () => {
+    it('does not reclassify ENOTFOUND (already handled by SDK)', async () => {
       const notFoundError = new Error('DNS not found');
       notFoundError.code = 'ENOTFOUND';
 
-      mockArgs.response = { error: notFoundError };
+      const errorInfo = { error: notFoundError };
 
-      await strategy.retry(mockNext, mockArgs);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      // SDK already handles ENOTFOUND, we should not mark it
-      expect(mockArgs.response.error.$retryable).to.be.undefined;
-      expect(mockNext).to.have.been.called;
+      // Verify errorType was NOT set to TRANSIENT
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.be.undefined;
     });
 
-    it('handles response with no error', async () => {
-      mockArgs.response = { success: true };
+    it('handles errorInfo with no error property', async () => {
+      const errorInfo = { errorType: 'THROTTLING' };
 
-      await strategy.retry(mockNext, mockArgs);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      expect(mockNext).to.have.been.called;
+      // Should delegate without crashing
+      expect(superRefreshStub).to.have.been.calledOnce;
     });
 
-    it('handles args with no response', async () => {
-      mockArgs = {};
-
-      await strategy.retry(mockNext, mockArgs);
-
-      expect(mockNext).to.have.been.called;
-    });
-
-    it('delegates to StandardRetryStrategy after marking error', async () => {
+    it('preserves other errorInfo properties when reclassifying', async () => {
       const ebusyError = new Error('EBUSY');
       ebusyError.code = 'EBUSY';
 
-      mockArgs.response = { error: ebusyError };
+      const errorInfo = {
+        error: ebusyError,
+        retryAfterHint: 1000,
+        customProperty: 'custom-value',
+      };
 
-      const result = await strategy.retry(mockNext, mockArgs);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      // Verify next was called (delegated to parent)
-      expect(mockNext).to.have.been.called;
-      expect(result).to.exist;
+      // Verify all properties are preserved
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, modifiedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
+      expect(modifiedErrorInfo.retryAfterHint).to.equal(1000);
+      expect(modifiedErrorInfo.customProperty).to.equal('custom-value');
+      expect(modifiedErrorInfo.error).to.equal(ebusyError);
     });
 
-    it('preserves error properties when marking as retryable', async () => {
-      const ebusyError = new Error('getaddrinfo EBUSY');
+    it('returns result from parent refreshRetryTokenForRetry', async () => {
+      const ebusyError = new Error('EBUSY');
       ebusyError.code = 'EBUSY';
-      ebusyError.customProperty = 'custom-value';
 
-      mockArgs.response = { error: ebusyError };
+      const errorInfo = { error: ebusyError };
+      superRefreshStub.resolves({ retryCount: 2, retryDelay: 200 });
 
-      await strategy.retry(mockNext, mockArgs);
+      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      // Verify custom properties are preserved
-      expect(mockArgs.response.error.code).to.equal('EBUSY');
-      expect(mockArgs.response.error.customProperty).to.equal('custom-value');
-      expect(mockArgs.response.error.$retryable).to.exist;
+      expect(result).to.deep.equal({ retryCount: 2, retryDelay: 200 });
     });
 
     it('constructs with default maxAttempts of 4', () => {

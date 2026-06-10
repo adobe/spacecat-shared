@@ -23,51 +23,13 @@ import { checkConfiguration } from './configuration.schema.js';
 const S3_CONFIG_KEY = 'config/spacecat/global-config.json';
 
 /**
- * Retries an async operation with exponential backoff and jitter.
- * Specifically handles transient DNS and network errors (EBUSY, ECONNRESET, etc.)
- * Adds jitter to prevent thundering herd when multiple Lambda invocations retry simultaneously.
- * @param {Function} operation - Async function to retry
- * @param {Object} log - Logger instance
- * @param {Object} options - Retry options
- * @param {number} options.maxRetries - Maximum number of retry attempts (default: 3)
- * @param {number} options.initialDelay - Initial delay in ms (default: 100)
- * @returns {Promise} - Result of the operation
- */
-async function retryWithBackoff(operation, log, { maxRetries = 3, initialDelay = 100 } = {}) {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      // Check if error is retryable (DNS, connection issues)
-      const isRetryable = error.code === 'EBUSY'
-        || error.code === 'ECONNRESET'
-        || error.code === 'ETIMEDOUT'
-        || error.code === 'ENOTFOUND'
-        || error.name === 'NetworkingError'
-        || (error.message && error.message.includes('getaddrinfo'));
-
-      if (!isRetryable || attempt === maxRetries) {
-        throw error;
-      }
-
-      // Add jitter (±20%) to prevent thundering herd
-      const jitter = 0.8 + Math.random() * 0.4; // Range: 0.8 to 1.2
-      const baseDelay = initialDelay * Math.pow(2, attempt);
-      const delay = Math.floor(baseDelay * jitter);
-
-      if (log) {
-        log.warn(`S3 operation failed with ${error.code || error.name}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-}
-
-/**
  * ConfigurationCollection - A standalone collection class for managing Configuration entities.
  * Unlike other collections, this uses S3 instead of PostgREST.
  * Configuration is stored as a versioned JSON object in S3.
+ *
+ * The S3Client is configured with a custom retry strategy (EbusyRetryStrategy) that extends
+ * the AWS SDK's StandardRetryStrategy to also retry EBUSY DNS errors. This handles the chronic
+ * DNS resolver exhaustion issue in Lambda without adding application-level retry logic.
  *
  * @class ConfigurationCollection
  */
@@ -166,7 +128,6 @@ class ConfigurationCollection {
 
   /**
    * Finds a configuration by S3 VersionId.
-   * Includes retry logic for transient DNS and network errors.
    *
    * @param {string} version - The S3 VersionId.
    * @returns {Promise<Configuration|null>} - The Configuration instance or null if not found.
@@ -178,21 +139,16 @@ class ConfigurationCollection {
     const versionId = String(version);
 
     try {
-      const operation = async () => {
-        const command = new GetObjectCommand({
-          Bucket: this.s3Bucket,
-          Key: S3_CONFIG_KEY,
-          VersionId: versionId,
-        });
+      const command = new GetObjectCommand({
+        Bucket: this.s3Bucket,
+        Key: S3_CONFIG_KEY,
+        VersionId: versionId,
+      });
 
-        const response = await this.s3Client.send(command);
-        const bodyString = await response.Body.transformToString();
-        const configData = JSON.parse(bodyString);
+      const response = await this.s3Client.send(command);
+      const bodyString = await response.Body.transformToString();
+      const configData = JSON.parse(bodyString);
 
-        return configData;
-      };
-
-      const configData = await retryWithBackoff(operation, this.log);
       return this.#createInstance(configData, versionId);
     } catch (error) {
       if (error.name === 'NoSuchKey' || error.name === 'NoSuchVersion') {
@@ -213,7 +169,6 @@ class ConfigurationCollection {
   /**
    * Retrieves the latest configuration from S3.
    * S3 automatically returns the latest version when versioning is enabled.
-   * Includes retry logic for transient DNS and network errors.
    *
    * @returns {Promise<Configuration|null>} - The latest Configuration instance
    * or null if not found.
@@ -223,21 +178,16 @@ class ConfigurationCollection {
     this.#requireS3();
 
     try {
-      const operation = async () => {
-        const command = new GetObjectCommand({
-          Bucket: this.s3Bucket,
-          Key: S3_CONFIG_KEY,
-        });
+      const command = new GetObjectCommand({
+        Bucket: this.s3Bucket,
+        Key: S3_CONFIG_KEY,
+      });
 
-        const response = await this.s3Client.send(command);
-        const bodyString = await response.Body.transformToString();
-        const configData = JSON.parse(bodyString);
-        const { VersionId: versionId } = response;
+      const response = await this.s3Client.send(command);
+      const bodyString = await response.Body.transformToString();
+      const configData = JSON.parse(bodyString);
+      const { VersionId: versionId } = response;
 
-        return { configData, versionId };
-      };
-
-      const { configData, versionId } = await retryWithBackoff(operation, this.log);
       return this.#createInstance(configData, versionId);
     } catch (error) {
       // If the object doesn't exist, return null (first-time setup)

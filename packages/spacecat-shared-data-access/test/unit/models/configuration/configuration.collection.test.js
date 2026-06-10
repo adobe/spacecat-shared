@@ -214,4 +214,231 @@ describe('ConfigurationCollection', () => {
       await expect(instance.findLatest()).to.be.rejectedWith('Original error');
     });
   });
+
+  describe('Retry logic with exponential backoff', () => {
+    describe('findLatest retry behavior', () => {
+      it('retries on EBUSY DNS error and succeeds on second attempt', async () => {
+        const ebusyError = new Error('getaddrinfo EBUSY spacecat-prod-importer.s3.us-east-1.amazonaws.com');
+        ebusyError.code = 'EBUSY';
+
+        // First call fails, second succeeds
+        mockS3Client.send
+          .onFirstCall().rejects(ebusyError)
+          .onSecondCall().resolves({
+            Body: createMockS3Body(mockRecord),
+            VersionId: 'retry-success-version',
+          });
+
+        const result = await instance.findLatest();
+
+        expect(result).to.be.an('object');
+        expect(result.getId()).to.equal('retry-success-version');
+        expect(mockS3Client.send).to.have.been.calledTwice;
+        expect(mockLogger.warn).to.have.been.calledWith('S3 operation failed with EBUSY, retrying in 100ms (attempt 1/3)');
+      });
+
+      it('retries on ECONNRESET error and succeeds on third attempt', async () => {
+        const connResetError = new Error('Connection reset');
+        connResetError.code = 'ECONNRESET';
+
+        mockS3Client.send
+          .onFirstCall().rejects(connResetError)
+          .onSecondCall().rejects(connResetError)
+          .onThirdCall().resolves({
+            Body: createMockS3Body(mockRecord),
+            VersionId: 'third-try-version',
+          });
+
+        const result = await instance.findLatest();
+
+        expect(result).to.be.an('object');
+        expect(result.getId()).to.equal('third-try-version');
+        expect(mockS3Client.send).to.have.been.calledThrice;
+        expect(mockLogger.warn).to.have.been.calledWith('S3 operation failed with ECONNRESET, retrying in 100ms (attempt 1/3)');
+        expect(mockLogger.warn).to.have.been.calledWith('S3 operation failed with ECONNRESET, retrying in 200ms (attempt 2/3)');
+      });
+
+      it('retries on ETIMEDOUT error', async () => {
+        const timeoutError = new Error('Connection timeout');
+        timeoutError.code = 'ETIMEDOUT';
+
+        mockS3Client.send
+          .onFirstCall().rejects(timeoutError)
+          .onSecondCall().resolves({
+            Body: createMockS3Body(mockRecord),
+            VersionId: 'timeout-retry-version',
+          });
+
+        const result = await instance.findLatest();
+
+        expect(result).to.be.an('object');
+        expect(mockS3Client.send).to.have.been.calledTwice;
+      });
+
+      it('retries on ENOTFOUND error', async () => {
+        const notFoundError = new Error('DNS not found');
+        notFoundError.code = 'ENOTFOUND';
+
+        mockS3Client.send
+          .onFirstCall().rejects(notFoundError)
+          .onSecondCall().resolves({
+            Body: createMockS3Body(mockRecord),
+            VersionId: 'notfound-retry-version',
+          });
+
+        const result = await instance.findLatest();
+
+        expect(result).to.be.an('object');
+        expect(mockS3Client.send).to.have.been.calledTwice;
+      });
+
+      it('retries on NetworkingError', async () => {
+        const networkError = new Error('Network error');
+        networkError.name = 'NetworkingError';
+
+        mockS3Client.send
+          .onFirstCall().rejects(networkError)
+          .onSecondCall().resolves({
+            Body: createMockS3Body(mockRecord),
+            VersionId: 'network-retry-version',
+          });
+
+        const result = await instance.findLatest();
+
+        expect(result).to.be.an('object');
+        expect(mockS3Client.send).to.have.been.calledTwice;
+      });
+
+      it('retries on error with getaddrinfo in message', async () => {
+        const dnsError = new Error('Some error with getaddrinfo details');
+
+        mockS3Client.send
+          .onFirstCall().rejects(dnsError)
+          .onSecondCall().resolves({
+            Body: createMockS3Body(mockRecord),
+            VersionId: 'getaddrinfo-retry-version',
+          });
+
+        const result = await instance.findLatest();
+
+        expect(result).to.be.an('object');
+        expect(mockS3Client.send).to.have.been.calledTwice;
+      });
+
+      it('throws after max retries (3 attempts) are exhausted', async () => {
+        const ebusyError = new Error('getaddrinfo EBUSY spacecat-prod-importer.s3.us-east-1.amazonaws.com');
+        ebusyError.code = 'EBUSY';
+
+        mockS3Client.send.rejects(ebusyError);
+
+        await expect(instance.findLatest())
+          .to.be.rejectedWith('Failed to retrieve configuration from S3');
+
+        // Should try: initial + 3 retries = 4 total calls
+        expect(mockS3Client.send).to.have.callCount(4);
+        expect(mockLogger.warn).to.have.been.calledThrice;
+      });
+
+      it('does not retry non-retryable errors', async () => {
+        const randomError = new Error('Some other error');
+
+        mockS3Client.send.rejects(randomError);
+
+        await expect(instance.findLatest())
+          .to.be.rejectedWith('Failed to retrieve configuration from S3');
+
+        // Should only try once (no retries)
+        expect(mockS3Client.send).to.have.been.calledOnce;
+        expect(mockLogger.warn).to.not.have.been.called;
+      });
+
+      it('does not retry NoSuchKey errors', async () => {
+        const noSuchKeyError = new Error('NoSuchKey');
+        noSuchKeyError.name = 'NoSuchKey';
+
+        mockS3Client.send.rejects(noSuchKeyError);
+
+        const result = await instance.findLatest();
+
+        expect(result).to.be.null;
+        expect(mockS3Client.send).to.have.been.calledOnce;
+        expect(mockLogger.warn).to.not.have.been.called;
+      });
+
+      it('does not retry DataAccessError', async () => {
+        const { default: DataAccessError } = await import('../../../../src/errors/data-access.error.js');
+        const daeError = new DataAccessError('Some DAE error', instance);
+
+        mockS3Client.send.rejects(daeError);
+
+        await expect(instance.findLatest())
+          .to.be.rejectedWith('Some DAE error');
+
+        expect(mockS3Client.send).to.have.been.calledOnce;
+        expect(mockLogger.warn).to.not.have.been.called;
+      });
+    });
+
+    describe('findByVersion retry behavior', () => {
+      it('retries on EBUSY DNS error and succeeds', async () => {
+        const ebusyError = new Error('getaddrinfo EBUSY spacecat-prod-importer.s3.us-east-1.amazonaws.com');
+        ebusyError.code = 'EBUSY';
+
+        mockS3Client.send
+          .onFirstCall().rejects(ebusyError)
+          .onSecondCall().resolves({
+            Body: createMockS3Body(mockRecord),
+          });
+
+        const result = await instance.findByVersion('test-version');
+
+        expect(result).to.be.an('object');
+        expect(result.getId()).to.equal('test-version');
+        expect(mockS3Client.send).to.have.been.calledTwice;
+        expect(mockLogger.warn).to.have.been.calledOnce;
+      });
+
+      it('throws after max retries are exhausted', async () => {
+        const ebusyError = new Error('getaddrinfo EBUSY');
+        ebusyError.code = 'EBUSY';
+
+        mockS3Client.send.rejects(ebusyError);
+
+        await expect(instance.findByVersion('test-version'))
+          .to.be.rejectedWith('Failed to retrieve configuration with version');
+
+        expect(mockS3Client.send).to.have.callCount(4);
+      });
+
+      it('does not retry NoSuchVersion errors', async () => {
+        const noSuchVersionError = new Error('NoSuchVersion');
+        noSuchVersionError.name = 'NoSuchVersion';
+
+        mockS3Client.send.rejects(noSuchVersionError);
+
+        const result = await instance.findByVersion('non-existent');
+
+        expect(result).to.be.null;
+        expect(mockS3Client.send).to.have.been.calledOnce;
+        expect(mockLogger.warn).to.not.have.been.called;
+      });
+    });
+
+    describe('Exponential backoff timing', () => {
+      it('uses exponential backoff delays (100ms, 200ms, 400ms)', async () => {
+        const ebusyError = new Error('EBUSY');
+        ebusyError.code = 'EBUSY';
+
+        mockS3Client.send.rejects(ebusyError);
+
+        await expect(instance.findLatest())
+          .to.be.rejectedWith('Failed to retrieve configuration from S3');
+
+        // Verify the delay messages show exponential backoff
+        expect(mockLogger.warn.firstCall).to.have.been.calledWith('S3 operation failed with EBUSY, retrying in 100ms (attempt 1/3)');
+        expect(mockLogger.warn.secondCall).to.have.been.calledWith('S3 operation failed with EBUSY, retrying in 200ms (attempt 2/3)');
+        expect(mockLogger.warn.thirdCall).to.have.been.calledWith('S3 operation failed with EBUSY, retrying in 400ms (attempt 3/3)');
+      });
+    });
+  });
 });

@@ -23,23 +23,21 @@ import { checkConfiguration } from './configuration.schema.js';
 const S3_CONFIG_KEY = 'config/spacecat/global-config.json';
 
 /**
- * Retries an async operation with exponential backoff.
+ * Retries an async operation with exponential backoff and jitter.
  * Specifically handles transient DNS and network errors (EBUSY, ECONNRESET, etc.)
+ * Adds jitter to prevent thundering herd when multiple Lambda invocations retry simultaneously.
  * @param {Function} operation - Async function to retry
- * @param {number} maxRetries - Maximum number of retry attempts (default: 3)
- * @param {number} initialDelay - Initial delay in ms (default: 100)
  * @param {Object} log - Logger instance
+ * @param {Object} options - Retry options
+ * @param {number} options.maxRetries - Maximum number of retry attempts (default: 3)
+ * @param {number} options.initialDelay - Initial delay in ms (default: 100)
  * @returns {Promise} - Result of the operation
  */
-async function retryWithBackoff(operation, maxRetries = 3, initialDelay = 100, log) {
-  let lastError;
-
+async function retryWithBackoff(operation, log, { maxRetries = 3, initialDelay = 100 } = {}) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error) {
-      lastError = error;
-
       // Check if error is retryable (DNS, connection issues)
       const isRetryable = error.code === 'EBUSY'
         || error.code === 'ECONNRESET'
@@ -52,14 +50,18 @@ async function retryWithBackoff(operation, maxRetries = 3, initialDelay = 100, l
         throw error;
       }
 
-      const delay = initialDelay * Math.pow(2, attempt);
-      log.warn(`S3 operation failed with ${error.code || error.name}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+      // Add jitter (±20%) to prevent thundering herd
+      const jitter = 0.8 + Math.random() * 0.4; // Range: 0.8 to 1.2
+      const baseDelay = initialDelay * Math.pow(2, attempt);
+      const delay = Math.floor(baseDelay * jitter);
+
+      if (log) {
+        log.warn(`S3 operation failed with ${error.code || error.name}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+      }
 
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-
-  throw lastError;
 }
 
 /**
@@ -190,7 +192,7 @@ class ConfigurationCollection {
         return configData;
       };
 
-      const configData = await retryWithBackoff(operation, 3, 100, this.log);
+      const configData = await retryWithBackoff(operation, this.log);
       return this.#createInstance(configData, versionId);
     } catch (error) {
       if (error.name === 'NoSuchKey' || error.name === 'NoSuchVersion') {
@@ -235,7 +237,7 @@ class ConfigurationCollection {
         return { configData, versionId };
       };
 
-      const { configData, versionId } = await retryWithBackoff(operation, 3, 100, this.log);
+      const { configData, versionId } = await retryWithBackoff(operation, this.log);
       return this.#createInstance(configData, versionId);
     } catch (error) {
       // If the object doesn't exist, return null (first-time setup)

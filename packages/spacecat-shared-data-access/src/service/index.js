@@ -83,27 +83,30 @@ const createPostgrestService = (config, client = undefined) => {
  * Custom retry strategy that extends StandardRetryStrategy to include EBUSY errors.
  * The AWS SDK's default retry strategy handles ECONNRESET, ETIMEDOUT, ENOTFOUND, etc.,
  * but does NOT retry EBUSY DNS errors. This class adds EBUSY to the retryable set.
+ *
+ * StandardRetryStrategy implements RetryStrategyV2 interface, which uses
+ * refreshRetryTokenForRetry() rather than retry(). The SDK's retry middleware
+ * calls this method to determine if an error should be retried.
  */
 class EbusyRetryStrategy extends StandardRetryStrategy {
   constructor(maxAttempts = 4) {
     super(maxAttempts);
   }
 
-  async retry(next, args) {
-    const { error } = args.response || {};
+  async refreshRetryTokenForRetry(token, errorInfo) {
+    const { error } = errorInfo;
 
     // Check if this is an EBUSY error (code or message)
     const isEbusy = error?.code === 'EBUSY'
       || (error?.message?.includes('getaddrinfo') && error?.message?.includes('EBUSY'));
 
     if (isEbusy) {
-      // Mark as retryable so StandardRetryStrategy handles it
-      const retryableError = Object.assign(error, { $retryable: {} });
-      args.response = { ...args.response, error: retryableError };
+      // Reclassify EBUSY as TRANSIENT so StandardRetryStrategy will retry it
+      return super.refreshRetryTokenForRetry(token, { ...errorInfo, errorType: 'TRANSIENT' });
     }
 
-    // Delegate to StandardRetryStrategy for retry logic (backoff, jitter, rate-limit tokens)
-    return super.retry(next, args);
+    // Delegate to StandardRetryStrategy for all other errors
+    return super.refreshRetryTokenForRetry(token, errorInfo);
   }
 }
 

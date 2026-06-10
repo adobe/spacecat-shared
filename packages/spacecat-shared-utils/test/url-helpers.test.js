@@ -1029,6 +1029,8 @@ describe('URL Utility Functions', () => {
       rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('real-key');
       nock('https://bundles.aem.page')
         .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'ghost-key' })
+        .times(2)
         .reply(200, { rumBundles: [] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
@@ -1039,17 +1041,36 @@ describe('URL Utility Functions', () => {
       expect(log.debug).to.have.been.calledWith('Resolved URL example.com for https://example.com using RUM API Client');
     });
 
+    it('should accept www-toggled hostname when today is empty but yesterday has bundle data', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'domain-key' })
+        .reply(200, { rumBundles: [] })
+        .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'domain-key' })
+        .reply(200, { rumBundles: [{ weight: 1 }] });
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+    });
+
     it('should fall back to original hostname when bundle probe returns non-200', async () => {
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('some-key');
       rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('real-key');
       nock('https://bundles.aem.page')
         .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'some-key' })
+        .times(2)
         .reply(500);
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
       expect(result).to.equal('example.com');
+      expect(log.debug).to.have.been.calledWith('[wwwUrlResolver] www.example.com has key but no bundle data, trying example.com');
     });
 
     it('should fall back to original hostname when bundle probe throws a network error', async () => {
@@ -1058,11 +1079,14 @@ describe('URL Utility Functions', () => {
       rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('real-key');
       nock('https://bundles.aem.page')
         .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'some-key' })
+        .times(2)
         .replyWithError('network failure');
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
       expect(result).to.equal('example.com');
+      expect(log.debug).to.have.been.calledWith('[wwwUrlResolver] www.example.com has key but no bundle data, trying example.com');
     });
   });
 

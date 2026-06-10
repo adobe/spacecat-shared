@@ -330,22 +330,33 @@ const RUM_BUNDLER_BASE_URL = 'https://bundles.aem.page';
 
 async function hasBundleData(hostname, domainkey, log) {
   const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = (now.getUTCMonth() + 1).toString().padStart(2, '0');
-  const day = now.getUTCDate().toString().padStart(2, '0');
-  const url = `${RUM_BUNDLER_BASE_URL}/bundles/${hostname}/${year}/${month}/${day}?domainkey=${domainkey}`;
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) {
-      return false;
+  const datesToCheck = [0, 1].map((daysAgo) => {
+    const d = new Date(now);
+    d.setUTCDate(now.getUTCDate() - daysAgo);
+    return `${d.getUTCFullYear()}/${(d.getUTCMonth() + 1).toString().padStart(2, '0')}/${d.getUTCDate().toString().padStart(2, '0')}`;
+  });
+
+  for (const dateStr of datesToCheck) {
+    const url = `${RUM_BUNDLER_BASE_URL}/bundles/${hostname}/${dateStr}?domainkey=${domainkey}`;
+    const safeUrl = `${RUM_BUNDLER_BASE_URL}/bundles/${hostname}/${dateStr}?domainkey=REDACTED`;
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': SPACECAT_USER_AGENT },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (resp.ok) {
+        // eslint-disable-next-line no-await-in-loop
+        const { rumBundles } = await resp.json();
+        if (Array.isArray(rumBundles) && rumBundles.length > 0) {
+          return true;
+        }
+      }
+    } catch (e) {
+      log.warn(`[wwwUrlResolver] bundle probe failed for ${hostname} (${safeUrl}): ${e.message.replace(domainkey, 'REDACTED')}`);
     }
-    const { rumBundles } = await resp.json();
-    return Array.isArray(rumBundles) && rumBundles.length > 0;
-    /* c8 ignore next 3 */
-  } catch (e) {
-    log.warn(`[wwwUrlResolver] bundle probe failed for ${hostname}: ${e.message}`);
-    return false;
   }
+  return false;
 }
 
 /**
@@ -380,7 +391,6 @@ async function wwwUrlResolver(site, rumApiClient, log) {
       log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
       return wwwToggledHostname;
     }
-    /* c8 ignore next */
     log.debug(`[wwwUrlResolver] ${wwwToggledHostname} has key but no bundle data, trying ${hostname}`);
   } catch (e) {
     log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);

@@ -216,6 +216,18 @@ describe('ConfigurationCollection', () => {
   });
 
   describe('Retry logic with exponential backoff', () => {
+    let randomStub;
+
+    beforeEach(() => {
+      // Stub Math.random to return 0.5, giving jitter multiplier of 1.0
+      // This makes delays deterministic: 100ms, 200ms, 400ms
+      randomStub = stub(Math, 'random').returns(0.5);
+    });
+
+    afterEach(() => {
+      randomStub.restore();
+    });
+
     describe('findLatest retry behavior', () => {
       it('retries on EBUSY DNS error and succeeds on second attempt', async () => {
         const ebusyError = new Error('getaddrinfo EBUSY spacecat-prod-importer.s3.us-east-1.amazonaws.com');
@@ -426,6 +438,9 @@ describe('ConfigurationCollection', () => {
 
     describe('Exponential backoff timing with jitter', () => {
       it('uses exponential backoff with jitter to prevent thundering herd', async () => {
+        // Restore Math.random for this test to verify actual jitter behavior
+        randomStub.restore();
+
         const ebusyError = new Error('EBUSY');
         ebusyError.code = 'EBUSY';
 
@@ -454,6 +469,9 @@ describe('ConfigurationCollection', () => {
         expect(delays[0]).to.be.within(80, 120);
         expect(delays[1]).to.be.within(160, 240);
         expect(delays[2]).to.be.within(320, 480);
+
+        // Re-stub for subsequent tests
+        randomStub = stub(Math, 'random').returns(0.5);
       });
 
       it('works correctly when log is undefined', async () => {

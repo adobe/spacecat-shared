@@ -13,6 +13,7 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { PostgrestClient } from '@supabase/postgrest-js';
 import { h1NoCache, keepAliveNoCache } from '@adobe/fetch';
+import { StandardRetryStrategy } from '@smithy/util-retry';
 
 import { instrumentAWSClient } from '@adobe/spacecat-shared-utils';
 import { EntityRegistry } from '../models/index.js';
@@ -79,6 +80,34 @@ const createPostgrestService = (config, client = undefined) => {
 };
 
 /**
+ * Custom retry strategy that extends StandardRetryStrategy to include EBUSY errors.
+ * The AWS SDK's default retry strategy handles ECONNRESET, ETIMEDOUT, ENOTFOUND, etc.,
+ * but does NOT retry EBUSY DNS errors. This class adds EBUSY to the retryable set.
+ */
+class EbusyRetryStrategy extends StandardRetryStrategy {
+  constructor(maxAttempts = 4) {
+    super(maxAttempts);
+  }
+
+  async retry(next, args) {
+    const { error } = args.response || {};
+
+    // Check if this is an EBUSY error (code or message)
+    const isEbusy = error?.code === 'EBUSY'
+      || (error?.message?.includes('getaddrinfo') && error?.message?.includes('EBUSY'));
+
+    if (isEbusy) {
+      // Mark as retryable so StandardRetryStrategy handles it
+      const retryableError = Object.assign(error, { $retryable: {} });
+      args.response = { ...args.response, error: retryableError };
+    }
+
+    // Delegate to StandardRetryStrategy for retry logic (backoff, jitter, rate-limit tokens)
+    return super.retry(next, args);
+  }
+}
+
+/**
  * Creates an S3 service configuration if bucket configuration is provided.
  *
  * @param {object} config - Configuration object
@@ -93,7 +122,11 @@ const createS3Service = (config) => {
     return null;
   }
 
-  const options = region ? { region } : {};
+  const options = {
+    ...(region ? { region } : {}),
+    maxAttempts: 4,
+    retryStrategy: new EbusyRetryStrategy(4),
+  };
   const s3Client = instrumentAWSClient(new S3Client(options));
 
   return { s3Client, s3Bucket };

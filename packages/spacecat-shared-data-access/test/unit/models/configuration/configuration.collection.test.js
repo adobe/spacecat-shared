@@ -424,8 +424,8 @@ describe('ConfigurationCollection', () => {
       });
     });
 
-    describe('Exponential backoff timing', () => {
-      it('uses exponential backoff delays (100ms, 200ms, 400ms)', async () => {
+    describe('Exponential backoff timing with jitter', () => {
+      it('uses exponential backoff with jitter to prevent thundering herd', async () => {
         const ebusyError = new Error('EBUSY');
         ebusyError.code = 'EBUSY';
 
@@ -434,10 +434,48 @@ describe('ConfigurationCollection', () => {
         await expect(instance.findLatest())
           .to.be.rejectedWith('Failed to retrieve configuration from S3');
 
-        // Verify the delay messages show exponential backoff
-        expect(mockLogger.warn.firstCall).to.have.been.calledWith('S3 operation failed with EBUSY, retrying in 100ms (attempt 1/3)');
-        expect(mockLogger.warn.secondCall).to.have.been.calledWith('S3 operation failed with EBUSY, retrying in 200ms (attempt 2/3)');
-        expect(mockLogger.warn.thirdCall).to.have.been.calledWith('S3 operation failed with EBUSY, retrying in 400ms (attempt 3/3)');
+        // Verify exponential backoff happened (with jitter, delays will vary)
+        expect(mockLogger.warn).to.have.been.calledThrice;
+
+        // Extract actual delays from log messages
+        const delays = [];
+        for (let i = 0; i < 3; i++) {
+          const call = mockLogger.warn.getCall(i);
+          const match = call.args[0].match(/retrying in (\d+)ms/);
+          if (match) {
+            delays.push(parseInt(match[1], 10));
+          }
+        }
+
+        // With base delays of 100, 200, 400 and jitter of ±20%:
+        // Attempt 1: ~80-120ms
+        // Attempt 2: ~160-240ms
+        // Attempt 3: ~320-480ms
+        expect(delays[0]).to.be.within(80, 120);
+        expect(delays[1]).to.be.within(160, 240);
+        expect(delays[2]).to.be.within(320, 480);
+      });
+
+      it('works correctly when log is undefined', async () => {
+        const ebusyError = new Error('EBUSY');
+        ebusyError.code = 'EBUSY';
+
+        // Remove logger
+        instance.log = undefined;
+
+        mockS3Client.send
+          .onFirstCall().rejects(ebusyError)
+          .onSecondCall().resolves({
+            Body: createMockS3Body(mockRecord),
+            VersionId: 'no-log-version',
+          });
+
+        const result = await instance.findLatest();
+
+        expect(result).to.be.an('object');
+        expect(result.getId()).to.equal('no-log-version');
+        expect(mockS3Client.send).to.have.been.calledTwice;
+        // No warning logs should have been attempted
       });
     });
   });

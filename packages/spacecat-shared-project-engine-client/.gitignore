@@ -4,5 +4,6 @@ build/
 # Counterfact scratch dir (mock handlers materialized at runtime).
 .counterfact/
 
-# Generated Python package scaffolding (only models.py is committed).
+# The generated Python package is committed (model.py, aiseo.py, http_server.py,
+# __init__.py); only the bytecode caches are ignored.
 python/**/__pycache__/

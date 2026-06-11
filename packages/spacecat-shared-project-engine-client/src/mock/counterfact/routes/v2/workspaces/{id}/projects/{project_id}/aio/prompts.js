@@ -13,23 +13,14 @@
 /* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
 
 /**
- * Stateful handlers for /v2/workspaces/{id}/projects/{project_id}/aio/prompts — create (one per
- * supplied keyword) and batch-delete. Materialized into `.counterfact/routes/` by the mock
- * runner; excluded from coverage.
+ * Stateful handler for DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts — the only
+ * operation the spec defines on this exact path (`aio-delete-prompt-by-ids-v2`). Prompt *create*
+ * lives at `aio/prompts/tagged` and *list* at `aio/prompts/by_tags` — the paths the real
+ * consumer (spacecat-api-service `rest-transport.js`) actually calls. Materialized into
+ * `.counterfact/routes/` by the mock runner; excluded from coverage.
  */
 
-/** POST — create prompts (body: { items: [text], tag_ids }). Returns the first as StringIDName. */
-export function POST($) {
-  const { path, body, context } = $;
-  const created = context.ops.prompts.createMany(
-    { workspaceId: path.id, projectId: path.project_id },
-    (body?.items ?? []).map((text) => ({ name: text })),
-  );
-  const first = created[0] ?? {};
-  return $.response[200].json({ id: first.id, name: first.name });
-}
-
-/** DELETE — batch-delete prompts (body: { ids }). */
+/** DELETE — batch-delete prompts (body: { ids }) → 204 No Content. */
 export function DELETE($) {
   const { path, body, context } = $;
   context.ops.prompts.removeMany(

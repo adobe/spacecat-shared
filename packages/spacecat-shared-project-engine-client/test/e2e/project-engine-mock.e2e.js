@@ -206,16 +206,55 @@ async function waitForReady(baseUrl, deadline) {
     expect(after.total).to.equal(2);
   });
 
-  it('creates aio prompts (v2)', async () => {
-    const { data, error } = await client.POST(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts',
+  // Exercises the prompt write-then-read spine through the paths the real consumer uses
+  // (spacecat-api-service): create via `tagged`, list via `by_tags`. Not `POST /aio/prompts`
+  // (delete-only in the spec) — see src/mock/.../aio/prompts*.js.
+  it('creates aio prompts (tagged) and lists them back (by_tags)', async () => {
+    const { data: created, error: createError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { items: ['What is X?', 'Tell me Y'] },
+        body: { prompts: { brand: ['What is X?', 'Tell me Y'] } },
       },
     );
-    expect(error).to.equal(undefined);
-    expect(data.name).to.equal('What is X?');
+    expect(createError).to.equal(undefined);
+    expect(created.ids).to.have.length(2);
+    expect(created.existing_count).to.equal(0);
+
+    // by_tags with an empty tag_ids lists every prompt: 1 seeded + 2 created.
+    const { data: listed, error: listError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { tag_ids: [] },
+      },
+    );
+    expect(listError).to.equal(undefined);
+    expect(listed.total).to.equal(3);
+    expect(listed.items.map((p) => p.name)).to.include.members(['What is X?', 'Tell me Y']);
+  });
+
+  it('deletes aio prompts by id (by_tags reflects the removal)', async () => {
+    const { data: created } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { prompts: { brand: ['Doomed prompt'] } },
+      },
+    );
+    await client.DELETE('/v2/workspaces/{id}/projects/{project_id}/aio/prompts', {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { ids: created.ids },
+    });
+    const { data: listed } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { tag_ids: [] },
+      },
+    );
+    expect(listed.total).to.equal(1);
+    expect(listed.items[0].id).to.equal('prompt-1');
   });
 
   it('__reset restores the seed between mutations', async () => {

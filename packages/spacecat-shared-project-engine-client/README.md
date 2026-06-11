@@ -80,7 +80,9 @@ Stateful endpoints (backed by the store):
 | `GET/POST /v1/workspaces/{id}/projects` | list / create |
 | `GET/PATCH/DELETE /v1/workspaces/{id}/projects/{project_id}` | get / update / remove (404 when missing) |
 | `GET/POST /v1/workspaces/{id}/projects/{project_id}/ai_models` | list / add |
-| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | create prompts |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged` | create prompts grouped by tag name |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags` | list prompts (empty `tag_ids` lists all; otherwise OR-filter) |
+| `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | batch-delete prompts by id |
 
 `POST /enterprise/projects/api/__reset` restores the store to its startup seed — call it
 between E2E cases for isolation. It is a test control route, not part of the Project Engine API.

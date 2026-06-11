@@ -43,7 +43,8 @@ export const WORKSPACE_WITH_DATA = Object.freeze({
     { id: 'model-gpt4o', name: 'gpt-4o' },
   ],
   [collectionKey('prompts', { workspaceId: WORKSPACE_ID, projectId: PROJECT_ID })]: [
-    { id: 'prompt-1', text: 'What is the best running shoe?' },
+    // Shape matches AIOPromptWithStatus (the by_tags list item): id, name, tags.
+    { id: 'prompt-1', name: 'What is the best running shoe?', tags: [] },
   ],
 });
 

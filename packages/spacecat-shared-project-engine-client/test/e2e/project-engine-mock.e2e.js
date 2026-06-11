@@ -23,6 +23,7 @@
 
 import { expect } from 'chai';
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSerenityProjectEngineApiClient } from '../../src/index.js';
@@ -31,9 +32,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, '..', '..');
 const RUNNER = join(packageRoot, 'src', 'mock', 'run.js');
 
-const PORT = process.env.MOCK_E2E_PORT ?? '4099';
-const BASE_URL = `http://localhost:${PORT}/enterprise/projects/api`;
 const READY_TIMEOUT_MS = 30_000;
+const SHUTDOWN_TIMEOUT_MS = 5_000;
 const SEED_WORKSPACE = 'ws-1';
 const SEED_PROJECT = 'pr-1';
 
@@ -43,12 +43,33 @@ function sleep(ms) {
   });
 }
 
+/**
+ * Binds an OS-assigned port, then releases it and hands back the number. Avoids a hardcoded
+ * port that could collide with a stray local server or a sibling CI job on the same runner.
+ * The bind/close/reuse window is a small race, acceptable for a single-process test boot.
+ * Honour `MOCK_E2E_PORT` when set so a developer can pin a port for manual debugging.
+ */
+function pickPort() {
+  if (process.env.MOCK_E2E_PORT) {
+    return Promise.resolve(Number(process.env.MOCK_E2E_PORT));
+  }
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.unref();
+    probe.on('error', reject);
+    probe.listen(0, '127.0.0.1', () => {
+      const { port } = probe.address();
+      probe.close(() => resolve(port));
+    });
+  });
+}
+
 /** Polls the mock until it answers a seeded request 200, or throws after the budget. */
 /* eslint-disable no-await-in-loop -- sequential readiness polling is intentional. */
-async function waitForReady(deadline) {
+async function waitForReady(baseUrl, deadline) {
   for (;;) {
     try {
-      const res = await fetch(`${BASE_URL}/v1/workspaces/${SEED_WORKSPACE}/projects`);
+      const res = await fetch(`${baseUrl}/v1/workspaces/${SEED_WORKSPACE}/projects`);
       if (res.ok) {
         return;
       }
@@ -68,34 +89,48 @@ async function waitForReady(deadline) {
 
   /** @type {import('node:child_process').ChildProcess} */
   let server;
+  /** @type {string} */
+  let baseUrl;
   /** @type {ReturnType<typeof createSerenityProjectEngineApiClient>} */
   let client;
 
   before(async () => {
+    const port = await pickPort();
+    baseUrl = `http://localhost:${port}/enterprise/projects/api`;
     // detached so we can signal the whole process group (run.js spawns Counterfact as a child).
     server = spawn(process.execPath, [RUNNER], {
       cwd: packageRoot,
       detached: true,
       stdio: 'ignore',
-      env: { ...process.env, MOCK_PORT: PORT },
+      env: { ...process.env, MOCK_PORT: String(port) },
     });
-    await waitForReady(Date.now() + READY_TIMEOUT_MS);
-    client = createSerenityProjectEngineApiClient({ baseUrl: BASE_URL, authToken: 'e2e-token' });
+    // If readiness times out, `server` is already assigned, so after() still tears it down
+    // (mocha runs after-hooks even when a before-hook throws).
+    await waitForReady(baseUrl, Date.now() + READY_TIMEOUT_MS);
+    client = createSerenityProjectEngineApiClient({ baseUrl, authToken: 'e2e-token' });
   });
 
-  after(() => {
-    if (server?.pid) {
-      try {
-        process.kill(-server.pid, 'SIGTERM');
-      } catch {
-        server.kill('SIGTERM');
-      }
+  after(async () => {
+    if (!server?.pid) {
+      return;
     }
+    // Wait for actual exit so the port is freed before the process ends — prevents a leaked
+    // server (and a port collision on the next run) if the test process is short-lived.
+    const exited = new Promise((resolve) => {
+      server.once('exit', resolve);
+    });
+    try {
+      // Negative pid signals the whole detached group (Counterfact child included).
+      process.kill(-server.pid, 'SIGTERM');
+    } catch {
+      server.kill('SIGTERM');
+    }
+    await Promise.race([exited, sleep(SHUTDOWN_TIMEOUT_MS)]);
   });
 
   // Restore the seed before each case so they are order-independent.
   beforeEach(async () => {
-    await fetch(`${BASE_URL}/__reset`, { method: 'POST' });
+    await fetch(`${baseUrl}/__reset`, { method: 'POST' });
   });
 
   it('lists the seeded project', async () => {
@@ -188,7 +223,7 @@ async function waitForReady(deadline) {
       params: { path: { id: SEED_WORKSPACE } },
       body: { name: 'Transient' },
     });
-    await fetch(`${BASE_URL}/__reset`, { method: 'POST' });
+    await fetch(`${baseUrl}/__reset`, { method: 'POST' });
     const { data } = await client.GET('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },
     });

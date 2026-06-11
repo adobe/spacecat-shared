@@ -12,7 +12,6 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { S3Client } from '@aws-sdk/client-s3';
 
 import { createDataAccess, createFetchCompat } from '../../../src/service/index.js';
 
@@ -113,9 +112,10 @@ describe('service/index', () => {
       }, console, {});
 
       // Extract the retry strategy from the Configuration collection's S3 client
-      const configCollection = dataAccess.Configuration;
-      const s3Client = configCollection.s3Client;
-      strategy = s3Client.config.retryStrategy;
+      const { Configuration } = dataAccess;
+      const { s3Client } = Configuration;
+      const { config } = s3Client;
+      strategy = config.retryStrategy;
 
       EbusyRetryStrategy = strategy.constructor;
     });

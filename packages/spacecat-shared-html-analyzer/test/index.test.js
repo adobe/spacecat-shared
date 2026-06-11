@@ -211,7 +211,7 @@ describe('HTML Visibility Analyzer', () => {
             <span>We are currently experiencing system difficulties.</span>
           </div>
         </div>
-        <span aria-live="polite">Loading complete</span>
+        <span aria-live="polite">Showing 150 results</span>
       </body></html>`;
 
       const text = await stripTagsToText(html, true);
@@ -219,7 +219,8 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Title');
       expect(text).to.include('Content');
       expect(text).to.not.include('system difficulties');
-      expect(text).to.not.include('Loading complete');
+      // aria-live="polite" is intentionally kept — used for legitimate dynamic content
+      expect(text).to.include('Showing 150 results');
     });
 
     it('should remove cookie banner when selector matches and content indicates consent', async () => {

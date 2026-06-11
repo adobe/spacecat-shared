@@ -370,9 +370,12 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
   // Remove accessibility elements
   removeAccessibilityElementsCheerio($);
 
-  // Remove transient notification elements (toasts, alerts) injected by JS
-  // e.g. bot-detection error toasts that don't appear in real browsers
-  $('[role="alert"], [aria-live="assertive"], [aria-live="polite"], #toastContainer').remove();
+  // Remove toast/alert notification elements injected by JS (e.g. bot-detection toasts).
+  // role="alert" and aria-live="assertive" are W3C live regions for urgent transient
+  // notifications — by spec they are dynamically triggered, not static page content.
+  // aria-live="polite" is intentionally excluded: it is used broadly for legitimate
+  // dynamic content (search result counts, filter updates, etc.).
+  $('[role="alert"], [aria-live="assertive"], #toastContainer').remove();
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {

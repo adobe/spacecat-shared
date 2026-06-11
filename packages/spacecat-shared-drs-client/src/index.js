@@ -232,6 +232,11 @@ export default class DrsClient {
    * @param {string[]} params.urls - URLs to scrape
    * @param {string} [params.priority='HIGH'] - Job priority (HIGH or LOW)
    * @param {string} [params.spacecatOrgId] - SpaceCat organization ID
+   * @param {string} [params.imsOrgId] - IMS organization ID. When provided, it is attached as
+   *   `parameters.metadata.imsOrgId` so DRS can scope the job's S2S token without relying on
+   *   resolving the org from `site_id`. When omitted, DRS falls back to `site_id` auto-resolution.
+   * @param {string} [params.brand] - Brand name; attached as `parameters.metadata.brand` only
+   *   when `imsOrgId` is also provided.
    * @param {number} [params.daysBack] - Time-window filter in days (reddit_comments only)
    * @param {number} [params.commentLimit=150] - Max comments per thread (reddit_comments only)
    * @param {('Best'|'Top'|'New'|'Controversial'|'Old'|'Q&A')} [params.sortBy='Best']
@@ -247,6 +252,8 @@ export default class DrsClient {
     priority = 'HIGH',
     daysBack,
     spacecatOrgId,
+    imsOrgId,
+    brand,
     commentLimit,
     sortBy,
     loadAllReplies,
@@ -293,6 +300,13 @@ export default class DrsClient {
       site_id: siteId,
       urls,
     };
+
+    if (imsOrgId) {
+      parameters.metadata = {
+        imsOrgId,
+        ...(brand ? { brand } : {}),
+      };
+    }
 
     if (isRedditComments) {
       parameters.comment_limit = commentLimit ?? REDDIT_COMMENTS_DEFAULT_COMMENT_LIMIT;

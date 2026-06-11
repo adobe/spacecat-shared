@@ -24,7 +24,7 @@ describe('Project Engine foundation: vendored spec', () => {
   const spec = read('spec/projectengine_swagger_public.yaml');
 
   it('is the vendored Swagger 2.0 file', () => {
-    expect(spec).to.include('swagger: "2.0"');
+    expect(spec).to.match(/^swagger:\s*['"]?2\.0['"]?/m);
   });
 
   it('declares the Project Engine basePath', () => {

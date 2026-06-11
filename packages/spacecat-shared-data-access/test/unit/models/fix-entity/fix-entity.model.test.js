@@ -15,6 +15,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { stub, restore } from 'sinon';
 import sinonChai from 'sinon-chai';
 
+import BaseModel from '../../../../src/models/base/base.model.js';
 import FixEntity from '../../../../src/models/fix-entity/fix-entity.model.js';
 import { createElectroMocks } from '../../util.js';
 
@@ -171,6 +172,152 @@ describe('FixEntityModel', () => {
 
       expect(mockFixEntityCollection.getSuggestionsByFixEntityId)
         .to.have.been.calledOnceWith(instance.getId());
+    });
+  });
+
+  describe('remove', () => {
+    const ISSUE_A = '8e1d2b8c-2b8e-4e6f-9a3a-1b2c3d4e5f60';
+    const ISSUE_B = '8e1d2b8c-2b8e-4e6f-9a3a-1b2c3d4e5f61';
+    let superRemoveStub;
+
+    beforeEach(() => {
+      // Bypass the inherited delete path; we only verify the override's
+      // pre-cleanup, not BaseModel's PostgREST removal machinery.
+      superRemoveStub = stub(BaseModel.prototype, 'remove').resolves();
+    });
+
+    afterEach(() => {
+      superRemoveStub.restore();
+    });
+
+    it('resets the matching issue on every linked suggestion when changeDetails.issueId is set', async () => {
+      const fix = createElectroMocks(FixEntity, {
+        ...mockRecord,
+        changeDetails: { ...mockRecord.changeDetails, issueId: ISSUE_A },
+      }).model;
+
+      const suggestionSaveSpies = [];
+      const buildSuggestion = (issues) => {
+        const data = { issues };
+        const save = stub().resolves();
+        suggestionSaveSpies.push(save);
+        return {
+          getData: () => data,
+          setData: (next) => { data.issues = next.issues; },
+          save,
+          // surface for assertions
+          peek: () => data,
+        };
+      };
+
+      const linkedSuggestions = [
+        buildSuggestion([
+          { id: ISSUE_A, status: 'FIXED', fixEntityId: fix.getId() },
+          { id: ISSUE_B, status: 'NEW', fixEntityId: null },
+        ]),
+        buildSuggestion([
+          { id: ISSUE_A, status: 'FIXED', fixEntityId: fix.getId() },
+        ]),
+      ];
+
+      const mockFixEntityCollection = {
+        getSuggestionsByFixEntityId: stub().resolves(linkedSuggestions),
+      };
+      fix.entityRegistry.getCollection
+        .withArgs('FixEntityCollection')
+        .returns(mockFixEntityCollection);
+
+      await fix.remove();
+
+      // Both suggestions saved once with the matching issue reset.
+      suggestionSaveSpies.forEach((save) => expect(save).to.have.been.calledOnce);
+
+      expect(linkedSuggestions[0].peek().issues).to.deep.equal([
+        { id: ISSUE_A, status: 'NEW', fixEntityId: null },
+        { id: ISSUE_B, status: 'NEW', fixEntityId: null },
+      ]);
+      expect(linkedSuggestions[1].peek().issues).to.deep.equal([
+        { id: ISSUE_A, status: 'NEW', fixEntityId: null },
+      ]);
+
+      expect(superRemoveStub).to.have.been.calledOnce;
+    });
+
+    it('skips suggestion mutation when no linked issue matches but still calls super.remove()', async () => {
+      const fix = createElectroMocks(FixEntity, {
+        ...mockRecord,
+        changeDetails: { ...mockRecord.changeDetails, issueId: ISSUE_A },
+      }).model;
+
+      const saveSpy = stub().resolves();
+      const orphanSuggestion = {
+        getData: () => ({ issues: [{ id: ISSUE_B, status: 'FIXED', fixEntityId: fix.getId() }] }),
+        setData: stub(),
+        save: saveSpy,
+      };
+
+      fix.entityRegistry.getCollection
+        .withArgs('FixEntityCollection')
+        .returns({ getSuggestionsByFixEntityId: stub().resolves([orphanSuggestion]) });
+
+      await fix.remove();
+
+      expect(saveSpy).to.not.have.been.called;
+      expect(orphanSuggestion.setData).to.not.have.been.called;
+      expect(superRemoveStub).to.have.been.calledOnce;
+    });
+
+    it('tolerates suggestions whose data has no issues array', async () => {
+      const fix = createElectroMocks(FixEntity, {
+        ...mockRecord,
+        changeDetails: { ...mockRecord.changeDetails, issueId: ISSUE_A },
+      }).model;
+
+      const noisySuggestions = [
+        { getData: () => null, setData: stub(), save: stub().resolves() },
+        { getData: () => ({ /* no issues */ }), setData: stub(), save: stub().resolves() },
+      ];
+
+      fix.entityRegistry.getCollection
+        .withArgs('FixEntityCollection')
+        .returns({ getSuggestionsByFixEntityId: stub().resolves(noisySuggestions) });
+
+      await fix.remove();
+
+      noisySuggestions.forEach((s) => {
+        expect(s.setData).to.not.have.been.called;
+        expect(s.save).to.not.have.been.called;
+      });
+      expect(superRemoveStub).to.have.been.calledOnce;
+    });
+
+    it('skips cleanup entirely when changeDetails.issueId is not set (legacy / non-CWV fix)', async () => {
+      // mockRecord's changeDetails has no issueId, so this is the legacy path.
+      const fix = createElectroMocks(FixEntity, mockRecord).model;
+      const getSuggestions = stub();
+      fix.entityRegistry.getCollection
+        .withArgs('FixEntityCollection')
+        .returns({ getSuggestionsByFixEntityId: getSuggestions });
+
+      await fix.remove();
+
+      expect(getSuggestions).to.not.have.been.called;
+      expect(superRemoveStub).to.have.been.calledOnce;
+    });
+
+    it('propagates errors from getSuggestions and does not call super.remove()', async () => {
+      const fix = createElectroMocks(FixEntity, {
+        ...mockRecord,
+        changeDetails: { ...mockRecord.changeDetails, issueId: ISSUE_A },
+      }).model;
+
+      const dbError = new Error('PostgREST exploded');
+      fix.entityRegistry.getCollection
+        .withArgs('FixEntityCollection')
+        .returns({ getSuggestionsByFixEntityId: stub().rejects(dbError) });
+
+      await expect(fix.remove()).to.be.rejectedWith('PostgREST exploded');
+      expect(superRemoveStub).to.not.have.been.called;
     });
   });
 });

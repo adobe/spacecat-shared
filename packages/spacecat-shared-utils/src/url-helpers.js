@@ -326,12 +326,46 @@ function toggleWWWHostname(hostname) {
   return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
 }
 
+const RUM_BUNDLER_BASE_URL = 'https://bundles.aem.page';
+
+async function hasBundleData(hostname, domainkey, log) {
+  const now = new Date();
+  const datesToCheck = [0, 1].map((daysAgo) => {
+    const d = new Date(now);
+    d.setUTCDate(now.getUTCDate() - daysAgo);
+    return `${d.getUTCFullYear()}/${(d.getUTCMonth() + 1).toString().padStart(2, '0')}/${d.getUTCDate().toString().padStart(2, '0')}`;
+  });
+
+  for (const dateStr of datesToCheck) {
+    const url = `${RUM_BUNDLER_BASE_URL}/bundles/${hostname}/${dateStr}?domainkey=${domainkey}`;
+    const safeUrl = `${RUM_BUNDLER_BASE_URL}/bundles/${hostname}/${dateStr}?domainkey=REDACTED`;
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': SPACECAT_USER_AGENT },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (resp.ok) {
+        // eslint-disable-next-line no-await-in-loop
+        const { rumBundles } = await resp.json();
+        if (Array.isArray(rumBundles) && rumBundles.length > 0) {
+          return true;
+        }
+      }
+    } catch (e) {
+      log.warn(`[wwwUrlResolver] bundle probe failed for ${hostname} (${safeUrl}): ${e.message.replace(domainkey, 'REDACTED')}`);
+    }
+  }
+  return false;
+}
+
 /**
  * Resolves the correct URL for a site by checking RUM data availability.
- * Tries www-toggled version first, then falls back to original.
+ * Tries www-toggled version first (only if actual bundle data exists there),
+ * then falls back to original hostname.
  * @param {object} site - The site object with getBaseURL() and getConfig() methods.
  * @param {object} rumApiClient - The RUM API client instance with retrieveDomainkey method.
- * @param {object} log - Logger instance with debug() and error() methods.
+ * @param {object} log - Logger instance with debug(), warn(), and error() methods.
  * @returns {Promise<string>} - The resolved hostname without protocol.
  */
 async function wwwUrlResolver(site, rumApiClient, log) {
@@ -352,9 +386,12 @@ async function wwwUrlResolver(site, rumApiClient, log) {
 
   try {
     const wwwToggledHostname = toggleWWWHostname(hostname);
-    await rumApiClient.retrieveDomainkey(wwwToggledHostname);
-    log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
-    return wwwToggledHostname;
+    const domainkey = await rumApiClient.retrieveDomainkey(wwwToggledHostname);
+    if (await hasBundleData(wwwToggledHostname, domainkey, log)) {
+      log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
+      return wwwToggledHostname;
+    }
+    log.debug(`[wwwUrlResolver] ${wwwToggledHostname} has key but no bundle data, trying ${hostname}`);
   } catch (e) {
     log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
   }

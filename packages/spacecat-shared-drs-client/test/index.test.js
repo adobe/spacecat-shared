@@ -458,6 +458,67 @@ describe('DrsClient', () => {
       scope.done();
     });
 
+    it('includes parameters.metadata.imsOrgId when imsOrgId is provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters.metadata).to.deep.equal({ imsOrgId: 'ABC123DEF456@AdobeOrg' });
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-ims' });
+
+      const result = await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: ['https://youtube.com/watch?v=abc'],
+        imsOrgId: 'ABC123DEF456@AdobeOrg',
+      });
+
+      expect(result.job_id).to.equal('scrape-ims');
+      scope.done();
+    });
+
+    it('includes brand alongside imsOrgId in metadata when both are provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters.metadata).to.deep.equal({
+            imsOrgId: 'ABC123DEF456@AdobeOrg',
+            brand: 'Hermes',
+          });
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-brand' });
+
+      const result = await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: ['https://youtube.com/watch?v=abc'],
+        imsOrgId: 'ABC123DEF456@AdobeOrg',
+        brand: 'Hermes',
+      });
+
+      expect(result.job_id).to.equal('scrape-brand');
+      scope.done();
+    });
+
+    it('omits metadata when imsOrgId is not provided (even if brand is)', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/jobs', (body) => {
+          expect(body.parameters).to.not.have.property('metadata');
+          return true;
+        })
+        .reply(200, { job_id: 'scrape-no-ims' });
+
+      const result = await client.submitScrapeJob({
+        datasetId: SCRAPE_DATASET_IDS.YOUTUBE_VIDEOS,
+        siteId: 'site-1',
+        urls: ['https://youtube.com/watch?v=abc'],
+        brand: 'Hermes',
+      });
+
+      expect(result.job_id).to.equal('scrape-no-ims');
+      scope.done();
+    });
+
     it('applies reddit_comments defaults (comment_limit=150, sort_by=Best) when omitted', async () => {
       const scope = nock(DRS_API_URL)
         .post('/jobs', (body) => {

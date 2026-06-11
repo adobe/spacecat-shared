@@ -69,6 +69,7 @@ const COOKIE_BANNER_ID_SELECTORS = [
   '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
   '#onetrust-consent-sdk', '#onetrust-banner-sdk',
   '#tc-privacy-wrapper',
+  '#CybotCookiebotDialog',
 ];
 
 const COOKIE_BANNER_ARIA_SELECTORS = [

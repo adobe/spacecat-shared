@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -76,6 +76,44 @@ describe('createRetryingFetch', () => {
     base.onCall(0).resolves(resp(429));
     base.onCall(1).resolves(resp(201));
     const res = await createRetryingFetch(base, 2, 0)('https://x', { method: 'POST' });
+    expect(res.status).to.equal(201);
+    expect(base.callCount).to.equal(2);
+  });
+
+  // Regression: openapi-fetch hands us a Request object, and reading its body (as real
+  // fetch does) marks it used — a bare replay would throw "Request ... already used".
+  // These two assert the per-attempt clone actually re-sends the body on retry.
+  it('re-sends a bodied idempotent Request on retry (clones rather than replaying)', async () => {
+    const seenBodies = [];
+    const base = sinon.stub().callsFake(async (req) => {
+      seenBodies.push(await req.text());
+      return resp(seenBodies.length === 1 ? 503 : 200);
+    });
+    const request = new Request('https://x/v1/projects', {
+      method: 'PUT',
+      body: JSON.stringify({ name: 'p' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const res = await createRetryingFetch(base, 2, 0)(request);
+    expect(res.status).to.equal(200);
+    expect(base.callCount).to.equal(2);
+    expect(seenBodies).to.deep.equal(['{"name":"p"}', '{"name":"p"}']);
+  });
+
+  it('retries a 429 on a bodied POST without consuming the original Request', async () => {
+    const consume = async (req, status) => {
+      await req.text();
+      return resp(status);
+    };
+    const base = sinon.stub();
+    base.onCall(0).callsFake((req) => consume(req, 429));
+    base.onCall(1).callsFake((req) => consume(req, 201));
+    const request = new Request('https://x/v1/projects', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'p' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const res = await createRetryingFetch(base, 2, 0)(request);
     expect(res.status).to.equal(201);
     expect(base.callCount).to.equal(2);
   });

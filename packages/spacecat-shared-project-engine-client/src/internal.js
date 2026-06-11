@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -80,6 +80,10 @@ const sleep = (ms) => new Promise((resolve) => {
 export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
   return async function retryingFetch(input, init) {
     const method = methodOf(input, init);
+    // openapi-fetch calls us with a Request object; fetch() consumes its body on use, so a
+    // bare replay throws "Request ... already used". Clone per attempt and never touch the
+    // original, so every retry (incl. a 429 on a bodied POST) sends a fresh, unconsumed body.
+    const forAttempt = () => (input instanceof Request ? input.clone() : input);
     let lastResponse;
     let lastError;
 
@@ -90,7 +94,7 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
       }
       try {
         // eslint-disable-next-line no-await-in-loop
-        const response = await baseFetch(input, init);
+        const response = await baseFetch(forAttempt(), init);
         if (!isRetryableStatus(method, response.status)) {
           return response;
         }

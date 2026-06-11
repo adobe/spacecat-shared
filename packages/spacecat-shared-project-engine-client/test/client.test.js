@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -68,5 +68,24 @@ describe('createSerenityProjectEngineApiClient', () => {
     const { response } = await client.GET('/v1/countries');
     expect(response.status).to.equal(200);
     expect(fetch.callCount).to.equal(2);
+  });
+
+  it('fails fast (and never sends the request) when the token resolves to empty', async () => {
+    const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
+    const client = createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example/enterprise/projects/api',
+      authToken: () => '',
+      fetch,
+    });
+
+    let thrown;
+    try {
+      await client.GET('/v1/countries');
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).to.be.an('error');
+    expect(thrown.message).to.contain('empty');
+    expect(fetch.called).to.equal(false);
   });
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -48,7 +48,13 @@ import { createRetryingFetch, toTokenGetter } from './internal.js';
 function authMiddleware(getToken) {
   return {
     async onRequest({ request }) {
-      request.headers.set('Auth-Data-Jwt', await getToken());
+      const token = await getToken();
+      // Fail fast on a missing token rather than sending the literal string "undefined"
+      // (or an empty header), which the server would reject with an opaque 401/403.
+      if (!token) {
+        throw new Error('Project Engine client: authToken resolved to an empty value');
+      }
+      request.headers.set('Auth-Data-Jwt', token);
       return request;
     },
   };

@@ -23,7 +23,7 @@
     "test": "c8 mocha",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "clean": "rm -rf package-lock.json node_modules",
+    "clean": "rm -rf node_modules build .counterfact",
     "spec:convert": "swagger2openapi spec/projectengine_swagger_public.yaml --patch --outfile build/openapi3.json",
     "generate:ts": "openapi-typescript build/openapi3.json --output src/generated/types.ts",
     "generate:pydantic": "datamodel-codegen --input build/openapi3.json --input-file-type openapi --output python/serenity_project_engine/ --output-model-type pydantic_v2.BaseModel",

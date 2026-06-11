@@ -87,17 +87,13 @@ const ACCESSIBILITY_SELECTORS = [
   '#digiAccess',
 ];
 
-// Transient notification selectors — dynamically injected UI elements that are not page
-// content. Per https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/alert_role
-// role="alert" and aria-live="assertive" are W3C live regions reserved for urgent,
-// time-sensitive messages triggered by application events (e.g. bot-detection toasts).
-// They appear in headless/automated contexts but never in a real browser session.
-// aria-live="polite" is intentionally excluded: it is used broadly for legitimate
-// dynamic content (search result counts, filter updates, etc.).
+// W3C ARIA live regions for urgent, dynamically triggered notifications (toasts, alerts).
+// aria-live="polite" excluded — used broadly for legitimate dynamic content.
+// Ref: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/alert_role
 const TRANSIENT_NOTIFICATION_SELECTORS = [
-  '[role="alert"]', // W3C: urgent notifications, dynamically rendered
-  '[aria-live="assertive"]', // W3C: assertive live region, interrupting updates only
-  '#toastContainer', // common toast mount point
+  '[role="alert"]',
+  '[aria-live="assertive"]',
+  '#toastContainer',
 ].join(', ');
 
 // Video player container selectors — these wrappers are injected client-side by JS video

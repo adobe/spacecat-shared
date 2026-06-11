@@ -300,6 +300,8 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNosc
   // Remove accessibility elements
   removeAccessibilityElements(documentElement);
 
+  documentElement.querySelectorAll(TRANSIENT_NOTIFICATION_SELECTORS).forEach((n) => n.remove());
+
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {
     filterNavigationAndFooterBrowser(documentElement);

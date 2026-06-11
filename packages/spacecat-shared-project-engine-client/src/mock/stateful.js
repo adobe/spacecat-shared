@@ -78,6 +78,16 @@ export function createStatefulOps(store) {
         return store.get(collectionKey('projects', scope), id);
       },
       /**
+       * Partially updates a project, returning the updated entity or undefined if unknown.
+       * @param {{ workspaceId: string | number }} scope
+       * @param {string} id
+       * @param {Record<string, unknown>} patch
+       * @returns {Entity | undefined}
+       */
+      update(scope, id, patch) {
+        return store.update(collectionKey('projects', scope), id, patch);
+      },
+      /**
        * @param {{ workspaceId: string | number }} scope
        * @param {string} id
        * @returns {boolean}

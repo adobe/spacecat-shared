@@ -181,12 +181,15 @@ jobs:
           fi
 
   e2e-project-engine-mock:
-    # Live-server E2E for @adobe/spacecat-shared-project-engine-client: boots the stateful
-    # Counterfact mock and drives it through the real client. Kept separate from the fast
-    # `test` job (which stays unit-only with 100% coverage and no server dependency) and
-    # gated by MOCK_E2E so it never runs in the default `npm test`. Independent of `release`
-    # — additional signal, not a publish gate. Path-scoped via `changes` so it doesn't pay the
-    # Counterfact boot cost on every monorepo push.
+    # Two checks for @adobe/spacecat-shared-project-engine-client that the unit `test` job
+    # can't cover, both scoped here so they only run when the package changes (via `changes`):
+    #   1. Type surface check — tsc-only guard that the public type surface stays assignable
+    #      to Client<paths> and never degrades to `any` (the package's deliverable).
+    #   2. Live-server E2E — boots the stateful Counterfact mock and drives it through the
+    #      real client. Gated by MOCK_E2E so it never runs in the default `npm test`.
+    # Kept separate from the fast `test` job (unit-only, 100% coverage, no server) and
+    # independent of `release` — additional signal, not a publish gate. Path-scoping avoids
+    # paying the Counterfact boot cost on every monorepo push.
     name: E2E (project-engine mock)
     needs: changes
     if: needs.changes.outputs.project_engine == 'true'
@@ -205,6 +208,13 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
         env:
           MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
+
+      - name: Type surface check
+        # Guards the package's deliverable: the public type surface (hand-written index.d.ts)
+        # must stay assignable to Client<paths> and not silently degrade to `any`. tsc-only,
+        # no server. Lives in this path-gated job since it only needs to run when the package
+        # (or its generated types) change. See test/types/index.type-test.ts.
+        run: npm run test:types -w @adobe/spacecat-shared-project-engine-client
 
       - name: Project Engine mock E2E
         run: npm run test:e2e -w @adobe/spacecat-shared-project-engine-client

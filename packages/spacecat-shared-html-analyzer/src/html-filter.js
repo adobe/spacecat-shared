@@ -87,6 +87,19 @@ const ACCESSIBILITY_SELECTORS = [
   '#digiAccess',
 ];
 
+// Transient notification selectors — dynamically injected UI elements that are not page
+// content. Per https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/alert_role
+// role="alert" and aria-live="assertive" are W3C live regions reserved for urgent,
+// time-sensitive messages triggered by application events (e.g. bot-detection toasts).
+// They appear in headless/automated contexts but never in a real browser session.
+// aria-live="polite" is intentionally excluded: it is used broadly for legitimate
+// dynamic content (search result counts, filter updates, etc.).
+const TRANSIENT_NOTIFICATION_SELECTORS = [
+  '[role="alert"]', // W3C: urgent notifications, dynamically rendered
+  '[aria-live="assertive"]', // W3C: assertive live region, interrupting updates only
+  '#toastContainer', // common toast mount point
+].join(', ');
+
 // Video player container selectors — these wrappers are injected client-side by JS video
 // player libraries and contain extensive control/accessibility text (play/pause labels,
 // caption settings dialogs, playback rate menus, etc.) that has no content value for AI
@@ -370,12 +383,7 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
   // Remove accessibility elements
   removeAccessibilityElementsCheerio($);
 
-  // Remove toast/alert notification elements injected by JS (e.g. bot-detection toasts).
-  // role="alert" and aria-live="assertive" are W3C live regions for urgent transient
-  // notifications — by spec they are dynamically triggered, not static page content.
-  // aria-live="polite" is intentionally excluded: it is used broadly for legitimate
-  // dynamic content (search result counts, filter updates, etc.).
-  $('[role="alert"], [aria-live="assertive"], #toastContainer').remove();
+  $(TRANSIENT_NOTIFICATION_SELECTORS).remove();
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {

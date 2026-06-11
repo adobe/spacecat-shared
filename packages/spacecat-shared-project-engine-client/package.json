@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Shared modules of the Spacecat Services - Semrush Project Engine client and generated types",
   "type": "module",
+  "private": true,
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "exports": {

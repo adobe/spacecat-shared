@@ -202,6 +202,26 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Accessibility Opener');
     });
 
+    it('should remove toast and live-region alert elements', async () => {
+      const html = `<html><body>
+        <h1>Title</h1>
+        <p>Content</p>
+        <div id="toastContainer">
+          <div aria-live="assertive" role="alert" aria-atomic="true">
+            <span>We are currently experiencing system difficulties.</span>
+          </div>
+        </div>
+        <span aria-live="polite">Loading complete</span>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Title');
+      expect(text).to.include('Content');
+      expect(text).to.not.include('system difficulties');
+      expect(text).to.not.include('Loading complete');
+    });
+
     it('should remove cookie banner when selector matches and content indicates consent', async () => {
       const html = `<html><body>
         <h1>Title</h1>

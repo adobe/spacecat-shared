@@ -370,6 +370,10 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
   // Remove accessibility elements
   removeAccessibilityElementsCheerio($);
 
+  // Remove transient notification elements (toasts, alerts) injected by JS
+  // e.g. bot-detection error toasts that don't appear in real browsers
+  $('[role="alert"], [aria-live="assertive"], [aria-live="polite"], #toastContainer').remove();
+
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {
     filterNavigationAndFooterCheerio($);

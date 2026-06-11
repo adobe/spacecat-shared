@@ -62,6 +62,7 @@ describe('resolveRumDomainKey', () => {
   });
 
   afterEach(() => {
+    sandbox.restore();
     nock.cleanAll();
   });
 
@@ -172,7 +173,7 @@ describe('resolveRumDomainKey', () => {
       clock.restore();
 
       expect(result).to.deep.equal({ hasDomainKey: false, timedOut: true });
-      expect(context.log.error).to.have.been.calledWithMatch(/timed out/);
+      expect(context.log.warn).to.have.been.calledWithMatch(/timed out/);
     } finally {
       RUMAPIClient.createFrom.restore();
     }

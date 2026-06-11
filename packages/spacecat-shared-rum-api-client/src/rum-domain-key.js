@@ -98,7 +98,7 @@ export async function resolveRumDomainKey(site, context) {
     ]);
   } catch (e) {
     if (timedOut) {
-      log.error(`[rum-domain-key] RUM check timed out for site ${siteId} across: ${domains.join(', ')}`);
+      log.warn(`[rum-domain-key] RUM check timed out for site ${siteId} across: ${domains.join(', ')}`);
     /* c8 ignore next 3 */
     } else {
       log.warn(`[rum-domain-key] Unexpected error during RUM check for site ${siteId}: ${e.message}`);

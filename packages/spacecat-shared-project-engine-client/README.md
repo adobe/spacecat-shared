@@ -135,6 +135,11 @@ Stateful endpoints (backed by the store):
 `POST /enterprise/projects/api/__reset` restores the store to its startup seed — call it
 between E2E cases for isolation. It is a test control route, not part of the Project Engine API.
 
+`npm run test:e2e` drives the **real client** against a freshly booted mock (self-managed
+lifecycle, `__reset` between cases). It is gated behind `MOCK_E2E=1` and lives outside the
+default `npm test` glob, so the unit suite stays fast and keeps 100% coverage with no
+live-server dependency. CI runs it as a dedicated `E2E (project-engine mock)` job.
+
 > **How it runs:** the runner materializes the committed handlers from `src/mock/` into a
 > gitignored `.counterfact/` tree (as `.ts`, so Counterfact's transpiler emits loadable `.cjs`)
 > and launches with `--serve` so no spec stubs are appended onto the stateful handlers. The

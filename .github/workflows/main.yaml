@@ -165,6 +165,34 @@ jobs:
           # OIDC releases on main confirm publishing works without a token (tracked in SITES-42702).
           SR_NO_NPM_AUTH: 'true'
 
+  e2e-project-engine-mock:
+    # Live-server E2E for @adobe/spacecat-shared-project-engine-client: boots the stateful
+    # Counterfact mock and drives it through the real client. Kept separate from the fast
+    # `test` job (which stays unit-only with 100% coverage and no server dependency) and
+    # gated by MOCK_E2E so it never runs in the default `npm test`. Independent of `release`
+    # — additional signal, not a publish gate.
+    name: E2E (project-engine mock)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: 'false'
+
+      - name: Setup Node & NPM
+        uses: ./.github/actions/setup-node-npm
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
+
+      - name: Project Engine mock E2E
+        run: npm run test:e2e -w @adobe/spacecat-shared-project-engine-client
+        env:
+          MOCK_E2E: '1'
+
   release:
     name: Release
     runs-on: ubuntu-latest

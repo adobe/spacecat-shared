@@ -67,5 +67,13 @@ export default defineConfig([
       'no-console': 'off',
       'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
     },
+  },
+  {
+    // E2E specs (*.e2e.js) live outside the default `npm test` glob, so they don't match
+    // the import rule's built-in `**/*.test.js` devDependency allowance — declare it here.
+    files: ['packages/**/test/**/*.e2e.js'],
+    rules: {
+      'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+    },
   }
 ]);

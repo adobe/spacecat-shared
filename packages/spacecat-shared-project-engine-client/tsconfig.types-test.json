@@ -1,0 +1,18 @@
+{
+  "//": "Compile-only check of the public type surface. Not a build — `noEmit`. Run by `npm run test:types`; see test/types/index.type-test.ts for what it guards.",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "esnext",
+    "lib": ["esnext", "dom"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": [
+    "test/types/**/*.ts",
+    "src/index.d.ts",
+    "src/generated/types.ts"
+  ]
+}

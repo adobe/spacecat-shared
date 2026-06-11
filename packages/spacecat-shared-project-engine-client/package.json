@@ -27,7 +27,7 @@
     "generate:ts": "openapi-typescript build/openapi3.json --output src/generated/types.ts",
     "generate:pydantic": "datamodel-codegen --input build/openapi3.json --input-file-type openapi --output python/serenity_project_engine/ --output-model-type pydantic_v2.BaseModel",
     "generate": "npm run spec:convert && npm run generate:ts && npm run generate:pydantic",
-    "mock": "counterfact spec/projectengine_swagger_public.yaml .counterfact --port 4010"
+    "mock": "node src/mock/run.js"
   },
   "mocha": {
     "reporter": "mocha-multi-reporters",

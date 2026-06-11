@@ -22,6 +22,7 @@ export default defineConfig([
     'docs/*',
     '**/vendor/**',
     '**/dist/**',
+    '**/.counterfact/**',
     '**/.releaserc.cjs',
     '**/test/fixtures/**',
   ]),

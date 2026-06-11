@@ -43,12 +43,14 @@ describe('stateful — collectionKey scoping', () => {
 describe('stateful — projects ops', () => {
   const ws = { workspaceId: 'w1' };
 
-  it('creates, lists, gets and removes a project', () => {
+  it('creates, lists, gets, updates and removes a project', () => {
     const ops = createStatefulOps(new InMemoryStore()).projects;
     const created = ops.create(ws, { id: 'p1', name: 'A' });
     expect(created).to.include({ id: 'p1', name: 'A' });
     expect(ops.list(ws)).to.have.length(1);
     expect(ops.get(ws, 'p1')?.name).to.equal('A');
+    expect(ops.update(ws, 'p1', { name: 'B' })?.name).to.equal('B');
+    expect(ops.update(ws, 'missing', { name: 'X' })).to.equal(undefined);
     expect(ops.remove(ws, 'p1')).to.equal(true);
     expect(ops.get(ws, 'p1')).to.equal(undefined);
   });

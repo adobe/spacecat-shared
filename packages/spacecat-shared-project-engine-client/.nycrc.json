@@ -12,6 +12,8 @@
     "src/**/*.js"
   ],
   "exclude": [
-    "src/generated/**"
+    "src/generated/**",
+    "src/mock/run.js",
+    "src/mock/counterfact/**"
   ]
 }

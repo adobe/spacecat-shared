@@ -27,7 +27,8 @@
     "generate:ts": "openapi-typescript build/openapi3.json --output src/generated/types.ts",
     "generate:pydantic": "datamodel-codegen --input build/openapi3.json --input-file-type openapi --output python/serenity_project_engine/ --output-model-type pydantic_v2.BaseModel",
     "generate": "npm run spec:convert && npm run generate:ts && npm run generate:pydantic",
-    "mock": "node src/mock/run.js"
+    "mock": "node src/mock/run.js",
+    "test:e2e": "MOCK_E2E=1 mocha --no-package --reporter spec --timeout 60000 test/e2e/**/*.e2e.js"
   },
   "mocha": {
     "reporter": "mocha-multi-reporters",

@@ -137,13 +137,59 @@ jobs:
           # OIDC releases on main confirm publishing works without a token (tracked in SITES-42702).
           SR_NO_NPM_AUTH: 'true'
 
+  changes:
+    # Cheap gate (~10s, no heavy setup) that decides whether the project-engine E2E needs to
+    # run. The workflow triggers on `push:` (every branch push), so an `on.paths` filter is no
+    # good — it would gate the whole workflow, including `test` and `release`. Instead we scope
+    # at the job level: diff the branch against its merge-base with main and only run the live
+    # mock when this package changed. Plain git, no third-party action (this file's npm Trusted
+    # Publisher binding makes adding actions a deliberate decision — see header).
+    name: Detect project-engine changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      project_engine: ${{ steps.filter.outputs.changed }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: 'false'
+          fetch-depth: 0   # full history so merge-base with main resolves
+
+      - name: Detect package changes
+        id: filter
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Fetch main so refs/remotes/origin/main exists (checkout fetches only the pushed ref).
+          git fetch --no-tags origin main
+          base="$(git merge-base origin/main HEAD || true)"
+          if [ -z "$base" ]; then
+            # No common ancestor with main (orphan/initial). Run the E2E to be safe.
+            echo "no merge-base with origin/main — running E2E"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --name-only "$base" HEAD \
+              | grep -q '^packages/spacecat-shared-project-engine-client/'; then
+            echo "project-engine-client changed — E2E will run"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "project-engine-client unchanged — skipping E2E"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   e2e-project-engine-mock:
     # Live-server E2E for @adobe/spacecat-shared-project-engine-client: boots the stateful
     # Counterfact mock and drives it through the real client. Kept separate from the fast
     # `test` job (which stays unit-only with 100% coverage and no server dependency) and
     # gated by MOCK_E2E so it never runs in the default `npm test`. Independent of `release`
-    # — additional signal, not a publish gate.
+    # — additional signal, not a publish gate. Path-scoped via `changes` so it doesn't pay the
+    # Counterfact boot cost on every monorepo push.
     name: E2E (project-engine mock)
+    needs: changes
+    if: needs.changes.outputs.project_engine == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.74.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.1...@adobe/spacecat-shared-data-access-v3.74.2) (2026-06-11)
+
+### Bug Fixes
+
+* reset linked issue status to NEW on FixEntity removal ([#1668](https://github.com/adobe/spacecat-shared/issues/1668)) ([46c54b8](https://github.com/adobe/spacecat-shared/commit/46c54b8829ea3b00029a4afa0cb835f3e7983dc9))
+
 ## [@adobe/spacecat-shared-data-access-v3.74.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.0...@adobe/spacecat-shared-data-access-v3.74.1) (2026-06-09)
 
 ### Bug Fixes

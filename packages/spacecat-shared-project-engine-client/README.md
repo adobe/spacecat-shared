@@ -4,7 +4,7 @@ Typed integration with the Semrush **Project Engine API** (`/enterprise/projects
 
 - generated **TypeScript** (`src/generated/types.ts`) and **Pydantic v2** (`python/serenity_project_engine/`) types,
 - a thin **Project Engine client** (`openapi-fetch` over the generated `paths`) — later PR,
-- a **Counterfact mock** for E2E tests and local dev — later PR.
+- a **stateful Counterfact mock** for E2E tests and local dev (`npm run mock`, see below).
 
 > **This PR is the foundation slice only:** vendor the spec + wire the
 > conversion-and-type-generation pipeline. The client wrapper, the IMS handler move,
@@ -54,6 +54,42 @@ your `PATH` before running `generate:pydantic`:
 ```bash
 pip install datamodel-code-generator
 ```
+
+## Mock (stateful)
+
+`npm run mock` starts a **stateful** Counterfact server straight off the v2 spec. Unmodelled
+paths fall back to Counterfact's spec-driven stubs; the project spine is backed by a shared
+in-memory store so reads reflect prior writes within a run.
+
+```bash
+npm run mock                       # serves on :4010
+MOCK_PORT=4032 MOCK_SEED=empty-workspace npm run mock
+```
+
+Base URL: `http://localhost:<port>/enterprise/projects/api`.
+
+| Var | Default | Purpose |
+| --- | --- | --- |
+| `MOCK_PORT` | `4010` | listen port |
+| `MOCK_SEED` | default seed | startup fixture; unknown values fall back to the default |
+
+Stateful endpoints (backed by the store):
+
+| Method + path | Behaviour |
+| --- | --- |
+| `GET/POST /v1/workspaces/{id}/projects` | list / create |
+| `GET/PATCH/DELETE /v1/workspaces/{id}/projects/{project_id}` | get / update / remove (404 when missing) |
+| `GET/POST /v1/workspaces/{id}/projects/{project_id}/ai_models` | list / add |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | create prompts |
+
+`POST /enterprise/projects/api/__reset` restores the store to its startup seed — call it
+between E2E cases for isolation. It is a test control route, not part of the Project Engine API.
+
+> **How it runs:** the runner materializes the committed handlers from `src/mock/` into a
+> gitignored `.counterfact/` tree (as `.ts`, so Counterfact's transpiler emits loadable `.cjs`)
+> and launches with `--serve` so no spec stubs are appended onto the stateful handlers. The
+> store, seeds, and resource ops are plain unit-tested JS in `src/mock/`; only the runner and
+> the materialized handlers — which need a live server — are excluded from coverage.
 
 ## Committed vs generated
 

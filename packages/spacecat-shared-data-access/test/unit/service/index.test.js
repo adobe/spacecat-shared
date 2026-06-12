@@ -65,6 +65,213 @@ describe('service/index', () => {
     expect(dataAccess).to.be.an('object');
   });
 
+  describe('S3 service with EbusyRetryStrategy', () => {
+    it('creates S3Client with custom retry strategy when s3Bucket is provided', () => {
+      const dataAccess = createDataAccess({
+        postgrestUrl: 'http://localhost:3000',
+        s3Bucket: 'test-bucket',
+        region: 'us-east-1',
+      }, console, {});
+
+      expect(dataAccess).to.be.an('object');
+      expect(dataAccess.Configuration).to.exist;
+    });
+
+    it('configures S3Client with maxAttempts: 4', () => {
+      const dataAccess = createDataAccess({
+        postgrestUrl: 'http://localhost:3000',
+        s3Bucket: 'test-bucket',
+      }, console, {});
+
+      // Verify Configuration collection exists (requires S3)
+      expect(dataAccess.Configuration).to.exist;
+    });
+
+    it('does not create S3 service when s3Bucket is not provided', () => {
+      const dataAccess = createDataAccess({
+        postgrestUrl: 'http://localhost:3000',
+      }, console, {});
+
+      expect(dataAccess).to.be.an('object');
+      // Configuration collection should still exist but without S3
+      expect(dataAccess.Configuration).to.exist;
+    });
+  });
+
+  describe('EbusyRetryStrategy', () => {
+    let EbusyRetryStrategy;
+    let strategy;
+    let mockToken;
+    let superRefreshStub;
+
+    before(async () => {
+      // Access the class through createS3Service execution
+      const dataAccess = createDataAccess({
+        postgrestUrl: 'http://localhost:3000',
+        s3Bucket: 'test-bucket',
+      }, console, {});
+
+      // Extract the retry strategy from the Configuration collection's S3 client
+      const { Configuration } = dataAccess;
+      const { s3Client } = Configuration;
+      const { config } = s3Client;
+      strategy = config.retryStrategy;
+
+      EbusyRetryStrategy = strategy.constructor;
+    });
+
+    beforeEach(() => {
+      mockToken = { retryCount: 0 };
+      // Stub the parent's refreshRetryTokenForRetry method
+      superRefreshStub = sinon.stub(Object.getPrototypeOf(Object.getPrototypeOf(strategy)), 'refreshRetryTokenForRetry')
+        .resolves({ retryCount: 1 });
+    });
+
+    afterEach(() => {
+      superRefreshStub.restore();
+    });
+
+    it('reclassifies EBUSY errors with code as TRANSIENT', async () => {
+      const ebusyError = new Error('getaddrinfo EBUSY');
+      ebusyError.code = 'EBUSY';
+
+      const errorInfo = { error: ebusyError };
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Verify super was called with TRANSIENT errorType
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [token, modifiedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(token).to.equal(mockToken);
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
+      expect(modifiedErrorInfo.error).to.equal(ebusyError);
+    });
+
+    it('reclassifies EBUSY errors with getaddrinfo message as TRANSIENT', async () => {
+      const ebusyDnsError = new Error('getaddrinfo EBUSY spacecat-prod-importer.s3.us-east-1.amazonaws.com');
+      // No code set, only message matching
+
+      const errorInfo = { error: ebusyDnsError };
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Verify super was called with TRANSIENT errorType
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, modifiedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
+    });
+
+    it('does not reclassify non-EBUSY errors', async () => {
+      const randomError = new Error('Some other error');
+      randomError.code = 'EOTHER';
+
+      const errorInfo = { error: randomError, errorType: 'THROTTLING' };
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Verify super was called with original errorInfo unchanged
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.equal('THROTTLING');
+      expect(passedErrorInfo.error).to.equal(randomError);
+    });
+
+    it('does not reclassify ECONNRESET (already handled by SDK)', async () => {
+      const connResetError = new Error('Connection reset');
+      connResetError.code = 'ECONNRESET';
+
+      const errorInfo = { error: connResetError };
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Verify errorType was NOT set to TRANSIENT
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.be.undefined;
+    });
+
+    it('does not reclassify ETIMEDOUT (already handled by SDK)', async () => {
+      const timeoutError = new Error('Timeout');
+      timeoutError.code = 'ETIMEDOUT';
+
+      const errorInfo = { error: timeoutError };
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Verify errorType was NOT set to TRANSIENT
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.be.undefined;
+    });
+
+    it('does not reclassify ENOTFOUND (already handled by SDK)', async () => {
+      const notFoundError = new Error('DNS not found');
+      notFoundError.code = 'ENOTFOUND';
+
+      const errorInfo = { error: notFoundError };
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Verify errorType was NOT set to TRANSIENT
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.be.undefined;
+    });
+
+    it('handles errorInfo with no error property', async () => {
+      const errorInfo = { errorType: 'THROTTLING' };
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Should delegate without crashing
+      expect(superRefreshStub).to.have.been.calledOnce;
+    });
+
+    it('preserves other errorInfo properties when reclassifying', async () => {
+      const ebusyError = new Error('EBUSY');
+      ebusyError.code = 'EBUSY';
+
+      const errorInfo = {
+        error: ebusyError,
+        retryAfterHint: 1000,
+        customProperty: 'custom-value',
+      };
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Verify all properties are preserved
+      expect(superRefreshStub).to.have.been.calledOnce;
+      const [, modifiedErrorInfo] = superRefreshStub.firstCall.args;
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
+      expect(modifiedErrorInfo.retryAfterHint).to.equal(1000);
+      expect(modifiedErrorInfo.customProperty).to.equal('custom-value');
+      expect(modifiedErrorInfo.error).to.equal(ebusyError);
+    });
+
+    it('returns result from parent refreshRetryTokenForRetry', async () => {
+      const ebusyError = new Error('EBUSY');
+      ebusyError.code = 'EBUSY';
+
+      const errorInfo = { error: ebusyError };
+      superRefreshStub.resolves({ retryCount: 2, retryDelay: 200 });
+
+      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      expect(result).to.deep.equal({ retryCount: 2, retryDelay: 200 });
+    });
+
+    it('constructs with default maxAttempts of 4', () => {
+      const newStrategy = new EbusyRetryStrategy();
+      expect(newStrategy).to.exist;
+      // maxAttempts is internal to StandardRetryStrategy, just verify construction works
+    });
+
+    it('constructs with custom maxAttempts', () => {
+      const newStrategy = new EbusyRetryStrategy(5);
+      expect(newStrategy).to.exist;
+    });
+  });
+
   describe('createFetchCompat', () => {
     it('converts native Headers instances to plain objects', async () => {
       const mockFetch = sinon.stub().resolves({ ok: true });

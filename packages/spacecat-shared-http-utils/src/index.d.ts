@@ -36,6 +36,20 @@ export declare function unauthorized(message?: string, headers?: object): Respon
 export declare function forbidden(message?: string, headers?: object): Response;
 
 /**
+ * FACS authorization wrapper for the helix-shared-wrap `.with()` chain.
+ * Enforces FACS permissions for external customer users per route, gated by a LaunchDarkly
+ * feature flag. Internal identities and Adobe internal orgs always bypass.
+ *
+ * @param fn - The handler to wrap.
+ * @param opts - Options containing a routeFacsCapabilities map of route patterns to FACS actions.
+ * @returns A wrapped handler.
+ */
+export function facsWrapper(
+  fn: Function,
+  opts: { routeFacsCapabilities: Record<string, string> },
+): Function;
+
+/**
  * Read-only admin authorization wrapper for the helix-shared-wrap `.with()` chain.
  * Blocks write operations for read-only admin users, gated by a LaunchDarkly feature flag.
  *

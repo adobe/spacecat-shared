@@ -14,5 +14,13 @@ $ npm install @adobe/spacecat-shared-http-utils
 $ npm install @adobe/spacecat-shared-utils
 ```
 
+## Development Setup
+
+If dependency resolution or generated project files are stale, regenerate the local project files and install workspace dependencies from the repository root:
+
+```bash
+$ ./spacecat project-files --install
+```
+
 ## Usage 
 See the [API documentation](docs/API.md).

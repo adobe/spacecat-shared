@@ -71,7 +71,7 @@ spacecat-shared/
 | **Utilities** | `utils` | Validation, S3/SQS helpers, schemas, date functions |
 | **Secrets** | `vault-secrets` | HashiCorp Vault integration (AppRole auth, KV secrets) |
 | **HTML** | `html-analyzer` | HTML analysis and extraction |
-| **API clients** | `athena-client`, `brand-client`, `cloud-manager-client`, `content-client`, `drs-client`, `google-client`, `gpt-client`, `ims-client`, `launchdarkly-client`, `mysticat-shared-seo-client`, `rum-api-client`, `scrape-client`, `slack-client`, `splunk-client`, `tier-client`, `tokowaka-client` | External service integrations |
+| **API clients** | `athena-client`, `brand-client`, `cloud-manager-client`, `content-client`, `drs-client`, `google-client`, `gpt-client`, `ims-client`, `launchdarkly-client`, `mysticat-shared-seo-client`, `project-engine-client`, `rum-api-client`, `scrape-client`, `slack-client`, `splunk-client`, `tier-client`, `tokowaka-client` | External service integrations |
 | **Example** | `example` | Template for creating new packages |
 
 ### Package-Level CLAUDE.md Files

@@ -22,6 +22,7 @@ export default defineConfig([
     'docs/*',
     '**/vendor/**',
     '**/dist/**',
+    '**/.counterfact/**',
     '**/.releaserc.cjs',
     '**/test/fixtures/**',
   ]),
@@ -64,6 +65,14 @@ export default defineConfig([
     files: ['packages/**/scripts/**/*.js'],
     rules: {
       'no-console': 'off',
+      'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+    },
+  },
+  {
+    // E2E specs (*.e2e.js) live outside the default `npm test` glob, so they don't match
+    // the import rule's built-in `**/*.test.js` devDependency allowance — declare it here.
+    files: ['packages/**/test/**/*.e2e.js'],
+    rules: {
       'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
     },
   }

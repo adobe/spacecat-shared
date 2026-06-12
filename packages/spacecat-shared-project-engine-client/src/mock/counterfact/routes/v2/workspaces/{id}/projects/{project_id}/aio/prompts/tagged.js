@@ -1,0 +1,44 @@
+/*
+ * Copyright 2025 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
+
+/**
+ * Stateful handler for POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged
+ * (`aio-create-prompts-with-tags`) — the create path the real consumer calls
+ * (spacecat-api-service `createTaggedPrompts`). Request is `AIOTaggedPromptsCreateRequest`:
+ * `{ prompts: { [tagName]: [text, ...] } }`. One stored prompt is created per text, carrying
+ * an `AIOTag` synthesized from the tag name (stable id so `by_tags` filtering is meaningful),
+ * so a later `by_tags` list reflects the write. Returns 201 `IDsWithStatsResponse`.
+ * Materialized into `.counterfact/routes/` by the mock runner; excluded from coverage.
+ */
+
+/** Deterministic tag id from a tag name so repeated creates under the same name share an id. */
+const tagId = (name) => `tag-${encodeURIComponent(name)}`;
+
+/** POST — create prompts grouped by tag name → 201 { ids, existing_count }. */
+export function POST($) {
+  const { path, body, context } = $;
+  const scope = { workspaceId: path.id, projectId: path.project_id };
+  const promptsByTag = body?.prompts ?? {};
+
+  const toCreate = Object.entries(promptsByTag).flatMap(([name, texts]) => (
+    (texts ?? []).map((text) => ({
+      name: text,
+      is_new: true,
+      tags: [{ id: tagId(name), name }],
+    }))
+  ));
+
+  const created = context.ops.prompts.createMany(scope, toCreate);
+  return $.response[201].json({ ids: created.map((p) => p.id), existing_count: 0 });
+}

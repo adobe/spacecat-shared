@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.74.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.2...@adobe/spacecat-shared-data-access-v3.74.3) (2026-06-12)
+
+### Bug Fixes
+
+* **data-access:** remove stale stash conflict markers in CHANGELOG ([#1669](https://github.com/adobe/spacecat-shared/issues/1669)) ([12229c3](https://github.com/adobe/spacecat-shared/commit/12229c33e6b2ed9731d256d89b580a0ad64d96b3))
+
 ## [@adobe/spacecat-shared-data-access-v3.74.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.1...@adobe/spacecat-shared-data-access-v3.74.2) (2026-06-11)
 
 ### Bug Fixes

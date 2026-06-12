@@ -1,0 +1,159 @@
+/*
+ * Copyright 2026 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+import { expect } from 'chai';
+import sinon from 'sinon';
+import {
+  createRetryingFetch,
+  isRetryableStatus,
+  methodOf,
+  toTokenGetter,
+} from '../src/internal.js';
+
+const resp = (status) => new Response(null, { status });
+
+describe('methodOf', () => {
+  it('reads the method from init when present', () => {
+    expect(methodOf('https://x', { method: 'post' })).to.equal('POST');
+  });
+
+  it('falls back to a Request input method', () => {
+    expect(methodOf(new Request('https://x', { method: 'delete' }))).to.equal('DELETE');
+  });
+
+  it('defaults to GET for a bare URL with no init', () => {
+    expect(methodOf('https://x')).to.equal('GET');
+  });
+});
+
+describe('isRetryableStatus', () => {
+  it('retries 429 for any method', () => {
+    expect(isRetryableStatus('POST', 429)).to.equal(true);
+    expect(isRetryableStatus('GET', 429)).to.equal(true);
+  });
+
+  it('retries 5xx only for idempotent methods', () => {
+    expect(isRetryableStatus('GET', 503)).to.equal(true);
+    expect(isRetryableStatus('PUT', 500)).to.equal(true);
+    expect(isRetryableStatus('POST', 503)).to.equal(false);
+    expect(isRetryableStatus('PATCH', 502)).to.equal(false);
+  });
+
+  it('does not retry 2xx or non-429 4xx', () => {
+    expect(isRetryableStatus('GET', 200)).to.equal(false);
+    expect(isRetryableStatus('GET', 404)).to.equal(false);
+  });
+});
+
+describe('createRetryingFetch', () => {
+  it('retries a retryable GET and returns the eventual success', async () => {
+    const base = sinon.stub();
+    base.onCall(0).resolves(resp(503));
+    base.onCall(1).resolves(resp(200));
+    const res = await createRetryingFetch(base, 2, 0)('https://x/v1/countries', { method: 'GET' });
+    expect(res.status).to.equal(200);
+    expect(base.callCount).to.equal(2);
+  });
+
+  it('does not retry a 5xx POST (avoids replaying a possible write)', async () => {
+    const base = sinon.stub().resolves(resp(503));
+    const res = await createRetryingFetch(base, 2, 0)('https://x', { method: 'POST' });
+    expect(res.status).to.equal(503);
+    expect(base.callCount).to.equal(1);
+  });
+
+  it('retries a 429 even on POST', async () => {
+    const base = sinon.stub();
+    base.onCall(0).resolves(resp(429));
+    base.onCall(1).resolves(resp(201));
+    const res = await createRetryingFetch(base, 2, 0)('https://x', { method: 'POST' });
+    expect(res.status).to.equal(201);
+    expect(base.callCount).to.equal(2);
+  });
+
+  // Regression: openapi-fetch hands us a Request object, and reading its body (as real
+  // fetch does) marks it used — a bare replay would throw "Request ... already used".
+  // These two assert the per-attempt clone actually re-sends the body on retry.
+  it('re-sends a bodied idempotent Request on retry (clones rather than replaying)', async () => {
+    const seenBodies = [];
+    const base = sinon.stub().callsFake(async (req) => {
+      seenBodies.push(await req.text());
+      return resp(seenBodies.length === 1 ? 503 : 200);
+    });
+    const request = new Request('https://x/v1/projects', {
+      method: 'PUT',
+      body: JSON.stringify({ name: 'p' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const res = await createRetryingFetch(base, 2, 0)(request);
+    expect(res.status).to.equal(200);
+    expect(base.callCount).to.equal(2);
+    expect(seenBodies).to.deep.equal(['{"name":"p"}', '{"name":"p"}']);
+  });
+
+  it('retries a 429 on a bodied POST without consuming the original Request', async () => {
+    const consume = async (req, status) => {
+      await req.text();
+      return resp(status);
+    };
+    const base = sinon.stub();
+    base.onCall(0).callsFake((req) => consume(req, 429));
+    base.onCall(1).callsFake((req) => consume(req, 201));
+    const request = new Request('https://x/v1/projects', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'p' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const res = await createRetryingFetch(base, 2, 0)(request);
+    expect(res.status).to.equal(201);
+    expect(base.callCount).to.equal(2);
+  });
+
+  it('returns the last retryable response after exhausting retries', async () => {
+    const base = sinon.stub().resolves(resp(503));
+    const res = await createRetryingFetch(base, 2, 0)('https://x', { method: 'GET' });
+    expect(res.status).to.equal(503);
+    expect(base.callCount).to.equal(3);
+  });
+
+  it('retries network errors for idempotent methods, then rethrows if persistent', async () => {
+    const base = sinon.stub().rejects(new Error('network down'));
+    try {
+      await createRetryingFetch(base, 1, 0)('https://x', { method: 'GET' });
+      expect.fail('expected the persistent network error to be rethrown');
+    } catch (error) {
+      expect(error.message).to.equal('network down');
+    }
+    expect(base.callCount).to.equal(2);
+  });
+
+  it('does not retry network errors for non-idempotent methods', async () => {
+    const base = sinon.stub().rejects(new Error('boom'));
+    try {
+      await createRetryingFetch(base, 2, 0)('https://x', { method: 'POST' });
+      expect.fail('expected the network error to be rethrown without retry');
+    } catch (error) {
+      expect(error.message).to.equal('boom');
+    }
+    expect(base.callCount).to.equal(1);
+  });
+});
+
+describe('toTokenGetter (IMS token source)', () => {
+  it('wraps a static token', async () => {
+    expect(await toTokenGetter('ims-token-123')()).to.equal('ims-token-123');
+  });
+
+  it('passes through an async getter for per-request tokens', async () => {
+    expect(await toTokenGetter(async () => 'fresh-ims')()).to.equal('fresh-ims');
+  });
+});

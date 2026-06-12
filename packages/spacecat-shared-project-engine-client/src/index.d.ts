@@ -19,23 +19,23 @@ export type AuthTokenSource = string | (() => string | Promise<string>);
 /**
  * The client authenticates each request with `Authorization: Bearer <IMS token>` via middleware
  * — a header that is NOT part of the generated `paths`, so it never appears on the typed surface
- * and needs no narrowing. The generated `paths`, however, still mark the Semrush-native
- * `Auth-Data-Jwt` header as a required per-operation param. Against the Adobe-hosted gateway that
- * header is injected server-side (the gateway exchanges the bearer for Semrush's credential), so
- * a consumer must neither be forced to pass it nor be able to. The client therefore exposes a
- * NARROWED view of `paths` that drops `Auth-Data-Jwt` from each operation's header params.
+ * and needs no narrowing. The Adobe-hosted gateway exchanges that bearer server-side; its internal
+ * mechanism is not specified here. The generated `paths`, however, still mark the Semrush-native
+ * `Auth-Data-Jwt` header as a required per-operation param, and the client does NOT send it. So the
+ * client exposes a NARROWED view of `paths` that drops `Auth-Data-Jwt` from each operation's header
+ * params — consumers are neither forced to pass it nor able to.
  *
  * This is a type-only transform over the client's PUBLIC surface. The generated `paths` (and
  * the vendored spec / Pydantic models) are intentionally left untouched — they remain the
- * honest API contract; only the client surface hides the gateway-injected header.
+ * honest API contract; only the client surface hides the header the client never sends.
  */
 type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'options' | 'head' | 'patch' | 'trace';
 
 /**
  * The header params of an operation with `Auth-Data-Jwt` removed. If that leaves no headers
  * (the case for every current operation — it's the only header in the contract), this is
- * `never`, so passing a header at all is a compile error: in the gateway flow `Auth-Data-Jwt`
- * is injected server-side, so a consumer must not pass it. If the contract ever gains a genuine
+ * `never`, so passing a header at all is a compile error: it's the Semrush-native header the
+ * client does not send, so a consumer must not pass it. If the contract ever gains a genuine
  * consumer header, the remaining bag is preserved instead.
  */
 type NarrowedHeader<Params> = Params extends { header?: infer Header }
@@ -45,9 +45,9 @@ type NarrowedHeader<Params> = Params extends { header?: infer Header }
   : never;
 
 /**
- * Drops the gateway-injected `Auth-Data-Jwt` from a single operation's header params and makes
- * the header bag optional. Non-operation values (e.g. `never` for unused methods) pass through
- * unchanged.
+ * Drops the Semrush-native `Auth-Data-Jwt` (which the client does not send) from a single
+ * operation's header params and makes the header bag optional. Non-operation values (e.g.
+ * `never` for unused methods) pass through unchanged.
  */
 type WithoutAuthHeader<Operation> = Operation extends { parameters: infer Params }
   ? Omit<Operation, 'parameters'> & {
@@ -64,7 +64,8 @@ type WithoutAuthHeaderPath<PathItem> = {
 
 /**
  * `paths` as exposed by the client: identical to the generated contract except the
- * gateway-injected `Auth-Data-Jwt` header is removed from every operation.
+ * Semrush-native `Auth-Data-Jwt` header (which the client does not send) is removed from
+ * every operation.
  */
 export type ClientPaths = {
   [Path in keyof paths]: WithoutAuthHeaderPath<paths[Path]>;

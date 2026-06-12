@@ -12,7 +12,10 @@
 
 import { DataChunks, facets } from '@adobe/rum-distiller';
 import trafficAcquisition from './traffic-acquisition.js';
-import { DELIMITER, generateKey, loadBundles } from '../utils.js';
+import { computeFieldEngagement } from './form-field-engagement.js';
+import {
+  DELIMITER, generateKey, loadBundles, isFormSource,
+} from '../utils.js';
 
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
 const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia', 'experiment'];
@@ -51,15 +54,6 @@ function filterEvents(bundles) {
         );
     }),
   }));
-}
-
-function isFormSource(source, eventSource) {
-  const excludeSrc = ['form.', 'form#'];
-  if (source === 'unknown') {
-    return /\bform\b/.test(eventSource?.toLowerCase()) && !excludeSrc.some((exclude) => eventSource?.includes(exclude));
-  } else {
-    return eventSource?.includes(source);
-  }
 }
 
 const metricFns = {
@@ -321,6 +315,13 @@ function handler(bundles) {
         iframeSrc,
       });
     }
+    // attach per-field engagement for this form (mirrors the trafficacquisition property)
+    const fieldMatch = formVitalCopy.formsource?.match(/form[#.]((?:\\[0-9a-fA-F]{1,6}\s?|\w|-)+)/);
+    const fieldFormSourceKey = fieldMatch ? fieldMatch[1] : 'unknown';
+    formVitalCopy.fieldEngagement = computeFieldEngagement(
+      bundles.filter((b) => b.url === formVitalCopy.url),
+      fieldFormSourceKey,
+    );
     return formVitalCopy;
   });
 

@@ -107,6 +107,7 @@ interface CreateExperimentScheduleParams {
   platforms?: string[];
   metadata?: Record<string, unknown>;
   triggerImmediately?: boolean;
+  timeout?: number;
 }
 
 interface ScheduleJobsSummary {

@@ -165,6 +165,15 @@ describe('ConfigurationModel', () => {
       expect(instance.isHandlerEnabledForOrg('cwv', org)).to.be.false;
     });
 
+    it('site enable overrides org disable for isHandlerEnabledForSite but not isHandlerEnabledForOrg', () => {
+      const data = JSON.parse(JSON.stringify(sampleConfiguration));
+      const inst = new Configuration(data, sampleVersionId, mockCollection, mockLogger);
+      inst.updateHandlerSites('404', site.getId(), true);
+      inst.disableHandlerForOrg('404', org);
+      expect(inst.isHandlerEnabledForSite('404', site)).to.be.true;
+      expect(inst.isHandlerEnabledForOrg('404', org)).to.be.false;
+    });
+
     it('gets enabled site ids for a handler', () => {
       expect(instance.getEnabledSiteIdsForHandler('lhs-mobile')).to.deep.equal(['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe']);
       instance.handlers = undefined;
@@ -235,6 +244,98 @@ describe('ConfigurationModel', () => {
       expect(isEnabled).to.be.true;
     });
 
+    it('returns false for a site whose org is in disabled.orgs and the site is not explicitly listed', () => {
+      instance.addHandler('org-disabled-handler', {
+        enabledByDefault: true,
+        enabled: { sites: [], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('org-disabled-handler', site)).to.be.false;
+    });
+
+    it('returns true when site is in enabled.sites even if its org is in disabled.orgs', () => {
+      instance.addHandler('site-override-handler', {
+        enabledByDefault: true,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('site-override-handler', site)).to.be.true;
+    });
+
+    it('returns true for non-default handler when site is in enabled.sites and org is in disabled.orgs', () => {
+      instance.addHandler('paid-handler', {
+        enabledByDefault: false,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('paid-handler', site)).to.be.true;
+    });
+
+    it('enables a paid handler for a site whose org is in disabled.orgs (free-trial -> paid)', () => {
+      instance.addHandler('paid-handler-migration', {
+        enabledByDefault: false,
+        enabled: { sites: [], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('paid-handler-migration', site)).to.be.false;
+      instance.updateHandlerSites('paid-handler-migration', site.getId(), true);
+      expect(instance.isHandlerEnabledForSite('paid-handler-migration', site)).to.be.true;
+      expect(instance.getHandler('paid-handler-migration').enabled.sites).to.include(site.getId());
+    });
+
+    it('removes site from disabled.sites when re-enabling for a non-default handler', () => {
+      instance.addHandler('cleanup-handler', {
+        enabledByDefault: false,
+        enabled: { sites: [], orgs: [] },
+        disabled: { sites: [site.getId()], orgs: [] },
+      });
+
+      instance.updateHandlerSites('cleanup-handler', site.getId(), true);
+
+      expect(instance.getHandler('cleanup-handler').disabled.sites).to.not.include(site.getId());
+      expect(instance.getHandler('cleanup-handler').enabled.sites).to.include(site.getId());
+    });
+
+    it('removes site from enabled.sites when disabling a default handler', () => {
+      instance.addHandler('default-cleanup-handler', {
+        enabledByDefault: true,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [], orgs: [] },
+      });
+
+      instance.updateHandlerSites('default-cleanup-handler', site.getId(), false);
+
+      expect(instance.getHandler('default-cleanup-handler').enabled.sites).to.not.include(site.getId());
+      expect(instance.getHandler('default-cleanup-handler').disabled.sites).to.include(site.getId());
+    });
+
+    it('returns false when site is in both enabled.sites and disabled.sites (disabled.sites wins)', () => {
+      instance.addHandler('conflict-handler', {
+        enabledByDefault: false,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [site.getId()], orgs: [] },
+      });
+
+      expect(instance.isHandlerEnabledForSite('conflict-handler', site)).to.be.false;
+    });
+
+    it('enables a site idempotently (repeated enable does not grow enabled.sites)', () => {
+      instance.addHandler('idempotent-handler', {
+        enabledByDefault: false,
+        enabled: { sites: [], orgs: [] },
+        disabled: { sites: [], orgs: [] },
+      });
+
+      instance.updateHandlerSites('idempotent-handler', site.getId(), true);
+      instance.updateHandlerSites('idempotent-handler', site.getId(), true);
+
+      expect(instance.getHandler('idempotent-handler').enabled.sites.length).to.equal(1);
+    });
+
     it('updates handler orgs for a handler disabled by default with enabled', () => {
       instance.updateHandlerOrgs('lhs-mobile', org.getId(), true);
       expect(instance.getHandler('lhs-mobile').enabled.orgs).to.include(org.getId());
@@ -258,6 +359,7 @@ describe('ConfigurationModel', () => {
     it('updates handler sites for a handler enabled by default', () => {
       instance.updateHandlerSites('404', site.getId(), true);
       expect(instance.getHandler('404').disabled.sites).to.not.include(site.getId());
+      expect(instance.getHandler('404').enabled.sites).to.include(site.getId());
     });
 
     it('enables a handler for a site', () => {
@@ -292,8 +394,9 @@ describe('ConfigurationModel', () => {
 
     it('disables a handler for a site', () => {
       instance.enableHandlerForSite('organic-keywords', site);
+      expect(instance.getHandler('organic-keywords').enabled.sites).to.include(site.getId());
       instance.disableHandlerForSite('organic-keywords', site);
-      expect(instance.getHandler('organic-keywords').disabled.sites).to.not.include(site.getId());
+      expect(instance.getHandler('organic-keywords').enabled.sites).to.not.include(site.getId());
     });
 
     it('enables a handler for an organization', () => {

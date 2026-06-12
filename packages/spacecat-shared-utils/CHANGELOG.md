@@ -1,3 +1,57 @@
+## [@adobe/spacecat-shared-utils-v1.118.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.117.0...@adobe/spacecat-shared-utils-v1.118.0) (2026-06-10)
+
+### Features
+
+* fix ghost RUM key false positive in wwwUrlResolver by verifying bundle data before accepting toggled hostname ([#1657](https://github.com/adobe/spacecat-shared/issues/1657)) ([dffa4aa](https://github.com/adobe/spacecat-shared/commit/dffa4aa8a858277a866bb1889668e80982adda6c))
+
+## [@adobe/spacecat-shared-utils-v1.117.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.6...@adobe/spacecat-shared-utils-v1.117.0) (2026-06-04)
+
+### Features
+
+* **utils:** accept optional headers in detectBotBlocker ([#1650](https://github.com/adobe/spacecat-shared/issues/1650)) ([e5464d3](https://github.com/adobe/spacecat-shared/commit/e5464d3d4832f685d1540c86262ce6e6f2572740))
+
+## [@adobe/spacecat-shared-utils-v1.116.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.5...@adobe/spacecat-shared-utils-v1.116.6) (2026-06-04)
+
+### Bug Fixes
+
+* tighten press/click.*hold regex to prevent false positives on normal page content ([#1649](https://github.com/adobe/spacecat-shared/issues/1649)) ([96e9c83](https://github.com/adobe/spacecat-shared/commit/96e9c835774a269a1cb120d96819dec10586f908))
+
+## [@adobe/spacecat-shared-utils-v1.116.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.4...@adobe/spacecat-shared-utils-v1.116.5) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
+## [@adobe/spacecat-shared-utils-v1.116.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.3...@adobe/spacecat-shared-utils-v1.116.4) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-utils-v1.116.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.2...@adobe/spacecat-shared-utils-v1.116.3) (2026-05-27)
+
+### Bug Fixes
+
+* **data-access:** mint UUID v7 ids to match DB schema default ([#1633](https://github.com/adobe/spacecat-shared/issues/1633)) ([5c8f6fc](https://github.com/adobe/spacecat-shared/commit/5c8f6fcd454975703b4f670c0f560f43a768736a))
+
+## [@adobe/spacecat-shared-utils-v1.116.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.1...@adobe/spacecat-shared-utils-v1.116.2) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+## [@adobe/spacecat-shared-utils-v1.116.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.0...@adobe/spacecat-shared-utils-v1.116.1) (2026-05-22)
+
+### Bug Fixes
+
+* **utils:** normalize $LATEST function version in resolveSecretsName ([#1614](https://github.com/adobe/spacecat-shared/issues/1614)) ([86c55b9](https://github.com/adobe/spacecat-shared/commit/86c55b9c53faf9a3ca5cb98b7181d3ca269af238)), closes [adobe/spacecat-scrape-job-manager#177](https://github.com/adobe/spacecat-scrape-job-manager/issues/177) [adobe/spacecat-content-scraper#886](https://github.com/adobe/spacecat-content-scraper/issues/886)
+
+## [@adobe/spacecat-shared-utils-v1.116.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.4...@adobe/spacecat-shared-utils-v1.116.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-utils-v1.115.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.3...@adobe/spacecat-shared-utils-v1.115.4) (2026-05-14)
 
 ### Bug Fixes

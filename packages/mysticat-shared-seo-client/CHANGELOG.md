@@ -1,3 +1,28 @@
+## [@adobe/mysticat-shared-seo-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.5.1...@adobe/mysticat-shared-seo-client-v1.6.0) (2026-06-08)
+
+### Features
+
+* **seo-client:** add quality filters to broken-backlinks Semrush call (404+410, follow, text, no lostlinks) ([#1652](https://github.com/adobe/spacecat-shared/issues/1652)) ([875d92c](https://github.com/adobe/spacecat-shared/commit/875d92c4ceb306b5010118e29287bc81906e980e))
+
+## [@adobe/mysticat-shared-seo-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.5.0...@adobe/mysticat-shared-seo-client-v1.5.1) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1609](https://github.com/adobe/spacecat-shared/issues/1609)) ([ccdcc2b](https://github.com/adobe/spacecat-shared/commit/ccdcc2b88c1b03e5c58ed682daaaadb382638395))
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/mysticat-shared-seo-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.4.0...@adobe/mysticat-shared-seo-client-v1.5.0) (2026-05-27)
+
+### Features
+
+* **seo-client:** add ad description and visible URL to paid keywords ([#1631](https://github.com/adobe/spacecat-shared/issues/1631)) ([474e200](https://github.com/adobe/spacecat-shared/commit/474e2004c684ed614ddd2a28d87e3e461f5c280d))
+
+## [@adobe/mysticat-shared-seo-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.3.1...@adobe/mysticat-shared-seo-client-v1.4.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/mysticat-shared-seo-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.3.0...@adobe/mysticat-shared-seo-client-v1.3.1) (2026-05-14)
 
 ### Bug Fixes

@@ -78,14 +78,14 @@ describe('SeoClient', () => {
   ].join('\n');
 
   const paidKeywordsCsv = [
-    'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-    '"adobe";"https://www.adobe.com/creativecloud/adobe/campaign/pricing.html";"47000";"1000000";"6.43";"1";"Adobe® - Official Site"',
-    '"adobe stock";"https://stock.adobe.com/promo/firstmonthfree";"25850";"550000";"0.79";"1";"Adobe Stock Images"',
-    '"adobe express";"https://www.adobe.com/express/";"17296";"368000";"13.27";"1";"Adobe Express"',
-    '"photoshop";"https://www.adobe.com/products/photoshop/landpa.html";"14147";"301000";"26.63";"1";"Adobe Photoshop"',
-    '"adobe";"https://www.adobe.com/creativecloud/adobe/campaign/pricing.html";"13000";"1000000";"6.43";"2";"Adobe® - Official Site"',
-    '"adobe acrobat";"https://www.adobe.com/acrobat/complete-pdf-solution.html";"11562";"246000";"1.76";"1";"Adobe Acrobat Pro"',
-    '"pdf editor";"https://www.adobe.com/acrobat/complete-pdf-solution.html";"11562";"246000";"2.01";"1";"Adobe Acrobat PDF Editor"',
+    'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+    '"adobe";"https://www.adobe.com/creativecloud/adobe/campaign/pricing.html";"47000";"1000000";"6.43";"1";"Adobe® - Official Site";"Buy Creative Cloud — Save on all the apps you love.";"adobe.com/creativecloud"',
+    '"adobe stock";"https://stock.adobe.com/promo/firstmonthfree";"25850";"550000";"0.79";"1";"Adobe Stock Images";"Get your first month free of Adobe Stock — 10 standard assets.";"stock.adobe.com/promo"',
+    '"adobe express";"https://www.adobe.com/express/";"17296";"368000";"13.27";"1";"Adobe Express";"Create on the go with Adobe Express — free templates included.";"adobe.com/express"',
+    '"photoshop";"https://www.adobe.com/products/photoshop/landpa.html";"14147";"301000";"26.63";"1";"Adobe Photoshop";"Edit photos like a pro with Photoshop.";"adobe.com/photoshop"',
+    '"adobe";"https://www.adobe.com/creativecloud/adobe/campaign/pricing.html";"13000";"1000000";"6.43";"2";"Adobe® - Official Site";"Buy Creative Cloud — Save on all the apps you love.";"adobe.com/creativecloud"',
+    '"adobe acrobat";"https://www.adobe.com/acrobat/complete-pdf-solution.html";"11562";"246000";"1.76";"1";"Adobe Acrobat Pro";"Edit, sign and share PDFs with Acrobat Pro.";"adobe.com/acrobat"',
+    '"pdf editor";"https://www.adobe.com/acrobat/complete-pdf-solution.html";"11562";"246000";"2.01";"1";"Adobe Acrobat PDF Editor";"Edit any PDF instantly with Acrobat.";"adobe.com/acrobat"',
   ].join('\n');
 
   before('setup', function () {
@@ -1112,7 +1112,7 @@ describe('SeoClient', () => {
   // ===== getPaidPages =====
 
   describe('getPaidPages', () => {
-    const emptyPaidCsv = 'Keyword;Url;Traffic;Search Volume;CPC;Position;Title';
+    const emptyPaidCsv = 'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url';
 
     function nockPaidDatabases(databases, csv, { targetDb } = {}) {
       for (const db of databases) {
@@ -1164,8 +1164,8 @@ describe('SeoClient', () => {
 
     it('sets top_keyword_country from the database with highest traffic keyword', async () => {
       const deCsv = [
-        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-        '"fenster";"https://example.com/p";"500";"1000";"0.50";"1";"Fenster"',
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+        '"fenster";"https://example.com/p";"500";"1000";"0.50";"1";"Fenster";"Fenster kaufen";"example.com/de"',
       ].join('\n');
 
       for (const db of BIG_MARKETS) {
@@ -1202,9 +1202,9 @@ describe('SeoClient', () => {
 
     it('handles keywords with zero/null traffic and CPC', async () => {
       const csv = [
-        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-        '"kw1";"https://example.com/p";"0";"100";"";"3";""',
-        '"kw2";"https://example.com/p";"";"200";"0.50";"5";"Title"',
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+        '"kw1";"https://example.com/p";"0";"100";"";"3";"";"";""',
+        '"kw2";"https://example.com/p";"";"200";"0.50";"5";"Title";"Desc";"example.com"',
       ].join('\n');
 
       nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
@@ -1218,9 +1218,9 @@ describe('SeoClient', () => {
 
     it('picks the keyword with the most traffic as top_keyword', async () => {
       const csv = [
-        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-        '"low-kw";"https://example.com/p";"10";"100";"0.50";"5";"Low Title"',
-        '"high-kw";"https://example.com/p";"500";"200";"1.00";"1";"High Title"',
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+        '"low-kw";"https://example.com/p";"10";"100";"0.50";"5";"Low Title";"Low Desc";"example.com/low"',
+        '"high-kw";"https://example.com/p";"500";"200";"1.00";"1";"High Title";"High Desc";"example.com/high"',
       ].join('\n');
 
       nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
@@ -1240,11 +1240,13 @@ describe('SeoClient', () => {
       expect(topPage.keywords).to.have.lengthOf(2);
 
       const kw = topPage.keywords[0];
-      expect(kw).to.have.all.keys('keyword', 'traffic', 'cpc', 'serp_title', 'position', 'volume', 'country');
+      expect(kw).to.have.all.keys('keyword', 'traffic', 'cpc', 'serp_title', 'serp_description', 'visible_url', 'position', 'volume', 'country');
       expect(kw.keyword).to.equal('adobe');
       expect(kw.traffic).to.equal(47000);
       expect(kw.cpc).to.equal(6.43);
       expect(kw.serp_title).to.equal('Adobe® - Official Site');
+      expect(kw.serp_description).to.equal('Buy Creative Cloud — Save on all the apps you love.');
+      expect(kw.visible_url).to.equal('adobe.com/creativecloud');
       expect(kw.position).to.equal(1);
       expect(kw.volume).to.equal(1000000);
       expect(kw.country).to.equal('US');
@@ -1257,10 +1259,10 @@ describe('SeoClient', () => {
 
     it('keywords[] length matches raw keyword count for multi-keyword page', async () => {
       const csv = [
-        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-        '"kw1";"https://example.com/p";"100";"500";"1.00";"2";"Title 1"',
-        '"kw2";"https://example.com/p";"200";"600";"2.00";"3";"Title 2"',
-        '"kw3";"https://example.com/p";"300";"700";"3.00";"1";"Title 3"',
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+        '"kw1";"https://example.com/p";"100";"500";"1.00";"2";"Title 1";"Desc 1";"example.com/1"',
+        '"kw2";"https://example.com/p";"200";"600";"2.00";"3";"Title 2";"Desc 2";"example.com/2"',
+        '"kw3";"https://example.com/p";"300";"700";"3.00";"1";"Title 3";"Desc 3";"example.com/3"',
       ].join('\n');
 
       nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
@@ -1271,8 +1273,8 @@ describe('SeoClient', () => {
 
     it('returns cpc: null when Cp is empty (nullish coalescing)', async () => {
       const csv = [
-        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-        '"kw-no-cpc";"https://example.com/p";"100";"500";"";"3";"No CPC Title"',
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+        '"kw-no-cpc";"https://example.com/p";"100";"500";"";"3";"No CPC Title";"No CPC Desc";"example.com"',
       ].join('\n');
 
       nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
@@ -1285,8 +1287,8 @@ describe('SeoClient', () => {
 
     it('returns cpc as float when Cp has a value', async () => {
       const csv = [
-        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-        '"kw-with-cpc";"https://example.com/p";"100";"500";"3.95";"2";"CPC Title"',
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+        '"kw-with-cpc";"https://example.com/p";"100";"500";"3.95";"2";"CPC Title";"CPC Desc";"example.com"',
       ].join('\n');
 
       nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
@@ -1298,8 +1300,8 @@ describe('SeoClient', () => {
 
     it('keywords[] returns null for missing position/volume/cpc and derives country from database key', async () => {
       const csv = [
-        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-        '"kw-sparse";"https://example.com/p";"50";"";"";"";"Sparse"',
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+        '"kw-sparse";"https://example.com/p";"50";"";"";"";"Sparse";"";""',
       ].join('\n');
 
       nockPaidDatabases(BIG_MARKETS, csv, { targetDb: 'us' });
@@ -1310,17 +1312,19 @@ describe('SeoClient', () => {
       expect(kw.volume).to.equal(null);
       expect(kw.cpc).to.equal(null);
       expect(kw.serp_title).to.equal('Sparse');
+      expect(kw.serp_description).to.equal(null);
+      expect(kw.visible_url).to.equal(null);
       expect(kw.country).to.equal('US');
     });
 
     it('keywords[] from multiple databases carry their respective country codes', async () => {
       const usCsv = [
-        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-        '"shoes";"https://example.com/shoes";"100";"5000";"2.50";"1";"Buy Shoes"',
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+        '"shoes";"https://example.com/shoes";"100";"5000";"2.50";"1";"Buy Shoes";"Shop running shoes";"example.com/shoes"',
       ].join('\n');
       const gbCsv = [
-        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title',
-        '"trainers";"https://example.com/shoes";"80";"3000";"1.80";"3";"Buy Trainers"',
+        'Keyword;Url;Traffic;Search Volume;CPC;Position;Title;Description;Visible Url',
+        '"trainers";"https://example.com/shoes";"80";"3000";"1.80";"3";"Buy Trainers";"Shop trainers";"example.com/shoes"',
       ].join('\n');
 
       const csvByDb = { us: usCsv, uk: gbCsv };
@@ -1347,6 +1351,14 @@ describe('SeoClient', () => {
   // ===== getBrokenBacklinks =====
 
   describe('getBrokenBacklinks', () => {
+    // Semrush does not support OR within display_filter, so 404 and 410 are fetched
+    // in two separate backlinks_pages requests and merged client-side.
+    const FILTER_404 = '+|responsecode|Eq|404';
+    const FILTER_410 = '+|responsecode|Eq|410';
+    // type/follow/text/lostlink are backlink-level attributes sent on the backlinks call.
+    const LINKS_FILTER = '+|type||follow|+|type||text|-|type||lostlink';
+    const EMPTY_PAGES_CSV = 'source_url;response_code;backlinks_num;domains_num';
+
     // Real API fixtures (adobe.com, April 2026)
     const brokenPagesCsv = [
       'source_url;response_code;backlinks_num;domains_num',
@@ -1370,12 +1382,39 @@ describe('SeoClient', () => {
       ';http://www.acrobat.com/;https://www.adobe.com/404.html;75;3',
     ].join('\n');
 
-    it('returns one high-quality backlink per broken page with full diversity', async () => {
+    // Helper: register both backlinks_pages interceptors (404 and 410 are always parallel).
+    function nockBrokenPages(csv404 = EMPTY_PAGES_CSV, csv410 = EMPTY_PAGES_CSV) {
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages'
-          && q.display_filter === '+|responsecode|Eq|404')
-        .reply(200, brokenPagesCsv);
+        .query((q) => q.type === 'backlinks_pages' && q.display_filter === FILTER_404)
+        .reply(200, csv404);
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks_pages' && q.display_filter === FILTER_410)
+        .reply(200, csv410);
+    }
+
+    it('sends correct quality filters to Semrush (404+410 on pages; follow, text, no lostlinks on backlinks)', async () => {
+      let capturedLinksFilter;
+      nockBrokenPages(brokenPagesCsv);
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .times(3)
+        .query((q) => {
+          if (q.type === 'backlinks') {
+            capturedLinksFilter = q.display_filter;
+          }
+          return q.type === 'backlinks';
+        })
+        .reply(200, backlinkForPage1Csv);
+
+      await client.getBrokenBacklinks('adobe.com', 3);
+
+      expect(capturedLinksFilter).to.equal(LINKS_FILTER);
+    });
+
+    it('returns one high-quality backlink per broken page with full diversity', async () => {
+      nockBrokenPages(brokenPagesCsv);
 
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
@@ -1425,15 +1464,50 @@ describe('SeoClient', () => {
       expect(result.fullAuditRef).to.include('type=backlinks_pages');
     });
 
+    it('merges 410 pages with 404 pages, deduplicates shared URLs, and sorts by domains_num', async () => {
+      const pages404Csv = [
+        'source_url;response_code;backlinks_num;domains_num',
+        'https://example.com/gone404;404;100;50',
+        'https://example.com/shared;404;80;40',
+      ].join('\n');
+      const pages410Csv = [
+        'source_url;response_code;backlinks_num;domains_num',
+        'https://example.com/gone410;410;200;100',
+        'https://example.com/shared;410;80;40',
+      ].join('\n');
+      nockBrokenPages(pages404Csv, pages410Csv);
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks' && q.target === 'https://example.com/gone410')
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref.com;https://example.com/gone410;80;5');
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks' && q.target === 'https://example.com/gone404')
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref2.com;https://example.com/gone404;60;5');
+
+      nock(config.apiBaseUrl)
+        .get('/analytics/v1/')
+        .query((q) => q.type === 'backlinks' && q.target === 'https://example.com/shared')
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref3.com;https://example.com/shared;40;5');
+
+      const result = await client.getBrokenBacklinks('example.com', 50);
+
+      // shared URL appears in both 404 and 410 — deduplicated to 3 unique pages, not 4
+      expect(result.result.backlinks).to.have.lengthOf(3);
+      // sorted by domains_num: gone410 (100), gone404 (50), shared (40)
+      expect(result.result.backlinks[0].url_to).to.equal('https://example.com/gone410');
+      expect(result.result.backlinks[1].url_to).to.equal('https://example.com/gone404');
+      expect(result.result.backlinks[2].url_to).to.equal('https://example.com/shared');
+    });
+
     it('parallelizes across multiple batches when limit exceeds batch size', async () => {
       // 12 broken pages → 2 batches (10 + 2)
       const pages = Array.from({ length: 12 }, (_, i) => `https://example.com/page${i};404;${100 - i};${50 - i}`);
       const pagesCsv = ['source_url;response_code;backlinks_num;domains_num', ...pages].join('\n');
 
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, pagesCsv);
+      nockBrokenPages(pagesCsv);
 
       // Mock backlinks response for each of the 12 pages
       for (let i = 0; i < 12; i += 1) {
@@ -1450,21 +1524,15 @@ describe('SeoClient', () => {
       expect(uniqueTargets.size).to.equal(12);
     });
 
-    it('returns empty backlinks when no 404 pages found', async () => {
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, 'source_url;response_code;backlinks_num;domains_num');
+    it('returns empty backlinks when no broken pages found', async () => {
+      nockBrokenPages();
 
       const result = await client.getBrokenBacklinks('no-broken-pages.com');
       expect(result.result.backlinks).to.deep.equal([]);
     });
 
     it('handles no-data responses for individual backlink fetches gracefully', async () => {
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, brokenPagesCsv);
+      nockBrokenPages(brokenPagesCsv);
 
       // First page returns backlink, second has no data, third returns backlink
       nock(config.apiBaseUrl)
@@ -1494,10 +1562,7 @@ describe('SeoClient', () => {
     });
 
     it('handles broken page with no backlinks', async () => {
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, 'source_url;response_code;backlinks_num;domains_num\nhttps://example.com/gone;404;0;0');
+      nockBrokenPages('source_url;response_code;backlinks_num;domains_num\nhttps://example.com/gone;404;0;0');
 
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
@@ -1509,10 +1574,7 @@ describe('SeoClient', () => {
     });
 
     it('respects upper limit of 100', async () => {
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages' && q.display_limit === '100')
-        .reply(200, 'source_url;response_code;backlinks_num;domains_num');
+      nockBrokenPages();
 
       await client.getBrokenBacklinks('adobe.com', 500);
     });
@@ -1522,18 +1584,12 @@ describe('SeoClient', () => {
     });
 
     it('handles null title in backlink response', async () => {
-      const pagesCsv = 'source_url;response_code;backlinks_num;domains_num\nhttps://t.com/p;404;1;1';
-      const linkCsv = 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref.com;https://t.com/p;50;10';
-
-      nock(config.apiBaseUrl)
-        .get('/analytics/v1/')
-        .query((q) => q.type === 'backlinks_pages')
-        .reply(200, pagesCsv);
+      nockBrokenPages('source_url;response_code;backlinks_num;domains_num\nhttps://t.com/p;404;1;1');
 
       nock(config.apiBaseUrl)
         .get('/analytics/v1/')
         .query((q) => q.type === 'backlinks')
-        .reply(200, linkCsv);
+        .reply(200, 'source_title;source_url;target_url;page_ascore;external_num\n;https://ref.com;https://t.com/p;50;10');
 
       const result = await client.getBrokenBacklinks('t.com', 1);
       expect(result.result.backlinks[0].title).to.equal(null);

@@ -15,5 +15,5 @@ export {
   isArray, isBoolean, isInteger, isIsoDate, isIsoTimeOffsetsDate,
   isNonEmptyArray, isNonEmptyObject, isNumber, isObject, isString,
   isValidDate, isValidHelixPreviewUrl, isValidIMSOrgId, isValidUrl,
-  isValidUUID, toBoolean,
+  isValidUUID, toBoolean, UUID_REGEX, UUID_V4_REGEX,
 } from './index.js';

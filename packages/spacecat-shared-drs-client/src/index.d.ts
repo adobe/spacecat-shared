@@ -31,12 +31,22 @@ interface PromptGenerationParams {
 
 export type ScrapeDatasetId = typeof SCRAPE_DATASET_IDS[keyof typeof SCRAPE_DATASET_IDS];
 
+export type RedditSortBy = 'Best' | 'Top' | 'New' | 'Controversial' | 'Old' | 'Q&A';
+
 interface ScrapeJobParams {
   datasetId: ScrapeDatasetId;
   siteId: string;
   urls: string[];
   priority?: 'HIGH' | 'LOW';
+  /** Time-window filter in days (reddit_comments only). */
   daysBack?: number;
+  spacecatOrgId?: string;
+  /** Max comments per thread (reddit_comments only). Defaults to 150 if omitted. */
+  commentLimit?: number;
+  /** Sort order for Bright Data (reddit_comments only). Defaults to 'Best' if omitted. */
+  sortBy?: RedditSortBy;
+  /** Whether to expand all reply trees (reddit_comments only). */
+  loadAllReplies?: boolean;
 }
 
 interface ScrapeLookupParams {
@@ -97,6 +107,7 @@ interface CreateExperimentScheduleParams {
   platforms?: string[];
   metadata?: Record<string, unknown>;
   triggerImmediately?: boolean;
+  timeout?: number;
 }
 
 interface ScheduleJobsSummary {
@@ -150,5 +161,11 @@ export declare const SCRAPE_DATASET_IDS: Readonly<{
   REDDIT_COMMENTS: 'reddit_comments';
   WIKIPEDIA: 'wikipedia';
 }>;
+
+/**
+ * Allowlist of valid `sortBy` values for the `reddit_comments` dataset.
+ * Exported so callers can validate input at their own boundary.
+ */
+export declare const REDDIT_COMMENTS_SORT_BY_VALUES: ReadonlySet<RedditSortBy>;
 
 export default DrsClient;

@@ -1,3 +1,28 @@
+## [@adobe/spacecat-shared-brand-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.3.0...@adobe/spacecat-shared-brand-client-v1.3.1) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1609](https://github.com/adobe/spacecat-shared/issues/1609)) ([ccdcc2b](https://github.com/adobe/spacecat-shared/commit/ccdcc2b88c1b03e5c58ed682daaaadb382638395))
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-brand-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.2.1...@adobe/spacecat-shared-brand-client-v1.3.0) (2026-05-28)
+
+### Features
+
+* **brand-client:** add BrandGovernanceClient for Brand Governance Agent API (LLMO-4920) ([#1605](https://github.com/adobe/spacecat-shared/issues/1605)) ([e472d46](https://github.com/adobe/spacecat-shared/commit/e472d46badde10b7701b2c68b689c9b229873f08))
+
+## [@adobe/spacecat-shared-brand-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.2.0...@adobe/spacecat-shared-brand-client-v1.2.1) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+## [@adobe/spacecat-shared-brand-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.42...@adobe/spacecat-shared-brand-client-v1.2.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-brand-client-v1.1.42](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.41...@adobe/spacecat-shared-brand-client-v1.1.42) (2026-05-14)
 
 ### Bug Fixes

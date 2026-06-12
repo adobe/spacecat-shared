@@ -1,3 +1,59 @@
+# [@adobe/spacecat-shared-drs-client-v1.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.12.0...@adobe/spacecat-shared-drs-client-v1.12.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* increase DRS createschedule api timeout ([#1670](https://github.com/adobe/spacecat-shared/issues/1670)) ([068dac8](https://github.com/adobe/spacecat-shared/commit/068dac845a2e875397c165be3268a7cda40e659f))
+
+# [@adobe/spacecat-shared-drs-client-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.11.1...@adobe/spacecat-shared-drs-client-v1.12.0) (2026-06-11)
+
+
+### Features
+
+* **drs-client:** forward imsOrgId/brand as parameters.metadata on sc… ([#1664](https://github.com/adobe/spacecat-shared/issues/1664)) ([8ea4a7f](https://github.com/adobe/spacecat-shared/commit/8ea4a7fd25038508198bd3711ff7a87f69b8b477))
+
+# [@adobe/spacecat-shared-drs-client-v1.11.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.11.0...@adobe/spacecat-shared-drs-client-v1.11.1) (2026-05-29)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+# [@adobe/spacecat-shared-drs-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.10.0...@adobe/spacecat-shared-drs-client-v1.11.0) (2026-05-26)
+
+
+### Features
+
+* add spacecatOrgId to ScrapeJobParams ([#1620](https://github.com/adobe/spacecat-shared/issues/1620)) ([f521408](https://github.com/adobe/spacecat-shared/commit/f521408c7903923a0a4679c29c779c32b695ae9c))
+
+# [@adobe/spacecat-shared-drs-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.9.0...@adobe/spacecat-shared-drs-client-v1.10.0) (2026-05-26)
+
+
+### Features
+
+* **drs-client:** export REDDIT_COMMENTS_SORT_BY_VALUES allowlist ([#1629](https://github.com/adobe/spacecat-shared/issues/1629)) ([c1540b5](https://github.com/adobe/spacecat-shared/commit/c1540b54c20b419cac07cb03b18810ece848e995)), closes [#1628](https://github.com/adobe/spacecat-shared/issues/1628)
+
+# [@adobe/spacecat-shared-drs-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.8.1...@adobe/spacecat-shared-drs-client-v1.9.0) (2026-05-26)
+
+
+### Features
+
+* **drs-client:** add new reddit_comments scrape specific parameters (LLMO-4464) ([#1628](https://github.com/adobe/spacecat-shared/issues/1628)) ([8d0e271](https://github.com/adobe/spacecat-shared/commit/8d0e271d0c9bd0113fd37c008414778bc7e18668))
+
+# [@adobe/spacecat-shared-drs-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.8.0...@adobe/spacecat-shared-drs-client-v1.8.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+# [@adobe/spacecat-shared-drs-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.7.2...@adobe/spacecat-shared-drs-client-v1.8.0) (2026-05-21)
+
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 # [@adobe/spacecat-shared-drs-client-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.7.1...@adobe/spacecat-shared-drs-client-v1.7.2) (2026-05-14)
 
 

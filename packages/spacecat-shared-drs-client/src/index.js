@@ -40,6 +40,23 @@ const VALID_SCRAPE_DATASET_IDS = new Set(Object.values(SCRAPE_DATASET_IDS));
 
 const URL_LOOKUP_BATCH_SIZE = 100;
 
+// Reddit-comments specific scrape parameters.
+// Exported so callers can validate `sortBy` at their own boundary without
+// duplicating the allowlist. Frozen for consistency with the sibling
+// EXPERIMENT_PHASES / SCRAPE_DATASET_IDS exports (note: Object.freeze does
+// not actually prevent Set mutation methods — the ReadonlySet<> type in the
+// .d.ts is what guards TypeScript consumers).
+export const REDDIT_COMMENTS_SORT_BY_VALUES = Object.freeze(
+  new Set(['Best', 'Top', 'New', 'Controversial', 'Old', 'Q&A']),
+);
+const REDDIT_COMMENTS_DEFAULT_COMMENT_LIMIT = 150;
+const REDDIT_COMMENTS_DEFAULT_SORT_BY = 'Best';
+const REDDIT_COMMENTS_ONLY_PARAMS = ['daysBack', 'commentLimit', 'sortBy', 'loadAllReplies'];
+
+function isPositiveInteger(value) {
+  return Number.isInteger(value) && value > 0;
+}
+
 export default class DrsClient {
   /**
    * Creates a DrsClient from a universal context object.
@@ -106,7 +123,7 @@ export default class DrsClient {
     return hasText(this.s3Bucket) && hasText(this.snsTopicArn);
   }
 
-  async #request(method, path, body = undefined) {
+  async #request(method, path, body = undefined, fetchOptions = {}) {
     if (!this.isConfigured()) {
       throw new Error('DRS client is not configured. Set DRS_API_URL and DRS_API_KEY environment variables.');
     }
@@ -118,6 +135,7 @@ export default class DrsClient {
         'Content-Type': 'application/json',
         'x-api-key': this.apiKey,
       },
+      ...fetchOptions,
     };
 
     if (body) {
@@ -128,7 +146,9 @@ export default class DrsClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`DRS ${method} ${path} failed: ${response.status} - ${errorText}`);
+      const error = new Error(`DRS ${method} ${path} failed: ${response.status} - ${errorText}`);
+      error.status = response.status;
+      throw error;
     }
 
     const contentType = response.headers.get('content-type') || '';
@@ -200,12 +220,30 @@ export default class DrsClient {
 
   /**
    * Submits a scrape job to DRS via the Bright Data provider.
+   *
+   * Reddit-comments-only parameters (`daysBack`, `commentLimit`, `sortBy`,
+   * `loadAllReplies`) are rejected for any other dataset. When the dataset is
+   * `reddit_comments`, `commentLimit` defaults to 150 and `sortBy` defaults to
+   * 'Best'; `daysBack` and `loadAllReplies` are omitted from the request when
+   * not provided (Bright Data treats absent fields as "no filter").
+   *
    * @param {object} params
    * @param {string} params.datasetId - One of SCRAPE_DATASET_IDS values
    * @param {string} params.siteId - SpaceCat site ID
    * @param {string[]} params.urls - URLs to scrape
    * @param {string} [params.priority='HIGH'] - Job priority (HIGH or LOW)
-   * @param {number} [params.daysBack] - Number of days back to scrape (reddit_comments only)
+   * @param {string} [params.spacecatOrgId] - SpaceCat organization ID
+   * @param {string} [params.imsOrgId] - IMS organization ID. When provided, it is attached as
+   *   `parameters.metadata.imsOrgId` so DRS can scope the job's S2S token without relying on
+   *   resolving the org from `site_id`. When omitted, DRS falls back to `site_id` auto-resolution.
+   * @param {string} [params.brand] - Brand name; attached as `parameters.metadata.brand` only
+   *   when `imsOrgId` is also provided.
+   * @param {number} [params.daysBack] - Time-window filter in days (reddit_comments only)
+   * @param {number} [params.commentLimit=150] - Max comments per thread (reddit_comments only)
+   * @param {('Best'|'Top'|'New'|'Controversial'|'Old'|'Q&A')} [params.sortBy='Best']
+   *   Sort order for Bright Data (reddit_comments only)
+   * @param {boolean} [params.loadAllReplies] - Whether to expand all reply trees
+   *   (reddit_comments only)
    * @returns {Promise<object>} Job result with job_id
    */
   async submitScrapeJob({
@@ -214,6 +252,12 @@ export default class DrsClient {
     urls,
     priority = 'HIGH',
     daysBack,
+    spacecatOrgId,
+    imsOrgId,
+    brand,
+    commentLimit,
+    sortBy,
+    loadAllReplies,
   }) {
     if (!VALID_SCRAPE_DATASET_IDS.has(datasetId)) {
       throw new Error(`Invalid dataset_id "${datasetId}". Must be one of: ${[...VALID_SCRAPE_DATASET_IDS].join(', ')}`);
@@ -224,8 +268,30 @@ export default class DrsClient {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
     }
-    if (daysBack !== undefined && datasetId !== SCRAPE_DATASET_IDS.REDDIT_COMMENTS) {
-      throw new Error('daysBack is only supported for reddit_comments dataset');
+
+    const isRedditComments = datasetId === SCRAPE_DATASET_IDS.REDDIT_COMMENTS;
+    if (!isRedditComments) {
+      const providedRedditParam = REDDIT_COMMENTS_ONLY_PARAMS.find(
+        (name) => ({
+          daysBack, commentLimit, sortBy, loadAllReplies,
+        }[name] !== undefined),
+      );
+      if (providedRedditParam) {
+        throw new Error(`${providedRedditParam} is only supported for reddit_comments dataset`);
+      }
+    }
+
+    if (daysBack !== undefined && !isPositiveInteger(daysBack)) {
+      throw new Error('daysBack must be a positive integer');
+    }
+    if (commentLimit !== undefined && !isPositiveInteger(commentLimit)) {
+      throw new Error('commentLimit must be a positive integer');
+    }
+    if (sortBy !== undefined && !REDDIT_COMMENTS_SORT_BY_VALUES.has(sortBy)) {
+      throw new Error(`Invalid sortBy "${sortBy}". Must be one of: ${[...REDDIT_COMMENTS_SORT_BY_VALUES].join(', ')}`);
+    }
+    if (loadAllReplies !== undefined && typeof loadAllReplies !== 'boolean') {
+      throw new Error('loadAllReplies must be a boolean');
     }
 
     this.log.info(`Submitting DRS scrape job for dataset ${datasetId}`, { datasetId, siteId, urlCount: urls.length });
@@ -235,15 +301,37 @@ export default class DrsClient {
       site_id: siteId,
       urls,
     };
-    if (daysBack !== undefined) {
-      parameters.days_back = daysBack;
+
+    if (imsOrgId) {
+      parameters.metadata = {
+        imsOrgId,
+        ...(brand ? { brand } : {}),
+      };
     }
 
-    return this.submitJob({
+    if (isRedditComments) {
+      parameters.comment_limit = commentLimit ?? REDDIT_COMMENTS_DEFAULT_COMMENT_LIMIT;
+      parameters.sort_by = sortBy ?? REDDIT_COMMENTS_DEFAULT_SORT_BY;
+
+      if (daysBack !== undefined) {
+        parameters.days_back = daysBack;
+      }
+
+      if (loadAllReplies !== undefined) {
+        parameters.load_all_replies = loadAllReplies;
+      }
+    }
+
+    const jobParams = {
       provider_id: 'brightdata',
       priority,
       parameters,
-    });
+    };
+    if (spacecatOrgId) {
+      jobParams.spacecat_org_id = spacecatOrgId;
+    }
+
+    return this.submitJob(jobParams);
   }
 
   /**
@@ -337,6 +425,7 @@ export default class DrsClient {
    * @param {boolean} params.triggerImmediately - Trigger first job on schedule creation
    * @param {boolean} [params.enableBrandPresence] - Enable brand presence detection in the job
    * @param {object} [params.metadata] - Additional metadata to attach to the job
+   * @param {number} [params.timeout] - Fetch timeout in ms; omit to use tracingFetch default
    * @returns {Promise<object>} Schedule creation response
    */
   async createExperimentSchedule({
@@ -350,6 +439,7 @@ export default class DrsClient {
     triggerImmediately,
     enableBrandPresence = false,
     metadata,
+    timeout,
   }) {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
@@ -409,7 +499,7 @@ export default class DrsClient {
       triggerImmediately: body.trigger_immediately,
     });
 
-    const result = await this.#request('POST', '/schedules', body);
+    const result = await this.#request('POST', '/schedules', body, timeout ? { timeout } : {});
     this.log.info('DRS experiment schedule created', {
       scheduleId: result?.schedule?.schedule_id || result?.schedule_id,
       experimentId,

@@ -411,7 +411,7 @@ export default class DrsClient {
    * @param {boolean} params.triggerImmediately - Trigger first job on schedule creation
    * @param {boolean} [params.enableBrandPresence] - Enable brand presence detection in the job
    * @param {object} [params.metadata] - Additional metadata to attach to the job
-   * @param {number} [params.timeout=12000] - Request timeout in milliseconds
+   * @param {number} [params.timeout] - Fetch timeout in ms; omit to use tracingFetch default
    * @returns {Promise<object>} Schedule creation response
    */
   async createExperimentSchedule({
@@ -425,7 +425,7 @@ export default class DrsClient {
     triggerImmediately,
     enableBrandPresence = false,
     metadata,
-    timeout = 12_000,
+    timeout,
   }) {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
@@ -485,7 +485,7 @@ export default class DrsClient {
       triggerImmediately: body.trigger_immediately,
     });
 
-    const result = await this.#request('POST', '/schedules', body, { timeout });
+    const result = await this.#request('POST', '/schedules', body, timeout ? { timeout } : {});
     this.log.info('DRS experiment schedule created', {
       scheduleId: result?.schedule?.schedule_id || result?.schedule_id,
       experimentId,

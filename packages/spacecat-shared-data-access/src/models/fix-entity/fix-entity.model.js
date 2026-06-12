@@ -44,6 +44,50 @@ class FixEntity extends BaseModel {
     return fixEntityCollection
       .getSuggestionsByFixEntityId(this.getId());
   }
+
+  /**
+   * Removes this FixEntity. When the fix is bound to a specific issue (granular CWV
+   * model — `changeDetails.issueId` is set), also rewinds every linked Suggestion so
+   * the issue is reopenable: clears `data.issues[issueId].fixEntityId` and resets
+   * that issue's status to NEW. The fix row and its junction rows are deleted by the
+   * inherited remove flow.
+   *
+   * Skipped when the fix has no issueId (legacy / non-CWV fixes) — same behavior as
+   * before. Also skipped when this method is reached as a dependent cascade (parent
+   * removal goes through `_remove()` directly), since the parent teardown moots the
+   * per-issue rewind.
+   */
+  async remove() {
+    const issueId = this.record?.changeDetails?.issueId;
+    if (issueId) {
+      await this.#resetLinkedIssues(issueId);
+    }
+    return super.remove();
+  }
+
+  async #resetLinkedIssues(issueId) {
+    const suggestions = await this.getSuggestions();
+
+    await Promise.all(suggestions.map(async (suggestion) => {
+      const data = suggestion.getData();
+      if (!data || !Array.isArray(data.issues)) {
+        return;
+      }
+      let mutated = false;
+      const nextIssues = data.issues.map((issue) => {
+        if (issue && issue.id === issueId) {
+          mutated = true;
+          return { ...issue, status: 'NEW', fixEntityId: null };
+        }
+        return issue;
+      });
+      if (!mutated) {
+        return;
+      }
+      suggestion.setData({ ...data, issues: nextIssues });
+      await suggestion.save();
+    }));
+  }
 }
 
 export default FixEntity;

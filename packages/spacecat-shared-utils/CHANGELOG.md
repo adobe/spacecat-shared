@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.118.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.117.0...@adobe/spacecat-shared-utils-v1.118.0) (2026-06-10)
+
+### Features
+
+* fix ghost RUM key false positive in wwwUrlResolver by verifying bundle data before accepting toggled hostname ([#1657](https://github.com/adobe/spacecat-shared/issues/1657)) ([dffa4aa](https://github.com/adobe/spacecat-shared/commit/dffa4aa8a858277a866bb1889668e80982adda6c))
+
 ## [@adobe/spacecat-shared-utils-v1.117.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.6...@adobe/spacecat-shared-utils-v1.117.0) (2026-06-04)
 
 ### Features

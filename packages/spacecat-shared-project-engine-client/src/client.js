@@ -25,12 +25,15 @@ import { createRetryingFetch, toTokenGetter } from './internal.js';
 
 /**
  * @typedef {object} SerenityProjectEngineApiClientOptions
- * @property {string} baseUrl Base URL of the Project Engine API. Point at the Counterfact
- *   mock for E2E / local dev.
- * @property {AuthTokenSource} authToken The caller's IMS JWT, or a (sync/async) getter
- *   resolved per request. Sent verbatim as the `Auth-Data-Jwt` header. The client performs
- *   NO token exchange or minting — Semrush validates the raw IMS token, and the `/serenity/*`
- *   routes opt out of the IMS→spacecat exchange, so the caller's token is forwarded as-is.
+ * @property {string} baseUrl Base URL of the Project Engine gateway — the origin of
+ *   `SEMRUSH_PROJECTS_BASE_URL` (e.g. `https://adobe-hackathon.semrush.com`), or the Counterfact
+ *   mock's origin for E2E / local dev. Only `protocol//host` is used; any path is dropped and the
+ *   client appends the fixed `/enterprise/projects/api` prefix itself, matching the deployed
+ *   api-service transport (`rest-transport.js`).
+ * @property {AuthTokenSource} authToken The caller's IMS JWT, or a (sync/async) getter resolved
+ *   per request. Sent as the `Authorization: Bearer <token>` header. The client performs NO token
+ *   exchange or minting — the Adobe-hosted gateway authenticates the raw IMS bearer and exchanges
+ *   it for Semrush's native credential server-side, so the caller's token is forwarded as-is.
  * @property {number} [maxRetries=2] Retry attempts on 429 / retryable 5xx / network error.
  *   Default 2 (3 tries total).
  * @property {number} [retryBaseDelayMs=200] Base backoff in ms; grows exponentially per
@@ -40,8 +43,36 @@ import { createRetryingFetch, toTokenGetter } from './internal.js';
  */
 
 /**
- * Builds the openapi-fetch middleware that forwards the caller's IMS token verbatim as the
- * `Auth-Data-Jwt` header.
+ * The Project Engine API path prefix — the vendored spec's `basePath`. The generated `paths`
+ * keys are relative to it, so the client owns it here, mirroring the deployed api-service
+ * transport (`rest-transport.js`), which appends this same constant to the env-configured origin.
+ */
+const API_PREFIX = '/enterprise/projects/api';
+
+/**
+ * Normalises the caller's base URL to `<origin>/enterprise/projects/api`, mirroring
+ * `rest-transport.js`: parse, keep only `protocol//host` — dropping any path or credentials so a
+ * misconfigured value can't bleed into every request — then append the fixed prefix. Unlike the
+ * prod-only transport it does NOT force https, since the client also targets the local Counterfact
+ * mock over http.
+ * @param {string} baseUrl
+ * @returns {string}
+ */
+function resolveBaseUrl(baseUrl) {
+  let parsed;
+  try {
+    parsed = new URL(baseUrl);
+  } catch {
+    throw new Error(`Project Engine client: invalid baseUrl ${JSON.stringify(baseUrl)}`);
+  }
+  return `${parsed.protocol}//${parsed.host}${API_PREFIX}`;
+}
+
+/**
+ * Builds the openapi-fetch middleware that authenticates each request with the caller's IMS token
+ * as `Authorization: Bearer <token>` — the auth model proven by the deployed api-service transport
+ * (`rest-transport.js`). The gateway exchanges the bearer for Semrush's native credential
+ * server-side; the client mints/exchanges nothing.
  * @param {() => string | Promise<string>} getToken
  * @returns {import('openapi-fetch').Middleware}
  */
@@ -49,12 +80,12 @@ function authMiddleware(getToken) {
   return {
     async onRequest({ request }) {
       const token = await getToken();
-      // Fail fast on a missing token rather than sending the literal string "undefined"
-      // (or an empty header), which the server would reject with an opaque 401/403.
+      // Fail fast on a missing token rather than sending `Bearer undefined` (or an empty header),
+      // which the gateway would reject with an opaque 401.
       if (!token) {
         throw new Error('Project Engine client: authToken resolved to an empty value');
       }
-      request.headers.set('Auth-Data-Jwt', token);
+      request.headers.set('Authorization', `Bearer ${token}`);
       return request;
     },
   };
@@ -62,8 +93,9 @@ function authMiddleware(getToken) {
 
 /**
  * Creates a thin, typed client over the generated Project Engine `paths`. It owns the base
- * URL, retries, and forwarding the caller's IMS JWT into the `Auth-Data-Jwt` header — and
- * nothing else; request/response shapes come straight from the generated types.
+ * URL (origin + `/enterprise/projects/api`), retries, and authenticating each request with the
+ * caller's IMS JWT as `Authorization: Bearer` — and nothing else; request/response shapes come
+ * straight from the generated types.
  * @param {SerenityProjectEngineApiClientOptions} options
  * @returns {SerenityProjectEngineApiClient}
  */
@@ -77,7 +109,7 @@ export function createSerenityProjectEngineApiClient(options) {
   } = options;
 
   const client = createClient({
-    baseUrl,
+    baseUrl: resolveBaseUrl(baseUrl),
     fetch: createRetryingFetch(injectedFetch, maxRetries, retryBaseDelayMs),
   });
   client.use(authMiddleware(toTokenGetter(authToken)));

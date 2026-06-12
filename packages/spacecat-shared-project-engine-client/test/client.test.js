@@ -20,10 +20,10 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 });
 
 describe('createSerenityProjectEngineApiClient', () => {
-  it('forwards a static IMS token verbatim as the Auth-Data-Jwt header', async () => {
+  it('sends the IMS token as Authorization: Bearer, not Auth-Data-Jwt', async () => {
     const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
     const client = createSerenityProjectEngineApiClient({
-      baseUrl: 'https://serenity.example/enterprise/projects/api',
+      baseUrl: 'https://serenity.example',
       authToken: 'raw-ims-jwt',
       fetch,
     });
@@ -32,7 +32,9 @@ describe('createSerenityProjectEngineApiClient', () => {
 
     expect(fetch.callCount).to.equal(1);
     const request = fetch.firstCall.args[0];
-    expect(request.headers.get('Auth-Data-Jwt')).to.equal('raw-ims-jwt');
+    expect(request.headers.get('Authorization')).to.equal('Bearer raw-ims-jwt');
+    expect(request.headers.get('Auth-Data-Jwt')).to.equal(null);
+    // the client appends the fixed /enterprise/projects/api prefix to the supplied origin
     expect(request.url).to.equal('https://serenity.example/enterprise/projects/api/v1/countries');
   });
 
@@ -40,6 +42,7 @@ describe('createSerenityProjectEngineApiClient', () => {
     const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
     let current = 'token-1';
     const client = createSerenityProjectEngineApiClient({
+      // a base URL that already carries the prefix normalises to the same target (idempotent)
       baseUrl: 'https://serenity.example/enterprise/projects/api',
       authToken: async () => current,
       fetch,
@@ -49,8 +52,31 @@ describe('createSerenityProjectEngineApiClient', () => {
     current = 'token-2';
     await client.GET('/v1/countries');
 
-    expect(fetch.firstCall.args[0].headers.get('Auth-Data-Jwt')).to.equal('token-1');
-    expect(fetch.secondCall.args[0].headers.get('Auth-Data-Jwt')).to.equal('token-2');
+    expect(fetch.firstCall.args[0].headers.get('Authorization')).to.equal('Bearer token-1');
+    expect(fetch.secondCall.args[0].headers.get('Authorization')).to.equal('Bearer token-2');
+    expect(fetch.firstCall.args[0].url)
+      .to.equal('https://serenity.example/enterprise/projects/api/v1/countries');
+  });
+
+  it('normalises a base URL with a leftover path to its origin + the API prefix', async () => {
+    const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
+    const client = createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example/some/leftover/path',
+      authToken: 'raw-ims-jwt',
+      fetch,
+    });
+
+    await client.GET('/v1/countries');
+
+    expect(fetch.firstCall.args[0].url)
+      .to.equal('https://serenity.example/enterprise/projects/api/v1/countries');
+  });
+
+  it('throws at construction when the base URL is not a valid URL', () => {
+    expect(() => createSerenityProjectEngineApiClient({
+      baseUrl: 'not a url',
+      authToken: 'raw-ims-jwt',
+    })).to.throw(/invalid baseUrl/);
   });
 
   it('applies retry defaults: retries a retryable 5xx GET', async () => {

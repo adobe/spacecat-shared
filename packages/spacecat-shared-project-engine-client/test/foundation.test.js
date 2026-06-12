@@ -31,7 +31,10 @@ describe('Project Engine foundation: vendored spec', () => {
     expect(spec).to.include('basePath: /enterprise/projects/api');
   });
 
-  it('carries the Auth-Data-Jwt header contract used by the client', () => {
+  // The spec models the Semrush-native Auth-Data-Jwt header as a per-operation param. The client
+  // does NOT send it — the Adobe gateway injects it server-side after exchanging the IMS bearer —
+  // so the client's typed surface narrows it out; the vendored contract keeps it verbatim.
+  it('carries the Semrush-native Auth-Data-Jwt header param in the vendored spec', () => {
     expect(spec).to.include('name: Auth-Data-Jwt');
   });
 });

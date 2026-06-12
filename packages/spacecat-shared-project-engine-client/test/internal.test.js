@@ -148,7 +148,7 @@ describe('createRetryingFetch', () => {
   });
 });
 
-describe('toTokenGetter (Auth-Data-Jwt source)', () => {
+describe('toTokenGetter (IMS token source)', () => {
   it('wraps a static token', async () => {
     expect(await toTokenGetter('ims-token-123')()).to.equal('ims-token-123');
   });

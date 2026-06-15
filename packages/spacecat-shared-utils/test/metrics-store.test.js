@@ -114,13 +114,37 @@ describe('Metrics Store', () => {
       expect(context.log.debug).to.have.been.calledWith('Successfully retrieved 2 metrics from metrics/testSite/testSource/testMetric.json');
     });
 
-    it('should return empty array when retrieval fails', async () => {
-      context.s3.s3Client.send.rejects(new Error('Test error'));
+    it('should warn (not error) and return empty array when the object is missing (NoSuchKey)', async () => {
+      const error = new Error('The specified key does not exist.');
+      error.name = 'NoSuchKey';
+      context.s3.s3Client.send.rejects(error);
 
       const metrics = await getStoredMetrics(config, context);
 
       expect(metrics).to.deep.equal([]);
-      expect(context.log.warn).to.have.been.calledWith('Failed to retrieve metrics from metrics/testSite/testSource/testMetric.json, error: Test error');
+      expect(context.log.warn).to.have.been.calledWith('No stored metrics found at metrics/testSite/testSource/testMetric.json, error: The specified key does not exist.');
+      expect(context.log.error).to.not.have.been.called;
+    });
+
+    it('should warn (not error) when the error message indicates a missing key', async () => {
+      // some S3 paths surface the missing-key condition only via the message
+      context.s3.s3Client.send.rejects(new Error('The specified key does not exist.'));
+
+      const metrics = await getStoredMetrics(config, context);
+
+      expect(metrics).to.deep.equal([]);
+      expect(context.log.warn).to.have.been.calledWith('No stored metrics found at metrics/testSite/testSource/testMetric.json, error: The specified key does not exist.');
+      expect(context.log.error).to.not.have.been.called;
+    });
+
+    it('should error (not warn) and return empty array on a genuine infra error', async () => {
+      context.s3.s3Client.send.rejects(new Error('getaddrinfo EBUSY s3.us-east-1.amazonaws.com'));
+
+      const metrics = await getStoredMetrics(config, context);
+
+      expect(metrics).to.deep.equal([]);
+      expect(context.log.error).to.have.been.calledWith('Failed to retrieve metrics from metrics/testSite/testSource/testMetric.json, error: getaddrinfo EBUSY s3.us-east-1.amazonaws.com');
+      expect(context.log.warn).to.not.have.been.called;
     });
   });
 

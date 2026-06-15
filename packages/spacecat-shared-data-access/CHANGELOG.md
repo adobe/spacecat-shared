@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.3...@adobe/spacecat-shared-data-access-v3.75.0) (2026-06-15)
+
+### Features
+
+* **data-access:** add minimal Brand entity for serenity sub-workspace ([#1679](https://github.com/adobe/spacecat-shared/issues/1679)) ([e68d257](https://github.com/adobe/spacecat-shared/commit/e68d2577d51b3a9110477ddcdc5a550f935b7b47))
+
 ## [@adobe/spacecat-shared-data-access-v3.74.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.2...@adobe/spacecat-shared-data-access-v3.74.3) (2026-06-12)
 
 ### Bug Fixes

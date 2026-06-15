@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.119.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.118.0...@adobe/spacecat-shared-utils-v1.119.0) (2026-06-12)
+
+### Features
+
+* **utils:** add LLMO claims guidance schema ([#1671](https://github.com/adobe/spacecat-shared/issues/1671)) ([b22f501](https://github.com/adobe/spacecat-shared/commit/b22f501dc2f50713ffa01e9e8c5e2dfaacbf26ea))
+
 ## [@adobe/spacecat-shared-utils-v1.118.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.117.0...@adobe/spacecat-shared-utils-v1.118.0) (2026-06-10)
 
 ### Features

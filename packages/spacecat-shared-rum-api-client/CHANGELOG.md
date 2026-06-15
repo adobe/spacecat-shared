@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-rum-api-client-v2.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.42.0...@adobe/spacecat-shared-rum-api-client-v2.43.0) (2026-06-15)
+
+### Features
+
+* **rum-api-client:** add resolveRumDomainKey shared utility ([#1662](https://github.com/adobe/spacecat-shared/issues/1662)) ([c3249f0](https://github.com/adobe/spacecat-shared/commit/c3249f011727e9297b191bf6ca0a78d6f462942e))
+
 ## [@adobe/spacecat-shared-rum-api-client-v2.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.41.1...@adobe/spacecat-shared-rum-api-client-v2.42.0) (2026-06-09)
 
 ### Features

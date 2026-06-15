@@ -54,6 +54,16 @@ Three compounding factors:
    level. It is shadowed by the nested `1.0.4` pin in `http-utils`, so the auth path never
    loads it. The version cascade - not just the code - is what kept this broken.
 
+### Not a cause: the LD SDK version
+
+The upstream SDK is not implicated. Both the prod-deployed `launchdarkly-client@1.0.4` and
+the current HEAD pin `@launchdarkly/node-server-sdk@^9.9.7` (same v9 line; latest is
+`9.11.2`). The SDK default is unchanged across v9: with no `logger` supplied it uses
+`basicLogger` at `info`, which writes to stderr. So bumping the SDK alone would **not** fix
+the noise - the wrapper-passes-logger fix is required regardless of SDK version and is
+deterministic, not version-dependent. An SDK bump (9.9.7 -> 9.11.2) is optional, orthogonal
+hygiene and is intentionally kept out of this change.
+
 ## Goal
 
 Eliminate the LD log noise **at the source** (not merely relabel it), and stop the
@@ -91,6 +101,10 @@ SDK in use: `@launchdarkly/node-server-sdk@9.10.10`.
      "on the advice of LaunchDarkly support." Disabling streaming in serverless is a
      well-established pattern, but we will validate flag-evaluation correctness explicitly
      (see Validation gates) and note this deviation.
+   - API choice: use the **stable** top-level `stream` / `pollInterval` options. The newer
+     `dataSystem` polling config (which the SDK docs label "Recommended") is marked
+     `@experimental` in 9.10/9.11, so it is deliberately avoided for this prod hot-path fix.
+     Do not "modernize" to `dataSystem` until it is stable.
 
 3. **Bounded init with timeout.** Replace `await client.waitForInitialization()` with
    `await client.waitForInitialization({ timeoutSeconds: 5 })`. Removes the "without a

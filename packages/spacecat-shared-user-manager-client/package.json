@@ -1,0 +1,51 @@
+{
+  "name": "@adobe/spacecat-shared-user-manager-client",
+  "version": "1.0.0",
+  "description": "Shared modules of the Spacecat Services - Semrush User Manager client and generated types",
+  "type": "module",
+  "private": true,
+  "types": "./src/generated/types.ts",
+  "engines": {
+    "node": ">=22.0.0 <25.0.0",
+    "npm": ">=10.9.0 <12.0.0"
+  },
+  "scripts": {
+    "test": "c8 mocha",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "clean": "rm -rf node_modules build .counterfact",
+    "spec:convert": "mkdir -p build && swagger2openapi spec/usermanager_swagger.yaml --patch --outfile build/openapi3.json",
+    "generate:ts": "openapi-typescript build/openapi3.json --output src/generated/types.ts",
+    "generate:pydantic": "datamodel-codegen --input build/openapi3.json --input-file-type openapi --output python/serenity_user_manager/ --output-model-type pydantic_v2.BaseModel",
+    "generate": "npm run spec:convert && npm run generate:ts && npm run generate:pydantic",
+    "mock": "counterfact spec/usermanager_swagger.yaml .counterfact --port 4010"
+  },
+  "mocha": {
+    "reporter": "mocha-multi-reporters",
+    "reporter-options": "configFile=.mocha-multi.json",
+    "spec": "test/**/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adobe/spacecat-shared.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/adobe/spacecat-shared/issues"
+  },
+  "homepage": "https://github.com/adobe/spacecat-shared/packages/spacecat-shared-user-manager-client/#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "c8": "11.0.0",
+    "chai": "6.2.2",
+    "counterfact": "2.14.0",
+    "mocha": "11.7.6",
+    "mocha-multi-reporters": "1.5.1",
+    "openapi-typescript": "7.13.0",
+    "swagger2openapi": "7.0.8"
+  }
+}

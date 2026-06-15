@@ -12,7 +12,6 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { StandardRetryStrategy } from '@smithy/util-retry';
 
 import { createDataAccess, createFetchCompat } from '../../../src/service/index.js';
 

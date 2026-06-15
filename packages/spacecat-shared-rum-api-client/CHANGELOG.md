@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-rum-api-client-v2.43.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.43.0...@adobe/spacecat-shared-rum-api-client-v2.43.1) (2026-06-15)
+
+### Bug Fixes
+
+* downgrade expected RUM domainkey 404s from error to debug ([#1678](https://github.com/adobe/spacecat-shared/issues/1678)) ([86c7fdd](https://github.com/adobe/spacecat-shared/commit/86c7fdd5333e8c40b45f7375bc4321e6c36135de))
+
 ## [@adobe/spacecat-shared-rum-api-client-v2.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.42.0...@adobe/spacecat-shared-rum-api-client-v2.43.0) (2026-06-15)
 
 ### Features

@@ -17,7 +17,7 @@ import type {
 export interface Brand extends BaseModel {
   getName(): string;
   getStatus(): string;
-  getSemrushWorkspaceId(): string | undefined;
+  getSemrushWorkspaceId(): string | null;
   setName(value: string): Brand;
   setStatus(value: string): Brand;
   setSemrushWorkspaceId(value: string | null): Brand;

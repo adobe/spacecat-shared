@@ -20,9 +20,12 @@ import BaseModel from '../base/base.model.js';
  * managed elsewhere (Brandalf sync, onboarding); this entity is a read +
  * targeted-patch surface, not a create surface.
  *
- * `semrushWorkspaceId` is the dual-mode switch: NULL = legacy/flat mode, set =
- * the brand has its own Semrush child workspace (kept across deactivation).
- * See serenity-docs brand-semrush-provisioning-v2-phase1-sync.md §6.
+ * `semrushWorkspaceId` is the dual-mode switch: NULL = the brand is not
+ * connected to a Semrush sub-workspace (resolves against the org parent
+ * workspace — "flat" mode); set = the brand has its own Semrush sub-workspace.
+ * Deactivation empties the sub-workspace and clears this pointer (the
+ * sub-workspace itself is never deleted). See serenity-docs
+ * brand-semrush-provisioning-v2-phase1-sync.md §6.
  *
  * @class Brand
  * @extends BaseModel
@@ -35,7 +38,7 @@ class Brand extends BaseModel {
    * (mysticat-data-service). Activation writes `active`; deactivation writes
    * `pending`; customer offboard writes `deleted`.
    */
-  static STATUSES = ['pending', 'active', 'deleted', 'ignored'];
+  static STATUSES = Object.freeze(['pending', 'active', 'deleted', 'ignored']);
 }
 
 export default Brand;

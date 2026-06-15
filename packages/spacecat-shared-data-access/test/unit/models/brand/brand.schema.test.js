@@ -59,16 +59,24 @@ describe('Brand Schema', () => {
     });
 
     it('accepts a non-empty string', () => {
-      expect(attributes.semrushWorkspaceId.validate('child-ws-123')).to.be.true;
+      expect(attributes.semrushWorkspaceId.validate('sub-ws-123')).to.be.true;
     });
 
-    it('accepts nullish (legacy/flat mode)', () => {
+    it('accepts nullish (no subworkspace connected)', () => {
       expect(attributes.semrushWorkspaceId.validate(null)).to.be.true;
       expect(attributes.semrushWorkspaceId.validate(undefined)).to.be.true;
     });
 
     it('rejects the empty string', () => {
       expect(attributes.semrushWorkspaceId.validate('')).to.be.false;
+    });
+
+    // Pins actual behaviour: the shared `hasText` does NOT trim, so a
+    // whitespace-only value passes the guard (parity with the Organization
+    // sibling). Safe because only the activate flow writes this column, always
+    // a real Semrush workspace UUID — never user input.
+    it('accepts whitespace-only input (hasText does not trim)', () => {
+      expect(attributes.semrushWorkspaceId.validate('   ')).to.be.true;
     });
 
     // No postgrestField override: camelToSnake('semrushWorkspaceId') already

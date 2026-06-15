@@ -25,7 +25,7 @@ const sampleRow = {
   brandId: 'c3e1a4b6-2a8e-4d61-8b03-7d0a1d6b3201',
   name: 'Fixture Brand',
   status: 'active',
-  semrushWorkspaceId: 'child-ws-fixture',
+  semrushWorkspaceId: 'sub-ws-fixture',
 };
 
 describe('BrandModel', () => {
@@ -82,23 +82,34 @@ describe('BrandModel', () => {
 
   describe('semrushWorkspaceId', () => {
     it('gets semrushWorkspaceId', () => {
-      expect(instance.getSemrushWorkspaceId()).to.equal('child-ws-fixture');
+      expect(instance.getSemrushWorkspaceId()).to.equal('sub-ws-fixture');
     });
 
-    it('sets a new child workspace id (re-grant)', () => {
-      instance.setSemrushWorkspaceId('child-ws-fixture-v2');
-      expect(instance.getSemrushWorkspaceId()).to.equal('child-ws-fixture-v2');
+    it('sets a new subworkspace id (re-grant)', () => {
+      instance.setSemrushWorkspaceId('sub-ws-fixture-v2');
+      expect(instance.getSemrushWorkspaceId()).to.equal('sub-ws-fixture-v2');
     });
 
-    it('clears the pointer (rollback to legacy mode)', () => {
+    it('clears the pointer (disconnects the brand from its subworkspace)', () => {
       instance.setSemrushWorkspaceId(null);
       expect(instance.getSemrushWorkspaceId()).to.equal(null);
     });
   });
 
   describe('STATUSES', () => {
-    it('mirrors the reference_status enum', () => {
-      expect(Brand.STATUSES).to.deep.equal(['pending', 'active', 'deleted', 'ignored']);
+    // Structural contract only — deep-equality against a re-declared literal
+    // would just mirror the source and could never fail independently.
+    it('is a frozen, non-empty list of unique non-empty strings', () => {
+      expect(Brand.STATUSES).to.be.an('array').that.is.not.empty;
+      expect(Object.isFrozen(Brand.STATUSES)).to.be.true;
+      expect(Brand.STATUSES.every((s) => typeof s === 'string' && s.length > 0)).to.be.true;
+      expect(new Set(Brand.STATUSES).size).to.equal(Brand.STATUSES.length);
+    });
+
+    it('includes the statuses the serenity lifecycle writes', () => {
+      // activate -> 'active', deactivate -> 'pending' (behavioural dependency).
+      expect(Brand.STATUSES).to.include('active');
+      expect(Brand.STATUSES).to.include('pending');
     });
   });
 });

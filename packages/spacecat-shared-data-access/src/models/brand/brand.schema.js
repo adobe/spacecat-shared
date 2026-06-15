@@ -35,9 +35,13 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
     type: Brand.STATUSES,
     validate: (value) => value == null || Brand.STATUSES.includes(value),
   })
-  // Brand → Semrush child workspace. Nullable (NULL = legacy/flat mode). Same
-  // minimum guard as organizations.semrushWorkspaceId: reject empty /
-  // whitespace-only strings while letting null/undefined short-circuit.
+  // Brand → Semrush sub-workspace. Nullable (NULL = no sub-workspace
+  // connected). Same minimum guard as organizations.semrushWorkspaceId: the
+  // shared `hasText` rejects the empty string (and non-strings) while letting
+  // null/undefined short-circuit. Note hasText does NOT trim, so a
+  // whitespace-only value would pass — acceptable here because this column is
+  // only ever written by the activate flow with a real Semrush workspace UUID,
+  // never user input.
   .addAttribute('semrushWorkspaceId', {
     type: 'string',
     validate: (value) => value == null || hasText(value),

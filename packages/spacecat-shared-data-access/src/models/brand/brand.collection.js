@@ -16,7 +16,7 @@ import BaseCollection from '../base/base.collection.js';
  * BrandCollection - collection of Brand rows. `findById` (the brand UUID) is
  * the primary access path for serenity dual-mode resolution;
  * `findBySemrushWorkspaceId` (from the addAllIndex below) is used to repair a
- * pointer when a child workspace is found to have been deleted out-of-band.
+ * pointer when a sub-workspace is found to have been deleted out-of-band.
  *
  * @class BrandCollection
  * @extends BaseCollection

@@ -35,7 +35,7 @@ describe('BrandCollection', () => {
     brandId: 'c3e1a4b6-2a8e-4d61-8b03-7d0a1d6b3201',
     name: 'Collection Test Brand',
     status: 'active',
-    semrushWorkspaceId: 'child-ws-collection',
+    semrushWorkspaceId: 'sub-ws-collection',
   };
 
   beforeEach(() => {

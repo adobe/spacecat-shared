@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.75.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.0...@adobe/spacecat-shared-data-access-v3.75.1) (2026-06-15)
+
+### Bug Fixes
+
+* quiet recoverable ERROR-severity log noise (config-validation fallback + missing metrics) ([#1681](https://github.com/adobe/spacecat-shared/issues/1681)) ([27be682](https://github.com/adobe/spacecat-shared/commit/27be6824d60af52a948e168a9a288239b402cdde))
+
 ## [@adobe/spacecat-shared-data-access-v3.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.3...@adobe/spacecat-shared-data-access-v3.75.0) (2026-06-15)
 
 ### Features

@@ -12,8 +12,9 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { StandardRetryStrategy } from '@smithy/util-retry';
 
-import { createDataAccess, createFetchCompat } from '../../../src/service/index.js';
+import { createDataAccess, createFetchCompat, EbusyRetryStrategy } from '../../../src/service/index.js';
 
 describe('service/index', () => {
   it('uses provided PostgREST client and does not require postgrestUrl', () => {
@@ -118,15 +119,80 @@ describe('service/index', () => {
 
       const { Configuration } = dataAccess;
       expect(Configuration.s3Client).to.exist;
-
-      // The retry strategy is configured in the S3Client options
-      // We verify it was set up by checking the client exists with the bucket
       expect(Configuration.s3Bucket).to.equal('test-bucket');
     });
+  });
 
-    // Note: The EbusyRetryStrategy class is internal to the service/index.js module.
-    // It extends StandardRetryStrategy to add EBUSY error retry logic.
-    // The actual retry behavior is tested via integration tests with real S3 operations,
-    // as unit testing would require mocking the entire AWS SDK retry infrastructure.
+  describe('EbusyRetryStrategy', () => {
+    let strategy;
+    let mockToken;
+
+    beforeEach(() => {
+      strategy = new EbusyRetryStrategy(4);
+      mockToken = {
+        getRetryCount: () => 0,
+        getRetryDelay: () => 100,
+        getRetryCost: () => 5,
+        hasRetryTokens: () => true,
+      };
+    });
+
+    it('extends StandardRetryStrategy', () => {
+      expect(strategy).to.be.instanceOf(StandardRetryStrategy);
+    });
+
+    it('has refreshRetryTokenForRetry method', () => {
+      expect(strategy.refreshRetryTokenForRetry).to.be.a('function');
+    });
+
+    it('constructs with default maxAttempts', () => {
+      const newStrategy = new EbusyRetryStrategy();
+      expect(newStrategy).to.exist;
+      expect(newStrategy).to.be.instanceOf(StandardRetryStrategy);
+    });
+
+    it('constructs with custom maxAttempts', () => {
+      const newStrategy = new EbusyRetryStrategy(10);
+      expect(newStrategy).to.exist;
+      expect(newStrategy).to.be.instanceOf(StandardRetryStrategy);
+    });
+
+    it('handles EBUSY error with code', async () => {
+      const ebusyError = new Error('getaddrinfo EBUSY');
+      ebusyError.code = 'EBUSY';
+      const errorInfo = { error: ebusyError };
+
+      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Should return a token (the method doesn't throw)
+      expect(result).to.exist;
+    });
+
+    it('handles EBUSY error in message', async () => {
+      const ebusyError = new Error('getaddrinfo EBUSY spacecat.s3.amazonaws.com');
+      const errorInfo = { error: ebusyError };
+
+      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      expect(result).to.exist;
+    });
+
+    it('handles non-EBUSY errors', async () => {
+      const otherError = new Error('Connection reset');
+      otherError.code = 'ECONNRESET';
+      const errorInfo = { error: otherError };
+
+      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      expect(result).to.exist;
+    });
+
+    it('handles errorInfo with no error', async () => {
+      const errorInfo = { errorType: 'THROTTLING' };
+
+      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      expect(result).to.exist;
+    });
   });
 });

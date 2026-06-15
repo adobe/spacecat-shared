@@ -88,7 +88,7 @@ const createPostgrestService = (config, client = undefined) => {
  * refreshRetryTokenForRetry() rather than retry(). The SDK's retry middleware
  * calls this method to determine if an error should be retried.
  */
-class EbusyRetryStrategy extends StandardRetryStrategy {
+export class EbusyRetryStrategy extends StandardRetryStrategy {
   constructor(maxAttempts = 4) {
     super(maxAttempts);
   }

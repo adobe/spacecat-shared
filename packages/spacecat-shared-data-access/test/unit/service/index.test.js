@@ -122,13 +122,15 @@ describe('service/index', () => {
 
     beforeEach(() => {
       mockToken = { retryCount: 0 };
-      // Stub the parent's refreshRetryTokenForRetry method
-      superRefreshStub = sinon.stub(Object.getPrototypeOf(Object.getPrototypeOf(strategy)), 'refreshRetryTokenForRetry')
+      // Stub the parent class method by stubbing StandardRetryStrategy.prototype
+      superRefreshStub = sinon.stub(StandardRetryStrategy.prototype, 'refreshRetryTokenForRetry')
         .resolves({ retryCount: 1 });
     });
 
     afterEach(() => {
-      superRefreshStub.restore();
+      if (superRefreshStub) {
+        superRefreshStub.restore();
+      }
     });
 
     it('reclassifies EBUSY errors with code as TRANSIENT', async () => {

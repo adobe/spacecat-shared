@@ -51,7 +51,15 @@ export async function getStoredMetrics(config, context) {
 
     return metrics;
   } catch (e) {
-    log.warn(`Failed to retrieve metrics from ${filePath}, error: ${e.message}`);
+    const isMissingKey = e.name === 'NoSuchKey'
+      || e.message?.toLowerCase().includes('the specified key does not exist');
+    if (isMissingKey) {
+      // Expected/recoverable: no metrics stored yet for this site/source/metric.
+      log.warn(`No stored metrics found at ${filePath}, error: ${e.message}`);
+    } else {
+      // Genuine infra error (e.g. EBUSY/EMFILE/DNS/timeout) - keep visible at error.
+      log.error(`Failed to retrieve metrics from ${filePath}, error: ${e.message}`);
+    }
     return [];
   }
 }

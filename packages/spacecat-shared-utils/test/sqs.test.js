@@ -70,7 +70,7 @@ describe('SQS', () => {
         .reply(400, errorResponse);
 
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/test-queue', { key: 'value' });
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
       }).with(sqsWrapper);
 
       await expect(action({}, context)).to.be.rejectedWith(errorResponse.message);
@@ -93,7 +93,7 @@ describe('SQS', () => {
         .reply(500, {});
 
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/test-queue', { key: 'value' });
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
       }).with(sqsWrapper);
 
       await expect(action({}, context)).to.be.rejected;

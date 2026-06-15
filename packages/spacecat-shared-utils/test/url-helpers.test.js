@@ -985,6 +985,39 @@ describe('URL Utility Functions', () => {
       expect(result).to.equal('www.example.com');
     });
 
+    it('should log a 404 domainkey miss at debug, not error (site not onboarded to RUM)', async () => {
+      site.getBaseURL.returns('https://example.com');
+      const notFound = new Error("Query '404' failed. Reason: ... Status: 404");
+      notFound.status = 404;
+      rumApiClient.retrieveDomainkey.rejects(notFound);
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(log.debug).to.have.been.calledWith(
+        `[wwwUrlResolver] No RUM domainkey for example.com (site not onboarded to RUM): ${notFound.message}`,
+      );
+      expect(log.error).to.not.have.been.called;
+    });
+
+    it('should log debug for a 404 first attempt and error for a non-404 second attempt', async () => {
+      site.getBaseURL.returns('https://example.com');
+      const notFound = new Error('No domainkey. Status: 404');
+      notFound.status = 404;
+      const serverError = new Error('upstream 500');
+      serverError.status = 500;
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').rejects(notFound);
+      rumApiClient.retrieveDomainkey.withArgs('example.com').rejects(serverError);
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(log.debug).to.have.been.calledWith(
+        `[wwwUrlResolver] No RUM domainkey for example.com (site not onboarded to RUM): ${notFound.message}`,
+      );
+      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: upstream 500');
+    });
+
     it('should fallback to non-www when hostname already has www and both RUM checks fail', async () => {
       site.getBaseURL.returns('https://www.example.org');
       rumApiClient.retrieveDomainkey.rejects(new Error('No domain key'));

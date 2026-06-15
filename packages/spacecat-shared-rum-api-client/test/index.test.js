@@ -299,6 +299,26 @@ describe('RUMAPIClient with admin key for external domainkey fetch', () => {
       .to.be.rejectedWith("Error during fetching domainkey for domain 'example.com using admin key. Status: 500");
   });
 
+  it('propagates the HTTP status through the query re-wrap on a 404 domainkey miss', async () => {
+    nock(RUM_BUNDLER_API_HOST)
+      .get('/domainkey/example.com')
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(404);
+
+    const opts = {
+      domain: 'example.com',
+      interval: 0,
+    };
+
+    const error = await client.query('404', opts).then(
+      () => expect.fail('expected query to reject'),
+      (e) => e,
+    );
+    expect(error.message).to.include("Query '404' failed.");
+    expect(error.message).to.include('Status: 404');
+    expect(error.status).to.equal(404);
+  });
+
   it('throws error when external domainkey fetch returns unexpected response', async () => {
     nock(RUM_BUNDLER_API_HOST)
       .get('/domainkey/example.com')
@@ -359,5 +379,21 @@ describe('RUMAPIClient retrieveDomainkey method', () => {
     // second call should return the cached value (no new HTTP request)
     const dk2 = await client.retrieveDomainkey(domain);
     expect(dk2).to.equal('cached-domain-key');
+  });
+
+  it('attaches the HTTP status to the thrown error on a 404 (domain not onboarded to RUM)', async () => {
+    const domain = 'not-onboarded.example.com';
+
+    nock(RUM_BUNDLER_API_HOST)
+      .get(`/domainkey/${domain}`)
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(404);
+
+    const error = await client.retrieveDomainkey(domain).then(
+      () => expect.fail('expected retrieveDomainkey to reject'),
+      (e) => e,
+    );
+    expect(error.message).to.include('Status: 404');
+    expect(error.status).to.equal(404);
   });
 });

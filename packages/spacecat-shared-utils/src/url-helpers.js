@@ -393,7 +393,11 @@ async function wwwUrlResolver(site, rumApiClient, log) {
     }
     log.debug(`[wwwUrlResolver] ${wwwToggledHostname} has key but no bundle data, trying ${hostname}`);
   } catch (e) {
-    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+    if (e.status === 404) {
+      log.debug(`[wwwUrlResolver] No RUM domainkey for ${hostname} (site not onboarded to RUM): ${e.message}`);
+    } else {
+      log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+    }
   }
 
   try {
@@ -401,7 +405,11 @@ async function wwwUrlResolver(site, rumApiClient, log) {
     log.debug(`Resolved URL ${hostname} for ${baseURL} using RUM API Client`);
     return hostname;
   } catch (e) {
-    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+    if (e.status === 404) {
+      log.debug(`[wwwUrlResolver] No RUM domainkey for ${hostname} (site not onboarded to RUM): ${e.message}`);
+    } else {
+      log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+    }
   }
 
   const fallback = hostname.startsWith('www.') ? hostname : `www.${hostname}`;

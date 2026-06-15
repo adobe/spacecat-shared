@@ -115,6 +115,23 @@ describe('RUMAPIClient#queryStream', () => {
     await expect(rumApiClient.queryStream('404', opts)).to.be.rejectedWith('You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable');
   });
 
+  it('propagates the HTTP status through the queryStream re-wrap on a 404 domainkey miss', async () => {
+    const adminContext = { env: { RUM_ADMIN_KEY: 'admin-key' } };
+    const adminClient = RUMAPIClient.createFrom(adminContext);
+    nock(RUM_BUNDLER_API_HOST)
+      .get('/domainkey/example.com')
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(404);
+
+    const opts = { domain: 'example.com', interval: 0 };
+    const error = await adminClient.queryStream('404', opts).then(
+      () => expect.fail('expected queryStream to reject'),
+      (e) => e,
+    );
+    expect(error.message).to.include("Query stream '404' failed.");
+    expect(error.status).to.equal(404);
+  });
+
   it('creates a readable stream of processed bundles', async () => {
     const rumBundles = [
       {

@@ -396,7 +396,7 @@ async function wwwUrlResolver(site, rumApiClient, log) {
     if (e.status === 404) {
       log.debug(`[wwwUrlResolver] No RUM domainkey for ${hostname} (site not onboarded to RUM): ${e.message}`);
     } else {
-      log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+      log.error(`Could not retrieve RUM domainkey for ${hostname}: ${e.message}`);
     }
   }
 
@@ -408,7 +408,7 @@ async function wwwUrlResolver(site, rumApiClient, log) {
     if (e.status === 404) {
       log.debug(`[wwwUrlResolver] No RUM domainkey for ${hostname} (site not onboarded to RUM): ${e.message}`);
     } else {
-      log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+      log.error(`Could not retrieve RUM domainkey for ${hostname}: ${e.message}`);
     }
   }
 

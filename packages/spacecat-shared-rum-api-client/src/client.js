@@ -145,7 +145,7 @@ export default class RUMAPIClient {
       this.log.debug(`Query "${query}" fetched ${bundles.length} bundles`); // maybe even remove?
       return handler(bundles, opts);
     } catch (e) {
-      const error = new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
+      const error = new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`, { cause: e });
       error.status = e.status;
       throw error;
     }
@@ -188,7 +188,7 @@ export default class RUMAPIClient {
 
       return results;
     } catch (e) {
-      const error = new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
+      const error = new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`, { cause: e });
       error.status = e.status;
       throw error;
     }
@@ -209,7 +209,7 @@ export default class RUMAPIClient {
         handler,
       }, this.log);
     } catch (e) {
-      const error = new Error(`Query stream '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
+      const error = new Error(`Query stream '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`, { cause: e });
       error.status = e.status;
       throw error;
     }

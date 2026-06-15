@@ -969,7 +969,7 @@ describe('URL Utility Functions', () => {
 
       await wwwUrlResolver(site, rumApiClient, log);
 
-      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: API error');
+      expect(log.error).to.have.been.calledWith('Could not retrieve RUM domainkey for example.com: API error');
       expect(log.error).to.have.been.calledTwice;
     });
 
@@ -980,8 +980,8 @@ describe('URL Utility Functions', () => {
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
-      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: First error');
-      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: Second error');
+      expect(log.error).to.have.been.calledWith('Could not retrieve RUM domainkey for example.com: First error');
+      expect(log.error).to.have.been.calledWith('Could not retrieve RUM domainkey for example.com: Second error');
       expect(result).to.equal('www.example.com');
     });
 
@@ -1015,7 +1015,7 @@ describe('URL Utility Functions', () => {
       expect(log.debug).to.have.been.calledWith(
         `[wwwUrlResolver] No RUM domainkey for example.com (site not onboarded to RUM): ${notFound.message}`,
       );
-      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: upstream 500');
+      expect(log.error).to.have.been.calledWith('Could not retrieve RUM domainkey for example.com: upstream 500');
     });
 
     it('should fallback to non-www when hostname already has www and both RUM checks fail', async () => {

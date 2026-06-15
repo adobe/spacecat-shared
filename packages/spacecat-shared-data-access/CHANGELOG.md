@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v3.74.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.2...@adobe/spacecat-shared-data-access-v3.74.3) (2026-06-12)
+
+### Bug Fixes
+
+* **data-access:** remove stale stash conflict markers in CHANGELOG ([#1669](https://github.com/adobe/spacecat-shared/issues/1669)) ([12229c3](https://github.com/adobe/spacecat-shared/commit/12229c33e6b2ed9731d256d89b580a0ad64d96b3))
+
+## [@adobe/spacecat-shared-data-access-v3.74.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.1...@adobe/spacecat-shared-data-access-v3.74.2) (2026-06-11)
+
+### Bug Fixes
+
+* reset linked issue status to NEW on FixEntity removal ([#1668](https://github.com/adobe/spacecat-shared/issues/1668)) ([46c54b8](https://github.com/adobe/spacecat-shared/commit/46c54b8829ea3b00029a4afa0cb835f3e7983dc9))
+
 ## [@adobe/spacecat-shared-data-access-v3.74.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.0...@adobe/spacecat-shared-data-access-v3.74.1) (2026-06-09)
 
 ### Bug Fixes
@@ -3726,18 +3738,14 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 
 * github org ([02f86c3](https://github.com/adobe/spacecat-shared/commit/02f86c351b2b1ab99ce5aca7fd5e6af2246c0efd))
 
-<<<<<<< Updated upstream
-# [@adobe/spacecat-shared-data-access-v1.6.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.2...@adobe/spacecat-shared-data-access-v1.6.0) (2024-01-12)
+# [@adobe/spacecat-shared-data-access-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.2...@adobe/spacecat-shared-data-access-v1.6.0) (2024-01-12)
 
 
 ### Features
 
-* site delivery type ([#77](https://github.com/adobe-rnd/spacecat-shared/issues/77)) ([005bc38](https://github.com/adobe-rnd/spacecat-shared/commit/005bc388ed6ab0f82c8b0f562d4c1f4c0d1e2894))
+* site delivery type ([#77](https://github.com/adobe/spacecat-shared/issues/77)) ([005bc38](https://github.com/adobe/spacecat-shared/commit/005bc388ed6ab0f82c8b0f562d4c1f4c0d1e2894))
 
-# [@adobe/spacecat-shared-data-access-v1.5.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.1...@adobe/spacecat-shared-data-access-v1.5.2) (2023-12-30)
-=======
 # [@adobe/spacecat-shared-data-access-v1.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.1...@adobe/spacecat-shared-data-access-v1.5.2) (2023-12-30)
->>>>>>> Stashed changes
 
 
 ### Bug Fixes

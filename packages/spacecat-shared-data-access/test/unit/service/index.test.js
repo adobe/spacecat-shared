@@ -122,10 +122,9 @@ describe('service/index', () => {
     });
 
     beforeEach(() => {
-      mockToken = { retryCount: 0 };
-      // Stub the parent class method by stubbing StandardRetryStrategy.prototype
-      superRefreshStub = sinon.stub(StandardRetryStrategy.prototype, 'refreshRetryTokenForRetry')
-        .resolves({ retryCount: 1 });
+      mockToken = { hasRetryTokens: () => true, getRetryCount: () => 0, getRetryDelay: () => 100 };
+      // Spy on the parent class method (don't stub - let it execute)
+      superRefreshStub = sinon.spy(StandardRetryStrategy.prototype, 'refreshRetryTokenForRetry');
     });
 
     afterEach(() => {

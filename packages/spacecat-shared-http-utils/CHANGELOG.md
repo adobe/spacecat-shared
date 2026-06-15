@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.29.0...@adobe/spacecat-shared-http-utils-v1.29.1) (2026-06-15)
+
+### Bug Fixes
+
+* **http-utils:** pin launchdarkly-client to 1.3.0 (ship Lambda log-noise fix) ([#1675](https://github.com/adobe/spacecat-shared/issues/1675)) ([da319b1](https://github.com/adobe/spacecat-shared/commit/da319b1c5ca3a6dd3f3ce5309ca25dbadfb9ef41))
+
 ## [@adobe/spacecat-shared-http-utils-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.2...@adobe/spacecat-shared-http-utils-v1.29.0) (2026-06-04)
 
 ### Features

@@ -61,8 +61,12 @@ the current HEAD pin `@launchdarkly/node-server-sdk@^9.9.7` (same v9 line; lates
 `9.11.2`). The SDK default is unchanged across v9: with no `logger` supplied it uses
 `basicLogger` at `info`, which writes to stderr. So bumping the SDK alone would **not** fix
 the noise - the wrapper-passes-logger fix is required regardless of SDK version and is
-deterministic, not version-dependent. An SDK bump (9.9.7 -> 9.11.2) is optional, orthogonal
-hygiene and is intentionally kept out of this change.
+deterministic, not version-dependent.
+
+The SDK is nonetheless bumped to `^9.11.2` as part of this change (routine hygiene, bundled
+because we are already touching this package - not the fix itself). On bump, re-verify the
+two API facts this design relies on still hold in 9.11.2: top-level `stream` / `pollInterval`
+are stable (not `@deprecated`), and the `dataSystem` config is still `@experimental`.
 
 ## Goal
 
@@ -113,6 +117,10 @@ SDK in use: `@launchdarkly/node-server-sdk@9.10.10`.
 
 4. **Keep the logger mapping.** Retain the existing wrapper mapping (`error -> log.error`;
    `warn`/`info`/`debug -> log.debug`) as defense-in-depth for any residual SDK chatter.
+
+5. **Bump the SDK** `@launchdarkly/node-server-sdk` `^9.9.7 -> ^9.11.2` (hygiene, bundled
+   because we are already in this package; behavior-neutral for the fix). Re-verify the
+   stable-`stream`/`pollInterval` and experimental-`dataSystem` facts on the bumped version.
 
 ### Part 2 - Release cascade (this is what lands it in prod)
 

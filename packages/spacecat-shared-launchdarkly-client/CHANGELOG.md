@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-launchdarkly-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.2.2...@adobe/spacecat-shared-launchdarkly-client-v1.3.0) (2026-06-15)
+
+### Features
+
+* **launchdarkly-client:** eliminate Lambda log noise (cache + polling + init timeout) ([#1674](https://github.com/adobe/spacecat-shared/issues/1674)) ([a673a4a](https://github.com/adobe/spacecat-shared/commit/a673a4aa443f9af69c96e5cda0503aa6db791f40))
+
 ## [@adobe/spacecat-shared-launchdarkly-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.2.1...@adobe/spacecat-shared-launchdarkly-client-v1.2.2) (2026-05-30)
 
 ### Bug Fixes

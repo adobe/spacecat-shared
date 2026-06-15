@@ -68,10 +68,59 @@ const sleep = (ms) => new Promise((resolve) => {
 });
 
 /**
+ * Upper bound on a single inter-attempt wait. Caps a hostile or fat-fingered `Retry-After`
+ * (and runaway exponential growth) so a retry can never hang a Lambda past a sane ceiling.
+ */
+export const MAX_RETRY_DELAY_MS = 20_000;
+
+/**
+ * Parses a `Retry-After` header into milliseconds. Supports both RFC 9110 forms: delta-seconds
+ * (e.g. `"5"`) and an HTTP-date. Returns null when the header is absent or unparseable, so the
+ * caller falls back to backoff.
+ * @param {Response} response
+ * @returns {number | null}
+ */
+export function parseRetryAfterMs(response) {
+  const raw = response.headers.get('retry-after');
+  if (!raw) {
+    return null;
+  }
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds)) {
+    return Math.max(0, Math.round(seconds * 1000));
+  }
+  const epochMs = Date.parse(raw);
+  if (Number.isNaN(epochMs)) {
+    return null;
+  }
+  return Math.max(0, epochMs - Date.now());
+}
+
+/**
+ * The wait before the next attempt: the larger of (a) exponential backoff with equal jitter —
+ * `baseDelayMs * 2 ** completedAttempt` scaled by a random factor in `[0.5, 1)` to de-correlate
+ * concurrent clients and avoid thundering-herd alignment on a shared 429/503 — and (b) the
+ * server's `Retry-After`, when present (so we never retry sooner than the server asked).
+ * Clamped to {@link MAX_RETRY_DELAY_MS}.
+ * @param {number} completedAttempt zero-based index of the attempt that just failed
+ * @param {number} baseDelayMs
+ * @param {Response | null} response the retryable response, if any (for `Retry-After`)
+ * @returns {number}
+ */
+export function nextRetryDelayMs(completedAttempt, baseDelayMs, response) {
+  const backoff = baseDelayMs * 2 ** completedAttempt;
+  const jittered = backoff * (0.5 + Math.random() * 0.5);
+  const retryAfter = response ? parseRetryAfterMs(response) : null;
+  const delay = retryAfter == null ? jittered : Math.max(jittered, retryAfter);
+  return Math.min(delay, MAX_RETRY_DELAY_MS);
+}
+
+/**
  * Wraps a fetch with bounded exponential-backoff retries. Retryable statuses follow
  * {@link isRetryableStatus}; thrown network errors are retried only for idempotent methods.
- * After exhausting retries it returns the last retryable response (so the caller still
- * sees e.g. the final 503) or rethrows the last network error.
+ * The wait between attempts is {@link nextRetryDelayMs} — jittered exponential backoff that also
+ * honours a `Retry-After` header. After exhausting retries it returns the last retryable response
+ * (so the caller still sees e.g. the final 503) or rethrows the last network error.
  * @param {typeof globalThis.fetch} baseFetch
  * @param {number} maxRetries
  * @param {number} baseDelayMs
@@ -86,11 +135,12 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
     const forAttempt = () => (input instanceof Request ? input.clone() : input);
     let lastResponse;
     let lastError;
+    let nextDelayMs = 0;
 
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
       if (attempt > 0) {
         // eslint-disable-next-line no-await-in-loop
-        await sleep(baseDelayMs * 2 ** (attempt - 1));
+        await sleep(nextDelayMs);
       }
       try {
         // eslint-disable-next-line no-await-in-loop
@@ -99,11 +149,13 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
           return response;
         }
         lastResponse = response;
+        nextDelayMs = nextRetryDelayMs(attempt, baseDelayMs, response);
       } catch (error) {
         if (!isIdempotent(method)) {
           throw error;
         }
         lastError = error;
+        nextDelayMs = nextRetryDelayMs(attempt, baseDelayMs, null);
       }
     }
 

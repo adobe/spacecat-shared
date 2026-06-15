@@ -16,10 +16,13 @@ import {
   createRetryingFetch,
   isRetryableStatus,
   methodOf,
+  nextRetryDelayMs,
+  parseRetryAfterMs,
   toTokenGetter,
+  MAX_RETRY_DELAY_MS,
 } from '../src/internal.js';
 
-const resp = (status) => new Response(null, { status });
+const resp = (status, headers) => new Response(null, { status, headers });
 
 describe('methodOf', () => {
   it('reads the method from init when present', () => {
@@ -145,6 +148,68 @@ describe('createRetryingFetch', () => {
       expect(error.message).to.equal('boom');
     }
     expect(base.callCount).to.equal(1);
+  });
+});
+
+describe('parseRetryAfterMs', () => {
+  it('parses a delta-seconds value into milliseconds', () => {
+    expect(parseRetryAfterMs(resp(429, { 'retry-after': '5' }))).to.equal(5000);
+  });
+
+  it('returns null when the header is absent', () => {
+    expect(parseRetryAfterMs(resp(429))).to.equal(null);
+  });
+
+  it('returns null for an unparseable value', () => {
+    expect(parseRetryAfterMs(resp(429, { 'retry-after': 'soon' }))).to.equal(null);
+  });
+
+  it('parses an HTTP-date into the delay until then', () => {
+    const whenMs = Date.now() + 3000;
+    const ms = parseRetryAfterMs(resp(429, { 'retry-after': new Date(whenMs).toUTCString() }));
+    // HTTP-date carries whole-second resolution, so allow a small window.
+    expect(ms).to.be.within(1500, 3000);
+  });
+
+  it('floors a past HTTP-date at zero', () => {
+    const past = new Date(Date.now() - 10000).toUTCString();
+    expect(parseRetryAfterMs(resp(429, { 'retry-after': past }))).to.equal(0);
+  });
+});
+
+describe('nextRetryDelayMs', () => {
+  afterEach(() => sinon.restore());
+
+  it('applies equal jitter to exponential backoff: floor at 0.5x', () => {
+    sinon.stub(Math, 'random').returns(0);
+    // completedAttempt 0 -> backoff = base * 2**0 = 200; jitter factor 0.5 -> 100
+    expect(nextRetryDelayMs(0, 200, null)).to.equal(100);
+  });
+
+  it('grows the backoff exponentially per attempt before jitter', () => {
+    sinon.stub(Math, 'random').returns(1);
+    // completedAttempt 2 -> backoff = 200 * 2**2 = 800; jitter factor ~1 -> ~800
+    expect(nextRetryDelayMs(2, 200, null)).to.be.closeTo(800, 1);
+  });
+
+  it('never waits less than the server-requested Retry-After', () => {
+    sinon.stub(Math, 'random').returns(0);
+    // jittered backoff (100) is dwarfed by the 5s Retry-After
+    const ms = nextRetryDelayMs(0, 200, resp(429, { 'retry-after': '5' }));
+    expect(ms).to.equal(5000);
+  });
+
+  it('still uses jittered backoff when it exceeds a small Retry-After', () => {
+    sinon.stub(Math, 'random').returns(1);
+    // backoff 800 > Retry-After 0.1s (100ms) -> keep backoff
+    const ms = nextRetryDelayMs(2, 200, resp(429, { 'retry-after': '0.1' }));
+    expect(ms).to.be.closeTo(800, 1);
+  });
+
+  it('clamps a hostile Retry-After to the ceiling', () => {
+    sinon.stub(Math, 'random').returns(0);
+    const ms = nextRetryDelayMs(0, 200, resp(429, { 'retry-after': '99999' }));
+    expect(ms).to.equal(MAX_RETRY_DELAY_MS);
   });
 });
 

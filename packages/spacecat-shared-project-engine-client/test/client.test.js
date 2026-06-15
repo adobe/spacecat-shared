@@ -114,4 +114,23 @@ describe('createSerenityProjectEngineApiClient', () => {
     expect(thrown.message).to.contain('empty');
     expect(fetch.called).to.equal(false);
   });
+
+  it('propagates an error thrown by the token getter (e.g. IMS outage) and never sends the request', async () => {
+    const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
+    const imsOutage = new Error('IMS token endpoint unavailable');
+    const client = createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example/enterprise/projects/api',
+      authToken: async () => { throw imsOutage; },
+      fetch,
+    });
+
+    let thrown;
+    try {
+      await client.GET('/v1/countries');
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).to.equal(imsOutage);
+    expect(fetch.called).to.equal(false);
+  });
 });

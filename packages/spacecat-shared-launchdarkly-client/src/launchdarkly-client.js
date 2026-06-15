@@ -13,6 +13,21 @@
 import * as ld from '@launchdarkly/node-server-sdk';
 
 const DEFAULT_API_BASE_URL = 'https://app.launchdarkly.com';
+const DEFAULT_POLL_INTERVAL_SECONDS = 30;
+const DEFAULT_INIT_TIMEOUT_SECONDS = 5;
+
+// Cache of initialized SDK clients, keyed by sdkKey. A warm Lambda container
+// reuses one client across invocations instead of opening a new connection per
+// request. Each entry holds the in-flight/resolved init promise.
+const sdkClientCache = new Map();
+
+/**
+ * Resets the module-scope SDK-client cache. Exported for tests; not part of the
+ * normal runtime flow.
+ */
+export function clearClientCache() {
+  sdkClientCache.clear();
+}
 
 /**
  * LaunchDarkly Client wrapper for SpaceCat services.
@@ -72,7 +87,6 @@ class LaunchDarklyClient {
       debug: (...args) => log.debug('[LaunchDarkly]', ...args),
     };
     this.client = null;
-    this.initPromise = null;
   }
 
   /**
@@ -89,23 +103,40 @@ class LaunchDarklyClient {
       return undefined;
     }
 
-    if (this.initPromise) {
-      await this.initPromise;
+    const cached = sdkClientCache.get(this.sdkKey);
+    if (cached) {
+      // Reuse an already-initialized client or join an in-flight initialization.
+      this.client = await cached.initPromise;
       return undefined;
     }
 
-    this.initPromise = (async () => {
-      try {
-        this.client = ld.init(this.sdkKey, { ...this.options, logger: this.sdkLogger });
-        await this.client.waitForInitialization();
-        this.log.info('LaunchDarkly client initialized successfully');
-      } catch (error) {
-        this.log.error('Failed to initialize LaunchDarkly client:', error);
-        throw error;
-      }
+    const initPromise = (async () => {
+      const client = ld.init(this.sdkKey, {
+        ...this.options,
+        // Forced after the spread: a consumer's options must not be able to
+        // re-enable streaming (the whole point of this change) or swap the logger.
+        stream: false,
+        pollInterval: DEFAULT_POLL_INTERVAL_SECONDS,
+        logger: this.sdkLogger,
+      });
+      await client.waitForInitialization({ timeoutSeconds: DEFAULT_INIT_TIMEOUT_SECONDS });
+      return client;
     })();
 
-    await this.initPromise;
+    // The first caller's sdkLogger is baked into the cached client; later
+    // callers reuse it. Per-instance this.log is still used for flag-evaluation
+    // logging in variation(), so request-scoped logs are unaffected.
+    sdkClientCache.set(this.sdkKey, { initPromise });
+
+    try {
+      this.client = await initPromise;
+      this.log.info('LaunchDarkly client initialized successfully');
+    } catch (error) {
+      // Clear the poisoned entry so the next call retries initialization.
+      sdkClientCache.delete(this.sdkKey);
+      this.log.error('Failed to initialize LaunchDarkly client:', error);
+      throw error;
+    }
     return undefined;
   }
 

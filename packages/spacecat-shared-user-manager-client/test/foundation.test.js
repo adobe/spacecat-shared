@@ -49,10 +49,10 @@ describe('User Manager foundation: generated TypeScript types', () => {
   });
 
   it('includes a v2 workspace child-creation path', () => {
-    expect(types).to.include('/child');
+    expect(types).to.include('/v2/workspaces/{id}/child');
   });
 
   it('includes a v1 workspace status path', () => {
-    expect(types).to.include('/status');
+    expect(types).to.include('/v1/workspaces/{id}/status');
   });
 });

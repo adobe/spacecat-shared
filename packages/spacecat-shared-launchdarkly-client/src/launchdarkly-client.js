@@ -122,6 +122,9 @@ class LaunchDarklyClient {
       return client;
     })();
 
+    // The first caller's sdkLogger is baked into the cached client; later
+    // callers reuse it. Per-instance this.log is still used for flag-evaluation
+    // logging in variation(), so request-scoped logs are unaffected.
     sdkClientCache.set(this.sdkKey, { initPromise });
 
     try {

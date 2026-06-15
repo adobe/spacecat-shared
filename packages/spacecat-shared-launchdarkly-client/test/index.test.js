@@ -326,6 +326,38 @@ describe('LaunchDarklyClient', () => {
       expect(mockInit).to.have.been.calledOnce;
     });
 
+    it('maintains separate cache entries per sdkKey', async () => {
+      const log = {
+        info: sinon.stub(), error: sinon.stub(), debug: sinon.stub(), warn: sinon.stub(),
+      };
+      const a = new LaunchDarklyClient({ sdkKey: 'sdk-key-a' }, log);
+      const b = new LaunchDarklyClient({ sdkKey: 'sdk-key-b' }, log);
+
+      await a.init();
+      await b.init();
+
+      // Different keys must not share a cache entry: ld.init runs once per key.
+      expect(mockInit).to.have.been.calledTwice;
+      expect(mockInit.firstCall.args[0]).to.equal('sdk-key-a');
+      expect(mockInit.secondCall.args[0]).to.equal('sdk-key-b');
+    });
+
+    it('forces polling and cannot be overridden by consumer options', async () => {
+      const log = {
+        info: sinon.stub(), error: sinon.stub(), debug: sinon.stub(), warn: sinon.stub(),
+      };
+      const client = new LaunchDarklyClient(
+        { sdkKey: testSdkKey, options: { stream: true, pollInterval: 999 } },
+        log,
+      );
+
+      await client.init();
+
+      // The forced settings win over consumer options - streaming stays off.
+      const options = mockInit.firstCall.args[1];
+      expect(options).to.include({ stream: false, pollInterval: 30 });
+    });
+
     it('initializes in polling mode with a bounded init timeout', async () => {
       const log = {
         info: sinon.stub(), error: sinon.stub(), debug: sinon.stub(), warn: sinon.stub(),

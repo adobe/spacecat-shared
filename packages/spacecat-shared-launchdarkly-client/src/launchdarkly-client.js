@@ -87,7 +87,6 @@ class LaunchDarklyClient {
       debug: (...args) => log.debug('[LaunchDarkly]', ...args),
     };
     this.client = null;
-    this.initPromise = null;
   }
 
   /**
@@ -113,9 +112,11 @@ class LaunchDarklyClient {
 
     const initPromise = (async () => {
       const client = ld.init(this.sdkKey, {
+        ...this.options,
+        // Forced after the spread: a consumer's options must not be able to
+        // re-enable streaming (the whole point of this change) or swap the logger.
         stream: false,
         pollInterval: DEFAULT_POLL_INTERVAL_SECONDS,
-        ...this.options,
         logger: this.sdkLogger,
       });
       await client.waitForInitialization({ timeoutSeconds: DEFAULT_INIT_TIMEOUT_SECONDS });

@@ -21,6 +21,7 @@ use(sinonChai);
 
 describe('LaunchDarklyClient', () => {
   let LaunchDarklyClient;
+  let clearClientCache;
   let mockClient;
   let mockInit;
   const testSdkKey = 'sdk-test-key-12345';
@@ -45,10 +46,12 @@ describe('LaunchDarklyClient', () => {
     });
 
     LaunchDarklyClient = module.default;
+    clearClientCache = module.clearClientCache;
   });
 
   afterEach(() => {
     sinon.resetHistory();
+    clearClientCache();
   });
 
   describe('constructor', () => {
@@ -267,36 +270,28 @@ describe('LaunchDarklyClient', () => {
       expect(mockInit).to.have.been.calledOnce;
     });
 
-    it('should wait for initPromise when concurrent calls happen', async () => {
-      const client = new LaunchDarklyClient({ sdkKey: testSdkKey });
+    it('joins an in-flight initialization via the shared cache', async () => {
+      // Two separate instances for the same sdkKey: the second one should join
+      // the in-flight init promise stored in sdkClientCache rather than calling
+      // ld.init() a second time.
+      const log = {
+        info: sinon.stub(), error: sinon.stub(), debug: sinon.stub(), warn: sinon.stub(),
+      };
+      const first = new LaunchDarklyClient({ sdkKey: testSdkKey }, log);
+      const second = new LaunchDarklyClient({ sdkKey: testSdkKey }, log);
 
-      // Manually create a scenario where initPromise exists
-      // This simulates the exact moment between two concurrent init() calls
-      let resolvePromise;
-      const testPromise = new Promise((resolve) => {
-        resolvePromise = resolve;
-      });
+      // Start first init but don't await it yet so the cache entry is in-flight
+      const firstInit = first.init();
 
-      // Set initPromise directly to simulate initialization in progress
-      client.initPromise = testPromise;
+      // Second instance joins the in-flight promise from the cache
+      const secondInit = second.init();
 
-      // Temporarily set client to null to force the code path
-      const originalClient = client.client;
-      client.client = null;
+      const [result1, result2] = await Promise.all([firstInit, secondInit]);
 
-      // Now call init() - this should hit lines 66-68
-      const initCall = client.init();
-
-      // Verify we're waiting
-      expect(client.initPromise).to.equal(testPromise);
-
-      // Restore client and resolve
-      client.client = originalClient;
-      resolvePromise();
-
-      // Wait for init to complete
-      const result = await initCall;
-      expect(result).to.be.undefined;
+      expect(result1).to.be.undefined;
+      expect(result2).to.be.undefined;
+      // Only one real SDK init despite two separate instances
+      expect(mockInit).to.have.been.calledOnce;
     });
 
     it('should throw error if initialization fails', async () => {
@@ -315,6 +310,53 @@ describe('LaunchDarklyClient', () => {
       expect(customLog.error).to.have.been.calledWith('Failed to initialize LaunchDarkly client:', initError);
 
       // Reset for other tests
+      mockClient.waitForInitialization.resolves();
+    });
+
+    it('reuses one SDK client across separate instances with the same sdkKey', async () => {
+      const log = {
+        info: sinon.stub(), error: sinon.stub(), debug: sinon.stub(), warn: sinon.stub(),
+      };
+      const a = new LaunchDarklyClient({ sdkKey: testSdkKey }, log);
+      const b = new LaunchDarklyClient({ sdkKey: testSdkKey }, log);
+
+      await a.init();
+      await b.init();
+
+      expect(mockInit).to.have.been.calledOnce;
+    });
+
+    it('initializes in polling mode with a bounded init timeout', async () => {
+      const log = {
+        info: sinon.stub(), error: sinon.stub(), debug: sinon.stub(), warn: sinon.stub(),
+      };
+      const client = new LaunchDarklyClient({ sdkKey: testSdkKey }, log);
+
+      await client.init();
+
+      const options = mockInit.firstCall.args[1];
+      expect(options).to.include({ stream: false, pollInterval: 30 });
+      expect(options).to.have.property('logger');
+      expect(mockClient.waitForInitialization)
+        .to.have.been.calledWith({ timeoutSeconds: 5 });
+    });
+
+    it('clears the cache on init failure so the next call retries', async () => {
+      const log = {
+        info: sinon.stub(), error: sinon.stub(), debug: sinon.stub(), warn: sinon.stub(),
+      };
+      mockClient.waitForInitialization.onFirstCall().rejects(new Error('init timeout'));
+      mockClient.waitForInitialization.onSecondCall().resolves();
+
+      const first = new LaunchDarklyClient({ sdkKey: testSdkKey }, log);
+      await expect(first.init()).to.be.rejectedWith('init timeout');
+
+      const second = new LaunchDarklyClient({ sdkKey: testSdkKey }, log);
+      await second.init();
+
+      expect(mockInit).to.have.been.calledTwice;
+
+      mockClient.waitForInitialization.reset();
       mockClient.waitForInitialization.resolves();
     });
   });

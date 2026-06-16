@@ -126,9 +126,11 @@ describe('Metrics Store', () => {
       expect(context.log.error).to.not.have.been.called;
     });
 
-    it('should warn (not error) when the error message indicates a missing key', async () => {
-      // some S3 paths surface the missing-key condition only via the message
-      context.s3.s3Client.send.rejects(new Error('The specified key does not exist.'));
+    it('should warn (not error) when the S3 error carries a 404 in $metadata', async () => {
+      // AWS SDK v3 attaches $metadata.httpStatusCode (404 for a missing key)
+      const error = new Error('The specified key does not exist.');
+      error.$metadata = { httpStatusCode: 404 };
+      context.s3.s3Client.send.rejects(error);
 
       const metrics = await getStoredMetrics(config, context);
 

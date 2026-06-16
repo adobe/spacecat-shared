@@ -7,11 +7,11 @@ Typed integration with the Semrush **User Manager API** (`/enterprise/users/api`
 - a **Counterfact mock** for E2E tests and local dev — later PR.
 
 > **This PR is the foundation slice only:** vendor the spec + wire the
-> conversion-and-type-generation pipeline. The client wrapper (with dual auth — the
-> caller's raw IMS token as `Authorization: Bearer` for the user-facing `Auth-Data-Jwt`
-> routes, an API-Key header for admin routes) and the stateful mock store land in
-> follow-up PRs. This mirrors the Project Engine foundation slice (LLMO-5461) applied to
-> a second, larger API (see LLMO-5558).
+> conversion-and-type-generation pipeline. The client wrapper (with auth —
+> `Authorization: Bearer <IMS>` for user-facing routes, API-Key header for admin routes;
+> `Auth-Data-Jwt` is a spec artifact and must not be sent per the CR2 finding below) and
+> the stateful mock store land in follow-up PRs. This mirrors the Project Engine
+> foundation slice (LLMO-5461) applied to a second, larger API (see LLMO-5558).
 
 This package follows the `spacecat-shared` convention: **JS + ESM**, JSDoc-typed source,
 `mocha` + `chai` + `c8` for tests, and `@adobe/eslint-config-helix` for lint. The scaffold's
@@ -24,8 +24,15 @@ The spec is a **vendored file** — `spec/usermanager_swagger.yaml` — kept und
 control. Semrush only provides the file (no endpoint access in the near term), and it's
 **Swagger 2.0** (no v3/v3.1 on offer). It is large: ~234 paths / ~284 operations across
 ~30 tags (Admin, Users, Workspaces, Projects, Keywords, Limits, Service Units,
-ActivationPanel, …), ~187 user-facing operations carrying the `Auth-Data-Jwt` header and
-~97 admin/internal operations behind an API-Key. Refresh is **manual**: drop in the newer
+ActivationPanel, …), ~187 user-facing operations and ~97 admin/internal operations.
+
+> **Spec auth correction (CR2 — same finding as Project Engine, rainer-friederich
+> 2026-06-15):** the vendored spec models auth as a required `Auth-Data-Jwt` header
+> parameter on ~187 operations. This is a **vendor spec artifact** — the live Adobe
+> gateway authenticates on `Authorization: Bearer <IMS>` only. Sending `Auth-Data-Jwt`
+> alone returns 401; sending both headers also returns 401. A generation-time overlay
+> to strip `Auth-Data-Jwt` from all operations and add a real bearer security scheme
+> (mirroring the CR2 overlay planned for Project Engine) will land in a follow-up PR. Refresh is **manual**: drop in the newer
 file, re-run `npm run generate`, and review the diff. There is no automated drift detection
 while endpoint access is restricted.
 

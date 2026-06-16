@@ -31,7 +31,9 @@ describe('User Manager foundation: vendored spec', () => {
     expect(spec).to.include('basePath: /enterprise/users/api');
   });
 
-  it('carries the Auth-Data-Jwt header contract used by the user-facing routes', () => {
+  it('carries the Auth-Data-Jwt parameter (vendor spec artifact — gateway uses Authorization: Bearer)', () => {
+    // The spec models this as a required header on ~187 ops, but the live Adobe gateway
+    // authenticates on Authorization: Bearer only. An overlay to strip it lands in a follow-up.
     expect(spec).to.include('name: Auth-Data-Jwt');
   });
 });

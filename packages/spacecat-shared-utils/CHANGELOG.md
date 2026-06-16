@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.120.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.3...@adobe/spacecat-shared-utils-v1.120.0) (2026-06-16)
+
+### Features
+
+* llm error pages subtypes ([#1686](https://github.com/adobe/spacecat-shared/issues/1686)) ([2598dc8](https://github.com/adobe/spacecat-shared/commit/2598dc88303b740b2dfd6e307d4ecb71f3005156))
+
 ## [@adobe/spacecat-shared-utils-v1.119.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.2...@adobe/spacecat-shared-utils-v1.119.3) (2026-06-16)
 
 ### Bug Fixes

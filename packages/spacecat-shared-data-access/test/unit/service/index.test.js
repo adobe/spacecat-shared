@@ -125,16 +125,19 @@ describe('service/index', () => {
 
   describe('EbusyRetryStrategy', () => {
     let strategy;
-    let mockToken;
+    let superStub;
 
     beforeEach(() => {
       strategy = new EbusyRetryStrategy(4);
-      mockToken = {
-        getRetryCount: () => 0,
-        getRetryDelay: () => 100,
-        getRetryCost: () => 5,
-        hasRetryTokens: () => true,
-      };
+      // Stub the parent method to avoid needing full AWS SDK context
+      superStub = sinon.stub(StandardRetryStrategy.prototype, 'refreshRetryTokenForRetry')
+        .resolves({ retryDelay: 100, retryCount: 1 });
+    });
+
+    afterEach(() => {
+      if (superStub) {
+        superStub.restore();
+      }
     });
 
     it('extends StandardRetryStrategy', () => {
@@ -157,42 +160,53 @@ describe('service/index', () => {
       expect(newStrategy).to.be.instanceOf(StandardRetryStrategy);
     });
 
-    it('handles EBUSY error with code', async () => {
+    it('reclassifies EBUSY error with code as TRANSIENT', async () => {
       const ebusyError = new Error('getaddrinfo EBUSY');
       ebusyError.code = 'EBUSY';
       const errorInfo = { error: ebusyError };
+      const mockToken = {};
 
-      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      // Should return a token (the method doesn't throw)
-      expect(result).to.exist;
+      // Verify parent was called with errorType: 'TRANSIENT'
+      expect(superStub).to.have.been.calledOnce;
+      const [, modifiedErrorInfo] = superStub.firstCall.args;
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
+      expect(modifiedErrorInfo.error).to.equal(ebusyError);
     });
 
-    it('handles EBUSY error in message', async () => {
+    it('reclassifies EBUSY error in message as TRANSIENT', async () => {
       const ebusyError = new Error('getaddrinfo EBUSY spacecat.s3.amazonaws.com');
       const errorInfo = { error: ebusyError };
+      const mockToken = {};
 
-      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      expect(result).to.exist;
+      expect(superStub).to.have.been.calledOnce;
+      const [, modifiedErrorInfo] = superStub.firstCall.args;
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
     });
 
-    it('handles non-EBUSY errors', async () => {
+    it('does not reclassify non-EBUSY errors', async () => {
       const otherError = new Error('Connection reset');
       otherError.code = 'ECONNRESET';
-      const errorInfo = { error: otherError };
+      const errorInfo = { error: otherError, errorType: 'THROTTLING' };
+      const mockToken = {};
 
-      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      expect(result).to.exist;
+      expect(superStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.equal('THROTTLING');
     });
 
     it('handles errorInfo with no error', async () => {
       const errorInfo = { errorType: 'THROTTLING' };
+      const mockToken = {};
 
-      const result = await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
 
-      expect(result).to.exist;
+      expect(superStub).to.have.been.calledOnce;
     });
   });
 });

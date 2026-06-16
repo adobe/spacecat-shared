@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.75.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.3...@adobe/spacecat-shared-data-access-v3.75.4) (2026-06-16)
+
+### Bug Fixes
+
+* **data-access:** batch suggestion-grant lookups to avoid 414 URI Too Long ([#1684](https://github.com/adobe/spacecat-shared/issues/1684)) ([941660c](https://github.com/adobe/spacecat-shared/commit/941660cea9ea37cc2e4bf50528923f9f051b540e))
+
 ## [@adobe/spacecat-shared-data-access-v3.75.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.2...@adobe/spacecat-shared-data-access-v3.75.3) (2026-06-16)
 
 ### Bug Fixes

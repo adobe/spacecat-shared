@@ -558,7 +558,9 @@ export const Config = (data = {}) => {
   } catch (error) {
     const logger = getLogger();
     if (logger && logger !== console) {
-      logger.error('Site configuration validation failed, using provided data', {
+      // Recoverable: validation failed but we fall back to the provided data,
+      // so this is a warning, not an error (avoids prod ERROR-severity noise).
+      logger.warn('Site configuration validation failed, using provided data', {
         error: error.message,
         invalidConfig: data,
       });

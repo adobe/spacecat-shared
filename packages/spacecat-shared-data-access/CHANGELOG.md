@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.75.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.2...@adobe/spacecat-shared-data-access-v3.75.3) (2026-06-16)
+
+### Bug Fixes
+
+* add EBUSY retry support to S3Client via custom retry strategy ([#1677](https://github.com/adobe/spacecat-shared/issues/1677)) ([04e5504](https://github.com/adobe/spacecat-shared/commit/04e550481cdff0e7545036320aaa43ed64e99ce3)), closes [#1659](https://github.com/adobe/spacecat-shared/issues/1659) [#1659](https://github.com/adobe/spacecat-shared/issues/1659)
+
 ## [@adobe/spacecat-shared-data-access-v3.75.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.1...@adobe/spacecat-shared-data-access-v3.75.2) (2026-06-16)
 
 ### Bug Fixes

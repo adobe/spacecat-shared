@@ -1,0 +1,33 @@
+import type { handlers_ActivationPanelWorkspaceWithLimits } from "./handlers.ActivationPanelWorkspaceWithLimits.js";
+import type { handlers_ActivationPanelOwner } from "./handlers.ActivationPanelOwner.js";
+import type { page_engine_backend_internal_usermanager_core_domain_ProductTierWithTimestamps } from "./page-engine-backend_internal_usermanager_core_domain.ProductTierWithTimestamps.js";
+
+export type handlers_ActivationPanelWorkspaceWithLimits = {
+  api_units?: number;
+  children?: Array<handlers_ActivationPanelWorkspaceWithLimits>;
+  corporate_account_id?: number;
+  created_at?: string;
+  expiration_date?: string;
+  icon?: string;
+  id?: string;
+  keywords?: number;
+  last_updated_at?: string;
+  owner?: handlers_ActivationPanelOwner;
+  pagespeed_urls?: number;
+  parent_id?: string;
+  partnership_enabled?: boolean;
+  product_tiers?: Array<page_engine_backend_internal_usermanager_core_domain_ProductTierWithTimestamps>;
+  projects?: number;
+  service_credits?: number;
+  status?: string;
+  subscription_id?: number;
+  subscription_rank?: number;
+  title?: string;
+  total_api_units?: number;
+  total_keywords?: number;
+  total_pagespeed_urls?: number;
+  total_projects?: number;
+  total_service_credits?: number;
+  total_users?: number;
+  users?: number;
+};

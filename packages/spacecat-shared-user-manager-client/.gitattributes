@@ -1,2 +1,3 @@
 src/generated/** linguist-generated=true
 python/serenity_user_manager/** linguist-generated=true
+.counterfact/** linguist-generated=true

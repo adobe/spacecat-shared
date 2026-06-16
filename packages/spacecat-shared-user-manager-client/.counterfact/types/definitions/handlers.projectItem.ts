@@ -1,0 +1,31 @@
+import type { handlers_BaseProject } from "./handlers.BaseProject.js";
+import type { page_engine_backend_internal_usermanager_core_domain_ProjectStatus } from "./page-engine-backend_internal_usermanager_core_domain.ProjectStatus.js";
+import type { rbac_RoleName } from "./rbac.RoleName.js";
+import type { handlers_TargetsStats } from "./handlers.TargetsStats.js";
+
+export type handlers_projectItem = {
+  color?: string;
+  core_conflicts?: boolean;
+  domain?: string;
+  draft_keywords_count?: number;
+  draft_pagespeed_urls_count?: number;
+  draft_project?: handlers_BaseProject;
+  draft_segments_count?: number;
+  draft_updated?: boolean;
+  favourite?: boolean;
+  goals_count?: number;
+  id?: string;
+  is_draft?: boolean;
+  is_out_of_sync?: boolean;
+  keywords_count?: number;
+  pagespeed_urls_count?: number;
+  publish_status?: page_engine_backend_internal_usermanager_core_domain_ProjectStatus;
+  published_at?: string;
+  publishing_failed_reason?: string;
+  role?: rbac_RoleName;
+  segments_count?: number;
+  shared_with?: number;
+  targets_stats?: handlers_TargetsStats;
+  title?: string;
+  total_invited_members?: number;
+};

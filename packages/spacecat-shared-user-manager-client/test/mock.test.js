@@ -1,0 +1,154 @@
+/*
+ * Copyright 2026 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/*
+ * LLMO-5616 — E2E tests for the User Manager Counterfact mock.
+ *
+ * Boots the mock as a child process once, exercises the stateful core chain,
+ * resets between tests via the non-spec POST /__reset route, and asserts the
+ * negative paths, the committed custom handlers, and the env-var constant.
+ *
+ * The mock logic lives in `.counterfact/**` (TypeScript compiled by Counterfact
+ * at runtime), so it is exercised behaviorally here rather than via unit
+ * coverage — see README "Mock architecture".
+ */
+import { spawn } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
+import { expect } from 'chai';
+
+import { USER_MANAGER_BASE_URL_ENV } from '../src/config.js';
+
+const PKG_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const PORT = 4099;
+const BASE = `http://localhost:${PORT}/enterprise/users/api`;
+
+// counterfact is hoisted to the monorepo root node_modules/.bin
+function counterfactBin() {
+  return path.join(PKG_ROOT, '..', '..', 'node_modules', '.bin', 'counterfact');
+}
+
+async function api(method, route, body) {
+  const res = await fetch(`${BASE}${route}`, {
+    method,
+    headers: body ? { 'content-type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  return { status: res.status, body: text ? JSON.parse(text) : undefined };
+}
+
+describe('User Manager mock (LLMO-5616)', () => {
+  let server;
+
+  before(async function before() {
+    this.timeout(120_000);
+    server = spawn(
+      process.execPath,
+      [
+        counterfactBin(), 'spec/usermanager_swagger.yaml', '.counterfact',
+        '--serve', '--port', String(PORT),
+        '--prefix', '/enterprise/users/api',
+        '--no-validate-request', '--no-update-check',
+      ],
+      { cwd: PKG_ROOT, stdio: 'ignore' },
+    );
+    // poll until the mock answers
+    for (let i = 0; i < 90; i += 1) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const r = await fetch(`${BASE}/v1/workspaces`);
+        if (r.ok) {
+          return;
+        }
+      } catch { /* not up yet */ }
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1000);
+      });
+    }
+    throw new Error('mock server did not start');
+  });
+
+  after(() => {
+    if (server) {
+      server.kill();
+    }
+  });
+
+  beforeEach(async () => {
+    await api('POST', '/__reset');
+  });
+
+  it('starts seeded with the fixture workspaces', async () => {
+    const { status, body } = await api('GET', '/v1/workspaces');
+    expect(status).to.equal(200);
+    const ids = body.items.map((w) => w.id);
+    expect(ids).to.include.members(['ws-root', 'ws-child']);
+  });
+
+  it('reflects a created child workspace in a subsequent GET (statefulness)', async () => {
+    const created = await api('POST', '/v1/workspaces/ws-root/child', { name: 'Spawned' });
+    expect(created.status).to.equal(200);
+    const { id } = created.body;
+    const got = await api('GET', `/v1/workspaces/${id}`);
+    expect(got.status).to.equal(200);
+    expect(got.body.name).to.equal('Spawned');
+    expect(got.body.parent_id).to.equal('ws-root');
+  });
+
+  it('updates then deletes a workspace', async () => {
+    const { body: ws } = await api('POST', '/v1/workspaces/ws-root/child', { name: 'A' });
+    await api('PUT', `/v1/workspaces/${ws.id}`, { name: 'B' });
+    expect((await api('GET', `/v1/workspaces/${ws.id}`)).body.name).to.equal('B');
+    expect((await api('DELETE', `/v1/workspaces/${ws.id}`)).status).to.equal(200);
+    expect((await api('GET', `/v1/workspaces/${ws.id}`)).status).to.be.gte(400);
+  });
+
+  it('adds a member and lists it', async () => {
+    await api('POST', '/v1/workspaces/ws-root/members', { user_id: 'user-9', role: 'viewer' });
+    const { body } = await api('GET', '/v1/workspaces/ws-root/members');
+    expect(body.items.map((m) => m.user_id)).to.include('user-9');
+  });
+
+  it('updates the profile (POST reflected in GET)', async () => {
+    await api('POST', '/v1/profile', { first_name: 'Grace' });
+    expect((await api('GET', '/v1/profile')).body.first_name).to.equal('Grace');
+  });
+
+  it('serves resources, deprecated limits alias, and service-units balance', async () => {
+    expect((await api('GET', '/v1/workspaces/ws-root/resources')).body.workspace_id).to.equal('ws-root');
+    expect((await api('GET', '/v1/workspaces/ws-root/limits')).body.workspace_id).to.equal('ws-root');
+    expect((await api('GET', '/v1/workspaces/ws-root/service-units/balance')).body.balance).to.equal(5000);
+  });
+
+  it('resets to the seeded state between tests', async () => {
+    await api('POST', '/v1/workspaces/ws-root/child', { name: 'Temp' });
+    await api('POST', '/__reset');
+    const ids = (await api('GET', '/v1/workspaces')).body.items.map((w) => w.id);
+    expect(ids).to.deep.equal(['ws-root', 'ws-child']);
+  });
+
+  it('returns an error status for a missing workspace', async () => {
+    expect((await api('GET', '/v1/workspaces/does-not-exist')).status).to.be.gte(400);
+  });
+
+  it('uses committed custom handlers (delegate to $.context)', () => {
+    const profile = fs.readFileSync(path.join(PKG_ROOT, '.counterfact/routes/v1/profile.ts'), 'utf8');
+    expect(profile).to.include('$.context');
+  });
+
+  it('exposes the base-URL env-var name for the future client', () => {
+    expect(USER_MANAGER_BASE_URL_ENV).to.equal('SEMRUSH_USERS_BASE_URL');
+  });
+});

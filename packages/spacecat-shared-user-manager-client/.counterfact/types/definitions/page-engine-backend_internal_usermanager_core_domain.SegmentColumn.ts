@@ -1,0 +1,15 @@
+export type page_engine_backend_internal_usermanager_core_domain_SegmentColumn =
+  | "url"
+  | "url_list"
+  | "keyword"
+  | "keyword_list"
+  | "traffic"
+  | "position"
+  | "search_volume"
+  | "keyword_intent"
+  | "country"
+  | "device"
+  | "clicks"
+  | "impressions"
+  | "ctr"
+  | "gsc_position";

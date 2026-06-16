@@ -79,7 +79,48 @@ pip install datamodel-code-generator
   module per dotted schema-name prefix) rather than a single `models.py`, mirroring the
   vendored spec's modular schema references. This is a tool-driven layout choice, not a
   spec edit.
-- **Gitignored intermediate:** `build/openapi3.json`, `.counterfact/`.
+- **Gitignored intermediate:** `build/openapi3.json`, `.counterfact/.cache/`. The rest of
+  `.counterfact/` **is committed** — see "Mock" below.
+
+## Mock (LLMO-5616)
+
+A stateful [Counterfact](https://counterfact.dev) mock for E2E tests and local dev.
+
+```bash
+npm run mock     # LocalStack-free: serves on :4010 under /enterprise/users/api, seeded
+npm test         # runs the E2E suite (boots the mock in a child process)
+```
+
+- **Run / paths:** the mock serves under the real basePath, e.g.
+  `GET http://localhost:4010/enterprise/users/api/v1/workspaces`. Auth is permissive
+  (`--no-validate-request`) so the vendor `Auth-Data-Jwt` artifact isn't required.
+- **Stateful core chain:** workspaces (create child / get / update / delete / list), members,
+  profile, resources (+ deprecated `…/limits` alias), service-units balance — a POST is
+  reflected in a later GET. Every other spec path returns a Counterfact schema-generated
+  response.
+- **Seed + reset:** the mock starts in a known fixture state (`Context.seed()` in
+  `.counterfact/routes/_.context.ts`). Reset to it with `POST /__reset` (a non-spec route);
+  the E2E suite calls it in `beforeEach`.
+- **Mock architecture (important):** Counterfact only compiles its own `routes/` tree, so the
+  mock state + logic live on the **Context class** (`$.context`, a persistent singleton) in
+  `.counterfact/routes/_.context.ts`, **not** in `src/`. Handlers are thin and delegate to it.
+  Because the logic is in `.counterfact/**` (TypeScript), it is exercised **behaviorally** by
+  `test/mock.test.js`, not by unit coverage (the 100% gate covers `src/**` only).
+- **Committed tree:** `.counterfact/` is committed except `.counterfact/.cache/`. Regenerating
+  (`npm run mock`) **preserves** hand-edited `routes/*.ts` and only refreshes generated types —
+  so an updated spec needs no stub hand-editing.
+- **Known caveat:** Counterfact warns of ambiguous sibling wildcards (`{id}` vs
+  `{workspace_id}`) on some non-core paths; the core chain uses `{id}` and routes correctly.
+
+### api-service wiring (deferred — LLMO-5615)
+
+`spacecat-api-service` calls **no** User Manager endpoints today, so wiring it to the mock is
+deferred to when the client lands (LLMO-5615). The base-URL env var the future client/transport
+will read is `SEMRUSH_USERS_BASE_URL` (see `src/config.js`) — mirroring `SEMRUSH_PROJECTS_BASE_URL`
+(required, no default, origin-only). **Re-open trigger for LLMO-5616:** when the client lands,
+point `SEMRUSH_USERS_BASE_URL` at the mock (`http://localhost:4010`) in api-service `.env.example`
++ `test/it/env.js`, and note the transport must allow `http` for localhost (the Project Engine
+transport is https-only and would 503 against the mock).
 
 ## Notes
 

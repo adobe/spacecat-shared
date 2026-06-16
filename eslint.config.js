@@ -24,6 +24,7 @@ export default defineConfig([
     '**/dist/**',
     '**/.releaserc.cjs',
     '**/test/fixtures/**',
+    '**/.counterfact/**',
   ]),
   {
     languageOptions: {

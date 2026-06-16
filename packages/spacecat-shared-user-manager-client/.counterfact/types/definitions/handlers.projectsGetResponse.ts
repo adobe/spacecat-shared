@@ -1,0 +1,30 @@
+import type { page_engine_backend_internal_usermanager_core_domain_ProjectStatus } from "./page-engine-backend_internal_usermanager_core_domain.ProjectStatus.js";
+import type { rbac_RoleName } from "./rbac.RoleName.js";
+import type { handlers_TargetsStats } from "./handlers.TargetsStats.js";
+
+export type handlers_projectsGetResponse = {
+  benchmarks_count?: number;
+  color?: string;
+  core_id?: number;
+  crawlers_count?: number;
+  created_at?: string;
+  domain?: string;
+  draft_updated?: boolean;
+  favourite?: boolean;
+  goals_count?: number;
+  id?: string;
+  is_draft?: boolean;
+  is_out_of_sync?: boolean;
+  keywords_count?: number;
+  pagespeed_urls_count?: number;
+  preferred_urls_count?: number;
+  publish_status?: page_engine_backend_internal_usermanager_core_domain_ProjectStatus;
+  published_at?: string;
+  publishing_failed_reason?: string;
+  role?: rbac_RoleName;
+  segments_count?: number;
+  shared_with?: number;
+  targets_count?: number;
+  targets_stats?: handlers_TargetsStats;
+  title?: string;
+};

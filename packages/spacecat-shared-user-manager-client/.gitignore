@@ -2,8 +2,7 @@
 build/
 
 # Counterfact scratch dir (mock handlers materialized at runtime).
-.counterfact/
-
+.counterfact/.cache/
 # The generated Python package is committed (model.py, __init__.py, plus any
 # per-prefix modules); only the bytecode caches are ignored.
 python/**/__pycache__/

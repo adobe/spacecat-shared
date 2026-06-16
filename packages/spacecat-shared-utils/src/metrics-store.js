@@ -52,7 +52,7 @@ export async function getStoredMetrics(config, context) {
     return metrics;
   } catch (e) {
     const isMissingKey = e.name === 'NoSuchKey'
-      || e.message?.toLowerCase().includes('the specified key does not exist');
+      || e.$metadata?.httpStatusCode === 404;
     if (isMissingKey) {
       // Expected/recoverable: no metrics stored yet for this site/source/metric.
       log.warn(`No stored metrics found at ${filePath}, error: ${e.message}`);

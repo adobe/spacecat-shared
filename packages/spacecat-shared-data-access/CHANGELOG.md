@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.75.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.1...@adobe/spacecat-shared-data-access-v3.75.2) (2026-06-16)
+
+### Bug Fixes
+
+* pageCitability url-upsert + metrics-store $metadata 404 detection ([#1683](https://github.com/adobe/spacecat-shared/issues/1683)) ([693a943](https://github.com/adobe/spacecat-shared/commit/693a943396fb78db3caf31fd2cb7f643f66bb0ef))
+
 ## [@adobe/spacecat-shared-data-access-v3.75.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.0...@adobe/spacecat-shared-data-access-v3.75.1) (2026-06-15)
 
 ### Bug Fixes

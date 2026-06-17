@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-data-access-v3.75.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.3...@adobe/spacecat-shared-data-access-v3.75.4) (2026-06-16)
+
+### Bug Fixes
+
+* **data-access:** batch suggestion-grant lookups to avoid 414 URI Too Long ([#1684](https://github.com/adobe/spacecat-shared/issues/1684)) ([941660c](https://github.com/adobe/spacecat-shared/commit/941660cea9ea37cc2e4bf50528923f9f051b540e))
+
+## [@adobe/spacecat-shared-data-access-v3.75.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.2...@adobe/spacecat-shared-data-access-v3.75.3) (2026-06-16)
+
+### Bug Fixes
+
+* add EBUSY retry support to S3Client via custom retry strategy ([#1677](https://github.com/adobe/spacecat-shared/issues/1677)) ([04e5504](https://github.com/adobe/spacecat-shared/commit/04e550481cdff0e7545036320aaa43ed64e99ce3)), closes [#1659](https://github.com/adobe/spacecat-shared/issues/1659) [#1659](https://github.com/adobe/spacecat-shared/issues/1659)
+
+## [@adobe/spacecat-shared-data-access-v3.75.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.1...@adobe/spacecat-shared-data-access-v3.75.2) (2026-06-16)
+
+### Bug Fixes
+
+* pageCitability url-upsert + metrics-store $metadata 404 detection ([#1683](https://github.com/adobe/spacecat-shared/issues/1683)) ([693a943](https://github.com/adobe/spacecat-shared/commit/693a943396fb78db3caf31fd2cb7f643f66bb0ef))
+
+## [@adobe/spacecat-shared-data-access-v3.75.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.0...@adobe/spacecat-shared-data-access-v3.75.1) (2026-06-15)
+
+### Bug Fixes
+
+* quiet recoverable ERROR-severity log noise (config-validation fallback + missing metrics) ([#1681](https://github.com/adobe/spacecat-shared/issues/1681)) ([27be682](https://github.com/adobe/spacecat-shared/commit/27be6824d60af52a948e168a9a288239b402cdde))
+
+## [@adobe/spacecat-shared-data-access-v3.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.3...@adobe/spacecat-shared-data-access-v3.75.0) (2026-06-15)
+
+### Features
+
+* **data-access:** add minimal Brand entity for serenity sub-workspace ([#1679](https://github.com/adobe/spacecat-shared/issues/1679)) ([e68d257](https://github.com/adobe/spacecat-shared/commit/e68d2577d51b3a9110477ddcdc5a550f935b7b47))
+
 ## [@adobe/spacecat-shared-data-access-v3.74.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.2...@adobe/spacecat-shared-data-access-v3.74.3) (2026-06-12)
 
 ### Bug Fixes

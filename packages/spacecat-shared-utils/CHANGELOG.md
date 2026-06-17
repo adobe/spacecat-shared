@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-utils-v1.120.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.3...@adobe/spacecat-shared-utils-v1.120.0) (2026-06-16)
+
+### Features
+
+* llm error pages subtypes ([#1686](https://github.com/adobe/spacecat-shared/issues/1686)) ([2598dc8](https://github.com/adobe/spacecat-shared/commit/2598dc88303b740b2dfd6e307d4ecb71f3005156))
+
+## [@adobe/spacecat-shared-utils-v1.119.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.2...@adobe/spacecat-shared-utils-v1.119.3) (2026-06-16)
+
+### Bug Fixes
+
+* pageCitability url-upsert + metrics-store $metadata 404 detection ([#1683](https://github.com/adobe/spacecat-shared/issues/1683)) ([693a943](https://github.com/adobe/spacecat-shared/commit/693a943396fb78db3caf31fd2cb7f643f66bb0ef))
+
+## [@adobe/spacecat-shared-utils-v1.119.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.1...@adobe/spacecat-shared-utils-v1.119.2) (2026-06-15)
+
+### Bug Fixes
+
+* quiet recoverable ERROR-severity log noise (config-validation fallback + missing metrics) ([#1681](https://github.com/adobe/spacecat-shared/issues/1681)) ([27be682](https://github.com/adobe/spacecat-shared/commit/27be6824d60af52a948e168a9a288239b402cdde))
+
+## [@adobe/spacecat-shared-utils-v1.119.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.0...@adobe/spacecat-shared-utils-v1.119.1) (2026-06-15)
+
+### Bug Fixes
+
+* downgrade expected RUM domainkey 404s from error to debug ([#1678](https://github.com/adobe/spacecat-shared/issues/1678)) ([86c7fdd](https://github.com/adobe/spacecat-shared/commit/86c7fdd5333e8c40b45f7375bc4321e6c36135de))
+
 ## [@adobe/spacecat-shared-utils-v1.119.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.118.0...@adobe/spacecat-shared-utils-v1.119.0) (2026-06-12)
 
 ### Features

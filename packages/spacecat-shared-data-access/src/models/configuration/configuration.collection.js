@@ -27,6 +27,10 @@ const S3_CONFIG_KEY = 'config/spacecat/global-config.json';
  * Unlike other collections, this uses S3 instead of PostgREST.
  * Configuration is stored as a versioned JSON object in S3.
  *
+ * The S3Client is configured with a custom retry strategy (EbusyRetryStrategy) that extends
+ * the AWS SDK's StandardRetryStrategy to also retry EBUSY DNS errors. This handles the chronic
+ * DNS resolver exhaustion issue in Lambda without adding application-level retry logic.
+ *
  * @class ConfigurationCollection
  */
 class ConfigurationCollection {

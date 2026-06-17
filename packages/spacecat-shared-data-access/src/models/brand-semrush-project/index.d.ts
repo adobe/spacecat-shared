@@ -15,10 +15,11 @@ import type {
 } from '../index';
 
 // NOTE: `belongs_to Brand` on the schema generates `brandId` plus a
-// `getBrand()` runtime accessor, but Brand is not a registered entity in this
-// package (brand data lives in mysticat-data-service and is fetched over HTTP
-// via @adobe/spacecat-shared-brand-client). The accessor is intentionally not
-// exposed on the TypeScript surface — callers must hop to brand-client.
+// `getBrand()` runtime accessor. Brand is now a registered (minimal) entity in
+// this package, so the accessor resolves locally; it is still intentionally
+// left off this TypeScript surface, which exposes only the fields callers here
+// need (`brandId`). Rich brand data continues to live in mysticat-data-service
+// and is fetched over HTTP via @adobe/spacecat-shared-brand-client.
 export interface BrandSemrushProject extends BaseModel {
   getBrandId(): string;
   getSemrushProjectId(): string;

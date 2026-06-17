@@ -214,4 +214,64 @@ describe('ConfigurationCollection', () => {
       await expect(instance.findLatest()).to.be.rejectedWith('Original error');
     });
   });
+
+  describe('S3 error handling', () => {
+    it('returns null when NoSuchKey error occurs in findLatest', async () => {
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+
+      mockS3Client.send.rejects(noSuchKeyError);
+
+      const result = await instance.findLatest();
+
+      expect(result).to.be.null;
+      expect(mockS3Client.send).to.have.been.calledOnce;
+    });
+
+    it('returns null when NoSuchVersion error occurs in findByVersion', async () => {
+      const noSuchVersionError = new Error('NoSuchVersion');
+      noSuchVersionError.name = 'NoSuchVersion';
+
+      mockS3Client.send.rejects(noSuchVersionError);
+
+      const result = await instance.findByVersion('non-existent');
+
+      expect(result).to.be.null;
+      expect(mockS3Client.send).to.have.been.calledOnce;
+    });
+
+    it('wraps S3 errors in DataAccessError for findLatest', async () => {
+      const s3Error = new Error('S3 network error');
+
+      mockS3Client.send.rejects(s3Error);
+
+      await expect(instance.findLatest())
+        .to.be.rejectedWith('Failed to retrieve configuration from S3');
+
+      expect(mockS3Client.send).to.have.been.calledOnce;
+    });
+
+    it('wraps S3 errors in DataAccessError for findByVersion', async () => {
+      const s3Error = new Error('S3 network error');
+
+      mockS3Client.send.rejects(s3Error);
+
+      await expect(instance.findByVersion('test-version'))
+        .to.be.rejectedWith('Failed to retrieve configuration with version');
+
+      expect(mockS3Client.send).to.have.been.calledOnce;
+    });
+
+    it('rethrows DataAccessError without wrapping', async () => {
+      const { default: DataAccessError } = await import('../../../../src/errors/data-access.error.js');
+      const daeError = new DataAccessError('Original DAE error', instance);
+
+      mockS3Client.send.rejects(daeError);
+
+      await expect(instance.findLatest())
+        .to.be.rejectedWith('Original DAE error');
+
+      expect(mockS3Client.send).to.have.been.calledOnce;
+    });
+  });
 });

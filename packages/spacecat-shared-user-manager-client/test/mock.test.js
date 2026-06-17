@@ -30,6 +30,8 @@ import { expect } from 'chai';
 import { USER_MANAGER_BASE_URL_ENV } from '../src/config.js';
 
 const PKG_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+// 4099, not the documented default 4010, so the suite never collides with a
+// mock a developer is running locally (`npm run mock` uses 4010).
 const PORT = 4099;
 const BASE = `http://localhost:${PORT}/enterprise/users/api`;
 
@@ -119,6 +121,41 @@ describe('User Manager mock (LLMO-5616)', () => {
     await api('POST', '/v1/workspaces/ws-root/members', { user_id: 'user-9', role: 'viewer' });
     const { body } = await api('GET', '/v1/workspaces/ws-root/members');
     expect(body.items.map((m) => m.user_id)).to.include('user-9');
+  });
+
+  it('adds members via the { members: [...] } body shape', async () => {
+    await api('POST', '/v1/workspaces/ws-root/members', {
+      members: [{ user_id: 'user-10', role: 'viewer' }, { user_id: 'user-11', role: 'editor' }],
+    });
+    const ids = (await api('GET', '/v1/workspaces/ws-root/members')).body.items.map((m) => m.user_id);
+    expect(ids).to.include.members(['user-10', 'user-11']);
+  });
+
+  it('adds members via a bare array body shape', async () => {
+    await api('POST', '/v1/workspaces/ws-root/members', [{ user_id: 'user-12', role: 'viewer' }]);
+    const ids = (await api('GET', '/v1/workspaces/ws-root/members')).body.items.map((m) => m.user_id);
+    expect(ids).to.include('user-12');
+  });
+
+  it('adding members to a missing workspace returns an error status', async () => {
+    const { status } = await api('POST', '/v1/workspaces/does-not-exist/members', { user_id: 'x' });
+    expect(status).to.be.gte(400);
+  });
+
+  it('deletes a member and reports the freed count (0 when absent)', async () => {
+    await api('POST', '/v1/workspaces/ws-root/members', { user_id: 'user-13', role: 'viewer' });
+    const removed = await api('DELETE', '/v1/workspaces/ws-root/members', { user_ids: ['user-13'] });
+    expect(removed.status).to.equal(200);
+    expect(removed.body.count).to.equal(1);
+    // Deleting an absent member is a 200 with count 0 (mirrors the real "units freed" semantics).
+    const none = await api('DELETE', '/v1/workspaces/ws-root/members', { user_ids: ['ghost'] });
+    expect(none.status).to.equal(200);
+    expect(none.body.count).to.equal(0);
+  });
+
+  it('updating a non-existent member returns an error status', async () => {
+    const { status } = await api('PATCH', '/v1/workspaces/ws-root/members', { user_id: 'ghost', role: 'x' });
+    expect(status).to.be.gte(400);
   });
 
   it('updates the profile (POST reflected in GET)', async () => {

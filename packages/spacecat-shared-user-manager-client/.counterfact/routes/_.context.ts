@@ -17,6 +17,9 @@ type Dict = Record<string, unknown>;
 type Workspace = { id: string; parent_id: string | null } & Dict;
 type Member = { user_id: string } & Dict;
 
+// Deep-clones the fixtures on each seed so resets never share references with a
+// previous session's mutated state. Constraint: fixtures must be JSON-safe —
+// `undefined`, `Date`, and functions are silently dropped by this round-trip.
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
@@ -77,6 +80,9 @@ export class Context {
     this.seed();
   }
 
+  // reset() zeroes idCounter, so generated ids restart at -1 after a reset.
+  // Safe today because reset() also clears `workspaces`; only relied upon within
+  // a single seeded session. Don't retain generated-id references across reset().
   nextId(prefix = "ws") {
     this.idCounter += 1;
     return `${prefix}-new-${this.idCounter}`;
@@ -143,11 +149,18 @@ export class Context {
     return updated;
   }
 
-  deleteMembers(workspaceId: string, userIds: string[]) {
+  // Returns the count of members actually removed, mirroring the real endpoint's
+  // "number of user units freed" semantics (0 is a valid success — deleting an
+  // absent member frees nothing). Returns null only when the workspace is missing,
+  // which the handler maps to 404/500. See the DELETE handler in workspaces/{id}/members.ts.
+  deleteMembers(workspaceId: string, userIds: string[]): number | null {
     const map = this.members.get(workspaceId);
-    if (!map) return false;
-    userIds.forEach((uid) => map.delete(uid));
-    return true;
+    if (!map) return null;
+    let removed = 0;
+    userIds.forEach((uid) => {
+      if (map.delete(uid)) removed += 1;
+    });
+    return removed;
   }
 
   // --- resources / service units ---

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.4...@adobe/spacecat-shared-data-access-v3.76.0) (2026-06-17)
+
+### Features
+
+* add `allByExternalOwnerIdAndExternalSiteId` type to SiteCollection ([#1655](https://github.com/adobe/spacecat-shared/issues/1655)) ([c73e2b1](https://github.com/adobe/spacecat-shared/commit/c73e2b12fc5eec9d95fb5453c0ef7bb217e6e170))
+
 ## [@adobe/spacecat-shared-data-access-v3.75.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.3...@adobe/spacecat-shared-data-access-v3.75.4) (2026-06-16)
 
 ### Bug Fixes

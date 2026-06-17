@@ -102,8 +102,10 @@ export function detectAEMVersion(htmlSource, headers = {}) {
     /data-routing="[^"]*ams=([^,"]*)/i,
   ];
 
+  // Case-insensitive: HTTP header values may arrive with unexpected casing.
+  // Must stay aligned with the extra-weight check below.
   const amsHeaderPatterns = [
-    /^dispatcher[0-9].*$/,
+    /^dispatcher[0-9]/i,
   ];
 
   const aemHeadlessPatterns = [

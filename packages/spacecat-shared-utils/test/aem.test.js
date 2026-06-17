@@ -241,6 +241,26 @@ describe('AEM Detection', () => {
         expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
       });
 
+      it('should detect AMS with mixed-case x-dispatcher header value', () => {
+        // HTTP header values may arrive with unexpected casing — the pattern and the
+        // extra-weight check must both match case-insensitively to score consistently.
+        const headers = { 'x-dispatcher': 'Dispatcher3eusouth2' };
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-1781626636100-lc.min.css">
+            </head>
+            <body>
+              <div class="cmp-container">
+                <div data-cmp-is="image" class="cmp-image"></div>
+              </div>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource, headers);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
+      });
+
       it('should detect AMS via foundation- pattern', () => {
         const htmlSource = `
           <html>

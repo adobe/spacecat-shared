@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-utils-v1.120.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.3...@adobe/spacecat-shared-utils-v1.120.0) (2026-06-16)
+
+### Features
+
+* llm error pages subtypes ([#1686](https://github.com/adobe/spacecat-shared/issues/1686)) ([2598dc8](https://github.com/adobe/spacecat-shared/commit/2598dc88303b740b2dfd6e307d4ecb71f3005156))
+
+## [@adobe/spacecat-shared-utils-v1.119.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.2...@adobe/spacecat-shared-utils-v1.119.3) (2026-06-16)
+
+### Bug Fixes
+
+* pageCitability url-upsert + metrics-store $metadata 404 detection ([#1683](https://github.com/adobe/spacecat-shared/issues/1683)) ([693a943](https://github.com/adobe/spacecat-shared/commit/693a943396fb78db3caf31fd2cb7f643f66bb0ef))
+
 ## [@adobe/spacecat-shared-utils-v1.119.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.1...@adobe/spacecat-shared-utils-v1.119.2) (2026-06-15)
 
 ### Bug Fixes

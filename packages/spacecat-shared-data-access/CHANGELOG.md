@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-data-access-v3.77.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.76.0...@adobe/spacecat-shared-data-access-v3.77.0) (2026-06-17)
+
+### Features
+
+* **data-access:** add Configuration.isHandlerDisabledForSite / isHandlerDisabledForOrg. ([#1673](https://github.com/adobe/spacecat-shared/issues/1673)) ([003371c](https://github.com/adobe/spacecat-shared/commit/003371c63316d5f06fb0e17d0a9f60eb8ba3ec2e))
+
+## [@adobe/spacecat-shared-data-access-v3.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.4...@adobe/spacecat-shared-data-access-v3.76.0) (2026-06-17)
+
+### Features
+
+* add `allByExternalOwnerIdAndExternalSiteId` type to SiteCollection ([#1655](https://github.com/adobe/spacecat-shared/issues/1655)) ([c73e2b1](https://github.com/adobe/spacecat-shared/commit/c73e2b12fc5eec9d95fb5453c0ef7bb217e6e170))
+
+## [@adobe/spacecat-shared-data-access-v3.75.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.3...@adobe/spacecat-shared-data-access-v3.75.4) (2026-06-16)
+
+### Bug Fixes
+
+* **data-access:** batch suggestion-grant lookups to avoid 414 URI Too Long ([#1684](https://github.com/adobe/spacecat-shared/issues/1684)) ([941660c](https://github.com/adobe/spacecat-shared/commit/941660cea9ea37cc2e4bf50528923f9f051b540e))
+
+## [@adobe/spacecat-shared-data-access-v3.75.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.2...@adobe/spacecat-shared-data-access-v3.75.3) (2026-06-16)
+
+### Bug Fixes
+
+* add EBUSY retry support to S3Client via custom retry strategy ([#1677](https://github.com/adobe/spacecat-shared/issues/1677)) ([04e5504](https://github.com/adobe/spacecat-shared/commit/04e550481cdff0e7545036320aaa43ed64e99ce3)), closes [#1659](https://github.com/adobe/spacecat-shared/issues/1659) [#1659](https://github.com/adobe/spacecat-shared/issues/1659)
+
+## [@adobe/spacecat-shared-data-access-v3.75.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.1...@adobe/spacecat-shared-data-access-v3.75.2) (2026-06-16)
+
+### Bug Fixes
+
+* pageCitability url-upsert + metrics-store $metadata 404 detection ([#1683](https://github.com/adobe/spacecat-shared/issues/1683)) ([693a943](https://github.com/adobe/spacecat-shared/commit/693a943396fb78db3caf31fd2cb7f643f66bb0ef))
+
 ## [@adobe/spacecat-shared-data-access-v3.75.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.0...@adobe/spacecat-shared-data-access-v3.75.1) (2026-06-15)
 
 ### Bug Fixes

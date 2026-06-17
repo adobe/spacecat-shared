@@ -213,6 +213,95 @@ describe('ConfigurationModel', () => {
     });
   });
 
+  describe('handler disabled (explicit deny-list)', () => {
+    it('returns false if a handler does not exist (nothing to deny)', () => {
+      expect(instance.isHandlerDisabledForSite('non-existent-handler', site)).to.be.false;
+      expect(instance.isHandlerDisabledForOrg('non-existent-handler', org)).to.be.false;
+    });
+
+    it('returns false for a handler with no disabled block (enabledByDefault only)', () => {
+      expect(instance.isHandlerDisabledForSite('404', site)).to.be.false;
+      expect(instance.isHandlerDisabledForOrg('404', org)).to.be.false;
+    });
+
+    it('returns false for a handler that is simply not opted-in (not-enabled ≠ disabled)', () => {
+      expect(instance.isHandlerDisabledForSite('organic-keywords', site)).to.be.false;
+      expect(instance.isHandlerDisabledForOrg('organic-keywords', org)).to.be.false;
+    });
+
+    it('returns true when the site is explicitly in handler.disabled.sites', () => {
+      expect(instance.isHandlerDisabledForSite('cwv', site)).to.be.true;
+    });
+
+    it('returns true when the site\'s org is in handler.disabled.orgs (and site has no override)', () => {
+      instance.addHandler('org-disabled-only', {
+        enabledByDefault: true,
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+      expect(instance.isHandlerDisabledForSite('org-disabled-only', site)).to.be.true;
+    });
+
+    it('site-level enable overrides org-level disable for isHandlerDisabledForSite', () => {
+      instance.addHandler('site-override-not-disabled', {
+        enabledByDefault: false,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+      expect(instance.isHandlerDisabledForSite('site-override-not-disabled', site)).to.be.false;
+    });
+
+    it('site-level disable wins over site-level enable when both lists violate disjoint invariant', () => {
+      instance.addHandler('conflicting-lists', {
+        enabledByDefault: true,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [site.getId()], orgs: [] },
+      });
+      expect(instance.isHandlerDisabledForSite('conflicting-lists', site)).to.be.true;
+    });
+
+    it('returns false when neither site nor org is in any deny list', () => {
+      instance.addHandler('deny-different-site', {
+        enabledByDefault: false,
+        disabled: { sites: ['some-other-site-id'], orgs: ['some-other-org-id'] },
+      });
+      expect(instance.isHandlerDisabledForSite('deny-different-site', site)).to.be.false;
+    });
+
+    it('handles missing disabled.sites or disabled.orgs gracefully', () => {
+      instance.addHandler('partial-disabled-block', {
+        enabledByDefault: true,
+        disabled: { sites: [site.getId()] }, // no orgs key
+      });
+      expect(instance.isHandlerDisabledForSite('partial-disabled-block', site)).to.be.true;
+
+      instance.addHandler('partial-disabled-block-orgs', {
+        enabledByDefault: true,
+        disabled: { orgs: [site.getOrganizationId()] }, // no sites key
+      });
+      expect(instance.isHandlerDisabledForSite('partial-disabled-block-orgs', site)).to.be.true;
+    });
+
+    it('isHandlerDisabledForOrg returns true when org is in handler.disabled.orgs', () => {
+      expect(instance.isHandlerDisabledForOrg('cwv', org)).to.be.true;
+    });
+
+    it('isHandlerDisabledForOrg returns false when org is not in handler.disabled.orgs', () => {
+      expect(instance.isHandlerDisabledForOrg('lhs-mobile', org)).to.be.false;
+      expect(instance.isHandlerDisabledForOrg('sitemap', org)).to.be.false;
+    });
+
+    it('isHandlerDisabledForOrg ignores site-level enable overrides (org-scope only)', () => {
+      // Mirror image of the "site overrides org disable" test on the site side:
+      // at org scope, a site-level enable for some site has no effect on the org's status.
+      instance.addHandler('mixed-config', {
+        enabledByDefault: false,
+        enabled: { sites: [site.getId()], orgs: [] },
+        disabled: { sites: [], orgs: [site.getOrganizationId()] },
+      });
+      expect(instance.isHandlerDisabledForOrg('mixed-config', org)).to.be.true;
+    });
+  });
+
   describe('manage handlers', () => {
     it('adds a new handler', () => {
       const handlerData = {

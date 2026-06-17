@@ -152,6 +152,31 @@ describe('ImsClient', () => {
       await expect(client.getImsOrganizationDetails('123456@AdobeOrg')).to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 500');
     });
 
+    it('v2 mint failure includes error field from response body when present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v4')
+        .query(true)
+        .reply(400, {
+          error: 'invalid_grant',
+          error_description: 'Authorization code expired',
+        });
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg'))
+        .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 400 - invalid_grant');
+    });
+
+    it('v2 mint failure includes message field from response body when error field absent', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v4')
+        .query(true)
+        .reply(401, {
+          message: 'Client credentials rejected',
+        });
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg'))
+        .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 401 - Client credentials rejected');
+    });
+
     it('should handle IMS service token request v3', async () => {
       nock(`https://${DUMMY_HOST}`)
         // Mock the token request, with a 500 server error response
@@ -193,6 +218,56 @@ describe('ImsClient', () => {
         .reply(500);
 
       await expect(client.getServiceAccessTokenV3()).to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 500');
+    });
+
+    it('v3 mint failure includes error field from response body when present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(400, {
+          error: 'invalid_scope',
+          error_description: 'Invalid scope value',
+        });
+
+      await expect(client.getServiceAccessTokenV3())
+        .to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 400 - invalid_scope');
+    });
+
+    it('v3 mint failure includes message field from response body when error field absent', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(403, {
+          message: 'Client not authorized for client_credentials grant',
+        });
+
+      await expect(client.getServiceAccessTokenV3())
+        .to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 403 - Client not authorized for client_credentials grant');
+    });
+
+    it('v3 mint failure prefers error field over message field when both are present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(401, {
+          error: 'invalid_client',
+          message: 'This should be ignored',
+        });
+
+      await expect(client.getServiceAccessTokenV3())
+        .to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 401 - invalid_client');
+    });
+
+    it('v3 mint failure with non-JSON response body falls back to status-only message', async () => {
+      // 5xx responses retry — mock all 3 attempts
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .times(3)
+        .reply(502, 'Bad Gateway');
+
+      await expect(client.getServiceAccessTokenV3())
+        .to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 502');
     });
 
     it('should handle IMS product context request failures', async () => {
@@ -346,6 +421,60 @@ describe('ImsClient', () => {
       await expect(client.getServicePrincipalAccessToken(orgId)).to.be.rejectedWith(
         'IMS getServicePrincipalAccessToken request failed with status: 500',
       );
+    });
+
+    it('service-principal mint failure includes error field from response body when present', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(400, {
+          error: 'invalid_scope',
+          error_description: 'Invalid scope value',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId))
+        .to.be.rejectedWith('IMS getServicePrincipalAccessToken request failed with status: 400 - invalid_scope');
+    });
+
+    it('service-principal mint failure includes message field from response body when error field absent', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(403, {
+          message: 'Org-scoped grant not configured',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId))
+        .to.be.rejectedWith('IMS getServicePrincipalAccessToken request failed with status: 403 - Org-scoped grant not configured');
+    });
+
+    it('service-principal mint failure prefers error field over message field when both present', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(401, {
+          error: 'invalid_client',
+          message: 'This should be ignored',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId))
+        .to.be.rejectedWith('IMS getServicePrincipalAccessToken request failed with status: 401 - invalid_client');
+    });
+
+    it('service-principal mint failure with non-JSON response body falls back to status-only message', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      // 5xx responses retry — mock all 3 attempts
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .times(3)
+        .reply(502, 'Bad Gateway');
+
+      await expect(client.getServicePrincipalAccessToken(orgId))
+        .to.be.rejectedWith('IMS getServicePrincipalAccessToken request failed with status: 502');
     });
   });
 

@@ -178,7 +178,18 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!tokenResponse.ok) {
-      throw new Error(`IMS getServiceAccessToken request failed with status: ${tokenResponse.status}`);
+      let errorMessage = `IMS getServiceAccessToken request failed with status: ${tokenResponse.status}`;
+      try {
+        const errorBody = await tokenResponse.json();
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error}`;
+        } else if (hasText(errorBody.message)) {
+          errorMessage += ` - ${errorBody.message}`;
+        }
+      } catch (e) {
+        // Response body is not JSON or cannot be parsed, ignore
+      }
+      throw new Error(errorMessage);
     }
 
     /* eslint-disable camelcase */
@@ -211,7 +222,18 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!tokenResponse.ok) {
-      throw new Error(`IMS getServiceAccessTokenV3 request failed with status: ${tokenResponse.status}`);
+      let errorMessage = `IMS getServiceAccessTokenV3 request failed with status: ${tokenResponse.status}`;
+      try {
+        const errorBody = await tokenResponse.json();
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error}`;
+        } else if (hasText(errorBody.message)) {
+          errorMessage += ` - ${errorBody.message}`;
+        }
+      } catch (e) {
+        // Response body is not JSON or cannot be parsed, ignore
+      }
+      throw new Error(errorMessage);
     }
 
     /* eslint-disable camelcase */
@@ -245,7 +267,18 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!tokenResponse.ok) {
-      throw new Error(`IMS getServicePrincipalAccessToken request failed with status: ${tokenResponse.status}`);
+      let errorMessage = `IMS getServicePrincipalAccessToken request failed with status: ${tokenResponse.status}`;
+      try {
+        const errorBody = await tokenResponse.json();
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error}`;
+        } else if (hasText(errorBody.message)) {
+          errorMessage += ` - ${errorBody.message}`;
+        }
+      } catch (e) {
+        // Response body is not JSON or cannot be parsed, ignore
+      }
+      throw new Error(errorMessage);
     }
 
     /* eslint-disable camelcase */

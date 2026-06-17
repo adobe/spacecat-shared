@@ -998,6 +998,26 @@ describe('DrsClient', () => {
       scope.done();
     });
 
+    it('forwards timeout to fetch when provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(201, { schedule: { schedule_id: 'sched-timeout' } });
+
+      const result = await client.createExperimentSchedule({
+        siteId: 'site-1',
+        experimentId: 'exp-timeout',
+        experimentPhase: 'pre',
+        cronExpression: '0 * * * *',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        platforms: ['chatgpt_free'],
+        providerIds: ['brightdata'],
+        timeout: 12000,
+      });
+
+      expect(result.schedule.schedule_id).to.equal('sched-timeout');
+      scope.done();
+    });
+
     it('supports top-level schedule_id response shape', async () => {
       const scope = nock(DRS_API_URL)
         .post('/schedules')

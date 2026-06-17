@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.77.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.76.0...@adobe/spacecat-shared-data-access-v3.77.0) (2026-06-17)
+
+### Features
+
+* **data-access:** add Configuration.isHandlerDisabledForSite / isHandlerDisabledForOrg. ([#1673](https://github.com/adobe/spacecat-shared/issues/1673)) ([003371c](https://github.com/adobe/spacecat-shared/commit/003371c63316d5f06fb0e17d0a9f60eb8ba3ec2e))
+
 ## [@adobe/spacecat-shared-data-access-v3.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.4...@adobe/spacecat-shared-data-access-v3.76.0) (2026-06-17)
 
 ### Features

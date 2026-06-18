@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.78.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.77.0...@adobe/spacecat-shared-data-access-v3.78.0) (2026-06-17)
+
+### Features
+
+* **data-access:** register money-pages as a supported audit type ([#1682](https://github.com/adobe/spacecat-shared/issues/1682)) ([1d2842f](https://github.com/adobe/spacecat-shared/commit/1d2842f6a9b42afb5c5c55cbb890d39f85a31f97))
+
 ## [@adobe/spacecat-shared-data-access-v3.77.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.76.0...@adobe/spacecat-shared-data-access-v3.77.0) (2026-06-17)
 
 ### Features

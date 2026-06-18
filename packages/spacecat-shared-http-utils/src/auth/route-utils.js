@@ -104,6 +104,56 @@ export function extractRouteParams(context, routeMap, fallbackRoutes = []) {
 }
 
 /**
+ * Returns the matched route pattern key (e.g. `'GET /sites/:siteId/llmo/config'`)
+ * for the current request, looked up in the supplied route map. Returns null when
+ * no entry matches. Mirrors the matching logic of `resolveRouteCapability` and
+ * `extractRouteParams`, but returns the pattern itself so callers can do further
+ * structural work on it (param ordering, etc.).
+ *
+ * @param {Object} context - Universal context with pathInfo
+ * @param {Object<string, *>} routeMap - Route pattern to value map (only the keys are used)
+ * @returns {string|null}
+ */
+export function findMatchedRouteKey(context, routeMap) {
+  const method = context.pathInfo?.method?.toUpperCase();
+  const path = context.pathInfo?.suffix;
+  if (!method || !path) {
+    return null;
+  }
+  const exactKey = `${method} ${path}`;
+  if (Object.prototype.hasOwnProperty.call(routeMap, exactKey)) {
+    return exactKey;
+  }
+  const requestSegments = path.split('/').filter(Boolean);
+  return Object.keys(routeMap)
+    .find((key) => matchRoute(method, requestSegments, key)) || null;
+}
+
+/**
+ * Parses a route pattern (e.g. `'GET /sites/:siteId/llmo/config'`) into the
+ * ordered list of `:param` names declared by it. Order is **declaration order
+ * left-to-right**, which is what Phase 2 of the FACS wrapper needs to do a
+ * LIFO (rightmost-first) scan of resource params.
+ *
+ * @param {string} routePattern - Route pattern starting with 'METHOD /path'.
+ * @returns {string[]} param names in declaration order, e.g. ['siteId'].
+ */
+export function extractParamNamesInOrder(routePattern) {
+  if (typeof routePattern !== 'string') {
+    return [];
+  }
+  const spaceIdx = routePattern.indexOf(' ');
+  if (spaceIdx === -1) {
+    return [];
+  }
+  return routePattern
+    .slice(spaceIdx + 1)
+    .split('/')
+    .filter((seg) => seg.length > 0 && seg.charCodeAt(0) === 58 /* ':' */)
+    .map((seg) => seg.slice(1));
+}
+
+/**
  * Throws at wrapper creation time if routeCapabilities is not a non-empty plain object.
  * Rejects undefined, null, arrays, strings, numbers, and empty objects so a caller
  * cannot accidentally pass a shape the wrapper's `if (isObject(...))` check would skip,

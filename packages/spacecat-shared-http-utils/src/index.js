@@ -162,7 +162,21 @@ export function internalServerError(message = 'internal server error', headers =
 }
 
 export { authWrapper } from './auth/auth-wrapper.js';
+export { facsWrapper } from './auth/facs-wrapper.js';
 export { readOnlyAdminWrapper } from './auth/read-only-admin-wrapper.js';
+
+// FACS state-layer helpers — used by api-service controllers / support code
+// that read or write `facs_access_mappings`. `normalizeImsOrgId` canonicalises
+// the bare ident returned by `authInfo.getTenantIds()` into the
+// `<ident>@<authSrc>` form the table stores, matching the rule documented in
+// platform/decisions/mac-state-layer.md §"Org identifier".
+export { normalizeImsOrgId, findFacsResourceBinding } from './auth/facs-state-layer.js';
+
+// Shared FACS rollout constants. Re-exported so consumers (e.g.
+// spacecat-auth-service login.js) can use the same flag table as
+// facsWrapper without re-declaring it. The constant name uses the FT_
+// prefix to match the LaunchDarkly key naming convention.
+export { FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './auth/constants.js';
 export { s2sAuthWrapper } from './auth/s2s-wrapper.js';
 export { enrichPathInfo } from './enrich-path-info-wrapper.js';
 export { compressResponse } from './compression-wrapper.js';

@@ -203,6 +203,46 @@ describe('AuthInfo', () => {
     });
   });
 
+  describe('getFacsPermissions', () => {
+    it('returns [] when profile is not set', () => {
+      const authInfo = new AuthInfo();
+      expect(authInfo.getFacsPermissions()).to.deep.equal([]);
+    });
+
+    it('returns [] when facs_permissions is not in profile', () => {
+      const authInfo = new AuthInfo().withProfile({});
+      expect(authInfo.getFacsPermissions()).to.deep.equal([]);
+    });
+
+    it('returns the facs_permissions array from profile', () => {
+      const authInfo = new AuthInfo().withProfile({
+        facs_permissions: ['llmo/can_read', 'llmo/can_manage'],
+      });
+      expect(authInfo.getFacsPermissions()).to.deep.equal(['llmo/can_read', 'llmo/can_manage']);
+    });
+  });
+
+  describe('hasFacsPermission', () => {
+    it('returns false when there are no facs permissions', () => {
+      const authInfo = new AuthInfo().withProfile({});
+      expect(authInfo.hasFacsPermission('llmo/can_read')).to.be.false;
+    });
+
+    it('returns true when the permission is present', () => {
+      const authInfo = new AuthInfo().withProfile({
+        facs_permissions: ['llmo/can_read', 'llmo/can_manage'],
+      });
+      expect(authInfo.hasFacsPermission('llmo/can_read')).to.be.true;
+    });
+
+    it('returns false when the permission is absent', () => {
+      const authInfo = new AuthInfo().withProfile({
+        facs_permissions: ['llmo/can_read'],
+      });
+      expect(authInfo.hasFacsPermission('llmo/can_edit')).to.be.false;
+    });
+  });
+
   describe('isDelegatedTenantsComplete', () => {
     it('should return true when profile is not set', () => {
       const authInfo = new AuthInfo();

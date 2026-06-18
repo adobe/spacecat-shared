@@ -6667,11 +6667,11 @@ describe('TokowakaClient', () => {
       });
 
       expect(deploySuggestionsStub).to.have.been.calledOnce;
-      const [,, , opts] = deploySuggestionsStub.firstCall.args;
-      expect(opts).to.deep.equal({ applyStale: true });
+      const [,, , metadata] = deploySuggestionsStub.firstCall.args;
+      expect(metadata).to.deep.equal({ applyStale: true });
     });
 
-    it('should pass applyStale: false to deploySuggestions when metadata is absent', async () => {
+    it('should pass empty metadata to deploySuggestions when metadata is absent', async () => {
       const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
 
       deploySuggestionsStub.resolves({
@@ -6687,8 +6687,8 @@ describe('TokowakaClient', () => {
       });
 
       expect(deploySuggestionsStub).to.have.been.calledOnce;
-      const [,, , opts] = deploySuggestionsStub.firstCall.args;
-      expect(opts).to.deep.equal({ applyStale: false });
+      const [,, , metadata] = deploySuggestionsStub.firstCall.args;
+      expect(metadata).to.deep.equal({});
     });
   });
 

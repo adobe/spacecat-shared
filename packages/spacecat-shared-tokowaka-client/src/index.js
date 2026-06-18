@@ -712,7 +712,8 @@ class TokowakaClient {
    * @param {Array} suggestions - Array of suggestion entities to deploy
    * @returns {Promise<Object>} - Deployment result with succeeded/failed suggestions
    */
-  async deploySuggestions(site, opportunity, suggestions, { applyStale = false } = {}) {
+  async deploySuggestions(site, opportunity, suggestions, metadata = {}) {
+    const { applyStale = false } = metadata;
     const opportunityType = opportunity.getType();
     const baseURL = getEffectiveBaseURL(site);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
@@ -832,8 +833,15 @@ class TokowakaClient {
    * @returns {Promise<number>} Number of patches removed
    * @private
    */
-  // eslint-disable-next-line max-len
-  async #rollbackPerUrlConfig(fullUrl, urlSuggestions, opportunity, mapper, opportunityType, s3Paths, rolledBackUrls) {
+  async #rollbackPerUrlConfig(
+    fullUrl,
+    urlSuggestions,
+    opportunity,
+    mapper,
+    opportunityType,
+    s3Paths,
+    rolledBackUrls,
+  ) {
     const existingConfig = await this.fetchConfig(fullUrl);
     if (!existingConfig) {
       this.log.warn(`No existing configuration found for URL: ${fullUrl}`);
@@ -1432,10 +1440,10 @@ class TokowakaClient {
    * @private
    */
   // eslint-disable-next-line max-len
-  async #deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, { applyStale = false } = {}) {
+  async #deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, metadata = {}) {
     try {
       // eslint-disable-next-line max-len
-      const result = await this.deploySuggestions(site, opportunity, validSuggestions, { applyStale });
+      const result = await this.deploySuggestions(site, opportunity, validSuggestions, metadata);
       const deploymentTimestamp = Date.now();
 
       const succeeded = result.succeededSuggestions.map((s) => {
@@ -1616,7 +1624,7 @@ class TokowakaClient {
     // Step 3: deploy per-URL suggestions via S3.
     if (validSuggestions.length > 0) {
       // eslint-disable-next-line max-len
-      const result = await this.#deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, { applyStale: metadata.applyStale === true });
+      const result = await this.#deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, metadata);
       const { succeededSuggestions: perUrlSucceeded, failedSuggestions: perUrlFailed } = result;
       succeededSuggestions = perUrlSucceeded;
       failedSuggestions.push(...perUrlFailed);

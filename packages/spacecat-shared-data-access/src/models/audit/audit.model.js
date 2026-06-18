@@ -96,6 +96,7 @@ class Audit extends BaseModel {
     CWV_TRENDS_AUDIT: 'cwv-trends-audit',
     OFFSITE_BRAND_PRESENCE: 'offsite-brand-presence',
     SEMANTIC_VALUE_VISIBILITY: 'semantic-value-visibility',
+    MONEY_PAGES: 'money-pages',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

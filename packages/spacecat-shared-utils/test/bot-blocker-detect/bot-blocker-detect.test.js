@@ -930,11 +930,9 @@ describe('Bot Blocker Detection', () => {
     });
 
     it('does NOT flag a content-rich page that merely references reCAPTCHA', () => {
-      // A real homepage with the "protected by reCAPTCHA" disclosure badge / a reCAPTCHA
-      // form widget is content-rich and must not be treated as a bot challenge. The bare
-      // captcha/recaptcha substring on a full page previously produced false
-      // "site is blocking us" verdicts for real customers (e.g. westjet.com, mazdausa.com,
-      // repsol.*). Only a content-thin interstitial should count as a challenge.
+      // A content-rich page that merely references reCAPTCHA (form widget or the "protected
+      // by reCAPTCHA" disclosure badge) is normal content, not a bot challenge. Only a
+      // content-thin interstitial should count as a challenge.
       const body = Array(60).fill('flights deals vacation packages').join(' ');
       const html = '<html><head><title>Flights and vacation packages</title></head>'
         + `<body><nav>Home Deals Flights Hotels Rewards</nav><main>${body}</main>`

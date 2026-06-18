@@ -287,10 +287,7 @@ function analyzeResponse(response, html = null) {
 
   // Success with no known infrastructure
   if (status === 200) {
-    // A generic challenge pattern only indicates a block when the page is actually a
-    // challenge interstitial (content-thin). A content-rich 200 page that merely
-    // references a captcha (form widget or "protected by reCAPTCHA" badge) is normal
-    // content, not a bot wall — flagging it produced false positives for real customers.
+    // Only treat a generic challenge match as a block on a content-thin (interstitial) page.
     if (htmlHasChallenge(CHALLENGE_PATTERNS.general) && isLikelyInterstitial(html)) {
       return {
         crawlable: false,

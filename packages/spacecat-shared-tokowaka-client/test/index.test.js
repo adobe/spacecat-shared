@@ -6801,5 +6801,22 @@ describe('TokowakaClient', () => {
 
       expect(fetchConfigStub).to.not.have.been.called;
     });
+
+    it('should log error and continue processing remaining URLs when one URL throws', async () => {
+      fetchConfigStub.onFirstCall().rejects(new Error('S3 transient error'));
+      fetchConfigStub.onSecondCall().resolves({
+        patches: [{ suggestionId: 'sugg-2', applyStale: true }],
+      });
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      const s2 = makeCompletedSuggestion('sugg-2', '/page2');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1, s2]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+      expect(invalidateCdnCacheStub).to.have.been.calledOnce;
+      const { urls } = invalidateCdnCacheStub.firstCall.args[0];
+      expect(urls).to.have.length(1);
+      expect(urls[0]).to.include('/page2');
+    });
   });
 });

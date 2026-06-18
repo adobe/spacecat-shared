@@ -1743,28 +1743,32 @@ class TokowakaClient {
 
     for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
       const fullUrl = new URL(urlPath, baseURL).toString();
-      // eslint-disable-next-line no-await-in-loop
-      const existingConfig = await this.fetchConfig(fullUrl);
-      if (!existingConfig?.patches?.length) {
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      const suggestionIds = new Set(urlSuggestions.map((s) => s.getId()));
-      let modified = false;
-      const updatedPatches = existingConfig.patches.map((patch) => {
-        if (suggestionIds.has(patch.suggestionId) && patch.applyStale) {
-          modified = true;
-          const { applyStale: _, ...rest } = patch;
-          return rest;
-        }
-        return patch;
-      });
-
-      if (modified) {
+      try {
         // eslint-disable-next-line no-await-in-loop
-        await this.uploadConfig(fullUrl, { ...existingConfig, patches: updatedPatches });
-        clearedUrls.push(fullUrl);
+        const existingConfig = await this.fetchConfig(fullUrl);
+        if (!existingConfig?.patches?.length) {
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
+        const suggestionIds = new Set(urlSuggestions.map((s) => s.getId()));
+        let modified = false;
+        const updatedPatches = existingConfig.patches.map((patch) => {
+          if (suggestionIds.has(patch.suggestionId) && patch.applyStale) {
+            modified = true;
+            const { applyStale: _, ...rest } = patch;
+            return rest;
+          }
+          return patch;
+        });
+
+        if (modified) {
+          // eslint-disable-next-line no-await-in-loop
+          await this.uploadConfig(fullUrl, { ...existingConfig, patches: updatedPatches });
+          clearedUrls.push(fullUrl);
+        }
+      } catch (err) {
+        this.log.error(`[clear-apply-stale] Failed to process URL ${fullUrl}: ${err.message}`, err);
       }
     }
 

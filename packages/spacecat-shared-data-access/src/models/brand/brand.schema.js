@@ -46,17 +46,11 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
     type: 'string',
     validate: (value) => value == null || hasText(value),
   })
-  // Deferred Semrush provisioning data for a pending (draft) brand: a JSONB
-  // object { primaryUrl?, markets: [{ market, languageCode }] } the add-brand
-  // wizard collected before the brand's sub-workspace + project exist. The
-  // activate flow reads it as the fallback when the request omits `markets` /
-  // `brandDomain`, then removes each market it provisions (nulling the column
-  // once none remain; failed markets stay for retry). Nullable: NULL = not a
-  // deferred draft (a non-pending brand, or
-  // a draft with no provisioning data yet). Maps to brands.pending_semrush_provisioning
-  // (migration 20260618120000). Validated only loosely here — the DB CHECK
-  // (brands_pending_semrush_provisioning_is_object) enforces the object shape; field
-  // validation lives in the controller.
+  // Nullable JSONB blob holding deferred Semrush provisioning data for a
+  // pending (draft) brand. Maps to brands.pending_semrush_provisioning
+  // (migration 20260618120000). Validated loosely here (object-or-null); the
+  // DB CHECK enforces the object shape and the controller owns field-level
+  // validation and the activate-flow consumption semantics.
   .addAttribute('pendingSemrushProvisioning', {
     type: 'any',
     validate: (value) => value == null || (typeof value === 'object' && !Array.isArray(value)),

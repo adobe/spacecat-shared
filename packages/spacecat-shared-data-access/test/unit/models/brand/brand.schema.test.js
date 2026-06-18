@@ -106,6 +106,10 @@ describe('Brand Schema', () => {
       expect(attributes.pendingSemrushProvisioning.validate(undefined)).to.be.true;
     });
 
+    it('accepts an empty object (loose by design — field validation lives in the controller)', () => {
+      expect(attributes.pendingSemrushProvisioning.validate({})).to.be.true;
+    });
+
     it('rejects an array (must be an object)', () => {
       expect(attributes.pendingSemrushProvisioning.validate([{ market: 'US' }])).to.be.false;
     });

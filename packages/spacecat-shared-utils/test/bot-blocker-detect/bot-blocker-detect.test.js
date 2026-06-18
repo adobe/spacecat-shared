@@ -929,6 +929,31 @@ describe('Bot Blocker Detection', () => {
       expect(result.type).to.equal('unknown');
     });
 
+    it('does NOT flag a content-rich page that merely references reCAPTCHA', () => {
+      // A real homepage with the "protected by reCAPTCHA" disclosure badge / a reCAPTCHA
+      // form widget is content-rich and must not be treated as a bot challenge. The bare
+      // captcha/recaptcha substring on a full page previously produced false
+      // "site is blocking us" verdicts for real customers (e.g. westjet.com, mazdausa.com,
+      // repsol.*). Only a content-thin interstitial should count as a challenge.
+      const body = Array(60).fill('flights deals vacation packages').join(' ');
+      const html = '<html><head><title>Flights and vacation packages</title></head>'
+        + `<body><nav>Home Deals Flights Hotels Rewards</nav><main>${body}</main>`
+        + '<footer>This site is protected by reCAPTCHA and the Google Privacy Policy '
+        + 'and Terms of Service apply.<template id="recaptcha-text"></template></footer>'
+        + '</body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('none');
+      expect(result.confidence).to.equal(1);
+    });
+
     it('detects "Press and Hold" challenge', () => {
       const html = '<html><body><div>Press and hold the button to continue</div></body></html>';
       const headers = {};

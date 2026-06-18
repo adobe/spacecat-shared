@@ -115,6 +115,38 @@ const CHALLENGE_PATTERNS = {
 };
 
 /**
+ * Maximum visible-word count for a 200-OK body to be treated as a challenge interstitial.
+ * A bot-challenge page is content-thin — its entire body is the challenge. A real page
+ * that merely references a captcha (a form widget, or the legally-required
+ * "protected by reCAPTCHA" disclosure badge) is content-rich and far above this bound.
+ */
+const INTERSTITIAL_MAX_WORDS = 50;
+
+/**
+ * Heuristic: does a 200-OK body look like a challenge interstitial (content-thin) rather
+ * than a real content page? Used to avoid flagging content-rich pages that merely
+ * reference a captcha — the bare presence of "captcha"/"recaptcha" on a full page (e.g.
+ * the "protected by reCAPTCHA" badge) is not a bot wall and previously produced false
+ * "site is blocking us" verdicts for real customers.
+ * @param {string} [html] - The response body.
+ * @returns {boolean} true if the body is empty or content-thin (interstitial-like).
+ */
+function isLikelyInterstitial(html) {
+  if (!html) {
+    return true;
+  }
+  const text = html
+    .replace(/<(script|style|template)[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) {
+    return true;
+  }
+  return text.split(' ').length < INTERSTITIAL_MAX_WORDS;
+}
+
+/**
  * Analyzes response for bot protection indicators
  * @param {Object} response - Response object with status and headers
  * @param {string} [html] - Optional HTML content for deeper analysis
@@ -255,8 +287,11 @@ function analyzeResponse(response, html = null) {
 
   // Success with no known infrastructure
   if (status === 200) {
-    // Still check for generic challenge patterns
-    if (htmlHasChallenge(CHALLENGE_PATTERNS.general)) {
+    // A generic challenge pattern only indicates a block when the page is actually a
+    // challenge interstitial (content-thin). A content-rich 200 page that merely
+    // references a captcha (form widget or "protected by reCAPTCHA" badge) is normal
+    // content, not a bot wall — flagging it produced false positives for real customers.
+    if (isLikelyInterstitial(html) && htmlHasChallenge(CHALLENGE_PATTERNS.general)) {
       return {
         crawlable: false,
         type: 'unknown',

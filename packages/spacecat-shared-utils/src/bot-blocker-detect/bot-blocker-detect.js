@@ -115,35 +115,35 @@ const CHALLENGE_PATTERNS = {
 };
 
 /**
- * Maximum visible-word count for a 200-OK body to be treated as a challenge interstitial.
- * A bot-challenge page is content-thin — its entire body is the challenge. A real page
- * that merely references a captcha (a form widget, or the legally-required
- * "protected by reCAPTCHA" disclosure badge) is content-rich and far above this bound.
+ * Maximum visible-text length (in characters) for a 200-OK body to be treated as a
+ * challenge interstitial. A bot-challenge page is content-thin — its entire body is the
+ * challenge — whereas a real content page (this only runs against a site's baseURL, i.e.
+ * a homepage) is far above this bound. Character length is used rather than word count so
+ * the heuristic is not biased against languages that do not delimit words with spaces
+ * (CJK, Thai, etc.), where a content-rich page would otherwise look like a few "words".
  */
-const INTERSTITIAL_MAX_WORDS = 50;
+const INTERSTITIAL_MAX_CHARS = 200;
 
 /**
  * Heuristic: does a 200-OK body look like a challenge interstitial (content-thin) rather
  * than a real content page? Used to avoid flagging content-rich pages that merely
  * reference a captcha — the bare presence of "captcha"/"recaptcha" on a full page (e.g.
  * the "protected by reCAPTCHA" badge) is not a bot wall and previously produced false
- * "site is blocking us" verdicts for real customers.
- * @param {string} [html] - The response body.
- * @returns {boolean} true if the body is empty or content-thin (interstitial-like).
+ * "site is blocking us" verdicts for real customers. A body that strips to no visible
+ * text counts as an interstitial (length 0).
+ *
+ * Precondition: `html` is a non-empty string. The only caller (the generic 200 branch)
+ * invokes this after `htmlHasChallenge` matches, which already guarantees a non-empty body.
+ * @param {string} html - The response body (non-empty; see precondition).
+ * @returns {boolean} true if the visible text is content-thin (interstitial-like).
  */
 function isLikelyInterstitial(html) {
-  if (!html) {
-    return true;
-  }
   const text = html
     .replace(/<(script|style|template)[\s\S]*?<\/\1>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  if (!text) {
-    return true;
-  }
-  return text.split(' ').length < INTERSTITIAL_MAX_WORDS;
+  return text.length < INTERSTITIAL_MAX_CHARS;
 }
 
 /**
@@ -291,7 +291,7 @@ function analyzeResponse(response, html = null) {
     // challenge interstitial (content-thin). A content-rich 200 page that merely
     // references a captcha (form widget or "protected by reCAPTCHA" badge) is normal
     // content, not a bot wall — flagging it produced false positives for real customers.
-    if (isLikelyInterstitial(html) && htmlHasChallenge(CHALLENGE_PATTERNS.general)) {
+    if (htmlHasChallenge(CHALLENGE_PATTERNS.general) && isLikelyInterstitial(html)) {
       return {
         crawlable: false,
         type: 'unknown',

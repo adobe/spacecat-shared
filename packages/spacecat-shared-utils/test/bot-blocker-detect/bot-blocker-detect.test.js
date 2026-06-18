@@ -954,6 +954,43 @@ describe('Bot Blocker Detection', () => {
       expect(result.confidence).to.equal(1);
     });
 
+    it('still flags a thin captcha interstitial (content-less challenge page)', () => {
+      const html = '<html><body><div class="g-recaptcha"></div>'
+        + '<p>Please complete the captcha to continue.</p></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('does NOT flag a content-rich non-Latin (CJK) page that references reCAPTCHA', () => {
+      // Languages without spaces (CJK, Thai, etc.) collapse to a few space-delimited
+      // "words", so the content-thin check must use character length — a real Japanese/
+      // Korean/Chinese homepage with a reCAPTCHA badge must not be treated as a challenge.
+      const cjk = 'フライト予約格安航空券ホテルレンタカー旅行情報マイレージ会員特典国内線国際線運賃案内'.repeat(8);
+      const html = `<html><head><title>航空券予約</title></head><body><main>${cjk}</main>`
+        + '<footer>This site is protected by reCAPTCHA.'
+        + '<template id="recaptcha-text"></template></footer></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('none');
+      expect(result.confidence).to.equal(1);
+    });
+
     it('detects "Press and Hold" challenge', () => {
       const html = '<html><body><div>Press and hold the button to continue</div></body></html>';
       const headers = {};

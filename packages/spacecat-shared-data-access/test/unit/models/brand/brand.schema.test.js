@@ -86,38 +86,38 @@ describe('Brand Schema', () => {
     });
   });
 
-  describe('pendingProvisioning attribute', () => {
+  describe('pendingSemrushProvisioning attribute', () => {
     it('exists with a nullable object validator', () => {
-      const attr = attributes.pendingProvisioning;
+      const attr = attributes.pendingSemrushProvisioning;
       expect(attr).to.exist;
       expect(attr.type).to.equal('any');
       expect(attr.validate).to.be.a('function');
     });
 
     it('accepts an object (the draft provisioning blob)', () => {
-      expect(attributes.pendingProvisioning.validate({
+      expect(attributes.pendingSemrushProvisioning.validate({
         primaryUrl: 'https://acme.com',
         markets: [{ market: 'US', languageCode: 'en' }],
       })).to.be.true;
     });
 
     it('accepts nullish (not a deferred draft, or cleared on activation)', () => {
-      expect(attributes.pendingProvisioning.validate(null)).to.be.true;
-      expect(attributes.pendingProvisioning.validate(undefined)).to.be.true;
+      expect(attributes.pendingSemrushProvisioning.validate(null)).to.be.true;
+      expect(attributes.pendingSemrushProvisioning.validate(undefined)).to.be.true;
     });
 
     it('rejects an array (must be an object)', () => {
-      expect(attributes.pendingProvisioning.validate([{ market: 'US' }])).to.be.false;
+      expect(attributes.pendingSemrushProvisioning.validate([{ market: 'US' }])).to.be.false;
     });
 
     it('rejects a non-object scalar', () => {
-      expect(attributes.pendingProvisioning.validate('nope')).to.be.false;
+      expect(attributes.pendingSemrushProvisioning.validate('nope')).to.be.false;
     });
 
-    // No postgrestField override: camelToSnake('pendingProvisioning') already
-    // produces the DB column name `pending_provisioning`.
+    // No postgrestField override: camelToSnake('pendingSemrushProvisioning') already
+    // produces the DB column name `pending_semrush_provisioning`.
     it('uses the default camelToSnake column mapping (no override)', () => {
-      expect(attributes.pendingProvisioning.postgrestField).to.be.undefined;
+      expect(attributes.pendingSemrushProvisioning.postgrestField).to.be.undefined;
     });
   });
 });

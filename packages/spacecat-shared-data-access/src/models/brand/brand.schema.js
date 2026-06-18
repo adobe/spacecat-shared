@@ -53,11 +53,11 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
   // `brandDomain`, then removes each market it provisions (nulling the column
   // once none remain; failed markets stay for retry). Nullable: NULL = not a
   // deferred draft (a non-pending brand, or
-  // a draft with no provisioning data yet). Maps to brands.pending_provisioning
+  // a draft with no provisioning data yet). Maps to brands.pending_semrush_provisioning
   // (migration 20260618120000). Validated only loosely here — the DB CHECK
-  // (brands_pending_provisioning_is_object) enforces the object shape; field
+  // (brands_pending_semrush_provisioning_is_object) enforces the object shape; field
   // validation lives in the controller.
-  .addAttribute('pendingProvisioning', {
+  .addAttribute('pendingSemrushProvisioning', {
     type: 'any',
     validate: (value) => value == null || (typeof value === 'object' && !Array.isArray(value)),
   })

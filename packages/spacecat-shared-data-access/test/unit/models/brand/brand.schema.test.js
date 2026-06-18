@@ -85,4 +85,39 @@ describe('Brand Schema', () => {
       expect(attributes.semrushWorkspaceId.postgrestField).to.be.undefined;
     });
   });
+
+  describe('pendingProvisioning attribute', () => {
+    it('exists with a nullable object validator', () => {
+      const attr = attributes.pendingProvisioning;
+      expect(attr).to.exist;
+      expect(attr.type).to.equal('any');
+      expect(attr.validate).to.be.a('function');
+    });
+
+    it('accepts an object (the draft provisioning blob)', () => {
+      expect(attributes.pendingProvisioning.validate({
+        primaryUrl: 'https://acme.com',
+        markets: [{ market: 'US', languageCode: 'en' }],
+      })).to.be.true;
+    });
+
+    it('accepts nullish (not a deferred draft, or cleared on activation)', () => {
+      expect(attributes.pendingProvisioning.validate(null)).to.be.true;
+      expect(attributes.pendingProvisioning.validate(undefined)).to.be.true;
+    });
+
+    it('rejects an array (must be an object)', () => {
+      expect(attributes.pendingProvisioning.validate([{ market: 'US' }])).to.be.false;
+    });
+
+    it('rejects a non-object scalar', () => {
+      expect(attributes.pendingProvisioning.validate('nope')).to.be.false;
+    });
+
+    // No postgrestField override: camelToSnake('pendingProvisioning') already
+    // produces the DB column name `pending_provisioning`.
+    it('uses the default camelToSnake column mapping (no override)', () => {
+      expect(attributes.pendingProvisioning.postgrestField).to.be.undefined;
+    });
+  });
 });

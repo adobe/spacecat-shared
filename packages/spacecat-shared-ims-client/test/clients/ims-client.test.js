@@ -177,6 +177,31 @@ describe('ImsClient', () => {
         .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 401 - Client credentials rejected');
     });
 
+    it('v2 mint failure prefers error field over message field when both present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v4')
+        .query(true)
+        .reply(401, {
+          error: 'invalid_grant',
+          message: 'This should be ignored',
+        });
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg'))
+        .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 401 - invalid_grant');
+    });
+
+    it('v2 mint failure with non-JSON response body falls back to status-only message', async () => {
+      // 5xx responses retry — mock all 3 attempts
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v4')
+        .query(true)
+        .times(3)
+        .reply(502, 'Bad Gateway');
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg'))
+        .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 502');
+    });
+
     it('should handle IMS service token request v3', async () => {
       nock(`https://${DUMMY_HOST}`)
         // Mock the token request, with a 500 server error response
@@ -268,6 +293,29 @@ describe('ImsClient', () => {
 
       await expect(client.getServiceAccessTokenV3())
         .to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 502');
+    });
+
+    it('v3 mint failure truncates response-body detail at 200 chars', async () => {
+      // Defense-in-depth bound on the appended error detail per @solaris007
+      // review — if IMS ever returns an unexpectedly verbose `error` or
+      // `message`, the thrown message stays bounded. Tests the v3 path as a
+      // proxy for all three mint sites (logic is identical).
+      const overlongDetail = 'x'.repeat(500);
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(400, { error: overlongDetail });
+
+      try {
+        await client.getServiceAccessTokenV3();
+        expect.fail('expected getServiceAccessTokenV3 to throw');
+      } catch (e) {
+        const truncatedDetail = 'x'.repeat(200);
+        expect(e.message).to.equal(
+          `IMS getServiceAccessTokenV3 request failed with status: 400 - ${truncatedDetail}`,
+        );
+        expect(e.message).to.not.include('x'.repeat(201));
+      }
     });
 
     it('should handle IMS product context request failures', async () => {

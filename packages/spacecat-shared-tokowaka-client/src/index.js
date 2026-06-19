@@ -1768,13 +1768,17 @@ class TokowakaClient {
           clearedUrls.push(fullUrl);
         }
       } catch (err) {
-        this.log.error(`[clear-apply-stale] Failed to process URL ${fullUrl}: ${err.message}`, err);
+        this.log.error(`[clear-apply-stale-failed] Failed to process URL ${fullUrl}: ${err.message}`, err);
       }
     }
 
     if (clearedUrls.length > 0) {
-      await this.invalidateCdnCache({ urls: clearedUrls });
-      this.log.info(`[clear-apply-stale] Cleared applyStale from ${clearedUrls.length} URL(s) and invalidated CDN`);
+      try {
+        await this.invalidateCdnCache({ urls: clearedUrls });
+        this.log.info(`[clear-apply-stale] Cleared applyStale from ${clearedUrls.length} URL(s) and invalidated CDN`);
+      } catch (err) {
+        this.log.warn(`[clear-apply-stale-failed] CDN invalidation failed for ${clearedUrls.length} URL(s), S3 configs already updated: ${err.message}`, err);
+      }
     }
   }
 }

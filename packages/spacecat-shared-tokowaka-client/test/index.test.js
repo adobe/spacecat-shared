@@ -6802,6 +6802,18 @@ describe('TokowakaClient', () => {
       expect(fetchConfigStub).to.not.have.been.called;
     });
 
+    it('should log warning and return normally when CDN invalidation throws', async () => {
+      fetchConfigStub.resolves({
+        patches: [{ suggestionId: 'sugg-1', applyStale: true }],
+      });
+      invalidateCdnCacheStub.rejects(new Error('CDN rate limit'));
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+    });
+
     it('should log error and continue processing remaining URLs when one URL throws', async () => {
       fetchConfigStub.onFirstCall().rejects(new Error('S3 transient error'));
       fetchConfigStub.onSecondCall().resolves({

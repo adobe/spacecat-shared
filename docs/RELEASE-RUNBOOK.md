@@ -410,6 +410,43 @@ Recovery options:
 that defeats the human gate's purpose. Use cancel-and-retry or temporary
 removal instead.
 
+## Failure mode 7: package-lock.json sync after release failed
+
+The release job's `Sync package-lock.json after release` step regenerates the
+root `package-lock.json` against the just-published versions and commits it back
+to `main` with `[skip ci]`. This exists because semantic-release bumps each
+package's `package.json` but its `@semantic-release/git` `assets` list does not
+include the lockfile, so the lock drifts every release; once a released version
+crosses a consumer's exact internal pin, the lock loses that resolution and
+`npm ci` fails on **every** branch (the `Missing <pkg>@<ver> from lock file`
+outage).
+
+The step is `continue-on-error: true` — it can never fail a release. So a
+failure here is **silent** and surfaces later as the `Verify package-lock.json
+is in sync` check going red on the next unrelated PR.
+
+Symptoms:
+
+- The `Sync package-lock.json after release` step shows a red ✗ in the release
+  run (push rejected after the one-shot rebase retry, or registry hiccup during
+  regeneration), **or**
+- An unrelated PR's `Test` job fails at `Verify package-lock.json is in sync`
+  with a `package-lock.json` diff it did not author.
+
+Recovery (same as the manual unblock that PR #1694 performed):
+
+```bash
+git checkout main && git pull
+npm install --package-lock-only --ignore-scripts
+git checkout -b fix/sync-package-lock
+git add package-lock.json
+git commit -m "fix: sync package-lock.json with released workspace versions"
+# open a PR; the lock-only change merges and unblocks all branches
+```
+
+No package is republished — this is a lockfile-only commit. The drift guard on
+the recovery PR confirms the fix (it will pass once the lock is regenerated).
+
 ## Re-enabling the environment approval gate
 
 Status today: **the `npm-publish` environment has no required reviewers** —

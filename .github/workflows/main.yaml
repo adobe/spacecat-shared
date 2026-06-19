@@ -248,7 +248,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
         run: |
-          set -uo pipefail
+          set -euo pipefail
+          # continue-on-error keeps this step from failing a release, which also
+          # means a failure is otherwise invisible. Surface ANY failure (regen,
+          # commit, or the push+rebase retry) as a workflow ::warning:: + run
+          # summary line so the operator sees it without digging through logs;
+          # the next PR's drift guard is still the backstop (RELEASE-RUNBOOK
+          # Failure mode 7). errexit makes a failed `npm install` an honest red
+          # mark instead of a false "already in sync" — the `if ! git push`
+          # retry below is errexit-safe (the negated condition suppresses it).
+          trap 'echo "::warning title=package-lock sync after release failed::Lockfile sync did not complete; see RELEASE-RUNBOOK Failure mode 7. The next PR drift guard will surface residual drift."; echo "package-lock.json sync after release failed — see RELEASE-RUNBOOK Failure mode 7." >> "$GITHUB_STEP_SUMMARY"' ERR
           npm install --package-lock-only --ignore-scripts
           if git diff --quiet -- package-lock.json; then
             echo "OK: package-lock.json already in sync; nothing to commit."
@@ -258,7 +267,10 @@ jobs:
           git config user.name "semantic-release-bot"
           git config user.email "semantic-release-bot@martynus.net"
           git add package-lock.json
-          git commit -m "chore(deps): sync package-lock.json after release [skip ci]"
+          # `chore(release):` subject so the release-job skip guard above also
+          # skips this commit (belt-and-suspenders alongside the native [skip ci]
+          # skip), matching how that guard is documented.
+          git commit -m "chore(release): sync package-lock.json after release [skip ci]"
           remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           # Releases are serialized (concurrency: npm-publish-main), so a race is
           # unlikely, but retry once against the latest main just in case.

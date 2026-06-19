@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-ims-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.13.3...@adobe/spacecat-shared-ims-client-v1.14.0) (2026-06-18)
+
+### Features
+
+* **ims-client:** include IMS response body in token-mint error messages ([#1689](https://github.com/adobe/spacecat-shared/issues/1689)) ([b1432c4](https://github.com/adobe/spacecat-shared/commit/b1432c483b5d831c0cca65b735e7133e08091648))
+
 ## [@adobe/spacecat-shared-ims-client-v1.13.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.13.2...@adobe/spacecat-shared-ims-client-v1.13.3) (2026-05-30)
 
 ### Bug Fixes

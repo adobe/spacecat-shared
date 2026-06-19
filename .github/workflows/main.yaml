@@ -271,13 +271,28 @@ jobs:
           # skips this commit (belt-and-suspenders alongside the native [skip ci]
           # skip), matching how that guard is documented.
           git commit -m "chore(release): sync package-lock.json after release [skip ci]"
-          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # Authenticate via http.extraHeader (base64 Basic auth) rather than
+          # embedding the token in the remote URL. git echoes the remote URL in
+          # push/pull error output, so a URL-embedded token can leak into logs if
+          # Actions' secret masking misses the exact substring; the header value
+          # is never echoed. Mirrors how actions/checkout injects credentials.
+          # Pre-mask the base64 form (which is NOT auto-masked, being a distinct
+          # string from the raw secret) before it can reach any log line.
+          auth_b64="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          echo "::add-mask::${auth_b64}"
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          git_auth() { git -c "http.extraheader=AUTHORIZATION: basic ${auth_b64}" "$@"; }
           # Releases are serialized (concurrency: npm-publish-main), so a race is
-          # unlikely, but retry once against the latest main just in case.
-          if ! git push "${remote}" HEAD:main; then
+          # unlikely, but retry once against the latest main just in case. KNOWN
+          # LIMITATION: a SECOND concurrent push landing within this retry window
+          # still loses — by design we do not loop. continue-on-error keeps it
+          # from failing the release, the ERR trap surfaces a ::warning::, and the
+          # residual drift is recovered via the next PR's drift guard +
+          # RELEASE-RUNBOOK Failure mode 7 (the manual lockfile-only PR).
+          if ! git_auth push "${remote}" HEAD:main; then
             echo "push rejected; rebasing on latest main and retrying once."
-            git pull --rebase "${remote}" main
-            git push "${remote}" HEAD:main
+            git_auth pull --rebase "${remote}" main
+            git_auth push "${remote}" HEAD:main
           fi
           echo "Pushed package-lock.json sync to main."
 

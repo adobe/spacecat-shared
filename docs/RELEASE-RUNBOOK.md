@@ -425,6 +425,17 @@ The step is `continue-on-error: true` — it can never fail a release. So a
 failure here is **silent** and surfaces later as the `Verify package-lock.json
 is in sync` check going red on the next unrelated PR.
 
+Known limitation — single-retry push race: the step pushes the sync commit to
+`main` and, if that push is rejected (someone else advanced `main` first),
+rebases and retries **once**. A *second* concurrent push landing inside that
+retry window still loses; by design the step does not loop. Releases are
+serialized (`concurrency: npm-publish-main`), so two release jobs cannot race,
+and a non-release push to `main` in the same sub-second window is vanishingly
+rare — so this is accepted rather than guarded with an unbounded retry. When it
+does happen the outcome is identical to any other sync failure: `continue-on-error`
+absorbs it, the `ERR` trap emits a `::warning::`, and recovery is the manual
+lockfile-only PR below.
+
 Symptoms:
 
 - The `Sync package-lock.json after release` step shows a red ✗ in the release

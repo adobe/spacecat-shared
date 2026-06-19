@@ -27,47 +27,52 @@ export default class MacGiverClient {
   }
 
   /**
-   * Checks a list of FACS permissions for a (user, org) pair in one round-trip.
-   * Returns the subset of the requested permissions where `allowed === true`.
+   * Calls the MacGiver `/api/facs/permissions/check` endpoint for a single
+   * (user, org) pair and returns the subset of evaluated permissions where
+   * `allowed === true`.
+   *
+   * `permissions` and `namespaces` map directly onto the request body:
+   * - `permissions` — evaluate this explicit list of (possibly namespaced)
+   *   permissions.
+   * - `namespaces` — evaluate every permission defined in these namespaces.
+   * At least one must be non-empty (MacGiver rejects a request where both are
+   * empty); the public methods below each supply exactly one.
+   *
+   * The `X-User-Token` header is intentionally omitted — FACS uses it only for
+   * logging, never for the evaluation itself, so the service token alone is
+   * sufficient for SpaceCat's use.
    *
    * Two outcomes are reported distinctly:
+   * - **Evaluated, none granted** — 2xx with `status: 'SUCCESS'` and no
+   *   `allowed: true` entries (or a non-SUCCESS status). Returns `[]`.
+   * - **Could not evaluate** — non-2xx, or a transport-layer failure. **Throws**
+   *   so callers (e.g. login.js) can fail-safe and omit the `facs_permissions`
+   *   claim rather than confusing an outage with "no permissions". The non-2xx
+   *   path is logged with a `tag: 'macgiver'` warning for independent alerting.
    *
-   * - **Evaluated, no permissions granted** — MacGiver returned 2xx with
-   *   `status: 'SUCCESS'` and no `allowed: true` entries (or `status` !==
-   *   'SUCCESS'). Returns `[]`. The caller treats this as "user has no
-   *   FACS roles for the requested permission set".
-   * - **Could not evaluate** — MacGiver returned a non-2xx status, or the
-   *   request failed at the transport layer. The method **throws** so the
-   *   outer try/catch in login.js fires and omits the `facs_permissions`
-   *   claim from the JWT (fail-safe at login). The caller never sees an
-   *   empty array confused with an outage.
-   *
-   * Logging at the non-2xx path is tagged so operations alerting can
-   * surface MacGiver health regressions independently of the login flow.
-   *
-   * `userToken` is optional per the MacGiver API.
+   * @param {object} args
+   * @param {string} args.userId    - IMS user id (subject).
+   * @param {string} args.imsOrgId  - IMS org id (object).
+   * @param {string[]} [args.permissions] - Explicit permissions to evaluate.
+   * @param {string[]} [args.namespaces]  - Namespaces whose permissions to evaluate.
+   * @returns {Promise<string[]>} Allowed permission names.
    */
-  async getPermissions({
-    userId, imsOrgId, permissions, userToken,
+  async #check({
+    userId, imsOrgId, permissions = [], namespaces = [],
   }) {
     const serviceToken = await this.imsClient.getServiceAccessToken();
 
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${serviceToken}`,
-    };
-    if (userToken) {
-      headers['X-User-Token'] = userToken;
-    }
-
     const res = await fetch(`${this.macGiverBaseUrl}${CHECK_PATH}`, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${serviceToken}`,
+      },
       body: JSON.stringify({
         subject: { type: 'user', id: userId, relation: null },
         permissions,
         object: { type: 'organization', id: imsOrgId },
-        namespaces: [],
+        namespaces,
       }),
     });
 
@@ -96,28 +101,33 @@ export default class MacGiverClient {
   }
 
   /**
-   * Checks a single FACS permission for a (user, org) pair.
+   * Checks an explicit list of FACS permissions for a (user, org) pair in one
+   * round-trip. Returns the subset of the requested permissions where
+   * `allowed === true`. See `#check` for the evaluated-vs-unavailable contract.
    *
-   * Boolean convenience wrapper around getPermissions. Returns true when
-   * MacGiver reports the permission as allowed, false otherwise — including
-   * the cases where getPermissions throws because MacGiver could not be
-   * evaluated. Callers that need to distinguish "denied" from "could not
-   * evaluate" must use getPermissions directly and handle the throw.
+   * @param {object} args
+   * @param {string} args.userId
+   * @param {string} args.imsOrgId
+   * @param {string[]} args.permissions - The permissions to evaluate.
+   * @returns {Promise<string[]>} Allowed subset of `permissions`.
    */
-  async checkPermission({
-    userId, imsOrgId, permission, userToken,
-  }) {
-    try {
-      const permitted = await this.getPermissions({
-        userId, imsOrgId, permissions: [permission], userToken,
-      });
-      return permitted.includes(permission);
-    } catch {
-      // getPermissions already logged the underlying cause with a
-      // `tag: 'macgiver'` warning; collapsing to false here preserves the
-      // boolean fail-closed contract for callers that don't care about
-      // the distinction.
-      return false;
-    }
+  async checkListOfPermission({ userId, imsOrgId, permissions }) {
+    return this.#check({ userId, imsOrgId, permissions });
+  }
+
+  /**
+   * Returns every FACS permission the (user, org) pair holds across the given
+   * namespaces — MacGiver evaluates all permissions defined in each namespace
+   * and this returns the allowed subset. See `#check` for the
+   * evaluated-vs-unavailable contract.
+   *
+   * @param {object} args
+   * @param {string} args.userId
+   * @param {string} args.imsOrgId
+   * @param {string[]} args.namespaces - The namespaces whose permissions to evaluate.
+   * @returns {Promise<string[]>} All allowed permissions across `namespaces`.
+   */
+  async checkAllPermission({ userId, imsOrgId, namespaces }) {
+    return this.#check({ userId, imsOrgId, namespaces });
   }
 }

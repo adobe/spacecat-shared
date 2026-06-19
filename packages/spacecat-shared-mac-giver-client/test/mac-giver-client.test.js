@@ -69,7 +69,7 @@ describe('MacGiverClient', () => {
     });
   });
 
-  describe('getPermissions', () => {
+  describe('checkListOfPermission', () => {
     let client;
 
     beforeEach(() => {
@@ -80,7 +80,7 @@ describe('MacGiverClient', () => {
       });
     });
 
-    it('returns permitted permissions from a successful check response', async () => {
+    it('returns the allowed subset of the requested permissions', async () => {
       nock('http://localhost:8080')
         .post(CHECK_PATH)
         .reply(200, makeCheckResponse({
@@ -89,30 +89,32 @@ describe('MacGiverClient', () => {
           'llmo/can_manage': { allowed: true },
         }));
 
-      const result = await client.getPermissions({
+      const result = await client.checkListOfPermission({
         userId: 'user1',
         imsOrgId: 'org1',
         permissions: ['llmo/can_read', 'llmo/can_edit', 'llmo/can_manage'],
-        userToken: 'user-token',
       });
 
       expect(result).to.deep.equal(['llmo/can_read', 'llmo/can_manage']);
     });
 
-    it('sends the correct request shape to MacGiver', async () => {
+    it('sends the permissions list (empty namespaces) and no X-User-Token header', async () => {
       let capturedBody;
+      let capturedHeaders;
       nock('http://localhost:8080')
         .post(CHECK_PATH, (body) => {
           capturedBody = body;
           return true;
         })
-        .reply(200, makeCheckResponse({}));
+        .reply(function reply() {
+          capturedHeaders = this.req.headers;
+          return [200, makeCheckResponse({})];
+        });
 
-      await client.getPermissions({
+      await client.checkListOfPermission({
         userId: 'user42',
         imsOrgId: 'org99',
         permissions: ['llmo/can_read', 'llmo/can_edit'],
-        userToken: 'tok',
       });
 
       expect(capturedBody).to.deep.equal({
@@ -121,43 +123,7 @@ describe('MacGiverClient', () => {
         object: { type: 'organization', id: 'org99' },
         namespaces: [],
       });
-    });
-
-    it('includes X-User-Token header when userToken is provided', async () => {
-      let capturedHeaders;
-      nock('http://localhost:8080')
-        .post(CHECK_PATH)
-        .reply(function reply() {
-          capturedHeaders = this.req.headers;
-          return [200, makeCheckResponse({})];
-        });
-
-      await client.getPermissions({
-        userId: 'u',
-        imsOrgId: 'o',
-        permissions: ['llmo/can_read'],
-        userToken: 'end-user-token',
-      });
-
       expect(capturedHeaders.authorization).to.include('Bearer service-access-token');
-      expect(capturedHeaders['x-user-token']).to.include('end-user-token');
-    });
-
-    it('omits X-User-Token header when userToken is not provided', async () => {
-      let capturedHeaders;
-      nock('http://localhost:8080')
-        .post(CHECK_PATH)
-        .reply(function reply() {
-          capturedHeaders = this.req.headers;
-          return [200, makeCheckResponse({})];
-        });
-
-      await client.getPermissions({
-        userId: 'u',
-        imsOrgId: 'o',
-        permissions: ['llmo/can_read'],
-      });
-
       expect(capturedHeaders['x-user-token']).to.be.undefined;
     });
 
@@ -173,11 +139,10 @@ describe('MacGiverClient', () => {
         .post(CHECK_PATH)
         .reply(503);
 
-      await expect(failingClient.getPermissions({
+      await expect(failingClient.checkListOfPermission({
         userId: 'u',
         imsOrgId: 'o',
         permissions: ['llmo/can_read'],
-        userToken: 'tok',
       })).to.be.rejectedWith('MacGiver returned 503');
 
       expect(logWarn).to.have.been.calledOnce;
@@ -193,11 +158,10 @@ describe('MacGiverClient', () => {
         .post(CHECK_PATH)
         .reply(200, { status: 'ERROR', results: null, error: 'upstream failure' });
 
-      const result = await client.getPermissions({
+      const result = await client.checkListOfPermission({
         userId: 'u',
         imsOrgId: 'o',
         permissions: ['llmo/can_read'],
-        userToken: 'tok',
       });
 
       expect(result).to.deep.equal([]);
@@ -208,17 +172,16 @@ describe('MacGiverClient', () => {
         .post(CHECK_PATH)
         .reply(200, { status: 'SUCCESS', results: null });
 
-      const result = await client.getPermissions({
+      const result = await client.checkListOfPermission({
         userId: 'u',
         imsOrgId: 'o',
         permissions: ['llmo/can_read'],
-        userToken: 'tok',
       });
 
       expect(result).to.deep.equal([]);
     });
 
-    it('returns [] when all permissions are denied', async () => {
+    it('returns [] when all requested permissions are denied', async () => {
       nock('http://localhost:8080')
         .post(CHECK_PATH)
         .reply(200, makeCheckResponse({
@@ -226,18 +189,17 @@ describe('MacGiverClient', () => {
           'llmo/can_edit': { allowed: false },
         }));
 
-      const result = await client.getPermissions({
+      const result = await client.checkListOfPermission({
         userId: 'u',
         imsOrgId: 'o',
         permissions: ['llmo/can_read', 'llmo/can_edit'],
-        userToken: 'tok',
       });
 
       expect(result).to.deep.equal([]);
     });
   });
 
-  describe('checkPermission', () => {
+  describe('checkAllPermission', () => {
     let client;
 
     beforeEach(() => {
@@ -248,68 +210,63 @@ describe('MacGiverClient', () => {
       });
     });
 
-    it('returns true when the permission is allowed', async () => {
+    it('returns every allowed permission across the requested namespaces', async () => {
       nock('http://localhost:8080')
         .post(CHECK_PATH)
-        .reply(200, makeCheckResponse({ 'llmo/can_read': { allowed: true } }));
+        .reply(200, makeCheckResponse({
+          'llmo/can_view': { allowed: true },
+          'llmo/can_manage_users': { allowed: true },
+          'llmo/can_deploy': { allowed: false },
+        }));
 
-      const result = await client.checkPermission({
+      const result = await client.checkAllPermission({
         userId: 'user1',
         imsOrgId: 'org1',
-        permission: 'llmo/can_read',
-        userToken: 'user-token',
+        namespaces: ['llmo'],
       });
 
-      expect(result).to.be.true;
+      expect(result).to.deep.equal(['llmo/can_view', 'llmo/can_manage_users']);
     });
 
-    it('returns false when the permission is denied', async () => {
-      nock('http://localhost:8080')
-        .post(CHECK_PATH)
-        .reply(200, makeCheckResponse({ 'llmo/can_read': { allowed: false } }));
-
-      const result = await client.checkPermission({
-        userId: 'user1',
-        imsOrgId: 'org1',
-        permission: 'llmo/can_read',
-        userToken: 'user-token',
-      });
-
-      expect(result).to.be.false;
-    });
-
-    it('returns false (fail-closed) when MacGiver responds with a non-ok status code', async () => {
-      nock('http://localhost:8080')
-        .post(CHECK_PATH)
-        .reply(503);
-
-      const result = await client.checkPermission({
-        userId: 'u',
-        imsOrgId: 'o',
-        permission: 'llmo/can_read',
-        userToken: 'tok',
-      });
-
-      expect(result).to.be.false;
-    });
-
-    it('sends a single-permission list in the request body', async () => {
+    it('sends the namespaces list (empty permissions) and no X-User-Token header', async () => {
       let capturedBody;
+      let capturedHeaders;
       nock('http://localhost:8080')
         .post(CHECK_PATH, (body) => {
           capturedBody = body;
           return true;
         })
-        .reply(200, makeCheckResponse({ 'llmo/can_edit': { allowed: true } }));
+        .reply(function reply() {
+          capturedHeaders = this.req.headers;
+          return [200, makeCheckResponse({})];
+        });
 
-      await client.checkPermission({
-        userId: 'u42',
+      await client.checkAllPermission({
+        userId: 'user42',
         imsOrgId: 'org99',
-        permission: 'llmo/can_edit',
-        userToken: 'tok',
+        namespaces: ['llmo', 'aso'],
       });
 
-      expect(capturedBody.permissions).to.deep.equal(['llmo/can_edit']);
+      expect(capturedBody).to.deep.equal({
+        subject: { type: 'user', id: 'user42', relation: null },
+        permissions: [],
+        object: { type: 'organization', id: 'org99' },
+        namespaces: ['llmo', 'aso'],
+      });
+      expect(capturedHeaders.authorization).to.include('Bearer service-access-token');
+      expect(capturedHeaders['x-user-token']).to.be.undefined;
+    });
+
+    it('throws when MacGiver responds with a non-ok status code', async () => {
+      nock('http://localhost:8080')
+        .post(CHECK_PATH)
+        .reply(500);
+
+      await expect(client.checkAllPermission({
+        userId: 'u',
+        imsOrgId: 'o',
+        namespaces: ['llmo'],
+      })).to.be.rejectedWith('MacGiver returned 500');
     });
   });
 });

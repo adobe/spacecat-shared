@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.78.0...@adobe/spacecat-shared-data-access-v3.79.0) (2026-06-19)
+
+### Features
+
+* **data-access:** add brand pendingSemrushProvisioning attribute ([#1692](https://github.com/adobe/spacecat-shared/issues/1692)) ([1c2bc2a](https://github.com/adobe/spacecat-shared/commit/1c2bc2a2043246268e0ebe421de7c2c9e9241cdc))
+
 ## [@adobe/spacecat-shared-data-access-v3.78.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.77.0...@adobe/spacecat-shared-data-access-v3.78.0) (2026-06-17)
 
 ### Features

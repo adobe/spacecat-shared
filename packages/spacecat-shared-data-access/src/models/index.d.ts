@@ -40,6 +40,8 @@ export type * from './scrape-job';
 export type * from './scrape-url';
 export type * from './sentiment-guideline';
 export type * from './sentiment-topic';
+export type * from './task-management-connection';
+export type * from './ticket';
 export type * from './site';
 export type * from './site-candidate';
 export type * from './site-enrollment';

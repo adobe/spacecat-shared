@@ -19,9 +19,12 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
   headers: { 'content-type': 'application/json' },
 });
 
+const sandbox = sinon.createSandbox();
+afterEach(() => sandbox.restore());
+
 describe('createSerenityProjectEngineApiClient', () => {
   it('sends the IMS token as Authorization: Bearer, not Auth-Data-Jwt', async () => {
-    const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
+    const fetch = sandbox.stub().callsFake(() => Promise.resolve(json({ ok: true })));
     const client = createSerenityProjectEngineApiClient({
       baseUrl: 'https://serenity.example',
       authToken: 'raw-ims-jwt',
@@ -39,7 +42,7 @@ describe('createSerenityProjectEngineApiClient', () => {
   });
 
   it('resolves an async token getter per request (no token captured at construction)', async () => {
-    const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
+    const fetch = sandbox.stub().callsFake(() => Promise.resolve(json({ ok: true })));
     let current = 'token-1';
     const client = createSerenityProjectEngineApiClient({
       // a base URL that already carries the prefix normalises to the same target (idempotent)
@@ -59,7 +62,7 @@ describe('createSerenityProjectEngineApiClient', () => {
   });
 
   it('normalises a base URL with a leftover path to its origin + the API prefix', async () => {
-    const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
+    const fetch = sandbox.stub().callsFake(() => Promise.resolve(json({ ok: true })));
     const client = createSerenityProjectEngineApiClient({
       baseUrl: 'https://serenity.example/some/leftover/path',
       authToken: 'raw-ims-jwt',
@@ -79,8 +82,15 @@ describe('createSerenityProjectEngineApiClient', () => {
     })).to.throw(/invalid baseUrl/);
   });
 
+  it('throws at construction when the base URL is not http(s)', () => {
+    expect(() => createSerenityProjectEngineApiClient({
+      baseUrl: 'ftp://serenity.example',
+      authToken: 'raw-ims-jwt',
+    })).to.throw(/must be http/);
+  });
+
   it('applies retry defaults: retries a retryable 5xx GET', async () => {
-    const fetch = sinon.stub();
+    const fetch = sandbox.stub();
     fetch.onCall(0).resolves(json({ err: true }, 503));
     fetch.onCall(1).resolves(json({ ok: true }, 200));
 
@@ -97,7 +107,7 @@ describe('createSerenityProjectEngineApiClient', () => {
   });
 
   it('fails fast (and never sends the request) when the token resolves to empty', async () => {
-    const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
+    const fetch = sandbox.stub().callsFake(() => Promise.resolve(json({ ok: true })));
     const client = createSerenityProjectEngineApiClient({
       baseUrl: 'https://serenity.example/enterprise/projects/api',
       authToken: () => '',
@@ -116,7 +126,7 @@ describe('createSerenityProjectEngineApiClient', () => {
   });
 
   it('propagates an error thrown by the token getter (e.g. IMS outage) and never sends the request', async () => {
-    const fetch = sinon.stub().callsFake(() => Promise.resolve(json({ ok: true })));
+    const fetch = sandbox.stub().callsFake(() => Promise.resolve(json({ ok: true })));
     const imsOutage = new Error('IMS token endpoint unavailable');
     const client = createSerenityProjectEngineApiClient({
       baseUrl: 'https://serenity.example/enterprise/projects/api',

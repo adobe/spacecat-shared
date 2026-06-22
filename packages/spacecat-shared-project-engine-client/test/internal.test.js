@@ -22,6 +22,9 @@ import {
   MAX_RETRY_DELAY_MS,
 } from '../src/internal.js';
 
+const sandbox = sinon.createSandbox();
+afterEach(() => sandbox.restore());
+
 const resp = (status, headers) => new Response(null, { status, headers });
 
 describe('methodOf', () => {
@@ -59,7 +62,7 @@ describe('isRetryableStatus', () => {
 
 describe('createRetryingFetch', () => {
   it('retries a retryable GET and returns the eventual success', async () => {
-    const base = sinon.stub();
+    const base = sandbox.stub();
     base.onCall(0).resolves(resp(503));
     base.onCall(1).resolves(resp(200));
     const res = await createRetryingFetch(base, 2, 0)('https://x/v1/countries', { method: 'GET' });
@@ -68,14 +71,14 @@ describe('createRetryingFetch', () => {
   });
 
   it('does not retry a 5xx POST (avoids replaying a possible write)', async () => {
-    const base = sinon.stub().resolves(resp(503));
+    const base = sandbox.stub().resolves(resp(503));
     const res = await createRetryingFetch(base, 2, 0)('https://x', { method: 'POST' });
     expect(res.status).to.equal(503);
     expect(base.callCount).to.equal(1);
   });
 
   it('retries a 429 even on POST', async () => {
-    const base = sinon.stub();
+    const base = sandbox.stub();
     base.onCall(0).resolves(resp(429));
     base.onCall(1).resolves(resp(201));
     const res = await createRetryingFetch(base, 2, 0)('https://x', { method: 'POST' });
@@ -88,7 +91,7 @@ describe('createRetryingFetch', () => {
   // These two assert the per-attempt clone actually re-sends the body on retry.
   it('re-sends a bodied idempotent Request on retry (clones rather than replaying)', async () => {
     const seenBodies = [];
-    const base = sinon.stub().callsFake(async (req) => {
+    const base = sandbox.stub().callsFake(async (req) => {
       seenBodies.push(await req.text());
       return resp(seenBodies.length === 1 ? 503 : 200);
     });
@@ -108,7 +111,7 @@ describe('createRetryingFetch', () => {
       await req.text();
       return resp(status);
     };
-    const base = sinon.stub();
+    const base = sandbox.stub();
     base.onCall(0).callsFake((req) => consume(req, 429));
     base.onCall(1).callsFake((req) => consume(req, 201));
     const request = new Request('https://x/v1/projects', {
@@ -122,14 +125,28 @@ describe('createRetryingFetch', () => {
   });
 
   it('returns the last retryable response after exhausting retries', async () => {
-    const base = sinon.stub().resolves(resp(503));
+    const base = sandbox.stub().resolves(resp(503));
     const res = await createRetryingFetch(base, 2, 0)('https://x', { method: 'GET' });
     expect(res.status).to.equal(503);
     expect(base.callCount).to.equal(3);
   });
 
+  it('makes exactly one attempt when maxRetries is 0 (no retry)', async () => {
+    const base = sandbox.stub().resolves(resp(503));
+    const res = await createRetryingFetch(base, 0, 0)('https://x', { method: 'GET' });
+    expect(res.status).to.equal(503);
+    expect(base.callCount).to.equal(1);
+  });
+
+  it('treats a negative maxRetries as zero (single attempt, never throws undefined)', async () => {
+    const base = sandbox.stub().resolves(resp(503));
+    const res = await createRetryingFetch(base, -3, 0)('https://x', { method: 'GET' });
+    expect(res.status).to.equal(503);
+    expect(base.callCount).to.equal(1);
+  });
+
   it('retries network errors for idempotent methods, then rethrows if persistent', async () => {
-    const base = sinon.stub().rejects(new Error('network down'));
+    const base = sandbox.stub().rejects(new Error('network down'));
     try {
       await createRetryingFetch(base, 1, 0)('https://x', { method: 'GET' });
       expect.fail('expected the persistent network error to be rethrown');
@@ -140,7 +157,7 @@ describe('createRetryingFetch', () => {
   });
 
   it('does not retry network errors for non-idempotent methods', async () => {
-    const base = sinon.stub().rejects(new Error('boom'));
+    const base = sandbox.stub().rejects(new Error('boom'));
     try {
       await createRetryingFetch(base, 2, 0)('https://x', { method: 'POST' });
       expect.fail('expected the network error to be rethrown without retry');
@@ -164,6 +181,10 @@ describe('parseRetryAfterMs', () => {
     expect(parseRetryAfterMs(resp(429, { 'retry-after': 'soon' }))).to.equal(null);
   });
 
+  it('floors a negative delta-seconds value at zero', () => {
+    expect(parseRetryAfterMs(resp(429, { 'retry-after': '-5' }))).to.equal(0);
+  });
+
   it('parses an HTTP-date into the delay until then', () => {
     const whenMs = Date.now() + 3000;
     const ms = parseRetryAfterMs(resp(429, { 'retry-after': new Date(whenMs).toUTCString() }));
@@ -178,36 +199,34 @@ describe('parseRetryAfterMs', () => {
 });
 
 describe('nextRetryDelayMs', () => {
-  afterEach(() => sinon.restore());
-
   it('applies equal jitter to exponential backoff: floor at 0.5x', () => {
-    sinon.stub(Math, 'random').returns(0);
+    sandbox.stub(Math, 'random').returns(0);
     // completedAttempt 0 -> backoff = base * 2**0 = 200; jitter factor 0.5 -> 100
     expect(nextRetryDelayMs(0, 200, null)).to.equal(100);
   });
 
   it('grows the backoff exponentially per attempt before jitter', () => {
-    sinon.stub(Math, 'random').returns(1);
+    sandbox.stub(Math, 'random').returns(1);
     // completedAttempt 2 -> backoff = 200 * 2**2 = 800; jitter factor ~1 -> ~800
     expect(nextRetryDelayMs(2, 200, null)).to.be.closeTo(800, 1);
   });
 
   it('never waits less than the server-requested Retry-After', () => {
-    sinon.stub(Math, 'random').returns(0);
+    sandbox.stub(Math, 'random').returns(0);
     // jittered backoff (100) is dwarfed by the 5s Retry-After
     const ms = nextRetryDelayMs(0, 200, resp(429, { 'retry-after': '5' }));
     expect(ms).to.equal(5000);
   });
 
   it('still uses jittered backoff when it exceeds a small Retry-After', () => {
-    sinon.stub(Math, 'random').returns(1);
+    sandbox.stub(Math, 'random').returns(1);
     // backoff 800 > Retry-After 0.1s (100ms) -> keep backoff
     const ms = nextRetryDelayMs(2, 200, resp(429, { 'retry-after': '0.1' }));
     expect(ms).to.be.closeTo(800, 1);
   });
 
   it('clamps a hostile Retry-After to the ceiling', () => {
-    sinon.stub(Math, 'random').returns(0);
+    sandbox.stub(Math, 'random').returns(0);
     const ms = nextRetryDelayMs(0, 200, resp(429, { 'retry-after': '99999' }));
     expect(ms).to.equal(MAX_RETRY_DELAY_MS);
   });

@@ -65,6 +65,14 @@ function resolveBaseUrl(baseUrl) {
   } catch {
     throw new Error(`Project Engine client: invalid baseUrl ${JSON.stringify(baseUrl)}`);
   }
+  // Restrict to http(s) so a `file:`/`ftp:`/etc. URL fails fast here with an actionable message
+  // rather than deep inside fetch(). Both schemes are allowed — https for prod, http for the
+  // local Counterfact mock.
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error(
+      `Project Engine client: baseUrl must be http(s), got ${parsed.protocol} in ${JSON.stringify(baseUrl)}`,
+    );
+  }
   return `${parsed.protocol}//${parsed.host}${API_PREFIX}`;
 }
 

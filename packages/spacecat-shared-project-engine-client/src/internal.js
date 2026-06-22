@@ -129,6 +129,9 @@ export function nextRetryDelayMs(completedAttempt, baseDelayMs, response) {
 export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
   return async function retryingFetch(input, init) {
     const method = methodOf(input, init);
+    // Floor at 0: a negative maxRetries would skip the loop entirely, leaving both lastResponse
+    // and lastError undefined and ending in `throw undefined`. Degrade to a single attempt instead.
+    const attempts = Math.max(0, maxRetries);
     // openapi-fetch calls us with a Request object; fetch() consumes its body on use, so a
     // bare replay throws "Request ... already used". Clone per attempt and never touch the
     // original, so every retry (incl. a 429 on a bodied POST) sends a fresh, unconsumed body.
@@ -137,7 +140,7 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
     let lastError;
     let nextDelayMs = 0;
 
-    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    for (let attempt = 0; attempt <= attempts; attempt += 1) {
       if (attempt > 0) {
         // eslint-disable-next-line no-await-in-loop
         await sleep(nextDelayMs);

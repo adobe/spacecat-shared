@@ -81,13 +81,22 @@ export const EXPORT_EXCLUDED_REJECTION_CATEGORIES = Object.freeze([
 /**
  * Customer-derived fields stripped from the JSONL export for organizations with
  * `training_opt_in = false`. Verdict / signal / category / identity metadata
- * still ship.
+ * still ship. snake_case to match the JSONL row shape (and the feedback_event
+ * DB columns) — {@link toJsonlRow} uses this list to do the stripping, so the
+ * opt-out boundary is single-sourced here.
  */
 export const OPT_OUT_STRIPPED_FIELDS = Object.freeze([
-  'previousFix',
-  'editedFix',
-  'detailMarkdown',
+  'previous_fix',
+  'edited_fix',
+  'detail_markdown',
 ]);
+
+/**
+ * Current JSONL row schema version (the `schema_version` field stamped on every
+ * exported line). DMAI ignores unknown fields within a known version and SHOULD
+ * reject unknown versions; bump this in one place on a breaking change.
+ */
+export const SCHEMA_VERSION = 1;
 
 /**
  * Translate the app-layer verdict to the persisted training signal. Single
@@ -127,16 +136,22 @@ export function signalToVerdict(signal) {
 
 /**
  * Map a raw `feedback_event` row (snake_case, as returned by PostgREST) to the
- * API review view (camelCase, verdict-flavoured). The heavy patch fields
- * (`previous_fix` / `edited_fix`) are omitted unless `includePatches` is set —
- * they exist for training export, not for the default read response.
+ * **API review view** (camelCase, verdict-flavoured) for HTTP responses — e.g.
+ * the `?include=reviews` composition in spacecat-api-service. This is NOT the
+ * JSONL export shape; use {@link toJsonlRow} for the Learning Agent export. The
+ * heavy patch fields (`previous_fix` / `edited_fix`) are omitted unless
+ * `includePatches` is set.
  *
  * @param {object} row - a raw feedback_event row from PostgREST.
  * @param {object} [options]
  * @param {boolean} [options.includePatches=false] - include previous/edited fix.
- * @returns {object} the review view object.
+ * @returns {object|null} the review view object, or null when no row is given.
  */
 export function toReviewView(row, { includePatches = false } = {}) {
+  if (!row) {
+    return null;
+  }
+
   const view = {
     eventId: row.event_id,
     eventTime: row.event_time,
@@ -156,4 +171,79 @@ export function toReviewView(row, { includePatches = false } = {}) {
   }
 
   return view;
+}
+
+/**
+ * Whether a raw `feedback_event` row should be exported to the Learning Agent
+ * corpus. `product_bug` rejections are excluded (routed to Jira); NULL-category
+ * rows ARE exported. See {@link EXPORT_EXCLUDED_REJECTION_CATEGORIES}.
+ *
+ * @param {object} row - a raw feedback_event row from PostgREST.
+ * @returns {boolean} true if the row should be exported.
+ */
+export function shouldExport(row) {
+  return !EXPORT_EXCLUDED_REJECTION_CATEGORIES.includes(row.rejection_category);
+}
+
+/**
+ * Map a raw `feedback_event` row (snake_case, from PostgREST) to one JSONL line
+ * object — the canonical Learning Agent export contract. The row mirrors the
+ * feedback_event columns (snake_case), stamped with {@link SCHEMA_VERSION} and
+ * the derived `verdict`. For organizations that have NOT opted into training,
+ * the customer-derived fields in {@link OPT_OUT_STRIPPED_FIELDS} are nulled;
+ * verdict / signal / category / identity metadata still ship (§10.5.7).
+ *
+ * This is the single source of truth for the JSONL row shape — the exporter
+ * (spacecat-jobs-dispatcher) calls it rather than re-deriving the contract.
+ *
+ * @param {object} row - a raw feedback_event row from PostgREST.
+ * @param {object} [options]
+ * @param {boolean} [options.optedIn=false] - the org's training_opt_in.
+ * @returns {object} a single JSONL line object (snake_case).
+ */
+export function toJsonlRow(row, { optedIn = false } = {}) {
+  const jsonlRow = {
+    schema_version: SCHEMA_VERSION,
+    event_id: row.event_id,
+    event_time: row.event_time,
+    organization_id: row.organization_id,
+    site_id: row.site_id,
+    suggestion_id: row.suggestion_id,
+    opportunity_type: row.opportunity_type,
+    source: row.source,
+    signal: row.signal,
+    verdict: signalToVerdict(row.signal),
+    reviewer_id: row.reviewer_id ?? null,
+    rejection_category: row.rejection_category ?? null,
+    state_transition: row.state_transition ?? null,
+    tier: row.tier,
+    detail_markdown: row.detail_markdown ?? null,
+    previous_fix: row.previous_fix ?? null,
+    edited_fix: row.edited_fix ?? null,
+  };
+
+  if (!optedIn) {
+    OPT_OUT_STRIPPED_FIELDS.forEach((field) => {
+      jsonlRow[field] = null;
+    });
+  }
+
+  return jsonlRow;
+}
+
+/**
+ * Build the JSONL (newline-delimited JSON) export body from raw feedback_event
+ * rows: filters out non-exportable rows ({@link shouldExport}) and maps the rest
+ * through {@link toJsonlRow}.
+ *
+ * @param {Array<object>} rows - raw feedback_event rows from PostgREST.
+ * @param {object} [options]
+ * @param {boolean} [options.optedIn=false] - the org's training_opt_in.
+ * @returns {string} the JSONL body (no trailing newline).
+ */
+export function buildJsonl(rows, { optedIn = false } = {}) {
+  return rows
+    .filter(shouldExport)
+    .map((row) => JSON.stringify(toJsonlRow(row, { optedIn })))
+    .join('\n');
 }

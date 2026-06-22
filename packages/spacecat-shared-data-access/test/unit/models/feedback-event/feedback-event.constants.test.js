@@ -22,9 +22,13 @@ import {
   FEEDBACK_TIERS,
   EXPORT_EXCLUDED_REJECTION_CATEGORIES,
   OPT_OUT_STRIPPED_FIELDS,
+  SCHEMA_VERSION,
   verdictToSignal,
   signalToVerdict,
   toReviewView,
+  shouldExport,
+  toJsonlRow,
+  buildJsonl,
 } from '../../../../src/models/feedback-event/index.js';
 
 describe('feedback-event constants', () => {
@@ -66,9 +70,13 @@ describe('feedback-event constants', () => {
     expect(Object.isFrozen(EXPORT_EXCLUDED_REJECTION_CATEGORIES)).to.equal(true);
   });
 
-  it('lists the opt-out stripped fields', () => {
-    expect(OPT_OUT_STRIPPED_FIELDS).to.deep.equal(['previousFix', 'editedFix', 'detailMarkdown']);
+  it('lists the opt-out stripped fields (snake_case, matching the JSONL/DB columns)', () => {
+    expect(OPT_OUT_STRIPPED_FIELDS).to.deep.equal(['previous_fix', 'edited_fix', 'detail_markdown']);
     expect(Object.isFrozen(OPT_OUT_STRIPPED_FIELDS)).to.equal(true);
+  });
+
+  it('exposes the current JSONL schema version', () => {
+    expect(SCHEMA_VERSION).to.equal(1);
   });
 });
 
@@ -154,5 +162,116 @@ describe('toReviewView', () => {
     expect(view.stateTransition).to.equal(null);
     expect(view.previousFix).to.equal(null);
     expect(view.editedFix).to.equal(null);
+  });
+
+  it('returns null when no row is given', () => {
+    expect(toReviewView(undefined)).to.equal(null);
+    expect(toReviewView(null)).to.equal(null);
+  });
+});
+
+describe('shouldExport', () => {
+  it('excludes product_bug rows', () => {
+    expect(shouldExport({ rejection_category: 'product_bug' })).to.equal(false);
+  });
+
+  it('includes bad_recommendation rows', () => {
+    expect(shouldExport({ rejection_category: 'bad_recommendation' })).to.equal(true);
+  });
+
+  it('includes NULL-category rows', () => {
+    expect(shouldExport({ rejection_category: null })).to.equal(true);
+  });
+});
+
+describe('toJsonlRow', () => {
+  const fullRow = {
+    event_id: 'e1',
+    event_time: '2026-06-19T18:00:00.000Z',
+    organization_id: 'org1',
+    site_id: 'site1',
+    suggestion_id: 'sug1',
+    opportunity_type: 'cwv',
+    source: 'backoffice',
+    signal: 'negative',
+    reviewer_id: 'ese@adobe.com',
+    rejection_category: 'bad_recommendation',
+    state_transition: 'PENDING_VALIDATION->REJECTED',
+    tier: 'paid',
+    detail_markdown: 'rationale',
+    previous_fix: { patch: 'before' },
+    edited_fix: { patch: 'after' },
+  };
+
+  it('maps a row to the snake_case JSONL shape, stamping schema_version + verdict', () => {
+    const out = toJsonlRow(fullRow, { optedIn: true });
+    expect(out.schema_version).to.equal(SCHEMA_VERSION);
+    expect(out.verdict).to.equal('down');
+    expect(out.signal).to.equal('negative');
+    expect(out.detail_markdown).to.equal('rationale');
+    expect(out.previous_fix).to.deep.equal({ patch: 'before' });
+    expect(out.edited_fix).to.deep.equal({ patch: 'after' });
+  });
+
+  it('strips the opt-out fields when the org is opted out', () => {
+    const out = toJsonlRow(fullRow, { optedIn: false });
+    expect(out.detail_markdown).to.equal(null);
+    expect(out.previous_fix).to.equal(null);
+    expect(out.edited_fix).to.equal(null);
+    // metadata still ships
+    expect(out.signal).to.equal('negative');
+    expect(out.rejection_category).to.equal('bad_recommendation');
+    expect(out.tier).to.equal('paid');
+  });
+
+  it('defaults to opted-out and nulls missing optional fields', () => {
+    const out = toJsonlRow({
+      event_id: 'e2',
+      event_time: '2026-06-19T18:00:00.000Z',
+      organization_id: 'org1',
+      site_id: 'site1',
+      suggestion_id: 'sug1',
+      opportunity_type: 'cwv',
+      source: 'backoffice',
+      signal: 'positive',
+      tier: 'free',
+    });
+    expect(out.verdict).to.equal('up');
+    expect(out.reviewer_id).to.equal(null);
+    expect(out.rejection_category).to.equal(null);
+    expect(out.state_transition).to.equal(null);
+    expect(out.detail_markdown).to.equal(null);
+    expect(out.previous_fix).to.equal(null);
+    expect(out.edited_fix).to.equal(null);
+  });
+});
+
+describe('buildJsonl', () => {
+  const row = (overrides = {}) => ({
+    event_id: 'e',
+    event_time: 't',
+    organization_id: 'o',
+    site_id: 's',
+    suggestion_id: 'sg',
+    opportunity_type: 'cwv',
+    source: 'backoffice',
+    signal: 'positive',
+    tier: 'free',
+    ...overrides,
+  });
+
+  it('filters product_bug rows and joins the rest as NDJSON', () => {
+    const jsonl = buildJsonl([
+      row({ event_id: 'a', rejection_category: 'bad_recommendation' }),
+      row({ event_id: 'b', rejection_category: 'product_bug' }),
+      row({ event_id: 'c', rejection_category: null }),
+    ], { optedIn: true });
+    const lines = jsonl.split('\n').map((l) => JSON.parse(l));
+    expect(lines).to.have.length(2);
+    expect(lines.map((l) => l.event_id)).to.deep.equal(['a', 'c']);
+  });
+
+  it('returns an empty string when every row is filtered out', () => {
+    expect(buildJsonl([row({ rejection_category: 'product_bug' })])).to.equal('');
   });
 });

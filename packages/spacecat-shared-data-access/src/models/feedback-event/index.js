@@ -12,8 +12,10 @@
 
 // feedback_event has a client-supplied PK and is append-only, so it is NOT a
 // data-access entity (no model/collection/schema/registry). This barrel only
-// re-exports the shared constants + verdict<->signal helpers consumed by
-// spacecat-api-service and spacecat-jobs-dispatcher.
+// re-exports the shared constants + helpers consumed by spacecat-api-service
+// (capture + ?include=reviews) and spacecat-jobs-dispatcher (the JSONL exporter):
+// the enum vocabulary, the verdict<->signal translation, the API review view,
+// and the single-sourced JSONL row contract.
 export {
   REVIEW_SOURCES,
   REVIEW_VERDICTS,
@@ -22,7 +24,11 @@ export {
   FEEDBACK_TIERS,
   EXPORT_EXCLUDED_REJECTION_CATEGORIES,
   OPT_OUT_STRIPPED_FIELDS,
+  SCHEMA_VERSION,
   verdictToSignal,
   signalToVerdict,
   toReviewView,
+  shouldExport,
+  toJsonlRow,
+  buildJsonl,
 } from './feedback-event.constants.js';

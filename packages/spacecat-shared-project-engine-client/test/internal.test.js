@@ -208,17 +208,30 @@ describe('createRetryingFetch onRetry hook', () => {
     expect(base.callCount).to.equal(2);
   });
 
-  it('sinks a rejected promise from an async onRetry (no unhandled rejection)', async () => {
+  it('sinks a rejected promise from an async onRetry (asserts no unhandled rejection escapes)', async () => {
     const base = sandbox.stub();
     base.onCall(0).resolves(resp(503));
     base.onCall(1).resolves(resp(200));
-    // an async hook whose promise rejects must be swallowed, not surface as an unhandled rejection
     const onRetry = async () => {
       throw new Error('async observer boom');
     };
-    const res = await createRetryingFetch(base, 2, 0, onRetry)('https://x', { method: 'GET' });
-    expect(res.status).to.equal(200);
-    expect(base.callCount).to.equal(2);
+
+    // Positively assert nothing escaped: capture process-level unhandled rejections for the
+    // duration of the call, then give the event loop a macrotask turn for any to surface.
+    const escaped = [];
+    const onUnhandled = (reason) => escaped.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      const res = await createRetryingFetch(base, 2, 0, onRetry)('https://x', { method: 'GET' });
+      await new Promise((r) => {
+        setImmediate(r);
+      });
+      expect(res.status).to.equal(200);
+      expect(base.callCount).to.equal(2);
+      expect(escaped).to.deep.equal([]);
+    } finally {
+      process.removeListener('unhandledRejection', onUnhandled);
+    }
   });
 });
 

@@ -155,7 +155,7 @@ function notifyRetry(onRetry, info) {
  * @param {string} info.method the HTTP method
  * @param {number} [info.status] the retryable response status that triggered the retry, if any
  * @param {Error} [info.error] the network error that triggered the retry, if any
- * @returns {void}
+ * @returns {void | Promise<void>} may be async; the return is not awaited (fire-and-forget)
  */
 
 /**

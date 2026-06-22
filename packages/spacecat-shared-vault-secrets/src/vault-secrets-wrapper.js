@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { Response } from '@adobe/fetch';
+
 import VaultClient from './vault-client.js';
 import { loadBootstrapConfig } from './bootstrap.js';
 

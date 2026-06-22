@@ -32,8 +32,8 @@ describe('Project Engine foundation: vendored spec', () => {
   });
 
   // The spec models the Semrush-native Auth-Data-Jwt header as a per-operation param. The client
-  // does NOT send it — it sends Authorization: Bearer, which the Adobe gateway exchanges
-  // server-side — so the client's typed surface narrows it out; the vendored contract keeps it.
+  // does NOT send it — it sends Authorization: Bearer, which Semrush accepts directly — so the
+  // client's typed surface narrows it out; the vendored contract keeps it.
   it('carries the Semrush-native Auth-Data-Jwt header param in the vendored spec', () => {
     expect(spec).to.include('name: Auth-Data-Jwt');
   });

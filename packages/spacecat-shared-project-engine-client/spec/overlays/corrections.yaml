@@ -66,7 +66,7 @@ actions:
       imsBearer:
         type: http
         scheme: bearer
-        description: "IMS user bearer token. The Adobe gateway authenticates the bearer and exchanges it for Semrush credentials server-side."
+        description: "IMS user bearer token, accepted directly by the Semrush Project Engine API."
 
   - target: "$"
     description: "CR2: apply imsBearer as the global security requirement"

@@ -25,15 +25,15 @@ import { createRetryingFetch, toTokenGetter } from './internal.js';
 
 /**
  * @typedef {object} SerenityProjectEngineApiClientOptions
- * @property {string} baseUrl Base URL of the Project Engine gateway — the origin of
+ * @property {string} baseUrl Base URL of the Project Engine API — the origin of
  *   `SEMRUSH_PROJECTS_BASE_URL` (e.g. `https://adobe-hackathon.semrush.com`), or the Counterfact
  *   mock's origin for E2E / local dev. Only `protocol//host` is used; any path is dropped and the
  *   client appends the fixed `/enterprise/projects/api` prefix itself, matching the deployed
  *   api-service transport (`rest-transport.js`).
  * @property {AuthTokenSource} authToken The caller's IMS JWT, or a (sync/async) getter resolved
  *   per request. Sent as the `Authorization: Bearer <token>` header. The client performs NO token
- *   exchange or minting — the Adobe-hosted gateway authenticates the raw IMS bearer and exchanges
- *   it for Semrush's native credential server-side, so the caller's token is forwarded as-is.
+ *   exchange or minting — Semrush accepts the IMS bearer token directly, so the caller's token is
+ *   forwarded as-is.
  * @property {number} [maxRetries=2] Retry attempts on 429 / retryable 5xx / network error.
  *   Default 2 (3 tries total).
  * @property {number} [retryBaseDelayMs=200] Base backoff in ms; grows exponentially per
@@ -71,8 +71,8 @@ function resolveBaseUrl(baseUrl) {
 /**
  * Builds the openapi-fetch middleware that authenticates each request with the caller's IMS token
  * as `Authorization: Bearer <token>` — the auth model proven by the deployed api-service transport
- * (`rest-transport.js`). The gateway exchanges the bearer for Semrush's native credential
- * server-side; the client mints/exchanges nothing.
+ * (`rest-transport.js`). Semrush accepts the IMS bearer directly; the client mints/exchanges
+ * nothing.
  * @param {() => string | Promise<string>} getToken
  * @returns {import('openapi-fetch').Middleware}
  */
@@ -81,7 +81,7 @@ function authMiddleware(getToken) {
     async onRequest({ request }) {
       const token = await getToken();
       // Fail fast on a missing token rather than sending `Bearer undefined` (or an empty header),
-      // which the gateway would reject with an opaque 401.
+      // which Semrush would reject with an opaque 401.
       if (!token) {
         throw new Error('Project Engine client: authToken resolved to an empty value');
       }

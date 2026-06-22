@@ -25,7 +25,7 @@ export type SerenityProjectEngineApiClient = Client<paths>;
 
 export interface SerenityProjectEngineApiClientOptions {
   /**
-   * Base URL of the Project Engine gateway — the origin of `SEMRUSH_PROJECTS_BASE_URL`, or the
+   * Base URL of the Project Engine API — the origin of `SEMRUSH_PROJECTS_BASE_URL`, or the
    * Counterfact mock's origin for E2E / local dev. Only `protocol//host` is used; the client
    * appends the fixed `/enterprise/projects/api` prefix itself.
    */
@@ -33,8 +33,7 @@ export interface SerenityProjectEngineApiClientOptions {
   /**
    * The caller's IMS JWT, or a (sync/async) getter resolved per request. Sent as the
    * `Authorization: Bearer <token>` header. The client performs NO token exchange or minting —
-   * the Adobe-hosted gateway authenticates the raw IMS bearer and exchanges it for Semrush's
-   * native credential server-side, so the caller's token is forwarded as-is.
+   * Semrush accepts the IMS bearer token directly, so the caller's token is forwarded as-is.
    */
   authToken: AuthTokenSource;
   /** Retry attempts on 429 / retryable 5xx / network error. Default 2 (3 tries total). */

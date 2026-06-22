@@ -105,13 +105,14 @@ spec.security = [{ imsBearer: [] }];
 // Remove the bogus Auth-Data-Jwt header param from every operation.
 for (const pathItem of Object.values(spec.paths)) {
   for (const [method, operation] of Object.entries(pathItem)) {
-    if (method === 'parameters' || typeof operation !== 'object') continue;
-    if (!Array.isArray(operation.parameters)) continue;
-    operation.parameters = operation.parameters.filter(
-      (p) => !(p.in === 'header' && p.name === 'Auth-Data-Jwt'),
-    );
+    if (method !== 'parameters' && typeof operation === 'object' && Array.isArray(operation.parameters)) {
+      operation.parameters = operation.parameters.filter(
+        (p) => !(p.in === 'header' && p.name === 'Auth-Data-Jwt'),
+      );
+    }
   }
 }
 
 writeFileSync(specPath, JSON.stringify(spec, null, 2), 'utf-8');
+// eslint-disable-next-line no-console
 console.log(`✔ overlay applied → ${specPath}`);

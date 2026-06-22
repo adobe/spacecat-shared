@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.79.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.79.0...@adobe/spacecat-shared-data-access-v3.79.1) (2026-06-22)
+
+### Bug Fixes
+
+* data structure for Sitemap "error" suggestions ([#1697](https://github.com/adobe/spacecat-shared/issues/1697)) ([a9b550c](https://github.com/adobe/spacecat-shared/commit/a9b550c8bf6c3411e312fe1c305f38b5a90dfdde))
+
 ## [@adobe/spacecat-shared-data-access-v3.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.78.0...@adobe/spacecat-shared-data-access-v3.79.0) (2026-06-19)
 
 ### Features

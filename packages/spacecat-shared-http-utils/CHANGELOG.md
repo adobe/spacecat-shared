@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.29.1...@adobe/spacecat-shared-http-utils-v1.30.0) (2026-06-22)
+
+### Features
+
+* **http-utils:** allow s2sAuthWrapper routes to accept multiple capabilities ([#1693](https://github.com/adobe/spacecat-shared/issues/1693)) ([73cd510](https://github.com/adobe/spacecat-shared/commit/73cd51088e778a444aaa524b14fb191b66c677e9))
+
 ## [@adobe/spacecat-shared-http-utils-v1.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.29.0...@adobe/spacecat-shared-http-utils-v1.29.1) (2026-06-15)
 
 ### Bug Fixes

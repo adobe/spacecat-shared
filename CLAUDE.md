@@ -47,7 +47,7 @@ This is the **foundation library layer** for all SpaceCat Node.js services. It's
 
 ```
 spacecat-shared/
-├── packages/                     # 23 npm workspace packages
+├── packages/                     # npm workspace packages
 │   ├── spacecat-shared-data-access/   # Core data layer (PostgREST + Aurora PostgreSQL)
 │   ├── spacecat-shared-http-utils/    # HTTP response helpers + auth middleware
 │   ├── spacecat-shared-utils/         # General utilities (validation, S3, SQS, helpers)

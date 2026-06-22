@@ -3,17 +3,45 @@
 Typed integration with the Semrush **Project Engine API** (`/enterprise/projects/api`):
 
 - generated **TypeScript** (`src/generated/types.ts`) and **Pydantic v2** (`python/serenity_project_engine/`) types,
-- a thin **Project Engine client** (`openapi-fetch` over the generated `paths`) — later PR,
-- a **Counterfact mock** for E2E tests and local dev — later PR.
+- a thin **Project Engine client** (`openapi-fetch` over the generated `paths`) — IMS Bearer auth + idempotency-aware retries (see [Client](#client)),
+- a generation-time **spec-correction overlay** (`spec/overlays/corrections.yaml`) that aligns the vendored swagger with the live API,
+- a **Counterfact mock** for E2E tests and local dev (`npm run mock`); the stateful mock store lands in a follow-up (LLMO-5460).
 
-> **This PR is the foundation slice only:** vendor the spec + wire the
-> conversion-and-type-generation pipeline. The client wrapper, the IMS handler move,
-> and the stateful mock store land in follow-up PRs (see LLMO-5461 / LLMO-5460).
+> **Scope:** this PR vendors the spec, wires the conversion-and-type-generation
+> pipeline plus the correction overlay, and adds the typed client. The IMS handler
+> move and the stateful mock store land in follow-up PRs (see LLMO-5461 / LLMO-5460).
 
 This package follows the `spacecat-shared` convention: **JS + ESM**, JSDoc-typed source,
 `mocha` + `chai` + `c8` for tests, and `@adobe/eslint-config-helix` for lint. The scaffold's
 TypeScript surface is ported to JS + JSDoc; the generated `types.ts` is a **type artifact only**,
 consumed by the client via JSDoc `import(...)` and by `openapi-fetch` at type-check time.
+
+## Client
+
+```js
+import { createSerenityProjectEngineApiClient } from '@adobe/spacecat-shared-project-engine-client';
+
+const client = createSerenityProjectEngineApiClient({
+  baseUrl: process.env.SEMRUSH_PROJECTS_BASE_URL, // origin only; the prefix is owned by the client
+  authToken: () => getImsToken(),                 // a static token or a (sync/async) per-request getter
+});
+
+const { data, error } = await client.GET('/v1/countries');
+```
+
+- **Auth:** the caller's IMS JWT is forwarded verbatim as `Authorization: Bearer <token>`. The
+  live API authenticates on Bearer directly — Semrush accepts the IMS token and the client mints
+  or exchanges **nothing**. The token source resolves once per request, so the header always
+  reflects the current caller.
+- **Base URL:** the client owns the fixed `/enterprise/projects/api` prefix; you pass only the
+  origin (any path/credentials are stripped). Non-`http(s)` base URLs fail fast at construction.
+- **Retries:** `429` is retried for any method; `5xx`/network errors only for idempotent methods
+  (so a POST is never replayed). Backoff is exponential with jitter, honours `Retry-After`, and is
+  capped at 20s/attempt. Pass `onRetry` to observe the loop.
+- **Shape:** this is a thin factory function rather than the `CLAUDE.md` "class + factory" client
+  pattern — the wrapper has no per-instance state or behaviour beyond what `openapi-fetch` already
+  provides, so a class would add ceremony without value. The typed surface IS the `openapi-fetch`
+  client.
 
 ## Spec source
 

@@ -38,6 +38,10 @@ import { createRetryingFetch, toTokenGetter } from './internal.js';
  *   Default 2 (3 tries total).
  * @property {number} [retryBaseDelayMs=200] Base backoff in ms; grows exponentially per
  *   attempt. Default 200.
+ * @property {import('./internal.js').OnRetry} [onRetry] Best-effort hook invoked before each
+ *   retry sleep (`{ attempt, delayMs, method, status?, error? }`), for logging/metrics. A retry
+ *   loop is otherwise silent — an operator can't tell "slow upstream" from "stuck in backoff". A
+ *   throwing hook is swallowed and never affects the request.
  * @property {typeof globalThis.fetch} [fetch] Injectable fetch (tests, custom agents).
  *   Defaults to the global fetch.
  */
@@ -113,13 +117,17 @@ export function createSerenityProjectEngineApiClient(options) {
     authToken,
     maxRetries = 2,
     retryBaseDelayMs = 200,
+    onRetry,
     fetch: injectedFetch = globalThis.fetch,
   } = options;
 
   const client = createClient({
     baseUrl: resolveBaseUrl(baseUrl),
-    fetch: createRetryingFetch(injectedFetch, maxRetries, retryBaseDelayMs),
+    fetch: createRetryingFetch(injectedFetch, maxRetries, retryBaseDelayMs, onRetry),
   });
+  // Auth runs as openapi-fetch middleware, so the token getter resolves once per logical request
+  // and that token is reused across the request's retries (the retry layer clones the same Request
+  // — see createRetryingFetch). toTokenGetter() rejects a non-string/function authToken up front.
   client.use(authMiddleware(toTokenGetter(authToken)));
   return client;
 }

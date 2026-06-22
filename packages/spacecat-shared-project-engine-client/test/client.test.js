@@ -143,4 +143,74 @@ describe('createSerenityProjectEngineApiClient', () => {
     expect(thrown).to.equal(imsOutage);
     expect(fetch.called).to.equal(false);
   });
+
+  it('strips embedded credentials from the base URL — never forwards user:pass', async () => {
+    const fetch = sandbox.stub().callsFake(() => Promise.resolve(json({ ok: true })));
+    const client = createSerenityProjectEngineApiClient({
+      baseUrl: 'https://user:pass@serenity.example/some/path',
+      authToken: 'raw-ims-jwt',
+      fetch,
+    });
+
+    await client.GET('/v1/countries');
+
+    const { url } = fetch.firstCall.args[0];
+    expect(url).to.equal('https://serenity.example/enterprise/projects/api/v1/countries');
+    expect(url).to.not.contain('user');
+    expect(url).to.not.contain('pass');
+  });
+
+  it('resolves the auth token once per request and reuses it across that request\'s retries', async () => {
+    let calls = 0;
+    const getToken = async () => {
+      calls += 1;
+      return `token-${calls}`;
+    };
+    const fetch = sandbox.stub();
+    fetch.onCall(0).resolves(json({ err: true }, 503));
+    fetch.onCall(1).resolves(json({ ok: true }, 200));
+    const client = createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example/enterprise/projects/api',
+      authToken: getToken,
+      retryBaseDelayMs: 0,
+      fetch,
+    });
+
+    const { response } = await client.GET('/v1/countries');
+
+    expect(response.status).to.equal(200);
+    expect(fetch.callCount).to.equal(2);
+    // The token getter is invoked once per logical request; both physical attempts carry that
+    // same token (the retry layer clones the already-authenticated Request).
+    expect(calls).to.equal(1);
+    expect(fetch.firstCall.args[0].headers.get('Authorization')).to.equal('Bearer token-1');
+    expect(fetch.secondCall.args[0].headers.get('Authorization')).to.equal('Bearer token-1');
+  });
+
+  it('forwards an onRetry hook to the retry layer', async () => {
+    const fetch = sandbox.stub();
+    fetch.onCall(0).resolves(json({ err: true }, 503));
+    fetch.onCall(1).resolves(json({ ok: true }, 200));
+    const retries = [];
+    const client = createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example/enterprise/projects/api',
+      authToken: 'raw-ims-jwt',
+      retryBaseDelayMs: 0,
+      onRetry: (info) => retries.push(info),
+      fetch,
+    });
+
+    const { response } = await client.GET('/v1/countries');
+
+    expect(response.status).to.equal(200);
+    expect(retries).to.have.length(1);
+    expect(retries[0]).to.include({ method: 'GET', status: 503 });
+  });
+
+  it('throws at construction when authToken is neither a string nor a function', () => {
+    expect(() => createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example',
+      authToken: 42,
+    })).to.throw(/must be a string or a function/);
+  });
 });

@@ -43,8 +43,15 @@ export function isIdempotent(method) {
 }
 
 /**
- * 429 is always retryable (the request wasn't processed). A 5xx is retried only for
- * idempotent methods, so a POST that may have already created a resource is never replayed.
+ * 429 is retried for ANY method, including non-idempotent ones (POST). The assumption: the
+ * Semrush gateway rejects a rate-limited request at the edge, before it reaches the handler, so
+ * the create never happened and replaying it cannot duplicate a resource. This holds for the
+ * deployed API today, but it IS an upstream contract: if Semrush ever rate-limits *after*
+ * partially processing a write, a 429-retried POST (e.g. bulk-create-projects, create-brand-urls,
+ * create-prompt) could double-create. There is no idempotency-key header on these endpoints to
+ * lean on; revisit this method-agnostic 429 retry if that upstream behaviour changes. A 5xx, by
+ * contrast, is retried only for idempotent methods, so a POST that may have already created a
+ * resource is never replayed.
  * @param {string} method
  * @param {number} status
  * @returns {boolean}
@@ -116,17 +123,51 @@ export function nextRetryDelayMs(completedAttempt, baseDelayMs, response) {
 }
 
 /**
+ * Invokes a best-effort {@link OnRetry} hook, swallowing any error it throws so a broken
+ * observability callback can never break the retry loop or the request.
+ * @param {OnRetry} [onRetry]
+ * @param {object} info
+ */
+function notifyRetry(onRetry, info) {
+  if (!onRetry) {
+    return;
+  }
+  try {
+    onRetry(info);
+  } catch {
+    // best-effort: observability must never affect the request outcome
+  }
+}
+
+/**
+ * @callback OnRetry
+ * @param {object} info
+ * @param {number} info.attempt the 1-based number of the retry about to be made
+ * @param {number} info.delayMs the wait before this retry
+ * @param {string} info.method the HTTP method
+ * @param {number} [info.status] the retryable response status that triggered the retry, if any
+ * @param {Error} [info.error] the network error that triggered the retry, if any
+ * @returns {void}
+ */
+
+/**
  * Wraps a fetch with bounded exponential-backoff retries. Retryable statuses follow
  * {@link isRetryableStatus}; thrown network errors are retried only for idempotent methods.
  * The wait between attempts is {@link nextRetryDelayMs} — jittered exponential backoff that also
  * honours a `Retry-After` header. After exhausting retries it returns the last retryable response
  * (so the caller still sees e.g. the final 503) or rethrows the last network error.
+ *
+ * An optional `onRetry` callback is invoked just before each retry sleep, so consumers can log or
+ * meter retry behaviour (otherwise a retry loop silently delays a response by up to
+ * `maxRetries * MAX_RETRY_DELAY_MS`). It is best-effort: a throwing `onRetry` is swallowed so a
+ * broken observability hook can never break the request itself.
  * @param {typeof globalThis.fetch} baseFetch
  * @param {number} maxRetries
  * @param {number} baseDelayMs
+ * @param {OnRetry} [onRetry] optional best-effort retry-observability hook
  * @returns {typeof globalThis.fetch}
  */
-export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
+export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs, onRetry) {
   return async function retryingFetch(input, init) {
     const method = methodOf(input, init);
     // Floor at 0: a negative maxRetries would skip the loop entirely, leaving both lastResponse
@@ -135,6 +176,10 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
     // openapi-fetch calls us with a Request object; fetch() consumes its body on use, so a
     // bare replay throws "Request ... already used". Clone per attempt and never touch the
     // original, so every retry (incl. a 429 on a bodied POST) sends a fresh, unconsumed body.
+    // The clone preserves the request's headers — including the `Authorization` header the auth
+    // middleware set once for this logical request — so all attempts share that one token. The
+    // token is resolved per request, not per attempt; with the ceiling above the whole loop is
+    // bounded well under an IMS token's lifetime, so mid-loop expiry is a non-issue.
     const forAttempt = () => (input instanceof Request ? input.clone() : input);
     let lastResponse;
     let lastError;
@@ -142,6 +187,9 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
 
     for (let attempt = 0; attempt <= attempts; attempt += 1) {
       if (attempt > 0) {
+        notifyRetry(onRetry, {
+          attempt, delayMs: nextDelayMs, method, status: lastResponse?.status, error: lastError,
+        });
         // eslint-disable-next-line no-await-in-loop
         await sleep(nextDelayMs);
       }
@@ -152,12 +200,14 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
           return response;
         }
         lastResponse = response;
+        lastError = undefined;
         nextDelayMs = nextRetryDelayMs(attempt, baseDelayMs, response);
       } catch (error) {
         if (!isIdempotent(method)) {
           throw error;
         }
         lastError = error;
+        lastResponse = undefined;
         nextDelayMs = nextRetryDelayMs(attempt, baseDelayMs, null);
       }
     }
@@ -171,10 +221,20 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs) {
 
 /**
  * Normalises an {@link AuthTokenSource} into a getter, so callers can pass either a static
- * token or a (sync/async) function resolved per request.
+ * token or a (sync/async) function resolved per request. Rejects any other type at construction
+ * time — without this guard a stray `null`, number, or object would flow into the
+ * `Authorization` header (`Bearer [object Object]`) and surface only as an opaque upstream 401.
  * @param {AuthTokenSource} source
  * @returns {() => string | Promise<string>}
  */
 export function toTokenGetter(source) {
-  return typeof source === 'function' ? source : () => source;
+  if (typeof source === 'function') {
+    return source;
+  }
+  if (typeof source === 'string') {
+    return () => source;
+  }
+  throw new Error(
+    `Project Engine client: authToken must be a string or a function, got ${typeof source}`,
+  );
 }

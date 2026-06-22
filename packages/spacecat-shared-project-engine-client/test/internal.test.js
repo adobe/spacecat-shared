@@ -168,6 +168,47 @@ describe('createRetryingFetch', () => {
   });
 });
 
+describe('createRetryingFetch onRetry hook', () => {
+  it('invokes onRetry before each retry with the triggering status', async () => {
+    const base = sandbox.stub();
+    base.onCall(0).resolves(resp(503));
+    base.onCall(1).resolves(resp(200));
+    const calls = [];
+    const res = await createRetryingFetch(base, 2, 0, (info) => calls.push(info))('https://x', { method: 'GET' });
+    expect(res.status).to.equal(200);
+    expect(calls).to.have.length(1);
+    expect(calls[0]).to.include({
+      attempt: 1, delayMs: 0, method: 'GET', status: 503,
+    });
+    expect(calls[0].error).to.equal(undefined);
+  });
+
+  it('invokes onRetry with the network error (and no status) on an error retry', async () => {
+    const boom = new Error('network down');
+    const base = sandbox.stub();
+    base.onCall(0).rejects(boom);
+    base.onCall(1).resolves(resp(200));
+    const calls = [];
+    const res = await createRetryingFetch(base, 2, 0, (info) => calls.push(info))('https://x', { method: 'GET' });
+    expect(res.status).to.equal(200);
+    expect(calls).to.have.length(1);
+    expect(calls[0].error).to.equal(boom);
+    expect(calls[0].status).to.equal(undefined);
+  });
+
+  it('swallows a throwing onRetry and still completes the request', async () => {
+    const base = sandbox.stub();
+    base.onCall(0).resolves(resp(503));
+    base.onCall(1).resolves(resp(200));
+    const onRetry = () => {
+      throw new Error('observer boom');
+    };
+    const res = await createRetryingFetch(base, 2, 0, onRetry)('https://x', { method: 'GET' });
+    expect(res.status).to.equal(200);
+    expect(base.callCount).to.equal(2);
+  });
+});
+
 describe('parseRetryAfterMs', () => {
   it('parses a delta-seconds value into milliseconds', () => {
     expect(parseRetryAfterMs(resp(429, { 'retry-after': '5' }))).to.equal(5000);
@@ -239,5 +280,11 @@ describe('toTokenGetter (IMS token source)', () => {
 
   it('passes through an async getter for per-request tokens', async () => {
     expect(await toTokenGetter(async () => 'fresh-ims')()).to.equal('fresh-ims');
+  });
+
+  it('throws for a non-string, non-function source (surfaces misconfig early)', () => {
+    expect(() => toTokenGetter(null)).to.throw(/must be a string or a function/);
+    expect(() => toTokenGetter(42)).to.throw(/must be a string or a function/);
+    expect(() => toTokenGetter({})).to.throw(/must be a string or a function/);
   });
 });

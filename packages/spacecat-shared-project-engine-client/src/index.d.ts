@@ -18,8 +18,8 @@ export type AuthTokenSource = string | (() => string | Promise<string>);
 
 /**
  * A fully-typed Project Engine client over every operation in the generated `paths`.
- * The generated `paths` are already free of `Auth-Data-Jwt` — the overlay (CR2) strips it
- * at generate time — so no runtime narrowing is required here.
+ * The generated `paths` are already free of the legacy `Auth-Data-Jwt` header (the live API
+ * authenticates on `Authorization: Bearer`), so no runtime header narrowing is required here.
  */
 export type SerenityProjectEngineApiClient = Client<paths>;
 
@@ -40,6 +40,17 @@ export interface SerenityProjectEngineApiClientOptions {
   maxRetries?: number;
   /** Base backoff in ms; grows exponentially per attempt. Default 200. */
   retryBaseDelayMs?: number;
+  /**
+   * Best-effort hook invoked before each retry sleep, for logging/metrics. A retry loop is
+   * otherwise silent. A throwing hook is swallowed and never affects the request.
+   */
+  onRetry?: (info: {
+    attempt: number;
+    delayMs: number;
+    method: string;
+    status?: number;
+    error?: Error;
+  }) => void;
   /** Injectable fetch (tests, custom agents). Defaults to the global fetch. */
   fetch?: typeof globalThis.fetch;
 }

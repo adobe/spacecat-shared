@@ -55,3 +55,15 @@ describe('Project Engine foundation: generated TypeScript types', () => {
     expect(types).to.include('/v2/workspaces/{id}/projects');
   });
 });
+
+describe('Project Engine foundation: overlay guard', () => {
+  const types = read('src/generated/types.ts');
+
+  it('exposes GET /v1/ai_models on the typed surface (CR1)', () => {
+    expect(types).to.include('/v1/ai_models');
+  });
+
+  it('has no Auth-Data-Jwt header in generated types (CR2)', () => {
+    expect(types).to.not.include('Auth-Data-Jwt');
+  });
+});

@@ -1,0 +1,52 @@
+overlay: 1.0.0
+info:
+  title: User Manager spec corrections — align the vendored swagger with the live API
+  version: 1.0.0
+# The single source of truth for our corrections to the vendored Semrush User
+# Manager spec. scripts/apply-overlay.mjs reads THIS file and applies the actions
+# to the swagger2openapi output (build/openapi3.json); the vendored
+# spec/usermanager_swagger.yaml is never modified.
+#
+# CR1  Express Authorization: Bearer as the auth scheme; remove Auth-Data-Jwt.
+#      The spec models Auth-Data-Jwt as a required header on ~187 operations, but
+#      the live API authenticates on Authorization: Bearer <IMS> only (Semrush
+#      accepts the IMS bearer directly). Remove when Semrush fixes the spec upstream.
+# CR2  Correct GET /v1/workspaces/{id}/status — the spec types the 200 body as an
+#      array of WorkspaceCheckResponse, but the live API returns a single
+#      WorkspaceCheckResponse object ({ status: "not ready" | "created" | "error" }).
+#      The api-service transport reads it as an object (status.status === 'created'),
+#      so the typed surface must match. Remove when Semrush fixes the spec upstream.
+actions:
+  # ── CR1: Express Authorization: Bearer, remove Auth-Data-Jwt ─────────────
+  # Live API: Authorization: Bearer <IMS> -> 200; Auth-Data-Jwt -> 401.
+  - target: "$.components.securitySchemes"
+    description: "CR1: add the imsBearer security scheme"
+    update:
+      imsBearer:
+        type: http
+        scheme: bearer
+        description: "IMS user bearer token, accepted directly by the Semrush User Manager API."
+
+  - target: "$"
+    description: "CR1: apply imsBearer as the global security requirement"
+    update:
+      security:
+        - imsBearer: []
+
+  - target: "$.paths.*.*.parameters[?(@.name == 'Auth-Data-Jwt')]"
+    description: "CR1: remove the Auth-Data-Jwt header param from every operation"
+    remove: true
+
+  # ── CR2: GET /v1/workspaces/{id}/status returns an object, not an array ───
+  # Upstream types the 200 as `type: array, items: WorkspaceCheckResponse`; the
+  # live API returns the bare object `{ status: "created" }`. Drop the array
+  # wrapper (remove the old schema, then point it at the object schema).
+  - target: "$.paths['/v1/workspaces/{id}/status'].get.responses['200'].content['application/json'].schema"
+    description: "CR2: drop the array wrapper on the status 200 schema"
+    remove: true
+
+  - target: "$.paths['/v1/workspaces/{id}/status'].get.responses['200'].content['application/json']"
+    description: "CR2: status returns a single WorkspaceCheckResponse object"
+    update:
+      schema:
+        $ref: "#/components/schemas/handlers.WorkspaceCheckResponse"

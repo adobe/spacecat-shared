@@ -15,9 +15,10 @@
     "lint:fix": "eslint --fix .",
     "clean": "rm -rf node_modules build .counterfact",
     "spec:convert": "mkdir -p build && swagger2openapi spec/usermanager_swagger.yaml --patch --outfile build/openapi3.json",
+    "spec:overlay": "node scripts/apply-overlay.mjs",
     "generate:ts": "openapi-typescript build/openapi3.json --output src/generated/types.ts",
     "generate:pydantic": "datamodel-codegen --input build/openapi3.json --input-file-type openapi --output python/serenity_user_manager/ --output-model-type pydantic_v2.BaseModel",
-    "generate": "npm run spec:convert && npm run generate:ts && npm run generate:pydantic",
+    "generate": "npm run spec:convert && npm run spec:overlay && npm run generate:ts && npm run generate:pydantic",
     "mock": "counterfact spec/usermanager_swagger.yaml .counterfact --port 4010"
   },
   "mocha": {
@@ -43,6 +44,7 @@
     "c8": "11.0.0",
     "chai": "6.2.2",
     "counterfact": "2.14.0",
+    "js-yaml": "4.1.1",
     "mocha": "11.7.6",
     "mocha-multi-reporters": "1.5.1",
     "openapi-typescript": "7.13.0",

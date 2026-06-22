@@ -9612,10 +9612,7 @@ export interface operations {
                 /** @description Report Suite ID */
                 rsid: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description adobe_proxy_auth_id identifier */
                 adobe_proxy_auth_id: string;
@@ -9664,10 +9661,7 @@ export interface operations {
                 /** @description Report Suite ID */
                 rsid: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description adobe_proxy_auth_id identifier */
                 adobe_proxy_auth_id: string;
@@ -9713,10 +9707,7 @@ export interface operations {
     "adobe-analytics-validate": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Adobe Proxy Auth ID */
                 adobe_proxy_auth_id: string;
@@ -9781,10 +9772,7 @@ export interface operations {
     "adobe-analytics-get-report-suites": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description adobe_proxy_auth_id identifier */
                 adobe_proxy_auth_id: string;
@@ -9835,10 +9823,7 @@ export interface operations {
                 /** @description Page number (1-indexed) */
                 page?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description adobe_proxy_auth_id identifier */
                 adobe_proxy_auth_id: string;
@@ -9884,10 +9869,7 @@ export interface operations {
     "adobe-analytics-get-status": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description adobe_proxy_auth_id identifier */
                 adobe_proxy_auth_id: string;
@@ -9931,10 +9913,7 @@ export interface operations {
     "adobe-analytics-create-credentials": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -9975,10 +9954,7 @@ export interface operations {
     "adobe-analytics-get-bulk-status": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -10024,10 +10000,7 @@ export interface operations {
     countries: {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -10065,10 +10038,7 @@ export interface operations {
     "goals-metrics-list": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -11338,10 +11308,7 @@ export interface operations {
                 /** @description roles */
                 roles: string[];
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description user id */
                 user_id: number;
@@ -11394,10 +11361,7 @@ export interface operations {
                 /** @description Filter by membership status. If provided, only these statuses are considered valid. Allowed: member, guest, basic. */
                 membership?: string[];
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 userId: number;
@@ -12218,10 +12182,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -12362,10 +12323,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -13293,10 +13251,7 @@ export interface operations {
     languages: {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -13343,10 +13298,7 @@ export interface operations {
                 /** @description filter by search engine(bing) */
                 filter_engine?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -13375,10 +13327,7 @@ export interface operations {
     "user-profile": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -13443,10 +13392,7 @@ export interface operations {
     "user-profile-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -13498,10 +13444,7 @@ export interface operations {
     "users-required-units": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -13565,10 +13508,7 @@ export interface operations {
                 /** @description user id */
                 email: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -13642,10 +13582,7 @@ export interface operations {
     "work-categories": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -13688,10 +13625,7 @@ export interface operations {
                 /** @description page size */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -13738,10 +13672,7 @@ export interface operations {
     "workspace-details": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -13791,10 +13722,7 @@ export interface operations {
     "workspace-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -13849,10 +13777,7 @@ export interface operations {
     "workspace-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -13911,10 +13836,7 @@ export interface operations {
     "workspace-api-units-get": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14032,8 +13954,6 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
                 /** @description Signed upload receipt token */
                 "X-Upload-Receipt": string;
             };
@@ -14091,10 +14011,7 @@ export interface operations {
     "workspaces-family": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14144,10 +14061,7 @@ export interface operations {
     "workspaces-has-children": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14200,8 +14114,6 @@ export interface operations {
             header: {
                 /** @description Signed upload receipt token */
                 "X-Upload-Receipt": string;
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
             };
             path: {
                 /** @description Workspace UUID */
@@ -14280,10 +14192,7 @@ export interface operations {
                 /** @description search by keyword list name */
                 search?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14324,10 +14233,7 @@ export interface operations {
     "keywordslists-post": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14373,10 +14279,7 @@ export interface operations {
     "keywordslists-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14422,10 +14325,7 @@ export interface operations {
     "keywordslists-rename": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14484,10 +14384,7 @@ export interface operations {
                 /** @description sort direction, default:containing */
                 operation?: "eq" | "containing" | "begins_with" | "ends_with" | "word_matching_separator" | "exact_matching" | "phrase_matching" | "broad_matching";
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14530,10 +14427,7 @@ export interface operations {
     "keywordslists-keywords-post": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14581,10 +14475,7 @@ export interface operations {
     "keywordslists-keywords-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14632,10 +14523,7 @@ export interface operations {
     "keywordslists-keywords-tags-add": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14678,10 +14566,7 @@ export interface operations {
     "keywordslists-keywords-tags-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14724,10 +14609,7 @@ export interface operations {
     "keywordslists-keywords-tags-patch": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14775,10 +14657,7 @@ export interface operations {
     "keywordslists-keywords-post-upload": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14849,10 +14728,7 @@ export interface operations {
     "keywords-list-members": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14904,10 +14780,7 @@ export interface operations {
     "keywords-list-add-members": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -14962,10 +14835,7 @@ export interface operations {
     "keywords-list-delete-members": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15020,10 +14890,7 @@ export interface operations {
     "keywords-list-update-members-role": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15078,10 +14945,7 @@ export interface operations {
     "keywordslists-databases-get": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15122,10 +14986,7 @@ export interface operations {
     "workspace-light-details": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15178,10 +15039,7 @@ export interface operations {
                 /** @description set true if you want the master workspace's limits */
                 master?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15248,10 +15106,7 @@ export interface operations {
                 /** @description include parent workspace */
                 include_parent_workspace?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15301,10 +15156,7 @@ export interface operations {
     "workspace-add-members": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15363,10 +15215,7 @@ export interface operations {
     "workspace-delete-members": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15421,10 +15270,7 @@ export interface operations {
     "workspaces-members-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15479,10 +15325,7 @@ export interface operations {
     "workspace-details-parent": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15532,10 +15375,7 @@ export interface operations {
     "workspace-resources-master": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15590,10 +15430,7 @@ export interface operations {
                 /** @description page size */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15652,10 +15489,7 @@ export interface operations {
     "project-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15740,10 +15574,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15804,10 +15635,7 @@ export interface operations {
     "project-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15891,10 +15719,7 @@ export interface operations {
     "project-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -15955,10 +15780,7 @@ export interface operations {
     "workspaces-clone-benchmarks-tags": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16022,10 +15844,7 @@ export interface operations {
     "discard-draft-project": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16075,10 +15894,7 @@ export interface operations {
     "set-project-favourite": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16140,10 +15956,7 @@ export interface operations {
                 /** @description limit number */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16195,10 +16008,7 @@ export interface operations {
     "goal-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16250,10 +16060,7 @@ export interface operations {
     "goals-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16310,10 +16117,7 @@ export interface operations {
     "goal-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16367,10 +16171,7 @@ export interface operations {
     "goal-simport": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16427,10 +16228,7 @@ export interface operations {
     "project-limits-get": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16487,10 +16285,7 @@ export interface operations {
                 /** @description page size */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16542,10 +16337,7 @@ export interface operations {
     "project-add-members": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16595,10 +16387,7 @@ export interface operations {
     "project-delete-members": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16653,10 +16442,7 @@ export interface operations {
     "project-update-members-role": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16715,10 +16501,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16788,10 +16571,7 @@ export interface operations {
     "pagespeed-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16866,10 +16646,7 @@ export interface operations {
     "pagespeed-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -16944,10 +16721,7 @@ export interface operations {
     "pagespeed-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17033,10 +16807,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17111,10 +16882,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17194,10 +16962,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17274,10 +17039,7 @@ export interface operations {
     "pagespeed-add-named-keywords": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17354,10 +17116,7 @@ export interface operations {
     "crawler-limits-get": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17420,10 +17179,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17495,10 +17251,7 @@ export interface operations {
     "pagespeed-add-urls": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17575,10 +17328,7 @@ export interface operations {
     "pagespeed-delete-urls": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17655,10 +17405,7 @@ export interface operations {
     "pagespeed-visible": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17735,10 +17482,7 @@ export interface operations {
     "project-publish-async": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17799,10 +17543,7 @@ export interface operations {
                 /** @description search by segment name */
                 search?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17845,10 +17586,7 @@ export interface operations {
     "project-segment-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17897,10 +17635,7 @@ export interface operations {
                 /** @description whether to show only for live projects */
                 live?: "true" | "false";
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -17945,10 +17680,7 @@ export interface operations {
     "project-segment-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18000,10 +17732,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18064,10 +17793,7 @@ export interface operations {
     "project-add-target": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18142,10 +17868,7 @@ export interface operations {
     "project-target-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18211,10 +17934,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18275,10 +17995,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18350,10 +18067,7 @@ export interface operations {
     "project-add-benchmarks": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18430,10 +18144,7 @@ export interface operations {
     "project-delete-benchmarks": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18512,10 +18223,7 @@ export interface operations {
     "project-update-benchmarks": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18594,10 +18302,7 @@ export interface operations {
     "project-bulk-update-benchmarks": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18677,10 +18382,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18750,10 +18452,7 @@ export interface operations {
     "project-remove-tags-benchmarks": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18830,10 +18529,7 @@ export interface operations {
     "project-upload-benchmarks": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18916,10 +18612,7 @@ export interface operations {
                 /** @description preferred url(to filter keywords by preferred_url) */
                 preferred_url?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -18982,10 +18675,7 @@ export interface operations {
     "project-add-keywords": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19062,10 +18752,7 @@ export interface operations {
     "project-delete-keywords": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19142,10 +18829,7 @@ export interface operations {
     "targets-keywords-by-names": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19222,10 +18906,7 @@ export interface operations {
     "keywords-preferred-urls-upload": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19297,10 +18978,7 @@ export interface operations {
     "project-update-keywords": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19371,10 +19049,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19444,10 +19119,7 @@ export interface operations {
     "keywords-related-tag-ids-get": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19517,10 +19189,7 @@ export interface operations {
     "keywords-tags-relations-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19595,10 +19264,7 @@ export interface operations {
     "keywords-metrics": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19663,10 +19329,7 @@ export interface operations {
     "project-add-tagged-keywords": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19739,10 +19402,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19812,10 +19472,7 @@ export interface operations {
     "project-upload-tagged-keywords": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19894,10 +19551,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -19960,10 +19614,7 @@ export interface operations {
     "project-add-tags": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20040,10 +19691,7 @@ export interface operations {
     "project-delete-tags": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20120,10 +19768,7 @@ export interface operations {
     "project-update-tag": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20205,10 +19850,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20289,10 +19931,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20360,10 +19999,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20440,10 +20076,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20511,10 +20144,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20577,10 +20207,7 @@ export interface operations {
     "workspaces-clone-keywords-tags": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20647,10 +20274,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20720,10 +20344,7 @@ export interface operations {
     "url-groups-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20793,10 +20414,7 @@ export interface operations {
     "url-groups-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20871,10 +20489,7 @@ export interface operations {
     "url-groups-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -20951,10 +20566,7 @@ export interface operations {
                 /** @description page size */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -21013,10 +20625,7 @@ export interface operations {
     "workspace-resources": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -21066,10 +20675,7 @@ export interface operations {
     "workspace-transfer-resources": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -21124,10 +20730,7 @@ export interface operations {
     "user-workspace-role": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -21184,10 +20787,7 @@ export interface operations {
                 /** @description whether to show only for live projects */
                 live?: "true" | "false";
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -21228,10 +20828,7 @@ export interface operations {
     "service-units-balance-get": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -21290,10 +20887,7 @@ export interface operations {
                 /** @description page size */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -21352,10 +20946,7 @@ export interface operations {
     "service-credits-transaction-get": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -21416,10 +21007,7 @@ export interface operations {
     "workspaces-status-get": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -21434,7 +21022,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["handlers.WorkspaceCheckResponse"][];
+                    "application/json": components["schemas"]["handlers.WorkspaceCheckResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -21478,10 +21066,7 @@ export interface operations {
                 /** @description Owner type filter */
                 owner_id?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -21539,10 +21124,7 @@ export interface operations {
     "workspace-connections-delete": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -21603,10 +21185,7 @@ export interface operations {
     "workspace-connections-byid": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -21666,10 +21245,7 @@ export interface operations {
     "workspace-connection-attach-project": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -21729,10 +21305,7 @@ export interface operations {
     "workspace-connection-detach-project": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -21792,10 +21365,7 @@ export interface operations {
     "adobe-analytics-connection-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -21856,10 +21426,7 @@ export interface operations {
     "adobe-analytics-connection-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -21922,10 +21489,7 @@ export interface operations {
     "workspace-connections-merge": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -21986,10 +21550,7 @@ export interface operations {
     "ads-connection-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -22045,10 +21606,7 @@ export interface operations {
     "ads-connection-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -22106,10 +21664,7 @@ export interface operations {
     "analytics-connection-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -22165,10 +21720,7 @@ export interface operations {
     "analytics-connection-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -22226,10 +21778,7 @@ export interface operations {
     "console-connection-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -22285,10 +21834,7 @@ export interface operations {
     "console-connection-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -22346,10 +21892,7 @@ export interface operations {
     "log-file-analysis-connection-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -22405,10 +21948,7 @@ export interface operations {
     "log-file-analysis-connection-update": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -22466,10 +22006,7 @@ export interface operations {
     "workspace-connection-owners": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -22517,10 +22054,7 @@ export interface operations {
     "workspace-project-connections": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -22580,10 +22114,7 @@ export interface operations {
     "workspaces-light-list": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -22630,10 +22161,7 @@ export interface operations {
     "total-limits-find": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -22682,10 +22210,7 @@ export interface operations {
     "workspace-resources-find-all": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -22734,10 +22259,7 @@ export interface operations {
     "tiers-list": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -22843,10 +22365,7 @@ export interface operations {
     "adobe-analytics-create-credentials-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -22894,10 +22413,7 @@ export interface operations {
                 /** @description Report Suite ID */
                 rsid: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -22959,10 +22475,7 @@ export interface operations {
                 /** @description Report Suite ID */
                 rsid: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -23017,10 +22530,7 @@ export interface operations {
     "adobe-analytics-validate-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -23092,10 +22602,7 @@ export interface operations {
                 /** @description Adobe global company ID */
                 global_company_id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -23159,10 +22666,7 @@ export interface operations {
                 /** @description Page number (1-indexed) */
                 page?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -23220,10 +22724,7 @@ export interface operations {
                 /** @description Internal credential ID */
                 credential_id: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -24060,10 +23561,7 @@ export interface operations {
     "workspace-details-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24122,10 +23620,7 @@ export interface operations {
     "workspace-child-create-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description parent workspace id */
                 id: string;
@@ -24193,10 +23688,7 @@ export interface operations {
                 /** @description page size (max 100) */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24264,10 +23756,7 @@ export interface operations {
     "project-create-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24349,10 +23838,7 @@ export interface operations {
     "project-limits-get-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24406,10 +23892,7 @@ export interface operations {
     "project-update-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24493,10 +23976,7 @@ export interface operations {
     "project-get-keywords-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24564,10 +24044,7 @@ export interface operations {
     "project-update-keyword-tags-batch-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24637,10 +24114,7 @@ export interface operations {
     "project-delete-keyword-tags-batch-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24721,10 +24195,7 @@ export interface operations {
                 /** @description live */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24787,10 +24258,7 @@ export interface operations {
     "project-delete-tags-batch-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24865,10 +24333,7 @@ export interface operations {
     "workspace-transfer-resources-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -24923,10 +24388,7 @@ export interface operations {
     "adobe-analytics-connection-create-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -24987,10 +24449,7 @@ export interface operations {
     "adobe-analytics-connection-update-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 workspace_id: string;
@@ -25053,10 +24512,7 @@ export interface operations {
     "project-get-keywords-v3": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -25124,10 +24580,7 @@ export interface operations {
     "workspace-owner-api-key-get": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -25204,10 +24657,7 @@ export interface operations {
     "project-segment-create": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace id */
                 id: string;
@@ -25250,10 +24700,7 @@ export interface operations {
     "segments-copy-to-projects": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -25324,10 +24771,7 @@ export interface operations {
                 /** @description Export format: csv or xlsx */
                 format?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -25393,10 +24837,7 @@ export interface operations {
     "segments-import": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;

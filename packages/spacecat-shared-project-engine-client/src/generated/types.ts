@@ -1155,7 +1155,7 @@ export interface paths {
         };
         /**
          * List V2 projects for the workspace (lightweight, for selectors)
-         * @description List V2 projects for the workspace — a lightweight view suitable for selectors. Maximum 100 items per page. Supports product-specific default sorting and custom sorting via query parameters. Adobe gateway correction: the upstream description claims this returns only published (live) projects, but a project that has never been published yet (its initial draft) also appears in this list; once a project has been published at least once, the list reflects its published view.
+         * @description List V2 projects for the workspace — a lightweight view suitable for selectors. Maximum 100 items per page. Supports product-specific default sorting and custom sorting via query parameters. Note: contrary to the upstream description, this does not return only published (live) projects — a project that has never been published yet (its initial draft) also appears in this list; once a project has been published at least once, the list reflects its published view.
          */
         get: operations["projects-list-projects-v2"];
         put?: never;

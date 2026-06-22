@@ -41,6 +41,9 @@ actions:
   # Upstream types the 200 as `type: array, items: WorkspaceCheckResponse`; the
   # live API returns the bare object `{ status: "created" }`. Drop the array
   # wrapper (remove the old schema, then point it at the object schema).
+  # ORDER MATTERS: the remove must run before the update — `update` deep-merges,
+  # so updating first would leave `type: array`/`items` alongside the new `$ref`
+  # (an invalid mixed schema). Do not reorder these two actions.
   - target: "$.paths['/v1/workspaces/{id}/status'].get.responses['200'].content['application/json'].schema"
     description: "CR2: drop the array wrapper on the status 200 schema"
     remove: true

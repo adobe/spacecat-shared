@@ -17,7 +17,7 @@
     "spec:convert": "mkdir -p build && swagger2openapi spec/usermanager_swagger.yaml --patch --outfile build/openapi3.json",
     "spec:overlay": "node scripts/apply-overlay.mjs",
     "generate:ts": "openapi-typescript build/openapi3.json --output src/generated/types.ts",
-    "generate:pydantic": "datamodel-codegen --input build/openapi3.json --input-file-type openapi --output python/serenity_user_manager/ --output-model-type pydantic_v2.BaseModel",
+    "generate:pydantic": "command -v datamodel-codegen >/dev/null 2>&1 || { echo 'ERROR: datamodel-codegen not found on PATH. Install it first: pip install datamodel-code-generator'; exit 1; }; datamodel-codegen --input build/openapi3.json --input-file-type openapi --output python/serenity_user_manager/ --output-model-type pydantic_v2.BaseModel",
     "generate": "npm run spec:convert && npm run spec:overlay && npm run generate:ts && npm run generate:pydantic",
     "mock": "counterfact spec/usermanager_swagger.yaml .counterfact --port 4010"
   },

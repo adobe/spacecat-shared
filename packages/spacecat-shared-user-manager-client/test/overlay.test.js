@@ -47,6 +47,14 @@ describe('apply-overlay: deepMerge', () => {
     deepMerge(target, { a: { y: 9, z: 3 }, list: [3], scalar: 'new' });
     expect(target).to.deep.equal({ a: { x: 1, y: 9, z: 3 }, list: [3], scalar: 'new' });
   });
+
+  it('skips prototype-pollution keys (no Object.prototype mutation)', () => {
+    const target = {};
+    deepMerge(target, JSON.parse('{ "__proto__": { "polluted": true }, "ok": 1 }'));
+    expect(target.ok).to.equal(1);
+    expect({}.polluted).to.equal(undefined);
+    expect(Object.prototype).to.not.have.property('polluted');
+  });
 });
 
 describe('apply-overlay: select', () => {

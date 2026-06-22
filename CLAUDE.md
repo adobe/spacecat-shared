@@ -41,7 +41,7 @@ Coverage enforcement: **100% lines/statements, 97% branches** per package (see e
 
 ## Architecture Overview
 
-This is the **foundation library layer** for all SpaceCat Node.js services. It's an npm workspaces monorepo (no lerna/nx) containing 23 packages that provide data access, API clients, utilities, and auth used by `spacecat-api-service`, `spacecat-audit-worker`, `spacecat-import-worker`, and other platform services.
+This is the **foundation library layer** for all SpaceCat Node.js services. It's an npm workspaces monorepo (no lerna/nx) whose packages provide data access, API clients, utilities, and auth used by `spacecat-api-service`, `spacecat-audit-worker`, `spacecat-import-worker`, and other platform services.
 
 ### Monorepo Structure
 

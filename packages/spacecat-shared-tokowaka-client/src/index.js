@@ -712,7 +712,8 @@ class TokowakaClient {
    * @param {Array} suggestions - Array of suggestion entities to deploy
    * @returns {Promise<Object>} - Deployment result with succeeded/failed suggestions
    */
-  async deploySuggestions(site, opportunity, suggestions) {
+  async deploySuggestions(site, opportunity, suggestions, metadata = {}) {
+    const { applyStale = false } = metadata;
     const opportunityType = opportunity.getType();
     const baseURL = getEffectiveBaseURL(site);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
@@ -788,6 +789,10 @@ class TokowakaClient {
         continue;
       }
 
+      if (applyStale && newConfig.patches?.length > 0) {
+        newConfig.patches = newConfig.patches.map((patch) => ({ ...patch, applyStale: true }));
+      }
+
       // Merge with existing config for this URL
       const config = this.mergeConfigs(existingConfig, newConfig);
 
@@ -828,8 +833,15 @@ class TokowakaClient {
    * @returns {Promise<number>} Number of patches removed
    * @private
    */
-  // eslint-disable-next-line max-len
-  async #rollbackPerUrlConfig(fullUrl, urlSuggestions, opportunity, mapper, opportunityType, s3Paths, rolledBackUrls) {
+  async #rollbackPerUrlConfig(
+    fullUrl,
+    urlSuggestions,
+    opportunity,
+    mapper,
+    opportunityType,
+    s3Paths,
+    rolledBackUrls,
+  ) {
     const existingConfig = await this.fetchConfig(fullUrl);
     if (!existingConfig) {
       this.log.warn(`No existing configuration found for URL: ${fullUrl}`);
@@ -1427,9 +1439,11 @@ class TokowakaClient {
    * @returns {Promise<{ succeededSuggestions: Array, failedSuggestions: Array }>}
    * @private
    */
-  async #deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy) {
+  // eslint-disable-next-line max-len
+  async #deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, metadata = {}) {
     try {
-      const result = await this.deploySuggestions(site, opportunity, validSuggestions);
+      // eslint-disable-next-line max-len
+      const result = await this.deploySuggestions(site, opportunity, validSuggestions, metadata);
       const deploymentTimestamp = Date.now();
 
       const succeeded = result.succeededSuggestions.map((s) => {
@@ -1590,6 +1604,7 @@ class TokowakaClient {
     targetSuggestions,
     allSuggestions,
     updatedBy = 'edge-deploy',
+    metadata = {},
   }) {
     // Step 1: classify suggestions into pattern vs per-URL buckets.
     // eslint-disable-next-line max-len
@@ -1609,7 +1624,7 @@ class TokowakaClient {
     // Step 3: deploy per-URL suggestions via S3.
     if (validSuggestions.length > 0) {
       // eslint-disable-next-line max-len
-      const result = await this.#deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy);
+      const result = await this.#deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, metadata);
       const { succeededSuggestions: perUrlSucceeded, failedSuggestions: perUrlFailed } = result;
       succeededSuggestions = perUrlSucceeded;
       failedSuggestions.push(...perUrlFailed);
@@ -1697,6 +1712,74 @@ class TokowakaClient {
     }
 
     return { succeededSuggestions, failedSuggestions, coveredSuggestions };
+  }
+
+  /**
+   * Strips the `applyStale` flag from patches in S3 for the given per-URL suggestions.
+   * Called when an experiment completes so edge reverts to normal (non-stale) behaviour.
+   * Pattern / domain-wide suggestions are skipped — they have no per-URL S3 config.
+   * CDN cache is invalidated for every URL whose config was actually modified.
+   *
+   * @param {Object} site - Site entity
+   * @param {Object} opportunity - Opportunity entity
+   * @param {Array}  suggestions - Suggestion entities to clear (may include pattern suggestions,
+   *   which are silently skipped)
+   * @returns {Promise<void>}
+   */
+  async clearApplyStaleFromPatches(site, opportunity, suggestions) {
+    const baseURL = getEffectiveBaseURL(site);
+
+    const perUrlSuggestions = suggestions.filter((s) => {
+      const data = s.getData();
+      return data?.url && !Array.isArray(data?.allowedRegexPatterns);
+    });
+
+    if (perUrlSuggestions.length === 0) {
+      return;
+    }
+
+    const suggestionsByUrl = groupSuggestionsByUrlPath(perUrlSuggestions, baseURL, this.log);
+    const clearedUrls = [];
+
+    for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
+      const fullUrl = new URL(urlPath, baseURL).toString();
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const existingConfig = await this.fetchConfig(fullUrl);
+        if (!existingConfig?.patches?.length) {
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
+        const suggestionIds = new Set(urlSuggestions.map((s) => s.getId()));
+        let modified = false;
+        const updatedPatches = existingConfig.patches.map((patch) => {
+          if (suggestionIds.has(patch.suggestionId) && patch.applyStale) {
+            modified = true;
+            const { applyStale: _, ...rest } = patch;
+            return rest;
+          }
+          return patch;
+        });
+
+        if (modified) {
+          // eslint-disable-next-line no-await-in-loop
+          await this.uploadConfig(fullUrl, { ...existingConfig, patches: updatedPatches });
+          clearedUrls.push(fullUrl);
+        }
+      } catch (err) {
+        this.log.error(`[clear-apply-stale-failed] Failed to process URL ${fullUrl}: ${err.message}`, err);
+      }
+    }
+
+    if (clearedUrls.length > 0) {
+      try {
+        await this.invalidateCdnCache({ urls: clearedUrls });
+        this.log.info(`[clear-apply-stale] Cleared applyStale from ${clearedUrls.length} URL(s) and invalidated CDN`);
+      } catch (err) {
+        this.log.warn(`[clear-apply-stale-failed] CDN invalidation failed for ${clearedUrls.length} URL(s), S3 configs already updated: ${err.message}`, err);
+      }
+    }
   }
 }
 

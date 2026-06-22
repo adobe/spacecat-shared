@@ -41,7 +41,7 @@ import { createRetryingFetch, toTokenGetter } from './internal.js';
  * @property {import('./internal.js').OnRetry} [onRetry] Best-effort hook invoked before each
  *   retry sleep (`{ attempt, delayMs, method, status?, error? }`), for logging/metrics. A retry
  *   loop is otherwise silent — an operator can't tell "slow upstream" from "stuck in backoff". A
- *   throwing hook is swallowed and never affects the request.
+ *   throwing or rejecting hook is swallowed and never affects the request.
  * @property {typeof globalThis.fetch} [fetch] Injectable fetch (tests, custom agents).
  *   Defaults to the global fetch.
  */

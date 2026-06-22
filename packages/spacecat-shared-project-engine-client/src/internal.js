@@ -123,8 +123,11 @@ export function nextRetryDelayMs(completedAttempt, baseDelayMs, response) {
 }
 
 /**
- * Invokes a best-effort {@link OnRetry} hook, swallowing any error it throws so a broken
- * observability callback can never break the retry loop or the request.
+ * Invokes a best-effort {@link OnRetry} hook, swallowing both synchronous throws and asynchronous
+ * rejections so a broken observability callback can never break the retry loop or the request.
+ * The hook fires fire-and-forget (never awaited), so it cannot delay a retry. Its own failures are
+ * deliberately silent (no signal is emitted) — surfacing them would itself need an observability
+ * channel; observability must never affect the request outcome.
  * @param {OnRetry} [onRetry]
  * @param {object} info
  */
@@ -133,9 +136,14 @@ function notifyRetry(onRetry, info) {
     return;
   }
   try {
-    onRetry(info);
+    const result = onRetry(info);
+    // An async onRetry returns a promise; sink its rejection here so a rejecting hook can't escape
+    // as an unhandled promise rejection (which crashes the process in Node 18+). Not awaited.
+    if (result && typeof result.catch === 'function') {
+      result.catch(() => {});
+    }
   } catch {
-    // best-effort: observability must never affect the request outcome
+    // best-effort: a throwing (sync) hook is swallowed, same as a rejecting (async) one above.
   }
 }
 
@@ -159,8 +167,9 @@ function notifyRetry(onRetry, info) {
  *
  * An optional `onRetry` callback is invoked just before each retry sleep, so consumers can log or
  * meter retry behaviour (otherwise a retry loop silently delays a response by up to
- * `maxRetries * MAX_RETRY_DELAY_MS`). It is best-effort: a throwing `onRetry` is swallowed so a
- * broken observability hook can never break the request itself.
+ * `maxRetries * MAX_RETRY_DELAY_MS`). It is best-effort and fire-and-forget: a throwing (sync) or
+ * rejecting (async) `onRetry` is swallowed so a broken observability hook can never break the
+ * request itself.
  * @param {typeof globalThis.fetch} baseFetch
  * @param {number} maxRetries
  * @param {number} baseDelayMs

@@ -171,34 +171,42 @@ export function applyAction(doc, action) {
 }
 
 /**
- * Applies every action of an overlay document to `spec` in place. Logs each action's hit count,
- * and WARNS (does not throw) when a `remove` matches nothing: a 0-match remove is a valid future
- * state — an upstream spec that already dropped the targeted node — but it means the correction is
- * now a no-op and should be pruned, so it must not pass silently. A 0-match `update` DOES throw
- * (see {@link applyAction}), since updating a node that has moved is a genuine miss.
+ * @typedef {object} OverlayActionResult
+ * @property {string} target the action's JSONPath target
+ * @property {boolean} remove whether the action was a remove (vs an update)
+ * @property {number} hits how many nodes the action touched
+ * @property {boolean} staleRemove true when a `remove` matched 0 nodes (the correction is now a
+ *   no-op — a valid future state once the upstream spec drops the node, but worth pruning)
+ */
+
+/**
+ * Applies every action of an overlay document to `spec` in place and returns a structured result
+ * per action — it prints NOTHING, so a programmatic caller gets no stray stdout; user-facing
+ * logging is the CLI {@link main}'s job. A 0-match `remove` is surfaced via `staleRemove` rather
+ * than passing silently; a 0-match `update` DOES throw (see {@link applyAction}), since updating a
+ * node that has moved is a genuine miss.
  * @param {object} spec the OAS3 document to mutate in place
  * @param {{ actions?: Array<object> }} overlay
- * @returns {number} total node count touched across all actions
+ * @returns {{ total: number, results: OverlayActionResult[] }}
  */
 export function applyOverlay(spec, overlay) {
   if (!Array.isArray(overlay?.actions) || overlay.actions.length === 0) {
     throw new Error('Overlay has no actions');
   }
+  const results = [];
   let total = 0;
   for (const action of overlay.actions) {
     const hits = applyAction(spec, action);
     total += hits;
-    // eslint-disable-next-line no-console
-    console.log(`overlay: ${action.remove ? 'remove' : 'update'} ${action.target} -> ${hits} node(s)`);
-    if (action.remove && hits === 0) {
-      // eslint-disable-next-line no-console
-      console.warn(`overlay: WARNING remove matched 0 nodes (stale correction?): ${action.target}`);
-    }
+    const remove = Boolean(action.remove);
+    results.push({
+      target: action.target, remove, hits, staleRemove: remove && hits === 0,
+    });
   }
-  return total;
+  return { total, results };
 }
 
-/** CLI entry: read the converted spec + the overlay, apply in place, write back. */
+/** CLI entry: read the converted spec + the overlay, apply in place, log, write back. */
 function main() {
   const here = dirname(fileURLToPath(import.meta.url));
   const pkgRoot = resolve(here, '..');
@@ -206,10 +214,18 @@ function main() {
   const overlayPath = resolve(pkgRoot, 'spec/overlays/corrections.yaml');
   const spec = JSON.parse(readFileSync(specPath, 'utf-8'));
   const overlay = yaml.load(readFileSync(overlayPath, 'utf-8'));
-  applyOverlay(spec, overlay);
+  const { results } = applyOverlay(spec, overlay);
+  for (const r of results) {
+    // eslint-disable-next-line no-console
+    console.log(`overlay: ${r.remove ? 'remove' : 'update'} ${r.target} -> ${r.hits} node(s)`);
+    if (r.staleRemove) {
+      // eslint-disable-next-line no-console
+      console.warn(`overlay: WARNING remove matched 0 nodes (stale correction?): ${r.target}`);
+    }
+  }
   writeFileSync(specPath, JSON.stringify(spec, null, 2), 'utf-8');
   // eslint-disable-next-line no-console
-  console.log(`✔ overlay applied (${overlay.actions.length} actions) → ${specPath}`);
+  console.log(`✔ overlay applied (${results.length} actions) → ${specPath}`);
 }
 
 // Run only when executed directly (`node scripts/apply-overlay.mjs`), not when imported by tests.

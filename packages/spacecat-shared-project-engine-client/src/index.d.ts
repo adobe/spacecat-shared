@@ -42,7 +42,8 @@ export interface SerenityProjectEngineApiClientOptions {
   retryBaseDelayMs?: number;
   /**
    * Best-effort hook invoked before each retry sleep, for logging/metrics. A retry loop is
-   * otherwise silent. A throwing hook is swallowed and never affects the request.
+   * otherwise silent. A throwing or rejecting hook is swallowed and never affects the request.
+   * May be async; it is fire-and-forget (never awaited) so it cannot delay a retry.
    */
   onRetry?: (info: {
     attempt: number;
@@ -50,7 +51,7 @@ export interface SerenityProjectEngineApiClientOptions {
     method: string;
     status?: number;
     error?: Error;
-  }) => void;
+  }) => void | Promise<void>;
   /** Injectable fetch (tests, custom agents). Defaults to the global fetch. */
   fetch?: typeof globalThis.fetch;
 }

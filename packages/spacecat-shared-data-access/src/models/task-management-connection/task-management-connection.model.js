@@ -35,7 +35,14 @@ class TaskManagementConnection extends BaseModel {
     JIRA_CLOUD: 'jira_cloud',
   };
 
-  /** Connection health statuses. */
+  /**
+   * Connection health statuses.
+   *
+   * v1 note: `DISCONNECTED` covers what the architecture spec calls both `disabled`
+   * (admin-disabled) and `error` (irrecoverable failure). v1 unifies them into a
+   * single terminal state for simplicity; the spec's two-state distinction is
+   * deferred to v2 when admin controls are added.
+   */
   static STATUSES = {
     ACTIVE: 'active',
     REQUIRES_REAUTH: 'requires_reauth',

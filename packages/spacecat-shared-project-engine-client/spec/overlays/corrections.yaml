@@ -1,6 +1,6 @@
 overlay: 1.0.0
 info:
-  title: Project Engine spec corrections (Adobe-hosted gateway)
+  title: Project Engine spec corrections — align the vendored swagger with the live API
   version: 1.0.0
 # The single source of truth for our corrections to the vendored Semrush spec.
 # scripts/apply-overlay.mjs reads THIS file and applies the actions to the
@@ -59,7 +59,7 @@ actions:
             - imsBearer: []
 
   # ── CR2: Express Authorization: Bearer, remove Auth-Data-Jwt ─────────────
-  # Live gateway: Authorization: Bearer <IMS> -> 200; Auth-Data-Jwt -> 401.
+  # Live API: Authorization: Bearer <IMS> -> 200; Auth-Data-Jwt -> 401.
   - target: "$.components.securitySchemes"
     description: "CR2: add the imsBearer security scheme"
     update:
@@ -86,4 +86,4 @@ actions:
     description: "CR3: correct the summary+description (also returns initial drafts)"
     update:
       summary: "List V2 projects for the workspace (lightweight, for selectors)"
-      description: "List V2 projects for the workspace — a lightweight view suitable for selectors. Maximum 100 items per page. Supports product-specific default sorting and custom sorting via query parameters. Adobe gateway correction: the upstream description claims this returns only published (live) projects, but a project that has never been published yet (its initial draft) also appears in this list; once a project has been published at least once, the list reflects its published view."
+      description: "List V2 projects for the workspace — a lightweight view suitable for selectors. Maximum 100 items per page. Supports product-specific default sorting and custom sorting via query parameters. Note: contrary to the upstream description, this does not return only published (live) projects — a project that has never been published yet (its initial draft) also appears in this list; once a project has been published at least once, the list reflects its published view."

@@ -12,10 +12,10 @@
 
 /**
  * Applies the OpenAPI Overlay in spec/overlays/corrections.yaml to the
- * swagger2openapi output build/openapi3.json, in place. The overlay is the
- * single source of truth for our gateway corrections (see that file for CR1-CR3);
- * this script just executes it. The vendored spec/projectengine_swagger_public.yaml
- * is never modified.
+ * swagger2openapi output build/openapi3.json, in place. The overlay is the single
+ * source of truth for the corrections that align the vendored swagger with the
+ * live API's actual behaviour (see that file for CR1-CR3); this script just
+ * executes it. The vendored spec/projectengine_swagger_public.yaml is never modified.
  *
  * It implements the subset of the Overlay spec the overlay uses — `update`
  * (deep-merge into the targeted node) and `remove` (delete the targeted node) —

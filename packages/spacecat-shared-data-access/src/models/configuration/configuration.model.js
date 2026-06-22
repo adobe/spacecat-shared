@@ -268,6 +268,71 @@ class Configuration {
     return false;
   }
 
+  /**
+   * Returns whether a handler is explicitly disabled for a given site.
+   *
+   * Unlike `!isHandlerEnabledForSite(...)`, this answers a strict question:
+   * "is this site (or its org, in the absence of a site-level override) in the
+   * handler's deny-list?" It does NOT treat "not-opted-in" as "disabled".
+   *
+   * Precedence (highest to lowest), aligned with `isHandlerEnabledForSite`:
+   *   1. disabled.sites includes siteId → true  (site explicitly disabled)
+   *   2. enabled.sites includes siteId  → false (site-level override beats org disable)
+   *   3. disabled.orgs includes orgId   → true  (org disabled, no site-level override)
+   *   4. otherwise                      → false (not in any deny-list)
+   *
+   * Notes:
+   * - `enabledByDefault` and `enabled.orgs` deliberately do NOT influence this result.
+   *   They control allow-list defaults, not deny-list membership.
+   * - When the handler does not exist at all, this returns false (nothing to deny).
+   *   Callers that need to forbid execution for unknown handlers should check existence
+   *   separately.
+   * - `disabled.sites` and `enabled.sites` are kept disjoint on writes (see #updatedHandler);
+   *   if violated, `disabled.sites` wins at site level.
+   */
+  isHandlerDisabledForSite(type, site) {
+    const handler = this.getHandlers()?.[type];
+    if (!handler) {
+      return false;
+    }
+
+    const siteId = site.getId();
+    const orgId = site.getOrganizationId();
+
+    const disabledSites = handler.disabled?.sites || [];
+    const enabledSites = handler.enabled?.sites || [];
+    const disabledOrgs = handler.disabled?.orgs || [];
+
+    if (disabledSites.includes(siteId)) {
+      return true;
+    }
+    if (enabledSites.includes(siteId)) {
+      return false;
+    }
+    return disabledOrgs.includes(orgId);
+  }
+
+  /**
+   * Returns whether a handler is explicitly disabled for a given org.
+   *
+   * Symmetric to `isHandlerEnabledForOrg` — there is no site-level override at org scope.
+   *
+   * Precedence:
+   *   1. disabled.orgs includes orgId → true
+   *   2. otherwise                    → false
+   *
+   * Note: when the handler does not exist, this returns false (nothing to deny).
+   */
+  isHandlerDisabledForOrg(type, org) {
+    const handler = this.getHandlers()?.[type];
+    if (!handler) {
+      return false;
+    }
+
+    const orgId = org.getId();
+    return (handler.disabled?.orgs || []).includes(orgId);
+  }
+
   #updatedHandler(type, entityId, enabled, entityKey) {
     const handlers = this.getHandlers();
     const handler = handlers?.[type];

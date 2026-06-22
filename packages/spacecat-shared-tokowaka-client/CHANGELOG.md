@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.19.0...@adobe/spacecat-shared-tokowaka-client-v1.19.1) (2026-06-21)
+
+### Bug Fixes
+
+* apply stale config in IVE edge deployment flow ([#1691](https://github.com/adobe/spacecat-shared/issues/1691)) ([9f07a9c](https://github.com/adobe/spacecat-shared/commit/9f07a9ccc73140249aad16e9c9d0d7f5cededf59))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.18.2...@adobe/spacecat-shared-tokowaka-client-v1.19.0) (2026-06-03)
 
 ### Features

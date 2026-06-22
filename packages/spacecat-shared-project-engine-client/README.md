@@ -7,9 +7,8 @@ Typed integration with the Semrush **Project Engine API** (`/enterprise/projects
 - a generation-time **spec-correction overlay** (`spec/overlays/corrections.yaml`) that aligns the vendored swagger with the live API,
 - a **Counterfact mock** for E2E tests and local dev (`npm run mock`); the stateful mock store lands in a follow-up (LLMO-5460).
 
-> **Scope:** this PR vendors the spec, wires the conversion-and-type-generation
-> pipeline plus the correction overlay, and adds the typed client. The IMS handler
-> move and the stateful mock store land in follow-up PRs (see LLMO-5461 / LLMO-5460).
+> **Not here yet:** the IMS auth-handler move and the stateful mock store are
+> tracked follow-ups (see LLMO-5461 / LLMO-5460).
 
 This package follows the `spacecat-shared` convention: **JS + ESM**, JSDoc-typed source,
 `mocha` + `chai` + `c8` for tests, and `@adobe/eslint-config-helix` for lint. The scaffold's

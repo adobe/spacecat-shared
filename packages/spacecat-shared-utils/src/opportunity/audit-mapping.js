@@ -65,7 +65,7 @@ export const AUDIT_OPPORTUNITY_MAP = {
 
   // LLMO / content quality
   'llm-blocked': ['llm-blocked'],
-  'llm-error-pages': ['llm-error-pages'],
+  'llm-error-pages': ['llm-error-pages-404', 'llm-error-pages-403', 'llm-error-pages-5xx'],
   faqs: ['faqs'],
   'related-urls': ['related-urls'],
   toc: ['toc'],

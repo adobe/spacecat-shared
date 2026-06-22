@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-data-access-v3.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.78.0...@adobe/spacecat-shared-data-access-v3.79.0) (2026-06-19)
+
+### Features
+
+* **data-access:** add brand pendingSemrushProvisioning attribute ([#1692](https://github.com/adobe/spacecat-shared/issues/1692)) ([1c2bc2a](https://github.com/adobe/spacecat-shared/commit/1c2bc2a2043246268e0ebe421de7c2c9e9241cdc))
+
+## [@adobe/spacecat-shared-data-access-v3.78.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.77.0...@adobe/spacecat-shared-data-access-v3.78.0) (2026-06-17)
+
+### Features
+
+* **data-access:** register money-pages as a supported audit type ([#1682](https://github.com/adobe/spacecat-shared/issues/1682)) ([1d2842f](https://github.com/adobe/spacecat-shared/commit/1d2842f6a9b42afb5c5c55cbb890d39f85a31f97))
+
+## [@adobe/spacecat-shared-data-access-v3.77.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.76.0...@adobe/spacecat-shared-data-access-v3.77.0) (2026-06-17)
+
+### Features
+
+* **data-access:** add Configuration.isHandlerDisabledForSite / isHandlerDisabledForOrg. ([#1673](https://github.com/adobe/spacecat-shared/issues/1673)) ([003371c](https://github.com/adobe/spacecat-shared/commit/003371c63316d5f06fb0e17d0a9f60eb8ba3ec2e))
+
+## [@adobe/spacecat-shared-data-access-v3.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.4...@adobe/spacecat-shared-data-access-v3.76.0) (2026-06-17)
+
+### Features
+
+* add `allByExternalOwnerIdAndExternalSiteId` type to SiteCollection ([#1655](https://github.com/adobe/spacecat-shared/issues/1655)) ([c73e2b1](https://github.com/adobe/spacecat-shared/commit/c73e2b12fc5eec9d95fb5453c0ef7bb217e6e170))
+
+## [@adobe/spacecat-shared-data-access-v3.75.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.3...@adobe/spacecat-shared-data-access-v3.75.4) (2026-06-16)
+
+### Bug Fixes
+
+* **data-access:** batch suggestion-grant lookups to avoid 414 URI Too Long ([#1684](https://github.com/adobe/spacecat-shared/issues/1684)) ([941660c](https://github.com/adobe/spacecat-shared/commit/941660cea9ea37cc2e4bf50528923f9f051b540e))
+
 ## [@adobe/spacecat-shared-data-access-v3.75.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.2...@adobe/spacecat-shared-data-access-v3.75.3) (2026-06-16)
 
 ### Bug Fixes

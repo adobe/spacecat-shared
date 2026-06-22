@@ -13,11 +13,13 @@
 import type { BaseCollection, BaseModel, Opportunity, TaskManagementConnection } from '../index';
 
 export interface Ticket extends BaseModel {
+  getCreatedBy(): string;
   getOpportunityId(): string | undefined;
   getOrganizationId(): string;
   getTaskManagementConnectionId(): string;
   getTicketId(): string;
   getTicketKey(): string;
+  getTicketProvider(): string;
   getTicketStatus(): string;
   getTicketUrl(): string;
 

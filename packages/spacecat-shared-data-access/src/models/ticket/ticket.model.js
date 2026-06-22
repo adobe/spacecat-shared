@@ -15,14 +15,23 @@ import BaseModel from '../base/base.model.js';
 /**
  * Ticket — one Jira issue created by ASO via a TaskManagementConnection.
  *
- * Preserves the three provider-side identifiers needed for future operations:
- *   ticketId  — Jira's internal numeric ID (data.id). Required for PATCH/update calls.
- *   ticketKey — Human-readable issue key, e.g. 'ASO-42'. Used in UI links.
- *   ticketUrl — Direct browser URL, e.g. 'https://acme.atlassian.net/browse/ASO-42'.
+ * Preserves the provider-side identifiers needed for future operations:
+ *   ticketId       — Jira's internal numeric ID (data.id). Required for PATCH/update calls.
+ *   ticketKey      — Human-readable issue key, e.g. 'ASO-42'. Used in UI links.
+ *   ticketUrl      — Direct browser URL, e.g. 'https://acme.atlassian.net/browse/ASO-42'.
+ *   ticketProvider — Provider that created the ticket (e.g. 'jira_cloud'). Denormalized from
+ *                    the connection so the audit record is self-contained even if the connection
+ *                    is later deleted.
+ *   createdBy      — IMS user ID of the person who initiated ticket creation (JWT sub claim).
  *
  * ticketStatus mirrors the Jira column heading ('To Do', 'In Progress', 'Done').
- * It is updated asynchronously by a future status-sync job; write directly via
+ * It is updated asynchronously by a future status-sync job (v2); write directly via
  * setTicketStatus() + save() only from that job.
+ *
+ * v1 scope — intentional deviations from the architecture spec:
+ *   - No status_synced_at: Jira webhook status sync is a v2 feature.
+ *   - No TicketSuggestion bridge model: v1 enforces 1:1 via opportunityId on the Ticket
+ *     itself; the M:N ticket_suggestions table is deferred to v2 (grouped ticket creation).
  *
  * @class Ticket
  * @extends BaseModel

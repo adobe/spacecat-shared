@@ -43,6 +43,16 @@ const schema = new SchemaBuilder(Ticket, TicketCollection)
     type: 'string',
     required: true,
     default: Ticket.DEFAULT_STATUS,
+  })
+  .addAttribute('ticketProvider', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+  })
+  .addAttribute('createdBy', {
+    type: 'string',
+    required: true,
+    readOnly: true,
   });
 
 export default schema.build();

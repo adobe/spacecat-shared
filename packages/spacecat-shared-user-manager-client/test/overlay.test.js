@@ -11,7 +11,6 @@
  */
 
 import { expect } from 'chai';
-import sinon from 'sinon';
 import {
   parsePath,
   select,
@@ -19,8 +18,6 @@ import {
   applyAction,
   applyOverlay,
 } from '../scripts/apply-overlay.mjs';
-
-const sandbox = sinon.createSandbox();
 
 describe('apply-overlay: parsePath', () => {
   it('parses key, bracketed-key, wildcard and filter segments', () => {
@@ -124,12 +121,9 @@ describe('apply-overlay: applyAction', () => {
 });
 
 describe('apply-overlay: applyOverlay', () => {
-  afterEach(() => sandbox.restore());
-
-  it('applies every action and returns the total node count', () => {
-    sandbox.stub(console, 'log');
+  it('applies every action and returns the total + per-action results (prints nothing)', () => {
     const doc = { paths: { '/a': { get: {} } }, components: {} };
-    const total = applyOverlay(doc, {
+    const { total, results } = applyOverlay(doc, {
       actions: [
         { target: '$.components.x', update: { v: 1 } },
         { target: "$.paths['/a']", remove: true },
@@ -138,6 +132,14 @@ describe('apply-overlay: applyOverlay', () => {
     expect(total).to.equal(2);
     expect(doc.components.x).to.deep.equal({ v: 1 });
     expect(doc.paths).to.deep.equal({});
+    expect(results).to.deep.equal([
+      {
+        target: '$.components.x', remove: false, hits: 1, staleRemove: false,
+      },
+      {
+        target: "$.paths['/a']", remove: true, hits: 1, staleRemove: false,
+      },
+    ]);
   });
 
   it('throws when the overlay has no actions', () => {
@@ -145,14 +147,15 @@ describe('apply-overlay: applyOverlay', () => {
     expect(() => applyOverlay({}, {})).to.throw(/no actions/);
   });
 
-  it('warns (does not throw) when a remove matches 0 nodes — a stale correction signal', () => {
-    sandbox.stub(console, 'log');
-    const warn = sandbox.stub(console, 'warn');
-    const total = applyOverlay({ params: [{ name: 'id' }] }, {
+  it('flags a 0-match remove via staleRemove (does not throw, prints nothing)', () => {
+    const { total, results } = applyOverlay({ params: [{ name: 'id' }] }, {
       actions: [{ target: "$.params[?(@.name == 'gone')]", remove: true }],
     });
     expect(total).to.equal(0);
-    expect(warn.calledOnce).to.equal(true);
-    expect(warn.firstCall.args[0]).to.match(/remove matched 0 nodes/);
+    expect(results).to.deep.equal([
+      {
+        target: "$.params[?(@.name == 'gone')]", remove: true, hits: 0, staleRemove: true,
+      },
+    ]);
   });
 });

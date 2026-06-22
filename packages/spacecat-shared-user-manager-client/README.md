@@ -6,10 +6,9 @@ Typed integration with the Semrush **User Manager API** (`/enterprise/users/api`
 - a generation-time **spec-correction overlay** (`spec/overlays/corrections.yaml`) that aligns the vendored swagger with the live API (see [Spec corrections](#spec-corrections)),
 - a **Counterfact mock** for E2E tests and local dev (`npm run mock`).
 
-> **Scope:** this PR vendors the spec, wires the conversion-and-type-generation
-> pipeline, and adds the correction overlay. The typed **client wrapper** and the
-> stateful mock store land in follow-up PRs. This mirrors the Project Engine
-> foundation + overlay slice (LLMO-5461) applied to a second, larger API (see LLMO-5558).
+> **Not here yet:** the typed **client wrapper** and the stateful mock store are
+> tracked follow-ups. This package mirrors the Project Engine foundation + overlay
+> (LLMO-5461) applied to a second, larger API (see LLMO-5558).
 
 This package follows the `spacecat-shared` convention: **JS + ESM**, JSDoc-typed source,
 `mocha` + `chai` + `c8` for tests, and `@adobe/eslint-config-helix` for lint. The scaffold's

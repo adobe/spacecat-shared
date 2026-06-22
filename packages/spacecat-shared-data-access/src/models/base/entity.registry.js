@@ -57,6 +57,7 @@ import AccessGrantLogCollection from '../access-grant-log/access-grant-log.colle
 import SiteImsOrgAccessCollection from '../site-ims-org-access/site-ims-org-access.collection.js';
 import TaskManagementConnectionCollection from '../task-management-connection/task-management-connection.collection.js';
 import TicketCollection from '../ticket/ticket.collection.js';
+import TicketSuggestionCollection from '../ticket-suggestion/ticket-suggestion.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -101,6 +102,7 @@ import AccessGrantLogSchema from '../access-grant-log/access-grant-log.schema.js
 import SiteImsOrgAccessSchema from '../site-ims-org-access/site-ims-org-access.schema.js';
 import TaskManagementConnectionSchema from '../task-management-connection/task-management-connection.schema.js';
 import TicketSchema from '../ticket/ticket.schema.js';
+import TicketSuggestionSchema from '../ticket-suggestion/ticket-suggestion.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -240,6 +242,7 @@ EntityRegistry.registerEntity(AccessGrantLogSchema, AccessGrantLogCollection);
 EntityRegistry.registerEntity(SiteImsOrgAccessSchema, SiteImsOrgAccessCollection);
 EntityRegistry.registerEntity(TaskManagementConnectionSchema, TaskManagementConnectionCollection);
 EntityRegistry.registerEntity(TicketSchema, TicketCollection);
+EntityRegistry.registerEntity(TicketSuggestionSchema, TicketSuggestionCollection);
 EntityRegistry.defaultEntities = { ...EntityRegistry.entities };
 
 export default EntityRegistry;

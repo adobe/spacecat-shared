@@ -55,3 +55,4 @@ export * from './sentiment-guideline/index.js';
 export * from './sentiment-topic/index.js';
 export * from './task-management-connection/index.js';
 export * from './ticket/index.js';
+export * from './ticket-suggestion/index.js';

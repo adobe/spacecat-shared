@@ -3,15 +3,13 @@
 Typed integration with the Semrush **User Manager API** (`/enterprise/users/api`):
 
 - generated **TypeScript** (`src/generated/types.ts`) and **Pydantic v2** (`python/serenity_user_manager/`) types,
-- a thin **User Manager client** (`openapi-fetch` over the generated `paths`) — later PR,
-- a **Counterfact mock** for E2E tests and local dev — later PR.
+- a generation-time **spec-correction overlay** (`spec/overlays/corrections.yaml`) that aligns the vendored swagger with the live API (see [Spec corrections](#spec-corrections)),
+- a **Counterfact mock** for E2E tests and local dev (`npm run mock`).
 
-> **This PR is the foundation slice only:** vendor the spec + wire the
-> conversion-and-type-generation pipeline. The client wrapper (with auth —
-> `Authorization: Bearer <IMS>` for user-facing routes, API-Key header for admin routes;
-> `Auth-Data-Jwt` is a spec artifact and must not be sent per the CR2 finding below) and
-> the stateful mock store land in follow-up PRs. This mirrors the Project Engine
-> foundation slice (LLMO-5461) applied to a second, larger API (see LLMO-5558).
+> **Scope:** this PR vendors the spec, wires the conversion-and-type-generation
+> pipeline, and adds the correction overlay. The typed **client wrapper** and the
+> stateful mock store land in follow-up PRs. This mirrors the Project Engine
+> foundation + overlay slice (LLMO-5461) applied to a second, larger API (see LLMO-5558).
 
 This package follows the `spacecat-shared` convention: **JS + ESM**, JSDoc-typed source,
 `mocha` + `chai` + `c8` for tests, and `@adobe/eslint-config-helix` for lint. The scaffold's
@@ -26,15 +24,10 @@ control. Semrush only provides the file (no endpoint access in the near term), a
 ~30 tags (Admin, Users, Workspaces, Projects, Keywords, Limits, Service Units,
 ActivationPanel, …), ~187 user-facing operations and ~97 admin/internal operations.
 
-> **Spec auth correction (CR2 — same finding as Project Engine, rainer-friederich
-> 2026-06-15):** the vendored spec models auth as a required `Auth-Data-Jwt` header
-> parameter on ~187 operations. This is a **vendor spec artifact** — the live Adobe
-> gateway authenticates on `Authorization: Bearer <IMS>` only. Sending `Auth-Data-Jwt`
-> alone returns 401; sending both headers also returns 401. A generation-time overlay
-> to strip `Auth-Data-Jwt` from all operations and add a real bearer security scheme
-> (mirroring the CR2 overlay planned for Project Engine) will land in a follow-up PR. Refresh is **manual**: drop in the newer
-file, re-run `npm run generate`, and review the diff. There is no automated drift detection
-while endpoint access is restricted.
+The vendored file is **never edited**; where it diverges from the live API, a generation-time
+overlay corrects the converted artifact instead (see [Spec corrections](#spec-corrections)).
+Refresh is **manual**: drop in the newer file, re-run `npm run generate`, and review the diff.
+There is no automated drift detection while endpoint access is restricted.
 
 ## Pipeline
 
@@ -45,17 +38,22 @@ spec/usermanager_swagger.yaml  (vendored, Swagger 2.0)
         │
         └── swagger2openapi (v2 → 3.x) ──►  build/openapi3.json
                                                 │
+                                                ├── apply-overlay (corrections) ──► build/openapi3.json (in place)
+                                                │
                                                 ├── openapi-typescript ──► src/generated/types.ts
                                                 └── datamodel-code-generator ──► python/serenity_user_manager/
 ```
 
 The v2 → 3.x conversion exists **only** to feed the type generators (`openapi-typescript`
-is v3-only, and 3.x yields cleaner TS/Pydantic). **Counterfact reads the raw v2 file
-directly**, so the mock path never touches the converted artifact.
+is v3-only, and 3.x yields cleaner TS/Pydantic); the overlay then corrects that converted
+artifact before the generators run. **Counterfact reads the raw v2 file directly**, so the mock
+path never touches the converted artifact (and so does not see the corrections — a known gap the
+client wrapper's follow-up addresses).
 
 | Command | Does |
 | --- | --- |
 | `npm run spec:convert` | v2 → 3.x via `swagger2openapi --patch` → `build/openapi3.json` |
+| `npm run spec:overlay` | apply `spec/overlays/corrections.yaml` to `build/openapi3.json` in place |
 | `npm run generate:ts` | `openapi-typescript` → `src/generated/types.ts` |
 | `npm run generate:pydantic` | `datamodel-code-generator` → `python/serenity_user_manager/` package |
 | `npm run generate` | all of the above, in order |
@@ -67,6 +65,27 @@ your `PATH` before running `generate:pydantic`:
 ```bash
 pip install datamodel-code-generator
 ```
+
+## Spec corrections
+
+The vendored swagger diverges from the live API in two places. A small OpenAPI Overlay
+(`spec/overlays/corrections.yaml`), applied to the converted OAS3 artifact at generation time by
+`scripts/apply-overlay.mjs`, corrects them; the vendored `spec/usermanager_swagger.yaml` is never
+touched.
+
+- **CR1 — auth.** The spec models a required `Auth-Data-Jwt` header on ~187 operations, but the
+  live API authenticates on `Authorization: Bearer <IMS>` only — Semrush accepts the IMS bearer
+  directly. The overlay removes `Auth-Data-Jwt` from every operation and adds an `imsBearer`
+  security scheme. (Verified rainer-friederich 2026-06-15: `Auth-Data-Jwt` alone → 401; both
+  headers → 401; `Authorization: Bearer` → 200.)
+- **CR2 — workspace status shape.** `GET /v1/workspaces/{id}/status` is typed as an array of
+  `WorkspaceCheckResponse`, but the live API returns a single object
+  (`{ status: "not ready" | "created" | "error" }`) — the deployed api-service transport reads it
+  as `status.status === 'created'`. The overlay drops the array wrapper.
+
+Guard tests in `test/foundation.test.js` pin CR1 and CR2 against the generated surface, so a
+future Semrush spec refresh that silently drops the overlay fails loudly instead of regressing the
+generated types. `test/overlay.test.js` covers the overlay applier itself.
 
 ## Committed vs generated
 
@@ -88,5 +107,5 @@ pip install datamodel-code-generator
   `generate:pydantic` if a consumer needs v1.
 - The base host is shared with Project Engine (`SEMRUSH_PROJECTS_BASE_URL`, e.g. the dev
   `https://adobe-hackathon.semrush.com`); only the basePath differs (`/enterprise/users/api`
-  vs `/enterprise/projects/api`). The auth split (which operations take `Auth-Data-Jwt`/IMS
-  vs API-Key) is resolved against the Adobe gateway when the client wrapper lands.
+  vs `/enterprise/projects/api`). The live API authenticates on `Authorization: Bearer <IMS>` —
+  Semrush accepts the IMS bearer directly (see [Spec corrections](#spec-corrections)).

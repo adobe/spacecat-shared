@@ -27,17 +27,13 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import process from 'node:process';
 // js-yaml is a build-time devDependency (this script only runs in `npm run generate`,
 // and the published package ships src/ only), so the production-import rule doesn't apply.
 // eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
-
-const here = dirname(fileURLToPath(import.meta.url));
-const pkgRoot = resolve(here, '..');
-const SPEC_PATH = resolve(pkgRoot, 'build/openapi3.json');
-const OVERLAY_PATH = resolve(pkgRoot, 'spec/overlays/corrections.yaml');
 
 const SEGMENT_MATCHERS = [
   // [?(@.name == 'Auth-Data-Jwt')]
@@ -62,7 +58,7 @@ function nextSegment(rest) {
 }
 
 /** Tokenises a supported JSONPath into a list of steps. */
-function parsePath(path) {
+export function parsePath(path) {
   if (!path.startsWith('$')) {
     throw new Error(`Overlay target must start with '$': ${path}`);
   }
@@ -106,7 +102,7 @@ function stepRefs(step, node, refs) {
  * Resolves a JSONPath to a list of `{ container, key }` references, so both `update`
  * (mutate `container[key]`) and `remove` (delete `container[key]`) can act on the result.
  */
-function select(doc, path) {
+export function select(doc, path) {
   let refs = [{ container: { $root: doc }, key: '$root' }];
   for (const step of parsePath(path)) {
     const next = [];
@@ -124,7 +120,7 @@ function select(doc, path) {
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 /** Deep-merges `src` into `target` (objects recurse; arrays and scalars overwrite). */
-function deepMerge(target, src) {
+export function deepMerge(target, src) {
   for (const [k, v] of Object.entries(src)) {
     if (isObject(v) && isObject(target[k])) {
       deepMerge(target[k], v);
@@ -137,7 +133,7 @@ function deepMerge(target, src) {
 }
 
 /** Removes matched refs: array items spliced high-to-low per container; object keys deleted. */
-function removeRefs(refs) {
+export function removeRefs(refs) {
   const byContainer = new Map();
   for (const ref of refs) {
     if (typeof ref.key === 'number') {
@@ -153,7 +149,7 @@ function removeRefs(refs) {
   }
 }
 
-function applyAction(doc, action) {
+export function applyAction(doc, action) {
   const refs = select(doc, action.target);
   if (action.remove) {
     removeRefs(refs);
@@ -174,16 +170,49 @@ function applyAction(doc, action) {
   throw new Error(`Overlay action must have 'update' or 'remove': ${action.target}`);
 }
 
-const spec = JSON.parse(readFileSync(SPEC_PATH, 'utf-8'));
-const overlay = yaml.load(readFileSync(OVERLAY_PATH, 'utf-8'));
-if (!Array.isArray(overlay?.actions) || overlay.actions.length === 0) {
-  throw new Error(`Overlay ${OVERLAY_PATH} has no actions`);
+/**
+ * Applies every action of an overlay document to `spec` in place. Logs each action's hit count,
+ * and WARNS (does not throw) when a `remove` matches nothing: a 0-match remove is a valid future
+ * state — an upstream spec that already dropped the targeted node — but it means the correction is
+ * now a no-op and should be pruned, so it must not pass silently. A 0-match `update` DOES throw
+ * (see {@link applyAction}), since updating a node that has moved is a genuine miss.
+ * @param {object} spec the OAS3 document to mutate in place
+ * @param {{ actions?: Array<object> }} overlay
+ * @returns {number} total node count touched across all actions
+ */
+export function applyOverlay(spec, overlay) {
+  if (!Array.isArray(overlay?.actions) || overlay.actions.length === 0) {
+    throw new Error('Overlay has no actions');
+  }
+  let total = 0;
+  for (const action of overlay.actions) {
+    const hits = applyAction(spec, action);
+    total += hits;
+    // eslint-disable-next-line no-console
+    console.log(`overlay: ${action.remove ? 'remove' : 'update'} ${action.target} -> ${hits} node(s)`);
+    if (action.remove && hits === 0) {
+      // eslint-disable-next-line no-console
+      console.warn(`overlay: WARNING remove matched 0 nodes (stale correction?): ${action.target}`);
+    }
+  }
+  return total;
 }
-for (const action of overlay.actions) {
-  const hits = applyAction(spec, action);
+
+/** CLI entry: read the converted spec + the overlay, apply in place, write back. */
+function main() {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const pkgRoot = resolve(here, '..');
+  const specPath = resolve(pkgRoot, 'build/openapi3.json');
+  const overlayPath = resolve(pkgRoot, 'spec/overlays/corrections.yaml');
+  const spec = JSON.parse(readFileSync(specPath, 'utf-8'));
+  const overlay = yaml.load(readFileSync(overlayPath, 'utf-8'));
+  applyOverlay(spec, overlay);
+  writeFileSync(specPath, JSON.stringify(spec, null, 2), 'utf-8');
   // eslint-disable-next-line no-console
-  console.log(`overlay: ${action.remove ? 'remove' : 'update'} ${action.target} -> ${hits} node(s)`);
+  console.log(`✔ overlay applied (${overlay.actions.length} actions) → ${specPath}`);
 }
-writeFileSync(SPEC_PATH, JSON.stringify(spec, null, 2), 'utf-8');
-// eslint-disable-next-line no-console
-console.log(`✔ overlay applied (${overlay.actions.length} actions) → ${SPEC_PATH}`);
+
+// Run only when executed directly (`node scripts/apply-overlay.mjs`), not when imported by tests.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}

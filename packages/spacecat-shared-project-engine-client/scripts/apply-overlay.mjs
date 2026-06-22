@@ -119,14 +119,20 @@ export function select(doc, path) {
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
+// Keys that would let a hand-edited overlay reach Object.prototype through deepMerge. No
+// legitimate OpenAPI node key is one of these, so they are skipped defensively.
+const PROTO_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /** Deep-merges `src` into `target` (objects recurse; arrays and scalars overwrite). */
 export function deepMerge(target, src) {
   for (const [k, v] of Object.entries(src)) {
-    if (isObject(v) && isObject(target[k])) {
-      deepMerge(target[k], v);
-    } else {
-      // eslint-disable-next-line no-param-reassign
-      target[k] = v;
+    if (!PROTO_POLLUTION_KEYS.has(k)) {
+      if (isObject(v) && isObject(target[k])) {
+        deepMerge(target[k], v);
+      } else {
+        // eslint-disable-next-line no-param-reassign
+        target[k] = v;
+      }
     }
   }
   return target;

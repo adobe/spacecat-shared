@@ -300,6 +300,25 @@ function urlMatchesFilter(url, filterUrls) {
 }
 
 /**
+ * Extracts the locale/section path prefix from a site's baseURL.
+ * Locale-specific sites encode the locale in the path (e.g. https://example.com/de),
+ * but RUM domain keys exist only for the main domain. This returns the path portion
+ * so RUM results fetched for the main domain can be narrowed to the locale subtree.
+ * @param {string} baseURL - The site's baseURL.
+ * @returns {string|null} The normalized path prefix (e.g. '/de'), or null when the
+ *   baseURL is at the domain root (whole-domain site) or cannot be parsed.
+ */
+function getBaseURLPathPrefix(baseURL) {
+  try {
+    const { pathname } = new URL(prependSchema(normalizeUrl(baseURL)));
+    const normalized = normalizePathname(pathname);
+    return normalized === '/' ? null : normalized;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Checks if a URL has a subdomain other than 'www'.
  * @param {string} baseUrl - The URL to check.
  * @returns {boolean} - True if the URL has a non-www subdomain, false otherwise.
@@ -463,6 +482,7 @@ export {
   stripTrailingSlash,
   stripWWW,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,

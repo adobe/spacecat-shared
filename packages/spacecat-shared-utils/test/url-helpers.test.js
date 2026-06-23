@@ -27,6 +27,7 @@ import {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
@@ -733,6 +734,41 @@ describe('URL Utility Functions', () => {
     it('should handle filter URL that causes prependSchema to fail', () => {
       const filterUrls = ['[invalid-filter-url]', 'example.com/path'];
       expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+  });
+
+  describe('getBaseURLPathPrefix', () => {
+    it('returns null for a domain-root baseURL', () => {
+      expect(getBaseURLPathPrefix('https://example.com')).to.be.null;
+    });
+
+    it('returns null for a domain-root baseURL with trailing slash', () => {
+      expect(getBaseURLPathPrefix('https://example.com/')).to.be.null;
+    });
+
+    it('extracts a single-segment locale prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/de')).to.equal('/de');
+    });
+
+    it('strips the trailing slash from the prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/de/')).to.equal('/de');
+    });
+
+    it('extracts a multi-segment prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/de-de/shop')).to.equal('/de-de/shop');
+    });
+
+    it('prepends a schema when missing', () => {
+      expect(getBaseURLPathPrefix('example.com/fr')).to.equal('/fr');
+    });
+
+    it('returns null for an unparseable baseURL', () => {
+      expect(getBaseURLPathPrefix('https://[invalid-url]')).to.be.null;
+    });
+
+    it('returns null for non-string input', () => {
+      expect(getBaseURLPathPrefix(null)).to.be.null;
+      expect(getBaseURLPathPrefix(undefined)).to.be.null;
     });
   });
 

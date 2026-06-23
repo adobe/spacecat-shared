@@ -109,6 +109,11 @@ actions:
   # rest. The single-equality overlay filter cannot express "name == 'id' && in ==
   # 'query'", but the blanket flip is equivalent and safe here. deep-merge sets
   # `in` to `path` (scalar overwrite); `required: true` is already present.
+  # CAUTION (for future spec-refresh reviewers): this is a BLANKET filter on the
+  # param name alone. If a future spec revision adds a legitimately query-bound
+  # parameter literally named `id` on some new operation, this overlay would
+  # silently relocate it to `in: path`. If that ever happens, narrow the filter
+  # (or special-case that operation) rather than dropping CR4.
   - target: "$.paths.*.*.parameters[?(@.name == 'id')]"
     description: "CR4: workspace `id` is a path parameter on every operation (not query)"
     update:

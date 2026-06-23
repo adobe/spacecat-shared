@@ -54,21 +54,20 @@ access is restricted.
 ```
 spec/projectengine_swagger_public.yaml  (vendored, Swagger 2.0)
         │
-        ├── Counterfact ── reads v2 directly ──►  mock (no conversion)   [npm run mock]
-        │
         └── swagger2openapi (v2 → 3.x) ──►  build/openapi3.json
                                                 │
                                                 ├── apply-overlay (corrections) ──► build/openapi3.json (in place)
                                                 │
+                                                ├── Counterfact ──►  mock   [npm run mock]
                                                 ├── openapi-typescript ──► src/generated/types.ts
                                                 └── datamodel-code-generator ──► python/serenity_project_engine/
 ```
 
-The v2 → 3.x conversion exists **only** to feed the type generators (`openapi-typescript`
-is v3-only, and 3.x yields cleaner TS/Pydantic); the overlay then corrects that converted
-artifact before the generators run (see [Spec corrections](#spec-corrections)). **Counterfact reads
-the raw v2 file directly**, so the mock path never touches the converted artifact (and so does not
-see the corrections — a known gap the stateful-mock follow-up addresses).
+The v2 → 3.x conversion + overlay feeds both the type generators and the Counterfact mock.
+`npm run generate` must be run once (and re-run after any spec refresh) before `npm run mock` —
+`build/openapi3.json` is gitignored. The overlay is applied in place so Counterfact sees the
+corrected paths (including `GET /v1/ai_models`, CR1) and the mock serves under the
+`/enterprise/projects/api` base path via `--prefix`.
 
 | Command | Does |
 | --- | --- |
@@ -76,8 +75,8 @@ see the corrections — a known gap the stateful-mock follow-up addresses).
 | `npm run spec:overlay` | apply `spec/overlays/corrections.yaml` to `build/openapi3.json` in place |
 | `npm run generate:ts` | `openapi-typescript` → `src/generated/types.ts` |
 | `npm run generate:pydantic` | `datamodel-code-generator` → `python/serenity_project_engine/` package |
-| `npm run generate` | all of the above, in order |
-| `npm run mock` | Counterfact mock on `:4010`, straight off the v2 spec |
+| `npm run generate` | all of the above, in order (run before `npm run mock`) |
+| `npm run mock` | Counterfact mock on `:4010`, corrected OAS3 artifact + `--prefix /enterprise/projects/api` |
 
 `datamodel-code-generator` is a **Python** tool, not an npm dependency. Install it once on
 your `PATH` before running `generate:pydantic`:
@@ -107,9 +106,10 @@ generated types. `test/overlay.test.js` covers the overlay applier itself.
 
 ## Mock (stateful)
 
-`npm run mock` starts a **stateful** Counterfact server straight off the v2 spec. Unmodelled
-paths fall back to Counterfact's spec-driven stubs; the project spine is backed by a shared
-in-memory store so reads reflect prior writes within a run.
+`npm run mock` starts a **stateful** Counterfact server off the corrected OAS3 artifact
+(`build/openapi3.json` — run `npm run generate` first). Unmodelled paths fall back to
+Counterfact's spec-driven stubs; the project spine is backed by a shared in-memory store so
+reads reflect prior writes within a run.
 
 ```bash
 npm run mock                       # serves on :4010

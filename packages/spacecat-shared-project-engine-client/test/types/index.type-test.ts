@@ -45,14 +45,12 @@ void asAlias;
 //    degraded, the body/response below would lose their shape — and the bogus-path canary
 //    in (4) would stop erroring.
 //
-//    NOTE: the generated spec marks `Auth-Data-Jwt` as a REQUIRED header param on each
-//    operation, so the typed surface demands it per call even though the client injects it
-//    at runtime via middleware. This fixture passes it to match today's published surface;
-//    if/when the client's typed surface is narrowed to omit the injected header (a DX
-//    improvement tracked separately), drop it here and this assertion still guards the rest.
+//    NOTE: `Auth-Data-Jwt` was removed from the generated surface by the spec-correction
+//    overlay (CR2). The client injects the auth header at runtime via middleware, so callers
+//    do not (and should not) pass it. This fixture matches the corrected surface.
 async function typedCall(): Promise<void> {
   const { data } = await client.GET('/v1/workspaces/{id}/projects', {
-    params: { path: { id: 'ws-1' }, header: { 'Auth-Data-Jwt': 'token' } },
+    params: { path: { id: 'ws-1' } },
   });
   void data;
 }

@@ -36,10 +36,18 @@
  * siblings. The `_lib/*` files register as unreachable (method-less) routes — harmless, and
  * not present in the spec.
  *
- * Request validation is disabled (`--no-validate-request`): the spec marks `Auth-Data-Jwt`
- * required, but Node lowercases inbound header names while the validator matches the exact
- * spec name, so every request would 400. We are mocking the upstream, not contract-testing
- * inbound traffic. Response validation stays on so envelope mismatches surface during dev.
+ * The spec fed to Counterfact is `build/openapi3.json` — the OAS3 artifact produced by
+ * `npm run generate` (swagger2openapi conversion → overlay corrections applied in place).
+ * Using the corrected artifact ensures Counterfact auto-generates stubs for paths added by
+ * the overlay (e.g. `GET /v1/ai_models`, CR1) and serves everything under the correct base
+ * path. Counterfact honours a Swagger-2.0 `basePath` as a serving prefix but silently ignores
+ * OAS3 `servers[0].url`, so we pass `--prefix /enterprise/projects/api` explicitly.
+ * `build/openapi3.json` is gitignored — run `npm run generate` once before `npm run mock`.
+ *
+ * Request validation is disabled (`--no-validate-request`): the overlay removes `Auth-Data-Jwt`
+ * from every operation (CR2), but Node also lowercases inbound header names while the validator
+ * matches exact spec names, so leaving it on would 400 any request regardless. Response
+ * validation stays on so envelope mismatches surface during dev.
  *
  * Excluded from coverage: requires a live server, validated via `npm run mock` (see README).
  */
@@ -54,7 +62,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, '..', '..');
 
-const SPEC = join(packageRoot, 'spec', 'projectengine_swagger_public.yaml');
+const SPEC = join(packageRoot, 'build', 'openapi3.json');
 const BASE_PATH = join(packageRoot, '.counterfact');
 const ROUTES_DIR = join(BASE_PATH, 'routes');
 const LIB_DIR = join(ROUTES_DIR, '_lib');
@@ -95,6 +103,10 @@ function copyTreeAsTs(src, dest) {
 }
 
 function materialize() {
+  if (!existsSync(SPEC)) {
+    process.stderr.write('Error: build/openapi3.json not found. Run `npm run generate` first.\n');
+    process.exit(1);
+  }
   // Clear the whole scratch dir (routes + the transpile .cache) so stale compiled handlers
   // from a previous run never shadow the freshly materialized source.
   rmSync(BASE_PATH, { recursive: true, force: true });
@@ -138,7 +150,8 @@ function launch() {
   // loads our handlers, but generates nothing, so our stateful handlers stand alone.
   const child = spawn(
     process.execPath,
-    [findCounterfactBin(), SPEC, BASE_PATH, '--port', String(PORT), '--serve', '--no-validate-request', '--no-update-check'],
+    [findCounterfactBin(), SPEC, BASE_PATH, '--port', String(PORT), '--serve',
+      '--prefix', '/enterprise/projects/api', '--no-validate-request', '--no-update-check'],
     { stdio: 'inherit', cwd: packageRoot },
   );
   child.on('exit', (code) => process.exit(code ?? 0));

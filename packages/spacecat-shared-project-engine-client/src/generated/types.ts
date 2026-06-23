@@ -89,10 +89,7 @@ export interface paths {
                      */
                     country: string;
                 };
-                header: {
-                    /** @description JWT Token */
-                    "Auth-Data-Jwt": string;
-                };
+                header?: never;
                 path: {
                     /** @description Workspace UUID */
                     id: string;
@@ -619,6 +616,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{id}/projects/{project_id}/apply_interactive_ignore_issue_rules/{crawl_configuration_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish interactive ignore issue rules event
+         * @description Publishes an interactive-ignore-issue-rules event to the pub/sub topic for the given crawl configuration. Accepts the same payload as the issue rules endpoint.
+         */
+        post: operations["si-apply-interactive-ignore-issue-rules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{id}/projects/{project_id}/ci/competitors": {
         parameters: {
             query?: never;
@@ -1137,10 +1154,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List published projects for workspace (V2 lightweight for selectors)
-         * @description List published projects for workspace with given ID. This is a lightweight V2 version suitable for selectors.
-         *     Returns only published (live) projects. Maximum limit is 100 items per page.
-         *     Supports product-specific default sorting and custom sorting via query parameters.
+         * List V2 projects for the workspace (lightweight, for selectors)
+         * @description List V2 projects for the workspace — a lightweight view suitable for selectors. Maximum 100 items per page. Supports product-specific default sorting and custom sorting via query parameters. Note: contrary to the upstream description, this does not return only published (live) projects — a project that has never been published yet (its initial draft) also appears in this list; once a project has been published at least once, the list reflects its published view.
          */
         get: operations["projects-list-projects-v2"];
         put?: never;
@@ -1224,6 +1239,54 @@ export interface paths {
          */
         get: operations["aio-available-prompts"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List brand URLs for AIO benchmark
+         * @description List brand URLs that belong to a specific benchmark within workspace and project with given IDs.
+         */
+        get: operations["aio-list-brand-urls"];
+        put?: never;
+        /**
+         * Create brand URLs for AIO benchmark (batch)
+         * @description Create multiple brand URLs at once under a specific benchmark for workspace and project with given IDs. Accepts array of brand URLs. Returns list of created IDs and count of already existing brand URLs. Duplicates by (project_id, url) are silently skipped and reflected in the response's `existing_count`.
+         */
+        post: operations["aio-create-brand-urls"];
+        /**
+         * Delete brand URLs within AIO benchmark (batch)
+         * @description Delete multiple brand URLs by IDs within a specific benchmark for workspace and project with given IDs. IDs that do not belong to the benchmark are silently ignored.
+         */
+        delete: operations["aio-delete-brand-urls"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls/{brand_url_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update brand URL within AIO benchmark
+         * @description Update a single brand URL within a specific benchmark for workspace and project with given IDs.
+         */
+        put: operations["aio-update-brand-url"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1515,6 +1578,72 @@ export interface paths {
         patch: operations["aio-update-tag"];
         trace?: never;
     };
+    "/v2/workspaces/{id}/projects/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk create AIO projects
+         * @description Creates AIO projects from a multipart payload. The operation is atomic: if any item fails, no projects are created.
+         *     Each project item must include name, brand_name, brand_aliases, domain, language_id, country_code, location_name, and llm_ids.
+         *     The top-level options.publish flag controls whether created projects should be published; it defaults to true.
+         *     The success response includes created projects in request order plus separate published and unpublished project lists.
+         */
+        post: operations["aio-bulk-create-projects"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/workspaces/{id}/projects/bulk/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get AIO bulk create limits
+         * @description Validates the bulk AIO multipart payload and returns workspace project and prompt limits for the batch without creating any projects.
+         *     An empty request body is allowed and returns the current limits state.
+         *     Invalid or incomplete project items are skipped for limit calculation.
+         *     The response includes current maximum available capacity and requested batch usage for both projects and prompts.
+         */
+        post: operations["aio-bulk-project-limits"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai_models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List global AI model catalog
+         * @description Global catalog of all AI models available for tracking across any workspace. Not scoped to a workspace or project.
+         */
+        get: operations["ai-list-global-models"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1638,6 +1767,11 @@ export interface components {
             confirmed_by_email?: string;
             confirmed_by_name?: string;
         };
+        "model.ApplyInteractiveIgnoreIssueRulesRequest": {
+            filters: number[];
+            id?: string;
+            name: string;
+        };
         "model.AvailablePromptsResponse": {
             available?: number;
             total?: number;
@@ -1649,6 +1783,56 @@ export interface components {
         };
         "model.BatchReferenceRequest": {
             items: components["schemas"]["model.ReferenceRequest"][];
+        };
+        "model.BrandURL": {
+            benchmark_id?: string;
+            created_at?: string;
+            id?: string;
+            project_id?: string;
+            type?: string;
+            updated_at?: string;
+            url?: string;
+        };
+        "model.BrandURLRequest": {
+            type?: string;
+            url: string;
+        };
+        "model.BulkCreateAIOProjectsErrorItem": {
+            message?: string;
+            row_index?: number;
+        };
+        "model.BulkCreateAIOProjectsErrorResponse": {
+            errors?: components["schemas"]["model.BulkCreateAIOProjectsErrorItem"][];
+        };
+        "model.BulkCreateAIOProjectsLimitInfoResponse": {
+            available?: number;
+            max?: number;
+            requested?: number;
+        };
+        "model.BulkCreateAIOProjectsLimitsResponse": {
+            can_create?: boolean;
+            projects?: components["schemas"]["model.BulkCreateAIOProjectsLimitInfoResponse"];
+            prompts?: components["schemas"]["model.BulkCreateAIOProjectsLimitInfoResponse"];
+        };
+        "model.BulkCreateAIOProjectsPublishedItem": {
+            project_id?: string;
+            row_index?: number;
+        };
+        "model.BulkCreateAIOProjectsResponse": {
+            projects?: components["schemas"]["model.BulkCreateAIOProjectsResponseItem"][];
+            published_projects?: components["schemas"]["model.BulkCreateAIOProjectsPublishedItem"][];
+            unpublished_projects?: components["schemas"]["model.BulkCreateAIOProjectsUnpublishedItem"][];
+        };
+        "model.BulkCreateAIOProjectsResponseItem": {
+            created_ai_model_ids?: string[];
+            project_id?: string;
+            prompt_count?: number;
+            row_index?: number;
+        };
+        "model.BulkCreateAIOProjectsUnpublishedItem": {
+            project_id?: string;
+            reason?: string;
+            row_index?: number;
         };
         "model.CICompetitor": {
             color?: string;
@@ -1948,6 +2132,9 @@ export interface components {
             page?: number;
             total?: number;
         };
+        "model.ListBrandURLsResponse": {
+            brand_urls?: components["schemas"]["model.BrandURL"][];
+        };
         "model.LocationResponse": {
             id?: number;
             name?: string;
@@ -2178,6 +2365,11 @@ export interface components {
         "model.UUIDsListRequest": {
             ids: string[];
         };
+        "model.AIModelListResponse": {
+            page?: number;
+            total?: number;
+            items?: components["schemas"]["model.AIModelResponse"][];
+        };
     };
     responses: never;
     parameters: never;
@@ -2268,10 +2460,7 @@ export interface operations {
     "projects-admin-list-countries": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2318,10 +2507,7 @@ export interface operations {
     "projects-admin-list-languages": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2368,10 +2554,7 @@ export interface operations {
     "resolve-locations": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2432,10 +2615,7 @@ export interface operations {
                 /** @description tag type */
                 type?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2491,10 +2671,7 @@ export interface operations {
                 /** @description show live projects */
                 live?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -2544,10 +2721,7 @@ export interface operations {
     "projects-post-project": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -2604,13 +2778,10 @@ export interface operations {
             query: {
                 /** @description project ID */
                 draft: string;
-                /** @description project type, defaults to ai */
+                /** @description project type, defaults to ai. Required for seo, mfour and journey products */
                 type?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -2662,10 +2833,7 @@ export interface operations {
     "projects-delete-project": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -2715,10 +2883,7 @@ export interface operations {
     "projects-patch-project": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -2788,10 +2953,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -2843,10 +3005,7 @@ export interface operations {
     "ai-create-model": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -2898,10 +3057,7 @@ export interface operations {
     "ai-delete-models": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -2954,10 +3110,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3011,10 +3164,7 @@ export interface operations {
     "ai-update-model": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3085,10 +3235,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3142,10 +3289,7 @@ export interface operations {
     "ai-create-prompt": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3199,10 +3343,7 @@ export interface operations {
     "ai-delete-prompt": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3273,10 +3414,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -3332,10 +3470,7 @@ export interface operations {
                 /** @description keyword ID */
                 keyword_id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -3382,10 +3517,7 @@ export interface operations {
     "ai-import-prompts": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3447,10 +3579,7 @@ export interface operations {
                 /** @description workspace ID */
                 id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description project ID */
                 project_id: string;
@@ -3512,10 +3641,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description project ID */
                 project_id: string;
@@ -3565,10 +3691,7 @@ export interface operations {
     "ai-upload-tagged-keywords": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3629,10 +3752,7 @@ export interface operations {
     "ai-update-prompts-batch": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3684,10 +3804,7 @@ export interface operations {
     "ai-delete-prompts-batch": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3742,10 +3859,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3807,10 +3921,7 @@ export interface operations {
                 /** @description workspace ID */
                 id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description project ID */
                 project_id: string;
@@ -3874,10 +3985,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -3934,10 +4042,7 @@ export interface operations {
                 /** @description workspace ID */
                 id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description project ID */
                 project_id: string;
@@ -3998,10 +4103,7 @@ export interface operations {
                 /** @description keyword ID */
                 keyword_id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -4049,10 +4151,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4095,10 +4194,7 @@ export interface operations {
     "ai-create-benchmark": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4159,10 +4255,7 @@ export interface operations {
     "ai-delete-benchmarks": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4221,10 +4314,7 @@ export interface operations {
     "ai-update-benchmark": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4282,13 +4372,76 @@ export interface operations {
             };
         };
     };
+    "si-apply-interactive-ignore-issue-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace ID */
+                id: string;
+                /** @description Project ID */
+                project_id: string;
+                /** @description Crawl Configuration ID */
+                crawl_configuration_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Request body */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["model.ApplyInteractiveIgnoreIssueRulesRequest"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
     "ci-update-competitors": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4345,10 +4498,7 @@ export interface operations {
     "ci-update-countries": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4412,10 +4562,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4467,10 +4614,7 @@ export interface operations {
     "si-create-crawl-configuration": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4527,10 +4671,7 @@ export interface operations {
     "si-update-crawl-configuration": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4590,10 +4731,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4647,10 +4785,7 @@ export interface operations {
     "si-delete-crawl-configuration": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4709,10 +4844,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4764,10 +4896,7 @@ export interface operations {
     "si-create-custom-extraction": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4819,10 +4948,7 @@ export interface operations {
     "si-update-custom-extraction": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4872,10 +4998,7 @@ export interface operations {
     "si-delete-custom-extraction": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -4927,10 +5050,7 @@ export interface operations {
     "projects-discard-project": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -4985,10 +5105,7 @@ export interface operations {
                 /** @description project ID */
                 project_id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -5051,10 +5168,7 @@ export interface operations {
                 /** @description Search string to filter issue rules */
                 search?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5106,10 +5220,7 @@ export interface operations {
     "si-create-issue-rule": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5161,10 +5272,7 @@ export interface operations {
     "si-delete-issue-rules": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5214,10 +5322,7 @@ export interface operations {
     "si-update-issue-rule": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5269,10 +5374,7 @@ export interface operations {
     "projects-publish-project": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -5335,10 +5437,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5390,10 +5489,7 @@ export interface operations {
     "project-create-segment": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5445,10 +5541,7 @@ export interface operations {
     "project-delete-segments": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5501,10 +5594,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5558,10 +5648,7 @@ export interface operations {
     "project-update-segment": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5613,10 +5700,7 @@ export interface operations {
     "segments-copy-to-projects": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5684,10 +5768,7 @@ export interface operations {
     "segments-copy-all-from-project": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5760,10 +5841,7 @@ export interface operations {
                 /** @description Export format: csv or xlsx */
                 format?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5829,10 +5907,7 @@ export interface operations {
     "project-import-segments": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -5905,10 +5980,7 @@ export interface operations {
     "projects-update-advanced-crawling-consent": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -5981,10 +6053,7 @@ export interface operations {
     "projects-set-allow-more-parallel-instances": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -6048,10 +6117,7 @@ export interface operations {
                 /** @description limit per page */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -6103,10 +6169,7 @@ export interface operations {
     "projects-create-tag": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -6158,10 +6221,7 @@ export interface operations {
     "projects-batch-delete-tags": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -6220,10 +6280,7 @@ export interface operations {
                 /** @description Tag ID */
                 tag_id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -6290,10 +6347,7 @@ export interface operations {
                  */
                 cursor?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /**
                  * @description Workspace UUID
@@ -6364,10 +6418,7 @@ export interface operations {
                 /** @description search query */
                 search?: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -6429,10 +6480,7 @@ export interface operations {
                 /** @description items per page (max 100) */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -6500,10 +6548,7 @@ export interface operations {
     "aio-project-create-model": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -6560,10 +6605,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description project ID */
                 project_id: string;
@@ -6613,10 +6655,7 @@ export interface operations {
     "ai-create-benchmarks-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -6682,10 +6721,7 @@ export interface operations {
     "aio-available-prompts": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace UUID */
                 id: string;
@@ -6743,6 +6779,318 @@ export interface operations {
             };
         };
     };
+    "aio-list-brand-urls": {
+        parameters: {
+            query?: {
+                /** @description Get draft project data */
+                draft?: boolean;
+                /** @description Page number */
+                page?: number;
+                /** @description Limit per page */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Workspace ID */
+                id: string;
+                /** @description Project ID */
+                project_id: string;
+                /** @description Benchmark ID */
+                benchmark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.ListBrandURLsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Not Found: project does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-create-brand-urls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace ID */
+                id: string;
+                /** @description Project ID */
+                project_id: string;
+                /** @description Benchmark ID */
+                benchmark_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Request body */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["model.BrandURLRequest"][];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.IDsWithStatsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Not Found: benchmark does not exist in this project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-delete-brand-urls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace ID */
+                id: string;
+                /** @description Project ID */
+                project_id: string;
+                /** @description Benchmark ID */
+                benchmark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["model.UUIDsListRequest"];
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Not Found: benchmark does not exist in this project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-update-brand-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace ID */
+                id: string;
+                /** @description Project ID */
+                project_id: string;
+                /** @description Benchmark ID */
+                benchmark_id: string;
+                /** @description Brand URL ID */
+                brand_url_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Request body */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["model.BrandURLRequest"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Not Found: brand URL does not exist within this benchmark */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Conflict: duplicate URL for project */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
     "aio-list-project-products": {
         parameters: {
             query?: {
@@ -6757,10 +7105,7 @@ export interface operations {
                 /** @description items per page (max 100) */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -6814,10 +7159,7 @@ export interface operations {
     "aio-create-project-products": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -6885,10 +7227,7 @@ export interface operations {
     "aio-delete-project-products": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -6945,10 +7284,7 @@ export interface operations {
     "aio-replace-project-product": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace ID */
                 id: string;
@@ -7018,10 +7354,7 @@ export interface operations {
     "aio-create-prompt-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7073,10 +7406,7 @@ export interface operations {
     "aio-delete-prompt-by-ids-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7126,10 +7456,7 @@ export interface operations {
     "aio-rename-prompt": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace UUID */
                 id: string;
@@ -7197,10 +7524,7 @@ export interface operations {
     "aio-delete-all-prompts-v2": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7253,10 +7577,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7313,10 +7634,7 @@ export interface operations {
     "aio-restore-prompt-names": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description Workspace UUID */
                 id: string;
@@ -7385,10 +7703,7 @@ export interface operations {
                 /** @description workspace ID */
                 id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description project ID */
                 project_id: string;
@@ -7446,10 +7761,7 @@ export interface operations {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7499,10 +7811,7 @@ export interface operations {
     "ai-upload-tagged-prompts": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7563,10 +7872,7 @@ export interface operations {
     "aio-update-prompts-batch": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7616,10 +7922,7 @@ export interface operations {
     "ai-delete-prompts-batch-without-model-id": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7684,10 +7987,7 @@ export interface operations {
                 /** @description items per page (max 100) */
                 limit?: number;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7739,10 +8039,7 @@ export interface operations {
     "aio-create-project-tags": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7797,10 +8094,7 @@ export interface operations {
                 /** @description prompt ID */
                 prompt_id: string;
             };
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7850,10 +8144,7 @@ export interface operations {
     "aio-update-tag": {
         parameters: {
             query?: never;
-            header: {
-                /** @description JWT Token */
-                "Auth-Data-Jwt": string;
-            };
+            header?: never;
             path: {
                 /** @description workspace ID */
                 id: string;
@@ -7895,6 +8186,180 @@ export interface operations {
             };
             /** @description Internal Server Error */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-bulk-create-projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @description JSON payload with project metadata and optional top-level options.publish flag. Each project item must include name, brand_name, brand_aliases, domain, language_id, country_code, location_name, and llm_ids */
+                    projects: string;
+                    /**
+                     * Format: binary
+                     * @description JSON file with prompts keyed by 1-based project index
+                     */
+                    prompts?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.BulkCreateAIOProjectsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.BulkCreateAIOProjectsErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-bulk-project-limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** @description JSON payload with project metadata. For limits, invalid or incomplete items are ignored instead of failing the whole request */
+                    projects?: string;
+                    /**
+                     * Format: binary
+                     * @description JSON file with prompts keyed by 1-based project index
+                     */
+                    prompts?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.BulkCreateAIOProjectsLimitsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.BulkCreateAIOProjectsErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "ai-list-global-models": {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.AIModelListResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

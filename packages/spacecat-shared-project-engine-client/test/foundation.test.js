@@ -31,7 +31,10 @@ describe('Project Engine foundation: vendored spec', () => {
     expect(spec).to.include('basePath: /enterprise/projects/api');
   });
 
-  it('carries the Auth-Data-Jwt header contract used by the client', () => {
+  // The spec models the Semrush-native Auth-Data-Jwt header as a per-operation param. The client
+  // does NOT send it — it sends Authorization: Bearer, which Semrush accepts directly — so the
+  // client's typed surface narrows it out; the vendored contract keeps it.
+  it('carries the Semrush-native Auth-Data-Jwt header param in the vendored spec', () => {
     expect(spec).to.include('name: Auth-Data-Jwt');
   });
 });
@@ -50,5 +53,17 @@ describe('Project Engine foundation: generated TypeScript types', () => {
 
   it('includes a known v2 path from the spec', () => {
     expect(types).to.include('/v2/workspaces/{id}/projects');
+  });
+});
+
+describe('Project Engine foundation: overlay guard', () => {
+  const types = read('src/generated/types.ts');
+
+  it('exposes GET /v1/ai_models on the typed surface (CR1)', () => {
+    expect(types).to.include('/v1/ai_models');
+  });
+
+  it('has no Auth-Data-Jwt header in generated types (CR2)', () => {
+    expect(types).to.not.include('Auth-Data-Jwt');
   });
 });

@@ -1,0 +1,7109 @@
+basePath: /enterprise/projects/api
+definitions:
+  aiseo.BrandTopicWithPrompts:
+    properties:
+      prompts:
+        items:
+          type: string
+        type: array
+      topic:
+        type: string
+      volume:
+        type: integer
+    type: object
+  http_server.BasicResponse:
+    properties:
+      errors:
+        additionalProperties: true
+        type: object
+      message:
+        type: string
+    type: object
+  model.AIModelResponse:
+    properties:
+      icon:
+        type: string
+      id:
+        type: string
+      key:
+        type: string
+      name:
+        type: string
+    type: object
+  model.AIOBenchmarkRequest:
+    properties:
+      brand_aliases:
+        items:
+          type: string
+        type: array
+      brand_name:
+        type: string
+      color:
+        type: string
+      domain:
+        type: string
+      favorite:
+        type: boolean
+    type: object
+  model.AIOBenchmarkWithCounters:
+    properties:
+      brand_aliases:
+        items:
+          type: string
+        type: array
+      brand_name:
+        type: string
+      color:
+        type: string
+      domain:
+        type: string
+      favorite:
+        type: boolean
+      id:
+        type: string
+      main_brand:
+        type: boolean
+      product_names:
+        items:
+          type: string
+        type: array
+      products_count:
+        type: integer
+      project_id:
+        type: string
+      rejected_brand_aliases:
+        items:
+          type: string
+        type: array
+    type: object
+  model.AIOProduct:
+    properties:
+      aliases:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      rejected_aliases:
+        items:
+          type: string
+        type: array
+    type: object
+  model.AIOProductEntity:
+    properties:
+      aliases:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+      rejected_aliases:
+        items:
+          type: string
+        type: array
+    type: object
+  model.AIOProjectInitializedResponse:
+    properties:
+      initialized:
+        type: boolean
+    type: object
+  model.AIOPromptWithStatus:
+    properties:
+      id:
+        type: string
+      is_new:
+        type: boolean
+      name:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/model.AIOTag'
+        type: array
+    type: object
+  model.AIOPromptsListRequest:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      search:
+        type: string
+      sort_dir:
+        type: string
+      sort_field:
+        type: string
+      tag_ids:
+        items:
+          type: string
+        type: array
+      unassigned:
+        type: boolean
+    type: object
+  model.AIOPromptsWithStatusListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.AIOPromptWithStatus'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+      unassigned:
+        type: integer
+    type: object
+  model.AIOTag:
+    properties:
+      children_count:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: string
+      path:
+        items:
+          $ref: '#/definitions/model.AIOTagLeaf'
+        type: array
+      prompts_count:
+        type: integer
+    type: object
+  model.AIOTagLeaf:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: string
+    type: object
+  model.AIOTaggedPromptsCreateRequest:
+    properties:
+      prompts:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+    type: object
+  model.AIOTagsListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.AIOTag'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.AISettings:
+    properties:
+      benchmarks_count:
+        type: integer
+      brand_name_display:
+        type: string
+      brand_names:
+        items:
+          type: string
+        type: array
+      country:
+        $ref: '#/definitions/model.CountryResponse'
+      language:
+        $ref: '#/definitions/model.LanguageResponse'
+      location:
+        $ref: '#/definitions/model.LocationResponse'
+      models_stats:
+        $ref: '#/definitions/model.ProjectModelStats'
+      products_count:
+        type: integer
+      prompts_count:
+        type: integer
+      segments_count:
+        type: integer
+    type: object
+  model.AdvancedCrawlingConsentRequest:
+    properties:
+      accepted:
+        type: boolean
+      confirmed_at:
+        type: string
+      confirmed_by_email:
+        type: string
+      confirmed_by_name:
+        type: string
+    required:
+    - accepted
+    - confirmed_at
+    - confirmed_by_email
+    - confirmed_by_name
+    type: object
+  model.AdvancedCrawlingConsentResponse:
+    properties:
+      accepted:
+        type: boolean
+      confirmed_at:
+        type: string
+      confirmed_by_email:
+        type: string
+      confirmed_by_name:
+        type: string
+    type: object
+  model.ApplyInteractiveIgnoreIssueRulesRequest:
+    properties:
+      filters:
+        items:
+          type: integer
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+    required:
+    - filters
+    - name
+    type: object
+  model.AvailablePromptsResponse:
+    properties:
+      available:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.BatchDeleteRequest:
+    properties:
+      all:
+        type: boolean
+      cascade:
+        type: boolean
+      ids:
+        items:
+          type: string
+        type: array
+    required:
+    - ids
+    type: object
+  model.BatchReferenceRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.ReferenceRequest'
+        minItems: 1
+        type: array
+    required:
+    - items
+    type: object
+  model.BrandURL:
+    properties:
+      benchmark_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      project_id:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+      url:
+        type: string
+    type: object
+  model.BrandURLRequest:
+    properties:
+      type:
+        maxLength: 32
+        type: string
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  model.BulkCreateAIOProjectsErrorItem:
+    properties:
+      message:
+        type: string
+      row_index:
+        type: integer
+    type: object
+  model.BulkCreateAIOProjectsErrorResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/model.BulkCreateAIOProjectsErrorItem'
+        type: array
+    type: object
+  model.BulkCreateAIOProjectsLimitInfoResponse:
+    properties:
+      available:
+        type: integer
+      max:
+        type: integer
+      requested:
+        type: integer
+    type: object
+  model.BulkCreateAIOProjectsLimitsResponse:
+    properties:
+      can_create:
+        type: boolean
+      projects:
+        $ref: '#/definitions/model.BulkCreateAIOProjectsLimitInfoResponse'
+      prompts:
+        $ref: '#/definitions/model.BulkCreateAIOProjectsLimitInfoResponse'
+    type: object
+  model.BulkCreateAIOProjectsPublishedItem:
+    properties:
+      project_id:
+        type: string
+      row_index:
+        type: integer
+    type: object
+  model.BulkCreateAIOProjectsResponse:
+    properties:
+      projects:
+        items:
+          $ref: '#/definitions/model.BulkCreateAIOProjectsResponseItem'
+        type: array
+      published_projects:
+        items:
+          $ref: '#/definitions/model.BulkCreateAIOProjectsPublishedItem'
+        type: array
+      unpublished_projects:
+        items:
+          $ref: '#/definitions/model.BulkCreateAIOProjectsUnpublishedItem'
+        type: array
+    type: object
+  model.BulkCreateAIOProjectsResponseItem:
+    properties:
+      created_ai_model_ids:
+        items:
+          type: string
+        type: array
+      project_id:
+        type: string
+      prompt_count:
+        type: integer
+      row_index:
+        type: integer
+    type: object
+  model.BulkCreateAIOProjectsUnpublishedItem:
+    properties:
+      project_id:
+        type: string
+      reason:
+        type: string
+      row_index:
+        type: integer
+    type: object
+  model.CICompetitor:
+    properties:
+      color:
+        type: string
+      domain:
+        type: string
+      id:
+        type: string
+      project_id:
+        type: string
+    type: object
+  model.CICompetitorsResponse:
+    properties:
+      ci_competitors:
+        items:
+          $ref: '#/definitions/model.CICompetitor'
+        type: array
+    type: object
+  model.CICompetitorsUpdateRequest:
+    properties:
+      ci_competitors:
+        items:
+          $ref: '#/definitions/model.CICompetitor'
+        type: array
+    type: object
+  model.CICountriesResponse:
+    properties:
+      ci_countries:
+        items:
+          type: string
+        type: array
+    type: object
+  model.CICountriesUpdateRequest:
+    properties:
+      ci_countries:
+        items:
+          type: string
+        type: array
+    type: object
+  model.CISettings:
+    properties:
+      competitors:
+        items:
+          $ref: '#/definitions/model.CICompetitor'
+        type: array
+      countries:
+        items:
+          type: string
+        type: array
+      segments_count:
+        type: integer
+    type: object
+  model.CopyAllSegmentsRequest:
+    properties:
+      source_project_id:
+        type: string
+    required:
+    - source_project_id
+    type: object
+  model.CopySegmentsRequest:
+    properties:
+      segment_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      target_project_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - segment_ids
+    - target_project_ids
+    type: object
+  model.CountryListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.CountryResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.CountryResponse:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+    type: object
+  model.CrawlerConfigurationCreateRequest:
+    properties:
+      analysis_device:
+        enum:
+        - desktop
+        - mobile
+        - tablet
+        type: string
+      analysis_speed:
+        type: integer
+      analyze_shadow_dom:
+        type: boolean
+      analyze_sitemap_xml:
+        type: boolean
+      analyze_subdomains:
+        type: boolean
+      budget:
+        type: integer
+      custom_user_agent:
+        type: string
+      entry_point:
+        type: string
+      htaccess_login:
+        type: string
+      htaccess_password:
+        type: string
+      ignore_get_parameters:
+        type: string
+      js_rendering:
+        type: boolean
+      location:
+        type: string
+      name:
+        type: string
+      no_adding_extracted_urls_to_queue:
+        type: boolean
+      robots_txt_behaviour:
+        $ref: '#/definitions/model.RobotsTxtBehaviourRequest'
+      schedule:
+        $ref: '#/definitions/model.CrawlerScheduleRequest'
+      show_in_dashboard:
+        type: boolean
+      sitemap_urls:
+        items:
+          type: string
+        type: array
+      start_urls:
+        items:
+          type: string
+        type: array
+      subfolder:
+        type: string
+      url_rules:
+        items:
+          $ref: '#/definitions/model.CrawlerUrlRuleRequest'
+        type: array
+      use_multi_start_urls:
+        type: boolean
+      user_agent:
+        type: string
+    required:
+    - analysis_device
+    - analysis_speed
+    - budget
+    - location
+    - name
+    - robots_txt_behaviour
+    - user_agent
+    type: object
+  model.CrawlerConfigurationListItemResponse:
+    properties:
+      analysis_device:
+        type: string
+      analysis_speed:
+        type: integer
+      budget:
+        type: integer
+      custom_user_agent:
+        type: string
+      id:
+        type: string
+      js_rendering:
+        type: boolean
+      location:
+        type: string
+      name:
+        type: string
+      project_id:
+        type: string
+      publish_status:
+        type: string
+      schedule:
+        $ref: '#/definitions/model.CrawlerScheduleResponse'
+      show_in_dashboard:
+        type: boolean
+      use_multi_start_urls:
+        type: boolean
+      user_agent:
+        type: string
+    type: object
+  model.CrawlerConfigurationResponse:
+    properties:
+      analysis_device:
+        type: string
+      analysis_speed:
+        type: integer
+      analyze_shadow_dom:
+        type: boolean
+      analyze_sitemap_xml:
+        type: boolean
+      analyze_subdomains:
+        type: boolean
+      budget:
+        type: integer
+      custom_user_agent:
+        type: string
+      entry_point:
+        type: string
+      htaccess_login:
+        type: string
+      htaccess_password:
+        type: string
+      id:
+        type: string
+      ignore_get_parameters:
+        type: string
+      js_rendering:
+        type: boolean
+      location:
+        type: string
+      name:
+        type: string
+      no_adding_extracted_urls_to_queue:
+        type: boolean
+      project_id:
+        type: string
+      publish_status:
+        type: string
+      published_at:
+        type: string
+      publishing_failed_reason:
+        type: string
+      robots_txt_behaviour:
+        $ref: '#/definitions/model.RobotsTxtBehaviourResponse'
+      schedule:
+        $ref: '#/definitions/model.CrawlerScheduleResponse'
+      show_in_dashboard:
+        type: boolean
+      sitemap_urls:
+        items:
+          type: string
+        type: array
+      start_urls:
+        items:
+          type: string
+        type: array
+      subfolder:
+        type: string
+      url_rules:
+        items:
+          $ref: '#/definitions/model.CrawlerUrlRuleResponse'
+        type: array
+      use_multi_start_urls:
+        type: boolean
+      user_agent:
+        type: string
+    type: object
+  model.CrawlerConfigurationUpdateRequestSwagger:
+    properties:
+      analysis_device:
+        type: string
+      analysis_speed:
+        type: integer
+      analyze_shadow_dom:
+        type: boolean
+      analyze_sitemap_xml:
+        type: boolean
+      analyze_subdomains:
+        type: boolean
+      budget:
+        type: integer
+      custom_user_agent:
+        type: string
+      entry_point:
+        type: string
+      htaccess_login:
+        type: string
+      htaccess_password:
+        type: string
+      id:
+        type: string
+      ignore_get_parameters:
+        type: string
+      js_rendering:
+        type: boolean
+      location:
+        type: string
+      name:
+        type: string
+      no_adding_extracted_urls_to_queue:
+        type: boolean
+      project_id:
+        type: string
+      robots_txt_behaviour:
+        $ref: '#/definitions/model.RobotsTxtBehaviourRequest'
+      schedule:
+        $ref: '#/definitions/model.CrawlerScheduleRequest'
+      show_in_dashboard:
+        type: boolean
+      sitemap_urls:
+        items:
+          type: string
+        type: array
+      start_urls:
+        items:
+          type: string
+        type: array
+      subfolder:
+        type: string
+      url_rules:
+        items:
+          $ref: '#/definitions/model.CrawlerUrlRuleRequest'
+        type: array
+      use_multi_start_urls:
+        type: boolean
+      user_agent:
+        type: string
+    required:
+    - id
+    - project_id
+    type: object
+  model.CrawlerConfigurationsListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.CrawlerConfigurationListItemResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.CrawlerScheduleRequest:
+    properties:
+      frequency:
+        type: string
+      start_day:
+        type: string
+      start_time:
+        type: string
+    required:
+    - frequency
+    - start_time
+    type: object
+  model.CrawlerScheduleResponse:
+    properties:
+      frequency:
+        type: string
+      start_day:
+        type: string
+      start_time:
+        type: string
+    type: object
+  model.CrawlerStats:
+    properties:
+      device:
+        type: string
+      location:
+        $ref: '#/definitions/model.CountryResponse'
+    type: object
+  model.CrawlerUrlRuleRequest:
+    properties:
+      dimension:
+        type: string
+      operator:
+        type: string
+      type:
+        type: string
+      value:
+        type: string
+    required:
+    - dimension
+    - operator
+    - type
+    - value
+    type: object
+  model.CrawlerUrlRuleResponse:
+    properties:
+      dimension:
+        type: string
+      operator:
+        type: string
+      type:
+        type: string
+      value:
+        type: string
+    type: object
+  model.CreateAIOProductsResponse:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/model.AIOProductEntity'
+        type: array
+    type: object
+  model.CreateProjectAIModelRequest:
+    properties:
+      model_id:
+        type: string
+    required:
+    - model_id
+    type: object
+  model.CustomExtractionRequest:
+    properties:
+      additional_info:
+        type: string
+      id:
+        type: string
+      mode:
+        enum:
+        - xpath_get_complete_tag
+        - xpath_get_text_only
+        - css_get_text_only
+        - css_get_complete_tag
+        - regex_search_in_text
+        - regex_search_in_html
+        type: string
+      name:
+        type: string
+      nr:
+        type: integer
+      project_id:
+        type: string
+      selector:
+        type: string
+      type:
+        enum:
+        - field
+        - counter
+        type: string
+    required:
+    - mode
+    - name
+    - selector
+    - type
+    type: object
+  model.CustomExtractionResponse:
+    properties:
+      additional_info:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      mode:
+        type: string
+      name:
+        type: string
+      nr:
+        type: integer
+      project_id:
+        type: string
+      selector:
+        type: string
+      type:
+        type: string
+    type: object
+  model.CustomExtractionsListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.CustomExtractionResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.DeleteAIOProductsRequest:
+    properties:
+      ids:
+        items:
+          type: string
+        type: array
+    required:
+    - ids
+    type: object
+  model.ExistingKeywordsCountResponse:
+    properties:
+      existing_count:
+        type: integer
+    type: object
+  model.FilterRequest:
+    properties:
+      column_name:
+        type: string
+      filters:
+        items:
+          $ref: '#/definitions/model.FilterRequest'
+        type: array
+      value: {}
+    type: object
+  model.FilterResponse:
+    properties:
+      column_name:
+        type: string
+      filters:
+        items:
+          $ref: '#/definitions/model.FilterResponse'
+        type: array
+      value: {}
+    type: object
+  model.IDsWithStatsResponse:
+    properties:
+      existing_count:
+        type: integer
+      ids:
+        items:
+          type: string
+        type: array
+    type: object
+  model.ImportPromptsRequest:
+    properties:
+      prompt_ids:
+        items:
+          type: string
+        type: array
+      source_model_id:
+        type: string
+      source_project_id:
+        type: string
+      source_workspace_id:
+        type: string
+      tag_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - source_model_id
+    - source_project_id
+    - source_workspace_id
+    type: object
+  model.IssueRulesListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.IssueRulesResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.IssueRulesRequest:
+    properties:
+      filters:
+        $ref: '#/definitions/model.FilterRequest'
+      id:
+        type: string
+      name:
+        type: string
+    required:
+    - filters
+    - name
+    type: object
+  model.IssueRulesResponse:
+    properties:
+      created_at:
+        type: string
+      filters:
+        $ref: '#/definitions/model.FilterResponse'
+      id:
+        type: string
+      name:
+        type: string
+      project_id:
+        type: string
+    type: object
+  model.KeywordListResponse:
+    properties:
+      all_total:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.KeywordResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+      unassigned:
+        type: integer
+    type: object
+  model.KeywordRequest:
+    properties:
+      items:
+        items:
+          type: string
+        type: array
+      tag_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  model.KeywordResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      tags:
+        $ref: '#/definitions/model.TreeNodeListResponse'
+    type: object
+  model.KeywordsByTagIDsRequest:
+    properties:
+      include_tags:
+        type: integer
+      limit:
+        type: integer
+      page:
+        type: integer
+      search:
+        type: string
+      sort_dir:
+        type: string
+      tag_ids:
+        items:
+          type: string
+        type: array
+      unassigned:
+        type: boolean
+    type: object
+  model.KeywordsTaggedRequest:
+    properties:
+      keywords:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        description: 'TODO: LJ: Validate'
+        type: object
+    type: object
+  model.LanguageListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.LanguageResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.LanguageResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  model.ListAIOBenchmarksResponse:
+    properties:
+      aio_benchmarks:
+        items:
+          $ref: '#/definitions/model.AIOBenchmarkWithCounters'
+        type: array
+    type: object
+  model.ListAIOProductsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.AIOProductEntity'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.ListBrandURLsResponse:
+    properties:
+      brand_urls:
+        items:
+          $ref: '#/definitions/model.BrandURL'
+        type: array
+    type: object
+  model.LocationResponse:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  model.ProjectAIModelListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.ProjectAIModelResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.ProjectAIModelResponse:
+    properties:
+      id:
+        type: string
+      model:
+        $ref: '#/definitions/model.AIModelResponse'
+      prompts_count:
+        type: integer
+    type: object
+  model.ProjectListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.ProjectResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.ProjectListWithCursorResponse:
+    properties:
+      items:
+        description: List of projects
+        items:
+          $ref: '#/definitions/model.ProjectResponse'
+        type: array
+      next_cursor:
+        description: Base64 encoded cursor for next page pagination
+        example: eyJTRU9PZmZzZXQiOjI1LCJBSU9PZmZzZXQiOjE1fQ==
+        type: string
+      total:
+        description: Total number of projects matching the filter criteria
+        example: 150
+        type: integer
+    type: object
+  model.ProjectModelStats:
+    properties:
+      models:
+        items:
+          $ref: '#/definitions/model.ProjectAIModelResponse'
+        type: array
+      models_count:
+        type: integer
+    type: object
+  model.ProjectRequest:
+    properties:
+      brand_name_display:
+        type: string
+      brand_names:
+        items:
+          type: string
+        type: array
+      color:
+        type: string
+      country_code:
+        type: string
+      domain:
+        type: string
+      language_id:
+        type: string
+      location_id:
+        type: integer
+      location_name:
+        type: string
+      name:
+        type: string
+      type:
+        description: 'enum: seo, ai, mfour, si, ci'
+        enum:
+        - SEO
+        - AI
+        - MFOUR
+        - SI
+        - CI
+        - seo
+        - ai
+        - mfour
+        - si
+        - ci
+        type: string
+    required:
+    - name
+    - type
+    type: object
+  model.ProjectResponse:
+    properties:
+      color:
+        type: string
+      domain:
+        type: string
+      draft_id:
+        type: string
+      favourite:
+        type: boolean
+      id:
+        type: string
+      is_draft:
+        type: boolean
+      live_id:
+        type: string
+      name:
+        type: string
+      publish_status:
+        description: 'enum: draft, publishing, initial_publish_failed, live, live_with_unpublished_updates'
+        type: string
+      published_at:
+        type: string
+      publishing_failed_reason:
+        type: string
+      role:
+        description: role/project/viewer or role/project/editor
+        type: string
+      settings:
+        $ref: '#/definitions/model.Settings'
+      shared_with:
+        type: integer
+      type:
+        description: 'enum: aio,mfour,ci'
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.ProjectUpdateRequest:
+    properties:
+      brand_name_display:
+        type: string
+      brand_names:
+        items:
+          type: string
+        type: array
+      color:
+        type: string
+      country_code:
+        type: string
+      domain:
+        type: string
+      language_id:
+        type: string
+      location_id:
+        type: integer
+      location_name:
+        type: string
+      name:
+        type: string
+      type:
+        description: 'enum: ai, mfour, si'
+        enum:
+        - AI
+        - MFOUR
+        - SI
+        - CI
+        - ai
+        - mfour
+        - si
+        - ci
+        type: string
+    required:
+    - type
+    type: object
+  model.ProjectV2ListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.ProjectV2Response'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.ProjectV2Response:
+    properties:
+      color:
+        type: string
+      domain:
+        type: string
+      draft_id:
+        type: string
+      favourite:
+        type: boolean
+      id:
+        type: string
+      is_draft:
+        type: boolean
+      live_id:
+        type: string
+      name:
+        type: string
+      publish_status:
+        description: 'enum: draft, publishing, initial_publish_failed, live, live_with_unpublished_updates'
+        type: string
+      published_at:
+        type: string
+      publishing_failed_reason:
+        type: string
+      role:
+        type: string
+      settings:
+        $ref: '#/definitions/model.Settings'
+      shared_with:
+        type: integer
+      type:
+        description: 'enum: aio,mfour,ci,seo,si'
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.ReferenceRequest:
+    properties:
+      id:
+        type: string
+      references:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      replace:
+        type: boolean
+    required:
+    - id
+    - references
+    type: object
+  model.RenamePromptRequest:
+    properties:
+      new_name:
+        type: string
+    type: object
+  model.RenamePromptResponse:
+    properties:
+      id:
+        type: string
+      is_updated:
+        type: boolean
+      name:
+        type: string
+    type: object
+  model.ReplaceModelSettingsRequest:
+    properties:
+      ids:
+        items:
+          type: string
+        type: array
+    required:
+    - ids
+    type: object
+  model.ResolveLocationsRequest:
+    properties:
+      locations:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - locations
+    type: object
+  model.ResolveLocationsResponse:
+    properties:
+      results:
+        additionalProperties:
+          $ref: '#/definitions/model.ResolveLocationsResponseItem'
+        type: object
+    type: object
+  model.ResolveLocationsResponseItem:
+    properties:
+      country_code:
+        type: string
+      location_name:
+        type: string
+      status:
+        type: string
+    type: object
+  model.RestorePromptNamesRequest:
+    properties:
+      ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - ids
+    type: object
+  model.RestorePromptNamesResponse:
+    properties:
+      restored_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  model.RobotsTxtBehaviourRequest:
+    properties:
+      behaviour:
+        enum:
+        - analyse_all_custom_robots_stats
+        - analyse_all_site_robots_stats
+        - respect_site_robots_txt
+        - respect_custom_robots_txt
+        type: string
+      custom_robots_txt:
+        type: string
+    required:
+    - behaviour
+    type: object
+  model.RobotsTxtBehaviourResponse:
+    properties:
+      behaviour:
+        type: string
+      custom_robots_txt:
+        type: string
+    type: object
+  model.SIProjectSettingsRequest:
+    properties:
+      allow_more_parallel_instances:
+        type: boolean
+    type: object
+  model.SISettings:
+    properties:
+      advanced_crawling_consent:
+        $ref: '#/definitions/model.AdvancedCrawlingConsentResponse'
+      allow_more_parallel_instances:
+        type: boolean
+      crawler_stats:
+        items:
+          $ref: '#/definitions/model.CrawlerStats'
+        type: array
+      crawlers_count:
+        type: integer
+      extractions_count:
+        type: integer
+      pages_count:
+        type: integer
+      rules_count:
+        type: integer
+      segments_count:
+        type: integer
+    type: object
+  model.SegmentsListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.SegmentsResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.SegmentsRequest:
+    properties:
+      filters:
+        $ref: '#/definitions/model.FilterRequest'
+      name:
+        type: string
+    required:
+    - filters
+    - name
+    type: object
+  model.SegmentsResponse:
+    properties:
+      filters:
+        $ref: '#/definitions/model.FilterResponse'
+      id:
+        type: string
+      name:
+        type: string
+      project_id:
+        type: string
+    type: object
+  model.SetFavouriteRequest:
+    properties:
+      favourite:
+        type: boolean
+    type: object
+  model.Settings:
+    properties:
+      ai:
+        $ref: '#/definitions/model.AISettings'
+      ci:
+        $ref: '#/definitions/model.CISettings'
+      si:
+        $ref: '#/definitions/model.SISettings'
+    type: object
+  model.StringIDName:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  model.StringIDNameListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.StringIDName'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.TreeNodeListRequest:
+    properties:
+      names:
+        items:
+          type: string
+        type: array
+      parent_id:
+        type: string
+    required:
+    - names
+    type: object
+  model.TreeNodeListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.TreeNodeResponse'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  model.TreeNodeRequest:
+    properties:
+      name:
+        type: string
+      parent_id:
+        type: string
+    required:
+    - name
+    type: object
+  model.TreeNodeResponse:
+    properties:
+      children_count:
+        type: integer
+      id:
+        type: string
+      keyword_count:
+        type: integer
+      name:
+        type: string
+      parent_id:
+        type: string
+    type: object
+  model.UUIDResponse:
+    properties:
+      id:
+        type: string
+    type: object
+  model.UUIDsListRequest:
+    properties:
+      ids:
+        items:
+          type: string
+        type: array
+    required:
+    - ids
+    type: object
+info:
+  contact: {}
+  description: This is the Semrush Enterprise Solutions (ES) Project Engine API. The
+    Project Engine handles projects for the ES.
+  title: Project Engine API
+  version: "1.0"
+paths:
+  /v1/countries:
+    get:
+      consumes:
+      - application/json
+      description: list countries
+      operationId: projects-admin-list-countries
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CountryListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list countries
+      tags:
+      - Suggestions
+  /v1/languages:
+    get:
+      consumes:
+      - application/json
+      description: list languages
+      operationId: projects-admin-list-languages
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.LanguageListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list languages
+      tags:
+      - Suggestions
+  /v1/locations/resolve:
+    post:
+      consumes:
+      - application/json
+      description: Resolves input location strings against projectengine location
+        data using Postgres similarity matching.
+      operationId: resolve-locations
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Location resolution request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.ResolveLocationsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ResolveLocationsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Resolve locations
+      tags:
+      - Locations
+  /v1/workspaces/{id}/brand-topics:
+    get:
+      description: Returns top 10 brand topics with their search volume and up to
+        100 prompts each, fetched directly from the AI-SEO service.
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Target domain
+        example: '"example.com"'
+        in: query
+        name: domain
+        required: true
+        type: string
+      - description: Country code
+        example: '"US"'
+        in: query
+        name: country
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/aiseo.BrandTopicWithPrompts'
+            type: array
+        "400":
+          description: Bad Request - Missing or invalid parameters
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized - Missing or invalid JWT token
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden - Insufficient permissions
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Get brand topics with prompts
+      tags:
+      - AI-SEO
+  /v1/workspaces/{id}/keywords:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        [DEPRECATED] list keywords for workspace with given ID. Keywords are non-hierarchical data.
+        Note: When type parameter is empty, the endpoint returns both prompts and brand names.
+        In this case, pagination is applied separately to each type, so the total number of items
+        in the response may be up to 2x the limit parameter (e.g., limit=10 may return up to 20 items).
+        For proper pagination, specify the type parameter (either "prompt" or "brand_name").
+      operationId: workspace-list-keywords
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: search query
+        in: query
+        name: search
+        type: string
+      - description: tag type
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StringIDNameListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list keywords for workspace
+      tags:
+      - Suggestions
+  /v1/workspaces/{id}/projects:
+    get:
+      consumes:
+      - application/json
+      description: list projects for workspace with given ID
+      operationId: projects-list-projects
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: project type
+        in: query
+        name: type
+        type: string
+      - description: show live projects
+        in: query
+        name: live
+        type: boolean
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProjectListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list projects for workspace
+      tags:
+      - Projects
+    post:
+      consumes:
+      - application/json
+      description: create project in workspace with given ID
+      operationId: projects-post-project
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.ProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.ProjectResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create a project
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/{project_id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete project in workspace with given IDs
+      operationId: projects-delete-project
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete a project
+      tags:
+      - Projects
+    get:
+      consumes:
+      - application/json
+      description: get project in workspace with given IDs
+      operationId: projects-get-project
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: project ID
+        in: query
+        name: draft
+        required: true
+        type: string
+      - description: project type, defaults to ai. Required for seo, mfour and journey
+          products
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProjectResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: get a project
+      tags:
+      - Projects
+    patch:
+      consumes:
+      - application/json
+      description: partially update project in workspace with given IDs
+      operationId: projects-patch-project
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.ProjectUpdateRequest'
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProjectResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: partially update a project
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/{project_id}/ai_models:
+    delete:
+      consumes:
+      - application/json
+      description: delete AI models in workspace and project with given IDs
+      operationId: ai-delete-models
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete AI models
+      tags:
+      - AIO
+    get:
+      consumes:
+      - application/json
+      description: list AI models for workspace and project with given IDs
+      operationId: ai-list-models
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model name
+        in: query
+        name: model
+        type: string
+      - description: location
+        in: query
+        name: location
+        type: string
+      - description: language
+        in: query
+        name: language
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProjectAIModelListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list AI models for workspace
+      tags:
+      - AIO
+    post:
+      consumes:
+      - application/json
+      description: create an AI model in workspace and project with given IDs
+      operationId: ai-create-model
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateProjectAIModelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProjectAIModelResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create an AI model
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}:
+    get:
+      consumes:
+      - application/json
+      description: get an AI model in workspace and project with given IDs
+      operationId: ai-get-model
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProjectAIModelResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: get an AI model
+      tags:
+      - AIO
+    patch:
+      consumes:
+      - application/json
+      description: update an AI model in workspace and project with given IDs
+      operationId: ai-update-model
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateProjectAIModelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProjectAIModelResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: update an AI model
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/keywords:
+    delete:
+      consumes:
+      - application/json
+      description: delete prompts in workspace, project, and AI model with given IDs
+      operationId: ai-delete-prompt
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete prompts
+      tags:
+      - AIO
+    get:
+      consumes:
+      - application/json
+      description: list prompts for workspace, project, and AI model with given IDs
+      operationId: ai-list-prompts
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: tag ID
+        in: query
+        name: tag_id
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: 'sort asc or desc '
+        in: query
+        name: sort_dir
+        type: string
+      - description: search query
+        in: query
+        name: search
+        type: string
+      - description: search query
+        in: query
+        name: include_tags
+        type: integer
+      - description: filter for unassigned
+        in: query
+        name: unassigned
+        type: boolean
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.KeywordListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list prompts for AI model
+      tags:
+      - AIO
+    post:
+      consumes:
+      - application/json
+      description: create prompts in workspace, project, and AI model with given IDs
+      operationId: ai-create-prompt
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.KeywordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StringIDName'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create prompts
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/keywords/{keyword_id}/tags:
+    get:
+      consumes:
+      - application/json
+      description: list categories for workspace, project, AI model and keyword with
+        given ID
+      operationId: ai-list-categories
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: query
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: query
+        name: model_id
+        required: true
+        type: string
+      - description: keyword ID
+        in: query
+        name: keyword_id
+        required: true
+        type: string
+      - description: parent ID
+        in: query
+        name: parent_id
+        required: true
+        type: string
+      - description: search query
+        in: query
+        name: search
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TreeNodeListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list categories for prompt
+      tags:
+      - AIO
+    post:
+      consumes:
+      - application/json
+      description: create a category in workspace, project, AI model and keyword with
+        given IDs
+      operationId: ai-create-category
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: query
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: query
+        name: model_id
+        required: true
+        type: string
+      - description: keyword ID
+        in: query
+        name: keyword_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.TreeNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TreeNodeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create a category
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/keywords/import:
+    post:
+      consumes:
+      - application/json
+      description: import prompts from another project to current project with workspace
+        limit validation
+      operationId: ai-import-prompts
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.ImportPromptsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.StringIDNameListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: import prompts from another project
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/keywords/tagged:
+    post:
+      consumes:
+      - application/json
+      description: create model prompts with new categories in workspace, project
+        and AI model with given IDs
+      operationId: ai-create-keywords-with-category
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.KeywordsTaggedRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.KeywordResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create model prompts with new categories
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/keywords/tagged/download:
+    get:
+      consumes:
+      - application/json
+      description: downloads tagged keywords in workspace, project and AI model with
+        given IDs
+      operationId: ai-download-tagged-keywords
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: downloads tagged keywords
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/keywords/tagged/upload:
+    post:
+      consumes:
+      - application/json
+      description: upload tagged keywords in workspace, project and AI model with
+        given IDs
+      operationId: ai-upload-tagged-keywords
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: The file to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "408":
+          description: Request Timeout
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: upload tagged keywords
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/keywords/tags:
+    delete:
+      consumes:
+      - application/json
+      description: delete prompts in workspace, project, and AI model with given IDs
+      operationId: ai-delete-prompts-batch
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchReferenceRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete prompts
+      tags:
+      - AIO
+    put:
+      consumes:
+      - application/json
+      description: delete prompts in workspace, project, and AI model with given IDs
+      operationId: ai-update-prompts-batch
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchReferenceRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete prompts
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/keywords_by_tags:
+    post:
+      consumes:
+      - application/json
+      description: list prompts for workspace, project, and AI model with given IDs,
+        search by multiple tag ids
+      operationId: ai-list-prompts-by-tag-ids
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body with tag IDs and pagination
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.KeywordsByTagIDsRequest'
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.KeywordListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list prompts for AI model by tag ids
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/replace:
+    put:
+      consumes:
+      - application/json
+      description: replace target model settings by source model settings
+      operationId: ai-replace-model-settings
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.ReplaceModelSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.KeywordResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: replace model settings
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/tags:
+    delete:
+      consumes:
+      - application/json
+      description: delete categories in workspace, project, AI model and keyword with
+        given IDs
+      operationId: ai-delete-category
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: query
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: query
+        name: model_id
+        required: true
+        type: string
+      - description: keyword ID
+        in: query
+        name: keyword_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete categories
+      tags:
+      - AIO
+    get:
+      consumes:
+      - application/json
+      description: get categories for workspace, project and AI model with given IDs
+      operationId: ai-get-model-categories
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: parent ID
+        in: query
+        name: parent_id
+        required: true
+        type: string
+      - description: search string
+        in: query
+        name: search
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.TreeNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TreeNodeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: get categories for a model
+      tags:
+      - AIO
+    post:
+      consumes:
+      - application/json
+      description: create model categories in workspace, project and AI model with
+        given IDs
+      operationId: ai-create-model-category
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.TreeNodeListRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TreeNodeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create model categories
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks:
+    delete:
+      description: Delete benchmarks for workspace and project with given IDs
+      operationId: ai-delete-benchmarks
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UUIDsListRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: 'Conflict: main brand benchmark cannot be deleted'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Delete AI benchmarks for project
+      tags:
+      - AIO
+    get:
+      description: List AIO benchmarks for workspace and project with given IDs (favorites
+        first, then newest)
+      operationId: ai-list-benchmarks
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListAIOBenchmarksResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: List AIO benchmarks for a project
+      tags:
+      - AIO
+    post:
+      deprecated: true
+      description: '[Deprecated - use v2 batch endpoint] Create single benchmark for
+        workspace and project with given IDs'
+      operationId: ai-create-benchmark
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.AIOBenchmarkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UUIDResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: 'Conflict: duplicate brand name or alias'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: '[v1] Create AI benchmark for project (single)'
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks/{benchmark_id}:
+    put:
+      description: Update benchmark for workspace and project with given IDs
+      operationId: ai-update-benchmark
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.AIOBenchmarkRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: 'Conflict: duplicate brand name or alias'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update AI benchmark for project
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/aio/init_status:
+    get:
+      description: Check whether AIO project initialization has finished for workspace
+        and project with given IDs.
+      parameters:
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AIOProjectInitializedResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Check whether an AIO project is initialized
+      tags:
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/apply_interactive_ignore_issue_rules/{crawl_configuration_id}:
+    post:
+      consumes:
+      - application/json
+      description: Publishes an interactive-ignore-issue-rules event to the pub/sub
+        topic for the given crawl configuration. Accepts the same payload as the issue
+        rules endpoint.
+      operationId: si-apply-interactive-ignore-issue-rules
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Crawl Configuration ID
+        in: path
+        name: crawl_configuration_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.ApplyInteractiveIgnoreIssueRulesRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Publish interactive ignore issue rules event
+      tags:
+      - SI
+  /v1/workspaces/{id}/projects/{project_id}/ci/competitors:
+    put:
+      description: Full update of CI competitors that deletes existing entries and
+        then insert the ones in the request.
+      operationId: ci-update-competitors
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.CICompetitorsUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CICompetitorsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update CI competitors
+      tags:
+      - CI
+  /v1/workspaces/{id}/projects/{project_id}/ci/countries:
+    put:
+      description: Full update of CI countries that deletes existing entries and then
+        insert the ones in the request.
+      operationId: ci-update-countries
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.CICountriesUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CICountriesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update CI countries
+      tags:
+      - CI
+  /v1/workspaces/{id}/projects/{project_id}/crawl_configurations:
+    get:
+      description: List SI crawler configurations for workspace and project with given
+        IDs
+      operationId: si-list-crawl-configurations
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CrawlerConfigurationsListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: List SI crawler configurations for project
+      tags:
+      - SI
+    patch:
+      description: Partial update for SI crawler configuration with given ID
+      operationId: si-update-crawl-configuration
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.CrawlerConfigurationUpdateRequestSwagger'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CrawlerConfigurationResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Only the fields included in the request will be updated. Fields explicitly
+        set to null will be cleared (if they are initially optional).
+      tags:
+      - SI
+    post:
+      description: Create SI crawler configuration for workspace and project with
+        given IDs
+      operationId: si-create-crawl-configuration
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.CrawlerConfigurationCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UUIDResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Create SI crawler configuration for project
+      tags:
+      - SI
+  /v1/workspaces/{id}/projects/{project_id}/crawl_configurations/{crawl_configuration_id}:
+    delete:
+      description: Delete SI crawler configuration by given ID
+      operationId: si-delete-crawl-configuration
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Crawler Configiration ID
+        in: path
+        name: crawl_configuration_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Delete SI crawler configuration for project
+      tags:
+      - SI
+    get:
+      description: Get SI crawler configuration by given ID
+      operationId: si-get-crawl-configuration
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: string
+      - description: Crawler configuration ID
+        in: path
+        name: crawl_configuration_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CrawlerConfigurationResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Get SI crawler configuration for project
+      tags:
+      - SI
+  /v1/workspaces/{id}/projects/{project_id}/custom_extractions:
+    get:
+      description: Get custom extractions for workspace and project with given IDs
+      operationId: si-get-custom-extractions
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CustomExtractionsListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Get custom extractions for project
+      tags:
+      - SI
+    post:
+      description: Create custom extraction for workspace and project with given IDs
+      operationId: si-create-custom-extraction
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.CustomExtractionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UUIDResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Create custom extraction for project
+      tags:
+      - SI
+  /v1/workspaces/{id}/projects/{project_id}/custom_extractions/{custom_extraction_id}:
+    delete:
+      description: Delete custom extraction for workspace and project with given IDs
+      operationId: si-delete-custom-extraction
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Custom Extraction ID
+        in: path
+        name: custom_extraction_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Delete custom extraction for project
+      tags:
+      - SI
+    put:
+      description: Update custom extraction for workspace and project with given IDs
+      operationId: si-update-custom-extraction
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.CustomExtractionRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update custom extraction for project
+      tags:
+      - SI
+  /v1/workspaces/{id}/projects/{project_id}/discard:
+    post:
+      consumes:
+      - application/json
+      description: discard draft for project in workspace with given ID
+      operationId: projects-discard-project
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: discard draft for a project
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/{project_id}/favourite:
+    post:
+      consumes:
+      - application/json
+      description: mark project as favourite in given workspace with given ID
+      operationId: project-set-favourite
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: query
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.SetFavouriteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: mark project as favourite
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/{project_id}/issue_rules:
+    delete:
+      description: Delete SI issue rule for workspace and project with given IDs
+      operationId: si-delete-issue-rules
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UUIDsListRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Delete SI issue rules
+      tags:
+      - SI
+    get:
+      description: Get SI issue rules for workspace and project with given IDs
+      operationId: si-list-issue-rules
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: sort by issue rule field
+        enum:
+        - name
+        - created_at
+        - updated_at
+        in: query
+        name: sort
+        type: string
+      - description: sort direction
+        enum:
+        - asc
+        - desc
+        in: query
+        name: direction
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: string
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: string
+      - description: Search string to filter issue rules
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.IssueRulesListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Get SI issue rules for project
+      tags:
+      - SI
+    post:
+      description: Create SI issue rule for workspace and project with given IDs
+      operationId: si-create-issue-rule
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.IssueRulesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UUIDResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Create SI issue rule for project
+      tags:
+      - SI
+  /v1/workspaces/{id}/projects/{project_id}/issue_rules/{issue_rule_id}:
+    put:
+      description: Update SI issue rule for workspace and project with given IDs
+      operationId: si-update-issue-rule
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Issue Rule ID
+        in: path
+        name: issue_rule_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.IssueRulesRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update SI issue rule for project
+      tags:
+      - SI
+  /v1/workspaces/{id}/projects/{project_id}/publish:
+    post:
+      consumes:
+      - application/json
+      description: publish project in workspace with given ID
+      operationId: projects-publish-project
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: publish a project
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/{project_id}/segments:
+    delete:
+      description: Delete segments for workspace and project with given IDs
+      operationId: project-delete-segments
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UUIDsListRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Delete segments
+      tags:
+      - SI
+      - CI
+      - AIO
+    get:
+      description: List segments for workspace and project with given IDs
+      operationId: project-list-segments
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: sort by segment field
+        enum:
+        - name
+        - created_at
+        - updated_at
+        in: query
+        name: sort
+        type: string
+      - description: sort direction
+        enum:
+        - asc
+        - desc
+        in: query
+        name: direction
+        type: string
+      - description: search by segment name
+        in: query
+        name: search
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SegmentsListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: List segments for project
+      tags:
+      - SI
+      - CI
+      - AIO
+    post:
+      description: Create segment for workspace and project with given IDs
+      operationId: project-create-segment
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.SegmentsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UUIDResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Create segment for project
+      tags:
+      - SI
+      - CI
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/segments/{segment_id}:
+    get:
+      description: Segment by ID for workspace and project with given IDs
+      operationId: project-segment-by-id
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Segment ID
+        in: path
+        name: segment_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SegmentsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Segment for project by id
+      tags:
+      - SI
+      - CI
+      - AIO
+    put:
+      description: Update segment for workspace and project with given IDs
+      operationId: project-update-segment
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Segment ID
+        in: path
+        name: segment_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.SegmentsRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update segment for project
+      tags:
+      - SI
+      - CI
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/segments/copy:
+    post:
+      consumes:
+      - application/json
+      description: Copy specified segments from current project to other projects
+        within the same workspace
+      operationId: segments-copy-to-projects
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Source Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Copy segments request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CopySegmentsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Copy result with copied count
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Copy segments to other projects
+      tags:
+      - SI
+      - CI
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/segments/copy-all-from:
+    post:
+      consumes:
+      - application/json
+      description: Copy all segments from a source project to the current project
+        within the same workspace
+      operationId: segments-copy-all-from-project
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Target Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Copy all segments request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CopyAllSegmentsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Copy result with copied count
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Copy all segments from source project to current project
+      tags:
+      - SI
+      - CI
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/segments/export:
+    get:
+      description: Export all segments for workspace and project to CSV or XLSX format
+      operationId: project-export-segments
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Export draft segments
+        in: query
+        name: draft
+        type: boolean
+      - default: csv
+        description: 'Export format: csv or xlsx'
+        in: query
+        name: format
+        type: string
+      produces:
+      - text/csv
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: CSV or XLSX file content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Export segments to CSV or XLSX
+      tags:
+      - SI
+      - CI
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/segments/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Import segments from CSV data where each row contains a segment
+        name and its logical expression
+      operationId: project-import-segments
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: CSV or XLSX file with segments data
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Import result with imported count
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Import segments from CSV or XLSX file
+      tags:
+      - SI
+      - CI
+      - AIO
+  /v1/workspaces/{id}/projects/{project_id}/si/advanced_crawling_consent:
+    patch:
+      consumes:
+      - application/json
+      operationId: projects-update-advanced-crawling-consent
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdvancedCrawlingConsentRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Set advanced crawling consent for SI project
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/{project_id}/si/allow_more_parallel_instances:
+    patch:
+      consumes:
+      - application/json
+      description: Sets allow_more_parallel_instances flag for a project in workspace
+        with given ID
+      operationId: projects-set-allow-more-parallel-instances
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.SIProjectSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProjectResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: set allow_more_parallel_instances for SI project
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/{project_id}/tags:
+    delete:
+      consumes:
+      - application/json
+      description: delete tags in workspace and project with given IDs
+      operationId: projects-batch-delete-tags
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete tags
+      tags:
+      - Projects
+    get:
+      consumes:
+      - application/json
+      description: get tag list for workspace and project with given IDs
+      operationId: projects-get-tag-list
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: parent ID
+        in: query
+        name: parent_id
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: limit per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/model.TreeNodeListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: get tag list
+      tags:
+      - Projects
+    post:
+      consumes:
+      - application/json
+      description: create a tag in workspace and project with given IDs
+      operationId: projects-create-tag
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.TreeNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TreeNodeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create a tag
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/{project_id}/tags/{tag_id}:
+    patch:
+      consumes:
+      - application/json
+      description: update a tag in workspace, project, AI model and keyword with given
+        IDs
+      operationId: ai-update-tag
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: query
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: query
+        name: model_id
+        required: true
+        type: string
+      - description: Tag ID
+        in: query
+        name: tag_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.TreeNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TreeNodeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: update a tag
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/multi-type:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Retrieve projects from workspace supporting multiple project types with cursor-based pagination.
+        This endpoint allows fetching projects of different types (SEO, AIO, SI, CI, MFOUR, JOURNEY) in a single request.
+        Projects are sorted by their source-specific ordering and merged in a deterministic way.
+        Uses cursor-based pagination for efficient navigation through large datasets.
+      operationId: projects-list-projects-multi-type
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: 'Number of projects per page (default: 25, max: 100)'
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Comma-separated project types
+        example: '"SEO,AIO,SI,JOURNEY"'
+        in: query
+        name: types
+        required: true
+        type: string
+      - default: false
+        description: Show live projects instead of draft projects
+        in: query
+        name: live
+        type: boolean
+      - description: Search query to filter projects by name
+        example: '"my project"'
+        in: query
+        name: search
+        type: string
+      - description: Pagination cursor (base64 encoded). Leave empty for first page
+        example: '"eyJTRU9PZmZzZXQiOjI1LCJBSU9PZmZzZXQiOjE1fQ=="'
+        in: query
+        name: cursor
+        type: string
+      - description: Workspace UUID
+        example: '"123e4567-e89b-12d3-a456-426614174000"'
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved projects with pagination info
+          schema:
+            $ref: '#/definitions/model.ProjectListWithCursorResponse'
+        "400":
+          description: Bad Request - Invalid parameters
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized - Missing or invalid JWT token
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden - Insufficient permissions
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: List projects for workspace with multiple types
+      tags:
+      - Projects
+  /v1/workspaces/{id}/tags:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        [DEPRECATED] list tags for workspace and project with given IDs. Tags can be hierarchical.
+        This endpoint is deprecated and no production usage was found.
+        The 'type' parameter has been removed.
+      operationId: workspace-list-tags
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: limit per page
+        in: query
+        name: limit
+        type: integer
+      - description: parent ID
+        in: query
+        name: parentID
+        type: string
+      - description: search query
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TreeNodeListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list tags for workspace
+      tags:
+      - Suggestions
+  /v2/workspaces/{id}/projects:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        List published projects for workspace with given ID. This is a lightweight V2 version suitable for selectors.
+        Returns only published (live) projects. Maximum limit is 100 items per page.
+        Supports product-specific default sorting and custom sorting via query parameters.
+      operationId: projects-list-projects-v2
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project type (AIO, SI, CI, MFOUR, JOURNEY)
+        in: query
+        name: type
+        required: true
+        type: string
+      - description: publish statuses filter (comma-separated)
+        in: query
+        name: publish_status
+        type: string
+      - description: search by project name or domain
+        in: query
+        name: search
+        type: string
+      - description: sort field (name, prompts, etc.)
+        in: query
+        name: sort_field
+        type: string
+      - description: sort direction (asc or desc)
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort_direction
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: items per page (max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved projects
+          schema:
+            $ref: '#/definitions/model.ProjectV2ListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: List published projects for workspace (V2 lightweight for selectors)
+      tags:
+      - Projects V2
+  /v2/workspaces/{id}/projects/{project_id}/ai_models:
+    post:
+      consumes:
+      - application/json
+      description: create an AI model in workspace and project with given IDs
+      operationId: aio-project-create-model
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateProjectAIModelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProjectAIModelResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create an AI model
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/ai_models/{model_id}/keywords/tagged/download:
+    get:
+      consumes:
+      - application/json
+      description: downloads tagged keywords in workspace, project and AI model with
+        given IDs
+      operationId: ai-download-tagged-keywords with flat hierarchy
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: AI model ID
+        in: path
+        name: model_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: downloads tagged keywords with flat hierarchy
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks:
+    post:
+      description: '[v2 API endpoint] Create multiple benchmarks at once for workspace
+        and project with given IDs. Accepts array of benchmarks. Returns list of created
+        IDs and count of already existing benchmarks. Use /v2/ base path.'
+      operationId: ai-create-benchmarks-v2
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.AIOBenchmarkRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.IDsWithStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: 'Conflict: duplicate brand name or alias'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: '[v2] Create AI benchmarks for project (batch)'
+      tags:
+      - AIOv2
+  /v2/workspaces/{id}/projects/{project_id}/aio/available-prompts:
+    get:
+      description: Returns the number of available and total prompts for the workspace,
+        based on the current live or draft usage.
+      operationId: aio-available-prompts
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project UUID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AvailablePromptsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Get available prompts for workspace
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls:
+    delete:
+      description: Delete multiple brand URLs by IDs within a specific benchmark for
+        workspace and project with given IDs. IDs that do not belong to the benchmark
+        are silently ignored.
+      operationId: aio-delete-brand-urls
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UUIDsListRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: 'Not Found: benchmark does not exist in this project'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Delete brand URLs within AIO benchmark (batch)
+      tags:
+      - AIOv2
+    get:
+      description: List brand URLs that belong to a specific benchmark within workspace
+        and project with given IDs.
+      operationId: aio-list-brand-urls
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListBrandURLsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: 'Not Found: project does not exist'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: List brand URLs for AIO benchmark
+      tags:
+      - AIOv2
+    post:
+      description: Create multiple brand URLs at once under a specific benchmark for
+        workspace and project with given IDs. Accepts array of brand URLs. Returns
+        list of created IDs and count of already existing brand URLs. Duplicates by
+        (project_id, url) are silently skipped and reflected in the response's `existing_count`.
+      operationId: aio-create-brand-urls
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.BrandURLRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.IDsWithStatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: 'Not Found: benchmark does not exist in this project'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Create brand URLs for AIO benchmark (batch)
+      tags:
+      - AIOv2
+  /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls/{brand_url_id}:
+    put:
+      description: Update a single brand URL within a specific benchmark for workspace
+        and project with given IDs.
+      operationId: aio-update-brand-url
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Brand URL ID
+        in: path
+        name: brand_url_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.BrandURLRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: 'Not Found: brand URL does not exist within this benchmark'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: 'Conflict: duplicate URL for project'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update brand URL within AIO benchmark
+      tags:
+      - AIOv2
+  /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/products:
+    delete:
+      description: Delete products in AIO project with given IDs. Accepts array of
+        ids.
+      operationId: aio-delete-project-products
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.DeleteAIOProductsRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Delete products in AIO project
+      tags:
+      - AIOv2
+      - AIO Products
+    get:
+      consumes:
+      - application/json
+      description: List products for AIO project with aliases
+      operationId: aio-list-project-products
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: filter by Name (%value%)
+        in: query
+        name: name
+        type: string
+      - description: sort field (name, created_at)
+        enum:
+        - name
+        - created_at
+        in: query
+        name: sort_field
+        type: string
+      - description: sort direction (asc, desc)
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort_direction
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: items per page (max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListAIOProductsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: List products for AIO project
+      tags:
+      - AIOv2
+      - AIO Products
+    post:
+      description: Create multiple products at once for workspace and project with
+        given IDs. Accepts array of products. Returns list of created products with
+        their IDs.
+      operationId: aio-create-project-products
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.AIOProduct'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CreateAIOProductsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: 'Conflict: duplicate product name'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Create products for AIO project
+      tags:
+      - AIOv2
+      - AIO Products
+  /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/products/{product_id}:
+    put:
+      description: Replace product in AIO project by Product ID
+      operationId: aio-replace-project-product
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Product ID
+        in: path
+        name: product_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.AIOProduct'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AIOProductEntity'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: 'Conflict: duplicate product name or alias'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Replace product in AIO project
+      tags:
+      - AIOv2
+      - AIO Products
+  /v2/workspaces/{id}/projects/{project_id}/aio/prompts:
+    delete:
+      consumes:
+      - application/json
+      description: delete prompts in workspace and project with given IDs
+      operationId: aio-delete-prompt-by-ids-v2
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete prompts
+      tags:
+      - AIO
+    post:
+      consumes:
+      - application/json
+      description: create prompts in workspace and project with given IDs
+      operationId: aio-create-prompt-v2
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.KeywordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StringIDName'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create prompts
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename:
+    post:
+      consumes:
+      - application/json
+      description: Renames a prompt in the draft version of the project. Returns is_updated=false
+        if the prompt is new (not in live), if the new name matches the live name
+        (restore), or if the name is unchanged.
+      operationId: aio-rename-prompt
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project UUID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Prompt UUID
+        format: uuid
+        in: path
+        name: prompt_id
+        required: true
+        type: string
+      - description: New prompt name
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RenamePromptRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RenamePromptResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: Prompt not found
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Rename a prompt
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/prompts/all_prompts:
+    delete:
+      consumes:
+      - application/json
+      description: delete all prompts in workspace and project with given IDs
+      operationId: aio-delete-all-prompts-v2
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete all prompts for project
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags:
+    post:
+      consumes:
+      - application/json
+      description: list prompts for workspace and project with given IDs, search by
+        multiple tag ids
+      operationId: aio-list-prompts-by-tag-ids
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      - description: request body with tag IDs and pagination
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AIOPromptsListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AIOPromptsWithStatusListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: list prompts for project by tag ids
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/prompts/restore_names:
+    post:
+      consumes:
+      - application/json
+      description: Restores renamed prompts to their original names from the live
+        version. Skips prompts that were not renamed or whose live name conflicts
+        with a non-restored draft prompt.
+      operationId: aio-restore-prompt-names
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project UUID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Prompt IDs to restore
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RestorePromptNamesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RestorePromptNamesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Restore prompt names to live version
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged:
+    post:
+      consumes:
+      - application/json
+      description: create prompts with tags in workspace and project with given IDs
+      operationId: aio-create-prompts-with-tags
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AIOTaggedPromptsCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.IDsWithStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create prompts with tags
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged/download:
+    get:
+      consumes:
+      - application/json
+      description: downloads tagged prompts in workspace and project with given IDs
+      operationId: ai-download-tagged-prompts
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: downloads tagged prompts
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged/upload:
+    post:
+      consumes:
+      - application/json
+      description: upload tagged prompts in workspace, project and AI model with given
+        IDs
+      operationId: ai-upload-tagged-prompts
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: The file to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - text/csv
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.ExistingKeywordsCountResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "408":
+          description: Request Timeout
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: upload tagged prompts
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags:
+    delete:
+      consumes:
+      - application/json
+      description: delete prompts in workspace and project with given IDs
+      operationId: ai-delete-prompts-batch-without-model-id
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchReferenceRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete prompts
+      tags:
+      - AIO
+    put:
+      consumes:
+      - application/json
+      description: update prompts in workspace and project with given IDs
+      operationId: aio-update-prompts-batch
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchReferenceRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: update prompts
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/tags:
+    delete:
+      consumes:
+      - application/json
+      description: delete tags in workspace and project with given IDs
+      operationId: aio-delete-tags
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: prompt ID
+        in: query
+        name: prompt_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BatchDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: delete tags
+      tags:
+      - AIO
+    get:
+      consumes:
+      - application/json
+      description: get tags for workspace and project with given IDs
+      operationId: aio-get-project-tags
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: parent ID
+        in: query
+        name: parent_id
+        required: true
+        type: string
+      - description: search string
+        in: query
+        name: search
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      - description: sort field (id, name, children_count, prompts_count, created_at)
+        enum:
+        - id
+        - name
+        - children_count
+        - prompts_count
+        in: query
+        name: sort_field
+        type: string
+      - description: sort direction (asc or desc)
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort_direction
+        type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: items per page (max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AIOTagsListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: get tags for project
+      tags:
+      - AIO
+    post:
+      consumes:
+      - application/json
+      description: create tags in workspace and project given IDs
+      operationId: aio-create-project-tags
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.TreeNodeListRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TreeNodeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: create project tags
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}:
+    patch:
+      consumes:
+      - application/json
+      description: update tag in workspace and project with given IDs
+      operationId: aio-update-tag
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: tag ID
+        in: path
+        name: tag_id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.TreeNodeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TreeNodeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: update tag
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/bulk:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        Creates AIO projects from a multipart payload. The operation is atomic: if any item fails, no projects are created.
+        Each project item must include name, brand_name, brand_aliases, domain, language_id, country_code, location_name, and llm_ids.
+        The top-level options.publish flag controls whether created projects should be published; it defaults to true.
+        The success response includes created projects in request order plus separate published and unpublished project lists.
+      operationId: aio-bulk-create-projects
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: JSON payload with project metadata and optional top-level options.publish
+          flag. Each project item must include name, brand_name, brand_aliases, domain,
+          language_id, country_code, location_name, and llm_ids
+        in: formData
+        name: projects
+        required: true
+        type: string
+      - description: JSON file with prompts keyed by 1-based project index
+        in: formData
+        name: prompts
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.BulkCreateAIOProjectsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.BulkCreateAIOProjectsErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Bulk create AIO projects
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/bulk/limits:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        Validates the bulk AIO multipart payload and returns workspace project and prompt limits for the batch without creating any projects.
+        An empty request body is allowed and returns the current limits state.
+        Invalid or incomplete project items are skipped for limit calculation.
+        The response includes current maximum available capacity and requested batch usage for both projects and prompts.
+      operationId: aio-bulk-project-limits
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: JSON payload with project metadata. For limits, invalid or incomplete
+          items are ignored instead of failing the whole request
+        in: formData
+        name: projects
+        type: string
+      - description: JSON file with prompts keyed by 1-based project index
+        in: formData
+        name: prompts
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.BulkCreateAIOProjectsLimitsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.BulkCreateAIOProjectsErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Get AIO bulk create limits
+      tags:
+      - AIO
+swagger: "2.0"

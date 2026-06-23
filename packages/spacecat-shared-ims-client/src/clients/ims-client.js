@@ -178,7 +178,22 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!tokenResponse.ok) {
-      throw new Error(`IMS getServiceAccessToken request failed with status: ${tokenResponse.status}`);
+      let errorMessage = `IMS getServiceAccessToken request failed with status: ${tokenResponse.status}`;
+      try {
+        const errorBody = await tokenResponse.json();
+        // Cap appended detail at 200 chars — defense-in-depth against
+        // unexpectedly verbose IMS responses; typical OAuth2 error codes
+        // (`invalid_scope`, `unauthorized_client`, etc.) are well under
+        // this. Per @solaris007 review.
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error.slice(0, 200)}`;
+        } else if (hasText(errorBody.message)) {
+          errorMessage += ` - ${errorBody.message.slice(0, 200)}`;
+        }
+      } catch (e) {
+        // Response body is not JSON or cannot be parsed, ignore
+      }
+      throw new Error(errorMessage);
     }
 
     /* eslint-disable camelcase */
@@ -211,7 +226,22 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!tokenResponse.ok) {
-      throw new Error(`IMS getServiceAccessTokenV3 request failed with status: ${tokenResponse.status}`);
+      let errorMessage = `IMS getServiceAccessTokenV3 request failed with status: ${tokenResponse.status}`;
+      try {
+        const errorBody = await tokenResponse.json();
+        // Cap appended detail at 200 chars — defense-in-depth against
+        // unexpectedly verbose IMS responses; typical OAuth2 error codes
+        // (`invalid_scope`, `unauthorized_client`, etc.) are well under
+        // this. Per @solaris007 review.
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error.slice(0, 200)}`;
+        } else if (hasText(errorBody.message)) {
+          errorMessage += ` - ${errorBody.message.slice(0, 200)}`;
+        }
+      } catch (e) {
+        // Response body is not JSON or cannot be parsed, ignore
+      }
+      throw new Error(errorMessage);
     }
 
     /* eslint-disable camelcase */
@@ -245,7 +275,22 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!tokenResponse.ok) {
-      throw new Error(`IMS getServicePrincipalAccessToken request failed with status: ${tokenResponse.status}`);
+      let errorMessage = `IMS getServicePrincipalAccessToken request failed with status: ${tokenResponse.status}`;
+      try {
+        const errorBody = await tokenResponse.json();
+        // Cap appended detail at 200 chars — defense-in-depth against
+        // unexpectedly verbose IMS responses; typical OAuth2 error codes
+        // (`invalid_scope`, `unauthorized_client`, etc.) are well under
+        // this. Per @solaris007 review.
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error.slice(0, 200)}`;
+        } else if (hasText(errorBody.message)) {
+          errorMessage += ` - ${errorBody.message.slice(0, 200)}`;
+        }
+      } catch (e) {
+        // Response body is not JSON or cannot be parsed, ignore
+      }
+      throw new Error(errorMessage);
     }
 
     /* eslint-disable camelcase */
@@ -430,10 +475,14 @@ export default class ImsClient extends ImsBaseClient {
       let errorMessage = `IMS getAccountCluster request failed with status: ${accountClusterResponse.status}`;
       try {
         const errorBody = await accountClusterResponse.json();
+        // Cap appended detail at 200 chars — defense-in-depth against
+        // unexpectedly verbose IMS responses; typical OAuth2 error codes
+        // (`invalid_scope`, `unauthorized_client`, etc.) are well under
+        // this. Per @solaris007 review.
         if (hasText(errorBody.error)) {
-          errorMessage += ` - ${errorBody.error}`;
+          errorMessage += ` - ${errorBody.error.slice(0, 200)}`;
         } else if (hasText(errorBody.message)) {
-          errorMessage += ` - ${errorBody.message}`;
+          errorMessage += ` - ${errorBody.message.slice(0, 200)}`;
         }
       } catch (e) {
         // Response body is not JSON or cannot be parsed, ignore

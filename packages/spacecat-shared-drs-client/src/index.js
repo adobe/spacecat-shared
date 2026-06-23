@@ -123,7 +123,7 @@ export default class DrsClient {
     return hasText(this.s3Bucket) && hasText(this.snsTopicArn);
   }
 
-  async #request(method, path, body = undefined) {
+  async #request(method, path, body = undefined, fetchOptions = {}) {
     if (!this.isConfigured()) {
       throw new Error('DRS client is not configured. Set DRS_API_URL and DRS_API_KEY environment variables.');
     }
@@ -135,6 +135,7 @@ export default class DrsClient {
         'Content-Type': 'application/json',
         'x-api-key': this.apiKey,
       },
+      ...fetchOptions,
     };
 
     if (body) {
@@ -232,6 +233,11 @@ export default class DrsClient {
    * @param {string[]} params.urls - URLs to scrape
    * @param {string} [params.priority='HIGH'] - Job priority (HIGH or LOW)
    * @param {string} [params.spacecatOrgId] - SpaceCat organization ID
+   * @param {string} [params.imsOrgId] - IMS organization ID. When provided, it is attached as
+   *   `parameters.metadata.imsOrgId` so DRS can scope the job's S2S token without relying on
+   *   resolving the org from `site_id`. When omitted, DRS falls back to `site_id` auto-resolution.
+   * @param {string} [params.brand] - Brand name; attached as `parameters.metadata.brand` only
+   *   when `imsOrgId` is also provided.
    * @param {number} [params.daysBack] - Time-window filter in days (reddit_comments only)
    * @param {number} [params.commentLimit=150] - Max comments per thread (reddit_comments only)
    * @param {('Best'|'Top'|'New'|'Controversial'|'Old'|'Q&A')} [params.sortBy='Best']
@@ -247,6 +253,8 @@ export default class DrsClient {
     priority = 'HIGH',
     daysBack,
     spacecatOrgId,
+    imsOrgId,
+    brand,
     commentLimit,
     sortBy,
     loadAllReplies,
@@ -293,6 +301,13 @@ export default class DrsClient {
       site_id: siteId,
       urls,
     };
+
+    if (imsOrgId) {
+      parameters.metadata = {
+        imsOrgId,
+        ...(brand ? { brand } : {}),
+      };
+    }
 
     if (isRedditComments) {
       parameters.comment_limit = commentLimit ?? REDDIT_COMMENTS_DEFAULT_COMMENT_LIMIT;
@@ -410,6 +425,7 @@ export default class DrsClient {
    * @param {boolean} params.triggerImmediately - Trigger first job on schedule creation
    * @param {boolean} [params.enableBrandPresence] - Enable brand presence detection in the job
    * @param {object} [params.metadata] - Additional metadata to attach to the job
+   * @param {number} [params.timeout] - Fetch timeout in ms; omit to use tracingFetch default
    * @returns {Promise<object>} Schedule creation response
    */
   async createExperimentSchedule({
@@ -423,6 +439,7 @@ export default class DrsClient {
     triggerImmediately,
     enableBrandPresence = false,
     metadata,
+    timeout,
   }) {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
@@ -482,7 +499,7 @@ export default class DrsClient {
       triggerImmediately: body.trigger_immediately,
     });
 
-    const result = await this.#request('POST', '/schedules', body);
+    const result = await this.#request('POST', '/schedules', body, timeout ? { timeout } : {});
     this.log.info('DRS experiment schedule created', {
       scheduleId: result?.schedule?.schedule_id || result?.schedule_id,
       experimentId,

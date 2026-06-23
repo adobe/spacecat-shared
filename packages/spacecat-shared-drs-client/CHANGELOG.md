@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-drs-client-v1.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.12.0...@adobe/spacecat-shared-drs-client-v1.12.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* increase DRS createschedule api timeout ([#1670](https://github.com/adobe/spacecat-shared/issues/1670)) ([068dac8](https://github.com/adobe/spacecat-shared/commit/068dac845a2e875397c165be3268a7cda40e659f))
+
+# [@adobe/spacecat-shared-drs-client-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.11.1...@adobe/spacecat-shared-drs-client-v1.12.0) (2026-06-11)
+
+
+### Features
+
+* **drs-client:** forward imsOrgId/brand as parameters.metadata on sc… ([#1664](https://github.com/adobe/spacecat-shared/issues/1664)) ([8ea4a7f](https://github.com/adobe/spacecat-shared/commit/8ea4a7fd25038508198bd3711ff7a87f69b8b477))
+
 # [@adobe/spacecat-shared-drs-client-v1.11.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.11.0...@adobe/spacecat-shared-drs-client-v1.11.1) (2026-05-29)
 
 

@@ -1,3 +1,75 @@
+## [@adobe/spacecat-shared-data-access-v3.79.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.79.0...@adobe/spacecat-shared-data-access-v3.79.1) (2026-06-22)
+
+### Bug Fixes
+
+* data structure for Sitemap "error" suggestions ([#1697](https://github.com/adobe/spacecat-shared/issues/1697)) ([a9b550c](https://github.com/adobe/spacecat-shared/commit/a9b550c8bf6c3411e312fe1c305f38b5a90dfdde))
+
+## [@adobe/spacecat-shared-data-access-v3.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.78.0...@adobe/spacecat-shared-data-access-v3.79.0) (2026-06-19)
+
+### Features
+
+* **data-access:** add brand pendingSemrushProvisioning attribute ([#1692](https://github.com/adobe/spacecat-shared/issues/1692)) ([1c2bc2a](https://github.com/adobe/spacecat-shared/commit/1c2bc2a2043246268e0ebe421de7c2c9e9241cdc))
+
+## [@adobe/spacecat-shared-data-access-v3.78.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.77.0...@adobe/spacecat-shared-data-access-v3.78.0) (2026-06-17)
+
+### Features
+
+* **data-access:** register money-pages as a supported audit type ([#1682](https://github.com/adobe/spacecat-shared/issues/1682)) ([1d2842f](https://github.com/adobe/spacecat-shared/commit/1d2842f6a9b42afb5c5c55cbb890d39f85a31f97))
+
+## [@adobe/spacecat-shared-data-access-v3.77.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.76.0...@adobe/spacecat-shared-data-access-v3.77.0) (2026-06-17)
+
+### Features
+
+* **data-access:** add Configuration.isHandlerDisabledForSite / isHandlerDisabledForOrg. ([#1673](https://github.com/adobe/spacecat-shared/issues/1673)) ([003371c](https://github.com/adobe/spacecat-shared/commit/003371c63316d5f06fb0e17d0a9f60eb8ba3ec2e))
+
+## [@adobe/spacecat-shared-data-access-v3.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.4...@adobe/spacecat-shared-data-access-v3.76.0) (2026-06-17)
+
+### Features
+
+* add `allByExternalOwnerIdAndExternalSiteId` type to SiteCollection ([#1655](https://github.com/adobe/spacecat-shared/issues/1655)) ([c73e2b1](https://github.com/adobe/spacecat-shared/commit/c73e2b12fc5eec9d95fb5453c0ef7bb217e6e170))
+
+## [@adobe/spacecat-shared-data-access-v3.75.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.3...@adobe/spacecat-shared-data-access-v3.75.4) (2026-06-16)
+
+### Bug Fixes
+
+* **data-access:** batch suggestion-grant lookups to avoid 414 URI Too Long ([#1684](https://github.com/adobe/spacecat-shared/issues/1684)) ([941660c](https://github.com/adobe/spacecat-shared/commit/941660cea9ea37cc2e4bf50528923f9f051b540e))
+
+## [@adobe/spacecat-shared-data-access-v3.75.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.2...@adobe/spacecat-shared-data-access-v3.75.3) (2026-06-16)
+
+### Bug Fixes
+
+* add EBUSY retry support to S3Client via custom retry strategy ([#1677](https://github.com/adobe/spacecat-shared/issues/1677)) ([04e5504](https://github.com/adobe/spacecat-shared/commit/04e550481cdff0e7545036320aaa43ed64e99ce3)), closes [#1659](https://github.com/adobe/spacecat-shared/issues/1659) [#1659](https://github.com/adobe/spacecat-shared/issues/1659)
+
+## [@adobe/spacecat-shared-data-access-v3.75.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.1...@adobe/spacecat-shared-data-access-v3.75.2) (2026-06-16)
+
+### Bug Fixes
+
+* pageCitability url-upsert + metrics-store $metadata 404 detection ([#1683](https://github.com/adobe/spacecat-shared/issues/1683)) ([693a943](https://github.com/adobe/spacecat-shared/commit/693a943396fb78db3caf31fd2cb7f643f66bb0ef))
+
+## [@adobe/spacecat-shared-data-access-v3.75.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.75.0...@adobe/spacecat-shared-data-access-v3.75.1) (2026-06-15)
+
+### Bug Fixes
+
+* quiet recoverable ERROR-severity log noise (config-validation fallback + missing metrics) ([#1681](https://github.com/adobe/spacecat-shared/issues/1681)) ([27be682](https://github.com/adobe/spacecat-shared/commit/27be6824d60af52a948e168a9a288239b402cdde))
+
+## [@adobe/spacecat-shared-data-access-v3.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.3...@adobe/spacecat-shared-data-access-v3.75.0) (2026-06-15)
+
+### Features
+
+* **data-access:** add minimal Brand entity for serenity sub-workspace ([#1679](https://github.com/adobe/spacecat-shared/issues/1679)) ([e68d257](https://github.com/adobe/spacecat-shared/commit/e68d2577d51b3a9110477ddcdc5a550f935b7b47))
+
+## [@adobe/spacecat-shared-data-access-v3.74.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.2...@adobe/spacecat-shared-data-access-v3.74.3) (2026-06-12)
+
+### Bug Fixes
+
+* **data-access:** remove stale stash conflict markers in CHANGELOG ([#1669](https://github.com/adobe/spacecat-shared/issues/1669)) ([12229c3](https://github.com/adobe/spacecat-shared/commit/12229c33e6b2ed9731d256d89b580a0ad64d96b3))
+
+## [@adobe/spacecat-shared-data-access-v3.74.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.1...@adobe/spacecat-shared-data-access-v3.74.2) (2026-06-11)
+
+### Bug Fixes
+
+* reset linked issue status to NEW on FixEntity removal ([#1668](https://github.com/adobe/spacecat-shared/issues/1668)) ([46c54b8](https://github.com/adobe/spacecat-shared/commit/46c54b8829ea3b00029a4afa0cb835f3e7983dc9))
+
 ## [@adobe/spacecat-shared-data-access-v3.74.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.74.0...@adobe/spacecat-shared-data-access-v3.74.1) (2026-06-09)
 
 ### Bug Fixes
@@ -3726,18 +3798,14 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 
 * github org ([02f86c3](https://github.com/adobe/spacecat-shared/commit/02f86c351b2b1ab99ce5aca7fd5e6af2246c0efd))
 
-<<<<<<< Updated upstream
-# [@adobe/spacecat-shared-data-access-v1.6.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.2...@adobe/spacecat-shared-data-access-v1.6.0) (2024-01-12)
+# [@adobe/spacecat-shared-data-access-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.2...@adobe/spacecat-shared-data-access-v1.6.0) (2024-01-12)
 
 
 ### Features
 
-* site delivery type ([#77](https://github.com/adobe-rnd/spacecat-shared/issues/77)) ([005bc38](https://github.com/adobe-rnd/spacecat-shared/commit/005bc388ed6ab0f82c8b0f562d4c1f4c0d1e2894))
+* site delivery type ([#77](https://github.com/adobe/spacecat-shared/issues/77)) ([005bc38](https://github.com/adobe/spacecat-shared/commit/005bc388ed6ab0f82c8b0f562d4c1f4c0d1e2894))
 
-# [@adobe/spacecat-shared-data-access-v1.5.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.1...@adobe/spacecat-shared-data-access-v1.5.2) (2023-12-30)
-=======
 # [@adobe/spacecat-shared-data-access-v1.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.1...@adobe/spacecat-shared-data-access-v1.5.2) (2023-12-30)
->>>>>>> Stashed changes
 
 
 ### Bug Fixes

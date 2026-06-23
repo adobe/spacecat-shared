@@ -136,7 +136,16 @@ export class AWSAthenaClient {
         return;
       }
       if (State === QueryExecutionState.FAILED || State === QueryExecutionState.CANCELLED) {
-        throw new Error(StateChangeReason || `Query ${State}`);
+        const error = new Error(StateChangeReason || `Query ${State}`);
+        // Surface Athena's structured error so callers can branch on its authoritative
+        // Retryable flag instead of matching the message string. Additive: message is
+        // unchanged, properties are only present when Athena returns AthenaError.
+        const { AthenaError: athenaError } = status;
+        if (athenaError) {
+          error.athenaError = athenaError;
+          error.retryable = athenaError.Retryable === true;
+        }
+        throw error;
       }
     }
     throw new Error('[Athena Client] Polling timed out');

@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-http-utils-v1.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.29.1...@adobe/spacecat-shared-http-utils-v1.30.0) (2026-06-22)
+
+### Features
+
+* **http-utils:** allow s2sAuthWrapper routes to accept multiple capabilities ([#1693](https://github.com/adobe/spacecat-shared/issues/1693)) ([73cd510](https://github.com/adobe/spacecat-shared/commit/73cd51088e778a444aaa524b14fb191b66c677e9))
+
+## [@adobe/spacecat-shared-http-utils-v1.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.29.0...@adobe/spacecat-shared-http-utils-v1.29.1) (2026-06-15)
+
+### Bug Fixes
+
+* **http-utils:** pin launchdarkly-client to 1.3.0 (ship Lambda log-noise fix) ([#1675](https://github.com/adobe/spacecat-shared/issues/1675)) ([da319b1](https://github.com/adobe/spacecat-shared/commit/da319b1c5ca3a6dd3f3ce5309ca25dbadfb9ef41))
+
 ## [@adobe/spacecat-shared-http-utils-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.2...@adobe/spacecat-shared-http-utils-v1.29.0) (2026-06-04)
 
 ### Features

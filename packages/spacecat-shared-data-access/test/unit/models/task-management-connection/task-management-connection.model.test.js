@@ -60,8 +60,16 @@ describe('TaskManagementConnectionModel', () => {
       expect(TaskManagementConnection.STATUSES.ACTIVE).to.equal('active');
     });
 
+    it('defines DISABLED status', () => {
+      expect(TaskManagementConnection.STATUSES.DISABLED).to.equal('disabled');
+    });
+
     it('defines REQUIRES_REAUTH status', () => {
       expect(TaskManagementConnection.STATUSES.REQUIRES_REAUTH).to.equal('requires_reauth');
+    });
+
+    it('defines ERROR status', () => {
+      expect(TaskManagementConnection.STATUSES.ERROR).to.equal('error');
     });
 
     it('defines DISCONNECTED status', () => {
@@ -74,8 +82,18 @@ describe('TaskManagementConnectionModel', () => {
       expect(instance.isActive()).to.be.true;
     });
 
+    it('returns false when status is disabled', () => {
+      instance.record.status = TaskManagementConnection.STATUSES.DISABLED;
+      expect(instance.isActive()).to.be.false;
+    });
+
     it('returns false when status is requires_reauth', () => {
       instance.record.status = TaskManagementConnection.STATUSES.REQUIRES_REAUTH;
+      expect(instance.isActive()).to.be.false;
+    });
+
+    it('returns false when status is error', () => {
+      instance.record.status = TaskManagementConnection.STATUSES.ERROR;
       expect(instance.isActive()).to.be.false;
     });
 
@@ -99,6 +117,39 @@ describe('TaskManagementConnectionModel', () => {
       stub(instance.patcher, 'save').rejects(new Error('DB error'));
 
       await expect(instance.markRequiresReauth()).to.be.rejected;
+    });
+  });
+
+  describe('markDisabled()', () => {
+    it('sets status to disabled and saves', async () => {
+      const saveStub = stub(instance.patcher, 'save').resolves();
+
+      await expect(instance.markDisabled()).to.be.fulfilled;
+
+      expect(saveStub).to.have.been.calledOnce;
+      expect(instance.record.status).to.equal(TaskManagementConnection.STATUSES.DISABLED);
+    });
+  });
+
+  describe('markError()', () => {
+    it('sets status to error and saves', async () => {
+      const saveStub = stub(instance.patcher, 'save').resolves();
+
+      await expect(instance.markError()).to.be.fulfilled;
+
+      expect(saveStub).to.have.been.calledOnce;
+      expect(instance.record.status).to.equal(TaskManagementConnection.STATUSES.ERROR);
+    });
+  });
+
+  describe('markDisconnected()', () => {
+    it('sets status to disconnected and saves', async () => {
+      const saveStub = stub(instance.patcher, 'save').resolves();
+
+      await expect(instance.markDisconnected()).to.be.fulfilled;
+
+      expect(saveStub).to.have.been.calledOnce;
+      expect(instance.record.status).to.equal(TaskManagementConnection.STATUSES.DISCONNECTED);
     });
   });
 });

@@ -1,0 +1,97 @@
+overlay: 1.0.0
+info:
+  title: Project Engine spec corrections — align the vendored swagger with the live API
+  version: 1.0.0
+# The single source of truth for our corrections to the vendored Semrush spec.
+# scripts/apply-overlay.mjs reads THIS file and applies the actions to the
+# swagger2openapi output (build/openapi3.json); the vendored
+# spec/projectengine_swagger_public.yaml is never modified.
+#
+# CR1  Add GET /v1/ai_models — live endpoint absent from the vendored spec.
+#      Remove when Semrush ships the path in the upstream swagger.
+# CR2  Express Authorization: Bearer as the auth scheme; remove Auth-Data-Jwt.
+#      Remove when Semrush fixes securityDefinitions upstream.
+# CR3  Correct GET /v2/.../projects summary+description — it also returns initial
+#      (never-yet-published) drafts, not only published projects.
+actions:
+  # ── CR1: Add GET /v1/ai_models ──────────────────────────────────────────
+  # Live: 200 -> { page:int, total:int, items:[AIModelResponse] }.
+  # Verified: GET /v1/ai_models?page=1&limit=100 -> 200 (rainer-friederich, 2026-06-15).
+  - target: "$.components.schemas"
+    description: "CR1: add the AIModelListResponse envelope schema"
+    update:
+      "model.AIModelListResponse":
+        type: object
+        properties:
+          page: { type: integer }
+          total: { type: integer }
+          items:
+            type: array
+            items:
+              $ref: "#/components/schemas/model.AIModelResponse"
+
+  - target: "$.paths"
+    description: "CR1: add the GET /v1/ai_models path"
+    update:
+      "/v1/ai_models":
+        get:
+          summary: "List global AI model catalog"
+          description: "Global catalog of all AI models available for tracking across any workspace. Not scoped to a workspace or project."
+          operationId: "ai-list-global-models"
+          tags: ["AIO"]
+          parameters:
+            - { name: page, in: query, schema: { type: integer } }
+            - { name: limit, in: query, schema: { type: integer } }
+          responses:
+            "200":
+              description: "OK"
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/model.AIModelListResponse"
+            "401":
+              description: "Unauthorized"
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/http_server.BasicResponse"
+          security:
+            - imsBearer: []
+
+  # ── CR2: Express Authorization: Bearer, remove Auth-Data-Jwt ─────────────
+  # Live API: Authorization: Bearer <IMS> -> 200; Auth-Data-Jwt -> 401.
+  - target: "$.components.securitySchemes"
+    description: "CR2: add the imsBearer security scheme"
+    update:
+      imsBearer:
+        type: http
+        scheme: bearer
+        description: "IMS user bearer token, accepted directly by the Semrush Project Engine API."
+
+  - target: "$"
+    description: "CR2: apply imsBearer as the global security requirement"
+    update:
+      security:
+        - imsBearer: []
+
+  - target: "$.paths.*.*.parameters[?(@.name == 'Auth-Data-Jwt')]"
+    description: "CR2: remove the Auth-Data-Jwt header param from every operation"
+    remove: true
+
+  # ── CR3: Correct the GET /v2/.../projects "published only" claim ─────────
+  # Upstream says it returns only published projects; in fact a project that has
+  # never been published yet (its initial draft) also appears, and once published
+  # at least once the list reflects the published view. Text-only fix.
+  - target: "$.paths['/v2/workspaces/{id}/projects'].get"
+    description: "CR3: correct the summary+description (also returns initial drafts)"
+    update:
+      summary: "List V2 projects for the workspace (lightweight, for selectors)"
+      # Folded scalar (>-): authored multi-line for review, emitted as one line.
+      description: >-
+        List V2 projects for the workspace — a lightweight view suitable for
+        selectors. Maximum 100 items per page. Supports product-specific default
+        sorting and custom sorting via query parameters. Note: contrary to the
+        upstream description, this does not return only published (live) projects —
+        a project that has never been published yet (its initial draft) also appears
+        in this list; once a project has been published at least once, the list
+        reflects its published view.

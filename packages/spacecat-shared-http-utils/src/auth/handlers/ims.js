@@ -21,7 +21,7 @@ import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 import { getBearerToken } from './utils/bearer.js';
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
-import { FF_READ_ONLY_ORG } from '../constants.js';
+import { FF_READ_ONLY_ORG, FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from '../constants.js';
 
 const IGNORED_PROFILE_PROPS = [
   'id',
@@ -183,6 +183,48 @@ async function isOrgBlockedFromImsAuth(context, organizations) {
     return false;
   }
 }
+
+/**
+ * Checks whether RBAC (the FACS / hybrid permission model) is enabled for the
+ * caller's first IMS org under the requested product. When enabled, the org
+ * must authenticate via the JWT / auth-service path — which mints the
+ * `facs_permissions` claim — rather than this legacy IMS handler, so IMS auth is
+ * blocked (mirroring the read-only-org gate).
+ *
+ * The FACS flag is product-scoped (`FT_MAC_FACS_PERMISSIONS`), resolved from the
+ * `x-product` header. A missing/unknown product (no flag entry) is never
+ * blocked. Only the first org is evaluated (same limitation as the read-only
+ * gate). Fail-open: returns false when the LD client is unavailable or
+ * evaluation errors.
+ */
+async function isOrgRbacEnabled(context, organizations) {
+  if (!isNonEmptyArray(organizations)) {
+    return false;
+  }
+
+  const product = context.pathInfo?.headers?.[X_PRODUCT_HEADER]?.toUpperCase();
+  const flagKey = product ? FT_MAC_FACS_PERMISSIONS[product] : undefined;
+  if (!flagKey) {
+    return false;
+  }
+
+  try {
+    const ldClient = LaunchDarklyClient.createFrom(context);
+    if (!ldClient) {
+      return false;
+    }
+
+    // Only evaluate the first org - see NOTE on isOrgBlockedFromImsAuth.
+    const ident = organizations[0]?.orgRef?.ident;
+    if (!ident) {
+      return false;
+    }
+
+    return await ldClient.isFlagEnabledForIMSOrg(flagKey, `${ident}@AdobeOrg`);
+  } catch {
+    return false;
+  }
+}
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
  */
@@ -260,6 +302,12 @@ export default class AdobeImsHandler extends AbstractHandler {
       // enabled — this is intentional: the entire org must migrate to the JWT path.
       if (await isOrgBlockedFromImsAuth(context, organizations)) {
         this.log('User belongs to a read-only org, blocking IMS authentication', 'warn');
+        throw new Error('Unauthorized');
+      }
+      // RBAC-enabled orgs must authenticate via the JWT/auth-service path (which
+      // mints facs_permissions), not this legacy IMS handler.
+      if (await isOrgRbacEnabled(context, organizations)) {
+        this.log('User belongs to an RBAC-enabled org, blocking IMS authentication', 'warn');
         throw new Error('Unauthorized');
       }
       const isAdmin = isUserPlatformAdmin(organizations);

@@ -140,6 +140,10 @@ export function createFooClient(config, log) {
 }
 ```
 
+The Semrush clients (`project-engine-client`, `user-manager-client`) instead use a thin
+factory wrapper over an `openapi-fetch` client generated from a vendored spec — no client
+class. Same `createXClient(...)` factory convention, different internals.
+
 ---
 
 ## Testing

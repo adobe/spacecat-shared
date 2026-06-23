@@ -45,7 +45,8 @@ describe('createSerenityUserManagerApiClient', () => {
     const fetch = sandbox.stub().callsFake(() => Promise.resolve(json({ ok: true })));
     let current = 'token-1';
     const client = createSerenityUserManagerApiClient({
-      // a base URL that already carries the prefix normalises to the same target (idempotent)
+      // resolveBaseUrl drops any path and re-appends the prefix, so a base URL that already
+      // carries the prefix resolves to the same target as a bare origin would
       baseUrl: 'https://serenity.example/enterprise/users/api',
       authToken: async () => current,
       fetch,
@@ -213,6 +214,22 @@ describe('createSerenityUserManagerApiClient', () => {
     expect(() => createSerenityUserManagerApiClient({
       baseUrl: 'https://serenity.example',
       authToken: 42,
+    })).to.throw(/must be a string or a function/);
+  });
+
+  it('throws a clear baseUrl diagnostic when baseUrl is missing', () => {
+    // a real misconfiguration path: an options object without baseUrl resolves it to undefined,
+    // which must surface the actionable "invalid baseUrl" error rather than a fetch-time failure.
+    expect(() => createSerenityUserManagerApiClient({
+      authToken: 'raw-ims-jwt',
+    })).to.throw(/invalid baseUrl/);
+  });
+
+  it('throws a clear authToken diagnostic when authToken is missing', () => {
+    // a real misconfiguration path: a valid baseUrl but no authToken must fail fast at
+    // construction with the type-guard message, not send a `Bearer undefined` header.
+    expect(() => createSerenityUserManagerApiClient({
+      baseUrl: 'https://serenity.example',
     })).to.throw(/must be a string or a function/);
   });
 });

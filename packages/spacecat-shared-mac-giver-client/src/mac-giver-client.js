@@ -20,14 +20,23 @@ const REQUEST_TIMEOUT_MS = 5000;
 export default class MacGiverClient {
   static createFrom(context) {
     const { log = console } = context;
+    if (!context.imsClient) {
+      throw new Error('MacGiverClient.createFrom: context.imsClient is required');
+    }
     const macGiverBaseUrl = context.env?.MACGIVER_BASE_URL || DEFAULT_BASE_URL;
-    return new MacGiverClient({ macGiverBaseUrl, imsClient: context.imsClient, log });
+    const requestTimeoutMs = Number(context.env?.MACGIVER_TIMEOUT_MS) || REQUEST_TIMEOUT_MS;
+    return new MacGiverClient({
+      macGiverBaseUrl, imsClient: context.imsClient, log, requestTimeoutMs,
+    });
   }
 
-  constructor({ macGiverBaseUrl, imsClient, log }) {
+  constructor({
+    macGiverBaseUrl, imsClient, log, requestTimeoutMs = REQUEST_TIMEOUT_MS,
+  }) {
     this.macGiverBaseUrl = macGiverBaseUrl;
     this.imsClient = imsClient;
     this.log = log;
+    this.requestTimeoutMs = requestTimeoutMs;
   }
 
   /**
@@ -99,7 +108,7 @@ export default class MacGiverClient {
         Authorization: `Bearer ${serviceToken}`,
       },
       body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: AbortSignal.timeout(this.requestTimeoutMs),
     });
 
     if (!res.ok) {

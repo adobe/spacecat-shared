@@ -75,6 +75,23 @@ describe('MacGiverClient', () => {
       const client = MacGiverClient.createFrom(context);
       expect(client.log).to.equal(console);
     });
+
+    it('throws a clear error when imsClient is missing on context', () => {
+      expect(() => MacGiverClient.createFrom({ env: {}, log: console }))
+        .to.throw(/context\.imsClient is required/);
+    });
+
+    it('reads the request timeout from MACGIVER_TIMEOUT_MS when set', () => {
+      const context = { env: { MACGIVER_TIMEOUT_MS: '1234' }, imsClient, log: console };
+      const client = MacGiverClient.createFrom(context);
+      expect(client.requestTimeoutMs).to.equal(1234);
+    });
+
+    it('defaults the request timeout when MACGIVER_TIMEOUT_MS is absent', () => {
+      const context = { env: {}, imsClient, log: console };
+      const client = MacGiverClient.createFrom(context);
+      expect(client.requestTimeoutMs).to.equal(5000);
+    });
   });
 
   describe('checkListOfPermission', () => {
@@ -161,6 +178,27 @@ describe('MacGiverClient', () => {
       await expect(client.checkListOfPermission({
         userId: 'u', imsOrgId: 'o',
       })).to.be.rejectedWith(/permissions must be a non-empty array/);
+    });
+
+    it('bounds the request with AbortSignal.timeout(requestTimeoutMs)', async () => {
+      const timeoutSpy = sandbox.spy(AbortSignal, 'timeout');
+      const boundedClient = new MacGiverClient({
+        macGiverBaseUrl: 'http://localhost:8080',
+        imsClient,
+        log: console,
+        requestTimeoutMs: 1234,
+      });
+      nock('http://localhost:8080')
+        .post(CHECK_PATH)
+        .reply(200, makeCheckResponse({ 'llmo/can_read': { allowed: true } }));
+
+      await boundedClient.checkListOfPermission({
+        userId: 'u',
+        imsOrgId: 'o',
+        permissions: ['llmo/can_read'],
+      });
+
+      expect(timeoutSpy).to.have.been.calledWith(1234);
     });
 
     it('throws and logs when MacGiver responds with a non-ok status code', async () => {

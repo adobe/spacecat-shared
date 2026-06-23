@@ -27,7 +27,6 @@ import {
 } from './utils/s3-utils.js';
 import {
   omitKeys,
-  isEdgeDeployableSuggestionStatus,
   isPatternSuggestion,
   groupSuggestionsByUrlPath,
   filterEligibleSuggestions,
@@ -35,9 +34,7 @@ import {
   stripSuggestion,
   cleanupCoveredSuggestions,
   classifySuggestions,
-  filterBatchCoveredSuggestions,
 } from './utils/suggestion-utils.js';
-import { buildUrlMatcher } from './utils/pattern-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { removePatternFromMetaconfig, addPatternsToMetaconfig } from './utils/metaconfig-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
@@ -1475,16 +1472,13 @@ class TokowakaClient {
 
   /**
    * Deploys a single pattern suggestion by appending its patterns to the metaconfig allowList
-   * (append-and-deduplicate; CDN write is skipped when nothing changes), stamps the suggestion
-   * with edgeDeployed, and marks qualifying per-URL suggestions as covered.
+   * (append-and-deduplicate; CDN write is skipped when nothing changes), and stamps
+   * the suggestion with edgeDeployed.
    * @param {Object} suggestion - The pattern suggestion entity
    * @param {Array<string>} allowedRegexPatterns
    * @param {Object} metaconfig - Metaconfig object (mutated in place)
    * @param {string} baseURL
-   * @param {Set<string>} skippedInBatchIds - IDs already handled as same-batch skips
-   * @param {Array} allSuggestions - Full opportunity suggestion list
    * @param {string} updatedBy
-   * @param {Array} coveredSuggestions - Accumulator (mutated)
    * @returns {Promise<void>} Throws on metaconfig upload failure
    * @private
    */
@@ -1493,14 +1487,8 @@ class TokowakaClient {
     allowedRegexPatterns,
     metaconfig,
     baseURL,
-    skippedInBatchIds,
-    allSuggestions,
     updatedBy,
-    coveredSuggestions,
   ) {
-    const data = suggestion.getData();
-    const coverageField = data?.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
-
     const beforeAllowList = metaconfig.prerender?.allowList ?? [];
     const changed = addPatternsToMetaconfig(metaconfig, allowedRegexPatterns);
     const afterAllowList = changed ? metaconfig.prerender.allowList : beforeAllowList;
@@ -1521,77 +1509,18 @@ class TokowakaClient {
     suggestion.setData({ ...suggestion.getData(), edgeDeployed: Date.now() });
     suggestion.setUpdatedBy(updatedBy);
     // suggestion.save() is deferred — caller batches saves via saveSuggestions.
-
-    // Mark per-URL suggestions covered by this pattern.
-    const matchers = allowedRegexPatterns.flatMap((p) => {
-      const m = buildUrlMatcher(p);
-      if (!m) {
-        // eslint-disable-next-line max-len
-        this.log.warn(`[edge-deploy] Pattern '${p}' for suggestion ${suggestion.getId()} is invalid, skipping`);
-      }
-      return m ? [m] : [];
-    });
-
-    if (matchers.length === 0) {
-      return;
-    }
-
-    const covered = allSuggestions.filter((s) => {
-      if (s.getId() === suggestion.getId()) {
-        return false;
-      }
-      if (skippedInBatchIds.has(s.getId())) {
-        return false;
-      }
-      if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
-        return false;
-      }
-      if (s.getData()?.edgeDeployed) {
-        return false;
-      }
-      // Path-level pattern suggestions (not domain-wide) are fully covered by a
-      // domain-wide deployment. Other pattern suggestions (including other DW ones) are not.
-      if (isPatternSuggestion(s)) {
-        return coverageField === 'coveredByDomainWide' && !s.getData()?.isDomainWide;
-      }
-      const url = s.getData()?.url;
-      return url && matchers.some((match) => match(url));
-    });
-
-    // eslint-disable-next-line max-len
-    this.log.info(`[edge-deploy] Pattern ${suggestion.getId()}: found ${covered.length} coverable per-URL suggestions (field=${coverageField})`);
-
-    if (covered.length > 0) {
-      covered.forEach((cs) => {
-        cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
-        cs.setUpdatedBy(updatedBy);
-      });
-      try {
-        await saveSuggestions(this.dataAccess, covered);
-        coveredSuggestions.push(...covered);
-        // eslint-disable-next-line max-len
-        this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
-      } catch (coverError) {
-        this.log.warn(
-          '[edge-deploy] Failed to mark covered suggestions for pattern suggestion '
-          + `${suggestion.getId()}: ${coverError.message}`,
-        );
-      }
-    }
   }
 
   /**
    * Deploys suggestions to edge, handling both regular and domain-wide suggestions.
    *
    * Regular suggestions are deployed via deploySuggestions(). Domain-wide suggestions
-   * update the site metaconfig's prerender allowList. Suggestions covered by domain-wide
-   * patterns (in the same batch or across the whole opportunity) are automatically marked.
+   * update the site metaconfig's prerender allowList.
    *
    * @param {Object} params
    * @param {Object} params.site - Site entity
    * @param {Object} params.opportunity - Opportunity entity
    * @param {Array}  params.targetSuggestions - Suggestions selected for this deployment
-   * @param {Array}  params.allSuggestions - All suggestions for the opportunity
    * @param {string} [params.updatedBy='edge-deploy'] - Value for updatedBy on saved suggestions
    * @returns {Promise<Object>} { succeededSuggestions, failedSuggestions, coveredSuggestions }
    *   - succeededSuggestions: suggestion entities that were deployed
@@ -1602,7 +1531,6 @@ class TokowakaClient {
     site,
     opportunity,
     targetSuggestions,
-    allSuggestions,
     updatedBy = 'edge-deploy',
     metadata = {},
   }) {
@@ -1611,12 +1539,11 @@ class TokowakaClient {
     const { patternSuggestions, validSuggestions: classified } = classifySuggestions(targetSuggestions, this.log);
     this.log.info(
       `[edge-deploy] Classification: pattern=${patternSuggestions.length},`
-      + ` perUrl=${classified.length}, allSuggestions=${allSuggestions.length}`,
+      + ` perUrl=${classified.length}`,
     );
 
-    // Step 2: remove per-URL suggestions already covered by a pattern in this batch.
-    // eslint-disable-next-line max-len
-    const { remaining: validSuggestions, skippedInBatch } = filterBatchCoveredSuggestions(classified, patternSuggestions, this.log);
+    // Step 2: keep per-URL deploy path independent from async covered marking.
+    const validSuggestions = classified;
 
     let succeededSuggestions = [];
     const failedSuggestions = [];
@@ -1634,7 +1561,6 @@ class TokowakaClient {
     const coveredSuggestions = [];
     const deployedPatternSuggestions = [];
     if (patternSuggestions.length > 0) {
-      const skippedInBatchIds = new Set(skippedInBatch.map((item) => item.suggestion.getId()));
       const baseURL = site.getBaseURL();
       let metaconfig = await this.fetchMetaconfig(baseURL);
       if (!metaconfig) {
@@ -1656,10 +1582,7 @@ class TokowakaClient {
             allowedRegexPatterns,
             metaconfig,
             baseURL,
-            skippedInBatchIds,
-            allSuggestions,
             updatedBy,
-            coveredSuggestions,
           );
           deployedPatternSuggestions.push(suggestion);
         } catch (error) {
@@ -1683,34 +1606,6 @@ class TokowakaClient {
         }
       }
     }
-
-    // Step 5: mark same-batch skipped suggestions, then batch-save.
-    if (skippedInBatch.length > 0) {
-      const skippedSuggestions = skippedInBatch.map((item) => {
-        const coverageField = item.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
-        item.suggestion.setData({
-          ...item.suggestion.getData(),
-          [coverageField]: 'same-batch-deployment',
-          skippedInDeployment: true,
-        });
-        item.suggestion.setUpdatedBy(updatedBy);
-        return item.suggestion;
-      });
-
-      try {
-        await saveSuggestions(this.dataAccess, skippedSuggestions);
-        succeededSuggestions.push(...skippedSuggestions);
-        coveredSuggestions.push(...skippedSuggestions);
-      } catch (error) {
-        // eslint-disable-next-line max-len
-        this.log.warn(`[edge-deploy] Failed to save same-batch skipped suggestions: ${error.message}`);
-        skippedSuggestions.forEach((s) => {
-          // eslint-disable-next-line max-len
-          failedSuggestions.push({ suggestion: s, reason: 'Failed to mark as covered', statusCode: 500 });
-        });
-      }
-    }
-
     return { succeededSuggestions, failedSuggestions, coveredSuggestions };
   }
 

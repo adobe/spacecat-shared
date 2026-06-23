@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.120.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.120.0...@adobe/spacecat-shared-utils-v1.120.1) (2026-06-18)
+
+### Bug Fixes
+
+* **utils:** correct AMS detection for AEM 6.5 sites with Core Components ([#1688](https://github.com/adobe/spacecat-shared/issues/1688)) ([5bf320c](https://github.com/adobe/spacecat-shared/commit/5bf320cc960b91cd81fc1facf6eae08816b6dd69))
+
 ## [@adobe/spacecat-shared-utils-v1.120.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.3...@adobe/spacecat-shared-utils-v1.120.0) (2026-06-16)
 
 ### Features

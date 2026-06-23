@@ -42,9 +42,14 @@ function matchRoute(method, requestSegments, routeKey) {
  * using the method and path from context.pathInfo. Supports both exact
  * matches and parameterized route patterns (e.g. 'GET /sites/:siteId').
  *
+ * The mapped value is returned verbatim — it may be a single capability string
+ * or an array of acceptable capabilities. Callers must handle both shapes (the
+ * s2sAuthWrapper normalizes to an array). Note an empty array `[]` is truthy and
+ * is passed through; the wrapper treats it as "no usable capability" and denies.
+ *
  * @param {Object} context - Universal context with pathInfo
- * @param {Object<string, string>} routeMap - Route pattern to value map
- * @returns {string|null} The matched value or null
+ * @param {Object<string, string|string[]>} routeMap - Route pattern to value map
+ * @returns {string|string[]|null} The matched value or null
  */
 export function resolveRouteCapability(context, routeMap) {
   const method = context.pathInfo?.method?.toUpperCase();

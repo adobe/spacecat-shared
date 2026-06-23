@@ -197,6 +197,70 @@ describe('AEM Detection', () => {
         expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
       });
 
+      it('should detect AMS 6.5 with Core Components despite CS-looking patterns', () => {
+        // AEM 6.5 (AMS) can use Core Components (cmp- classes, data-cmp-),
+        // experience fragments, and lc-[timestamp]-lc clientlib format — all of which
+        // also appear on CS. The explicit ams= data-routing must win.
+        const htmlSource = `
+          <html>
+            <head>
+              <script defer src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@%5E2/dist/rum-standalone.js"
+                data-routing="env=prod,tier=publish,ams=My Org Name"></script>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-1781626636100-lc.min.css">
+            </head>
+            <body data-cmp-link-accessibility-enabled data-cmp-data-layer-name="adobeDataLayer">
+              <div id="container-abc" class="cmp-container">
+                <div class="cmp-experiencefragment">
+                  <div data-cmp-is="image" class="cmp-image">
+                    <img src="/content/experience-fragments/mysite/header.svg">
+                  </div>
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
+      });
+
+      it('should detect AMS 6.5 with Core Components and x-dispatcher header', () => {
+        const headers = { 'x-dispatcher': 'dispatcher3eusouth2' };
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-1781626636100-lc.min.css">
+            </head>
+            <body>
+              <div class="cmp-container">
+                <div data-cmp-is="image" class="cmp-image"></div>
+              </div>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource, headers);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
+      });
+
+      it('should detect AMS with mixed-case x-dispatcher header value', () => {
+        // HTTP header values may arrive with unexpected casing — the pattern and the
+        // extra-weight check must both match case-insensitively to score consistently.
+        const headers = { 'x-dispatcher': 'Dispatcher3eusouth2' };
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-1781626636100-lc.min.css">
+            </head>
+            <body>
+              <div class="cmp-container">
+                <div data-cmp-is="image" class="cmp-image"></div>
+              </div>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource, headers);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
+      });
+
       it('should detect AMS via foundation- pattern', () => {
         const htmlSource = `
           <html>

@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-data-access-v3.79.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.79.0...@adobe/spacecat-shared-data-access-v3.79.1) (2026-06-22)
+
+### Bug Fixes
+
+* data structure for Sitemap "error" suggestions ([#1697](https://github.com/adobe/spacecat-shared/issues/1697)) ([a9b550c](https://github.com/adobe/spacecat-shared/commit/a9b550c8bf6c3411e312fe1c305f38b5a90dfdde))
+
+## [@adobe/spacecat-shared-data-access-v3.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.78.0...@adobe/spacecat-shared-data-access-v3.79.0) (2026-06-19)
+
+### Features
+
+* **data-access:** add brand pendingSemrushProvisioning attribute ([#1692](https://github.com/adobe/spacecat-shared/issues/1692)) ([1c2bc2a](https://github.com/adobe/spacecat-shared/commit/1c2bc2a2043246268e0ebe421de7c2c9e9241cdc))
+
+## [@adobe/spacecat-shared-data-access-v3.78.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.77.0...@adobe/spacecat-shared-data-access-v3.78.0) (2026-06-17)
+
+### Features
+
+* **data-access:** register money-pages as a supported audit type ([#1682](https://github.com/adobe/spacecat-shared/issues/1682)) ([1d2842f](https://github.com/adobe/spacecat-shared/commit/1d2842f6a9b42afb5c5c55cbb890d39f85a31f97))
+
 ## [@adobe/spacecat-shared-data-access-v3.77.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.76.0...@adobe/spacecat-shared-data-access-v3.77.0) (2026-06-17)
 
 ### Features

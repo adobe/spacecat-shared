@@ -12,8 +12,10 @@
 
 import TaskManagementConnection from './task-management-connection.model.js';
 import TaskManagementConnectionCollection from './task-management-connection.collection.js';
+import { validateMetadata } from './metadata-validator.js';
 
 export {
   TaskManagementConnection,
   TaskManagementConnectionCollection,
+  validateMetadata,
 };

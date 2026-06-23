@@ -66,4 +66,18 @@ describe('Project Engine foundation: overlay guard', () => {
   it('has no Auth-Data-Jwt header in generated types (CR2)', () => {
     expect(types).to.not.include('Auth-Data-Jwt');
   });
+
+  it('types the workspace id as a path param, not query (CR4)', () => {
+    // aio-create-prompts-with-tags (and 10 other ops) declared the workspace
+    // `id` as in:query in the vendored swagger, though `{id}` is a path-template
+    // variable. CR4 relocates it to `path`; if a spec refresh silently drops the
+    // overlay the op reverts to `query: { id }` / `path?: never` and this fails.
+    // Target the operation DEFINITION (`...": {`), not the paths-section
+    // reference (`operations["..."]`).
+    const start = types.indexOf('"aio-create-prompts-with-tags": {');
+    expect(start, 'operation present in generated types').to.be.greaterThan(-1);
+    const op = types.slice(start, types.indexOf('requestBody', start));
+    expect(op).to.match(/path:\s*\{[\s\S]*\bid: string/);
+    expect(op).to.match(/query\?: never/);
+  });
 });

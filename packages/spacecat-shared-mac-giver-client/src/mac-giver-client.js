@@ -21,6 +21,7 @@ export default class MacGiverClient {
   }
 
   constructor({ macGiverBaseUrl, imsClient, log }) {
+    log.info(`macGiverBaseUrl used in mac-giver client: ${macGiverBaseUrl}`);
     this.macGiverBaseUrl = macGiverBaseUrl;
     this.imsClient = imsClient;
     this.log = log;
@@ -60,21 +61,51 @@ export default class MacGiverClient {
   async #check({
     userId, imsOrgId, permissions = [], namespaces = [],
   }) {
-    const serviceToken = await this.imsClient.getServiceAccessToken();
+    const url = `${this.macGiverBaseUrl}${CHECK_PATH}`;
+    const requestBody = {
+      subject: { type: 'user', id: userId, relation: null },
+      permissions,
+      object: { type: 'organization', id: imsOrgId },
+      namespaces,
+    };
+    // DEBUG (temporary): trace the outbound request. Never logs the service
+    // token. Drop these info logs once MacGiver wiring is verified.
+    this.log.info({
+      tag: 'macgiver',
+      url,
+      method: 'POST',
+      userId,
+      imsOrgId,
+      permissions,
+      namespaces,
+    }, 'MacGiver check: sending request');
 
-    const res = await fetch(`${this.macGiverBaseUrl}${CHECK_PATH}`, {
+    // ImsClient.getServiceAccessToken() resolves to
+    // { access_token, expires_in, token_type } — the bearer is in `access_token`.
+    // Templating the whole object would send `Bearer [object Object]` and FACS
+    // would reject it with 401.
+    const { access_token: serviceToken } = await this.imsClient.getServiceAccessToken();
+    if (!serviceToken) {
+      throw new Error('MacGiver check: IMS service token is missing access_token');
+    }
+    this.log.info({
+      tag: 'macgiver',
+      url,
+      hasServiceToken: true,
+    }, 'MacGiver check: resolved service token, calling MacGiver');
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${serviceToken}`,
       },
-      body: JSON.stringify({
-        subject: { type: 'user', id: userId, relation: null },
-        permissions,
-        object: { type: 'organization', id: imsOrgId },
-        namespaces,
-      }),
+      body: JSON.stringify(requestBody),
     });
+
+    this.log.info({
+      tag: 'macgiver', url, status: res.status, ok: res.ok,
+    }, 'MacGiver check: received response');
 
     if (!res.ok) {
       // Distinguish "could not evaluate" from "evaluated, none". Login wraps
@@ -91,13 +122,25 @@ export default class MacGiverClient {
     }
 
     const json = await res.json();
+    this.log.info({
+      tag: 'macgiver',
+      url,
+      status: json.status,
+      hasResults: Boolean(json.results),
+      resultKeys: json.results ? Object.keys(json.results) : [],
+    }, 'MacGiver check: parsed response body');
+
     if (json.status !== 'SUCCESS' || !json.results) {
       return [];
     }
 
-    return Object.entries(json.results)
+    const allowed = Object.entries(json.results)
       .filter(([, v]) => v?.allowed === true)
       .map(([permission]) => permission);
+    this.log.info({
+      tag: 'macgiver', url, allowedCount: allowed.length, allowed,
+    }, 'MacGiver check: returning allowed permissions');
+    return allowed;
   }
 
   /**

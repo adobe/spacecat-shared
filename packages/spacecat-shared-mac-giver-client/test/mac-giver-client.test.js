@@ -30,7 +30,15 @@ describe('MacGiverClient', () => {
   let imsClient;
 
   beforeEach(() => {
-    imsClient = { getServiceAccessToken: sandbox.stub().resolves('service-access-token') };
+    // Mirror the real ImsClient.getServiceAccessToken() shape:
+    // { access_token, expires_in, token_type } — only access_token is used here.
+    imsClient = {
+      getServiceAccessToken: sandbox.stub().resolves({
+        access_token: 'service-access-token',
+        expires_in: 3600,
+        token_type: 'bearer',
+      }),
+    };
     nock.cleanAll();
   });
 
@@ -125,6 +133,16 @@ describe('MacGiverClient', () => {
       });
       expect(capturedHeaders.authorization).to.include('Bearer service-access-token');
       expect(capturedHeaders['x-user-token']).to.be.undefined;
+    });
+
+    it('throws when the IMS service-token response is missing access_token', async () => {
+      imsClient.getServiceAccessToken.resolves({ expires_in: 3600, token_type: 'bearer' });
+
+      await expect(client.checkListOfPermission({
+        userId: 'u',
+        imsOrgId: 'o',
+        permissions: ['llmo/can_read'],
+      })).to.be.rejectedWith(/missing access_token/);
     });
 
     it('throws and logs when MacGiver responds with a non-ok status code', async () => {

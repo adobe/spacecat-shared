@@ -180,6 +180,81 @@ describe('User Manager mock (LLMO-5616)', () => {
     expect((await api('GET', '/v1/workspaces/does-not-exist')).status).to.be.gte(400);
   });
 
+  describe('sub-workspace lifecycle (LLMO-5616)', () => {
+    it('POST /v2/workspaces/:id/child registers a child with a deterministic id, reachable via GET', async () => {
+      const created = await api('POST', '/v2/workspaces/ws-root/child', {
+        title: 'Market Mirror', resources: { ai: { units: 100 } },
+      });
+      expect(created.status).to.equal(200);
+      expect(created.body.id).to.be.a('string').and.match(/^ws-new-/);
+      expect(created.body.parent_id).to.equal('ws-root');
+      expect(created.body.title).to.equal('Market Mirror');
+      // the child is stored, so a subsequent workspace GET finds it
+      const got = await api('GET', `/v1/workspaces/${created.body.id}`);
+      expect(got.status).to.equal(200);
+      expect(got.body.parent_id).to.equal('ws-root');
+    });
+
+    it('GET /v1/workspaces/:id/status returns the terminal "created" as a single object', async () => {
+      const res = await api('GET', '/v1/workspaces/ws-root/status');
+      expect(res.status).to.equal(200);
+      // CR2: a single object, not an array
+      expect(res.body).to.be.an('object');
+      expect(res.body.status).to.equal('created');
+    });
+
+    it('GET /v1/workspaces/:id/status returns an error status for an unknown workspace', async () => {
+      expect((await api('GET', '/v1/workspaces/no-such-ws/status')).status).to.be.gte(400);
+    });
+
+    it('GET status walks a seeded "not ready" -> "created" sequence, then stays created (poll path)', async () => {
+      const seeded = await api('POST', '/__set-status-sequence', {
+        id: 'ws-root', statuses: ['not ready', 'not ready', 'created'],
+      });
+      expect(seeded.status).to.equal(200);
+      const poll = async () => (await api('GET', '/v1/workspaces/ws-root/status')).body.status;
+      expect(await poll()).to.equal('not ready');
+      expect(await poll()).to.equal('not ready');
+      expect(await poll()).to.equal('created');
+      // drained -> stays at the terminal created
+      expect(await poll()).to.equal('created');
+    });
+
+    it('POST /__set-status-sequence on an unknown workspace returns an error status', async () => {
+      const res = await api('POST', '/__set-status-sequence', { id: 'no-such-ws', statuses: ['created'] });
+      expect(res.status).to.be.gte(400);
+    });
+
+    it('POST /v2/workspaces/:id/resources/transfer reflects the allocation in the store', async () => {
+      const res = await api('POST', '/v2/workspaces/ws-child/resources/transfer', {
+        resources: { projects: 5, keywords: 500 },
+      });
+      expect(res.status).to.equal(200);
+      expect(res.body).to.include({ projects: 5, keywords: 500 });
+      // reflected on a subsequent resources GET
+      const got = await api('GET', '/v1/workspaces/ws-child/resources');
+      expect(got.body).to.include({ projects: 5, keywords: 500 });
+    });
+
+    it('transfer to a missing workspace returns an error status', async () => {
+      const res = await api('POST', '/v2/workspaces/no-such-ws/resources/transfer', {
+        resources: { projects: 1 },
+      });
+      expect(res.status).to.be.gte(400);
+    });
+
+    it('end-to-end: child -> status -> transfer is deterministic across the chain', async () => {
+      const child = await api('POST', '/v2/workspaces/ws-root/child', { title: 'Mirror' });
+      const { id } = child.body;
+      expect((await api('GET', `/v1/workspaces/${id}/status`)).body.status).to.equal('created');
+      const transfer = await api('POST', `/v2/workspaces/${id}/resources/transfer`, {
+        resources: { projects: 3 },
+      });
+      expect(transfer.status).to.equal(200);
+      expect(transfer.body).to.include({ projects: 3 });
+    });
+  });
+
   it('uses committed custom handlers (delegate to $.context)', () => {
     const profile = fs.readFileSync(path.join(PKG_ROOT, '.counterfact/routes/v1/profile.ts'), 'utf8');
     expect(profile).to.include('$.context');

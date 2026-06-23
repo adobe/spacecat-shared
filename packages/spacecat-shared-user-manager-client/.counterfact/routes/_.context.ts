@@ -53,6 +53,13 @@ export class Context {
 
   serviceUnits = new Map<string, Dict>();
 
+  // Per-workspace provisioning status queue. GET /v1/workspaces/{id}/status
+  // consumes one entry per call; once drained, status reports the terminal
+  // "created" — the success sentinel the api-service transport polls for (overlay
+  // CR2). Kept apart from the workspace so it never leaks into a workspace GET
+  // body; seeded empty, set via the non-spec /__set-status-sequence route.
+  statusSequences = new Map<string, string[]>();
+
   idCounter = 0;
 
   constructor($: Context$) {
@@ -73,6 +80,7 @@ export class Context {
     );
     this.resources = new Map(Object.entries(f.resources));
     this.serviceUnits = new Map(Object.entries(f.serviceUnits));
+    this.statusSequences = new Map();
     this.idCounter = 0;
   }
 
@@ -126,6 +134,27 @@ export class Context {
     return this.workspaces.delete(id);
   }
 
+  // --- sub-workspace provisioning status ---
+  // Returns the next provisioning status for a workspace, or null when it is
+  // missing (the handler maps that to 404/500). A workspace with a queued
+  // sequence walks it one status per call (e.g. "not ready" -> "created"); once
+  // drained, or with no sequence set, it reports the terminal "created".
+  getStatus(id: string) {
+    if (!this.workspaces.has(id)) return null;
+    const queue = this.statusSequences.get(id);
+    const status = queue && queue.length > 0 ? queue.shift()! : "created";
+    return { status };
+  }
+
+  // Seeds the provisioning sequence GET /status walks through. Returns false
+  // when the workspace is missing. Used by the non-spec /__set-status-sequence
+  // control route to exercise the poll path deterministically.
+  setStatusSequence(id: string, statuses: string[]) {
+    if (!this.workspaces.has(id)) return false;
+    this.statusSequences.set(id, [...statuses]);
+    return true;
+  }
+
   // --- members ---
   listMembers(workspaceId: string) {
     const m = this.members.get(workspaceId);
@@ -174,5 +203,17 @@ export class Context {
 
   getServiceUnitsBalance(workspaceId: string) {
     return this.serviceUnits.get(workspaceId) ?? null;
+  }
+
+  // Reflects a resource transfer onto the target workspace: merges the requested
+  // `resources` into its stored resources so a subsequent GET reflects the new
+  // allocation. Returns null when the workspace is missing (handler -> 404/500).
+  transferResources(id: string, body: Dict) {
+    if (!this.workspaces.has(id)) return null;
+    const requested = (body.resources as Dict) ?? {};
+    const existing = this.resources.get(id) ?? { workspace_id: id };
+    const updated = { ...existing, ...requested };
+    this.resources.set(id, updated);
+    return updated;
   }
 }

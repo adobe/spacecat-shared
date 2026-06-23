@@ -220,6 +220,13 @@ describe('AuthInfo', () => {
       });
       expect(authInfo.getFacsPermissions()).to.deep.equal(['llmo/can_read', 'llmo/can_manage']);
     });
+
+    it('returns [] when facs_permissions is a non-array truthy value (fail-closed)', () => {
+      const authInfo = new AuthInfo().withProfile({ facs_permissions: 'llmo/can_read' });
+      expect(authInfo.getFacsPermissions()).to.deep.equal([]);
+      // Guards against substring matching: a string claim must not satisfy a check.
+      expect(authInfo.hasFacsPermission('can')).to.be.false;
+    });
   });
 
   describe('hasFacsPermission', () => {

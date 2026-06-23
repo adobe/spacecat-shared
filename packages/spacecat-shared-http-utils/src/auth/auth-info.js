@@ -92,7 +92,13 @@ export default class AuthInfo {
 
   isReadOnlyAdmin() { return this.profile?.is_read_only_admin; }
 
-  getFacsPermissions() { return this.profile?.facs_permissions || []; }
+  getFacsPermissions() {
+    // Fail-closed on an unexpected claim shape: a non-array truthy value (e.g. a
+    // string) would otherwise reach `hasFacsPermission().includes()` and do
+    // substring matching, silently granting access on partial matches.
+    const perms = this.profile?.facs_permissions;
+    return Array.isArray(perms) ? perms : [];
+  }
 
   hasFacsPermission(permission) { return this.getFacsPermissions().includes(permission); }
 

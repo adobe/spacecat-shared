@@ -225,6 +225,7 @@ async function isOrgRbacEnabled(context, organizations) {
     return false;
   }
 }
+
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
  */

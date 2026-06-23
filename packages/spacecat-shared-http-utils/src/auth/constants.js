@@ -27,9 +27,9 @@ export const FF_READ_ONLY_ORG = 'FT_LLMO-3008';
  * source of truth is consumed by both `spacecat-auth-service` (login-time
  * lookup) and `facsWrapper` (request-time enforcement gate).
  */
-export const FT_MAC_FACS_PERMISSIONS = {
+export const FT_MAC_FACS_PERMISSIONS = Object.freeze({
   LLMO: 'FF_LLMO-3026',
   ASO: 'FT_SITES-44631',
-};
+});
 
 export const X_PRODUCT_HEADER = 'x-product';

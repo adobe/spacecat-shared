@@ -73,6 +73,9 @@ export class InMemoryStore {
    */
   create(name, entity) {
     const id = entity.id ?? InMemoryStore.#generateId();
+    if (entity.id && this.#collection(name).has(entity.id)) {
+      throw new Error(`duplicate id ${entity.id} in collection ${name}`);
+    }
     /** @type {Entity} */
     const stored = { ...entity, id };
     this.#collection(name).set(id, stored);

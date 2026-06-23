@@ -244,6 +244,14 @@ jobs:
         # (or its generated types) change. See test/types/index.type-test.ts.
         run: npm run test:types -w @adobe/spacecat-shared-project-engine-client
 
+      - name: Generate corrected OAS3 artifact
+        # build/openapi3.json is gitignored; the mock runner requires it.
+        # Only the conversion + overlay steps are needed here — generate:ts and
+        # generate:pydantic produce committed artifacts and require Python.
+        run: |
+          npm run spec:convert -w @adobe/spacecat-shared-project-engine-client
+          npm run spec:overlay -w @adobe/spacecat-shared-project-engine-client
+
       - name: Project Engine mock E2E
         run: npm run test:e2e -w @adobe/spacecat-shared-project-engine-client
         env:

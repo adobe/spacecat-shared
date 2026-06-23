@@ -27,6 +27,13 @@ describe('InMemoryStore — CRUD', () => {
     expect(store.get('projects', 'fixed')?.name).to.equal('B');
   });
 
+  it('throws on a duplicate explicit id', () => {
+    const store = new InMemoryStore();
+    store.create('projects', { id: 'dup', name: 'first' });
+    expect(() => store.create('projects', { id: 'dup', name: 'second' }))
+      .to.throw('duplicate id dup in collection projects');
+  });
+
   it('returns undefined for an unknown id', () => {
     const store = new InMemoryStore();
     expect(store.get('projects', 'nope')).to.equal(undefined);

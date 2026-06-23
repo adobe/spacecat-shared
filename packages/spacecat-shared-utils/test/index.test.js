@@ -130,6 +130,8 @@ describe('Index Exports', () => {
     'stripWWW',
     'TOKEN_GRANT_CONFIG',
     'toBoolean',
+    'filterBySiteScope',
+    'isWithinSiteScope',
     'toggleWWWHostname',
     'tracingFetch',
     'urlMatchesFilter',

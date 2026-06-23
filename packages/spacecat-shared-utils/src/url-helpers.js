@@ -443,6 +443,63 @@ export function canonicalizeUrl(url, { stripQuery = false } = {}) {
   return canonicalized;
 }
 
+/**
+ * Checks if a URL is within the site scope defined by siteBaseUrl.
+ * For a siteBaseUrl with a subpath (e.g. bulk.com/uk), only URLs whose pathname starts with that
+ * subpath are in scope. For domain-only base URLs (no subpath), all URLs pass through.
+ *
+ * @param {string} url - The URL to check (relative or absolute).
+ * @param {string} siteBaseUrl - The site's base URL defining the scope (e.g. "bulk.com/uk").
+ * @returns {boolean}
+ */
+function isWithinSiteScope(url, siteBaseUrl) {
+  if (!url) {
+    return false;
+  }
+  if (!siteBaseUrl) {
+    return true;
+  }
+
+  try {
+    const parsedBase = new URL(prependSchema(siteBaseUrl));
+    const rawPath = parsedBase.pathname;
+    const basePath = rawPath.endsWith('/') ? rawPath.slice(0, -1) : rawPath;
+
+    if (!basePath || basePath === '/') {
+      return true;
+    }
+
+    const basePathWithSlash = `${basePath}/`;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return url.startsWith(basePathWithSlash) || url === basePath;
+    }
+
+    const parsedUrl = new URL(prependSchema(url));
+    if (
+      stripWWW(parsedUrl.hostname) !== stripWWW(parsedBase.hostname)
+      || parsedUrl.port !== parsedBase.port
+    ) {
+      return false;
+    }
+
+    return parsedUrl.pathname.startsWith(basePathWithSlash) || parsedUrl.pathname === basePath;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Filters a list of URLs to only those within the site scope.
+ *
+ * @param {string[]} urls
+ * @param {string} siteBaseUrl
+ * @returns {string[]}
+ */
+function filterBySiteScope(urls, siteBaseUrl) {
+  return urls.filter((url) => isWithinSiteScope(url, siteBaseUrl));
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,
@@ -458,4 +515,6 @@ export {
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
 };

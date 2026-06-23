@@ -30,6 +30,8 @@ import {
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
 } from '../src/url-helpers.js';
 
 use(sinonChai);
@@ -1148,6 +1150,107 @@ describe('URL Utility Functions', () => {
     it('handles URLs without protocol', () => {
       expect(canonicalizeUrl('example.com/path')).to.equal('example.com/path');
       expect(canonicalizeUrl('www.example.com/path')).to.equal('example.com/path');
+    });
+  });
+
+  describe('isWithinSiteScope', () => {
+    it('returns false for null or empty url', () => {
+      expect(isWithinSiteScope(null, 'bulk.com/uk')).to.be.false;
+      expect(isWithinSiteScope('', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns true when siteBaseUrl is null or empty (no restriction)', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', null)).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', '')).to.be.true;
+    });
+
+    it('returns true for all URLs when siteBaseUrl has no subpath', () => {
+      expect(isWithinSiteScope('https://bulk.com/any/path', 'bulk.com')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/', 'bulk.com')).to.be.true;
+    });
+
+    it('returns true for absolute URL within subpath scope', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns true for absolute URL exactly matching the base path', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns false for absolute URL outside the subpath scope', () => {
+      expect(isWithinSiteScope('https://bulk.com/de/page', 'bulk.com/uk')).to.be.false;
+      expect(isWithinSiteScope('https://bulk.com/ukraine', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns true for relative URL within subpath scope', () => {
+      expect(isWithinSiteScope('/uk/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('/uk/', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns true for relative URL exactly matching the base path', () => {
+      expect(isWithinSiteScope('/uk', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns false for relative URL outside the subpath scope', () => {
+      expect(isWithinSiteScope('/ukraine', 'bulk.com/uk')).to.be.false;
+      expect(isWithinSiteScope('/de/page', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('normalizes www when comparing hosts', () => {
+      expect(isWithinSiteScope('https://www.bulk.com/uk/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'www.bulk.com/uk')).to.be.true;
+    });
+
+    it('returns false when hosts differ', () => {
+      expect(isWithinSiteScope('https://other.com/uk/page', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns false when ports differ', () => {
+      expect(isWithinSiteScope('https://bulk.com:8080/uk/page', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('handles siteBaseUrl with trailing slash', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/uk/')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/ukraine', 'bulk.com/uk/')).to.be.false;
+    });
+
+    it('returns false on malformed siteBaseUrl without throwing', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', '://%%%bad')).to.be.false;
+    });
+
+    it('returns false on malformed absolute URL without throwing', () => {
+      expect(isWithinSiteScope('https://%%%bad', 'bulk.com/uk')).to.be.false;
+    });
+  });
+
+  describe('filterBySiteScope', () => {
+    it('returns only URLs within the site scope', () => {
+      const urls = [
+        'https://bulk.com/uk/page1',
+        'https://bulk.com/de/page2',
+        'https://bulk.com/uk/page3',
+        'https://bulk.com/ukraine',
+      ];
+      expect(filterBySiteScope(urls, 'bulk.com/uk')).to.deep.equal([
+        'https://bulk.com/uk/page1',
+        'https://bulk.com/uk/page3',
+      ]);
+    });
+
+    it('returns all URLs when siteBaseUrl has no subpath', () => {
+      const urls = ['https://bulk.com/a', 'https://bulk.com/b'];
+      expect(filterBySiteScope(urls, 'bulk.com')).to.deep.equal(urls);
+    });
+
+    it('returns all URLs when siteBaseUrl is null', () => {
+      const urls = ['https://bulk.com/a', 'https://bulk.com/b'];
+      expect(filterBySiteScope(urls, null)).to.deep.equal(urls);
+    });
+
+    it('returns empty array when no URLs are in scope', () => {
+      const urls = ['https://bulk.com/de/page', 'https://other.com/uk/page'];
+      expect(filterBySiteScope(urls, 'bulk.com/uk')).to.deep.equal([]);
     });
   });
 });

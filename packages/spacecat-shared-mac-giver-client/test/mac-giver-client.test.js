@@ -128,7 +128,6 @@ describe('MacGiverClient', () => {
       expect(capturedBody).to.deep.equal({
         subject: { type: 'user', id: 'user42' },
         object: { type: 'org', id: 'org99' },
-        namespaces: [],
         permissions: ['llmo/can_read', 'llmo/can_edit'],
       });
       expect(capturedHeaders.authorization).to.include('Bearer service-access-token');
@@ -143,6 +142,25 @@ describe('MacGiverClient', () => {
         imsOrgId: 'o',
         permissions: ['llmo/can_read'],
       })).to.be.rejectedWith(/missing access_token/);
+    });
+
+    it('throws when userId or imsOrgId is missing (no request fired)', async () => {
+      await expect(client.checkListOfPermission({
+        imsOrgId: 'o', permissions: ['llmo/can_read'],
+      })).to.be.rejectedWith(/userId and imsOrgId are required/);
+      await expect(client.checkListOfPermission({
+        userId: 'u', permissions: ['llmo/can_read'],
+      })).to.be.rejectedWith(/userId and imsOrgId are required/);
+      expect(imsClient.getServiceAccessToken).to.not.have.been.called;
+    });
+
+    it('throws when permissions is missing or empty', async () => {
+      await expect(client.checkListOfPermission({
+        userId: 'u', imsOrgId: 'o', permissions: [],
+      })).to.be.rejectedWith(/permissions must be a non-empty array/);
+      await expect(client.checkListOfPermission({
+        userId: 'u', imsOrgId: 'o',
+      })).to.be.rejectedWith(/permissions must be a non-empty array/);
     });
 
     it('throws and logs when MacGiver responds with a non-ok status code', async () => {
@@ -284,6 +302,45 @@ describe('MacGiverClient', () => {
         imsOrgId: 'o',
         namespaces: ['llmo'],
       })).to.be.rejectedWith('MacGiver returned 500');
+    });
+
+    it('throws when userId or imsOrgId is missing (no request fired)', async () => {
+      await expect(client.checkAllPermission({
+        imsOrgId: 'o', namespaces: ['llmo'],
+      })).to.be.rejectedWith(/userId and imsOrgId are required/);
+      await expect(client.checkAllPermission({
+        userId: 'u', namespaces: ['llmo'],
+      })).to.be.rejectedWith(/userId and imsOrgId are required/);
+      expect(imsClient.getServiceAccessToken).to.not.have.been.called;
+    });
+
+    it('throws when namespaces is missing or empty', async () => {
+      await expect(client.checkAllPermission({
+        userId: 'u', imsOrgId: 'o', namespaces: [],
+      })).to.be.rejectedWith(/namespaces must be a non-empty array/);
+      await expect(client.checkAllPermission({
+        userId: 'u', imsOrgId: 'o',
+      })).to.be.rejectedWith(/namespaces must be a non-empty array/);
+    });
+
+    it('logs a warning when MacGiver returns a non-SUCCESS status', async () => {
+      const logWarn = sinon.spy();
+      const warnClient = new MacGiverClient({
+        macGiverBaseUrl: 'http://localhost:8080',
+        imsClient,
+        log: { warn: logWarn, info: () => {}, debug: () => {} },
+      });
+      nock('http://localhost:8080')
+        .post(CHECK_PATH)
+        .reply(200, { status: 'ERROR', results: null });
+
+      const result = await warnClient.checkAllPermission({
+        userId: 'u', imsOrgId: 'o', namespaces: ['llmo'],
+      });
+
+      expect(result).to.deep.equal([]);
+      expect(logWarn).to.have.been.calledOnce;
+      expect(logWarn.firstCall.args[1]).to.match(/non-SUCCESS/i);
     });
   });
 });

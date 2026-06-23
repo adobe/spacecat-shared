@@ -12,6 +12,10 @@
 
 const DEFAULT_BASE_URL = 'http://localhost:8080';
 const CHECK_PATH = '/api/facs/permissions/check';
+// MacGiver sits on the login critical path; bound the request so a hung
+// dependency cannot hang login indefinitely. AbortSignal.timeout is native in
+// Node 22+.
+const REQUEST_TIMEOUT_MS = 5000;
 
 export default class MacGiverClient {
   static createFrom(context) {
@@ -67,9 +71,16 @@ export default class MacGiverClient {
     // and mac-giver surfaces it as a 500.
     const subject = { type: 'user', id: userId };
     const object = { type: 'org', id: imsOrgId };
-    const requestBody = { subject, object, namespaces };
+    // Include only the non-empty list. MacGiver requires at least one of
+    // `permissions` / `namespaces`; the public methods each supply exactly one,
+    // so omitting the empty one keeps the body symmetric and future-proof
+    // against stricter MacGiver validation.
+    const requestBody = { subject, object };
     if (permissions.length > 0) {
       requestBody.permissions = permissions;
+    }
+    if (namespaces.length > 0) {
+      requestBody.namespaces = namespaces;
     }
 
     // ImsClient.getServiceAccessToken() resolves to
@@ -88,6 +99,7 @@ export default class MacGiverClient {
         Authorization: `Bearer ${serviceToken}`,
       },
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
     if (!res.ok) {
@@ -106,6 +118,17 @@ export default class MacGiverClient {
 
     const json = await res.json();
     if (json.status !== 'SUCCESS' || !json.results) {
+      // A non-SUCCESS status is an unexpected MacGiver condition, not "the user
+      // has no permissions" — log it (errors-only) so operators can tell them
+      // apart. A SUCCESS-with-no-results is genuinely empty and stays quiet.
+      if (json.status !== 'SUCCESS') {
+        this.log.warn(
+          {
+            tag: 'macgiver', status: json.status, userId, imsOrgId,
+          },
+          'MacGiver returned a non-SUCCESS status',
+        );
+      }
       return [];
     }
 
@@ -126,6 +149,12 @@ export default class MacGiverClient {
    * @returns {Promise<string[]>} Allowed subset of `permissions`.
    */
   async checkListOfPermission({ userId, imsOrgId, permissions }) {
+    if (!userId || !imsOrgId) {
+      throw new Error('MacGiver checkListOfPermission: userId and imsOrgId are required');
+    }
+    if (!Array.isArray(permissions) || permissions.length === 0) {
+      throw new Error('MacGiver checkListOfPermission: permissions must be a non-empty array');
+    }
     return this.#check({ userId, imsOrgId, permissions });
   }
 
@@ -142,6 +171,12 @@ export default class MacGiverClient {
    * @returns {Promise<string[]>} All allowed permissions across `namespaces`.
    */
   async checkAllPermission({ userId, imsOrgId, namespaces }) {
+    if (!userId || !imsOrgId) {
+      throw new Error('MacGiver checkAllPermission: userId and imsOrgId are required');
+    }
+    if (!Array.isArray(namespaces) || namespaces.length === 0) {
+      throw new Error('MacGiver checkAllPermission: namespaces must be a non-empty array');
+    }
     return this.#check({ userId, imsOrgId, namespaces });
   }
 }

@@ -3,8 +3,17 @@
   "version": "1.0.0",
   "description": "Shared modules of the Spacecat Services - Semrush User Manager client and generated types",
   "type": "module",
-  "private": true,
-  "types": "./src/generated/types.ts",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src"
+  ],
   "engines": {
     "node": ">=22.0.0 <25.0.0",
     "npm": ">=10.9.0 <12.0.0"
@@ -39,7 +48,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {},
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
   "devDependencies": {
     "c8": "11.0.0",
     "chai": "6.2.2",
@@ -48,6 +59,7 @@
     "mocha": "11.7.6",
     "mocha-multi-reporters": "1.5.1",
     "openapi-typescript": "7.13.0",
+    "sinon": "22.0.0",
     "swagger2openapi": "7.0.8"
   }
 }

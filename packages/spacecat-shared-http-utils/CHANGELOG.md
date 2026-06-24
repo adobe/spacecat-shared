@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.30.0...@adobe/spacecat-shared-http-utils-v1.31.0) (2026-06-24)
+
+### Features
+
+* **http-utils:** FACS AuthInfo accessors, constants, and IMS-handler RBAC block ([#1712](https://github.com/adobe/spacecat-shared/issues/1712)) ([ba9655b](https://github.com/adobe/spacecat-shared/commit/ba9655b6027abf3cab37162f31a942fc7e2b5262)), closes [#1711](https://github.com/adobe/spacecat-shared/issues/1711)
+
 ## [@adobe/spacecat-shared-http-utils-v1.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.29.1...@adobe/spacecat-shared-http-utils-v1.30.0) (2026-06-22)
 
 ### Features

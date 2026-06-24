@@ -2,13 +2,39 @@
 
 Typed integration with the Semrush **User Manager API** (`/enterprise/users/api`):
 
+- a thin, typed **client wrapper** (`createSerenityUserManagerApiClient`) over the generated `paths` — owns the base URL, IMS-Bearer auth, and retries (see [Client](#client)),
 - generated **TypeScript** (`src/generated/types.ts`) and **Pydantic v2** (`python/serenity_user_manager/`) types,
 - a generation-time **spec-correction overlay** (`spec/overlays/corrections.yaml`) that aligns the vendored swagger with the live API (see [Spec corrections](#spec-corrections)),
 - a **Counterfact mock** for E2E tests and local dev (`npm run mock`).
 
-> **Not here yet:** the typed **client wrapper** and the stateful mock store are
-> tracked follow-ups. This package mirrors the Project Engine foundation + overlay
-> (LLMO-5461) applied to a second, larger API (see LLMO-5558).
+## Client
+
+`createSerenityUserManagerApiClient(options)` returns an [`openapi-fetch`](https://openapi-ts.dev/openapi-fetch/)
+client fully typed over the generated `paths`. It owns the fixed `/enterprise/users/api` prefix,
+forwards the caller's IMS JWT as `Authorization: Bearer <token>` (no minting or exchange — Semrush
+accepts the IMS bearer directly), and retries `429` / retryable `5xx` / network errors with
+jittered exponential backoff that honours `Retry-After`.
+
+```js
+import { createSerenityUserManagerApiClient } from '@adobe/spacecat-shared-user-manager-client';
+
+const client = createSerenityUserManagerApiClient({
+  // origin only — the client appends `/enterprise/users/api` itself. The host is shared with
+  // Project Engine (`SEMRUSH_PROJECTS_BASE_URL`), or the Counterfact mock's origin for E2E.
+  baseUrl: 'https://adobe-hackathon.semrush.com',
+  // a raw IMS JWT, or a (sync/async) getter resolved per request
+  authToken: () => getCurrentImsToken(),
+});
+
+const { data, error, response } = await client.GET('/v1/countries');
+```
+
+Options: `baseUrl` and `authToken` are required; `maxRetries` (default `2`), `retryBaseDelayMs`
+(default `200`), `onRetry` (best-effort observability hook), and `fetch` (injectable, for tests)
+are optional. Request/response shapes come straight from the generated types — see `src/index.d.ts`.
+
+This package follows the Project Engine client (LLMO-5461) applied to a second, larger API
+(LLMO-5558).
 
 This package follows the `spacecat-shared` convention: **JS + ESM**, JSDoc-typed source,
 `mocha` + `chai` + `c8` for tests, and `@adobe/eslint-config-helix` for lint. The scaffold's

@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## Commands
 
@@ -41,13 +41,13 @@ Coverage enforcement: **100% lines/statements, 97% branches** per package (see e
 
 ## Architecture Overview
 
-This is the **foundation library layer** for all SpaceCat Node.js services. It's an npm workspaces monorepo (no lerna/nx) whose packages provide data access, API clients, utilities, and auth used by `spacecat-api-service`, `spacecat-audit-worker`, `spacecat-import-worker`, and other platform services.
+This is the **foundation library layer** for all SpaceCat Node.js services. It's an npm workspaces monorepo (no lerna/nx) containing 22 packages that provide data access, API clients, utilities, and auth used by `spacecat-api-service`, `spacecat-audit-worker`, `spacecat-import-worker`, and other platform services.
 
 ### Monorepo Structure
 
 ```
 spacecat-shared/
-├── packages/                     # npm workspace packages
+├── packages/                     # 22 npm workspace packages
 │   ├── spacecat-shared-data-access/   # Core data layer (PostgREST + Aurora PostgreSQL)
 │   ├── spacecat-shared-http-utils/    # HTTP response helpers + auth middleware
 │   ├── spacecat-shared-utils/         # General utilities (validation, S3, SQS, helpers)
@@ -71,16 +71,16 @@ spacecat-shared/
 | **Utilities** | `utils` | Validation, S3/SQS helpers, schemas, date functions |
 | **Secrets** | `vault-secrets` | HashiCorp Vault integration (AppRole auth, KV secrets) |
 | **HTML** | `html-analyzer` | HTML analysis and extraction |
-| **API clients** | `athena-client`, `brand-client`, `cloud-manager-client`, `content-client`, `drs-client`, `google-client`, `gpt-client`, `ims-client`, `launchdarkly-client`, `mac-giver-client`, `mysticat-shared-seo-client`, `project-engine-client`, `rum-api-client`, `scrape-client`, `slack-client`, `splunk-client`, `tier-client`, `tokowaka-client`, `user-manager-client` | External service integrations |
+| **API clients** | `athena-client`, `brand-client`, `cloud-manager-client`, `content-client`, `drs-client`, `google-client`, `gpt-client`, `ims-client`, `launchdarkly-client`, `mysticat-shared-seo-client`, `rum-api-client`, `scrape-client`, `slack-client`, `splunk-client`, `tier-client`, `tokowaka-client` | External service integrations |
 | **Example** | `example` | Template for creating new packages |
 
-### Package-Level CLAUDE.md Files
+### Package-Level AGENTS.md Files
 
-Some packages have their own CLAUDE.md with deeper architectural guidance:
+Some packages have their own AGENTS.md with deeper architectural guidance:
 
-- [`packages/spacecat-shared-data-access/CLAUDE.md`](packages/spacecat-shared-data-access/CLAUDE.md) — Entity pattern, SchemaBuilder DSL, PostgREST queries, integration tests
-- [`packages/spacecat-shared-vault-secrets/CLAUDE.md`](packages/spacecat-shared-vault-secrets/CLAUDE.md) — Vault pipeline, AppRole auth, E2E validation
-- [`packages/spacecat-shared-google-client/docs/CLAUDE.md`](packages/spacecat-shared-google-client/docs/CLAUDE.md) — GSC client, OAuth, environment variables
+- [`packages/spacecat-shared-data-access/AGENTS.md`](packages/spacecat-shared-data-access/AGENTS.md) — Entity pattern, SchemaBuilder DSL, PostgREST queries, integration tests
+- [`packages/spacecat-shared-vault-secrets/AGENTS.md`](packages/spacecat-shared-vault-secrets/AGENTS.md) — Vault pipeline, AppRole auth, E2E validation
+- [`packages/spacecat-shared-google-client/docs/AGENTS.md`](packages/spacecat-shared-google-client/docs/AGENTS.md) — GSC client, OAuth, environment variables
 
 ---
 
@@ -114,7 +114,7 @@ src/models/<entity>/
   index.js                 # Re-exports model, collection, schema
 ```
 
-See [`packages/spacecat-shared-data-access/CLAUDE.md`](packages/spacecat-shared-data-access/CLAUDE.md) for the SchemaBuilder DSL, attribute options, and field mapping details.
+See [`packages/spacecat-shared-data-access/AGENTS.md`](packages/spacecat-shared-data-access/AGENTS.md) for the SchemaBuilder DSL, attribute options, and field mapping details.
 
 ### Field Mapping Convention
 
@@ -139,10 +139,6 @@ export function createFooClient(config, log) {
   return new FooClient(config, log);
 }
 ```
-
-The Semrush clients (`project-engine-client`, `user-manager-client`) instead use a thin
-factory wrapper over an `openapi-fetch` client generated from a vendored spec — no client
-class. Same `createXClient(...)` factory convention, different internals.
 
 ---
 
@@ -225,7 +221,7 @@ npm run lint -w packages/spacecat-shared-<name>
 1. Update three locations in `src/models/site/config.js`: `IMPORT_TYPES`, `IMPORT_TYPE_SCHEMAS`, `DEFAULT_IMPORT_CONFIGS`
 2. Update three corresponding assertions in `test/unit/models/site/config.test.js`
 
-See [`packages/spacecat-shared-data-access/CLAUDE.md`](packages/spacecat-shared-data-access/CLAUDE.md) for full details including code examples.
+See [`packages/spacecat-shared-data-access/AGENTS.md`](packages/spacecat-shared-data-access/AGENTS.md) for full details including code examples.
 
 ---
 

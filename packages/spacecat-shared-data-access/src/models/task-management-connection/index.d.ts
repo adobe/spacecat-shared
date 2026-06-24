@@ -20,7 +20,16 @@ export interface TaskManagementConnection extends BaseModel {
    * so the UI can prompt the user to reconnect.
    */
   markRequiresReauth(): Promise<TaskManagementConnection>;
+  /** Persists status = 'disabled'. */
+  markDisabled(): Promise<TaskManagementConnection>;
+  /** Persists status = 'error' after repeated API failures. */
+  markError(): Promise<TaskManagementConnection>;
+  /** Persists status = 'disconnected' (soft-delete on user revoke). */
+  markDisconnected(): Promise<TaskManagementConnection>;
 
+  getConnectedBy(): string;
+  getDisplayName(): string;
+  getInstanceUrl(): string;
   getMetadata(): object;
   getOrganizationId(): string;
   getProvider(): string;

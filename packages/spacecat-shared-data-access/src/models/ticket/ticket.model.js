@@ -29,9 +29,10 @@ import BaseModel from '../base/base.model.js';
  * setTicketStatus() + save() only from that job.
  *
  * v1 scope — intentional deviations from the architecture spec:
- *   - No status_synced_at: Jira webhook status sync is a v2 feature.
- *   - No TicketSuggestion bridge model: v1 enforces 1:1 via opportunityId on the Ticket
- *     itself; the M:N ticket_suggestions table is deferred to v2 (grouped ticket creation).
+ *   - No status_synced_at: Jira webhook status sync is a v2 feature. UI links to ticketUrl
+ *     for live status.
+ *   - opportunityId is kept as an optional FK on Ticket in addition to the TicketSuggestion
+ *     bridge so single-suggestion queries don't require a JOIN.
  *
  * @class Ticket
  * @extends BaseModel

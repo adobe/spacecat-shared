@@ -17,57 +17,83 @@ const VALID_CLOUD_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 describe('validateMetadata()', () => {
   describe('jira_cloud', () => {
-    it('accepts valid jira_cloud metadata', () => {
+    it('accepts minimal metadata (cloudId only)', () => {
       expect(() => validateMetadata('jira_cloud', {
         cloudId: VALID_CLOUD_ID,
-        siteName: 'My Jira',
-        siteUrl: 'https://my-org.atlassian.net',
       })).not.to.throw();
     });
 
-    it('accepts minimal metadata (cloudId + siteName only)', () => {
+    it('accepts metadata with optional scopes array', () => {
       expect(() => validateMetadata('jira_cloud', {
         cloudId: VALID_CLOUD_ID,
-        siteName: 'My Jira',
+        scopes: ['read:jira-work', 'write:jira-work'],
+      })).not.to.throw();
+    });
+
+    it('accepts empty scopes array', () => {
+      expect(() => validateMetadata('jira_cloud', {
+        cloudId: VALID_CLOUD_ID,
+        scopes: [],
       })).not.to.throw();
     });
 
     it('rejects missing cloudId', () => {
-      expect(() => validateMetadata('jira_cloud', { siteName: 'My Jira' }))
+      expect(() => validateMetadata('jira_cloud', {}))
         .to.throw('metadata.cloudId is required');
     });
 
-    it('rejects missing siteName', () => {
-      expect(() => validateMetadata('jira_cloud', { cloudId: VALID_CLOUD_ID }))
-        .to.throw('metadata.siteName is required');
-    });
-
     it('rejects non-UUID cloudId', () => {
-      expect(() => validateMetadata('jira_cloud', { cloudId: 'not-a-uuid', siteName: 'x' }))
+      expect(() => validateMetadata('jira_cloud', { cloudId: 'not-a-uuid' }))
         .to.throw('cloudId must be a valid UUID');
     });
 
-    it('rejects siteUrl without https scheme', () => {
+    it('rejects non-array scopes', () => {
       expect(() => validateMetadata('jira_cloud', {
         cloudId: VALID_CLOUD_ID,
-        siteName: 'x',
-        siteUrl: 'http://insecure.atlassian.net',
-      })).to.throw('siteUrl must start with https://');
+        scopes: 'read:jira-work',
+      })).to.throw('scopes must be an array of strings');
+    });
+
+    it('rejects scopes array with non-string elements', () => {
+      expect(() => validateMetadata('jira_cloud', {
+        cloudId: VALID_CLOUD_ID,
+        scopes: [42],
+      })).to.throw('scopes must be an array of strings');
+    });
+
+    it('rejects siteName in metadata (must use displayName column)', () => {
+      expect(() => validateMetadata('jira_cloud', {
+        cloudId: VALID_CLOUD_ID,
+        siteName: 'My Jira',
+      })).to.throw('Unexpected metadata properties');
+    });
+
+    it('rejects siteUrl in metadata (must use instanceUrl column)', () => {
+      expect(() => validateMetadata('jira_cloud', {
+        cloudId: VALID_CLOUD_ID,
+        siteUrl: 'https://my-org.atlassian.net',
+      })).to.throw('Unexpected metadata properties');
     });
 
     it('rejects extra properties', () => {
       expect(() => validateMetadata('jira_cloud', {
         cloudId: VALID_CLOUD_ID,
-        siteName: 'x',
         unexpected: 'field',
       })).to.throw('Unexpected metadata properties');
     });
   });
 
   describe('jira_corp', () => {
-    it('accepts valid jira_corp metadata', () => {
+    it('accepts valid jira_corp metadata with baseUrl only', () => {
       expect(() => validateMetadata('jira_corp', {
         baseUrl: 'https://jira.corp.example.com',
+      })).not.to.throw();
+    });
+
+    it('accepts valid jira_corp metadata with optional projectCategory', () => {
+      expect(() => validateMetadata('jira_corp', {
+        baseUrl: 'https://jira.corp.example.com',
+        projectCategory: 'Engineering',
       })).not.to.throw();
     });
 
@@ -79,6 +105,18 @@ describe('validateMetadata()', () => {
     it('rejects non-https baseUrl', () => {
       expect(() => validateMetadata('jira_corp', { baseUrl: 'http://jira.corp.example.com' }))
         .to.throw('baseUrl must be a valid https:// URI');
+    });
+
+    it('rejects non-string baseUrl', () => {
+      expect(() => validateMetadata('jira_corp', { baseUrl: 42 }))
+        .to.throw('baseUrl must be a valid https:// URI');
+    });
+
+    it('rejects non-string projectCategory', () => {
+      expect(() => validateMetadata('jira_corp', {
+        baseUrl: 'https://jira.corp.example.com',
+        projectCategory: 99,
+      })).to.throw('projectCategory must be a string');
     });
   });
 

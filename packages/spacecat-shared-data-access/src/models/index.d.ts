@@ -42,6 +42,7 @@ export type * from './sentiment-guideline';
 export type * from './sentiment-topic';
 export type * from './task-management-connection';
 export type * from './ticket';
+export type * from './ticket-suggestion';
 export type * from './site';
 export type * from './site-candidate';
 export type * from './site-enrollment';

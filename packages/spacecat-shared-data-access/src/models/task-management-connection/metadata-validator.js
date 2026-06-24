@@ -29,12 +29,21 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  */
 const METADATA_SCHEMAS = {
   jira_cloud: {
-    required: ['cloudId', 'siteName'],
-    allowed: new Set(['cloudId', 'siteName', 'siteUrl']),
+    // Aligns with mysticat-data-service PR #720:
+    //   - cloudId (required) is Atlassian's stable workspace UUID used to build API URLs;
+    //     enforced as UUID format by a DB CHECK constraint.
+    //   - scopes (optional) is the array from the Atlassian accessible-resources response;
+    //     stored so permission gaps can be detected without re-calling Atlassian (e.g. missing
+    //     manage:jira-webhook when v2 webhooks land).
+    //   - siteName and siteUrl are NOT stored in metadata — they live in the dedicated
+    //     display_name and instance_url columns (see PR #720 mysticat-data-service).
+    required: ['cloudId'],
+    allowed: new Set(['cloudId', 'scopes']),
     properties: {
       cloudId: (v) => (UUID_REGEX.test(v) ? null : 'cloudId must be a valid UUID'),
-      siteName: (v) => (typeof v === 'string' && v.length > 0 ? null : 'siteName must be a non-empty string'),
-      siteUrl: (v) => (v === undefined || (typeof v === 'string' && v.startsWith('https://')) ? null : 'siteUrl must start with https://'),
+      scopes: (v) => (Array.isArray(v) && v.every((s) => typeof s === 'string')
+        ? null
+        : 'scopes must be an array of strings'),
     },
   },
   jira_corp: {
@@ -42,7 +51,7 @@ const METADATA_SCHEMAS = {
     allowed: new Set(['baseUrl', 'projectCategory']),
     properties: {
       baseUrl: (v) => (typeof v === 'string' && v.startsWith('https://') ? null : 'baseUrl must be a valid https:// URI'),
-      projectCategory: (v) => (v === undefined || typeof v === 'string' ? null : 'projectCategory must be a string'),
+      projectCategory: (v) => (typeof v === 'string' ? null : 'projectCategory must be a string'),
     },
   },
 };

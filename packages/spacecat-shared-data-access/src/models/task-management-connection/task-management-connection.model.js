@@ -62,6 +62,17 @@ class TaskManagementConnection extends BaseModel {
   }
 
   /**
+   * Marks the connection as active. Called by auth-service after a successful
+   * re-authorization to restore a connection from requires_reauth state.
+   *
+   * @returns {Promise<TaskManagementConnection>}
+   */
+  async markActive() {
+    this.setStatus(TaskManagementConnection.STATUSES.ACTIVE);
+    return this.save();
+  }
+
+  /**
    * Marks the connection as requiring re-authentication (e.g. after a failed
    * token refresh). Persists immediately so other services see the degraded
    * state without waiting for the next GC cycle.

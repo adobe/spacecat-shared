@@ -156,6 +156,24 @@ describe('TaskManagementConnectionModel', () => {
       expect(instance.record.status).to.equal(TaskManagementConnection.STATUSES.DISCONNECTED);
     });
   });
+
+  describe('markActive()', () => {
+    it('sets status to active and saves', async () => {
+      instance.record.status = TaskManagementConnection.STATUSES.REQUIRES_REAUTH;
+      const saveStub = stub(instance.patcher, 'save').resolves();
+
+      await expect(instance.markActive()).to.be.fulfilled;
+
+      expect(saveStub).to.have.been.calledOnce;
+      expect(instance.record.status).to.equal(TaskManagementConnection.STATUSES.ACTIVE);
+    });
+
+    it('propagates save errors', async () => {
+      stub(instance.patcher, 'save').rejects(new Error('DB error'));
+
+      await expect(instance.markActive()).to.be.rejected;
+    });
+  });
 });
 
 describe('TaskManagementConnectionCollection', () => {

@@ -12,6 +12,8 @@
 
 /* c8 ignore start */
 
+import { isValidUrl } from '@adobe/spacecat-shared-utils';
+
 import SchemaBuilder from '../base/schema.builder.js';
 import TaskManagementConnection from './task-management-connection.model.js';
 import TaskManagementConnectionCollection from './task-management-connection.collection.js';
@@ -47,7 +49,7 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
     type: 'string',
     required: true,
     readOnly: true,
-    validate: (value) => typeof value === 'string' && value.startsWith('https://'),
+    validate: (value) => isValidUrl(value),
   })
   // connected_by column (PR #720): IMS user ID (JWT sub) of the person who completed OAuth.
   .addAttribute('connectedBy', {
@@ -71,10 +73,12 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
   // metadata JSONB (PR #720): provider-specific structured data.
   // jira_cloud: { cloudId (required UUID), scopes (optional string array) }.
   // siteName and siteUrl are NOT stored here — they live in displayName/instanceUrl above.
+  // No default — callers must supply valid metadata (e.g. { cloudId: '...' } for
+  // jira_cloud). An empty-object default would silently bypass validateMetadata's
+  // required-field check at the schema level.
   .addAttribute('metadata', {
     type: 'any',
     required: true,
-    default: {},
   });
 
 export default schema.build();

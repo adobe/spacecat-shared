@@ -23,6 +23,7 @@ const schema = new SchemaBuilder(Ticket, TicketCollection)
   .addReference('belongs_to', 'TaskManagementConnection')
   // Optional FK — a ticket may not be linked to an opportunity in future flows.
   .addReference('belongs_to', 'Opportunity', ['ticketKey'], { required: false })
+  .addReference('has_many', 'TicketSuggestions', ['createdAt'], { removeDependents: true })
   .addAttribute('ticketId', {
     type: 'string',
     required: true,

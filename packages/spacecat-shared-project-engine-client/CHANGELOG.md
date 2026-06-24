@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.1.0...@adobe/spacecat-shared-project-engine-client-v1.1.1) (2026-06-23)
+
+### Bug Fixes
+
+* **project-engine-client:** correct workspace-id param location (CR4) + publish to npm ([#1706](https://github.com/adobe/spacecat-shared/issues/1706)) ([50f52dc](https://github.com/adobe/spacecat-shared/commit/50f52dcb6ab40c9c551624d77c7a17b34e092250))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.0.0...@adobe/spacecat-shared-project-engine-client-v1.1.0) (2026-06-23)
 
 ### Features

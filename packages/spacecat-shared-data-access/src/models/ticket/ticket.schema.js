@@ -41,8 +41,8 @@ const schema = new SchemaBuilder(Ticket, TicketCollection)
   })
   .addAttribute('ticketStatus', {
     type: 'string',
-    required: true,
-    default: Ticket.DEFAULT_STATUS,
+    required: false,
+    default: null,
   })
   .addAttribute('ticketProvider', {
     type: 'string',

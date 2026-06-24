@@ -39,9 +39,6 @@ import BaseModel from '../base/base.model.js';
  */
 class Ticket extends BaseModel {
   static ENTITY_NAME = 'Ticket';
-
-  /** Default status assigned to every newly created ticket. */
-  static DEFAULT_STATUS = 'To Do';
 }
 
 export default Ticket;

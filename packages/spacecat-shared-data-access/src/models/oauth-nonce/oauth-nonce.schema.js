@@ -12,31 +12,28 @@
 
 /* c8 ignore start */
 
-import SchemaBuilder from '../base/schema.builder.js';
-import TicketSuggestion from './ticket-suggestion.model.js';
-import TicketSuggestionCollection from './ticket-suggestion.collection.js';
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
 
-// GSI on suggestionId powers findBySuggestionId() — used to check if a
-// suggestion has already been ticketed before attempting to create a duplicate.
-const schema = new SchemaBuilder(TicketSuggestion, TicketSuggestionCollection)
-  .addReference('belongs_to', 'Ticket')
-  .addAttribute('suggestionId', {
+import SchemaBuilder from '../base/schema.builder.js';
+import OAuthNonce from './oauth-nonce.model.js';
+import OAuthNonceCollection from './oauth-nonce.collection.js';
+
+// nonce is the state parameter sent to the OAuth provider and consumed exactly once
+// at callback time to prevent CSRF/replay attacks. The index on nonce powers the
+// OAuthNonceCollection.delete({ nonce }) lookup used by auth-service at callback time.
+const schema = new SchemaBuilder(OAuthNonce, OAuthNonceCollection)
+  .addAttribute('nonce', {
     type: 'string',
     required: true,
     readOnly: true,
   })
-  .addAttribute('opportunityId', {
+  .addAttribute('expiresAt', {
     type: 'string',
     required: true,
-    readOnly: true,
-  })
-  .addAttribute('createdBy', {
-    type: 'string',
-    required: true,
-    readOnly: true,
+    validate: (value) => isIsoDate(value),
   })
   .addIndex(
-    { composite: ['suggestionId'] },
+    { composite: ['nonce'] },
     { composite: [] },
   );
 

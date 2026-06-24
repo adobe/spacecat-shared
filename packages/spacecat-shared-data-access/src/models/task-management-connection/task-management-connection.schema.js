@@ -65,6 +65,9 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
     readOnly: true,
     validate: (value) => typeof value === 'string' && value.length > 0,
   })
+  // TODO(follow-up): add lastUsedAt (timestamp, nullable) and errorMessage (string, nullable)
+  //   columns that the auth-service already writes in markError(). Tracked in the data-models PR.
+
   // metadata JSONB (PR #720): provider-specific structured data.
   // jira_cloud: { cloudId (required UUID), scopes (optional string array) }.
   // siteName and siteUrl are NOT stored here — they live in displayName/instanceUrl above.

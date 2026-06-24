@@ -167,6 +167,7 @@ export { s2sAuthWrapper } from './auth/s2s-wrapper.js';
 export { enrichPathInfo } from './enrich-path-info-wrapper.js';
 export { compressResponse } from './compression-wrapper.js';
 export { hashWithSHA256 } from './auth/generate-hash.js';
+export { FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './auth/constants.js';
 
 export {
   AdobeImsHandler, ScopedApiKeyHandler, LegacyApiKeyHandler, JwtHandler,

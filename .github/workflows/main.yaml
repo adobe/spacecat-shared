@@ -51,18 +51,18 @@ jobs:
           persist-credentials: 'false'
 
       - name: Verify SR_NO_NPM_AUTH guard consistency
-        # The @semantic-release/npm gate (process.env.SR_NO_NPM_AUTH === 'true') must
-        # stay consistent across all .releaserc.cjs files while the workflow's
-        # SR_NO_NPM_AUTH env var is declared. After OIDC publishing is verified working
-        # (per SITES-42702 rollback policy: 2 successful releases), the cleanup PR
-        # atomically removes (a) the env var declaration below, (b) the strict guard
-        # from every .releaserc.cjs. Phase is auto-detected — no marker file required.
+        # @semantic-release/npm must be skipped in the Test-job dry-run: that job has no
+        # npm publish auth (OIDC works only in the release job, which has id-token: write
+        # + the npm-publish environment), so the plugin's verifyConditions npm-whoami would
+        # fail here. The skip is driven by SR_NO_NPM_AUTH: 'true' on the dry-run step below,
+        # gated in every .releaserc.cjs. This is PERMANENT, not a bootstrap shim — #1592
+        # added SR_NO_NPM_AUTH in the same change that removed NPM_TOKEN from the dry-run.
+        # This step enforces that the env var AND the guard in every .releaserc.cjs stay
+        # present; neither may be removed (doing so red-lines the dry-run on every PR).
         #
-        # Phase detection uses a YAML-key-anchored regex on the SR_NO_NPM_AUTH env var
-        # declaration. The pattern (indented key + 'true' | "true" | true) is robust to
-        # quote-style reformatting from Prettier/yamllint and is syntactically distinct
-        # from the JS strict-equality this step looks for in configs, so it cannot
-        # self-reference. The JS guard pattern likewise accepts both quote styles.
+        # The anchored regex (indented key + 'true' | "true" | true) is robust to quote-style
+        # reformatting from Prettier/yamllint and is syntactically distinct from the JS
+        # strict-equality this step looks for in configs, so it cannot self-reference.
         run: |
           set -euo pipefail
           shopt -s nullglob
@@ -79,33 +79,29 @@ jobs:
             [ -f "$f" ] || { echo "FAIL: expected config not found or not a regular file: $f"; exit 1; }
           done
 
-          # Phase 1 anchor: YAML mapping `<indent>SR_NO_NPM_AUTH: 'true' | "true" | true`
-          # at end-of-value (no trailing chars that would denote a different key/value).
-          if grep -qE "^[[:space:]]+SR_NO_NPM_AUTH:[[:space:]]+('true'|\"true\"|true)[[:space:]]*\$" .github/workflows/main.yaml; then
-            # Phase 1 (shim active): every .releaserc.cjs must include the strict guard.
-            # Accept both JS quote styles so Prettier reformats don't cause spurious fails.
-            missing=$(grep -L -E "SR_NO_NPM_AUTH === ['\"]true['\"]" "${files[@]}" || true)
-            if [ -n "$missing" ]; then
-              echo "FAIL: SR_NO_NPM_AUTH guard missing in:"
-              echo "$missing"
-              echo ""
-              echo "Each .releaserc.cjs must gate @semantic-release/npm on:"
-              echo "  ...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : [\"@semantic-release/npm\"]),"
-              exit 1
-            fi
-          else
-            # Phase 2 (shim removed from workflow): no .releaserc.cjs may still reference
-            # SR_NO_NPM_AUTH. Catches a partial cleanup that leaves leftover guards in
-            # some configs after the env var was removed.
-            leftover=$(grep -l "SR_NO_NPM_AUTH" "${files[@]}" || true)
-            if [ -n "$leftover" ]; then
-              echo "FAIL: SR_NO_NPM_AUTH removed from workflow env but still referenced in:"
-              echo "$leftover"
-              echo ""
-              echo "Cleanup is partial. Remove every SR_NO_NPM_AUTH reference from these"
-              echo "files to complete the OIDC bootstrap cleanup."
-              exit 1
-            fi
+          # The SR_NO_NPM_AUTH skip is permanent (see comment above). Enforce BOTH legs:
+          # the workflow env var must stay declared, and every .releaserc.cjs must keep the
+          # matching guard. Removing either breaks the dry-run.
+          #
+          # Anchor: YAML mapping `<indent>SR_NO_NPM_AUTH: 'true' | "true" | true` at
+          # end-of-value (no trailing chars that would denote a different key/value).
+          if ! grep -qE "^[[:space:]]+SR_NO_NPM_AUTH:[[:space:]]+('true'|\"true\"|true)[[:space:]]*\$" .github/workflows/main.yaml; then
+            echo "FAIL: SR_NO_NPM_AUTH: 'true' is missing from the dry-run step env."
+            echo ""
+            echo "It is required and permanent — the Test-job dry-run has no npm publish auth,"
+            echo "so @semantic-release/npm must be skipped there. Restore it; do not remove it."
+            exit 1
+          fi
+          # Every .releaserc.cjs must include the strict guard. Accept both JS quote styles
+          # so Prettier reformats don't cause spurious fails.
+          missing=$(grep -L -E "SR_NO_NPM_AUTH === ['\"]true['\"]" "${files[@]}" || true)
+          if [ -n "$missing" ]; then
+            echo "FAIL: SR_NO_NPM_AUTH guard missing in:"
+            echo "$missing"
+            echo ""
+            echo "Each .releaserc.cjs must gate @semantic-release/npm on:"
+            echo "  ...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : [\"@semantic-release/npm\"]),"
+            exit 1
           fi
 
       - name: Set up JDK 17
@@ -161,8 +157,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
           # SR_NO_NPM_AUTH skips @semantic-release/npm in the plugin chain (see all .releaserc.cjs).
-          # Remove this env var AND the matching guard from every .releaserc.cjs after 2 successful
-          # OIDC releases on main confirm publishing works without a token (tracked in SITES-42702).
+          # PERMANENT, not a bootstrap shim: this dry-run has no npm publish auth (OIDC is
+          # release-job-only), so @semantic-release/npm's verifyConditions npm-whoami would fail
+          # here without it. #1592 added it in the same change that removed NPM_TOKEN from this
+          # step. Do not remove (the "Verify SR_NO_NPM_AUTH guard consistency" step enforces it).
           SR_NO_NPM_AUTH: 'true'
 
   release:

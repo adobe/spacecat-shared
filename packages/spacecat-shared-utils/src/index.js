@@ -73,6 +73,8 @@ export {
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
 } from './url-helpers.js';
 
 export {

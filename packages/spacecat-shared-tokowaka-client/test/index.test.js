@@ -3091,7 +3091,7 @@ describe('TokowakaClient', () => {
       expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/*']);
     });
 
-    it('cleans up covered suggestions (coveredByDomainWide) when rolling back a pattern suggestion', async () => {
+    it('does not synchronously clean coveredByDomainWide suggestions when rolling back a pattern suggestion', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3138,17 +3138,12 @@ describe('TokowakaClient', () => {
       expect(dwData).to.not.have.property('edgeDeployed');
       expect(dwData).to.not.have.property('tokowakaDeployed');
 
-      // Verify covered suggestion was also cleaned up.
-      // DW rollback only strips coveredByDomainWide — edgeDeployed is
-      // preserved because it represents an independent per-URL deployment.
-      expect(coveredSuggestion.setData.calledOnce).to.be.true;
-      expect(coveredSuggestion.setUpdatedBy.calledWith('test@example.com')).to.be.true;
-      const coveredData = coveredSuggestion.setData.firstCall.args[0];
-      expect(coveredData).to.have.property('edgeDeployed');
-      expect(coveredData).to.not.have.property('coveredByDomainWide');
+      // Covered suggestion cleanup is async and handled by import-worker.
+      expect(coveredSuggestion.setData.called).to.be.false;
+      expect(coveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
-    it('cleans up coveredByDomainWide on path-level suggestions when rolling back domain-wide', async () => {
+    it('does not synchronously clean coveredByDomainWide on path-level suggestions when rolling back domain-wide', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3186,18 +3181,15 @@ describe('TokowakaClient', () => {
       );
 
       expect(result.succeededSuggestions).to.include(dwSuggestion);
-      expect(pathSuggestion.setData.calledOnce).to.be.true;
-      const pathData = pathSuggestion.setData.firstCall.args[0];
-      expect(pathData).to.not.have.property('coveredByDomainWide');
-      expect(pathData).to.have.property('allowedRegexPatterns');
-      // Verify the cleaned-up path suggestion was actually persisted via saveMany
-      expect(client.dataAccess.Suggestion.saveMany).to.have.been.calledWith(
+      expect(pathSuggestion.setData.called).to.be.false;
+      expect(pathSuggestion.setUpdatedBy.called).to.be.false;
+      expect(client.dataAccess.Suggestion.saveMany).to.not.have.been.calledWith(
         sinon.match((arr) => arr.includes(pathSuggestion)),
         sinon.match.any,
       );
     });
 
-    it('cleans up covered suggestions (coveredByPattern) when rolling back a path-level pattern', async () => {
+    it('does not synchronously clean coveredByPattern suggestions when rolling back a path-level pattern', async () => {
       const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
       const pathSuggestion = {
         getId: () => 'path-1',
@@ -3234,13 +3226,11 @@ describe('TokowakaClient', () => {
         { allSuggestions: [pathSuggestion, coveredSuggestion] },
       );
 
-      expect(coveredSuggestion.setData.calledOnce).to.be.true;
-      const coveredData = coveredSuggestion.setData.firstCall.args[0];
-      expect(coveredData).to.not.have.property('edgeDeployed');
-      expect(coveredData).to.not.have.property('coveredByPattern');
+      expect(coveredSuggestion.setData.called).to.be.false;
+      expect(coveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
-    it('uses domain-wide-rollback fallback for covered suggestions when updatedBy is not provided (domain-wide parent)', async () => {
+    it('does not apply domain-wide-rollback fallback in shared client for async covered cleanup', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3280,11 +3270,10 @@ describe('TokowakaClient', () => {
 
       // The domain-wide suggestion itself uses 'tokowaka-rollback'
       expect(dwSuggestion.setUpdatedBy.calledWith('tokowaka-rollback')).to.be.true;
-      // The covered suggestion uses 'domain-wide-rollback'
-      expect(coveredSuggestion.setUpdatedBy.calledWith('domain-wide-rollback')).to.be.true;
+      expect(coveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
-    it('uses path-rollback fallback for covered suggestions when updatedBy is not provided (path parent)', async () => {
+    it('does not apply path-rollback fallback in shared client for async covered cleanup', async () => {
       const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
       const pathSuggestion = {
         getId: () => 'path-1',
@@ -3322,8 +3311,7 @@ describe('TokowakaClient', () => {
 
       // The path suggestion itself uses 'tokowaka-rollback'
       expect(pathSuggestion.setUpdatedBy.calledWith('tokowaka-rollback')).to.be.true;
-      // The covered suggestion uses 'path-rollback'
-      expect(coveredSuggestion.setUpdatedBy.calledWith('path-rollback')).to.be.true;
+      expect(coveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
     it('DW rollback does NOT cascade to deployed path suggestions (paths are independent)', async () => {
@@ -3649,7 +3637,7 @@ describe('TokowakaClient', () => {
       expect(pathSuggestion.save).to.not.have.been.called;
     });
 
-    it('rollback logs error when covered suggestion saveMany fails', async () => {
+    it('rollback does not attempt covered suggestion saveMany cleanup in shared client', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3677,10 +3665,7 @@ describe('TokowakaClient', () => {
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
-      // First saveMany succeeds (pattern suggestion save), second fails (covered cleanup)
-      client.dataAccess.Suggestion.saveMany
-        .onFirstCall().resolves()
-        .onSecondCall().rejects(new Error('DB error'));
+      client.dataAccess.Suggestion.saveMany.resolves();
 
       await client.rollbackSuggestions(
         mockSite,
@@ -3689,11 +3674,10 @@ describe('TokowakaClient', () => {
         { allSuggestions: [dwSuggestion, covered] },
       );
 
-      // Covered suggestion was mutated before saveMany
-      expect(covered.setData.calledOnce).to.be.true;
-      // The failure was logged as a consolidated error for alerting
-      // eslint-disable-next-line max-len
-      expect(log.error).to.have.been.calledWithMatch(/\[edge-rollback-failed\].*covered suggestion/);
+      expect(covered.setData.called).to.be.false;
+      expect(covered.setUpdatedBy.called).to.be.false;
+      expect(client.dataAccess.Suggestion.saveMany).to.have.been.calledOnce;
+      expect(client.dataAccess.Suggestion.saveMany.firstCall.args[0]).to.not.include(covered);
     });
 
     it('rollback marks all pattern suggestions as failed when saveMany throws', async () => {
@@ -3740,9 +3724,7 @@ describe('TokowakaClient', () => {
 
     // --- Edge case tests for deploy/rollback interaction scenarios ---
 
-    it('DW rollback preserves coveredByPattern on suggestions covered by both DW and path', async () => {
-      // Scenario: URL covered by both DW and a path. DW rollback should
-      // only strip coveredByDomainWide; coveredByPattern must survive.
+    it('DW rollback leaves doubly covered URL suggestions untouched for async cleanup', async () => {
       const prerenderOpportunity = {
         getId: () => 'opp-dw',
         getType: () => 'prerender',
@@ -3787,15 +3769,11 @@ describe('TokowakaClient', () => {
         },
       );
 
-      expect(doubleCoveredSuggestion.setData.calledOnce).to.be.true;
-      const data = doubleCoveredSuggestion.setData.firstCall.args[0];
-      expect(data).to.not.have.property('coveredByDomainWide');
-      expect(data).to.have.property('coveredByPattern', 'path-1');
+      expect(doubleCoveredSuggestion.setData.called).to.be.false;
+      expect(doubleCoveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
-    it('path rollback preserves coveredByDomainWide on suggestions covered by both DW and path', async () => {
-      // Scenario: URL covered by both DW and a path. Path rollback should
-      // only strip coveredByPattern; coveredByDomainWide must survive.
+    it('path rollback leaves doubly covered URL suggestions untouched for async cleanup', async () => {
       const prerenderOpportunity = {
         getId: () => 'opp-p',
         getType: () => 'prerender',
@@ -3840,11 +3818,8 @@ describe('TokowakaClient', () => {
         },
       );
 
-      expect(doubleCoveredSuggestion.setData.calledOnce).to.be.true;
-      const data = doubleCoveredSuggestion.setData.firstCall.args[0];
-      expect(data).to.not.have.property('coveredByPattern');
-      expect(data).to.not.have.property('edgeDeployed');
-      expect(data).to.have.property('coveredByDomainWide', 'dw-1');
+      expect(doubleCoveredSuggestion.setData.called).to.be.false;
+      expect(doubleCoveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
     it('DW rollback cascade skips path deployed before DW', async () => {

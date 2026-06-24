@@ -32,7 +32,6 @@ import {
   filterEligibleSuggestions,
   saveSuggestions,
   stripSuggestion,
-  cleanupCoveredSuggestions,
   classifySuggestions,
 } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
@@ -1035,27 +1034,6 @@ class TokowakaClient {
               suggestion: s, reason: 'Internal server error', statusCode: 500,
             }));
           }
-        }
-
-        // Clean up covered suggestions for each succeeded pattern suggestion.
-        for (const suggestion of succeededPatternSuggestions) {
-          const suggData = suggestion.getData();
-          const isDomainWide = suggData?.isDomainWide === true;
-          const coveredFallback = isDomainWide ? 'domain-wide-rollback' : 'path-rollback';
-          const coverageField = isDomainWide
-            ? 'coveredByDomainWide' : 'coveredByPattern';
-          const covered = allSuggestions.filter(
-            (s) => s.getData()?.[coverageField] === suggestion.getId(),
-          );
-          const fieldsToStrip = isDomainWide
-            ? ['coveredByDomainWide']
-            : ['edgeDeployed', 'tokowakaDeployed', 'coveredByPattern'];
-          if (covered.length > 0) {
-            // eslint-disable-next-line max-len
-            this.log.info(`[edge-rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
-          }
-          // eslint-disable-next-line no-await-in-loop, max-len
-          await cleanupCoveredSuggestions(this.dataAccess, covered, coveredFallback, updatedBy, fieldsToStrip, this.log);
         }
       }
     }

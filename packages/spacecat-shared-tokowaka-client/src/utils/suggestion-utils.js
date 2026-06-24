@@ -138,36 +138,6 @@ export function stripSuggestion(suggestion, actorFallback, updatedBy) {
 }
 
 /**
- * Clears coverage and deployment markers from suggestions that were covered by a pattern.
- * Only strips the fields relevant to the rollback type so independent coverage layers
- * are preserved. For example, rolling back domain-wide should only clear
- * coveredByDomainWide — not coveredByPattern (which belongs to a separate path deploy).
- * @param {Object} dataAccess - Data access layer
- * @param {Array} covered - Covered suggestion entities
- * @param {string} actorFallback - Fallback updatedBy string
- * @param {string|undefined} updatedBy - Explicit actor
- * @param {string[]} fieldsToStrip - Specific fields to remove
- * @param {Object} log - Logger instance
- * @returns {Promise<void>}
- */
-// eslint-disable-next-line max-len
-export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log) {
-  if (covered.length === 0) {
-    return;
-  }
-  covered.forEach((cs) => {
-    cs.setData(omitKeys(cs.getData(), fieldsToStrip));
-    cs.setUpdatedBy(updatedBy ?? actorFallback);
-  });
-  try {
-    await saveSuggestions(dataAccess, covered);
-  } catch (error) {
-    // eslint-disable-next-line max-len
-    log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
-  }
-}
-
-/**
  * Classifies a batch of target suggestions into pattern-based and per-URL buckets.
  * Pattern suggestions (domain-wide or path-level) are returned as
  * `{ suggestion, allowedRegexPatterns }` objects; per-URL suggestions are filtered

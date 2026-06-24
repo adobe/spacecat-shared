@@ -456,7 +456,7 @@ export function canonicalizeUrl(url, { stripQuery = false } = {}) {
  * For a siteBaseUrl with a subpath (e.g. bulk.com/uk), only URLs whose pathname starts with that
  * subpath are in scope. For domain-only base URLs (no subpath), all URLs pass through.
  *
- * @param {string} url - The URL to check (relative or absolute).
+ * @param {string} url - The URL to check (absolute, or absolute-path reference starting with `/`).
  * @param {string} siteBaseUrl - The site's base URL defining the scope (e.g. "bulk.com/uk").
  * @returns {boolean}
  */
@@ -480,7 +480,8 @@ function isWithinSiteScope(url, siteBaseUrl) {
     const basePathWithSlash = `${basePath}/`;
 
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      return url.startsWith(basePathWithSlash) || url === basePath;
+      const normalized = new URL(url, 'https://dummy.local').pathname;
+      return normalized.startsWith(basePathWithSlash) || normalized === basePath;
     }
 
     const parsedUrl = new URL(prependSchema(url));
@@ -505,6 +506,9 @@ function isWithinSiteScope(url, siteBaseUrl) {
  * @returns {string[]}
  */
 function filterBySiteScope(urls, siteBaseUrl) {
+  if (!Array.isArray(urls)) {
+    return [];
+  }
   return urls.filter((url) => isWithinSiteScope(url, siteBaseUrl));
 }
 

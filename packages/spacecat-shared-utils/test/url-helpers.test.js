@@ -1255,6 +1255,20 @@ describe('URL Utility Functions', () => {
     it('returns false on malformed absolute URL without throwing', () => {
       expect(isWithinSiteScope('https://%%%bad', 'bulk.com/uk')).to.be.false;
     });
+
+    it('handles multi-level subpath scope (e.g. bulk.com/uk/en)', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/en/page', 'bulk.com/uk/en')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/uk/en')).to.be.false;
+    });
+
+    it('handles relative URL with query string', () => {
+      expect(isWithinSiteScope('/uk/page?lang=en', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('/de/page?lang=en', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('blocks path traversal via .. segments in relative URLs', () => {
+      expect(isWithinSiteScope('/uk/../admin/secret', 'bulk.com/uk')).to.be.false;
+    });
   });
 
   describe('filterBySiteScope', () => {
@@ -1284,6 +1298,11 @@ describe('URL Utility Functions', () => {
     it('returns empty array when no URLs are in scope', () => {
       const urls = ['https://bulk.com/de/page', 'https://other.com/uk/page'];
       expect(filterBySiteScope(urls, 'bulk.com/uk')).to.deep.equal([]);
+    });
+
+    it('returns empty array for non-array input', () => {
+      expect(filterBySiteScope(null, 'bulk.com/uk')).to.deep.equal([]);
+      expect(filterBySiteScope(undefined, 'bulk.com/uk')).to.deep.equal([]);
     });
   });
 });

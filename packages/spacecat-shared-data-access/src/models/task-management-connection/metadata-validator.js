@@ -27,6 +27,8 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  * The logic is equivalent to the spec's JSON Schema: required fields, a UUID
  * pattern constraint, and additionalProperties: false.
  */
+// v1: only jira_cloud is supported. Add jira_corp, asana, workfront schemas here
+// when the corresponding provider value is added to TaskManagementConnection.PROVIDERS.
 const METADATA_SCHEMAS = {
   jira_cloud: {
     // Aligns with mysticat-data-service PR #720:
@@ -44,14 +46,6 @@ const METADATA_SCHEMAS = {
       scopes: (v) => (Array.isArray(v) && v.every((s) => typeof s === 'string')
         ? null
         : 'scopes must be an array of strings'),
-    },
-  },
-  jira_corp: {
-    required: ['baseUrl'],
-    allowed: new Set(['baseUrl', 'projectCategory']),
-    properties: {
-      baseUrl: (v) => (typeof v === 'string' && v.startsWith('https://') ? null : 'baseUrl must be a valid https:// URI'),
-      projectCategory: (v) => (typeof v === 'string' ? null : 'projectCategory must be a string'),
     },
   },
 };

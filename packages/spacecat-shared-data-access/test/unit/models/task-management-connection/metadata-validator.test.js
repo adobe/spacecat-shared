@@ -83,43 +83,6 @@ describe('validateMetadata()', () => {
     });
   });
 
-  describe('jira_corp', () => {
-    it('accepts valid jira_corp metadata with baseUrl only', () => {
-      expect(() => validateMetadata('jira_corp', {
-        baseUrl: 'https://jira.corp.example.com',
-      })).not.to.throw();
-    });
-
-    it('accepts valid jira_corp metadata with optional projectCategory', () => {
-      expect(() => validateMetadata('jira_corp', {
-        baseUrl: 'https://jira.corp.example.com',
-        projectCategory: 'Engineering',
-      })).not.to.throw();
-    });
-
-    it('rejects missing baseUrl', () => {
-      expect(() => validateMetadata('jira_corp', {}))
-        .to.throw('metadata.baseUrl is required');
-    });
-
-    it('rejects non-https baseUrl', () => {
-      expect(() => validateMetadata('jira_corp', { baseUrl: 'http://jira.corp.example.com' }))
-        .to.throw('baseUrl must be a valid https:// URI');
-    });
-
-    it('rejects non-string baseUrl', () => {
-      expect(() => validateMetadata('jira_corp', { baseUrl: 42 }))
-        .to.throw('baseUrl must be a valid https:// URI');
-    });
-
-    it('rejects non-string projectCategory', () => {
-      expect(() => validateMetadata('jira_corp', {
-        baseUrl: 'https://jira.corp.example.com',
-        projectCategory: 99,
-      })).to.throw('projectCategory must be a string');
-    });
-  });
-
   describe('unknown provider', () => {
     it('throws for unknown provider', () => {
       expect(() => validateMetadata('asana', { anything: 'goes' }))

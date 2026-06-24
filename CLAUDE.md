@@ -41,13 +41,13 @@ Coverage enforcement: **100% lines/statements, 97% branches** per package (see e
 
 ## Architecture Overview
 
-This is the **foundation library layer** for all SpaceCat Node.js services. It's an npm workspaces monorepo (no lerna/nx) containing 23 packages that provide data access, API clients, utilities, and auth used by `spacecat-api-service`, `spacecat-audit-worker`, `spacecat-import-worker`, and other platform services.
+This is the **foundation library layer** for all SpaceCat Node.js services. It's an npm workspaces monorepo (no lerna/nx) whose packages provide data access, API clients, utilities, and auth used by `spacecat-api-service`, `spacecat-audit-worker`, `spacecat-import-worker`, and other platform services.
 
 ### Monorepo Structure
 
 ```
 spacecat-shared/
-├── packages/                     # 23 npm workspace packages
+├── packages/                     # npm workspace packages
 │   ├── spacecat-shared-data-access/   # Core data layer (PostgREST + Aurora PostgreSQL)
 │   ├── spacecat-shared-http-utils/    # HTTP response helpers + auth middleware
 │   ├── spacecat-shared-utils/         # General utilities (validation, S3, SQS, helpers)
@@ -71,7 +71,7 @@ spacecat-shared/
 | **Utilities** | `utils` | Validation, S3/SQS helpers, schemas, date functions |
 | **Secrets** | `vault-secrets` | HashiCorp Vault integration (AppRole auth, KV secrets) |
 | **HTML** | `html-analyzer` | HTML analysis and extraction |
-| **API clients** | `athena-client`, `brand-client`, `cloud-manager-client`, `content-client`, `drs-client`, `google-client`, `gpt-client`, `ims-client`, `launchdarkly-client`, `mysticat-shared-seo-client`, `project-engine-client`, `rum-api-client`, `scrape-client`, `slack-client`, `splunk-client`, `tier-client`, `tokowaka-client` | External service integrations |
+| **API clients** | `athena-client`, `brand-client`, `cloud-manager-client`, `content-client`, `drs-client`, `google-client`, `gpt-client`, `ims-client`, `launchdarkly-client`, `mac-giver-client`, `mysticat-shared-seo-client`, `project-engine-client`, `rum-api-client`, `scrape-client`, `slack-client`, `splunk-client`, `tier-client`, `tokowaka-client`, `user-manager-client` | External service integrations |
 | **Example** | `example` | Template for creating new packages |
 
 ### Package-Level CLAUDE.md Files
@@ -139,6 +139,10 @@ export function createFooClient(config, log) {
   return new FooClient(config, log);
 }
 ```
+
+The Semrush clients (`project-engine-client`, `user-manager-client`) instead use a thin
+factory wrapper over an `openapi-fetch` client generated from a vendored spec — no client
+class. Same `createXClient(...)` factory convention, different internals.
 
 ---
 

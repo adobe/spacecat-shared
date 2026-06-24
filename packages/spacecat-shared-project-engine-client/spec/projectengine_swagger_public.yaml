@@ -252,6 +252,20 @@ definitions:
       confirmed_by_name:
         type: string
     type: object
+  model.ApplyInteractiveIgnoreIssueRulesRequest:
+    properties:
+      filters:
+        items:
+          type: integer
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+    required:
+    - filters
+    - name
+    type: object
   model.AvailablePromptsResponse:
     properties:
       available:
@@ -281,6 +295,109 @@ definitions:
         type: array
     required:
     - items
+    type: object
+  model.BrandURL:
+    properties:
+      benchmark_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      project_id:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+      url:
+        type: string
+    type: object
+  model.BrandURLRequest:
+    properties:
+      type:
+        maxLength: 32
+        type: string
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  model.BulkCreateAIOProjectsErrorItem:
+    properties:
+      message:
+        type: string
+      row_index:
+        type: integer
+    type: object
+  model.BulkCreateAIOProjectsErrorResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/model.BulkCreateAIOProjectsErrorItem'
+        type: array
+    type: object
+  model.BulkCreateAIOProjectsLimitInfoResponse:
+    properties:
+      available:
+        type: integer
+      max:
+        type: integer
+      requested:
+        type: integer
+    type: object
+  model.BulkCreateAIOProjectsLimitsResponse:
+    properties:
+      can_create:
+        type: boolean
+      projects:
+        $ref: '#/definitions/model.BulkCreateAIOProjectsLimitInfoResponse'
+      prompts:
+        $ref: '#/definitions/model.BulkCreateAIOProjectsLimitInfoResponse'
+    type: object
+  model.BulkCreateAIOProjectsPublishedItem:
+    properties:
+      project_id:
+        type: string
+      row_index:
+        type: integer
+    type: object
+  model.BulkCreateAIOProjectsResponse:
+    properties:
+      projects:
+        items:
+          $ref: '#/definitions/model.BulkCreateAIOProjectsResponseItem'
+        type: array
+      published_projects:
+        items:
+          $ref: '#/definitions/model.BulkCreateAIOProjectsPublishedItem'
+        type: array
+      unpublished_projects:
+        items:
+          $ref: '#/definitions/model.BulkCreateAIOProjectsUnpublishedItem'
+        type: array
+    type: object
+  model.BulkCreateAIOProjectsResponseItem:
+    properties:
+      created_ai_model_ids:
+        items:
+          type: string
+        type: array
+      project_id:
+        type: string
+      prompt_count:
+        type: integer
+      row_index:
+        type: integer
+    type: object
+  model.BulkCreateAIOProjectsUnpublishedItem:
+    properties:
+      project_id:
+        type: string
+      reason:
+        type: string
+      row_index:
+        type: integer
     type: object
   model.CICompetitor:
     properties:
@@ -951,6 +1068,13 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  model.ListBrandURLsResponse:
+    properties:
+      brand_urls:
+        items:
+          $ref: '#/definitions/model.BrandURL'
+        type: array
     type: object
   model.LocationResponse:
     properties:
@@ -1822,7 +1946,8 @@ paths:
         name: draft
         required: true
         type: string
-      - description: project type, defaults to ai
+      - description: project type, defaults to ai. Required for seo, mfour and journey
+          products
         in: query
         name: type
         type: string
@@ -3347,6 +3472,65 @@ paths:
       summary: Check whether an AIO project is initialized
       tags:
       - AIO
+  /v1/workspaces/{id}/projects/{project_id}/apply_interactive_ignore_issue_rules/{crawl_configuration_id}:
+    post:
+      consumes:
+      - application/json
+      description: Publishes an interactive-ignore-issue-rules event to the pub/sub
+        topic for the given crawl configuration. Accepts the same payload as the issue
+        rules endpoint.
+      operationId: si-apply-interactive-ignore-issue-rules
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Crawl Configuration ID
+        in: path
+        name: crawl_configuration_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.ApplyInteractiveIgnoreIssueRulesRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Publish interactive ignore issue rules event
+      tags:
+      - SI
   /v1/workspaces/{id}/projects/{project_id}/ci/competitors:
     put:
       description: Full update of CI competitors that deletes existing entries and
@@ -5493,6 +5677,268 @@ paths:
       summary: Get available prompts for workspace
       tags:
       - AIO
+  /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls:
+    delete:
+      description: Delete multiple brand URLs by IDs within a specific benchmark for
+        workspace and project with given IDs. IDs that do not belong to the benchmark
+        are silently ignored.
+      operationId: aio-delete-brand-urls
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UUIDsListRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: 'Not Found: benchmark does not exist in this project'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Delete brand URLs within AIO benchmark (batch)
+      tags:
+      - AIOv2
+    get:
+      description: List brand URLs that belong to a specific benchmark within workspace
+        and project with given IDs.
+      operationId: aio-list-brand-urls
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Get draft project data
+        in: query
+        name: draft
+        type: boolean
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListBrandURLsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: 'Not Found: project does not exist'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: List brand URLs for AIO benchmark
+      tags:
+      - AIOv2
+    post:
+      description: Create multiple brand URLs at once under a specific benchmark for
+        workspace and project with given IDs. Accepts array of brand URLs. Returns
+        list of created IDs and count of already existing brand URLs. Duplicates by
+        (project_id, url) are silently skipped and reflected in the response's `existing_count`.
+      operationId: aio-create-brand-urls
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.BrandURLRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.IDsWithStatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: 'Not Found: benchmark does not exist in this project'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Create brand URLs for AIO benchmark (batch)
+      tags:
+      - AIOv2
+  /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls/{brand_url_id}:
+    put:
+      description: Update a single brand URL within a specific benchmark for workspace
+        and project with given IDs.
+      operationId: aio-update-brand-url
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Benchmark ID
+        in: path
+        name: benchmark_id
+        required: true
+        type: string
+      - description: Brand URL ID
+        in: path
+        name: brand_url_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.BrandURLRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: 'Not Found: brand URL does not exist within this benchmark'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: 'Conflict: duplicate URL for project'
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update brand URL within AIO benchmark
+      tags:
+      - AIOv2
   /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/products:
     delete:
       description: Delete products in AIO project with given IDs. Accepts array of
@@ -6542,6 +6988,122 @@ paths:
           schema:
             $ref: '#/definitions/http_server.BasicResponse'
       summary: update tag
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/bulk:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        Creates AIO projects from a multipart payload. The operation is atomic: if any item fails, no projects are created.
+        Each project item must include name, brand_name, brand_aliases, domain, language_id, country_code, location_name, and llm_ids.
+        The top-level options.publish flag controls whether created projects should be published; it defaults to true.
+        The success response includes created projects in request order plus separate published and unpublished project lists.
+      operationId: aio-bulk-create-projects
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: JSON payload with project metadata and optional top-level options.publish
+          flag. Each project item must include name, brand_name, brand_aliases, domain,
+          language_id, country_code, location_name, and llm_ids
+        in: formData
+        name: projects
+        required: true
+        type: string
+      - description: JSON file with prompts keyed by 1-based project index
+        in: formData
+        name: prompts
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.BulkCreateAIOProjectsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.BulkCreateAIOProjectsErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Bulk create AIO projects
+      tags:
+      - AIO
+  /v2/workspaces/{id}/projects/bulk/limits:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        Validates the bulk AIO multipart payload and returns workspace project and prompt limits for the batch without creating any projects.
+        An empty request body is allowed and returns the current limits state.
+        Invalid or incomplete project items are skipped for limit calculation.
+        The response includes current maximum available capacity and requested batch usage for both projects and prompts.
+      operationId: aio-bulk-project-limits
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: JSON payload with project metadata. For limits, invalid or incomplete
+          items are ignored instead of failing the whole request
+        in: formData
+        name: projects
+        type: string
+      - description: JSON file with prompts keyed by 1-based project index
+        in: formData
+        name: prompts
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.BulkCreateAIOProjectsLimitsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.BulkCreateAIOProjectsErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Get AIO bulk create limits
       tags:
       - AIO
 swagger: "2.0"

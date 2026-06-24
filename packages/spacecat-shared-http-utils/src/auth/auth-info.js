@@ -92,6 +92,16 @@ export default class AuthInfo {
 
   isReadOnlyAdmin() { return this.profile?.is_read_only_admin; }
 
+  getFacsPermissions() {
+    // Fail-closed on an unexpected claim shape: a non-array truthy value (e.g. a
+    // string) would otherwise reach `hasFacsPermission().includes()` and do
+    // substring matching, silently granting access on partial matches.
+    const perms = this.profile?.facs_permissions;
+    return Array.isArray(perms) ? perms : [];
+  }
+
+  hasFacsPermission(permission) { return this.getFacsPermissions().includes(permission); }
+
   hasOrganization(orgId) {
     const [id] = orgId.split('@');
     return this.profile?.tenants?.some(

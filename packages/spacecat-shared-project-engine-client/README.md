@@ -3,25 +3,54 @@
 Typed integration with the Semrush **Project Engine API** (`/enterprise/projects/api`):
 
 - generated **TypeScript** (`src/generated/types.ts`) and **Pydantic v2** (`python/serenity_project_engine/`) types,
-- a thin **Project Engine client** (`openapi-fetch` over the generated `paths`) — later PR,
-- a **Counterfact mock** for E2E tests and local dev — later PR.
+- a thin **Project Engine client** (`openapi-fetch` over the generated `paths`) — IMS Bearer auth + idempotency-aware retries (see [Client](#client)),
+- a generation-time **spec-correction overlay** (`spec/overlays/corrections.yaml`) that aligns the vendored swagger with the live API,
+- a **Counterfact mock** for E2E tests and local dev (`npm run mock`); the stateful mock store lands in a follow-up (LLMO-5460).
 
-> **This PR is the foundation slice only:** vendor the spec + wire the
-> conversion-and-type-generation pipeline. The client wrapper, the IMS handler move,
-> and the stateful mock store land in follow-up PRs (see LLMO-5461 / LLMO-5460).
+> **Not here yet:** the IMS auth-handler move and the stateful mock store are
+> tracked follow-ups (see LLMO-5461 / LLMO-5460).
 
 This package follows the `spacecat-shared` convention: **JS + ESM**, JSDoc-typed source,
 `mocha` + `chai` + `c8` for tests, and `@adobe/eslint-config-helix` for lint. The scaffold's
 TypeScript surface is ported to JS + JSDoc; the generated `types.ts` is a **type artifact only**,
 consumed by the client via JSDoc `import(...)` and by `openapi-fetch` at type-check time.
 
+## Client
+
+```js
+import { createSerenityProjectEngineApiClient } from '@adobe/spacecat-shared-project-engine-client';
+
+const client = createSerenityProjectEngineApiClient({
+  baseUrl: process.env.SEMRUSH_PROJECTS_BASE_URL, // origin only; the prefix is owned by the client
+  authToken: () => getImsToken(),                 // a static token or a (sync/async) per-request getter
+});
+
+const { data, error } = await client.GET('/v1/countries');
+```
+
+- **Auth:** the caller's IMS JWT is forwarded verbatim as `Authorization: Bearer <token>`. The
+  live API authenticates on Bearer directly — Semrush accepts the IMS token and the client mints
+  or exchanges **nothing**. The token source resolves once per request, so the header always
+  reflects the current caller.
+- **Base URL:** the client owns the fixed `/enterprise/projects/api` prefix; you pass only the
+  origin (any path/credentials are stripped). Non-`http(s)` base URLs fail fast at construction.
+- **Retries:** `429` is retried for any method; `5xx`/network errors only for idempotent methods
+  (so a POST is never replayed). Backoff is exponential with jitter, honours `Retry-After`, and is
+  capped at 20s/attempt. Pass `onRetry` to observe the loop.
+- **Shape:** this is a thin factory function rather than the `CLAUDE.md` "class + factory" client
+  pattern — the wrapper has no per-instance state or behaviour beyond what `openapi-fetch` already
+  provides, so a class would add ceremony without value. The typed surface IS the `openapi-fetch`
+  client.
+
 ## Spec source
 
 The spec is a **vendored file** — `spec/projectengine_swagger_public.yaml` — kept under
 version control. Semrush only provides the file (no endpoint access in the near term), and
-it's **Swagger 2.0** (no v3/v3.1 on offer). Refresh is **manual**: drop in the newer file,
-re-run `npm run generate`, and review the diff. There is no automated drift detection while
-endpoint access is restricted.
+it's **Swagger 2.0** (no v3/v3.1 on offer). The vendored file is **never edited**; where it
+diverges from the live API, a generation-time overlay corrects the converted artifact instead (see
+[Spec corrections](#spec-corrections)). Refresh is **manual**: drop in the newer file, re-run
+`npm run generate`, and review the diff. There is no automated drift detection while endpoint
+access is restricted.
 
 ## Pipeline
 
@@ -32,17 +61,22 @@ spec/projectengine_swagger_public.yaml  (vendored, Swagger 2.0)
         │
         └── swagger2openapi (v2 → 3.x) ──►  build/openapi3.json
                                                 │
+                                                ├── apply-overlay (corrections) ──► build/openapi3.json (in place)
+                                                │
                                                 ├── openapi-typescript ──► src/generated/types.ts
                                                 └── datamodel-code-generator ──► python/serenity_project_engine/
 ```
 
 The v2 → 3.x conversion exists **only** to feed the type generators (`openapi-typescript`
-is v3-only, and 3.x yields cleaner TS/Pydantic). **Counterfact reads the raw v2 file
-directly**, so the mock path never touches the converted artifact.
+is v3-only, and 3.x yields cleaner TS/Pydantic); the overlay then corrects that converted
+artifact before the generators run (see [Spec corrections](#spec-corrections)). **Counterfact reads
+the raw v2 file directly**, so the mock path never touches the converted artifact (and so does not
+see the corrections — a known gap the stateful-mock follow-up addresses).
 
 | Command | Does |
 | --- | --- |
 | `npm run spec:convert` | v2 → 3.x via `swagger2openapi --patch` → `build/openapi3.json` |
+| `npm run spec:overlay` | apply `spec/overlays/corrections.yaml` to `build/openapi3.json` in place |
 | `npm run generate:ts` | `openapi-typescript` → `src/generated/types.ts` |
 | `npm run generate:pydantic` | `datamodel-code-generator` → `python/serenity_project_engine/` package |
 | `npm run generate` | all of the above, in order |
@@ -54,6 +88,25 @@ your `PATH` before running `generate:pydantic`:
 ```bash
 pip install datamodel-code-generator
 ```
+
+## Spec corrections
+
+The vendored swagger diverges from the live API in three places. A small OpenAPI Overlay
+(`spec/overlays/corrections.yaml`), applied to the converted OAS3 artifact at generation time by
+`scripts/apply-overlay.mjs`, corrects them; the vendored `spec/projectengine_swagger_public.yaml`
+is never touched.
+
+- **CR1 — missing endpoint.** Adds `GET /v1/ai_models` (the live global model catalog), which is
+  absent from the upstream swagger.
+- **CR2 — auth.** The spec models a required `Auth-Data-Jwt` header, but the live API authenticates
+  on `Authorization: Bearer <IMS>` only — Semrush accepts the IMS bearer directly. The overlay
+  removes `Auth-Data-Jwt` from every operation and adds an `imsBearer` security scheme.
+- **CR3 — drafts.** Corrects the `GET /v2/workspaces/{id}/projects` description: it also returns
+  initial, never-yet-published draft projects, not only published ones.
+
+Guard tests in `test/foundation.test.js` pin CR1 and CR2 against the generated surface, so a future
+Semrush spec refresh that silently drops the overlay fails loudly instead of regressing the
+generated types. `test/overlay.test.js` covers the overlay applier itself.
 
 ## Committed vs generated
 

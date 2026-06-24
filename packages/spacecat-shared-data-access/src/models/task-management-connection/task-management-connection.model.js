@@ -23,8 +23,8 @@ import BaseModel from '../base/base.model.js';
  *   error            → repeated API failures; connection degraded
  *   disconnected     → explicitly deleted by the user (v1 soft-delete)
  *
- * Provider-specific config (cloudId, siteUrl, scopeKey) lives in `metadata`
- * as jsonb so new fields never require a schema change.
+ * Provider-specific config lives in `metadata` as jsonb (jira_cloud: { cloudId, scopes }).
+ * Display fields (siteName, siteUrl) live in the dedicated displayName/instanceUrl columns.
  *
  * @class TaskManagementConnection
  * @extends BaseModel

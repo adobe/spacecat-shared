@@ -307,6 +307,53 @@ describe('AEM Detection', () => {
         const result = detectAEMVersion(htmlSource);
         expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
       });
+
+      it('should NOT detect AEM Headless via publish-p URL alone (asset delivery is not headless)', () => {
+        // A page that only loads an image from an AEM publish tier is not headless —
+        // it is simply fetching an asset; the publish-p host is not a delivery signal.
+        const htmlSource = `
+          <html>
+            <body>
+              <img src="/content/dam/mysite/hero.jpg">
+              <script>
+                window.__AEM__ = { host: "https://publish-p128342-e1259725.adobeaemcloud.com" };
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.OTHER);
+      });
+
+      it('should detect AEM Headless via GraphQL persisted query endpoint', () => {
+        const htmlSource = `
+          <html>
+            <body>
+              <div id="app"></div>
+              <script>
+                const GRAPHQL_ENDPOINT = "https://publish-p128342-e1259725.adobeaemcloud.com/graphql/execute.json/mysite/homepage";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should detect AEM Headless via Sling Model Exporter path', () => {
+        const htmlSource = `
+          <html>
+            <body>
+              <div id="root"></div>
+              <script id="__NEXT_DATA__" type="application/json">
+                {"props":{"pageProps":{"contentPath":"/content/mysite/en/home.model.json"}}}
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
     });
 
     describe('threshold and priority testing', () => {

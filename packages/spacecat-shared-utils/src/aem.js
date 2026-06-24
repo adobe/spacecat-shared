@@ -111,6 +111,10 @@ export function detectAEMVersion(htmlSource, headers = {}) {
   const aemHeadlessPatterns = [
     /aem-headless/i,
     /\/content\/dam\//i,
+    // AEM GraphQL persisted query endpoint — unambiguous AEM headless signal
+    /\/graphql\/execute\.json/i,
+    // Sling Model Exporter — /content/ scoped to avoid false positives
+    /\/content\/[^\s"']+\.model(?:\.tidy)?\.json/i,
   ];
 
   // Count matches for each type
@@ -184,6 +188,26 @@ export function detectAEMVersion(htmlSource, headers = {}) {
   // lc-[timestamp]-lc format exists on AEM 6.5 (AMS) too — not CS-exclusive
   if (/\/etc\.clientlibs\/[^"']+\.lc-[a-f0-9]+-lc\.min\.(js|css)/i.test(normalizedHtml)) {
     csMatches += 1;
+  }
+
+  // AEM GraphQL persisted query — high weight, but guard against hybrid CS sites that use
+  // GraphQL for isolated components while AEM still renders the page (lc-hash clientlibs present)
+  if (
+    /\/graphql\/execute\.json/i.test(normalizedHtml)
+    && !/\/etc\.clientlibs\/[^"']+\.lc-[a-f0-9]+-lc\.min\.(js|css)/i.test(normalizedHtml)
+  ) {
+    aemHeadlessMatches += 1;
+  }
+
+  // Sling Model Exporter under /content/ — guard against false positives:
+  // AEM CS SPA Editor (cq:pagemodel_root_url) and AEM AMS sites (MD5-hash clientlibs)
+  // both embed .model.json paths without being headless
+  if (
+    /\/content\/[^\s"']+\.model(?:\.tidy)?\.json/i.test(normalizedHtml)
+    && !/\/etc\.clientlibs\/[^"']+\.lc-[a-f0-9]+-lc\.min\.(js|css)/i.test(normalizedHtml)
+    && !/\/etc\.clientlibs\/[^"']+\.min\.[a-f0-9]{32}\.(js|css)/i.test(normalizedHtml)
+  ) {
+    aemHeadlessMatches += 1;
   }
 
   // Give significant weight to explicit RUM data-routing indicators

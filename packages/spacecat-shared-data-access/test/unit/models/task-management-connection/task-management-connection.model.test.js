@@ -34,6 +34,7 @@ describe('TaskManagementConnectionModel', () => {
       organizationId: '22222222-2222-2222-2222-222222222222',
       provider: TaskManagementConnection.PROVIDERS.JIRA_CLOUD,
       status: TaskManagementConnection.STATUSES.ACTIVE,
+      externalInstanceId: '33333333-3333-3333-3333-333333333333',
       displayName: 'My Jira Site',
       instanceUrl: 'https://my-org.atlassian.net',
       connectedBy: 'ims-user-id-123',

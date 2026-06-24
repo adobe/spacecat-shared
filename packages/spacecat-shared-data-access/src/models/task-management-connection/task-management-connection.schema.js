@@ -55,6 +55,16 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
     required: true,
     readOnly: true,
   })
+  // external_instance_id column: provider-stable identifier for the remote workspace.
+  // jira_cloud → Atlassian cloudId UUID; jira_corp → normalized baseUrl (v2).
+  // Used as the dedup key in UNIQUE(organization_id, provider, external_instance_id).
+  // Never changes after connection is created — readOnly.
+  .addAttribute('externalInstanceId', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+    validate: (value) => typeof value === 'string' && value.length > 0,
+  })
   // metadata JSONB (PR #720): provider-specific structured data.
   // jira_cloud: { cloudId (required UUID), scopes (optional string array) }.
   // siteName and siteUrl are NOT stored here — they live in displayName/instanceUrl above.

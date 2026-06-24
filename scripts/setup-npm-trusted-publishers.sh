@@ -265,6 +265,7 @@ PACKAGES=(
   "@adobe/spacecat-shared-http-utils"
   "@adobe/spacecat-shared-ims-client"
   "@adobe/spacecat-shared-launchdarkly-client"
+  "@adobe/spacecat-shared-mac-giver-client"
   "@adobe/spacecat-shared-project-engine-client"
   "@adobe/spacecat-shared-rum-api-client"
   "@adobe/spacecat-shared-scrape-client"

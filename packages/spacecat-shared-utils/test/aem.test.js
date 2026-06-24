@@ -354,6 +354,60 @@ describe('AEM Detection', () => {
         const result = detectAEMVersion(htmlSource);
         expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
       });
+
+      it('should NOT classify as headless when GraphQL endpoint co-exists with lc-hash clientlibs (hybrid CS)', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-abc123-lc.min.css">
+            </head>
+            <body>
+              <div class="cmp-text" data-cmp-is="text">Content</div>
+              <script>
+                const GRAPHQL_ENDPOINT = "/graphql/execute.json/mysite/homepage";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.not.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT classify as headless when model.json co-exists with lc-hash clientlibs (AEM CS SPA Editor)', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-abc123-lc.min.css">
+            </head>
+            <body>
+              <div id="root"></div>
+              <script>
+                window.MODEL_PATH = "/content/mysite/en/home.model.json";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.not.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT classify as headless when model.json co-exists with MD5-hash clientlibs (AEM AMS)', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/base.min.123456789012345678901234567890ab.css">
+            </head>
+            <body>
+              <div id="root"></div>
+              <script>
+                window.MODEL_PATH = "/content/mysite/en/home.model.json";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.not.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
     });
 
     describe('threshold and priority testing', () => {

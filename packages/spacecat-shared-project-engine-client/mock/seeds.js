@@ -24,11 +24,14 @@
  */
 
 import { collectionKey } from './stateful.js';
+import { QUOTA_COLLECTION } from './quota.js';
 import {
   createProjectMock,
   createProjectAiModelMock,
   createAiModelMock,
   createPromptMock,
+  createBenchmarkMock,
+  createBrandUrlMock,
 } from './factories.js';
 
 // Real-shaped fixtures: the Project Engine API types every id as `format: uuid`, so the seeds
@@ -39,6 +42,8 @@ const PROJECT_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'; // project UUID (path
 const AI_MODEL_ASSIGNMENT_ID = 'c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f'; // ProjectAIModelResponse.id
 const AI_MODEL_CATALOG_ID = 'd4e5f6a7-b8c9-4d0e-9f1a-3b4c5d6e7f80'; // AIModelResponse.id (the model_id)
 const PROMPT_ID = 'e5f6a7b8-c9d0-4e1f-8a2b-4c5d6e7f8091'; // AIOPromptWithStatus.id
+const BENCHMARK_ID = 'f6a7b8c9-d0e1-4f2a-9b3c-5d6e7f809102'; // AIOBenchmarkWithCounters.id (own brand)
+const BRAND_URL_ID = 'a7b8c9d0-e1f2-4a3b-8c4d-6e7f80910213'; // BrandURL.id
 
 /**
  * @typedef {import('./store.js').Snapshot} Snapshot
@@ -67,6 +72,22 @@ export const WORKSPACE_WITH_DATA = Object.freeze({
   [collectionKey('prompts', { workspaceId: WORKSPACE_ID, projectId: PROJECT_ID })]: [
     createPromptMock({ id: PROMPT_ID, name: 'What is the best running shoe?' }),
   ],
+  // The project's own-brand benchmark (main_brand: true) — the `benchmark_id` brand URLs attach
+  // to. Mirrors the live listBenchmarks own-brand row.
+  [collectionKey('benchmarks', { workspaceId: WORKSPACE_ID, projectId: PROJECT_ID })]: [
+    createBenchmarkMock({
+      id: BENCHMARK_ID,
+      brand_name: 'Seeded Brand',
+      domain: 'example.com',
+      main_brand: true,
+    }),
+  ],
+  // One brand URL under the own-brand benchmark.
+  [collectionKey('brand_urls', {
+    workspaceId: WORKSPACE_ID, projectId: PROJECT_ID, benchmarkId: BENCHMARK_ID,
+  })]: [
+    createBrandUrlMock({ id: BRAND_URL_ID, url: 'https://example.com/about', type: 'own' }),
+  ],
 });
 
 /**
@@ -88,6 +109,8 @@ export const SEED_IDS = Object.freeze({
   projectId: PROJECT_ID,
   aiModelId: AI_MODEL_CATALOG_ID,
   promptId: PROMPT_ID,
+  benchmarkId: BENCHMARK_ID,
+  brandUrlId: BRAND_URL_ID,
 });
 
 /**
@@ -109,10 +132,15 @@ export const SEED_IDS = Object.freeze({
  * The project entity is built via {@link createProjectMock} (typed); pass `aiModels`/`prompts`
  * built with the factories so every row stays spec-shaped with real UUIDs.
  *
- * @param {{ workspaceId: string, projects?: SeedProject[] }} spec
+ * Pass `quota` to mirror the AI-unit allocation the sub-workspace was granted (via user-manager);
+ * the project-engine mock then meters project/prompt creates + publish against it. Omit for the
+ * unlimited (limits-disabled) default.
+ *
+ * @param {{ workspaceId: string, projects?: SeedProject[],
+ *   quota?: { projects?: number | null, prompts?: number | null } }} spec
  * @returns {import('./store.js').Snapshot}
  */
-export function buildSeed({ workspaceId, projects = [] }) {
+export function buildSeed({ workspaceId, projects = [], quota }) {
   const projectsKey = collectionKey('projects', { workspaceId });
   /** @type {import('./store.js').Snapshot} */
   const snapshot = { [projectsKey]: [] };
@@ -123,6 +151,14 @@ export function buildSeed({ workspaceId, projects = [] }) {
     const scope = { workspaceId, projectId: id };
     snapshot[collectionKey('ai_models', scope)] = aiModels;
     snapshot[collectionKey('prompts', scope)] = prompts;
+  }
+  if (quota) {
+    // The `quota` collection (id = workspaceId) is read by mock/quota.js; null = unlimited.
+    snapshot[QUOTA_COLLECTION] = [{
+      id: workspaceId,
+      projects: quota.projects ?? null,
+      prompts: quota.prompts ?? null,
+    }];
   }
   return snapshot;
 }

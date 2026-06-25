@@ -120,3 +120,18 @@ describe('InMemoryStore — snapshot', () => {
     expect(new InMemoryStore().snapshot()).to.deep.equal({});
   });
 });
+
+describe('InMemoryStore — keys & size (non-creating)', () => {
+  it('keys lists only collections that exist; size counts entities, 0 for unknown', () => {
+    const store = new InMemoryStore();
+    store.create('a', { id: '1' });
+    store.create('a', { id: '2' });
+    store.create('b', { id: '1' });
+    expect(store.keys()).to.have.members(['a', 'b']);
+    expect(store.size('a')).to.equal(2);
+    expect(store.size('b')).to.equal(1);
+    // size on an unknown collection returns 0 WITHOUT materializing it
+    expect(store.size('missing')).to.equal(0);
+    expect(store.keys()).to.not.include('missing');
+  });
+});

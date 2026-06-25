@@ -29,20 +29,32 @@
  * @typedef {import('./store.js').Entity} Entity
  */
 
-/** Resource groups that the spike confirmed need real state. */
-export const STATEFUL_RESOURCES = Object.freeze(['projects', 'ai_models', 'prompts']);
+/**
+ * Resource groups the live audit (docs/mock-vs-live-parity.md) confirmed the consumer
+ * write-then-reads: projects, ai_models, prompts, plus benchmarks (per project) and brand_urls
+ * (per benchmark) — the competitor-benchmark and brand-URL sync flows create→list→update→delete,
+ * so they need real state to be faithfully testable.
+ */
+export const STATEFUL_RESOURCES = Object.freeze([
+  'projects', 'ai_models', 'prompts', 'benchmarks', 'brand_urls',
+]);
 
 /**
- * Builds the store collection key for a resource, scoped so two workspaces (or two projects)
- * never share state. `projects` are scoped per workspace; `ai_models` and `prompts` per project.
- * @param {'projects' | 'ai_models' | 'prompts'} resource
- * @param {{ workspaceId?: string | number, projectId?: string | number }} scope
+ * Builds the store collection key for a resource, scoped so two workspaces (or projects, or
+ * benchmarks) never share state. `projects` are scoped per workspace; `ai_models`, `prompts`,
+ * and `benchmarks` per project; `brand_urls` per benchmark (within a project).
+ * @param {'projects' | 'ai_models' | 'prompts' | 'benchmarks' | 'brand_urls'} resource
+ * @param {{ workspaceId?: string | number, projectId?: string | number,
+ *   benchmarkId?: string | number }} scope
  * @returns {string}
  */
 export function collectionKey(resource, scope = {}) {
-  const { workspaceId, projectId } = scope;
+  const { workspaceId, projectId, benchmarkId } = scope;
   if (resource === 'projects') {
     return `projects:${workspaceId}`;
+  }
+  if (resource === 'brand_urls') {
+    return `brand_urls:${workspaceId}:${projectId}:${benchmarkId}`;
   }
   return `${resource}:${workspaceId}:${projectId}`;
 }
@@ -153,6 +165,79 @@ export function createStatefulOps(store) {
        */
       removeMany(scope, ids) {
         const key = collectionKey('prompts', scope);
+        return ids.reduce((removed, id) => (store.delete(key, id) ? removed + 1 : removed), 0);
+      },
+    },
+
+    benchmarks: {
+      /**
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @returns {Entity[]}
+       */
+      list(scope) {
+        return store.list(collectionKey('benchmarks', scope));
+      },
+      /**
+       * Creates one benchmark per supplied entry, returning all created entities (so the caller
+       * can surface their ids). The own/main-brand benchmark is system-managed, so created
+       * benchmarks are always competitor (`main_brand: false`) — matching the live create API.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<Partial<Entity> & Record<string, unknown>>} benchmarks
+       * @returns {Entity[]}
+       */
+      createMany(scope, benchmarks) {
+        const key = collectionKey('benchmarks', scope);
+        return benchmarks.map((b) => store.create(key, b));
+      },
+      /**
+       * Updates one benchmark in place, returning the updated entity or undefined if unknown.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {string} id
+       * @param {Record<string, unknown>} patch
+       * @returns {Entity | undefined}
+       */
+      update(scope, id, patch) {
+        return store.update(collectionKey('benchmarks', scope), id, patch);
+      },
+      /**
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<string>} ids
+       * @returns {number}
+       */
+      removeMany(scope, ids) {
+        const key = collectionKey('benchmarks', scope);
+        return ids.reduce((removed, id) => (store.delete(key, id) ? removed + 1 : removed), 0);
+      },
+    },
+
+    brand_urls: {
+      /**
+       * @param {{ workspaceId: string | number, projectId: string | number,
+       *   benchmarkId: string | number }} scope
+       * @returns {Entity[]}
+       */
+      list(scope) {
+        return store.list(collectionKey('brand_urls', scope));
+      },
+      /**
+       * Creates one brand URL per supplied entry, returning all created entities.
+       * @param {{ workspaceId: string | number, projectId: string | number,
+       *   benchmarkId: string | number }} scope
+       * @param {Array<Partial<Entity> & Record<string, unknown>>} urls
+       * @returns {Entity[]}
+       */
+      createMany(scope, urls) {
+        const key = collectionKey('brand_urls', scope);
+        return urls.map((u) => store.create(key, u));
+      },
+      /**
+       * @param {{ workspaceId: string | number, projectId: string | number,
+       *   benchmarkId: string | number }} scope
+       * @param {Array<string>} ids
+       * @returns {number}
+       */
+      removeMany(scope, ids) {
+        const key = collectionKey('brand_urls', scope);
         return ids.reduce((removed, id) => (store.delete(key, id) ? removed + 1 : removed), 0);
       },
     },

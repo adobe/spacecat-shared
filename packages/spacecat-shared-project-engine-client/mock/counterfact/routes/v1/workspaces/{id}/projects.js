@@ -14,8 +14,9 @@
 
 /**
  * Stateful handlers for /v1/workspaces/{id}/projects — list + create, backed by the shared
- * store on `$.context`. Materialized into `.counterfact/routes/` by the mock runner; never
- * imported by tests, so excluded from coverage.
+ * store on `$.context`. Project create is metered: when the workspace's `projects` allocation is
+ * exhausted it returns the disguised quota 405 (see mock/quota.js). Materialized into
+ * `.counterfact/routes/` by the mock runner; never imported by tests, so excluded from coverage.
  */
 
 /** GET — list projects in the workspace. */
@@ -25,9 +26,16 @@ export function GET($) {
   return $.response[200].json({ items, page: 1, total: items.length });
 }
 
-/** POST — create a project in the workspace. */
+/** POST — create a project (metered → 405 when the projects quota is exhausted). */
 export function POST($) {
   const { path, body, context } = $;
+  if (!context.quota.canCreateProject(path.id)) {
+    return {
+      status: 405,
+      body: { message: 'Quota exceeded: project allocation exhausted' },
+      contentType: 'application/json',
+    };
+  }
   const created = context.ops.projects.create({ workspaceId: path.id }, { ...body });
   return $.response[201].json(created);
 }

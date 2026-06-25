@@ -106,6 +106,10 @@ generated types. `test/overlay.test.js` covers the overlay applier itself.
 
 ## Mock (stateful)
 
+> **Full guide:** [`docs/mock-usage.md`](./docs/mock-usage.md) is the complete usage manual for
+> humans and agents — auth, the full endpoint inventory, seeds, control routes, quota, and
+> troubleshooting. This section is the summary.
+
 `npm run mock` starts a **stateful** Counterfact server off the corrected OAS3 artifact
 (`build/openapi3.json` — run `npm run generate` first). Unmodelled paths fall back to
 Counterfact's spec-driven stubs; the project spine is backed by a shared in-memory store so
@@ -117,6 +121,10 @@ MOCK_PORT=4032 MOCK_SEED=empty-workspace npm run mock
 ```
 
 Base URL: `http://localhost:<port>/enterprise/projects/api`.
+
+**Auth:** every real route requires `Authorization: Bearer <token>` (any non-empty token — the
+mock checks presence, not validity, like the live gateway). Missing/invalid → `401 { "detail":
+"Not authenticated" }`. The `__*` control routes are exempt. See the manual §2.
 
 | Var | Default | Purpose |
 | --- | --- | --- |
@@ -145,6 +153,18 @@ All under the base URL, e.g. `http://localhost:<port>/enterprise/projects/api/__
 | `POST /__reset` | restore the store to its boot seed (or the last `/__seed`) — call between E2E cases for isolation |
 | `POST /__seed` | replace the store with the posted `Snapshot` and make it the new reset baseline — set the mock to exactly the state a test needs |
 | `GET /__dump` | **look inside the mock DB** — returns the current store state as JSON (every `projects:{ws}` / `ai_models:{ws}:{pr}` / `prompts:{ws}:{pr}` collection and its rows) |
+| `POST /__quota` | set a workspace's AI-unit allocation: `{ workspaceId, projects?, prompts? }` (mirrors a user-manager transfer; `{ projects: 0, prompts: 0 }` = empty-units child). Project create / prompt write / publish then return the disguised quota **405** when exhausted |
+| `GET /__quota?workspaceId=<ws>` | read a workspace's limits + live usage |
+
+**Model AI-unit quota (the disguised 405).** A sub-workspace with no allocation is unlimited
+(default). Grant one, then the metered ops 405 when exhausted — the behaviour the consumer's
+quota handling relies on:
+
+```bash
+# grant 1 project + 2 prompts to a workspace
+curl -s -XPOST .../__quota -d '{"workspaceId":"<ws>","projects":1,"prompts":2}'
+# a 2nd project create, a 3rd prompt, or publishing an empty-units child now returns 405
+```
 
 **Inspect what's inside:**
 

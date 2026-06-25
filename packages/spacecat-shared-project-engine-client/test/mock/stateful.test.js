@@ -19,8 +19,10 @@ import {
 } from '../../mock/stateful.js';
 
 describe('stateful — confirmed resource set', () => {
-  it('is exactly projects, ai_models, prompts (the spike first cut)', () => {
-    expect([...STATEFUL_RESOURCES]).to.deep.equal(['projects', 'ai_models', 'prompts']);
+  it('is projects, ai_models, prompts, benchmarks, brand_urls (live-audited surface)', () => {
+    expect([...STATEFUL_RESOURCES]).to.deep.equal([
+      'projects', 'ai_models', 'prompts', 'benchmarks', 'brand_urls',
+    ]);
   });
 });
 
@@ -29,9 +31,15 @@ describe('stateful — collectionKey scoping', () => {
     expect(collectionKey('projects', { workspaceId: 'w1' })).to.equal('projects:w1');
   });
 
-  it('scopes ai_models and prompts per project', () => {
+  it('scopes ai_models, prompts and benchmarks per project', () => {
     expect(collectionKey('ai_models', { workspaceId: 'w1', projectId: 'p1' })).to.equal('ai_models:w1:p1');
     expect(collectionKey('prompts', { workspaceId: 'w1', projectId: 'p1' })).to.equal('prompts:w1:p1');
+    expect(collectionKey('benchmarks', { workspaceId: 'w1', projectId: 'p1' })).to.equal('benchmarks:w1:p1');
+  });
+
+  it('scopes brand_urls per benchmark (within a project)', () => {
+    expect(collectionKey('brand_urls', { workspaceId: 'w1', projectId: 'p1', benchmarkId: 'b1' }))
+      .to.equal('brand_urls:w1:p1:b1');
   });
 
   it('keeps two workspaces from sharing project state', () => {
@@ -85,6 +93,45 @@ describe('stateful — prompts ops', () => {
     expect(ops.list(scope)).to.have.length(2);
     expect(ops.list(scope, (e) => e.text === 'a')).to.have.length(1);
     expect(ops.removeMany(scope, [...created.map((e) => e.id), 'missing'])).to.equal(2);
+    expect(ops.list(scope)).to.have.length(0);
+  });
+});
+
+describe('stateful — benchmarks ops', () => {
+  const scope = { workspaceId: 'w1', projectId: 'p1' };
+
+  it('creates many, lists, updates in place and bulk-removes', () => {
+    const ops = createStatefulOps(new InMemoryStore()).benchmarks;
+    const created = ops.createMany(scope, [
+      { brand_name: 'Comp A', domain: 'a.example' },
+      { brand_name: 'Comp B', domain: 'b.example' },
+    ]);
+    expect(created).to.have.length(2);
+    expect(ops.list(scope)).to.have.length(2);
+    expect(ops.update(scope, created[0].id, { brand_aliases: ['A'] })?.brand_aliases).to.deep.equal(['A']);
+    expect(ops.update(scope, 'missing', { brand_aliases: ['X'] })).to.equal(undefined);
+    expect(ops.removeMany(scope, [created[0].id, 'missing'])).to.equal(1);
+    expect(ops.list(scope)).to.have.length(1);
+  });
+
+  it('isolates benchmarks across projects', () => {
+    const ops = createStatefulOps(new InMemoryStore()).benchmarks;
+    ops.createMany({ workspaceId: 'w1', projectId: 'p1' }, [{ domain: 'a.example' }]);
+    expect(ops.list({ workspaceId: 'w1', projectId: 'p2' })).to.have.length(0);
+  });
+});
+
+describe('stateful — brand_urls ops', () => {
+  const scope = { workspaceId: 'w1', projectId: 'p1', benchmarkId: 'b1' };
+
+  it('creates many, lists and bulk-removes, scoped per benchmark', () => {
+    const ops = createStatefulOps(new InMemoryStore()).brand_urls;
+    const created = ops.createMany(scope, [{ url: 'https://x.example', type: 'own' }]);
+    expect(created).to.have.length(1);
+    expect(ops.list(scope)).to.have.length(1);
+    // a different benchmark under the same project does not see these urls
+    expect(ops.list({ ...scope, benchmarkId: 'b2' })).to.have.length(0);
+    expect(ops.removeMany(scope, [created[0].id, 'missing'])).to.equal(1);
     expect(ops.list(scope)).to.have.length(0);
   });
 });

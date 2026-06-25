@@ -70,7 +70,11 @@ function pickPort() {
 async function waitForReady(baseUrl, deadline) {
   for (;;) {
     try {
-      const res = await fetch(`${baseUrl}/v1/workspaces/${SEED_WORKSPACE}/projects`);
+      // Send a bearer token: every real route is now auth-gated, so an unauthenticated probe
+      // would 401 forever (the server is up, but `res.ok` would never be true).
+      const res = await fetch(`${baseUrl}/v1/workspaces/${SEED_WORKSPACE}/projects`, {
+        headers: { Authorization: 'Bearer readiness-probe' },
+      });
       if (res.ok) {
         return;
       }
@@ -215,13 +219,14 @@ async function waitForReady(baseUrl, deadline) {
 
   // Exercises the prompt write-then-read spine through the paths the real consumer uses
   // (spacecat-api-service): create via `tagged`, list via `by_tags`. Not `POST /aio/prompts`
-  // (delete-only in the spec) — see mock/.../aio/prompts*.js.
+  // (delete-only in the spec) — see mock/.../aio/prompts*.js. Body is keyed by PROMPT TEXT,
+  // value = tag names (the real consumer shape: `{ [text]: tags }`).
   it('creates aio prompts (tagged) and lists them back (by_tags)', async () => {
     const { data: created, error: createError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { prompts: { brand: ['What is X?', 'Tell me Y'] } },
+        body: { prompts: { 'What is X?': ['brand'], 'Tell me Y': ['brand'] } },
       },
     );
     expect(createError).to.equal(undefined);
@@ -246,7 +251,7 @@ async function waitForReady(baseUrl, deadline) {
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { prompts: { brand: ['Doomed prompt'] } },
+        body: { prompts: { 'Doomed prompt': ['brand'] } },
       },
     );
     await client.DELETE('/v2/workspaces/{id}/projects/{project_id}/aio/prompts', {
@@ -319,5 +324,281 @@ async function waitForReady(baseUrl, deadline) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(SEEDS['workspace-with-data']),
     });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Live-verified parity: the auto-generated (non-stateful) endpoints + the two
+  // drift fixes. These assert that the mock's response SHAPE matches what the real
+  // Semrush API returns (recorded live 2026-06-25, see docs/mock-vs-live-parity.md).
+  // Shapes only — no live customer content is encoded here.
+  // ───────────────────────────────────────────────────────────────────────
+
+  it('addAiModel (v2) responds 201 Created, matching the live API (drift D2/CR7)', async () => {
+    const { response, error } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { model_id: SEED_IDS.aiModelId },
+      },
+    );
+    expect(error).to.equal(undefined);
+    expect(response.status).to.equal(201);
+  });
+
+  it('createProjectTags returns a top-level array, matching the live API (drift D1/CR6)', async () => {
+    const { data, error } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { names: ['type:branded', 'topic:Probe'] },
+      },
+    );
+    expect(error).to.equal(undefined);
+    // Live returns [{ id, name, children_count, keyword_count }], NOT a single object.
+    expect(data).to.be.an('array');
+  });
+
+  it('listLanguages returns { page, total, items:[{ id, name }] }', async () => {
+    const { data, error } = await client.GET('/v1/languages', {});
+    expect(error).to.equal(undefined);
+    expect(data).to.include.keys(['page', 'total', 'items']);
+    expect(data.items).to.be.an('array');
+    if (data.items.length > 0) {
+      expect(data.items[0]).to.include.keys(['id', 'name']);
+    }
+  });
+
+  it('listGlobalAiModels returns { page, total, items:[{ id, name, key, icon }] }', async () => {
+    const { data, error } = await client.GET('/v1/ai_models', {});
+    expect(error).to.equal(undefined);
+    expect(data).to.include.keys(['page', 'total', 'items']);
+    expect(data.items).to.be.an('array');
+    if (data.items.length > 0) {
+      expect(data.items[0]).to.include.keys(['id']);
+    }
+  });
+
+  it('getBrandTopics returns a top-level array of { topic, volume, prompts }', async () => {
+    const { data, error } = await client.GET('/v1/workspaces/{id}/brand-topics', {
+      params: { path: { id: SEED_WORKSPACE }, query: { domain: 'example.com', country: 'us' } },
+    });
+    expect(error).to.equal(undefined);
+    expect(data).to.be.an('array');
+  });
+
+  it('listBenchmarks returns the seeded own-brand benchmark', async () => {
+    const { data, error } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    expect(error).to.equal(undefined);
+    expect(data.aio_benchmarks).to.be.an('array').with.length(1);
+    expect(data.aio_benchmarks[0]).to.include({ id: SEED_IDS.benchmarkId, main_brand: true });
+  });
+
+  // Mirrors the consumer's competitor-benchmark sync: create → list reflects → delete → gone.
+  it('creates a benchmark (v2), lists it back (v1), then deletes it', async () => {
+    const { data: created, error: createError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [{ brand_name: 'Competitor X', domain: 'competitor-x.example' }],
+      },
+    );
+    expect(createError).to.equal(undefined);
+    expect(created.ids).to.have.length(1);
+    expect(created.existing_count).to.equal(0);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    // seeded own-brand + the new competitor
+    expect(listed.aio_benchmarks.map((b) => b.id)).to.include(created.ids[0]);
+
+    await client.DELETE('/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks', {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { ids: created.ids },
+    });
+    const { data: after } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    expect(after.aio_benchmarks.map((b) => b.id)).to.not.include(created.ids[0]);
+  });
+
+  it('listBrandUrls returns the seeded brand URL under the own-brand benchmark', async () => {
+    const { data, error } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls',
+      {
+        params: {
+          path: {
+            id: SEED_WORKSPACE, project_id: SEED_PROJECT, benchmark_id: SEED_IDS.benchmarkId,
+          },
+        },
+      },
+    );
+    expect(error).to.equal(undefined);
+    expect(data.brand_urls).to.be.an('array').with.length(1);
+    expect(data.brand_urls[0].id).to.equal(SEED_IDS.brandUrlId);
+  });
+
+  // Mirrors the consumer's brand-URL sync: create → list reflects → delete → gone.
+  it('creates brand URLs, lists them back, then deletes them', async () => {
+    const { benchmarkId } = SEED_IDS;
+    const BRAND_URLS = '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls';
+    const path = { id: SEED_WORKSPACE, project_id: SEED_PROJECT, benchmark_id: benchmarkId };
+
+    const { data: created, error: createError } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ url: 'https://example.com/blog', type: 'own' }],
+    });
+    expect(createError).to.equal(undefined);
+    expect(created.ids).to.have.length(1);
+
+    const { data: listed } = await client.GET(BRAND_URLS, { params: { path } });
+    // seeded url + the new one
+    expect(listed.brand_urls.map((u) => u.id)).to.include(created.ids[0]);
+
+    await client.DELETE(BRAND_URLS, { params: { path }, body: { ids: created.ids } });
+    const { data: after } = await client.GET(BRAND_URLS, { params: { path } });
+    expect(after.brand_urls.map((u) => u.id)).to.not.include(created.ids[0]);
+  });
+
+  it('publishProject + getInitStatus respond with the intended mock contract', async () => {
+    const { response: pubRes } = await client.POST(
+      '/v1/workspaces/{id}/projects/{project_id}/publish',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    expect(pubRes.status).to.equal(202);
+
+    // init_status lives on /v2 (overlay CR8) — the /v1 path 404s live.
+    const { data: init, error } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/init_status',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    expect(error).to.equal(undefined);
+    expect(init).to.have.property('initialized');
+  });
+
+  it('updateCiCompetitors returns { ci_competitors: [...] }', async () => {
+    const { data, error } = await client.PUT(
+      '/v1/workspaces/{id}/projects/{project_id}/ci/competitors',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { ci_competitors: [{ domain: 'competitor.example' }] },
+      },
+    );
+    expect(error).to.equal(undefined);
+    expect(data).to.have.property('ci_competitors');
+    expect(data.ci_competitors).to.be.an('array');
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // AI-unit quota metering. A workspace's allocation is provided via POST /__quota
+  // (mirroring a user-manager transfer); project create, prompt create, and publish
+  // then return the disguised 405 when the allocation is exhausted — the behaviour
+  // the consumer's quota handling (republishBestEffort, "Quota exceeded") relies on.
+  // ───────────────────────────────────────────────────────────────────────
+
+  const PROJECTS = '/v1/workspaces/{id}/projects';
+  const TAGGED = '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged';
+  const PUBLISH = '/v1/workspaces/{id}/projects/{project_id}/publish';
+
+  async function setQuota(workspaceId, allocation) {
+    const res = await fetch(`${baseUrl}/__quota`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ workspaceId, ...allocation }),
+    });
+    return res.json();
+  }
+
+  it('meters project create: 405 once the projects allocation is exhausted', async () => {
+    const id = globalThis.crypto.randomUUID();
+    await setQuota(id, { projects: 1, prompts: 100 });
+    const { response: ok } = await client.POST(PROJECTS, { params: { path: { id } }, body: { name: 'P1' } });
+    expect(ok.status).to.equal(201);
+    const { response: over, error } = await client.POST(PROJECTS, {
+      params: { path: { id } }, body: { name: 'P2' },
+    });
+    expect(over.status).to.equal(405);
+    expect(error).to.not.equal(undefined);
+  });
+
+  it('meters prompt create: 405 (all-or-nothing) when a batch exceeds the prompts allocation', async () => {
+    const id = globalThis.crypto.randomUUID();
+    const projectId = globalThis.crypto.randomUUID();
+    await setQuota(id, { projects: 5, prompts: 2 });
+    const { response: ok } = await client.POST(TAGGED, {
+      params: { path: { id, project_id: projectId } },
+      body: { prompts: { 'prompt one': ['t'], 'prompt two': ['t'] } },
+    });
+    expect(ok.status).to.equal(201);
+    const { response: over } = await client.POST(TAGGED, {
+      params: { path: { id, project_id: projectId } },
+      body: { prompts: { 'prompt three': ['t'] } },
+    });
+    expect(over.status).to.equal(405);
+  });
+
+  it('meters publish: 405 for an empty-units workspace, 202 when unlimited', async () => {
+    const projectId = globalThis.crypto.randomUUID();
+    const empty = globalThis.crypto.randomUUID();
+    await setQuota(empty, { projects: 0, prompts: 0 });
+    const { response: blocked } = await client.POST(PUBLISH, {
+      params: { path: { id: empty, project_id: projectId } },
+    });
+    expect(blocked.status).to.equal(405);
+    // a workspace with no allocation (limits-disabled, like the dev parent) publishes fine
+    const { response: okPub } = await client.POST(PUBLISH, {
+      params: { path: { id: globalThis.crypto.randomUUID(), project_id: projectId } },
+    });
+    expect(okPub.status).to.equal(202);
+  });
+
+  it('__quota reports limits + live usage', async () => {
+    const id = globalThis.crypto.randomUUID();
+    await setQuota(id, { projects: 3, prompts: 50 });
+    await client.POST(PROJECTS, { params: { path: { id } }, body: { name: 'P' } });
+    const res = await fetch(`${baseUrl}/__quota?workspaceId=${id}`);
+    const usage = await res.json();
+    expect(usage.projects).to.deep.equal({ limit: 3, used: 1 });
+    expect(usage.prompts).to.deep.equal({ limit: 50, used: 0 });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Bearer auth. The live gateway 401s any request lacking a usable bearer
+  // credential (verified live 2026-06-25: missing header AND `Bearer <garbage>`
+  // both 401). The mock mirrors that on every real route. The typed client always
+  // sends `Authorization: Bearer <token>`, so the unauth paths use a raw fetch.
+  // The `__*` control routes are exempt (harness plumbing, not the emulated API).
+  // ───────────────────────────────────────────────────────────────────────
+
+  const ANY_REAL_ROUTE = `/v1/workspaces/${SEED_WORKSPACE}/projects`;
+
+  it('rejects a real route with no Authorization header (401 Not authenticated)', async () => {
+    const res = await fetch(`${baseUrl}${ANY_REAL_ROUTE}`);
+    expect(res.status).to.equal(401);
+    expect(await res.json()).to.deep.equal({ detail: 'Not authenticated' });
+  });
+
+  it('rejects a real route with a non-Bearer Authorization header (401)', async () => {
+    const res = await fetch(`${baseUrl}${ANY_REAL_ROUTE}`, {
+      headers: { Authorization: 'token-without-the-bearer-scheme' },
+    });
+    expect(res.status).to.equal(401);
+  });
+
+  it('accepts a real route once a Bearer token is present', async () => {
+    const res = await fetch(`${baseUrl}${ANY_REAL_ROUTE}`, {
+      headers: { Authorization: 'Bearer any-non-empty-token' },
+    });
+    expect(res.status).to.equal(200);
+  });
+
+  it('exempts the __* control routes from auth (no token needed)', async () => {
+    const dump = await fetch(`${baseUrl}/__dump`);
+    expect(dump.status).to.equal(200);
   });
 });

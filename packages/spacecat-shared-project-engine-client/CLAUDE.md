@@ -6,8 +6,18 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
 - `src/` — the published client (`createSerenityProjectEngineApiClient`, an `openapi-fetch`
   client) + generated types (`src/generated/types.ts`). This is the ONLY thing that ships
   (`files: ["src"]`).
-- `mock/` — the stateful mock (store, factories, seeds, Counterfact handlers, runner). NOT
-  published; importable in-workspace via the `./mock/*` subpath export. Boot with `npm run mock`.
+- `mock/` — the stateful mock (store, factories, seeds, quota metering, bearer auth, Counterfact
+  handlers, runner). NOT published; importable in-workspace via the `./mock/*` subpath export. Boot
+  with `npm run mock`. **Usage manual: `docs/mock-usage.md`** (humans + agents — auth, full
+  endpoint inventory, seeds, control routes, quota, troubleshooting). AI-unit quota (the
+  disguised-405 the live API returns for an over-allocation) is in `mock/quota.js`, set via the
+  `POST /__quota` control route or `buildSeed({ quota })`, enforced on project create / prompt write
+  / publish. **Bearer auth** (`mock/auth.js`) is modelled like the live gateway — every real route
+  needs `Authorization: Bearer <token>` (presence, not validity) or returns `401 { detail: 'Not
+  authenticated' }`; the `__*` control routes are exempt. The gate is injected onto every handler at
+  the materialization seam by `injectAuthGuard` in `mock/run.js` (so no handler can forget it). Any
+  new file imported by `mock/context.js` MUST be added to `LIB_FILES` in `mock/run.js` or the
+  materialized `.counterfact/` tree breaks.
 - `spec/` — the vendored swagger + `spec/overlays/corrections.yaml` (corrections).
 
 ## Type-checking: `// @ts-check` is mandatory
@@ -33,8 +43,9 @@ is guarded by the `.ts` type-tests under `test/types/` rather than per-spec `@ts
 ## Mock fixtures: the factory pattern, never literals
 
 Build seed/fixture entities with the typed factories in `mock/factories.js` — `createProjectMock`,
-`createProjectAiModelMock`, `createAiModelMock`, `createPromptMock` — each `(Partial<T>) => T`
-typed against `components['schemas'][...]` (the
+`createProjectAiModelMock`, `createAiModelMock`, `createPromptMock`, `createBenchmarkMock`,
+`createBrandUrlMock`, `createLanguageMock`, `createTagNodeMock`, `createBrandTopicMock` — each
+`(Partial<T>) => T` typed against `components['schemas'][...]` (the
 [mock factory pattern](https://dev.to/davelosert/mock-factory-pattern-in-typescript-44l9)). Never
 hand-write entity literals: they drift from the spec (an early seed had grown a `workspace_id` that
 isn't in `ProjectResponse`). `test/types/factories.type-test.ts` proves the enforcement (the

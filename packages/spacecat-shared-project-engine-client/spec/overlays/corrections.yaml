@@ -30,6 +30,21 @@ info:
 #      only `id` required: the add path (`POST .../ai_models {model_id}`) does not
 #      resolve the catalog name, so `name` is genuinely absent there. Narrow/remove
 #      if a spec refresh adds upstream `required` arrays.
+# CR6  createProjectTags (POST /v2/.../aio/tags) returns a TOP-LEVEL ARRAY of
+#      TreeNodeResponse, not a single object. The vendored swagger types the 201 as
+#      one `model.TreeNodeResponse`, so Counterfact's mock returned an object while the
+#      live API returns `[{ id, name, children_count, keyword_count }]` (verified
+#      2026-06-25 against prod). Retype the 201 as an array. Remove if Semrush fixes it.
+# CR7  addAiModel v2 (POST /v2/.../ai_models) returns 201, not 200. The vendored swagger
+#      declares the success response under 200; the live API responds 201 Created
+#      (verified 2026-06-25 against prod). Move the response to 201 so the type, the mock,
+#      and the live API agree. Remove if Semrush changes the status upstream.
+# CR8  init_status lives on /v2, not /v1. The vendored swagger declares
+#      GET /v1/.../aio/init_status, but that path 404s live while
+#      GET /v2/.../aio/init_status -> 200 { initialized } (verified 2026-06-25 against prod;
+#      OPTIONS /v2 -> allow: GET, OPTIONS /v1 -> 404). Relocate the path to v2 so the typed
+#      client + mock match the live API. The consumer (spacecat-api-service rest-transport
+#      `getInitStatus`) must call /v2 too. Remove if Semrush adds the v1 alias upstream.
 actions:
   # ── CR1: Add GET /v1/ai_models ──────────────────────────────────────────
   # Live: 200 -> { page:int, total:int, items:[AIModelResponse] }.
@@ -147,6 +162,88 @@ actions:
       required: [id]
 
   - target: "$.components.schemas['model.AIOPromptWithStatus']"
-    description: "CR5: a prompt-with-status always carries id + name + is_new + tags"
+    description: "CR5: a prompt-with-status always carries id + name + tags"
+    # `is_new` is NOT marked required: the live `by_tags` list omits it (verified
+    # 2026-06-25 against prod), most likely an omit-when-false boolean. Requiring it
+    # would misrepresent the live API and make the type lie. It stays an optional
+    # property (the mock may still populate it; that is a spec-valid superset).
     update:
-      required: [id, name, is_new, tags]
+      required: [id, name, tags]
+
+  - target: "$.components.schemas['model.AIOBenchmarkWithCounters']"
+    description: "CR5: a listed benchmark always carries id (the benchmark_id brand URLs attach to)"
+    # Now that benchmarks are stateful-served by the mock, the served list item always has an id
+    # (verified live 2026-06-25). Conservative: id only — brand_name/domain can legitimately be
+    # absent on a sparse competitor row.
+    update:
+      required: [id]
+
+  - target: "$.components.schemas['model.BrandURL']"
+    description: "CR5: a listed brand URL always carries id"
+    update:
+      required: [id]
+
+  # ── CR6: createProjectTags returns a top-level ARRAY ─────────────────────
+  # Live: POST /v2/.../aio/tags -> 201 [{ id, name, children_count, keyword_count }].
+  # The vendored 201 schema is a single TreeNodeResponse; replace it with an array.
+  # Two actions: drop the scalar `$ref` (deep-merge cannot overwrite an object node),
+  # then set the array schema in its place.
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags'].post.responses['201'].content['application/json'].schema.$ref"
+    description: "CR6: drop the single-object $ref on the tags-create 201"
+    remove: true
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags'].post.responses['201'].content['application/json'].schema"
+    description: "CR6: the tags-create 201 is an array of TreeNodeResponse"
+    update:
+      type: array
+      items:
+        $ref: "#/components/schemas/model.TreeNodeResponse"
+
+  # ── CR7: addAiModel v2 responds 201, not 200 ─────────────────────────────
+  # Live: POST /v2/.../ai_models -> 201 ProjectAIModelResponse. Move the success
+  # response from 200 to 201 so the type, the Counterfact mock, and the live API agree.
+  # Add the 201 (copy of the 200 body), then remove the stale 200.
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/ai_models'].post.responses"
+    description: "CR7: add the 201 Created success response on the v2 ai_models add"
+    update:
+      "201":
+        description: "Created"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/model.ProjectAIModelResponse"
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/ai_models'].post.responses['200']"
+    description: "CR7: remove the stale 200 success response on the v2 ai_models add"
+    remove: true
+
+  # ── CR8: init_status is a /v2 route, not /v1 ─────────────────────────────
+  # Live: GET /v2/.../aio/init_status -> 200 { initialized }; the /v1 path 404s.
+  - target: "$.paths"
+    description: "CR8: add the GET /v2/.../aio/init_status path (the live location)"
+    update:
+      "/v2/workspaces/{id}/projects/{project_id}/aio/init_status":
+        get:
+          summary: "AIO project initialization status"
+          description: "Check whether AIO project initialization has finished for the workspace and project."
+          operationId: "aio-get-project-init-status-v2"
+          tags: ["AIO"]
+          parameters:
+            - { name: id, in: path, required: true, schema: { type: string } }
+            - { name: project_id, in: path, required: true, schema: { type: string } }
+          responses:
+            "200":
+              description: "OK"
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/model.AIOProjectInitializedResponse"
+            "401":
+              description: "Unauthorized"
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/http_server.BasicResponse"
+          security:
+            - imsBearer: []
+  - target: "$.paths['/v1/workspaces/{id}/projects/{project_id}/aio/init_status']"
+    description: "CR8: remove the stale /v1 init_status path (404s live)"
+    remove: true

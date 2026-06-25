@@ -23,12 +23,12 @@
  * Materialized into `.counterfact/routes/` by the mock runner; excluded from coverage.
  */
 
-/** POST — add an AI model to the project (body: { model_id }). */
+/** POST — add an AI model to the project (body: { model_id }) → 201 (matches live). */
 export function POST($) {
   const { path, body, context } = $;
   const created = context.ops.ai_models.add(
     { workspaceId: path.id, projectId: path.project_id },
     { model: { id: body.model_id }, prompts_count: 0 },
   );
-  return $.response[200].json(created);
+  return $.response[201].json(created);
 }

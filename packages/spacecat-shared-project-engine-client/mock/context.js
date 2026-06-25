@@ -21,7 +21,11 @@
  * pure {@link InMemoryStore} + {@link createStatefulOps} (unit-tested on their own) to a seed
  * selected at startup, and exposes the test-only control surface — `reset()` (`POST /__reset`),
  * `seed()` (`POST /__seed`), and `dump()` (`GET /__dump`) — so an E2E / the cross-repo harness
- * can drive and inspect mock state between cases.
+ * can drive and inspect mock state between cases. It also wires {@link createQuota} as `quota`
+ * (AI-unit metering; allocation set via `POST /__quota`, enforced on project/prompt create +
+ * publish — the disguised-405 the live API returns for an over-allocation) and {@link authError}
+ * as `authError` (bearer-auth gate; every real route guards on it, the `__*` control routes are
+ * exempt — see mock/auth.js).
  *
  * Startup seed precedence: an explicit `seedFile` (a JSON {@link Snapshot} path, e.g. one the
  * harness generates from the same fixtures it loads into Postgres so the workspace/project ids
@@ -35,6 +39,8 @@
 import { readFileSync } from 'node:fs';
 import { InMemoryStore } from './store.js';
 import { createStatefulOps } from './stateful.js';
+import { createQuota } from './quota.js';
+import { authError } from './auth.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
 /**
@@ -57,6 +63,12 @@ export class Context {
       this.store.load(SEEDS[this.seedName]);
     }
     this.ops = createStatefulOps(this.store);
+    // AI-unit metering over the same store (limits live in the `quota` collection, so they ride
+    // along in seed / reset / dump; usage is derived from the projects/prompts collections).
+    this.quota = createQuota(this.store);
+    // Bearer-auth gate. Stateless, so it is a plain reference to the pure guard; every real route
+    // calls `context.authError($.headers)`, the `__*` control routes do not (see mock/auth.js).
+    this.authError = authError;
   }
 
   /**

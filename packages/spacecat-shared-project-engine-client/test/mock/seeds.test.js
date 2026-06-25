@@ -13,6 +13,7 @@
 import { expect } from 'chai';
 import { InMemoryStore } from '../../mock/store.js';
 import { createStatefulOps } from '../../mock/stateful.js';
+import { createQuota } from '../../mock/quota.js';
 import {
   SEEDS,
   DEFAULT_SEED,
@@ -39,12 +40,19 @@ describe('seeds', () => {
     const store = new InMemoryStore();
     store.load(SEEDS['workspace-with-data']);
     const ops = createStatefulOps(store);
-    const { workspaceId, projectId } = SEED_IDS;
+    const {
+      workspaceId, projectId, benchmarkId,
+    } = SEED_IDS;
 
     expect(ops.projects.list({ workspaceId })).to.have.length(1);
     expect(ops.projects.get({ workspaceId }, projectId)?.name).to.equal('Seeded Project');
     expect(ops.ai_models.list({ workspaceId, projectId })).to.have.length(1);
     expect(ops.prompts.list({ workspaceId, projectId })).to.have.length(1);
+    // own-brand benchmark + a brand URL under it
+    const benchmarks = ops.benchmarks.list({ workspaceId, projectId });
+    expect(benchmarks).to.have.length(1);
+    expect(benchmarks[0]).to.include({ id: benchmarkId, main_brand: true });
+    expect(ops.brand_urls.list({ workspaceId, projectId, benchmarkId })).to.have.length(1);
   });
 
   it('reset restores a seed after mutation', () => {
@@ -100,5 +108,26 @@ describe('buildSeed', () => {
   it('handles an empty workspace (no projects)', () => {
     const snapshot = buildSeed({ workspaceId: 'ws-empty' });
     expect(snapshot).to.deep.equal({ 'projects:ws-empty': [] });
+  });
+
+  it('embeds an AI allocation the quota layer reads back', () => {
+    const snapshot = buildSeed({ workspaceId: 'ws-q', quota: { projects: 3, prompts: 500 } });
+    expect(snapshot.quota).to.deep.equal([{ id: 'ws-q', projects: 3, prompts: 500 }]);
+    const store = new InMemoryStore();
+    store.load(snapshot);
+    const quota = createQuota(store);
+    expect(quota.limits('ws-q')).to.deep.equal({ projects: 3, prompts: 500 });
+    expect(quota.canCreateProject('ws-q')).to.equal(true);
+  });
+
+  it('omits the quota collection when no allocation is given (unlimited default)', () => {
+    const snapshot = buildSeed({ workspaceId: 'ws-u' });
+    expect(snapshot).to.not.have.property('quota');
+  });
+
+  it('defaults an omitted quota dimension to null (unlimited for that dimension)', () => {
+    // a present-but-empty quota still creates the record, with both dimensions unlimited
+    const snapshot = buildSeed({ workspaceId: 'ws-p', quota: {} });
+    expect(snapshot.quota).to.deep.equal([{ id: 'ws-p', projects: null, prompts: null }]);
   });
 });

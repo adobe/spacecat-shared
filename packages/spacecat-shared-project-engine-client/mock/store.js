@@ -131,6 +131,27 @@ export class InMemoryStore {
   }
 
   /**
+   * The names of all collections that currently exist (have been written to). Used by the quota
+   * layer to derive a workspace's prompt usage across every project (`prompts:{ws}:*`) without
+   * coupling the store to resource keys. Non-creating: never materializes a collection.
+   * @returns {string[]}
+   */
+  keys() {
+    return [...this.#collections.keys()];
+  }
+
+  /**
+   * The number of entities in a collection (0 if it does not exist). Non-creating, so a quota
+   * usage check never leaves an empty collection behind.
+   * @param {string} name
+   * @returns {number}
+   */
+  size(name) {
+    const col = this.#collections.get(name);
+    return col ? col.size : 0;
+  }
+
+  /**
    * Loads a seed set, remembers it as the reset target, and applies it.
    * @param {Snapshot} snapshot
    * @returns {void}

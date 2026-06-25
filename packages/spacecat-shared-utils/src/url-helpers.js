@@ -514,12 +514,16 @@ function filterBySiteScope(urls, siteBaseUrl) {
 
 /**
  * Extracts the pathname from a URL string, stripping trailing slashes on non-root paths.
- * Falls back to the raw string when the URL is not parseable (e.g. invalid or relative).
+ * The result is always lowercased. Falls back to the raw string (also lowercased) when
+ * the URL is not parseable (e.g. invalid or relative). Returns '' for non-string input.
  *
  * @param {string} url
- * @returns {string} pathname, or the original string on parse failure
+ * @returns {string} pathname, or the original string on parse failure, or '' for non-strings
  */
 export function toPathname(url) {
+  if (!url || typeof url !== 'string') {
+    return '';
+  }
   try {
     const { pathname } = new URL(url);
     return pathname === '/' ? pathname : pathname.replace(/\/$/, '').toLowerCase();
@@ -546,6 +550,9 @@ export function hasSamePathname(url, referenceUrl) {
  * @returns {boolean} True if every URL in the array has the same pathname as referenceUrl.
  */
 export function allHaveSamePathname(urls, referenceUrl) {
+  if (!Array.isArray(urls)) {
+    return false;
+  }
   return urls.every((url) => hasSamePathname(url, referenceUrl));
 }
 

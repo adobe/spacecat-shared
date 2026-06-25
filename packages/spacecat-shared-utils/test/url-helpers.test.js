@@ -1337,6 +1337,14 @@ describe('URL Utility Functions', () => {
     it('handles relative paths by falling back to lowercased string', () => {
       expect(toPathname('/some/PATH')).to.equal('/some/path');
     });
+
+    it('returns empty string for null input', () => {
+      expect(toPathname(null)).to.equal('');
+    });
+
+    it('returns empty string for undefined input', () => {
+      expect(toPathname(undefined)).to.equal('');
+    });
   });
 
   describe('hasSamePathname', () => {
@@ -1362,6 +1370,10 @@ describe('URL Utility Functions', () => {
 
     it('returns false when one is root and the other is not', () => {
       expect(hasSamePathname('https://a.com/', 'https://b.com/page')).to.be.false;
+    });
+
+    it('does not crash when url is null', () => {
+      expect(hasSamePathname(null, 'https://b.com/page')).to.be.false;
     });
   });
 
@@ -1390,6 +1402,15 @@ describe('URL Utility Functions', () => {
     it('is case-insensitive across all entries', () => {
       const urls = ['https://a.com/PAGE', 'https://b.com/Page'];
       expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.true;
+    });
+
+    it('returns false for non-array input', () => {
+      expect(allHaveSamePathname(null, 'https://ref.com/page')).to.be.false;
+      expect(allHaveSamePathname(undefined, 'https://ref.com/page')).to.be.false;
+    });
+
+    it('does not crash when array contains null elements', () => {
+      expect(allHaveSamePathname([null], 'https://ref.com/page')).to.be.false;
     });
   });
 });

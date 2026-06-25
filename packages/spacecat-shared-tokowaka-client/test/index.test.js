@@ -3127,7 +3127,7 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, coveredSuggestion], updatedBy: 'test@example.com' },
+        { updatedBy: 'test@example.com' },
       );
 
       expect(result.succeededSuggestions).to.include(dwSuggestion);
@@ -3177,7 +3177,7 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, pathSuggestion], updatedBy: 'test@example.com' },
+        { updatedBy: 'test@example.com' },
       );
 
       expect(result.succeededSuggestions).to.include(dwSuggestion);
@@ -3223,7 +3223,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [pathSuggestion],
-        { allSuggestions: [pathSuggestion, coveredSuggestion] },
       );
 
       expect(coveredSuggestion.setData.called).to.be.false;
@@ -3265,7 +3264,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, coveredSuggestion] },
       );
 
       // The domain-wide suggestion itself uses 'tokowaka-rollback'
@@ -3306,7 +3304,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [pathSuggestion],
-        { allSuggestions: [pathSuggestion, coveredSuggestion] },
       );
 
       // The path suggestion itself uses 'tokowaka-rollback'
@@ -3358,7 +3355,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, deployedPathSuggestion, pathCoveredSuggestion] },
       );
 
       // Domain-wide suggestion was rolled back
@@ -3406,7 +3402,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
       );
 
       // Only '/*' removed; '/products/*' and '/blog/*' preserved
@@ -3452,7 +3447,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
       );
 
       // One upload for DW removal only
@@ -3494,7 +3488,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, undeployedPathSuggestion] },
       );
 
       // Undeployed path suggestion was not touched
@@ -3671,7 +3664,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, covered] },
       );
 
       expect(covered.setData.called).to.be.false;
@@ -3761,12 +3753,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        {
-          allSuggestions: [
-            dwSuggestion,
-            doubleCoveredSuggestion,
-          ],
-        },
       );
 
       expect(doubleCoveredSuggestion.setData.called).to.be.false;
@@ -3810,12 +3796,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [pathSuggestion],
-        {
-          allSuggestions: [
-            pathSuggestion,
-            doubleCoveredSuggestion,
-          ],
-        },
       );
 
       expect(doubleCoveredSuggestion.setData.called).to.be.false;
@@ -3860,9 +3840,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        {
-          allSuggestions: [dwSuggestion, preExistingPath],
-        },
       );
 
       // Pre-existing path was NOT cascaded
@@ -3908,7 +3885,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, laterPath] },
       );
 
       // Path was NOT cascaded
@@ -3955,9 +3931,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        {
-          allSuggestions: [dwSuggestion, pathOnlyCovered],
-        },
       );
 
       // URL with only coveredByPattern was NOT touched
@@ -3965,9 +3938,9 @@ describe('TokowakaClient', () => {
       expect(pathOnlyCovered.setData.called).to.be.false;
     });
 
-    it('DW rollback cascade skips other domain-wide suggestions in allSuggestions', async () => {
+    it('DW rollback leaves other domain-wide suggestions untouched', async () => {
       // Covers the isDomainWide guard inside the cascade filter.
-      // A second DW suggestion in allSuggestions must not be cascaded.
+      // A second DW suggestion not selected for rollback must not be cascaded.
       const prerenderOpportunity = {
         getId: () => 'opp-dw',
         getType: () => 'prerender',
@@ -4004,7 +3977,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, otherDw] },
       );
 
       // The other DW suggestion was not cascaded
@@ -5793,7 +5765,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1, s2],
-        allSuggestions: [s1, s2],
         updatedBy: 'test-user',
       });
 
@@ -5816,7 +5787,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
         updatedBy: 'test-user',
       });
 
@@ -5837,7 +5807,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
       });
 
       expect(s1.getData()).to.not.have.property('edgeOptimizeStatus');
@@ -5856,7 +5825,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
       });
 
       expect(result.failedSuggestions).to.have.length(1);
@@ -5873,7 +5841,6 @@ describe('TokowakaClient', () => {
           site: mockSite,
           opportunity: mockOpportunity,
           targetSuggestions: [s1],
-          allSuggestions: [s1],
         });
         expect.fail('Should have thrown');
       } catch (error) {
@@ -5893,7 +5860,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(uploadMetaconfigStub).to.have.been.calledOnce;
@@ -5913,7 +5879,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       const uploadCall = uploadMetaconfigStub.firstCall.args[1];
@@ -5933,7 +5898,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, covered],
       });
 
       expect(result.coveredSuggestions).to.not.include(covered);
@@ -5957,7 +5921,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw1],
-        allSuggestions: [dw1, dw2],
       });
 
       // dw2 is domain-wide so should not appear in coveredSuggestions
@@ -5979,7 +5942,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, pathLevel],
       });
 
       expect(result.coveredSuggestions).to.not.include(pathLevel);
@@ -6002,7 +5964,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, pathLevel],
       });
 
       expect(result.coveredSuggestions).to.not.include(pathLevel);
@@ -6022,7 +5983,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, approved],
       });
 
       expect(result.coveredSuggestions).to.not.include(approved);
@@ -6040,7 +6000,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, covered],
       });
 
       // domain-wide itself still succeeded
@@ -6063,7 +6022,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(result.succeededSuggestions).to.not.include(dw);
@@ -6089,7 +6047,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, regular],
-        allSuggestions: [dw, regular],
       });
 
       expect(deploySuggestionsStub).to.have.been.calledOnce;
@@ -6107,7 +6064,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(result.succeededSuggestions).to.have.length(0);
@@ -6126,7 +6082,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(result.succeededSuggestions).to.include(path);
@@ -6145,7 +6100,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(log.warn).to.not.have.been.called;
@@ -6169,7 +6123,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, regular],
-        allSuggestions: [dw, regular],
       });
 
       expect(deploySuggestionsStub).to.have.been.calledOnce;
@@ -6196,7 +6149,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, regular],
-        allSuggestions: [dw, regular],
       });
 
       expect(result.failedSuggestions.some((f) => f.suggestion === regular)).to.be.false;
@@ -6216,7 +6168,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
       });
 
       expect(s1.getUpdatedBy()).to.equal('edge-deploy');
@@ -6240,7 +6191,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, regular],
-        allSuggestions: [dw, regular],
       });
 
       expect(deploySuggestionsStub).to.have.been.calledOnce;
@@ -6266,7 +6216,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, r1, r2],
-        allSuggestions: [dw, r1, r2],
       });
 
       expect(deploySuggestionsStub).to.have.been.calledOnce;
@@ -6289,7 +6238,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, skipped],
-        allSuggestions: [dw, skipped],
       });
 
       expect(result.coveredSuggestions).to.have.length(0);
@@ -6307,7 +6255,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
@@ -6326,7 +6273,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(uploadMetaconfigStub).to.not.have.been.called;
@@ -6343,7 +6289,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(result.succeededSuggestions).to.include(path);
@@ -6363,7 +6308,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
@@ -6381,7 +6325,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(uploadMetaconfigStub).to.not.have.been.called;
@@ -6400,7 +6343,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(deploySuggestionsStub).to.not.have.been.called;
@@ -6419,7 +6361,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, urlUnderPath, urlElsewhere],
       });
 
       expect(result.coveredSuggestions).to.not.include(urlUnderPath);
@@ -6439,7 +6380,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(result.succeededSuggestions).to.not.include(path);
@@ -6461,7 +6401,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, urlUnderPath],
       });
 
       expect(result.succeededSuggestions).to.include(path);
@@ -6469,18 +6408,10 @@ describe('TokowakaClient', () => {
       expect(urlUnderPath.getData()).to.not.have.property('coveredByPattern');
     });
 
-    it('path deploy does not mark non-NEW, pattern, or already-deployed candidates as covered', async () => {
+    it('path deploy returns empty coveredSuggestions for async covered marking', async () => {
       const path = makeSuggestion('p1', {
         allowedRegexPatterns: ['/products/*'],
       });
-      // APPROVED — not a deployable status
-      const nonNew = makeSuggestion('u1', { url: 'https://example.com/products/a' }, 'APPROVED');
-      // isDomainWide pattern — excluded (isPatternSuggestion)
-      const dw = makeSuggestion('u2', { isDomainWide: true, allowedRegexPatterns: ['/*'], url: 'https://example.com/products/b' });
-      // another path pattern — excluded (isPatternSuggestion)
-      const otherPath = makeSuggestion('u3', { allowedRegexPatterns: ['/products/*'], url: 'https://example.com/products/c' });
-      // already edgeDeployed — excluded
-      const deployed = makeSuggestion('u4', { url: 'https://example.com/products/d', edgeDeployed: 12345 });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
 
@@ -6488,7 +6419,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, nonNew, dw, otherPath, deployed],
       });
 
       expect(result.coveredSuggestions).to.have.length(0);
@@ -6506,7 +6436,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, badUrl],
       });
 
       // bad URL is not covered, but deploy itself still succeeds
@@ -6525,7 +6454,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, urlUnderPath],
       });
 
       // path suggestion itself still succeeded
@@ -6570,7 +6498,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [invalidPattern, perUrl],
-        allSuggestions: [invalidPattern, perUrl],
       });
 
       // per-URL not skipped (invalid matchers → no filtering)
@@ -6592,7 +6519,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(result.succeededSuggestions).to.not.include(dw);
@@ -6615,7 +6541,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
         metadata: { applyStale: true },
       });
 
@@ -6636,7 +6561,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
       });
 
       expect(deploySuggestionsStub).to.have.been.calledOnce;

@@ -886,16 +886,12 @@ class TokowakaClient {
    * @param {Object} opportunity - Opportunity entity
    * @param {Array} suggestions - Array of suggestion entities to rollback
    * @param {Object} [options] - Optional parameters
-   * @param {Array} [options.allSuggestions=[]] - All suggestions for the opportunity,
-   *   used to clean up suggestions covered by a domain-wide or path-level pattern rollback
    * @param {string} [options.updatedBy] - Actor identity (e.g. profile email). When undefined,
-   *   context-specific fallback strings are used: 'tokowaka-rollback' for direct suggestions,
-   *   'domain-wide-rollback' for per-URL suggestions covered by a domain-wide pattern, and
-   *   'path-rollback' for per-URL suggestions covered by a path pattern.
+   *   'tokowaka-rollback' is used.
    * @returns {Promise<Object>} - Rollback result with succeeded/failed suggestions
    */
   // eslint-disable-next-line max-len
-  async rollbackSuggestions(site, opportunity, suggestions, { allSuggestions = [], updatedBy } = {}) {
+  async rollbackSuggestions(site, opportunity, suggestions, { updatedBy } = {}) {
     const opportunityType = opportunity.getType();
     const baseURL = getEffectiveBaseURL(site);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
@@ -912,7 +908,7 @@ class TokowakaClient {
     const patternSuggestions = suggestions.filter(isPatternSuggestion);
     const perUrlSuggestions = suggestions.filter((s) => !isPatternSuggestion(s));
     // eslint-disable-next-line max-len
-    this.log.info(`[edge-rollback] Site: ${baseURL}, total: ${suggestions.length}, pattern: ${patternSuggestions.length}, perUrl: ${perUrlSuggestions.length}, allSuggestions: ${allSuggestions.length}`);
+    this.log.info(`[edge-rollback] Site: ${baseURL}, total: ${suggestions.length}, pattern: ${patternSuggestions.length}, perUrl: ${perUrlSuggestions.length}`);
 
     const {
       eligible: eligibleSuggestions,
@@ -1503,7 +1499,7 @@ class TokowakaClient {
    * @returns {Promise<Object>} { succeededSuggestions, failedSuggestions, coveredSuggestions }
    *   - succeededSuggestions: suggestion entities that were deployed
    *   - failedSuggestions: { suggestion, reason } items that couldn't be deployed
-   *   - coveredSuggestions: suggestion entities auto-marked via domain-wide patterns
+   *   - coveredSuggestions: always empty; covered marking now runs asynchronously
    */
   async deployToEdge({
     site,
@@ -1514,14 +1510,11 @@ class TokowakaClient {
   }) {
     // Step 1: classify suggestions into pattern vs per-URL buckets.
     // eslint-disable-next-line max-len
-    const { patternSuggestions, validSuggestions: classified } = classifySuggestions(targetSuggestions, this.log);
+    const { patternSuggestions, validSuggestions } = classifySuggestions(targetSuggestions, this.log);
     this.log.info(
       `[edge-deploy] Classification: pattern=${patternSuggestions.length},`
-      + ` perUrl=${classified.length}`,
+      + ` perUrl=${validSuggestions.length}`,
     );
-
-    // Step 2: keep per-URL deploy path independent from async covered marking.
-    const validSuggestions = classified;
 
     let succeededSuggestions = [];
     const failedSuggestions = [];

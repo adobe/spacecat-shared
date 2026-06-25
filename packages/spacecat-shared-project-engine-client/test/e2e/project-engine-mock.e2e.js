@@ -27,7 +27,7 @@ import { createServer } from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSerenityProjectEngineApiClient } from '../../src/index.js';
-import { buildSeed, SEEDS } from '../../mock/seeds.js';
+import { buildSeed, SEEDS, SEED_IDS } from '../../mock/seeds.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, '..', '..');
@@ -35,8 +35,8 @@ const RUNNER = join(packageRoot, 'mock', 'run.js');
 
 const READY_TIMEOUT_MS = 30_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
-const SEED_WORKSPACE = 'ws-1';
-const SEED_PROJECT = 'pr-1';
+const SEED_WORKSPACE = SEED_IDS.workspaceId;
+const SEED_PROJECT = SEED_IDS.projectId;
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -201,7 +201,7 @@ async function waitForReady(baseUrl, deadline) {
       '/v2/workspaces/{id}/projects/{project_id}/ai_models',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { model_id: 'gpt-4o' },
+        body: { model_id: SEED_IDS.aiModelId },
       },
     );
     expect(addError).to.equal(undefined);
@@ -261,7 +261,7 @@ async function waitForReady(baseUrl, deadline) {
       },
     );
     expect(listed.total).to.equal(1);
-    expect(listed.items[0].id).to.equal('prompt-1');
+    expect(listed.items[0].id).to.equal(SEED_IDS.promptId);
   });
 
   it('__reset restores the seed between mutations', async () => {
@@ -286,9 +286,12 @@ async function waitForReady(baseUrl, deadline) {
   });
 
   it('__seed loads a DB-shaped snapshot the typed client then reads back', async () => {
+    // Real UUIDs, as the harness would inject to match its Postgres fixtures.
+    const seededWorkspace = globalThis.crypto.randomUUID();
+    const seededProject = globalThis.crypto.randomUUID();
     const snapshot = buildSeed({
-      workspaceId: 'ws-seeded',
-      projects: [{ id: 'pr-seeded', name: 'From harness' }],
+      workspaceId: seededWorkspace,
+      projects: [{ id: seededProject, name: 'From harness' }],
     });
     const res = await fetch(`${baseUrl}/__seed`, {
       method: 'POST',
@@ -298,10 +301,10 @@ async function waitForReady(baseUrl, deadline) {
     expect(res.ok).to.equal(true);
 
     const { data } = await client.GET('/v1/workspaces/{id}/projects', {
-      params: { path: { id: 'ws-seeded' } },
+      params: { path: { id: seededWorkspace } },
     });
     expect(data.total).to.equal(1);
-    expect(data.items[0].id).to.equal('pr-seeded');
+    expect(data.items[0].id).to.equal(seededProject);
 
     // the previous seed's workspace is gone (seed replaces state).
     const { data: old } = await client.GET('/v1/workspaces/{id}/projects', {

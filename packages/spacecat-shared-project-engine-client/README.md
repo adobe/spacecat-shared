@@ -153,35 +153,46 @@ curl -s http://localhost:4010/enterprise/projects/api/__dump | jq
 ```
 
 **Seed state that matches your DB.** `/__seed` (and a `MOCK_SEED_FILE`) take a `Snapshot`: a
-plain JSON object keyed by `<resource>:<scope>` whose values are entity rows. Use the same
-workspace/project ids you load into Postgres (`semrush_workspace_id` / project id) so the two
-sides line up. Any caller — including the cross-repo harness consuming the published client —
-can POST this JSON directly:
+plain JSON object keyed by `<resource>:<scope>` whose values are entity rows. The Project Engine
+API types every id as `format: uuid`, so use the same **UUIDs** you load into Postgres
+(`semrush_workspace_id` / project id) so the two sides line up, and mirror the real entity
+shapes (`ProjectAIModelResponse`, `AIOPromptWithStatus`). Any caller — including the cross-repo
+harness consuming the published client — can POST this JSON directly:
 
 ```jsonc
 // POST /__seed
 {
-  "projects:ws-from-db":            [{ "id": "pr-from-db", "name": "Acme", "workspace_id": "ws-from-db" }],
-  "ai_models:ws-from-db:pr-from-db": [{ "id": "m-1", "name": "gpt-4o" }],
-  "prompts:ws-from-db:pr-from-db":   [{ "id": "q-1", "name": "What is Acme?", "tags": [] }]
+  "projects:a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d": [
+    { "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e", "name": "Acme", "workspace_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }
+  ],
+  "ai_models:a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d:b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e": [
+    { "id": "c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f", "model": { "id": "d4e5f6a7-b8c9-4d0e-9f1a-3b4c5d6e7f80", "key": "gpt-4o", "name": "GPT-4o" }, "prompts_count": 0 }
+  ],
+  "prompts:a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d:b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e": [
+    { "id": "e5f6a7b8-c9d0-4e1f-8a2b-4c5d6e7f8091", "name": "What is Acme?", "is_new": false, "tags": [] }
+  ]
 }
 ```
 
 The `buildSeed()` helper authors that shape from a friendlier description so you don't
-hand-write the keys. It's exposed on the `./mock/*` subpath, so a workspace caller (this
-repo's own tests, or the cross-repo harness resolving spacecat-shared from the checkout)
-imports it by package name:
+hand-write the keys (it routes the rows verbatim, so pass real UUIDs and the real entity
+shapes). It's exposed on the `./mock/*` subpath, so a workspace caller (this repo's own tests,
+or the cross-repo harness resolving spacecat-shared from the checkout) imports it by package
+name:
 
 ```js
 import { buildSeed } from '@adobe/spacecat-shared-project-engine-client/mock/seeds.js';
+import { randomUUID } from 'node:crypto';
 
+const workspaceId = randomUUID();
+const projectId = randomUUID();
 const snapshot = buildSeed({
-  workspaceId: 'ws-from-db',
+  workspaceId,
   projects: [{
-    id: 'pr-from-db',
+    id: projectId,
     name: 'Acme',
-    aiModels: [{ id: 'm-1', name: 'gpt-4o' }],
-    prompts: [{ id: 'q-1', name: 'What is Acme?' }],
+    aiModels: [{ id: randomUUID(), model: { id: randomUUID(), key: 'gpt-4o', name: 'GPT-4o' }, prompts_count: 0 }],
+    prompts: [{ id: randomUUID(), name: 'What is Acme?', is_new: false }],
   }],
 });
 await fetch(`${baseUrl}/__seed`, { method: 'POST', body: JSON.stringify(snapshot) });

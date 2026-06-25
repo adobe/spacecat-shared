@@ -3395,8 +3395,6 @@ export interface operations {
     "ai-list-categories": {
         parameters: {
             query: {
-                /** @description workspace ID */
-                id: string;
                 /** @description project ID */
                 project_id: string;
                 /** @description AI model ID */
@@ -3415,7 +3413,10 @@ export interface operations {
                 draft?: boolean;
             };
             header?: never;
-            path?: never;
+            path: {
+                /** @description workspace ID */
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -3461,8 +3462,6 @@ export interface operations {
     "ai-create-category": {
         parameters: {
             query: {
-                /** @description workspace ID */
-                id: string;
                 /** @description project ID */
                 project_id: string;
                 /** @description AI model ID */
@@ -3471,7 +3470,10 @@ export interface operations {
                 keyword_id: string;
             };
             header?: never;
-            path?: never;
+            path: {
+                /** @description workspace ID */
+                id: string;
+            };
             cookie?: never;
         };
         requestBody: components["requestBodies"]["model.TreeNodeRequest"];
@@ -3575,12 +3577,11 @@ export interface operations {
     };
     "ai-create-keywords-with-category": {
         parameters: {
-            query: {
-                /** @description workspace ID */
-                id: string;
-            };
+            query?: never;
             header?: never;
             path: {
+                /** @description workspace ID */
+                id: string;
                 /** @description project ID */
                 project_id: string;
                 /** @description AI model ID */
@@ -3635,14 +3636,14 @@ export interface operations {
     };
     "ai-download-tagged-keywords": {
         parameters: {
-            query: {
-                /** @description workspace ID */
-                id: string;
+            query?: {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
             header?: never;
             path: {
+                /** @description workspace ID */
+                id: string;
                 /** @description project ID */
                 project_id: string;
                 /** @description AI model ID */
@@ -3917,12 +3918,11 @@ export interface operations {
     };
     "ai-replace-model-settings": {
         parameters: {
-            query: {
-                /** @description workspace ID */
-                id: string;
-            };
+            query?: never;
             header?: never;
             path: {
+                /** @description workspace ID */
+                id: string;
                 /** @description project ID */
                 project_id: string;
                 /** @description AI model ID */
@@ -4038,12 +4038,11 @@ export interface operations {
     };
     "ai-create-model-category": {
         parameters: {
-            query: {
-                /** @description workspace ID */
-                id: string;
-            };
+            query?: never;
             header?: never;
             path: {
+                /** @description workspace ID */
+                id: string;
                 /** @description project ID */
                 project_id: string;
                 /** @description AI model ID */
@@ -4094,8 +4093,6 @@ export interface operations {
     "ai-delete-category": {
         parameters: {
             query: {
-                /** @description workspace ID */
-                id: string;
                 /** @description project ID */
                 project_id: string;
                 /** @description AI model ID */
@@ -4104,7 +4101,10 @@ export interface operations {
                 keyword_id: string;
             };
             header?: never;
-            path?: never;
+            path: {
+                /** @description workspace ID */
+                id: string;
+            };
             cookie?: never;
         };
         requestBody: components["requestBodies"]["model.BatchDeleteRequest"];
@@ -5100,13 +5100,14 @@ export interface operations {
     "project-set-favourite": {
         parameters: {
             query: {
-                /** @description workspace ID */
-                id: string;
                 /** @description project ID */
                 project_id: string;
             };
             header?: never;
-            path?: never;
+            path: {
+                /** @description workspace ID */
+                id: string;
+            };
             cookie?: never;
         };
         /** @description request body */
@@ -6271,8 +6272,6 @@ export interface operations {
     "ai-update-tag": {
         parameters: {
             query: {
-                /** @description workspace ID */
-                id: string;
                 /** @description project ID */
                 project_id: string;
                 /** @description AI model ID */
@@ -6281,7 +6280,10 @@ export interface operations {
                 tag_id: string;
             };
             header?: never;
-            path?: never;
+            path: {
+                /** @description workspace ID */
+                id: string;
+            };
             cookie?: never;
         };
         requestBody: components["requestBodies"]["model.TreeNodeRequest"];
@@ -6599,14 +6601,14 @@ export interface operations {
     };
     "ai-download-tagged-keywords with flat hierarchy": {
         parameters: {
-            query: {
-                /** @description workspace ID */
-                id: string;
+            query?: {
                 /** @description Get draft project data */
                 draft?: boolean;
             };
             header?: never;
             path: {
+                /** @description workspace ID */
+                id: string;
                 /** @description project ID */
                 project_id: string;
                 /** @description AI model ID */
@@ -7699,12 +7701,11 @@ export interface operations {
     };
     "aio-create-prompts-with-tags": {
         parameters: {
-            query: {
-                /** @description workspace ID */
-                id: string;
-            };
+            query?: never;
             header?: never;
             path: {
+                /** @description workspace ID */
+                id: string;
                 /** @description project ID */
                 project_id: string;
             };

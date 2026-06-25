@@ -13,6 +13,12 @@ info:
 #      Remove when Semrush fixes securityDefinitions upstream.
 # CR3  Correct GET /v2/.../projects summary+description — it also returns initial
 #      (never-yet-published) drafts, not only published projects.
+# CR4  Relocate the workspace `id` parameter from query → path. 11 operations
+#      declare `id` as `in: query` though `{id}` is a path-template variable in
+#      every one of them; openapi-typescript then emits an unsatisfiable `{id}`
+#      path key + a `query: { id }`, so a caller passing the runtime-correct
+#      `path: { id }` fails to type-check. Remove when Semrush fixes the param
+#      location upstream.
 actions:
   # ── CR1: Add GET /v1/ai_models ──────────────────────────────────────────
   # Live: 200 -> { page:int, total:int, items:[AIModelResponse] }.
@@ -95,3 +101,20 @@ actions:
         a project that has never been published yet (its initial draft) also appears
         in this list; once a project has been published at least once, the list
         reflects its published view.
+
+  # ── CR4: Workspace `id` is a path param on every operation, not query ─────
+  # Verified: all 11 operations that declare `id` as `in: query` have `{id}` in
+  # their path template, and the other 87 `id` params are already `in: path`, so
+  # forcing every `id` param to `in: path` corrects the 11 and is a no-op for the
+  # rest. The single-equality overlay filter cannot express "name == 'id' && in ==
+  # 'query'", but the blanket flip is equivalent and safe here. deep-merge sets
+  # `in` to `path` (scalar overwrite); `required: true` is already present.
+  # CAUTION (for future spec-refresh reviewers): this is a BLANKET filter on the
+  # param name alone. If a future spec revision adds a legitimately query-bound
+  # parameter literally named `id` on some new operation, this overlay would
+  # silently relocate it to `in: path`. If that ever happens, narrow the filter
+  # (or special-case that operation) rather than dropping CR4.
+  - target: "$.paths.*.*.parameters[?(@.name == 'id')]"
+    description: "CR4: workspace `id` is a path parameter on every operation (not query)"
+    update:
+      in: path

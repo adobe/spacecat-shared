@@ -66,4 +66,27 @@ describe('Project Engine foundation: overlay guard', () => {
   it('has no Auth-Data-Jwt header in generated types (CR2)', () => {
     expect(types).to.not.include('Auth-Data-Jwt');
   });
+
+  it('types the workspace id as a path param, not query (CR4)', () => {
+    // aio-create-prompts-with-tags (and 10 other ops) declared the workspace
+    // `id` as in:query in the vendored swagger, though `{id}` is a path-template
+    // variable. CR4 relocates it to `path`; if a spec refresh silently drops the
+    // overlay the op reverts to `query: { id }` / `path?: never` and this fails.
+    // Target the operation DEFINITION (`...": {`), not the paths-section
+    // reference (`operations["..."]`).
+    // aio-create-prompts-with-tags is the representative op because `id` was its
+    // ONLY query param: with the overlay applied it emits `query?: never`, so the
+    // `query?: never` assertion below is a uniquely strong regression signal that
+    // would not survive the overlay being dropped (the op would regain `query`).
+    const start = types.indexOf('"aio-create-prompts-with-tags": {');
+    expect(start, 'operation present in generated types').to.be.greaterThan(-1);
+    // Guard the slice boundary: if a spec refresh drops `requestBody` from the op,
+    // indexOf returns -1 and slice(start, -1) would capture nearly the whole file,
+    // making the assertions pass vacuously instead of failing loudly.
+    const end = types.indexOf('requestBody', start);
+    expect(end, 'requestBody boundary present after the operation').to.be.greaterThan(start);
+    const op = types.slice(start, end);
+    expect(op).to.match(/path:\s*\{[\s\S]*\bid: string/);
+    expect(op).to.match(/query\?: never/);
+  });
 });

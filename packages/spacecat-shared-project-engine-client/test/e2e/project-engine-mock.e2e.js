@@ -451,6 +451,21 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data).to.be.an('array');
   });
 
+  // Live requires the domain + country query params and 400s naming the missing one (verified
+  // 2026-06-25). Raw fetch so we can omit a param the typed client would otherwise require.
+  it('getBrandTopics 400s when a required query param is missing, matching live', async () => {
+    const base = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}/brand-topics`;
+    const auth = { headers: { Authorization: 'Bearer e2e-token' } };
+
+    const noDomain = await fetch(`${base}?country=us`, auth);
+    expect(noDomain.status).to.equal(400);
+    expect(await noDomain.json()).to.deep.equal({ message: 'domain query param is required' });
+
+    const noCountry = await fetch(`${base}?domain=example.com`, auth);
+    expect(noCountry.status).to.equal(400);
+    expect(await noCountry.json()).to.deep.equal({ message: 'country query param is required' });
+  });
+
   it('listBenchmarks returns the seeded own-brand benchmark', async () => {
     const { data, error } = await client.GET(
       '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',

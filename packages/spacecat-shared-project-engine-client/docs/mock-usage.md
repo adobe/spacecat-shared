@@ -119,7 +119,7 @@ method that calls it.
 | Method + path | Consumer | Behaviour |
 | --- | --- | --- |
 | `GET /v1/languages` | `listLanguages` | language catalog → `{ page, total, items }` |
-| `GET /v1/workspaces/{id}/brand-topics` | `getBrandTopics` | top-level array `[{ topic, volume, prompts }]` |
+| `GET /v1/workspaces/{id}/brand-topics` | `getBrandTopics` | top-level array `[{ topic, volume, prompts }]`; `domain` + `country` are required query params — omitting either → `400 { message: '<param> query param is required' }` (matches live, guarded in-handler since the mock disables request validation) |
 | `PUT /v1/workspaces/{id}/projects/{project_id}/ci/competitors` | `updateCiCompetitors` | full replace → `{ ci_competitors }` |
 | `GET /v2/workspaces/{id}/projects/{project_id}/aio/init_status` | `getInitStatus` | `{ initialized }`. **Live route is `/v2`** — the vendored swagger's `/v1` path 404s (overlay CR8, verified live across 4 projects). The api-service consumer still calls `/v1` today (a pre-existing bug — it degrades to `initialized: null`). |
 

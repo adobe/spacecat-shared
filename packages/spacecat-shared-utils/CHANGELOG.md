@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.122.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.121.0...@adobe/spacecat-shared-utils-v1.122.0) (2026-06-25)
+
+### Features
+
+* **utils:** add toPathname, hasSamePathname, allHaveSamePathname URL helpers ([#1724](https://github.com/adobe/spacecat-shared/issues/1724)) ([6da512a](https://github.com/adobe/spacecat-shared/commit/6da512aebf199189eea666f6d7655878349588d0))
+
 ## [@adobe/spacecat-shared-utils-v1.121.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.120.1...@adobe/spacecat-shared-utils-v1.121.0) (2026-06-24)
 
 ### Features

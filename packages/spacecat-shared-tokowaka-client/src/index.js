@@ -747,9 +747,8 @@ class TokowakaClient {
     // Group suggestions by URL
     const suggestionsByUrl = groupSuggestionsByUrlPath(eligibleSuggestions, baseURL, this.log);
 
-    // Check if domain-level metaconfig exists
-    const firstUrl = new URL(Object.keys(suggestionsByUrl)[0], baseURL).toString();
-    const metaconfig = await this.fetchMetaconfig(firstUrl);
+    // Check if site-level metaconfig exists — use baseURL so subpath sites get their own key
+    const metaconfig = await this.fetchMetaconfig(baseURL);
 
     if (!metaconfig) {
       throw this.#createError(
@@ -1140,9 +1139,10 @@ class TokowakaClient {
       throw this.#createError('Preview URL not found in suggestion data', HTTP_BAD_REQUEST);
     }
 
-    // Fetch metaconfig and existing config in parallel
+    // Fetch metaconfig and existing config in parallel — use site baseURL for metaconfig
+    // so subpath sites (e.g. nba.com/timberwolves) get their own metaconfig key
     const [metaconfig, existingConfig] = await Promise.all([
-      this.fetchMetaconfig(previewUrl).catch(() => null),
+      this.fetchMetaconfig(getEffectiveBaseURL(site)).catch(() => null),
       this.fetchConfig(previewUrl, false),
     ]);
 

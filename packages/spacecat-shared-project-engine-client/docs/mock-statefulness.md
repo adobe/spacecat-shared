@@ -85,7 +85,10 @@ change, the live proof.
   for any benchmark id. Deliberate: the consumer only ever lists brand URLs on the **main-brand**
   benchmark id it reads from `listBenchmarks`, so the 404 path is outside its flow. Add a
   benchmark-existence guard to the `brand_urls` GET only if a future flow lists arbitrary
-  benchmarks.
+  benchmarks. (Note: live, a project's main-brand benchmark is generated **asynchronously** — it
+  did not appear within ~60s of create, even after a publish — so its `brand_urls` list/delete
+  can't be quickly ground-truthed on a fresh project; the mock makes them immediately available,
+  which is what the consumer's tests need.)
 - **Create ops report `existing_count: 0` unconditionally.** `POST .../aio/prompts/tagged` and
   `POST .../ai_models/benchmarks` always return `existing_count: 0` — the mock models no dedup
   against already-present rows, so the consumer's "some already present" branch

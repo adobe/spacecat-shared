@@ -513,13 +513,13 @@ function filterBySiteScope(urls, siteBaseUrl) {
 }
 
 /**
- * Extracts the pathname from a URL string. Expects a domain-based URL, with or without schema
- * (e.g. 'https://example.com/path' or 'example.com/path'). Trailing slashes are stripped on
- * non-root paths and the result is lowercased. Leading-slash inputs (already a pathname) are
- * returned as-is. Returns '' for non-string or empty input.
+ * Extracts the pathname from a domain-based URL string (e.g. 'https://example.com/path' or
+ * 'example.com/path'). Trailing slashes are stripped on non-root paths and the result is
+ * lowercased. Inputs that already start with '/' are returned unchanged. Returns '' for
+ * non-string or empty input.
  *
- * @param {string} url
- * @returns {string} pathname, or the input as-is for leading-slash paths, or '' for non-strings
+ * @param {string} url - Domain-based URL, with or without schema.
+ * @returns {string} Normalized pathname.
  */
 export function toPathname(url) {
   if (!url || typeof url !== 'string') {
@@ -537,10 +537,11 @@ export function toPathname(url) {
 }
 
 /**
- * Checks whether two URLs share the same normalized pathname.
- * Comparison is case-insensitive and ignores trailing slashes on non-root paths.
- * @param {string} url - URL to compare.
- * @param {string} referenceUrl - URL to compare against.
+ * Checks whether two domain-based URLs share the same normalized pathname.
+ * Both arguments must be domain-based URLs (with or without schema). Comparison is
+ * case-insensitive and ignores trailing slashes on non-root paths.
+ * @param {string} url - Domain-based URL to compare.
+ * @param {string} referenceUrl - Domain-based URL to compare against.
  * @returns {boolean} True if both URLs resolve to the same pathname.
  */
 export function hasSamePathname(url, referenceUrl) {
@@ -549,8 +550,9 @@ export function hasSamePathname(url, referenceUrl) {
 
 /**
  * Checks whether every URL in an array shares the same normalized pathname as a reference URL.
- * @param {string[]} urls - Array of URLs to check.
- * @param {string} referenceUrl - URL whose pathname all entries must match.
+ * All entries and the reference must be domain-based URLs (with or without schema).
+ * @param {string[]} urls - Array of domain-based URLs to check.
+ * @param {string} referenceUrl - Domain-based URL whose pathname all entries must match.
  * @returns {boolean} True if every URL in the array has the same pathname as referenceUrl.
  */
 export function allHaveSamePathname(urls, referenceUrl) {

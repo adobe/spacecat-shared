@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.121.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.120.1...@adobe/spacecat-shared-utils-v1.121.0) (2026-06-24)
+
+### Features
+
+* **utils:** add isWithinSiteScope and filterBySiteScope URL helpers [LLMO-5748] ([#1714](https://github.com/adobe/spacecat-shared/issues/1714)) ([5511bf0](https://github.com/adobe/spacecat-shared/commit/5511bf0c389b296078642d26088091fda0f7c7d7))
+
 ## [@adobe/spacecat-shared-utils-v1.120.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.120.0...@adobe/spacecat-shared-utils-v1.120.1) (2026-06-18)
 
 ### Bug Fixes

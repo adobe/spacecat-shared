@@ -138,6 +138,40 @@ export const createProjectResponseFromRequest = (request = {}) => {
 };
 
 /**
+ * Applies a flat `ProjectUpdateRequest` patch onto a stored draft `ProjectResponse`, routing each
+ * field to the place the live API reflects it (verified 2026-06-25): `name`/`type`/`domain` stay
+ * top-level, while `brand_name_display`/`brand_names` are nested under `settings.ai` — a flat PATCH
+ * body is reflected there, NOT echoed at the top level. Counts/stats the patch does not touch stay
+ * as they were on the stored draft. Mirrors {@link createProjectResponseFromRequest}'s placement so
+ * the PATCH response shape matches the create response. The brand-identity re-sync
+ * (`brand_name_display` + `brand_names`) is the consumer's only PATCH use today.
+ * @param {Project} stored the stored draft ProjectResponse
+ * @param {Schemas['model.ProjectUpdateRequest']} patch
+ * @returns {Project}
+ */
+export const applyProjectUpdate = (stored, patch) => {
+  const ai = { ...(stored.settings?.ai ?? {}) };
+  if (patch.brand_names !== undefined) {
+    ai.brand_names = patch.brand_names;
+  }
+  if (patch.brand_name_display !== undefined) {
+    ai.brand_name_display = patch.brand_name_display;
+  }
+  /** @type {Project} */
+  const next = { ...stored, settings: { ...stored.settings, ai } };
+  if (patch.name !== undefined) {
+    next.name = patch.name;
+  }
+  if (patch.type !== undefined) {
+    next.type = patch.type;
+  }
+  if (patch.domain !== undefined) {
+    next.domain = patch.domain;
+  }
+  return next;
+};
+
+/**
  * An AIO benchmark with counters (`AIOBenchmarkWithCounters`) — the `listBenchmarks` item. The
  * live shape carries `id, project_id, domain, color, favorite, main_brand, brand_name,
  * brand_aliases, rejected_brand_aliases, products_count` (and the under-specified `primary_url`/

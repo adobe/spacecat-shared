@@ -14,6 +14,7 @@ import { expect } from 'chai';
 import {
   createAiModelMock,
   createProjectResponseFromRequest,
+  applyProjectUpdate,
   createBenchmarkMock,
   createBrandUrlMock,
   createLanguageMock,
@@ -83,6 +84,39 @@ describe('factories — live-shaped entities', () => {
     expect(p.settings.ai.country).to.deep.equal({ code: '', name: '' });
     expect(p.settings.ai.location).to.deep.equal({ id: 0, name: '' });
     expect(p.settings.ai.primary_url).to.equal('');
+  });
+
+  it('applyProjectUpdate nests brand fields under settings.ai and keeps name/type/domain top-level', () => {
+    const stored = createProjectResponseFromRequest({ name: 'Before', type: 'ai', domain: 'a.com' });
+    const updated = applyProjectUpdate(stored, {
+      name: 'After',
+      type: 'ai',
+      domain: 'b.com',
+      brand_name_display: 'Acme Renamed',
+      brand_names: ['Acme', 'Acme Inc'],
+    });
+    expect(updated).to.include({ name: 'After', type: 'ai', domain: 'b.com' });
+    // brand fields land under settings.ai (live shape), not at the top level.
+    expect(updated.settings.ai).to.include({ brand_name_display: 'Acme Renamed' });
+    expect(updated.settings.ai.brand_names).to.deep.equal(['Acme', 'Acme Inc']);
+    expect(updated).to.not.have.property('brand_name_display');
+    expect(updated).to.not.have.property('brand_names');
+    // untouched stored counts are preserved.
+    expect(updated.settings.ai.prompts_count).to.equal(0);
+  });
+
+  it('applyProjectUpdate leaves the stored draft unchanged for an empty patch', () => {
+    const stored = createProjectResponseFromRequest({ name: 'Keep', brand_name_display: 'Keep Co' });
+    const updated = applyProjectUpdate(stored, {});
+    expect(updated.name).to.equal('Keep');
+    expect(updated.settings.ai.brand_name_display).to.equal('Keep Co');
+  });
+
+  it('applyProjectUpdate tolerates a stored entity with no settings', () => {
+    const updated = applyProjectUpdate({ id: 'p1', name: 'No Settings' }, {
+      brand_names: ['X'],
+    });
+    expect(updated.settings.ai.brand_names).to.deep.equal(['X']);
   });
 
   it('createBenchmarkMock defaults to a competitor benchmark with a real uuid id', () => {

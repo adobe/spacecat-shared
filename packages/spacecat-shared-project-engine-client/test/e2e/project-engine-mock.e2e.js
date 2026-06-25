@@ -204,16 +204,27 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(list.total).to.equal(2);
   });
 
-  it('patches a project', async () => {
+  it('patches a project: name stays top-level, brand fields nest under settings.ai (like live)', async () => {
     const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },
       body: { name: 'Before', type: 'ai' },
     });
     const { data: patched } = await client.PATCH('/v1/workspaces/{id}/projects/{project_id}', {
       params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
-      body: { name: 'After', type: 'ai' },
+      body: {
+        name: 'After',
+        type: 'ai',
+        brand_name_display: 'Acme Renamed',
+        brand_names: ['Acme', 'Acme Inc'],
+      },
     });
     expect(patched.name).to.equal('After');
+    // Live reflects the flat brand fields NESTED under settings.ai, never at the top level
+    // (verified 2026-06-25). A shallow merge of the request body would put them at the top.
+    expect(patched.settings.ai).to.include({ brand_name_display: 'Acme Renamed' });
+    expect(patched.settings.ai.brand_names).to.deep.equal(['Acme', 'Acme Inc']);
+    expect(patched).to.not.have.property('brand_name_display');
+    expect(patched).to.not.have.property('brand_names');
   });
 
   it('deletes a project (404 on subsequent read)', async () => {

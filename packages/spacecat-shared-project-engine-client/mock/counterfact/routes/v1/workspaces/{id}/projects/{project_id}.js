@@ -25,14 +25,25 @@ export function GET($) {
   return $.response[200].json(project);
 }
 
-/** PATCH — partially update a project. */
+/**
+ * PATCH — partially update a project. The request is a flat `ProjectUpdateRequest`; live reflects
+ * the brand-identity fields (`brand_name_display`/`brand_names`) NESTED under `settings.ai`, not at
+ * the top level (verified 2026-06-25), so we map through `applyProjectUpdate` rather than spreading
+ * the flat body. Returns 200 with the full updated draft `ProjectResponse` (live: 200 + body, NOT a
+ * 202 ack — unlike the benchmark/brand-url edits).
+ */
 export function PATCH($) {
   const { path, body, context } = $;
   const scope = { workspaceId: path.id };
-  const updated = context.ops.projects.update(scope, path.project_id, { ...body });
-  if (!updated) {
+  const stored = context.ops.projects.get(scope, path.project_id);
+  if (!stored) {
     return { status: 404 };
   }
+  const updated = context.ops.projects.update(
+    scope,
+    path.project_id,
+    context.factories.applyProjectUpdate(stored, body),
+  );
   return $.response[200].json(updated);
 }
 

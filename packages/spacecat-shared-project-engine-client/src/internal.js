@@ -27,7 +27,7 @@ const IDEMPOTENT_METHODS = new Set(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS']);
 
 /**
  * Resolves the HTTP method for a fetch call the same way the platform does.
- * @param {RequestInfo | URL} input
+ * @param {Request | string | URL} input the `fetch` input (a Request, URL, or URL string)
  * @param {RequestInit} [init]
  * @returns {string} the upper-cased method
  */

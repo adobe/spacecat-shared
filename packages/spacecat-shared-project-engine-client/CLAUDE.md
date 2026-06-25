@@ -14,7 +14,7 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
 
 **Every hand-authored `.js` file under `src/` and `mock/` MUST start with `// @ts-check`** (right
 after the license header). They are type-checked by `npm run test:types`
-(`tsc -p tsconfig.types-test.json`, which globs `src/`, `mock/`, `test/` — add a file, it's
+(`tsc -p tsconfig.json` — the same config editors use, which globs `src/`, `mock/`, `test/`; add a file, it's
 covered, no list to maintain). Treat a `test:types` failure like a compile error; it is the gate
 that catches fixture/JSDoc drift from the overlayed schema at build time (it has already caught
 real bugs in the client's retry code).

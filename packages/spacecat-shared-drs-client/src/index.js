@@ -53,6 +53,26 @@ const REDDIT_COMMENTS_DEFAULT_COMMENT_LIMIT = 150;
 const REDDIT_COMMENTS_DEFAULT_SORT_BY = 'Best';
 const REDDIT_COMMENTS_ONLY_PARAMS = ['daysBack', 'commentLimit', 'sortBy', 'loadAllReplies'];
 
+// Canonical brand-presence schedule definition (LLMO-5605). This is the SINGLE source of
+// truth for the recurring brand-presence schedule: both the self-serve activate-brand
+// endpoint (spacecat-api-service) and the audit-worker `llmo-customer-analysis` onboarding
+// cascade create the schedule through `createBrandPresenceSchedule` below. DRS dedups
+// schedules on (site_id, brand_id, cadence, provider-set), so the provider set MUST be
+// identical across callers — one definition is what keeps the dedup matching (two
+// hand-synced payloads would drift and silently produce duplicate schedules).
+const BRAND_PRESENCE_PROVIDER_IDS = Object.freeze([
+  'brightdata',
+  'google_ai_overviews',
+  'openai_web_search',
+]);
+const BRAND_PRESENCE_BRIGHTDATA_PLATFORMS = Object.freeze([
+  'chatgpt_free',
+  'perplexity',
+  'gemini',
+  'copilot',
+  'aimode',
+]);
+
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
 }
@@ -156,6 +176,41 @@ export default class DrsClient {
       return response.json();
     }
     return null;
+  }
+
+  /**
+   * Like {@link DrsClient##request} but returns the parsed body together with the HTTP
+   * status instead of throwing on a non-2xx response. Used where a specific non-2xx status
+   * is a normal, expected outcome the caller must inspect — e.g. `createBrandPresenceSchedule`
+   * treats a 409 from the DRS schedule dedup as success.
+   * @returns {Promise<{ ok: boolean, status: number, body: object|string|null }>}
+   */
+  async #requestRaw(method, path, body = undefined, fetchOptions = {}) {
+    if (!this.isConfigured()) {
+      throw new Error('DRS client is not configured. Set DRS_API_URL and DRS_API_KEY environment variables.');
+    }
+
+    const url = `${this.apiBaseUrl}${path}`;
+    const options = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': this.apiKey,
+      },
+      ...fetchOptions,
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url, options);
+    const contentType = response.headers.get('content-type') || '';
+    const payload = contentType.includes('application/json')
+      ? await response.json()
+      : await response.text();
+
+    return { ok: response.ok, status: response.status, body: payload };
   }
 
   /**
@@ -509,6 +564,108 @@ export default class DrsClient {
   }
 
   /**
+   * Creates (or reuses) the recurring weekly brand-presence schedule for a site.
+   *
+   * SINGLE shared definition of the brand-presence schedule (LLMO-5605): the self-serve
+   * activate-brand endpoint and the audit-worker `llmo-customer-analysis` onboarding cascade
+   * both create the schedule through this method. DRS dedups schedules on
+   * (site_id, brand_id, cadence, provider-set) and returns 409 + `existing_schedule_id` on a
+   * match, so this POSTs and treats a 409 as success (idempotent).
+   *
+   * @param {object} params
+   * @param {string} params.siteId - SpaceCat site UUID (required).
+   * @param {string} [params.brandId] - SpaceCat brand UUID (sent top-level; required for v2 dedup).
+   * @param {string} [params.orgId] - SpaceCat org UUID (sent top-level as `spacecat_org_id`).
+   * @param {('HIGH'|'LOW')} [params.priority='LOW'] - Job priority.
+   * @param {string} [params.description] - Schedule description (NOT part of the dedup key).
+   * @param {boolean} [params.triggerImmediately=false] - Trigger the first run on creation.
+   * @param {number} [params.timeout] - Fetch timeout in ms; omit for the tracingFetch default.
+   * @returns {Promise<{ scheduleId: string, alreadyExisted: boolean }>}
+   */
+  async createBrandPresenceSchedule({
+    siteId,
+    brandId,
+    orgId,
+    priority = 'LOW',
+    description,
+    triggerImmediately = false,
+    timeout,
+  }) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+
+    const body = {
+      site_id: siteId,
+      ...(hasText(brandId) ? { brand_id: brandId } : {}),
+      ...(hasText(orgId) ? { spacecat_org_id: orgId } : {}),
+      frequency: 'weekly',
+      cron_expression: 'auto',
+      description: description || `Brand presence: ${siteId}`,
+      job_config: {
+        provider_ids: [...BRAND_PRESENCE_PROVIDER_IDS],
+        priority,
+        enable_brand_presence: true,
+        cadence: 'weekly',
+        provider_parameters: {
+          brightdata: {
+            siteId,
+            metadata: { site: siteId },
+            dataset_id: BRAND_PRESENCE_BRIGHTDATA_PLATFORMS.join(','),
+            platforms: [...BRAND_PRESENCE_BRIGHTDATA_PLATFORMS],
+          },
+          google_ai_overviews: {
+            siteId,
+            metadata: { site: siteId },
+          },
+          openai_web_search: {
+            siteId,
+            metadata: { site: siteId },
+          },
+        },
+      },
+    };
+
+    this.log.info(`Creating brand presence schedule for site ${siteId}`, {
+      brandId, orgId, triggerImmediately,
+    });
+    const { ok, status, body: payload } = await this.#requestRaw(
+      'POST',
+      '/schedules',
+      body,
+      timeout ? { timeout } : {},
+    );
+
+    // DRS returns top-level `schedule_id` on 201 and `existing_schedule_id` on a 409 dedup
+    // (create_schedule.py: 668-670 and 621-628).
+    let scheduleId;
+    let alreadyExisted = false;
+    if (ok) {
+      scheduleId = payload?.schedule_id;
+    } else if (status === 409) {
+      alreadyExisted = true;
+      scheduleId = payload?.existing_schedule_id;
+      this.log.info(`Brand presence schedule already exists for site ${siteId}: ${scheduleId}`);
+    } else {
+      const errorText = typeof payload === 'string' ? payload : JSON.stringify(payload);
+      const error = new Error(`DRS POST /schedules failed: ${status} - ${errorText}`);
+      error.status = status;
+      throw error;
+    }
+
+    if (!hasText(scheduleId)) {
+      throw new Error('DRS schedule create/dedup returned no schedule_id');
+    }
+
+    if (triggerImmediately) {
+      this.log.info(`Triggering brand presence schedule ${scheduleId} for site ${siteId}`);
+      await this.#request('POST', `/schedules/${siteId}/${scheduleId}/trigger`);
+    }
+
+    return { scheduleId, alreadyExisted };
+  }
+
+  /**
    * Gets schedule details with jobs summary from DRS.
    * @param {string} siteId - SpaceCat site ID
    * @param {string} scheduleId - DRS schedule ID
@@ -539,6 +696,51 @@ export default class DrsClient {
    */
   async getJob(jobId) {
     return this.#request('GET', `/jobs/${jobId}`);
+  }
+
+  /**
+   * Lists DRS jobs for a site, with optional filters. Thin wrapper over the DRS
+   * `GET /jobs` endpoint (backed by the `site-submitted-index` GSI). Used to dedup
+   * in-flight prompt-generation jobs before submitting a new one (LLMO-5605).
+   *
+   * Note: the DRS `status` filter is single-valued. To find non-terminal jobs
+   * (QUEUED *or* RUNNING), omit `status` and filter the returned array client-side.
+   *
+   * @param {object} params
+   * @param {string} params.siteId - SpaceCat site UUID (required; maps to the `site` query param).
+   * @param {string} [params.providerId] - DRS provider id to filter by.
+   * @param {string} [params.status] - Filter by a single status (QUEUED/RUNNING/COMPLETED/FAILED).
+   * @param {string} [params.source] - Filter by job source (e.g. 'brand-activation').
+   * @param {number} [params.submittedFrom] - Unix timestamp lower bound on submitted_at.
+   * @returns {Promise<object[]>} Array of job records (empty array when none).
+   */
+  async listJobs({
+    siteId,
+    providerId,
+    status,
+    source,
+    submittedFrom,
+  } = {}) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+
+    const query = new URLSearchParams({ site: siteId });
+    if (hasText(providerId)) {
+      query.set('provider_id', providerId);
+    }
+    if (hasText(status)) {
+      query.set('status', status);
+    }
+    if (hasText(source)) {
+      query.set('source', source);
+    }
+    if (submittedFrom != null) {
+      query.set('submitted_from', String(submittedFrom));
+    }
+
+    const result = await this.#request('GET', `/jobs?${query.toString()}`);
+    return Array.isArray(result?.jobs) ? result.jobs : [];
   }
 
   /**

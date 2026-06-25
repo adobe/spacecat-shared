@@ -167,11 +167,13 @@ can POST this JSON directly:
 }
 ```
 
-Inside this repo (tests / monorepo callers) the `buildSeed()` helper in `mock/seeds.js` authors
-that shape from a friendlier description so you don't hand-write the keys:
+The `buildSeed()` helper authors that shape from a friendlier description so you don't
+hand-write the keys. It's exposed on the `./mock/*` subpath, so a workspace caller (this
+repo's own tests, or the cross-repo harness resolving spacecat-shared from the checkout)
+imports it by package name:
 
 ```js
-import { buildSeed } from '../../mock/seeds.js';
+import { buildSeed } from '@adobe/spacecat-shared-project-engine-client/mock/seeds.js';
 
 const snapshot = buildSeed({
   workspaceId: 'ws-from-db',
@@ -185,8 +187,10 @@ const snapshot = buildSeed({
 await fetch(`${baseUrl}/__seed`, { method: 'POST', body: JSON.stringify(snapshot) });
 ```
 
-`buildSeed` lives with the (unpublished) mock, so external consumers POST the raw `Snapshot`
-above; `buildSeed` is the in-repo convenience that produces it.
+The `./mock/*` subpath resolves against the **checked-out** package (the mock isn't in the
+published tarball — see "Not published" below), which is the same source the harness boots the
+mock from, so it adds no new coupling. A consumer that only has the *published* tarball has no
+`buildSeed`; it POSTs the raw `Snapshot` JSON above instead.
 
 `npm run test:e2e` drives the **real client** against a freshly booted mock (self-managed
 lifecycle, `__reset` between cases). It is gated behind `MOCK_E2E=1` and lives outside the
@@ -203,7 +207,10 @@ live-server dependency. CI runs it as a dedicated `E2E (project-engine mock)` jo
 > allowlist, so nothing mock-related is in the published tarball — client consumers install
 > only `src/` (the typed client + generated types), and `counterfact` stays a `devDependency`.
 > The mock is booted from source via `npm run mock` (or `npm run test:e2e`) inside the
-> monorepo / e2e harness, which is why it never needs to ship.
+> monorepo / e2e harness, which is why it never needs to ship. The `./mock/*` entry in
+> `exports` makes those source files importable by package name **when spacecat-shared is
+> resolved from a checkout** (the workspace case); it intentionally has no effect for a
+> tarball-only consumer, which never imports the mock.
 
 ## Committed vs generated
 

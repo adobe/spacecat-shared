@@ -328,21 +328,33 @@ handler:
 ## 10. Capturing real API responses to build a faithful handler
 
 A handler is only trustworthy if its shape came from the **live** API, not a guess. This is the
-recipe used to validate every endpoint in this package (commit `4ee03f80`).
+recipe used to validate every endpoint in this package (commit `4ee03f80`). Testing is done against
+a **prod** Semrush workspace the team keeps for this purpose — so don't hardcode ids or URLs here
+(they differ per env and rotate); resolve them each time from the sources below.
 
-**Target — the shared stage test tenant:**
+**Where the live values come from:**
 
-| | |
-| --- | --- |
-| Workspace | `adobe-hackathon` (`c522f571-76e9-42e5-9213-7a767f448453`) |
-| Base URL | `https://adobe-hackathon.semrush.com` (api-service `.env` `SEMRUSH_PROJECTS_BASE_URL`, **IMS stage**) |
-| Full prefix | `…/enterprise/projects/api/v1\|v2/…` |
-| Token | `mysticat auth token --ims` (after `mysticat login`) — a real IMS bearer |
+- **Prod base URL** — the exact value api-service's `rest-transport` resolves, stored in Vault
+  (populated for `dev`/`stage`/`prod`; validation uses **prod**). Needs `vault login -method=oidc`
+  first (see the workspace `CLAUDE.md` Vault section):
+  ```bash
+  vault kv get -field=SEMRUSH_PROJECTS_BASE_URL dx_mysticat/prod/api-service
+  ```
+- **A workspace id to test against** — a Semrush sub-workspace under the Adobe brownfield parent,
+  used only for testing. Get a real id from any of:
+  - the **Semrush web UI** for that workspace (the UUID is in the URL);
+  - the **prod DB** — `organizations.semrush_workspace_id` (the parent) or a brand's
+    `brands.semrush_workspace_id`;
+  - enumerate the parent's children via the **user-manager** API:
+    `GET /enterprise/users/api/v1/workspaces/{parent}/family` → `[{ id, title, status }]` (note that
+    is the `/enterprise/users/api` gateway, not `/projects`).
+- **Token** — a real user IMS bearer for the **prod** IMS env (the tenant is prod):
+  `mysticat auth token --ims` (after `mysticat login`).
 
 ```bash
 TOKEN=$(mysticat auth token --ims)
-BASE=https://adobe-hackathon.semrush.com/enterprise/projects/api
-WS=c522f571-76e9-42e5-9213-7a767f448453
+BASE="$(vault kv get -field=SEMRUSH_PROJECTS_BASE_URL dx_mysticat/prod/api-service)/enterprise/projects/api"
+WS=<workspace id resolved above>
 
 # -i prints status + headers, so you SEE an empty-body 202 (content-length: 0)
 curl -is -H "Authorization: Bearer $TOKEN" "$BASE/v1/workspaces/$WS/projects" | sed -n '1,/^\r\{0,1\}$/p'
@@ -359,14 +371,16 @@ Turning a captured response into a handler:
   flat `ProjectUpdateRequest` under `settings.ai`, hence `applyProjectUpdate`;
   `createProjectResponseFromRequest` does the same for create). A field the live body carries but
   the swagger omits becomes an overlay `CRn` (that is exactly how CR9's `primary_url` was found).
-- **Writes need explicit authorization + cleanup.** Reads against the shared tenant are safe;
+- **Writes need explicit authorization + cleanup — and this is a PROD workspace.** Reads are safe;
   **only** do live writes with the user's go-ahead, on a single throwaway project, with a
-  `trap`-based delete-on-exit so you never leave residue on a workspace others use.
-- **Don't blindly mirror tenant-specific quirks.** The hackathon tenant returns an nginx `405` on
-  `createTaggedPrompts` / `publish` — that's **gateway route-gating on that tenant**, not the prod
-  contract (prod onboarding does `tagged → 201` / `publish → 202` daily). Model the **prod**
-  behaviour; verify a surprising response against prod Splunk or a prod-enabled tenant before
-  encoding it, or the mock will reject the consumer's core success path.
+  `trap`-based delete-on-exit so you never leave residue on a workspace the team shares.
+- **A `405` on a metered op is real — it means "payment required" (no AI units).** `createProject`,
+  `createTaggedPrompts`, and `publish` return `405` when the workspace has no AI-unit allocation:
+  units must be transferred from the **parent** workspace to the child before those ops succeed.
+  This is the live metered-quota gate, and the mock **reproduces** it (§6 — the disguised 405). So
+  to capture a *success* response, first make sure the test workspace has units allocated (or use a
+  funded parent); don't treat the `405` as a quirk to paper over — it's faithful behaviour the mock
+  already models.
 
 ---
 

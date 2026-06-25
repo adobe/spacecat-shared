@@ -181,7 +181,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   it('creates a project and reads it back', async () => {
     const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },
-      body: { name: 'E2E Project', domain: 'acme.com', brand_name_display: 'Acme' },
+      body: {
+        name: 'E2E Project', type: 'ai', domain: 'acme.com', brand_name_display: 'Acme',
+      },
     });
     expect(created.id).to.be.a('string');
     // The live API returns a draft ProjectResponse with the request nested under settings.ai —
@@ -191,7 +193,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.settings.ai).to.include({ brand_name_display: 'Acme', primary_url: 'acme.com' });
 
     const { data: fetched } = await client.GET('/v1/workspaces/{id}/projects/{project_id}', {
-      params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
+      // `draft` is a required query param (consumer sends it); validation 400s without it.
+      params: { path: { id: SEED_WORKSPACE, project_id: created.id }, query: { draft: 'true' } },
     });
     expect(fetched.name).to.equal('E2E Project');
 
@@ -204,11 +207,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   it('patches a project', async () => {
     const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },
-      body: { name: 'Before' },
+      body: { name: 'Before', type: 'ai' },
     });
     const { data: patched } = await client.PATCH('/v1/workspaces/{id}/projects/{project_id}', {
       params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
-      body: { name: 'After' },
+      body: { name: 'After', type: 'ai' },
     });
     expect(patched.name).to.equal('After');
   });
@@ -216,13 +219,13 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   it('deletes a project (404 on subsequent read)', async () => {
     const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },
-      body: { name: 'Doomed' },
+      body: { name: 'Doomed', type: 'ai' },
     });
     await client.DELETE('/v1/workspaces/{id}/projects/{project_id}', {
       params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
     });
     const { error, response } = await client.GET('/v1/workspaces/{id}/projects/{project_id}', {
-      params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
+      params: { path: { id: SEED_WORKSPACE, project_id: created.id }, query: { draft: 'true' } },
     });
     expect(response.status).to.equal(404);
     expect(error).to.not.equal(undefined);
@@ -333,7 +336,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   it('__reset restores the seed between mutations', async () => {
     await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },
-      body: { name: 'Transient' },
+      body: { name: 'Transient', type: 'ai' },
     });
     await fetch(`${baseUrl}/__reset`, { method: 'POST' });
     const { data } = await client.GET('/v1/workspaces/{id}/projects', {
@@ -451,19 +454,33 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data).to.be.an('array');
   });
 
-  // Live requires the domain + country query params and 400s naming the missing one (verified
-  // 2026-06-25). Raw fetch so we can omit a param the typed client would otherwise require.
-  it('getBrandTopics 400s when a required query param is missing, matching live', async () => {
+  // Request validation is enabled, so the runner 400s a request missing a required query param
+  // (domain/country on brand-topics are swagger-`required`) before the handler runs — matching the
+  // live 400. Body is the validator's message; status is the contract the consumer keys on.
+  // Raw fetch so we can omit a param the typed client would otherwise require.
+  it('getBrandTopics 400s when a required query param is missing (request validation)', async () => {
     const base = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}/brand-topics`;
     const auth = { headers: { Authorization: 'Bearer e2e-token' } };
 
     const noDomain = await fetch(`${base}?country=us`, auth);
     expect(noDomain.status).to.equal(400);
-    expect(await noDomain.json()).to.deep.equal({ message: 'domain query param is required' });
+    expect(await noDomain.text()).to.match(/domain/);
 
     const noCountry = await fetch(`${base}?domain=example.com`, auth);
     expect(noCountry.status).to.equal(400);
-    expect(await noCountry.json()).to.deep.equal({ message: 'country query param is required' });
+    expect(await noCountry.text()).to.match(/country/);
+  });
+
+  // Request validation also covers required body fields: project-create requires `type`
+  // (model.ProjectRequest required: [name, type]); omitting it 400s before the handler.
+  it('createProject 400s when a required body field is missing (request validation)', async () => {
+    const res = await fetch(`${baseUrl}/v1/workspaces/${SEED_WORKSPACE}/projects`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'no-type' }),
+    });
+    expect(res.status).to.equal(400);
+    expect(await res.text()).to.match(/type/);
   });
 
   it('listBenchmarks returns the seeded own-brand benchmark', async () => {
@@ -628,10 +645,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   it('meters project create: 405 once the projects allocation is exhausted', async () => {
     const id = globalThis.crypto.randomUUID();
     await setQuota(id, { projects: 1, prompts: 100 });
-    const { response: ok } = await client.POST(PROJECTS, { params: { path: { id } }, body: { name: 'P1' } });
+    const { response: ok } = await client.POST(PROJECTS, { params: { path: { id } }, body: { name: 'P1', type: 'ai' } });
     expect(ok.status).to.equal(201);
     const { response: over, error } = await client.POST(PROJECTS, {
-      params: { path: { id } }, body: { name: 'P2' },
+      params: { path: { id } }, body: { name: 'P2', type: 'ai' },
     });
     expect(over.status).to.equal(405);
     expect(error).to.not.equal(undefined);
@@ -671,7 +688,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   it('__quota reports limits + live usage', async () => {
     const id = globalThis.crypto.randomUUID();
     await setQuota(id, { projects: 3, prompts: 50 });
-    await client.POST(PROJECTS, { params: { path: { id } }, body: { name: 'P' } });
+    await client.POST(PROJECTS, { params: { path: { id } }, body: { name: 'P', type: 'ai' } });
     const res = await fetch(`${baseUrl}/__quota?workspaceId=${id}`);
     const usage = await res.json();
     expect(usage.projects).to.deep.equal({ limit: 3, used: 1 });

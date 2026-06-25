@@ -49,10 +49,14 @@
  * ignores OAS3 `servers[0].url`, so we pass `--prefix /enterprise/projects/api` explicitly.
  * `build/openapi3.json` is gitignored — run `npm run generate` once before `npm run mock`.
  *
- * Request validation is disabled (`--no-validate-request`): the overlay removes `Auth-Data-Jwt`
- * from every operation (CR2), but Node also lowercases inbound header names while the validator
- * matches exact spec names, so leaving it on would 400 any request regardless. Response
- * validation stays on so envelope mismatches surface during dev.
+ * Request validation is ENABLED (Counterfact's default — no `--no-validate-request`): the
+ * overlay-corrected spec is the request contract, so a request missing a required query param
+ * (e.g. brand-topics `domain`/`country`) or a required body field (e.g. project-create `type`)
+ * gets a 400 before the handler runs, matching the live API. This was previously disabled because
+ * the vendored spec declared a required `Auth-Data-Jwt` HEADER param that the validator matched
+ * case-sensitively against Node's lowercased inbound headers (400ing every request); CR2 removes
+ * that header from every operation and it was the only header param, so the casing problem is gone
+ * and validation is safe to run. Response validation also stays on so envelope mismatches surface.
  *
  * Bearer auth is modelled by {@link injectAuthGuard}, which prepends a
  * `context.authError($.headers)` gate to every materialized handler: a real route without
@@ -164,7 +168,7 @@ function launch() {
   const child = spawn(
     process.execPath,
     [findCounterfactBin(), SPEC, BASE_PATH, '--port', String(PORT), '--serve',
-      '--prefix', '/enterprise/projects/api', '--no-validate-request', '--no-update-check'],
+      '--prefix', '/enterprise/projects/api', '--no-update-check'],
     { stdio: 'inherit', cwd: packageRoot },
   );
   child.on('exit', (code) => process.exit(code ?? 0));

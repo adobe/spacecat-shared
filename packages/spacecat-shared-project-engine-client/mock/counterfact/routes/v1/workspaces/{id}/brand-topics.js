@@ -15,10 +15,9 @@
  * generator the consumer (spacecat-api-service `getBrandTopics`) reads at brand-create to seed
  * a project's prompts. Live shape is a TOP-LEVEL ARRAY `[{ topic, volume, prompts: string[] }]`
  * (verified 2026-06-25). `domain` and `country` are required query params (the swagger marks both
- * required); the live API 400s with `{ message: '<param> query param is required' }` when one is
- * absent — verified live 2026-06-25 (no `domain` -> 400). The mock disables request validation
- * globally, so this single guard reproduces that 400 explicitly. Excluded from coverage
- * (materialized).
+ * required) — the runner's request validation 400s when either is absent before this handler runs,
+ * matching the live 400 (verified no-`domain` -> 400), so no in-handler guard is needed. Excluded
+ * from coverage (materialized).
  */
 
 const TOPICS = [
@@ -36,21 +35,6 @@ const TOPICS = [
 
 /** GET — generate the workspace's top brand topics (top-level array, shaped via the factory). */
 export function GET($) {
-  const { domain, country } = $.query ?? {};
-  // Live requires both query params and 400s naming the missing one (verified no-domain -> 400).
-  let missing = null;
-  if (!domain) {
-    missing = 'domain';
-  } else if (!country) {
-    missing = 'country';
-  }
-  if (missing) {
-    return {
-      status: 400,
-      body: $.context.factories.createBasicResponseMock({ message: `${missing} query param is required` }),
-      contentType: 'application/json',
-    };
-  }
   const topics = TOPICS.map((t) => $.context.factories.createBrandTopicMock(t));
   return $.response[200].json(topics);
 }

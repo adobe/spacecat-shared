@@ -119,7 +119,7 @@ method that calls it.
 | Method + path | Consumer | Behaviour |
 | --- | --- | --- |
 | `GET /v1/languages` | `listLanguages` | language catalog → `{ page, total, items }` |
-| `GET /v1/workspaces/{id}/brand-topics` | `getBrandTopics` | top-level array `[{ topic, volume, prompts }]`; `domain` + `country` are required query params — omitting either → `400 { message: '<param> query param is required' }` (matches live, guarded in-handler since the mock disables request validation) |
+| `GET /v1/workspaces/{id}/brand-topics` | `getBrandTopics` | top-level array `[{ topic, volume, prompts }]`; `domain` + `country` are `required` query params — omitting either → `400` (enforced by request validation, matching live) |
 | `PUT /v1/workspaces/{id}/projects/{project_id}/ci/competitors` | `updateCiCompetitors` | full replace → `{ ci_competitors }` |
 | `GET /v2/workspaces/{id}/projects/{project_id}/aio/init_status` | `getInitStatus` | `{ initialized }`. **Live route is `/v2`** — the vendored swagger's `/v1` path 404s (overlay CR8, verified live across 4 projects). The api-service consumer still calls `/v1` today (a pre-existing bug — it degrades to `initialized: null`). |
 
@@ -263,7 +263,11 @@ readiness + auth patterns.
 gitignored `.counterfact/` tree (renamed to `.ts` so Counterfact's transpiler emits loadable
 `.cjs`), copies the `_lib` modules (`store`, `stateful`, `factories`, `quota`, `auth`, `seeds`,
 `context`), and launches Counterfact with `--serve` (no spec stubs appended onto the stateful
-handlers). Response validation stays on; request validation is off.
+handlers). Both response AND request validation are on: a request missing a required query param
+(brand-topics `domain`/`country`) or body field (project-create `type`) gets a `400` from the
+overlay-corrected spec before the handler runs, matching live. (Request validation was historically
+off because the vendored spec's required `Auth-Data-Jwt` header param 400'd every request under
+case-sensitive matching; CR2 removed that header, so it is safe to run.)
 
 - **Bearer auth** is injected at this seam: `injectAuthGuard` prepends
   `context.authError($.headers)` to every materialized handler method, so the gate is impossible to

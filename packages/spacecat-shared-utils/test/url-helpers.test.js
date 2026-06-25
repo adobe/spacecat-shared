@@ -1360,8 +1360,12 @@ describe('URL Utility Functions', () => {
       expect(toPathname('https://example.com/path?q=1#section')).to.equal('/path');
     });
 
-    it('falls back to lowercased string when input is not a valid absolute URL', () => {
-      expect(toPathname('BULK.COM/page')).to.equal('bulk.com/page');
+    it('parses a bare domain+path by prepending schema', () => {
+      expect(toPathname('BULK.COM/page')).to.equal('/page');
+    });
+
+    it('returns "/" for a bare domain with no path', () => {
+      expect(toPathname('staging.example.com')).to.equal('/');
     });
 
     it('handles relative paths by falling back to lowercased string', () => {

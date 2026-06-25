@@ -1051,7 +1051,10 @@ describe('edge-optimize support', () => {
       .filter((c) => c.args[0].commandName === name).pop()?.args[0];
     const notFound = () => Promise.reject(Object.assign(new Error('nf'), { name: 'ResourceNotFoundException' }));
 
-    it('creates the role + function (non-blocking) and returns provisioning', async () => {
+    it('returns provisioning WITHOUT CreateFunction when the role was just created', async () => {
+      // Root-cause fix for the 503 first-byte timeout: a freshly-created IAM role needs time to
+      // propagate, so we must NOT wait + CreateFunction in this same request. Return provisioning
+      // immediately; the next poll (role now exists → roleIsNew false) performs the create.
       wireIam({
         GetRole: () => Promise.reject(Object.assign(new Error('no role'), { name: 'NoSuchEntityException' })),
         CreateRole: { Role: { Arn: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role' } },
@@ -1062,21 +1065,23 @@ describe('edge-optimize support', () => {
         CreateFunction: { FunctionArn: 'arn:fn' },
       });
 
-      const result = await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { roleWaitMs: 0, distributionId: 'E2EXAMPLE' });
+      const result = await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { distributionId: 'E2EXAMPLE' });
 
-      // Does NOT block on the new function becoming Active — returns provisioning immediately.
       expect(result.status).to.equal('provisioning');
       expect(result.created).to.equal(true);
+      expect(result.functionArn).to.equal(null);
       expect(result.versionArn).to.equal(null);
       expect(result.roleArn).to.include('edgeoptimize-origin-role');
-      expect(lastLambda('CreateFunction').input.Role).to.include('edgeoptimize-origin-role');
-      expect(lastLambda('PublishVersion')).to.equal(undefined); // never publishes while Pending
+      // The expensive work is deferred: no CreateFunction (and no PublishVersion) this call.
+      expect(lastLambda('CreateFunction')).to.equal(undefined);
+      expect(lastLambda('PublishVersion')).to.equal(undefined);
     });
 
-    it('waits roleWaitMs after creating a new role before the first create', async () => {
+    it('creates the function (non-blocking) and returns provisioning when the role already exists', async () => {
+      // Existing role + missing function: proceed to CreateFunction in the SAME call (unchanged).
       wireIam({
-        GetRole: () => Promise.reject(Object.assign(new Error('no role'), { name: 'NoSuchEntityException' })),
-        CreateRole: { Role: { Arn: 'arn:role' } },
+        GetRole: { Role: { Arn: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role' } },
+        UpdateAssumeRolePolicy: {},
         PutRolePolicy: {},
       });
       wireLambda({
@@ -1084,8 +1089,16 @@ describe('edge-optimize support', () => {
         CreateFunction: { FunctionArn: 'arn:fn' },
       });
 
-      const result = await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { roleWaitMs: 1, distributionId: 'E2EXAMPLE' });
+      const result = await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { distributionId: 'E2EXAMPLE' });
+
+      // Does NOT block on the new function becoming Active — returns provisioning immediately.
       expect(result.status).to.equal('provisioning');
+      expect(result.created).to.equal(true);
+      expect(result.functionArn).to.equal('arn:fn');
+      expect(result.versionArn).to.equal(null);
+      expect(result.roleArn).to.include('edgeoptimize-origin-role');
+      expect(lastLambda('CreateFunction').input.Role).to.include('edgeoptimize-origin-role');
+      expect(lastLambda('PublishVersion')).to.equal(undefined); // never publishes while Pending
     });
 
     it('retries CreateFunction on role-propagation then succeeds', async () => {
@@ -1105,7 +1118,7 @@ describe('edge-optimize support', () => {
         },
       });
 
-      const result = await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { roleWaitMs: 0, retryDelayMs: 1, distributionId: 'E2EXAMPLE' });
+      const result = await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { retryDelayMs: 1, distributionId: 'E2EXAMPLE' });
       expect(result.status).to.equal('provisioning');
       expect(createAttempts).to.equal(2);
     });
@@ -1119,7 +1132,7 @@ describe('edge-optimize support', () => {
 
       let error;
       try {
-        await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { roleWaitMs: 0, distributionId: 'E2EXAMPLE' });
+        await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { distributionId: 'E2EXAMPLE' });
       } catch (e) {
         error = e;
       }
@@ -1142,7 +1155,7 @@ describe('edge-optimize support', () => {
 
       let error;
       try {
-        await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { roleWaitMs: 0, distributionId: 'E2EXAMPLE' });
+        await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { distributionId: 'E2EXAMPLE' });
       } catch (e) {
         error = e;
       }
@@ -1161,7 +1174,7 @@ describe('edge-optimize support', () => {
 
       let error;
       try {
-        await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { roleWaitMs: 0, retryDelayMs: 1, distributionId: 'E2EXAMPLE' });
+        await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { retryDelayMs: 1, distributionId: 'E2EXAMPLE' });
       } catch (e) {
         error = e;
       }
@@ -1252,7 +1265,7 @@ describe('edge-optimize support', () => {
         CreateFunction: () => Promise.reject(Object.assign(new Error('exists'), { name: 'ResourceConflictException' })),
       });
 
-      const result = await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { roleWaitMs: 0, distributionId: 'E2EXAMPLE' });
+      const result = await edgeOptimize.createEdgeOptimizeLambda(creds, '120569600543', { distributionId: 'E2EXAMPLE' });
 
       expect(result.status).to.equal('provisioning');
     });

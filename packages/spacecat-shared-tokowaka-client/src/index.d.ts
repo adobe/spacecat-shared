@@ -265,7 +265,6 @@ export function createEdgeOptimizeLambda(
     region?: string;
     distributionId?: string;
     originDomain?: string;
-    roleWaitMs?: number;
     retryDelayMs?: number;
   },
 ): Promise<{

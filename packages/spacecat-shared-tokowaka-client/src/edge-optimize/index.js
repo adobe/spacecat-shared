@@ -726,7 +726,6 @@ async function getLatestLambdaVersion(lambda, functionName) {
  * @param {string} accountId - the 12-digit customer AWS account ID (for the logs-policy ARNs).
  * @param {object} [opts]
  * @param {string} [opts.region] - control-plane region (Lambda@Edge must be us-east-1).
- * @param {number} [opts.roleWaitMs] - extra wait after creating a new role before first create.
  * @param {number} [opts.retryDelayMs] - back-off between CreateFunction role-propagation retries.
  * @returns {Promise<{functionArn: string, versionArn: string, version: string,
  *   roleArn: string, created: boolean}>}
@@ -738,7 +737,6 @@ export async function createEdgeOptimizeLambda(
     region = EDGE_OPTIMIZE_REGION,
     distributionId,
     originDomain = EDGE_OPTIMIZE_DEFAULT_ORIGIN_DOMAIN,
-    roleWaitMs = 12000,
     retryDelayMs = 5000,
   } = {},
 ) {
@@ -805,8 +803,16 @@ export async function createEdgeOptimizeLambda(
 
   // Function does not exist yet → create it (returns fast in Pending) and report provisioning.
   if (!cfg) {
-    if (roleIsNew && roleWaitMs > 0) {
-      await delay(roleWaitMs);
+    // A brand-new IAM role takes several seconds to propagate before Lambda can assume it.
+    // Waiting for that propagation AND running CreateFunction inside this same request can exceed
+    // the CDN/gateway ~60s first-byte timeout → the FE sees a 503. So when the role was just
+    // created in THIS call, return provisioning immediately and let the next poll do the create:
+    // by then GetRole succeeds (roleIsNew === false), the role has had the full poll interval to
+    // propagate, and we fall through to CreateFunction below.
+    if (roleIsNew) {
+      return {
+        status: 'provisioning', functionArn: null, roleArn, created: true, versionArn: null,
+      };
     }
     let lastErr;
     let createdArn;

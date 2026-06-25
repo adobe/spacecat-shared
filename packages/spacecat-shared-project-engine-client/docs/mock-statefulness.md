@@ -3,13 +3,20 @@
 ## The question (from the spike)
 *How much true CRUD statefulness do the E2E flows need vs. scenario-based static responses?*
 
-Counterfact gives every operation a schema-valid response for free. State (a POST a later GET
-reads back) is the hand-maintained part, so we make **only** the resources that actually need
-it stateful and let everything else fall back to the generated schema response.
+State (a POST a later GET reads back) is the costly part, so we make **only** the resources that
+actually need it stateful and keep everything else as a thin echo/catalog handler.
+
+> **Implementation note.** The spike framed the non-stateful endpoints as "left on Counterfact's
+> auto-generated response." That is NOT how it shipped: leaving `generate` on appends a `random()`
+> stub onto every materialized handler (duplicate `VERB` declarations → load failure), and a random
+> stub returns spec-shaped-but-garbage data — useless for a fidelity mock. So the runner uses
+> `--serve` (no `generate`): every non-stateful op is a small hand-authored echo/catalog handler,
+> and an **unmodelled path 404s** (no auto-stub fallback). The decision rule below still governs
+> which resources get the *store*; it no longer implies anything is auto-generated.
 
 ## Decision rule
 A resource needs the in-memory store **iff a flow writes it and then reads / depends on that
-write within the same logical flow.** Everything else stays on the auto-generated response.
+write within the same logical flow.** Everything else is a thin echo/catalog handler.
 
 ## Confirmed consumer inventory (the AC floor)
 Grepped both consumers (2026-06). **`spacecat-api-service` is the only Project Engine consumer
@@ -44,7 +51,8 @@ recommended first cut plus the competitor-benchmark + brand-URL sync the consume
 (`spacecat-api-service` `syncCompetitorBenchmarksAcrossMarkets` / `syncBrandUrlsAcrossMarkets` /
 `attachBrandUrlsToProject` — each write-then-reads, so by the decision rule above they belong in
 the set). The `publish` action and the `GET /v1/ai_models` / `GET /v1/languages` reference lookups
-stay on Counterfact's auto-generated response. The store is generic, so growing the stateful set
+are thin hand-authored echo/catalog handlers (no store, no auto-stub). The store is generic, so
+growing the stateful set
 later is cheap and needs no rework — benchmarks + brand_urls were added as ops with no store
 change, the live proof.
 
@@ -56,7 +64,8 @@ change, the live proof.
 - Seed sets are `Snapshot`s loaded via `store.load(...)`; `store.reset()` restores the last seed
   and is exposed to out-of-process E2E as a test-only `POST /__reset`.
 - The Counterfact runner wires these into per-path handlers (`$.context` carries the store);
-  non-stateful operations are left untouched.
+  non-stateful operations are thin hand-authored echo/catalog handlers (no auto-stub fallback —
+  the runner serves with `--serve`, no `generate`).
 
 ## Known fidelity simplifications
 - **Child-resource writes do not validate the parent project exists.** `POST .../ai_models`,

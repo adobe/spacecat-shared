@@ -18,7 +18,8 @@
  * Deliberately knows nothing about specific resources — the statefulness spike decides
  * *which* collections need it (see docs/mock-statefulness.md); this primitive is the same
  * regardless of that outcome. Stateful mock handlers plug their resources into it; endpoints
- * that don't need state keep returning the auto-generated schema response.
+ * that don't need state are thin hand-authored echo/catalog handlers that never touch the store
+ * (the runner serves no auto-stubs — `--serve`, no `generate`).
  *
  * All reads and writes clone, so a loaded seed snapshot is never mutated by store operations
  * and `reset()` always restores a pristine copy.

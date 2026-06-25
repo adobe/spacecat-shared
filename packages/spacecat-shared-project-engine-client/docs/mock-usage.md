@@ -21,8 +21,10 @@ npm run mock              # serves on http://localhost:4010
 
 - **Base URL:** `http://localhost:<port>/enterprise/projects/api`
 - **Default port:** `4010` (override with `MOCK_PORT`)
-- Every real route requires a bearer token (see §2). Unmodelled spec paths fall back to
-  Counterfact's random stubs; the modelled spine (below) is stateful.
+- Every real route requires a bearer token (see §2). The runner serves only the modelled
+  handlers (`--serve`, no `generate`) — an **unmodelled path 404s**, it does NOT fall back to a
+  random stub. The modelled spine (below) is stateful; the rest are thin echo/catalog handlers.
+  Adding an endpoint is §9.
 
 | Env var | Default | Purpose |
 | --- | --- | --- |
@@ -281,13 +283,100 @@ case-sensitive matching; CR2 removed that header, so it is safe to run.)
 
 ---
 
-## 9. Troubleshooting
+## 9. Extending the mock — add an endpoint
+
+When the consumer (`spacecat-api-service` `rest-transport.js`) starts calling a Project Engine
+path this mock doesn't model yet, that path **404s** (the runner serves no auto-stubs — §8). Add a
+handler:
+
+1. **Confirm the live contract first** — don't guess the response; capture it from the real API
+   (§10). The mock's whole value is fidelity, so a hand-invented shape defeats the purpose.
+2. **Make sure the operation is in the spec.** Counterfact validates request + response against
+   `build/openapi3.json`. If the path — or a field the live body carries — is missing from the
+   vendored swagger, add a `CRn` action to `spec/overlays/corrections.yaml` and `npm run generate`.
+   **Never edit the vendored `spec/*.yaml`** (CR9 added `primary_url`; CR8 fixed the `init_status`
+   path).
+3. **Create the handler file** under `mock/counterfact/routes/**`, mirroring the URL (Counterfact
+   maps filesystem → path; `{id}` segments are literal directory names). e.g.
+   `GET /v2/workspaces/{id}/projects/{project_id}/aio/foo` →
+   `mock/counterfact/routes/v2/workspaces/{id}/projects/{project_id}/aio/foo.js`.
+4. **Author the canonical handler shape:** `export function VERB($) { … }`
+   (`GET`/`POST`/`PUT`/`PATCH`/`DELETE`). The bearer-auth guard is injected onto exactly this shape
+   — an arrow `export const GET =` or an unmatched verb throws at materialization (fail-closed, see
+   `inject-auth-guard.js`). Read request data off `$`: `$.path`, `$.body`, `$.query`, `$.headers`.
+   These handlers are the **`// @ts-check` exception** — leave it off (they run against
+   Counterfact's untyped `$`).
+5. **Build every response entity through a factory**, never an inline literal:
+   `$.context.factories.createXMock({ … })`. If no factory fits, add one to `mock/factories.js`
+   (typed against `components['schemas'][…]`) plus a type-assert in
+   `test/types/factories.type-test.ts` — that type-test is the only tsc-checked guard on an
+   (untyped) handler's output shape.
+6. **Stateful?** If a flow writes then reads it, use `$.context.ops.<resource>` (see
+   `mock/stateful.js`); a brand-new resource group also needs an entry in `STATEFUL_RESOURCES` + a
+   `collectionKey` case. A pure echo/catalog read needs neither — just return the factory-built
+   shape.
+7. **Match the runtime contract exactly** — status code AND empty-body acks. A live `202`/`204`
+   with `content-length: 0` must be `return { status: 202, body: '' }`: a bare `{ status: 202 }`
+   makes Counterfact emit the reason phrase `"Accepted"` as the body and breaks `JSON.parse`.
+8. **Add an e2e case** in `test/e2e/project-engine-mock.e2e.js` driving the **real client** against
+   it — handlers are coverage-excluded and untyped, so the e2e is their only safety net. For
+   empty-body acks, raw-`fetch` and assert `res.status === 202 && (await res.text()) === ''` (the
+   typed client swallows the body).
+9. **Gate:** `npm run generate && npm run test:types && MOCK_E2E=1 npm run test:e2e`. The `_lib`
+   list is auto-derived, so a new module imported by `mock/context.js` materializes automatically.
+
+## 10. Capturing real API responses to build a faithful handler
+
+A handler is only trustworthy if its shape came from the **live** API, not a guess. This is the
+recipe used to validate every endpoint in this package (commit `4ee03f80`).
+
+**Target — the shared stage test tenant:**
+
+| | |
+| --- | --- |
+| Workspace | `adobe-hackathon` (`c522f571-76e9-42e5-9213-7a767f448453`) |
+| Base URL | `https://adobe-hackathon.semrush.com` (api-service `.env` `SEMRUSH_PROJECTS_BASE_URL`, **IMS stage**) |
+| Full prefix | `…/enterprise/projects/api/v1\|v2/…` |
+| Token | `mysticat auth token --ims` (after `mysticat login`) — a real IMS bearer |
+
+```bash
+TOKEN=$(mysticat auth token --ims)
+BASE=https://adobe-hackathon.semrush.com/enterprise/projects/api
+WS=c522f571-76e9-42e5-9213-7a767f448453
+
+# -i prints status + headers, so you SEE an empty-body 202 (content-length: 0)
+curl -is -H "Authorization: Bearer $TOKEN" "$BASE/v1/workspaces/$WS/projects" | sed -n '1,/^\r\{0,1\}$/p'
+curl -s  -H "Authorization: Bearer $TOKEN" "$BASE/v1/workspaces/$WS/projects" | jq   # body
+```
+
+Turning a captured response into a handler:
+
+- **Status + headers first, body second.** `200` vs `202`, and empty body (`content-length: 0`) vs
+  an envelope, IS the contract — pin both. (Live `createProject` returns `200` with a *draft*
+  `ProjectResponse`; the `publish` / benchmark / brand-url acks return empty `202`s.)
+- **Nest into the factory, don't paste the literal.** Add the captured fields to the matching
+  `createXMock` — or a transforming factory if it's a write that reshapes the request (live nests a
+  flat `ProjectUpdateRequest` under `settings.ai`, hence `applyProjectUpdate`;
+  `createProjectResponseFromRequest` does the same for create). A field the live body carries but
+  the swagger omits becomes an overlay `CRn` (that is exactly how CR9's `primary_url` was found).
+- **Writes need explicit authorization + cleanup.** Reads against the shared tenant are safe;
+  **only** do live writes with the user's go-ahead, on a single throwaway project, with a
+  `trap`-based delete-on-exit so you never leave residue on a workspace others use.
+- **Don't blindly mirror tenant-specific quirks.** The hackathon tenant returns an nginx `405` on
+  `createTaggedPrompts` / `publish` — that's **gateway route-gating on that tenant**, not the prod
+  contract (prod onboarding does `tagged → 201` / `publish → 202` daily). Model the **prod**
+  behaviour; verify a surprising response against prod Splunk or a prod-enabled tenant before
+  encoding it, or the mock will reject the consumer's core success path.
+
+---
+
+## 11. Troubleshooting
 
 | Symptom | Cause / fix |
 | --- | --- |
 | `401 { "detail": "Not authenticated" }` | Missing/invalid bearer. Send `Authorization: Bearer <any-non-empty>` (§2). Control routes don't need it. |
 | `build/openapi3.json not found` on `npm run mock` | Run `npm run generate` first (it's a gitignored intermediate). |
-| A real route returns random/garbage data | That path isn't modelled — Counterfact is serving a spec stub. The modelled surface is §3. |
+| A real route 404s unexpectedly | That path isn't modelled — the runner serves no auto-stubs, so unmodelled paths 404. Model it (§9). The modelled surface is §3. |
 | A metered op unexpectedly 405s | A `quota` allocation is set for that workspace and is exhausted. Inspect with `GET /__quota?workspaceId=`; clear by `__reset` or re-seed without a `quota` row. |
 | `getInitStatus` 404 against `/v1` | Expected — the live route is `/v2` (overlay CR8). |
 | A new `_lib` import "not found" at boot | Add the file to `LIB_FILES` in `mock/run.js` (§8). |

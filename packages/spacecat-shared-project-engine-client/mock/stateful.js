@@ -21,8 +21,10 @@
  * encodes that set as pure operations over an {@link InMemoryStore} —
  * collection-key scoping plus the CRUD each group needs — with no Counterfact / HTTP coupling,
  * so it is unit-testable on its own. The Counterfact runner adapts these into per-path handlers
- * (mapping store results into spec-valid response envelopes); non-stateful operations are left
- * on Counterfact's auto-generated response.
+ * (mapping store results into spec-valid response envelopes); non-stateful operations (catalogs,
+ * echo reads, the publish/202 acks) are thin hand-authored handlers too. The runner serves NO
+ * auto-stubs (`--serve`, no `generate` — see run.js), so an unmodelled path 404s; nothing falls
+ * back to a generated random response.
  */
 
 /**

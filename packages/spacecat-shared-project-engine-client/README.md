@@ -111,9 +111,10 @@ generated types. `test/overlay.test.js` covers the overlay applier itself.
 > troubleshooting. This section is the summary.
 
 `npm run mock` starts a **stateful** Counterfact server off the corrected OAS3 artifact
-(`build/openapi3.json` — run `npm run generate` first). Unmodelled paths fall back to
-Counterfact's spec-driven stubs; the project spine is backed by a shared in-memory store so
-reads reflect prior writes within a run.
+(`build/openapi3.json` — run `npm run generate` first). The runner serves only the modelled
+handlers (`--serve`, no `generate`), so an unmodelled path **404s** — it does not fall back to a
+spec-driven stub. The project spine is backed by a shared in-memory store so reads reflect prior
+writes within a run; see [`docs/mock-usage.md`](./docs/mock-usage.md) §9 to add an endpoint.
 
 ```bash
 npm run mock                       # serves on :4010

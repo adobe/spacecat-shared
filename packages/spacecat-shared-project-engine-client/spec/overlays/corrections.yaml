@@ -267,9 +267,11 @@ actions:
 
   # ── CR10: AIOBenchmarkWithCounters carries primary_url + root_domain (live), absent from swagger ──
   # Live: GET /v1/.../ai_models/benchmarks → each aio_benchmark carries primary_url + root_domain
-  # (the benchmark domain's URL + registrable root) alongside the already-present project_id, all
-  # verified live 2026-06-25 against a real project's main-brand + competitor benchmarks. primary_url
-  # and root_domain are absent from the vendored swagger (the CR9 pattern). Deep-merge adds the
+  # alongside the already-present project_id. Verified live 2026-06-25 against a real project's
+  # main-brand + competitor benchmarks: both equalled the benchmark's domain (the fixtures were bare
+  # domains; the mock mirrors the domain and does NOT extract a registrable root — a known
+  # simplification, faithful for bare-domain rows). primary_url and root_domain are absent from the
+  # vendored swagger (the CR9 pattern). Deep-merge adds the
   # properties alongside the existing ones. Kept optional (like CR9), not required: the factory
   # always populates them, but a sparse stored row stays spec-valid.
   - target: "$.components.schemas['model.AIOBenchmarkWithCounters']"

@@ -27,12 +27,17 @@ export function GET($) {
   const stored = context.ops.benchmarks.list(
     { workspaceId: path.id, projectId: path.project_id },
   );
-  // Route each stored row back through the factory so the listed shape is faithful regardless of
-  // how it was stored (created vs seeded) — filling primary_url/root_domain from the domain — and
-  // stamp the live project_id (the path project), which live always returns on a listed benchmark.
-  const aioBenchmarks = stored.map(
-    (b) => context.factories.createBenchmarkMock({ ...b, project_id: path.project_id }),
-  );
+  // Live returns primary_url/root_domain mirroring the benchmark's CURRENT domain, plus
+  // project_id = the path project. The create handler is the write-time source; here we re-derive
+  // both off the row's domain at read time, dropping any stored value so a stale one (e.g. left by
+  // a PUT that changed the domain, or a pre-CR10 row) can't leak, then stamp project_id. The
+  // factory recomputes the two URL fields from the (preserved) domain.
+  const aioBenchmarks = stored.map((b) => {
+    const row = { ...b };
+    delete row.primary_url;
+    delete row.root_domain;
+    return context.factories.createBenchmarkMock({ ...row, project_id: path.project_id });
+  });
   return $.response[200].json({ aio_benchmarks: aioBenchmarks });
 }
 

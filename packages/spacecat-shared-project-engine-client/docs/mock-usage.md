@@ -278,8 +278,9 @@ case-sensitive matching; CR2 removed that header, so it is safe to run.)
   through `context.factories.createXMock(...)` (the typed factories from `mock/factories.js`), so
   every emitted shape has one tsc-checked source of truth and can't drift from the spec. When you
   add a create/catalog handler, route its entities through the matching factory.
-- **Adding a new `_lib` module:** any file imported by `mock/context.js` MUST be added to
-  `LIB_FILES` in `mock/run.js`, or the materialized tree breaks.
+- **Adding a new `_lib` module:** nothing to wire up — `LIB_FILES` in `mock/run.js` is auto-derived
+  from the `mock/*.js` files, so any module imported by `mock/context.js` is materialized
+  automatically.
 
 ---
 
@@ -294,8 +295,8 @@ handler:
 2. **Make sure the operation is in the spec.** Counterfact validates request + response against
    `build/openapi3.json`. If the path — or a field the live body carries — is missing from the
    vendored swagger, add a `CRn` action to `spec/overlays/corrections.yaml` and `npm run generate`.
-   **Never edit the vendored `spec/*.yaml`** (CR9 added `primary_url`; CR8 fixed the `init_status`
-   path).
+   **Never edit the vendored `spec/*.yaml`** (e.g. CR10 added the benchmark `primary_url`/
+   `root_domain`; CR8 moved the `init_status` path).
 3. **Create the handler file** under `mock/counterfact/routes/**`, mirroring the URL (Counterfact
    maps filesystem → path; `{id}` segments are literal directory names). e.g.
    `GET /v2/workspaces/{id}/projects/{project_id}/aio/foo` →
@@ -410,5 +411,5 @@ Turning a captured response into a handler:
 | A real route 404s unexpectedly | That path isn't modelled — the runner serves no auto-stubs, so unmodelled paths 404. Model it (§9). The modelled surface is §3. |
 | A metered op unexpectedly 405s | A `quota` allocation is set for that workspace and is exhausted. Inspect with `GET /__quota?workspaceId=`; clear by `__reset` or re-seed without a `quota` row. |
 | `getInitStatus` 404 against `/v1` | Expected — the live route is `/v2` (overlay CR8). |
-| A new `_lib` import "not found" at boot | Add the file to `LIB_FILES` in `mock/run.js` (§8). |
+| A new `_lib` import "not found" at boot | The module must sit directly under `mock/` — the runner auto-derives `LIB_FILES` from `mock/*.js`, so a file outside `mock/` (or imported under the wrong name) won't materialize. |
 | `datamodel-codegen: command not found` during `npm run generate` | Only the pydantic step; the JS gates don't need it. Run it via `uvx --from datamodel-code-generator datamodel-codegen …` if you need the Python models. |

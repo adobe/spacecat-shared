@@ -177,7 +177,8 @@ export const applyProjectUpdate = (stored, patch) => {
  * main_brand, brand_name, brand_aliases, rejected_brand_aliases, products_count` (all verified live
  * 2026-06-25; `primary_url`/`root_domain` are added to the schema by overlay CR10). `primary_url`
  * and `root_domain` mirror the benchmark's `domain` live, so they default off the effective domain
- * here; `project_id` defaults empty and is set by the handler/seed to the owning project. Created
+ * here (the mock mirrors the full domain; it does not extract a registrable root); `project_id`
+ * defaults empty and is set by the handler/seed to the owning project. Created
  * benchmarks are competitors (`main_brand: false`); the own-brand benchmark is system-managed.
  * @param {Partial<Benchmark>} [overrides]
  * @returns {Benchmark}

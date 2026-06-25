@@ -17,9 +17,9 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
   / publish. **Bearer auth** (`mock/auth.js`) is modelled like the live gateway — every real route
   needs `Authorization: Bearer <token>` (presence, not validity) or returns `401 { detail: 'Not
   authenticated' }`; the `__*` control routes are exempt. The gate is injected onto every handler at
-  the materialization seam by `injectAuthGuard` in `mock/run.js` (so no handler can forget it). Any
-  new file imported by `mock/context.js` MUST be added to `LIB_FILES` in `mock/run.js` or the
-  materialized `.counterfact/` tree breaks.
+  the materialization seam by `injectAuthGuard` in `mock/run.js` (so no handler can forget it). A new
+  file imported by `mock/context.js` is materialized automatically — `LIB_FILES` in `mock/run.js` is
+  auto-derived from the `mock/*.js` files, so there is no list to maintain.
 - `spec/` — the vendored swagger + `spec/overlays/corrections.yaml` (corrections).
 
 **Coverage:** this package enforces **`branches: 100`** in `.nycrc.json` — stricter than the

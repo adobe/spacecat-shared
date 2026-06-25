@@ -28,6 +28,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSerenityProjectEngineApiClient } from '../../src/index.js';
 import { buildSeed, SEEDS, SEED_IDS } from '../../mock/seeds.js';
+import { createBenchmarkMock } from '../../mock/factories.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, '..', '..');
@@ -511,6 +512,55 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(own.project_id).to.equal(SEED_PROJECT);
     expect(own).to.have.property('primary_url', own.domain);
     expect(own).to.have.property('root_domain', own.domain);
+  });
+
+  it('listBenchmarks re-derives primary_url/root_domain off the domain (CR10)', async () => {
+    // Seed a benchmark whose STORED primary_url/root_domain diverge from its domain — as a PUT that
+    // changed the domain, or a pre-CR10 row, would leave them. Live always mirrors the CURRENT
+    // domain, so the list handler must re-derive, not echo the stale stored value. This is the only
+    // gate on that handler (it is coverage-excluded), and it fails if the handler stops re-mapping.
+    const ws = globalThis.crypto.randomUUID();
+    const pid = globalThis.crypto.randomUUID();
+    const bid = globalThis.crypto.randomUUID();
+    const snapshot = buildSeed({
+      workspaceId: ws,
+      projects: [{
+        id: pid,
+        name: 'Stale-bench',
+        benchmarks: [createBenchmarkMock({
+          id: bid,
+          main_brand: true,
+          domain: 'real.example',
+          primary_url: 'stale.example',
+          root_domain: 'stale.example',
+        })],
+      }],
+    });
+    await fetch(`${baseUrl}/__seed`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(snapshot),
+    });
+
+    const { data } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: ws, project_id: pid } } },
+    );
+    const b = data.aio_benchmarks.find((x) => x.id === bid);
+    // re-derived off domain (NOT the stale stored value); project_id stamped from the path.
+    expect(b).to.include({
+      domain: 'real.example',
+      primary_url: 'real.example',
+      root_domain: 'real.example',
+      project_id: pid,
+    });
+
+    // restore the boot seed (__seed rewrote the reset baseline) so later cases stay independent.
+    await fetch(`${baseUrl}/__seed`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(SEEDS['workspace-with-data']),
+    });
   });
 
   // Mirrors the consumer's competitor-benchmark sync: create → list reflects → delete → gone.

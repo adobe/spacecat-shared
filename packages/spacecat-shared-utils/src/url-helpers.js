@@ -513,13 +513,13 @@ function filterBySiteScope(urls, siteBaseUrl) {
 }
 
 /**
- * Extracts the pathname from a URL string, stripping trailing slashes on non-root paths.
- * The result is always lowercased. Leading-slash inputs are returned directly (lowercased,
- * trailing slash stripped). Falls back to the raw lowercased string when the URL is not
- * parseable (e.g. invalid). Returns '' for non-string input.
+ * Extracts the pathname from a URL string. Expects a domain-based URL, with or without schema
+ * (e.g. 'https://example.com/path' or 'example.com/path'). Trailing slashes are stripped on
+ * non-root paths and the result is lowercased. Leading-slash inputs (already a pathname) are
+ * returned as-is. Returns '' for non-string or empty input.
  *
  * @param {string} url
- * @returns {string} pathname, or the original string on parse failure, or '' for non-strings
+ * @returns {string} pathname, or the input as-is for leading-slash paths, or '' for non-strings
  */
 export function toPathname(url) {
   if (!url || typeof url !== 'string') {

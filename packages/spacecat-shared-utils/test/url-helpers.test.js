@@ -1272,6 +1272,24 @@ describe('URL Utility Functions', () => {
     it('blocks path traversal via .. segments in relative URLs', () => {
       expect(isWithinSiteScope('/uk/../admin/secret', 'bulk.com/uk')).to.be.false;
     });
+
+    describe('skipHostMatching', () => {
+      it('matches URL from different host when skipHostMatching is true', () => {
+        expect(isWithinSiteScope('https://other.com/uk/page', 'bulk.com/uk', true)).to.be.true;
+      });
+
+      it('matches URL with different port when skipHostMatching is true', () => {
+        expect(isWithinSiteScope('https://bulk.com:8080/uk/page', 'bulk.com/uk', true)).to.be.true;
+      });
+
+      it('still rejects URL on wrong subpath when skipHostMatching is true', () => {
+        expect(isWithinSiteScope('https://other.com/de/page', 'bulk.com/uk', true)).to.be.false;
+      });
+
+      it('defaults to false (host matching enabled)', () => {
+        expect(isWithinSiteScope('https://other.com/uk/page', 'bulk.com/uk')).to.be.false;
+      });
+    });
   });
 
   describe('filterBySiteScope', () => {
@@ -1306,6 +1324,18 @@ describe('URL Utility Functions', () => {
     it('returns empty array for non-array input', () => {
       expect(filterBySiteScope(null, 'bulk.com/uk')).to.deep.equal([]);
       expect(filterBySiteScope(undefined, 'bulk.com/uk')).to.deep.equal([]);
+    });
+
+    it('includes URLs from different hosts when skipHostMatching is true', () => {
+      const urls = [
+        'https://bulk.com/uk/page1',
+        'https://other.com/uk/page2',
+        'https://another.com/de/page3',
+      ];
+      expect(filterBySiteScope(urls, 'bulk.com/uk', true)).to.deep.equal([
+        'https://bulk.com/uk/page1',
+        'https://other.com/uk/page2',
+      ]);
     });
   });
 

@@ -460,7 +460,7 @@ export function canonicalizeUrl(url, { stripQuery = false } = {}) {
  * @param {string} siteBaseUrl - The site's base URL defining the scope (e.g. "bulk.com/uk").
  * @returns {boolean}
  */
-function isWithinSiteScope(url, siteBaseUrl) {
+function isWithinSiteScope(url, siteBaseUrl, skipHostMatching = false) {
   if (!url) {
     return false;
   }
@@ -486,8 +486,11 @@ function isWithinSiteScope(url, siteBaseUrl) {
 
     const parsedUrl = new URL(prependSchema(url));
     if (
-      stripWWW(parsedUrl.hostname) !== stripWWW(parsedBase.hostname)
-      || parsedUrl.port !== parsedBase.port
+      !skipHostMatching
+      && (
+        stripWWW(parsedUrl.hostname) !== stripWWW(parsedBase.hostname)
+        || parsedUrl.port !== parsedBase.port
+      )
     ) {
       return false;
     }
@@ -505,11 +508,11 @@ function isWithinSiteScope(url, siteBaseUrl) {
  * @param {string} siteBaseUrl
  * @returns {string[]}
  */
-function filterBySiteScope(urls, siteBaseUrl) {
+function filterBySiteScope(urls, siteBaseUrl, skipHostMatching = false) {
   if (!Array.isArray(urls)) {
     return [];
   }
-  return urls.filter((url) => isWithinSiteScope(url, siteBaseUrl));
+  return urls.filter((url) => isWithinSiteScope(url, siteBaseUrl, skipHostMatching));
 }
 
 /**

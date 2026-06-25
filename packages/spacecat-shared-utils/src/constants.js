@@ -74,6 +74,9 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
   WIKIPEDIA_ANALYSIS: 'wikipedia-analysis',
   YOUTUBE_ANALYSIS: 'youtube-analysis',
   INFO_GAIN: 'info-gain',
+
+  // Multimedia
+  MULTIMEDIA_ENRICHMENT: 'multimedia-enrichment',
 });
 
 export const DEFAULT_CPC_VALUE = 1.5;

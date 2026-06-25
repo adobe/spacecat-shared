@@ -553,6 +553,10 @@ export default class DrsClient {
    * (site_id, brand_id, cadence, provider-set) and returns 409 + `existing_schedule_id` on a
    * match, so this POSTs and treats a 409 as success (idempotent).
    *
+   * With `triggerImmediately`, the schedule is created first; if the subsequent
+   * trigger POST fails this throws, but the schedule already exists — a retry hits
+   * the 409 dedup (`alreadyExisted: true`) and re-triggers, so it is self-healing.
+   *
    * @param {object} params
    * @param {string} params.siteId - SpaceCat site UUID (required).
    * @param {string} [params.brandId] - SpaceCat brand UUID (sent top-level; required for v2 dedup).
@@ -591,19 +595,23 @@ export default class DrsClient {
         priority,
         enable_brand_presence: true,
         cadence: 'weekly',
+        // brightdata routes on the comma-joined `dataset_id` (the platform list);
+        // `metadata.site` carries the site. The legacy onboarding payload also set a
+        // camelCase `siteId` and a separate `platforms` array, but DRS reads neither
+        // (the scheduler copies these params verbatim into the job, yet brightdata
+        // consumes only `dataset_id` + `metadata.site`) — so they are omitted here,
+        // matching createExperimentSchedule. Dedup is keyed on
+        // (site_id, brand_id, cadence, provider-set), not on provider_parameters,
+        // so this stays dedup-equivalent to the legacy payload.
         provider_parameters: {
           brightdata: {
-            siteId,
-            metadata: { site: siteId },
             dataset_id: BRAND_PRESENCE_BRIGHTDATA_PLATFORMS.join(','),
-            platforms: [...BRAND_PRESENCE_BRIGHTDATA_PLATFORMS],
+            metadata: { site: siteId },
           },
           google_ai_overviews: {
-            siteId,
             metadata: { site: siteId },
           },
           openai_web_search: {
-            siteId,
             metadata: { site: siteId },
           },
         },

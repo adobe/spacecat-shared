@@ -338,11 +338,14 @@ describe('DrsClient', () => {
           expect(body.job_config.cadence).to.equal('weekly');
           expect(body.job_config.provider_parameters.brightdata.dataset_id)
             .to.equal('chatgpt_free,perplexity,gemini,copilot,aimode');
-          expect(body.job_config.provider_parameters.brightdata.platforms).to.deep.equal([
-            'chatgpt_free', 'perplexity', 'gemini', 'copilot', 'aimode',
-          ]);
+          expect(body.job_config.provider_parameters.brightdata.metadata.site).to.equal('site-1');
+          // The legacy no-op fields (camelCase siteId, platforms array) are dropped.
+          expect(body.job_config.provider_parameters.brightdata).to.not.have.property('siteId');
+          expect(body.job_config.provider_parameters.brightdata).to.not.have.property('platforms');
           expect(body.job_config.provider_parameters.google_ai_overviews.metadata.site)
             .to.equal('site-1');
+          expect(body.job_config.provider_parameters.google_ai_overviews)
+            .to.not.have.property('siteId');
           expect(body.job_config.provider_parameters.openai_web_search.metadata.site)
             .to.equal('site-1');
           return true;

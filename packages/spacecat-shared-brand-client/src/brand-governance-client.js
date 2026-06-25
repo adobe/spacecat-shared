@@ -96,7 +96,10 @@ export class BrandGovernanceClient {
    * @param {string} siteBaseUrl - The site's base URL to resolve brand by domain
    * @param {string} imsOrgId - The IMS org ID sent as x-gw-ims-org-id header
    * @param {object} imsConfig - IMS auth config: { host, clientId, clientCode, clientSecret }
-   * @returns {Promise<object|null>} Brand guidelines or null if not registered
+   * @returns {Promise<object|null>} Raw brand profile from the Brand Governance Agent
+   *   /profile endpoint, or null if the brand is not registered or has no profile
+   * @throws {Error} If siteBaseUrl, imsOrgId, or imsConfig fields are invalid
+   * @throws {Error} If the Brand Governance Agent returns a non-404 error
    */
   async getBrandGuidelinesForUrl(siteBaseUrl, imsOrgId, imsConfig) {
     if (!isValidUrl(siteBaseUrl)) {

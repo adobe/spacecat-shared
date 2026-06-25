@@ -1330,12 +1330,24 @@ describe('URL Utility Functions', () => {
       expect(toPathname('https://example.com/path?q=1#section')).to.equal('/path');
     });
 
-    it('falls back to lowercased string when input is not a valid absolute URL', () => {
-      expect(toPathname('BULK.COM/page')).to.equal('bulk.com/page');
+    it('extracts pathname from a schema-less URL', () => {
+      expect(toPathname('BULK.COM/page')).to.equal('/page');
     });
 
-    it('handles relative paths by falling back to lowercased string', () => {
+    it('extracts pathname from a schema-less URL with trailing slash', () => {
+      expect(toPathname('example.com/')).to.equal('/');
+    });
+
+    it('extracts pathname from a schema-less URL with a deep path', () => {
+      expect(toPathname('example.com/path/page')).to.equal('/path/page');
+    });
+
+    it('handles leading-slash paths as-is', () => {
       expect(toPathname('/some/PATH')).to.equal('/some/path');
+    });
+
+    it('falls back to lowercased string when URL parsing fails', () => {
+      expect(toPathname('[invalid-url')).to.equal('[invalid-url');
     });
 
     it('returns empty string for null input', () => {
@@ -1375,6 +1387,10 @@ describe('URL Utility Functions', () => {
     it('does not crash when url is null', () => {
       expect(hasSamePathname(null, 'https://b.com/page')).to.be.false;
     });
+
+    it('matches schema-less URL against an absolute URL', () => {
+      expect(hasSamePathname('a.com/page', 'https://b.com/page')).to.be.true;
+    });
   });
 
   describe('allHaveSamePathname', () => {
@@ -1411,6 +1427,11 @@ describe('URL Utility Functions', () => {
 
     it('does not crash when array contains null elements', () => {
       expect(allHaveSamePathname([null], 'https://ref.com/page')).to.be.false;
+    });
+
+    it('matches schema-less URLs in the array against a reference URL', () => {
+      const urls = ['a.com/page', 'https://b.com/page'];
+      expect(allHaveSamePathname(urls, 'c.com/page')).to.be.true;
     });
   });
 });

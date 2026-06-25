@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Stateful handlers for
  * /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls — list,
@@ -19,7 +17,7 @@
  * `createBrandUrls` / `deleteBrandUrls`). Scoped per benchmark (`brand_urls:{ws}:{pid}:{bid}`) so
  * a create is visible to a subsequent list under the same benchmark. Live: list → 200
  * `{ brand_urls: [...] }`; create → 200 `IDsWithStatsResponse` `{ ids, existing_count }`;
- * delete → 202 `BasicResponse` (verified 2026-06-25, see docs/mock-vs-live-parity.md). Excluded
+ * delete → 202 `BasicResponse` (verified 2026-06-25). Excluded
  * from coverage (materialized handler).
  */
 

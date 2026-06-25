@@ -10,13 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Static handler for GET /v1/workspaces/{id}/brand-topics — the workspace-scoped topic
  * generator the consumer (spacecat-api-service `getBrandTopics`) reads at brand-create to seed
  * a project's prompts. Live shape is a TOP-LEVEL ARRAY `[{ topic, volume, prompts: string[] }]`
- * (verified 2026-06-25, see docs/mock-vs-live-parity.md). Excluded from coverage (materialized).
+ * (verified 2026-06-25). Excluded from coverage (materialized).
  */
 
 const TOPICS = [

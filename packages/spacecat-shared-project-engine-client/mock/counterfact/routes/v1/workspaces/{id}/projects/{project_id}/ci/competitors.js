@@ -10,14 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Handler for PUT /v1/workspaces/{id}/projects/{project_id}/ci/competitors — full replace of a
  * project's CI competitor list (the consumer's `updateCiCompetitors`). Request is
  * `CICompetitorsUpdateRequest` `{ ci_competitors: [{ domain, color? }] }`; live returns the
  * resulting `CICompetitorsResponse` `{ ci_competitors: [{ id, project_id, domain, color }] }`
- * (verified 2026-06-25, see docs/mock-vs-live-parity.md). The mock echoes the input back as the
+ * (verified 2026-06-25). The mock echoes the input back as the
  * stored set, assigning an id + the path project_id. Excluded from coverage (materialized handler).
  */
 

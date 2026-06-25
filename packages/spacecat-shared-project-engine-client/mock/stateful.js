@@ -30,7 +30,7 @@
  */
 
 /**
- * Resource groups the live audit (docs/mock-vs-live-parity.md) confirmed the consumer
+ * Resource groups the live audit confirmed the consumer
  * write-then-reads: projects, ai_models, prompts, plus benchmarks (per project) and brand_urls
  * (per benchmark) — the competitor-benchmark and brand-URL sync flows create→list→update→delete,
  * so they need real state to be faithfully testable.

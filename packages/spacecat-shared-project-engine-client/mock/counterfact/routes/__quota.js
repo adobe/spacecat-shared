@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Test-only control route for AI-unit metering — the project-engine API itself never sets
  * allocations (the user-manager gateway does), so this is how a test / the cross-repo harness

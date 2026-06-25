@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Test-only control route: restores the shared store to its startup seed so E2E cases start
  * from a known state. Not part of the Project Engine API; materialized into `.counterfact/routes/`

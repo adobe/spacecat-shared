@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Handler for GET /v2/workspaces/{id}/projects/{project_id}/aio/init_status — AIO readiness for a
  * live project (the consumer's `getInitStatus`). The live route is on /v2 (the vendored swagger's

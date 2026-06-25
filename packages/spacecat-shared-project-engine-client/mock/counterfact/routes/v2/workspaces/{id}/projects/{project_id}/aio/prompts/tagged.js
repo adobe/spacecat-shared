@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Stateful handler for POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged
  * (`aio-create-prompts-with-tags`) — the create path the real consumer calls

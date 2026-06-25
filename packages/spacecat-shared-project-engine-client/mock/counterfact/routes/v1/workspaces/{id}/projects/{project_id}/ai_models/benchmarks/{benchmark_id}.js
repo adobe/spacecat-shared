@@ -10,14 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Stateful PUT handler for the `…/ai_models/benchmarks/{benchmark_id}` route — updates one
  * benchmark in place (the consumer's `updateBenchmark`, used to re-sync a
  * competitor's `brand_aliases` when the domain is unchanged). Request is `AIOBenchmarkRequest`;
  * the patch lands on the stored benchmark so a subsequent `listBenchmarks` reflects it. Live: 202
- * `BasicResponse` (verified 2026-06-25, see docs/mock-vs-live-parity.md). Excluded from coverage
+ * `BasicResponse` (verified 2026-06-25). Excluded from coverage
  * (materialized handler).
  */
 

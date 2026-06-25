@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Stateful POST handler for /v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks —
  * batch-creates benchmarks (the consumer's `createBenchmarks`). Request is an ARRAY of
@@ -19,7 +17,7 @@
  * always a competitor (`main_brand: false` — the API cannot set the system-managed own brand).
  * Writes to the SAME store key (`benchmarks:{ws}:{pid}`) the v1 list/delete use, so a subsequent
  * list reflects it. Live: 200 `IDsWithStatsResponse` `{ ids, existing_count }` (verified
- * 2026-06-25, see docs/mock-vs-live-parity.md). Excluded from coverage (materialized handler).
+ * 2026-06-25). Excluded from coverage (materialized handler).
  */
 
 /** POST — batch-create benchmarks (body: array) → 200 { ids, existing_count }. */

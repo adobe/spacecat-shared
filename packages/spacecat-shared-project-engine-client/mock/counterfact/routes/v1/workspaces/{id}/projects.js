@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Stateful handlers for /v1/workspaces/{id}/projects — list + create, backed by the shared
  * store on `$.context`. Project create is metered: when the workspace's `projects` allocation is

@@ -10,14 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Handler for POST /v1/workspaces/{id}/projects/{project_id}/publish — moves a draft to live
  * (the consumer's `publishProject`). Success is `202` `BasicResponse`. Metered: publish is a
  * metered op, so an empty-units child (an explicit `prompts: 0` allocation) returns the disguised
  * quota 405 — exactly the "publishing an empty-units child 405s" behaviour the consumer's
- * `republishBestEffort` swallows (docs/mock-vs-live-parity.md A3; see mock/quota.js). Excluded
+ * `republishBestEffort` swallows (see mock/quota.js). Excluded
  * from coverage (materialized handler).
  */
 

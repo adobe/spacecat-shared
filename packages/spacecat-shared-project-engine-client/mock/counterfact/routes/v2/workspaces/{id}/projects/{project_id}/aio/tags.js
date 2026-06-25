@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Handler for POST /v2/workspaces/{id}/projects/{project_id}/aio/tags — creates project-level
  * AIO tags (the consumer's `createProjectTags`). Request is `TreeNodeListRequest` `{ names }`.

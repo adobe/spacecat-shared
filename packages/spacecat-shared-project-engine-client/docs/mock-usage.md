@@ -1,9 +1,7 @@
 # Project Engine mock — usage manual (humans & agents)
 
 A single, complete guide to running and driving the stateful Semrush **Project Engine** mock in
-this package. For the design rationale see [`mock-statefulness.md`](./mock-statefulness.md); for
-the field-by-field comparison against the live API see
-[`mock-vs-live-parity.md`](./mock-vs-live-parity.md).
+this package. For the design rationale see [`mock-statefulness.md`](./mock-statefulness.md).
 
 > **Scope.** This mock emulates the **Project Engine API** only (the `/enterprise/projects/api`
 > gateway — projects, AI models, prompts, benchmarks, brand URLs, tags, catalogs, publish). The
@@ -120,7 +118,7 @@ method that calls it.
 | `GET /v1/languages` | `listLanguages` | language catalog → `{ page, total, items }` |
 | `GET /v1/workspaces/{id}/brand-topics` | `getBrandTopics` | top-level array `[{ topic, volume, prompts }]` |
 | `PUT /v1/workspaces/{id}/projects/{project_id}/ci/competitors` | `updateCiCompetitors` | full replace → `{ ci_competitors }` |
-| `GET /v2/workspaces/{id}/projects/{project_id}/aio/init_status` | `getInitStatus` | `{ initialized }`. **Live route is `/v2`** — the vendored swagger's `/v1` path 404s (overlay CR8). The api-service consumer still calls `/v1` today; see [parity §4](./mock-vs-live-parity.md). |
+| `GET /v2/workspaces/{id}/projects/{project_id}/aio/init_status` | `getInitStatus` | `{ initialized }`. **Live route is `/v2`** — the vendored swagger's `/v1` path 404s (overlay CR8, verified live across 4 projects). The api-service consumer still calls `/v1` today (a pre-existing bug — it degrades to `initialized: null`). |
 
 ---
 

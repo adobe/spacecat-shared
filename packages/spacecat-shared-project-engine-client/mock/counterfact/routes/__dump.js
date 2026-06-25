@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Test-only introspection route: returns the CURRENT store state (live mutations) so you can
  * "look inside" the mock DB — every collection (`projects:{ws}`, `ai_models:{ws}:{pr}`,

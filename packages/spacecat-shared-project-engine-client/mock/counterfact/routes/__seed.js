@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Test-only control route: replaces the shared store with the posted Snapshot and makes it the
  * new reset baseline, so the harness can set the mock to exactly the state a test needs (use

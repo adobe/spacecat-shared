@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Stateful handlers for /v1/workspaces/{id}/projects/{project_id} — get, patch, delete.
  * Materialized into `.counterfact/routes/` by the mock runner; excluded from coverage.

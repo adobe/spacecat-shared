@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Stateful POST handler for /v2/workspaces/{id}/projects/{project_id}/ai_models — adds an AI
  * model to a project. The real consumer (spacecat-api-service `addAiModel`) writes via this v2

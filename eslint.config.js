@@ -75,5 +75,16 @@ export default defineConfig([
     rules: {
       'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
     },
+  },
+  {
+    // Counterfact mock route handlers receive a single untyped `$` context object and routinely
+    // destructure only the fields a given method needs, so no-unused-vars would fire on the rest.
+    // Disable it here for the whole route tree rather than repeating an inline disable in every
+    // handler. (These handlers are also the documented `// @ts-check` exception — see
+    // packages/spacecat-shared-project-engine-client/CLAUDE.md.)
+    files: ['packages/spacecat-shared-project-engine-client/mock/counterfact/routes/**/*.js'],
+    rules: {
+      'no-unused-vars': 'off',
+    },
   }
 ]);

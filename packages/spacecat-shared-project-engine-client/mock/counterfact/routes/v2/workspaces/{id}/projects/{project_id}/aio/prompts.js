@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars -- Counterfact passes a single `$` context object to handlers. */
-
 /**
  * Stateful handler for DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts — the only
  * operation the spec defines on this exact path (`aio-delete-prompt-by-ids-v2`). Prompt *create*

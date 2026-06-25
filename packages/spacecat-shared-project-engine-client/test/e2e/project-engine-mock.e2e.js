@@ -329,7 +329,7 @@ async function waitForReady(baseUrl, deadline) {
   // ───────────────────────────────────────────────────────────────────────
   // Live-verified parity: the auto-generated (non-stateful) endpoints + the two
   // drift fixes. These assert that the mock's response SHAPE matches what the real
-  // Semrush API returns (recorded live 2026-06-25, see docs/mock-vs-live-parity.md).
+  // Semrush API returns (recorded live 2026-06-25).
   // Shapes only — no live customer content is encoded here.
   // ───────────────────────────────────────────────────────────────────────
 
@@ -358,24 +358,26 @@ async function waitForReady(baseUrl, deadline) {
     expect(data).to.be.an('array');
   });
 
-  it('listLanguages returns { page, total, items:[{ id, name }] }', async () => {
+  // The catalog is the FULL live taxonomy (captured 2026-06-25), so assert the real counts +
+  // a known entry, not just the envelope — the consumer resolves language code → UUID against it.
+  it('listLanguages returns the full live language taxonomy (38, real UUIDs)', async () => {
     const { data, error } = await client.GET('/v1/languages', {});
     expect(error).to.equal(undefined);
     expect(data).to.include.keys(['page', 'total', 'items']);
-    expect(data.items).to.be.an('array');
-    if (data.items.length > 0) {
-      expect(data.items[0]).to.include.keys(['id', 'name']);
-    }
+    expect(data.total).to.equal(38);
+    expect(data.items).to.be.an('array').with.length(38);
+    expect(data.items[0]).to.include.keys(['id', 'name']);
+    expect(data.items).to.deep.include({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English' });
   });
 
-  it('listGlobalAiModels returns { page, total, items:[{ id, name, key, icon }] }', async () => {
+  it('listGlobalAiModels returns the full live model taxonomy (11, real keys)', async () => {
     const { data, error } = await client.GET('/v1/ai_models', {});
     expect(error).to.equal(undefined);
     expect(data).to.include.keys(['page', 'total', 'items']);
-    expect(data.items).to.be.an('array');
-    if (data.items.length > 0) {
-      expect(data.items[0]).to.include.keys(['id']);
-    }
+    expect(data.total).to.equal(11);
+    expect(data.items).to.be.an('array').with.length(11);
+    expect(data.items[0]).to.include.keys(['id', 'name', 'key', 'icon']);
+    expect(data.items.map((m) => m.key)).to.include.members(['perplexity', 'gemini-2.5-flash']);
   });
 
   it('getBrandTopics returns a top-level array of { topic, volume, prompts }', async () => {

@@ -144,38 +144,19 @@ export default class DrsClient {
   }
 
   async #request(method, path, body = undefined, fetchOptions = {}) {
-    if (!this.isConfigured()) {
-      throw new Error('DRS client is not configured. Set DRS_API_URL and DRS_API_KEY environment variables.');
-    }
+    const { ok, status, body: payload } = await this.#requestRaw(method, path, body, fetchOptions);
 
-    const url = `${this.apiBaseUrl}${path}`;
-    const options = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': this.apiKey,
-      },
-      ...fetchOptions,
-    };
-
-    if (body) {
-      options.body = JSON.stringify(body);
-    }
-
-    const response = await fetch(url, options);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      const error = new Error(`DRS ${method} ${path} failed: ${response.status} - ${errorText}`);
-      error.status = response.status;
+    if (!ok) {
+      const errorText = typeof payload === 'string' ? payload : JSON.stringify(payload);
+      const error = new Error(`DRS ${method} ${path} failed: ${status} - ${errorText}`);
+      error.status = status;
       throw error;
     }
 
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      return response.json();
-    }
-    return null;
+    // #requestRaw parses application/json into an object and returns the raw text
+    // otherwise; preserve the historical contract: the parsed object for JSON, null
+    // for any non-JSON (or empty) body.
+    return typeof payload === 'object' ? payload : null;
   }
 
   /**
@@ -593,6 +574,9 @@ export default class DrsClient {
   }) {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
+    }
+    if (!hasText(brandId)) {
+      this.log.debug(`createBrandPresenceSchedule: no brandId; dedup is site-level for ${siteId}`);
     }
 
     const body = {

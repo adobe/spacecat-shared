@@ -183,6 +183,10 @@ declare class DrsClient {
   createExperimentSchedule(params: CreateExperimentScheduleParams): Promise<ScheduleStatusResult>;
   getScheduleStatus(siteId: string, scheduleId: string): Promise<ScheduleStatusResult>;
   getJob(jobId: string): Promise<Record<string, unknown>>;
+  listJobs(params: ListJobsParams): Promise<Record<string, unknown>[]>;
+  createBrandPresenceSchedule(
+    params: CreateBrandPresenceScheduleParams,
+  ): Promise<BrandPresenceScheduleResult>;
 }
 
 export declare const SCRAPE_DATASET_IDS: Readonly<{

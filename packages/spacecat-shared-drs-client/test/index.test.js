@@ -289,6 +289,23 @@ describe('DrsClient', () => {
       expect(result).to.deep.equal([]);
       scope.done();
     });
+
+    it('propagates a DRS error (e.g. 503 with a json body)', async () => {
+      const scope = nock(DRS_API_URL)
+        .get('/jobs')
+        .query({ site: 'site-1' })
+        .reply(503, { error: 'Service Unavailable' });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      try {
+        await client.listJobs({ siteId: 'site-1' });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.message).to.include('DRS GET /jobs?site=site-1 failed: 503 - {"error":"Service Unavailable"}');
+        expect(err.status).to.equal(503);
+      }
+      scope.done();
+    });
   });
 
   describe('createBrandPresenceSchedule', () => {
@@ -400,6 +417,28 @@ describe('DrsClient', () => {
       });
 
       expect(result).to.deep.equal({ scheduleId: 'sched-3', alreadyExisted: false });
+      scope.done();
+    });
+
+    it('throws when the immediate trigger fails after the schedule is created', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(201, { schedule_id: 'sched-4' })
+        .post('/schedules/site-1/sched-4/trigger')
+        .reply(500, 'trigger boom');
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      try {
+        await client.createBrandPresenceSchedule({
+          siteId: 'site-1',
+          brandId: 'brand-1',
+          triggerImmediately: true,
+        });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.message).to.include('DRS POST /schedules/site-1/sched-4/trigger failed: 500');
+        expect(err.status).to.equal(500);
+      }
       scope.done();
     });
 

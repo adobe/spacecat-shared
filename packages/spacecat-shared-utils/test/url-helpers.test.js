@@ -1343,7 +1343,7 @@ describe('URL Utility Functions', () => {
     });
 
     it('handles leading-slash paths as-is', () => {
-      expect(toPathname('/some/PATH')).to.equal('/some/path');
+      expect(toPathname('/some/PATH')).to.equal('/some/PATH');
     });
 
     it('falls back to lowercased string when URL parsing fails', () => {

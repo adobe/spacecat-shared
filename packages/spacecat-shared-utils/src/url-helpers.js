@@ -527,7 +527,7 @@ export function toPathname(url) {
   }
   try {
     if (url.startsWith('/')) {
-      return url.toLowerCase();
+      return url;
     }
     const { pathname } = new URL(prependSchema(url));
     return pathname === '/' ? pathname : pathname.replace(/\/$/, '').toLowerCase();

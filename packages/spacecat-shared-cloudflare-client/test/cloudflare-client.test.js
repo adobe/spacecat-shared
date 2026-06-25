@@ -31,6 +31,7 @@ const SCRIPT_NAME = 'edge-optimize-router';
 function makeLog() {
   return {
     info: sinon.stub(),
+    debug: sinon.stub(),
     warn: sinon.stub(),
     error: sinon.stub(),
   };
@@ -38,18 +39,15 @@ function makeLog() {
 
 describe('CloudflareClient', () => {
   let client;
-  let sandbox;
   let log;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
     log = makeLog();
     client = new CloudflareClient({ token: FAKE_TOKEN }, log);
     nock.disableNetConnect();
   });
 
   afterEach(() => {
-    sandbox.restore();
     nock.cleanAll();
     nock.enableNetConnect();
   });
@@ -101,7 +99,7 @@ describe('CloudflareClient', () => {
     it('returns accounts on success', async () => {
       const result = [{ id: ACCOUNT_ID, name: 'Acme Corp' }];
       nock(CF_API_BASE)
-        .get('/accounts?per_page=50')
+        .get('/accounts?page=1&per_page=50')
         .matchHeader('Authorization', `Bearer ${FAKE_TOKEN}`)
         .reply(200, { success: true, result });
 
@@ -110,9 +108,19 @@ describe('CloudflareClient', () => {
       expect(log.info).to.have.been.calledWith('Listing Cloudflare accounts');
     });
 
+    it('passes through custom page and perPage', async () => {
+      const result = [{ id: ACCOUNT_ID, name: 'Acme Corp' }];
+      nock(CF_API_BASE)
+        .get('/accounts?page=3&per_page=10')
+        .reply(200, { success: true, result });
+
+      const accounts = await client.listAccounts({ page: 3, perPage: 10 });
+      expect(accounts).to.deep.equal(result);
+    });
+
     it('throws when the API returns success:false with an error message', async () => {
       nock(CF_API_BASE)
-        .get('/accounts?per_page=50')
+        .get('/accounts?page=1&per_page=50')
         .reply(200, { success: false, errors: [{ message: 'Unauthorized' }] });
 
       await expect(client.listAccounts()).to.be.rejectedWith('Unauthorized');
@@ -120,11 +128,38 @@ describe('CloudflareClient', () => {
 
     it('throws with a generic message when errors array is empty', async () => {
       nock(CF_API_BASE)
-        .get('/accounts?per_page=50')
+        .get('/accounts?page=1&per_page=50')
         .reply(200, { success: false, errors: [] });
 
       await expect(client.listAccounts())
-        .to.be.rejectedWith('Cloudflare API error on /accounts?per_page=50');
+        .to.be.rejectedWith('Cloudflare API error on /accounts?page=1&per_page=50');
+    });
+
+    it('throws a contextual error on a non-OK HTML response', async () => {
+      nock(CF_API_BASE)
+        .get('/accounts?page=1&per_page=50')
+        .reply(502, '<html>Bad Gateway</html>');
+
+      await expect(client.listAccounts())
+        .to.be.rejectedWith('Cloudflare API returned 502 on /accounts?page=1&per_page=50');
+    });
+
+    it('throws a contextual error when fetch itself fails', async () => {
+      nock(CF_API_BASE)
+        .get('/accounts?page=1&per_page=50')
+        .replyWithError('ECONNREFUSED');
+
+      await expect(client.listAccounts())
+        .to.be.rejectedWith('Cloudflare API request to /accounts?page=1&per_page=50 failed');
+    });
+
+    it('throws a contextual error on a non-JSON 200 response', async () => {
+      nock(CF_API_BASE)
+        .get('/accounts?page=1&per_page=50')
+        .reply(200, 'not json', { 'Content-Type': 'text/plain' });
+
+      await expect(client.listAccounts())
+        .to.be.rejectedWith('Cloudflare API returned a non-JSON response on /accounts?page=1&per_page=50');
     });
   });
 
@@ -133,8 +168,12 @@ describe('CloudflareClient', () => {
   describe('deployWorkerScript', () => {
     it('uploads a worker script with default options', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
+      let capturedBody;
       nock(CF_API_BASE)
-        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, (body) => {
+          capturedBody = body;
+          return true;
+        })
         .reply(200, { success: true, result });
 
       const res = await client.deployWorkerScript(
@@ -144,6 +183,12 @@ describe('CloudflareClient', () => {
         [{ name: 'HOST', type: 'plain_text', text: 'example.com' }],
       );
       expect(res).to.deep.equal(result);
+      // Verify the multipart body carries the expected metadata, bindings and observability flag.
+      expect(capturedBody).to.contain('"main_module":"worker.js"');
+      expect(capturedBody).to.contain('"compatibility_date":"2025-01-01"');
+      expect(capturedBody).to.contain('"observability":{"enabled":true}');
+      expect(capturedBody).to.contain('"name":"HOST"');
+      expect(capturedBody).to.contain('"text":"example.com"');
       expect(log.info).to.have.been.calledWith(
         `Deploying worker script '${SCRIPT_NAME}' to account ${ACCOUNT_ID}`,
       );
@@ -151,8 +196,12 @@ describe('CloudflareClient', () => {
 
     it('deploys without observability when disabled', async () => {
       const result = { id: SCRIPT_NAME };
+      let capturedBody;
       nock(CF_API_BASE)
-        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, (body) => {
+          capturedBody = body;
+          return true;
+        })
         .reply(200, { success: true, result });
 
       const res = await client.deployWorkerScript(
@@ -163,12 +212,17 @@ describe('CloudflareClient', () => {
         { observability: false },
       );
       expect(res).to.deep.equal(result);
+      expect(capturedBody).to.not.contain('observability');
     });
 
     it('accepts a custom compatibilityDate', async () => {
       const result = { id: SCRIPT_NAME };
+      let capturedBody;
       nock(CF_API_BASE)
-        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, (body) => {
+          capturedBody = body;
+          return true;
+        })
         .reply(200, { success: true, result });
 
       const res = await client.deployWorkerScript(
@@ -179,6 +233,22 @@ describe('CloudflareClient', () => {
         { compatibilityDate: '2024-06-01' },
       );
       expect(res).to.deep.equal(result);
+      expect(capturedBody).to.contain('"compatibility_date":"2024-06-01"');
+    });
+
+    it('throws when accountId is missing', async () => {
+      await expect(client.deployWorkerScript('', SCRIPT_NAME, 'export default {}'))
+        .to.be.rejectedWith('accountId is required');
+    });
+
+    it('throws when scriptName is missing', async () => {
+      await expect(client.deployWorkerScript(ACCOUNT_ID, '', 'export default {}'))
+        .to.be.rejectedWith('scriptName is required');
+    });
+
+    it('throws when scriptContent is missing', async () => {
+      await expect(client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, ''))
+        .to.be.rejectedWith('scriptContent is required');
     });
 
     it('throws when the API returns an error', async () => {
@@ -203,9 +273,24 @@ describe('CloudflareClient', () => {
 
       const res = await client.setWorkerSecret(ACCOUNT_ID, SCRIPT_NAME, 'MY_SECRET', 's3cr3t');
       expect(res).to.deep.equal(result);
-      expect(log.info).to.have.been.calledWith(
+      expect(log.debug).to.have.been.calledWith(
         `Setting secret 'MY_SECRET' on worker '${SCRIPT_NAME}'`,
       );
+    });
+
+    it('throws when accountId is missing', async () => {
+      await expect(client.setWorkerSecret('', SCRIPT_NAME, 'KEY', 'val'))
+        .to.be.rejectedWith('accountId is required');
+    });
+
+    it('throws when scriptName is missing', async () => {
+      await expect(client.setWorkerSecret(ACCOUNT_ID, '', 'KEY', 'val'))
+        .to.be.rejectedWith('scriptName is required');
+    });
+
+    it('throws when secretName is missing', async () => {
+      await expect(client.setWorkerSecret(ACCOUNT_ID, SCRIPT_NAME, '', 'val'))
+        .to.be.rejectedWith('secretName is required');
     });
 
     it('throws when the API returns an error', async () => {
@@ -225,7 +310,7 @@ describe('CloudflareClient', () => {
     it('returns zones on success', async () => {
       const result = [{ id: ZONE_ID, name: 'example.com' }];
       nock(CF_API_BASE)
-        .get('/zones?per_page=50&status=active')
+        .get('/zones?page=1&per_page=50&status=active')
         .reply(200, { success: true, result });
 
       const zones = await client.listZones();
@@ -233,9 +318,19 @@ describe('CloudflareClient', () => {
       expect(log.info).to.have.been.calledWith('Listing Cloudflare zones');
     });
 
+    it('passes through custom page and perPage', async () => {
+      const result = [{ id: ZONE_ID, name: 'example.com' }];
+      nock(CF_API_BASE)
+        .get('/zones?page=2&per_page=25&status=active')
+        .reply(200, { success: true, result });
+
+      const zones = await client.listZones({ page: 2, perPage: 25 });
+      expect(zones).to.deep.equal(result);
+    });
+
     it('throws when the API returns an error', async () => {
       nock(CF_API_BASE)
-        .get('/zones?per_page=50&status=active')
+        .get('/zones?page=1&per_page=50&status=active')
         .reply(200, { success: false, errors: [{ message: 'Forbidden' }] });
 
       await expect(client.listZones()).to.be.rejectedWith('Forbidden');
@@ -254,6 +349,10 @@ describe('CloudflareClient', () => {
       const routes = await client.listRoutes(ZONE_ID);
       expect(routes).to.deep.equal(result);
       expect(log.info).to.have.been.calledWith(`Listing routes for zone ${ZONE_ID}`);
+    });
+
+    it('throws when zoneId is missing', async () => {
+      await expect(client.listRoutes('')).to.be.rejectedWith('zoneId is required');
     });
 
     it('throws when the API returns an error', async () => {
@@ -281,6 +380,21 @@ describe('CloudflareClient', () => {
       );
     });
 
+    it('throws when zoneId is missing', async () => {
+      await expect(client.addRoute('', 'example.com/*', SCRIPT_NAME))
+        .to.be.rejectedWith('zoneId is required');
+    });
+
+    it('throws when pattern is missing', async () => {
+      await expect(client.addRoute(ZONE_ID, '', SCRIPT_NAME))
+        .to.be.rejectedWith('pattern is required');
+    });
+
+    it('throws when scriptName is missing', async () => {
+      await expect(client.addRoute(ZONE_ID, 'example.com/*', ''))
+        .to.be.rejectedWith('scriptName is required');
+    });
+
     it('throws when the API returns an error', async () => {
       nock(CF_API_BASE)
         .post(`/zones/${ZONE_ID}/workers/routes`)
@@ -305,6 +419,14 @@ describe('CloudflareClient', () => {
       expect(log.info).to.have.been.calledWith(
         `Deleting route ${ROUTE_ID} from zone ${ZONE_ID}`,
       );
+    });
+
+    it('throws when zoneId is missing', async () => {
+      await expect(client.deleteRoute('', ROUTE_ID)).to.be.rejectedWith('zoneId is required');
+    });
+
+    it('throws when routeId is missing', async () => {
+      await expect(client.deleteRoute(ZONE_ID, '')).to.be.rejectedWith('routeId is required');
     });
 
     it('throws when the API returns an error', async () => {

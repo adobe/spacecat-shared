@@ -15,6 +15,8 @@ import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 const CF_API_BASE = 'https://api.cloudflare.com/client/v4';
 
 export default class CloudflareClient {
+  #token;
+
   /**
    * Creates a CloudflareClient from a Universal context.
    * Reads the API token from context.env.CLOUDFLARE_API_TOKEN.
@@ -38,21 +40,38 @@ export default class CloudflareClient {
     if (!hasText(token)) {
       throw new Error('CloudflareClient requires a token');
     }
-    this.token = token;
+    this.#token = token;
     this.apiBase = apiBase;
     this.log = log;
   }
 
   async #cfFetch(path, options = {}) {
     const url = `${this.apiBase}${path}`;
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        ...options.headers,
-      },
-    });
-    const body = await res.json();
+    let res;
+    try {
+      res = await fetch(url, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${this.#token}`,
+          ...options.headers,
+        },
+      });
+    } catch (e) {
+      throw new Error(`Cloudflare API request to ${path} failed: ${e.message}`);
+    }
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Cloudflare API returned ${res.status} on ${path}: ${text.slice(0, 200)}`);
+    }
+
+    let body;
+    try {
+      body = await res.json();
+    } catch {
+      throw new Error(`Cloudflare API returned a non-JSON response on ${path}`);
+    }
+
     if (!body.success) {
       const msg = body.errors?.[0]?.message || `Cloudflare API error on ${path}`;
       throw new Error(msg);
@@ -61,12 +80,19 @@ export default class CloudflareClient {
   }
 
   /**
-   * Lists all Cloudflare accounts accessible with the current token.
+   * Lists Cloudflare accounts accessible with the current token.
+   *
+   * Returns a single page of results. To retrieve more than `perPage` accounts,
+   * call repeatedly with an incrementing `page`.
+   *
+   * @param {object} [options]
+   * @param {number} [options.page=1] - 1-based page number
+   * @param {number} [options.perPage=50] - results per page
    * @returns {Promise<Array<{id: string, name: string}>>}
    */
-  async listAccounts() {
+  async listAccounts({ page = 1, perPage = 50 } = {}) {
     this.log.info('Listing Cloudflare accounts');
-    return this.#cfFetch('/accounts?per_page=50');
+    return this.#cfFetch(`/accounts?page=${page}&per_page=${perPage}`);
   }
 
   /**
@@ -82,6 +108,16 @@ export default class CloudflareClient {
    * @returns {Promise<object>}
    */
   async deployWorkerScript(accountId, scriptName, scriptContent, bindings = [], opts = {}) {
+    if (!hasText(accountId)) {
+      throw new Error('accountId is required');
+    }
+    if (!hasText(scriptName)) {
+      throw new Error('scriptName is required');
+    }
+    if (!hasText(scriptContent)) {
+      throw new Error('scriptContent is required');
+    }
+
     const {
       compatibilityDate = '2025-01-01',
       observability = true,
@@ -115,7 +151,16 @@ export default class CloudflareClient {
    * @returns {Promise<object>}
    */
   async setWorkerSecret(accountId, scriptName, secretName, secretValue) {
-    this.log.info(`Setting secret '${secretName}' on worker '${scriptName}'`);
+    if (!hasText(accountId)) {
+      throw new Error('accountId is required');
+    }
+    if (!hasText(scriptName)) {
+      throw new Error('scriptName is required');
+    }
+    if (!hasText(secretName)) {
+      throw new Error('secretName is required');
+    }
+    this.log.debug(`Setting secret '${secretName}' on worker '${scriptName}'`);
     return this.#cfFetch(`/accounts/${accountId}/workers/scripts/${scriptName}/secrets`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -125,11 +170,18 @@ export default class CloudflareClient {
 
   /**
    * Lists active Cloudflare zones accessible with the current token.
+   *
+   * Returns a single page of results. To retrieve more than `perPage` zones,
+   * call repeatedly with an incrementing `page`.
+   *
+   * @param {object} [options]
+   * @param {number} [options.page=1] - 1-based page number
+   * @param {number} [options.perPage=50] - results per page
    * @returns {Promise<Array<{id: string, name: string}>>}
    */
-  async listZones() {
+  async listZones({ page = 1, perPage = 50 } = {}) {
     this.log.info('Listing Cloudflare zones');
-    return this.#cfFetch('/zones?per_page=50&status=active');
+    return this.#cfFetch(`/zones?page=${page}&per_page=${perPage}&status=active`);
   }
 
   /**
@@ -138,6 +190,9 @@ export default class CloudflareClient {
    * @returns {Promise<Array<{id: string, pattern: string, script: string}>>}
    */
   async listRoutes(zoneId) {
+    if (!hasText(zoneId)) {
+      throw new Error('zoneId is required');
+    }
     this.log.info(`Listing routes for zone ${zoneId}`);
     return this.#cfFetch(`/zones/${zoneId}/workers/routes`);
   }
@@ -150,6 +205,15 @@ export default class CloudflareClient {
    * @returns {Promise<{id: string, pattern: string, script: string}>}
    */
   async addRoute(zoneId, pattern, scriptName) {
+    if (!hasText(zoneId)) {
+      throw new Error('zoneId is required');
+    }
+    if (!hasText(pattern)) {
+      throw new Error('pattern is required');
+    }
+    if (!hasText(scriptName)) {
+      throw new Error('scriptName is required');
+    }
     this.log.info(`Adding route '${pattern}' → '${scriptName}' on zone ${zoneId}`);
     return this.#cfFetch(`/zones/${zoneId}/workers/routes`, {
       method: 'POST',
@@ -165,6 +229,12 @@ export default class CloudflareClient {
    * @returns {Promise<object>}
    */
   async deleteRoute(zoneId, routeId) {
+    if (!hasText(zoneId)) {
+      throw new Error('zoneId is required');
+    }
+    if (!hasText(routeId)) {
+      throw new Error('routeId is required');
+    }
     this.log.info(`Deleting route ${routeId} from zone ${zoneId}`);
     return this.#cfFetch(`/zones/${zoneId}/workers/routes/${routeId}`, {
       method: 'DELETE',

@@ -42,12 +42,17 @@ export interface CloudflareClientConfig {
   apiBase?: string;
 }
 
+export interface PaginationOptions {
+  page?: number;
+  perPage?: number;
+}
+
 export default class CloudflareClient {
   static createFrom(context: object): CloudflareClient;
 
-  constructor(config: CloudflareClientConfig, log?: object): void;
+  constructor(config: CloudflareClientConfig, log?: object);
 
-  listAccounts(): Promise<CloudflareAccount[]>;
+  listAccounts(options?: PaginationOptions): Promise<CloudflareAccount[]>;
 
   deployWorkerScript(
     accountId: string,
@@ -64,7 +69,7 @@ export default class CloudflareClient {
     secretValue: string,
   ): Promise<object>;
 
-  listZones(): Promise<CloudflareZone[]>;
+  listZones(options?: PaginationOptions): Promise<CloudflareZone[]>;
 
   listRoutes(zoneId: string): Promise<WorkerRoute[]>;
 

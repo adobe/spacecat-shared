@@ -514,8 +514,9 @@ function filterBySiteScope(urls, siteBaseUrl) {
 
 /**
  * Extracts the pathname from a URL string, stripping trailing slashes on non-root paths.
- * The result is always lowercased. Falls back to the raw string (also lowercased) when
- * the URL is not parseable (e.g. invalid or relative). Returns '' for non-string input.
+ * The result is always lowercased. Leading-slash inputs are returned directly (lowercased,
+ * trailing slash stripped). Falls back to the raw lowercased string when the URL is not
+ * parseable (e.g. invalid). Returns '' for non-string input.
  *
  * @param {string} url
  * @returns {string} pathname, or the original string on parse failure, or '' for non-strings
@@ -526,7 +527,8 @@ export function toPathname(url) {
   }
   try {
     if (url.startsWith('/')) {
-      return url.toLowerCase();
+      const lower = url.toLowerCase();
+      return lower === '/' ? lower : lower.replace(/\/$/, '');
     }
     const { pathname } = new URL(prependSchema(url));
     return pathname === '/' ? pathname : pathname.replace(/\/$/, '').toLowerCase();

@@ -1346,6 +1346,10 @@ describe('URL Utility Functions', () => {
       expect(toPathname('/some/PATH')).to.equal('/some/path');
     });
 
+    it('strips trailing slash from leading-slash paths', () => {
+      expect(toPathname('/some/path/')).to.equal('/some/path');
+    });
+
     it('falls back to lowercased string when URL parsing fails', () => {
       expect(toPathname('[invalid-url')).to.equal('[invalid-url');
     });

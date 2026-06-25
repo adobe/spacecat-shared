@@ -20,9 +20,12 @@
 import {
   createProjectMock,
   createProjectResponseFromRequest,
+  applyProjectUpdate,
   createProjectAiModelMock,
   createAiModelMock,
   createPromptMock,
+  createBenchmarkMock,
+  createBrandUrlMock,
 } from '../../mock/factories.js';
 import type { components } from '../../src/index.js';
 
@@ -30,6 +33,8 @@ type Project = components['schemas']['model.ProjectResponse'];
 type ProjectAIModel = components['schemas']['model.ProjectAIModelResponse'];
 type Prompt = components['schemas']['model.AIOPromptWithStatus'];
 type AIModel = components['schemas']['model.AIModelResponse'];
+type Benchmark = components['schemas']['model.AIOBenchmarkWithCounters'];
+type BrandUrl = components['schemas']['model.BrandURL'];
 
 // 1. Each factory returns exactly its spec type (assignable in both directions).
 const project: Project = createProjectMock();
@@ -44,6 +49,19 @@ const created: Project = createProjectResponseFromRequest({
 void created;
 // @ts-expect-error — location_id is an integer in ProjectRequest, not a string.
 createProjectResponseFromRequest({ location_id: 'nope' });
+
+// 1c. applyProjectUpdate maps a flat ProjectUpdateRequest onto a stored draft, returning a Project.
+const updatedProject: Project = applyProjectUpdate(
+  createProjectMock(),
+  { type: 'ai', brand_names: ['X'] },
+);
+void updatedProject;
+
+// 1d. the benchmark + brand-url factories (the overlay drift-guarded list shapes).
+const benchmark: Benchmark = createBenchmarkMock();
+const brandUrl: BrandUrl = createBrandUrlMock();
+void benchmark;
+void brandUrl;
 
 // 2. Partial overrides of real fields are accepted.
 createProjectMock({ name: 'Acme' });

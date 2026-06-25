@@ -62,6 +62,8 @@ export function createQuota(store) {
      * @returns {{ id: string, projects: number | null, prompts: number | null }}
      */
     set(workspaceId, allocation = {}) {
+      // Read-then-write is safe: the mock store is single-writer (one Node process), so there is no
+      // TOCTOU between the get below and the update/create.
       const record = {
         id: workspaceId,
         projects: asLimit(allocation.projects),

@@ -14,6 +14,14 @@ name: Project Engine Mock E2E
 permissions: {}
 
 on:
+  # Also run post-merge on main: the type-surface check + live E2E are not in main.yaml, so without
+  # this a regression that lands on main (e.g. a rebase/merge resolution) would sit unseen until the
+  # next PR that touches the package. Same path filter, so it only runs when this package changes.
+  push:
+    branches: [main]
+    paths:
+      - 'packages/spacecat-shared-project-engine-client/**'
+      - '.github/workflows/project-engine-mock-e2e.yaml'
   pull_request:
     paths:
       - 'packages/spacecat-shared-project-engine-client/**'

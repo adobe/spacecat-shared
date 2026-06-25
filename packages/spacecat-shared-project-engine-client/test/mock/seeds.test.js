@@ -21,7 +21,9 @@ import {
   EMPTY_WORKSPACE,
   buildSeed,
 } from '../../mock/seeds.js';
-import { createProjectAiModelMock, createPromptMock } from '../../mock/factories.js';
+import {
+  createProjectAiModelMock, createPromptMock, createBenchmarkMock, createBrandUrlMock,
+} from '../../mock/factories.js';
 
 describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {
@@ -103,6 +105,31 @@ describe('buildSeed', () => {
     expect(prompts).to.have.length(1);
     expect(prompts[0].name).to.equal('What is X?');
     expect(prompts[0].tags).to.deep.equal([]); // factory default
+  });
+
+  it('seeds benchmarks and brand URLs grouped by benchmark', () => {
+    const workspaceId = 'ws-b';
+    const projectId = 'pr-b';
+    const benchmarkId = 'bm-b';
+    const snapshot = buildSeed({
+      workspaceId,
+      projects: [
+        {
+          id: projectId,
+          name: 'Bench',
+          benchmarks: [createBenchmarkMock({ id: benchmarkId, main_brand: true })],
+          brandUrls: [
+            { benchmarkId, urls: [createBrandUrlMock({ url: 'https://x.example/a' })] },
+          ],
+        },
+      ],
+    });
+
+    const store = new InMemoryStore();
+    store.load(snapshot);
+    const ops = createStatefulOps(store);
+    expect(ops.benchmarks.list({ workspaceId, projectId })).to.have.length(1);
+    expect(ops.brand_urls.list({ workspaceId, projectId, benchmarkId })).to.have.length(1);
   });
 
   it('handles an empty workspace (no projects)', () => {

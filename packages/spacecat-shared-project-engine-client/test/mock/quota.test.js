@@ -140,7 +140,12 @@ describe('quota — usage()', () => {
 });
 
 describe('quota — QUOTA_COLLECTION export', () => {
-  it('is the store collection name the limits live in', () => {
-    expect(QUOTA_COLLECTION).to.equal('quota');
+  it('names the exact store collection quota rows are written to and read from', () => {
+    const store = new InMemoryStore();
+    const quota = createQuota(store);
+    quota.set('ws-z', { projects: 5, prompts: 100 });
+    // Proves the constant is wired to the store, not just that it equals a string literal.
+    const [row] = store.list(QUOTA_COLLECTION);
+    expect(row).to.include({ id: 'ws-z', projects: 5, prompts: 100 });
   });
 });

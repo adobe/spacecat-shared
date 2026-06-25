@@ -166,6 +166,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
   // Restore the seed before each case so they are order-independent.
   beforeEach(async () => {
+    if (serverExited) {
+      throw new Error('mock server exited before this test ran — see its stderr above');
+    }
     await fetch(`${baseUrl}/__reset`, { method: 'POST' });
   });
 
@@ -524,10 +527,17 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // seeded own-brand + the new competitor
     expect(listed.aio_benchmarks.map((b) => b.id)).to.include(created.ids[0]);
 
-    await client.DELETE('/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks', {
-      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-      body: { ids: created.ids },
+    // Live ack: 202 with an EMPTY body (verified 2026-06-25), not a BasicResponse. Raw fetch so the
+    // empty body is asserted — the typed client swallows it, so a regression to a JSON body passes.
+    const benchUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}`
+      + `/projects/${SEED_PROJECT}/ai_models/benchmarks`;
+    const rawBenchDel = await fetch(benchUrl, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ ids: created.ids }),
     });
+    expect(rawBenchDel.status).to.equal(202);
+    expect(await rawBenchDel.text()).to.equal('');
     const { data: after } = await client.GET(
       '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
       { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
@@ -537,18 +547,16 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
   // Mirrors the consumer's updateBenchmark: PUT a brand_aliases re-sync, list reflects it.
   it('updates a benchmark in place (PUT v1) and the list reflects the change', async () => {
-    const { error: putError } = await client.PUT(
-      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks/{benchmark_id}',
-      {
-        params: {
-          path: {
-            id: SEED_WORKSPACE, project_id: SEED_PROJECT, benchmark_id: SEED_IDS.benchmarkId,
-          },
-        },
-        body: { brand_aliases: ['Adobe Inc', 'Adobe Systems'] },
-      },
-    );
-    expect(putError).to.equal(undefined);
+    // Live ack: 202 with an EMPTY body (verified 2026-06-25) — raw fetch asserts the empty body.
+    const benchPutUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}`
+      + `/projects/${SEED_PROJECT}/ai_models/benchmarks/${SEED_IDS.benchmarkId}`;
+    const rawBenchPut = await fetch(benchPutUrl, {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ brand_aliases: ['Adobe Inc', 'Adobe Systems'] }),
+    });
+    expect(rawBenchPut.status).to.equal(202);
+    expect(await rawBenchPut.text()).to.equal('');
 
     const { data: listed } = await client.GET(
       '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
@@ -591,7 +599,16 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // seeded url + the new one
     expect(listed.brand_urls.map((u) => u.id)).to.include(created.ids[0]);
 
-    await client.DELETE(BRAND_URLS, { params: { path }, body: { ids: created.ids } });
+    // Live ack: 202 with an EMPTY body (verified 2026-06-25) — raw fetch asserts the empty body.
+    const buUrl = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}`
+      + `/projects/${SEED_PROJECT}/aio/benchmarks/${benchmarkId}/brand_urls`;
+    const rawBuDel = await fetch(buUrl, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ ids: created.ids }),
+    });
+    expect(rawBuDel.status).to.equal(202);
+    expect(await rawBuDel.text()).to.equal('');
     const { data: after } = await client.GET(BRAND_URLS, { params: { path } });
     expect(after.brand_urls.map((u) => u.id)).to.not.include(created.ids[0]);
   });

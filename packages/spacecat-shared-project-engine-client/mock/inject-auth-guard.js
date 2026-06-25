@@ -43,7 +43,12 @@
 /** Exported HTTP methods in any declaration shape — the count the guard must match. */
 const DECLARED_METHOD = /export\s+(?:(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s*\(|const\s+(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s*=)/g;
 
-/** The canonical guardable shape: `export [async] function VERB($) {`. */
+/**
+ * The canonical guardable shape: `export [async] function VERB($) {`. OPTIONS/HEAD are deliberately
+ * absent here but present in DECLARED_METHOD: a handler exporting one is counted but not matched,
+ * so the count-mismatch assert below throws (fail-closed) rather than silently guarding a verb that
+ * Counterfact may not even route. Add them here only if real OPTIONS/HEAD handlers are introduced.
+ */
 const GUARDABLE_METHOD = /(export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE)\s*\(\$\)\s*\{)/g;
 
 /**

@@ -10,14 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Opportunity, TaskManagementConnection } from '../index';
+import type { BaseCollection, BaseModel } from '../index';
 
 export interface Ticket extends BaseModel {
   getCreatedBy(): string;
   getOpportunityId(): string | undefined;
   getOrganizationId(): string;
   getTaskManagementConnectionId(): string;
-  getTicketId(): string;
+  getExternalTicketId(): string;
   getTicketKey(): string;
   getTicketProvider(): string;
   getTicketStatus(): string;

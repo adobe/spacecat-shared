@@ -16,7 +16,7 @@ import BaseModel from '../base/base.model.js';
  * Ticket — one Jira issue created by ASO via a TaskManagementConnection.
  *
  * Preserves the provider-side identifiers needed for future operations:
- *   ticketId       — Jira's internal numeric ID (data.id). Required for PATCH/update calls.
+ *   externalTicketId — Jira's internal numeric ID (data.id). Required for PATCH/update calls.
  *   ticketKey      — Human-readable issue key, e.g. 'ASO-42'. Used in UI links.
  *   ticketUrl      — Direct browser URL, e.g. 'https://acme.atlassian.net/browse/ASO-42'.
  *   ticketProvider — Provider that created the ticket (e.g. 'jira_cloud'). Denormalized from

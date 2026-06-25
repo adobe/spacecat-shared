@@ -27,6 +27,7 @@ import { createServer } from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSerenityProjectEngineApiClient } from '../../src/index.js';
+import { buildSeed, SEEDS } from '../../mock/seeds.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, '..', '..');
@@ -187,17 +188,23 @@ async function waitForReady(baseUrl, deadline) {
     expect(error).to.not.equal(undefined);
   });
 
-  it('lists and adds ai_models on the seeded project', async () => {
+  // Mirrors the real consumer (spacecat-api-service): add via the v2 route, list via v1.
+  // The v2 POST writes to the same version-agnostic store key, so the v1 GET sees it.
+  it('adds an ai_model via v2 and lists it back via v1', async () => {
     const { data: before } = await client.GET(
       '/v1/workspaces/{id}/projects/{project_id}/ai_models',
       { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
     );
     expect(before.total).to.equal(1);
 
-    await client.POST('/v1/workspaces/{id}/projects/{project_id}/ai_models', {
-      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-      body: { model_id: 'gpt-4o' },
-    });
+    const { error: addError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { model_id: 'gpt-4o' },
+      },
+    );
+    expect(addError).to.equal(undefined);
 
     const { data: after } = await client.GET(
       '/v1/workspaces/{id}/projects/{project_id}/ai_models',
@@ -268,5 +275,46 @@ async function waitForReady(baseUrl, deadline) {
     });
     expect(data.total).to.equal(1);
     expect(data.items[0].id).to.equal(SEED_PROJECT);
+  });
+
+  it('__dump exposes the current store state', async () => {
+    const res = await fetch(`${baseUrl}/__dump`);
+    expect(res.ok).to.equal(true);
+    const state = await res.json();
+    // The booted seed is workspace-with-data: one project under the seed workspace.
+    expect(state[`projects:${SEED_WORKSPACE}`].map((p) => p.id)).to.include(SEED_PROJECT);
+  });
+
+  it('__seed loads a DB-shaped snapshot the typed client then reads back', async () => {
+    const snapshot = buildSeed({
+      workspaceId: 'ws-seeded',
+      projects: [{ id: 'pr-seeded', name: 'From harness' }],
+    });
+    const res = await fetch(`${baseUrl}/__seed`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(snapshot),
+    });
+    expect(res.ok).to.equal(true);
+
+    const { data } = await client.GET('/v1/workspaces/{id}/projects', {
+      params: { path: { id: 'ws-seeded' } },
+    });
+    expect(data.total).to.equal(1);
+    expect(data.items[0].id).to.equal('pr-seeded');
+
+    // the previous seed's workspace is gone (seed replaces state).
+    const { data: old } = await client.GET('/v1/workspaces/{id}/projects', {
+      params: { path: { id: SEED_WORKSPACE } },
+    });
+    expect(old.total).to.equal(0);
+
+    // __seed rewrites the reset baseline, so restore the boot seed to keep this case
+    // order-independent (beforeEach __reset would otherwise restore to ws-seeded).
+    await fetch(`${baseUrl}/__seed`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(SEEDS['workspace-with-data']),
+    });
   });
 });

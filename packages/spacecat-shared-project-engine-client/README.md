@@ -121,7 +121,8 @@ Base URL: `http://localhost:<port>/enterprise/projects/api`.
 | Var | Default | Purpose |
 | --- | --- | --- |
 | `MOCK_PORT` | `4010` | listen port |
-| `MOCK_SEED` | default seed | startup fixture; unknown values fall back to the default |
+| `MOCK_SEED` | default seed | named startup fixture; unknown values fall back to the default |
+| `MOCK_SEED_FILE` | — | path to a JSON `Snapshot` to boot from; takes precedence over `MOCK_SEED` |
 
 Stateful endpoints (backed by the store):
 
@@ -129,13 +130,63 @@ Stateful endpoints (backed by the store):
 | --- | --- |
 | `GET/POST /v1/workspaces/{id}/projects` | list / create |
 | `GET/PATCH/DELETE /v1/workspaces/{id}/projects/{project_id}` | get / update / remove (404 when missing) |
-| `GET/POST /v1/workspaces/{id}/projects/{project_id}/ai_models` | list / add |
+| `GET/DELETE /v1/workspaces/{id}/projects/{project_id}/ai_models` | list / batch-delete |
+| `POST /v2/workspaces/{id}/projects/{project_id}/ai_models` | add (the path the real consumer uses; writes the same store collection the v1 list/delete read) |
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged` | create prompts grouped by tag name |
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags` | list prompts (empty `tag_ids` lists all; otherwise OR-filter) |
 | `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | batch-delete prompts by id |
 
-`POST /enterprise/projects/api/__reset` restores the store to its startup seed — call it
-between E2E cases for isolation. It is a test control route, not part of the Project Engine API.
+### Test control routes (not part of the Project Engine API)
+
+All under the base URL, e.g. `http://localhost:<port>/enterprise/projects/api/__dump`:
+
+| Route | Purpose |
+| --- | --- |
+| `POST /__reset` | restore the store to its boot seed (or the last `/__seed`) — call between E2E cases for isolation |
+| `POST /__seed` | replace the store with the posted `Snapshot` and make it the new reset baseline — set the mock to exactly the state a test needs |
+| `GET /__dump` | **look inside the mock DB** — returns the current store state as JSON (every `projects:{ws}` / `ai_models:{ws}:{pr}` / `prompts:{ws}:{pr}` collection and its rows) |
+
+**Inspect what's inside:**
+
+```bash
+curl -s http://localhost:4010/enterprise/projects/api/__dump | jq
+```
+
+**Seed state that matches your DB.** `/__seed` (and a `MOCK_SEED_FILE`) take a `Snapshot`: a
+plain JSON object keyed by `<resource>:<scope>` whose values are entity rows. Use the same
+workspace/project ids you load into Postgres (`semrush_workspace_id` / project id) so the two
+sides line up. Any caller — including the cross-repo harness consuming the published client —
+can POST this JSON directly:
+
+```jsonc
+// POST /__seed
+{
+  "projects:ws-from-db":            [{ "id": "pr-from-db", "name": "Acme", "workspace_id": "ws-from-db" }],
+  "ai_models:ws-from-db:pr-from-db": [{ "id": "m-1", "name": "gpt-4o" }],
+  "prompts:ws-from-db:pr-from-db":   [{ "id": "q-1", "name": "What is Acme?", "tags": [] }]
+}
+```
+
+Inside this repo (tests / monorepo callers) the `buildSeed()` helper in `mock/seeds.js` authors
+that shape from a friendlier description so you don't hand-write the keys:
+
+```js
+import { buildSeed } from '../../mock/seeds.js';
+
+const snapshot = buildSeed({
+  workspaceId: 'ws-from-db',
+  projects: [{
+    id: 'pr-from-db',
+    name: 'Acme',
+    aiModels: [{ id: 'm-1', name: 'gpt-4o' }],
+    prompts: [{ id: 'q-1', name: 'What is Acme?' }],
+  }],
+});
+await fetch(`${baseUrl}/__seed`, { method: 'POST', body: JSON.stringify(snapshot) });
+```
+
+`buildSeed` lives with the (unpublished) mock, so external consumers POST the raw `Snapshot`
+above; `buildSeed` is the in-repo convenience that produces it.
 
 `npm run test:e2e` drives the **real client** against a freshly booted mock (self-managed
 lifecycle, `__reset` between cases). It is gated behind `MOCK_E2E=1` and lives outside the

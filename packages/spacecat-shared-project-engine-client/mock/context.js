@@ -17,34 +17,72 @@
  * `$.context`; a single Context registered at the routes root (via `_.context.js`) is therefore
  * shared by all routes and persists across requests — the statefulness seam. This class wires the
  * pure {@link InMemoryStore} + {@link createStatefulOps} (unit-tested on their own) to a seed
- * selected at startup, and exposes `reset()` so the test-only `POST /__reset` route can restore
- * the seed between E2E cases.
+ * selected at startup, and exposes the test-only control surface — `reset()` (`POST /__reset`),
+ * `seed()` (`POST /__seed`), and `dump()` (`GET /__dump`) — so an E2E / the cross-repo harness
+ * can drive and inspect mock state between cases.
  *
- * Kept import-resolvable on its own (only relative sibling imports) so the runner can materialize
- * it under `.counterfact/lib/` and re-export it from `.counterfact/routes/_.context.js`.
+ * Startup seed precedence: an explicit `seedFile` (a JSON {@link Snapshot} path, e.g. one the
+ * harness generates from the same fixtures it loads into Postgres so the workspace/project ids
+ * line up) wins over a named `seed`, which falls back to the default. `seedFile` is read with
+ * `node:fs` at construction.
+ *
+ * Kept import-resolvable on its own (only relative sibling imports + node builtins) so the runner
+ * can materialize it under `.counterfact/routes/_lib/` and re-export it from `_.context.js`.
  */
 
+import { readFileSync } from 'node:fs';
 import { InMemoryStore } from './store.js';
 import { createStatefulOps } from './stateful.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
+/**
+ * @typedef {import('./store.js').Snapshot} Snapshot
+ */
+
 export class Context {
   /**
-   * @param {{ seed?: string }} [options] selects a named seed set; falls back to the default
-   *   when omitted or unknown. The runner passes `process.env.MOCK_SEED`.
+   * @param {{ seed?: string, seedFile?: string }} [options] `seedFile` (a JSON Snapshot path)
+   *   takes precedence; otherwise `seed` selects a named seed set, falling back to the default
+   *   when omitted or unknown. The runner passes `process.env.MOCK_SEED` / `MOCK_SEED_FILE`.
    */
-  constructor({ seed } = {}) {
-    this.seedName = seed && SEEDS[seed] ? seed : DEFAULT_SEED;
+  constructor({ seed, seedFile } = {}) {
     this.store = new InMemoryStore();
-    this.store.load(SEEDS[this.seedName]);
+    if (seedFile) {
+      this.seedName = null;
+      this.store.load(JSON.parse(readFileSync(seedFile, 'utf8')));
+    } else {
+      this.seedName = seed && SEEDS[seed] ? seed : DEFAULT_SEED;
+      this.store.load(SEEDS[this.seedName]);
+    }
     this.ops = createStatefulOps(this.store);
   }
 
   /**
-   * Restores the store to the seed it was loaded with. Backs `POST /__reset`.
+   * Restores the store to the seed it was loaded with (boot seed, or the last `seed()`).
+   * Backs `POST /__reset`.
    * @returns {void}
    */
   reset() {
     this.store.reset();
+  }
+
+  /**
+   * Replaces the store state with `snapshot` and makes it the new reset baseline, so a later
+   * `reset()` returns here. Lets the harness set the world to exactly the state a test needs
+   * (typically a shared baseline merged with per-test, namespaced data). Backs `POST /__seed`.
+   * @param {Snapshot} snapshot collection-keyed state; see {@link buildSeed} to author one
+   * @returns {void}
+   */
+  seed(snapshot) {
+    this.store.load(snapshot);
+  }
+
+  /**
+   * Returns the CURRENT store state (live mutations, deep-cloned) for inspection. Backs the
+   * read-only `GET /__dump` route — the way to "look inside" the mock DB.
+   * @returns {Snapshot}
+   */
+  dump() {
+    return this.store.snapshot();
   }
 }

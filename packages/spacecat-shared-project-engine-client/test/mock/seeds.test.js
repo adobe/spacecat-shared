@@ -18,6 +18,7 @@ import {
   DEFAULT_SEED,
   SEED_IDS,
   EMPTY_WORKSPACE,
+  buildSeed,
 } from '../../mock/seeds.js';
 
 describe('seeds', () => {
@@ -61,5 +62,38 @@ describe('seeds', () => {
   it('seed sets are frozen (handed to the store by reference safely)', () => {
     expect(Object.isFrozen(EMPTY_WORKSPACE)).to.equal(true);
     expect(Object.isFrozen(SEEDS)).to.equal(true);
+  });
+});
+
+describe('buildSeed', () => {
+  it('builds a collection-keyed snapshot the stateful ops can read back', () => {
+    const snapshot = buildSeed({
+      workspaceId: 'ws-7',
+      projects: [
+        {
+          id: 'pr-7',
+          name: 'Mirror',
+          aiModels: [{ id: 'm-1', name: 'gpt-4o' }],
+          prompts: [{ id: 'q-1', name: 'What is X?' }],
+        },
+      ],
+    });
+
+    const store = new InMemoryStore();
+    store.load(snapshot);
+    const ops = createStatefulOps(store);
+    const scope = { workspaceId: 'ws-7', projectId: 'pr-7' };
+
+    expect(ops.projects.list({ workspaceId: 'ws-7' })).to.have.length(1);
+    expect(ops.projects.get({ workspaceId: 'ws-7' }, 'pr-7')?.workspace_id).to.equal('ws-7');
+    expect(ops.ai_models.list(scope)).to.have.length(1);
+    const prompts = ops.prompts.list(scope);
+    expect(prompts).to.have.length(1);
+    expect(prompts[0].tags).to.deep.equal([]); // default tags applied
+  });
+
+  it('handles an empty workspace (no projects)', () => {
+    const snapshot = buildSeed({ workspaceId: 'ws-empty' });
+    expect(snapshot).to.deep.equal({ 'projects:ws-empty': [] });
   });
 });

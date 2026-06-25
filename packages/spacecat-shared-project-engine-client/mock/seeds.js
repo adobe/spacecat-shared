@@ -59,3 +59,35 @@ export const DEFAULT_SEED = 'workspace-with-data';
 
 /** Ids used by the seed sets, exported so E2E flows can reference them without hardcoding. */
 export const SEED_IDS = Object.freeze({ workspaceId: WORKSPACE_ID, projectId: PROJECT_ID });
+
+/**
+ * @typedef {object} SeedProject
+ * @property {string} id project id (use the project / `semrush_workspace_id` ids from your DB
+ *   fixtures so the mock and Postgres line up)
+ * @property {string} [name]
+ * @property {Array<{ id: string, name?: string }>} [aiModels]
+ * @property {Array<{ id: string, name: string, tags?: string[] }>} [prompts] AIOPromptWithStatus
+ */
+
+/**
+ * Authors a collection-keyed {@link Snapshot} from a friendly, DB-shaped description, so a caller
+ * (the cross-repo e2e harness) can mirror the rows it inserted into Postgres without hand-writing
+ * `collectionKey(...)` keys. Pass the result to `POST /__seed` or write it to a `MOCK_SEED_FILE`.
+ *
+ * @param {{ workspaceId: string, projects?: SeedProject[] }} spec
+ * @returns {import('./store.js').Snapshot}
+ */
+export function buildSeed({ workspaceId, projects = [] }) {
+  const projectsKey = collectionKey('projects', { workspaceId });
+  /** @type {import('./store.js').Snapshot} */
+  const snapshot = { [projectsKey]: [] };
+  for (const {
+    id, name, aiModels = [], prompts = [],
+  } of projects) {
+    snapshot[projectsKey].push({ id, name, workspace_id: workspaceId });
+    const scope = { workspaceId, projectId: id };
+    snapshot[collectionKey('ai_models', scope)] = aiModels.map((m) => ({ ...m }));
+    snapshot[collectionKey('prompts', scope)] = prompts.map((p) => ({ tags: [], ...p }));
+  }
+  return snapshot;
+}

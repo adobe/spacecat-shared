@@ -103,3 +103,20 @@ describe('InMemoryStore — seed & reset', () => {
     expect(store.get('projects', 'pr2')).to.equal(undefined);
   });
 });
+
+describe('InMemoryStore — snapshot', () => {
+  it('exports the current live state (including emptied collections), deep-cloned', () => {
+    const store = new InMemoryStore();
+    store.load({ projects: [{ id: 'pr1', name: 'seedproj' }] });
+    store.create('projects', { id: 'pr2', name: 'new' });
+    const out = store.snapshot();
+    expect(out.projects.map((p) => p.id)).to.have.members(['pr1', 'pr2']);
+    // deep-cloned: mutating the snapshot does not affect the store.
+    out.projects[0].name = 'mutated';
+    expect(store.get('projects', 'pr1')?.name).to.equal('seedproj');
+  });
+
+  it('returns an empty object for a fresh store', () => {
+    expect(new InMemoryStore().snapshot()).to.deep.equal({});
+  });
+});

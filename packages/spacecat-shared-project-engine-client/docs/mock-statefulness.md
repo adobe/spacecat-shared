@@ -22,7 +22,7 @@ api-service calls (`src/support/serenity/handlers/*`):
 | `DELETE /v1/workspaces/{id}/projects/{id}` | projects | yes | **stateful** |
 | `POST /v1/workspaces/{id}/projects/{id}/publish` | publish (action) | — | passthrough |
 | `GET  /v1/workspaces/{id}/projects/{id}/ai_models` | ai_models | yes | **stateful** |
-| `POST /v1/workspaces/{id}/projects/{id}/ai_models` | ai_models | yes | **stateful** |
+| `POST /v2/workspaces/{id}/projects/{id}/ai_models` | ai_models | yes | **stateful** (the consumer's `addAiModel` path — list/delete have no v2 variant) |
 | `DELETE /v1/workspaces/{id}/projects/{id}/ai_models` | ai_models | yes | **stateful** |
 | `GET  /v1/ai_models` | ai_models (catalog) | no | static |
 | `GET  /v1/languages` | languages | no | static |

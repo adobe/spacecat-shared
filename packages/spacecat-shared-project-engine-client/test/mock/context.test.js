@@ -11,8 +11,13 @@
  */
 
 import { expect } from 'chai';
+import {
+  mkdtempSync, writeFileSync, rmSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Context } from '../../mock/context.js';
-import { SEED_IDS } from '../../mock/seeds.js';
+import { SEED_IDS, buildSeed } from '../../mock/seeds.js';
 
 describe('mock Context', () => {
   const { workspaceId, projectId } = SEED_IDS;
@@ -40,5 +45,53 @@ describe('mock Context', () => {
     expect(ctx.ops.prompts.list({ workspaceId, projectId })).to.have.length(2);
     ctx.reset();
     expect(ctx.ops.prompts.list({ workspaceId, projectId })).to.have.length(1);
+  });
+
+  it('seed() replaces state and becomes the new reset baseline', () => {
+    const ctx = new Context({ seed: 'empty-workspace' });
+    ctx.seed(buildSeed({
+      workspaceId: 'ws-99',
+      projects: [{ id: 'pr-99', name: 'Seeded' }],
+    }));
+    expect(ctx.ops.projects.list({ workspaceId: 'ws-99' })).to.have.length(1);
+    // mutate, then reset → returns to the seeded baseline, not the boot seed.
+    ctx.ops.projects.create({ workspaceId: 'ws-99' }, { name: 'transient' });
+    expect(ctx.ops.projects.list({ workspaceId: 'ws-99' })).to.have.length(2);
+    ctx.reset();
+    expect(ctx.ops.projects.list({ workspaceId: 'ws-99' })).to.have.length(1);
+  });
+
+  it('dump() returns the current live state', () => {
+    const ctx = new Context();
+    ctx.ops.projects.create({ workspaceId }, { id: 'pr-extra', name: 'Extra' });
+    const snapshot = ctx.dump();
+    const projects = snapshot[`projects:${workspaceId}`];
+    expect(projects.map((p) => p.id)).to.have.members([projectId, 'pr-extra']);
+  });
+
+  describe('seedFile boot', () => {
+    let dir;
+    let seedFile;
+
+    before(() => {
+      dir = mkdtempSync(join(tmpdir(), 'pe-mock-seed-'));
+      seedFile = join(dir, 'seed.json');
+      writeFileSync(seedFile, JSON.stringify(buildSeed({
+        workspaceId: 'ws-file',
+        projects: [{ id: 'pr-file', name: 'From file' }],
+      })));
+    });
+
+    after(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('loads a JSON Snapshot file in preference to a named seed', () => {
+      const ctx = new Context({ seed: 'workspace-with-data', seedFile });
+      expect(ctx.seedName).to.equal(null);
+      expect(ctx.ops.projects.list({ workspaceId: 'ws-file' })).to.have.length(1);
+      // the named seed was NOT loaded.
+      expect(ctx.ops.projects.list({ workspaceId })).to.have.length(0);
+    });
   });
 });

@@ -147,6 +147,21 @@ export class InMemoryStore {
   }
 
   /**
+   * Exports the CURRENT store state (live mutations, not the seed baseline) as a deep-cloned
+   * {@link Snapshot}. Backs the test-only `GET /__dump` introspection route. Empty collections
+   * are included so callers can see a collection exists but holds nothing.
+   * @returns {Snapshot}
+   */
+  snapshot() {
+    /** @type {Snapshot} */
+    const out = {};
+    for (const [name, col] of this.#collections) {
+      out[name] = [...col.values()].map((entity) => clone(entity));
+    }
+    return out;
+  }
+
+  /**
    * @returns {void}
    */
   #applySeed() {

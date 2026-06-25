@@ -68,6 +68,7 @@ import {
 } from 'node:fs';
 import { dirname, join, parse as parsePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { injectAuthGuard } from './inject-auth-guard.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, '..');
@@ -92,55 +93,6 @@ export class Context extends Base {
   }
 }
 `;
-
-/**
- * Prepends the bearer-auth guard to every exported method of a route handler, so each real route
- * rejects a request lacking `Authorization: Bearer <token>` with the live gateway's
- * `401 { detail: 'Not authenticated' }` before running (see mock/auth.js, wired as
- * `context.authError`). It is applied HERE — at the single materialization seam — rather than
- * hand-written into every handler: bearer auth is cross-cutting (it gates ALL routes, unlike the
- * per-op quota check), so a central injection means no current or future handler can forget it,
- * and the committed handler source stays focused on its behaviour. The `__*` control routes
- * (reset/seed/dump/quota) are test-harness plumbing, not part of the emulated API, so they are
- * exempt. The guard returns a raw `{ status, body, contentType }`, which bypasses Counterfact
- * response validation (401 is not declared per-operation) — the same mechanism the quota 405 uses.
- *
- * The guard match is asserted, not best-effort: it counts every exported HTTP method declaration
- * and throws if any did not receive a guard. Without this, a handler authored in a shape the regex
- * does not match (`export const GET = ($) => …`, a destructured/renamed param, an `OPTIONS`/`HEAD`
- * verb) would silently materialize UNGUARDED and serve unauthenticated — an auth bypass that would
- * pass every gate. The throw turns that latent drift into a loud materialization failure.
- * @param {string} source the handler's committed `.js` source
- * @param {string} fileName the handler's base file name
- * @returns {string} source with a guard prepended to each GET/POST/PUT/PATCH/DELETE body
- */
-function injectAuthGuard(source, fileName) {
-  if (fileName.startsWith('__')) {
-    return source;
-  }
-  const guard = '\n  const __authDenied = $.context.authError($.headers);'
-    + '\n  if (__authDenied) { return __authDenied; }';
-  // Every exported HTTP method, regardless of the param/declaration shape the regex below guards.
-  const declaredMethods = (source.match(
-    /export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE)\s*\(/g,
-  ) ?? []).length;
-  let guarded = 0;
-  const out = source.replace(
-    /(export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE)\s*\(\$\)\s*\{)/g,
-    (match) => {
-      guarded += 1;
-      return `${match}${guard}`;
-    },
-  );
-  if (guarded !== declaredMethods) {
-    throw new Error(
-      `injectAuthGuard: ${fileName} declares ${declaredMethods} HTTP method export(s) but only `
-      + `${guarded} matched the guard pattern — a handler signature is unguarded and would serve `
-      + 'unauthenticated. Author real-route handlers as `export function VERB($) { … }`.',
-    );
-  }
-  return out;
-}
 
 /**
  * Recursively copies the committed `.js` handler tree to `dest`, renaming each file to `.ts`

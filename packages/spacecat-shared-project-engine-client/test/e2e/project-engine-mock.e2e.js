@@ -485,6 +485,29 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(after.aio_benchmarks.map((b) => b.id)).to.not.include(created.ids[0]);
   });
 
+  // Mirrors the consumer's updateBenchmark: PUT a brand_aliases re-sync, list reflects it.
+  it('updates a benchmark in place (PUT v1) and the list reflects the change', async () => {
+    const { error: putError } = await client.PUT(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks/{benchmark_id}',
+      {
+        params: {
+          path: {
+            id: SEED_WORKSPACE, project_id: SEED_PROJECT, benchmark_id: SEED_IDS.benchmarkId,
+          },
+        },
+        body: { brand_aliases: ['Adobe Inc', 'Adobe Systems'] },
+      },
+    );
+    expect(putError).to.equal(undefined);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const updated = listed.aio_benchmarks.find((b) => b.id === SEED_IDS.benchmarkId);
+    expect(updated.brand_aliases).to.deep.equal(['Adobe Inc', 'Adobe Systems']);
+  });
+
   it('listBrandUrls returns the seeded brand URL under the own-brand benchmark', async () => {
     const { data, error } = await client.GET(
       '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls',

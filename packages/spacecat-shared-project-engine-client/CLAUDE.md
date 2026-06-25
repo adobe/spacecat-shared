@@ -7,7 +7,9 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
   client) + generated types (`src/generated/types.ts`). This is the ONLY thing that ships
   (`files: ["src"]`).
 - `mock/` — the stateful mock (store, factories, seeds, quota metering, bearer auth, Counterfact
-  handlers, runner). NOT published; importable in-workspace via the `./mock/*` subpath export. Boot
+  handlers, runner). NOT published (`files: ["src"]` ships only `src/`, so the `./mock/*` subpath
+  export resolves via the in-workspace symlink only, never the published registry tarball —
+  intended: consumers use the mock as an in-monorepo dev dependency, not off npm). Boot
   with `npm run mock`. **Usage manual: `docs/mock-usage.md`** (humans + agents — auth, full
   endpoint inventory, seeds, control routes, quota, troubleshooting). AI-unit quota (the
   disguised-405 the live API returns for an over-allocation) is in `mock/quota.js`, set via the
@@ -19,6 +21,11 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
   new file imported by `mock/context.js` MUST be added to `LIB_FILES` in `mock/run.js` or the
   materialized `.counterfact/` tree breaks.
 - `spec/` — the vendored swagger + `spec/overlays/corrections.yaml` (corrections).
+
+**Coverage:** this package enforces **`branches: 100`** in `.nycrc.json` — stricter than the
+monorepo-standard 97% (root `CLAUDE.md`) — and excludes `mock/counterfact/routes/**` and
+`mock/run.js` (materialized handlers + the server launcher need a live server, validated by the
+E2E). Everything else, including `mock/inject-auth-guard.js`, hits 100%.
 
 ## Type-checking: `// @ts-check` is mandatory
 

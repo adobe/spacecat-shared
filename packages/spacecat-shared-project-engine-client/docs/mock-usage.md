@@ -49,6 +49,9 @@ mirrors this on **every real route**:
 - **Missing / non-Bearer / empty** → `401 { "detail": "Not authenticated" }`.
 - The **`__*` control routes** (`/__reset`, `/__seed`, `/__dump`, `/__quota`) are **exempt** —
   they are test-harness plumbing, not part of the emulated API.
+- **Bind to localhost only.** The `__*` routes are unauthenticated and `/__dump` returns the full
+  store state, so the mock must stay on a loopback interface. The E2E binds `127.0.0.1`; if you
+  ever wire the mock to a shared/CI host, gate or remove the `__*` routes first.
 
 ```bash
 # 401 — no token

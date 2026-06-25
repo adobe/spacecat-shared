@@ -22,7 +22,9 @@
  * *provided* here, by seed or the `POST /__quota` control route, mirroring what the user-manager
  * mock/harness transferred). The project-engine API then ENFORCES it: a metered op — project
  * create, prompt write, live publish — that exceeds the allocation is rejected with a **disguised
- * 405** (an nginx-style body, NOT a method error). A child created with an empty/inherited
+ * 405** (the status code, not a real method error — the live API reuses 405 for over-allocation).
+ * The mock returns that 405 with a JSON `{ message: 'Quota exceeded: …' }` body; the consumer keys
+ * off the 405 *status*, not the body. A child created with an empty/inherited
  * allocation lands with 0 units, so its prompt writes and publishes 405. The dev parent runs with
  * limits DISABLED (unlimited), so the mock's default — no quota record for a workspace — is
  * unlimited, and existing flows are unaffected until an allocation is set.

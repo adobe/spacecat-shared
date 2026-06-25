@@ -29,12 +29,24 @@ api-service calls (`src/support/serenity/handlers/*`):
 | `POST /v2/workspaces/{id}/projects/{id}/aio/prompts/by_tags` | prompts | no (read) | **stateful** (list) |
 | `POST /v2/workspaces/{id}/projects/{id}/aio/prompts/tagged` | prompts | yes | **stateful** |
 | `DELETE /v2/workspaces/{id}/projects/{id}/aio/prompts` | prompts | yes | **stateful** |
+| `POST /v2/workspaces/{id}/projects/{id}/ai_models/benchmarks` | benchmarks | yes | **stateful** (competitor-benchmark create) |
+| `GET  /v1/workspaces/{id}/projects/{id}/ai_models/benchmarks` | benchmarks | yes | **stateful** (list) |
+| `PUT  /v1/workspaces/{id}/projects/{id}/ai_models/benchmarks/{id}` | benchmarks | yes | **stateful** (in-place `updateBenchmark`) |
+| `DELETE /v1/workspaces/{id}/projects/{id}/ai_models/benchmarks` | benchmarks | yes | **stateful** |
+| `POST /v2/workspaces/{id}/projects/{id}/aio/benchmarks/{id}/brand_urls` | brand_urls | yes | **stateful** (per benchmark) |
+| `GET  /v2/workspaces/{id}/projects/{id}/aio/benchmarks/{id}/brand_urls` | brand_urls | yes | **stateful** (list) |
+| `DELETE /v2/workspaces/{id}/projects/{id}/aio/benchmarks/{id}/brand_urls` | brand_urls | yes | **stateful** |
 
 ## Confirmed stateful set
-**projects, ai_models (per project), prompts (aio, per project).** This matches the recommended
-first cut. The `publish` action and the `GET /v1/ai_models` / `GET /v1/languages` reference
-lookups stay on Counterfact's auto-generated response. The store is generic, so growing the
-stateful set later is cheap and needs no rework.
+**projects (per workspace), ai_models / prompts / benchmarks (per project), brand_urls (per
+benchmark).** These five are `STATEFUL_RESOURCES` in `mock/stateful.js`. This matches the
+recommended first cut plus the competitor-benchmark + brand-URL sync the consumer drives
+(`spacecat-api-service` `syncCompetitorBenchmarksAcrossMarkets` / `syncBrandUrlsAcrossMarkets` /
+`attachBrandUrlsToProject` — each write-then-reads, so by the decision rule above they belong in
+the set). The `publish` action and the `GET /v1/ai_models` / `GET /v1/languages` reference lookups
+stay on Counterfact's auto-generated response. The store is generic, so growing the stateful set
+later is cheap and needs no rework — benchmarks + brand_urls were added as ops with no store
+change, the live proof.
 
 ## How it plugs in
 - `mock/store.js` — generic `InMemoryStore` (collection-keyed CRUD + seed/reset, deep-clone
@@ -57,3 +69,9 @@ stateful set later is cheap and needs no rework.
   minted, never-created project ids to exercise metering in isolation. If a future consumer flow
   needs unknown-project 404s, add a shared `requireProject(scope)` guard to the child writers and
   seed the parent projects the quota cases use.
+- **Create ops report `existing_count: 0` unconditionally.** `POST .../aio/prompts/tagged` and
+  `POST .../ai_models/benchmarks` always return `existing_count: 0` — the mock models no dedup
+  against already-present rows, so the consumer's "some already present" branch
+  (`existing_count > 0`) cannot be exercised against this mock. Deliberate: the confirmed consumer
+  flows create into freshly scoped collections, and dedup fidelity adds store complexity no flow
+  reads. Add a name/domain-keyed existing-count if a future flow depends on it.

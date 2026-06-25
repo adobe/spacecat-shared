@@ -34,9 +34,13 @@ export function POST($) {
       contentType: 'application/json',
     };
   }
+  // The live API does not echo the flat request body back — it nests brand/language/country/
+  // location under `settings.ai` and returns a draft ProjectResponse (verified 2026-06-25). Map
+  // the request through the factory so a create-then-read matches live (not the old `{...body}`
+  // echo, which leaked request-only fields like `country_code`/`language_id` and dropped settings).
   const created = context.ops.projects.create(
     { workspaceId: path.id },
-    context.factories.createProjectMock({ ...body }),
+    context.factories.createProjectResponseFromRequest(body),
   );
   return $.response[201].json(created);
 }

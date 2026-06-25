@@ -15,11 +15,11 @@
  * benchmark in place (the consumer's `updateBenchmark`, used to re-sync a
  * competitor's `brand_aliases` when the domain is unchanged). Request is `AIOBenchmarkRequest`;
  * the patch lands on the stored benchmark so a subsequent `listBenchmarks` reflects it. Live: 202
- * `BasicResponse` (verified 2026-06-25). Excluded from coverage
- * (materialized handler).
+ * with an EMPTY body (`content-length: 0` — verified 2026-06-25; the swagger declares no 202
+ * schema), so we return no body. Excluded from coverage (materialized handler).
  */
 
-/** PUT — update a benchmark in place → 202 Accepted. */
+/** PUT — update a benchmark in place → 202 Accepted (empty body, matching live). */
 export function PUT($) {
   const { path, body, context } = $;
   context.ops.benchmarks.update(
@@ -27,7 +27,6 @@ export function PUT($) {
     path.benchmark_id,
     { ...body },
   );
-  return $.response[202].json(
-    context.factories.createBasicResponseMock({ message: 'benchmark updated' }),
-  );
+  // Empty body (content-length 0) like live, not Counterfact's default "Accepted" reason.
+  return { status: 202, body: '' };
 }

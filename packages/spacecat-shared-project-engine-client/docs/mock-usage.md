@@ -123,6 +123,14 @@ method that calls it.
 | `PUT /v1/workspaces/{id}/projects/{project_id}/ci/competitors` | `updateCiCompetitors` | full replace → `{ ci_competitors }` |
 | `GET /v2/workspaces/{id}/projects/{project_id}/aio/init_status` | `getInitStatus` | `{ initialized }`. **Live route is `/v2`** — the vendored swagger's `/v1` path 404s (overlay CR8, verified live across 4 projects). The api-service consumer still calls `/v1` today (a pre-existing bug — it degrades to `initialized: null`). |
 
+> **Response-body shapes pinned to live (verified 2026-06-25 against the test workspace).**
+> The `202` action acks — `publishProject`, `deleteBenchmarks`, `updateBenchmark`, `deleteBrandUrls`
+> — return an **empty body** (`content-length: 0`, matching the swagger's no-schema 202), not a
+> `BasicResponse` envelope. `createProject` returns a **draft `ProjectResponse`** — the request's
+> flat `brand_*`/`language_id`/`country_code`/`location_*` fields are nested under `settings.ai`,
+> with `live_id`/`draft_id` mirrored and `is_draft: true`/`publish_status: 'draft'` — NOT a flat
+> echo of the request body. `addAiModel` resolves the catalog model's `icon` onto the response.
+
 ---
 
 ## 4. Seeds

@@ -27,9 +27,11 @@ info:
 #      that the mock's own create handlers populate, so generated types gain real
 #      enforcement (factories must supply them; Counterfact validates them at
 #      runtime) without misrepresenting the vendor. Notably AIModelResponse keeps
-#      only `id` required: the add path (`POST .../ai_models {model_id}`) does not
-#      resolve the catalog name, so `name` is genuinely absent there. Narrow/remove
-#      if a spec refresh adds upstream `required` arrays.
+#      only `id` required: the live shapes vary in which optional fields appear
+#      (e.g. the add path `POST .../ai_models {model_id}` returns `name` + `icon`
+#      but an EMPTY `key` — verified 2026-06-25), so requiring more than `id` would
+#      risk a false `required` claim. Narrow/remove if a spec refresh adds upstream
+#      `required` arrays.
 # CR6  createProjectTags (POST /v2/.../aio/tags) returns a TOP-LEVEL ARRAY of
 #      TreeNodeResponse, not a single object. The vendored swagger types the 201 as
 #      one `model.TreeNodeResponse`, so Counterfact's mock returned an object while the
@@ -45,6 +47,12 @@ info:
 #      OPTIONS /v2 -> allow: GET, OPTIONS /v1 -> 404). Relocate the path to v2 so the typed
 #      client + mock match the live API. The consumer (spacecat-api-service rest-transport
 #      `getInitStatus`) must call /v2 too. Remove if Semrush adds the v1 alias upstream.
+# CR9  Add `primary_url` to model.AISettings. The live `settings.ai` returns `primary_url` (the
+#      project's own domain) on every project — verified 2026-06-25 against the test workspace
+#      (`GET .../projects/{id}` and the `POST .../projects` create response) — but the vendored
+#      swagger's AISettings schema omits it, so a typed fixture/handler that populates it fails
+#      tsc. Add it (string) so the type, the factory, and the live API agree. Remove if Semrush
+#      adds the field upstream.
 actions:
   # ── CR1: Add GET /v1/ai_models ──────────────────────────────────────────
   # Live: 200 -> { page:int, total:int, items:[AIModelResponse] }.
@@ -157,7 +165,7 @@ actions:
       required: [id, model, prompts_count]
 
   - target: "$.components.schemas['model.AIModelResponse']"
-    description: "CR5: a catalog model always carries id (name absent on the add path)"
+    description: "CR5: a catalog model always carries id (name/icon present on add, key empty there)"
     update:
       required: [id]
 
@@ -247,3 +255,12 @@ actions:
   - target: "$.paths['/v1/workspaces/{id}/projects/{project_id}/aio/init_status']"
     description: "CR8: remove the stale /v1 init_status path (404s live)"
     remove: true
+
+  # ── CR9: AISettings carries primary_url (live), absent from the vendored swagger ──
+  # Live: GET/POST projects → settings.ai.primary_url = the project's own domain. Deep-merge adds
+  # the property alongside the existing AISettings properties (does not clobber them).
+  - target: "$.components.schemas['model.AISettings']"
+    description: "CR9: add primary_url to AISettings (live returns it; vendored swagger omits it)"
+    update:
+      properties:
+        primary_url: { type: string }

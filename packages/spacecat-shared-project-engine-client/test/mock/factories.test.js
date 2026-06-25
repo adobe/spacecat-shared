@@ -12,6 +12,8 @@
 
 import { expect } from 'chai';
 import {
+  createAiModelMock,
+  createProjectResponseFromRequest,
   createBenchmarkMock,
   createBrandUrlMock,
   createLanguageMock,
@@ -26,6 +28,63 @@ import {
 // component schema; these runtime tests cover the factory bodies (defaults + override merge) so
 // coverage stays complete and the live-verified shapes are pinned.
 describe('factories — live-shaped entities', () => {
+  it('createAiModelMock carries an icon (the live add path returns name + icon)', () => {
+    expect(createAiModelMock()).to.include({ key: 'gpt-4o', name: 'GPT-4o', icon: 'openai' });
+    expect(createAiModelMock({ icon: 'claude' }).icon).to.equal('claude');
+  });
+
+  it('createProjectResponseFromRequest nests a full request under settings.ai (live shape)', () => {
+    const p = createProjectResponseFromRequest({
+      name: 'Adobe · US · en',
+      type: 'ai',
+      domain: 'adobe.com',
+      brand_names: ['Adobe'],
+      brand_name_display: 'Adobe',
+      language_id: 'lang-uuid',
+      country_code: 'us',
+      location_id: 2840,
+      location_name: 'United States',
+    });
+    // identity + draft fields the live API adds (not echoed request fields).
+    expect(p.id).to.match(/^[0-9a-f-]{36}$/);
+    expect(p).to.include({
+      live_id: p.id,
+      draft_id: p.id,
+      type: 'ai',
+      name: 'Adobe · US · en',
+      domain: 'adobe.com',
+      is_draft: true,
+      publish_status: 'draft',
+      shared_with: 0,
+    });
+    // the flat request fields land under settings.ai, NOT at the top level.
+    expect(p).to.not.have.any.keys('country_code', 'language_id', 'location_id', 'location_name');
+    expect(p.settings.ai).to.deep.include({
+      brand_names: ['Adobe'],
+      brand_name_display: 'Adobe',
+      primary_url: 'adobe.com',
+      prompts_count: 0,
+      segments_count: 0,
+      benchmarks_count: 0,
+      products_count: 0,
+    });
+    expect(p.settings.ai.language).to.deep.equal({ id: 'lang-uuid', name: '' });
+    expect(p.settings.ai.country).to.deep.equal({ code: 'us', name: '' });
+    expect(p.settings.ai.location).to.deep.equal({ id: 2840, name: 'United States' });
+    expect(p.settings.ai.models_stats).to.deep.equal({ models: [], models_count: 0 });
+  });
+
+  it('createProjectResponseFromRequest falls back to defaults for an empty request', () => {
+    const p = createProjectResponseFromRequest();
+    expect(p).to.include({ type: 'ai', name: 'Seeded Project', domain: '' });
+    expect(p.settings.ai.brand_names).to.deep.equal([]);
+    expect(p.settings.ai.brand_name_display).to.equal('');
+    expect(p.settings.ai.language).to.deep.equal({ id: '', name: '' });
+    expect(p.settings.ai.country).to.deep.equal({ code: '', name: '' });
+    expect(p.settings.ai.location).to.deep.equal({ id: 0, name: '' });
+    expect(p.settings.ai.primary_url).to.equal('');
+  });
+
   it('createBenchmarkMock defaults to a competitor benchmark with a real uuid id', () => {
     const b = createBenchmarkMock();
     expect(b.id).to.match(/^[0-9a-f-]{36}$/);

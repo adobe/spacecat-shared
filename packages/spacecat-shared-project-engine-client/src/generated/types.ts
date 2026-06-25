@@ -1712,6 +1712,7 @@ export interface components {
             products_count?: number;
             prompts_count?: number;
             segments_count?: number;
+            primary_url?: string;
         };
         "model.AdvancedCrawlingConsentRequest": {
             accepted: boolean;

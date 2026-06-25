@@ -30,6 +30,7 @@
 /** @typedef {Schemas['model.ProjectAIModelResponse']} ProjectAIModel */
 /** @typedef {Schemas['model.AIOPromptWithStatus']} Prompt */
 /** @typedef {Schemas['model.ProjectResponse']} Project */
+/** @typedef {Schemas['model.ProjectRequest']} ProjectRequest */
 /** @typedef {Schemas['model.AIOBenchmarkWithCounters']} Benchmark */
 /** @typedef {Schemas['model.BrandURL']} BrandUrl */
 /** @typedef {Schemas['model.LanguageResponse']} Language */
@@ -43,7 +44,9 @@ const uuid = () => globalThis.crypto.randomUUID();
 
 /**
  * A catalog AI model (`AIModelResponse`). Only `id` is required by the spec; `name`/`key` are
- * realistic defaults (the add path knows only the id, so callers that mirror it omit them).
+ * realistic defaults. `icon` is included because the live add path (`POST .../ai_models`) resolves
+ * and returns the catalog model's `name` + `icon` (only `key` comes back empty there) — verified
+ * live 2026-06-25 — so the complete shape carries `icon` and an `addAiModel` response matches live.
  * @param {Partial<AIModel>} [overrides]
  * @returns {AIModel}
  */
@@ -51,6 +54,7 @@ export const createAiModelMock = (overrides = {}) => ({
   id: uuid(),
   key: 'gpt-4o',
   name: 'GPT-4o',
+  icon: 'openai',
   ...overrides,
 });
 
@@ -90,6 +94,48 @@ export const createProjectMock = (overrides = {}) => ({
   name: 'Seeded Project',
   ...overrides,
 });
+
+/**
+ * Builds the {@link Project} the live API returns from a *create request* (the
+ * `POST /v1/.../projects` body, `model.ProjectRequest`). The live API does NOT echo the flat
+ * request fields back: it nests `brand_*` / `language_id` / `country_code` / `location_*` under
+ * `settings.ai`, mirrors the new id into `live_id`/`draft_id`, and marks the project a draft
+ * (`is_draft: true`, `publish_status: 'draft'`) — verified live 2026-06-25 against the test
+ * workspace. The create handler maps the request through this so a create-then-read sees the live
+ * shape; the prior `createProjectMock({ ...body })` leaked request-only fields (`country_code`,
+ * `language_id`, …) into the response and omitted `settings` entirely.
+ * @param {Partial<ProjectRequest>} [request] the create-request body
+ * @returns {Project}
+ */
+export const createProjectResponseFromRequest = (request = {}) => {
+  const id = uuid();
+  return createProjectMock({
+    id,
+    live_id: id,
+    draft_id: id,
+    type: request.type ?? 'ai',
+    name: request.name ?? 'Seeded Project',
+    domain: request.domain ?? '',
+    is_draft: true,
+    publish_status: 'draft',
+    shared_with: 0,
+    settings: {
+      ai: {
+        models_stats: { models: [], models_count: 0 },
+        prompts_count: 0,
+        brand_names: request.brand_names ?? [],
+        brand_name_display: request.brand_name_display ?? '',
+        language: { id: request.language_id ?? '', name: '' },
+        country: { code: request.country_code ?? '', name: '' },
+        location: { id: request.location_id ?? 0, name: request.location_name ?? '' },
+        primary_url: request.domain ?? '',
+        segments_count: 0,
+        benchmarks_count: 0,
+        products_count: 0,
+      },
+    },
+  });
+};
 
 /**
  * An AIO benchmark with counters (`AIOBenchmarkWithCounters`) — the `listBenchmarks` item. The
@@ -162,8 +208,10 @@ export const createBrandTopicMock = (overrides = {}) => ({
 });
 
 /**
- * A simple message envelope (`http_server.BasicResponse`) — the 202 ack the action routes return
- * (publish, delete-benchmarks, update-benchmark, delete-brand-urls).
+ * A simple message envelope (`http_server.BasicResponse`) — the shape the live API uses for its
+ * error responses (401/403/409/500). The action routes (publish, delete/update-benchmark,
+ * delete-brand-urls) return a 202 with an EMPTY body (`content-length: 0`, verified live
+ * 2026-06-25), NOT this envelope, so they no longer build it; it is retained for the error shape.
  * @param {Partial<BasicResponse>} [overrides]
  * @returns {BasicResponse}
  */

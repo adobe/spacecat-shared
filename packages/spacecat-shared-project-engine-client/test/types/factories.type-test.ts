@@ -19,6 +19,7 @@
 
 import {
   createProjectMock,
+  createProjectResponseFromRequest,
   createProjectAiModelMock,
   createAiModelMock,
   createPromptMock,
@@ -35,6 +36,14 @@ const project: Project = createProjectMock();
 const assigned: ProjectAIModel = createProjectAiModelMock();
 const prompt: Prompt = createPromptMock();
 const model: AIModel = createAiModelMock();
+
+// 1b. createProjectResponseFromRequest maps a create-request to a spec-shaped ProjectResponse.
+const created: Project = createProjectResponseFromRequest({
+  name: 'Acme', type: 'ai', domain: 'acme.com', brand_names: ['Acme'], language_id: 'l', location_id: 2840,
+});
+void created;
+// @ts-expect-error — location_id is an integer in ProjectRequest, not a string.
+createProjectResponseFromRequest({ location_id: 'nope' });
 
 // 2. Partial overrides of real fields are accepted.
 createProjectMock({ name: 'Acme' });

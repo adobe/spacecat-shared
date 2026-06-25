@@ -12,14 +12,15 @@
 
 /**
  * Handler for POST /v1/workspaces/{id}/projects/{project_id}/publish — moves a draft to live
- * (the consumer's `publishProject`). Success is `202` `BasicResponse`. Metered: publish is a
- * metered op, so an empty-units child (an explicit `prompts: 0` allocation) returns the disguised
- * quota 405 — exactly the "publishing an empty-units child 405s" behaviour the consumer's
- * `republishBestEffort` swallows (see mock/quota.js). Excluded
- * from coverage (materialized handler).
+ * (the consumer's `publishProject`). Success is a `202` with an EMPTY body (the swagger declares no
+ * 202 schema; the sibling action acks return `content-length: 0` live, verified 2026-06-25).
+ * Metered: publish is a metered op, so an empty-units child (an explicit `prompts: 0` allocation)
+ * returns the disguised quota 405 — exactly the "publishing an empty-units child 405s" behaviour
+ * the consumer's `republishBestEffort` swallows (see mock/quota.js). Excluded from coverage
+ * (materialized handler).
  */
 
-/** POST — publish the draft → 202 Accepted (405 when the workspace has 0 prompt units). */
+/** POST — publish the draft → 202 (empty body); 405 when the workspace has 0 prompt units. */
 export function POST($) {
   const { path, context } = $;
   if (!context.quota.canPublish(path.id)) {
@@ -29,7 +30,6 @@ export function POST($) {
       contentType: 'application/json',
     };
   }
-  return $.response[202].json(
-    context.factories.createBasicResponseMock({ message: 'publish accepted' }),
-  );
+  // Empty body (content-length 0) like live, not Counterfact's default "Accepted" reason.
+  return { status: 202, body: '' };
 }

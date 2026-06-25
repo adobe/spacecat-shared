@@ -15,9 +15,10 @@
 /**
  * The stateful slice of the Project Engine mock.
  *
- * The confirmed consumer inventory (see docs/mock-statefulness.md) makes exactly three resource
- * groups write-then-read: **projects**, **ai_models** (per project), and **prompts** (aio, per
- * project). This module encodes that set as pure operations over an {@link InMemoryStore} —
+ * The confirmed consumer inventory (see docs/mock-statefulness.md) makes five resource groups
+ * write-then-read: **projects** (per workspace), **ai_models** / **prompts** / **benchmarks** (per
+ * project), and **brand_urls** (per benchmark) — see {@link STATEFUL_RESOURCES}. This module
+ * encodes that set as pure operations over an {@link InMemoryStore} —
  * collection-key scoping plus the CRUD each group needs — with no Counterfact / HTTP coupling,
  * so it is unit-testable on its own. The Counterfact runner adapts these into per-path handlers
  * (mapping store results into spec-valid response envelopes); non-stateful operations are left

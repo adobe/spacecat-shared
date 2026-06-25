@@ -181,9 +181,14 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   it('creates a project and reads it back', async () => {
     const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },
-      body: { name: 'E2E Project' },
+      body: { name: 'E2E Project', domain: 'acme.com', brand_name_display: 'Acme' },
     });
     expect(created.id).to.be.a('string');
+    // The live API returns a draft ProjectResponse with the request nested under settings.ai —
+    // NOT a flat echo of the request body (verified 2026-06-25).
+    expect(created).to.include({ is_draft: true, publish_status: 'draft' });
+    expect(created).to.not.have.any.keys('country_code', 'language_id', 'location_id');
+    expect(created.settings.ai).to.include({ brand_name_display: 'Acme', primary_url: 'acme.com' });
 
     const { data: fetched } = await client.GET('/v1/workspaces/{id}/projects/{project_id}', {
       params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
@@ -389,8 +394,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // Shapes only — no live customer content is encoded here.
   // ───────────────────────────────────────────────────────────────────────
 
-  it('addAiModel (v2) responds 201 Created, matching the live API (drift D2/CR7)', async () => {
-    const { response, error } = await client.POST(
+  it('addAiModel (v2) responds 201 Created with model { id, icon, ... }, matching live (drift D2/CR7)', async () => {
+    const { data, response, error } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/ai_models',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
@@ -399,6 +404,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     expect(error).to.equal(undefined);
     expect(response.status).to.equal(201);
+    // Live resolves the catalog model's icon onto the add response (verified 2026-06-25).
+    expect(data.model).to.include.keys('id', 'icon');
   });
 
   it('createProjectTags returns a top-level array, matching the live API (drift D1/CR6)', async () => {
@@ -552,6 +559,14 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
     );
     expect(pubRes.status).to.equal(202);
+    // Live action acks (publish, delete/update-benchmark, delete-brand-urls) return a 202 with an
+    // EMPTY body (verified 2026-06-25), not a BasicResponse — a raw fetch confirms no body.
+    const pubUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/publish`;
+    const rawPub = await fetch(pubUrl, {
+      method: 'POST', headers: { Authorization: 'Bearer e2e-token' },
+    });
+    expect(rawPub.status).to.equal(202);
+    expect(await rawPub.text()).to.equal('');
 
     // init_status lives on /v2 (overlay CR8) — the /v1 path 404s live.
     const { data: init, error } = await client.GET(

@@ -17,8 +17,8 @@
  * `createBrandUrls` / `deleteBrandUrls`). Scoped per benchmark (`brand_urls:{ws}:{pid}:{bid}`) so
  * a create is visible to a subsequent list under the same benchmark. Live: list → 200
  * `{ brand_urls: [...] }`; create → 200 `IDsWithStatsResponse` `{ ids, existing_count }`;
- * delete → 202 `BasicResponse` (verified 2026-06-25). Excluded
- * from coverage (materialized handler).
+ * delete → 202 with an EMPTY body (`content-length: 0` — verified 2026-06-25; the swagger declares
+ * no 202 schema). Excluded from coverage (materialized handler).
  */
 
 /** GET — list the benchmark's brand URLs → 200 { brand_urls }. */
@@ -46,14 +46,13 @@ export function POST($) {
   return $.response[200].json({ ids: created.map((u) => u.id), existing_count: 0 });
 }
 
-/** DELETE — batch-delete brand URLs by id (body: { ids }) → 202 Accepted. */
+/** DELETE — batch-delete brand URLs by id (body: { ids }) → 202 Accepted (empty body). */
 export function DELETE($) {
   const { path, body, context } = $;
   context.ops.brand_urls.removeMany(
     { workspaceId: path.id, projectId: path.project_id, benchmarkId: path.benchmark_id },
     body?.ids ?? [],
   );
-  return $.response[202].json(
-    context.factories.createBasicResponseMock({ message: 'brand urls deleted' }),
-  );
+  // Empty body (content-length 0) like live, not Counterfact's default "Accepted" reason.
+  return { status: 202, body: '' };
 }

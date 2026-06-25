@@ -16,8 +16,8 @@
  * `deleteBenchmarks`). Benchmarks are created via the v2 sibling and updated via the
  * `…/benchmarks/{benchmark_id}` route; all three share the version-agnostic store key
  * (`benchmarks:{ws}:{pid}`), so a create/update is visible to this list. Live: list → 200
- * `{ aio_benchmarks: [...] }`; delete → 202 `BasicResponse` (verified 2026-06-25). Excluded from
- * coverage (materialized handler).
+ * `{ aio_benchmarks: [...] }`; delete → 202 with an EMPTY body (`content-length: 0` — verified
+ * 2026-06-25; the swagger declares no 202 schema). Excluded from coverage (materialized handler).
  */
 
 /** GET — list the project's benchmarks → 200 { aio_benchmarks }. */
@@ -29,14 +29,13 @@ export function GET($) {
   return $.response[200].json({ aio_benchmarks: aioBenchmarks });
 }
 
-/** DELETE — batch-delete benchmarks by id (body: { ids }) → 202 Accepted. */
+/** DELETE — batch-delete benchmarks by id (body: { ids }) → 202 Accepted (empty body). */
 export function DELETE($) {
   const { path, body, context } = $;
   context.ops.benchmarks.removeMany(
     { workspaceId: path.id, projectId: path.project_id },
     body?.ids ?? [],
   );
-  return $.response[202].json(
-    context.factories.createBasicResponseMock({ message: 'benchmarks deleted' }),
-  );
+  // Empty body (content-length 0) like live, not Counterfact's default "Accepted" reason.
+  return { status: 202, body: '' };
 }

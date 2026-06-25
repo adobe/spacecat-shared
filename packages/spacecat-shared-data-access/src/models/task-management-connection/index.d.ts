@@ -24,10 +24,13 @@ export interface TaskManagementConnection extends BaseModel {
   markDisabled(): Promise<TaskManagementConnection>;
   /** Persists status = 'error' after repeated API failures. */
   markError(): Promise<TaskManagementConnection>;
+  /** Persists status = 'active' after a successful re-authorization. */
+  markActive(): Promise<TaskManagementConnection>;
   /** Persists status = 'disconnected' (soft-delete on user revoke). */
   markDisconnected(): Promise<TaskManagementConnection>;
 
   getConnectedBy(): string;
+  getExternalInstanceId(): string;
   getDisplayName(): string;
   getErrorMessage(): string | null;
   getInstanceUrl(): string;

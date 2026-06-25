@@ -51,6 +51,40 @@ import {
 export { FastlyKVClient } from './fastly-kv-client.js';
 export { calculateForwardedHost } from './utils/custom-html-utils.js';
 
+// CloudFront "Optimize at Edge" control-plane (free functions + constants).
+export {
+  assumeConnectorRole,
+  listCloudFrontDistributions,
+  getDistributionConfig,
+  createEdgeOptimizeOrigin,
+  createEdgeOptimizeRoutingFunction,
+  applyEdgeOptimizeCacheHeaders,
+  createEdgeOptimizeLambda,
+  getEdgeOptimizeLambdaStatus,
+  applyEdgeOptimizeAssociations,
+  verifyEdgeOptimizeRouting,
+  runEdgeOptimizeDeployStep,
+  planEdgeOptimizeDeploy,
+  buildRoutingFunctionCode,
+  buildEdgeOptimizeLambdaCode,
+  buildLambdaZip,
+  buildEoClonedCachePolicyName,
+  eoRoutingFunctionName,
+  eoLambdaFunctionName,
+  eoLambdaRoleName,
+  EDGE_OPTIMIZE_REGION,
+  EDGE_OPTIMIZE_DEFAULT_ROLE_NAME,
+  EDGE_OPTIMIZE_ORIGIN_ID,
+  EDGE_OPTIMIZE_DEFAULT_ORIGIN_DOMAIN,
+  EDGE_OPTIMIZE_FUNCTION_NAME,
+  EDGE_OPTIMIZE_LAMBDA_FUNCTION_NAME,
+  EDGE_OPTIMIZE_LAMBDA_ROLE_NAME,
+  EDGE_OPTIMIZE_CACHE_HEADERS,
+  EDGE_OPTIMIZE_CACHE_POLICY_NAME,
+  EDGE_OPTIMIZE_MIN_TTL_KEEP_THRESHOLD,
+  EDGE_OPTIMIZE_DEPLOY_STEPS,
+} from './edge-optimize/index.js';
+
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;

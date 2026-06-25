@@ -19,5 +19,5 @@
 
 /** GET — AIO init status → 200 { initialized: true }. */
 export function GET($) {
-  return $.response[200].json({ initialized: true });
+  return $.response[200].json($.context.factories.createInitStatusMock({ initialized: true }));
 }

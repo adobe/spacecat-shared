@@ -39,6 +39,16 @@ describe('InMemoryStore — CRUD', () => {
     expect(store.get('projects', 'nope')).to.equal(undefined);
   });
 
+  it('returns deep clones — mutating a create/get result never corrupts the store', () => {
+    const store = new InMemoryStore();
+    const created = store.create('projects', { id: 'p1', name: 'A' });
+    created.name = 'mutated';
+    expect(store.get('projects', 'p1')?.name).to.equal('A');
+    const got = store.get('projects', 'p1');
+    got.name = 'mutated again';
+    expect(store.get('projects', 'p1')?.name).to.equal('A');
+  });
+
   it('lists all and filters', () => {
     const store = new InMemoryStore();
     store.create('projects', { id: 'p1', name: 'A' });

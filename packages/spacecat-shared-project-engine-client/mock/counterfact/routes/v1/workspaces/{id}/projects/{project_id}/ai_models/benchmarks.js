@@ -36,5 +36,7 @@ export function DELETE($) {
     { workspaceId: path.id, projectId: path.project_id },
     body?.ids ?? [],
   );
-  return $.response[202].json({ message: 'benchmarks deleted' });
+  return $.response[202].json(
+    context.factories.createBasicResponseMock({ message: 'benchmarks deleted' }),
+  );
 }

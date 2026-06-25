@@ -104,6 +104,12 @@ export class Context extends Base {
  * (reset/seed/dump/quota) are test-harness plumbing, not part of the emulated API, so they are
  * exempt. The guard returns a raw `{ status, body, contentType }`, which bypasses Counterfact
  * response validation (401 is not declared per-operation) — the same mechanism the quota 405 uses.
+ *
+ * The guard match is asserted, not best-effort: it counts every exported HTTP method declaration
+ * and throws if any did not receive a guard. Without this, a handler authored in a shape the regex
+ * does not match (`export const GET = ($) => …`, a destructured/renamed param, an `OPTIONS`/`HEAD`
+ * verb) would silently materialize UNGUARDED and serve unauthenticated — an auth bypass that would
+ * pass every gate. The throw turns that latent drift into a loud materialization failure.
  * @param {string} source the handler's committed `.js` source
  * @param {string} fileName the handler's base file name
  * @returns {string} source with a guard prepended to each GET/POST/PUT/PATCH/DELETE body
@@ -114,10 +120,26 @@ function injectAuthGuard(source, fileName) {
   }
   const guard = '\n  const __authDenied = $.context.authError($.headers);'
     + '\n  if (__authDenied) { return __authDenied; }';
-  return source.replace(
+  // Every exported HTTP method, regardless of the param/declaration shape the regex below guards.
+  const declaredMethods = (source.match(
+    /export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE)\s*\(/g,
+  ) ?? []).length;
+  let guarded = 0;
+  const out = source.replace(
     /(export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE)\s*\(\$\)\s*\{)/g,
-    `$1${guard}`,
+    (match) => {
+      guarded += 1;
+      return `${match}${guard}`;
+    },
   );
+  if (guarded !== declaredMethods) {
+    throw new Error(
+      `injectAuthGuard: ${fileName} declares ${declaredMethods} HTTP method export(s) but only `
+      + `${guarded} matched the guard pattern — a handler signature is unguarded and would serve `
+      + 'unauthenticated. Author real-route handlers as `export function VERB($) { … }`.',
+    );
+  }
+  return out;
 }
 
 /**

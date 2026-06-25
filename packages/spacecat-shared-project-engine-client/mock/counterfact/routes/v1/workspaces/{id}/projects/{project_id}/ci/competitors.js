@@ -24,9 +24,9 @@ const competitorId = (domain) => `cic-${encodeURIComponent(String(domain ?? ''))
 
 /** PUT — replace the CI competitor list → 200 { ci_competitors }. */
 export function PUT($) {
-  const { path, body } = $;
+  const { path, body, context } = $;
   const input = Array.isArray(body?.ci_competitors) ? body.ci_competitors : [];
-  const ciCompetitors = input.map((c) => ({
+  const ciCompetitors = input.map((c) => context.factories.createCiCompetitorMock({
     id: competitorId(c?.domain),
     project_id: path.project_id,
     domain: c?.domain ?? '',

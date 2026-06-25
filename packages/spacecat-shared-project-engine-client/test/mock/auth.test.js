@@ -56,6 +56,14 @@ describe('mock auth', () => {
       expect(isAuthorized({ authorization: 'Bearer ' })).to.equal(false);
     });
 
+    it('rejects a whitespace-only token after Bearer', () => {
+      expect(isAuthorized({ authorization: 'Bearer    ' })).to.equal(false);
+    });
+
+    it('accepts extra internal whitespace before the token', () => {
+      expect(isAuthorized({ authorization: 'Bearer   tok' })).to.equal(true);
+    });
+
     it('rejects a non-Bearer scheme', () => {
       expect(isAuthorized({ authorization: 'Basic dXNlcjpwYXNz' })).to.equal(false);
     });

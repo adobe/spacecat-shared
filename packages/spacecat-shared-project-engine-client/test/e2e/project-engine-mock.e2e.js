@@ -65,9 +65,13 @@ function pickPort() {
   });
 }
 
-/** Polls the mock until it answers a seeded request 200, or throws after the budget. */
+/**
+ * Polls the mock until it answers a seeded request 200, or throws after the budget. On timeout it
+ * appends the tail of the captured server stderr (via `getStderr`) so a boot/transpile failure is
+ * diagnosable from the CI log rather than surfacing only as the opaque readiness error.
+ */
 /* eslint-disable no-await-in-loop -- sequential readiness polling is intentional. */
-async function waitForReady(baseUrl, deadline) {
+async function waitForReady(baseUrl, deadline, getStderr) {
   for (;;) {
     try {
       // Send a bearer token: every real route is now auth-gated, so an unauthenticated probe
@@ -82,7 +86,10 @@ async function waitForReady(baseUrl, deadline) {
       // server not up yet
     }
     if (Date.now() > deadline) {
-      throw new Error('mock did not become ready in time');
+      const tail = (getStderr?.() ?? '').slice(-2000).trim();
+      throw new Error(
+        `mock did not become ready in time${tail ? `; server stderr:\n${tail}` : ''}`,
+      );
     }
     await sleep(250);
   }
@@ -99,19 +106,34 @@ async function waitForReady(baseUrl, deadline) {
   /** @type {ReturnType<typeof createSerenityProjectEngineApiClient>} */
   let client;
 
+  /** Captured server stderr, surfaced in the readiness-timeout error for diagnosability. */
+  let serverStderr = '';
+  /** Set once the spawned server process has exited, so teardown knows whether to escalate. */
+  let serverExited = false;
+
   before(async () => {
     const port = await pickPort();
-    baseUrl = `http://localhost:${port}/enterprise/projects/api`;
+    baseUrl = `http://127.0.0.1:${port}/enterprise/projects/api`;
+    serverStderr = '';
+    serverExited = false;
     // detached so we can signal the whole process group (run.js spawns Counterfact as a child).
+    // stderr is piped (not 'ignore') so a boot/transpile failure is captured and reported on a
+    // readiness timeout instead of being silently discarded.
     server = spawn(process.execPath, [RUNNER], {
       cwd: packageRoot,
       detached: true,
-      stdio: 'ignore',
+      stdio: ['ignore', 'ignore', 'pipe'],
       env: { ...process.env, MOCK_PORT: String(port) },
+    });
+    server.stderr.on('data', (chunk) => {
+      serverStderr += chunk.toString();
+    });
+    server.once('exit', () => {
+      serverExited = true;
     });
     // If readiness times out, `server` is already assigned, so after() still tears it down
     // (mocha runs after-hooks even when a before-hook throws).
-    await waitForReady(baseUrl, Date.now() + READY_TIMEOUT_MS);
+    await waitForReady(baseUrl, Date.now() + READY_TIMEOUT_MS, () => serverStderr);
     client = createSerenityProjectEngineApiClient({ baseUrl, authToken: 'e2e-token' });
   });
 
@@ -131,6 +153,15 @@ async function waitForReady(baseUrl, deadline) {
       server.kill('SIGTERM');
     }
     await Promise.race([exited, sleep(SHUTDOWN_TIMEOUT_MS)]);
+    // Escalate to SIGKILL if the group ignored SIGTERM within the grace window, so a wedged
+    // Counterfact child can never outlive the test run.
+    if (!serverExited) {
+      try {
+        process.kill(-server.pid, 'SIGKILL');
+      } catch {
+        server.kill('SIGKILL');
+      }
+    }
   });
 
   // Restore the seed before each case so they are order-independent.
@@ -244,6 +275,31 @@ async function waitForReady(baseUrl, deadline) {
     expect(listError).to.equal(undefined);
     expect(listed.total).to.equal(3);
     expect(listed.items.map((p) => p.name)).to.include.members(['What is X?', 'Tell me Y']);
+  });
+
+  // The consumer's real read path (listPromptsByTags) passes non-empty tag_ids — exercise the
+  // filter branch (OR semantics), not just the list-all branch. `tagged` stores a deterministic
+  // tag id `tag-<name>`, so a prompt tagged 'brand' is found via tag_ids: ['tag-brand'].
+  it('by_tags filters to prompts carrying a given tag id (non-empty tag_ids)', async () => {
+    await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { prompts: { 'Branded question': ['brand'], 'Generic question': ['category'] } },
+      },
+    );
+    const { data: branded, error } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { tag_ids: ['tag-brand'] },
+      },
+    );
+    expect(error).to.equal(undefined);
+    // Only the 'brand'-tagged prompt matches: the seeded prompt has no tags, the 'category' one
+    // carries a different tag id.
+    expect(branded.items.map((p) => p.name)).to.deep.equal(['Branded question']);
+    expect(branded.total).to.equal(1);
   });
 
   it('deletes aio prompts by id (by_tags reflects the removal)', async () => {

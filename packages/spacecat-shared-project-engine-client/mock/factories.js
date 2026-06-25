@@ -35,6 +35,9 @@
 /** @typedef {Schemas['model.LanguageResponse']} Language */
 /** @typedef {Schemas['model.TreeNodeResponse']} TreeNode */
 /** @typedef {Schemas['aiseo.BrandTopicWithPrompts']} BrandTopic */
+/** @typedef {Schemas['http_server.BasicResponse']} BasicResponse */
+/** @typedef {Schemas['model.AIOProjectInitializedResponse']} InitStatus */
+/** @typedef {Schemas['model.CICompetitor']} CiCompetitor */
 
 const uuid = () => globalThis.crypto.randomUUID();
 
@@ -155,5 +158,39 @@ export const createBrandTopicMock = (overrides = {}) => ({
   topic: 'Running Shoes',
   volume: 12000,
   prompts: ['What is the best running shoe?'],
+  ...overrides,
+});
+
+/**
+ * A simple message envelope (`http_server.BasicResponse`) — the 202 ack the action routes return
+ * (publish, delete-benchmarks, update-benchmark, delete-brand-urls).
+ * @param {Partial<BasicResponse>} [overrides]
+ * @returns {BasicResponse}
+ */
+export const createBasicResponseMock = (overrides = {}) => ({
+  message: '',
+  ...overrides,
+});
+
+/**
+ * The AIO init-status envelope (`AIOProjectInitializedResponse`) — `getInitStatus`'s
+ * `{ initialized }`.
+ * @param {Partial<InitStatus>} [overrides]
+ * @returns {InitStatus}
+ */
+export const createInitStatusMock = (overrides = {}) => ({
+  initialized: false,
+  ...overrides,
+});
+
+/**
+ * A CI competitor (`CICompetitor`) — an item of `updateCiCompetitors`' `{ ci_competitors }` echo.
+ * @param {Partial<CiCompetitor>} [overrides]
+ * @returns {CiCompetitor}
+ */
+export const createCiCompetitorMock = (overrides = {}) => ({
+  id: uuid(),
+  domain: 'competitor.example',
+  color: '',
   ...overrides,
 });

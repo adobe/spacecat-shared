@@ -30,7 +30,8 @@ that catches fixture/JSDoc drift from the overlayed schema at build time (it has
 real bugs in the client's retry code).
 
 - When you add a `.js` file under `src/` or `mock/`, add `// @ts-check` and make `tsc` pass.
-- Node built-ins are typed (`types: ["node"]`); `globalThis.crypto` is typed via lib `dom`.
+- Node built-ins are typed (`types: ["node"]`); `globalThis.crypto` is typed via `@types/node`
+  (the `tsconfig.json` `lib` is `["esnext"]`, no `dom`).
 - Prefer fixing the JSDoc/types over `@ts-ignore`. If a cast is unavoidable, use an inline
   `/** @type {...} */ (expr)` and explain why.
 
@@ -44,7 +45,8 @@ is guarded by the `.ts` type-tests under `test/types/` rather than per-spec `@ts
 
 Build seed/fixture entities with the typed factories in `mock/factories.js` — `createProjectMock`,
 `createProjectAiModelMock`, `createAiModelMock`, `createPromptMock`, `createBenchmarkMock`,
-`createBrandUrlMock`, `createLanguageMock`, `createTagNodeMock`, `createBrandTopicMock` — each
+`createBrandUrlMock`, `createLanguageMock`, `createTagNodeMock`, `createBrandTopicMock`,
+`createBasicResponseMock`, `createInitStatusMock`, `createCiCompetitorMock` — each
 `(Partial<T>) => T` typed against `components['schemas'][...]` (the
 [mock factory pattern](https://dev.to/davelosert/mock-factory-pattern-in-typescript-44l9)). Never
 hand-write entity literals: they drift from the spec (an early seed had grown a `workspace_id` that
@@ -57,8 +59,10 @@ entity through them — `context.factories.createBenchmarkMock({ brand_name, dom
 catalog handlers map their data rows through `createLanguageMock` / `createAiModelMock` /
 `createBrandTopicMock` — rather than emitting an inline literal that the untyped handler (the
 `@ts-check` exception) couldn't catch drifting. The factory is the single, tsc-checked source of
-truth for each shape. The lone exception is `ci/competitors` (the `CICompetitor` response has no
-factory yet); if you add one, route that handler through it too.
+truth for each shape. This holds for EVERY handler, including the trivial envelope shapes: the
+202 acks build a `createBasicResponseMock`, `getInitStatus` a `createInitStatusMock`, and
+`updateCiCompetitors` maps through `createCiCompetitorMock` — there are no inline-literal
+exceptions left.
 
 ## Spec corrections: the overlay is the single source of truth
 

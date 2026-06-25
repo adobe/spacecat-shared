@@ -17,6 +17,9 @@ import {
   createLanguageMock,
   createTagNodeMock,
   createBrandTopicMock,
+  createBasicResponseMock,
+  createInitStatusMock,
+  createCiCompetitorMock,
 } from '../../mock/factories.js';
 
 // The .ts type-tests under test/types/ enforce that each factory's return is assignable to its
@@ -54,5 +57,23 @@ describe('factories — live-shaped entities', () => {
   it('createBrandTopicMock yields { topic, volume, prompts }', () => {
     const t = createBrandTopicMock({ topic: 'Hydration', volume: 42, prompts: ['a'] });
     expect(t).to.deep.equal({ topic: 'Hydration', volume: 42, prompts: ['a'] });
+  });
+
+  it('createBasicResponseMock defaults to an empty message, overridable', () => {
+    expect(createBasicResponseMock()).to.deep.equal({ message: '' });
+    expect(createBasicResponseMock({ message: 'done' })).to.deep.equal({ message: 'done' });
+  });
+
+  it('createInitStatusMock defaults to not-initialized, overridable', () => {
+    expect(createInitStatusMock()).to.deep.equal({ initialized: false });
+    expect(createInitStatusMock({ initialized: true })).to.deep.equal({ initialized: true });
+  });
+
+  it('createCiCompetitorMock yields a CICompetitor with a real uuid id', () => {
+    const c = createCiCompetitorMock();
+    expect(c.id).to.match(/^[0-9a-f-]{36}$/);
+    expect(c).to.include({ domain: 'competitor.example', color: '' });
+    expect(createCiCompetitorMock({ domain: 'x.example', project_id: 'p1' }))
+      .to.include({ domain: 'x.example', project_id: 'p1' });
   });
 });

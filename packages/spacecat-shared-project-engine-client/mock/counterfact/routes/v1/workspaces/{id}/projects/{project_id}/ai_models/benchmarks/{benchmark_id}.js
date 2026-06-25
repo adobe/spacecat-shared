@@ -27,5 +27,7 @@ export function PUT($) {
     path.benchmark_id,
     { ...body },
   );
-  return $.response[202].json({ message: 'benchmark updated' });
+  return $.response[202].json(
+    context.factories.createBasicResponseMock({ message: 'benchmark updated' }),
+  );
 }

@@ -29,5 +29,7 @@ export function POST($) {
       contentType: 'application/json',
     };
   }
-  return $.response[202].json({ message: 'publish accepted' });
+  return $.response[202].json(
+    context.factories.createBasicResponseMock({ message: 'publish accepted' }),
+  );
 }

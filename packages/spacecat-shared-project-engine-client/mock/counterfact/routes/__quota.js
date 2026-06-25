@@ -28,7 +28,14 @@
 /** POST /__quota — set a workspace's AI allocation. */
 export function POST($) {
   const { body, context } = $;
-  const record = context.quota.set(body?.workspaceId, {
+  if (!body?.workspaceId) {
+    return {
+      status: 400,
+      body: { message: '__quota requires a workspaceId' },
+      contentType: 'application/json',
+    };
+  }
+  const record = context.quota.set(body.workspaceId, {
     projects: body?.projects ?? null,
     prompts: body?.prompts ?? null,
   });

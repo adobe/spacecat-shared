@@ -53,5 +53,7 @@ export function DELETE($) {
     { workspaceId: path.id, projectId: path.project_id, benchmarkId: path.benchmark_id },
     body?.ids ?? [],
   );
-  return $.response[202].json({ message: 'brand urls deleted' });
+  return $.response[202].json(
+    context.factories.createBasicResponseMock({ message: 'brand urls deleted' }),
+  );
 }

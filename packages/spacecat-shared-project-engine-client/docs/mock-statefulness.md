@@ -45,3 +45,15 @@ stateful set later is cheap and needs no rework.
   and is exposed to out-of-process E2E as a test-only `POST /__reset`.
 - The Counterfact runner wires these into per-path handlers (`$.context` carries the store);
   non-stateful operations are left untouched.
+
+## Known fidelity simplifications
+- **Child-resource writes do not validate the parent project exists.** `POST .../ai_models`,
+  `.../aio/prompts/tagged`, `.../benchmarks`, `.../brand_urls`, and `publish` write to (or meter)
+  their collection without first asserting the `{project_id}` is a live project, so they succeed
+  (201/202) against a project the real API would 404. This is deliberate: quota is metered at
+  **workspace** granularity (a child write is gated by the workspace allocation, not by a project
+  row), and the consumer never adds resources to a project it believes deleted. The quota E2E
+  relies on it — those cases provision an allocation and write prompts/publish under freshly
+  minted, never-created project ids to exercise metering in isolation. If a future consumer flow
+  needs unknown-project 404s, add a shared `requireProject(scope)` guard to the child writers and
+  seed the parent projects the quota cases use.

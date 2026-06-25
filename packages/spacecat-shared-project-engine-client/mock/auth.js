@@ -54,6 +54,9 @@ function authorizationHeader(headers = {}) {
  * @returns {boolean}
  */
 export function isAuthorized(headers) {
+  // `.trim()` is load-bearing: it strips a trailing-whitespace-only token (e.g. `'Bearer   '`)
+  // down to `'Bearer'`, which then fails the `\s+\S` requirement. Without the trim the regex
+  // would accept such a value, so keep them together if this is ever refactored.
   return BEARER_RE.test(authorizationHeader(headers).trim());
 }
 

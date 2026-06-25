@@ -35,6 +35,9 @@ jobs:
     #      real client. Gated by MOCK_E2E so it never runs in the default `npm test`.
     name: E2E (project-engine mock)
     runs-on: ubuntu-latest
+    # Defense-in-depth against a wedged runner (npm ci hang, transpile deadlock, a Counterfact
+    # child that ignores SIGTERM): the in-test budgets bound the suite, this bounds the job.
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:

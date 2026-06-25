@@ -125,7 +125,10 @@ export function resolveFacsResource({
     const resourceType = aliasLookup.get(name);
     if (resourceType) {
       const value = params?.[name];
-      if (value) {
+      // Treat any present value (including falsy 0 / false / '') as a resource
+      // id: a present-but-bogus id resolves and is then denied at the binding
+      // lookup (fail-closed), rather than silently deferring to the controller.
+      if (value != null) {
         return { resourceType, resourceId: String(value), source: 'param' };
       }
     }
@@ -142,7 +145,10 @@ export function resolveFacsResource({
   if (body && typeof body === 'object') {
     for (const [alias, resourceType] of aliasLookup) {
       const value = body[alias];
-      if (value) {
+      // Treat any present value (including falsy 0 / false / '') as a resource
+      // id: a present-but-bogus id resolves and is then denied at the binding
+      // lookup (fail-closed), rather than silently deferring to the controller.
+      if (value != null) {
         return { resourceType, resourceId: String(value), source: 'body' };
       }
     }
@@ -154,7 +160,10 @@ export function resolveFacsResource({
   if (query && typeof query === 'object') {
     for (const [alias, resourceType] of aliasLookup) {
       const value = query[alias];
-      if (value) {
+      // Treat any present value (including falsy 0 / false / '') as a resource
+      // id: a present-but-bogus id resolves and is then denied at the binding
+      // lookup (fail-closed), rather than silently deferring to the controller.
+      if (value != null) {
         return { resourceType, resourceId: String(value), source: 'query' };
       }
     }

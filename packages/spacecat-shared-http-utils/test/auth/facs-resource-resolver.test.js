@@ -165,6 +165,28 @@ describe('resolveFacsResource', () => {
     expect(result.resourceId).to.equal('42');
   });
 
+  it('treats a falsy-but-present resource id (0) as a resource (fail-closed, no defer)', () => {
+    // A present-but-bogus id must resolve so the binding lookup denies it,
+    // rather than returning null and silently deferring enforcement.
+    const result = resolveFacsResource({
+      productCode: 'LLMO',
+      routePattern: 'GET /brands/:brandId',
+      params: { brandId: 0 },
+      aliasLookupsPerProduct,
+    });
+    expect(result).to.deep.equal({ resourceType: 'brand', resourceId: '0', source: 'param' });
+  });
+
+  it('treats an empty-string resource id as a resource (fail-closed, no defer)', () => {
+    const result = resolveFacsResource({
+      productCode: 'LLMO',
+      routePattern: 'GET /brands/:brandId',
+      params: { brandId: '' },
+      aliasLookupsPerProduct,
+    });
+    expect(result).to.deep.equal({ resourceType: 'brand', resourceId: '', source: 'param' });
+  });
+
   describe('body fallback', () => {
     it('reads from body when the route declares NO URL params at all', () => {
       const result = resolveFacsResource({

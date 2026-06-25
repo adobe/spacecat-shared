@@ -285,6 +285,24 @@ describe('facsWrapper', () => {
       expect(handler.calledOnce).to.be.true;
     });
 
+    it('bypasses when the env lists the canonical @AdobeOrg form but the caller org is bare', async () => {
+      // Operators may paste the DB canonical form into FACS_EXCEPTION_INTERNAL_ORGS;
+      // both sides are normalized so the bare caller org still matches.
+      context.env = {
+        FACS_EXCEPTION_INTERNAL_ORGS: '8C6043F15F43B6390A49401A@AdobeOrg',
+      };
+      context.attributes.authInfo = makeAuthInfo({
+        getTenantIds: () => ['8C6043F15F43B6390A49401A'],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs' },
+        'FACS bypass: Adobe internal IMS org',
+      )).to.be.true;
+    });
+
     it('does not bypass when env var is unset', async () => {
       // Tests the empty-set return of parseFacsExceptionInternalOrgs.
       context.env = {};
@@ -421,6 +439,17 @@ describe('facsWrapper', () => {
       await wrapped({}, context);
       const [flagKey, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
       expect(flagKey).to.equal('FF_LLMO-3026');
+      expect(imsOrgId).to.equal('ORG-ABC@AdobeOrg');
+    });
+
+    it('does not double-suffix a pre-canonicalized org id for the LD flag key', async () => {
+      // getTenantIds() may already return the `<ident>@AdobeOrg` form; the key
+      // must stay single-suffixed (regression: `${orgId}@AdobeOrg` produced
+      // `ORG@AdobeOrg@AdobeOrg`, silently bypassing FACS).
+      context.attributes.authInfo = makeAuthInfo({ getTenantIds: () => ['ORG-ABC@AdobeOrg'] });
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      const [, imsOrgId] = ldClient.isFlagEnabledForIMSOrg.firstCall.args;
       expect(imsOrgId).to.equal('ORG-ABC@AdobeOrg');
     });
 

@@ -26,7 +26,12 @@ function parseFacsExceptionInternalOrgs(env) {
   if (!raw) {
     return new Set();
   }
-  return new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
+  // Canonicalize each entry so an operator may list either the bare ident or
+  // the `<ident>@AdobeOrg` form; membership is checked against the normalized
+  // caller org id below.
+  return new Set(
+    raw.split(',').map((s) => normalizeImsOrgId(s.trim())).filter(Boolean),
+  );
 }
 
 /**
@@ -242,10 +247,15 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       return internalServerError('Multi-tenant sessions are not supported');
     }
     const orgId = tenantIds[0];
+    // Canonical `<ident>@AdobeOrg` form used for the internal-org bypass set and
+    // the LaunchDarkly flag key. `getTenantIds()` may return either the bare
+    // ident or the suffixed form; normalize once so both lookups are consistent
+    // (normalizeImsOrgId is idempotent — it only appends when no `@` is present).
+    const normalizedOrgId = normalizeImsOrgId(orgId);
 
     // (2) Adobe internal IMS org IDs — permanent bypass (env-configured).
     const internalImsOrgIds = parseFacsExceptionInternalOrgs(context.env);
-    if (orgId && internalImsOrgIds.has(orgId)) {
+    if (normalizedOrgId && internalImsOrgIds.has(normalizedOrgId)) {
       log.info({
         tag: 'facs', bypass: 'internal-adobe-org', method, suffix, org: orgId,
       }, 'FACS bypass: Adobe internal IMS org');
@@ -295,7 +305,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       }
       let isFacsEnabled;
       try {
-        isFacsEnabled = await ldClient.isFlagEnabledForIMSOrg(flagKey, `${orgId}@AdobeOrg`);
+        isFacsEnabled = await ldClient.isFlagEnabledForIMSOrg(flagKey, normalizedOrgId);
       } catch (e) {
         log.error({
           tag: 'facs', flagKey, org: orgId, err: e.message,
@@ -400,8 +410,8 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     }
 
     // Tries user-scoped first, then org-scoped; either is sufficient and
-    // they're stored symmetrically.
-    const canonicalImsOrgId = normalizeImsOrgId(orgId);
+    // they're stored symmetrically. Reuses the org id normalized above.
+    const canonicalImsOrgId = normalizedOrgId;
     let stateGrants = [];
     try {
       const lookupKey = {

@@ -384,6 +384,20 @@ Turning a captured response into a handler:
   to capture a *success* response, first make sure the test workspace has units allocated (or use a
   funded parent); don't treat the `405` as a quirk to paper over — it's faithful behaviour the mock
   already models.
+- **Live is eventually-consistent — a create-then-immediately-read can look empty/`404`.** Verified
+  2026-06-25: a just-`POST`ed prompt did not appear in `prompts/by_tags`, a just-created brand URL
+  did not appear in `listBrandUrls`, and a project's **main-brand benchmark is generated
+  asynchronously** (it did not appear within ~60s of create, even after a publish — and a freshly
+  created competitor benchmark's `brand_urls` GET `404`s until it is processed). So to capture a
+  *populated* read, drive it against a **pre-existing, settled** project, not one you just created;
+  don't read an empty list / `404` right after a write as the contract. (The mock makes every write
+  immediately readable — what the consumer's tests need — so this asymmetry is a capture-time
+  concern only, never a mock-fidelity gap.)
+- **Source the request shape from the consumer, not a guess.** Take the exact method + path + body
+  from the consumer's `rest-transport.js` on **`origin/main`** — not a stale worktree branch (a
+  12-commits-behind checkout once mislabeled live endpoints as dead). A metered create also needs a
+  funded workspace *and* a well-formed body — e.g. `createProject` needs a real `language_id`
+  (resolve from `GET /v1/languages`) and `location_id`, or it `400`s/`500`s before you see the shape.
 
 ---
 

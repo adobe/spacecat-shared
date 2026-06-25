@@ -512,6 +512,43 @@ function filterBySiteScope(urls, siteBaseUrl) {
   return urls.filter((url) => isWithinSiteScope(url, siteBaseUrl));
 }
 
+/**
+ * Extracts the pathname from a URL string, stripping trailing slashes on non-root paths.
+ * Falls back to the raw string when the URL is not parseable (e.g. invalid or relative).
+ *
+ * @param {string} url
+ * @returns {string} pathname, or the original string on parse failure
+ */
+export function toPathname(url) {
+  try {
+    const { pathname } = new URL(url);
+    return pathname === '/' ? pathname : pathname.replace(/\/$/, '').toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
+}
+
+/**
+ * Checks whether two URLs share the same normalized pathname.
+ * Comparison is case-insensitive and ignores trailing slashes on non-root paths.
+ * @param {string} url - URL to compare.
+ * @param {string} referenceUrl - URL to compare against.
+ * @returns {boolean} True if both URLs resolve to the same pathname.
+ */
+export function hasSamePathname(url, referenceUrl) {
+  return toPathname(url) === toPathname(referenceUrl);
+}
+
+/**
+ * Checks whether every URL in an array shares the same normalized pathname as a reference URL.
+ * @param {string[]} urls - Array of URLs to check.
+ * @param {string} referenceUrl - URL whose pathname all entries must match.
+ * @returns {boolean} True if every URL in the array has the same pathname as referenceUrl.
+ */
+export function allHaveSamePathname(urls, referenceUrl) {
+  return urls.every((url) => hasSamePathname(url, referenceUrl));
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,

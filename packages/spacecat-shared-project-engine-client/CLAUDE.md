@@ -51,6 +51,15 @@ hand-write entity literals: they drift from the spec (an early seed had grown a 
 isn't in `ProjectResponse`). `test/types/factories.type-test.ts` proves the enforcement (the
 `workspace_id` drift and a wrong field type are `@ts-expect-error` canaries). Use real UUIDs.
 
+This applies to the **Counterfact route handlers too**, not just seeds/tests. The factories are
+exposed on the per-request context as `context.factories`, so a handler builds every response
+entity through them — `context.factories.createBenchmarkMock({ brand_name, domain, ... })`, the
+catalog handlers map their data rows through `createLanguageMock` / `createAiModelMock` /
+`createBrandTopicMock` — rather than emitting an inline literal that the untyped handler (the
+`@ts-check` exception) couldn't catch drifting. The factory is the single, tsc-checked source of
+truth for each shape. The lone exception is `ci/competitors` (the `CICompetitor` response has no
+factory yet); if you add one, route that handler through it too.
+
 ## Spec corrections: the overlay is the single source of truth
 
 `spec/overlays/corrections.yaml` holds all corrections to the vendored swagger; the vendored

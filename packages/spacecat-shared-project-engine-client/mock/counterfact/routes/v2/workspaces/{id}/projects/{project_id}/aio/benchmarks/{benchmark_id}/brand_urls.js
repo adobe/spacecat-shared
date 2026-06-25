@@ -36,7 +36,7 @@ export function POST($) {
   const entries = Array.isArray(body) ? body : [];
   const created = context.ops.brand_urls.createMany(
     { workspaceId: path.id, projectId: path.project_id, benchmarkId: path.benchmark_id },
-    entries.map((u) => ({
+    entries.map((u) => context.factories.createBrandUrlMock({
       url: u?.url ?? '',
       type: u?.type ?? '',
       benchmark_id: path.benchmark_id,

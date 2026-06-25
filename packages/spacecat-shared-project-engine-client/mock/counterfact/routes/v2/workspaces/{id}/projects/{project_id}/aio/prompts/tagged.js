@@ -37,11 +37,12 @@ export function POST($) {
   const scope = { workspaceId: path.id, projectId: path.project_id };
   const promptsByText = body?.prompts ?? {};
 
-  const toCreate = Object.entries(promptsByText).map(([text, tags]) => ({
-    name: text,
-    is_new: true,
-    tags: (tags ?? []).map((name) => ({ id: tagId(name), name })),
-  }));
+  const toCreate = Object.entries(promptsByText).map(([text, tags]) => context.factories
+    .createPromptMock({
+      name: text,
+      is_new: true,
+      tags: (tags ?? []).map((name) => ({ id: tagId(name), name })),
+    }));
 
   if (!context.quota.canCreatePrompts(path.id, toCreate.length)) {
     return {

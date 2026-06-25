@@ -60,7 +60,8 @@ const LANGUAGES = [
   { id: '12aa4de5-3526-4b96-909a-c033c1f4e32c', name: 'Vietnamese' },
 ];
 
-/** GET — list the language catalog. */
+/** GET — list the language catalog (each row shaped via the factory). */
 export function GET($) {
-  return $.response[200].json({ page: 1, total: LANGUAGES.length, items: LANGUAGES });
+  const items = LANGUAGES.map((l) => $.context.factories.createLanguageMock(l));
+  return $.response[200].json({ page: 1, total: items.length, items });
 }

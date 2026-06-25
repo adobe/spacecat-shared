@@ -257,6 +257,10 @@ handlers). Response validation stays on; request validation is off.
 - **Bearer auth** is injected at this seam: `injectAuthGuard` prepends
   `context.authError($.headers)` to every materialized handler method, so the gate is impossible to
   forget on a new handler. `__*` control routes are skipped.
+- **Entity shapes via factories.** Handlers don't hand-write response entities — they build them
+  through `context.factories.createXMock(...)` (the typed factories from `mock/factories.js`), so
+  every emitted shape has one tsc-checked source of truth and can't drift from the spec. When you
+  add a create/catalog handler, route its entities through the matching factory.
 - **Adding a new `_lib` module:** any file imported by `mock/context.js` MUST be added to
   `LIB_FILES` in `mock/run.js`, or the materialized tree breaks.
 

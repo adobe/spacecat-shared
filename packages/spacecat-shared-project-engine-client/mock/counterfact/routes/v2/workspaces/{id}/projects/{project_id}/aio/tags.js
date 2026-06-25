@@ -24,10 +24,8 @@ const tagId = (name) => `tag-${encodeURIComponent(name)}`;
 
 /** POST — create project tags → 201 array of TreeNodeResponse. */
 export function POST($) {
-  const { body } = $;
+  const { body, context } = $;
   const names = Array.isArray(body?.names) ? body.names : [];
-  const tags = names.map((name) => ({
-    id: tagId(name), name, children_count: 0, keyword_count: 0,
-  }));
+  const tags = names.map((name) => context.factories.createTagNodeMock({ id: tagId(name), name }));
   return $.response[201].json(tags);
 }

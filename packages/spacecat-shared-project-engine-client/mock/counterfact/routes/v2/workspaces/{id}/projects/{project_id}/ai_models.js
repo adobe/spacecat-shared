@@ -26,7 +26,10 @@ export function POST($) {
   const { path, body, context } = $;
   const created = context.ops.ai_models.add(
     { workspaceId: path.id, projectId: path.project_id },
-    { model: { id: body.model_id }, prompts_count: 0 },
+    context.factories.createProjectAiModelMock({
+      model: context.factories.createAiModelMock({ id: body.model_id }),
+      prompts_count: 0,
+    }),
   );
   return $.response[201].json(created);
 }

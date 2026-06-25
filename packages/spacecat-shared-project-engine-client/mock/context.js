@@ -41,6 +41,7 @@ import { InMemoryStore } from './store.js';
 import { createStatefulOps } from './stateful.js';
 import { createQuota } from './quota.js';
 import { authError } from './auth.js';
+import * as factories from './factories.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
 /**
@@ -69,6 +70,11 @@ export class Context {
     // Bearer-auth gate. Stateless, so it is a plain reference to the pure guard; every real route
     // calls `context.authError($.headers)`, the `__*` control routes do not (see mock/auth.js).
     this.authError = authError;
+    // The typed entity factories (mock/factories.js), exposed so route handlers build every
+    // response entity through them (`context.factories.createXMock(...)`) instead of inline
+    // literals — the factory is the single, tsc-checked source of truth for each shape, so the
+    // handlers can't drift from the spec the way duplicated literals would.
+    this.factories = factories;
   }
 
   /**

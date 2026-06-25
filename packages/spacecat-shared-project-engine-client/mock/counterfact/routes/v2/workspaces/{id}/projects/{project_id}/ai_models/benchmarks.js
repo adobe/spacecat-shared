@@ -26,15 +26,11 @@ export function POST($) {
   const entries = Array.isArray(body) ? body : [];
   const created = context.ops.benchmarks.createMany(
     { workspaceId: path.id, projectId: path.project_id },
-    entries.map((b) => ({
+    entries.map((b) => context.factories.createBenchmarkMock({
       brand_name: b?.brand_name ?? '',
       domain: b?.domain ?? '',
       brand_aliases: Array.isArray(b?.brand_aliases) ? b.brand_aliases : [],
-      rejected_brand_aliases: [],
       color: b?.color ?? '',
-      favorite: false,
-      main_brand: false,
-      products_count: 0,
       project_id: path.project_id,
     })),
   );

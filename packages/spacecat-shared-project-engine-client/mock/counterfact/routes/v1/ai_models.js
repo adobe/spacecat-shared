@@ -90,7 +90,8 @@ const MODELS = [
   },
 ];
 
-/** GET — list the global AI model catalog. */
+/** GET — list the global AI model catalog (each row shaped via the factory). */
 export function GET($) {
-  return $.response[200].json({ page: 1, total: MODELS.length, items: MODELS });
+  const items = MODELS.map((m) => $.context.factories.createAiModelMock(m));
+  return $.response[200].json({ page: 1, total: items.length, items });
 }

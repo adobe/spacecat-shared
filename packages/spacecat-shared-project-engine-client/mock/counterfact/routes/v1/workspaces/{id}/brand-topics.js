@@ -30,7 +30,8 @@ const TOPICS = [
   },
 ];
 
-/** GET — generate the workspace's top brand topics (top-level array). */
+/** GET — generate the workspace's top brand topics (top-level array, shaped via the factory). */
 export function GET($) {
-  return $.response[200].json(TOPICS);
+  const topics = TOPICS.map((t) => $.context.factories.createBrandTopicMock(t));
+  return $.response[200].json(topics);
 }

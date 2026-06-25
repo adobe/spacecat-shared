@@ -34,6 +34,9 @@ export function POST($) {
       contentType: 'application/json',
     };
   }
-  const created = context.ops.projects.create({ workspaceId: path.id }, { ...body });
+  const created = context.ops.projects.create(
+    { workspaceId: path.id },
+    context.factories.createProjectMock({ ...body }),
+  );
   return $.response[201].json(created);
 }

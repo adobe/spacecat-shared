@@ -451,6 +451,111 @@ export function canonicalizeUrl(url, { stripQuery = false } = {}) {
   return canonicalized;
 }
 
+/**
+ * Checks if a URL is within the site scope defined by siteBaseUrl.
+ * For a siteBaseUrl with a subpath (e.g. bulk.com/uk), only URLs whose pathname starts with that
+ * subpath are in scope. For domain-only base URLs (no subpath), all URLs pass through.
+ *
+ * @param {string} url - The URL to check (absolute, or absolute-path reference starting with `/`).
+ * @param {string} siteBaseUrl - The site's base URL defining the scope (e.g. "bulk.com/uk").
+ * @returns {boolean}
+ */
+function isWithinSiteScope(url, siteBaseUrl) {
+  if (!url) {
+    return false;
+  }
+  if (!siteBaseUrl) {
+    return true;
+  }
+
+  try {
+    const parsedBase = new URL(prependSchema(siteBaseUrl));
+    const rawPath = parsedBase.pathname;
+    const basePath = rawPath.endsWith('/') ? rawPath.slice(0, -1) : rawPath;
+
+    if (!basePath || basePath === '/') {
+      return true;
+    }
+
+    const basePathWithSlash = `${basePath}/`;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      const normalized = new URL(url, 'https://dummy.local').pathname;
+      return normalized.startsWith(basePathWithSlash) || normalized === basePath;
+    }
+
+    const parsedUrl = new URL(prependSchema(url));
+    if (
+      stripWWW(parsedUrl.hostname) !== stripWWW(parsedBase.hostname)
+      || parsedUrl.port !== parsedBase.port
+    ) {
+      return false;
+    }
+
+    return parsedUrl.pathname.startsWith(basePathWithSlash) || parsedUrl.pathname === basePath;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Filters a list of URLs to only those within the site scope.
+ *
+ * @param {string[]} urls
+ * @param {string} siteBaseUrl
+ * @returns {string[]}
+ */
+function filterBySiteScope(urls, siteBaseUrl) {
+  if (!Array.isArray(urls)) {
+    return [];
+  }
+  return urls.filter((url) => isWithinSiteScope(url, siteBaseUrl));
+}
+
+/**
+ * Extracts the pathname from a URL string, stripping trailing slashes on non-root paths.
+ * The result is always lowercased. Falls back to the raw string (also lowercased) when
+ * the URL is not parseable (e.g. invalid or relative). Returns '' for non-string input.
+ *
+ * @param {string} url
+ * @returns {string} pathname, or the original string on parse failure, or '' for non-strings
+ */
+export function toPathname(url) {
+  if (!url || typeof url !== 'string') {
+    return '';
+  }
+  try {
+    const { pathname } = new URL(url);
+    return pathname === '/' ? pathname : pathname.replace(/\/$/, '').toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
+}
+
+/**
+ * Checks whether two URLs share the same normalized pathname.
+ * Comparison is case-insensitive and ignores trailing slashes on non-root paths.
+ * @param {string} url - URL to compare.
+ * @param {string} referenceUrl - URL to compare against.
+ * @returns {boolean} True if both URLs resolve to the same pathname.
+ */
+export function hasSamePathname(url, referenceUrl) {
+  return toPathname(url) === toPathname(referenceUrl);
+}
+
+/**
+ * Checks whether every URL in an array shares the same normalized pathname as a reference URL.
+ * @param {string[]} urls - Array of URLs to check.
+ * @param {string} referenceUrl - URL whose pathname all entries must match.
+ * @returns {boolean} True if every URL in the array has the same pathname as referenceUrl.
+ */
+export function allHaveSamePathname(urls, referenceUrl) {
+  if (!Array.isArray(urls)) {
+    return false;
+  }
+  return urls.every((url) => hasSamePathname(url, referenceUrl));
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,
@@ -466,4 +571,6 @@ export {
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
 };

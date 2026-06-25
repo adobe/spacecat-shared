@@ -30,6 +30,11 @@ import {
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
+  toPathname,
+  hasSamePathname,
+  allHaveSamePathname,
 } from '../src/url-helpers.js';
 
 use(sinonChai);
@@ -1181,6 +1186,231 @@ describe('URL Utility Functions', () => {
     it('handles URLs without protocol', () => {
       expect(canonicalizeUrl('example.com/path')).to.equal('example.com/path');
       expect(canonicalizeUrl('www.example.com/path')).to.equal('example.com/path');
+    });
+  });
+
+  describe('isWithinSiteScope', () => {
+    it('returns false for null or empty url', () => {
+      expect(isWithinSiteScope(null, 'bulk.com/uk')).to.be.false;
+      expect(isWithinSiteScope('', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns true when siteBaseUrl is null or empty (no restriction)', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', null)).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', '')).to.be.true;
+    });
+
+    it('returns true for all URLs when siteBaseUrl has no subpath', () => {
+      expect(isWithinSiteScope('https://bulk.com/any/path', 'bulk.com')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/', 'bulk.com')).to.be.true;
+    });
+
+    it('returns true for absolute URL within subpath scope', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns true for absolute URL exactly matching the base path', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns false for absolute URL outside the subpath scope', () => {
+      expect(isWithinSiteScope('https://bulk.com/de/page', 'bulk.com/uk')).to.be.false;
+      expect(isWithinSiteScope('https://bulk.com/ukraine', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns true for relative URL within subpath scope', () => {
+      expect(isWithinSiteScope('/uk/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('/uk/', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns true for relative URL exactly matching the base path', () => {
+      expect(isWithinSiteScope('/uk', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns false for relative URL outside the subpath scope', () => {
+      expect(isWithinSiteScope('/ukraine', 'bulk.com/uk')).to.be.false;
+      expect(isWithinSiteScope('/de/page', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('normalizes www when comparing hosts', () => {
+      expect(isWithinSiteScope('https://www.bulk.com/uk/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'www.bulk.com/uk')).to.be.true;
+    });
+
+    it('returns false when hosts differ', () => {
+      expect(isWithinSiteScope('https://other.com/uk/page', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns false when ports differ', () => {
+      expect(isWithinSiteScope('https://bulk.com:8080/uk/page', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('handles siteBaseUrl with trailing slash', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/uk/')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/ukraine', 'bulk.com/uk/')).to.be.false;
+    });
+
+    it('returns false on malformed siteBaseUrl without throwing', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', '://%%%bad')).to.be.false;
+    });
+
+    it('returns false on malformed absolute URL without throwing', () => {
+      expect(isWithinSiteScope('https://%%%bad', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('handles multi-level subpath scope (e.g. bulk.com/uk/en)', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/en/page', 'bulk.com/uk/en')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/uk/en')).to.be.false;
+    });
+
+    it('handles relative URL with query string', () => {
+      expect(isWithinSiteScope('/uk/page?lang=en', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('/de/page?lang=en', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('blocks path traversal via .. segments in relative URLs', () => {
+      expect(isWithinSiteScope('/uk/../admin/secret', 'bulk.com/uk')).to.be.false;
+    });
+  });
+
+  describe('filterBySiteScope', () => {
+    it('returns only URLs within the site scope', () => {
+      const urls = [
+        'https://bulk.com/uk/page1',
+        'https://bulk.com/de/page2',
+        'https://bulk.com/uk/page3',
+        'https://bulk.com/ukraine',
+      ];
+      expect(filterBySiteScope(urls, 'bulk.com/uk')).to.deep.equal([
+        'https://bulk.com/uk/page1',
+        'https://bulk.com/uk/page3',
+      ]);
+    });
+
+    it('returns all URLs when siteBaseUrl has no subpath', () => {
+      const urls = ['https://bulk.com/a', 'https://bulk.com/b'];
+      expect(filterBySiteScope(urls, 'bulk.com')).to.deep.equal(urls);
+    });
+
+    it('returns all URLs when siteBaseUrl is null', () => {
+      const urls = ['https://bulk.com/a', 'https://bulk.com/b'];
+      expect(filterBySiteScope(urls, null)).to.deep.equal(urls);
+    });
+
+    it('returns empty array when no URLs are in scope', () => {
+      const urls = ['https://bulk.com/de/page', 'https://other.com/uk/page'];
+      expect(filterBySiteScope(urls, 'bulk.com/uk')).to.deep.equal([]);
+    });
+
+    it('returns empty array for non-array input', () => {
+      expect(filterBySiteScope(null, 'bulk.com/uk')).to.deep.equal([]);
+      expect(filterBySiteScope(undefined, 'bulk.com/uk')).to.deep.equal([]);
+    });
+  });
+
+  describe('toPathname', () => {
+    it('returns the pathname of an absolute URL', () => {
+      expect(toPathname('https://example.com/path/page')).to.equal('/path/page');
+    });
+
+    it('returns "/" for a root URL', () => {
+      expect(toPathname('https://example.com/')).to.equal('/');
+    });
+
+    it('strips trailing slash on non-root paths', () => {
+      expect(toPathname('https://example.com/path/')).to.equal('/path');
+    });
+
+    it('lowercases the pathname', () => {
+      expect(toPathname('https://example.com/PATH/Page')).to.equal('/path/page');
+    });
+
+    it('ignores query string and fragment when extracting pathname', () => {
+      expect(toPathname('https://example.com/path?q=1#section')).to.equal('/path');
+    });
+
+    it('falls back to lowercased string when input is not a valid absolute URL', () => {
+      expect(toPathname('BULK.COM/page')).to.equal('bulk.com/page');
+    });
+
+    it('handles relative paths by falling back to lowercased string', () => {
+      expect(toPathname('/some/PATH')).to.equal('/some/path');
+    });
+
+    it('returns empty string for null input', () => {
+      expect(toPathname(null)).to.equal('');
+    });
+
+    it('returns empty string for undefined input', () => {
+      expect(toPathname(undefined)).to.equal('');
+    });
+  });
+
+  describe('hasSamePathname', () => {
+    it('returns true when two URLs have the same pathname', () => {
+      expect(hasSamePathname('https://a.com/page', 'https://b.com/page')).to.be.true;
+    });
+
+    it('returns false when two URLs have different pathnames', () => {
+      expect(hasSamePathname('https://a.com/page1', 'https://b.com/page2')).to.be.false;
+    });
+
+    it('ignores trailing slashes when comparing pathnames', () => {
+      expect(hasSamePathname('https://a.com/page/', 'https://b.com/page')).to.be.true;
+    });
+
+    it('is case-insensitive', () => {
+      expect(hasSamePathname('https://a.com/PAGE', 'https://b.com/page')).to.be.true;
+    });
+
+    it('returns true when both are root paths', () => {
+      expect(hasSamePathname('https://a.com/', 'https://b.com/')).to.be.true;
+    });
+
+    it('returns false when one is root and the other is not', () => {
+      expect(hasSamePathname('https://a.com/', 'https://b.com/page')).to.be.false;
+    });
+
+    it('does not crash when url is null', () => {
+      expect(hasSamePathname(null, 'https://b.com/page')).to.be.false;
+    });
+  });
+
+  describe('allHaveSamePathname', () => {
+    it('returns true when all URLs match the reference pathname', () => {
+      const urls = [
+        'https://a.com/page',
+        'https://b.com/page',
+        'https://c.com/page/',
+      ];
+      expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.true;
+    });
+
+    it('returns false when one URL has a different pathname', () => {
+      const urls = [
+        'https://a.com/page',
+        'https://b.com/other',
+      ];
+      expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.false;
+    });
+
+    it('returns true for an empty array', () => {
+      expect(allHaveSamePathname([], 'https://ref.com/page')).to.be.true;
+    });
+
+    it('is case-insensitive across all entries', () => {
+      const urls = ['https://a.com/PAGE', 'https://b.com/Page'];
+      expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.true;
+    });
+
+    it('returns false for non-array input', () => {
+      expect(allHaveSamePathname(null, 'https://ref.com/page')).to.be.false;
+      expect(allHaveSamePathname(undefined, 'https://ref.com/page')).to.be.false;
+    });
+
+    it('does not crash when array contains null elements', () => {
+      expect(allHaveSamePathname([null], 'https://ref.com/page')).to.be.false;
     });
   });
 });

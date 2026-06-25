@@ -60,6 +60,11 @@ void updatedProject;
 // 1d. the benchmark + brand-url factories (the overlay drift-guarded list shapes).
 const benchmark: Benchmark = createBenchmarkMock();
 const brandUrl: BrandUrl = createBrandUrlMock();
+// CR10: primary_url + root_domain are added to AIOBenchmarkWithCounters by the overlay (live
+// returns them). These reads only compile while CR10 is in the schema — drop CR10 and they error.
+void benchmark.primary_url;
+void benchmark.root_domain;
+void benchmark.project_id;
 void benchmark;
 void brandUrl;
 

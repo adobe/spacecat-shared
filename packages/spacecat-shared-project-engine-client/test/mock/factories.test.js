@@ -129,6 +129,18 @@ describe('factories — live-shaped entities', () => {
       .to.include({ main_brand: true, domain: 'x.example' });
   });
 
+  it('createBenchmarkMock carries the live-only fields: project_id + primary_url/root_domain (CR10)', () => {
+    // Live always returns these (verified 2026-06-25); primary_url/root_domain mirror the domain.
+    const def = createBenchmarkMock();
+    expect(def).to.include({ project_id: '', primary_url: 'competitor.example', root_domain: 'competitor.example' });
+    // they track the effective domain by default…
+    expect(createBenchmarkMock({ domain: 'adobe.com' }))
+      .to.include({ primary_url: 'adobe.com', root_domain: 'adobe.com' });
+    // …but an explicit override still wins.
+    expect(createBenchmarkMock({ domain: 'adobe.com', primary_url: 'www.adobe.com', project_id: 'p1' }))
+      .to.include({ primary_url: 'www.adobe.com', root_domain: 'adobe.com', project_id: 'p1' });
+  });
+
   it('createBrandUrlMock defaults to an own-type url', () => {
     const u = createBrandUrlMock();
     expect(u.id).to.match(/^[0-9a-f-]{36}$/);

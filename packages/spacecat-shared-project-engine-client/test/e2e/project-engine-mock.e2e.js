@@ -505,6 +505,12 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(error).to.equal(undefined);
     expect(data.aio_benchmarks).to.be.an('array').with.length(1);
     expect(data.aio_benchmarks[0]).to.include({ id: SEED_IDS.benchmarkId, main_brand: true });
+    // CR10: a listed benchmark carries project_id (the path project) + primary_url/root_domain
+    // (mirroring its domain), all confirmed live 2026-06-25. The GET handler stamps project_id.
+    const own = data.aio_benchmarks[0];
+    expect(own.project_id).to.equal(SEED_PROJECT);
+    expect(own).to.have.property('primary_url', own.domain);
+    expect(own).to.have.property('root_domain', own.domain);
   });
 
   // Mirrors the consumer's competitor-benchmark sync: create → list reflects → delete → gone.

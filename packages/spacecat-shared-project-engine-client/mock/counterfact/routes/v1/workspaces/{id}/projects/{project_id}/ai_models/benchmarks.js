@@ -16,15 +16,22 @@
  * `deleteBenchmarks`). Benchmarks are created via the v2 sibling and updated via the
  * `…/benchmarks/{benchmark_id}` route; all three share the version-agnostic store key
  * (`benchmarks:{ws}:{pid}`), so a create/update is visible to this list. Live: list → 200
- * `{ aio_benchmarks: [...] }`; delete → 202 with an EMPTY body (`content-length: 0` — verified
- * 2026-06-25; the swagger declares no 202 schema). Excluded from coverage (materialized handler).
+ * `{ aio_benchmarks: [...] }`, each item carrying `project_id` + `primary_url`/`root_domain`
+ * (overlay CR10, verified live 2026-06-25); delete → 202 with an EMPTY body (`content-length: 0`
+ * — verified 2026-06-25; the swagger declares no 202 schema). Excluded from coverage (handler).
  */
 
 /** GET — list the project's benchmarks → 200 { aio_benchmarks }. */
 export function GET($) {
   const { path, context } = $;
-  const aioBenchmarks = context.ops.benchmarks.list(
+  const stored = context.ops.benchmarks.list(
     { workspaceId: path.id, projectId: path.project_id },
+  );
+  // Route each stored row back through the factory so the listed shape is faithful regardless of
+  // how it was stored (created vs seeded) — filling primary_url/root_domain from the domain — and
+  // stamp the live project_id (the path project), which live always returns on a listed benchmark.
+  const aioBenchmarks = stored.map(
+    (b) => context.factories.createBenchmarkMock({ ...b, project_id: path.project_id }),
   );
   return $.response[200].json({ aio_benchmarks: aioBenchmarks });
 }

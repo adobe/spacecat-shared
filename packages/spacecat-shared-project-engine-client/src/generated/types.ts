@@ -1642,6 +1642,8 @@ export interface components {
             products_count?: number;
             project_id?: string;
             rejected_brand_aliases?: string[];
+            primary_url?: string;
+            root_domain?: string;
         };
         "model.AIOProduct": {
             aliases?: string[];

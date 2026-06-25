@@ -11,9 +11,11 @@
  */
 
 /**
- * Stateful handlers for /v1/workspaces/{id}/projects/{project_id}/ai_models — list, add, and
- * batch-delete the project's AI models. Materialized into `.counterfact/routes/` by the mock
- * runner; excluded from coverage.
+ * Stateful handlers for /v1/workspaces/{id}/projects/{project_id}/ai_models — list and
+ * batch-delete the project's AI models. There is deliberately NO v1 POST (add): the only
+ * consumer (`spacecat-api-service` rest-transport `addAiModel`) adds via the v2 route, so a v1
+ * add is dead surface. A v1 POST therefore 404s in the mock, matching the consumer-driven floor
+ * in docs/mock-statefulness.md. Materialized into `.counterfact/routes/`; excluded from coverage.
  */
 
 /** GET — list the project's AI models. */
@@ -21,19 +23,6 @@ export function GET($) {
   const { path, context } = $;
   const items = context.ops.ai_models.list({ workspaceId: path.id, projectId: path.project_id });
   return $.response[200].json({ items, page: 1, total: items.length });
-}
-
-/** POST — add an AI model to the project (body: { model_id }). */
-export function POST($) {
-  const { path, body, context } = $;
-  const created = context.ops.ai_models.add(
-    { workspaceId: path.id, projectId: path.project_id },
-    context.factories.createProjectAiModelMock({
-      model: context.factories.createAiModelMock({ id: body.model_id }),
-      prompts_count: 0,
-    }),
-  );
-  return $.response[200].json(created);
 }
 
 /** DELETE — batch-delete AI models (body: { ids }). */

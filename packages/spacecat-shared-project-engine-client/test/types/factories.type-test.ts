@@ -1,0 +1,59 @@
+/*
+ * Copyright 2025 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/**
+ * Compile-only proof that the mock factories produce spec-shaped entities, derived from the
+ * overlayed schema. Type-checked by `npm run test:types`; emits nothing. This is the guard that
+ * the "mock factory pattern" actually enforces shape — if a factory or the generated types drift,
+ * the build fails here. NOT run by mocha.
+ */
+
+import {
+  createProjectMock,
+  createProjectAiModelMock,
+  createAiModelMock,
+  createPromptMock,
+} from '../../mock/factories.js';
+import type { components } from '../../src/index.js';
+
+type Project = components['schemas']['model.ProjectResponse'];
+type ProjectAIModel = components['schemas']['model.ProjectAIModelResponse'];
+type Prompt = components['schemas']['model.AIOPromptWithStatus'];
+type AIModel = components['schemas']['model.AIModelResponse'];
+
+// 1. Each factory returns exactly its spec type (assignable in both directions).
+const project: Project = createProjectMock();
+const assigned: ProjectAIModel = createProjectAiModelMock();
+const prompt: Prompt = createPromptMock();
+const model: AIModel = createAiModelMock();
+
+// 2. Partial overrides of real fields are accepted.
+createProjectMock({ name: 'Acme' });
+createPromptMock({ is_new: true, tags: [] });
+createProjectAiModelMock({ model: createAiModelMock({ name: 'Claude' }) });
+
+// 3. Unknown fields are rejected — this is the `workspace_id` drift that slipped past
+//    hand-authored literals. If ProjectResponse ever gains workspace_id, this stops erroring.
+// @ts-expect-error — workspace_id is not part of ProjectResponse.
+createProjectMock({ workspace_id: 'not-a-real-field' });
+
+// 4. Wrong field types are rejected.
+// @ts-expect-error — prompts_count is a number, not a string.
+createProjectAiModelMock({ prompts_count: 'zero' });
+
+// 5. Overlay CR5 made the identity fields required: the factory outputs satisfy them as
+//    non-optional `string`. If CR5 were dropped (fields back to optional), `id` would be
+//    `string | undefined` and these assignments would fail.
+const ids: string[] = [project.id, assigned.id, prompt.id, model.id];
+const names: string[] = [project.name, prompt.name];
+void ids;
+void names;

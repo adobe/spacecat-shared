@@ -19,6 +19,17 @@ info:
 #      path key + a `query: { id }`, so a caller passing the runtime-correct
 #      `path: { id }` fails to type-check. Remove when Semrush fixes the param
 #      location upstream.
+# CR5  Mark the always-present identity fields `required` on the response schemas
+#      the stateful mock serves (projects, ai_models, prompts read paths). The
+#      vendored swagger marks NO response field required, so openapi-typescript
+#      emits everything optional — which lets typed fixtures silently omit fields
+#      and degrade fidelity. We require only fields the live API always returns AND
+#      that the mock's own create handlers populate, so generated types gain real
+#      enforcement (factories must supply them; Counterfact validates them at
+#      runtime) without misrepresenting the vendor. Notably AIModelResponse keeps
+#      only `id` required: the add path (`POST .../ai_models {model_id}`) does not
+#      resolve the catalog name, so `name` is genuinely absent there. Narrow/remove
+#      if a spec refresh adds upstream `required` arrays.
 actions:
   # ── CR1: Add GET /v1/ai_models ──────────────────────────────────────────
   # Live: 200 -> { page:int, total:int, items:[AIModelResponse] }.
@@ -118,3 +129,24 @@ actions:
     description: "CR4: workspace `id` is a path parameter on every operation (not query)"
     update:
       in: path
+
+  # ── CR5: Require the always-present identity fields on served responses ───
+  - target: "$.components.schemas['model.ProjectResponse']"
+    description: "CR5: a project response always carries id + name"
+    update:
+      required: [id, name]
+
+  - target: "$.components.schemas['model.ProjectAIModelResponse']"
+    description: "CR5: an assigned model always carries id + model + prompts_count"
+    update:
+      required: [id, model, prompts_count]
+
+  - target: "$.components.schemas['model.AIModelResponse']"
+    description: "CR5: a catalog model always carries id (name absent on the add path)"
+    update:
+      required: [id]
+
+  - target: "$.components.schemas['model.AIOPromptWithStatus']"
+    description: "CR5: a prompt-with-status always carries id + name + is_new + tags"
+    update:
+      required: [id, name, is_new, tags]

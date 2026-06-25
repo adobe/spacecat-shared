@@ -174,14 +174,22 @@ harness consuming the published client — can POST this JSON directly:
 }
 ```
 
-The `buildSeed()` helper authors that shape from a friendlier description so you don't
-hand-write the keys (it routes the rows verbatim, so pass real UUIDs and the real entity
-shapes). It's exposed on the `./mock/*` subpath, so a workspace caller (this repo's own tests,
-or the cross-repo harness resolving spacecat-shared from the checkout) imports it by package
-name:
+Rather than hand-write that JSON, use the **typed mock factories** (the
+[mock factory pattern](https://dev.to/davelosert/mock-factory-pattern-in-typescript-44l9)):
+each `createXMock(overrides?)` returns a spec-shaped entity typed against the generated
+(overlay-corrected) component schemas, so fixtures stay in sync with the spec and `npm run
+test:types` fails on drift (wrong/unknown/missing-required field). `buildSeed()` routes the
+factory rows into the collection-keyed `Snapshot`. All are on the `./mock/*` subpath, so a
+workspace caller (this repo's tests, or the cross-repo harness resolving spacecat-shared from
+the checkout) imports them by package name:
 
 ```js
 import { buildSeed } from '@adobe/spacecat-shared-project-engine-client/mock/seeds.js';
+import {
+  createProjectAiModelMock,
+  createAiModelMock,
+  createPromptMock,
+} from '@adobe/spacecat-shared-project-engine-client/mock/factories.js';
 import { randomUUID } from 'node:crypto';
 
 const workspaceId = randomUUID();
@@ -191,8 +199,8 @@ const snapshot = buildSeed({
   projects: [{
     id: projectId,
     name: 'Acme',
-    aiModels: [{ id: randomUUID(), model: { id: randomUUID(), key: 'gpt-4o', name: 'GPT-4o' }, prompts_count: 0 }],
-    prompts: [{ id: randomUUID(), name: 'What is Acme?', is_new: false }],
+    aiModels: [createProjectAiModelMock({ model: createAiModelMock({ name: 'GPT-4o' }) })],
+    prompts: [createPromptMock({ name: 'What is Acme?' })],
   }],
 });
 await fetch(`${baseUrl}/__seed`, { method: 'POST', body: JSON.stringify(snapshot) });

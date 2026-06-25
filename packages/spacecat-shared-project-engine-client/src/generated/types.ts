@@ -1661,7 +1661,7 @@ export interface components {
         };
         "model.AIModelResponse": {
             icon?: string;
-            id?: string;
+            id: string;
             key?: string;
             name?: string;
         };
@@ -1700,10 +1700,10 @@ export interface components {
             initialized?: boolean;
         };
         "model.AIOPromptWithStatus": {
-            id?: string;
-            is_new?: boolean;
-            name?: string;
-            tags?: components["schemas"]["model.AIOTag"][];
+            id: string;
+            is_new: boolean;
+            name: string;
+            tags: components["schemas"]["model.AIOTag"][];
         };
         "model.AIOPromptsListRequest": {
             limit?: number;
@@ -2145,9 +2145,9 @@ export interface components {
             total?: number;
         };
         "model.ProjectAIModelResponse": {
-            id?: string;
-            model?: components["schemas"]["model.AIModelResponse"];
-            prompts_count?: number;
+            id: string;
+            model: components["schemas"]["model.AIModelResponse"];
+            prompts_count: number;
         };
         "model.ProjectListResponse": {
             items?: components["schemas"]["model.ProjectResponse"][];
@@ -2193,10 +2193,10 @@ export interface components {
             domain?: string;
             draft_id?: string;
             favourite?: boolean;
-            id?: string;
+            id: string;
             is_draft?: boolean;
             live_id?: string;
-            name?: string;
+            name: string;
             /** @description enum: draft, publishing, initial_publish_failed, live, live_with_unpublished_updates */
             publish_status?: string;
             published_at?: string;

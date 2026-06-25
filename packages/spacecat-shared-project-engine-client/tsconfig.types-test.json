@@ -1,5 +1,5 @@
 {
-  "//": "Compile-only check of the public type surface. Not a build — `noEmit`. Run by `npm run test:types`; see test/types/index.type-test.ts for what it guards.",
+  "//": "Compile-only check of the public type surface AND the mock factories/fixtures. Not a build — `noEmit`. Run by `npm run test:types`; see test/types/*.ts. allowJs lets tsc read the `// @ts-check` mock files (factories.js, seeds.js) so fixture drift from the overlayed schema is a compile error.",
   "compilerOptions": {
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -7,12 +7,16 @@
     "lib": ["esnext", "dom"],
     "strict": true,
     "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
     "skipLibCheck": true,
     "types": []
   },
   "include": [
     "test/types/**/*.ts",
     "src/index.d.ts",
-    "src/generated/types.ts"
+    "src/generated/types.ts",
+    "mock/factories.js",
+    "mock/seeds.js"
   ]
 }

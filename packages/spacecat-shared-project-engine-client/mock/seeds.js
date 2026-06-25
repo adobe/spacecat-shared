@@ -10,14 +10,26 @@
  * governing permissions and limitations under the License.
  */
 
+// @ts-check
+
 /**
  * Named seed sets for the Project Engine mock. Each is a {@link Snapshot} keyed by the same
  * collection names {@link createStatefulOps} uses (see {@link collectionKey}), so a seed loaded
  * via `store.load(seed)` is immediately visible to the stateful handlers. E2E selects a seed at
  * startup and restores it between tests with `store.reset()` (exposed as `POST /__reset`).
+ *
+ * Entities are built via the typed {@link createProjectMock} / {@link createProjectAiModelMock} /
+ * {@link createPromptMock} factories, so the fixtures are spec-shaped and checked by tsc
+ * (`// @ts-check`). E2E flows reference the fixed UUIDs through {@link SEED_IDS}.
  */
 
 import { collectionKey } from './stateful.js';
+import {
+  createProjectMock,
+  createProjectAiModelMock,
+  createAiModelMock,
+  createPromptMock,
+} from './factories.js';
 
 // Real-shaped fixtures: the Project Engine API types every id as `format: uuid`, so the seeds
 // use fixed UUIDs (not `ws-1`/`pr-1`) to mirror production data. Fixed, not generated, so
@@ -44,21 +56,16 @@ export const EMPTY_WORKSPACE = Object.freeze({
  */
 export const WORKSPACE_WITH_DATA = Object.freeze({
   [collectionKey('projects', { workspaceId: WORKSPACE_ID })]: [
-    { id: PROJECT_ID, name: 'Seeded Project', workspace_id: WORKSPACE_ID },
+    createProjectMock({ id: PROJECT_ID, name: 'Seeded Project' }),
   ],
   [collectionKey('ai_models', { workspaceId: WORKSPACE_ID, projectId: PROJECT_ID })]: [
-    // ProjectAIModelResponse: assignment id + nested catalog model + prompts_count.
-    {
+    createProjectAiModelMock({
       id: AI_MODEL_ASSIGNMENT_ID,
-      model: { id: AI_MODEL_CATALOG_ID, key: 'gpt-4o', name: 'GPT-4o' },
-      prompts_count: 0,
-    },
+      model: createAiModelMock({ id: AI_MODEL_CATALOG_ID, key: 'gpt-4o', name: 'GPT-4o' }),
+    }),
   ],
   [collectionKey('prompts', { workspaceId: WORKSPACE_ID, projectId: PROJECT_ID })]: [
-    // AIOPromptWithStatus (the by_tags list item): id, name, is_new, tags.
-    {
-      id: PROMPT_ID, name: 'What is the best running shoe?', is_new: false, tags: [],
-    },
+    createPromptMock({ id: PROMPT_ID, name: 'What is the best running shoe?' }),
   ],
 });
 
@@ -80,22 +87,23 @@ export const SEED_IDS = Object.freeze({
 });
 
 /**
+ * @typedef {import('../src/index.js').components['schemas']} Schemas
  * @typedef {object} SeedProject
  * @property {string} id project UUID (use the project / `semrush_workspace_id` UUIDs from your DB
  *   fixtures so the mock and Postgres line up)
- * @property {string} [name]
- * @property {Array<object>} [aiModels] entity rows, stored verbatim — pass the real
- *   ProjectAIModelResponse shape (`{ id, model: { id, key, name }, prompts_count }`) for fidelity
- * @property {Array<object>} [prompts] entity rows, stored verbatim (`tags` defaults to `[]`) —
- *   pass the real AIOPromptWithStatus shape (`{ id, name, is_new, tags }`)
+ * @property {string} name
+ * @property {Array<Schemas['model.ProjectAIModelResponse']>} [aiModels] build with
+ *   {@link createProjectAiModelMock} so the shape is checked
+ * @property {Array<Schemas['model.AIOPromptWithStatus']>} [prompts] build with
+ *   {@link createPromptMock} so the shape is checked
  */
 
 /**
  * Authors a collection-keyed {@link Snapshot} from a friendly, DB-shaped description, so a caller
  * (the cross-repo e2e harness) can mirror the rows it inserted into Postgres without hand-writing
  * `collectionKey(...)` keys. Pass the result to `POST /__seed` or write it to a `MOCK_SEED_FILE`.
- * `aiModels`/`prompts` are routed verbatim, so use real UUIDs and real entity shapes (see
- * {@link WORKSPACE_WITH_DATA} for the reference shapes) to keep the mock close to production data.
+ * The project entity is built via {@link createProjectMock} (typed); pass `aiModels`/`prompts`
+ * built with the factories so every row stays spec-shaped with real UUIDs.
  *
  * @param {{ workspaceId: string, projects?: SeedProject[] }} spec
  * @returns {import('./store.js').Snapshot}
@@ -107,10 +115,10 @@ export function buildSeed({ workspaceId, projects = [] }) {
   for (const {
     id, name, aiModels = [], prompts = [],
   } of projects) {
-    snapshot[projectsKey].push({ id, name, workspace_id: workspaceId });
+    snapshot[projectsKey].push(createProjectMock({ id, name }));
     const scope = { workspaceId, projectId: id };
-    snapshot[collectionKey('ai_models', scope)] = aiModels.map((m) => ({ ...m }));
-    snapshot[collectionKey('prompts', scope)] = prompts.map((p) => ({ tags: [], ...p }));
+    snapshot[collectionKey('ai_models', scope)] = aiModels;
+    snapshot[collectionKey('prompts', scope)] = prompts;
   }
   return snapshot;
 }

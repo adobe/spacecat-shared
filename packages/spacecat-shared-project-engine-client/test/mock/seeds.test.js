@@ -20,6 +20,7 @@ import {
   EMPTY_WORKSPACE,
   buildSeed,
 } from '../../mock/seeds.js';
+import { createProjectAiModelMock, createPromptMock } from '../../mock/factories.js';
 
 describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {
@@ -67,14 +68,16 @@ describe('seeds', () => {
 
 describe('buildSeed', () => {
   it('builds a collection-keyed snapshot the stateful ops can read back', () => {
+    const workspaceId = 'ws-7';
+    const projectId = 'pr-7';
     const snapshot = buildSeed({
-      workspaceId: 'ws-7',
+      workspaceId,
       projects: [
         {
-          id: 'pr-7',
+          id: projectId,
           name: 'Mirror',
-          aiModels: [{ id: 'm-1', name: 'gpt-4o' }],
-          prompts: [{ id: 'q-1', name: 'What is X?' }],
+          aiModels: [createProjectAiModelMock()],
+          prompts: [createPromptMock({ name: 'What is X?' })],
         },
       ],
     });
@@ -82,14 +85,16 @@ describe('buildSeed', () => {
     const store = new InMemoryStore();
     store.load(snapshot);
     const ops = createStatefulOps(store);
-    const scope = { workspaceId: 'ws-7', projectId: 'pr-7' };
+    const scope = { workspaceId, projectId };
 
-    expect(ops.projects.list({ workspaceId: 'ws-7' })).to.have.length(1);
-    expect(ops.projects.get({ workspaceId: 'ws-7' }, 'pr-7')?.workspace_id).to.equal('ws-7');
+    expect(ops.projects.list({ workspaceId })).to.have.length(1);
+    // project built via the factory → ProjectResponse shape (id + name, no bogus workspace_id).
+    expect(ops.projects.get({ workspaceId }, projectId)?.name).to.equal('Mirror');
     expect(ops.ai_models.list(scope)).to.have.length(1);
     const prompts = ops.prompts.list(scope);
     expect(prompts).to.have.length(1);
-    expect(prompts[0].tags).to.deep.equal([]); // default tags applied
+    expect(prompts[0].name).to.equal('What is X?');
+    expect(prompts[0].tags).to.deep.equal([]); // factory default
   });
 
   it('handles an empty workspace (no projects)', () => {

@@ -256,6 +256,7 @@ PACKAGES=(
   "@adobe/spacecat-shared-athena-client"
   "@adobe/spacecat-shared-brand-client"
   "@adobe/spacecat-shared-cloud-manager-client"
+  "@adobe/spacecat-shared-cloudflare-client"
   "@adobe/spacecat-shared-content-client"
   "@adobe/spacecat-shared-data-access"
   "@adobe/spacecat-shared-drs-client"

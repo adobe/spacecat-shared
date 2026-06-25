@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+// @ts-check
+
 /**
  * The Counterfact per-path Context for the Project Engine mock.
  *

@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+// @ts-check
+
 /**
  * Framework-agnostic building blocks for the Project Engine client.
  * Deliberately free of `openapi-fetch` and generated-type imports so they can be
@@ -123,13 +125,22 @@ export function nextRetryDelayMs(completedAttempt, baseDelayMs, response) {
 }
 
 /**
+ * @typedef {object} RetryInfo
+ * @property {number} attempt the 1-based number of the retry about to be made
+ * @property {number} delayMs the wait before this retry
+ * @property {string} method the HTTP method
+ * @property {number} [status] the retryable response status that triggered the retry, if any
+ * @property {Error} [error] the network error that triggered the retry, if any
+ */
+
+/**
  * Invokes a best-effort {@link OnRetry} hook, swallowing both synchronous throws and asynchronous
  * rejections so a broken observability callback can never break the retry loop or the request.
  * The hook fires fire-and-forget (never awaited), so it cannot delay a retry. Its own failures are
  * deliberately silent (no signal is emitted) — surfacing them would itself need an observability
  * channel; observability must never affect the request outcome.
- * @param {OnRetry} [onRetry]
- * @param {object} info
+ * @param {OnRetry | undefined} onRetry
+ * @param {RetryInfo} info
  */
 function notifyRetry(onRetry, info) {
   if (!onRetry) {
@@ -139,7 +150,7 @@ function notifyRetry(onRetry, info) {
     const result = onRetry(info);
     // An async onRetry returns a promise; sink its rejection here so a rejecting hook can't escape
     // as an unhandled promise rejection (which crashes the process in Node 18+). Not awaited.
-    if (result && typeof result.catch === 'function') {
+    if (result instanceof Promise) {
       result.catch(() => {});
     }
   } catch {
@@ -149,12 +160,7 @@ function notifyRetry(onRetry, info) {
 
 /**
  * @callback OnRetry
- * @param {object} info
- * @param {number} info.attempt the 1-based number of the retry about to be made
- * @param {number} info.delayMs the wait before this retry
- * @param {string} info.method the HTTP method
- * @param {number} [info.status] the retryable response status that triggered the retry, if any
- * @param {Error} [info.error] the network error that triggered the retry, if any
+ * @param {RetryInfo} info
  * @returns {void | Promise<void>} may be async; the return is not awaited (fire-and-forget)
  */
 
@@ -197,7 +203,13 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs, onRetry)
     for (let attempt = 0; attempt <= attempts; attempt += 1) {
       if (attempt > 0) {
         notifyRetry(onRetry, {
-          attempt, delayMs: nextDelayMs, method, status: lastResponse?.status, error: lastError,
+          attempt,
+          delayMs: nextDelayMs,
+          method,
+          status: lastResponse?.status,
+          // lastError is a caught throw (unknown); pass it only when it's a real Error. The
+          // original value is still rethrown unchanged below if retries are exhausted.
+          error: lastError instanceof Error ? lastError : undefined,
         });
         // eslint-disable-next-line no-await-in-loop
         await sleep(nextDelayMs);

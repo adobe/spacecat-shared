@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+// @ts-check
+
 /**
  * Mock runner for the Project Engine Counterfact server.
  *

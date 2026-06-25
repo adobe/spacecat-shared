@@ -69,7 +69,11 @@ export const WORKSPACE_WITH_DATA = Object.freeze({
   ],
 });
 
-/** All seed sets by name, for the runner to select via env/flag. */
+/**
+ * All seed sets by name, for the runner to select via env/flag. Typed as a string map so a
+ * runtime `MOCK_SEED` (an arbitrary string) can index it with a fallback (see {@link Context}).
+ * @type {Record<string, import('./store.js').Snapshot>}
+ */
 export const SEEDS = Object.freeze({
   'empty-workspace': EMPTY_WORKSPACE,
   'workspace-with-data': WORKSPACE_WITH_DATA,

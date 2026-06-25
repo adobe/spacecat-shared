@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+// @ts-check
+
 /**
  * The stateful slice of the Project Engine mock.
  *

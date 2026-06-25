@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+// @ts-check
+
 /**
  * A generic, resource-agnostic in-memory store for the Project Engine mock.
  *

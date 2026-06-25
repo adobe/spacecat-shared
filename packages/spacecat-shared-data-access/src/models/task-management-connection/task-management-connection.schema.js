@@ -67,8 +67,15 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
     readOnly: true,
     validate: (value) => typeof value === 'string' && value.length > 0,
   })
-  // TODO(follow-up): add lastUsedAt (timestamp, nullable) and errorMessage (string, nullable)
-  //   columns that the auth-service already writes in markError(). Tracked in the data-models PR.
+  .addAttribute('lastUsedAt', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || !Number.isNaN(Date.parse(value)),
+  })
+  .addAttribute('errorMessage', {
+    type: 'string',
+    required: false,
+  })
 
   // metadata JSONB (PR #720): provider-specific structured data.
   // jira_cloud: { cloudId (required UUID), scopes (optional string array) }.

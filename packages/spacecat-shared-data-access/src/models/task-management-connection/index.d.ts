@@ -29,13 +29,17 @@ export interface TaskManagementConnection extends BaseModel {
 
   getConnectedBy(): string;
   getDisplayName(): string;
+  getErrorMessage(): string | null;
   getInstanceUrl(): string;
+  getLastUsedAt(): string | null;
   getMetadata(): object;
   getOrganizationId(): string;
   getProvider(): string;
   getStatus(): string;
   getTickets(): Promise<Ticket[]>;
 
+  setErrorMessage(message: string | null): TaskManagementConnection;
+  setLastUsedAt(timestamp: string): TaskManagementConnection;
   setMetadata(metadata: object): TaskManagementConnection;
   setStatus(status: string): TaskManagementConnection;
 }

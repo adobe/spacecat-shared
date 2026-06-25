@@ -66,4 +66,31 @@ describe('TaskManagementConnection Schema', () => {
       expect(attributes.instanceUrl.readOnly).to.be.true;
     });
   });
+
+  describe('lastUsedAt attribute', () => {
+    it('exists and is optional', () => {
+      expect(attributes.lastUsedAt).to.exist;
+      expect(attributes.lastUsedAt.required).to.be.false;
+    });
+
+    it('validates ISO date strings', () => {
+      expect(attributes.lastUsedAt.validate('2026-06-15T10:05:00Z')).to.be.true;
+    });
+
+    it('rejects non-ISO strings', () => {
+      expect(attributes.lastUsedAt.validate('not-a-date')).to.be.false;
+    });
+
+    it('accepts null/undefined', () => {
+      expect(attributes.lastUsedAt.validate(null)).to.be.true;
+      expect(attributes.lastUsedAt.validate(undefined)).to.be.true;
+    });
+  });
+
+  describe('errorMessage attribute', () => {
+    it('exists and is optional', () => {
+      expect(attributes.errorMessage).to.exist;
+      expect(attributes.errorMessage.required).to.be.false;
+    });
+  });
 });

@@ -363,9 +363,12 @@ curl -s  -H "Authorization: Bearer $TOKEN" "$BASE/v1/workspaces/$WS/projects" | 
 
 Turning a captured response into a handler:
 
-- **Status + headers first, body second.** `200` vs `202`, and empty body (`content-length: 0`) vs
-  an envelope, IS the contract — pin both. (Live `createProject` returns `200` with a *draft*
-  `ProjectResponse`; the `publish` / benchmark / brand-url acks return empty `202`s.)
+- **Status + headers first, body second.** `200` vs `201` vs `202`, and empty body
+  (`content-length: 0`) vs an envelope, IS the contract — pin both. (Verified live 2026-06-25:
+  `createProject` → `201` draft `ProjectResponse`; `createTaggedPrompts` → `201 { ids,
+  existing_count }`; `createBenchmarks` / `createBrandUrls` → `200 { ids, existing_count }`;
+  `publish` and the benchmark / brand-url **delete/update** acks → empty `202`; `deletePromptsByIds`
+  → `204`.)
 - **Nest into the factory, don't paste the literal.** Add the captured fields to the matching
   `createXMock` — or a transforming factory if it's a write that reshapes the request (live nests a
   flat `ProjectUpdateRequest` under `settings.ai`, hence `applyProjectUpdate`;

@@ -78,6 +78,14 @@ change, the live proof.
   minted, never-created project ids to exercise metering in isolation. If a future consumer flow
   needs unknown-project 404s, add a shared `requireProject(scope)` guard to the child writers and
   seed the parent projects the quota cases use.
+- **`listBrandUrls` always returns `200 { brand_urls }`; live can `404`.** Live (verified
+  2026-06-25) `GET …/aio/benchmarks/{bid}/brand_urls` returns `404 { message: "not found" }` when
+  `{bid}` is not the project's listable (auto-created main-brand) benchmark — even though a `POST`
+  of brand URLs onto that same competitor `{bid}` succeeds. The mock returns `200 { brand_urls }`
+  for any benchmark id. Deliberate: the consumer only ever lists brand URLs on the **main-brand**
+  benchmark id it reads from `listBenchmarks`, so the 404 path is outside its flow. Add a
+  benchmark-existence guard to the `brand_urls` GET only if a future flow lists arbitrary
+  benchmarks.
 - **Create ops report `existing_count: 0` unconditionally.** `POST .../aio/prompts/tagged` and
   `POST .../ai_models/benchmarks` always return `existing_count: 0` — the mock models no dedup
   against already-present rows, so the consumer's "some already present" branch

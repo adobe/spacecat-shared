@@ -11,7 +11,7 @@
  */
 
 import { expect } from 'chai';
-import { InMemoryStore } from '../../src/mock/store.js';
+import { InMemoryStore } from '../../mock/store.js';
 
 describe('InMemoryStore — CRUD', () => {
   it('creates with a generated id and reads it back', () => {
@@ -65,7 +65,7 @@ describe('InMemoryStore — CRUD', () => {
 });
 
 describe('InMemoryStore — seed & reset', () => {
-  /** @type {import('../../src/mock/store.js').Snapshot} */
+  /** @type {import('../../mock/store.js').Snapshot} */
   const snapshot = {
     workspaces: [{ id: 'w1', name: 'WS' }],
     projects: [{ id: 'pr1', name: 'seedproj' }],

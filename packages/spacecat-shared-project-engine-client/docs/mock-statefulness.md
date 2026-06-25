@@ -37,9 +37,9 @@ lookups stay on Counterfact's auto-generated response. The store is generic, so 
 stateful set later is cheap and needs no rework.
 
 ## How it plugs in
-- `src/mock/store.js` — generic `InMemoryStore` (collection-keyed CRUD + seed/reset, deep-clone
+- `mock/store.js` — generic `InMemoryStore` (collection-keyed CRUD + seed/reset, deep-clone
   on every read/write).
-- `src/mock/stateful.js` — pure operation functions mapping the stateful operations above onto
+- `mock/stateful.js` — pure operation functions mapping the stateful operations above onto
   the store (collections scoped per workspace/project). Unit-tested without a running server.
 - Seed sets are `Snapshot`s loaded via `store.load(...)`; `store.reset()` restores the last seed
   and is exposed to out-of-process E2E as a test-only `POST /__reset`.

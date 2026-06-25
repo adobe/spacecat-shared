@@ -11,12 +11,12 @@
  */
 
 import { expect } from 'chai';
-import { InMemoryStore } from '../../src/mock/store.js';
+import { InMemoryStore } from '../../mock/store.js';
 import {
   STATEFUL_RESOURCES,
   collectionKey,
   createStatefulOps,
-} from '../../src/mock/stateful.js';
+} from '../../mock/stateful.js';
 
 describe('stateful — confirmed resource set', () => {
   it('is exactly projects, ai_models, prompts (the spike first cut)', () => {

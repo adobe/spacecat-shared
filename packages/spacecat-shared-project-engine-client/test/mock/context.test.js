@@ -11,8 +11,8 @@
  */
 
 import { expect } from 'chai';
-import { Context } from '../../src/mock/context.js';
-import { SEED_IDS } from '../../src/mock/seeds.js';
+import { Context } from '../../mock/context.js';
+import { SEED_IDS } from '../../mock/seeds.js';
 
 describe('mock Context', () => {
   const { workspaceId, projectId } = SEED_IDS;

@@ -12,7 +12,7 @@
 
 /**
  * E2E: drives the real {@link createSerenityProjectEngineApiClient} against a live Counterfact
- * mock booted by `src/mock/run.js`. Scoped to this package — it exercises the client<->mock
+ * mock booted by `mock/run.js`. Scoped to this package — it exercises the client<->mock
  * contract directly, with no api-service routes (that wiring lands with the adoption PR).
  *
  * Gated behind `MOCK_E2E=1` (set by `npm run test:e2e`) and kept out of the default
@@ -30,7 +30,7 @@ import { createSerenityProjectEngineApiClient } from '../../src/index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, '..', '..');
-const RUNNER = join(packageRoot, 'src', 'mock', 'run.js');
+const RUNNER = join(packageRoot, 'mock', 'run.js');
 
 const READY_TIMEOUT_MS = 30_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
@@ -208,7 +208,7 @@ async function waitForReady(baseUrl, deadline) {
 
   // Exercises the prompt write-then-read spine through the paths the real consumer uses
   // (spacecat-api-service): create via `tagged`, list via `by_tags`. Not `POST /aio/prompts`
-  // (delete-only in the spec) — see src/mock/.../aio/prompts*.js.
+  // (delete-only in the spec) — see mock/.../aio/prompts*.js.
   it('creates aio prompts (tagged) and lists them back (by_tags)', async () => {
     const { data: created, error: createError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',

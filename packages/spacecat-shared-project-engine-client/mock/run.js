@@ -60,7 +60,7 @@ import { dirname, join, parse as parsePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const packageRoot = join(here, '..', '..');
+const packageRoot = join(here, '..');
 
 const SPEC = join(packageRoot, 'build', 'openapi3.json');
 const BASE_PATH = join(packageRoot, '.counterfact');

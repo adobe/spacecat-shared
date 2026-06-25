@@ -9,11 +9,12 @@
   "statements": 100,
   "all": true,
   "include": [
-    "src/**/*.js"
+    "src/**/*.js",
+    "mock/**/*.js"
   ],
   "exclude": [
     "src/generated/**",
-    "src/mock/run.js",
-    "src/mock/counterfact/**"
+    "mock/run.js",
+    "mock/counterfact/**"
   ]
 }

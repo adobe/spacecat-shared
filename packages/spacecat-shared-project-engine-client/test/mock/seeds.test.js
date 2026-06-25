@@ -11,14 +11,14 @@
  */
 
 import { expect } from 'chai';
-import { InMemoryStore } from '../../src/mock/store.js';
-import { createStatefulOps } from '../../src/mock/stateful.js';
+import { InMemoryStore } from '../../mock/store.js';
+import { createStatefulOps } from '../../mock/stateful.js';
 import {
   SEEDS,
   DEFAULT_SEED,
   SEED_IDS,
   EMPTY_WORKSPACE,
-} from '../../src/mock/seeds.js';
+} from '../../mock/seeds.js';
 
 describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {

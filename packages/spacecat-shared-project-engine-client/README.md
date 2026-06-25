@@ -142,11 +142,17 @@ lifecycle, `__reset` between cases). It is gated behind `MOCK_E2E=1` and lives o
 default `npm test` glob, so the unit suite stays fast and keeps 100% coverage with no
 live-server dependency. CI runs it as a dedicated `E2E (project-engine mock)` job.
 
-> **How it runs:** the runner materializes the committed handlers from `src/mock/` into a
+> **How it runs:** the runner materializes the committed handlers from `mock/` into a
 > gitignored `.counterfact/` tree (as `.ts`, so Counterfact's transpiler emits loadable `.cjs`)
 > and launches with `--serve` so no spec stubs are appended onto the stateful handlers. The
-> store, seeds, and resource ops are plain unit-tested JS in `src/mock/`; only the runner and
+> store, seeds, and resource ops are plain unit-tested JS in `mock/`; only the runner and
 > the materialized handlers — which need a live server — are excluded from coverage.
+
+> **Not published.** The `mock/` tree sits outside `src/` and outside the package's `files`
+> allowlist, so nothing mock-related is in the published tarball — client consumers install
+> only `src/` (the typed client + generated types), and `counterfact` stays a `devDependency`.
+> The mock is booted from source via `npm run mock` (or `npm run test:e2e`) inside the
+> monorepo / e2e harness, which is why it never needs to ship.
 
 ## Committed vs generated
 

@@ -82,16 +82,49 @@ change, the live proof.
   2026-06-25) `GET …/aio/benchmarks/{bid}/brand_urls` returns `404 { message: "not found" }` when
   `{bid}` is not the project's listable (auto-created main-brand) benchmark — even though a `POST`
   of brand URLs onto that same competitor `{bid}` succeeds. The mock returns `200 { brand_urls }`
-  for any benchmark id. Deliberate: the consumer only ever lists brand URLs on the **main-brand**
-  benchmark id it reads from `listBenchmarks`, so the 404 path is outside its flow. Add a
-  benchmark-existence guard to the `brand_urls` GET only if a future flow lists arbitrary
-  benchmarks. (Note: live, a project's main-brand benchmark is generated **asynchronously** — it
-  did not appear within ~60s of create, even after a publish — so its `brand_urls` list/delete
-  can't be quickly ground-truthed on a fresh project; the mock makes them immediately available,
-  which is what the consumer's tests need.)
+  for any benchmark id. The consumer (`ensureOwnBrandBenchmark`) lists brand URLs on whatever
+  benchmark it resolves — usually the settled **main-brand** one (`200`), but when that benchmark
+  is absent it *creates its own* competitor benchmark and lists on **that**, which live `404`s until
+  processed. The consumer's per-market `try/catch` (brand-urls.js) catches the `404` and skips that
+  market with a warning. So the mock's always-`200` exercises the happy path but NOT the consumer's
+  skip-on-`404` degraded branch. (Live, a project's main-brand benchmark is generated
+  **asynchronously** — it did not appear within ~60s of create, even after a publish — and a freshly
+  created competitor benchmark's `brand_urls` GET `404`s until processed.) The mock keeps writes
+  immediately readable on purpose (deterministic test double); to exercise the consumer's
+  absent-benchmark / `404`-skip branches, model them **deterministically via seed/control state**,
+  never via time-based delays — see "Replicating live async behaviour" below.
 - **Create ops report `existing_count: 0` unconditionally.** `POST .../aio/prompts/tagged` and
   `POST .../ai_models/benchmarks` always return `existing_count: 0` — the mock models no dedup
   against already-present rows, so the consumer's "some already present" branch
   (`existing_count > 0`) cannot be exercised against this mock. Deliberate: the confirmed consumer
   flows create into freshly scoped collections, and dedup fidelity adds store complexity no flow
   reads. Add a name/domain-keyed existing-count if a future flow depends on it.
+
+## Replicating live async behaviour (don't use timers)
+
+Live Semrush is **eventually consistent**: a just-created prompt/brand-URL isn't listed yet, and a
+project's main-brand benchmark is generated asynchronously (it didn't appear within ~60s of create,
+even after a publish — verified 2026-06-25). The mock is deliberately **immediately consistent**.
+
+**Do NOT make the mock time-based** (delays, "appears after N seconds / N reads"). A test double's
+value is determinism; introducing wall-clock async makes consumer tests flaky and slow, and the
+consumer's own flows don't poll these resources on a timer.
+
+Instead, replicate the **observable scenarios** the async behaviour produces, **deterministically
+via seed / control state** — the consumer has resilient branches that the always-consistent mock
+never exercises:
+
+- **Absent main-brand benchmark** → seed a project with no `main_brand` benchmark. This drives the
+  consumer's `ensureOwnBrandBenchmark` *create-its-own-then-relist* fallback. Already expressible
+  with today's seeds; no mock change needed — just a scenario in the consumer's cross-repo e2e.
+- **`listBrandUrls` `404` on an unprocessed benchmark** → the mock always returns `200
+  { brand_urls: [] }`, so the consumer's per-market *catch-the-404-and-skip* branch
+  (brand-urls.js) is never tested. To exercise it, add an **opt-in** control: a benchmark flagged
+  (via `__seed` / a `pending` field) whose `brand_urls` GET returns `404` until "settled". Opt-in
+  so the default happy path stays green.
+- **`existing_count > 0`** (dedup) and the **`409` duplicate-benchmark** re-list path are the same
+  shape: deterministic control state, not timing — add them only when a consumer test needs them.
+
+Rule of thumb: model the **state** that makes the consumer take its degraded branch, never the
+**clock**. These scenarios belong in the consumer's (api-service) e2e, with the mock as the double;
+the mock only needs to be *able* to present the state.

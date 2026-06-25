@@ -770,6 +770,27 @@ describe('URL Utility Functions', () => {
       expect(getBaseURLPathPrefix(null)).to.be.null;
       expect(getBaseURLPathPrefix(undefined)).to.be.null;
     });
+
+    it('returns null when the baseURL points at a file (single-segment)', () => {
+      expect(getBaseURLPathPrefix('https://example.com/en.html')).to.be.null;
+    });
+
+    it('returns null when the baseURL points at a file (multi-segment)', () => {
+      expect(getBaseURLPathPrefix('https://www2.example.com/us/en.html')).to.be.null;
+      expect(getBaseURLPathPrefix('https://example.com/en/home.html')).to.be.null;
+    });
+
+    it('returns null for a file baseURL with a trailing slash stripped', () => {
+      expect(getBaseURLPathPrefix('https://example.com/us/index.php')).to.be.null;
+    });
+
+    it('keeps an extensionless deep path prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/us/en_us')).to.equal('/us/en_us');
+    });
+
+    it('does not treat a hyphenated locale as a file', () => {
+      expect(getBaseURLPathPrefix('https://example.com/en-gb')).to.equal('/en-gb');
+    });
   });
 
   describe('hasNonWWWSubdomain', () => {

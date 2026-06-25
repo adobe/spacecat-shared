@@ -304,15 +304,29 @@ function urlMatchesFilter(url, filterUrls) {
  * Locale-specific sites encode the locale in the path (e.g. https://example.com/de),
  * but RUM domain keys exist only for the main domain. This returns the path portion
  * so RUM results fetched for the main domain can be narrowed to the locale subtree.
+ *
+ * When the baseURL points at a file (the last path segment has an extension, e.g.
+ * https://example.com/us/en.html), the locale directory cannot be reliably inferred
+ * — 'en.html' is a locale but 'home.html' in '/en/home.html' is a page, and the two
+ * are indistinguishable. In that case this returns null so the caller falls back to
+ * whole-domain metrics rather than over-filtering RUM to a single page.
+ *
  * @param {string} baseURL - The site's baseURL.
  * @returns {string|null} The normalized path prefix (e.g. '/de'), or null when the
- *   baseURL is at the domain root (whole-domain site) or cannot be parsed.
+ *   baseURL is at the domain root, points at a file, or cannot be parsed.
  */
 function getBaseURLPathPrefix(baseURL) {
   try {
     const { pathname } = new URL(prependSchema(normalizeUrl(baseURL)));
     const normalized = normalizePathname(pathname);
-    return normalized === '/' ? null : normalized;
+    if (normalized === '/') {
+      return null;
+    }
+    const lastSegment = normalized.slice(normalized.lastIndexOf('/') + 1);
+    if (/\.[a-z0-9]+$/i.test(lastSegment)) {
+      return null;
+    }
+    return normalized;
   } catch {
     return null;
   }

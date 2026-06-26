@@ -70,10 +70,6 @@ export default class CloudflareClient {
       throw new Error(`Cloudflare API returned ${res.status} on ${path}: ${text.slice(0, 200)}`);
     }
 
-    if (fetchOptions.method === 'HEAD') {
-      return true;
-    }
-
     let body;
     try {
       body = await res.json();
@@ -115,7 +111,7 @@ export default class CloudflareClient {
    * @param {string}  [opts.compatibilityDate]
    * @param {boolean} [opts.observability] - Enable Workers Logs (default: true)
    * @param {boolean} [opts.overwrite=false] - Allow replacing an existing script. When false a
-   *   HEAD existence check is performed before upload. This guard is best-effort and not atomic —
+   *   GET existence check is performed before upload. This guard is best-effort and not atomic —
    *   a concurrent deploy could create the script between the check and the PUT.
    * @returns {Promise<object>}
    */
@@ -186,9 +182,10 @@ export default class CloudflareClient {
   }
 
   async #workerExists(accountId, scriptName) {
+    // Cloudflare Workers Scripts API supports GET/PUT on this path, not HEAD (returns 405).
     const result = await this.#cfFetch(
       `/accounts/${accountId}/workers/scripts/${scriptName}`,
-      { method: 'HEAD', allowNotFound: true },
+      { method: 'GET', allowNotFound: true },
     );
     return result !== null;
   }

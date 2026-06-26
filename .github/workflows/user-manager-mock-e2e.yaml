@@ -1,0 +1,92 @@
+name: User Manager Mock E2E
+
+# Standalone, path-gated workflow for @adobe/spacecat-shared-user-manager-client.
+#
+# Deliberately NOT part of main.yaml: that workflow carries the npm Trusted Publisher binding
+# and runs on every push to every branch, so it cannot use an `on.paths` filter (it would gate
+# `test` and `release` too). A dedicated workflow CAN filter at the trigger level, so the
+# Counterfact boot cost is only paid when this package actually changes — no merge-base
+# detection job required.
+#
+# This is additional signal, not a release gate. It never publishes (no id-token, no npm auth),
+# so it is independent of main.yaml's release job.
+
+permissions: {}
+
+on:
+  # Also run post-merge on main: the type-surface check + live E2E are not in main.yaml, so without
+  # this a regression that lands on main (e.g. a rebase/merge resolution) would sit unseen until the
+  # next PR that touches the package. Same path filter, so it only runs when this package changes.
+  push:
+    branches: [main]
+    paths:
+      - 'packages/spacecat-shared-user-manager-client/**'
+      - '.github/workflows/user-manager-mock-e2e.yaml'
+  pull_request:
+    paths:
+      - 'packages/spacecat-shared-user-manager-client/**'
+      - '.github/workflows/user-manager-mock-e2e.yaml'
+  workflow_dispatch:
+
+# One run per PR branch; cancel superseded runs.
+concurrency:
+  group: user-manager-mock-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-user-manager-mock:
+    # Two checks for @adobe/spacecat-shared-user-manager-client that the unit `test` job
+    # (in main.yaml) can't cover:
+    #   1. Type surface check — tsc-only guard that the public type surface stays assignable
+    #      to Client<paths> and never degrades to `any` (the package's deliverable).
+    #   2. Live-server E2E — boots the stateful Counterfact mock and drives it through the
+    #      real client. Gated by MOCK_E2E so it never runs in the default `npm test`.
+    name: E2E (user-manager mock)
+    runs-on: ubuntu-latest
+    # Defense-in-depth against a wedged runner (npm ci hang, transpile deadlock, a Counterfact
+    # child that ignores SIGTERM): the in-test budgets bound the suite, this bounds the job.
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: 'false'
+
+      - name: Setup Node & NPM
+        uses: ./.github/actions/setup-node-npm
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
+
+      - name: Type surface check
+        # Guards the package's deliverable: the public type surface (hand-written index.d.ts)
+        # must stay assignable to Client<paths> and not silently degrade to `any`. tsc-only,
+        # no server. See test/types/index.type-test.ts.
+        run: npm run test:types -w @adobe/spacecat-shared-user-manager-client
+
+      - name: Generate corrected OAS3 artifact
+        # build/openapi3.json is gitignored; the mock runner requires it.
+        # The conversion + overlay produce that artifact; the next step also regenerates the
+        # committed TypeScript surface off it to catch drift. (generate:pydantic is the only
+        # generator that needs Python, so it stays manual and is not run here.)
+        run: |
+          npm run spec:convert -w @adobe/spacecat-shared-user-manager-client
+          npm run spec:overlay -w @adobe/spacecat-shared-user-manager-client
+
+      - name: Generated types in sync with the overlay
+        # The committed src/generated/types.ts must equal what the overlayed spec regenerates.
+        # test:types only proves index.d.ts matches the committed file; without this, a new CRn
+        # shipped without re-running generate:ts would ship a stale (lying) type surface and pass.
+        # generate:ts is openapi-typescript (pure Node, no Python), so it is cheap to run in CI.
+        run: |
+          npm run generate:ts -w @adobe/spacecat-shared-user-manager-client
+          git diff --exit-code -- packages/spacecat-shared-user-manager-client/src/generated/types.ts \
+            || { echo "::error::src/generated/types.ts is stale — run 'npm run generate' and commit the result."; exit 1; }
+
+      - name: User Manager mock E2E
+        run: npm run test:e2e -w @adobe/spacecat-shared-user-manager-client
+        env:
+          MOCK_E2E: '1'

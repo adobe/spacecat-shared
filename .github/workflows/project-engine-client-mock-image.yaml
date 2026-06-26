@@ -98,9 +98,10 @@ jobs:
         with:
           context: packages/spacecat-shared-project-engine-client
           push: true
-          tags: |
-            ghcr.io/adobe/spacecat-shared-project-engine-client-mock:${{ steps.ver.outputs.version }}
-            ghcr.io/adobe/spacecat-shared-project-engine-client-mock:latest
+          # Only an immutable, exact X.Y.Z tag that pins to the published npm version. No `:latest`:
+          # consumers reference a known version, and a floating tag would otherwise be clobbered
+          # backwards by a workflow_dispatch recovery build of an older version.
+          tags: ghcr.io/adobe/spacecat-shared-project-engine-client-mock:${{ steps.ver.outputs.version }}
           # Keep the manifest a plain image (no attestation manifest) so `services:`/`docker run`
           # consumers pull a single platform cleanly.
           provenance: false

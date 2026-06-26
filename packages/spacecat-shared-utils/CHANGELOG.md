@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.123.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.122.1...@adobe/spacecat-shared-utils-v1.123.0) (2026-06-26)
+
+### Features
+
+* **rum:** scope latest-metrics RUM to locale path prefix ([#1707](https://github.com/adobe/spacecat-shared/issues/1707)) ([77cdb33](https://github.com/adobe/spacecat-shared/commit/77cdb33d7f55a9bff795b768621ec70830b2cba3))
+
 ## [@adobe/spacecat-shared-utils-v1.122.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.122.0...@adobe/spacecat-shared-utils-v1.122.1) (2026-06-26)
 
 ### Bug Fixes

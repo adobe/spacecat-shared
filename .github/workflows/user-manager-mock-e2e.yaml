@@ -69,11 +69,22 @@ jobs:
 
       - name: Generate corrected OAS3 artifact
         # build/openapi3.json is gitignored; the mock runner requires it.
-        # Only the conversion + overlay steps are needed here — generate:ts and
-        # generate:pydantic produce committed artifacts and require Python.
+        # The conversion + overlay produce that artifact; the next step also regenerates the
+        # committed TypeScript surface off it to catch drift. (generate:pydantic is the only
+        # generator that needs Python, so it stays manual and is not run here.)
         run: |
           npm run spec:convert -w @adobe/spacecat-shared-user-manager-client
           npm run spec:overlay -w @adobe/spacecat-shared-user-manager-client
+
+      - name: Generated types in sync with the overlay
+        # The committed src/generated/types.ts must equal what the overlayed spec regenerates.
+        # test:types only proves index.d.ts matches the committed file; without this, a new CRn
+        # shipped without re-running generate:ts would ship a stale (lying) type surface and pass.
+        # generate:ts is openapi-typescript (pure Node, no Python), so it is cheap to run in CI.
+        run: |
+          npm run generate:ts -w @adobe/spacecat-shared-user-manager-client
+          git diff --exit-code -- packages/spacecat-shared-user-manager-client/src/generated/types.ts \
+            || { echo "::error::src/generated/types.ts is stale — run 'npm run generate' and commit the result."; exit 1; }
 
       - name: User Manager mock E2E
         run: npm run test:e2e -w @adobe/spacecat-shared-user-manager-client

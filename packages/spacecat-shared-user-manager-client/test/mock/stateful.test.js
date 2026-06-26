@@ -15,6 +15,7 @@ import { InMemoryStore } from '../../mock/store.js';
 import {
   createStatefulOps, STATEFUL_RESOURCES, WORKSPACES, STATUS_CONTROL,
 } from '../../mock/stateful.js';
+import { POOL_COLLECTION } from '../../mock/quota.js';
 
 /** A store + ops pair, seeded with the given workspace entities. */
 function setup(workspaces = []) {
@@ -101,11 +102,13 @@ describe('mock stateful — workspaces', () => {
         { id: 'g1', title: 'Grandchild', parent_id: 'c1' },
       ]);
       store.create(STATUS_CONTROL, { id: 'c1', pending: 1 });
+      store.create(POOL_COLLECTION, { id: 'p', projects: 5, prompts: 100 });
       const removed = ops.remove('p');
       expect(removed).to.have.members(['p', 'c1', 'g1']);
       expect(ops.list()).to.have.length(0);
-      // the cascade also drops the descendant's status budget
+      // the cascade also drops the descendant's status budget and the parent's pool record
       expect(store.get(STATUS_CONTROL, 'c1')).to.equal(undefined);
+      expect(store.get(POOL_COLLECTION, 'p')).to.equal(undefined);
     });
 
     it('returns an empty array for an unknown workspace', () => {

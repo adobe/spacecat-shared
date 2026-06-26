@@ -219,10 +219,44 @@ async function waitForReady(apiBase, deadline, getStderr) {
     expect(error).to.equal(undefined);
     expect(data.id).to.equal(CHILD);
 
-    const { response } = await client.GET('/v1/workspaces/{id}/status', {
+    const { error: readError, response } = await client.GET('/v1/workspaces/{id}/status', {
       params: { path: { id: CHILD } },
     });
     expect(response.status).to.equal(403);
+    // Pin the live 403 envelope string (the handler is coverage-excluded — assert it here).
+    expect(readError).to.deep.equal({ message: 'invalid access attempt' });
+  });
+
+  it('403s a child create under an unknown parent (no silent orphan)', async () => {
+    const ghostParent = globalThis.crypto.randomUUID();
+    const { error, response } = await client.POST('/v2/workspaces/{id}/child', {
+      params: { path: { id: ghostParent } },
+      body: { title: 'Orphan [e2e00003]', resources: { ai: { projects: 1, prompts: 500 } } },
+    });
+    expect(response.status).to.equal(403);
+    expect(error).to.deep.equal({ message: 'invalid access attempt' });
+  });
+
+  it('draws the parent pool down on a successful create (second create exhausts it)', async () => {
+    // One project of headroom; prompts left effectively unlimited so projects is the binding dim.
+    await fetch(`${apiBase}/__quota`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ workspaceId: PARENT, projects: 1, prompts: 100000 }),
+    });
+    const first = await client.POST('/v2/workspaces/{id}/child', {
+      params: { path: { id: PARENT } },
+      body: { title: 'First [e2e00004]', resources: { ai: { projects: 1, prompts: 500 } } },
+    });
+    expect(first.error).to.equal(undefined);
+    expect(first.data.parent_id).to.equal(PARENT);
+    // The draw must have persisted: the pool now has 0 projects, so the next create 422s.
+    const second = await client.POST('/v2/workspaces/{id}/child', {
+      params: { path: { id: PARENT } },
+      body: { title: 'Second [e2e00005]', resources: { ai: { projects: 1, prompts: 500 } } },
+    });
+    expect(second.response.status).to.equal(422);
+    expect(second.error).to.deep.equal({ message: 'insufficient available units' });
   });
 
   it('rejects an unauthenticated request with 401 { detail }', async () => {
@@ -242,7 +276,8 @@ async function waitForReady(apiBase, deadline, getStderr) {
       body: { title: 'Over budget [e2e00002]', resources: { ai: { projects: 1, prompts: 500 } } },
     });
     expect(response.status).to.equal(422);
-    expect(error).to.not.equal(undefined);
+    // Pin the live 422 envelope string (the handler is coverage-excluded — assert it here).
+    expect(error).to.deep.equal({ message: 'insufficient available units' });
   });
 
   it('404s an unmodelled path (serve-only — no random stubs)', async () => {

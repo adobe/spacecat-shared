@@ -14,15 +14,25 @@
  * Stateful handler for POST /v2/workspaces/{id}/child — create a brand's child sub-workspace under
  * the parent `{id}` (the consumer's `createSubworkspace`). Body is `{ title, resources }` where
  * `resources` carries the `{ ai: { projects, prompts } }` allocation carved off the parent's pool.
- * Metered: when the parent's pool can't cover the allocation it returns the 422 "insufficient
- * available units" (see mock/quota.js); otherwise it draws the units, creates a `created` child
- * linked to the parent, and returns the new workspace. Materialized into `.counterfact/routes/` by
- * the mock runner; excluded from coverage.
+ * An unknown parent is a 403 "invalid access attempt" (mirrors status/transfer/delete), never a
+ * silent orphan create. Otherwise metered: when the parent's pool can't cover the allocation it
+ * returns the 422 "insufficient available units" (see mock/quota.js); else it draws the units,
+ * creates a `created` child linked to the parent, and returns the new workspace. Materialized into
+ * `.counterfact/routes/` by the mock runner; excluded from coverage.
  */
 
 /** POST — create a child sub-workspace (metered → 422 when the parent pool is insufficient). */
 export function POST($) {
   const { path, body, context } = $;
+  // A child can only be created under a parent that exists — an unknown parent is a 403
+  // (mirrors status/transfer/delete), never a silent orphan create the live gateway would reject.
+  if (!context.ops.workspaces.exists(path.id)) {
+    return {
+      status: 403,
+      body: context.factories.createBasicResponseMock({ message: 'invalid access attempt' }),
+      contentType: 'application/json',
+    };
+  }
   const ai = body?.resources?.ai ?? {};
   if (!context.quota.canAllocate(path.id, ai)) {
     return {

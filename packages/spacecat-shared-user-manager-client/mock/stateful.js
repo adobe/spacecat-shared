@@ -37,6 +37,8 @@
  * @typedef {import('./store.js').Entity} Entity
  */
 
+import { POOL_COLLECTION } from './quota.js';
+
 /** The store collection holding the workspace tree (global, keyed by workspace id). */
 export const WORKSPACES = 'workspaces';
 
@@ -142,8 +144,9 @@ export function createStatefulOps(store) {
     },
 
     /**
-     * Deletes `id` and every descendant (the live delete cascades), plus their status budgets.
-     * Returns the ids actually removed (empty when `id` is unknown).
+     * Deletes `id` and every descendant (the live delete cascades), plus all per-workspace state
+     * keyed by those ids (status budgets and any parent pool record). Returns the ids actually
+     * removed (empty when `id` is unknown).
      * @param {string} id
      * @returns {string[]}
      */
@@ -152,6 +155,7 @@ export function createStatefulOps(store) {
       for (const wid of ids) {
         store.delete(WORKSPACES, wid);
         store.delete(STATUS_CONTROL, wid);
+        store.delete(POOL_COLLECTION, wid);
       }
       return ids;
     },

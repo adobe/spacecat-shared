@@ -40,9 +40,10 @@ a cycle guard); `delete` is a transitive cascade. The pure layer is unit-tested 
 ## Live-fidelity validation (replayed 2026-06-26)
 
 Every op was replayed against the **real** gateway (`adobe-hackathon.semrush.com`,
-`/enterprise/users/api`) under the funded prod parent **LLMO-Dev-2**
-(`bb0f4e1c-8bb1-402e-88f2-f68618ea7397`) — one throwaway child, `trap`-cleaned, parent `family`
-asserted byte-identical before/after (residue = 0). What it pinned:
+`/enterprise/users/api` — the client's documented base URL) under a funded test parent
+workspace (a real provisioned workspace id, kept in the team's `local/` handover notes, not
+committed to this public repo) — one throwaway child, `trap`-cleaned, parent `family` asserted
+byte-identical before/after (residue = 0). What it pinned:
 
 - **`status` is a single object** `{ "status": "created" }`, **not** an array → validates overlay
   **CR2** (and the consumer's `status.status === 'created'` read).

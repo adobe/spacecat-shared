@@ -81,7 +81,7 @@ export default defineConfig([
     // destructure only the fields a given method needs, so no-unused-vars would fire on the rest.
     // Disable it here for the whole route tree (generalized across packages) rather than repeating
     // an inline disable in every handler. (These handlers are also the documented `// @ts-check`
-    // exception — see each client package's mock/ and docs/mock-usage.md.)
+    // exception — see each client package's CLAUDE.md.)
     files: ['packages/**/mock/counterfact/routes/**/*.js'],
     rules: {
       'no-unused-vars': 'off',

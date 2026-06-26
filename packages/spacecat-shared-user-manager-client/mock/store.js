@@ -132,9 +132,9 @@ export class InMemoryStore {
   }
 
   /**
-   * The names of all collections that currently exist (have been written to). Used by the quota
-   * layer to derive a parent's drawn-down usage across every child without coupling the store to
-   * resource keys. Non-creating: never materializes a collection.
+   * The names of all collections that currently exist (have been written to). A generic
+   * introspection helper on the store surface (used by tests / debugging); no runtime caller
+   * today. Non-creating: never materializes a collection.
    * @returns {string[]}
    */
   keys() {
@@ -142,8 +142,8 @@ export class InMemoryStore {
   }
 
   /**
-   * The number of entities in a collection (0 if it does not exist). Non-creating, so a quota
-   * usage check never leaves an empty collection behind.
+   * The number of entities in a collection (0 if it does not exist). Generic introspection helper;
+   * no runtime caller today. Non-creating, so the check never leaves an empty collection behind.
    * @param {string} name
    * @returns {number}
    */

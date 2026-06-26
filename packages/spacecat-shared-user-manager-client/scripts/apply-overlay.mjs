@@ -14,7 +14,7 @@
  * Applies the OpenAPI Overlay in spec/overlays/corrections.yaml to the
  * swagger2openapi output build/openapi3.json, in place. The overlay is the single
  * source of truth for the corrections that align the vendored swagger with the
- * live API's actual behaviour (see that file for CR1-CR3); this script just
+ * live API's actual behaviour (see that file for CR1-CR4); this script just
  * executes it. The vendored spec/usermanager_swagger.yaml is never modified.
  *
  * It implements the subset of the Overlay spec the overlay uses — `update`

@@ -19,7 +19,11 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
   authenticated' }`; the `__*` control routes are exempt. The gate is injected onto every handler at
   the materialization seam by `injectAuthGuard` in `mock/run.js` (so no handler can forget it). A new
   file imported by `mock/context.js` is materialized automatically — `LIB_FILES` in `mock/run.js` is
-  auto-derived from the `mock/*.js` files, so there is no list to maintain.
+  auto-derived from the `mock/*.js` files, so there is no list to maintain. For the **containerized
+  HTTPS form** of the mock (a GHCR image consumed by cross-repo e2e like spacecat-api-service, which
+  requires an `https:` origin), see `docs/mock-docker.md` — `Dockerfile` + `Caddyfile` (TLS
+  terminator) + `docker-entrypoint.sh` + `docker-compose.yml`, published by
+  `.github/workflows/project-engine-mock-image.yaml` on each release tag.
 - `spec/` — the vendored swagger + `spec/overlays/corrections.yaml` (corrections).
 
 **Coverage:** this package enforces **`branches: 100`** in `.nycrc.json` — stricter than the

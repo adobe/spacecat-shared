@@ -164,7 +164,7 @@ export async function assumeConnectorRole({
  * @param {string} [region] - CloudFront control-plane region.
  * @returns {Promise<Array<object>>} distributions projected to the fields the wizard needs.
  */
-export async function listCloudFrontDistributions(credentials, region = EDGE_OPTIMIZE_REGION) {
+export async function listDistributions(credentials, region = EDGE_OPTIMIZE_REGION) {
   const client = new CloudFrontClient({ region, credentials });
   // Paginate: ListDistributions returns at most 100 items per page; accounts fronting more than
   // 100 distributions would otherwise have the target silently missing from the picker. Follow the
@@ -298,7 +298,7 @@ function buildEdgeOptimizeOriginHeaders({ apiKey, forwardedHost, fetcherKey } = 
  * @param {string} [region] - CloudFront control-plane region.
  * @returns {Promise<{created, alreadyExisted, updated, originId}>} origin mutation outcome.
  */
-export async function createEdgeOptimizeOrigin(
+export async function createOrigin(
   credentials,
   distributionId,
   originDomain = EDGE_OPTIMIZE_DEFAULT_ORIGIN_DOMAIN,
@@ -391,7 +391,7 @@ export async function createEdgeOptimizeOrigin(
  * @param {string} [region] - CloudFront control-plane region.
  * @returns {Promise<{name: string, created: boolean, stage: string}>}
  */
-export async function createEdgeOptimizeRoutingFunction(
+export async function createCloudFrontFunction(
   credentials,
   defaultOriginId,
   distributionId,
@@ -473,7 +473,7 @@ export async function createEdgeOptimizeRoutingFunction(
  * @returns {Promise<{scenario: string, policyId: string|null, updated: boolean,
  *   alreadyForwarded: boolean, reused?: boolean}>}
  */
-export async function applyEdgeOptimizeCacheHeaders(
+export async function updateCacheSettings(
   credentials,
   distributionId,
   pathPattern,
@@ -747,7 +747,7 @@ async function getLatestLambdaVersion(lambda, functionName) {
  * @returns {Promise<{functionArn: string, versionArn: string, version: string,
  *   roleArn: string, created: boolean}>}
  */
-export async function createEdgeOptimizeLambda(
+export async function createLambdaAtEdge(
   credentials,
   accountId,
   {
@@ -984,7 +984,7 @@ async function inspectEdgeOptimizeLambdaRole(iam, roleName) {
  *   lastUpdateStatus?: string, functionArn?: string, versionArn: string|null, version?: string,
  *   ready: boolean}>}
  */
-export async function getEdgeOptimizeLambdaStatus(
+export async function getLambdaAtEdgeStatus(
   credentials,
   distributionId,
   region = EDGE_OPTIMIZE_REGION,
@@ -1092,7 +1092,7 @@ function findEdgeOptimizeAssociationConflict(behavior, pathPattern) {
  * @param {string} [region] - CloudFront control-plane region.
  * @returns {Promise<{cloudFrontFunctionArn: string, lambdaArn: string}>}
  */
-export async function applyEdgeOptimizeAssociations(
+export async function applyAssociations(
   credentials,
   distributionId,
   pathPattern,
@@ -1167,7 +1167,7 @@ export const EDGE_OPTIMIZE_VERIFY_PROBE_TIMEOUT_MS = 20000;
 async function fetchEdgeOptimizeHeaders(url, userAgent) {
   // Abort the probe if the origin does not respond within the bounded timeout. On timeout/abort OR
   // any network error we resolve to a NON-passing result ({ status: 0, headers: {} }) instead of
-  // throwing: verifyEdgeOptimizeRouting then returns passed:false and the FE's poll loop simply
+  // throwing: verifyRouting then returns passed:false and the FE's poll loop simply
   // retries on the next poll (verification persistence lives in the poll loop, not one fetch — a
   // slow origin just spans more polls).
   const controller = new AbortController();
@@ -1210,7 +1210,7 @@ async function fetchEdgeOptimizeHeaders(url, userAgent) {
  * @returns {Promise<{passed: boolean, requestId: string|null,
  *   details: {bot: object, human: object}}>}
  */
-export async function verifyEdgeOptimizeRouting(url) {
+export async function verifyRouting(url) {
   if (!hasText(url)) {
     throw new Error('url is required');
   }
@@ -1325,7 +1325,7 @@ async function isBehaviorAlreadyAssociated(client, distributionId, pathPattern) 
  * @param {string} [region] - CloudFront control-plane region.
  * @returns {Promise<{routingDeployed: boolean, verified: boolean, steps: Array<object>}>}
  */
-export async function runEdgeOptimizeDeployStep(
+export async function runDeployStep(
   credentials,
   {
     distributionId, originId, behavior, originDomain, originHeaders, accountId,
@@ -1343,7 +1343,7 @@ export async function runEdgeOptimizeDeployStep(
 
   // ── 1. origin — already idempotent (no UpdateDistribution when headers match). ──
   try {
-    await createEdgeOptimizeOrigin(
+    await createOrigin(
       credentials,
       distributionId,
       originDomain,
@@ -1362,7 +1362,7 @@ export async function runEdgeOptimizeDeployStep(
     if (await isRoutingFunctionLive(client, distributionId)) {
       byKey('function').status = 'done';
     } else {
-      await createEdgeOptimizeRoutingFunction(credentials, originId, distributionId, null, region);
+      await createCloudFrontFunction(credentials, originId, distributionId, null, region);
       byKey('function').status = 'done';
     }
   } catch (err) {
@@ -1373,7 +1373,7 @@ export async function runEdgeOptimizeDeployStep(
 
   // ── 3. cache — idempotent (skips UpdateDistribution/UpdateCachePolicy when already applied). ──
   try {
-    await applyEdgeOptimizeCacheHeaders(credentials, distributionId, behavior, { region });
+    await updateCacheSettings(credentials, distributionId, behavior, { region });
     byKey('cache').status = 'done';
   } catch (err) {
     byKey('cache').status = 'error';
@@ -1382,23 +1382,23 @@ export async function runEdgeOptimizeDeployStep(
   }
 
   // ── 4. lambda — drive the create/publish state machine each poll (idempotent + non-blocking). ──
-  // createEdgeOptimizeLambda creates the function when missing, no-ops while it is Pending, and —
+  // createLambdaAtEdge creates the function when missing, no-ops while it is Pending, and —
   // crucially — PUBLISHES a numbered version once the function is Active (which is what flips it to
   // ready). We must call it on EVERY not-ready poll, not only when the function is missing: the
   // version is published on a later poll (after the function reaches Active), so if we merely
   // status-check while it "exists", the version never gets published and the step hangs at
   // "provisioning" forever.
   try {
-    const ls = await getEdgeOptimizeLambdaStatus(credentials, distributionId, region);
+    const ls = await getLambdaAtEdgeStatus(credentials, distributionId, region);
     // Done only when the function is ready AND the role is present + correctly configured. If the
     // role is missing or mis-configured (even with a published function), fall through to
-    // createEdgeOptimizeLambda — it (re)creates the role + heals its trust/logs policy; the
+    // createLambdaAtEdge — it (re)creates the role + heals its trust/logs policy; the
     // function already exists so it just reuses the published version and returns ready.
     if (ls.ready && ls.roleOk) {
       lambdaVersionArn = ls.versionArn;
       byKey('lambda').status = 'done';
     } else {
-      const created = await createEdgeOptimizeLambda(
+      const created = await createLambdaAtEdge(
         credentials,
         accountId,
         { region, distributionId, originDomain },
@@ -1425,7 +1425,7 @@ export async function runEdgeOptimizeDeployStep(
     if (await isBehaviorAlreadyAssociated(client, distributionId, behavior)) {
       byKey('associate').status = 'done';
     } else {
-      await applyEdgeOptimizeAssociations(
+      await applyAssociations(
         credentials,
         distributionId,
         behavior,
@@ -1478,7 +1478,7 @@ export async function runEdgeOptimizeDeployStep(
       byKey('verify').detail = 'waiting for domain';
       return { routingDeployed, verified, steps };
     }
-    const result = await verifyEdgeOptimizeRouting(`https://${domain}/`);
+    const result = await verifyRouting(`https://${domain}/`);
     // Per-probe summary the wizard renders (Human vs Agentic): UA, HTTP status, the
     // x-edgeoptimize-request-id value (or null), and whether it failed over to the origin.
     const toProbe = (d) => ({
@@ -1506,7 +1506,7 @@ export async function runEdgeOptimizeDeployStep(
   /* c8 ignore start */
   } catch (err) {
     // Defensive only: the verify probes are now bounded (a timeout/abort or network error resolves
-    // to a non-passing probe instead of throwing), so verifyEdgeOptimizeRouting no longer rejects
+    // to a non-passing probe instead of throwing), so verifyRouting no longer rejects
     // for a valid URL and this branch is unreachable in practice. Kept as a safety net so a future
     // throw here can never fail the whole deploy — surface as in_progress and let the poll retry.
     byKey('verify').status = 'in_progress';
@@ -1518,7 +1518,7 @@ export async function runEdgeOptimizeDeployStep(
 }
 
 /**
- * Read-only "preview" of what {@link runEdgeOptimizeDeployStep} would do, without mutating
+ * Read-only "preview" of what {@link runDeployStep} would do, without mutating
  * anything. Powers the wizard's "Review & Deploy" screen: it inspects the distribution config,
  * the attached cache policy, the routing CloudFront Function, and the Lambda@Edge function, and
  * returns a per-step plan (create | exists | update | blocked) plus an overall canProceed/blocker.
@@ -1541,7 +1541,7 @@ export async function runEdgeOptimizeDeployStep(
  * @returns {Promise<{canProceed: boolean, blocker: string|null,
  *   steps: Array<{key: string, label: string, action: string, detail: string}>}>}
  */
-export async function planEdgeOptimizeDeploy(
+export async function planDeploy(
   credentials,
   {
     distributionId, behavior, originDomain = EDGE_OPTIMIZE_DEFAULT_ORIGIN_DOMAIN, originHeaders,
@@ -1631,7 +1631,7 @@ export async function planEdgeOptimizeDeploy(
 
   // ── cache ───────────────────────────────────────────────────────────────
   // Detect the scenario the deploy would hit (legacy / custom / managed) and describe it without
-  // mutating. Mirrors applyEdgeOptimizeCacheHeaders' detection logic.
+  // mutating. Mirrors updateCacheSettings' detection logic.
   try {
     if (!config) {
       throw new Error('distribution config unavailable');
@@ -1667,7 +1667,7 @@ export async function planEdgeOptimizeDeploy(
       if (!isManaged) {
         // Custom policy → updated in place (idempotent). If our headers are already in the cache
         // key AND the MinTTL won't change, it is already configured (e.g. our own clone from a
-        // prior deploy) → 'No change'; otherwise 'update'. Mirrors applyEdgeOptimizeCacheHeaders.
+        // prior deploy) → 'No change'; otherwise 'update'. Mirrors updateCacheSettings.
         const pcResult = await client.send(new GetCachePolicyConfigCommand({ Id: policyId }));
         const pc = pcResult.CachePolicyConfig || {};
         const hc = pc.ParametersInCacheKeyAndForwardedToOrigin?.HeadersConfig || {};
@@ -1723,9 +1723,9 @@ export async function planEdgeOptimizeDeploy(
   // trust (lambda + edgelambda) + logs policy, so a mismatch is auto-corrected, not a blocker.
   try {
     const roleName = eoLambdaRoleName(distributionId);
-    // getEdgeOptimizeLambdaStatus already inspects the role (roleExists + roleOk = trust + logs),
+    // getLambdaAtEdgeStatus already inspects the role (roleExists + roleOk = trust + logs),
     // so we derive the role note from it — no separate IAM read needed.
-    const ls = await getEdgeOptimizeLambdaStatus(credentials, distributionId, region);
+    const ls = await getLambdaAtEdgeStatus(credentials, distributionId, region);
     let roleNote;
     if (!ls.roleExists) {
       roleNote = ` Execution role ${roleName} will be created.`;
@@ -1785,7 +1785,7 @@ export async function planEdgeOptimizeDeploy(
  * This is a light wrapper over the free functions below: callers still assume the customer
  * connector role per request, then create one client instance for that customer's operation.
  */
-export class CloudFrontEdgeOptimizeClient {
+export class CloudFrontEdgeClient {
   constructor({ credentials, region = EDGE_OPTIMIZE_REGION } = {}) {
     if (!credentials) {
       throw new Error('credentials are required');
@@ -1795,7 +1795,7 @@ export class CloudFrontEdgeOptimizeClient {
   }
 
   listDistributions() {
-    return listCloudFrontDistributions(this.credentials, this.region);
+    return listDistributions(this.credentials, this.region);
   }
 
   getDistributionConfig(distributionId) {
@@ -1803,7 +1803,7 @@ export class CloudFrontEdgeOptimizeClient {
   }
 
   createOrigin(distributionId, originDomain, headers) {
-    return createEdgeOptimizeOrigin(
+    return createOrigin(
       this.credentials,
       distributionId,
       originDomain,
@@ -1813,7 +1813,7 @@ export class CloudFrontEdgeOptimizeClient {
   }
 
   createCloudFrontFunction(defaultOriginId, distributionId, targetedPaths = null) {
-    return createEdgeOptimizeRoutingFunction(
+    return createCloudFrontFunction(
       this.credentials,
       defaultOriginId,
       distributionId,
@@ -1823,7 +1823,7 @@ export class CloudFrontEdgeOptimizeClient {
   }
 
   updateCacheSettings(distributionId, pathPattern, opts = {}) {
-    return applyEdgeOptimizeCacheHeaders(
+    return updateCacheSettings(
       this.credentials,
       distributionId,
       pathPattern,
@@ -1832,7 +1832,7 @@ export class CloudFrontEdgeOptimizeClient {
   }
 
   createLambdaAtEdge(accountId, opts = {}) {
-    return createEdgeOptimizeLambda(
+    return createLambdaAtEdge(
       this.credentials,
       accountId,
       { ...opts, region: opts.region || this.region },
@@ -1840,11 +1840,11 @@ export class CloudFrontEdgeOptimizeClient {
   }
 
   getLambdaAtEdgeStatus(distributionId) {
-    return getEdgeOptimizeLambdaStatus(this.credentials, distributionId, this.region);
+    return getLambdaAtEdgeStatus(this.credentials, distributionId, this.region);
   }
 
   applyAssociations(distributionId, pathPattern, lambdaVersionArn) {
-    return applyEdgeOptimizeAssociations(
+    return applyAssociations(
       this.credentials,
       distributionId,
       pathPattern,
@@ -1854,23 +1854,10 @@ export class CloudFrontEdgeOptimizeClient {
   }
 
   runDeployStep(params) {
-    return runEdgeOptimizeDeployStep(this.credentials, params, this.region);
+    return runDeployStep(this.credentials, params, this.region);
   }
 
   planDeploy(params) {
-    return planEdgeOptimizeDeploy(this.credentials, params, this.region);
+    return planDeploy(this.credentials, params, this.region);
   }
 }
-
-// Primary AWS-style public surface. The original Edge Optimize-prefixed function names
-// remain exported above for backwards compatibility.
-export const listDistributions = listCloudFrontDistributions;
-export const createOrigin = createEdgeOptimizeOrigin;
-export const createCloudFrontFunction = createEdgeOptimizeRoutingFunction;
-export const updateCacheSettings = applyEdgeOptimizeCacheHeaders;
-export const createLambdaAtEdge = createEdgeOptimizeLambda;
-export const getLambdaAtEdgeStatus = getEdgeOptimizeLambdaStatus;
-export const applyAssociations = applyEdgeOptimizeAssociations;
-export const verifyRouting = verifyEdgeOptimizeRouting;
-export const runDeployStep = runEdgeOptimizeDeployStep;
-export const planDeploy = planEdgeOptimizeDeploy;

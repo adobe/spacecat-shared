@@ -165,13 +165,10 @@ export interface AWSCredentials {
   expiration?: Date;
 }
 
-/** @deprecated Use {@link AWSCredentials}. */
-export type EdgeOptimizeCredentials = AWSCredentials;
-
 /**
  * One row of the Edge Optimize deploy/plan step contract.
  */
-export interface EdgeOptimizeStep {
+export interface DeployStep {
   key: string;
   label: string;
   status?: string;
@@ -333,7 +330,7 @@ export function runDeployStep(
     accountId: string;
   },
   region?: string,
-): Promise<{ routingDeployed: boolean; verified: boolean; steps: EdgeOptimizeStep[] }>;
+): Promise<{ routingDeployed: boolean; verified: boolean; steps: DeployStep[] }>;
 
 /**
  * Read-only "preview" of what {@link runDeployStep} would do, without mutating.
@@ -349,9 +346,9 @@ export function planDeploy(
     accountId?: string;
   },
   region?: string,
-): Promise<{ canProceed: boolean; blocker: string | null; steps: EdgeOptimizeStep[] }>;
+): Promise<{ canProceed: boolean; blocker: string | null; steps: DeployStep[] }>;
 
-export interface CloudFrontEdgeOptimizeClientOptions {
+export interface CloudFrontEdgeClientOptions {
   credentials: AWSCredentials;
   region?: string;
 }
@@ -359,8 +356,8 @@ export interface CloudFrontEdgeOptimizeClientOptions {
 /**
  * CloudFront control-plane client initialized with short-lived AWS credentials.
  */
-export class CloudFrontEdgeOptimizeClient {
-  constructor(options: CloudFrontEdgeOptimizeClientOptions);
+export class CloudFrontEdgeClient {
+  constructor(options: CloudFrontEdgeClientOptions);
 
   listDistributions(): ReturnType<typeof listDistributions>;
 
@@ -407,27 +404,6 @@ export class CloudFrontEdgeOptimizeClient {
   planDeploy(params: Parameters<typeof planDeploy>[1]): ReturnType<typeof planDeploy>;
 }
 
-/** @deprecated Use {@link listDistributions}. */
-export const listCloudFrontDistributions: typeof listDistributions;
-/** @deprecated Use {@link createOrigin}. */
-export const createEdgeOptimizeOrigin: typeof createOrigin;
-/** @deprecated Use {@link createCloudFrontFunction}. */
-export const createEdgeOptimizeRoutingFunction: typeof createCloudFrontFunction;
-/** @deprecated Use {@link updateCacheSettings}. */
-export const applyEdgeOptimizeCacheHeaders: typeof updateCacheSettings;
-/** @deprecated Use {@link createLambdaAtEdge}. */
-export const createEdgeOptimizeLambda: typeof createLambdaAtEdge;
-/** @deprecated Use {@link getLambdaAtEdgeStatus}. */
-export const getEdgeOptimizeLambdaStatus: typeof getLambdaAtEdgeStatus;
-/** @deprecated Use {@link applyAssociations}. */
-export const applyEdgeOptimizeAssociations: typeof applyAssociations;
-/** @deprecated Use {@link verifyRouting}. */
-export const verifyEdgeOptimizeRouting: typeof verifyRouting;
-/** @deprecated Use {@link runDeployStep}. */
-export const runEdgeOptimizeDeployStep: typeof runDeployStep;
-/** @deprecated Use {@link planDeploy}. */
-export const planEdgeOptimizeDeploy: typeof planDeploy;
-
 /**
  * Build the CloudFront Function (viewer-request) routing code.
  */
@@ -437,38 +413,9 @@ export function buildCloudfrontFunctionCode(
 ): string;
 
 /**
- * Build the Lambda@Edge origin-request/response handler source code.
- */
-export function buildEdgeOptimizeLambdaCode(eoOriginDomain: string): string;
-
-/**
  * Build an in-memory zip containing a single file (used to package the Lambda@Edge code).
  */
 export function buildLambdaZip(filename: string, content: string | Buffer): Buffer;
-
-/**
- * Build the per-distribution name for a cache policy cloned from a managed (AWS) policy.
- */
-export function buildEoClonedCachePolicyName(sourceName: string, distributionId: string): string;
-
-/** Per-distribution routing CloudFront Function name. */
-export function eoRoutingFunctionName(distributionId: string): string;
-/** Per-distribution Lambda@Edge function name. */
-export function eoLambdaFunctionName(distributionId: string): string;
-/** Per-distribution Lambda@Edge execution role name. */
-export function eoLambdaRoleName(distributionId: string): string;
-
-export const EDGE_OPTIMIZE_REGION: string;
-export const EDGE_OPTIMIZE_DEFAULT_ROLE_NAME: string;
-export const EDGE_OPTIMIZE_ORIGIN_ID: string;
-export const EDGE_OPTIMIZE_DEFAULT_ORIGIN_DOMAIN: string;
-export const EDGE_OPTIMIZE_FUNCTION_NAME: string;
-export const EDGE_OPTIMIZE_LAMBDA_FUNCTION_NAME: string;
-export const EDGE_OPTIMIZE_LAMBDA_ROLE_NAME: string;
-export const EDGE_OPTIMIZE_CACHE_HEADERS: string[];
-export const EDGE_OPTIMIZE_CACHE_POLICY_NAME: string;
-export const EDGE_OPTIMIZE_MIN_TTL_KEEP_THRESHOLD: number;
-export const EDGE_OPTIMIZE_DEPLOY_STEPS: EdgeOptimizeStep[];
 
 /**
  * Base class for opportunity mappers

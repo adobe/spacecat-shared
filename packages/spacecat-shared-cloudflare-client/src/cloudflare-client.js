@@ -182,7 +182,7 @@ export default class CloudflareClient {
 
   async #listWorkers(accountId, { page = 1, perPage = 50, tags } = {}) {
     const tagFilter = Array.isArray(tags) && tags.length > 0
-      ? tags.map((t) => `&tags=${encodeURIComponent(t)}`).join('')
+      ? `&tags=${tags.map((t) => `${encodeURIComponent(t)}:yes`).join(',')}`
       : '';
     return this.#cfFetch(
       `/accounts/${accountId}/workers/scripts?page=${page}&per_page=${perPage}${tagFilter}`,

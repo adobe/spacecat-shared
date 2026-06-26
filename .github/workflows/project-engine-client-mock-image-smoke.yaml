@@ -74,10 +74,15 @@ jobs:
         # a probe. Fail fast (and dump logs) if it never goes healthy.
         run: |
           for i in $(seq 1 30); do
+            state=$(docker inspect -f '{{.State.Status}}' pe-mock-smoke 2>/dev/null || echo missing)
             health=$(docker inspect -f '{{.State.Health.Status}}' pe-mock-smoke 2>/dev/null || echo missing)
-            echo "health[$i]: $health"
+            echo "state[$i]: $state / health: $health"
             [ "$health" = "healthy" ] && exit 0
-            if [ "$health" = "unhealthy" ]; then break; fi
+            # Fail fast on a crashed container instead of sleeping through all 30 iterations.
+            case "$state" in
+              exited|dead) echo "::error::container is $state before becoming healthy"; docker logs pe-mock-smoke || true; exit 1 ;;
+            esac
+            [ "$health" = "unhealthy" ] && break
             sleep 2
           done
           echo "::error::container did not become healthy"
@@ -94,7 +99,7 @@ jobs:
           set -euo pipefail
 
           echo "1) __dump (auth-exempt) -> 200"
-          curl -ksf "$BASE/__dump" >/dev/null
+          curl -ksf "$BASE/__dump" >/dev/null || { echo "::error::__dump did not return 200 over HTTPS"; exit 1; }
 
           echo "2) GET /v1/languages without token -> 401"
           code=$(curl -ks -o /dev/null -w '%{http_code}' "$BASE/v1/languages")

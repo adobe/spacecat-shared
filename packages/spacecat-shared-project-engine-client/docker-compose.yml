@@ -11,7 +11,7 @@ services:
   project-engine-mock:
     build:
       context: .
-    image: ghcr.io/adobe/spacecat-shared-project-engine-mock:local
+    image: ghcr.io/adobe/spacecat-shared-project-engine-client-mock:local
     ports:
       - "127.0.0.1:8443:8443"
     environment:

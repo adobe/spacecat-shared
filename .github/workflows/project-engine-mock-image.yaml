@@ -36,7 +36,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      packages: write   # push to ghcr.io/adobe/spacecat-shared-project-engine-mock
+      packages: write   # push to ghcr.io/adobe/spacecat-shared-project-engine-client-mock
     steps:
       - name: Check out
         uses: actions/checkout@v6
@@ -80,8 +80,8 @@ jobs:
           context: packages/spacecat-shared-project-engine-client
           push: true
           tags: |
-            ghcr.io/adobe/spacecat-shared-project-engine-mock:${{ steps.ver.outputs.version }}
-            ghcr.io/adobe/spacecat-shared-project-engine-mock:latest
+            ghcr.io/adobe/spacecat-shared-project-engine-client-mock:${{ steps.ver.outputs.version }}
+            ghcr.io/adobe/spacecat-shared-project-engine-client-mock:latest
           # Keep the manifest a plain image (no attestation manifest) so `services:`/`docker run`
           # consumers pull a single platform cleanly.
           provenance: false

@@ -8,7 +8,7 @@ package's `mock/` source — the same way `spacecat-shared-data-access` consumes
 The published client ships only `src/` (`files: ["src"]`), so the mock is never on npm. This image
 is the only cross-repo distribution of it.
 
-- **Image:** `ghcr.io/adobe/spacecat-shared-project-engine-mock`
+- **Image:** `ghcr.io/adobe/spacecat-shared-project-engine-client-mock`
 - **Tag:** the published client version, e.g. `:1.2.0`, plus `:latest`. The image version always
   matches the `@adobe/spacecat-shared-project-engine-client` npm version it was built from.
 - **Exposed:** `8443` (HTTPS only)
@@ -71,7 +71,7 @@ jobs:
   e2e:
     services:
       project-engine-mock:
-        image: ghcr.io/adobe/spacecat-shared-project-engine-mock:1.2.0   # pin to the client version
+        image: ghcr.io/adobe/spacecat-shared-project-engine-client-mock:1.2.0   # pin to the client version
         ports: ["8443:8443"]
         # credentials: only needed if the GHCR package is kept private (see below)
     env:

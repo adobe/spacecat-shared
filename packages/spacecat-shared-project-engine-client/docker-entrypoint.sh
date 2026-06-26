@@ -29,11 +29,18 @@ mock_pid=$!
 # liveness: if the mock exits before it binds, fail fast instead of looping forever.
 # __dump is auth-exempt, so no token is needed for the readiness probe.
 mock_url="http://127.0.0.1:${MOCK_PORT:-4010}/enterprise/projects/api/__dump"
+mock_ready=
 for _ in $(seq 1 50); do
-  if curl -sf "$mock_url" >/dev/null 2>&1; then break; fi
+  # --max-time 1 caps each probe so the ~10s budget is by contract, not at the mercy of the OS
+  # connect timeout if the socket is open-but-hung.
+  if curl -sf --max-time 1 "$mock_url" >/dev/null 2>&1; then mock_ready=1; break; fi
   kill -0 "$mock_pid" 2>/dev/null || { echo "mock exited before binding ${mock_url}" >&2; exit 1; }
   sleep 0.2
 done
+# Fail loudly on a timeout (mock alive but unresponsive) rather than starting Caddy into the very
+# 502 gap this probe exists to prevent. The HEALTHCHECK would catch it downstream, but failing here
+# is louder and faster.
+[ -n "$mock_ready" ] || { echo "mock did not become ready within timeout: ${mock_url}" >&2; exit 1; }
 
 caddy run --config /etc/caddy/Caddyfile --adapter caddyfile &
 

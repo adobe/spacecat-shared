@@ -25,7 +25,11 @@ gateway, `/enterprise/projects/api`) — two deliberately separate packages, one
   `mock/run.js`), which throws if a handler is authored in a shape it can't guard (fail-closed — no
   route can serve unauthenticated by accident).
   A new file imported by `mock/context.js` is materialized automatically — `LIB_FILES` in
-  `mock/run.js` is auto-derived from the `mock/*.js` files, so there is no list to maintain.
+  `mock/run.js` is auto-derived from the `mock/*.js` files, so there is no list to maintain. For the
+  **containerized HTTPS form** of the mock (a GHCR image consumed by cross-repo e2e like
+  spacecat-api-service, which requires an `https:` origin), see `docs/mock-docker.md` — `Dockerfile`
+  + `Caddyfile` (TLS terminator) + `docker-entrypoint.sh` + `docker-compose.yml`, published by
+  `.github/workflows/user-manager-client-mock-image.yaml` when a release is published.
 - `spec/` — the vendored swagger (`spec/usermanager_swagger.yaml`, NEVER edited) +
   `spec/overlays/corrections.yaml` (corrections), applied by `scripts/apply-overlay.mjs`.
 

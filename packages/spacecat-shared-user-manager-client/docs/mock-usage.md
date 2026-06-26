@@ -8,7 +8,8 @@ transport calls (`createSubworkspace` / `getWorkspaceStatus` / `listWorkspaceFam
 `/enterprise/projects/api`); the two are deliberately separate packages, one prefix each.
 
 The mock is an in-workspace dev dependency only — it is NOT in the npm tarball (`files: ["src"]`),
-exposed via the `./mock/*` export and the `mock/` symlink.
+exposed via the `./mock/*` export and the `mock/` symlink. To run the mock as a containerized HTTPS
+service for a cross-repo e2e suite (e.g. spacecat-api-service), see [`mock-docker.md`](./mock-docker.md).
 
 ## 1. Quick start
 

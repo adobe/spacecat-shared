@@ -24,7 +24,7 @@ the mock on `127.0.0.1:4010`. The `https:` requirement is satisfied for real, no
 The cert is a **self-signed, build-time** cert (no private key is committed to this public repo).
 It carries no real trust, so the consuming test process disables verification:
 `NODE_TLS_REJECT_UNAUTHORIZED=0`. Its SANs cover `localhost`, `127.0.0.1`, and the compose/CI
-service alias `project-engine-mock`.
+service alias `project-engine-client-mock`.
 
 ## Security: loopback / ephemeral only
 
@@ -37,7 +37,7 @@ over **loopback** (local dev) or on an **ephemeral CI runner** — never bound t
 
 ```bash
 # from packages/spacecat-shared-project-engine-client
-npm run docker:build           # docker build -t …project-engine-mock:local .
+npm run docker:build           # docker build -t …project-engine-client-mock:local .
 npm run docker:run             # docker run --rm -p 127.0.0.1:8443:8443 …:local
 
 # or via compose (adds a healthcheck + the loopback binding)
@@ -70,7 +70,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0          # accept the mock's self-signed cert (te
 jobs:
   e2e:
     services:
-      project-engine-mock:
+      project-engine-client-mock:
         image: ghcr.io/adobe/spacecat-shared-project-engine-client-mock:1.2.0   # pin to the client version
         ports: ["8443:8443"]
         # credentials: only needed if the GHCR package is kept private (see below)
@@ -83,11 +83,11 @@ jobs:
 ```
 
 If the job itself runs inside a container, reach the service by its alias
-(`https://project-engine-mock:8443`) — that hostname is in the cert SANs.
+(`https://project-engine-client-mock:8443`) — that hostname is in the cert SANs.
 
 ## Publishing (CI)
 
-`.github/workflows/project-engine-mock-image.yaml` builds and pushes on the per-package release tag
+`.github/workflows/project-engine-client-mock-image.yaml` builds and pushes on the per-package release tag
 `@adobe/spacecat-shared-project-engine-client-v*` (pushed by `main.yaml`'s release job via the
 `ADOBE_BOT_GITHUB_TOKEN` PAT, which triggers downstream workflows). It tags `:<version>` + `:latest`
 and pushes with the workflow's built-in `GITHUB_TOKEN` (`packages: write`). `workflow_dispatch`

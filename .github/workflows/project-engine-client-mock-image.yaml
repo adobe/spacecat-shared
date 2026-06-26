@@ -1,4 +1,4 @@
-name: Project Engine Mock Image
+name: Project Engine Client Mock Image
 
 # Build + push the runnable mock image to GHCR when @adobe/spacecat-shared-project-engine-client
 # releases.
@@ -26,7 +26,7 @@ on:
 
 concurrency:
   # Serialize per ref; never cancel an in-flight push (a half-pushed manifest is worse than a wait).
-  group: project-engine-mock-image-${{ github.ref }}
+  group: project-engine-client-mock-image-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

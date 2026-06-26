@@ -5,10 +5,10 @@
 #
 # Bound to 127.0.0.1 ONLY: the __* control routes are unauthenticated and /__dump dumps the whole
 # store, so the mock must never be reachable off-loopback (see docs/mock-docker.md, "Security").
-name: project-engine-mock
+name: project-engine-client-mock
 
 services:
-  project-engine-mock:
+  project-engine-client-mock:
     build:
       context: .
     image: ghcr.io/adobe/spacecat-shared-project-engine-client-mock:local

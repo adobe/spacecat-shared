@@ -42,13 +42,13 @@ RUN npm run spec:convert && npm run spec:overlay
 # Self-signed cert for https://…:8443, minted at build time so no key lives in this public repo.
 # SANs cover every host the cert is reached by:
 #   localhost / 127.0.0.1 → test process on the host (local dev + non-containerized CI)
-#   project-engine-mock   → reached by docker/compose service alias from a containerized CI job
+#   project-engine-client-mock   → reached by docker/compose service alias from a containerized CI job
 # 100-year lifetime so it never silently expires. Test-only: it carries no real trust — consumers
 # disable verification (NODE_TLS_REJECT_UNAUTHORIZED=0) for the e2e process. See docs/mock-docker.md.
 RUN mkdir -p /etc/tls && openssl req -x509 -newkey rsa:2048 -nodes \
       -keyout /etc/tls/key.pem -out /etc/tls/cert.pem \
-      -days 36500 -subj "/CN=project-engine-mock" \
-      -addext "subjectAltName=DNS:localhost,DNS:project-engine-mock,IP:127.0.0.1"
+      -days 36500 -subj "/CN=project-engine-client-mock" \
+      -addext "subjectAltName=DNS:localhost,DNS:project-engine-client-mock,IP:127.0.0.1"
 
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

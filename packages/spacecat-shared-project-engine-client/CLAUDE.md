@@ -23,7 +23,7 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
   HTTPS form** of the mock (a GHCR image consumed by cross-repo e2e like spacecat-api-service, which
   requires an `https:` origin), see `docs/mock-docker.md` — `Dockerfile` + `Caddyfile` (TLS
   terminator) + `docker-entrypoint.sh` + `docker-compose.yml`, published by
-  `.github/workflows/project-engine-mock-image.yaml` on each release tag.
+  `.github/workflows/project-engine-client-mock-image.yaml` on each release tag.
 - `spec/` — the vendored swagger + `spec/overlays/corrections.yaml` (corrections).
 
 **Coverage:** this package enforces **`branches: 100`** in `.nycrc.json` — stricter than the

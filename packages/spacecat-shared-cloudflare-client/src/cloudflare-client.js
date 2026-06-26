@@ -131,21 +131,16 @@ export default class CloudflareClient {
     } = opts;
 
     if (!overwrite) {
-      if (Array.isArray(tags) && tags.length > 0) {
-        const ownedWorkers = await this.#listAllWorkers(accountId, { tags });
-        if (ownedWorkers.find((w) => w.id === scriptName)) {
-          this.log.info(`Worker script '${scriptName}' already deployed with a matching tag — skipping`);
-          return null;
+      const found = await this.#findWorker(accountId, scriptName);
+      if (found) {
+        if (Array.isArray(tags) && tags.length > 0) {
+          const settings = await this.#getWorkerSettings(accountId, scriptName);
+          if (tags.some((t) => settings.tags?.includes(t))) {
+            this.log.info(`Worker script '${scriptName}' already deployed with a matching tag — skipping`);
+            return null;
+          }
         }
-        const unownedWorkers = await this.#listAllWorkers(accountId, { tags, tagsAllowed: false });
-        if (unownedWorkers.find((w) => w.id === scriptName)) {
-          throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
-        }
-      } else {
-        const workers = await this.#listAllWorkers(accountId);
-        if (workers.find((w) => w.id === scriptName)) {
-          throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
-        }
+        throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
       }
     }
 
@@ -195,29 +190,15 @@ export default class CloudflareClient {
     });
   }
 
-  async #listWorkers(accountId, {
-    page = 1, perPage = 50, tags, tagsAllowed = true,
-  } = {}) {
-    const tagFilter = Array.isArray(tags) && tags.length > 0
-      ? `&tags=${tags.map((t) => `${encodeURIComponent(t)}:${tagsAllowed ? 'yes' : 'no'}`).join(',')}`
-      : '';
-    return this.#cfFetch(
-      `/accounts/${accountId}/workers/scripts?page=${page}&per_page=${perPage}${tagFilter}`,
+  async #findWorker(accountId, scriptName) {
+    const workers = await this.#cfFetch(
+      `/accounts/${accountId}/workers/scripts-search?search=${encodeURIComponent(scriptName)}`,
     );
+    return workers.find((w) => w.id === scriptName) ?? null;
   }
 
-  async #listAllWorkers(accountId, options = {}) {
-    const perPage = 50;
-    const results = [];
-    let page = 1;
-    let batch;
-    do {
-      // eslint-disable-next-line no-await-in-loop
-      batch = await this.#listWorkers(accountId, { ...options, page, perPage });
-      results.push(...batch);
-      page += 1;
-    } while (batch.length === perPage);
-    return results;
+  async #getWorkerSettings(accountId, scriptName) {
+    return this.#cfFetch(`/accounts/${accountId}/workers/scripts/${scriptName}/script-settings`);
   }
 
   /**

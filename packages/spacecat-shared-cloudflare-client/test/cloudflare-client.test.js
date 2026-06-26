@@ -264,21 +264,7 @@ describe('CloudflareClient', () => {
 
     it('throws by default when the script already exists', async () => {
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
-        .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
-
-      await expect(
-        client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
-      ).to.be.rejectedWith(`Worker script '${SCRIPT_NAME}' already exists in account ${ACCOUNT_ID}`);
-    });
-
-    it('paginates until all workers are found (no-tags path)', async () => {
-      const fullPage = Array.from({ length: 50 }, (_, i) => ({ id: `other-worker-${i}` }));
-      nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
-        .reply(200, { success: true, result: fullPage });
-      nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=2&per_page=50`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?search=${SCRIPT_NAME}`)
         .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
 
       await expect(
@@ -289,7 +275,7 @@ describe('CloudflareClient', () => {
     it('deploys when script does not exist and overwrite is false', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?search=${SCRIPT_NAME}`)
         .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
@@ -309,9 +295,9 @@ describe('CloudflareClient', () => {
       expect(res).to.deep.equal(result);
     });
 
-    it('throws when the list API returns an error during existence check', async () => {
+    it('throws when the search API returns an error during existence check', async () => {
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?search=${SCRIPT_NAME}`)
         .reply(403, 'Forbidden');
 
       await expect(
@@ -321,7 +307,7 @@ describe('CloudflareClient', () => {
 
     it('throws when existence check fetch itself fails', async () => {
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?search=${SCRIPT_NAME}`)
         .replyWithError('ECONNREFUSED');
 
       await expect(
@@ -332,12 +318,9 @@ describe('CloudflareClient', () => {
     it('includes tags in the metadata when provided', async () => {
       const result = { id: SCRIPT_NAME };
       let capturedBody;
-      // tag:yes empty, tag:no empty → new script → deploy with tags in metadata
+      // search → not found → new script → deploy with tags in metadata
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:yes,env%3Dprod:yes`)
-        .reply(200, { success: true, result: [] });
-      nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:no,env%3Dprod:no`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?search=${SCRIPT_NAME}`)
         .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, (body) => {
@@ -366,32 +349,20 @@ describe('CloudflareClient', () => {
         })
         .reply(200, { success: true, result });
 
-      await client.deployWorkerScript(
-        ACCOUNT_ID,
-        SCRIPT_NAME,
-        'export default {}',
-        [],
-        { overwrite: true },
-      );
+      await client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}', [], { overwrite: true });
       expect(capturedBody).to.not.contain('"tags"');
     });
 
     it('skips deploy and logs info when script exists with a matching tag (same owner)', async () => {
-      // tag:yes returns the script → same owner → skip, no PUT
+      // search → found; script-settings → has our tag → skip
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:yes`)
-        .reply(200, {
-          success: true,
-          result: [{ id: SCRIPT_NAME, tags: ['createdBy=adobe'] }],
-        });
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?search=${SCRIPT_NAME}`)
+        .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}/script-settings`)
+        .reply(200, { success: true, result: { tags: ['createdBy=adobe'] } });
 
-      const res = await client.deployWorkerScript(
-        ACCOUNT_ID,
-        SCRIPT_NAME,
-        'export default {}',
-        [],
-        { tags: ['createdBy=adobe'] },
-      );
+      const res = await client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}', [], { tags: ['createdBy=adobe'] });
       expect(res).to.be.null;
       expect(log.info).to.have.been.calledWith(
         `Worker script '${SCRIPT_NAME}' already deployed with a matching tag — skipping`,
@@ -399,50 +370,30 @@ describe('CloudflareClient', () => {
     });
 
     it('throws when script exists without a matching tag (different owner)', async () => {
-      // tag:yes empty → script not ours; tag:no returns it → exists without our tag → error
+      // search → found; script-settings → no matching tag → error
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:yes`)
-        .reply(200, { success: true, result: [] });
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?search=${SCRIPT_NAME}`)
+        .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:no`)
-        .reply(200, {
-          success: true,
-          result: [{ id: SCRIPT_NAME, tags: ['createdBy=other'] }],
-        });
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}/script-settings`)
+        .reply(200, { success: true, result: { tags: ['createdBy=other'] } });
 
       await expect(
-        client.deployWorkerScript(
-          ACCOUNT_ID,
-          SCRIPT_NAME,
-          'export default {}',
-          [],
-          { tags: ['createdBy=adobe'] },
-        ),
-      ).to.be.rejectedWith(
-        `Worker script '${SCRIPT_NAME}' already exists in account ${ACCOUNT_ID}`,
-      );
+        client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}', [], { tags: ['createdBy=adobe'] }),
+      ).to.be.rejectedWith(`Worker script '${SCRIPT_NAME}' already exists in account ${ACCOUNT_ID}`);
     });
 
     it('deploys when script does not exist (tags provided)', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
-      // tag:yes empty, tag:no empty → script doesn't exist → deploy
+      // search → not found → new script, no settings call needed
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:yes`)
-        .reply(200, { success: true, result: [] });
-      nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:no`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?search=${SCRIPT_NAME}`)
         .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
         .reply(200, { success: true, result });
 
-      const res = await client.deployWorkerScript(
-        ACCOUNT_ID,
-        SCRIPT_NAME,
-        'export default {}',
-        [],
-        { tags: ['createdBy=adobe'] },
-      );
+      const res = await client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}', [], { tags: ['createdBy=adobe'] });
       expect(res).to.deep.equal(result);
     });
   });

@@ -27,7 +27,7 @@
  * @param {string[]|null} [targetedPaths] - explicit paths to target, or null for "all HTML pages".
  * @returns {string} the CloudFront Function source code.
  */
-export function buildRoutingFunctionCode(defaultOriginId, targetedPaths = null) {
+export function buildCloudfrontFunctionCode(defaultOriginId, targetedPaths = null) {
   const targetedPathsValue = targetedPaths === null ? 'null' : JSON.stringify(targetedPaths);
 
   return `import cf from 'cloudfront';

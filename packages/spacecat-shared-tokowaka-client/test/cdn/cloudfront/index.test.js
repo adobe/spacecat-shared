@@ -519,16 +519,16 @@ describe('edge-optimize support', () => {
     });
   });
 
-  describe('buildRoutingFunctionCode', () => {
+  describe('buildCloudfrontFunctionCode', () => {
     it('embeds the default origin id and null targeted paths', () => {
-      const code = edgeOptimize.buildRoutingFunctionCode('origin-aem');
+      const code = edgeOptimize.buildCloudfrontFunctionCode('origin-aem');
       expect(code).to.include('{ "originId": "origin-aem" }');
       expect(code).to.include('var TARGETED_PATHS = null;');
       expect(code).to.include("import cf from 'cloudfront';");
     });
 
     it('embeds explicit targeted paths as JSON', () => {
-      const code = edgeOptimize.buildRoutingFunctionCode('origin-aem', ['/a', '/b']);
+      const code = edgeOptimize.buildCloudfrontFunctionCode('origin-aem', ['/a', '/b']);
       expect(code).to.include('var TARGETED_PATHS = ["/a","/b"];');
     });
   });

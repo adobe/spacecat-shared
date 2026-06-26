@@ -351,7 +351,7 @@ export function planEdgeOptimizeDeploy(
 /**
  * Build the CloudFront Function (viewer-request) routing code.
  */
-export function buildRoutingFunctionCode(
+export function buildCloudfrontFunctionCode(
   defaultOriginId: string,
   targetedPaths?: string[] | null,
 ): string;

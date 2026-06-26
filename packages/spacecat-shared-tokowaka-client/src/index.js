@@ -65,7 +65,7 @@ export {
   verifyEdgeOptimizeRouting,
   runEdgeOptimizeDeployStep,
   planEdgeOptimizeDeploy,
-  buildRoutingFunctionCode,
+  buildCloudfrontFunctionCode,
   buildEdgeOptimizeLambdaCode,
   buildLambdaZip,
   buildEoClonedCachePolicyName,

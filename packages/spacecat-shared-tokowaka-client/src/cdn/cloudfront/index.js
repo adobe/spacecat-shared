@@ -47,9 +47,9 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 
 // Edge runtime code (Lambda@Edge handler + CloudFront routing function) lives in its own
 // module for readability; imported for use here and re-exported to keep the public surface.
-import { buildEdgeOptimizeLambdaCode, buildRoutingFunctionCode } from './edge-code.js';
+import { buildEdgeOptimizeLambdaCode, buildCloudfrontFunctionCode } from './edge-code.js';
 
-export { buildEdgeOptimizeLambdaCode, buildRoutingFunctionCode };
+export { buildEdgeOptimizeLambdaCode, buildCloudfrontFunctionCode };
 
 // CloudFront is a global service; its control plane lives in us-east-1.
 export const EDGE_OPTIMIZE_REGION = 'us-east-1';
@@ -403,7 +403,7 @@ export async function createEdgeOptimizeRoutingFunction(
   }
   const functionName = eoRoutingFunctionName(distributionId);
   const client = new CloudFrontClient({ region, credentials });
-  const code = Buffer.from(buildRoutingFunctionCode(defaultOriginId, targetedPaths), 'utf-8');
+  const code = Buffer.from(buildCloudfrontFunctionCode(defaultOriginId, targetedPaths), 'utf-8');
   const functionConfig = {
     Comment: 'EdgeOptimize agentic bot routing — managed by LLM Optimizer',
     Runtime: 'cloudfront-js-2.0',

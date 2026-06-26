@@ -22,6 +22,19 @@ set -euo pipefail
 trap 'kill 0' INT TERM
 
 node mock/run.js &
+mock_pid=$!
+
+# Wait for the mock to bind before starting Caddy, so proxied requests never 502 in the gap
+# between Caddy coming up and the mock binding :4010. Bounded (~10s) and tied to the mock's
+# liveness: if the mock exits before it binds, fail fast instead of looping forever.
+# __dump is auth-exempt, so no token is needed for the readiness probe.
+mock_url="http://127.0.0.1:${MOCK_PORT:-4010}/enterprise/projects/api/__dump"
+for _ in $(seq 1 50); do
+  if curl -sf "$mock_url" >/dev/null 2>&1; then break; fi
+  kill -0 "$mock_pid" 2>/dev/null || { echo "mock exited before binding ${mock_url}" >&2; exit 1; }
+  sleep 0.2
+done
+
 caddy run --config /etc/caddy/Caddyfile --adapter caddyfile &
 
 # `wait -n` returns when the first background job exits; propagate its status.

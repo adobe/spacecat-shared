@@ -46,18 +46,22 @@ jobs:
       - name: Resolve version
         id: ver
         shell: bash
-        # INPUT_VERSION via env (not inline ${{ }}) so a workflow_dispatch input can't inject shell.
+        # All ${{ }} values are passed via env (never inlined into the script body) so neither a
+        # workflow_dispatch input nor any GitHub-context value can be interpolated as shell.
         env:
           INPUT_VERSION: ${{ inputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             VERSION="$INPUT_VERSION"
           else
             # Strip the package-name tag prefix: @adobe/…-client-v1.2.0 -> 1.2.0
             VERSION="${GITHUB_REF_NAME##*-v}"
           fi
-          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+          # Anchored both ends: the image tag must be exactly X.Y.Z — reject any trailing junk
+          # (a malformed tag or pre-release suffix) rather than minting a surprising image tag.
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "FAIL: could not parse a semver from '${GITHUB_REF_NAME:-$VERSION}'"
             exit 1
           fi

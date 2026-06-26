@@ -168,6 +168,12 @@ function launch() {
   // spec operation onto our materialized handler files — producing duplicate `GET`/`POST`
   // declarations. An explicit `--serve` skips that defaulting: the server still transpiles and
   // loads our handlers, but generates nothing, so our stateful handlers stand alone.
+  //
+  // NOTE: Counterfact 2.14.0 hardcodes `koaApp.listen({ port })` with no host option and exposes
+  // no `--host` flag, so the server binds all interfaces — the auth-exempt `__*` control routes
+  // (full state read/replace) are reachable on the host's network. This is a dev/CI-only mock on
+  // ephemeral ports, so it is acceptable; if a future Counterfact adds a host/bind option, pin it
+  // to loopback (127.0.0.1) here to keep the control surface local-only.
   const child = spawn(
     process.execPath,
     [findCounterfactBin(), SPEC, BASE_PATH, '--port', String(PORT), '--serve',

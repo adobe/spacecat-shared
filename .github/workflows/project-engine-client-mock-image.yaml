@@ -3,10 +3,19 @@ name: Project Engine Client Mock Image
 # Build + push the runnable mock image to GHCR when @adobe/spacecat-shared-project-engine-client
 # releases.
 #
-# semantic-release-monorepo tags each release `@adobe/spacecat-shared-project-engine-client-vX.Y.Z`.
-# That tag is pushed by main.yaml's release job using the ADOBE_BOT_GITHUB_TOKEN PAT which — unlike
-# the default GITHUB_TOKEN — DOES trigger downstream workflows, so keying off the tag fires this
-# build exactly once per release and pins the image version to the published npm version.
+# semantic-release-monorepo tags each release `@adobe/spacecat-shared-project-engine-client-vX.Y.Z`
+# and (via @semantic-release/github) publishes a matching GitHub Release — both authored by
+# main.yaml's release job with the ADOBE_BOT_GITHUB_TOKEN PAT (which, unlike the default
+# GITHUB_TOKEN, DOES trigger downstream workflows).
+#
+# We key off `release: published`, NOT the tag push. @semantic-release/git tags the
+# `chore(release): X.Y.Z [skip ci]` commit, and GitHub suppresses every push-triggered workflow —
+# a tag push included — when the head commit message contains `[skip ci]`. So an `on: push: tags:`
+# trigger here silently never fires: that is exactly why v1.3.0's image was never built and had to
+# be recovered by hand via workflow_dispatch. A `release` event is not a push event, so `[skip ci]`
+# does not apply; it fires once per published release and pins the image to the published npm
+# version. `release` fires for EVERY package in the monorepo, so the job is gated on the
+# tag-name prefix below.
 #
 # Deliberately separate from main.yaml (mirroring project-engine-mock-e2e.yaml): main.yaml carries
 # the npm Trusted Publisher binding, and an image-build failure must never be able to touch the npm
@@ -14,9 +23,8 @@ name: Project Engine Client Mock Image
 permissions: {}
 
 on:
-  push:
-    tags:
-      - '@adobe/spacecat-shared-project-engine-client-v*'
+  release:
+    types: [published]
   # Manual rebuild for a specific already-published version (incident recovery / first publish).
   workflow_dispatch:
     inputs:
@@ -32,6 +40,12 @@ concurrency:
 jobs:
   build-push:
     name: Build & push mock image
+    # `release` fires for all 21 packages; only act on this package's releases. workflow_dispatch
+    # (manual recovery) always passes. github.event.release is absent on dispatch, so the
+    # startsWith operand is the empty string there — harmless, the OR short-circuits first.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.release.tag_name, '@adobe/spacecat-shared-project-engine-client-v')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -51,18 +65,19 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }}
           EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             VERSION="$INPUT_VERSION"
           else
             # Strip the package-name tag prefix: @adobe/…-client-v1.2.0 -> 1.2.0
-            VERSION="${GITHUB_REF_NAME##*-v}"
+            VERSION="${RELEASE_TAG##*-v}"
           fi
           # Anchored both ends: the image tag must be exactly X.Y.Z — reject any trailing junk
           # (a malformed tag or pre-release suffix) rather than minting a surprising image tag.
           if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "FAIL: could not parse a semver from '${GITHUB_REF_NAME:-$VERSION}'"
+            echo "FAIL: could not parse a semver from '${RELEASE_TAG:-$VERSION}'"
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -83,9 +98,10 @@ jobs:
         with:
           context: packages/spacecat-shared-project-engine-client
           push: true
-          tags: |
-            ghcr.io/adobe/spacecat-shared-project-engine-client-mock:${{ steps.ver.outputs.version }}
-            ghcr.io/adobe/spacecat-shared-project-engine-client-mock:latest
+          # Only an immutable, exact X.Y.Z tag that pins to the published npm version. No `:latest`:
+          # consumers reference a known version, and a floating tag would otherwise be clobbered
+          # backwards by a workflow_dispatch recovery build of an older version.
+          tags: ghcr.io/adobe/spacecat-shared-project-engine-client-mock:${{ steps.ver.outputs.version }}
           # Keep the manifest a plain image (no attestation manifest) so `services:`/`docker run`
           # consumers pull a single platform cleanly.
           provenance: false

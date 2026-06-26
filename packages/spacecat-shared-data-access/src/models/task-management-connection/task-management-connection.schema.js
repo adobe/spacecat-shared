@@ -57,6 +57,13 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
     required: true,
     readOnly: true,
   })
+  // connected_at column: when OAuth was last successfully completed.
+  // Set on initial connect, updated on re-auth. Differs from createdAt after reconnect.
+  .addAttribute('connectedAt', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || !Number.isNaN(Date.parse(value)),
+  })
   // external_instance_id column: provider-stable identifier for the remote workspace.
   // jira_cloud → Atlassian cloudId UUID; jira_corp → normalized baseUrl (v2).
   // Used as the dedup key in UNIQUE(organization_id, provider, external_instance_id).

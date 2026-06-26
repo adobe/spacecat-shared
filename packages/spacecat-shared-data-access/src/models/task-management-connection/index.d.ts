@@ -29,6 +29,7 @@ export interface TaskManagementConnection extends BaseModel {
   /** Persists status = 'disconnected' (soft-delete on user revoke). */
   markDisconnected(): Promise<TaskManagementConnection>;
 
+  getConnectedAt(): string | null;
   getConnectedBy(): string;
   getExternalInstanceId(): string;
   getDisplayName(): string;
@@ -41,6 +42,7 @@ export interface TaskManagementConnection extends BaseModel {
   getStatus(): string;
   getTickets(): Promise<Ticket[]>;
 
+  setConnectedAt(timestamp: string): TaskManagementConnection;
   setErrorMessage(message: string | null): TaskManagementConnection;
   setLastUsedAt(timestamp: string): TaskManagementConnection;
   setMetadata(metadata: object): TaskManagementConnection;

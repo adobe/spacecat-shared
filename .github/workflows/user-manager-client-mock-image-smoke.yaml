@@ -21,6 +21,9 @@ on:
       - 'packages/spacecat-shared-user-manager-client/Caddyfile'
       - 'packages/spacecat-shared-user-manager-client/docker-entrypoint.sh'
       - 'packages/spacecat-shared-user-manager-client/.dockerignore'
+      # package.json drives the image build (npm install + the spec:convert/spec:overlay scripts the
+      # Dockerfile runs), so a scripts/deps change there must re-run the smoke.
+      - 'packages/spacecat-shared-user-manager-client/package.json'
       - 'packages/spacecat-shared-user-manager-client/mock/**'
       - 'packages/spacecat-shared-user-manager-client/spec/**'
       - 'packages/spacecat-shared-user-manager-client/scripts/**'
@@ -31,6 +34,9 @@ on:
       - 'packages/spacecat-shared-user-manager-client/Caddyfile'
       - 'packages/spacecat-shared-user-manager-client/docker-entrypoint.sh'
       - 'packages/spacecat-shared-user-manager-client/.dockerignore'
+      # package.json drives the image build (npm install + the spec:convert/spec:overlay scripts the
+      # Dockerfile runs), so a scripts/deps change there must re-run the smoke.
+      - 'packages/spacecat-shared-user-manager-client/package.json'
       - 'packages/spacecat-shared-user-manager-client/mock/**'
       - 'packages/spacecat-shared-user-manager-client/spec/**'
       - 'packages/spacecat-shared-user-manager-client/scripts/**'

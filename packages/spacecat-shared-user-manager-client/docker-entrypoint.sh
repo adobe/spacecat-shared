@@ -19,7 +19,9 @@
 set -euo pipefail
 
 # Forward termination to the whole process group so a `docker stop` tears down both children.
-trap 'kill 0' INT TERM
+# EXIT is included so that when `wait -n` returns (one process died) and the script exits, the
+# surviving process is reaped too, not just on a signal-driven `docker stop`.
+trap 'kill 0' INT TERM EXIT
 
 node mock/run.js &
 mock_pid=$!

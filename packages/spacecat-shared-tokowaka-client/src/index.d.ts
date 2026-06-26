@@ -190,13 +190,13 @@ export function assumeConnectorRole(params: {
   externalId: string;
   roleName?: string;
   region?: string;
-}): Promise<{ roleArn: string; accountId: string; credentials: EdgeOptimizeCredentials }>;
+}): Promise<{ roleArn: string; accountId: string; credentials: AWSCredentials }>;
 
 /**
  * List the CloudFront distributions in the customer account using assumed-role credentials.
  */
-export function listCloudFrontDistributions(
-  credentials: EdgeOptimizeCredentials,
+export function listDistributions(
+  credentials: AWSCredentials,
   region?: string,
 ): Promise<Array<{
   id: string;
@@ -211,7 +211,7 @@ export function listCloudFrontDistributions(
  * Fetch a single CloudFront distribution's configuration using assumed-role credentials.
  */
 export function getDistributionConfig(
-  credentials: EdgeOptimizeCredentials,
+  credentials: AWSCredentials,
   distributionId: string,
   region?: string,
 ): Promise<{
@@ -223,8 +223,8 @@ export function getDistributionConfig(
 /**
  * Add the Edge Optimize origin to a CloudFront distribution (idempotent + self-healing).
  */
-export function createEdgeOptimizeOrigin(
-  credentials: EdgeOptimizeCredentials,
+export function createOrigin(
+  credentials: AWSCredentials,
   distributionId: string,
   originDomain?: string,
   headers?: { apiKey?: string; forwardedHost?: string; fetcherKey?: string },
@@ -234,8 +234,8 @@ export function createEdgeOptimizeOrigin(
 /**
  * Create or update the routing CloudFront Function and publish it to LIVE (idempotent).
  */
-export function createEdgeOptimizeRoutingFunction(
-  credentials: EdgeOptimizeCredentials,
+export function createCloudFrontFunction(
+  credentials: AWSCredentials,
   defaultOriginId: string,
   distributionId: string,
   targetedPaths?: string[] | null,
@@ -245,8 +245,8 @@ export function createEdgeOptimizeRoutingFunction(
 /**
  * Add the Edge Optimize routing headers to the cache key for the target behavior.
  */
-export function applyEdgeOptimizeCacheHeaders(
-  credentials: EdgeOptimizeCredentials,
+export function updateCacheSettings(
+  credentials: AWSCredentials,
   distributionId: string,
   pathPattern: string,
   opts?: { setMinTTLZero?: boolean; region?: string },
@@ -261,8 +261,8 @@ export function applyEdgeOptimizeCacheHeaders(
 /**
  * Create (or update) the Edge Optimize Lambda@Edge function and publish a version (idempotent).
  */
-export function createEdgeOptimizeLambda(
-  credentials: EdgeOptimizeCredentials,
+export function createLambdaAtEdge(
+  credentials: AWSCredentials,
   accountId: string,
   opts?: {
     region?: string;
@@ -283,8 +283,8 @@ export function createEdgeOptimizeLambda(
 /**
  * Read-only status of the Edge Optimize Lambda@Edge function and its execution role.
  */
-export function getEdgeOptimizeLambdaStatus(
-  credentials: EdgeOptimizeCredentials,
+export function getLambdaAtEdgeStatus(
+  credentials: AWSCredentials,
   distributionId: string,
   region?: string,
 ): Promise<{
@@ -302,8 +302,8 @@ export function getEdgeOptimizeLambdaStatus(
 /**
  * Wire the routing CloudFront Function and the Lambda@Edge function onto a cache behavior.
  */
-export function applyEdgeOptimizeAssociations(
-  credentials: EdgeOptimizeCredentials,
+export function applyAssociations(
+  credentials: AWSCredentials,
   distributionId: string,
   pathPattern: string,
   lambdaVersionArn: string,
@@ -313,7 +313,7 @@ export function applyEdgeOptimizeAssociations(
 /**
  * Verify Edge Optimize routing end-to-end by probing as a bot and as a human.
  */
-export function verifyEdgeOptimizeRouting(url: string): Promise<{
+export function verifyRouting(url: string): Promise<{
   passed: boolean;
   requestId: string | null;
   details: { bot: Record<string, any>; human: Record<string, any> };
@@ -322,8 +322,8 @@ export function verifyEdgeOptimizeRouting(url: string): Promise<{
 /**
  * Run one poll of the idempotent Edge Optimize "Deploy routing" orchestrator.
  */
-export function runEdgeOptimizeDeployStep(
-  credentials: EdgeOptimizeCredentials,
+export function runDeployStep(
+  credentials: AWSCredentials,
   params: {
     distributionId: string;
     originId: string;
@@ -336,10 +336,10 @@ export function runEdgeOptimizeDeployStep(
 ): Promise<{ routingDeployed: boolean; verified: boolean; steps: EdgeOptimizeStep[] }>;
 
 /**
- * Read-only "preview" of what {@link runEdgeOptimizeDeployStep} would do, without mutating.
+ * Read-only "preview" of what {@link runDeployStep} would do, without mutating.
  */
-export function planEdgeOptimizeDeploy(
-  credentials: EdgeOptimizeCredentials,
+export function planDeploy(
+  credentials: AWSCredentials,
   params: {
     distributionId: string;
     originId?: string;
@@ -351,19 +351,26 @@ export function planEdgeOptimizeDeploy(
   region?: string,
 ): Promise<{ canProceed: boolean; blocker: string | null; steps: EdgeOptimizeStep[] }>;
 
-/**
- * AWS-style aliases for the CloudFront control-plane methods.
- */
-export const listDistributions: typeof listCloudFrontDistributions;
-export const createOrigin: typeof createEdgeOptimizeOrigin;
-export const createCloudFrontFunction: typeof createEdgeOptimizeRoutingFunction;
-export const updateCacheSettings: typeof applyEdgeOptimizeCacheHeaders;
-export const createLambdaAtEdge: typeof createEdgeOptimizeLambda;
-export const getLambdaAtEdgeStatus: typeof getEdgeOptimizeLambdaStatus;
-export const applyAssociations: typeof applyEdgeOptimizeAssociations;
-export const verifyRouting: typeof verifyEdgeOptimizeRouting;
-export const runDeployStep: typeof runEdgeOptimizeDeployStep;
-export const planDeploy: typeof planEdgeOptimizeDeploy;
+/** @deprecated Use {@link listDistributions}. */
+export const listCloudFrontDistributions: typeof listDistributions;
+/** @deprecated Use {@link createOrigin}. */
+export const createEdgeOptimizeOrigin: typeof createOrigin;
+/** @deprecated Use {@link createCloudFrontFunction}. */
+export const createEdgeOptimizeRoutingFunction: typeof createCloudFrontFunction;
+/** @deprecated Use {@link updateCacheSettings}. */
+export const applyEdgeOptimizeCacheHeaders: typeof updateCacheSettings;
+/** @deprecated Use {@link createLambdaAtEdge}. */
+export const createEdgeOptimizeLambda: typeof createLambdaAtEdge;
+/** @deprecated Use {@link getLambdaAtEdgeStatus}. */
+export const getEdgeOptimizeLambdaStatus: typeof getLambdaAtEdgeStatus;
+/** @deprecated Use {@link applyAssociations}. */
+export const applyEdgeOptimizeAssociations: typeof applyAssociations;
+/** @deprecated Use {@link verifyRouting}. */
+export const verifyEdgeOptimizeRouting: typeof verifyRouting;
+/** @deprecated Use {@link runDeployStep}. */
+export const runEdgeOptimizeDeployStep: typeof runDeployStep;
+/** @deprecated Use {@link planDeploy}. */
+export const planEdgeOptimizeDeploy: typeof planDeploy;
 
 /**
  * Build the CloudFront Function (viewer-request) routing code.

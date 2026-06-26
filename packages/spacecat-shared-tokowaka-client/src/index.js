@@ -51,21 +51,11 @@ import {
 export { FastlyKVClient } from './fastly-kv-client.js';
 export { calculateForwardedHost } from './utils/custom-html-utils.js';
 
-// CloudFront "Optimize at Edge" control-plane (free functions + constants).
+// CloudFront control-plane (free functions + constants).
 export {
   assumeConnectorRole,
-  listCloudFrontDistributions,
-  getDistributionConfig,
-  createEdgeOptimizeOrigin,
-  createEdgeOptimizeRoutingFunction,
-  applyEdgeOptimizeCacheHeaders,
-  createEdgeOptimizeLambda,
-  getEdgeOptimizeLambdaStatus,
-  applyEdgeOptimizeAssociations,
-  verifyEdgeOptimizeRouting,
-  runEdgeOptimizeDeployStep,
-  planEdgeOptimizeDeploy,
   listDistributions,
+  getDistributionConfig,
   createOrigin,
   createCloudFrontFunction,
   updateCacheSettings,
@@ -75,6 +65,17 @@ export {
   verifyRouting,
   runDeployStep,
   planDeploy,
+  // Backwards-compatible Edge Optimize-prefixed aliases.
+  listCloudFrontDistributions,
+  createEdgeOptimizeOrigin,
+  createEdgeOptimizeRoutingFunction,
+  applyEdgeOptimizeCacheHeaders,
+  createEdgeOptimizeLambda,
+  getEdgeOptimizeLambdaStatus,
+  applyEdgeOptimizeAssociations,
+  verifyEdgeOptimizeRouting,
+  runEdgeOptimizeDeployStep,
+  planEdgeOptimizeDeploy,
   buildCloudfrontFunctionCode,
   buildEdgeOptimizeLambdaCode,
   buildLambdaZip,

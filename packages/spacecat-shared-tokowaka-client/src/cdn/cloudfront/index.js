@@ -1779,8 +1779,8 @@ export async function planEdgeOptimizeDeploy(
   return { canProceed, blocker, steps };
 }
 
-// AWS-style public aliases. Keep the original Edge Optimize-prefixed names exported for
-// compatibility while consumers migrate to this shorter client-shaped surface.
+// Primary AWS-style public surface. The original Edge Optimize-prefixed function names
+// remain exported above for backwards compatibility.
 export const listDistributions = listCloudFrontDistributions;
 export const createOrigin = createEdgeOptimizeOrigin;
 export const createCloudFrontFunction = createEdgeOptimizeRoutingFunction;

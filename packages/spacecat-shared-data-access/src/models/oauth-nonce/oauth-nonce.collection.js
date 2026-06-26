@@ -31,6 +31,9 @@ class OAuthNonceCollection extends BaseCollection {
    * @returns {Promise<number>} 1 if the nonce was found and deleted, 0 otherwise.
    */
   async delete({ nonce } = {}) {
+    if (!nonce || typeof nonce !== 'string') {
+      throw new Error('nonce is required and must be a non-empty string');
+    }
     const { data, error } = await this.postgrestService
       .from(this.tableName)
       .delete()

@@ -68,6 +68,10 @@ export function validateMetadata(provider, metadata) {
     throw new ValidationError(`No metadata schema for provider: ${provider}`);
   }
 
+  if (metadata === null || metadata === undefined || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    throw new ValidationError('metadata must be a non-null object');
+  }
+
   const { required, allowed, properties } = schema;
 
   for (const field of required) {

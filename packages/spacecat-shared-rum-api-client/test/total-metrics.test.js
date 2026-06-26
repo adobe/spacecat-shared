@@ -76,4 +76,54 @@ describe('Total Metrics Queries', () => {
     const result = totalMetrics.handler([]);
     expect(result).to.have.property('totalEngagement', 0);
   });
+
+  describe('locale path-prefix filtering', () => {
+    const localeBundles = [
+      {
+        id: 'b-de-1', url: 'https://example.com/de', weight: 100, events: [{ checkpoint: 'click' }],
+      },
+      {
+        id: 'b-de-2', url: 'https://example.com/de/products', weight: 100, events: [],
+      },
+      {
+        id: 'b-en', url: 'https://example.com/en/home', weight: 100, events: [],
+      },
+      {
+        id: 'b-root', url: 'https://example.com/', weight: 100, events: [],
+      },
+      {
+        id: 'b-design', url: 'https://example.com/design', weight: 100, events: [],
+      },
+    ];
+
+    it('aggregates all bundles when no pathPrefix is given', () => {
+      const result = totalMetrics.handler(localeBundles);
+      expect(result).to.have.property('totalPageViews', 500);
+    });
+
+    it('scopes aggregation to the locale subtree when pathPrefix is given', () => {
+      // matches /de and /de/products only — not /en, /, or the look-alike /design
+      const result = totalMetrics.handler(localeBundles, { pathPrefix: '/de' });
+      expect(result).to.have.property('totalPageViews', 200);
+    });
+
+    it('does not match a look-alike sibling path', () => {
+      const result = totalMetrics.handler(localeBundles, { pathPrefix: '/design' });
+      expect(result).to.have.property('totalPageViews', 100);
+    });
+
+    it('ignores bundles with missing or invalid urls when filtering', () => {
+      const bundles = [
+        {
+          id: 'ok', url: 'https://example.com/de/x', weight: 100, events: [],
+        },
+        { id: 'no-url', weight: 100, events: [] },
+        {
+          id: 'bad-url', url: 'not a url', weight: 100, events: [],
+        },
+      ];
+      const result = totalMetrics.handler(bundles, { pathPrefix: '/de' });
+      expect(result).to.have.property('totalPageViews', 100);
+    });
+  });
 });

@@ -9,8 +9,9 @@ The published client ships only `src/` (`files: ["src"]`), so the mock is never 
 is the only cross-repo distribution of it.
 
 - **Image:** `ghcr.io/adobe/spacecat-shared-user-manager-client-mock`
-- **Tag:** the published client version, e.g. `:1.2.0`, plus `:latest`. The image version always
-  matches the `@adobe/spacecat-shared-user-manager-client` npm version it was built from.
+- **Tag:** the published client version only, e.g. `:1.2.0` (no `:latest` — see Publishing). The
+  image version always matches the `@adobe/spacecat-shared-user-manager-client` npm version it was
+  built from.
 - **Exposed:** `8443` (HTTPS only)
 - **Base URL inside:** `https://<host>:8443/enterprise/users/api`
 
@@ -92,11 +93,17 @@ If the job itself runs inside a container, reach the service by its alias
 
 ## Publishing (CI)
 
-`.github/workflows/user-manager-client-mock-image.yaml` builds and pushes on the per-package release tag
-`@adobe/spacecat-shared-user-manager-client-v*` (pushed by `main.yaml`'s release job via the
-`ADOBE_BOT_GITHUB_TOKEN` PAT, which triggers downstream workflows). It tags `:<version>` + `:latest`
-and pushes with the workflow's built-in `GITHUB_TOKEN` (`packages: write`). `workflow_dispatch`
-(input: `version`) rebuilds a specific already-published version for the first publish or recovery.
+`.github/workflows/user-manager-client-mock-image.yaml` builds and pushes on the GitHub **`release:
+published`** event for this package (published by `main.yaml`'s release job via `@semantic-release/github`
+with the `ADOBE_BOT_GITHUB_TOKEN` PAT, which triggers downstream workflows). It deliberately keys off
+the release event, NOT a tag push: `@semantic-release/git` tags the `chore(release): X.Y.Z [skip ci]`
+commit, and GitHub suppresses push-triggered workflows (tag pushes included) on a `[skip ci]` head
+commit — so an `on: push: tags:` trigger would silently never fire. The job is gated with an `if:` on
+the `@adobe/spacecat-shared-user-manager-client-v` tag-name prefix (the release event fires for every
+package in the monorepo). It tags only the immutable `:<version>` (no `:latest`, so a
+`workflow_dispatch` recovery of an older version can't clobber a floating tag backwards) and pushes
+with the workflow's built-in `GITHUB_TOKEN` (`packages: write`). `workflow_dispatch` (input: `version`)
+rebuilds a specific already-published version for the first publish or recovery.
 
 **One-time after the first publish:** set the GHCR package visibility to **public** in the package
 settings, so local devs and api-service CI pull with no auth. If org policy forbids a public package,

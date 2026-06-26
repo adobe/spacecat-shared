@@ -76,6 +76,9 @@ export {
   wwwUrlResolver,
   isWithinSiteScope,
   filterBySiteScope,
+  toPathname,
+  hasSamePathname,
+  allHaveSamePathname,
 } from './url-helpers.js';
 
 export {

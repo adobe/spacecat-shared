@@ -81,6 +81,8 @@ Some packages have their own CLAUDE.md with deeper architectural guidance:
 - [`packages/spacecat-shared-data-access/CLAUDE.md`](packages/spacecat-shared-data-access/CLAUDE.md) — Entity pattern, SchemaBuilder DSL, PostgREST queries, integration tests
 - [`packages/spacecat-shared-vault-secrets/CLAUDE.md`](packages/spacecat-shared-vault-secrets/CLAUDE.md) — Vault pipeline, AppRole auth, E2E validation
 - [`packages/spacecat-shared-google-client/docs/CLAUDE.md`](packages/spacecat-shared-google-client/docs/CLAUDE.md) — GSC client, OAuth, environment variables
+- [`packages/spacecat-shared-project-engine-client/CLAUDE.md`](packages/spacecat-shared-project-engine-client/CLAUDE.md) — mandatory `// @ts-check`, the Counterfact mock + factory-pattern fixtures, the spec overlay
+- [`packages/spacecat-shared-user-manager-client/CLAUDE.md`](packages/spacecat-shared-user-manager-client/CLAUDE.md) — mandatory `// @ts-check`, the Counterfact mock + factory-pattern fixtures, parent-pool quota metering + bearer auth, the spec overlay + freshness gate
 
 ---
 

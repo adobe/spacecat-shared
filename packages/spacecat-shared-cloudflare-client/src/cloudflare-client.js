@@ -46,18 +46,23 @@ export default class CloudflareClient {
   }
 
   async #cfFetch(path, options = {}) {
+    const { allowNotFound = false, ...fetchOptions } = options;
     const url = `${this.apiBase}${path}`;
     let res;
     try {
       res = await fetch(url, {
-        ...options,
+        ...fetchOptions,
         headers: {
           Authorization: `Bearer ${this.#token}`,
-          ...options.headers,
+          ...fetchOptions.headers,
         },
       });
     } catch (e) {
       throw new Error(`Cloudflare API request to ${path} failed: ${e.message}`);
+    }
+
+    if (res.status === 404 && allowNotFound) {
+      return null;
     }
 
     if (!res.ok) {
@@ -105,6 +110,9 @@ export default class CloudflareClient {
    * @param {object} [opts]
    * @param {string}  [opts.compatibilityDate]
    * @param {boolean} [opts.observability] - Enable Workers Logs (default: true)
+   * @param {boolean} [opts.overwrite=false] - Allow replacing an existing script. When false a
+   *   GET existence check is performed before upload. This guard is best-effort and not atomic —
+   *   a concurrent deploy could create the script between the check and the PUT.
    * @returns {Promise<object>}
    */
   async deployWorkerScript(accountId, scriptName, scriptContent, bindings = [], opts = {}) {
@@ -121,7 +129,12 @@ export default class CloudflareClient {
     const {
       compatibilityDate = '2025-01-01',
       observability = true,
+      overwrite = false,
     } = opts;
+
+    if (!overwrite && await this.#workerExists(accountId, scriptName)) {
+      throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
+    }
 
     const metadata = {
       main_module: 'worker.js',
@@ -168,6 +181,15 @@ export default class CloudflareClient {
     });
   }
 
+  async #workerExists(accountId, scriptName) {
+    // Cloudflare Workers Scripts API supports GET/PUT on this path, not HEAD (returns 405).
+    const result = await this.#cfFetch(
+      `/accounts/${accountId}/workers/scripts/${scriptName}`,
+      { method: 'GET', allowNotFound: true },
+    );
+    return result !== null;
+  }
+
   /**
    * Lists active Cloudflare zones accessible with the current token.
    *
@@ -177,11 +199,13 @@ export default class CloudflareClient {
    * @param {object} [options]
    * @param {number} [options.page=1] - 1-based page number
    * @param {number} [options.perPage=50] - results per page
+   * @param {string} [options.accountId] - restrict results to a specific account
    * @returns {Promise<Array<{id: string, name: string}>>}
    */
-  async listZones({ page = 1, perPage = 50 } = {}) {
+  async listZones({ page = 1, perPage = 50, accountId } = {}) {
     this.log.info('Listing Cloudflare zones');
-    return this.#cfFetch(`/zones?page=${page}&per_page=${perPage}&status=active`);
+    const accountFilter = hasText(accountId) ? `&account.id=${encodeURIComponent(accountId)}` : '';
+    return this.#cfFetch(`/zones?page=${page}&per_page=${perPage}&status=active${accountFilter}`);
   }
 
   /**

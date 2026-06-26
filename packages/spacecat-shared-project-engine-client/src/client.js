@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+// @ts-check
+
 import createClient from 'openapi-fetch';
 import { createRetryingFetch, toTokenGetter } from './internal.js';
 

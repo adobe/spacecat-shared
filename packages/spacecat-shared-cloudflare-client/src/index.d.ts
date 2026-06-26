@@ -66,7 +66,7 @@ export default class CloudflareClient {
     scriptContent: string,
     bindings?: WorkerBinding[],
     opts?: DeployOptions,
-  ): Promise<object>;
+  ): Promise<object | null>;
 
   setWorkerSecret(
     accountId: string,

@@ -105,12 +105,12 @@ export default class CloudflareClient {
    * @param {object} [opts]
    * @param {string}  [opts.compatibilityDate]
    * @param {boolean} [opts.observability] - Enable Workers Logs (default: true)
-   * @param {boolean} [opts.overwrite=false] - Allow replacing an existing script. When false a
-   *   list-based existence check is performed before upload. This guard is best-effort and not
-   *   atomic — a concurrent deploy could create the script between the check and the PUT.
-   * @param {string[]} [opts.tags] - Tags to attach to the Worker script. When provided and the
-   *   script already exists, deploy is only blocked if no tag overlaps (ownership check).
-   * @returns {Promise<object>}
+   * @param {boolean} [opts.overwrite=false] - Bypass all existence checks and always upload.
+   * @param {string[]} [opts.tags] - Tags to attach to the Worker script. When provided:
+   *   script exists with a matching tag → silently skip (idempotent);
+   *   script exists without a matching tag → error (different owner);
+   *   script does not exist → deploy.
+   * @returns {Promise<object|null>} - null when the deploy was skipped
    */
   async deployWorkerScript(accountId, scriptName, scriptContent, bindings = [], opts = {}) {
     if (!hasText(accountId)) {
@@ -130,8 +130,23 @@ export default class CloudflareClient {
       tags,
     } = opts;
 
-    if (!overwrite && await this.#isDeployBlocked(accountId, scriptName, tags)) {
-      throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
+    if (!overwrite) {
+      if (Array.isArray(tags) && tags.length > 0) {
+        const ownedWorkers = await this.#listWorkers(accountId, { tags });
+        if (ownedWorkers.find((w) => w.id === scriptName)) {
+          this.log.info(`Worker script '${scriptName}' already deployed with a matching tag — skipping`);
+          return null;
+        }
+        const unownedWorkers = await this.#listWorkers(accountId, { tags, tagsAllowed: false });
+        if (unownedWorkers.find((w) => w.id === scriptName)) {
+          throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
+        }
+      } else {
+        const workers = await this.#listWorkers(accountId);
+        if (workers.find((w) => w.id === scriptName)) {
+          throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
+        }
+      }
     }
 
     const metadata = {
@@ -180,26 +195,15 @@ export default class CloudflareClient {
     });
   }
 
-  async #listWorkers(accountId, { page = 1, perPage = 50, tags } = {}) {
+  async #listWorkers(accountId, {
+    page = 1, perPage = 50, tags, tagsAllowed = true,
+  } = {}) {
     const tagFilter = Array.isArray(tags) && tags.length > 0
-      ? `&tags=${tags.map((t) => `${encodeURIComponent(t)}:no`).join(',')}`
+      ? `&tags=${tags.map((t) => `${encodeURIComponent(t)}:${tagsAllowed ? 'yes' : 'no'}`).join(',')}`
       : '';
     return this.#cfFetch(
       `/accounts/${accountId}/workers/scripts?page=${page}&per_page=${perPage}${tagFilter}`,
     );
-  }
-
-  // Returns true when the deploy should be blocked.
-  // With tags: query with tag:no — returns workers that do NOT have our tags. If the script
-  // appears there it exists under a different owner → block. If absent, it either has our tag
-  // or doesn't exist at all — both allow the deploy. Single API call.
-  // Without tags: blocked whenever the script already exists.
-  async #isDeployBlocked(accountId, scriptName, tags) {
-    const workers = await this.#listWorkers(
-      accountId,
-      Array.isArray(tags) && tags.length > 0 ? { tags } : {},
-    );
-    return !!workers.find((w) => w.id === scriptName);
   }
 
   /**

@@ -53,6 +53,15 @@ info:
 #      swagger's AISettings schema omits it, so a typed fixture/handler that populates it fails
 #      tsc. Add it (string) so the type, the factory, and the live API agree. Remove if Semrush
 #      adds the field upstream.
+# CR10 Add `primary_url` + `root_domain` to model.AIOBenchmarkWithCounters. The live benchmarks
+#      list returns both alongside the already-present `project_id` (verified 2026-06-25 against
+#      prod) — same pattern as CR9 — but the vendored swagger omits them. Add them (string).
+#      Remove if Semrush adds the fields upstream.
+#
+# Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
+# nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
+# spec that makes a correction stale or redundant fails CI. `npm run spec:overlay` likewise
+# exits non-zero on a stale (0-match) correction.
 actions:
   # ── CR1: Add GET /v1/ai_models ──────────────────────────────────────────
   # Live: 200 -> { page:int, total:int, items:[AIModelResponse] }.

@@ -21,7 +21,9 @@ export interface Preflight extends BaseModel {
     getUrl(): string;
     getStatus(): string;
     getCreatedBy(): { email: string; displayName?: string };
-    getEndedAt(): string | null;
+    // `string | undefined` (not `| null`) because normalizeModelValue maps
+    // DB NULL → undefined on read — see AsyncJob/index.d.ts header.
+    getEndedAt(): string | undefined;
 
     setUrl(url: string): Preflight;
     setStatus(status: 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED'): Preflight;

@@ -6072,7 +6072,7 @@ export interface components {
             skills?: string[];
         };
         "handlers.WorkspaceCheckResponse": {
-            status?: string;
+            status: string;
         };
         /** @description A connection for a particular workspace */
         "handlers.WorkspaceConnection": {
@@ -7028,7 +7028,7 @@ export interface components {
             created_at?: string;
             expires_at?: string;
             icon?: string;
-            id?: string;
+            id: string;
             is_admin?: boolean;
             is_master?: boolean;
             keywords_count?: number;
@@ -7042,9 +7042,9 @@ export interface components {
             products?: components["schemas"]["page-engine-backend_internal_usermanager_core_domain.ProductID"][];
             published_projects_count?: number;
             role?: string;
-            status?: string;
+            status: string;
             subscription_tier?: components["schemas"]["page-engine-backend_internal_usermanager_core_domain.Tier"];
-            title?: string;
+            title: string;
             users?: number;
         };
         "handlers.workspaceSettings": {
@@ -24353,7 +24353,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["page-engine-backend_internal_usermanager_core_domain.WorkspaceResourcesV2"];
+                    "application/json": components["schemas"]["handlers.workspaceResponse"];
                 };
             };
             /** @description Unauthorized */

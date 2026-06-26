@@ -233,6 +233,19 @@ describe('createRetryingFetch onRetry hook', () => {
       process.removeListener('unhandledRejection', onUnhandled);
     }
   });
+
+  it('only sinks a native Promise return (a non-Promise thenable is left untouched)', async () => {
+    const base = sandbox.stub();
+    base.onCall(0).resolves(resp(503));
+    base.onCall(1).resolves(resp(200));
+    // The guard is `result instanceof Promise`, not a duck-typed `.catch` check: a thenable that
+    // is NOT a Promise must be ignored, so its `.catch` is never invoked.
+    const thenable = { catch: sandbox.spy() };
+    const onRetry = () => thenable;
+    const res = await createRetryingFetch(base, 2, 0, onRetry)('https://x', { method: 'GET' });
+    expect(res.status).to.equal(200);
+    expect(thenable.catch.called).to.equal(false);
+  });
 });
 
 describe('parseRetryAfterMs', () => {

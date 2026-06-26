@@ -554,68 +554,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/workspaces/{id}/projects/{project_id}/aio/init_status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Check whether an AIO project is initialized
-         * @description Check whether AIO project initialization has finished for workspace and project with given IDs.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Workspace ID */
-                    id: string;
-                    /** @description Project ID */
-                    project_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["model.AIOProjectInitializedResponse"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["http_server.BasicResponse"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["http_server.BasicResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/workspaces/{id}/projects/{project_id}/apply_interactive_ignore_issue_rules/{crawl_configuration_id}": {
         parameters: {
             query?: never;
@@ -1644,6 +1582,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/workspaces/{id}/projects/{project_id}/aio/init_status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * AIO project initialization status
+         * @description Check whether AIO project initialization has finished for the workspace and project.
+         */
+        get: operations["aio-get-project-init-status-v2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1661,7 +1619,7 @@ export interface components {
         };
         "model.AIModelResponse": {
             icon?: string;
-            id?: string;
+            id: string;
             key?: string;
             name?: string;
         };
@@ -1678,12 +1636,14 @@ export interface components {
             color?: string;
             domain?: string;
             favorite?: boolean;
-            id?: string;
+            id: string;
             main_brand?: boolean;
             product_names?: string[];
             products_count?: number;
             project_id?: string;
             rejected_brand_aliases?: string[];
+            primary_url?: string;
+            root_domain?: string;
         };
         "model.AIOProduct": {
             aliases?: string[];
@@ -1700,10 +1660,10 @@ export interface components {
             initialized?: boolean;
         };
         "model.AIOPromptWithStatus": {
-            id?: string;
+            id: string;
             is_new?: boolean;
-            name?: string;
-            tags?: components["schemas"]["model.AIOTag"][];
+            name: string;
+            tags: components["schemas"]["model.AIOTag"][];
         };
         "model.AIOPromptsListRequest": {
             limit?: number;
@@ -1754,6 +1714,7 @@ export interface components {
             products_count?: number;
             prompts_count?: number;
             segments_count?: number;
+            primary_url?: string;
         };
         "model.AdvancedCrawlingConsentRequest": {
             accepted: boolean;
@@ -1787,7 +1748,7 @@ export interface components {
         "model.BrandURL": {
             benchmark_id?: string;
             created_at?: string;
-            id?: string;
+            id: string;
             project_id?: string;
             type?: string;
             updated_at?: string;
@@ -2145,9 +2106,9 @@ export interface components {
             total?: number;
         };
         "model.ProjectAIModelResponse": {
-            id?: string;
-            model?: components["schemas"]["model.AIModelResponse"];
-            prompts_count?: number;
+            id: string;
+            model: components["schemas"]["model.AIModelResponse"];
+            prompts_count: number;
         };
         "model.ProjectListResponse": {
             items?: components["schemas"]["model.ProjectResponse"][];
@@ -2193,10 +2154,10 @@ export interface components {
             domain?: string;
             draft_id?: string;
             favourite?: boolean;
-            id?: string;
+            id: string;
             is_draft?: boolean;
             live_id?: string;
-            name?: string;
+            name: string;
             /** @description enum: draft, publishing, initial_publish_failed, live, live_with_unpublished_updates */
             publish_status?: string;
             published_at?: string;
@@ -6561,8 +6522,8 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["model.CreateProjectAIModelRequest"];
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8057,7 +8018,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["model.TreeNodeResponse"];
+                    "application/json": components["schemas"]["model.TreeNodeResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -8357,6 +8318,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["model.AIModelListResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-get-project-init-status-v2": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.AIOProjectInitializedResponse"];
                 };
             };
             /** @description Unauthorized */

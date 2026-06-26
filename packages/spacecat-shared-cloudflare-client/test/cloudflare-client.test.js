@@ -265,7 +265,7 @@ describe('CloudflareClient', () => {
     it('throws by default when the script already exists', async () => {
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
-        .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
+        .reply(200, { success: true, result: [{ script_name: SCRIPT_NAME }] });
 
       await expect(
         client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
@@ -277,6 +277,19 @@ describe('CloudflareClient', () => {
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
         .reply(200, { success: true, result: [] });
+      nock(CF_API_BASE)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .reply(200, { success: true, result });
+
+      const res = await client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}');
+      expect(res).to.deep.equal(result);
+    });
+
+    it('deploys when search returns a null result', async () => {
+      const result = { id: SCRIPT_NAME, etag: 'abc123' };
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
+        .reply(200, { success: true, result: null });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
         .reply(200, { success: true, result });
@@ -357,7 +370,7 @@ describe('CloudflareClient', () => {
       // search → found; script-settings → has our tag → skip
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
-        .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
+        .reply(200, { success: true, result: [{ script_name: SCRIPT_NAME }] });
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}/script-settings`)
         .reply(200, { success: true, result: { tags: ['createdBy=adobe'] } });
@@ -373,7 +386,7 @@ describe('CloudflareClient', () => {
       // search → found; script-settings → no matching tag → error
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
-        .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
+        .reply(200, { success: true, result: [{ script_name: SCRIPT_NAME }] });
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}/script-settings`)
         .reply(200, { success: true, result: { tags: ['createdBy=other'] } });

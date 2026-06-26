@@ -1779,6 +1779,89 @@ export async function planEdgeOptimizeDeploy(
   return { canProceed, blocker, steps };
 }
 
+/**
+ * Per-request CloudFront control-plane client initialized with short-lived AWS credentials.
+ *
+ * This is a light wrapper over the free functions below: callers still assume the customer
+ * connector role per request, then create one client instance for that customer's operation.
+ */
+export class CloudFrontEdgeOptimizeClient {
+  constructor({ credentials, region = EDGE_OPTIMIZE_REGION } = {}) {
+    if (!credentials) {
+      throw new Error('credentials are required');
+    }
+    this.credentials = credentials;
+    this.region = region;
+  }
+
+  listDistributions() {
+    return listCloudFrontDistributions(this.credentials, this.region);
+  }
+
+  getDistributionConfig(distributionId) {
+    return getDistributionConfig(this.credentials, distributionId, this.region);
+  }
+
+  createOrigin(distributionId, originDomain, headers) {
+    return createEdgeOptimizeOrigin(
+      this.credentials,
+      distributionId,
+      originDomain,
+      headers,
+      this.region,
+    );
+  }
+
+  createCloudFrontFunction(defaultOriginId, distributionId, targetedPaths = null) {
+    return createEdgeOptimizeRoutingFunction(
+      this.credentials,
+      defaultOriginId,
+      distributionId,
+      targetedPaths,
+      this.region,
+    );
+  }
+
+  updateCacheSettings(distributionId, pathPattern, opts = {}) {
+    return applyEdgeOptimizeCacheHeaders(
+      this.credentials,
+      distributionId,
+      pathPattern,
+      { ...opts, region: opts.region || this.region },
+    );
+  }
+
+  createLambdaAtEdge(accountId, opts = {}) {
+    return createEdgeOptimizeLambda(
+      this.credentials,
+      accountId,
+      { ...opts, region: opts.region || this.region },
+    );
+  }
+
+  getLambdaAtEdgeStatus(distributionId) {
+    return getEdgeOptimizeLambdaStatus(this.credentials, distributionId, this.region);
+  }
+
+  applyAssociations(distributionId, pathPattern, lambdaVersionArn) {
+    return applyEdgeOptimizeAssociations(
+      this.credentials,
+      distributionId,
+      pathPattern,
+      lambdaVersionArn,
+      this.region,
+    );
+  }
+
+  runDeployStep(params) {
+    return runEdgeOptimizeDeployStep(this.credentials, params, this.region);
+  }
+
+  planDeploy(params) {
+    return planEdgeOptimizeDeploy(this.credentials, params, this.region);
+  }
+}
+
 // Primary AWS-style public surface. The original Edge Optimize-prefixed function names
 // remain exported above for backwards compatibility.
 export const listDistributions = listCloudFrontDistributions;

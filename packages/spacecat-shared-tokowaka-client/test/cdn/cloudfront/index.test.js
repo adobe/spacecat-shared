@@ -358,6 +358,37 @@ describe('edge-optimize support', () => {
     });
   });
 
+  describe('CloudFrontEdgeOptimizeClient', () => {
+    it('requires credentials', () => {
+      expect(() => new edgeOptimize.CloudFrontEdgeOptimizeClient()).to.throw('credentials are required');
+    });
+
+    it('stores credentials once and delegates through generic methods', async () => {
+      cfSendStub.resolves({
+        DistributionList: {
+          Items: [{
+            Id: 'E123',
+            DomainName: 'd.cloudfront.net',
+            Status: 'Deployed',
+            Enabled: true,
+          }],
+        },
+      });
+      const credentials = { accessKeyId: 'A', secretAccessKey: 'S', sessionToken: 'T' };
+      const client = new edgeOptimize.CloudFrontEdgeOptimizeClient({
+        credentials,
+        region: 'us-west-2',
+      });
+
+      const result = await client.listDistributions();
+
+      expect(client.credentials).to.equal(credentials);
+      expect(client.region).to.equal('us-west-2');
+      expect(result.map((d) => d.id)).to.deep.equal(['E123']);
+      expect(cfSendStub.calledOnce).to.equal(true);
+    });
+  });
+
   describe('createEdgeOptimizeOrigin', () => {
     it('adds the Edge Optimize origin when it does not exist', async () => {
       cfSendStub.onFirstCall().resolves({

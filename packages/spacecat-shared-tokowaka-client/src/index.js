@@ -65,6 +65,7 @@ export {
   verifyRouting,
   runDeployStep,
   planDeploy,
+  CloudFrontEdgeOptimizeClient,
   // Backwards-compatible Edge Optimize-prefixed aliases.
   listCloudFrontDistributions,
   createEdgeOptimizeOrigin,

@@ -351,6 +351,62 @@ export function planDeploy(
   region?: string,
 ): Promise<{ canProceed: boolean; blocker: string | null; steps: EdgeOptimizeStep[] }>;
 
+export interface CloudFrontEdgeOptimizeClientOptions {
+  credentials: AWSCredentials;
+  region?: string;
+}
+
+/**
+ * CloudFront control-plane client initialized with short-lived AWS credentials.
+ */
+export class CloudFrontEdgeOptimizeClient {
+  constructor(options: CloudFrontEdgeOptimizeClientOptions);
+
+  listDistributions(): ReturnType<typeof listDistributions>;
+
+  getDistributionConfig(distributionId: string): ReturnType<typeof getDistributionConfig>;
+
+  createOrigin(
+    distributionId: string,
+    originDomain?: string,
+    headers?: { apiKey?: string; forwardedHost?: string; fetcherKey?: string },
+  ): ReturnType<typeof createOrigin>;
+
+  createCloudFrontFunction(
+    defaultOriginId: string,
+    distributionId: string,
+    targetedPaths?: string[] | null,
+  ): ReturnType<typeof createCloudFrontFunction>;
+
+  updateCacheSettings(
+    distributionId: string,
+    pathPattern: string,
+    opts?: { setMinTTLZero?: boolean; region?: string },
+  ): ReturnType<typeof updateCacheSettings>;
+
+  createLambdaAtEdge(
+    accountId: string,
+    opts?: {
+      region?: string;
+      distributionId?: string;
+      originDomain?: string;
+      retryDelayMs?: number;
+    },
+  ): ReturnType<typeof createLambdaAtEdge>;
+
+  getLambdaAtEdgeStatus(distributionId: string): ReturnType<typeof getLambdaAtEdgeStatus>;
+
+  applyAssociations(
+    distributionId: string,
+    pathPattern: string,
+    lambdaVersionArn: string,
+  ): ReturnType<typeof applyAssociations>;
+
+  runDeployStep(params: Parameters<typeof runDeployStep>[1]): ReturnType<typeof runDeployStep>;
+
+  planDeploy(params: Parameters<typeof planDeploy>[1]): ReturnType<typeof planDeploy>;
+}
+
 /** @deprecated Use {@link listDistributions}. */
 export const listCloudFrontDistributions: typeof listDistributions;
 /** @deprecated Use {@link createOrigin}. */

@@ -305,7 +305,7 @@ export function applyEdgeOptimizeAssociations(
   pathPattern: string,
   lambdaVersionArn: string,
   region?: string,
-): Promise<{ cfFunctionArn: string; lambdaArn: string }>;
+): Promise<{ cloudFrontFunctionArn: string; lambdaArn: string }>;
 
 /**
  * Verify Edge Optimize routing end-to-end by probing as a bot and as a human.

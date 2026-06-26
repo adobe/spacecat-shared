@@ -1578,7 +1578,7 @@ describe('edge-optimize support', () => {
 
       const result = await edgeOptimize.applyEdgeOptimizeAssociations({}, 'E2EXAMPLE', 'default', lambdaArn);
 
-      expect(result).to.deep.equal({ cfFunctionArn: 'arn:cf-fn', lambdaArn });
+      expect(result).to.deep.equal({ cloudFrontFunctionArn: 'arn:cf-fn', lambdaArn });
       const update = cfSendStub.thirdCall.args[0];
       expect(update.commandName).to.equal('UpdateDistribution');
       const behavior = update.input.DistributionConfig.DefaultCacheBehavior;

@@ -1087,7 +1087,7 @@ function findEdgeOptimizeAssociationConflict(behavior, pathPattern) {
  * @param {string} pathPattern - the behavior to wire (`default` for the default behavior).
  * @param {string} lambdaVersionArn - the published, versioned Lambda@Edge ARN.
  * @param {string} [region] - CloudFront control-plane region.
- * @returns {Promise<{cfFunctionArn: string, lambdaArn: string}>}
+ * @returns {Promise<{cloudFrontFunctionArn: string, lambdaArn: string}>}
  */
 export async function applyEdgeOptimizeAssociations(
   credentials,
@@ -1112,8 +1112,8 @@ export async function applyEdgeOptimizeAssociations(
     Name: functionName,
     Stage: 'LIVE',
   }));
-  const cfFunctionArn = fnResult.FunctionSummary?.FunctionMetadata?.FunctionARN;
-  if (!cfFunctionArn) {
+  const cloudFrontFunctionArn = fnResult.FunctionSummary?.FunctionMetadata?.FunctionARN;
+  if (!cloudFrontFunctionArn) {
     throw new Error(`CloudFront function '${functionName}' not found or not published to LIVE`);
   }
 
@@ -1135,7 +1135,7 @@ export async function applyEdgeOptimizeAssociations(
   const existingLambdas = behavior.LambdaFunctionAssociations?.Items || [];
   const mergedFns = [
     ...existingFns.filter((a) => a.EventType !== 'viewer-request'),
-    { FunctionARN: cfFunctionArn, EventType: 'viewer-request' },
+    { FunctionARN: cloudFrontFunctionArn, EventType: 'viewer-request' },
   ];
   const mergedLambdas = [
     ...existingLambdas.filter(
@@ -1153,7 +1153,7 @@ export async function applyEdgeOptimizeAssociations(
     DistributionConfig: config,
   }));
 
-  return { cfFunctionArn, lambdaArn: lambdaVersionArn };
+  return { cloudFrontFunctionArn, lambdaArn: lambdaVersionArn };
 }
 
 // Bounded per-probe timeout for the verify fetches. 20s is generous enough for a slow/cold

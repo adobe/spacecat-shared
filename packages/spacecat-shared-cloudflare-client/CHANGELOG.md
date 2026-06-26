@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloudflare-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloudflare-client-v1.1.0...@adobe/spacecat-shared-cloudflare-client-v1.1.1) (2026-06-26)
+
+### Bug Fixes
+
+* **cloudflare-client:** use GET for worker existence check before deploy ([#1736](https://github.com/adobe/spacecat-shared/issues/1736)) ([c9928d8](https://github.com/adobe/spacecat-shared/commit/c9928d8c03382cde7c5a01479ca1843c971200b7))
+
 ## [@adobe/spacecat-shared-cloudflare-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloudflare-client-v1.0.0...@adobe/spacecat-shared-cloudflare-client-v1.1.0) (2026-06-26)
 
 ### Features

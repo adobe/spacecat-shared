@@ -46,23 +46,32 @@ export default class CloudflareClient {
   }
 
   async #cfFetch(path, options = {}) {
+    const { allowNotFound = false, ...fetchOptions } = options;
     const url = `${this.apiBase}${path}`;
     let res;
     try {
       res = await fetch(url, {
-        ...options,
+        ...fetchOptions,
         headers: {
           Authorization: `Bearer ${this.#token}`,
-          ...options.headers,
+          ...fetchOptions.headers,
         },
       });
     } catch (e) {
       throw new Error(`Cloudflare API request to ${path} failed: ${e.message}`);
     }
 
+    if (res.status === 404 && allowNotFound) {
+      return null;
+    }
+
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new Error(`Cloudflare API returned ${res.status} on ${path}: ${text.slice(0, 200)}`);
+    }
+
+    if (fetchOptions.method === 'HEAD') {
+      return true;
     }
 
     let body;
@@ -105,6 +114,9 @@ export default class CloudflareClient {
    * @param {object} [opts]
    * @param {string}  [opts.compatibilityDate]
    * @param {boolean} [opts.observability] - Enable Workers Logs (default: true)
+   * @param {boolean} [opts.overwrite=false] - Allow replacing an existing script. When false a
+   *   HEAD existence check is performed before upload. This guard is best-effort and not atomic —
+   *   a concurrent deploy could create the script between the check and the PUT.
    * @returns {Promise<object>}
    */
   async deployWorkerScript(accountId, scriptName, scriptContent, bindings = [], opts = {}) {
@@ -174,24 +186,11 @@ export default class CloudflareClient {
   }
 
   async #workerExists(accountId, scriptName) {
-    const path = `/accounts/${accountId}/workers/scripts/${scriptName}`;
-    const url = `${this.apiBase}${path}`;
-    let res;
-    try {
-      res = await fetch(url, {
-        headers: { Authorization: `Bearer ${this.#token}` },
-      });
-    } catch (e) {
-      throw new Error(`Cloudflare API request to ${path} failed: ${e.message}`);
-    }
-    if (res.status === 404) {
-      return false;
-    }
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error(`Cloudflare API returned ${res.status} on ${path}: ${text.slice(0, 200)}`);
-    }
-    return true;
+    const result = await this.#cfFetch(
+      `/accounts/${accountId}/workers/scripts/${scriptName}`,
+      { method: 'HEAD', allowNotFound: true },
+    );
+    return result !== null;
   }
 
   /**
@@ -208,7 +207,7 @@ export default class CloudflareClient {
    */
   async listZones({ page = 1, perPage = 50, accountId } = {}) {
     this.log.info('Listing Cloudflare zones');
-    const accountFilter = hasText(accountId) ? `&account.id=${accountId}` : '';
+    const accountFilter = hasText(accountId) ? `&account.id=${encodeURIComponent(accountId)}` : '';
     return this.#cfFetch(`/zones?page=${page}&per_page=${perPage}&status=active${accountFilter}`);
   }
 

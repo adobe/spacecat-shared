@@ -1,7 +1,9 @@
 # Project Engine mock — usage manual (humans & agents)
 
 A single, complete guide to running and driving the stateful Semrush **Project Engine** mock in
-this package. For the design rationale see [`mock-statefulness.md`](./mock-statefulness.md).
+this package. For the design rationale see [`mock-statefulness.md`](./mock-statefulness.md). To run
+the mock as a containerized HTTPS service for a cross-repo e2e suite (e.g. spacecat-api-service),
+see [`mock-docker.md`](./mock-docker.md).
 
 > **Scope.** This mock emulates the **Project Engine API** only (the `/enterprise/projects/api`
 > gateway — projects, AI models, prompts, benchmarks, brand URLs, tags, catalogs, publish). The

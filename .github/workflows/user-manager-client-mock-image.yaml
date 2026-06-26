@@ -1,0 +1,91 @@
+name: User Manager Client Mock Image
+
+# Build + push the runnable mock image to GHCR when @adobe/spacecat-shared-user-manager-client
+# releases.
+#
+# semantic-release-monorepo tags each release `@adobe/spacecat-shared-user-manager-client-vX.Y.Z`.
+# That tag is pushed by main.yaml's release job using the ADOBE_BOT_GITHUB_TOKEN PAT which — unlike
+# the default GITHUB_TOKEN — DOES trigger downstream workflows, so keying off the tag fires this
+# build exactly once per release and pins the image version to the published npm version.
+#
+# Deliberately separate from main.yaml (mirroring user-manager-mock-e2e.yaml): main.yaml carries
+# the npm Trusted Publisher binding, and an image-build failure must never be able to touch the npm
+# release/publish path. This workflow never publishes to npm and has no npm/OIDC auth.
+permissions: {}
+
+on:
+  push:
+    tags:
+      - '@adobe/spacecat-shared-user-manager-client-v*'
+  # Manual rebuild for a specific already-published version (incident recovery / first publish).
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build, e.g. 1.2.0 (no leading v)'
+        required: true
+
+concurrency:
+  # Serialize per ref; never cancel an in-flight push (a half-pushed manifest is worse than a wait).
+  group: user-manager-client-mock-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-push:
+    name: Build & push mock image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write   # push to ghcr.io/adobe/spacecat-shared-user-manager-client-mock
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: 'false'
+
+      - name: Resolve version
+        id: ver
+        shell: bash
+        # All ${{ }} values are passed via env (never inlined into the script body) so neither a
+        # workflow_dispatch input nor any GitHub-context value can be interpolated as shell.
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            # Strip the package-name tag prefix: @adobe/…-client-v1.2.0 -> 1.2.0
+            VERSION="${GITHUB_REF_NAME##*-v}"
+          fi
+          # Anchored both ends: the image tag must be exactly X.Y.Z — reject any trailing junk
+          # (a malformed tag or pre-release suffix) rather than minting a surprising image tag.
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "FAIL: could not parse a semver from '${GITHUB_REF_NAME:-$VERSION}'"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building image version $VERSION"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: packages/spacecat-shared-user-manager-client
+          push: true
+          tags: |
+            ghcr.io/adobe/spacecat-shared-user-manager-client-mock:${{ steps.ver.outputs.version }}
+            ghcr.io/adobe/spacecat-shared-user-manager-client-mock:latest
+          # Keep the manifest a plain image (no attestation manifest) so `services:`/`docker run`
+          # consumers pull a single platform cleanly.
+          provenance: false

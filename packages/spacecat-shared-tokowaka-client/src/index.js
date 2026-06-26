@@ -83,7 +83,7 @@ export {
   EDGE_OPTIMIZE_CACHE_POLICY_NAME,
   EDGE_OPTIMIZE_MIN_TTL_KEEP_THRESHOLD,
   EDGE_OPTIMIZE_DEPLOY_STEPS,
-} from './edge-optimize/index.js';
+} from './cdn/cloudfront/index.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;

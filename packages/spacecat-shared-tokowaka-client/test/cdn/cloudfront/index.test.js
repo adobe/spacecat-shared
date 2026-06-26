@@ -45,7 +45,7 @@ describe('edge-optimize support', () => {
       this.input = input;
       this.commandName = Name;
     };
-    edgeOptimize = await esmock('../../src/edge-optimize/index.js', {
+    edgeOptimize = await esmock('../../../src/cdn/cloudfront/index.js', {
       '@aws-sdk/client-sts': {
         STSClient: function STSClient() {
           this.send = (cmd) => stsSendStub(cmd);

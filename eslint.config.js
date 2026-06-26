@@ -22,6 +22,7 @@ export default defineConfig([
     'docs/*',
     '**/vendor/**',
     '**/dist/**',
+    '**/.counterfact/**',
     '**/.releaserc.cjs',
     '**/test/fixtures/**',
   ]),
@@ -65,6 +66,25 @@ export default defineConfig([
     rules: {
       'no-console': 'off',
       'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+    },
+  },
+  {
+    // E2E specs (*.e2e.js) live outside the default `npm test` glob, so they don't match
+    // the import rule's built-in `**/*.test.js` devDependency allowance — declare it here.
+    files: ['packages/**/test/**/*.e2e.js'],
+    rules: {
+      'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+    },
+  },
+  {
+    // Counterfact mock route handlers receive a single untyped `$` context object and routinely
+    // destructure only the fields a given method needs, so no-unused-vars would fire on the rest.
+    // Disable it here for the whole route tree rather than repeating an inline disable in every
+    // handler. (These handlers are also the documented `// @ts-check` exception — see
+    // packages/spacecat-shared-project-engine-client/CLAUDE.md.)
+    files: ['packages/spacecat-shared-project-engine-client/mock/counterfact/routes/**/*.js'],
+    rules: {
+      'no-unused-vars': 'off',
     },
   }
 ]);

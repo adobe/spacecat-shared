@@ -264,8 +264,8 @@ describe('CloudflareClient', () => {
 
     it('throws by default when the script already exists', async () => {
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
-        .reply(200, { success: true, result: { id: SCRIPT_NAME } });
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
 
       await expect(
         client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
@@ -275,8 +275,8 @@ describe('CloudflareClient', () => {
     it('deploys when script does not exist and overwrite is false', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
-        .reply(404);
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
         .reply(200, { success: true, result });
@@ -295,9 +295,9 @@ describe('CloudflareClient', () => {
       expect(res).to.deep.equal(result);
     });
 
-    it('throws when existence check returns a non-404 error status', async () => {
+    it('throws when the list API returns an error during existence check', async () => {
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
         .reply(403, 'Forbidden');
 
       await expect(
@@ -305,19 +305,9 @@ describe('CloudflareClient', () => {
       ).to.be.rejectedWith('Cloudflare API returned 403');
     });
 
-    it('throws when existence check returns 405 (HEAD is not supported on this endpoint)', async () => {
-      nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
-        .reply(405, 'Method Not Allowed');
-
-      await expect(
-        client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
-      ).to.be.rejectedWith('Cloudflare API returned 405');
-    });
-
     it('throws when existence check fetch itself fails', async () => {
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
         .replyWithError('ECONNREFUSED');
 
       await expect(
@@ -428,22 +418,6 @@ describe('CloudflareClient', () => {
         { tags: ['createdBy=adobe'] },
       );
       expect(res).to.deep.equal(result);
-    });
-
-    it('throws when worker list fetch fails during ownership check', async () => {
-      nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
-        .replyWithError('ECONNREFUSED');
-
-      await expect(
-        client.deployWorkerScript(
-          ACCOUNT_ID,
-          SCRIPT_NAME,
-          'export default {}',
-          [],
-          { tags: ['createdBy=adobe'] },
-        ),
-      ).to.be.rejectedWith('Cloudflare API request to /accounts');
     });
   });
 

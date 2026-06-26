@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloudflare-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloudflare-client-v1.0.0...@adobe/spacecat-shared-cloudflare-client-v1.1.0) (2026-06-26)
+
+### Features
+
+* **cloudflare-client:** add zone account filter and overwrite guard on deploy ([#1728](https://github.com/adobe/spacecat-shared/issues/1728)) ([6f8cbe6](https://github.com/adobe/spacecat-shared/commit/6f8cbe6556123980b20890aacddf20a8033990cc))
+
 ## @adobe/spacecat-shared-cloudflare-client-v1.0.0 (2026-06-25)
 
 ### Features

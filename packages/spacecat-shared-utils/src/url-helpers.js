@@ -513,30 +513,35 @@ function filterBySiteScope(urls, siteBaseUrl) {
 }
 
 /**
- * Extracts the pathname from a URL string, stripping trailing slashes on non-root paths.
- * The result is always lowercased. Falls back to the raw string (also lowercased) when
- * the URL is not parseable (e.g. invalid or relative). Returns '' for non-string input.
+ * Extracts the pathname from a domain-based URL string (e.g. 'https://example.com/path' or
+ * 'example.com/path'). Trailing slashes are stripped on non-root paths and the result is
+ * lowercased. Inputs that already start with '/' are passed through as-is. Returns '' for
+ * non-string or empty input.
  *
- * @param {string} url
- * @returns {string} pathname, or the original string on parse failure, or '' for non-strings
+ * @param {string} url - Domain-based URL, with or without schema, or a leading-slash path.
+ * @returns {string} Normalized pathname, or the input unchanged for leading-slash paths.
  */
 export function toPathname(url) {
   if (!url || typeof url !== 'string') {
     return '';
   }
   try {
-    const { pathname } = new URL(url);
-    return pathname === '/' ? pathname : pathname.replace(/\/$/, '').toLowerCase();
+    if (url.startsWith('/')) {
+      return url;
+    }
+    const { pathname } = new URL(prependSchema(url));
+    return normalizePathname(pathname).toLowerCase();
   } catch {
     return url.toLowerCase();
   }
 }
 
 /**
- * Checks whether two URLs share the same normalized pathname.
- * Comparison is case-insensitive and ignores trailing slashes on non-root paths.
- * @param {string} url - URL to compare.
- * @param {string} referenceUrl - URL to compare against.
+ * Checks whether two domain-based URLs share the same normalized pathname.
+ * Both arguments must be domain-based URLs (with or without schema). Comparison is
+ * case-insensitive and ignores trailing slashes on non-root paths.
+ * @param {string} url - Domain-based URL to compare.
+ * @param {string} referenceUrl - Domain-based URL to compare against.
  * @returns {boolean} True if both URLs resolve to the same pathname.
  */
 export function hasSamePathname(url, referenceUrl) {
@@ -545,8 +550,9 @@ export function hasSamePathname(url, referenceUrl) {
 
 /**
  * Checks whether every URL in an array shares the same normalized pathname as a reference URL.
- * @param {string[]} urls - Array of URLs to check.
- * @param {string} referenceUrl - URL whose pathname all entries must match.
+ * All entries and the reference must be domain-based URLs (with or without schema).
+ * @param {string[]} urls - Array of domain-based URLs to check.
+ * @param {string} referenceUrl - Domain-based URL whose pathname all entries must match.
  * @returns {boolean} True if every URL in the array has the same pathname as referenceUrl.
  */
 export function allHaveSamePathname(urls, referenceUrl) {

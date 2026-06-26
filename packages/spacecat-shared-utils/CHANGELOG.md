@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.122.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.122.0...@adobe/spacecat-shared-utils-v1.122.1) (2026-06-26)
+
+### Bug Fixes
+
+* add schema-less URL support to pathname helpers ([#1727](https://github.com/adobe/spacecat-shared/issues/1727)) ([7e875a7](https://github.com/adobe/spacecat-shared/commit/7e875a7be924257ff66285df2539e8a195e55186))
+
 ## [@adobe/spacecat-shared-utils-v1.122.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.121.0...@adobe/spacecat-shared-utils-v1.122.0) (2026-06-25)
 
 ### Features

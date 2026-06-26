@@ -318,6 +318,10 @@ describe('CloudflareClient', () => {
     it('includes tags in the metadata when provided', async () => {
       const result = { id: SCRIPT_NAME };
       let capturedBody;
+      // tag-filtered existence check → not found → unfiltered check → not found → deploy
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe&tags=env%3Dprod`)
+        .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
         .reply(200, { success: true, result: [] });
@@ -360,8 +364,9 @@ describe('CloudflareClient', () => {
 
     it('deploys when script exists with a matching tag (ownership check passes)', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
+      // tag-filtered list returns the script → same owner → allow without a second call
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe`)
         .reply(200, {
           success: true,
           result: [{ id: SCRIPT_NAME, tags: ['createdBy=adobe'] }],
@@ -381,6 +386,11 @@ describe('CloudflareClient', () => {
     });
 
     it('throws when script exists with no matching tags (ownership check fails)', async () => {
+      // tag-filtered list: script not found (different owner)
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe`)
+        .reply(200, { success: true, result: [] });
+      // unfiltered list: script found → block
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
         .reply(200, {
@@ -401,8 +411,13 @@ describe('CloudflareClient', () => {
       );
     });
 
-    it('deploys when script does not exist in the list (tags provided)', async () => {
+    it('deploys when script does not exist in either list (tags provided)', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
+      // tag-filtered list: not found
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe`)
+        .reply(200, { success: true, result: [] });
+      // unfiltered list: not found → allow new deploy
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
         .reply(200, { success: true, result: [] });

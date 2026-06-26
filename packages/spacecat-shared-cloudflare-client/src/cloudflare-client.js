@@ -180,22 +180,29 @@ export default class CloudflareClient {
     });
   }
 
-  async #listWorkers(accountId, { page = 1, perPage = 50 } = {}) {
-    return this.#cfFetch(`/accounts/${accountId}/workers/scripts?page=${page}&per_page=${perPage}`);
+  async #listWorkers(accountId, { page = 1, perPage = 50, tags } = {}) {
+    const tagFilter = Array.isArray(tags) && tags.length > 0
+      ? tags.map((t) => `&tags=${encodeURIComponent(t)}`).join('')
+      : '';
+    return this.#cfFetch(
+      `/accounts/${accountId}/workers/scripts?page=${page}&per_page=${perPage}${tagFilter}`,
+    );
   }
 
   // Returns true when the deploy should be blocked.
-  // Blocked when the script exists AND no tag overlaps with the caller's tags (or no tags given).
+  // With tags: ask the API for workers matching our tags first — if the script is there,
+  // the same owner is redeploying → allow. If not, fall through to an unfiltered existence
+  // check; if it exists with no matching tag → block.
+  // Without tags: blocked whenever the script already exists.
   async #isDeployBlocked(accountId, scriptName, tags) {
-    const workers = await this.#listWorkers(accountId);
-    const existing = workers.find((w) => w.id === scriptName);
-    if (!existing) {
-      return false;
-    }
     if (Array.isArray(tags) && tags.length > 0) {
-      return !existing.tags?.some((t) => tags.includes(t));
+      const ownedWorkers = await this.#listWorkers(accountId, { tags });
+      if (ownedWorkers.find((w) => w.id === scriptName)) {
+        return false;
+      }
     }
-    return true;
+    const allWorkers = await this.#listWorkers(accountId);
+    return !!allWorkers.find((w) => w.id === scriptName);
   }
 
   /**

@@ -182,7 +182,7 @@ export default class CloudflareClient {
 
   async #listWorkers(accountId, { page = 1, perPage = 50, tags } = {}) {
     const tagFilter = Array.isArray(tags) && tags.length > 0
-      ? `&tags=${tags.map((t) => `${encodeURIComponent(t)}:yes`).join(',')}`
+      ? `&tags=${tags.map((t) => `${encodeURIComponent(t)}:no`).join(',')}`
       : '';
     return this.#cfFetch(
       `/accounts/${accountId}/workers/scripts?page=${page}&per_page=${perPage}${tagFilter}`,
@@ -190,19 +190,16 @@ export default class CloudflareClient {
   }
 
   // Returns true when the deploy should be blocked.
-  // With tags: ask the API for workers matching our tags first — if the script is there,
-  // the same owner is redeploying → allow. If not, fall through to an unfiltered existence
-  // check; if it exists with no matching tag → block.
+  // With tags: query with tag:no — returns workers that do NOT have our tags. If the script
+  // appears there it exists under a different owner → block. If absent, it either has our tag
+  // or doesn't exist at all — both allow the deploy. Single API call.
   // Without tags: blocked whenever the script already exists.
   async #isDeployBlocked(accountId, scriptName, tags) {
-    if (Array.isArray(tags) && tags.length > 0) {
-      const ownedWorkers = await this.#listWorkers(accountId, { tags });
-      if (ownedWorkers.find((w) => w.id === scriptName)) {
-        return false;
-      }
-    }
-    const allWorkers = await this.#listWorkers(accountId);
-    return !!allWorkers.find((w) => w.id === scriptName);
+    const workers = await this.#listWorkers(
+      accountId,
+      Array.isArray(tags) && tags.length > 0 ? { tags } : {},
+    );
+    return !!workers.find((w) => w.id === scriptName);
   }
 
   /**

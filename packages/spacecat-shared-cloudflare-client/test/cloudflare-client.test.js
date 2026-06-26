@@ -318,12 +318,9 @@ describe('CloudflareClient', () => {
     it('includes tags in the metadata when provided', async () => {
       const result = { id: SCRIPT_NAME };
       let capturedBody;
-      // tag-filtered existence check → not found → unfiltered check → not found → deploy
+      // tag:no check returns empty → script absent or owned by us → allow
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:yes,env%3Dprod:yes`)
-        .reply(200, { success: true, result: [] });
-      nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:no,env%3Dprod:no`)
         .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, (body) => {
@@ -364,13 +361,10 @@ describe('CloudflareClient', () => {
 
     it('deploys when script exists with a matching tag (ownership check passes)', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
-      // tag-filtered list returns the script → same owner → allow without a second call
+      // tag:no list is empty → script not found without our tag → allow (same owner or new)
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:yes`)
-        .reply(200, {
-          success: true,
-          result: [{ id: SCRIPT_NAME, tags: ['createdBy=adobe'] }],
-        });
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:no`)
+        .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
         .reply(200, { success: true, result });
@@ -386,13 +380,9 @@ describe('CloudflareClient', () => {
     });
 
     it('throws when script exists with no matching tags (ownership check fails)', async () => {
-      // tag-filtered list: script not found (different owner)
+      // tag:no list contains the script → it exists without our tag → block
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:yes`)
-        .reply(200, { success: true, result: [] });
-      // unfiltered list: script found → block
-      nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:no`)
         .reply(200, {
           success: true,
           result: [{ id: SCRIPT_NAME, tags: ['createdBy=other'] }],
@@ -411,15 +401,11 @@ describe('CloudflareClient', () => {
       );
     });
 
-    it('deploys when script does not exist in either list (tags provided)', async () => {
+    it('deploys when script does not exist (tags provided)', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
-      // tag-filtered list: not found
+      // tag:no list is empty → script doesn't exist → allow
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:yes`)
-        .reply(200, { success: true, result: [] });
-      // unfiltered list: not found → allow new deploy
-      nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50&tags=createdBy%3Dadobe:no`)
         .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)

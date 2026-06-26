@@ -121,7 +121,12 @@ export default class CloudflareClient {
     const {
       compatibilityDate = '2025-01-01',
       observability = true,
+      overwrite = false,
     } = opts;
+
+    if (!overwrite && await this.#workerExists(accountId, scriptName)) {
+      throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
+    }
 
     const metadata = {
       main_module: 'worker.js',
@@ -168,6 +173,27 @@ export default class CloudflareClient {
     });
   }
 
+  async #workerExists(accountId, scriptName) {
+    const path = `/accounts/${accountId}/workers/scripts/${scriptName}`;
+    const url = `${this.apiBase}${path}`;
+    let res;
+    try {
+      res = await fetch(url, {
+        headers: { Authorization: `Bearer ${this.#token}` },
+      });
+    } catch (e) {
+      throw new Error(`Cloudflare API request to ${path} failed: ${e.message}`);
+    }
+    if (res.status === 404) {
+      return false;
+    }
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Cloudflare API returned ${res.status} on ${path}: ${text.slice(0, 200)}`);
+    }
+    return true;
+  }
+
   /**
    * Lists active Cloudflare zones accessible with the current token.
    *
@@ -177,11 +203,13 @@ export default class CloudflareClient {
    * @param {object} [options]
    * @param {number} [options.page=1] - 1-based page number
    * @param {number} [options.perPage=50] - results per page
+   * @param {string} [options.accountId] - restrict results to a specific account
    * @returns {Promise<Array<{id: string, name: string}>>}
    */
-  async listZones({ page = 1, perPage = 50 } = {}) {
+  async listZones({ page = 1, perPage = 50, accountId } = {}) {
     this.log.info('Listing Cloudflare zones');
-    return this.#cfFetch(`/zones?page=${page}&per_page=${perPage}&status=active`);
+    const accountFilter = hasText(accountId) ? `&account.id=${accountId}` : '';
+    return this.#cfFetch(`/zones?page=${page}&per_page=${perPage}&status=active${accountFilter}`);
   }
 
   /**

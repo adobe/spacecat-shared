@@ -181,6 +181,7 @@ describe('CloudflareClient', () => {
         SCRIPT_NAME,
         'export default { async fetch(r) { return fetch(r); } }',
         [{ name: 'HOST', type: 'plain_text', text: 'example.com' }],
+        { overwrite: true },
       );
       expect(res).to.deep.equal(result);
       // Verify the multipart body carries the expected metadata, bindings and observability flag.
@@ -209,7 +210,7 @@ describe('CloudflareClient', () => {
         SCRIPT_NAME,
         'export default {}',
         [],
-        { observability: false },
+        { observability: false, overwrite: true },
       );
       expect(res).to.deep.equal(result);
       expect(capturedBody).to.not.contain('observability');
@@ -230,7 +231,7 @@ describe('CloudflareClient', () => {
         SCRIPT_NAME,
         'export default {}',
         [],
-        { compatibilityDate: '2024-06-01' },
+        { compatibilityDate: '2024-06-01', overwrite: true },
       );
       expect(res).to.deep.equal(result);
       expect(capturedBody).to.contain('"compatibility_date":"2024-06-01"');
@@ -257,8 +258,61 @@ describe('CloudflareClient', () => {
         .reply(200, { success: false, errors: [{ message: 'Script too large' }] });
 
       await expect(
-        client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
+        client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}', [], { overwrite: true }),
       ).to.be.rejectedWith('Script too large');
+    });
+
+    it('throws by default when the script already exists', async () => {
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .reply(200, 'export default {}');
+
+      await expect(
+        client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
+      ).to.be.rejectedWith(`Worker script '${SCRIPT_NAME}' already exists in account ${ACCOUNT_ID}`);
+    });
+
+    it('deploys when script does not exist and overwrite is false', async () => {
+      const result = { id: SCRIPT_NAME, etag: 'abc123' };
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .reply(404);
+      nock(CF_API_BASE)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .reply(200, { success: true, result });
+
+      const res = await client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}');
+      expect(res).to.deep.equal(result);
+    });
+
+    it('skips existence check and deploys when overwrite is true', async () => {
+      const result = { id: SCRIPT_NAME, etag: 'abc123' };
+      nock(CF_API_BASE)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .reply(200, { success: true, result });
+
+      const res = await client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}', [], { overwrite: true });
+      expect(res).to.deep.equal(result);
+    });
+
+    it('throws when existence check returns a non-404 error status', async () => {
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .reply(403, 'Forbidden');
+
+      await expect(
+        client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
+      ).to.be.rejectedWith('Cloudflare API returned 403');
+    });
+
+    it('throws when existence check fetch itself fails', async () => {
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .replyWithError('ECONNREFUSED');
+
+      await expect(
+        client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
+      ).to.be.rejectedWith('Cloudflare API request to /accounts');
     });
   });
 
@@ -325,6 +379,16 @@ describe('CloudflareClient', () => {
         .reply(200, { success: true, result });
 
       const zones = await client.listZones({ page: 2, perPage: 25 });
+      expect(zones).to.deep.equal(result);
+    });
+
+    it('filters by accountId when provided', async () => {
+      const result = [{ id: ZONE_ID, name: 'example.com' }];
+      nock(CF_API_BASE)
+        .get(`/zones?page=1&per_page=50&status=active&account.id=${ACCOUNT_ID}`)
+        .reply(200, { success: true, result });
+
+      const zones = await client.listZones({ accountId: ACCOUNT_ID });
       expect(zones).to.deep.equal(result);
     });
 

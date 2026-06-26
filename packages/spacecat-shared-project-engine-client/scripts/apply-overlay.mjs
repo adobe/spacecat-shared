@@ -14,7 +14,7 @@
  * Applies the OpenAPI Overlay in spec/overlays/corrections.yaml to the
  * swagger2openapi output build/openapi3.json, in place. The overlay is the single
  * source of truth for the corrections that align the vendored swagger with the
- * live API's actual behaviour (see that file for CR1-CR10); this script just
+ * live API's actual behaviour (see that file for the full CR list); this script just
  * executes it. The vendored spec/projectengine_swagger_public.yaml is never modified.
  *
  * It implements the subset of the Overlay spec the overlay uses — `update`
@@ -218,8 +218,10 @@ export function applyOverlay(spec, overlay) {
  * Returns a process exit code so the build fails loudly when a correction has gone stale: a
  * 0-match `remove` (`staleRemove`) means upstream may have caught up and the correction should be
  * pruned, so we exit 1. (A 0-match `update` throws from {@link applyAction} and aborts before any
- * write — also a hard failure.) Paths and the logger are injectable so the behaviour is testable
- * without spawning a subprocess; the defaults target this package's real build artefact.
+ * write — also a hard failure.) The overlaid spec is written back BEFORE the stale check, so a
+ * failed run still leaves the produced artefact on disk for local inspection. Paths and the logger
+ * are injectable so the behaviour is testable without spawning a subprocess; the defaults target
+ * this package's real build artefact.
  *
  * @param {object} [opts]
  * @param {string} [opts.specPath] OAS3 doc to overlay (default: build/openapi3.json)

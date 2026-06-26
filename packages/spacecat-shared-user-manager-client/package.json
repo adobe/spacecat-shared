@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-user-manager-client",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Shared modules of the Spacecat Services - Semrush User Manager client and generated types",
   "type": "module",
   "main": "src/index.js",

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloudflare-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloudflare-client-v1.1.1...@adobe/spacecat-shared-cloudflare-client-v1.2.0) (2026-06-26)
+
+### Features
+
+* **cloudflare-client:** tag-based ownership check in deployWorkerScript ([#1738](https://github.com/adobe/spacecat-shared/issues/1738)) ([3a79d06](https://github.com/adobe/spacecat-shared/commit/3a79d066aceeba0f5f4dfe372201e5c02bc8c39d))
+
 ## [@adobe/spacecat-shared-cloudflare-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloudflare-client-v1.1.0...@adobe/spacecat-shared-cloudflare-client-v1.1.1) (2026-06-26)
 
 ### Bug Fixes

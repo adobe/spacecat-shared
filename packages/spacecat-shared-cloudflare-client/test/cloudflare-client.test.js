@@ -272,6 +272,20 @@ describe('CloudflareClient', () => {
       ).to.be.rejectedWith(`Worker script '${SCRIPT_NAME}' already exists in account ${ACCOUNT_ID}`);
     });
 
+    it('paginates until all workers are found (no-tags path)', async () => {
+      const fullPage = Array.from({ length: 50 }, (_, i) => ({ id: `other-worker-${i}` }));
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .reply(200, { success: true, result: fullPage });
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=2&per_page=50`)
+        .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
+
+      await expect(
+        client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
+      ).to.be.rejectedWith(`Worker script '${SCRIPT_NAME}' already exists in account ${ACCOUNT_ID}`);
+    });
+
     it('deploys when script does not exist and overwrite is false', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
       nock(CF_API_BASE)

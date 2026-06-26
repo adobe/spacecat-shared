@@ -132,17 +132,17 @@ export default class CloudflareClient {
 
     if (!overwrite) {
       if (Array.isArray(tags) && tags.length > 0) {
-        const ownedWorkers = await this.#listWorkers(accountId, { tags });
+        const ownedWorkers = await this.#listAllWorkers(accountId, { tags });
         if (ownedWorkers.find((w) => w.id === scriptName)) {
           this.log.info(`Worker script '${scriptName}' already deployed with a matching tag — skipping`);
           return null;
         }
-        const unownedWorkers = await this.#listWorkers(accountId, { tags, tagsAllowed: false });
+        const unownedWorkers = await this.#listAllWorkers(accountId, { tags, tagsAllowed: false });
         if (unownedWorkers.find((w) => w.id === scriptName)) {
           throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
         }
       } else {
-        const workers = await this.#listWorkers(accountId);
+        const workers = await this.#listAllWorkers(accountId);
         if (workers.find((w) => w.id === scriptName)) {
           throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
         }
@@ -204,6 +204,20 @@ export default class CloudflareClient {
     return this.#cfFetch(
       `/accounts/${accountId}/workers/scripts?page=${page}&per_page=${perPage}${tagFilter}`,
     );
+  }
+
+  async #listAllWorkers(accountId, options = {}) {
+    const perPage = 50;
+    const results = [];
+    let page = 1;
+    let batch;
+    do {
+      // eslint-disable-next-line no-await-in-loop
+      batch = await this.#listWorkers(accountId, { ...options, page, perPage });
+      results.push(...batch);
+      page += 1;
+    } while (batch.length === perPage);
+    return results;
   }
 
   /**

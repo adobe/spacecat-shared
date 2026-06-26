@@ -113,6 +113,8 @@ export default class CloudflareClient {
    * @param {boolean} [opts.overwrite=false] - Allow replacing an existing script. When false a
    *   GET existence check is performed before upload. This guard is best-effort and not atomic —
    *   a concurrent deploy could create the script between the check and the PUT.
+   * @param {string[]} [opts.tags] - Tags to attach to the Worker script. When provided and the
+   *   script already exists, deploy is only blocked if no tag overlaps (ownership check).
    * @returns {Promise<object>}
    */
   async deployWorkerScript(accountId, scriptName, scriptContent, bindings = [], opts = {}) {
@@ -130,9 +132,10 @@ export default class CloudflareClient {
       compatibilityDate = '2025-01-01',
       observability = true,
       overwrite = false,
+      tags,
     } = opts;
 
-    if (!overwrite && await this.#workerExists(accountId, scriptName)) {
+    if (!overwrite && await this.#isDeployBlocked(accountId, scriptName, tags)) {
       throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
     }
 
@@ -141,6 +144,7 @@ export default class CloudflareClient {
       bindings,
       compatibility_date: compatibilityDate,
       ...(observability && { observability: { enabled: true } }),
+      ...(Array.isArray(tags) && tags.length > 0 && { tags }),
     };
 
     const form = new FormData();
@@ -188,6 +192,25 @@ export default class CloudflareClient {
       { method: 'GET', allowNotFound: true },
     );
     return result !== null;
+  }
+
+  async #listWorkers(accountId, { page = 1, perPage = 50 } = {}) {
+    return this.#cfFetch(`/accounts/${accountId}/workers/scripts?page=${page}&per_page=${perPage}`);
+  }
+
+  // Returns true when the deploy should be blocked.
+  // With tags: blocked only when the script exists AND shares none of the provided tags.
+  // Without tags: blocked whenever the script exists.
+  async #isDeployBlocked(accountId, scriptName, tags) {
+    if (Array.isArray(tags) && tags.length > 0) {
+      const workers = await this.#listWorkers(accountId);
+      const existing = workers.find((w) => w.id === scriptName);
+      if (!existing) {
+        return false;
+      }
+      return !existing.tags?.some((t) => tags.includes(t));
+    }
+    return this.#workerExists(accountId, scriptName);
   }
 
   /**

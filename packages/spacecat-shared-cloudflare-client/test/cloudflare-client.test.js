@@ -324,6 +324,127 @@ describe('CloudflareClient', () => {
         client.deployWorkerScript(ACCOUNT_ID, SCRIPT_NAME, 'export default {}'),
       ).to.be.rejectedWith('Cloudflare API request to /accounts');
     });
+
+    it('includes tags in the metadata when provided', async () => {
+      const result = { id: SCRIPT_NAME };
+      let capturedBody;
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .reply(200, { success: true, result: [] });
+      nock(CF_API_BASE)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, (body) => {
+          capturedBody = body;
+          return true;
+        })
+        .reply(200, { success: true, result });
+
+      await client.deployWorkerScript(
+        ACCOUNT_ID,
+        SCRIPT_NAME,
+        'export default {}',
+        [],
+        { tags: ['createdBy=adobe', 'env=prod'] },
+      );
+      expect(capturedBody).to.contain('"tags":["createdBy=adobe","env=prod"]');
+    });
+
+    it('omits tags from metadata when not provided', async () => {
+      const result = { id: SCRIPT_NAME };
+      let capturedBody;
+      nock(CF_API_BASE)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, (body) => {
+          capturedBody = body;
+          return true;
+        })
+        .reply(200, { success: true, result });
+
+      await client.deployWorkerScript(
+        ACCOUNT_ID,
+        SCRIPT_NAME,
+        'export default {}',
+        [],
+        { overwrite: true },
+      );
+      expect(capturedBody).to.not.contain('"tags"');
+    });
+
+    it('deploys when script exists with a matching tag (ownership check passes)', async () => {
+      const result = { id: SCRIPT_NAME, etag: 'abc123' };
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .reply(200, {
+          success: true,
+          result: [{ id: SCRIPT_NAME, tags: ['createdBy=adobe'] }],
+        });
+      nock(CF_API_BASE)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .reply(200, { success: true, result });
+
+      const res = await client.deployWorkerScript(
+        ACCOUNT_ID,
+        SCRIPT_NAME,
+        'export default {}',
+        [],
+        { tags: ['createdBy=adobe'] },
+      );
+      expect(res).to.deep.equal(result);
+    });
+
+    it('throws when script exists with no matching tags (ownership check fails)', async () => {
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .reply(200, {
+          success: true,
+          result: [{ id: SCRIPT_NAME, tags: ['createdBy=other'] }],
+        });
+
+      await expect(
+        client.deployWorkerScript(
+          ACCOUNT_ID,
+          SCRIPT_NAME,
+          'export default {}',
+          [],
+          { tags: ['createdBy=adobe'] },
+        ),
+      ).to.be.rejectedWith(
+        `Worker script '${SCRIPT_NAME}' already exists in account ${ACCOUNT_ID}`,
+      );
+    });
+
+    it('deploys when script does not exist in the list (tags provided)', async () => {
+      const result = { id: SCRIPT_NAME, etag: 'abc123' };
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .reply(200, { success: true, result: [] });
+      nock(CF_API_BASE)
+        .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
+        .reply(200, { success: true, result });
+
+      const res = await client.deployWorkerScript(
+        ACCOUNT_ID,
+        SCRIPT_NAME,
+        'export default {}',
+        [],
+        { tags: ['createdBy=adobe'] },
+      );
+      expect(res).to.deep.equal(result);
+    });
+
+    it('throws when worker list fetch fails during ownership check', async () => {
+      nock(CF_API_BASE)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts?page=1&per_page=50`)
+        .replyWithError('ECONNREFUSED');
+
+      await expect(
+        client.deployWorkerScript(
+          ACCOUNT_ID,
+          SCRIPT_NAME,
+          'export default {}',
+          [],
+          { tags: ['createdBy=adobe'] },
+        ),
+      ).to.be.rejectedWith('Cloudflare API request to /accounts');
+    });
   });
 
   // ─── setWorkerSecret ─────────────────────────────────────────────────────

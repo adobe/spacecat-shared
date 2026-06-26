@@ -20,6 +20,7 @@ export interface DeployOptions {
   compatibilityDate?: string;
   observability?: boolean;
   overwrite?: boolean;
+  tags?: string[];
 }
 
 export interface CloudflareAccount {

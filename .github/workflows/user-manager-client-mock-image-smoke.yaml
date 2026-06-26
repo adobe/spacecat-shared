@@ -2,7 +2,7 @@ name: User Manager Client Mock Image Smoke
 
 # PR-time guard that the mock Docker image actually BUILDS and BOOTS.
 #
-# The publish workflow (user-manager-client-mock-image.yaml) only runs on the release tag, so
+# The publish workflow (user-manager-client-mock-image.yaml) only runs when a release is published, so
 # without this a broken Dockerfile / Caddyfile / entrypoint would not surface until release — on a
 # tag, where it is hardest to fix. This builds the image and smoke-tests a throwaway container on
 # every PR that touches the package, so the same break is caught on the PR that introduces it.

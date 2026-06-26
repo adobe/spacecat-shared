@@ -29,7 +29,7 @@ gateway, `/enterprise/projects/api`) — two deliberately separate packages, one
   **containerized HTTPS form** of the mock (a GHCR image consumed by cross-repo e2e like
   spacecat-api-service, which requires an `https:` origin), see `docs/mock-docker.md` — `Dockerfile`
   + `Caddyfile` (TLS terminator) + `docker-entrypoint.sh` + `docker-compose.yml`, published by
-  `.github/workflows/user-manager-client-mock-image.yaml` on each release tag.
+  `.github/workflows/user-manager-client-mock-image.yaml` when a release is published.
 - `spec/` — the vendored swagger (`spec/usermanager_swagger.yaml`, NEVER edited) +
   `spec/overlays/corrections.yaml` (corrections), applied by `scripts/apply-overlay.mjs`.
 

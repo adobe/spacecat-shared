@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloudflare-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloudflare-client-v1.2.0...@adobe/spacecat-shared-cloudflare-client-v1.2.1) (2026-06-26)
+
+### Bug Fixes
+
+* **cloudflare-client:** filter scripts-search results by script_name not id ([#1741](https://github.com/adobe/spacecat-shared/issues/1741)) ([f4bad0f](https://github.com/adobe/spacecat-shared/commit/f4bad0f50eb11b884de6c0724bf585e7c038650b))
+
 ## [@adobe/spacecat-shared-cloudflare-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloudflare-client-v1.1.1...@adobe/spacecat-shared-cloudflare-client-v1.2.0) (2026-06-26)
 
 ### Features

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -12,11 +12,12 @@
 
 /* c8 ignore start */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import TaskManagementConnection from './task-management-connection.model.js';
 import TaskManagementConnectionCollection from './task-management-connection.collection.js';
+import { validateMetadata } from './metadata-validator.js';
 
 // Sort key [provider, status] on the Organization GSI lets the collection method
 // findActiveByOrganizationAndProvider() resolve to a single DB call:
@@ -62,7 +63,7 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
   .addAttribute('connectedAt', {
     type: 'string',
     required: false,
-    validate: (value) => !value || !Number.isNaN(Date.parse(value)),
+    validate: (value) => !value || isIsoDate(value),
   })
   // external_instance_id column: provider-stable identifier for the remote workspace.
   // jira_cloud → Atlassian cloudId UUID; jira_corp → normalized baseUrl (v2).
@@ -77,7 +78,7 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
   .addAttribute('lastUsedAt', {
     type: 'string',
     required: false,
-    validate: (value) => !value || !Number.isNaN(Date.parse(value)),
+    validate: (value) => !value || isIsoDate(value),
   })
   .addAttribute('errorMessage', {
     type: 'string',
@@ -93,6 +94,15 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
   .addAttribute('metadata', {
     type: 'any',
     required: true,
+    set: (value, allAttrs) => {
+      // Validate metadata on every write — defence-in-depth alongside DB CHECK constraint.
+      // The provider attribute is readOnly, so it's always present in allAttrs after creation.
+      const provider = allAttrs?.provider;
+      if (provider) {
+        validateMetadata(provider, value);
+      }
+      return value;
+    },
   });
 
 export default schema.build();

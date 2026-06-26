@@ -60,6 +60,7 @@ describe('edge-optimize support', () => {
           this.send = (cmd) => cfSendStub(cmd);
         },
         ListDistributionsCommand: cfCommand('ListDistributions'),
+        GetDistributionCommand: cfCommand('GetDistribution'),
         GetDistributionConfigCommand: cfCommand('GetDistributionConfig'),
         GetCachePolicyConfigCommand: cfCommand('GetCachePolicyConfig'),
         GetCachePolicyCommand: cfCommand('GetCachePolicy'),
@@ -237,6 +238,36 @@ describe('edge-optimize support', () => {
       expect(result[0].aliases).to.deep.equal([]);
       expect(result[0].comment).to.equal('');
       expect(result[0].enabled).to.equal(false);
+    });
+
+    it('paginates through every page when the result is truncated', async () => {
+      // First page is truncated (IsTruncated + NextMarker) → a second ListDistributions call must
+      // follow the marker; the loop stops once IsTruncated is false. Both pages are aggregated.
+      cfSendStub.onFirstCall().resolves({
+        DistributionList: {
+          IsTruncated: true,
+          NextMarker: 'page-2',
+          Items: [{
+            Id: 'E1', DomainName: 'd1.cloudfront.net', Status: 'Deployed', Enabled: true,
+          }],
+        },
+      });
+      cfSendStub.onSecondCall().resolves({
+        DistributionList: {
+          IsTruncated: false,
+          Items: [{
+            Id: 'E2', DomainName: 'd2.cloudfront.net', Status: 'Deployed', Enabled: true,
+          }],
+        },
+      });
+
+      const result = await edgeOptimize.listCloudFrontDistributions({});
+
+      expect(cfSendStub.callCount).to.equal(2);
+      // The first page is fetched with no Marker; the second follows the NextMarker.
+      expect(cfSendStub.firstCall.args[0].input).to.deep.equal({});
+      expect(cfSendStub.secondCall.args[0].input).to.deep.equal({ Marker: 'page-2' });
+      expect(result.map((d) => d.id)).to.deep.equal(['E1', 'E2']);
     });
   });
 
@@ -1811,6 +1842,61 @@ describe('edge-optimize support', () => {
       expect(result.passed).to.equal(false);
     });
 
+    it('passes a bounded AbortSignal to each probe', async () => {
+      fetchStub = sinon.stub(global, 'fetch');
+      fetchStub.resolves(makeResponse(200, { 'x-edgeoptimize-request-id': 'r' }));
+
+      await edgeOptimize.verifyEdgeOptimizeRouting('https://d.cloudfront.net/');
+
+      // Each probe carries an AbortSignal so it can be cancelled at the bounded timeout.
+      expect(fetchStub.firstCall.args[1].signal).to.be.instanceOf(AbortSignal);
+      expect(edgeOptimize.EDGE_OPTIMIZE_VERIFY_PROBE_TIMEOUT_MS).to.equal(20000);
+    });
+
+    it('resolves passed:false on a network error instead of throwing', async () => {
+      fetchStub = sinon.stub(global, 'fetch');
+      // Bot probe errors at the network layer; it must resolve to a non-passing { status: 0 }
+      // result (NOT throw) so the FE poll loop simply retries. The human probe still runs.
+      fetchStub.onFirstCall().rejects(new Error('ECONNREFUSED'));
+      fetchStub.onSecondCall().resolves(makeResponse(200, {}));
+
+      const result = await edgeOptimize.verifyEdgeOptimizeRouting('https://d.cloudfront.net/');
+
+      expect(result.passed).to.equal(false);
+      expect(result.requestId).to.equal(null);
+      expect(result.details.bot.status).to.equal(0);
+      expect(result.details.bot.headers).to.deep.equal({});
+      // A plain network error is not flagged as a timeout.
+      expect(result.details.bot.timedOut).to.equal(undefined);
+      expect(result.details.human.status).to.equal(200);
+    });
+
+    it('aborts a probe that exceeds the bounded timeout and resolves passed:false', async () => {
+      const clock = sinon.useFakeTimers();
+      fetchStub = sinon.stub(global, 'fetch');
+      // Bot probe hangs until its abort signal fires (the bounded-timeout abort); the human
+      // probe resolves immediately. Driving the fake clock past the timeout triggers the abort.
+      fetchStub.onFirstCall().callsFake((url, opts) => new Promise((resolve, reject) => {
+        opts.signal.addEventListener('abort', () => {
+          const err = new Error('aborted');
+          err.name = 'AbortError';
+          reject(err);
+        });
+      }));
+      fetchStub.onSecondCall().resolves(makeResponse(200, {}));
+
+      const promise = edgeOptimize.verifyEdgeOptimizeRouting('https://d.cloudfront.net/');
+      await clock.tickAsync(edgeOptimize.EDGE_OPTIMIZE_VERIFY_PROBE_TIMEOUT_MS);
+      const result = await promise;
+
+      expect(result.passed).to.equal(false);
+      expect(result.requestId).to.equal(null);
+      expect(result.details.bot.status).to.equal(0);
+      // An abort (timeout) is flagged so callers can tell "still warming up" from a hard failure.
+      expect(result.details.bot.timedOut).to.equal(true);
+      clock.restore();
+    });
+
     it('throws when url is missing', async () => {
       let error;
       try {
@@ -1933,7 +2019,7 @@ describe('edge-optimize support', () => {
         ETag: 'cp-etag',
       },
       UpdateDistribution: {},
-      ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'InProgress' }] } },
+      GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'InProgress' } },
     });
     const readyLambda = () => ({
       GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2115,7 +2201,7 @@ describe('edge-optimize support', () => {
             ETag: 'cp-etag',
           },
           UpdateDistribution: {},
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'Deployed' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2184,7 +2270,7 @@ describe('edge-optimize support', () => {
             },
             ETag: 'cp-etag',
           },
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'Deployed' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2239,7 +2325,7 @@ describe('edge-optimize support', () => {
             },
             ETag: 'cp-etag',
           },
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'Deployed' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2287,7 +2373,7 @@ describe('edge-optimize support', () => {
             ETag: 'cp-etag',
           },
           // distribution deployed but reports no domain name → no host to verify.
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: '', Status: 'Deployed' }] } },
+          GetDistribution: { Distribution: { DomainName: '', Status: 'Deployed' } },
           UpdateDistribution: {}, // origin self-heal write (api-key header added)
         },
         {
@@ -2332,7 +2418,7 @@ describe('edge-optimize support', () => {
             },
             ETag: 'cp-etag',
           },
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'Deployed' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2351,7 +2437,7 @@ describe('edge-optimize support', () => {
       expect(out.steps.find((s) => s.key === 'verify').detail).to.include('failover');
     });
 
-    it('surfaces a verify fetch failure as in_progress (never fails the deploy)', async () => {
+    it('keeps verify in_progress when a probe network error resolves to a non-passing result', async () => {
       const lambdaVersionArn = 'arn:aws:lambda:us-east-1:120569600543:function:edgeoptimize-origin:3';
       wire(
         {
@@ -2378,7 +2464,7 @@ describe('edge-optimize support', () => {
             },
             ETag: 'cp-etag',
           },
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'Deployed' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2387,13 +2473,16 @@ describe('edge-optimize support', () => {
         okRoleIam(),
       );
       fetchStub = sinon.stub(global, 'fetch');
+      // Both probes hit a network error. After the bounded-timeout fix they resolve to a
+      // non-passing result ({ status: 0 }) instead of throwing, so the deploy never fails — verify
+      // simply stays in_progress and the FE poll loop retries on the next poll.
       fetchStub.rejects(new Error('network down'));
 
       const noHeaderParams = { ...deployParams, originHeaders: undefined };
       const out = await edgeOptimize.runEdgeOptimizeDeployStep({}, noHeaderParams);
 
       expect(statusOf(out.steps, 'verify')).to.equal('in_progress');
-      expect(out.steps.find((s) => s.key === 'verify').detail).to.equal('network down');
+      expect(out.steps.find((s) => s.key === 'verify').detail).to.equal('waiting for propagation');
     });
 
     it('holds at propagation (verify pending) while the distribution is still Deploying', async () => {
@@ -2435,7 +2524,7 @@ describe('edge-optimize support', () => {
             ETag: 'cp-etag',
           },
           // distribution still deploying → propagation gate holds, verify never runs.
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'InProgress' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'InProgress' } },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2453,7 +2542,7 @@ describe('edge-optimize support', () => {
       expect(out.verified).to.equal(false);
     });
 
-    it('holds at propagation when the distribution is not yet listed', async () => {
+    it('holds at propagation when the distribution is not yet returned', async () => {
       const lambdaVersionArn = 'arn:aws:lambda:us-east-1:120569600543:function:edgeoptimize-origin:3';
       wire(
         {
@@ -2480,8 +2569,8 @@ describe('edge-optimize support', () => {
             },
             ETag: 'cp-etag',
           },
-          // distribution missing from the list → "waiting for the distribution to appear".
-          ListDistributions: { DistributionList: { Items: [] } },
+          // distribution not returned yet → "waiting for the distribution to appear".
+          GetDistribution: {},
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2497,7 +2586,7 @@ describe('edge-optimize support', () => {
       expect(out.steps.find((s) => s.key === 'propagation').detail).to.include('waiting for the distribution');
     });
 
-    it('marks propagation in_progress when listing distributions fails', async () => {
+    it('marks propagation in_progress when getting the distribution fails', async () => {
       const lambdaVersionArn = 'arn:aws:lambda:us-east-1:120569600543:function:edgeoptimize-origin:3';
       wire(
         {
@@ -2524,7 +2613,7 @@ describe('edge-optimize support', () => {
             },
             ETag: 'cp-etag',
           },
-          ListDistributions: () => { throw new Error('list failed'); },
+          GetDistribution: () => { throw new Error('get failed'); },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2537,7 +2626,7 @@ describe('edge-optimize support', () => {
       const out = await edgeOptimize.runEdgeOptimizeDeployStep({}, noHeaderParams);
 
       expect(statusOf(out.steps, 'propagation')).to.equal('in_progress');
-      expect(out.steps.find((s) => s.key === 'propagation').detail).to.equal('list failed');
+      expect(out.steps.find((s) => s.key === 'propagation').detail).to.equal('get failed');
     });
 
     it('marks the step error (earlier done, later pending) and does not throw when a step fails', async () => {
@@ -2832,7 +2921,7 @@ describe('edge-optimize support', () => {
             },
             ETag: 'cp-etag',
           },
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'Deployed' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
           // Active + idle, NO published version yet → createEdgeOptimizeLambda must publish one.
@@ -2936,7 +3025,7 @@ describe('edge-optimize support', () => {
             },
             ETag: 'cp-etag',
           },
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'Deployed' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -2978,7 +3067,7 @@ describe('edge-optimize support', () => {
             ETag: 'cp-etag',
           },
           UpdateDistribution: {},
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'InProgress' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'InProgress' } },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
@@ -3069,7 +3158,7 @@ describe('edge-optimize support', () => {
             ETag: 'cp-etag',
           },
           UpdateDistribution: {},
-          ListDistributions: { DistributionList: { Items: [{ Id: 'E2EXAMPLE123', DomainName: 'd123.cloudfront.net', Status: 'InProgress' }] } },
+          GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'InProgress' } },
         },
         {
           GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },

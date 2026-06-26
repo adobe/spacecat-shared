@@ -15,6 +15,7 @@ import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import {
   CloudFrontClient,
   ListDistributionsCommand,
+  GetDistributionCommand,
   GetDistributionConfigCommand,
   GetCachePolicyConfigCommand,
   GetCachePolicyCommand,
@@ -165,8 +166,21 @@ export async function assumeConnectorRole({
  */
 export async function listCloudFrontDistributions(credentials, region = EDGE_OPTIMIZE_REGION) {
   const client = new CloudFrontClient({ region, credentials });
-  const response = await client.send(new ListDistributionsCommand({}));
-  const items = response?.DistributionList?.Items || [];
+  // Paginate: ListDistributions returns at most 100 items per page; accounts fronting more than
+  // 100 distributions would otherwise have the target silently missing from the picker. Follow the
+  // Marker/IsTruncated/NextMarker chain, accumulating every page before projecting.
+  const items = [];
+  let marker;
+  /* eslint-disable no-await-in-loop */
+  do {
+    const response = await client.send(new ListDistributionsCommand(
+      marker ? { Marker: marker } : {},
+    ));
+    const list = response?.DistributionList || {};
+    items.push(...(list.Items || []));
+    marker = list.IsTruncated ? list.NextMarker : undefined;
+  } while (marker);
+  /* eslint-enable no-await-in-loop */
   return items.map((dist) => ({
     id: dist.Id,
     domainName: dist.DomainName,
@@ -1142,20 +1156,44 @@ export async function applyEdgeOptimizeAssociations(
   return { cfFunctionArn, lambdaArn: lambdaVersionArn };
 }
 
+// Bounded per-probe timeout for the verify fetches. 20s is generous enough for a slow/cold
+// `ChatGPT-User` prerender response, yet safely under the ~60s CDN/gateway first-byte budget — so a
+// hung origin can never block the request long enough to cascade into a gateway 503.
+export const EDGE_OPTIMIZE_VERIFY_PROBE_TIMEOUT_MS = 20000;
+
 async function fetchEdgeOptimizeHeaders(url, userAgent) {
-  const response = await fetch(url, {
-    redirect: 'manual',
-    headers: { 'user-agent': userAgent },
-  });
-  const headers = {};
-  response.headers.forEach((value, key) => {
-    if (key.toLowerCase().startsWith('x-edgeoptimize')) {
-      headers[key.toLowerCase()] = value;
-    }
-  });
-  // Drain the body so the connection can be reused/closed.
-  await response.arrayBuffer().catch(() => {});
-  return { status: response.status, headers };
+  // Abort the probe if the origin does not respond within the bounded timeout. On timeout/abort OR
+  // any network error we resolve to a NON-passing result ({ status: 0, headers: {} }) instead of
+  // throwing: verifyEdgeOptimizeRouting then returns passed:false and the FE's poll loop simply
+  // retries on the next poll (verification persistence lives in the poll loop, not one fetch — a
+  // slow origin just spans more polls).
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), EDGE_OPTIMIZE_VERIFY_PROBE_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      redirect: 'manual',
+      headers: { 'user-agent': userAgent },
+      signal: controller.signal,
+    });
+    const headers = {};
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase().startsWith('x-edgeoptimize')) {
+        headers[key.toLowerCase()] = value;
+      }
+    });
+    // Drain the body so the connection can be reused/closed.
+    await response.arrayBuffer().catch(() => {});
+    return { status: response.status, headers };
+  } catch (err) {
+    // `timedOut` lets callers distinguish "still warming up" (abort) from a hard network failure.
+    const timedOut = err?.name === 'AbortError';
+    return { status: 0, headers: {}, ...(timedOut ? { timedOut: true } : {}) };
+  // The catch always returns (never rethrows), so V8 marks the finally's exceptional-entry branch
+  // as unreachable — suppress just that phantom branch; clearTimeout itself is exercised.
+  /* c8 ignore next */
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
@@ -1403,21 +1441,22 @@ export async function runEdgeOptimizeDeployStep(
   // ── 6. propagation — GATE: wait for the distribution to finish deploying before we verify. ──
   // CloudFront reports `Status: 'InProgress'` while it propagates the new behavior/Lambda globally
   // (the console shows "Deploying"); once `Deployed`, edge nodes have the change. Verifying before
-  // that just churns, so we hold here and surface the propagation status. distDomain is reused by
-  // the verify step so we only list distributions once.
+  // that just churns, so we hold here and surface the propagation status. A direct GetDistribution
+  // (instead of scanning the paginated list) reads this distribution's Status/DomainName in one
+  // call; distDomain is reused by the verify step.
   let distDomain = '';
   try {
-    const distributions = await listCloudFrontDistributions(credentials, region);
-    const match = distributions.find((d) => d.id === distributionId);
-    distDomain = match?.domainName || '';
-    if (!match) {
+    const distResult = await client.send(new GetDistributionCommand({ Id: distributionId }));
+    const distribution = distResult?.Distribution;
+    distDomain = distribution?.DomainName || '';
+    if (!distribution) {
       byKey('propagation').status = 'in_progress';
       byKey('propagation').detail = 'waiting for the distribution to appear';
       return { routingDeployed, verified, steps };
     }
-    if (match.status !== 'Deployed') {
+    if (distribution.Status !== 'Deployed') {
       byKey('propagation').status = 'in_progress';
-      byKey('propagation').detail = `Deploying — CloudFront is propagating the change globally (status: ${match.status})`;
+      byKey('propagation').detail = `Deploying — CloudFront is propagating the change globally (status: ${distribution.Status})`;
       return { routingDeployed, verified, steps };
     }
     byKey('propagation').status = 'done';
@@ -1461,11 +1500,16 @@ export async function runEdgeOptimizeDeployStep(
       byKey('verify').status = 'in_progress';
       byKey('verify').detail = 'waiting for propagation';
     }
+  /* c8 ignore start */
   } catch (err) {
-    // Never fail the whole deploy because verify could not run yet — surface as in_progress.
+    // Defensive only: the verify probes are now bounded (a timeout/abort or network error resolves
+    // to a non-passing probe instead of throwing), so verifyEdgeOptimizeRouting no longer rejects
+    // for a valid URL and this branch is unreachable in practice. Kept as a safety net so a future
+    // throw here can never fail the whole deploy — surface as in_progress and let the poll retry.
     byKey('verify').status = 'in_progress';
     byKey('verify').detail = err.message;
   }
+  /* c8 ignore stop */
 
   return { routingDeployed, verified, steps };
 }

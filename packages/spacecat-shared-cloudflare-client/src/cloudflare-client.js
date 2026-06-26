@@ -191,11 +191,13 @@ export default class CloudflareClient {
   }
 
   async #findWorker(accountId, scriptName) {
-    // name param returns partial matches — filter to exact id.
+    // name param returns partial matches — filter to exact script_name.
+    // Note: the result objects use `script_name` for the worker name (used in URLs/routes);
+    // `id` is the script tag identifier and is not the same value.
     const workers = await this.#cfFetch(
       `/accounts/${accountId}/workers/scripts-search?name=${encodeURIComponent(scriptName)}&per_page=100`,
     );
-    return workers.find((w) => w.id === scriptName) ?? null;
+    return (workers ?? []).find((w) => w.script_name === scriptName) ?? null;
   }
 
   async #getWorkerSettings(accountId, scriptName) {

@@ -240,6 +240,255 @@ describe('DrsClient', () => {
     });
   });
 
+  describe('listJobs', () => {
+    it('throws when siteId is missing', async () => {
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      await expect(client.listJobs({})).to.be.rejectedWith('siteId is required');
+    });
+
+    it('throws when called with no arguments', async () => {
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      await expect(client.listJobs()).to.be.rejectedWith('siteId is required');
+    });
+
+    it('queries with site + all optional filters and returns the jobs array', async () => {
+      const jobs = [{ job_id: 'j1', status: 'QUEUED', source: 'brand-activation' }];
+      const scope = nock(DRS_API_URL)
+        .get('/jobs')
+        .query({
+          site: 'site-1',
+          provider_id: 'prompt_generation_base_url',
+          status: 'QUEUED',
+          source: 'brand-activation',
+          submitted_from: '1700000000',
+        })
+        .reply(200, { jobs });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      const result = await client.listJobs({
+        siteId: 'site-1',
+        providerId: 'prompt_generation_base_url',
+        status: 'QUEUED',
+        source: 'brand-activation',
+        submittedFrom: 1700000000,
+      });
+
+      expect(result).to.deep.equal(jobs);
+      scope.done();
+    });
+
+    it('omits optional filters and returns [] when the response has no jobs', async () => {
+      const scope = nock(DRS_API_URL)
+        .get('/jobs')
+        .query({ site: 'site-2' })
+        .reply(200, { count: 0 });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      const result = await client.listJobs({ siteId: 'site-2' });
+
+      expect(result).to.deep.equal([]);
+      scope.done();
+    });
+
+    it('propagates a DRS error (e.g. 503 with a json body)', async () => {
+      const scope = nock(DRS_API_URL)
+        .get('/jobs')
+        .query({ site: 'site-1' })
+        .reply(503, { error: 'Service Unavailable' });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      try {
+        await client.listJobs({ siteId: 'site-1' });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.message).to.include('DRS GET /jobs?site=site-1 failed: 503 - {"error":"Service Unavailable"}');
+        expect(err.status).to.equal(503);
+      }
+      scope.done();
+    });
+  });
+
+  describe('createBrandPresenceSchedule', () => {
+    it('throws when siteId is missing', async () => {
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      await expect(client.createBrandPresenceSchedule({}))
+        .to.be.rejectedWith('siteId is required');
+    });
+
+    it('throws when not configured', async () => {
+      const client = new DrsClient({ apiBaseUrl: '', apiKey: '' }, log);
+      await expect(client.createBrandPresenceSchedule({ siteId: 'site-1' }))
+        .to.be.rejectedWith('DRS client is not configured');
+    });
+
+    it('POSTs the canonical brand-presence payload and returns the new schedule id', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules', (body) => {
+          expect(body.site_id).to.equal('site-1');
+          expect(body.brand_id).to.equal('brand-1');
+          expect(body.spacecat_org_id).to.equal('org-1');
+          expect(body.frequency).to.equal('weekly');
+          expect(body.cron_expression).to.equal('auto');
+          expect(body.description).to.equal('Brand presence: site-1');
+          expect(body.job_config.provider_ids).to.deep.equal([
+            'brightdata', 'google_ai_overviews', 'openai_web_search',
+          ]);
+          expect(body.job_config.priority).to.equal('LOW');
+          expect(body.job_config.enable_brand_presence).to.equal(true);
+          expect(body.job_config.cadence).to.equal('weekly');
+          expect(body.job_config.provider_parameters.brightdata.dataset_id)
+            .to.equal('chatgpt_free,perplexity,gemini,copilot,aimode');
+          expect(body.job_config.provider_parameters.brightdata.metadata.site).to.equal('site-1');
+          // The legacy no-op fields (camelCase siteId, platforms array) are dropped.
+          expect(body.job_config.provider_parameters.brightdata).to.not.have.property('siteId');
+          expect(body.job_config.provider_parameters.brightdata).to.not.have.property('platforms');
+          expect(body.job_config.provider_parameters.google_ai_overviews.metadata.site)
+            .to.equal('site-1');
+          expect(body.job_config.provider_parameters.google_ai_overviews)
+            .to.not.have.property('siteId');
+          expect(body.job_config.provider_parameters.openai_web_search.metadata.site)
+            .to.equal('site-1');
+          return true;
+        })
+        .reply(201, { schedule_id: 'sched-1', schedule: {} });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      const result = await client.createBrandPresenceSchedule({
+        siteId: 'site-1',
+        brandId: 'brand-1',
+        orgId: 'org-1',
+      });
+
+      expect(result).to.deep.equal({ scheduleId: 'sched-1', alreadyExisted: false });
+      scope.done();
+    });
+
+    it('omits brand_id/spacecat_org_id when absent and honors priority + description overrides', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules', (body) => {
+          expect(body).to.not.have.property('brand_id');
+          expect(body).to.not.have.property('spacecat_org_id');
+          expect(body.description).to.equal('custom desc');
+          expect(body.job_config.priority).to.equal('HIGH');
+          return true;
+        })
+        .reply(201, { schedule_id: 'sched-2' });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      const result = await client.createBrandPresenceSchedule({
+        siteId: 'site-1',
+        priority: 'HIGH',
+        description: 'custom desc',
+      });
+
+      expect(result).to.deep.equal({ scheduleId: 'sched-2', alreadyExisted: false });
+      scope.done();
+    });
+
+    it('treats a 409 dedup as success and returns the existing schedule id', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(409, {
+          error: 'A schedule already exists for this site and provider configuration',
+          existing_schedule_id: 'sched-existing',
+          schedule: {},
+        });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      const result = await client.createBrandPresenceSchedule({
+        siteId: 'site-1',
+        brandId: 'brand-1',
+      });
+
+      expect(result).to.deep.equal({ scheduleId: 'sched-existing', alreadyExisted: true });
+      scope.done();
+    });
+
+    it('triggers the schedule immediately when triggerImmediately is true', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(201, { schedule_id: 'sched-3' })
+        .post('/schedules/site-1/sched-3/trigger')
+        .reply(200, { status: 'triggered' });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      const result = await client.createBrandPresenceSchedule({
+        siteId: 'site-1',
+        brandId: 'brand-1',
+        triggerImmediately: true,
+        timeout: 5000,
+      });
+
+      expect(result).to.deep.equal({ scheduleId: 'sched-3', alreadyExisted: false });
+      scope.done();
+    });
+
+    it('throws when the immediate trigger fails after the schedule is created', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(201, { schedule_id: 'sched-4' })
+        .post('/schedules/site-1/sched-4/trigger')
+        .reply(500, 'trigger boom');
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      try {
+        await client.createBrandPresenceSchedule({
+          siteId: 'site-1',
+          brandId: 'brand-1',
+          triggerImmediately: true,
+        });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.message).to.include('DRS POST /schedules/site-1/sched-4/trigger failed: 500');
+        expect(err.status).to.equal(500);
+      }
+      scope.done();
+    });
+
+    it('throws when the schedule response carries no schedule id', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(201, { message: 'created but missing id' });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      await expect(client.createBrandPresenceSchedule({ siteId: 'site-1' }))
+        .to.be.rejectedWith('DRS schedule create/dedup returned no schedule_id');
+      scope.done();
+    });
+
+    it('throws on a non-409 failure with a plain-text body', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(500, 'Internal Server Error');
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      try {
+        await client.createBrandPresenceSchedule({ siteId: 'site-1' });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.message).to.include('DRS POST /schedules failed: 500 - Internal Server Error');
+        expect(err.status).to.equal(500);
+      }
+      scope.done();
+    });
+
+    it('stringifies a json error body on a non-409 failure', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(503, { error: 'unavailable' });
+
+      const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+      try {
+        await client.createBrandPresenceSchedule({ siteId: 'site-1' });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.message).to.include('DRS POST /schedules failed: 503 - {"error":"unavailable"}');
+        expect(err.status).to.equal(503);
+      }
+      scope.done();
+    });
+  });
+
   describe('SCRAPE_DATASET_IDS', () => {
     it('exports all expected dataset IDs', () => {
       expect(SCRAPE_DATASET_IDS).to.deep.equal({

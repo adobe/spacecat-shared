@@ -512,6 +512,56 @@ function filterBySiteScope(urls, siteBaseUrl) {
   return urls.filter((url) => isWithinSiteScope(url, siteBaseUrl));
 }
 
+/**
+ * Extracts the pathname from a domain-based URL string (e.g. 'https://example.com/path' or
+ * 'example.com/path'). Trailing slashes are stripped on non-root paths and the result is
+ * lowercased. Inputs that already start with '/' are passed through as-is. Returns '' for
+ * non-string or empty input.
+ *
+ * @param {string} url - Domain-based URL, with or without schema, or a leading-slash path.
+ * @returns {string} Normalized pathname, or the input unchanged for leading-slash paths.
+ */
+export function toPathname(url) {
+  if (!url || typeof url !== 'string') {
+    return '';
+  }
+  try {
+    if (url.startsWith('/')) {
+      return url;
+    }
+    const { pathname } = new URL(prependSchema(url));
+    return normalizePathname(pathname).toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
+}
+
+/**
+ * Checks whether two domain-based URLs share the same normalized pathname.
+ * Both arguments must be domain-based URLs (with or without schema). Comparison is
+ * case-insensitive and ignores trailing slashes on non-root paths.
+ * @param {string} url - Domain-based URL to compare.
+ * @param {string} referenceUrl - Domain-based URL to compare against.
+ * @returns {boolean} True if both URLs resolve to the same pathname.
+ */
+export function hasSamePathname(url, referenceUrl) {
+  return toPathname(url) === toPathname(referenceUrl);
+}
+
+/**
+ * Checks whether every URL in an array shares the same normalized pathname as a reference URL.
+ * All entries and the reference must be domain-based URLs (with or without schema).
+ * @param {string[]} urls - Array of domain-based URLs to check.
+ * @param {string} referenceUrl - Domain-based URL whose pathname all entries must match.
+ * @returns {boolean} True if every URL in the array has the same pathname as referenceUrl.
+ */
+export function allHaveSamePathname(urls, referenceUrl) {
+  if (!Array.isArray(urls)) {
+    return false;
+  }
+  return urls.every((url) => hasSamePathname(url, referenceUrl));
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,

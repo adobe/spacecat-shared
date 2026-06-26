@@ -32,6 +32,9 @@ import {
   wwwUrlResolver,
   isWithinSiteScope,
   filterBySiteScope,
+  toPathname,
+  hasSamePathname,
+  allHaveSamePathname,
 } from '../src/url-helpers.js';
 
 use(sinonChai);
@@ -1303,6 +1306,132 @@ describe('URL Utility Functions', () => {
     it('returns empty array for non-array input', () => {
       expect(filterBySiteScope(null, 'bulk.com/uk')).to.deep.equal([]);
       expect(filterBySiteScope(undefined, 'bulk.com/uk')).to.deep.equal([]);
+    });
+  });
+
+  describe('toPathname', () => {
+    it('returns the pathname of an absolute URL', () => {
+      expect(toPathname('https://example.com/path/page')).to.equal('/path/page');
+    });
+
+    it('returns "/" for a root URL', () => {
+      expect(toPathname('https://example.com/')).to.equal('/');
+    });
+
+    it('strips trailing slash on non-root paths', () => {
+      expect(toPathname('https://example.com/path/')).to.equal('/path');
+    });
+
+    it('lowercases the pathname', () => {
+      expect(toPathname('https://example.com/PATH/Page')).to.equal('/path/page');
+    });
+
+    it('ignores query string and fragment when extracting pathname', () => {
+      expect(toPathname('https://example.com/path?q=1#section')).to.equal('/path');
+    });
+
+    it('extracts pathname from a schema-less URL', () => {
+      expect(toPathname('BULK.COM/page')).to.equal('/page');
+    });
+
+    it('extracts pathname from a schema-less URL with trailing slash', () => {
+      expect(toPathname('example.com/')).to.equal('/');
+    });
+
+    it('extracts pathname from a schema-less URL with a deep path', () => {
+      expect(toPathname('example.com/path/page')).to.equal('/path/page');
+    });
+
+    it('handles leading-slash paths as-is', () => {
+      expect(toPathname('/some/PATH')).to.equal('/some/PATH');
+    });
+
+    it('falls back to lowercased string when URL parsing fails', () => {
+      expect(toPathname('[invalid-url')).to.equal('[invalid-url');
+    });
+
+    it('returns empty string for null input', () => {
+      expect(toPathname(null)).to.equal('');
+    });
+
+    it('returns empty string for undefined input', () => {
+      expect(toPathname(undefined)).to.equal('');
+    });
+  });
+
+  describe('hasSamePathname', () => {
+    it('returns true when two URLs have the same pathname', () => {
+      expect(hasSamePathname('https://a.com/page', 'https://b.com/page')).to.be.true;
+    });
+
+    it('returns false when two URLs have different pathnames', () => {
+      expect(hasSamePathname('https://a.com/page1', 'https://b.com/page2')).to.be.false;
+    });
+
+    it('ignores trailing slashes when comparing pathnames', () => {
+      expect(hasSamePathname('https://a.com/page/', 'https://b.com/page')).to.be.true;
+    });
+
+    it('is case-insensitive', () => {
+      expect(hasSamePathname('https://a.com/PAGE', 'https://b.com/page')).to.be.true;
+    });
+
+    it('returns true when both are root paths', () => {
+      expect(hasSamePathname('https://a.com/', 'https://b.com/')).to.be.true;
+    });
+
+    it('returns false when one is root and the other is not', () => {
+      expect(hasSamePathname('https://a.com/', 'https://b.com/page')).to.be.false;
+    });
+
+    it('does not crash when url is null', () => {
+      expect(hasSamePathname(null, 'https://b.com/page')).to.be.false;
+    });
+
+    it('matches schema-less URL against an absolute URL', () => {
+      expect(hasSamePathname('a.com/page', 'https://b.com/page')).to.be.true;
+    });
+  });
+
+  describe('allHaveSamePathname', () => {
+    it('returns true when all URLs match the reference pathname', () => {
+      const urls = [
+        'https://a.com/page',
+        'https://b.com/page',
+        'https://c.com/page/',
+      ];
+      expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.true;
+    });
+
+    it('returns false when one URL has a different pathname', () => {
+      const urls = [
+        'https://a.com/page',
+        'https://b.com/other',
+      ];
+      expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.false;
+    });
+
+    it('returns true for an empty array', () => {
+      expect(allHaveSamePathname([], 'https://ref.com/page')).to.be.true;
+    });
+
+    it('is case-insensitive across all entries', () => {
+      const urls = ['https://a.com/PAGE', 'https://b.com/Page'];
+      expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.true;
+    });
+
+    it('returns false for non-array input', () => {
+      expect(allHaveSamePathname(null, 'https://ref.com/page')).to.be.false;
+      expect(allHaveSamePathname(undefined, 'https://ref.com/page')).to.be.false;
+    });
+
+    it('does not crash when array contains null elements', () => {
+      expect(allHaveSamePathname([null], 'https://ref.com/page')).to.be.false;
+    });
+
+    it('matches schema-less URLs in the array against a reference URL', () => {
+      const urls = ['a.com/page', 'https://b.com/page'];
+      expect(allHaveSamePathname(urls, 'c.com/page')).to.be.true;
     });
   });
 });

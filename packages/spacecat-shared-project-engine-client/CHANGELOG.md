@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.1.1...@adobe/spacecat-shared-project-engine-client-v1.2.0) (2026-06-26)
+
+### Features
+
+* **project-engine-client:** stateful mock core — store, resource ops, seeds (LLMO-5460) ([#1665](https://github.com/adobe/spacecat-shared/issues/1665)) ([5cf66c1](https://github.com/adobe/spacecat-shared/commit/5cf66c13a109c288217a4a87f2626939c3be035e)), closes [#1660](https://github.com/adobe/spacecat-shared/issues/1660) [#1661](https://github.com/adobe/spacecat-shared/issues/1661)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.1.0...@adobe/spacecat-shared-project-engine-client-v1.1.1) (2026-06-23)
 
 ### Bug Fixes

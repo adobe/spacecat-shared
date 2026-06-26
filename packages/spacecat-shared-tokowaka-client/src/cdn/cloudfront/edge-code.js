@@ -29,6 +29,7 @@
  */
 export function buildCloudfrontFunctionCode(defaultOriginId, targetedPaths = null) {
   const targetedPathsValue = targetedPaths === null ? 'null' : JSON.stringify(targetedPaths);
+  const defaultOriginIdValue = JSON.stringify(defaultOriginId);
 
   return `import cf from 'cloudfront';
 
@@ -67,7 +68,7 @@ function handler(event) {
         cf.createRequestOriginGroup({
             "originIds": [
                 { "originId": "EdgeOptimize_Origin" },
-                { "originId": "${defaultOriginId}" }
+                { "originId": ${defaultOriginIdValue} }
             ],
             "failoverCriteria": {
                 "statusCodes": [400, 403, 404, 416, 500, 502, 503, 504]
@@ -97,6 +98,8 @@ function handler(event) {
  * @returns {string} the Lambda@Edge function source code.
  */
 export function buildEdgeOptimizeLambdaCode(eoOriginDomain) {
+  const eoOriginDomainValue = JSON.stringify(eoOriginDomain);
+
   return `function hasHeader(map, name) {
   const h = map?.[name];
   return Array.isArray(h) && h.length > 0 && (h[0].value || '').trim() !== '';
@@ -120,7 +123,7 @@ export const handler = async (event) => {
     const isEdgeOptimizeRequest = hasHeader(reqHeaders, 'x-edgeoptimize-request');
 
     if (isEdgeOptimizeConfig && !isEdgeOptimizeRequest) {
-      if (originDomain === '${eoOriginDomain}') {
+      if (originDomain === ${eoOriginDomainValue}) {
         console.log("Calling Edge Optimize Origin for agentic requests");
         setHeader(request.headers, 'host', originDomain);
       } else {

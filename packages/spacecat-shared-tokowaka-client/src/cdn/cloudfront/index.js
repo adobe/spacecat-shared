@@ -316,9 +316,12 @@ export async function createEdgeOptimizeOrigin(
   const etag = result.ETag;
   const origins = config.Origins?.Items || [];
 
-  const existing = origins.find(
-    (o) => o.Id === EDGE_OPTIMIZE_ORIGIN_ID || o.DomainName === originDomain,
-  );
+  const existing = origins.find((o) => o.Id === EDGE_OPTIMIZE_ORIGIN_ID);
+  const existingDomainOrigin = origins.find((o) => o.DomainName === originDomain);
+
+  if (!existing && existingDomainOrigin) {
+    throw new Error(`An origin for ${originDomain} already exists as ${existingDomainOrigin.Id}; refusing to reuse a non-Edge Optimize origin`);
+  }
 
   if (existing) {
     // Idempotent — but self-heal an origin created without the EO headers (earlier bug): patch its
@@ -1583,10 +1586,14 @@ export async function planEdgeOptimizeDeploy(
   const desiredHeaderItems = buildEdgeOptimizeOriginHeaders(originHeaders || {});
   if (config) {
     const origins = config.Origins?.Items || [];
-    const existing = origins.find(
-      (o) => o.Id === EDGE_OPTIMIZE_ORIGIN_ID || o.DomainName === originDomain,
-    );
-    if (existing) {
+    const existing = origins.find((o) => o.Id === EDGE_OPTIMIZE_ORIGIN_ID);
+    const existingDomainOrigin = origins.find((o) => o.DomainName === originDomain);
+    if (!existing && existingDomainOrigin) {
+      byKey('origin').action = 'blocked';
+      byKey('origin').detail = `An origin for ${originDomain} already exists as ${existingDomainOrigin.Id}; refusing to reuse a non-Edge Optimize origin`;
+      canProceed = false;
+      blocker = byKey('origin').detail;
+    } else if (existing) {
       const toMap = (arr) => (arr || []).reduce((acc, h) => {
         acc[h.HeaderName.toLowerCase()] = h.HeaderValue;
         return acc;
@@ -1771,3 +1778,16 @@ export async function planEdgeOptimizeDeploy(
 
   return { canProceed, blocker, steps };
 }
+
+// AWS-style public aliases. Keep the original Edge Optimize-prefixed names exported for
+// compatibility while consumers migrate to this shorter client-shaped surface.
+export const listDistributions = listCloudFrontDistributions;
+export const createOrigin = createEdgeOptimizeOrigin;
+export const createCloudFrontFunction = createEdgeOptimizeRoutingFunction;
+export const updateCacheSettings = applyEdgeOptimizeCacheHeaders;
+export const createLambdaAtEdge = createEdgeOptimizeLambda;
+export const getLambdaAtEdgeStatus = getEdgeOptimizeLambdaStatus;
+export const applyAssociations = applyEdgeOptimizeAssociations;
+export const verifyRouting = verifyEdgeOptimizeRouting;
+export const runDeployStep = runEdgeOptimizeDeployStep;
+export const planDeploy = planEdgeOptimizeDeploy;

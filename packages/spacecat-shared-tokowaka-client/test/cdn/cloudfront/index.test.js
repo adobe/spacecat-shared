@@ -441,15 +441,20 @@ describe('edge-optimize support', () => {
       expect(cfSendStub.calledOnce).to.equal(true); // never updated
     });
 
-    it('is idempotent when an origin already uses the EO domain', async () => {
+    it('stops when a non-Edge Optimize origin already uses the EO domain', async () => {
       cfSendStub.resolves({
         DistributionConfig: { Origins: { Items: [{ Id: 'custom', DomainName: 'dev.edgeoptimize.net' }] } },
         ETag: 'etag-1',
       });
 
-      const result = await edgeOptimize.createEdgeOptimizeOrigin({}, 'E2EXAMPLE', 'dev.edgeoptimize.net');
+      let error;
+      try {
+        await edgeOptimize.createEdgeOptimizeOrigin({}, 'E2EXAMPLE', 'dev.edgeoptimize.net');
+      } catch (e) {
+        error = e;
+      }
 
-      expect(result.alreadyExisted).to.equal(true);
+      expect(error.message).to.include('refusing to reuse a non-Edge Optimize origin');
       expect(cfSendStub.calledOnce).to.equal(true);
     });
 
@@ -531,16 +536,28 @@ describe('edge-optimize support', () => {
       const code = edgeOptimize.buildCloudfrontFunctionCode('origin-aem', ['/a', '/b']);
       expect(code).to.include('var TARGETED_PATHS = ["/a","/b"];');
     });
+
+    it('escapes the default origin id as a JavaScript string literal', () => {
+      const code = edgeOptimize.buildCloudfrontFunctionCode('origin-aem"; throw new Error("x")//');
+
+      expect(code).to.include('{ "originId": "origin-aem\\"; throw new Error(\\"x\\")//" }');
+    });
   });
 
   describe('buildEdgeOptimizeLambdaCode', () => {
     it('bakes the EO origin domain into the routing check (per environment)', () => {
       const dev = edgeOptimize.buildEdgeOptimizeLambdaCode('dev.edgeoptimize.net');
-      expect(dev).to.include("originDomain === 'dev.edgeoptimize.net'");
-      expect(dev).to.not.include("originDomain === 'live.edgeoptimize.net'");
+      expect(dev).to.include('originDomain === "dev.edgeoptimize.net"');
+      expect(dev).to.not.include('originDomain === "live.edgeoptimize.net"');
 
       const prod = edgeOptimize.buildEdgeOptimizeLambdaCode('live.edgeoptimize.net');
-      expect(prod).to.include("originDomain === 'live.edgeoptimize.net'");
+      expect(prod).to.include('originDomain === "live.edgeoptimize.net"');
+    });
+
+    it('escapes the EO origin domain as a JavaScript string literal', () => {
+      const code = edgeOptimize.buildEdgeOptimizeLambdaCode('live.edgeoptimize.net"; throw new Error("x")//');
+
+      expect(code).to.include('originDomain === "live.edgeoptimize.net\\"; throw new Error(\\"x\\")//"');
     });
   });
 
@@ -3319,7 +3336,7 @@ describe('edge-optimize support', () => {
       expect(stepOf(result.steps, 'origin').detail).to.include('add Edge Optimize origin');
     });
 
-    it('matches an existing EO origin by DomainName (not id) and marks it "exists"', async () => {
+    it('blocks when a non-Edge Optimize origin uses the EO domain', async () => {
       wire(
         {
           GetDistributionConfig: {
@@ -3335,14 +3352,15 @@ describe('edge-optimize support', () => {
         { GetRole: throwNamed('NoSuchEntityException', 'no role') },
       );
 
-      // no originHeaders → desiredHeaderItems empty → headersMatch true → 'exists'.
       const result = await edgeOptimize.planEdgeOptimizeDeploy(
         {},
         { ...planParams, originHeaders: undefined },
       );
 
-      expect(stepOf(result.steps, 'origin').action).to.equal('exists');
-      expect(stepOf(result.steps, 'origin').detail).to.include('live.edgeoptimize.net');
+      expect(result.canProceed).to.equal(false);
+      expect(result.blocker).to.include('refusing to reuse a non-Edge Optimize origin');
+      expect(stepOf(result.steps, 'origin').action).to.equal('blocked');
+      expect(stepOf(result.steps, 'origin').detail).to.include('some-other-id');
     });
 
     it('marks the legacy cache step "exists" when the headers are already forwarded', async () => {

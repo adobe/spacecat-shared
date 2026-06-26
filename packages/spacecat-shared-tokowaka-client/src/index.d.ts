@@ -158,12 +158,15 @@ export function calculateForwardedHost(url: string, logger?: { debug?: (msg: str
 /**
  * Temporary AWS credentials returned by {@link assumeConnectorRole}.
  */
-export interface EdgeOptimizeCredentials {
+export interface AWSCredentials {
   accessKeyId: string;
   secretAccessKey: string;
   sessionToken: string;
   expiration?: Date;
 }
+
+/** @deprecated Use {@link AWSCredentials}. */
+export type EdgeOptimizeCredentials = AWSCredentials;
 
 /**
  * One row of the Edge Optimize deploy/plan step contract.
@@ -347,6 +350,20 @@ export function planEdgeOptimizeDeploy(
   },
   region?: string,
 ): Promise<{ canProceed: boolean; blocker: string | null; steps: EdgeOptimizeStep[] }>;
+
+/**
+ * AWS-style aliases for the CloudFront control-plane methods.
+ */
+export const listDistributions: typeof listCloudFrontDistributions;
+export const createOrigin: typeof createEdgeOptimizeOrigin;
+export const createCloudFrontFunction: typeof createEdgeOptimizeRoutingFunction;
+export const updateCacheSettings: typeof applyEdgeOptimizeCacheHeaders;
+export const createLambdaAtEdge: typeof createEdgeOptimizeLambda;
+export const getLambdaAtEdgeStatus: typeof getEdgeOptimizeLambdaStatus;
+export const applyAssociations: typeof applyEdgeOptimizeAssociations;
+export const verifyRouting: typeof verifyEdgeOptimizeRouting;
+export const runDeployStep: typeof runEdgeOptimizeDeployStep;
+export const planDeploy: typeof planEdgeOptimizeDeploy;
 
 /**
  * Build the CloudFront Function (viewer-request) routing code.
@@ -716,4 +733,3 @@ export default class TokowakaClient {
    */
   getSupportedOpportunityTypes(): string[];
 }
-

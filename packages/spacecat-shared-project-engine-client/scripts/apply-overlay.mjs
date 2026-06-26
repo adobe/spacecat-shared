@@ -14,7 +14,7 @@
  * Applies the OpenAPI Overlay in spec/overlays/corrections.yaml to the
  * swagger2openapi output build/openapi3.json, in place. The overlay is the single
  * source of truth for the corrections that align the vendored swagger with the
- * live API's actual behaviour (see that file for CR1-CR3); this script just
+ * live API's actual behaviour (see that file for CR1-CR10); this script just
  * executes it. The vendored spec/projectengine_swagger_public.yaml is never modified.
  *
  * It implements the subset of the Overlay spec the overlay uses — `update`
@@ -212,29 +212,49 @@ export function applyOverlay(spec, overlay) {
   return { total, results };
 }
 
-/** CLI entry: read the converted spec + the overlay, apply in place, log, write back. */
-function main() {
+/**
+ * CLI entry: read the converted spec + the overlay, apply in place, log, write back.
+ *
+ * Returns a process exit code so the build fails loudly when a correction has gone stale: a
+ * 0-match `remove` (`staleRemove`) means upstream may have caught up and the correction should be
+ * pruned, so we exit 1. (A 0-match `update` throws from {@link applyAction} and aborts before any
+ * write — also a hard failure.) Paths and the logger are injectable so the behaviour is testable
+ * without spawning a subprocess; the defaults target this package's real build artefact.
+ *
+ * @param {object} [opts]
+ * @param {string} [opts.specPath] OAS3 doc to overlay (default: build/openapi3.json)
+ * @param {string} [opts.overlayPath] overlay file (default: spec/overlays/corrections.yaml)
+ * @param {Pick<Console, 'log' | 'error'>} [opts.logger] sink for progress + failure output
+ * @returns {number} process exit code — 0 on success, 1 when any correction is stale
+ */
+export function main({ specPath, overlayPath, logger = console } = {}) {
   const here = dirname(fileURLToPath(import.meta.url));
   const pkgRoot = resolve(here, '..');
-  const specPath = resolve(pkgRoot, 'build/openapi3.json');
-  const overlayPath = resolve(pkgRoot, 'spec/overlays/corrections.yaml');
-  const spec = JSON.parse(readFileSync(specPath, 'utf-8'));
-  const overlay = yaml.load(readFileSync(overlayPath, 'utf-8'));
+  const resolvedSpecPath = specPath ?? resolve(pkgRoot, 'build/openapi3.json');
+  const resolvedOverlayPath = overlayPath ?? resolve(pkgRoot, 'spec/overlays/corrections.yaml');
+  const spec = JSON.parse(readFileSync(resolvedSpecPath, 'utf-8'));
+  const overlay = yaml.load(readFileSync(resolvedOverlayPath, 'utf-8'));
   const { results } = applyOverlay(spec, overlay);
+  const stale = [];
   for (const r of results) {
-    // eslint-disable-next-line no-console
-    console.log(`overlay: ${r.remove ? 'remove' : 'update'} ${r.target} -> ${r.hits} node(s)`);
+    logger.log(`overlay: ${r.remove ? 'remove' : 'update'} ${r.target} -> ${r.hits} node(s)`);
     if (r.staleRemove) {
-      // eslint-disable-next-line no-console
-      console.warn(`overlay: WARNING remove matched 0 nodes (stale correction?): ${r.target}`);
+      stale.push(r.target);
     }
   }
-  writeFileSync(specPath, JSON.stringify(spec, null, 2), 'utf-8');
-  // eslint-disable-next-line no-console
-  console.log(`✔ overlay applied (${results.length} actions) → ${specPath}`);
+  writeFileSync(resolvedSpecPath, JSON.stringify(spec, null, 2), 'utf-8');
+  if (stale.length > 0) {
+    logger.error(`overlay: FAIL ${stale.length} stale correction(s) matched 0 nodes — upstream may have caught up; prune them from corrections.yaml:`);
+    for (const target of stale) {
+      logger.error(`overlay:   - ${target}`);
+    }
+    return 1;
+  }
+  logger.log(`✔ overlay applied (${results.length} actions) → ${resolvedSpecPath}`);
+  return 0;
 }
 
 // Run only when executed directly (`node scripts/apply-overlay.mjs`), not when imported by tests.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main();
+  process.exitCode = main();
 }

@@ -20,6 +20,7 @@ export interface DeployOptions {
   compatibilityDate?: string;
   observability?: boolean;
   overwrite?: boolean;
+  tags?: string[];
 }
 
 export interface CloudflareAccount {
@@ -65,7 +66,7 @@ export default class CloudflareClient {
     scriptContent: string,
     bindings?: WorkerBinding[],
     opts?: DeployOptions,
-  ): Promise<object>;
+  ): Promise<object | null>;
 
   setWorkerSecret(
     accountId: string,

@@ -193,7 +193,7 @@ export default class CloudflareClient {
   async #findWorker(accountId, scriptName) {
     // name param returns partial matches — filter to exact id.
     const workers = await this.#cfFetch(
-      `/accounts/${accountId}/workers/scripts-search?name=${encodeURIComponent(scriptName)}`,
+      `/accounts/${accountId}/workers/scripts-search?name=${encodeURIComponent(scriptName)}&per_page=100`,
     );
     return workers.find((w) => w.id === scriptName) ?? null;
   }

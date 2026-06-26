@@ -264,7 +264,7 @@ describe('CloudflareClient', () => {
 
     it('throws by default when the script already exists', async () => {
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
         .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
 
       await expect(
@@ -275,7 +275,7 @@ describe('CloudflareClient', () => {
     it('deploys when script does not exist and overwrite is false', async () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
         .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)
@@ -297,7 +297,7 @@ describe('CloudflareClient', () => {
 
     it('throws when the search API returns an error during existence check', async () => {
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
         .reply(403, 'Forbidden');
 
       await expect(
@@ -307,7 +307,7 @@ describe('CloudflareClient', () => {
 
     it('throws when existence check fetch itself fails', async () => {
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
         .replyWithError('ECONNREFUSED');
 
       await expect(
@@ -320,7 +320,7 @@ describe('CloudflareClient', () => {
       let capturedBody;
       // search → not found → new script → deploy with tags in metadata
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
         .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`, (body) => {
@@ -356,7 +356,7 @@ describe('CloudflareClient', () => {
     it('skips deploy and logs info when script exists with a matching tag (same owner)', async () => {
       // search → found; script-settings → has our tag → skip
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
         .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}/script-settings`)
@@ -372,7 +372,7 @@ describe('CloudflareClient', () => {
     it('throws when script exists without a matching tag (different owner)', async () => {
       // search → found; script-settings → no matching tag → error
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
         .reply(200, { success: true, result: [{ id: SCRIPT_NAME }] });
       nock(CF_API_BASE)
         .get(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}/script-settings`)
@@ -387,7 +387,7 @@ describe('CloudflareClient', () => {
       const result = { id: SCRIPT_NAME, etag: 'abc123' };
       // search → not found → new script, no settings call needed
       nock(CF_API_BASE)
-        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}`)
+        .get(`/accounts/${ACCOUNT_ID}/workers/scripts-search?name=${SCRIPT_NAME}&per_page=100`)
         .reply(200, { success: true, result: [] });
       nock(CF_API_BASE)
         .put(`/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`)

@@ -3091,7 +3091,7 @@ describe('TokowakaClient', () => {
       expect(uploadedConfig.prerender.allowList).to.deep.equal(['/products/*']);
     });
 
-    it('cleans up covered suggestions (coveredByDomainWide) when rolling back a pattern suggestion', async () => {
+    it('does not synchronously clean coveredByDomainWide suggestions when rolling back a pattern suggestion', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3127,7 +3127,7 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, coveredSuggestion], updatedBy: 'test@example.com' },
+        { updatedBy: 'test@example.com' },
       );
 
       expect(result.succeededSuggestions).to.include(dwSuggestion);
@@ -3138,17 +3138,12 @@ describe('TokowakaClient', () => {
       expect(dwData).to.not.have.property('edgeDeployed');
       expect(dwData).to.not.have.property('tokowakaDeployed');
 
-      // Verify covered suggestion was also cleaned up.
-      // DW rollback only strips coveredByDomainWide — edgeDeployed is
-      // preserved because it represents an independent per-URL deployment.
-      expect(coveredSuggestion.setData.calledOnce).to.be.true;
-      expect(coveredSuggestion.setUpdatedBy.calledWith('test@example.com')).to.be.true;
-      const coveredData = coveredSuggestion.setData.firstCall.args[0];
-      expect(coveredData).to.have.property('edgeDeployed');
-      expect(coveredData).to.not.have.property('coveredByDomainWide');
+      // Covered suggestion cleanup is async and handled by import-worker.
+      expect(coveredSuggestion.setData.called).to.be.false;
+      expect(coveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
-    it('cleans up coveredByDomainWide on path-level suggestions when rolling back domain-wide', async () => {
+    it('does not synchronously clean coveredByDomainWide on path-level suggestions when rolling back domain-wide', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3182,22 +3177,19 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, pathSuggestion], updatedBy: 'test@example.com' },
+        { updatedBy: 'test@example.com' },
       );
 
       expect(result.succeededSuggestions).to.include(dwSuggestion);
-      expect(pathSuggestion.setData.calledOnce).to.be.true;
-      const pathData = pathSuggestion.setData.firstCall.args[0];
-      expect(pathData).to.not.have.property('coveredByDomainWide');
-      expect(pathData).to.have.property('allowedRegexPatterns');
-      // Verify the cleaned-up path suggestion was actually persisted via saveMany
-      expect(client.dataAccess.Suggestion.saveMany).to.have.been.calledWith(
+      expect(pathSuggestion.setData.called).to.be.false;
+      expect(pathSuggestion.setUpdatedBy.called).to.be.false;
+      expect(client.dataAccess.Suggestion.saveMany).to.not.have.been.calledWith(
         sinon.match((arr) => arr.includes(pathSuggestion)),
         sinon.match.any,
       );
     });
 
-    it('cleans up covered suggestions (coveredByPattern) when rolling back a path-level pattern', async () => {
+    it('does not synchronously clean coveredByPattern suggestions when rolling back a path-level pattern', async () => {
       const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
       const pathSuggestion = {
         getId: () => 'path-1',
@@ -3231,16 +3223,13 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [pathSuggestion],
-        { allSuggestions: [pathSuggestion, coveredSuggestion] },
       );
 
-      expect(coveredSuggestion.setData.calledOnce).to.be.true;
-      const coveredData = coveredSuggestion.setData.firstCall.args[0];
-      expect(coveredData).to.not.have.property('edgeDeployed');
-      expect(coveredData).to.not.have.property('coveredByPattern');
+      expect(coveredSuggestion.setData.called).to.be.false;
+      expect(coveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
-    it('uses domain-wide-rollback fallback for covered suggestions when updatedBy is not provided (domain-wide parent)', async () => {
+    it('does not apply domain-wide-rollback fallback in shared client for async covered cleanup', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3275,16 +3264,14 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, coveredSuggestion] },
       );
 
       // The domain-wide suggestion itself uses 'tokowaka-rollback'
       expect(dwSuggestion.setUpdatedBy.calledWith('tokowaka-rollback')).to.be.true;
-      // The covered suggestion uses 'domain-wide-rollback'
-      expect(coveredSuggestion.setUpdatedBy.calledWith('domain-wide-rollback')).to.be.true;
+      expect(coveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
-    it('uses path-rollback fallback for covered suggestions when updatedBy is not provided (path parent)', async () => {
+    it('does not apply path-rollback fallback in shared client for async covered cleanup', async () => {
       const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
       const pathSuggestion = {
         getId: () => 'path-1',
@@ -3317,13 +3304,11 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [pathSuggestion],
-        { allSuggestions: [pathSuggestion, coveredSuggestion] },
       );
 
       // The path suggestion itself uses 'tokowaka-rollback'
       expect(pathSuggestion.setUpdatedBy.calledWith('tokowaka-rollback')).to.be.true;
-      // The covered suggestion uses 'path-rollback'
-      expect(coveredSuggestion.setUpdatedBy.calledWith('path-rollback')).to.be.true;
+      expect(coveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
     it('DW rollback does NOT cascade to deployed path suggestions (paths are independent)', async () => {
@@ -3370,7 +3355,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, deployedPathSuggestion, pathCoveredSuggestion] },
       );
 
       // Domain-wide suggestion was rolled back
@@ -3418,7 +3402,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
       );
 
       // Only '/*' removed; '/products/*' and '/blog/*' preserved
@@ -3464,7 +3447,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, deployedPathSuggestion] },
       );
 
       // One upload for DW removal only
@@ -3506,7 +3488,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, undeployedPathSuggestion] },
       );
 
       // Undeployed path suggestion was not touched
@@ -3649,7 +3630,7 @@ describe('TokowakaClient', () => {
       expect(pathSuggestion.save).to.not.have.been.called;
     });
 
-    it('rollback logs error when covered suggestion saveMany fails', async () => {
+    it('rollback does not attempt covered suggestion saveMany cleanup in shared client', async () => {
       const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
       const dwSuggestion = {
         getId: () => 'dw-1',
@@ -3677,23 +3658,18 @@ describe('TokowakaClient', () => {
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
-      // First saveMany succeeds (pattern suggestion save), second fails (covered cleanup)
-      client.dataAccess.Suggestion.saveMany
-        .onFirstCall().resolves()
-        .onSecondCall().rejects(new Error('DB error'));
+      client.dataAccess.Suggestion.saveMany.resolves();
 
       await client.rollbackSuggestions(
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, covered] },
       );
 
-      // Covered suggestion was mutated before saveMany
-      expect(covered.setData.calledOnce).to.be.true;
-      // The failure was logged as a consolidated error for alerting
-      // eslint-disable-next-line max-len
-      expect(log.error).to.have.been.calledWithMatch(/\[edge-rollback-failed\].*covered suggestion/);
+      expect(covered.setData.called).to.be.false;
+      expect(covered.setUpdatedBy.called).to.be.false;
+      expect(client.dataAccess.Suggestion.saveMany).to.have.been.calledOnce;
+      expect(client.dataAccess.Suggestion.saveMany.firstCall.args[0]).to.not.include(covered);
     });
 
     it('rollback marks all pattern suggestions as failed when saveMany throws', async () => {
@@ -3740,9 +3716,7 @@ describe('TokowakaClient', () => {
 
     // --- Edge case tests for deploy/rollback interaction scenarios ---
 
-    it('DW rollback preserves coveredByPattern on suggestions covered by both DW and path', async () => {
-      // Scenario: URL covered by both DW and a path. DW rollback should
-      // only strip coveredByDomainWide; coveredByPattern must survive.
+    it('DW rollback leaves doubly covered URL suggestions untouched for async cleanup', async () => {
       const prerenderOpportunity = {
         getId: () => 'opp-dw',
         getType: () => 'prerender',
@@ -3779,23 +3753,13 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        {
-          allSuggestions: [
-            dwSuggestion,
-            doubleCoveredSuggestion,
-          ],
-        },
       );
 
-      expect(doubleCoveredSuggestion.setData.calledOnce).to.be.true;
-      const data = doubleCoveredSuggestion.setData.firstCall.args[0];
-      expect(data).to.not.have.property('coveredByDomainWide');
-      expect(data).to.have.property('coveredByPattern', 'path-1');
+      expect(doubleCoveredSuggestion.setData.called).to.be.false;
+      expect(doubleCoveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
-    it('path rollback preserves coveredByDomainWide on suggestions covered by both DW and path', async () => {
-      // Scenario: URL covered by both DW and a path. Path rollback should
-      // only strip coveredByPattern; coveredByDomainWide must survive.
+    it('path rollback leaves doubly covered URL suggestions untouched for async cleanup', async () => {
       const prerenderOpportunity = {
         getId: () => 'opp-p',
         getType: () => 'prerender',
@@ -3832,19 +3796,10 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [pathSuggestion],
-        {
-          allSuggestions: [
-            pathSuggestion,
-            doubleCoveredSuggestion,
-          ],
-        },
       );
 
-      expect(doubleCoveredSuggestion.setData.calledOnce).to.be.true;
-      const data = doubleCoveredSuggestion.setData.firstCall.args[0];
-      expect(data).to.not.have.property('coveredByPattern');
-      expect(data).to.not.have.property('edgeDeployed');
-      expect(data).to.have.property('coveredByDomainWide', 'dw-1');
+      expect(doubleCoveredSuggestion.setData.called).to.be.false;
+      expect(doubleCoveredSuggestion.setUpdatedBy.called).to.be.false;
     });
 
     it('DW rollback cascade skips path deployed before DW', async () => {
@@ -3885,9 +3840,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        {
-          allSuggestions: [dwSuggestion, preExistingPath],
-        },
       );
 
       // Pre-existing path was NOT cascaded
@@ -3933,7 +3885,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, laterPath] },
       );
 
       // Path was NOT cascaded
@@ -3980,9 +3931,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        {
-          allSuggestions: [dwSuggestion, pathOnlyCovered],
-        },
       );
 
       // URL with only coveredByPattern was NOT touched
@@ -3990,9 +3938,9 @@ describe('TokowakaClient', () => {
       expect(pathOnlyCovered.setData.called).to.be.false;
     });
 
-    it('DW rollback cascade skips other domain-wide suggestions in allSuggestions', async () => {
+    it('DW rollback leaves other domain-wide suggestions untouched', async () => {
       // Covers the isDomainWide guard inside the cascade filter.
-      // A second DW suggestion in allSuggestions must not be cascaded.
+      // A second DW suggestion not selected for rollback must not be cascaded.
       const prerenderOpportunity = {
         getId: () => 'opp-dw',
         getType: () => 'prerender',
@@ -4029,7 +3977,6 @@ describe('TokowakaClient', () => {
         mockSite,
         prerenderOpportunity,
         [dwSuggestion],
-        { allSuggestions: [dwSuggestion, otherDw] },
       );
 
       // The other DW suggestion was not cascaded
@@ -5818,7 +5765,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1, s2],
-        allSuggestions: [s1, s2],
         updatedBy: 'test-user',
       });
 
@@ -5841,7 +5787,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
         updatedBy: 'test-user',
       });
 
@@ -5862,7 +5807,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
       });
 
       expect(s1.getData()).to.not.have.property('edgeOptimizeStatus');
@@ -5881,7 +5825,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
       });
 
       expect(result.failedSuggestions).to.have.length(1);
@@ -5898,7 +5841,6 @@ describe('TokowakaClient', () => {
           site: mockSite,
           opportunity: mockOpportunity,
           targetSuggestions: [s1],
-          allSuggestions: [s1],
         });
         expect.fail('Should have thrown');
       } catch (error) {
@@ -5918,7 +5860,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(uploadMetaconfigStub).to.have.been.calledOnce;
@@ -5938,14 +5879,13 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       const uploadCall = uploadMetaconfigStub.firstCall.args[1];
       expect(uploadCall).to.have.property('siteId', 'site-123');
     });
 
-    it('should mark non-batch suggestions covered by domain-wide patterns', async () => {
+    it('should not synchronously mark non-batch suggestions covered by domain-wide patterns', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['^https://example\\.com/.*'],
@@ -5958,11 +5898,10 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, covered],
       });
 
-      expect(result.coveredSuggestions).to.include(covered);
-      expect(covered.getData()).to.have.property('coveredByDomainWide', 'dw1');
+      expect(result.coveredSuggestions).to.not.include(covered);
+      expect(covered.getData()).to.not.have.property('coveredByDomainWide');
     });
 
     it('should not mark already-domain-wide suggestions as covered', async () => {
@@ -5982,14 +5921,13 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw1],
-        allSuggestions: [dw1, dw2],
       });
 
       // dw2 is domain-wide so should not appear in coveredSuggestions
       expect(result.coveredSuggestions).to.not.include(dw2);
     });
 
-    it('should mark path-level pattern suggestions as coveredByDomainWide when domain-wide is deployed', async () => {
+    it('should not synchronously mark path-level pattern suggestions when domain-wide is deployed', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['^https://example\\.com/.*'],
@@ -6004,11 +5942,10 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, pathLevel],
       });
 
-      expect(result.coveredSuggestions).to.include(pathLevel);
-      expect(pathLevel.getData()).to.have.property('coveredByDomainWide', 'dw1');
+      expect(result.coveredSuggestions).to.not.include(pathLevel);
+      expect(pathLevel.getData()).to.not.have.property('coveredByDomainWide');
     });
 
     it('should not mark already-deployed path-level suggestions as coveredByDomainWide', async () => {
@@ -6027,7 +5964,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, pathLevel],
       });
 
       expect(result.coveredSuggestions).to.not.include(pathLevel);
@@ -6047,13 +5983,12 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, approved],
       });
 
       expect(result.coveredSuggestions).to.not.include(approved);
     });
 
-    it('should warn but continue when covered-suggestion saveMany fails', async () => {
+    it('should ignore non-batch covered suggestion save path (now async in worker)', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['^https://example\\.com/.*'],
@@ -6061,24 +5996,17 @@ describe('TokowakaClient', () => {
       const covered = makeSuggestion('covered1', { url: 'https://example.com/page1' });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
-      // First saveMany call is for covered suggestions (fails),
-      // second is for pattern suggestions batch save (succeeds)
-      client.dataAccess.Suggestion.saveMany
-        .onFirstCall().rejects(new Error('DB error'))
-        .onSecondCall().resolves();
-
       const result = await client.deployToEdge({
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw, covered],
       });
 
       // domain-wide itself still succeeded
       expect(result.succeededSuggestions).to.include(dw);
-      // covered is not in coveredSuggestions — saveMany error was swallowed
+      // covered is not in coveredSuggestions in sync path anymore
       expect(result.coveredSuggestions).to.not.include(covered);
-      expect(log.warn).to.have.been.called;
+      expect(log.warn).to.not.have.been.called;
     });
 
     it('should mark domain-wide as failed with statusCode 500 when metaconfig upload fails', async () => {
@@ -6094,7 +6022,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(result.succeededSuggestions).to.not.include(dw);
@@ -6103,7 +6030,7 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions[0].reason).to.equal('Internal server error');
     });
 
-    it('should skip invalid regex in same-batch pattern filtering without throwing', async () => {
+    it('should deploy regular suggestion even when domain-wide regex list includes invalid entries', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['[invalid', '^https://example\\.com/.*'],
@@ -6111,16 +6038,20 @@ describe('TokowakaClient', () => {
       const regular = makeSuggestion('r1', { url: 'https://example.com/page1' });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [regular],
+        failedSuggestions: [],
+      });
 
       const result = await client.deployToEdge({
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, regular],
-        allSuggestions: [dw, regular],
       });
 
-      // valid pattern matches regular, so it's skipped in batch
-      expect(result.coveredSuggestions).to.include(regular);
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
+      expect(result.succeededSuggestions).to.include(regular);
+      expect(result.coveredSuggestions).to.not.include(regular);
     });
 
     it('should skip domain-wide suggestion with no valid allowedRegexPatterns', async () => {
@@ -6133,7 +6064,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(result.succeededSuggestions).to.have.length(0);
@@ -6141,7 +6071,7 @@ describe('TokowakaClient', () => {
       expect(uploadMetaconfigStub).to.not.have.been.called;
     });
 
-    it('should warn and skip empty string patterns', async () => {
+    it('should deploy path pattern with empty matcher entries without sync covered-marking', async () => {
       const path = makeSuggestion('p1', {
         allowedRegexPatterns: [''],
       });
@@ -6152,14 +6082,13 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(result.succeededSuggestions).to.include(path);
-      expect(log.warn).to.have.been.called;
+      expect(log.warn).to.not.have.been.called;
     });
 
-    it('should warn and skip invalid regex patterns for domain-wide', async () => {
+    it('should deploy domain-wide even if regex list contains invalid patterns', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['[invalid', '^https://example\\.com/.*'],
@@ -6171,14 +6100,13 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
-      expect(log.warn).to.have.been.called;
+      expect(log.warn).to.not.have.been.called;
       expect(uploadMetaconfigStub).to.have.been.calledOnce;
     });
 
-    it('should skip same-batch regular suggestions covered by domain-wide patterns', async () => {
+    it('should deploy same-batch regular suggestions even when covered by domain-wide patterns', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['^https://example\\.com/.*'],
@@ -6186,67 +6114,46 @@ describe('TokowakaClient', () => {
       const regular = makeSuggestion('r1', { url: 'https://example.com/page1' });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [regular],
+        failedSuggestions: [],
+      });
 
       const result = await client.deployToEdge({
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, regular],
-        allSuggestions: [dw, regular],
       });
 
-      // regular was in same batch as domain-wide, should be marked covered
-      expect(result.coveredSuggestions).to.include(regular);
-      expect(regular.getData()).to.have.property('coveredByDomainWide', 'same-batch-deployment');
-      expect(regular.getData()).to.have.property('skippedInDeployment', true);
-      // deploySuggestions should NOT have been called for the regular suggestion
-      expect(deploySuggestionsStub).to.not.have.been.called;
-    });
-
-    it('same-batch skip with path-level pattern sets coveredByPattern, not coveredByDomainWide', async () => {
-      const path = makeSuggestion('p1', {
-        allowedRegexPatterns: ['/products/*'],
-      });
-      const regular = makeSuggestion('r1', { url: 'https://example.com/products/item' });
-
-      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
-
-      const result = await client.deployToEdge({
-        site: mockSite,
-        opportunity: mockOpportunity,
-        targetSuggestions: [path, regular],
-        allSuggestions: [path, regular],
-      });
-
-      expect(result.coveredSuggestions).to.include(regular);
-      expect(regular.getData()).to.have.property('coveredByPattern', 'same-batch-deployment');
-      expect(regular.getData()).to.not.have.property('coveredByDomainWide');
-      expect(regular.getData()).to.have.property('skippedInDeployment', true);
-      expect(deploySuggestionsStub).to.not.have.been.called;
-    });
-
-    it('should surface same-batch save failures as failed suggestions with statusCode 500', async () => {
-      const dw = makeSuggestion('dw1', {
-        isDomainWide: true,
-        allowedRegexPatterns: ['^https://example\\.com/.*'],
-      });
-      const regular = makeSuggestion('r1', { url: 'https://example.com/page1' });
-
-      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
-      // Make saveMany fail for same-batch skipped suggestions
-      client.dataAccess.Suggestion.saveMany.rejects(new Error('save failed'));
-
-      const result = await client.deployToEdge({
-        site: mockSite,
-        opportunity: mockOpportunity,
-        targetSuggestions: [dw, regular],
-        allSuggestions: [dw, regular],
-      });
-
-      expect(result.failedSuggestions.some((f) => f.suggestion === regular)).to.be.true;
-      // eslint-disable-next-line max-len
-      expect(result.failedSuggestions.find((f) => f.suggestion === regular).statusCode).to.equal(500);
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
+      expect(result.succeededSuggestions).to.include(regular);
       expect(result.coveredSuggestions).to.not.include(regular);
-      expect(log.warn).to.have.been.called;
+      expect(regular.getData()).to.not.have.property('coveredByDomainWide');
+      expect(regular.getData()).to.not.have.property('skippedInDeployment');
+    });
+
+    it('should not use same-batch covered-marking failure path (async in worker)', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const regular = makeSuggestion('r1', { url: 'https://example.com/page1' });
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [regular],
+        failedSuggestions: [],
+      });
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw, regular],
+      });
+
+      expect(result.failedSuggestions.some((f) => f.suggestion === regular)).to.be.false;
+      expect(result.coveredSuggestions).to.not.include(regular);
+      expect(log.warn).to.not.have.been.called;
     });
 
     it('should use default updatedBy when not provided', async () => {
@@ -6261,7 +6168,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
       });
 
       expect(s1.getUpdatedBy()).to.equal('edge-deploy');
@@ -6285,7 +6191,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, regular],
-        allSuggestions: [dw, regular],
       });
 
       expect(deploySuggestionsStub).to.have.been.calledOnce;
@@ -6293,7 +6198,7 @@ describe('TokowakaClient', () => {
       expect(result.coveredSuggestions).to.not.include(regular);
     });
 
-    it('should not call deploySuggestions when all regular suggestions are skipped in batch', async () => {
+    it('should call deploySuggestions when regular suggestions are selected with domain-wide', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['^https://example\\.com/.*'],
@@ -6302,18 +6207,21 @@ describe('TokowakaClient', () => {
       const r2 = makeSuggestion('r2', { url: 'https://example.com/page2' });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [r1, r2],
+        failedSuggestions: [],
+      });
 
       await client.deployToEdge({
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, r1, r2],
-        allSuggestions: [dw, r1, r2],
       });
 
-      expect(deploySuggestionsStub).to.not.have.been.called;
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
     });
 
-    it('should not include same-batch skipped suggestions in covered-by-pattern check', async () => {
+    it('should keep coveredSuggestions empty when domain-wide and matching regular are selected together', async () => {
       const dw = makeSuggestion('dw1', {
         isDomainWide: true,
         allowedRegexPatterns: ['^https://example\\.com/.*'],
@@ -6321,18 +6229,18 @@ describe('TokowakaClient', () => {
       const skipped = makeSuggestion('r1', { url: 'https://example.com/page1' });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [skipped],
+        failedSuggestions: [],
+      });
 
       const result = await client.deployToEdge({
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw, skipped],
-        allSuggestions: [dw, skipped],
       });
 
-      // skipped is in same batch, it should be in coveredSuggestions once (via same-batch path)
-      // but NOT doubly added via the per-suggestion covered-marking path
-      const skippedInCovered = result.coveredSuggestions.filter((s) => s.getId() === 'r1');
-      expect(skippedInCovered).to.have.length(1);
+      expect(result.coveredSuggestions).to.have.length(0);
     });
 
     it('domain-wide deploy merges /*  into existing allowList instead of replacing it', async () => {
@@ -6347,7 +6255,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
@@ -6366,7 +6273,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(uploadMetaconfigStub).to.not.have.been.called;
@@ -6383,7 +6289,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(result.succeededSuggestions).to.include(path);
@@ -6403,7 +6308,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       const uploadedConfig = uploadMetaconfigStub.firstCall.args[1];
@@ -6421,7 +6325,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(uploadMetaconfigStub).to.not.have.been.called;
@@ -6440,13 +6343,12 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(deploySuggestionsStub).to.not.have.been.called;
     });
 
-    it('path deploy marks per-URL suggestions under the deployed path prefix as covered', async () => {
+    it('path deploy does not synchronously mark per-URL suggestions under the deployed path prefix', async () => {
       const path = makeSuggestion('p1', {
         allowedRegexPatterns: ['/products/*'],
       });
@@ -6459,11 +6361,10 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, urlUnderPath, urlElsewhere],
       });
 
-      expect(result.coveredSuggestions).to.include(urlUnderPath);
-      expect(urlUnderPath.getData()).to.have.property('coveredByPattern', 'p1');
+      expect(result.coveredSuggestions).to.not.include(urlUnderPath);
+      expect(urlUnderPath.getData()).to.not.have.property('coveredByPattern');
       expect(result.coveredSuggestions).to.not.include(urlElsewhere);
     });
 
@@ -6479,7 +6380,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path],
       });
 
       expect(result.succeededSuggestions).to.not.include(path);
@@ -6488,7 +6388,7 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions[0].reason).to.equal('Internal server error');
     });
 
-    it('path deploy marks coverage via allowedRegexPatterns even when pathPattern field is absent', async () => {
+    it('path deploy does not set coveredByPattern via allowedRegexPatterns in sync path', async () => {
       const path = makeSuggestion('p1', {
         allowedRegexPatterns: ['/products/*'],
         // no pathPattern field — coverage is derived from allowedRegexPatterns
@@ -6501,26 +6401,17 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, urlUnderPath],
       });
 
       expect(result.succeededSuggestions).to.include(path);
-      expect(result.coveredSuggestions).to.include(urlUnderPath);
-      expect(urlUnderPath.getData()).to.have.property('coveredByPattern', 'p1');
+      expect(result.coveredSuggestions).to.not.include(urlUnderPath);
+      expect(urlUnderPath.getData()).to.not.have.property('coveredByPattern');
     });
 
-    it('path deploy does not mark non-NEW, pattern, or already-deployed candidates as covered', async () => {
+    it('path deploy returns empty coveredSuggestions for async covered marking', async () => {
       const path = makeSuggestion('p1', {
         allowedRegexPatterns: ['/products/*'],
       });
-      // APPROVED — not a deployable status
-      const nonNew = makeSuggestion('u1', { url: 'https://example.com/products/a' }, 'APPROVED');
-      // isDomainWide pattern — excluded (isPatternSuggestion)
-      const dw = makeSuggestion('u2', { isDomainWide: true, allowedRegexPatterns: ['/*'], url: 'https://example.com/products/b' });
-      // another path pattern — excluded (isPatternSuggestion)
-      const otherPath = makeSuggestion('u3', { allowedRegexPatterns: ['/products/*'], url: 'https://example.com/products/c' });
-      // already edgeDeployed — excluded
-      const deployed = makeSuggestion('u4', { url: 'https://example.com/products/d', edgeDeployed: 12345 });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
 
@@ -6528,7 +6419,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, nonNew, dw, otherPath, deployed],
       });
 
       expect(result.coveredSuggestions).to.have.length(0);
@@ -6546,7 +6436,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, badUrl],
       });
 
       // bad URL is not covered, but deploy itself still succeeds
@@ -6554,31 +6443,23 @@ describe('TokowakaClient', () => {
       expect(result.coveredSuggestions).to.not.include(badUrl);
     });
 
-    it('path deploy warns but continues when covered-suggestion saveMany fails', async () => {
+    it('path deploy skips covered-suggestion saveMany path (now async in worker)', async () => {
       const path = makeSuggestion('p1', {
         allowedRegexPatterns: ['/products/*'],
       });
       const urlUnderPath = makeSuggestion('u1', { url: 'https://example.com/products/item-1' });
 
       fetchMetaconfigStub.resolves({ siteId: 'site-123' });
-      // First saveMany call is for covered suggestions (fails),
-      // second is for pattern suggestions batch save (succeeds)
-      client.dataAccess.Suggestion.saveMany
-        .onFirstCall().rejects(new Error('DB error'))
-        .onSecondCall().resolves();
-
       const result = await client.deployToEdge({
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [path],
-        allSuggestions: [path, urlUnderPath],
       });
 
       // path suggestion itself still succeeded
       expect(result.succeededSuggestions).to.include(path);
-      // covered is not in coveredSuggestions — saveMany error was swallowed
       expect(result.coveredSuggestions).to.not.include(urlUnderPath);
-      expect(log.warn).to.have.been.called;
+      expect(log.warn).to.not.have.been.called;
     });
 
     it('batch filter is a no-op when all pattern matchers are invalid', async () => {
@@ -6617,7 +6498,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [invalidPattern, perUrl],
-        allSuggestions: [invalidPattern, perUrl],
       });
 
       // per-URL not skipped (invalid matchers → no filtering)
@@ -6639,7 +6519,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [dw],
-        allSuggestions: [dw],
       });
 
       expect(result.succeededSuggestions).to.not.include(dw);
@@ -6662,7 +6541,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
         metadata: { applyStale: true },
       });
 
@@ -6683,7 +6561,6 @@ describe('TokowakaClient', () => {
         site: mockSite,
         opportunity: mockOpportunity,
         targetSuggestions: [s1],
-        allSuggestions: [s1],
       });
 
       expect(deploySuggestionsStub).to.have.been.calledOnce;

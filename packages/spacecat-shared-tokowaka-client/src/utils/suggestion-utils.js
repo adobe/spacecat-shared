@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { buildUrlMatcher } from './pattern-utils.js';
-
 /** Returns a shallow copy of obj with the specified keys removed. */
 export function omitKeys(obj, keys) {
   const keySet = new Set(keys);
@@ -140,36 +138,6 @@ export function stripSuggestion(suggestion, actorFallback, updatedBy) {
 }
 
 /**
- * Clears coverage and deployment markers from suggestions that were covered by a pattern.
- * Only strips the fields relevant to the rollback type so independent coverage layers
- * are preserved. For example, rolling back domain-wide should only clear
- * coveredByDomainWide — not coveredByPattern (which belongs to a separate path deploy).
- * @param {Object} dataAccess - Data access layer
- * @param {Array} covered - Covered suggestion entities
- * @param {string} actorFallback - Fallback updatedBy string
- * @param {string|undefined} updatedBy - Explicit actor
- * @param {string[]} fieldsToStrip - Specific fields to remove
- * @param {Object} log - Logger instance
- * @returns {Promise<void>}
- */
-// eslint-disable-next-line max-len
-export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log) {
-  if (covered.length === 0) {
-    return;
-  }
-  covered.forEach((cs) => {
-    cs.setData(omitKeys(cs.getData(), fieldsToStrip));
-    cs.setUpdatedBy(updatedBy ?? actorFallback);
-  });
-  try {
-    await saveSuggestions(dataAccess, covered);
-  } catch (error) {
-    // eslint-disable-next-line max-len
-    log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
-  }
-}
-
-/**
  * Classifies a batch of target suggestions into pattern-based and per-URL buckets.
  * Pattern suggestions (domain-wide or path-level) are returned as
  * `{ suggestion, allowedRegexPatterns }` objects; per-URL suggestions are filtered
@@ -197,47 +165,4 @@ export function classifySuggestions(targetSuggestions, log) {
   });
 
   return { patternSuggestions, validSuggestions };
-}
-
-/**
- * Splits validSuggestions into those covered by an in-batch pattern and those that are not.
- * Returns the two arrays; validSuggestions itself is not mutated.
- * @param {Array} validSuggestions - Per-URL suggestions
- * @param {Array} patternSuggestions - Pattern suggestions in the same batch
- * @param {Object} log - Logger instance
- * @returns {{ remaining: Array, skippedInBatch: Array }}
- */
-export function filterBatchCoveredSuggestions(validSuggestions, patternSuggestions, log) {
-  if (patternSuggestions.length === 0 || validSuggestions.length === 0) {
-    return { remaining: validSuggestions, skippedInBatch: [] };
-  }
-
-  // Build matchers per pattern suggestion so we can track which type covered each URL.
-  // eslint-disable-next-line max-len
-  const matcherEntries = patternSuggestions.flatMap(({ suggestion, allowedRegexPatterns }) => {
-    const isDomainWide = suggestion.getData()?.isDomainWide === true;
-    return allowedRegexPatterns
-      .map(buildUrlMatcher)
-      .filter(Boolean)
-      .map((matcher) => ({ matcher, isDomainWide }));
-  });
-
-  if (matcherEntries.length === 0) {
-    return { remaining: validSuggestions, skippedInBatch: [] };
-  }
-
-  const remaining = [];
-  const skippedInBatch = [];
-  validSuggestions.forEach((s) => {
-    const url = s.getData()?.url;
-    const match = url && matcherEntries.find(({ matcher }) => matcher(url));
-    if (match) {
-      skippedInBatch.push({ suggestion: s, isDomainWide: match.isDomainWide });
-      log.info(`[edge-deploy] Skipping suggestion ${s.getId()} - covered by pattern`);
-    } else {
-      remaining.push(s);
-    }
-  });
-
-  return { remaining, skippedInBatch };
 }

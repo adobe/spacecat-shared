@@ -43,6 +43,7 @@ import { createQuota } from './quota.js';
 import { authError } from './auth.js';
 import { emptyAck } from './responses.js';
 import * as factories from './factories.js';
+import { LANGUAGE_CATALOG } from './language-catalog.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
 /**
@@ -82,6 +83,10 @@ export class Context {
     // literals — the factory is the single, tsc-checked source of truth for each shape, so the
     // handlers can't drift from the spec the way duplicated literals would.
     this.factories = factories;
+    // The canonical language catalog (mock/language-catalog.js). Exposed so the `GET /v1/languages`
+    // route serves it without duplicating the 38-entry list, mirroring how `factories` is shared —
+    // every route reads its lib data through `$.context`, never an import.
+    this.languageCatalog = LANGUAGE_CATALOG;
   }
 
   /**

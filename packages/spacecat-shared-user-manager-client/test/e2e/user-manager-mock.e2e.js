@@ -256,7 +256,7 @@ async function waitForReady(apiBase, deadline, getStderr) {
       body: { title: 'Second [e2e00005]', resources: { ai: { projects: 1, prompts: 500 } } },
     });
     expect(second.response.status).to.equal(422);
-    expect(second.error).to.deep.equal({ message: 'insufficient available units' });
+    expect(second.error).to.deep.equal({ message: 'insufficient available units in subscription' });
   });
 
   it('rejects an unauthenticated request with 401 { detail }', async () => {
@@ -277,7 +277,15 @@ async function waitForReady(apiBase, deadline, getStderr) {
     });
     expect(response.status).to.equal(422);
     // Pin the live 422 envelope string (the handler is coverage-excluded — assert it here).
-    expect(error).to.deep.equal({ message: 'insufficient available units' });
+    expect(error).to.deep.equal({ message: 'insufficient available units in subscription' });
+  });
+
+  it('403s GET family on an unknown workspace (mirrors status — no ownership of an unseeded id)', async () => {
+    const { error, response } = await client.GET('/v1/workspaces/{id}/family', {
+      params: { path: { id: '00000000-0000-4000-8000-000000000000' } },
+    });
+    expect(response.status).to.equal(403);
+    expect(error).to.deep.equal({ message: 'invalid access attempt' });
   });
 
   it('404s an unmodelled path (serve-only — no random stubs)', async () => {

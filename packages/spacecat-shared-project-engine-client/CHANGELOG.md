@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.3.1...@adobe/spacecat-shared-project-engine-client-v1.3.2) (2026-06-29)
+
+### Bug Fixes
+
+* **project-engine-client, user-manager-client:** round-trip created+published market + live-fidelity sweep ([#1745](https://github.com/adobe/spacecat-shared/issues/1745)) ([#1746](https://github.com/adobe/spacecat-shared/issues/1746)) ([d3d823c](https://github.com/adobe/spacecat-shared/commit/d3d823c58f155ffa35258ff40c16b2b6f4fe2d56)), closes [#1742](https://github.com/adobe/spacecat-shared/issues/1742)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.3.0...@adobe/spacecat-shared-project-engine-client-v1.3.1) (2026-06-29)
 
 ### Bug Fixes

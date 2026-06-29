@@ -15,6 +15,29 @@ is the only cross-repo distribution of it.
 - **Exposed:** `8443` (HTTPS only)
 - **Base URL inside:** `https://<host>:8443/enterprise/users/api`
 
+## Image size & the multi-stage build
+
+The image is built in two stages (see `Dockerfile`) to keep the runtime layer lean:
+
+- **builder** — full `npm install` (incl. devDeps), runs `spec:convert && spec:overlay` to bake
+  `build/openapi3.json`, and mints the self-signed cert with `openssl`.
+- **runtime** — clean base + only what the mock needs to *run*: a prod-only `node_modules` (the
+  `counterfact` engine; the build/test toolchain is dropped), the baked spec, `mock/`, the cert,
+  and `caddy` (TLS) + `curl` (healthcheck). `openssl` (build-only) and `bash` (the entrypoint is
+  POSIX `sh`) are not installed, and `spec/` / `scripts/` are absent (their only job ran in the
+  builder). The container runs as the unprivileged `node` user (uid 1000), not root.
+
+`counterfact` stays a **devDependency** in `package.json` so consumers of the *published* client
+(`files: ["src"]`) never inherit it. The runtime stage installs it explicitly from a derived,
+throwaway runtime-only manifest, pinned to the exact version `package.json` declares.
+
+The dominant remaining weight is `counterfact` itself: it transpiles the materialized `.ts`
+handlers at runtime, so it drags `typescript`/`esbuild`/`tsx` (plus a dashboard/telemetry) as
+genuine runtime deps — that toolchain is the floor and cannot be pruned without redesigning the
+mock. The base is pinned to a `node:24-alpine` digest for reproducibility; a distroless runtime
+would shave the node-alpine layer further but is a stretch (no shell/apk → Caddy/curl/entrypoint
+rework).
+
 ## Why HTTPS / why Caddy
 
 `spacecat-api-service`'s transport (`rest-transport.js` `baseUrl()`) **throws `503` on any non-https

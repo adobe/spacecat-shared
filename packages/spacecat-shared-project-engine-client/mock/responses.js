@@ -28,6 +28,17 @@
  * Counterfact skips negotiation/validation and serves the response verbatim. {@link emptyAck}
  * centralizes that shape so empty-body ack handlers can't reintroduce the negotiation 406.
  *
+ * KNOWN, UNAVOIDABLE DIVERGENCE — the mock's empty 202 carries a `Content-Type: application/json`
+ * header; live prod sends the empty ack with `content-length: 0` and NO `Content-Type` at all
+ * (captured 2026-06-29 against the real gateway: `202`, `content-length: 0`, no content type). This
+ * is a Counterfact framework limit, not a choice: a truthy `contentType` is the ONLY way to get a
+ * 0-byte body past negotiation — without it the body either 406s or falls back to Counterfact's
+ * default `text/plain` "Accepted" 8-byte body (both verified across the raw-return and typed
+ * `$.response[202]` paths). The divergence is invisible to the only consumer — the serenity
+ * transport keys off `response.ok`/status, and the body is empty either way — so status + body
+ * match prod exactly; only this one extra response header differs. `application/json` is chosen
+ * because it matches the caller's `Accept`.
+ *
  * NOTE — this is for `2xx` acks that carry an EMPTY body but are NOT `204`. A bare
  * `{ status: 204 }` is already safe: Counterfact special-cases `204 No Content` and serves it
  * without negotiating (verified 2026-06-29 — `204` returns `204` under `Accept: application/json`,

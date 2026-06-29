@@ -30,6 +30,7 @@ export interface FixEntity extends BaseModel {
   setPublishedAt(value: string): this;
   getStatus(): string;
   setStatus(value: string): this;
+  transitionStatus(to: string): this;
   getType(): string;
 }
 

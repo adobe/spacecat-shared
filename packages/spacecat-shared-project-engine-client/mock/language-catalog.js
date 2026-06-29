@@ -38,6 +38,13 @@
  */
 
 /**
+ * The date the catalog (`id`/`name`) was captured verbatim from the live Semrush gateway, so drift
+ * from the live taxonomy is discoverable/greppable rather than buried in prose. Bump it when the
+ * catalog is re-captured.
+ */
+export const CATALOG_CAPTURED = '2026-06-25';
+
+/**
  * @typedef {{ id: string, name: string, iso: string }} LanguageCatalogEntry
  */
 

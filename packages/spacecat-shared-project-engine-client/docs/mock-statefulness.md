@@ -122,7 +122,8 @@ change, the live proof.
   gets no new id (live, 2026-06-29). `POST .../ai_models/benchmarks` instead treats a duplicate
   brand name / alias / domain as a **hard `409`** `{ message: "ai benchmark conflict: duplicate
   brand name or alias" }` (benchmarks and prompts dedup *differently* live) and creates nothing for
-  the batch. Not modelled: **slice-uniqueness** (two US/en projects both succeed with distinct ids —
+  the batch — including two conflicting entries **within the same batch**, not just against
+  already-stored rows. Not modelled: **slice-uniqueness** (two US/en projects both succeed with distinct ids —
   PE does not enforce it; that invariant lives only in serenity's `findBySlice`/DB), matching live.
 
 ## Project read-view fidelity (#1745, live-pinned 2026-06-29)

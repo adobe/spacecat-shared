@@ -52,9 +52,9 @@ const REGION_NAMES = new Intl.DisplayNames(['en'], { type: 'region' });
  * request omitted them (`brand_names`, `location.name`). The generated schema types those as
  * `string[]`/`string` with no null variant, so this localizes the one unavoidable cast to a single
  * documented spot rather than scattering `@ts-ignore`s across the literal.
- * @returns {any}
+ * @type {any}
  */
-const nullable = () => null;
+const NULLABLE = null;
 
 /**
  * Resolves a 2-letter country code to the informal country name the live project read-view returns
@@ -165,7 +165,7 @@ export const createProjectResponseFromRequest = (request = {}) => {
         // Live echoes `null` (not `[]`/`''`) for an omitted brand_names / location_name on the
         // read-view (verified 2026-06-29). The consumer always sends these, so it is fidelity-only;
         // the casts satisfy the schema (string[]/string), which has no explicit null variant.
-        brand_names: request.brand_names ?? nullable(),
+        brand_names: request.brand_names ?? NULLABLE,
         brand_name_display: request.brand_name_display ?? '',
         // Live read-view: `language.name` is the ISO code (e.g. "en"), NOT the English display
         // name, and `language.id` is the catalog UUID sent on create. `langOf` reads
@@ -174,7 +174,7 @@ export const createProjectResponseFromRequest = (request = {}) => {
         // populated for fidelity.
         language: { id: request.language_id ?? '', name: isoForLanguageId(request.language_id) },
         country: { code: request.country_code ?? '', name: countryName(request.country_code) },
-        location: { id: request.location_id ?? 0, name: request.location_name ?? nullable() },
+        location: { id: request.location_id ?? 0, name: request.location_name ?? NULLABLE },
         primary_url: request.domain ?? '',
         segments_count: 0,
         benchmarks_count: 0,

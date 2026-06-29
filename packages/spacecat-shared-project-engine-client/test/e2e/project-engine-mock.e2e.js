@@ -246,6 +246,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(published.settings.ai.language.name).to.equal('en');
     expect(published).to.include({ publish_status: 'live', is_draft: true });
     expect(published.published_at).to.be.a('string').with.length.greaterThan(0);
+    // published_at is a valid ISO 8601 timestamp (round-trips through Date).
+    expect(new Date(published.published_at).toISOString()).to.equal(published.published_at);
   });
 
   it('patches a project: name stays top-level, brand fields nest under settings.ai (like live)', async () => {
@@ -688,6 +690,37 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     expect(dupRes.status).to.equal(409);
     expect(dupErr).to.deep.equal({ message: 'ai benchmark conflict: duplicate brand name or alias' });
+  });
+
+  // The conflict set includes brand_aliases (case-insensitive); a later brand_name that matches an
+  // existing alias must 409 too — exercises the alias spread/lowercase branch.
+  it('409s a benchmark whose brand_name collides with an existing brand alias', async () => {
+    const path = { id: SEED_WORKSPACE, project_id: SEED_PROJECT };
+    const { error: firstErr } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path }, body: [{ brand_name: 'Aliased', domain: 'aliased.example', brand_aliases: ['MyAlias'] }] },
+    );
+    expect(firstErr).to.equal(undefined);
+    const { response: dupRes } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path }, body: [{ brand_name: 'myalias', domain: 'other.example' }] },
+    );
+    expect(dupRes.status).to.equal(409);
+  });
+
+  // Two conflicting entries in ONE batch collide against each other (not just against stored rows).
+  it('409s an intra-batch duplicate (two conflicting entries in one POST)', async () => {
+    const { response } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [
+          { brand_name: 'Batch X', domain: 'batch-a.example' },
+          { brand_name: 'Batch X', domain: 'batch-b.example' },
+        ],
+      },
+    );
+    expect(response.status).to.equal(409);
   });
 
   // Mirrors the consumer's updateBenchmark: PUT a brand_aliases re-sync, list reflects it.

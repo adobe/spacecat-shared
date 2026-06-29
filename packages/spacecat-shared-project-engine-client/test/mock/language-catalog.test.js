@@ -11,7 +11,7 @@
  */
 
 import { expect } from 'chai';
-import { LANGUAGE_CATALOG, isoForLanguageId } from '../../mock/language-catalog.js';
+import { LANGUAGE_CATALOG, isoForLanguageId, CATALOG_CAPTURED } from '../../mock/language-catalog.js';
 
 const ENGLISH_ID = '5a0a33ed-7f5c-4901-befd-a042c0350da1';
 
@@ -30,6 +30,10 @@ describe('language-catalog — the canonical id ↔ name ↔ iso catalog', () =>
   it('ids are unique (a faithful reverse index needs no collisions)', () => {
     const ids = LANGUAGE_CATALOG.map((l) => l.id);
     expect(new Set(ids).size).to.equal(ids.length);
+  });
+
+  it('exposes the capture date so live-catalog drift is discoverable', () => {
+    expect(CATALOG_CAPTURED).to.match(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it('isoForLanguageId resolves a known catalog id to its ISO code', () => {

@@ -24,9 +24,13 @@
  */
 
 /** Case-insensitive identity tokens (brand name + aliases + domain) a benchmark conflicts on. */
-const identityTokens = (b) => [b?.brand_name, b?.domain, ...(b?.brand_aliases ?? [])]
-  .filter((t) => typeof t === 'string' && t.length > 0)
-  .map((t) => t.toLowerCase());
+const identityTokens = (b) => [
+  b?.brand_name,
+  b?.domain,
+  // Guard the spread: a raw request entry's `brand_aliases` may not be an array (spreading a
+  // string would iterate its characters into spurious tokens).
+  ...(Array.isArray(b?.brand_aliases) ? b.brand_aliases : []),
+].filter((t) => typeof t === 'string' && t.length > 0).map((t) => t.toLowerCase());
 
 /** POST — batch-create benchmarks (body: array) → 200 { ids, existing_count }; 409 on conflict. */
 export function POST($) {
@@ -36,8 +40,15 @@ export function POST($) {
 
   // Reject if any incoming benchmark collides (brand name / alias / domain, case-insensitive) with
   // one already in the project — the live hard-409, not a silent duplicate (#1745 second sweep).
+  // Each entry's tokens are folded into `taken` as we iterate, so two conflicting entries in the
+  // SAME batch collide too, not just against already-stored benchmarks.
   const taken = new Set(context.ops.benchmarks.list(scope).flatMap(identityTokens));
-  const conflicts = entries.some((b) => identityTokens(b).some((t) => taken.has(t)));
+  const conflicts = entries.some((b) => {
+    const tokens = identityTokens(b);
+    const hit = tokens.some((t) => taken.has(t));
+    tokens.forEach((t) => taken.add(t));
+    return hit;
+  });
   if (conflicts) {
     return {
       status: 409,

@@ -40,7 +40,46 @@
 /** @typedef {Schemas['model.AIOProjectInitializedResponse']} InitStatus */
 /** @typedef {Schemas['model.CICompetitor']} CiCompetitor */
 
+import { isoForLanguageId } from './language-catalog.js';
+
 const uuid = () => globalThis.crypto.randomUUID();
+
+// Built once: the locale + options are constant, so a per-call constructor would be wasteful.
+const REGION_NAMES = new Intl.DisplayNames(['en'], { type: 'region' });
+
+/**
+ * `null`, typed as `any`, for read-view fields the live API echoes as `null` when the create
+ * request omitted them (`brand_names`, `location.name`). The generated schema types those as
+ * `string[]`/`string` with no null variant, so this localizes the one unavoidable cast to a single
+ * documented spot rather than scattering `@ts-ignore`s across the literal.
+ * @returns {any}
+ */
+const nullable = () => null;
+
+/**
+ * Resolves a 2-letter country code to the informal country name the live project read-view returns
+ * as `settings.ai.country.name` (e.g. `de` → "Germany"). Live actually returns the short informal
+ * name ("USA" for `us`), which no built-in reproduces; `Intl.DisplayNames` is the faithful-enough,
+ * zero-maintenance choice (it returns "United States" for `us` — the one documented divergence —
+ * and matches live for most others). Not load-bearing: no consumer reads `country.name` (geo
+ * resolves from `country.code`), so a `''` fallback for an empty/invalid code is safe.
+ * @param {string} [code] the 2-letter country code (e.g. `us`)
+ * @returns {string} the English country name, or `''` when the code is empty/invalid
+ */
+const countryName = (code) => {
+  if (!code) {
+    return '';
+  }
+  try {
+    // With the default `fallback: 'code'`, `.of()` returns the resolved name for a known region
+    // and the code itself for an unknown-but-valid one — never nullish here — so `String(...)`
+    // (not `?? ''`) keeps this branchless while satisfying the `string | undefined` return type.
+    return String(REGION_NAMES.of(code.toUpperCase()));
+  } catch {
+    // `.of()` throws a RangeError for a structurally invalid region code — fall back to empty.
+    return '';
+  }
+};
 
 /**
  * A catalog AI model (`AIModelResponse`). Only `id` is required by the spec; `name`/`key` are
@@ -123,11 +162,19 @@ export const createProjectResponseFromRequest = (request = {}) => {
       ai: {
         models_stats: { models: [], models_count: 0 },
         prompts_count: 0,
-        brand_names: request.brand_names ?? [],
+        // Live echoes `null` (not `[]`/`''`) for an omitted brand_names / location_name on the
+        // read-view (verified 2026-06-29). The consumer always sends these, so it is fidelity-only;
+        // the casts satisfy the schema (string[]/string), which has no explicit null variant.
+        brand_names: request.brand_names ?? nullable(),
         brand_name_display: request.brand_name_display ?? '',
-        language: { id: request.language_id ?? '', name: '' },
-        country: { code: request.country_code ?? '', name: '' },
-        location: { id: request.location_id ?? 0, name: request.location_name ?? '' },
+        // Live read-view: `language.name` is the ISO code (e.g. "en"), NOT the English display
+        // name, and `language.id` is the catalog UUID sent on create. `langOf` reads
+        // `language.name` directly as the slice code, so resolving the id → ISO is the load-bearing
+        // round-trip fix (#1745). `country.name` is the informal country name; not consumed,
+        // populated for fidelity.
+        language: { id: request.language_id ?? '', name: isoForLanguageId(request.language_id) },
+        country: { code: request.country_code ?? '', name: countryName(request.country_code) },
+        location: { id: request.location_id ?? 0, name: request.location_name ?? nullable() },
         primary_url: request.domain ?? '',
         segments_count: 0,
         benchmarks_count: 0,

@@ -37,7 +37,14 @@ export function POST($) {
   const scope = { workspaceId: path.id, projectId: path.project_id };
   const promptsByText = body?.prompts ?? {};
 
-  const toCreate = Object.entries(promptsByText).map(([text, tags]) => context.factories
+  // Live dedups prompts by TEXT: a text already present in the project is not re-created — it is
+  // counted in `existing_count` and gets no new id (verified 2026-06-29). Partition the request
+  // against the stored prompt texts so only genuinely-new texts are created (object keys are
+  // unique, so there are no in-batch text duplicates to fold in).
+  const existingTexts = new Set(context.ops.prompts.list(scope).map((p) => p.name));
+  const newEntries = Object.entries(promptsByText).filter(([text]) => !existingTexts.has(text));
+  const existingCount = Object.keys(promptsByText).length - newEntries.length;
+  const toCreate = newEntries.map(([text, tags]) => context.factories
     .createPromptMock({
       name: text,
       is_new: true,
@@ -53,5 +60,5 @@ export function POST($) {
   }
 
   const created = context.ops.prompts.createMany(scope, toCreate);
-  return $.response[201].json({ ids: created.map((p) => p.id), existing_count: 0 });
+  return $.response[201].json({ ids: created.map((p) => p.id), existing_count: existingCount });
 }

@@ -17,15 +17,39 @@
  * always a competitor (`main_brand: false` — the API cannot set the system-managed own brand).
  * Writes to the SAME store key (`benchmarks:{ws}:{pid}`) the v1 list/delete use, so a subsequent
  * list reflects it. Live: 200 `IDsWithStatsResponse` `{ ids, existing_count }` (verified
- * 2026-06-25). Excluded from coverage (materialized handler).
+ * 2026-06-25). Unlike prompts (which dedup into `existing_count`), a benchmark whose brand name,
+ * alias, or domain collides with an existing one is a HARD **409** conflict
+ * `{ message: 'ai benchmark conflict: duplicate brand name or alias' }` (verified live 2026-06-29);
+ * the whole batch is rejected, nothing is created. Excluded from coverage (materialized handler).
  */
 
-/** POST — batch-create benchmarks (body: array) → 200 { ids, existing_count }. */
+/** Case-insensitive identity tokens (brand name + aliases + domain) a benchmark conflicts on. */
+const identityTokens = (b) => [b?.brand_name, b?.domain, ...(b?.brand_aliases ?? [])]
+  .filter((t) => typeof t === 'string' && t.length > 0)
+  .map((t) => t.toLowerCase());
+
+/** POST — batch-create benchmarks (body: array) → 200 { ids, existing_count }; 409 on conflict. */
 export function POST($) {
   const { path, body, context } = $;
+  const scope = { workspaceId: path.id, projectId: path.project_id };
   const entries = Array.isArray(body) ? body : [];
+
+  // Reject if any incoming benchmark collides (brand name / alias / domain, case-insensitive) with
+  // one already in the project — the live hard-409, not a silent duplicate (#1745 second sweep).
+  const taken = new Set(context.ops.benchmarks.list(scope).flatMap(identityTokens));
+  const conflicts = entries.some((b) => identityTokens(b).some((t) => taken.has(t)));
+  if (conflicts) {
+    return {
+      status: 409,
+      body: context.factories.createBasicResponseMock({
+        message: 'ai benchmark conflict: duplicate brand name or alias',
+      }),
+      contentType: 'application/json',
+    };
+  }
+
   const created = context.ops.benchmarks.createMany(
-    { workspaceId: path.id, projectId: path.project_id },
+    scope,
     entries.map((b) => context.factories.createBenchmarkMock({
       brand_name: b?.brand_name ?? '',
       domain: b?.domain ?? '',

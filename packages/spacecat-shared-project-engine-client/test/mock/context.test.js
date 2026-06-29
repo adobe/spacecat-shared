@@ -28,6 +28,14 @@ describe('mock Context', () => {
     expect(ctx.ops.projects.list({ workspaceId })).to.have.length(1);
   });
 
+  it('exposes the language catalog for the GET /v1/languages route', () => {
+    const ctx = new Context();
+    expect(ctx.languageCatalog).to.be.an('array').with.length(38);
+    expect(ctx.languageCatalog).to.deep.include({
+      id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English', iso: 'en',
+    });
+  });
+
   it('selects a named seed', () => {
     const ctx = new Context({ seed: 'empty-workspace' });
     expect(ctx.seedName).to.equal('empty-workspace');

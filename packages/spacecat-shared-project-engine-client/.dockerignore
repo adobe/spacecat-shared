@@ -11,3 +11,4 @@ docs
 python
 *.log
 test-results.xml
+.DS_Store

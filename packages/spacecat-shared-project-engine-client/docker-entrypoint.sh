@@ -63,4 +63,8 @@ if ! kill -0 "$mock_pid" 2>/dev/null; then
 else
   wait "$caddy_pid" || status=$?  # caddy died first — propagate its status
 fi
+# Clear the traps before the final exit so the EXIT trap's `kill 0` cannot fire mid-exit and
+# overwrite the status the orchestrator must see; then reap the surviving child explicitly.
+trap - INT TERM EXIT
+kill "$mock_pid" "$caddy_pid" 2>/dev/null || true
 exit "$status"

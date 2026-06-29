@@ -70,15 +70,17 @@ WORKDIR /app
 # the exact version package.json declares — single source of truth, no drift) and drops every
 # devDependency. With the devDeps gone the ERESOLVE conflict is gone too, so no --legacy-peer-deps.
 COPY package.json ./
-RUN node -e "const p=require('./package.json'); require('fs').writeFileSync('package.json', JSON.stringify({ name: p.name, version: p.version, type: p.type, dependencies: { ...p.dependencies, counterfact: p.devDependencies.counterfact } }, null, 2));" \
+RUN node -e "const p=require('./package.json'); const cf=p.devDependencies&&p.devDependencies.counterfact; if(!cf){console.error('counterfact missing from devDependencies'); process.exit(1);} require('fs').writeFileSync('package.json', JSON.stringify({ name: p.name, version: p.version, type: p.type, dependencies: { ...p.dependencies, counterfact: cf } }, null, 2));" \
  && npm install --no-audit --no-fund --ignore-scripts --omit=dev \
  && npm cache clean --force \
- && find node_modules -type f \( -name '*.map' -o -name '*.md' -o -name '*.markdown' -o -name '*.d.ts' \) -delete
+ && find node_modules -type f \( -name '*.map' -o -name '*.md' -o -name '*.markdown' -o -name '*.d.ts' \) ! -iname 'LICENSE*' ! -iname 'COPYING*' -delete
 # ^ npm cache clean + strip runtime-irrelevant files from the dep tree, in the same layer so they
 #   never reach the image: source maps (debug-only), docs, and *.d.ts TYPE DECLARATIONS (type-only,
 #   never executed — counterfact's runtime transpiler is transpile-only, verified by the smoke test).
-#   LICENSE files are kept (3rd-party license compliance); *.ts SOURCE files and package test dirs
-#   are left alone (small, and counterfact's runtime transpile path isn't worth risking for the MB).
+#   LICENSE/COPYING files are kept for 3rd-party license compliance — including the `.md` ones, hence
+#   the `! -iname` excludes. *.ts SOURCE files and package test dirs are left alone (small, and
+#   counterfact's runtime transpile path isn't worth risking for the MB). The node -e guard fails the
+#   build loudly if counterfact ever leaves devDependencies (rather than shipping a broken mock).
 
 # Mock source + the built spec. spec/ and scripts/ are build-only (convert/overlay already ran in
 # the builder), so the runtime image carries only the materialization inputs the runner reads:

@@ -273,6 +273,23 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(patched).to.not.have.property('brand_names');
   });
 
+  // Live `PATCH .../projects/{id}` REQUIRES `type` — a typeless body 400s (Go-validator,
+  // confirmed live 2026-06-29, issue #1745). The vendored spec already marks
+  // ProjectUpdateRequest.type required, so Counterfact rejects it at the request-validation seam.
+  // This pins that the mock does NOT hide the serenity bug where updateProject omits `type`
+  // (spacecat-api-service brand-aliases.js) — the IT will surface it.
+  it('400s a PATCH that omits the required `type` (does not hide the serenity omit-type bug)', async () => {
+    const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
+      params: { path: { id: SEED_WORKSPACE } },
+      body: { name: 'NeedsType', type: 'ai' },
+    });
+    const { response } = await client.PATCH('/v1/workspaces/{id}/projects/{project_id}', {
+      params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
+      body: { brand_names: ['Acme'] },
+    });
+    expect(response.status).to.equal(400);
+  });
+
   it('deletes a project (404 on subsequent read)', async () => {
     const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.3.0...@adobe/spacecat-shared-project-engine-client-v1.3.1) (2026-06-29)
+
+### Bug Fixes
+
+* **project-engine-client:** bypass Counterfact 406 on empty-body 2xx mock acks ([#1744](https://github.com/adobe/spacecat-shared/issues/1744)) ([17e6107](https://github.com/adobe/spacecat-shared/commit/17e6107d0ec3802a57c8349f5034541bac834d0a))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.2.0...@adobe/spacecat-shared-project-engine-client-v1.3.0) (2026-06-26)
 
 ### Features

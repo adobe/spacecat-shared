@@ -48,6 +48,7 @@ export function DELETE($) {
     { workspaceId: path.id, projectId: path.project_id },
     body?.ids ?? [],
   );
-  // Empty body (content-length 0) like live, not Counterfact's default "Accepted" reason.
-  return { status: 202, body: '' };
+  // Empty body (content-length 0) like live. The explicit content type (via emptyAck) bypasses
+  // Counterfact's response negotiation, which would otherwise 406 under `Accept: application/json`.
+  return context.emptyAck(202);
 }

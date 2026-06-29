@@ -585,11 +585,17 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
     // Live ack: 202 with an EMPTY body (verified 2026-06-25), not a BasicResponse. Raw fetch so the
     // empty body is asserted — the typed client swallows it, so a regression to a JSON body passes.
+    // `Accept: application/json` (what the real serenity transport sends) pins the negotiation-
+    // bypass fix: without the handler's content type this empty 202 would 406 (issue 1742).
     const benchUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}`
       + `/projects/${SEED_PROJECT}/ai_models/benchmarks`;
     const rawBenchDel = await fetch(benchUrl, {
       method: 'DELETE',
-      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      headers: {
+        Authorization: 'Bearer e2e-token',
+        'content-type': 'application/json',
+        Accept: 'application/json',
+      },
       body: JSON.stringify({ ids: created.ids }),
     });
     expect(rawBenchDel.status).to.equal(202);
@@ -604,11 +610,16 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // Mirrors the consumer's updateBenchmark: PUT a brand_aliases re-sync, list reflects it.
   it('updates a benchmark in place (PUT v1) and the list reflects the change', async () => {
     // Live ack: 202 with an EMPTY body (verified 2026-06-25) — raw fetch asserts the empty body.
+    // `Accept: application/json` pins the negotiation-bypass fix (406 otherwise — issue 1742).
     const benchPutUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}`
       + `/projects/${SEED_PROJECT}/ai_models/benchmarks/${SEED_IDS.benchmarkId}`;
     const rawBenchPut = await fetch(benchPutUrl, {
       method: 'PUT',
-      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      headers: {
+        Authorization: 'Bearer e2e-token',
+        'content-type': 'application/json',
+        Accept: 'application/json',
+      },
       body: JSON.stringify({ brand_aliases: ['Adobe Inc', 'Adobe Systems'] }),
     });
     expect(rawBenchPut.status).to.equal(202);
@@ -656,11 +667,16 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(listed.brand_urls.map((u) => u.id)).to.include(created.ids[0]);
 
     // Live ack: 202 with an EMPTY body (verified 2026-06-25) — raw fetch asserts the empty body.
+    // `Accept: application/json` pins the negotiation-bypass fix (406 otherwise — issue 1742).
     const buUrl = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}`
       + `/projects/${SEED_PROJECT}/aio/benchmarks/${benchmarkId}/brand_urls`;
     const rawBuDel = await fetch(buUrl, {
       method: 'DELETE',
-      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      headers: {
+        Authorization: 'Bearer e2e-token',
+        'content-type': 'application/json',
+        Accept: 'application/json',
+      },
       body: JSON.stringify({ ids: created.ids }),
     });
     expect(rawBuDel.status).to.equal(202);
@@ -677,9 +693,12 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(pubRes.status).to.equal(202);
     // Live action acks (publish, delete/update-benchmark, delete-brand-urls) return a 202 with an
     // EMPTY body (verified 2026-06-25), not a BasicResponse — a raw fetch confirms no body.
+    // `Accept: application/json` (the serenity transport's header) pins the negotiation-bypass fix:
+    // this is the exact request shape that 406'd and blocked the create/activate IT (issue 1742).
     const pubUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/publish`;
     const rawPub = await fetch(pubUrl, {
-      method: 'POST', headers: { Authorization: 'Bearer e2e-token' },
+      method: 'POST',
+      headers: { Authorization: 'Bearer e2e-token', Accept: 'application/json' },
     });
     expect(rawPub.status).to.equal(202);
     expect(await rawPub.text()).to.equal('');

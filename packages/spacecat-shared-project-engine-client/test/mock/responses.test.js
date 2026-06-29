@@ -23,13 +23,6 @@ describe('mock responses', () => {
       });
     });
 
-    it('carries the content type — the field that makes Counterfact skip negotiation', () => {
-      // The bug this guards against: without `contentType`, an empty-body 2xx is negotiated and
-      // 406s under `Accept: application/json`. Its presence (any value) is what triggers the
-      // raw-return bypass; assert it is set so a regression that drops it is caught.
-      expect(emptyAck()).to.have.property('contentType', 'application/json');
-    });
-
     it('acks with the given 2xx status (and still bypasses negotiation)', () => {
       // The non-default arg exercises the other branch of the `status = 202` default, so the
       // no-arg test above plus this one cover both; an empty body + contentType stay invariant.

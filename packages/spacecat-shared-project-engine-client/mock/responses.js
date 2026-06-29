@@ -52,8 +52,9 @@
  * skip negotiation; the body stays empty and the consumer keys off `response.ok`/status only, so
  * `application/json` (matching the caller's `Accept`) is the natural, negotiation-satisfying
  * choice. Use for empty-body `202`-class acks; `204 No Content` needs no helper (see module note).
- * @param {number} [status] the 2xx status to ack with (defaults to the publish/action-ack `202`)
- * @returns {{ status: number, body: string, contentType: string }}
+ * @param {200 | 201 | 202} [status] the empty-body 2xx ack status (defaults to the publish/
+ *   action-ack `202`); the literal union keeps the "empty-body 2xx ack only" contract tsc-enforced
+ * @returns {{ status: 200 | 201 | 202, body: string, contentType: string }}
  */
 export function emptyAck(status = 202) {
   return { status, body: '', contentType: 'application/json' };

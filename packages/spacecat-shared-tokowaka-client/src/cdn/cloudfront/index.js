@@ -1199,6 +1199,11 @@ async function fetchEdgeOptimizeHeaders(url, userAgent) {
   }
 }
 
+// A realistic desktop-browser User-Agent for the "human" probe. A bare `Mozilla/5.0` can be
+// misclassified by bot-detection, making the human leg look bot-like and the verify falsely fail.
+const DEFAULT_HUMAN_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+  + '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
 /**
  * Verify Edge Optimize routing end-to-end by fetching the distribution domain as an agentic bot
  * and as a human, then inspecting the `x-edgeoptimize-*` headers. Mirrors the standalone wizard's
@@ -1207,15 +1212,16 @@ async function fetchEdgeOptimizeHeaders(url, userAgent) {
  * the page is NOT optimised, which is NOT success.
  *
  * @param {string} url - the URL to probe (typically `https://<distribution-domain>/`).
+ * @param {object} [options]
+ * @param {string} [options.humanUa] - User-Agent for the human probe (defaults to a browser UA).
  * @returns {Promise<{passed: boolean, requestId: string|null,
  *   details: {bot: object, human: object}}>}
  */
-export async function verifyRouting(url) {
+export async function verifyRouting(url, { humanUa = DEFAULT_HUMAN_UA } = {}) {
   if (!hasText(url)) {
     throw new Error('url is required');
   }
   const botUa = 'chatgpt-user';
-  const humanUa = 'Mozilla/5.0';
   const [bot, human] = await Promise.all([
     fetchEdgeOptimizeHeaders(url, botUa),
     fetchEdgeOptimizeHeaders(url, humanUa),

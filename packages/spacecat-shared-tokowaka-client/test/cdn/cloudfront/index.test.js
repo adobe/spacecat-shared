@@ -2045,6 +2045,27 @@ describe('edge-optimize support', () => {
       expect(result.details.bot.status).to.equal(200);
     });
 
+    it('uses a realistic browser User-Agent for the human probe by default', async () => {
+      fetchStub = sinon.stub(global, 'fetch');
+      fetchStub.resolves(makeResponse(200, {}));
+
+      await edgeOptimize.verifyRouting('https://d.cloudfront.net/');
+
+      // bot probe is the first fetch, human probe the second.
+      const humanUa = fetchStub.secondCall.args[1].headers['user-agent'];
+      expect(humanUa).to.include('Chrome/');
+      expect(humanUa).to.not.equal('Mozilla/5.0');
+    });
+
+    it('allows overriding the human User-Agent', async () => {
+      fetchStub = sinon.stub(global, 'fetch');
+      fetchStub.resolves(makeResponse(200, {}));
+
+      await edgeOptimize.verifyRouting('https://d.cloudfront.net/', { humanUa: 'CustomHumanUA/1.0' });
+
+      expect(fetchStub.secondCall.args[1].headers['user-agent']).to.equal('CustomHumanUA/1.0');
+    });
+
     it('ignores non-edgeoptimize response headers', async () => {
       fetchStub = sinon.stub(global, 'fetch');
       fetchStub.onFirstCall().resolves(makeResponse(200, { 'x-edgeoptimize-request-id': 'req-1', 'content-type': 'text/html' }));

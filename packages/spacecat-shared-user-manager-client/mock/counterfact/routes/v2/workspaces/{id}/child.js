@@ -16,8 +16,8 @@
  * `resources` carries the `{ ai: { projects, prompts } }` allocation carved off the parent's pool.
  * An unknown parent is a 403 "invalid access attempt" (mirrors status/transfer/delete), never a
  * silent orphan create. Otherwise metered: when the parent's pool can't cover the allocation it
- * returns the 422 "insufficient available units" (see mock/quota.js); else it draws the units,
- * creates a `created` child linked to the parent, and returns the new workspace. Materialized into
+ * returns the 422 "insufficient available units in subscription" (see mock/quota.js); else it draws
+ * the units, creates a `created` child linked to the parent, returns it. Materialized into
  * `.counterfact/routes/` by the mock runner; excluded from coverage.
  */
 
@@ -37,7 +37,9 @@ export function POST($) {
   if (!context.quota.canAllocate(path.id, ai)) {
     return {
       status: 422,
-      body: context.factories.createBasicResponseMock({ message: 'insufficient available units' }),
+      body: context.factories.createBasicResponseMock({
+        message: 'insufficient available units in subscription',
+      }),
       contentType: 'application/json',
     };
   }

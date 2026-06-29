@@ -208,6 +208,48 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(list.total).to.equal(2);
   });
 
+  it('round-trips a created + published market: language.name = ISO code, status flips to live (#1745)', async () => {
+    const ENGLISH_ID = '5a0a33ed-7f5c-4901-befd-a042c0350da1'; // catalog "English"
+    const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
+      params: { path: { id: SEED_WORKSPACE } },
+      body: {
+        name: 'Adobe · US · en',
+        type: 'ai',
+        domain: 'adobe.com',
+        brand_names: ['Adobe'],
+        brand_name_display: 'Adobe',
+        language_id: ENGLISH_ID,
+        country_code: 'us',
+        location_id: 2840,
+        location_name: 'United States',
+      },
+    });
+    // The created read-view carries the live shapes the consumer's langOf/geoOf reconstruct a
+    // market from: language.name is the ISO code (NOT the English display name), location echoed.
+    expect(created.settings.ai.language).to.deep.equal({ id: ENGLISH_ID, name: 'en' });
+    expect(created.settings.ai.country).to.deep.equal({ code: 'us', name: 'United States' });
+    expect(created.settings.ai.location).to.deep.equal({ id: 2840, name: 'United States' });
+    expect(created).to.include({ is_draft: true, publish_status: 'draft' });
+
+    // Publish moves the stored read-view to live: publish_status flips, published_at is stamped,
+    // is_draft stays true (matches live — only publish_status/published_at change).
+    const { response: pubRes } = await client.POST(
+      '/v1/workspaces/{id}/projects/{project_id}/publish',
+      { params: { path: { id: SEED_WORKSPACE, project_id: created.id } } },
+    );
+    expect(pubRes.status).to.equal(202);
+
+    const { data: list } = await client.GET('/v1/workspaces/{id}/projects', {
+      params: { path: { id: SEED_WORKSPACE } },
+    });
+    const published = list.items.find((p) => p.id === created.id);
+    expect(published.settings.ai.language.name).to.equal('en');
+    expect(published).to.include({ publish_status: 'live', is_draft: true });
+    expect(published.published_at).to.be.a('string').with.length.greaterThan(0);
+    // published_at is a valid ISO 8601 timestamp (round-trips through Date).
+    expect(new Date(published.published_at).toISOString()).to.equal(published.published_at);
+  });
+
   it('patches a project: name stays top-level, brand fields nest under settings.ai (like live)', async () => {
     const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },
@@ -231,6 +273,23 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(patched).to.not.have.property('brand_names');
   });
 
+  // Live `PATCH .../projects/{id}` REQUIRES `type` — a typeless body 400s (Go-validator,
+  // confirmed live 2026-06-29, issue #1745). The vendored spec already marks
+  // ProjectUpdateRequest.type required, so Counterfact rejects it at the request-validation seam.
+  // This pins that the mock does NOT hide the serenity bug where updateProject omits `type`
+  // (spacecat-api-service brand-aliases.js) — the IT will surface it.
+  it('400s a PATCH that omits the required `type` (does not hide the serenity omit-type bug)', async () => {
+    const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
+      params: { path: { id: SEED_WORKSPACE } },
+      body: { name: 'NeedsType', type: 'ai' },
+    });
+    const { response } = await client.PATCH('/v1/workspaces/{id}/projects/{project_id}', {
+      params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
+      body: { brand_names: ['Acme'] },
+    });
+    expect(response.status).to.equal(400);
+  });
+
   it('deletes a project (404 on subsequent read)', async () => {
     const { data: created } = await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },
@@ -244,6 +303,13 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     expect(response.status).to.equal(404);
     expect(error).to.not.equal(undefined);
+  });
+
+  it('404s a DELETE of a non-existent project (live shape; serenity treats 404 as success)', async () => {
+    const { response } = await client.DELETE('/v1/workspaces/{id}/projects/{project_id}', {
+      params: { path: { id: SEED_WORKSPACE, project_id: 'ffffffff-0000-4000-8000-000000000000' } },
+    });
+    expect(response.status).to.equal(404);
   });
 
   // Mirrors the real consumer (spacecat-api-service): add via the v2 route, list via v1.
@@ -298,6 +364,21 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(listError).to.equal(undefined);
     expect(listed.total).to.equal(3);
     expect(listed.items.map((p) => p.name)).to.include.members(['What is X?', 'Tell me Y']);
+  });
+
+  // Live dedups prompts by text: re-creating an existing text yields no new id and existing_count:1
+  // (#1745 second sweep). The seed already holds "What is the best running shoe?".
+  it('dedups a duplicate prompt text into existing_count (no new id)', async () => {
+    const { data: dup, error } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { prompts: { 'What is the best running shoe?': ['brand'], 'A brand new prompt': ['brand'] } },
+      },
+    );
+    expect(error).to.equal(undefined);
+    expect(dup.ids).to.have.length(1); // only the genuinely-new text is created
+    expect(dup.existing_count).to.equal(1); // the duplicate text is counted, not re-created
   });
 
   // The consumer's real read path (listPromptsByTags) passes non-empty tag_ids — exercise the
@@ -448,6 +529,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data.total).to.equal(38);
     expect(data.items).to.be.an('array').with.length(38);
     expect(data.items[0]).to.include.keys(['id', 'name']);
+    // The mock-only `iso` column (used by the project read-view resolver) is NOT served here — the
+    // live catalog item is just `{ id, name }`.
+    expect(data.items[0]).to.not.have.property('iso');
     expect(data.items).to.deep.include({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English' });
   });
 
@@ -585,11 +669,17 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
     // Live ack: 202 with an EMPTY body (verified 2026-06-25), not a BasicResponse. Raw fetch so the
     // empty body is asserted — the typed client swallows it, so a regression to a JSON body passes.
+    // `Accept: application/json` (what the real serenity transport sends) pins the negotiation-
+    // bypass fix: without the handler's content type this empty 202 would 406 (issue 1742).
     const benchUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}`
       + `/projects/${SEED_PROJECT}/ai_models/benchmarks`;
     const rawBenchDel = await fetch(benchUrl, {
       method: 'DELETE',
-      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      headers: {
+        Authorization: 'Bearer e2e-token',
+        'content-type': 'application/json',
+        Accept: 'application/json',
+      },
       body: JSON.stringify({ ids: created.ids }),
     });
     expect(rawBenchDel.status).to.equal(202);
@@ -601,14 +691,84 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(after.aio_benchmarks.map((b) => b.id)).to.not.include(created.ids[0]);
   });
 
+  // Live rejects a duplicate competitor (same brand name / alias / domain) with a hard 409, unlike
+  // prompts which dedup into existing_count (#1745 second sweep).
+  it('409s a duplicate benchmark (brand name or domain conflict)', async () => {
+    const path = { id: SEED_WORKSPACE, project_id: SEED_PROJECT };
+    const { error: firstErr } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path }, body: [{ brand_name: 'Dup Brand', domain: 'dup.example' }] },
+    );
+    expect(firstErr).to.equal(undefined);
+    // Same domain again (different brand name) → conflict.
+    const { response: dupRes, error: dupErr } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path }, body: [{ brand_name: 'Other Brand', domain: 'dup.example' }] },
+    );
+    expect(dupRes.status).to.equal(409);
+    expect(dupErr).to.deep.equal({ message: 'ai benchmark conflict: duplicate brand name or alias' });
+  });
+
+  // The conflict set includes brand_aliases (case-insensitive); a later brand_name that matches an
+  // existing alias must 409 too — exercises the alias spread/lowercase branch.
+  it('409s a benchmark whose brand_name collides with an existing brand alias', async () => {
+    const path = { id: SEED_WORKSPACE, project_id: SEED_PROJECT };
+    const { error: firstErr } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path }, body: [{ brand_name: 'Aliased', domain: 'aliased.example', brand_aliases: ['MyAlias'] }] },
+    );
+    expect(firstErr).to.equal(undefined);
+    const { response: dupRes } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path }, body: [{ brand_name: 'myalias', domain: 'other.example' }] },
+    );
+    expect(dupRes.status).to.equal(409);
+  });
+
+  // Two conflicting entries in ONE batch collide against each other (not just against stored rows).
+  it('409s an intra-batch duplicate (two conflicting entries in one POST)', async () => {
+    const { response } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [
+          { brand_name: 'Batch X', domain: 'batch-a.example' },
+          { brand_name: 'Batch X', domain: 'batch-b.example' },
+        ],
+      },
+    );
+    expect(response.status).to.equal(409);
+  });
+
+  // The intra-batch check is generic across token types — a shared DOMAIN (distinct brand names)
+  // within a single batch must 409 too, not just a shared brand name.
+  it('409s an intra-batch domain collision (distinct names, same domain in one POST)', async () => {
+    const { response } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [
+          { brand_name: 'Batch Y', domain: 'batch-dup.example' },
+          { brand_name: 'Batch Z', domain: 'batch-dup.example' },
+        ],
+      },
+    );
+    expect(response.status).to.equal(409);
+  });
+
   // Mirrors the consumer's updateBenchmark: PUT a brand_aliases re-sync, list reflects it.
   it('updates a benchmark in place (PUT v1) and the list reflects the change', async () => {
     // Live ack: 202 with an EMPTY body (verified 2026-06-25) — raw fetch asserts the empty body.
+    // `Accept: application/json` pins the negotiation-bypass fix (406 otherwise — issue 1742).
     const benchPutUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}`
       + `/projects/${SEED_PROJECT}/ai_models/benchmarks/${SEED_IDS.benchmarkId}`;
     const rawBenchPut = await fetch(benchPutUrl, {
       method: 'PUT',
-      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      headers: {
+        Authorization: 'Bearer e2e-token',
+        'content-type': 'application/json',
+        Accept: 'application/json',
+      },
       body: JSON.stringify({ brand_aliases: ['Adobe Inc', 'Adobe Systems'] }),
     });
     expect(rawBenchPut.status).to.equal(202);
@@ -656,11 +816,16 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(listed.brand_urls.map((u) => u.id)).to.include(created.ids[0]);
 
     // Live ack: 202 with an EMPTY body (verified 2026-06-25) — raw fetch asserts the empty body.
+    // `Accept: application/json` pins the negotiation-bypass fix (406 otherwise — issue 1742).
     const buUrl = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}`
       + `/projects/${SEED_PROJECT}/aio/benchmarks/${benchmarkId}/brand_urls`;
     const rawBuDel = await fetch(buUrl, {
       method: 'DELETE',
-      headers: { Authorization: 'Bearer e2e-token', 'content-type': 'application/json' },
+      headers: {
+        Authorization: 'Bearer e2e-token',
+        'content-type': 'application/json',
+        Accept: 'application/json',
+      },
       body: JSON.stringify({ ids: created.ids }),
     });
     expect(rawBuDel.status).to.equal(202);
@@ -677,9 +842,12 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(pubRes.status).to.equal(202);
     // Live action acks (publish, delete/update-benchmark, delete-brand-urls) return a 202 with an
     // EMPTY body (verified 2026-06-25), not a BasicResponse — a raw fetch confirms no body.
+    // `Accept: application/json` (the serenity transport's header) pins the negotiation-bypass fix:
+    // this is the exact request shape that 406'd and blocked the create/activate IT (issue 1742).
     const pubUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/publish`;
     const rawPub = await fetch(pubUrl, {
-      method: 'POST', headers: { Authorization: 'Bearer e2e-token' },
+      method: 'POST',
+      headers: { Authorization: 'Bearer e2e-token', Accept: 'application/json' },
     });
     expect(rawPub.status).to.equal(202);
     expect(await rawPub.text()).to.equal('');

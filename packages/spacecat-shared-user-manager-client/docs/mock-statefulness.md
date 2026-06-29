@@ -68,6 +68,24 @@ activate → re-activate (re-grant) → deactivate lifecycle behaves identically
 unit-level net-zero on the parent pool (`…/resources` `ai.prompts`/`projects` byte-identical
 before/after).
 
+**Re-replay 2026-06-29 (spacecat-shared#1745 sweep)** — three refinements to the above, all live
+observations the deterministic mock intentionally collapses:
+
+- **`POST .../child` → HTTP 200** returning the child with **`status: "not ready"`**, settling to
+  `created` in ~3 s (the mock returns `created` at once; reproduce the window via the `__status`
+  budget — see "Known fidelity simplifications").
+- **Delete is eventually consistent with a transient `deleting` window.** `DELETE .../{id}` →
+  `200 { id }`; immediately after, `GET .../status` → **`200 { "status": "deleting" }`** (a status
+  value outside the documented `not ready | created | error` enum) and the child is **still in
+  `family`**; within ~5 s it settles to the `403 { "message": "invalid access attempt" }` the mock
+  returns at once. The transient `deleting`/200 window is unmodelled (the mock jumps straight to the
+  settled `403`).
+- **Live child envelope is richer than the factory** (confirms "Lean workspace envelope" below):
+  live also returns `icon`, `created_at`, `last_updated_at`, `keywords_count`,
+  `published_projects_count`, `pagespeed_urls_count`, `is_admin`, `users`, `is_master`,
+  `subscription_tier`, `products`, `product_tiers`, `parent`, `partnership_enabled` — and notably
+  does **NOT** return `role` (see the `role`-drift note below).
+
 ## Known fidelity simplifications
 
 - **Child boots `created` immediately.** Live `createSubworkspace` returns the child as **`not
@@ -87,10 +105,30 @@ before/after).
   populates (`icon`, `is_master`, `subscription_tier`, `product_tiers`, `parent`, counts). The
   consumer reads only `id` / `title` / `status` (required via overlay CR3), so the factory is a
   faithful-shape stand-in; all extra fields are optional in the schema.
-- **Pool-exhaustion 422 message is inferred.** The 422 envelope (`{ message }`) is live-pinned, but
-  the exact "insufficient available units" string was not triggered live (it would require
-  over-drawing a real pool); only the "workspace not ready" 422 variant was observed. The status
-  (422) is the contract the consumer keys off.
+- **`role` is a mock-only field (live drift).** `createWorkspaceMock` populates `role: 'owner'`, but
+  the live child envelope does **not** carry `role` at all (confirmed 2026-06-29). It is a valid
+  optional schema field and the consumer never reads it, so this is harmless fidelity drift — left
+  as-is rather than risking a fixture/overlay change for a field nothing depends on.
+- **Pool-exhaustion 422 message — now live-pinned.** The over-allocation 422 string was triggered
+  live on 2026-06-29 and is **`{ message: "insufficient available units in subscription" }`** — the
+  mock (`child.js` / `transfer.js`) now returns exactly this (previously the inferred
+  `"insufficient available units"`). The other live 422 variant, `{ message: "workspace not ready" }`
+  (transfer/delete racing a still-settling child), remains unmodelled — see the lock bullet above.
+- **No tenant / ownership model; presence-only bearer.** `GET status` and `GET family` 403 an
+  **unknown** workspace id (the mock has no descendants for it), but the mock otherwise serves any id
+  it does know without an ownership check, and the bearer gate is **presence-only** — a garbage
+  `Bearer xxx` passes (live `401`s it). Deliberate: the consumer always uses a real IMS token on
+  workspaces it owns. (`GET family` on an unknown id was aligned to `status`'s 403 on 2026-06-29 —
+  it previously returned `200 []`.)
+- **`resources` is treated as required on child create; live tolerates its absence.** The mock reads
+  `body.resources.ai` to meter the draw, so an omitted `resources` allocates nothing; live (2026-06-29)
+  **200**s a child create with no `resources`, creating the child on the default tier. The consumer
+  always sends `resources`, so this is fidelity-only.
+- **Stuck-`not ready` zombies are not modelled.** Live, a child created against an exhausted/contended
+  parent pool can stay `not ready` for hours and is **un-deletable** (`DELETE` → `422 { "workspace
+  not ready" }`); the finite parent pool means rapid raw child-creates can strand zombie workspaces.
+  Serenity avoids this by sizing the allocation to the market count and polling `status`→`created`
+  before any transfer/delete. The mock's immediate-`created` hides this entirely (by design). (2026-06-29)
 
 ## Replicating live async behaviour (don't use timers)
 

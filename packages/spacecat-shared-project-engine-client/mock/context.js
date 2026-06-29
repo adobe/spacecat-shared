@@ -41,7 +41,9 @@ import { InMemoryStore } from './store.js';
 import { createStatefulOps } from './stateful.js';
 import { createQuota } from './quota.js';
 import { authError } from './auth.js';
+import { emptyAck } from './responses.js';
 import * as factories from './factories.js';
+import { LANGUAGE_CATALOG } from './language-catalog.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
 /**
@@ -70,11 +72,21 @@ export class Context {
     // Bearer-auth gate. Stateless, so it is a plain reference to the pure guard; every real route
     // calls `context.authError($.headers)`, the `__*` control routes do not (see mock/auth.js).
     this.authError = authError;
+    // Empty-body 2xx ack shape (mock/responses.js). Stateless, so a plain reference to the pure
+    // helper. Action-ack handlers (publish, batch-delete, update-benchmark) return
+    // `context.emptyAck(202)` so the empty body carries an explicit content type and bypasses
+    // Counterfact's response negotiation, which otherwise 406s under `Accept: application/json`.
+    // 204 No Content handlers don't need it — Counterfact serves 204 raw (see mock/responses.js).
+    this.emptyAck = emptyAck;
     // The typed entity factories (mock/factories.js), exposed so route handlers build every
     // response entity through them (`context.factories.createXMock(...)`) instead of inline
     // literals — the factory is the single, tsc-checked source of truth for each shape, so the
     // handlers can't drift from the spec the way duplicated literals would.
     this.factories = factories;
+    // The canonical language catalog (mock/language-catalog.js). Exposed so the `GET /v1/languages`
+    // route serves it without duplicating the 38-entry list, mirroring how `factories` is shared —
+    // every route reads its lib data through `$.context`, never an import.
+    this.languageCatalog = LANGUAGE_CATALOG;
   }
 
   /**

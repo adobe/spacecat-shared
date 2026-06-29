@@ -723,6 +723,22 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(response.status).to.equal(409);
   });
 
+  // The intra-batch check is generic across token types — a shared DOMAIN (distinct brand names)
+  // within a single batch must 409 too, not just a shared brand name.
+  it('409s an intra-batch domain collision (distinct names, same domain in one POST)', async () => {
+    const { response } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [
+          { brand_name: 'Batch Y', domain: 'batch-dup.example' },
+          { brand_name: 'Batch Z', domain: 'batch-dup.example' },
+        ],
+      },
+    );
+    expect(response.status).to.equal(409);
+  });
+
   // Mirrors the consumer's updateBenchmark: PUT a brand_aliases re-sync, list reflects it.
   it('updates a benchmark in place (PUT v1) and the list reflects the change', async () => {
     // Live ack: 202 with an EMPTY body (verified 2026-06-25) — raw fetch asserts the empty body.

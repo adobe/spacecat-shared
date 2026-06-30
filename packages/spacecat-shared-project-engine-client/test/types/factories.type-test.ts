@@ -26,6 +26,7 @@ import {
   createPromptMock,
   createBenchmarkMock,
   createBrandUrlMock,
+  createAIOTagMock,
 } from '../../mock/factories.js';
 import type { components } from '../../src/index.js';
 
@@ -35,6 +36,7 @@ type Prompt = components['schemas']['model.AIOPromptWithStatus'];
 type AIModel = components['schemas']['model.AIModelResponse'];
 type Benchmark = components['schemas']['model.AIOBenchmarkWithCounters'];
 type BrandUrl = components['schemas']['model.BrandURL'];
+type AIOTag = components['schemas']['model.AIOTag'];
 
 // 1. Each factory returns exactly its spec type (assignable in both directions).
 const project: Project = createProjectMock();
@@ -60,6 +62,12 @@ void updatedProject;
 // 1d. the benchmark + brand-url factories (the overlay drift-guarded list shapes).
 const benchmark: Benchmark = createBenchmarkMock();
 const brandUrl: BrandUrl = createBrandUrlMock();
+// 1e. the AIO tag factory (the GET /aio/tags list item + persisted shape).
+const aioTag: AIOTag = createAIOTagMock({ id: 'tag-x', name: 'category:X' });
+void aioTag.prompts_count;
+void aioTag;
+// @ts-expect-error — keyword_count is a TreeNodeResponse field, not on AIOTag.
+createAIOTagMock({ keyword_count: 0 });
 // CR10: primary_url + root_domain are added to AIOBenchmarkWithCounters by the overlay (live
 // returns them). These reads only compile while CR10 is in the schema — drop CR10 and they error.
 void benchmark.primary_url;

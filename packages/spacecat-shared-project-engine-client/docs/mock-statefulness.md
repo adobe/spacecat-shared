@@ -36,6 +36,9 @@ api-service calls (`src/support/serenity/handlers/*`):
 | `POST /v2/workspaces/{id}/projects/{id}/aio/prompts/by_tags` | prompts | no (read) | **stateful** (list) |
 | `POST /v2/workspaces/{id}/projects/{id}/aio/prompts/tagged` | prompts | yes | **stateful** |
 | `DELETE /v2/workspaces/{id}/projects/{id}/aio/prompts` | prompts | yes | **stateful** |
+| `POST /v2/workspaces/{id}/projects/{id}/aio/tags` | tags | yes | **stateful** (project-tag create, idempotent by name) |
+| `GET  /v2/workspaces/{id}/projects/{id}/aio/tags` | tags | yes | **stateful** (list — surfaces 0-prompt categories) |
+| `DELETE /v2/workspaces/{id}/projects/{id}/aio/tags` | tags | yes | **stateful** (project-tag remove; prompts untouched) |
 | `POST /v2/workspaces/{id}/projects/{id}/ai_models/benchmarks` | benchmarks | yes | **stateful** (competitor-benchmark create) |
 | `GET  /v1/workspaces/{id}/projects/{id}/ai_models/benchmarks` | benchmarks | yes | **stateful** (list) |
 | `PUT  /v1/workspaces/{id}/projects/{id}/ai_models/benchmarks/{id}` | benchmarks | yes | **stateful** (in-place `updateBenchmark`) |
@@ -45,16 +48,18 @@ api-service calls (`src/support/serenity/handlers/*`):
 | `DELETE /v2/workspaces/{id}/projects/{id}/aio/benchmarks/{id}/brand_urls` | brand_urls | yes | **stateful** |
 
 ## Confirmed stateful set
-**projects (per workspace), ai_models / prompts / benchmarks (per project), brand_urls (per
-benchmark).** These five are `STATEFUL_RESOURCES` in `mock/stateful.js`. This matches the
+**projects (per workspace), ai_models / prompts / benchmarks / tags (per project), brand_urls (per
+benchmark).** These six are `STATEFUL_RESOURCES` in `mock/stateful.js`. This matches the
 recommended first cut plus the competitor-benchmark + brand-URL sync the consumer drives
 (`spacecat-api-service` `syncCompetitorBenchmarksAcrossMarkets` / `syncBrandUrlsAcrossMarkets` /
 `attachBrandUrlsToProject` — each write-then-reads, so by the decision rule above they belong in
-the set). The `publish` action and the `GET /v1/ai_models` / `GET /v1/languages` reference lookups
-are thin hand-authored echo/catalog handlers (no store, no auto-stub). The store is generic, so
-growing the stateful set
-later is cheap and needs no rework — benchmarks + brand_urls were added as ops with no store
-change, the live proof.
+the set). `tags` joined the set for the Categories surface: the consumer registers a standalone
+`category:<name>` tag per market project (one `createProjectTags` per market — a category spans N
+projects, so the collection is scoped per project, never global) and must read it back via
+`GET /aio/tags` even before any prompt carries it. The `publish` action and the `GET /v1/ai_models`
+/ `GET /v1/languages` reference lookups are thin hand-authored echo/catalog handlers (no store, no
+auto-stub). The store is generic, so growing the stateful set later is cheap and needs no rework —
+benchmarks + brand_urls + tags were added as ops with no store change, the live proof.
 
 ## How it plugs in
 - `mock/store.js` — generic `InMemoryStore` (collection-keyed CRUD + seed/reset, deep-clone

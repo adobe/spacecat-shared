@@ -520,6 +520,173 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data).to.be.an('array');
   });
 
+  // The core fix: a standalone tag created via createProjectTags must PERSIST so a 0-prompt
+  // category reads back via GET /aio/tags (today the elmo Categories surface falls back to an
+  // optimistic add because the mock couldn't persist it). parent_id + search are spec-required
+  // query params (the consumer sends them); empty search lists every stored tag.
+  it('persists createProjectTags and reads the 0-prompt category back via GET /aio/tags', async () => {
+    const { error: createError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { names: ['category:Running Shoes'] },
+      },
+    );
+    expect(createError).to.equal(undefined);
+
+    const { data: listed, error: listError } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: '', search: '' },
+        },
+      },
+    );
+    expect(listError).to.equal(undefined);
+    expect(listed.total).to.equal(1);
+    expect(listed.items.map((t) => t.name)).to.deep.equal(['category:Running Shoes']);
+    // The stored/listed shape is an AIOTag (prompts_count), not a TreeNodeResponse (keyword_count).
+    expect(listed.items[0]).to.include.keys('id', 'name', 'prompts_count');
+  });
+
+  // Re-creating the same category name is idempotent (deterministic tag-<name> id) — no duplicate.
+  // The `search` query filters by name substring, so it can target one of several stored tags.
+  it('createProjectTags is idempotent by name; GET search filters by name substring', async () => {
+    const post = (names) => client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } }, body: { names } },
+    );
+    await post(['category:Alpha', 'category:Beta']);
+    await post(['category:Alpha']); // repeat — must not duplicate
+
+    const { data: all } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: '', search: '' },
+        },
+      },
+    );
+    expect(all.total).to.equal(2); // Alpha once, Beta once
+
+    const { data: filtered } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: '', search: 'beta' },
+        },
+      },
+    );
+    expect(filtered.items.map((t) => t.name)).to.deep.equal(['category:Beta']);
+  });
+
+  // __reset restores the boot seed (no tags), so created standalone tags are cleared — proving the
+  // tags collection rides the seed/reset lifecycle like every other stateful resource.
+  it('clears created tags on __reset (tags ride the seed lifecycle)', async () => {
+    await client.POST('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { names: ['category:Ephemeral'] },
+    });
+    await fetch(`${baseUrl}/__reset`, { method: 'POST' });
+
+    const { data: listed } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: '', search: '' },
+        },
+      },
+    );
+    expect(listed.total).to.equal(0);
+  });
+
+  // Multi-market: one category name is registered on N market projects via N createProjectTags
+  // calls; each project keeps its OWN tag collection (tags:{ws}:{pid}), never global. Creating a
+  // tag on project A must not surface on project B in the same workspace.
+  it('scopes tags per project (multi-market isolation)', async () => {
+    const ws = globalThis.crypto.randomUUID();
+    const projectA = globalThis.crypto.randomUUID();
+    const projectB = globalThis.crypto.randomUUID();
+    const snapshot = buildSeed({
+      workspaceId: ws,
+      projects: [{ id: projectA, name: 'Market A' }, { id: projectB, name: 'Market B' }],
+    });
+    await fetch(`${baseUrl}/__seed`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(snapshot),
+    });
+
+    await client.POST('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
+      params: { path: { id: ws, project_id: projectA } },
+      body: { names: ['category:Shared'] },
+    });
+
+    const listTags = (pid) => client.GET('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
+      params: { path: { id: ws, project_id: pid }, query: { parent_id: '', search: '' } },
+    });
+    const { data: aTags } = await listTags(projectA);
+    const { data: bTags } = await listTags(projectB);
+    expect(aTags.items.map((t) => t.name)).to.deep.equal(['category:Shared']);
+    expect(bTags.total).to.equal(0);
+
+    // restore the boot seed (__seed rewrote the reset baseline) so later cases stay independent.
+    await fetch(`${baseUrl}/__seed`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(SEEDS['workspace-with-data']),
+    });
+  });
+
+  // DELETE removes the standalone project tag (so a 0-prompt orphan can be cleaned up), but the
+  // prompts collection is independent — a prompt that happens to carry the tag is NOT deleted.
+  it('deletes a project tag without touching prompts', async () => {
+    const { data: created } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { names: ['category:Doomed'] },
+      },
+    );
+    const { response: delRes } = await client.DELETE(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { prompt_id: '' },
+        },
+        body: { ids: [created[0].id] },
+      },
+    );
+    expect(delRes.status).to.equal(204);
+
+    const { data: tagsAfter } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: '', search: '' },
+        },
+      },
+    );
+    expect(tagsAfter.total).to.equal(0);
+
+    // The seeded prompt is untouched — the tag delete does not cascade to the prompts collection.
+    const { data: prompts } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { tag_ids: [] },
+      },
+    );
+    expect(prompts.total).to.equal(1);
+    expect(prompts.items[0].id).to.equal(SEED_IDS.promptId);
+  });
+
   // The catalog is the FULL live taxonomy (captured 2026-06-25), so assert the real counts +
   // a known entry, not just the envelope — the consumer resolves language code → UUID against it.
   it('listLanguages returns the full live language taxonomy (38, real UUIDs)', async () => {

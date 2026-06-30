@@ -19,9 +19,9 @@ import {
 } from '../../mock/stateful.js';
 
 describe('stateful — confirmed resource set', () => {
-  it('is projects, ai_models, prompts, benchmarks, brand_urls (live-audited surface)', () => {
+  it('is projects, ai_models, prompts, benchmarks, tags, brand_urls (live-audited surface)', () => {
     expect([...STATEFUL_RESOURCES]).to.deep.equal([
-      'projects', 'ai_models', 'prompts', 'benchmarks', 'brand_urls',
+      'projects', 'ai_models', 'prompts', 'benchmarks', 'tags', 'brand_urls',
     ]);
   });
 });
@@ -31,10 +31,11 @@ describe('stateful — collectionKey scoping', () => {
     expect(collectionKey('projects', { workspaceId: 'w1' })).to.equal('projects:w1');
   });
 
-  it('scopes ai_models, prompts and benchmarks per project', () => {
+  it('scopes ai_models, prompts, benchmarks and tags per project', () => {
     expect(collectionKey('ai_models', { workspaceId: 'w1', projectId: 'p1' })).to.equal('ai_models:w1:p1');
     expect(collectionKey('prompts', { workspaceId: 'w1', projectId: 'p1' })).to.equal('prompts:w1:p1');
     expect(collectionKey('benchmarks', { workspaceId: 'w1', projectId: 'p1' })).to.equal('benchmarks:w1:p1');
+    expect(collectionKey('tags', { workspaceId: 'w1', projectId: 'p1' })).to.equal('tags:w1:p1');
   });
 
   it('scopes brand_urls per benchmark (within a project)', () => {
@@ -117,6 +118,35 @@ describe('stateful — benchmarks ops', () => {
   it('isolates benchmarks across projects', () => {
     const ops = createStatefulOps(new InMemoryStore()).benchmarks;
     ops.createMany({ workspaceId: 'w1', projectId: 'p1' }, [{ domain: 'a.example' }]);
+    expect(ops.list({ workspaceId: 'w1', projectId: 'p2' })).to.have.length(0);
+  });
+});
+
+describe('stateful — tags ops', () => {
+  const scope = { workspaceId: 'w1', projectId: 'p1' };
+
+  it('upserts idempotently (reuses an existing id), lists and bulk-removes', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    const created = ops.upsertMany(scope, [
+      { id: 'tag-a', name: 'category:A' },
+      { id: 'tag-b', name: 'category:B' },
+    ]);
+    expect(created).to.have.length(2);
+    expect(ops.list(scope)).to.have.length(2);
+    // a repeated upsert of an existing id reuses the stored tag — no duplicate, no throw
+    const again = ops.upsertMany(scope, [
+      { id: 'tag-a', name: 'category:A' },
+      { id: 'tag-c', name: 'category:C' },
+    ]);
+    expect(again.map((t) => t.id)).to.deep.equal(['tag-a', 'tag-c']);
+    expect(ops.list(scope)).to.have.length(3);
+    expect(ops.removeMany(scope, ['tag-a', 'missing'])).to.equal(1);
+    expect(ops.list(scope)).to.have.length(2);
+  });
+
+  it('isolates tags across projects (the multi-market scoping invariant)', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    ops.upsertMany({ workspaceId: 'w1', projectId: 'p1' }, [{ id: 'tag-a', name: 'category:A' }]);
     expect(ops.list({ workspaceId: 'w1', projectId: 'p2' })).to.have.length(0);
   });
 });

@@ -36,6 +36,11 @@ describe('mock Context', () => {
     });
   });
 
+  it('exposes the shared tagId helper for the tag-minting routes', () => {
+    const ctx = new Context();
+    expect(ctx.tagId('category:Running Shoes')).to.equal('tag-category%3ARunning%20Shoes');
+  });
+
   it('selects a named seed', () => {
     const ctx = new Context({ seed: 'empty-workspace' });
     expect(ctx.seedName).to.equal('empty-workspace');

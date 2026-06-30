@@ -125,6 +125,8 @@ export const SEED_IDS = Object.freeze({
  *   {@link createPromptMock} so the shape is checked
  * @property {Array<Schemas['model.AIOBenchmarkWithCounters']>} [benchmarks] build with
  *   {@link createBenchmarkMock} (the competitor + own-brand benchmarks the consumer syncs)
+ * @property {Array<Schemas['model.AIOTag']>} [tags] standalone project tags (the `category:<name>`
+ *   taxonomy); build with {@link createAIOTagMock} so the shape is checked
  * @property {Array<{ benchmarkId: string, urls: Array<Schemas['model.BrandURL']> }>} [brandUrls]
  *   brand URLs grouped by their benchmark id; build each url with {@link createBrandUrlMock}
  */
@@ -149,13 +151,14 @@ export function buildSeed({ workspaceId, projects = [], quota }) {
   /** @type {import('./store.js').Snapshot} */
   const snapshot = { [projectsKey]: [] };
   for (const {
-    id, name, aiModels = [], prompts = [], benchmarks = [], brandUrls = [],
+    id, name, aiModels = [], prompts = [], benchmarks = [], tags = [], brandUrls = [],
   } of projects) {
     snapshot[projectsKey].push(createProjectMock({ id, name }));
     const scope = { workspaceId, projectId: id };
     snapshot[collectionKey('ai_models', scope)] = aiModels;
     snapshot[collectionKey('prompts', scope)] = prompts;
     snapshot[collectionKey('benchmarks', scope)] = benchmarks;
+    snapshot[collectionKey('tags', scope)] = tags;
     for (const { benchmarkId, urls } of brandUrls) {
       snapshot[collectionKey('brand_urls', { workspaceId, projectId: id, benchmarkId })] = urls;
     }

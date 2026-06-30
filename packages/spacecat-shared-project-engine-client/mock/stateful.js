@@ -15,9 +15,10 @@
 /**
  * The stateful slice of the Project Engine mock.
  *
- * The confirmed consumer inventory (see docs/mock-statefulness.md) makes five resource groups
- * write-then-read: **projects** (per workspace), **ai_models** / **prompts** / **benchmarks** (per
- * project), and **brand_urls** (per benchmark) — see {@link STATEFUL_RESOURCES}. This module
+ * The confirmed consumer inventory (see docs/mock-statefulness.md) makes six resource groups
+ * write-then-read: **projects** (per workspace), **ai_models** / **prompts** / **benchmarks** /
+ * **tags** (per project), and **brand_urls** (per benchmark) — see {@link STATEFUL_RESOURCES}.
+ * This module
  * encodes that set as pure operations over an {@link InMemoryStore} —
  * collection-key scoping plus the CRUD each group needs — with no Counterfact / HTTP coupling,
  * so it is unit-testable on its own. The Counterfact runner adapts these into per-path handlers
@@ -36,17 +37,19 @@
  * Resource groups the live audit confirmed the consumer
  * write-then-reads: projects, ai_models, prompts, plus benchmarks (per project) and brand_urls
  * (per benchmark) — the competitor-benchmark and brand-URL sync flows create→list→update→delete,
- * so they need real state to be faithfully testable.
+ * so they need real state to be faithfully testable. `tags` are the project-level AIO taxonomy
+ * (the Categories surface): the consumer creates a standalone `category:<name>` tag per market
+ * project and must read it back even before any prompt carries it, so it needs real state too.
  */
 export const STATEFUL_RESOURCES = Object.freeze([
-  'projects', 'ai_models', 'prompts', 'benchmarks', 'brand_urls',
+  'projects', 'ai_models', 'prompts', 'benchmarks', 'tags', 'brand_urls',
 ]);
 
 /**
  * Builds the store collection key for a resource, scoped so two workspaces (or projects, or
  * benchmarks) never share state. `projects` are scoped per workspace; `ai_models`, `prompts`,
- * and `benchmarks` per project; `brand_urls` per benchmark (within a project).
- * @param {'projects' | 'ai_models' | 'prompts' | 'benchmarks' | 'brand_urls'} resource
+ * `benchmarks`, and `tags` per project; `brand_urls` per benchmark (within a project).
+ * @param {'projects' | 'ai_models' | 'prompts' | 'benchmarks' | 'tags' | 'brand_urls'} resource
  * @param {{ workspaceId?: string | number, projectId?: string | number,
  *   benchmarkId?: string | number }} scope
  * @returns {string}
@@ -209,6 +212,42 @@ export function createStatefulOps(store) {
        */
       removeMany(scope, ids) {
         const key = collectionKey('benchmarks', scope);
+        return ids.reduce((removed, id) => (store.delete(key, id) ? removed + 1 : removed), 0);
+      },
+    },
+
+    tags: {
+      /**
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @returns {Entity[]}
+       */
+      list(scope) {
+        return store.list(collectionKey('tags', scope));
+      },
+      /**
+       * Idempotently persists one tag per supplied entity, returning ALL of them (existing +
+       * newly created) in request order. The handler derives a deterministic id per tag name, so a
+       * repeated create of the same name resolves to the already-stored tag instead of throwing on
+       * the duplicate id — mirroring the live API, which reuses a tag by name rather than
+       * duplicating it.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<Entity>} tags each carrying its deterministic `id`
+       * @returns {Entity[]}
+       */
+      upsertMany(scope, tags) {
+        const key = collectionKey('tags', scope);
+        return tags.map((tag) => store.get(key, tag.id) ?? store.create(key, tag));
+      },
+      /**
+       * Removes the given tag ids from the project's tag collection, reporting how many were
+       * actually removed. Only the standalone tag collection is touched — prompts that carry a
+       * removed tag are a separate collection and keep their tag map intact.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<string>} ids
+       * @returns {number}
+       */
+      removeMany(scope, ids) {
+        const key = collectionKey('tags', scope);
         return ids.reduce((removed, id) => (store.delete(key, id) ? removed + 1 : removed), 0);
       },
     },

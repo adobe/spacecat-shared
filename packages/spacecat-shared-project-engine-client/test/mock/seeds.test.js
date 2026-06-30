@@ -23,6 +23,7 @@ import {
 } from '../../mock/seeds.js';
 import {
   createProjectAiModelMock, createPromptMock, createBenchmarkMock, createBrandUrlMock,
+  createAIOTagMock,
 } from '../../mock/factories.js';
 
 describe('seeds', () => {
@@ -130,6 +131,27 @@ describe('buildSeed', () => {
     const ops = createStatefulOps(store);
     expect(ops.benchmarks.list({ workspaceId, projectId })).to.have.length(1);
     expect(ops.brand_urls.list({ workspaceId, projectId, benchmarkId })).to.have.length(1);
+  });
+
+  it('seeds standalone project tags, scoped per project', () => {
+    const workspaceId = 'ws-t';
+    const projectId = 'pr-t';
+    const snapshot = buildSeed({
+      workspaceId,
+      projects: [
+        {
+          id: projectId,
+          name: 'Tagged',
+          tags: [createAIOTagMock({ id: 'tag-cat', name: 'category:Running' })],
+        },
+      ],
+    });
+
+    const store = new InMemoryStore();
+    store.load(snapshot);
+    const tags = createStatefulOps(store).tags.list({ workspaceId, projectId });
+    expect(tags).to.have.length(1);
+    expect(tags[0]).to.include({ id: 'tag-cat', name: 'category:Running' });
   });
 
   it('handles an empty workspace (no projects)', () => {

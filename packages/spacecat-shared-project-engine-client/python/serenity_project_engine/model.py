@@ -578,7 +578,7 @@ class AIModelListResponse(BaseModel):
 
 class AIOTag(BaseModel):
     children_count: int | None = None
-    id: str | None = None
+    id: str
     name: str | None = None
     parent_id: str | None = None
     path: list[AIOTagLeaf] | None = None

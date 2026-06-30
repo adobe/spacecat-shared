@@ -116,7 +116,9 @@ method that calls it.
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged` | `createTaggedPrompts` | create; body `{ prompts: { [promptText]: [tagName, …] } }` → `201 { ids, existing_count }`; **metered** (all-or-nothing 405 on the prompts allocation) |
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags` | `listPromptsByTags` | list → `{ items, page, total, unassigned }` (empty `tag_ids` lists all; else OR-filter) |
 | `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | `deletePromptsByIds` | batch-delete (body `{ ids }`) → `204` |
-| `POST /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `createProjectTags` | create tags (body `{ names }`) → `201` top-level array |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `createProjectTags` | create tags (body `{ names }`) → `201` top-level array of `TreeNodeResponse`; **persists** each tag (idempotent on the deterministic `tag-<name>` id) into the per-project `tags` collection |
+| `GET /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `getProjectTags` | list the project's stored tags → `200 { items, page, total }` (`AIOTagsListResponse`); `parent_id` + `search` are `required` query params (omitting either → `400`), a non-empty `search` filters by case-insensitive name substring, `parent_id` is accepted but not used to filter (the mock's tags are a flat collection) |
+| `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `deleteProjectTags` | remove standalone tags by id (body `{ ids }`) → `204`; prompts carrying a removed tag are a separate collection and stay intact (the `prompt_id` query param is `required` by the spec but not load-bearing in the mock) |
 
 ### Catalogs, CI competitors, init status
 

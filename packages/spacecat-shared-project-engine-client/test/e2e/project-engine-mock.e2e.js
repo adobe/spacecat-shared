@@ -687,6 +687,23 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(prompts.items[0].id).to.equal(SEED_IDS.promptId);
   });
 
+  // Request validation is enabled, so GET /aio/tags 400s when a required query param
+  // (parent_id/search are swagger-`required`) is omitted, before the handler runs — matching the
+  // live 400 and the contract the PR/docs/JSDoc claim. Mirrors the getBrandTopics 400 test: raw
+  // fetch so we can omit a param the typed client would otherwise require.
+  it('getProjectTags 400s when a required query param is missing (request validation)', async () => {
+    const base = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/tags`;
+    const auth = { headers: { Authorization: 'Bearer e2e-token' } };
+
+    const noParent = await fetch(`${base}?search=`, auth);
+    expect(noParent.status).to.equal(400);
+    expect(await noParent.text()).to.match(/parent_id/);
+
+    const noSearch = await fetch(`${base}?parent_id=`, auth);
+    expect(noSearch.status).to.equal(400);
+    expect(await noSearch.text()).to.match(/search/);
+  });
+
   // The catalog is the FULL live taxonomy (captured 2026-06-25), so assert the real counts +
   // a known entry, not just the envelope — the consumer resolves language code → UUID against it.
   it('listLanguages returns the full live language taxonomy (38, real UUIDs)', async () => {

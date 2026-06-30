@@ -56,7 +56,9 @@ export function GET($) {
   const items = search
     ? stored.filter((t) => String(t.name).toLowerCase().includes(search))
     : stored;
-  return $.response[200].json({ items, page: query?.page ?? 1, total: items.length });
+  // `page` arrives as a query string (e.g. "2"); coerce so the response field stays the numeric
+  // type AIOTagsListResponse declares, regardless of whether the param was passed.
+  return $.response[200].json({ items, page: Number(query?.page ?? 1), total: items.length });
 }
 
 /** DELETE — remove standalone project tags by id (prompts are untouched) → 204 No Content. */

@@ -2495,6 +2495,37 @@ describe('TokowakaClient', () => {
       expect(updatedPatch.suggestionId).to.equal('sugg-1');
       expect(updatedPatch.lastUpdated).to.be.greaterThan(1234567890);
     });
+
+    it('should add applyStale: true to all patches when applyStale option is true', async () => {
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { applyStale: true },
+      );
+
+      expect(result.s3Paths).to.have.length(1);
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.patches).to.have.length(2);
+      uploadedConfig.patches.forEach((patch) => {
+        expect(patch.applyStale).to.equal(true);
+      });
+    });
+
+    it('should not add applyStale to patches when applyStale option is false', async () => {
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { applyStale: false },
+      );
+
+      expect(result.s3Paths).to.have.length(1);
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      uploadedConfig.patches.forEach((patch) => {
+        expect(patch.applyStale).to.be.undefined;
+      });
+    });
   });
 
   describe('rollbackSuggestions', () => {
@@ -6617,6 +6648,187 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions[0].statusCode).to.equal(500);
       expect(result.failedSuggestions[0].reason).to.equal('Internal server error');
       expect(log.error).to.have.been.called;
+    });
+
+    it('should pass applyStale: true to deploySuggestions when metadata.applyStale is true', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+        metadata: { applyStale: true },
+      });
+
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
+      const [,, , metadata] = deploySuggestionsStub.firstCall.args;
+      expect(metadata).to.deep.equal({ applyStale: true });
+    });
+
+    it('should pass empty metadata to deploySuggestions when metadata is absent', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+      });
+
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
+      const [,, , metadata] = deploySuggestionsStub.firstCall.args;
+      expect(metadata).to.deep.equal({});
+    });
+  });
+
+  describe('clearApplyStaleFromPatches', () => {
+    let fetchConfigStub;
+    let uploadConfigStub;
+    let invalidateCdnCacheStub;
+
+    function makeCompletedSuggestion(id, urlPath) {
+      return {
+        getId: () => id,
+        getData: () => ({ url: `https://example.com${urlPath}`, edgeDeployed: Date.now() }),
+      };
+    }
+
+    beforeEach(() => {
+      fetchConfigStub = sinon.stub(client, 'fetchConfig');
+      uploadConfigStub = sinon.stub(client, 'uploadConfig').resolves('s3-path');
+      invalidateCdnCacheStub = sinon.stub(client, 'invalidateCdnCache').resolves([]);
+    });
+
+    it('should strip applyStale from matching patches and invalidate CDN', async () => {
+      fetchConfigStub.resolves({
+        url: 'https://example.com/page1',
+        version: '1.0',
+        patches: [
+          {
+            op: 'replace', selector: 'h1', value: 'New', suggestionId: 'sugg-1', applyStale: true,
+          },
+          {
+            op: 'replace', selector: 'h2', value: 'Other', suggestionId: 'sugg-2', applyStale: true,
+          },
+        ],
+      });
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+      const [, uploadedConfig] = uploadConfigStub.firstCall.args;
+      const patch1 = uploadedConfig.patches.find((p) => p.suggestionId === 'sugg-1');
+      expect(patch1).to.not.have.property('applyStale');
+      // sugg-2 not in suggestions list — applyStale untouched
+      const patch2 = uploadedConfig.patches.find((p) => p.suggestionId === 'sugg-2');
+      expect(patch2.applyStale).to.equal(true);
+      expect(invalidateCdnCacheStub).to.have.been.calledOnce;
+    });
+
+    it('should skip upload when no patches have applyStale', async () => {
+      fetchConfigStub.resolves({
+        url: 'https://example.com/page1',
+        version: '1.0',
+        patches: [
+          {
+            op: 'replace', selector: 'h1', value: 'New', suggestionId: 'sugg-1',
+          },
+        ],
+      });
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1]);
+
+      expect(uploadConfigStub).to.not.have.been.called;
+      expect(invalidateCdnCacheStub).to.not.have.been.called;
+    });
+
+    it('should skip URLs with no existing config', async () => {
+      fetchConfigStub.resolves(null);
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1]);
+
+      expect(uploadConfigStub).to.not.have.been.called;
+      expect(invalidateCdnCacheStub).to.not.have.been.called;
+    });
+
+    it('should silently skip pattern and domain-wide suggestions', async () => {
+      const patternSugg = {
+        getId: () => 'dw-1',
+        getData: () => ({ isDomainWide: true, allowedRegexPatterns: ['/.*'] }),
+      };
+
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [patternSugg]);
+
+      expect(fetchConfigStub).to.not.have.been.called;
+      expect(uploadConfigStub).to.not.have.been.called;
+    });
+
+    it('should handle multiple URLs, only invalidate ones that changed', async () => {
+      fetchConfigStub.onFirstCall().resolves({
+        patches: [{ suggestionId: 'sugg-1', applyStale: true }],
+      });
+      fetchConfigStub.onSecondCall().resolves({
+        patches: [{ suggestionId: 'sugg-2' }],
+      });
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      const s2 = makeCompletedSuggestion('sugg-2', '/page2');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1, s2]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+      expect(invalidateCdnCacheStub).to.have.been.calledOnce;
+      const { urls } = invalidateCdnCacheStub.firstCall.args[0];
+      expect(urls).to.have.length(1);
+      expect(urls[0]).to.include('/page1');
+    });
+
+    it('should do nothing when given no per-URL suggestions', async () => {
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, []);
+
+      expect(fetchConfigStub).to.not.have.been.called;
+    });
+
+    it('should log warning and return normally when CDN invalidation throws', async () => {
+      fetchConfigStub.resolves({
+        patches: [{ suggestionId: 'sugg-1', applyStale: true }],
+      });
+      invalidateCdnCacheStub.rejects(new Error('CDN rate limit'));
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+    });
+
+    it('should log error and continue processing remaining URLs when one URL throws', async () => {
+      fetchConfigStub.onFirstCall().rejects(new Error('S3 transient error'));
+      fetchConfigStub.onSecondCall().resolves({
+        patches: [{ suggestionId: 'sugg-2', applyStale: true }],
+      });
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      const s2 = makeCompletedSuggestion('sugg-2', '/page2');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1, s2]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+      expect(invalidateCdnCacheStub).to.have.been.calledOnce;
+      const { urls } = invalidateCdnCacheStub.firstCall.args[0];
+      expect(urls).to.have.length(1);
+      expect(urls[0]).to.include('/page2');
     });
   });
 });

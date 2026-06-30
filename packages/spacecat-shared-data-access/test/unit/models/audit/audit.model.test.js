@@ -221,6 +221,7 @@ describe('AuditModel', () => {
       CWV_TRENDS_AUDIT: 'cwv-trends-audit',
       OFFSITE_BRAND_PRESENCE: 'offsite-brand-presence',
       SEMANTIC_VALUE_VISIBILITY: 'semantic-value-visibility',
+      MONEY_PAGES: 'money-pages',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

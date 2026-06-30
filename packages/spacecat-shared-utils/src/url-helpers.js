@@ -300,6 +300,39 @@ function urlMatchesFilter(url, filterUrls) {
 }
 
 /**
+ * Extracts the locale/section path prefix from a site's baseURL.
+ * Locale-specific sites encode the locale in the path (e.g. https://example.com/de),
+ * but RUM domain keys exist only for the main domain. This returns the path portion
+ * so RUM results fetched for the main domain can be narrowed to the locale subtree.
+ *
+ * When the baseURL points at a file (the last path segment has an extension, e.g.
+ * https://example.com/us/en.html), the locale directory cannot be reliably inferred
+ * — 'en.html' is a locale but 'home.html' in '/en/home.html' is a page, and the two
+ * are indistinguishable. In that case this returns null so the caller falls back to
+ * whole-domain metrics rather than over-filtering RUM to a single page.
+ *
+ * @param {string} baseURL - The site's baseURL.
+ * @returns {string|null} The normalized path prefix (e.g. '/de'), or null when the
+ *   baseURL is at the domain root, points at a file, or cannot be parsed.
+ */
+function getBaseURLPathPrefix(baseURL) {
+  try {
+    const { pathname } = new URL(prependSchema(normalizeUrl(baseURL)));
+    const normalized = normalizePathname(pathname);
+    if (normalized === '/') {
+      return null;
+    }
+    const lastSegment = normalized.slice(normalized.lastIndexOf('/') + 1);
+    if (/\.[a-z0-9]+$/i.test(lastSegment)) {
+      return null;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Checks if a URL has a subdomain other than 'www'.
  * @param {string} baseUrl - The URL to check.
  * @returns {boolean} - True if the URL has a non-www subdomain, false otherwise.
@@ -393,7 +426,11 @@ async function wwwUrlResolver(site, rumApiClient, log) {
     }
     log.debug(`[wwwUrlResolver] ${wwwToggledHostname} has key but no bundle data, trying ${hostname}`);
   } catch (e) {
-    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+    if (e.status === 404) {
+      log.debug(`[wwwUrlResolver] No RUM domainkey for ${hostname} (site not onboarded to RUM): ${e.message}`);
+    } else {
+      log.error(`Could not retrieve RUM domainkey for ${hostname}: ${e.message}`);
+    }
   }
 
   try {
@@ -401,7 +438,11 @@ async function wwwUrlResolver(site, rumApiClient, log) {
     log.debug(`Resolved URL ${hostname} for ${baseURL} using RUM API Client`);
     return hostname;
   } catch (e) {
-    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+    if (e.status === 404) {
+      log.debug(`[wwwUrlResolver] No RUM domainkey for ${hostname} (site not onboarded to RUM): ${e.message}`);
+    } else {
+      log.error(`Could not retrieve RUM domainkey for ${hostname}: ${e.message}`);
+    }
   }
 
   const fallback = hostname.startsWith('www.') ? hostname : `www.${hostname}`;
@@ -443,6 +484,117 @@ export function canonicalizeUrl(url, { stripQuery = false } = {}) {
   return canonicalized;
 }
 
+/**
+ * Checks if a URL is within the site scope defined by siteBaseUrl.
+ * For a siteBaseUrl with a subpath (e.g. bulk.com/uk), only URLs whose pathname starts with that
+ * subpath are in scope. For domain-only base URLs (no subpath), all URLs pass through.
+ *
+ * @param {string} url - The URL to check (absolute, or absolute-path reference starting with `/`).
+ * @param {string} siteBaseUrl - The site's base URL defining the scope (e.g. "bulk.com/uk").
+ * @returns {boolean}
+ */
+function isWithinSiteScope(url, siteBaseUrl) {
+  if (!url) {
+    return false;
+  }
+  if (!siteBaseUrl) {
+    return true;
+  }
+
+  try {
+    const parsedBase = new URL(prependSchema(siteBaseUrl));
+    const rawPath = parsedBase.pathname;
+    const basePath = rawPath.endsWith('/') ? rawPath.slice(0, -1) : rawPath;
+
+    if (!basePath || basePath === '/') {
+      return true;
+    }
+
+    const basePathWithSlash = `${basePath}/`;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      const normalized = new URL(url, 'https://dummy.local').pathname;
+      return normalized.startsWith(basePathWithSlash) || normalized === basePath;
+    }
+
+    const parsedUrl = new URL(prependSchema(url));
+    if (
+      stripWWW(parsedUrl.hostname) !== stripWWW(parsedBase.hostname)
+      || parsedUrl.port !== parsedBase.port
+    ) {
+      return false;
+    }
+
+    return parsedUrl.pathname.startsWith(basePathWithSlash) || parsedUrl.pathname === basePath;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Filters a list of URLs to only those within the site scope.
+ *
+ * @param {string[]} urls
+ * @param {string} siteBaseUrl
+ * @returns {string[]}
+ */
+function filterBySiteScope(urls, siteBaseUrl) {
+  if (!Array.isArray(urls)) {
+    return [];
+  }
+  return urls.filter((url) => isWithinSiteScope(url, siteBaseUrl));
+}
+
+/**
+ * Extracts the pathname from a domain-based URL string (e.g. 'https://example.com/path' or
+ * 'example.com/path'). Trailing slashes are stripped on non-root paths and the result is
+ * lowercased. Inputs that already start with '/' are passed through as-is. Returns '' for
+ * non-string or empty input.
+ *
+ * @param {string} url - Domain-based URL, with or without schema, or a leading-slash path.
+ * @returns {string} Normalized pathname, or the input unchanged for leading-slash paths.
+ */
+export function toPathname(url) {
+  if (!url || typeof url !== 'string') {
+    return '';
+  }
+  try {
+    if (url.startsWith('/')) {
+      return url;
+    }
+    const { pathname } = new URL(prependSchema(url));
+    return normalizePathname(pathname).toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
+}
+
+/**
+ * Checks whether two domain-based URLs share the same normalized pathname.
+ * Both arguments must be domain-based URLs (with or without schema). Comparison is
+ * case-insensitive and ignores trailing slashes on non-root paths.
+ * @param {string} url - Domain-based URL to compare.
+ * @param {string} referenceUrl - Domain-based URL to compare against.
+ * @returns {boolean} True if both URLs resolve to the same pathname.
+ */
+export function hasSamePathname(url, referenceUrl) {
+  return toPathname(url) === toPathname(referenceUrl);
+}
+
+/**
+ * Checks whether every URL in an array shares the same normalized pathname as a reference URL.
+ * All entries and the reference must be domain-based URLs (with or without schema).
+ * @param {string[]} urls - Array of domain-based URLs to check.
+ * @param {string} referenceUrl - Domain-based URL whose pathname all entries must match.
+ * @returns {boolean} True if every URL in the array has the same pathname as referenceUrl.
+ */
+export function allHaveSamePathname(urls, referenceUrl) {
+  if (!Array.isArray(urls)) {
+    return false;
+  }
+  return urls.every((url) => hasSamePathname(url, referenceUrl));
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,
@@ -455,7 +607,10 @@ export {
   stripTrailingSlash,
   stripWWW,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
 };

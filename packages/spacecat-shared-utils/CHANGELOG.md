@@ -1,3 +1,63 @@
+## [@adobe/spacecat-shared-utils-v1.123.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.123.0...@adobe/spacecat-shared-utils-v1.123.1) (2026-06-26)
+
+### Bug Fixes
+
+* **utils:** added some patterns for aem_headless detection ([#1716](https://github.com/adobe/spacecat-shared/issues/1716)) ([a646b2b](https://github.com/adobe/spacecat-shared/commit/a646b2bf8aeb0bb11e13e03c43f57f414af7caad))
+
+## [@adobe/spacecat-shared-utils-v1.123.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.122.1...@adobe/spacecat-shared-utils-v1.123.0) (2026-06-26)
+
+### Features
+
+* **rum:** scope latest-metrics RUM to locale path prefix ([#1707](https://github.com/adobe/spacecat-shared/issues/1707)) ([77cdb33](https://github.com/adobe/spacecat-shared/commit/77cdb33d7f55a9bff795b768621ec70830b2cba3))
+
+## [@adobe/spacecat-shared-utils-v1.122.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.122.0...@adobe/spacecat-shared-utils-v1.122.1) (2026-06-26)
+
+### Bug Fixes
+
+* add schema-less URL support to pathname helpers ([#1727](https://github.com/adobe/spacecat-shared/issues/1727)) ([7e875a7](https://github.com/adobe/spacecat-shared/commit/7e875a7be924257ff66285df2539e8a195e55186))
+
+## [@adobe/spacecat-shared-utils-v1.122.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.121.0...@adobe/spacecat-shared-utils-v1.122.0) (2026-06-25)
+
+### Features
+
+* **utils:** add toPathname, hasSamePathname, allHaveSamePathname URL helpers ([#1724](https://github.com/adobe/spacecat-shared/issues/1724)) ([6da512a](https://github.com/adobe/spacecat-shared/commit/6da512aebf199189eea666f6d7655878349588d0))
+
+## [@adobe/spacecat-shared-utils-v1.121.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.120.1...@adobe/spacecat-shared-utils-v1.121.0) (2026-06-24)
+
+### Features
+
+* **utils:** add isWithinSiteScope and filterBySiteScope URL helpers [LLMO-5748] ([#1714](https://github.com/adobe/spacecat-shared/issues/1714)) ([5511bf0](https://github.com/adobe/spacecat-shared/commit/5511bf0c389b296078642d26088091fda0f7c7d7))
+
+## [@adobe/spacecat-shared-utils-v1.120.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.120.0...@adobe/spacecat-shared-utils-v1.120.1) (2026-06-18)
+
+### Bug Fixes
+
+* **utils:** correct AMS detection for AEM 6.5 sites with Core Components ([#1688](https://github.com/adobe/spacecat-shared/issues/1688)) ([5bf320c](https://github.com/adobe/spacecat-shared/commit/5bf320cc960b91cd81fc1facf6eae08816b6dd69))
+
+## [@adobe/spacecat-shared-utils-v1.120.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.3...@adobe/spacecat-shared-utils-v1.120.0) (2026-06-16)
+
+### Features
+
+* llm error pages subtypes ([#1686](https://github.com/adobe/spacecat-shared/issues/1686)) ([2598dc8](https://github.com/adobe/spacecat-shared/commit/2598dc88303b740b2dfd6e307d4ecb71f3005156))
+
+## [@adobe/spacecat-shared-utils-v1.119.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.2...@adobe/spacecat-shared-utils-v1.119.3) (2026-06-16)
+
+### Bug Fixes
+
+* pageCitability url-upsert + metrics-store $metadata 404 detection ([#1683](https://github.com/adobe/spacecat-shared/issues/1683)) ([693a943](https://github.com/adobe/spacecat-shared/commit/693a943396fb78db3caf31fd2cb7f643f66bb0ef))
+
+## [@adobe/spacecat-shared-utils-v1.119.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.1...@adobe/spacecat-shared-utils-v1.119.2) (2026-06-15)
+
+### Bug Fixes
+
+* quiet recoverable ERROR-severity log noise (config-validation fallback + missing metrics) ([#1681](https://github.com/adobe/spacecat-shared/issues/1681)) ([27be682](https://github.com/adobe/spacecat-shared/commit/27be6824d60af52a948e168a9a288239b402cdde))
+
+## [@adobe/spacecat-shared-utils-v1.119.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.0...@adobe/spacecat-shared-utils-v1.119.1) (2026-06-15)
+
+### Bug Fixes
+
+* downgrade expected RUM domainkey 404s from error to debug ([#1678](https://github.com/adobe/spacecat-shared/issues/1678)) ([86c7fdd](https://github.com/adobe/spacecat-shared/commit/86c7fdd5333e8c40b45f7375bc4321e6c36135de))
+
 ## [@adobe/spacecat-shared-utils-v1.119.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.118.0...@adobe/spacecat-shared-utils-v1.119.0) (2026-06-12)
 
 ### Features

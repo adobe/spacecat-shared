@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { createSerenityProjectEngineApiClient } from '../../src/index.js';
 import { buildSeed, SEEDS, SEED_IDS } from '../../mock/seeds.js';
 import { createBenchmarkMock } from '../../mock/factories.js';
+import { AI_MODEL_CATALOG } from '../../mock/ai-model-catalog.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, '..', '..');
@@ -505,6 +506,27 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(response.status).to.equal(201);
     // Live resolves the catalog model's icon onto the add response (verified 2026-06-25).
     expect(data.model).to.include.keys('id', 'icon');
+  });
+
+  // Regression: a known catalog model_id must echo THAT model's name + icon — not the
+  // createAiModelMock GPT-4o default. Before the catalog lookup, every added model read back as
+  // GPT-4o, so a project tracking Perplexity/Gemini showed identical "GPT-4o" rows. Live returns
+  // the catalog name + icon with an EMPTY key on the add path (verified 2026-06-25).
+  it('addAiModel (v2) resolves the posted model_id to the real catalog name + icon', async () => {
+    const perplexity = AI_MODEL_CATALOG.find((m) => m.key === 'perplexity');
+    const { data, error } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { model_id: perplexity.id },
+      },
+    );
+    expect(error).to.equal(undefined);
+    expect(data.model.id).to.equal(perplexity.id);
+    expect(data.model.name).to.equal('Perplexity');
+    expect(data.model.icon).to.equal('perplexity');
+    // Live add path returns the catalog name + icon but an empty `key`.
+    expect(data.model.key).to.equal('');
   });
 
   it('createProjectTags returns a top-level array, matching the live API (drift D1/CR6)', async () => {

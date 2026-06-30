@@ -40,6 +40,8 @@ export const CATALOG_CAPTURED = '2026-06-25';
  * @typedef {{ id: string, name: string, key: string, icon: string }} AiModelCatalogEntry
  */
 
+// Both the array and each entry are frozen, so a consumer holding a reference can't mutate shared
+// catalog state within the mock process (`Object.freeze` on the array alone is shallow).
 /** @type {ReadonlyArray<AiModelCatalogEntry>} */
 export const AI_MODEL_CATALOG = Object.freeze([
   {
@@ -108,4 +110,4 @@ export const AI_MODEL_CATALOG = Object.freeze([
     key: 'deepseek',
     icon: 'deepseek',
   },
-]);
+].map(Object.freeze));

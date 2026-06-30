@@ -135,7 +135,9 @@ method that calls it.
 > `BasicResponse` envelope. `createProject` returns a **draft `ProjectResponse`** — the request's
 > flat `brand_*`/`language_id`/`country_code`/`location_*` fields are nested under `settings.ai`,
 > with `live_id`/`draft_id` mirrored and `is_draft: true`/`publish_status: 'draft'` — NOT a flat
-> echo of the request body. `addAiModel` resolves the catalog model's `icon` onto the response.
+> echo of the request body. `addAiModel` resolves the catalog model's `name` and `icon` onto the
+> response (with an empty `key`), matching the live add path; an unmodelled `model_id` keeps the
+> factory default (GPT-4o).
 
 ---
 

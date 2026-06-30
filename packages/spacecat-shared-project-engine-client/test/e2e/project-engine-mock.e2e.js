@@ -506,6 +506,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(response.status).to.equal(201);
     // Live resolves the catalog model's icon onto the add response (verified 2026-06-25).
     expect(data.model).to.include.keys('id', 'icon');
+    // SEED_IDS.aiModelId is NOT a catalog id, so this exercises the unmodelled fallback:
+    // the factory default (GPT-4o) is kept, with the posted id preserved.
+    expect(data.model.name).to.equal('GPT-4o');
+    expect(data.model.key).to.equal('gpt-4o');
   });
 
   // Regression: a known catalog model_id must echo THAT model's name + icon — not the

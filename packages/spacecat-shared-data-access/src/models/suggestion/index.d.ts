@@ -25,6 +25,7 @@ export interface Suggestion extends BaseModel {
   setOpportunityId(opportunityId: string): Suggestion;
   setRank(rank: number): Suggestion;
   setStatus(status: string): Suggestion;
+  transitionStatus(to: string): Suggestion;
 }
 
 export interface SuggestionCollection extends BaseCollection<Suggestion> {

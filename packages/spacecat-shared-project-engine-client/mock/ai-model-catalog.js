@@ -110,4 +110,4 @@ export const AI_MODEL_CATALOG = Object.freeze([
     key: 'deepseek',
     icon: 'deepseek',
   },
-].map(Object.freeze));
+].map((entry) => Object.freeze(entry)));

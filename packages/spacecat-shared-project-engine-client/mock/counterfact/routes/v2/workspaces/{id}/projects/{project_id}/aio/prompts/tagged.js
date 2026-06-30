@@ -17,12 +17,11 @@
  * `{ prompts: { [promptText]: [tagName, ...] } }` — keyed by PROMPT TEXT (verified live
  * 2026-06-25), each value the tag names to attach. One stored prompt is created per text key,
  * carrying an `AIOTag` synthesized from each tag name (stable id so `by_tags` filtering works),
- * so a later `by_tags` list reflects the write. Returns 201 `IDsWithStatsResponse`.
+ * so a later `by_tags` list reflects the write. The tag ids are minted via `context.tagId` (the
+ * shared mock/tag-id.js helper) so they match the ids `POST /aio/tags` persists for the same name.
+ * Returns 201 `IDsWithStatsResponse`.
  * Materialized into `.counterfact/routes/` by the mock runner; excluded from coverage.
  */
-
-/** Deterministic tag id from a tag name so repeated creates under the same name share an id. */
-const tagId = (name) => `tag-${encodeURIComponent(name)}`;
 
 /**
  * POST — create prompts → 201 { ids, existing_count }. Body is `AIOTaggedPromptsCreateRequest`
@@ -48,7 +47,7 @@ export function POST($) {
     .createPromptMock({
       name: text,
       is_new: true,
-      tags: (tags ?? []).map((name) => ({ id: tagId(name), name })),
+      tags: (tags ?? []).map((name) => ({ id: context.tagId(name), name })),
     }));
 
   if (!context.quota.canCreatePrompts(path.id, toCreate.length)) {

@@ -1682,7 +1682,7 @@ export interface components {
         };
         "model.AIOTag": {
             children_count?: number;
-            id?: string;
+            id: string;
             name?: string;
             parent_id?: string;
             path?: components["schemas"]["model.AIOTagLeaf"][];

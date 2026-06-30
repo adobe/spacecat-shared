@@ -56,7 +56,7 @@ is guarded by the `.ts` type-tests under `test/types/` rather than per-spec `@ts
 
 Build seed/fixture entities with the typed factories in `mock/factories.js` — `createProjectMock`,
 `createProjectAiModelMock`, `createAiModelMock`, `createPromptMock`, `createBenchmarkMock`,
-`createBrandUrlMock`, `createLanguageMock`, `createTagNodeMock`, `createBrandTopicMock`,
+`createBrandUrlMock`, `createLanguageMock`, `createTagNodeMock`, `createAIOTagMock`, `createBrandTopicMock`,
 `createBasicResponseMock`, `createInitStatusMock`, `createCiCompetitorMock` — each
 `(Partial<T>) => T` typed against `components['schemas'][...]` (the
 [mock factory pattern](https://dev.to/davelosert/mock-factory-pattern-in-typescript-44l9)). Never

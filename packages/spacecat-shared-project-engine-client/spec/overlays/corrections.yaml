@@ -200,6 +200,14 @@ actions:
     update:
       required: [id]
 
+  - target: "$.components.schemas['model.AIOTag']"
+    description: "CR5: a listed/stored project tag always carries id"
+    # Now that project tags are stateful-served by the mock (GET /aio/tags), the served list item
+    # always has an id (the deterministic `tag-<name>`). Conservative: id only — the count fields
+    # default to 0 but are not asserted required, and parent_id/path are absent on a flat tag.
+    update:
+      required: [id]
+
   # ── CR6: createProjectTags returns a top-level ARRAY ─────────────────────
   # Live: POST /v2/.../aio/tags -> 201 [{ id, name, children_count, keyword_count }].
   # The vendored 201 schema is a single TreeNodeResponse; replace it with an array.

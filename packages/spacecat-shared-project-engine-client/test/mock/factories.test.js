@@ -19,6 +19,7 @@ import {
   createBrandUrlMock,
   createLanguageMock,
   createTagNodeMock,
+  createAIOTagMock,
   createBrandTopicMock,
   createBasicResponseMock,
   createInitStatusMock,
@@ -179,6 +180,13 @@ describe('factories — live-shaped entities', () => {
   it('createTagNodeMock yields a TreeNodeResponse', () => {
     const t = createTagNodeMock({ name: 'topic:Probe' });
     expect(t).to.include({ name: 'topic:Probe', children_count: 0, keyword_count: 0 });
+  });
+
+  it('createAIOTagMock yields an AIOTag (prompts_count, not keyword_count)', () => {
+    const t = createAIOTagMock({ id: 'tag-x', name: 'category:Probe' });
+    expect(t).to.deep.equal({
+      id: 'tag-x', name: 'category:Probe', children_count: 0, prompts_count: 0,
+    });
   });
 
   it('createBrandTopicMock yields { topic, volume, prompts }', () => {

@@ -44,6 +44,8 @@ import { authError } from './auth.js';
 import { emptyAck } from './responses.js';
 import * as factories from './factories.js';
 import { LANGUAGE_CATALOG } from './language-catalog.js';
+import { AI_MODEL_CATALOG } from './ai-model-catalog.js';
+import { tagId } from './tag-id.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
 /**
@@ -87,6 +89,15 @@ export class Context {
     // route serves it without duplicating the 38-entry list, mirroring how `factories` is shared —
     // every route reads its lib data through `$.context`, never an import.
     this.languageCatalog = LANGUAGE_CATALOG;
+    // The canonical AI-model catalog (mock/ai-model-catalog.js). Exposed so the global
+    // `GET /v1/ai_models` route serves it AND the project-scoped add handler resolves a posted
+    // `model_id` to the real model's name/icon — same `$.context` lib-data convention as above.
+    this.aiModelCatalog = AI_MODEL_CATALOG;
+    // The deterministic tag-id derivation (mock/tag-id.js). Exposed so the two routes that mint tag
+    // ids — `POST /aio/tags` and `POST /aio/prompts/tagged` — share one definition and can't drift
+    // out of the cross-endpoint id contract that lets `by_tags` / the Categories surface correlate
+    // a standalone tag with the same tag attached to a prompt.
+    this.tagId = tagId;
   }
 
   /**

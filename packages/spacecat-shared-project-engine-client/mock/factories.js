@@ -35,6 +35,7 @@
 /** @typedef {Schemas['model.BrandURL']} BrandUrl */
 /** @typedef {Schemas['model.LanguageResponse']} Language */
 /** @typedef {Schemas['model.TreeNodeResponse']} TreeNode */
+/** @typedef {Schemas['model.AIOTag']} AIOTag */
 /** @typedef {Schemas['aiseo.BrandTopicWithPrompts']} BrandTopic */
 /** @typedef {Schemas['http_server.BasicResponse']} BasicResponse */
 /** @typedef {Schemas['model.AIOProjectInitializedResponse']} InitStatus */
@@ -282,6 +283,24 @@ export const createTagNodeMock = (overrides = {}) => ({
   name: 'type:branded',
   children_count: 0,
   keyword_count: 0,
+  ...overrides,
+});
+
+/**
+ * A stored/listed project tag (`AIOTag`) — the `GET /aio/tags` (`AIOTagsListResponse`) item and
+ * the shape the mock persists in the per-project `tags` collection. A standalone `category:<name>`
+ * tag is a flat, top-level node, so `parent_id`/`path` are omitted by default; counts default to 0.
+ * Distinct from {@link createTagNodeMock}: the create path returns a `TreeNodeResponse`
+ * (`keyword_count`) while the list/store shape is an `AIOTag` (`prompts_count`) — two genuinely
+ * different live shapes.
+ * @param {Partial<AIOTag>} [overrides]
+ * @returns {AIOTag}
+ */
+export const createAIOTagMock = (overrides = {}) => ({
+  id: uuid(),
+  name: 'category:Running Shoes',
+  children_count: 0,
+  prompts_count: 0,
   ...overrides,
 });
 

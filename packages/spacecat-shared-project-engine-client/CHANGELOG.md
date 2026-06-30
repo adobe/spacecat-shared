@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.4.0...@adobe/spacecat-shared-project-engine-client-v1.4.1) (2026-06-30)
+
+### Bug Fixes
+
+* **project-engine-client:** resolve added AI model to real catalog name/icon in mock ([#1753](https://github.com/adobe/spacecat-shared/issues/1753)) ([0b74bc0](https://github.com/adobe/spacecat-shared/commit/0b74bc0c5443371f500f622cc96862371849c342))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.3.2...@adobe/spacecat-shared-project-engine-client-v1.4.0) (2026-06-30)
+
+### Features
+
+* **project-engine-client:** make project AIO tags a stateful mock resource ([#1752](https://github.com/adobe/spacecat-shared/issues/1752)) ([91f7d25](https://github.com/adobe/spacecat-shared/commit/91f7d253cd93ddf29d29ac3bdef226f15109014f))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.3.1...@adobe/spacecat-shared-project-engine-client-v1.3.2) (2026-06-29)
 
 ### Bug Fixes

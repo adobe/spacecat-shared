@@ -33,11 +33,17 @@ export function POST($) {
   const { path, body, context } = $;
   const catalogModel = context.aiModelCatalog.find((m) => m.id === body.model_id);
   // Live echoes the catalog model's name + icon on add; only `key` comes back empty there.
-  const modelOverrides = catalogModel
-    ? {
+  // A missing model_id can't reach here on the validated route (the request schema marks it
+  // required → 400), but guard anyway so the unmodelled fallback never overrides the factory's
+  // generated id with `undefined`.
+  let modelOverrides = {};
+  if (catalogModel) {
+    modelOverrides = {
       id: body.model_id, key: '', name: catalogModel.name, icon: catalogModel.icon,
-    }
-    : { id: body.model_id };
+    };
+  } else if (body.model_id) {
+    modelOverrides = { id: body.model_id };
+  }
   const created = context.ops.ai_models.add(
     { workspaceId: path.id, projectId: path.project_id },
     context.factories.createProjectAiModelMock({

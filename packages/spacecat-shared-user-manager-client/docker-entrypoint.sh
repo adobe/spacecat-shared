@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Copyright 2026 Adobe. All rights reserved.
 # This file is licensed to you under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,15 @@
 #
 # Exits as soon as EITHER process exits, so a dead component stops the container (the healthcheck /
 # orchestrator then fails fast) instead of the container lingering half-up with a 502-ing proxy.
-set -euo pipefail
+#
+# POSIX sh (busybox ash), NOT bash: the runtime image no longer ships bash. bash was here only for
+# `wait -n` (return when the first background job exits), which ash lacks; we poll the two PIDs
+# instead (see the loop below). Everything else is plain POSIX.
+set -eu
 
-# Forward termination to the whole process group so a `docker stop` tears down both children.
-# EXIT is included so that when `wait -n` returns (one process died) and the script exits, the
-# surviving process is reaped too, not just on a signal-driven `docker stop`.
+# Forward termination to the whole process group so a `docker stop` tears down both children. EXIT
+# is included so the surviving process is reaped when the script exits after one dies, not only on a
+# signal-driven `docker stop`.
 trap 'kill 0' INT TERM EXIT
 
 node mock/run.js &
@@ -45,7 +49,22 @@ done
 [ -n "$mock_ready" ] || { echo "mock did not become ready within timeout: ${mock_url}" >&2; exit 1; }
 
 caddy run --config /etc/caddy/Caddyfile --adapter caddyfile &
+caddy_pid=$!
 
-# `wait -n` returns when the first background job exits; propagate its status.
-wait -n
-exit $?
+# POSIX sh has no `wait -n`, so poll until EITHER child exits, then propagate the status of the one
+# that died. The 1s granularity is irrelevant for a test mock; the surviving child is torn down by
+# the EXIT trap on the `exit` below.
+while kill -0 "$mock_pid" 2>/dev/null && kill -0 "$caddy_pid" 2>/dev/null; do
+  sleep 1
+done
+status=0
+if ! kill -0 "$mock_pid" 2>/dev/null; then
+  wait "$mock_pid" || status=$?   # mock died first — propagate its status
+else
+  wait "$caddy_pid" || status=$?  # caddy died first — propagate its status
+fi
+# Clear the traps before the final exit so the EXIT trap's `kill 0` cannot fire mid-exit and
+# overwrite the status the orchestrator must see; then reap the surviving child explicitly.
+trap - INT TERM EXIT
+kill "$mock_pid" "$caddy_pid" 2>/dev/null || true
+exit "$status"

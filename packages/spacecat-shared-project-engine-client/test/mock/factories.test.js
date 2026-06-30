@@ -41,7 +41,7 @@ describe('factories — live-shaped entities', () => {
       domain: 'adobe.com',
       brand_names: ['Adobe'],
       brand_name_display: 'Adobe',
-      language_id: 'lang-uuid',
+      language_id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', // catalog "English"
       country_code: 'us',
       location_id: 2840,
       location_name: 'United States',
@@ -69,20 +69,42 @@ describe('factories — live-shaped entities', () => {
       benchmarks_count: 0,
       products_count: 0,
     });
-    expect(p.settings.ai.language).to.deep.equal({ id: 'lang-uuid', name: '' });
-    expect(p.settings.ai.country).to.deep.equal({ code: 'us', name: '' });
+    // language.name = ISO code resolved from the catalog id (live read-view shape, #1745), NOT the
+    // English display name; country.name = the Intl region name resolved from the code.
+    expect(p.settings.ai.language)
+      .to.deep.equal({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'en' });
+    expect(p.settings.ai.country).to.deep.equal({ code: 'us', name: 'United States' });
     expect(p.settings.ai.location).to.deep.equal({ id: 2840, name: 'United States' });
     expect(p.settings.ai.models_stats).to.deep.equal({ models: [], models_count: 0 });
+  });
+
+  it('createProjectResponseFromRequest leaves language/country names empty for an unknown id/code', () => {
+    // An unknown language_id (not in the catalog) resolves to '' (id is still echoed). A
+    // structurally invalid country code makes Intl.DisplayNames.of throw — caught → ''.
+    const p = createProjectResponseFromRequest({ language_id: 'not-a-catalog-id', country_code: 'usa' });
+    expect(p.settings.ai.language).to.deep.equal({ id: 'not-a-catalog-id', name: '' });
+    expect(p.settings.ai.country).to.deep.equal({ code: 'usa', name: '' });
+  });
+
+  it('createProjectResponseFromRequest resolves a non-en catalog language id (e.g. German → de)', () => {
+    const p = createProjectResponseFromRequest({
+      language_id: 'e5282ae9-83a6-4ea3-b3cf-5e99d8f51eca', // catalog "German"
+      country_code: 'de',
+    });
+    expect(p.settings.ai.language)
+      .to.deep.equal({ id: 'e5282ae9-83a6-4ea3-b3cf-5e99d8f51eca', name: 'de' });
+    expect(p.settings.ai.country).to.deep.equal({ code: 'de', name: 'Germany' });
   });
 
   it('createProjectResponseFromRequest falls back to defaults for an empty request', () => {
     const p = createProjectResponseFromRequest();
     expect(p).to.include({ type: 'ai', name: 'Seeded Project', domain: '' });
-    expect(p.settings.ai.brand_names).to.deep.equal([]);
+    // Live echoes null (not [] / '') for an omitted brand_names / location_name (2026-06-29).
+    expect(p.settings.ai.brand_names).to.equal(null);
     expect(p.settings.ai.brand_name_display).to.equal('');
     expect(p.settings.ai.language).to.deep.equal({ id: '', name: '' });
     expect(p.settings.ai.country).to.deep.equal({ code: '', name: '' });
-    expect(p.settings.ai.location).to.deep.equal({ id: 0, name: '' });
+    expect(p.settings.ai.location).to.deep.equal({ id: 0, name: null });
     expect(p.settings.ai.primary_url).to.equal('');
   });
 

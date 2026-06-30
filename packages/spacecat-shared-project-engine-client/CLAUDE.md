@@ -70,10 +70,17 @@ entity through them — `context.factories.createBenchmarkMock({ brand_name, dom
 catalog handlers map their data rows through `createLanguageMock` / `createAiModelMock` /
 `createBrandTopicMock` — rather than emitting an inline literal that the untyped handler (the
 `@ts-check` exception) couldn't catch drifting. The factory is the single, tsc-checked source of
-truth for each shape. This holds for EVERY handler, including the trivial envelope shapes: the
-202 acks build a `createBasicResponseMock`, `getInitStatus` a `createInitStatusMock`, and
-`updateCiCompetitors` maps through `createCiCompetitorMock` — there are no inline-literal
-exceptions left.
+truth for each shape. This holds for EVERY handler that returns an entity, including the trivial
+envelope shapes: `getInitStatus` builds a `createInitStatusMock` and `updateCiCompetitors` maps
+through `createCiCompetitorMock` — there are no inline-literal entity exceptions left.
+
+The empty-body action acks (publish, batch-delete, update-benchmark) are NOT entities — they
+mirror the live gateway's `content-length: 0` ack, so they return `context.emptyAck(202)` from
+`mock/responses.js` rather than a factory. `emptyAck` is a raw `{ status, body: '', contentType }`
+envelope (like `auth.js`'s 401 and `quota.js`'s 405): the explicit `contentType` makes Counterfact
+skip response content-negotiation, which otherwise **406**s an empty-body 2xx under `Accept:
+application/json` (the header the real serenity transport always sends). A bare `{ status: 204 }`
+delete needs no helper — Counterfact serves 204 No Content without negotiating.
 
 ## Spec corrections: the overlay is the single source of truth
 

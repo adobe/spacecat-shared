@@ -77,7 +77,31 @@ change, the live proof.
   relies on it — those cases provision an allocation and write prompts/publish under freshly
   minted, never-created project ids to exercise metering in isolation. If a future consumer flow
   needs unknown-project 404s, add a shared `requireProject(scope)` guard to the child writers and
-  seed the parent projects the quota cases use.
+  seed the parent projects the quota cases use. (Live evidence, 2026-06-29: GET / DELETE / publish /
+  add-prompt / by_tags / list-ai_models on a non-existent `project_id` all `404 { message: "not
+  found" }`. The mock now mirrors this for **DELETE project** — see the read-view section — but child
+  writes still succeed against a bogus project id, on purpose.)
+- **No tenant / ownership model.** PE `GET projects` returns `200 { items: [] }` for *any* workspace
+  id; live `403 { invalid access attempt }`s an unknown/unowned workspace (and `200 { items: [] }`
+  only for an owned-but-empty one) — the mock has no notion of ownership. Likewise the **bearer gate
+  is presence-only**: a garbage `Bearer xxx` passes (live `401`s it). Both are deliberate — the
+  consumer always operates on workspaces it owns, with a real IMS token. (verified 2026-06-29)
+- **Two live error layers collapsed into one.** Live has a gateway/auth layer (`application/json`,
+  `{detail}`/`{message}`) and a PE app/handler layer (**`text/plain`**, Go-validator/handler bodies:
+  `400` field-validation, `404 {message:"not found"}`, `500 {message:"internal server error"}`,
+  `409` conflict). The mock returns every error as `application/json` with a single envelope, and
+  does **not** reproduce the unguarded **500s** live throws for a bad input it never validates
+  (unknown `language_id`, `type:"seo"`, `GET projects` with no params / `?live=true`). The consumer
+  reads status, not error bodies (`mapError` redacts upstream), so this is shape-only. (2026-06-29)
+- **Pagination is asymmetric across catalogs.** `GET /v1/languages` ignores `page`/`limit` (always
+  all 38, `page:1`) — the mock matches; `GET /v1/ai_models` and `GET projects` *do* paginate live —
+  the mock does not honor `page`/`limit` on those (returns the full list). No consumer paginates
+  these, so it is unmodelled rather than wrong. (2026-06-29)
+- **`brand-topics` `prompts` is empty in the mock.** Live `GET brand-topics` returns each topic with
+  a large multilingual keyword array under `prompts`; the mock's two static topics carry
+  `prompts: []`, so serenity's volume-ranked `generateAndAttachPrompts` (which reads per-topic
+  `prompts`) gets nothing from the mock — a fidelity gap for the prompt-generation flow only. Seed
+  richer topics if a cross-repo e2e drives that path. (2026-06-29)
 - **`listBrandUrls` always returns `200 { brand_urls }`; live can `404`.** Live (verified
   2026-06-25) `GET …/aio/benchmarks/{bid}/brand_urls` returns `404 { message: "not found" }` when
   `{bid}` is not the project's listable (auto-created main-brand) benchmark — even though a `POST`
@@ -93,18 +117,72 @@ change, the live proof.
   immediately readable on purpose (deterministic test double); to exercise the consumer's
   absent-benchmark / `404`-skip branches, model them **deterministically via seed/control state**,
   never via time-based delays — see "Replicating live async behaviour" below.
-- **Create ops report `existing_count: 0` unconditionally.** `POST .../aio/prompts/tagged` and
-  `POST .../ai_models/benchmarks` always return `existing_count: 0` — the mock models no dedup
-  against already-present rows, so the consumer's "some already present" branch
-  (`existing_count > 0`) cannot be exercised against this mock. Deliberate: the confirmed consumer
-  flows create into freshly scoped collections, and dedup fidelity adds store complexity no flow
-  reads. Add a name/domain-keyed existing-count if a future flow depends on it.
+- **Create ops now model live dedup/conflict (#1745).** `POST .../aio/prompts/tagged` dedups by
+  prompt **text** — a text already present is not re-created, it is counted in `existing_count` and
+  gets no new id (live, 2026-06-29). `POST .../ai_models/benchmarks` instead treats a duplicate
+  brand name / alias / domain as a **hard `409`** `{ message: "ai benchmark conflict: duplicate
+  brand name or alias" }` (benchmarks and prompts dedup *differently* live) and creates nothing for
+  the batch — including two conflicting entries **within the same batch**, not just against
+  already-stored rows. Not modelled: **slice-uniqueness** (two US/en projects both succeed with distinct ids —
+  PE does not enforce it; that invariant lives only in serenity's `findBySlice`/DB), matching live.
+
+## Project read-view fidelity (#1745, live-pinned 2026-06-29)
+
+The created/published project read-view is reconstructed by the consumer into an addressable
+**market** (`spacecat-api-service` `subworkspace-projects.js`), so its `settings.ai` shape is
+load-bearing. Two fields are resolved by the mock to match live, and the publish action mutates the
+stored project:
+
+- **`settings.ai.language.name` = the ISO code, NOT the English display name.** Live returns the
+  ISO code (`"en"`) here on both the create response and every read-view, while `language.id` is the
+  catalog UUID sent on create (the SAME UUID `GET /v1/languages` returns under the English display
+  name `"English"` — only `name` differs between the two views). The consumer's `langOf` reads
+  `settings.ai.language.name` directly and lowercases it as the slice code, so the create factory
+  resolves `language_id` → ISO via the shared **`mock/language-catalog.js`** (`isoForLanguageId`),
+  which carries an `iso` column alongside the live `id`/`name`. Only `en` is live-verified; the
+  other ISO codes are standard ISO 639-1, best-effort so any market a downstream e2e exercises
+  round-trips. (`GET /v1/languages` still serves just `{ id, name }` — the `iso` column is
+  mock-internal.)
+- **`settings.ai.country.name`** is populated from the country code via `Intl.DisplayNames` (region).
+  **Documented divergence:** live returns the short informal name (`"USA"` for `us`); Intl returns
+  `"United States"`. Accepted because **no consumer reads `country.name`** — `geoOf` resolves geo
+  from `country.code` → `resolveLocation` — so it is fidelity-only, and a hand-maintained
+  code→informal-name catalog would be unread maintenance. `location.id`/`name` are echoed from the
+  request verbatim (matches live for the consumer-driven create path).
+- **Publish moves the stored read-view to live.** `POST .../publish` flips the stored project's
+  `publish_status` `draft` → `live` and stamps `published_at`, so a later `GET`/list reports the
+  published status (the slice's `mapPublishStatus(publish_status)` reads `live`). **`is_draft` is
+  left as-is** — live keeps `is_draft: true` after publish (only `publish_status`/`published_at`
+  change; live's full quirk is `true` on create → `false` on GET-as-draft → `true` post-publish),
+  and the consumer ignores `is_draft` entirely. The publish update is a no-op for an unknown project
+  id, so the metering cases (which publish under never-created ids) are unaffected.
+
+## Endpoint status-code quirks the mock does NOT reproduce (live errors; mock is permissive)
+
+Live returns errors for several call *shapes* the consumer never sends; the mock answers normally.
+None affects the consumer, but they are documented so a future caller doesn't assume mock parity
+(live captured 2026-06-29):
+
+| call | live | mock | why it's safe |
+| --- | --- | --- | --- |
+| `GET /v1/.../projects` (no params) | **500** | 200 | the consumer always sends `?type=ai` |
+| `GET /v1/.../projects?live=true` | **500** | 200 | the consumer never sends `live=` |
+| `GET .../aio/prompts` | **405** | (DELETE only) | reads go via `by_tags` (POST) |
+| `GET .../aio/prompts/tagged` | **405** | (POST only) | create is POST |
+| `GET .../ci/competitors` | **405** | (PUT only) | update is PUT |
+| `POST .../publish` | 202, `content-length: 0`, **no `Content-Type`** | 202 + `Content-Type: application/json` | consumer keys off status/`response.ok`; body empty either way (Counterfact limit, see responses.js) |
 
 ## Replicating live async behaviour (don't use timers)
 
 Live Semrush is **eventually consistent**: a just-created prompt/brand-URL isn't listed yet, and a
 project's main-brand benchmark is generated asynchronously (it didn't appear within ~60s of create,
-even after a publish — verified 2026-06-25). The mock is deliberately **immediately consistent**.
+even after a publish — verified 2026-06-25). A further, distinct case (live-pinned 2026-06-29):
+the project **list** (`GET projects?type=ai`) lags a new project by ~4 s, and **prompt reads**
+(`POST aio/prompts/by_tags`) are **publish-gated** — a created prompt stays invisible until the
+project is published, then appears (this is a published-snapshot read, not lag). The end-to-end
+consumer flow closes anyway because `POST /prompts` runs `publishAffected`; a test that lists
+prompts *before* that publish would diverge from the immediately-consistent mock. The mock is
+deliberately **immediately consistent**.
 
 **Do NOT make the mock time-based** (delays, "appears after N seconds / N reads"). A test double's
 value is determinism; introducing wall-clock async makes consumer tests flaky and slow, and the

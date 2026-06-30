@@ -87,12 +87,13 @@ to model exhaustion:
 ```bash
 curl -s -XPOST localhost:4010/enterprise/users/api/__quota \
   -H 'content-type: application/json' -d '{"workspaceId":"<parent>","projects":0,"prompts":0}'
-# now a createSubworkspace under <parent> → 422 { "message": "insufficient available units" }
+# now a createSubworkspace under <parent> → 422 { "message": "insufficient available units in subscription" }
 ```
 
-The 422 **envelope** (`{ message }`) is live-confirmed (2026-06-26). Live also returns a second 422
-variant — `{ "message": "workspace not ready" }` — when a transfer/delete races a still-settling
-child; the mock is immediately-consistent and does not model that lock (see mock-statefulness.md).
+The 422 string is live-pinned (2026-06-29): `{ "message": "insufficient available units in
+subscription" }`. Live also returns a second 422 variant — `{ "message": "workspace not ready" }` —
+when a transfer/delete races a still-settling child; the mock is immediately-consistent and does not
+model that lock (see mock-statefulness.md).
 
 ## 7. Driving the mock from tests / an agent
 

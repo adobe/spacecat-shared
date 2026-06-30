@@ -26,6 +26,7 @@ describe('Suggestion transitions', () => {
     ['NEW', 'FIXED'],
     ['NEW', 'ERROR'],
     ['PENDING_VALIDATION', 'NEW'],
+    ['PENDING_VALIDATION', 'IN_PROGRESS'], // api-service autofixSuggestions path
     ['PENDING_VALIDATION', 'REJECTED'], // the one hard rule preserved from api-service
     ['IN_PROGRESS', 'FIXED'],
     ['IN_PROGRESS', 'NEW'], // bubble-up: all issues NEUTRAL

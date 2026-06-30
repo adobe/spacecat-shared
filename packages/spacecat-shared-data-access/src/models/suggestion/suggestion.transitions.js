@@ -51,7 +51,8 @@ export const SUGGESTION_TRANSITIONS = {
   // ESE/TBYB review (-> NEW), mystique (-> IN_PROGRESS), bubble-up, UI skip, re-audit.
   [S.NEW]: [S.APPROVED, S.IN_PROGRESS, S.FIXED, S.ERROR, S.SKIPPED, S.OUTDATED],
   // paid-review gate: approve -> NEW, decline -> REJECTED (the one hard rule), or skip/outdate.
-  [S.PENDING_VALIDATION]: [S.NEW, S.REJECTED, S.SKIPPED, S.OUTDATED],
+  // IN_PROGRESS: api-service autofixSuggestions accepts PENDING_VALIDATION and sets IN_PROGRESS.
+  [S.PENDING_VALIDATION]: [S.NEW, S.IN_PROGRESS, S.REJECTED, S.SKIPPED, S.OUTDATED],
   [S.APPROVED]: [S.IN_PROGRESS, S.FIXED, S.ERROR, S.SKIPPED, S.NEW, S.OUTDATED],
   // bubble-up after fix-entity transitions.
   [S.IN_PROGRESS]: [S.FIXED, S.ERROR, S.SKIPPED, S.NEW, S.OUTDATED],

@@ -14,13 +14,21 @@
  * Stateful handler for GET /v1/workspaces/{id}/family — the consumer's `listWorkspaceFamily`,
  * returning the workspace `{id}` plus every descendant as a TOP-LEVEL array (the live shape; the
  * consumer reads the bare array, not an `{ items }` envelope). Used for ambiguous-create recovery
- * (match a child by title) and the linked-sub-workspace guard. An unknown `{id}` yields an empty
- * array (no descendants). Materialized into `.counterfact/routes/` by the mock runner; excluded
- * from coverage.
+ * (match a child by title) and the linked-sub-workspace guard. An unknown `{id}` is a 403 "invalid
+ * access attempt" — live 403s `family` on a workspace that doesn't exist / you don't own (verified
+ * 2026-06-29), mirroring `status`. Materialized into `.counterfact/routes/` by the mock runner;
+ * excluded from coverage.
  */
 
-/** GET — the workspace's family (itself + descendants) as a top-level array. */
+/** GET — the workspace's family (itself + descendants) as a top-level array; 403 if unknown. */
 export function GET($) {
   const { path, context } = $;
+  if (!context.ops.workspaces.exists(path.id)) {
+    return {
+      status: 403,
+      body: context.factories.createBasicResponseMock({ message: 'invalid access attempt' }),
+      contentType: 'application/json',
+    };
+  }
   return $.response[200].json(context.ops.workspaces.listFamily(path.id));
 }

@@ -186,6 +186,27 @@ export function detectAEMVersion(htmlSource, headers = {}) {
     csMatches += 1;
   }
 
+  // AEM GraphQL persisted query — guarded against hybrid CS sites that embed GraphQL
+  // endpoints while AEM still server-renders the page (lc-hash clientlibs are proof
+  // of CS rendering pipeline). Score +2 so a single signal clears MIN_THRESHOLD alone.
+  if (
+    /\/graphql\/execute\.json/i.test(normalizedHtml)
+    && !/\/etc\.clientlibs\/[^"']+\.lc-[a-f0-9]+-lc\.min\.(js|css)/i.test(normalizedHtml)
+  ) {
+    aemHeadlessMatches += 2;
+  }
+
+  // Sling Model Exporter under /content/ — guarded against AEM CS SPA Editor sites
+  // (lc-hash clientlibs) and AEM AMS sites (MD5-hash clientlibs), which both embed
+  // .model.json paths without being headless. Score +2 so a single signal is sufficient.
+  if (
+    /\/content\/[^\s"']+\.model(?:\.tidy)?\.json/i.test(normalizedHtml)
+    && !/\/etc\.clientlibs\/[^"']+\.lc-[a-f0-9]+-lc\.min\.(js|css)/i.test(normalizedHtml)
+    && !/\/etc\.clientlibs\/[^"']+\.min\.[a-f0-9]{32}\.(js|css)/i.test(normalizedHtml)
+  ) {
+    aemHeadlessMatches += 2;
+  }
+
   // Give significant weight to explicit RUM data-routing indicators
   // ams= gets higher weight (+8 total) because AMS 6.5 sites running Core Components
   // accumulate many CS-looking patterns (lc- format, cmp- classes, experience-fragments)

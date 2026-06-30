@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.19.1...@adobe/spacecat-shared-tokowaka-client-v1.20.0) (2026-06-27)
+
+### Features
+
+* **tokowaka-client:** add CloudFront Optimize-at-Edge control-plane ([#1722](https://github.com/adobe/spacecat-shared/issues/1722)) ([e465be0](https://github.com/adobe/spacecat-shared/commit/e465be0a21e61b13db8dd06dacbec7895cb91272))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.19.0...@adobe/spacecat-shared-tokowaka-client-v1.19.1) (2026-06-21)
 
 ### Bug Fixes

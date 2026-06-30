@@ -47,9 +47,17 @@ export function PATCH($) {
   return $.response[200].json(updated);
 }
 
-/** DELETE — remove a project. */
+/**
+ * DELETE — remove a project. Live returns 404 `{ message: 'not found' }` for a non-existent project
+ * (verified 2026-06-29); the mock mirrors the status (bare 404, like the sibling GET — the
+ * text/plain error body is a documented simplification). The consumer treats a delete-404 as
+ * success (idempotent decommission), so the status change is consumer-equivalent.
+ */
 export function DELETE($) {
   const { path, context } = $;
-  context.ops.projects.remove({ workspaceId: path.id }, path.project_id);
+  const removed = context.ops.projects.remove({ workspaceId: path.id }, path.project_id);
+  if (!removed) {
+    return { status: 404 };
+  }
   return { status: 204 };
 }

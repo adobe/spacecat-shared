@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.12.1...@adobe/spacecat-shared-drs-client-v1.13.0) (2026-06-25)
+
+
+### Features
+
+* **drs-client:** add listJobs + createBrandPresenceSchedule | LLMO-5605 ([#1721](https://github.com/adobe/spacecat-shared/issues/1721)) ([6f5a73a](https://github.com/adobe/spacecat-shared/commit/6f5a73a42577872f13c64c4950b9d2724a103b36))
+
 # [@adobe/spacecat-shared-drs-client-v1.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.12.0...@adobe/spacecat-shared-drs-client-v1.12.1) (2026-06-12)
 
 

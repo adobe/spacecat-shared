@@ -27,6 +27,7 @@ import {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
@@ -741,6 +742,62 @@ describe('URL Utility Functions', () => {
     });
   });
 
+  describe('getBaseURLPathPrefix', () => {
+    it('returns null for a domain-root baseURL', () => {
+      expect(getBaseURLPathPrefix('https://example.com')).to.be.null;
+    });
+
+    it('returns null for a domain-root baseURL with trailing slash', () => {
+      expect(getBaseURLPathPrefix('https://example.com/')).to.be.null;
+    });
+
+    it('extracts a single-segment locale prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/de')).to.equal('/de');
+    });
+
+    it('strips the trailing slash from the prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/de/')).to.equal('/de');
+    });
+
+    it('extracts a multi-segment prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/de-de/shop')).to.equal('/de-de/shop');
+    });
+
+    it('prepends a schema when missing', () => {
+      expect(getBaseURLPathPrefix('example.com/fr')).to.equal('/fr');
+    });
+
+    it('returns null for an unparseable baseURL', () => {
+      expect(getBaseURLPathPrefix('https://[invalid-url]')).to.be.null;
+    });
+
+    it('returns null for non-string input', () => {
+      expect(getBaseURLPathPrefix(null)).to.be.null;
+      expect(getBaseURLPathPrefix(undefined)).to.be.null;
+    });
+
+    it('returns null when the baseURL points at a file (single-segment)', () => {
+      expect(getBaseURLPathPrefix('https://example.com/en.html')).to.be.null;
+    });
+
+    it('returns null when the baseURL points at a file (multi-segment)', () => {
+      expect(getBaseURLPathPrefix('https://www2.example.com/us/en.html')).to.be.null;
+      expect(getBaseURLPathPrefix('https://example.com/en/home.html')).to.be.null;
+    });
+
+    it('returns null for a file baseURL with a trailing slash stripped', () => {
+      expect(getBaseURLPathPrefix('https://example.com/us/index.php')).to.be.null;
+    });
+
+    it('keeps an extensionless deep path prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/us/en_us')).to.equal('/us/en_us');
+    });
+
+    it('does not treat a hyphenated locale as a file', () => {
+      expect(getBaseURLPathPrefix('https://example.com/en-gb')).to.equal('/en-gb');
+    });
+  });
+
   describe('hasNonWWWSubdomain', () => {
     it('should return true for URLs with non-www subdomains', () => {
       expect(hasNonWWWSubdomain('https://subdomain.domain.com')).to.equal(true);
@@ -1330,12 +1387,24 @@ describe('URL Utility Functions', () => {
       expect(toPathname('https://example.com/path?q=1#section')).to.equal('/path');
     });
 
-    it('falls back to lowercased string when input is not a valid absolute URL', () => {
-      expect(toPathname('BULK.COM/page')).to.equal('bulk.com/page');
+    it('extracts pathname from a schema-less URL', () => {
+      expect(toPathname('BULK.COM/page')).to.equal('/page');
     });
 
-    it('handles relative paths by falling back to lowercased string', () => {
-      expect(toPathname('/some/PATH')).to.equal('/some/path');
+    it('extracts pathname from a schema-less URL with trailing slash', () => {
+      expect(toPathname('example.com/')).to.equal('/');
+    });
+
+    it('extracts pathname from a schema-less URL with a deep path', () => {
+      expect(toPathname('example.com/path/page')).to.equal('/path/page');
+    });
+
+    it('handles leading-slash paths as-is', () => {
+      expect(toPathname('/some/PATH')).to.equal('/some/PATH');
+    });
+
+    it('falls back to lowercased string when URL parsing fails', () => {
+      expect(toPathname('[invalid-url')).to.equal('[invalid-url');
     });
 
     it('returns empty string for null input', () => {
@@ -1375,6 +1444,10 @@ describe('URL Utility Functions', () => {
     it('does not crash when url is null', () => {
       expect(hasSamePathname(null, 'https://b.com/page')).to.be.false;
     });
+
+    it('matches schema-less URL against an absolute URL', () => {
+      expect(hasSamePathname('a.com/page', 'https://b.com/page')).to.be.true;
+    });
   });
 
   describe('allHaveSamePathname', () => {
@@ -1411,6 +1484,11 @@ describe('URL Utility Functions', () => {
 
     it('does not crash when array contains null elements', () => {
       expect(allHaveSamePathname([null], 'https://ref.com/page')).to.be.false;
+    });
+
+    it('matches schema-less URLs in the array against a reference URL', () => {
+      const urls = ['a.com/page', 'https://b.com/page'];
+      expect(allHaveSamePathname(urls, 'c.com/page')).to.be.true;
     });
   });
 });

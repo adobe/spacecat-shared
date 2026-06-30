@@ -5,10 +5,7 @@ Typed integration with the Semrush **Project Engine API** (`/enterprise/projects
 - generated **TypeScript** (`src/generated/types.ts`) and **Pydantic v2** (`python/serenity_project_engine/`) types,
 - a thin **Project Engine client** (`openapi-fetch` over the generated `paths`) — IMS Bearer auth + idempotency-aware retries (see [Client](#client)),
 - a generation-time **spec-correction overlay** (`spec/overlays/corrections.yaml`) that aligns the vendored swagger with the live API,
-- a **Counterfact mock** for E2E tests and local dev (`npm run mock`); the stateful mock store lands in a follow-up (LLMO-5460).
-
-> **Not here yet:** the IMS auth-handler move and the stateful mock store are
-> tracked follow-ups (see LLMO-5461 / LLMO-5460).
+- a **stateful Counterfact mock** for E2E tests and local dev (`npm run mock`, see below).
 
 This package follows the `spacecat-shared` convention: **JS + ESM**, JSDoc-typed source,
 `mocha` + `chai` + `c8` for tests, and `@adobe/eslint-config-helix` for lint. The scaffold's
@@ -57,21 +54,20 @@ access is restricted.
 ```
 spec/projectengine_swagger_public.yaml  (vendored, Swagger 2.0)
         │
-        ├── Counterfact ── reads v2 directly ──►  mock (no conversion)   [npm run mock]
-        │
         └── swagger2openapi (v2 → 3.x) ──►  build/openapi3.json
                                                 │
                                                 ├── apply-overlay (corrections) ──► build/openapi3.json (in place)
                                                 │
+                                                ├── Counterfact ──►  mock   [npm run mock]
                                                 ├── openapi-typescript ──► src/generated/types.ts
                                                 └── datamodel-code-generator ──► python/serenity_project_engine/
 ```
 
-The v2 → 3.x conversion exists **only** to feed the type generators (`openapi-typescript`
-is v3-only, and 3.x yields cleaner TS/Pydantic); the overlay then corrects that converted
-artifact before the generators run (see [Spec corrections](#spec-corrections)). **Counterfact reads
-the raw v2 file directly**, so the mock path never touches the converted artifact (and so does not
-see the corrections — a known gap the stateful-mock follow-up addresses).
+The v2 → 3.x conversion + overlay feeds both the type generators and the Counterfact mock.
+`npm run generate` must be run once (and re-run after any spec refresh) before `npm run mock` —
+`build/openapi3.json` is gitignored. The overlay is applied in place so Counterfact sees the
+corrected paths (including `GET /v1/ai_models`, CR1) and the mock serves under the
+`/enterprise/projects/api` base path via `--prefix`.
 
 | Command | Does |
 | --- | --- |
@@ -79,8 +75,8 @@ see the corrections — a known gap the stateful-mock follow-up addresses).
 | `npm run spec:overlay` | apply `spec/overlays/corrections.yaml` to `build/openapi3.json` in place |
 | `npm run generate:ts` | `openapi-typescript` → `src/generated/types.ts` |
 | `npm run generate:pydantic` | `datamodel-code-generator` → `python/serenity_project_engine/` package |
-| `npm run generate` | all of the above, in order |
-| `npm run mock` | Counterfact mock on `:4010`, straight off the v2 spec |
+| `npm run generate` | all of the above, in order (run before `npm run mock`) |
+| `npm run mock` | Counterfact mock on `:4010`, corrected OAS3 artifact + `--prefix /enterprise/projects/api` |
 
 `datamodel-code-generator` is a **Python** tool, not an npm dependency. Install it once on
 your `PATH` before running `generate:pydantic`:
@@ -107,6 +103,154 @@ is never touched.
 Guard tests in `test/foundation.test.js` pin CR1 and CR2 against the generated surface, so a future
 Semrush spec refresh that silently drops the overlay fails loudly instead of regressing the
 generated types. `test/overlay.test.js` covers the overlay applier itself.
+
+## Mock (stateful)
+
+> **Full guide:** [`docs/mock-usage.md`](./docs/mock-usage.md) is the complete usage manual for
+> humans and agents — auth, the full endpoint inventory, seeds, control routes, quota, and
+> troubleshooting. This section is the summary.
+
+`npm run mock` starts a **stateful** Counterfact server off the corrected OAS3 artifact
+(`build/openapi3.json` — run `npm run generate` first). The runner serves only the modelled
+handlers (`--serve`, no `generate`), so an unmodelled path **404s** — it does not fall back to a
+spec-driven stub. The project spine is backed by a shared in-memory store so reads reflect prior
+writes within a run; see [`docs/mock-usage.md`](./docs/mock-usage.md) §9 to add an endpoint.
+
+```bash
+npm run mock                       # serves on :4010
+MOCK_PORT=4032 MOCK_SEED=empty-workspace npm run mock
+```
+
+Base URL: `http://localhost:<port>/enterprise/projects/api`.
+
+**Auth:** every real route requires `Authorization: Bearer <token>` (any non-empty token — the
+mock checks presence, not validity, like the live gateway). Missing/invalid → `401 { "detail":
+"Not authenticated" }`. The `__*` control routes are exempt. See the manual §2.
+
+| Var | Default | Purpose |
+| --- | --- | --- |
+| `MOCK_PORT` | `4010` | listen port |
+| `MOCK_SEED` | default seed | named startup fixture; unknown values fall back to the default |
+| `MOCK_SEED_FILE` | — | path to a JSON `Snapshot` to boot from; takes precedence over `MOCK_SEED` |
+
+Stateful endpoints (backed by the store):
+
+| Method + path | Behaviour |
+| --- | --- |
+| `GET/POST /v1/workspaces/{id}/projects` | list / create |
+| `GET/PATCH/DELETE /v1/workspaces/{id}/projects/{project_id}` | get / update / remove (404 when missing) |
+| `GET/DELETE /v1/workspaces/{id}/projects/{project_id}/ai_models` | list / batch-delete |
+| `POST /v2/workspaces/{id}/projects/{project_id}/ai_models` | add (the path the real consumer uses; writes the same store collection the v1 list/delete read) |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged` | create prompts grouped by tag name |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags` | list prompts (empty `tag_ids` lists all; otherwise OR-filter) |
+| `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | batch-delete prompts by id |
+
+### Test control routes (not part of the Project Engine API)
+
+All under the base URL, e.g. `http://localhost:<port>/enterprise/projects/api/__dump`:
+
+| Route | Purpose |
+| --- | --- |
+| `POST /__reset` | restore the store to its boot seed (or the last `/__seed`) — call between E2E cases for isolation |
+| `POST /__seed` | replace the store with the posted `Snapshot` and make it the new reset baseline — set the mock to exactly the state a test needs |
+| `GET /__dump` | **look inside the mock DB** — returns the current store state as JSON (every `projects:{ws}` / `ai_models:{ws}:{pr}` / `prompts:{ws}:{pr}` collection and its rows) |
+| `POST /__quota` | set a workspace's AI-unit allocation: `{ workspaceId, projects?, prompts? }` (mirrors a user-manager transfer; `{ projects: 0, prompts: 0 }` = empty-units child). Project create / prompt write / publish then return the disguised quota **405** when exhausted |
+| `GET /__quota?workspaceId=<ws>` | read a workspace's limits + live usage |
+
+**Model AI-unit quota (the disguised 405).** A sub-workspace with no allocation is unlimited
+(default). Grant one, then the metered ops 405 when exhausted — the behaviour the consumer's
+quota handling relies on:
+
+```bash
+# grant 1 project + 2 prompts to a workspace
+curl -s -XPOST .../__quota -d '{"workspaceId":"<ws>","projects":1,"prompts":2}'
+# a 2nd project create, a 3rd prompt, or publishing an empty-units child now returns 405
+```
+
+**Inspect what's inside:**
+
+```bash
+curl -s http://localhost:4010/enterprise/projects/api/__dump | jq
+```
+
+**Seed state that matches your DB.** `/__seed` (and a `MOCK_SEED_FILE`) take a `Snapshot`: a
+plain JSON object keyed by `<resource>:<scope>` whose values are entity rows. The Project Engine
+API types every id as `format: uuid`, so use the same **UUIDs** you load into Postgres
+(`semrush_workspace_id` / project id) so the two sides line up, and mirror the real entity
+shapes (`ProjectAIModelResponse`, `AIOPromptWithStatus`). Any caller — including the cross-repo
+harness consuming the published client — can POST this JSON directly:
+
+```jsonc
+// POST /__seed
+{
+  "projects:a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d": [
+    { "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e", "name": "Acme", "workspace_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }
+  ],
+  "ai_models:a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d:b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e": [
+    { "id": "c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f", "model": { "id": "d4e5f6a7-b8c9-4d0e-9f1a-3b4c5d6e7f80", "key": "gpt-4o", "name": "GPT-4o" }, "prompts_count": 0 }
+  ],
+  "prompts:a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d:b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e": [
+    { "id": "e5f6a7b8-c9d0-4e1f-8a2b-4c5d6e7f8091", "name": "What is Acme?", "is_new": false, "tags": [] }
+  ]
+}
+```
+
+Rather than hand-write that JSON, use the **typed mock factories** (the
+[mock factory pattern](https://dev.to/davelosert/mock-factory-pattern-in-typescript-44l9)):
+each `createXMock(overrides?)` returns a spec-shaped entity typed against the generated
+(overlay-corrected) component schemas, so fixtures stay in sync with the spec and `npm run
+test:types` fails on drift (wrong/unknown/missing-required field). `buildSeed()` routes the
+factory rows into the collection-keyed `Snapshot`. All are on the `./mock/*` subpath, so a
+workspace caller (this repo's tests, or the cross-repo harness resolving spacecat-shared from
+the checkout) imports them by package name:
+
+```js
+import { buildSeed } from '@adobe/spacecat-shared-project-engine-client/mock/seeds.js';
+import {
+  createProjectAiModelMock,
+  createAiModelMock,
+  createPromptMock,
+} from '@adobe/spacecat-shared-project-engine-client/mock/factories.js';
+import { randomUUID } from 'node:crypto';
+
+const workspaceId = randomUUID();
+const projectId = randomUUID();
+const snapshot = buildSeed({
+  workspaceId,
+  projects: [{
+    id: projectId,
+    name: 'Acme',
+    aiModels: [createProjectAiModelMock({ model: createAiModelMock({ name: 'GPT-4o' }) })],
+    prompts: [createPromptMock({ name: 'What is Acme?' })],
+  }],
+});
+await fetch(`${baseUrl}/__seed`, { method: 'POST', body: JSON.stringify(snapshot) });
+```
+
+The `./mock/*` subpath resolves against the **checked-out** package (the mock isn't in the
+published tarball — see "Not published" below), which is the same source the harness boots the
+mock from, so it adds no new coupling. A consumer that only has the *published* tarball has no
+`buildSeed`; it POSTs the raw `Snapshot` JSON above instead.
+
+`npm run test:e2e` drives the **real client** against a freshly booted mock (self-managed
+lifecycle, `__reset` between cases). It is gated behind `MOCK_E2E=1` and lives outside the
+default `npm test` glob, so the unit suite stays fast and keeps 100% coverage with no
+live-server dependency. CI runs it as a dedicated `E2E (project-engine mock)` job.
+
+> **How it runs:** the runner materializes the committed handlers from `mock/` into a
+> gitignored `.counterfact/` tree (as `.ts`, so Counterfact's transpiler emits loadable `.cjs`)
+> and launches with `--serve` so no spec stubs are appended onto the stateful handlers. The
+> store, seeds, and resource ops are plain unit-tested JS in `mock/`; only the runner and
+> the materialized handlers — which need a live server — are excluded from coverage.
+
+> **Not published.** The `mock/` tree sits outside `src/` and outside the package's `files`
+> allowlist, so nothing mock-related is in the published tarball — client consumers install
+> only `src/` (the typed client + generated types), and `counterfact` stays a `devDependency`.
+> The mock is booted from source via `npm run mock` (or `npm run test:e2e`) inside the
+> monorepo / e2e harness, which is why it never needs to ship. The `./mock/*` entry in
+> `exports` makes those source files importable by package name **when spacecat-shared is
+> resolved from a checkout** (the workspace case); it intentionally has no effect for a
+> tarball-only consumer, which never imports the mock.
 
 ## Committed vs generated
 

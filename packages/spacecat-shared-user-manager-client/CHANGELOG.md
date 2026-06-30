@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-user-manager-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.3.0...@adobe/spacecat-shared-user-manager-client-v1.3.1) (2026-06-29)
+
+### Bug Fixes
+
+* **project-engine-client, user-manager-client:** round-trip created+published market + live-fidelity sweep ([#1745](https://github.com/adobe/spacecat-shared/issues/1745)) ([#1746](https://github.com/adobe/spacecat-shared/issues/1746)) ([d3d823c](https://github.com/adobe/spacecat-shared/commit/d3d823c58f155ffa35258ff40c16b2b6f4fe2d56)), closes [#1742](https://github.com/adobe/spacecat-shared/issues/1742)
+
+## [@adobe/spacecat-shared-user-manager-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.2.0...@adobe/spacecat-shared-user-manager-client-v1.3.0) (2026-06-26)
+
+### Features
+
+* **user-manager-client:** publish stateful mock as an HTTPS Docker image ([#1735](https://github.com/adobe/spacecat-shared/issues/1735)) ([2a84fdc](https://github.com/adobe/spacecat-shared/commit/2a84fdcf28b9782eb4934d1d5dc0d8cd1bbaf8e5)), closes [#1734](https://github.com/adobe/spacecat-shared/issues/1734)
+
+## [@adobe/spacecat-shared-user-manager-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.1.0...@adobe/spacecat-shared-user-manager-client-v1.2.0) (2026-06-26)
+
+### Features
+
+* **user-manager-client:** stateful Counterfact mock for the sub-workspace lifecycle gateway (LLMO-5616) ([#1734](https://github.com/adobe/spacecat-shared/issues/1734)) ([50983ac](https://github.com/adobe/spacecat-shared/commit/50983ac45304f2ec94bc5a2d0faa5697adb1b431))
+
 ## [@adobe/spacecat-shared-user-manager-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.0.0...@adobe/spacecat-shared-user-manager-client-v1.1.0) (2026-06-23)
 
 ### Features

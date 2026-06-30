@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-rum-api-client-v2.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.43.1...@adobe/spacecat-shared-rum-api-client-v2.44.0) (2026-06-26)
+
+### Features
+
+* **rum:** scope latest-metrics RUM to locale path prefix ([#1707](https://github.com/adobe/spacecat-shared/issues/1707)) ([77cdb33](https://github.com/adobe/spacecat-shared/commit/77cdb33d7f55a9bff795b768621ec70830b2cba3))
+
 ## [@adobe/spacecat-shared-rum-api-client-v2.43.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.43.0...@adobe/spacecat-shared-rum-api-client-v2.43.1) (2026-06-15)
 
 ### Bug Fixes

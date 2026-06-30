@@ -48,6 +48,7 @@ describe('Index Exports', () => {
     'FORMS_AUDIT_INTERVAL',
     'generateCSVFile',
     'getAuditsForOpportunity',
+    'getBaseURLPathPrefix',
     'getAllAuditTypes',
     'getAllOpportunityTypes',
     'getCurrentCycle',

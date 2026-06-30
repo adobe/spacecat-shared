@@ -156,6 +156,268 @@ export class FastlyKVClient {
 export function calculateForwardedHost(url: string, logger?: { debug?: (msg: string) => void; error?: (msg: string) => void }): string;
 
 /**
+ * Temporary AWS credentials returned by {@link assumeConnectorRole}.
+ */
+export interface AWSCredentials {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken: string;
+  expiration?: Date;
+}
+
+/**
+ * One row of the Edge Optimize deploy/plan step contract.
+ */
+export interface DeployStep {
+  key: string;
+  label: string;
+  status?: string;
+  action?: string;
+  detail?: string;
+  probe?: Record<string, any>;
+}
+
+// ── CloudFront "Optimize at Edge" control-plane (free functions) ──────────────
+
+/**
+ * Assume the customer's cross-account connector role and return short-lived credentials.
+ */
+export function assumeConnectorRole(params: {
+  accountId: string;
+  externalId: string;
+  roleName?: string;
+  region?: string;
+}): Promise<{ roleArn: string; accountId: string; credentials: AWSCredentials }>;
+
+/**
+ * List the CloudFront distributions in the customer account using assumed-role credentials.
+ */
+export function listDistributions(
+  credentials: AWSCredentials,
+  region?: string,
+): Promise<Array<{
+  id: string;
+  domainName: string;
+  aliases: string[];
+  status: string;
+  enabled: boolean;
+  comment: string;
+}>>;
+
+/**
+ * Fetch a single CloudFront distribution's configuration using assumed-role credentials.
+ */
+export function getDistributionConfig(
+  credentials: AWSCredentials,
+  distributionId: string,
+  region?: string,
+): Promise<{
+  origins: Array<{ id: string; domainName: string; originPath: string }>;
+  defaultCacheBehavior: { pathPattern: string; targetOriginId: string } | null;
+  cacheBehaviors: Array<{ pathPattern: string; targetOriginId: string }>;
+}>;
+
+/**
+ * Add the Edge Optimize origin to a CloudFront distribution (idempotent + self-healing).
+ */
+export function createOrigin(
+  credentials: AWSCredentials,
+  distributionId: string,
+  originDomain?: string,
+  headers?: { apiKey?: string; forwardedHost?: string; fetcherKey?: string },
+  region?: string,
+): Promise<{ created: boolean; alreadyExisted: boolean; updated: boolean; originId: string }>;
+
+/**
+ * Create or update the routing CloudFront Function and publish it to LIVE (idempotent).
+ */
+export function createCloudFrontFunction(
+  credentials: AWSCredentials,
+  defaultOriginId: string,
+  distributionId: string,
+  targetedPaths?: string[] | null,
+  region?: string,
+): Promise<{ name: string; created: boolean; stage: string }>;
+
+/**
+ * Add the Edge Optimize routing headers to the cache key for the target behavior.
+ */
+export function updateCacheSettings(
+  credentials: AWSCredentials,
+  distributionId: string,
+  pathPattern: string,
+  opts?: { setMinTTLZero?: boolean; region?: string },
+): Promise<{
+  scenario: string;
+  policyId: string | null;
+  updated: boolean;
+  alreadyForwarded: boolean;
+  reused?: boolean;
+}>;
+
+/**
+ * Create (or update) the Edge Optimize Lambda@Edge function and publish a version (idempotent).
+ */
+export function createLambdaAtEdge(
+  credentials: AWSCredentials,
+  accountId: string,
+  opts?: {
+    region?: string;
+    distributionId?: string;
+    originDomain?: string;
+    retryDelayMs?: number;
+  },
+): Promise<{
+  status: string;
+  functionArn?: string;
+  versionArn: string | null;
+  version?: string;
+  roleArn: string;
+  created: boolean;
+  alreadyExisted?: boolean;
+}>;
+
+/**
+ * Read-only status of the Edge Optimize Lambda@Edge function and its execution role.
+ */
+export function getLambdaAtEdgeStatus(
+  credentials: AWSCredentials,
+  distributionId: string,
+  region?: string,
+): Promise<{
+  exists: boolean;
+  roleExists: boolean;
+  roleOk: boolean;
+  state?: string;
+  lastUpdateStatus?: string;
+  functionArn?: string;
+  versionArn: string | null;
+  version?: string;
+  ready: boolean;
+}>;
+
+/**
+ * Wire the routing CloudFront Function and the Lambda@Edge function onto a cache behavior.
+ */
+export function applyAssociations(
+  credentials: AWSCredentials,
+  distributionId: string,
+  pathPattern: string,
+  lambdaVersionArn: string,
+  region?: string,
+): Promise<{ cloudFrontFunctionArn: string; lambdaArn: string }>;
+
+/**
+ * Verify Edge Optimize routing end-to-end by probing as a bot and as a human.
+ */
+export function verifyRouting(url: string): Promise<{
+  passed: boolean;
+  requestId: string | null;
+  details: { bot: Record<string, any>; human: Record<string, any> };
+}>;
+
+/**
+ * Run one poll of the idempotent Edge Optimize "Deploy routing" orchestrator.
+ */
+export function runDeployStep(
+  credentials: AWSCredentials,
+  params: {
+    distributionId: string;
+    originId: string;
+    behavior: string;
+    originDomain?: string;
+    originHeaders?: { apiKey?: string; forwardedHost?: string; fetcherKey?: string };
+    accountId: string;
+  },
+  region?: string,
+): Promise<{ routingDeployed: boolean; verified: boolean; steps: DeployStep[] }>;
+
+/**
+ * Read-only "preview" of what {@link runDeployStep} would do, without mutating.
+ */
+export function planDeploy(
+  credentials: AWSCredentials,
+  params: {
+    distributionId: string;
+    originId?: string;
+    behavior: string;
+    originDomain?: string;
+    originHeaders?: { apiKey?: string; forwardedHost?: string; fetcherKey?: string };
+    accountId?: string;
+  },
+  region?: string,
+): Promise<{ canProceed: boolean; blocker: string | null; steps: DeployStep[] }>;
+
+export interface CloudFrontEdgeClientOptions {
+  credentials: AWSCredentials;
+  region?: string;
+}
+
+/**
+ * CloudFront control-plane client initialized with short-lived AWS credentials.
+ */
+export class CloudFrontEdgeClient {
+  constructor(options: CloudFrontEdgeClientOptions);
+
+  listDistributions(): ReturnType<typeof listDistributions>;
+
+  getDistributionConfig(distributionId: string): ReturnType<typeof getDistributionConfig>;
+
+  createOrigin(
+    distributionId: string,
+    originDomain?: string,
+    headers?: { apiKey?: string; forwardedHost?: string; fetcherKey?: string },
+  ): ReturnType<typeof createOrigin>;
+
+  createCloudFrontFunction(
+    defaultOriginId: string,
+    distributionId: string,
+    targetedPaths?: string[] | null,
+  ): ReturnType<typeof createCloudFrontFunction>;
+
+  updateCacheSettings(
+    distributionId: string,
+    pathPattern: string,
+    opts?: { setMinTTLZero?: boolean; region?: string },
+  ): ReturnType<typeof updateCacheSettings>;
+
+  createLambdaAtEdge(
+    accountId: string,
+    opts?: {
+      region?: string;
+      distributionId?: string;
+      originDomain?: string;
+      retryDelayMs?: number;
+    },
+  ): ReturnType<typeof createLambdaAtEdge>;
+
+  getLambdaAtEdgeStatus(distributionId: string): ReturnType<typeof getLambdaAtEdgeStatus>;
+
+  applyAssociations(
+    distributionId: string,
+    pathPattern: string,
+    lambdaVersionArn: string,
+  ): ReturnType<typeof applyAssociations>;
+
+  runDeployStep(params: Parameters<typeof runDeployStep>[1]): ReturnType<typeof runDeployStep>;
+
+  planDeploy(params: Parameters<typeof planDeploy>[1]): ReturnType<typeof planDeploy>;
+}
+
+/**
+ * Build the CloudFront Function (viewer-request) routing code.
+ */
+export function buildCloudfrontFunctionCode(
+  defaultOriginId: string,
+  targetedPaths?: string[] | null,
+): string;
+
+/**
+ * Build an in-memory zip containing a single file (used to package the Lambda@Edge code).
+ */
+export function buildLambdaZip(filename: string, content: string | Buffer): Buffer;
+
+/**
  * Base class for opportunity mappers
  * Extend this class to create custom mappers for new opportunity types
  */
@@ -481,4 +743,3 @@ export default class TokowakaClient {
    */
   getSupportedOpportunityTypes(): string[];
 }
-

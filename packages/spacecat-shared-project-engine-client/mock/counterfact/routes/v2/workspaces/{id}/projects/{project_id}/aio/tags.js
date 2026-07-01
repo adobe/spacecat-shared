@@ -62,6 +62,9 @@ export function POST($) {
   const names = Array.isArray(body?.names) ? body.names : [];
   // A non-empty `parent_id` makes the created tags children under that category; absent/empty ⇒
   // roots (the created tags carry no `parent_id`) — `context.parentIdField` owns that coercion.
+  // `upsertMany` is idempotent by the name-derived id, so re-POSTing an EXISTING name with a
+  // different `parent_id` is a no-op on parentage: it returns the already-stored tag (original
+  // parent) rather than re-parenting it — re-parenting goes through PATCH, not a repeated POST.
   const parentField = context.parentIdField(body?.parent_id);
   const stored = context.ops.tags.upsertMany(
     scope,
@@ -87,6 +90,14 @@ export function GET($) {
   const search = String(query?.search ?? '').toLowerCase();
   const stored = context.ops.tags.list(scope);
   const byId = new Map(stored.map((t) => [t.id, t]));
+  // Pre-count children per parent in one O(n) pass, so the per-item map below is O(n) overall
+  // (not an O(n^2) re-scan of `stored` inside every iteration).
+  const childCounts = new Map();
+  for (const t of stored) {
+    if (t.parent_id) {
+      childCounts.set(t.parent_id, (childCounts.get(t.parent_id) ?? 0) + 1);
+    }
+  }
 
   // `parent_id=''` ⇒ roots (no parent); a non-empty `parent_id` ⇒ that category's children.
   const scoped = parentId
@@ -101,7 +112,7 @@ export function GET($) {
     return context.factories.createAIOTagMock({
       ...t,
       // Derived, never stored: the live tree carries these on every read.
-      children_count: stored.filter((c) => c.parent_id === t.id).length,
+      children_count: childCounts.get(t.id) ?? 0,
       path: parent
         ? [context.factories.createAIOTagLeafMock({
           id: parent.id, name: parent.name, parent_id: String(parent.parent_id ?? ''),

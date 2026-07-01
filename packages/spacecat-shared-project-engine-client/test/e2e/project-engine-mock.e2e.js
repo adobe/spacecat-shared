@@ -673,6 +673,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     expect(children.items.map((t) => t.name)).to.deep.equal(['Sneakers']);
     expect(children.items[0].parent_id).to.equal(parentId);
+    expect(children.items[0].children_count).to.equal(0); // the new leaf has no children of its own
     expect(children.items[0].path).to.deep.equal([
       { id: parentId, name: 'category:Footwear', parent_id: '' },
     ]);
@@ -748,6 +749,40 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     );
     expect(childrenAfter.total).to.equal(0);
+  });
+
+  // PATCH also RENAMES in place: changing `name` (keeping the parent) is reflected in the 201
+  // response and a subsequent GET. Exercises the full route-handler→response roundtrip for a
+  // rename — the stateful unit test covers only the store layer, not the handler's response build.
+  it('renames a tag via PATCH (new name reflected in the response and on read)', async () => {
+    const { data: renamed, error: renameError } = await client.PATCH(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}',
+      {
+        params: {
+          path: {
+            id: SEED_WORKSPACE, project_id: SEED_PROJECT, tag_id: SEED_IDS.childTagId,
+          },
+        },
+        body: { name: 'Hiking', parent_id: SEED_IDS.categoryTagId },
+      },
+    );
+    expect(renameError).to.equal(undefined);
+    expect(renamed).to.include({
+      id: SEED_IDS.childTagId, name: 'Hiking', parent_id: SEED_IDS.categoryTagId,
+    });
+
+    // the child still sits under the same parent, now carrying the new name
+    const { data: children } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: SEED_IDS.categoryTagId, search: '' },
+        },
+      },
+    );
+    expect(children.items.map((t) => t.name)).to.deep.equal(['Hiking']);
+    expect(children.items[0].id).to.equal(SEED_IDS.childTagId);
   });
 
   // Multi-market: one category name is registered on N market projects via N createProjectTags

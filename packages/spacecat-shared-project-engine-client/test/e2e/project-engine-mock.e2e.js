@@ -401,8 +401,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     );
     expect(error).to.equal(undefined);
-    // Only the 'brand'-tagged prompt matches: the seeded prompt has no tags, the 'category' one
-    // carries a different tag id.
+    // Only the 'brand'-tagged prompt matches: the seeded prompt's topic:/source:/intent:/type:
+    // tags (none is the bare 'brand' → tag-brand), and the 'category' one a different tag id.
     expect(branded.items.map((p) => p.name)).to.deep.equal(['Branded question']);
     expect(branded.total).to.equal(1);
   });
@@ -499,17 +499,21 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       '/v2/workspaces/{id}/projects/{project_id}/ai_models',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { model_id: SEED_IDS.aiModelId },
+        // A synthetic id absent from the catalog, to exercise the unmodelled fallback. (The seed's
+        // own model is now the catalog `search-gpt`, so posting SEED_IDS.aiModelId would resolve —
+        // not fall back.)
+        body: { model_id: '00000000-0000-4000-8000-000000000000' },
       },
     );
     expect(error).to.equal(undefined);
     expect(response.status).to.equal(201);
     // Live resolves the catalog model's icon onto the add response (verified 2026-06-25).
     expect(data.model).to.include.keys('id', 'icon');
-    // SEED_IDS.aiModelId is NOT a catalog id, so this exercises the unmodelled fallback:
-    // the factory default (GPT-4o) is kept, with the posted id preserved.
-    expect(data.model.name).to.equal('GPT-4o');
-    expect(data.model.key).to.equal('gpt-4o');
+    // Unmodelled id → the catalog-valid factory default (search-gpt / ChatGPT) is kept, with the
+    // posted id preserved.
+    expect(data.model.name).to.equal('ChatGPT');
+    expect(data.model.key).to.equal('search-gpt');
+    expect(data.model.id).to.equal('00000000-0000-4000-8000-000000000000');
   });
 
   // Regression: a known catalog model_id must echo THAT model's name + icon — not the

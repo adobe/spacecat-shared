@@ -28,7 +28,8 @@ import {
 
 describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {
-    expect(Object.keys(SEEDS)).to.include.members(['empty-workspace', 'workspace-with-data']);
+    expect(Object.keys(SEEDS))
+      .to.include.members(['empty-workspace', 'workspace-with-data', 'two-hierarchies']);
     expect(SEEDS).to.have.property(DEFAULT_SEED);
   });
 
@@ -58,24 +59,51 @@ describe('seeds', () => {
     expect(ops.brand_urls.list({ workspaceId, projectId, benchmarkId })).to.have.length(1);
   });
 
-  it('workspace-with-data seeds a nested category taxonomy (root + bare child)', () => {
+  it('workspace-with-data seeds a LIVE US/en market with a catalog model, tagged prompt + categories', () => {
     const store = new InMemoryStore();
     store.load(SEEDS['workspace-with-data']);
-    const {
-      workspaceId, projectId, categoryTagId, childTagId,
-    } = SEED_IDS;
+    const ops = createStatefulOps(store);
+    const { workspaceId, projectId } = SEED_IDS;
 
-    const tags = createStatefulOps(store).tags.list({ workspaceId, projectId });
-    expect(tags).to.have.length(2);
-    const root = tags.find((t) => t.id === categoryTagId);
-    const child = tags.find((t) => t.id === childTagId);
-    expect(root.name).to.equal('category:Running Shoes');
+    // the project lives under the CHILD sub-workspace (not the org parent) and is live with a
+    // resolvable US/en market — else api-service's listMarkets would drop it (#1754 gaps 1 + 3).
+    expect(workspaceId).to.equal('b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e');
+    const project = ops.projects.get({ workspaceId }, projectId);
+    expect(project.publish_status).to.equal('live');
+    expect(project.settings.ai.location.id).to.equal(2840);
+    expect(project.settings.ai.language.name).to.equal('en');
+
+    // the assigned model is catalog-valid (search-gpt / ChatGPT), NOT the old non-catalog gpt-4o.
+    const [assigned] = ops.ai_models.list({ workspaceId, projectId });
+    expect(assigned.model).to.include({ key: 'search-gpt', name: 'ChatGPT' });
+
+    // the seeded prompt carries dimension:value tags; the project has a 1-level NESTED category
+    // taxonomy — a root category + a bare child linked by parent_id (#1758 / serenity-docs#21).
+    const [prompt] = ops.prompts.list({ workspaceId, projectId });
+    expect(prompt.tags.map((t) => t.name))
+      .to.deep.equal(['topic:Running Shoes', 'source:blog', 'intent:commercial', 'type:branded']);
+    const categories = ops.tags.list({ workspaceId, projectId });
+    expect(categories.map((t) => t.name)).to.deep.equal(['category:Running Shoes', 'Trail']);
+    const [root, child] = categories;
     expect(root).to.not.have.property('parent_id'); // a root carries no parent
-    expect(child).to.include({ name: 'Trail', parent_id: categoryTagId });
+    expect(child).to.include({ name: 'Trail', parent_id: SEED_IDS.categoryTagId });
+  });
 
-    // the seeded prompt carries both tags so the Categories surface renders populated
-    const [prompt] = createStatefulOps(store).prompts.list({ workspaceId, projectId });
-    expect(prompt.tags.map((t) => t.id)).to.deep.equal([categoryTagId, childTagId]);
+  it('two-hierarchies is a superset with a second, independent live market (DE/de)', () => {
+    const store = new InMemoryStore();
+    store.load(SEEDS['two-hierarchies']);
+    const ops = createStatefulOps(store);
+
+    // hierarchy 1 still resolves (superset of workspace-with-data)…
+    expect(ops.projects.list({ workspaceId: SEED_IDS.workspaceId })).to.have.length(1);
+    // …and a second, distinct child workspace carries its own live DE/de market (#1754 gap 2).
+    const secondWs = SEED_IDS.secondWorkspaceId;
+    const [secondProject] = ops.projects.list({ workspaceId: secondWs });
+    expect(secondProject.id).to.equal(SEED_IDS.secondProjectId);
+    expect(secondProject.publish_status).to.equal('live');
+    expect(secondProject.settings.ai.language.name).to.equal('de');
+    // distinct workspace ids (the DB enforces unique semrush_workspace_id per org/brand).
+    expect(secondWs).to.not.equal(SEED_IDS.workspaceId);
   });
 
   it('reset restores a seed after mutation', () => {

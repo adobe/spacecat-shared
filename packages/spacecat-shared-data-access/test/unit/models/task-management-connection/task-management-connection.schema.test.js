@@ -54,16 +54,16 @@ describe('TaskManagementConnection Schema', () => {
   });
 
   describe('displayName attribute', () => {
-    it('is required and readOnly', () => {
+    it('is required and mutable (updated on re-auth)', () => {
       expect(attributes.displayName.required).to.be.true;
-      expect(attributes.displayName.readOnly).to.be.true;
+      expect(attributes.displayName.readOnly).to.not.be.true;
     });
   });
 
   describe('instanceUrl attribute', () => {
-    it('is required and readOnly', () => {
+    it('is required and mutable (updated on re-auth)', () => {
       expect(attributes.instanceUrl.required).to.be.true;
-      expect(attributes.instanceUrl.readOnly).to.be.true;
+      expect(attributes.instanceUrl.readOnly).to.not.be.true;
     });
   });
 

@@ -36,20 +36,20 @@ const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnect
     default: TaskManagementConnection.STATUSES.ACTIVE,
   })
   // display_name column (PR #720): human-readable site name from Atlassian accessible-resources.
-  // Set by auth-service at OAuth callback time; never user-provided.
+  // Set by auth-service at OAuth callback time; updated on re-auth (user may reconnect to a
+  // different Jira site or Atlassian may rename the site). Not readOnly — setDisplayName() needed.
   .addAttribute('displayName', {
     type: 'string',
     required: true,
-    readOnly: true,
     validate: (value) => typeof value === 'string' && value.length > 0 && value.length <= 255,
   })
   // instance_url column (PR #720): Jira site URL (https://*.atlassian.net).
   // Display-only — never used as a request target (SSRF protection: all outbound
   // calls route through the fixed Atlassian gateway keyed on cloudId from metadata).
+  // Updated on re-auth — not readOnly so setInstanceUrl() works.
   .addAttribute('instanceUrl', {
     type: 'string',
     required: true,
-    readOnly: true,
     validate: (value) => isValidUrl(value),
   })
   // connected_by column (PR #720): IMS user ID (JWT sub) of the person who completed OAuth.

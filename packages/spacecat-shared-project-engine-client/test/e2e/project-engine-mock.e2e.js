@@ -869,6 +869,36 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(prompts.items[0].id).to.equal(SEED_IDS.promptId);
   });
 
+  // Anchors the DELETE-orphan limitation documented in the tags.js header: deleting a parent does
+  // NOT cascade to or re-parent its children (live behaviour unverified — serenity-docs#21 §7). The
+  // orphaned child then drops out of BOTH listings a consumer would use — it is not among the roots
+  // (its parent_id is still truthy), and reaching it as a "child" needs the deleted parent's id.
+  it('leaves a child orphaned (invisible) when its parent is deleted (documented limitation)', async () => {
+    const delTag = (ids) => client.DELETE('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+        query: { prompt_id: '' },
+      },
+      body: { ids },
+    });
+    // delete the baked root category while its child `Trail` still points at it
+    const { response: delRes } = await delTag([SEED_IDS.categoryTagId]);
+    expect(delRes.status).to.equal(204);
+
+    const listTags = (parentId) => client.GET('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+        query: { parent_id: parentId, search: '' },
+      },
+    });
+    // the child is not among the roots (its parent_id is still the deleted id, so it's not a root)
+    const { data: roots } = await listTags('');
+    expect(roots.items.map((t) => t.name)).to.not.include('Trail');
+    // it survives ONLY as a child of the now-deleted parent id — reachable only via that stale id
+    const { data: orphans } = await listTags(SEED_IDS.categoryTagId);
+    expect(orphans.items.map((t) => t.id)).to.deep.equal([SEED_IDS.childTagId]);
+  });
+
   // Request validation is enabled, so GET /aio/tags 400s when a required query param
   // (parent_id/search are swagger-`required`) is omitted, before the handler runs — matching the
   // live 400 and the contract the PR/docs/JSDoc claim. Mirrors the getBrandTopics 400 test: raw

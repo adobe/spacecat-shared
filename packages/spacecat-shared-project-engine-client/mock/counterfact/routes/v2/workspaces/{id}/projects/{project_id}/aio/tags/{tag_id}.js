@@ -32,7 +32,12 @@ export function PATCH($) {
   const { path, body, context } = $;
   const scope = { workspaceId: path.id, projectId: path.project_id };
   // Empty `parent_id` (or omitted) promotes the tag to a root — clear it to '' so the stored shape
-  // reflects "no parent" (the read path treats a falsy parent_id as a root).
+  // reflects "no parent" (the read path treats a falsy parent_id as a root). A degenerate
+  // self-referential `parent_id` (== `tag_id`) is NOT guarded: the consumer never parents a
+  // category to itself, and live Semrush's handling of it is unverified (serenity-docs#21 §7), so
+  // the mock stores it verbatim rather than inventing a rejection — a read would then show a
+  // self-loop (path/children_count pointing at the tag itself), an artefact of that degenerate
+  // input.
   const parentId = String(body?.parent_id ?? '');
   const updated = context.ops.tags.update(scope, path.tag_id, {
     name: body?.name,

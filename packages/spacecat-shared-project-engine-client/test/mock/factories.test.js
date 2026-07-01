@@ -20,6 +20,7 @@ import {
   createLanguageMock,
   createTagNodeMock,
   createAIOTagMock,
+  createAIOTagLeafMock,
   createBrandTopicMock,
   createBasicResponseMock,
   createInitStatusMock,
@@ -187,6 +188,30 @@ describe('factories — live-shaped entities', () => {
     expect(t).to.deep.equal({
       id: 'tag-x', name: 'category:Probe', children_count: 0, prompts_count: 0,
     });
+  });
+
+  it('createAIOTagMock omits parent_id/path by default (a root has none)', () => {
+    const root = createAIOTagMock();
+    expect(root).to.not.have.property('parent_id');
+    expect(root).to.not.have.property('path');
+  });
+
+  it('createAIOTagMock models a child via parent_id + path override', () => {
+    const child = createAIOTagMock({
+      id: 'tag-child',
+      name: 'Trail',
+      parent_id: 'tag-root',
+      path: [createAIOTagLeafMock({ id: 'tag-root', name: 'category:Running' })],
+    });
+    expect(child).to.include({ id: 'tag-child', name: 'Trail', parent_id: 'tag-root' });
+    expect(child.path).to.deep.equal([
+      { id: 'tag-root', name: 'category:Running', parent_id: '' },
+    ]);
+  });
+
+  it('createAIOTagLeafMock yields an AIOTagLeaf { id, name, parent_id }', () => {
+    const leaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category:Running' });
+    expect(leaf).to.deep.equal({ id: 'tag-root', name: 'category:Running', parent_id: '' });
   });
 
   it('createBrandTopicMock yields { topic, volume, prompts }', () => {

@@ -239,6 +239,20 @@ export function createStatefulOps(store) {
         return tags.map((tag) => store.get(key, tag.id) ?? store.create(key, tag));
       },
       /**
+       * Re-parents / renames one tag in place (the `PATCH /aio/tags/{tag_id}` — `aio-update-tag`
+       * surface), returning the updated entity or undefined if the id is unknown. The id stays
+       * stable (Semrush tag ids are opaque; only `name`/`parent_id` change). Promoting a child to a
+       * root is expressed by patching `parent_id` to `''` (the read path treats a falsy `parent_id`
+       * as a root); `children_count`/`path` are never stored, so they are not part of the patch.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {string} id
+       * @param {Record<string, unknown>} patch
+       * @returns {Entity | undefined}
+       */
+      update(scope, id, patch) {
+        return store.update(collectionKey('tags', scope), id, patch);
+      },
+      /**
        * Removes the given tag ids from the project's tag collection, reporting how many were
        * actually removed. Only the standalone tag collection is touched — prompts that carry a
        * removed tag are a separate collection and keep their tag map intact.

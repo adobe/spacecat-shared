@@ -25,6 +25,7 @@
 
 import { collectionKey } from './stateful.js';
 import { QUOTA_COLLECTION } from './quota.js';
+import { tagId } from './tag-id.js';
 import {
   createProjectMock,
   createProjectAiModelMock,
@@ -32,6 +33,7 @@ import {
   createPromptMock,
   createBenchmarkMock,
   createBrandUrlMock,
+  createAIOTagMock,
 } from './factories.js';
 
 // Real-shaped fixtures: the Project Engine API types every id as `format: uuid`, so the seeds
@@ -44,6 +46,12 @@ const AI_MODEL_CATALOG_ID = 'd4e5f6a7-b8c9-4d0e-9f1a-3b4c5d6e7f80'; // AIModelRe
 const PROMPT_ID = 'e5f6a7b8-c9d0-4e1f-8a2b-4c5d6e7f8091'; // AIOPromptWithStatus.id
 const BENCHMARK_ID = 'f6a7b8c9-d0e1-4f2a-9b3c-5d6e7f809102'; // AIOBenchmarkWithCounters.id (own brand)
 const BRAND_URL_ID = 'a7b8c9d0-e1f2-4a3b-8c4d-6e7f80910213'; // BrandURL.id
+// Nested category taxonomy (1-level tree, serenity-docs#21): a root `category:` tag with one bare
+// child. Ids are derived by the shared `tagId(name)` helper — the same derivation the two
+// tag-minting routes use — so the seeded ids line up with a POST/tagged create of the same name and
+// `by_tags` / the Categories surface correlate them.
+const CATEGORY_TAG_ID = tagId('category:Running Shoes'); // root category
+const CHILD_TAG_ID = tagId('Trail'); // bare child (sub-category / migrated topic) under the root
 
 /**
  * @typedef {import('./store.js').Snapshot} Snapshot
@@ -70,7 +78,25 @@ export const WORKSPACE_WITH_DATA = Object.freeze({
     }),
   ],
   [collectionKey('prompts', { workspaceId: WORKSPACE_ID, projectId: PROJECT_ID })]: [
-    createPromptMock({ id: PROMPT_ID, name: 'What is the best running shoe?' }),
+    // The seeded prompt carries the nested taxonomy: its root `category:` tag + the bare child, so
+    // the Categories surface and `by_tags` render a populated tree out of the box. Same ids as the
+    // standalone `tags` collection below (both via `tagId`), so the standalone tag and the
+    // prompt-attached tag correlate.
+    createPromptMock({
+      id: PROMPT_ID,
+      name: 'What is the best running shoe?',
+      tags: [
+        createAIOTagMock({ id: CATEGORY_TAG_ID, name: 'category:Running Shoes' }),
+        createAIOTagMock({ id: CHILD_TAG_ID, name: 'Trail', parent_id: CATEGORY_TAG_ID }),
+      ],
+    }),
+  ],
+  // The project's standalone category taxonomy (the `GET /aio/tags` collection): a root category
+  // and one bare child under it. A 0-prompt category still reads back here; `children_count`/`path`
+  // are derived by the read handler from these stored `parent_id` links.
+  [collectionKey('tags', { workspaceId: WORKSPACE_ID, projectId: PROJECT_ID })]: [
+    createAIOTagMock({ id: CATEGORY_TAG_ID, name: 'category:Running Shoes' }),
+    createAIOTagMock({ id: CHILD_TAG_ID, name: 'Trail', parent_id: CATEGORY_TAG_ID }),
   ],
   // The project's own-brand benchmark (main_brand: true) — the `benchmark_id` brand URLs attach
   // to. Mirrors the live listBenchmarks own-brand row.
@@ -111,6 +137,8 @@ export const SEED_IDS = Object.freeze({
   promptId: PROMPT_ID,
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
+  categoryTagId: CATEGORY_TAG_ID,
+  childTagId: CHILD_TAG_ID,
 });
 
 /**

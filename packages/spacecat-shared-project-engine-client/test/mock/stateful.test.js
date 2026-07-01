@@ -149,6 +149,25 @@ describe('stateful — tags ops', () => {
     ops.upsertMany({ workspaceId: 'w1', projectId: 'p1' }, [{ id: 'tag-a', name: 'category:A' }]);
     expect(ops.list({ workspaceId: 'w1', projectId: 'p2' })).to.have.length(0);
   });
+
+  it('re-parents / renames a tag in place, keeping the id stable', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    ops.upsertMany(scope, [
+      { id: 'tag-root', name: 'category:Root' },
+      { id: 'tag-child', name: 'Child' },
+    ]);
+    // re-parent the child under the root
+    const parented = ops.update(scope, 'tag-child', { name: 'Child', parent_id: 'tag-root' });
+    expect(parented).to.include({ id: 'tag-child', name: 'Child', parent_id: 'tag-root' });
+    // promote back to a root (parent_id cleared to '')
+    const promoted = ops.update(scope, 'tag-child', { name: 'Child', parent_id: '' });
+    expect(promoted).to.include({ id: 'tag-child', parent_id: '' });
+  });
+
+  it('returns undefined when updating an unknown tag id', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    expect(ops.update(scope, 'missing', { name: 'x', parent_id: '' })).to.equal(undefined);
+  });
 });
 
 describe('stateful — brand_urls ops', () => {

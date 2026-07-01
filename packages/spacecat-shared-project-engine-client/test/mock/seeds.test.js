@@ -58,6 +58,26 @@ describe('seeds', () => {
     expect(ops.brand_urls.list({ workspaceId, projectId, benchmarkId })).to.have.length(1);
   });
 
+  it('workspace-with-data seeds a nested category taxonomy (root + bare child)', () => {
+    const store = new InMemoryStore();
+    store.load(SEEDS['workspace-with-data']);
+    const {
+      workspaceId, projectId, categoryTagId, childTagId,
+    } = SEED_IDS;
+
+    const tags = createStatefulOps(store).tags.list({ workspaceId, projectId });
+    expect(tags).to.have.length(2);
+    const root = tags.find((t) => t.id === categoryTagId);
+    const child = tags.find((t) => t.id === childTagId);
+    expect(root.name).to.equal('category:Running Shoes');
+    expect(root).to.not.have.property('parent_id'); // a root carries no parent
+    expect(child).to.include({ name: 'Trail', parent_id: categoryTagId });
+
+    // the seeded prompt carries both tags so the Categories surface renders populated
+    const [prompt] = createStatefulOps(store).prompts.list({ workspaceId, projectId });
+    expect(prompt.tags.map((t) => t.id)).to.deep.equal([categoryTagId, childTagId]);
+  });
+
   it('reset restores a seed after mutation', () => {
     const store = new InMemoryStore();
     store.load(SEEDS['workspace-with-data']);

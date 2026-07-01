@@ -46,6 +46,7 @@ import * as factories from './factories.js';
 import { LANGUAGE_CATALOG } from './language-catalog.js';
 import { AI_MODEL_CATALOG } from './ai-model-catalog.js';
 import { tagId } from './tag-id.js';
+import { parentIdField } from './parent-id.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
 /**
@@ -98,6 +99,11 @@ export class Context {
     // out of the cross-endpoint id contract that lets `by_tags` / the Categories surface correlate
     // a standalone tag with the same tag attached to a prompt.
     this.tagId = tagId;
+    // The optional-`parent_id` spread helper (mock/parent-id.js). Exposed so the two tag routes
+    // that build a tag with an optional parent link — `POST /aio/tags` and
+    // `PATCH /aio/tags/{tag_id}` — share one coerce-then-spread definition and can't drift, the
+    // same `$.context` lib-helper convention as `tagId` above.
+    this.parentIdField = parentIdField;
   }
 
   /**

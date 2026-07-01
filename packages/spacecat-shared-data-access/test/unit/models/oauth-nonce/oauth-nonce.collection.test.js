@@ -75,5 +75,9 @@ describe('OAuthNonceCollection', () => {
 
       await expect(instance.delete({ nonce: 'abc123' })).to.be.rejectedWith('DB error');
     });
+
+    it('throws when nonce is missing', async () => {
+      await expect(instance.delete({})).to.be.rejectedWith('nonce is required and must be a non-empty string');
+    });
   });
 });

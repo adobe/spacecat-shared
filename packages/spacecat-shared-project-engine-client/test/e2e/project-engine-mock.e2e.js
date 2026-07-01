@@ -401,8 +401,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     );
     expect(error).to.equal(undefined);
-    // Only the 'brand'-tagged prompt matches: the seeded prompt has no tags, the 'category' one
-    // carries a different tag id.
+    // Only the 'brand'-tagged prompt matches: the seeded prompt's topic:/source:/intent:/type:
+    // tags (none is the bare 'brand' → tag-brand), and the 'category' one a different tag id.
     expect(branded.items.map((p) => p.name)).to.deep.equal(['Branded question']);
     expect(branded.total).to.equal(1);
   });
@@ -499,17 +499,21 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       '/v2/workspaces/{id}/projects/{project_id}/ai_models',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { model_id: SEED_IDS.aiModelId },
+        // A synthetic id absent from the catalog, to exercise the unmodelled fallback. (The seed's
+        // own model is now the catalog `search-gpt`, so posting SEED_IDS.aiModelId would resolve —
+        // not fall back.)
+        body: { model_id: '00000000-0000-4000-8000-000000000000' },
       },
     );
     expect(error).to.equal(undefined);
     expect(response.status).to.equal(201);
     // Live resolves the catalog model's icon onto the add response (verified 2026-06-25).
     expect(data.model).to.include.keys('id', 'icon');
-    // SEED_IDS.aiModelId is NOT a catalog id, so this exercises the unmodelled fallback:
-    // the factory default (GPT-4o) is kept, with the posted id preserved.
-    expect(data.model.name).to.equal('GPT-4o');
-    expect(data.model.key).to.equal('gpt-4o');
+    // Unmodelled id → the catalog-valid factory default (search-gpt / ChatGPT) is kept, with the
+    // posted id preserved.
+    expect(data.model.name).to.equal('ChatGPT');
+    expect(data.model.key).to.equal('search-gpt');
+    expect(data.model.id).to.equal('00000000-0000-4000-8000-000000000000');
   });
 
   // Regression: a known catalog model_id must echo THAT model's name + icon — not the
@@ -551,11 +555,13 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // optimistic add because the mock couldn't persist it). parent_id + search are spec-required
   // query params (the consumer sends them); empty search lists every stored tag.
   it('persists createProjectTags and reads the 0-prompt category back via GET /aio/tags', async () => {
+    // The seed already carries two category tags; create a NEW 0-prompt category and prove it
+    // persists + reads back (the elmo Categories surface fix).
     const { error: createError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { names: ['category:Running Shoes'] },
+        body: { names: ['category:Hydration'] },
       },
     );
     expect(createError).to.equal(undefined);
@@ -570,10 +576,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     );
     expect(listError).to.equal(undefined);
-    expect(listed.total).to.equal(1);
-    expect(listed.items.map((t) => t.name)).to.deep.equal(['category:Running Shoes']);
+    expect(listed.total).to.equal(3); // two seeded categories + the one just created
+    const created = listed.items.find((t) => t.name === 'category:Hydration');
+    expect(created).to.not.equal(undefined);
     // The stored/listed shape is an AIOTag (prompts_count), not a TreeNodeResponse (keyword_count).
-    expect(listed.items[0]).to.include.keys('id', 'name', 'prompts_count');
+    expect(created).to.include.keys('id', 'name', 'prompts_count');
   });
 
   // Re-creating the same category name is idempotent (deterministic tag-<name> id) — no duplicate.
@@ -595,7 +602,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         },
       },
     );
-    expect(all.total).to.equal(2); // Alpha once, Beta once
+    expect(all.total).to.equal(4); // Alpha once, Beta once + the two seeded categories
 
     const { data: filtered } = await client.GET(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
@@ -609,8 +616,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(filtered.items.map((t) => t.name)).to.deep.equal(['category:Beta']);
   });
 
-  // __reset restores the boot seed (no tags), so created standalone tags are cleared — proving the
-  // tags collection rides the seed/reset lifecycle like every other stateful resource.
+  // __reset restores the boot seed (its two category tags), so created tags are cleared —
+  // proving the tags collection rides the seed/reset lifecycle like every other stateful resource.
   it('clears created tags on __reset (tags ride the seed lifecycle)', async () => {
     await client.POST('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
       params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
@@ -627,7 +634,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         },
       },
     );
-    expect(listed.total).to.equal(0);
+    expect(listed.total).to.equal(2); // only the two seeded categories remain
+    expect(listed.items.map((t) => t.name)).to.not.include('category:Ephemeral');
   });
 
   // Multi-market: one category name is registered on N market projects via N createProjectTags
@@ -699,7 +707,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         },
       },
     );
-    expect(tagsAfter.total).to.equal(0);
+    // The two seeded categories remain; only the created 'Doomed' tag is gone.
+    expect(tagsAfter.total).to.equal(2);
+    expect(tagsAfter.items.map((t) => t.name)).to.not.include('category:Doomed');
 
     // The seeded prompt is untouched — the tag delete does not cascade to the prompts collection.
     const { data: prompts } = await client.POST(

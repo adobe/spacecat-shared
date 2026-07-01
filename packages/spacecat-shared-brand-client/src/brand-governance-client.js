@@ -17,16 +17,14 @@ import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
 
-const CHECKS_PAGE_SIZE = 100;
-const MAX_PAGES = 20;
-
 const API_GET_BRAND_FROM_URL = (url) => `/api/v1/brands/from-url?url=${encodeURIComponent(url)}`;
-const API_GET_BRAND_CHECKS = (brandId, page) => `/api/v1/brands/${brandId}/checks?status=ACTIVE&type=BRAND&scope=COPY&pageSize=${CHECKS_PAGE_SIZE}&page=${page}`;
+const API_GET_BRAND_PROFILE = (brandId) => `/api/v1/brands/${brandId}/profile`;
 
 /**
  * Client for the Adobe Brand Governance Agent API.
- * Resolves brand guidelines by site URL using COPY-scoped checks.
- * Returns null when the brand is not registered — caller falls back to Brand Publish.
+ * Resolves brand profile by site URL using the /profile endpoint.
+ * Returns null when the brand is not registered or has no profile — caller falls back to
+ * Brand Publish.
  */
 export class BrandGovernanceClient {
   static createFrom(context) {
@@ -98,7 +96,10 @@ export class BrandGovernanceClient {
    * @param {string} siteBaseUrl - The site's base URL to resolve brand by domain
    * @param {string} imsOrgId - The IMS org ID sent as x-gw-ims-org-id header
    * @param {object} imsConfig - IMS auth config: { host, clientId, clientCode, clientSecret }
-   * @returns {Promise<object|null>} Brand guidelines or null if not registered
+   * @returns {Promise<object|null>} Raw brand profile from the Brand Governance Agent
+   *   /profile endpoint, or null if the brand is not registered or has no profile
+   * @throws {Error} If siteBaseUrl, imsOrgId, or imsConfig fields are invalid
+   * @throws {Error} If the Brand Governance Agent returns a non-404 error
    */
   async getBrandGuidelinesForUrl(siteBaseUrl, imsOrgId, imsConfig) {
     if (!isValidUrl(siteBaseUrl)) {
@@ -139,45 +140,19 @@ export class BrandGovernanceClient {
       throw this.#createError(`Brand resolved for URL ${siteBaseUrl} has no id`, HTTP_NOT_FOUND);
     }
 
-    const allChecks = [];
-    let page = 1;
-    do {
-      // eslint-disable-next-line no-await-in-loop
-      const checksResponse = await fetch(
-        `${this.apiBaseUrl}${API_GET_BRAND_CHECKS(brand.id, page)}`,
-        { headers },
+    const profileResponse = await fetch(
+      `${this.apiBaseUrl}${API_GET_BRAND_PROFILE(brand.id)}`,
+      { headers },
+    );
+    if (profileResponse.status === HTTP_NOT_FOUND) {
+      return null;
+    }
+    if (!profileResponse.ok) {
+      throw this.#createError(
+        `Error fetching brand profile for brand ${brand.id}: ${profileResponse.status}`,
+        profileResponse.status,
       );
-      if (!checksResponse.ok) {
-        throw this.#createError(
-          `Error fetching brand checks for brand ${brand.id}: ${checksResponse.status}`,
-          checksResponse.status,
-        );
-      }
-      // eslint-disable-next-line no-await-in-loop
-      const { data = [] } = await checksResponse.json();
-      allChecks.push(...data);
-      if (data.length < CHECKS_PAGE_SIZE) {
-        break;
-      }
-      page += 1;
-      if (page > MAX_PAGES) {
-        throw this.#createError(
-          `Brand checks pagination exceeded ${MAX_PAGES} pages for brand ${brand.id}`,
-          HTTP_BAD_REQUEST,
-        );
-      }
-    // eslint-disable-next-line no-constant-condition
-    } while (true);
-
-    const guidelines = allChecks.map((check) => ({ name: check.name, text: check.rule }));
-
-    return {
-      id: brand.id,
-      name: brand.name,
-      imsOrgId,
-      createdAt: brand.createdAt,
-      updatedAt: brand.updatedAt,
-      guidelines,
-    };
+    }
+    return profileResponse.json();
   }
 }

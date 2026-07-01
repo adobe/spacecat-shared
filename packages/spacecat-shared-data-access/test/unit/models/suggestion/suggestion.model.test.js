@@ -483,6 +483,76 @@ describe('SuggestionModel', () => {
         });
       });
 
+      describe('SITEMAP opportunity type', () => {
+        it('passes for error-type suggestions with empty sitemapUrl (robots-level errors)', () => {
+          const data = {
+            type: 'error',
+            error: 'robots-missing-sitemap',
+            sitemapUrl: '',
+            recommendedAction: '',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('passes for error-type suggestions with sitemapUrl populated', () => {
+          const data = {
+            type: 'error',
+            error: 'sitemap-not-found',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+            recommendedAction: '',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('passes for error-type suggestions with recommendedAction (general-error)', () => {
+          const data = {
+            type: 'error',
+            error: 'general-error',
+            sitemapUrl: '',
+            recommendedAction: 'Something went wrong during the audit.',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('passes for url-type suggestions with required sitemapUrl and pageUrl', () => {
+          const data = {
+            type: 'url',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+            pageUrl: 'https://example.com/missing-page',
+            statusCode: 404,
+            urlsSuggested: '',
+            recommendedAction: 'Make sure your sitemaps only include URLs that return the 200 (OK) response code.',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('rejects error-type suggestions missing the error code', () => {
+          const data = {
+            type: 'error',
+            sitemapUrl: '',
+            recommendedAction: '',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.throw();
+        });
+
+        it('rejects url-type suggestions missing pageUrl', () => {
+          const data = {
+            type: 'url',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.throw();
+        });
+
+        it('rejects url-type suggestions with invalid pageUrl', () => {
+          const data = {
+            type: 'url',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+            pageUrl: 'not-a-uri',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.throw();
+        });
+      });
+
       describe('BROKEN_INTERNAL_LINKS opportunity type', () => {
         it('passes with malformed http/https URLs', () => {
           const data = {

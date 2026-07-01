@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.5.0...@adobe/spacecat-shared-project-engine-client-v1.6.0) (2026-07-01)
+
+### Features
+
+* **project-engine-client:** model 1-level nested AIO tags in the mock ([#1758](https://github.com/adobe/spacecat-shared/issues/1758)) ([a040b45](https://github.com/adobe/spacecat-shared/commit/a040b459b50b0e7fa02d098034f75b2936fb0497)), closes [serenity-docs#21](https://github.com/adobe/serenity-docs/issues/21)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.4.1...@adobe/spacecat-shared-project-engine-client-v1.5.0) (2026-07-01)
 
 ### Features

@@ -36,6 +36,7 @@
 /** @typedef {Schemas['model.LanguageResponse']} Language */
 /** @typedef {Schemas['model.TreeNodeResponse']} TreeNode */
 /** @typedef {Schemas['model.AIOTag']} AIOTag */
+/** @typedef {Schemas['model.AIOTagLeaf']} AIOTagLeaf */
 /** @typedef {Schemas['aiseo.BrandTopicWithPrompts']} BrandTopic */
 /** @typedef {Schemas['http_server.BasicResponse']} BasicResponse */
 /** @typedef {Schemas['model.AIOProjectInitializedResponse']} InitStatus */
@@ -340,8 +341,17 @@ export const createTagNodeMock = (overrides = {}) => ({
 
 /**
  * A stored/listed project tag (`AIOTag`) — the `GET /aio/tags` (`AIOTagsListResponse`) item and
- * the shape the mock persists in the per-project `tags` collection. A standalone `category:<name>`
- * tag is a flat, top-level node, so `parent_id`/`path` are omitted by default; counts default to 0.
+ * the shape the mock persists in the per-project `tags` collection.
+ *
+ * The tag taxonomy is a 1-level tree (see serenity-docs#21): a **root category** is a top-level
+ * node named `category:<name>` with no `parent_id`; a **child** (sub-category / migrated topic) is
+ * a bare `<name>` (no prefix) whose `parent_id` is its root's id. Because roots legitimately have
+ * no parent, `parent_id` is left OUT of the defaults (optional, supplied via override on a child) —
+ * a plain `createAIOTagMock()` is a root. `children_count` and `path` are DERIVED at read time by
+ * the `GET /aio/tags` handler from the stored collection (count of children; the ancestor
+ * breadcrumb), never stored — so they stay consistent as children are added; the
+ * `children_count: 0` default is only the empty baseline a childless root carries in the store.
+ *
  * Distinct from {@link createTagNodeMock}: the create path returns a `TreeNodeResponse`
  * (`keyword_count`) while the list/store shape is an `AIOTag` (`prompts_count`) — two genuinely
  * different live shapes.
@@ -353,6 +363,21 @@ export const createAIOTagMock = (overrides = {}) => ({
   name: 'category:Running Shoes',
   children_count: 0,
   prompts_count: 0,
+  ...overrides,
+});
+
+/**
+ * A tag ancestry-breadcrumb leaf (`AIOTagLeaf`) — one level of an {@link AIOTag}'s `path[]`. In the
+ * 1-level tree a child's `path` is a single leaf: its root category. Live returns each path leaf
+ * as `{ id, name }` — `parent_id` is NOT echoed on the breadcrumb (verified 2026-07-01 against
+ * prod) — so it is omitted by default (still overridable, the schema keeps it optional). Built
+ * through this factory (not an inline literal) so the derived breadcrumb stays tsc-checked.
+ * @param {Partial<AIOTagLeaf>} [overrides]
+ * @returns {AIOTagLeaf}
+ */
+export const createAIOTagLeafMock = (overrides = {}) => ({
+  id: uuid(),
+  name: 'category:Running Shoes',
   ...overrides,
 });
 

@@ -63,6 +63,14 @@ const BENCHMARK_ID = 'f6a7b8c9-d0e1-4f2a-9b3c-5d6e7f809102'; // AIOBenchmarkWith
 const BRAND_URL_ID = 'a7b8c9d0-e1f2-4a3b-8c4d-6e7f80910213'; // BrandURL.id
 const ENGLISH_LANGUAGE_ID = '5a0a33ed-7f5c-4901-befd-a042c0350da1'; // catalog "English" → ISO en
 const US_GEO_TARGET_ID = 2840; // Google geoTargetId (United States)
+// Nested category taxonomy (1-level tree, serenity-docs#21 / #1758): a root `category:` tag with
+// one bare child linked by `parent_id`. Ids derive from the shared `tagId(name)` helper — the same
+// derivation the tag-minting routes use — so a POST/tagged create of the same name lands on the
+// seeded id and the Categories surface / `by_tags` correlate them.
+const CATEGORY_ROOT_NAME = 'category:Running Shoes';
+const CATEGORY_CHILD_NAME = 'Trail';
+const CATEGORY_TAG_ID = tagId(CATEGORY_ROOT_NAME); // root category
+const CHILD_TAG_ID = tagId(CATEGORY_CHILD_NAME); // bare child under the root
 
 // --- Hierarchy 2 — a second, fully independent mock-wired org (unique `semrush_workspace_id`s),
 // present only in the `two-hierarchies` seed. A German market so the two read distinctly. These
@@ -161,11 +169,13 @@ const aioTags = (names) => names.map((name) => createAIOTagMock({ id: tagId(name
  * own-brand benchmark + URL, and standalone `category:` tags) under a CHILD workspace, via the
  * public {@link buildSeed} recipe. Both seeded hierarchies go through here so they stay identical
  * in shape.
+ * `categoryTags` is passed pre-built (not as names) so a hierarchy can seed a flat list (via
+ * {@link aioTags}) OR a 1-level nested tree (a root + a `parent_id`-linked child).
  * @param {{ childWorkspaceId: string, projectId: string, aiModelAssignmentId: string, name: string,
  *   domain: string, brandName: string, languageId: string, countryCode: string, locationId: number,
  *   locationName: string, modelKey: string, promptId: string, promptName: string,
  *   promptTagNames: string[], benchmarkId: string, brandUrlId: string,
- *   categoryTagNames: string[] }} cfg
+ *   categoryTags: Array<Schemas['model.AIOTag']> }} cfg
  * @returns {Snapshot}
  */
 const peHierarchy = (cfg) => buildSeed({
@@ -197,7 +207,7 @@ const peHierarchy = (cfg) => buildSeed({
       domain: cfg.domain,
       main_brand: true,
     })],
-    tags: aioTags(cfg.categoryTagNames),
+    tags: cfg.categoryTags,
     brandUrls: [{
       benchmarkId: cfg.benchmarkId,
       urls: [createBrandUrlMock({ id: cfg.brandUrlId, url: `https://${cfg.domain}/about`, type: 'own' })],
@@ -232,7 +242,11 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
   promptTagNames: ['topic:Running Shoes', 'source:blog', 'intent:commercial', 'type:branded'],
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
-  categoryTagNames: ['category:Running Shoes', 'category:Trail Running'],
+  // A 1-level nested taxonomy: the root category + one bare child linked by parent_id (#1758).
+  categoryTags: [
+    createAIOTagMock({ id: CATEGORY_TAG_ID, name: CATEGORY_ROOT_NAME }),
+    createAIOTagMock({ id: CHILD_TAG_ID, name: CATEGORY_CHILD_NAME, parent_id: CATEGORY_TAG_ID }),
+  ],
 }));
 
 /**
@@ -261,7 +275,7 @@ export const TWO_HIERARCHIES = Object.freeze({
     promptTagNames: ['topic:Laufschuhe', 'source:forum', 'intent:informational', 'type:non-branded'],
     benchmarkId: 'e7f8a9b0-c1d2-4e3f-8a4b-6c7d8e9f0112',
     brandUrlId: 'f8a9b0c1-d2e3-4f4a-8b5c-7d8e9f011223',
-    categoryTagNames: ['category:Laufschuhe', 'category:Trailrunning'],
+    categoryTags: aioTags(['category:Laufschuhe', 'category:Trailrunning']),
   }),
 });
 
@@ -290,6 +304,9 @@ export const SEED_IDS = Object.freeze({
   promptId: PROMPT_ID,
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
+  // The H1 project's nested category taxonomy: the root category + its bare child (#1758).
+  categoryTagId: CATEGORY_TAG_ID,
+  childTagId: CHILD_TAG_ID,
   // Hierarchy 2 (present only in `two-hierarchies`).
   secondParentWorkspaceId: PARENT_WORKSPACE_ID_2,
   secondWorkspaceId: CHILD_WORKSPACE_ID_2,

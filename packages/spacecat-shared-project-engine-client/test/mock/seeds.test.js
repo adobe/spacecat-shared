@@ -77,12 +77,16 @@ describe('seeds', () => {
     const [assigned] = ops.ai_models.list({ workspaceId, projectId });
     expect(assigned.model).to.include({ key: 'search-gpt', name: 'ChatGPT' });
 
-    // the seeded prompt carries dimension:value tags; the project has category: tags (#1754 g5).
+    // the seeded prompt carries dimension:value tags; the project has a 1-level NESTED category
+    // taxonomy — a root category + a bare child linked by parent_id (#1758 / serenity-docs#21).
     const [prompt] = ops.prompts.list({ workspaceId, projectId });
     expect(prompt.tags.map((t) => t.name))
       .to.deep.equal(['topic:Running Shoes', 'source:blog', 'intent:commercial', 'type:branded']);
-    const categories = ops.tags.list({ workspaceId, projectId }).map((t) => t.name);
-    expect(categories).to.deep.equal(['category:Running Shoes', 'category:Trail Running']);
+    const categories = ops.tags.list({ workspaceId, projectId });
+    expect(categories.map((t) => t.name)).to.deep.equal(['category:Running Shoes', 'Trail']);
+    const [root, child] = categories;
+    expect(root).to.not.have.property('parent_id'); // a root carries no parent
+    expect(child).to.include({ name: 'Trail', parent_id: SEED_IDS.categoryTagId });
   });
 
   it('two-hierarchies is a superset with a second, independent live market (DE/de)', () => {

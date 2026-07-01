@@ -595,6 +595,43 @@ export function allHaveSamePathname(urls, referenceUrl) {
   return urls.every((url) => hasSamePathname(url, referenceUrl));
 }
 
+/**
+ * A pattern is trusted as scoped to the site's base path only when it is an exact match or
+ * uses the `/*` pathname-prefix convention (see @adobe/spacecat-shared-tokowaka-client's
+ * buildUrlMatcher). Any other pattern is compiled as a regex and matched against the full
+ * URL downstream, so a literal `startsWith` check on the pattern text is not sound —
+ * e.g. `/kings/.*|/wolves/.*` starts with `/kings` but, once compiled, also matches
+ * `/wolves/...` via the `|` alternation. We fail closed for anything we cannot verify.
+ * @param {string} pathPattern - the pattern to check.
+ * @param {string} siteBaseUrl - the site's base URL defining the scope (e.g. "bulk.com/uk"),
+ * mirroring the siteBaseUrl argument of @adobe/spacecat-shared-utils's isWithinSiteScope.
+ * @returns {boolean} true if the pattern is confirmed to be within the site's scope.
+ */
+export function isPathPatternWithinSiteScope(pathPattern, siteBaseUrl) {
+  if (typeof pathPattern !== 'string') {
+    return false;
+  }
+  if (!siteBaseUrl) {
+    return true;
+  }
+
+  const siteBasePath = toPathname(siteBaseUrl);
+
+  if (siteBasePath === '/') {
+    return true;
+  }
+
+  if (pathPattern.endsWith('/*')) {
+    const prefix = pathPattern.slice(0, -2);
+    return prefix === siteBasePath || prefix.startsWith(`${siteBasePath}/`);
+  }
+  // eslint-disable-next-line no-useless-escape
+  if (/[|()\[\]^$+*?\\.]/.test(pathPattern)) {
+    return false;
+  }
+  return pathPattern === siteBasePath || pathPattern.startsWith(`${siteBasePath}/`);
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,

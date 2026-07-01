@@ -22,9 +22,18 @@ class OAuthNonceCollection extends BaseCollection {
   static COLLECTION_NAME = 'OAuthNonceCollection';
 
   /**
-   * Atomically deletes a nonce by its value.
-   * Returns the number of rows deleted (1 = consumed, 0 = not found or already consumed).
+   * Atomically consumes a nonce: deletes it only if it exists AND has not expired.
+   *
+   * Mirrors the intended DB operation from the migration:
+   *   DELETE FROM oauth_nonces WHERE nonce = $1 AND expires_at > NOW() RETURNING id
+   *
+   * Returns the number of rows deleted:
+   *   1 = consumed (nonce was valid and not expired)
+   *   0 = not found, already consumed, OR expired
+   *
    * Used by auth-service to enforce single-use replay prevention at OAuth callback time.
+   * An expired nonce must return 0 (rejected) even if the row still exists in the DB —
+   * the background cleanup job may not have swept it yet.
    *
    * @param {object} keys
    * @param {string} keys.nonce - The nonce value to consume.
@@ -38,6 +47,7 @@ class OAuthNonceCollection extends BaseCollection {
       .from(this.tableName)
       .delete()
       .eq('nonce', nonce)
+      .gt('expires_at', new Date().toISOString())
       .select();
     if (error) {
       throw error;

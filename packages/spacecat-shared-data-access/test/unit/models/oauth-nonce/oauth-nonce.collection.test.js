@@ -40,10 +40,13 @@ describe('OAuthNonceCollection', () => {
   describe('delete()', () => {
     function setupDeleteChain(result) {
       const selectStub = sinon.stub().resolves(result);
-      const eqStub = sinon.stub().returns({ select: selectStub });
+      const gtStub = sinon.stub().returns({ select: selectStub });
+      const eqStub = sinon.stub().returns({ gt: gtStub });
       const deleteStub = sinon.stub().returns({ eq: eqStub });
       instance.postgrestService.from = sinon.stub().returns({ delete: deleteStub });
-      return { deleteStub, eqStub, selectStub };
+      return {
+        deleteStub, eqStub, gtStub, selectStub,
+      };
     }
 
     it('returns 1 when nonce is found and deleted', async () => {
@@ -68,6 +71,20 @@ describe('OAuthNonceCollection', () => {
       const result = await instance.delete({ nonce: 'abc123' });
 
       expect(result).to.equal(0);
+    });
+
+    it('filters by expires_at > now to reject expired nonces', async () => {
+      const { eqStub, gtStub } = setupDeleteChain({ data: [], error: null });
+
+      await instance.delete({ nonce: 'expired-nonce' });
+
+      expect(eqStub).to.have.been.calledOnceWith('nonce', 'expired-nonce');
+      expect(gtStub).to.have.been.calledOnce;
+      expect(gtStub.firstCall.args[0]).to.equal('expires_at');
+      // Second arg is an ISO date string — verify it's a recent timestamp
+      const filterTimestamp = new Date(gtStub.firstCall.args[1]);
+      expect(filterTimestamp).to.be.an.instanceOf(Date);
+      expect(Date.now() - filterTimestamp.getTime()).to.be.lessThan(5000);
     });
 
     it('throws when PostgREST returns an error', async () => {

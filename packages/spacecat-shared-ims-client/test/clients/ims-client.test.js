@@ -423,8 +423,10 @@ describe('ImsClient', () => {
       const orgId = '1234567890ABCDEF12345678@AdobeOrg';
       nock(`https://${DUMMY_HOST}`)
         .post('/ims/token/v3', (body) => {
-          const str = typeof body === 'string' ? body : body.toString('utf8');
-          return str.includes('org_id') && str.includes('1234567890ABCDEF12345678@AdobeOrg');
+          const str = typeof body === 'object' && body !== null
+            ? Object.entries(body).map(([k, v]) => `${k}=${v}`).join('&')
+            : String(body);
+          return str.includes('org_id') && str.includes('1234567890ABCDEF12345678');
         })
         .query(true)
         .reply(200, {

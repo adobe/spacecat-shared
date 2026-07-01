@@ -19,6 +19,12 @@ import TicketSuggestionCollection from './ticket-suggestion.collection.js';
 // GSI on suggestionId powers findBySuggestionId() — used to check if a
 // suggestion has already been ticketed before attempting to create a duplicate.
 const schema = new SchemaBuilder(TicketSuggestion, TicketSuggestionCollection)
+  // ticket_suggestions is append-only — no updated_at or updated_by columns in the DB.
+  // Suppress the SchemaBuilder auto-added attributes so they are not included in INSERTs.
+  .addAttribute('updatedAt', {
+    type: 'string', required: false, readOnly: true, postgrestIgnore: true,
+  })
+  .addAttribute('updatedBy', { type: 'string', required: false, postgrestIgnore: true })
   .addReference('belongs_to', 'Ticket')
   .addAttribute('suggestionId', {
     type: 'string',

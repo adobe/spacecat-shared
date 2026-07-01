@@ -19,6 +19,9 @@ import Ticket from './ticket.model.js';
 import TicketCollection from './ticket.collection.js';
 
 const schema = new SchemaBuilder(Ticket, TicketCollection)
+  // tickets table has updated_at but no updated_by column. Suppress updatedBy so
+  // it is not included in INSERTs.
+  .addAttribute('updatedBy', { type: 'string', required: false, postgrestIgnore: true })
   .addReference('belongs_to', 'Organization')
   .addReference('belongs_to', 'TaskManagementConnection')
   // The DB column for the TaskManagementConnection FK is `connection_id` (not

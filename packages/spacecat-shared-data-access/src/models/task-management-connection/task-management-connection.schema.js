@@ -23,6 +23,9 @@ import { validateMetadata } from './metadata-validator.js';
 // findActiveByOrganizationAndProvider() resolve to a single DB call:
 //   allByOrganizationIdAndProviderAndStatus(orgId, 'jira_cloud', 'active')
 const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnectionCollection)
+  // task_management_connections table has updated_at but no updated_by column. Suppress
+  // updatedBy so it is not included in INSERTs or UPDATEs.
+  .addAttribute('updatedBy', { type: 'string', required: false, postgrestIgnore: true })
   .addReference('belongs_to', 'Organization', ['provider', 'status'])
   .addReference('has_many', 'Tickets', ['updatedAt'], { removeDependents: true })
   .addAttribute('provider', {

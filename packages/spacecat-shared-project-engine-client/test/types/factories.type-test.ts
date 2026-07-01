@@ -77,6 +77,10 @@ const childTag: AIOTag = createAIOTagMock({
 });
 void childTag.parent_id;
 void childTag.path;
+// CR13: live returns null (not omitted/[]) for a flat root's parent_id + path — the overlay makes
+// both nullable, so these only compile while CR13 is in the schema.
+const rootTag: AIOTag = createAIOTagMock({ parent_id: null, path: null });
+void rootTag;
 // @ts-expect-error — a path leaf is an AIOTagLeaf, not a bare string.
 createAIOTagMock({ path: ['tag-root'] });
 // CR10: primary_url + root_domain are added to AIOBenchmarkWithCounters by the overlay (live

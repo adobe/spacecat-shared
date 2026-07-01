@@ -42,6 +42,11 @@
  *   here — the mock's project-tag delete targets the standalone collection, never cascading to
  *   prompts).
  *
+ * The "1-level" tree is a PRODUCT convention, not an API constraint: a live probe (2026-07-01,
+ * prod) confirmed Semrush accepts a grandchild (`parent_id` pointing at a child), returning 201 —
+ * there is no depth cap on the wire. The mock likewise does not cap depth; keeping the taxonomy to
+ * one level is the onboarding writer's job, not this endpoint's.
+ *
  * Known limitations (edges whose LIVE behaviour is NOT yet verified — serenity-docs#21 §7 — so the
  * mock deliberately does not invent a resolution):
  * - DELETE of a parent category does NOT cascade to, or re-parent, its children: a child left
@@ -111,13 +116,15 @@ export function GET($) {
     const parent = t.parent_id ? byId.get(t.parent_id) : undefined;
     return context.factories.createAIOTagMock({
       ...t,
-      // Derived, never stored: the live tree carries these on every read.
+      // Derived, never stored: the live tree carries these on every read. Live returns `null`
+      // (not an omitted field / an empty array) for a flat root's parent_id + path, and a child's
+      // path leaf is `{ id, name }` — no parent_id (all verified 2026-07-01 against prod; CR13
+      // makes parent_id/path nullable).
       children_count: childCounts.get(t.id) ?? 0,
+      parent_id: t.parent_id || null,
       path: parent
-        ? [context.factories.createAIOTagLeafMock({
-          id: parent.id, name: parent.name, parent_id: String(parent.parent_id ?? ''),
-        })]
-        : [],
+        ? [context.factories.createAIOTagLeafMock({ id: parent.id, name: parent.name })]
+        : null,
     });
   });
   // `page` arrives as a query string (e.g. "2"); coerce so the response field stays the numeric

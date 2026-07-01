@@ -674,11 +674,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(children.items.map((t) => t.name)).to.deep.equal(['Sneakers']);
     expect(children.items[0].parent_id).to.equal(parentId);
     expect(children.items[0].children_count).to.equal(0); // the new leaf has no children of its own
-    expect(children.items[0].path).to.deep.equal([
-      { id: parentId, name: 'category:Footwear', parent_id: '' },
-    ]);
+    // the path leaf is { id, name } — live does not echo parent_id on the breadcrumb (D6)
+    expect(children.items[0].path).to.deep.equal([{ id: parentId, name: 'category:Footwear' }]);
 
-    // the parent root now reports children_count 1
+    // the parent root now reports children_count 1, and a root's parent_id + path are null (D5)
     const { data: rootList } = await client.GET(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
       {
@@ -689,7 +688,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     );
     expect(rootList.items[0]).to.include({ name: 'category:Footwear', children_count: 1 });
-    expect(rootList.items[0].path).to.deep.equal([]); // a root has no ancestors
+    expect(rootList.items[0].parent_id).to.equal(null); // live returns null for a root
+    expect(rootList.items[0].path).to.equal(null); // live returns null (not []) for a root
   });
 
   // The boot seed bakes a nested taxonomy (root `category:Running Shoes` → bare child `Trail`), so
@@ -706,14 +706,14 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     expect(children.items.map((t) => t.name)).to.deep.equal(['Trail']);
     expect(children.items[0].path).to.deep.equal([
-      { id: SEED_IDS.categoryTagId, name: 'category:Running Shoes', parent_id: '' },
+      { id: SEED_IDS.categoryTagId, name: 'category:Running Shoes' },
     ]);
   });
 
   // PATCH (aio-update-tag) re-parents / promotes a tag in place. Promoting the baked child `Trail`
   // to a root clears its parent_id, so it leaves the parent's children and appears among the roots.
   it('re-parents a tag via PATCH (promote a child to a root)', async () => {
-    const { data: patched, error: patchError } = await client.PATCH(
+    const { data: patched, error: patchError, response: patchResp } = await client.PATCH(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}',
       {
         params: {
@@ -725,6 +725,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     );
     expect(patchError).to.equal(undefined);
+    expect(patchResp.status).to.equal(200); // live responds 200, not 201 (D1/CR11)
     expect(patched).to.include({ id: SEED_IDS.childTagId, name: 'Trail' });
 
     // the promoted tag now appears as a root, and the old parent has no children left
@@ -783,6 +784,26 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     expect(children.items.map((t) => t.name)).to.deep.equal(['Hiking']);
     expect(children.items[0].id).to.equal(SEED_IDS.childTagId);
+  });
+
+  // PATCH an unknown tag id → 404 { message: 'not found' } (verified live 2026-07-01; D2/CR12).
+  it('PATCHing an unknown tag id returns 404 not found', async () => {
+    const { data, error, response } = await client.PATCH(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}',
+      {
+        params: {
+          path: {
+            id: SEED_WORKSPACE,
+            project_id: SEED_PROJECT,
+            tag_id: '00000000-0000-4000-8000-000000000000',
+          },
+        },
+        body: { name: 'ZZ-nope', parent_id: '' },
+      },
+    );
+    expect(data).to.equal(undefined);
+    expect(response.status).to.equal(404);
+    expect(error).to.deep.equal({ message: 'not found' });
   });
 
   // Multi-market: one category name is registered on N market projects via N createProjectTags

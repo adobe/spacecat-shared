@@ -21,10 +21,10 @@
  * `parent_id` re-parents the tag under that category; an
  * absent/empty `parent_id` promotes it to a root (`parent_id` cleared to `''`, which the read path
  * treats as a root). `children_count`/`path` are derived at read time, so they are not part of the
- * update. Returns 201 `TreeNodeResponse` (the live status for this op, per the spec). An unknown
- * `tag_id` has nothing to update → 500 (live behaviour here is unverified — serenity-docs#21 §7-Q4;
- * the consumer only PATCHes tags it just read). Materialized into `.counterfact/routes/` by the
- * mock runner; excluded from coverage.
+ * update. Returns 200 `TreeNodeResponse` and 404 `{ message: 'not found' }` for an unknown
+ * `tag_id` — both verified 2026-07-01 against prod (`adobe-hackathon.semrush.com`); the vendored
+ * swagger's 201/no-404 is corrected by overlay CR11/CR12. Materialized into `.counterfact/routes/`
+ * by the mock runner; excluded from coverage.
  */
 
 /** PATCH — re-parent / rename a tag (body: `{ name, parent_id? }`) → 201 TreeNodeResponse. */
@@ -44,11 +44,12 @@ export function PATCH($) {
     parent_id: parentId,
   });
   if (!updated) {
-    return $.response[500].json(
-      context.factories.createBasicResponseMock({ message: `tag ${path.tag_id} not found` }),
-    );
+    // Live returns `404 {"message":"not found"}` for an unknown tag id (verified 2026-07-01 against
+    // prod — CR12 declares the 404 so response validation accepts it).
+    return $.response[404].json(context.factories.createBasicResponseMock({ message: 'not found' }));
   }
-  return $.response[201].json(context.factories.createTagNodeMock({
+  // Live responds 200 (not 201) to aio-update-tag (verified 2026-07-01 against prod — CR11).
+  return $.response[200].json(context.factories.createTagNodeMock({
     id: updated.id,
     name: updated.name,
     ...context.parentIdField(updated.parent_id),

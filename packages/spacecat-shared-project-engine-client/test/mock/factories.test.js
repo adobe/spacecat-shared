@@ -204,14 +204,13 @@ describe('factories — live-shaped entities', () => {
       path: [createAIOTagLeafMock({ id: 'tag-root', name: 'category:Running' })],
     });
     expect(child).to.include({ id: 'tag-child', name: 'Trail', parent_id: 'tag-root' });
-    expect(child.path).to.deep.equal([
-      { id: 'tag-root', name: 'category:Running', parent_id: '' },
-    ]);
+    // the path leaf is { id, name } — live does not echo parent_id on the breadcrumb
+    expect(child.path).to.deep.equal([{ id: 'tag-root', name: 'category:Running' }]);
   });
 
-  it('createAIOTagLeafMock yields an AIOTagLeaf { id, name, parent_id }', () => {
+  it('createAIOTagLeafMock yields an AIOTagLeaf { id, name } (no parent_id, matching live)', () => {
     const leaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category:Running' });
-    expect(leaf).to.deep.equal({ id: 'tag-root', name: 'category:Running', parent_id: '' });
+    expect(leaf).to.deep.equal({ id: 'tag-root', name: 'category:Running' });
   });
 
   it('createBrandTopicMock yields { topic, volume, prompts }', () => {

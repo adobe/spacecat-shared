@@ -315,18 +315,17 @@ export const createAIOTagMock = (overrides = {}) => ({
 });
 
 /**
- * A tag ancestry-breadcrumb leaf (`AIOTagLeaf`) — one `{ id, name, parent_id }` level of an
- * {@link AIOTag}'s `path[]`. In the 1-level tree a child's `path` is a single leaf: its root
- * category. Built through this factory (rather than an inline literal) so the `GET /aio/tags`
- * handler's derived breadcrumb stays tsc-checked against the schema. `parent_id` defaults to `''`
- * (a root ancestor has no parent of its own).
+ * A tag ancestry-breadcrumb leaf (`AIOTagLeaf`) — one level of an {@link AIOTag}'s `path[]`. In the
+ * 1-level tree a child's `path` is a single leaf: its root category. Live returns each path leaf
+ * as `{ id, name }` — `parent_id` is NOT echoed on the breadcrumb (verified 2026-07-01 against
+ * prod) — so it is omitted by default (still overridable, the schema keeps it optional). Built
+ * through this factory (not an inline literal) so the derived breadcrumb stays tsc-checked.
  * @param {Partial<AIOTagLeaf>} [overrides]
  * @returns {AIOTagLeaf}
  */
 export const createAIOTagLeafMock = (overrides = {}) => ({
   id: uuid(),
   name: 'category:Running Shoes',
-  parent_id: '',
   ...overrides,
 });
 

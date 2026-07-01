@@ -1309,6 +1309,13 @@ describe('URL Utility Functions', () => {
       expect(isWithinSiteScope('https://bulk.com/ukraine', 'bulk.com/uk/')).to.be.false;
     });
 
+    it('compares pathnames case-insensitively', () => {
+      expect(isWithinSiteScope('https://bulk.com/UK/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/UK')).to.be.true;
+      expect(isWithinSiteScope('/UK/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/UKRAINE', 'bulk.com/uk')).to.be.false;
+    });
+
     it('returns false on malformed siteBaseUrl without throwing', () => {
       expect(isWithinSiteScope('https://bulk.com/uk/page', '://%%%bad')).to.be.false;
     });

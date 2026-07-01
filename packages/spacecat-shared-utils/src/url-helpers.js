@@ -488,6 +488,7 @@ export function canonicalizeUrl(url, { stripQuery = false } = {}) {
  * Checks if a URL is within the site scope defined by siteBaseUrl.
  * For a siteBaseUrl with a subpath (e.g. bulk.com/uk), only URLs whose pathname starts with that
  * subpath are in scope. For domain-only base URLs (no subpath), all URLs pass through.
+ * Pathname comparison is case-insensitive, consistent with `toPathname`/`hasSamePathname`.
  *
  * @param {string} url - The URL to check (absolute, or absolute-path reference starting with `/`).
  * @param {string} siteBaseUrl - The site's base URL defining the scope (e.g. "bulk.com/uk").
@@ -504,7 +505,7 @@ function isWithinSiteScope(url, siteBaseUrl) {
   try {
     const parsedBase = new URL(prependSchema(siteBaseUrl));
     const rawPath = parsedBase.pathname;
-    const basePath = rawPath.endsWith('/') ? rawPath.slice(0, -1) : rawPath;
+    const basePath = (rawPath.endsWith('/') ? rawPath.slice(0, -1) : rawPath).toLowerCase();
 
     if (!basePath || basePath === '/') {
       return true;
@@ -513,7 +514,7 @@ function isWithinSiteScope(url, siteBaseUrl) {
     const basePathWithSlash = `${basePath}/`;
 
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      const normalized = new URL(url, 'https://dummy.local').pathname;
+      const normalized = new URL(url, 'https://dummy.local').pathname.toLowerCase();
       return normalized.startsWith(basePathWithSlash) || normalized === basePath;
     }
 
@@ -525,7 +526,8 @@ function isWithinSiteScope(url, siteBaseUrl) {
       return false;
     }
 
-    return parsedUrl.pathname.startsWith(basePathWithSlash) || parsedUrl.pathname === basePath;
+    const urlPath = parsedUrl.pathname.toLowerCase();
+    return urlPath.startsWith(basePathWithSlash) || urlPath === basePath;
   } catch {
     return false;
   }

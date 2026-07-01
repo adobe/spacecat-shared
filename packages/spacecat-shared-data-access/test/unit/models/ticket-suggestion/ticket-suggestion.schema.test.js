@@ -62,10 +62,10 @@ describe('TicketSuggestion Schema', () => {
 
   describe('index', () => {
     it('has an index on suggestionId', () => {
-      const indexes = ticketSuggestionSchema.getIndexes();
+      const indexes = Object.values(ticketSuggestionSchema.getIndexes());
       expect(indexes).to.be.an('array').that.is.not.empty;
       const suggestionIdIndex = indexes.find(
-        (idx) => idx.sk?.composite?.includes('suggestionId'),
+        (idx) => idx.pk?.composite?.includes('suggestionId'),
       );
       expect(suggestionIdIndex).to.exist;
     });

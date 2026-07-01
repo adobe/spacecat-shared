@@ -20,6 +20,12 @@ describe('TicketSuggestion Schema', () => {
     attributes = ticketSuggestionSchema.getAttributes();
   });
 
+  describe('schema options', () => {
+    it('does not allow updates (append-only)', () => {
+      expect(ticketSuggestionSchema.allowsUpdates()).to.be.false;
+    });
+  });
+
   describe('suggestionId attribute', () => {
     it('exists', () => {
       expect(attributes.suggestionId).to.exist;

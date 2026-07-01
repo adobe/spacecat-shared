@@ -20,6 +20,12 @@ describe('OAuthNonce Schema', () => {
     attributes = oauthNonceSchema.getAttributes();
   });
 
+  describe('schema options', () => {
+    it('does not allow updates (append-only)', () => {
+      expect(oauthNonceSchema.allowsUpdates()).to.be.false;
+    });
+  });
+
   describe('nonce attribute', () => {
     it('exists', () => {
       expect(attributes.nonce).to.exist;

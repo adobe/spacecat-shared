@@ -22,6 +22,10 @@ import OAuthNonceCollection from './oauth-nonce.collection.js';
 // at callback time to prevent CSRF/replay attacks. The index on nonce powers the
 // OAuthNonceCollection.delete({ nonce }) lookup used by auth-service at callback time.
 const schema = new SchemaBuilder(OAuthNonce, OAuthNonceCollection)
+  // oauth_nonces is append-only — the DB grants no UPDATE privilege (postgrest_anon and
+  // postgrest_writer both lack UPDATE). Disabling updates at the model layer surfaces a
+  // clean ValidationError instead of an opaque PostgREST 403 at the DB level.
+  .allowUpdates(false)
   // oauth_nonces is append-only — no updated_at or updated_by columns in the DB.
   // Suppress the SchemaBuilder auto-added attributes so they are not included in INSERTs.
   .addAttribute('updatedAt', {

@@ -19,6 +19,10 @@ import TicketSuggestionCollection from './ticket-suggestion.collection.js';
 // GSI on suggestionId powers findBySuggestionId() — used to check if a
 // suggestion has already been ticketed before attempting to create a duplicate.
 const schema = new SchemaBuilder(TicketSuggestion, TicketSuggestionCollection)
+  // ticket_suggestions is append-only — the DB grants no UPDATE privilege (bridge rows are
+  // immutable once created; delete and recreate if wrong). Disabling updates at the model
+  // layer surfaces a clean ValidationError instead of an opaque PostgREST 403.
+  .allowUpdates(false)
   // ticket_suggestions is append-only — no updated_at or updated_by columns in the DB.
   // Suppress the SchemaBuilder auto-added attributes so they are not included in INSERTs.
   .addAttribute('updatedAt', {

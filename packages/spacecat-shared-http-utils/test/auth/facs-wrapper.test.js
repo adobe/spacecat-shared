@@ -503,6 +503,13 @@ describe('facsWrapper', () => {
       expect(logStub.info.calledWithMatch(
         { tag: 'facs', defer: 'no-resolvable-resource' },
       )).to.be.true;
+      // The enrolled, resource-scoped defer surfaces a ReBAC session flag so
+      // collection endpoints can filter their results.
+      expect(context.attributes.facs).to.deep.equal({
+        enabled: true,
+        product: 'LLMO',
+        subjectId: 'user@example.com',
+      });
     });
 
     it('defers when product has no alias lookup at all', async () => {

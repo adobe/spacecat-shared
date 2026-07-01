@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.32.0...@adobe/spacecat-shared-http-utils-v1.33.0) (2026-06-30)
+
+### Features
+
+* **http-utils:** surface a ReBAC session flag on the no-resource defer path ([#1755](https://github.com/adobe/spacecat-shared/issues/1755)) ([e8bc8a1](https://github.com/adobe/spacecat-shared/commit/e8bc8a1a6d6e3792b338ec80543b7a414c142447))
+
 ## [@adobe/spacecat-shared-http-utils-v1.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.31.0...@adobe/spacecat-shared-http-utils-v1.32.0) (2026-06-30)
 
 ### Features

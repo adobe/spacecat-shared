@@ -378,6 +378,24 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     });
 
     if (!resource) {
+      // Reaching here means the session is FACS-enrolled (passed the internal,
+      // internal-org and LD-flag gates) and resource-scoped (the JWT short-circuit
+      // at step 5 did not fire, so the caller lacks the org-wide capability), yet
+      // there is no single ReBAC resource to enforce against. Surface that to the
+      // controller via `context.attributes.facs` so collection endpoints (whose
+      // path param is the org, not a resource — e.g. list-sites, list-brands) can
+      // ReBAC-filter their results to the resources the caller may view. Callers
+      // that bypass earlier (admin / internal org / LD-off) or short-circuit on an
+      // org-wide JWT capability never set this flag, so those sessions see the
+      // unfiltered collection — the controller treats an absent flag as "no filter".
+      // `context.attributes` is always present here: reaching this point past the
+      // per-product LD-flag gate required a tenant (`orgId`), read from `authInfo`
+      // on `context.attributes`.
+      context.attributes.facs = {
+        enabled: true,
+        product: upperProduct,
+        subjectId: subjectUserId,
+      };
       log.info({
         tag: 'facs',
         defer: 'no-resolvable-resource',

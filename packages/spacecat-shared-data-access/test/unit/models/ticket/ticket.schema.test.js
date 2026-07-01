@@ -20,6 +20,17 @@ describe('Ticket Schema', () => {
     attributes = ticketSchema.getAttributes();
   });
 
+  describe('taskManagementConnectionId attribute', () => {
+    it('is required and readOnly', () => {
+      expect(attributes.taskManagementConnectionId.required).to.be.true;
+      expect(attributes.taskManagementConnectionId.readOnly).to.be.true;
+    });
+
+    it('maps to connection_id DB column', () => {
+      expect(attributes.taskManagementConnectionId.postgrestField).to.equal('connection_id');
+    });
+  });
+
   describe('externalTicketId attribute', () => {
     it('exists', () => {
       expect(attributes.externalTicketId).to.exist;

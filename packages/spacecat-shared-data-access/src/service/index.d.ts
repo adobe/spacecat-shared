@@ -44,6 +44,10 @@ import type { SiteEnrollmentCollection } from '../models/site-enrollment';
 import type { SiteTopFormCollection } from '../models/site-top-form';
 import type { SiteTopPageCollection } from '../models/site-top-page';
 import type { SuggestionCollection } from '../models/suggestion';
+import type { OAuthNonceCollection } from '../models/oauth-nonce';
+import type { TaskManagementConnectionCollection } from '../models/task-management-connection';
+import type { TicketCollection } from '../models/ticket';
+import type { TicketSuggestionCollection } from '../models/ticket-suggestion';
 import type { TrialUserCollection } from '../models/trial-user';
 import type { TrialUserActivityCollection } from '../models/trial-user-activity';
 
@@ -94,6 +98,10 @@ export interface DataAccess {
   SiteTopForm: SiteTopFormCollection;
   SiteTopPage: SiteTopPageCollection;
   Suggestion: SuggestionCollection;
+  OAuthNonce: OAuthNonceCollection;
+  TaskManagementConnection: TaskManagementConnectionCollection;
+  Ticket: TicketCollection;
+  TicketSuggestion: TicketSuggestionCollection;
   TrialUser: TrialUserCollection;
   TrialUserActivity: TrialUserActivityCollection;
 }

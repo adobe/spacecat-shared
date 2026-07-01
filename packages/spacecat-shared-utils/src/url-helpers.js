@@ -300,6 +300,39 @@ function urlMatchesFilter(url, filterUrls) {
 }
 
 /**
+ * Extracts the locale/section path prefix from a site's baseURL.
+ * Locale-specific sites encode the locale in the path (e.g. https://example.com/de),
+ * but RUM domain keys exist only for the main domain. This returns the path portion
+ * so RUM results fetched for the main domain can be narrowed to the locale subtree.
+ *
+ * When the baseURL points at a file (the last path segment has an extension, e.g.
+ * https://example.com/us/en.html), the locale directory cannot be reliably inferred
+ * — 'en.html' is a locale but 'home.html' in '/en/home.html' is a page, and the two
+ * are indistinguishable. In that case this returns null so the caller falls back to
+ * whole-domain metrics rather than over-filtering RUM to a single page.
+ *
+ * @param {string} baseURL - The site's baseURL.
+ * @returns {string|null} The normalized path prefix (e.g. '/de'), or null when the
+ *   baseURL is at the domain root, points at a file, or cannot be parsed.
+ */
+function getBaseURLPathPrefix(baseURL) {
+  try {
+    const { pathname } = new URL(prependSchema(normalizeUrl(baseURL)));
+    const normalized = normalizePathname(pathname);
+    if (normalized === '/') {
+      return null;
+    }
+    const lastSegment = normalized.slice(normalized.lastIndexOf('/') + 1);
+    if (/\.[a-z0-9]+$/i.test(lastSegment)) {
+      return null;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Checks if a URL has a subdomain other than 'www'.
  * @param {string} baseUrl - The URL to check.
  * @returns {boolean} - True if the URL has a non-www subdomain, false otherwise.
@@ -513,30 +546,35 @@ function filterBySiteScope(urls, siteBaseUrl) {
 }
 
 /**
- * Extracts the pathname from a URL string, stripping trailing slashes on non-root paths.
- * The result is always lowercased. Falls back to the raw string (also lowercased) when
- * the URL is not parseable (e.g. invalid or relative). Returns '' for non-string input.
+ * Extracts the pathname from a domain-based URL string (e.g. 'https://example.com/path' or
+ * 'example.com/path'). Trailing slashes are stripped on non-root paths and the result is
+ * lowercased. Inputs that already start with '/' are passed through as-is. Returns '' for
+ * non-string or empty input.
  *
- * @param {string} url
- * @returns {string} pathname, or the original string on parse failure, or '' for non-strings
+ * @param {string} url - Domain-based URL, with or without schema, or a leading-slash path.
+ * @returns {string} Normalized pathname, or the input unchanged for leading-slash paths.
  */
 export function toPathname(url) {
   if (!url || typeof url !== 'string') {
     return '';
   }
   try {
-    const { pathname } = new URL(url);
-    return pathname === '/' ? pathname : pathname.replace(/\/$/, '').toLowerCase();
+    if (url.startsWith('/')) {
+      return url;
+    }
+    const { pathname } = new URL(prependSchema(url));
+    return normalizePathname(pathname).toLowerCase();
   } catch {
     return url.toLowerCase();
   }
 }
 
 /**
- * Checks whether two URLs share the same normalized pathname.
- * Comparison is case-insensitive and ignores trailing slashes on non-root paths.
- * @param {string} url - URL to compare.
- * @param {string} referenceUrl - URL to compare against.
+ * Checks whether two domain-based URLs share the same normalized pathname.
+ * Both arguments must be domain-based URLs (with or without schema). Comparison is
+ * case-insensitive and ignores trailing slashes on non-root paths.
+ * @param {string} url - Domain-based URL to compare.
+ * @param {string} referenceUrl - Domain-based URL to compare against.
  * @returns {boolean} True if both URLs resolve to the same pathname.
  */
 export function hasSamePathname(url, referenceUrl) {
@@ -545,8 +583,9 @@ export function hasSamePathname(url, referenceUrl) {
 
 /**
  * Checks whether every URL in an array shares the same normalized pathname as a reference URL.
- * @param {string[]} urls - Array of URLs to check.
- * @param {string} referenceUrl - URL whose pathname all entries must match.
+ * All entries and the reference must be domain-based URLs (with or without schema).
+ * @param {string[]} urls - Array of domain-based URLs to check.
+ * @param {string} referenceUrl - Domain-based URL whose pathname all entries must match.
  * @returns {boolean} True if every URL in the array has the same pathname as referenceUrl.
  */
 export function allHaveSamePathname(urls, referenceUrl) {
@@ -554,6 +593,44 @@ export function allHaveSamePathname(urls, referenceUrl) {
     return false;
   }
   return urls.every((url) => hasSamePathname(url, referenceUrl));
+}
+
+/**
+ * A pattern is trusted as scoped to the site's base path only when it is a literal path
+ * (no regex metacharacters) that equals or is nested under the base path, or when it uses
+ * the `/*` pathname-prefix convention (see @adobe/spacecat-shared-tokowaka-client's
+ * buildUrlMatcher). Any other pattern is compiled as a regex and matched against the full
+ * URL downstream, so a literal `startsWith` check on the pattern text is not sound —
+ * e.g. `/kings/.*|/wolves/.*` starts with `/kings` but, once compiled, also matches
+ * `/wolves/...` via the `|` alternation. We fail closed for anything we cannot verify.
+ * @param {string} pathPattern - the pattern to check.
+ * @param {string} siteBaseUrl - the site's base URL defining the scope (e.g. "bulk.com/uk"),
+ * mirroring the siteBaseUrl argument of @adobe/spacecat-shared-utils's isWithinSiteScope.
+ * @returns {boolean} true if the pattern is confirmed to be within the site's scope.
+ */
+export function isPathPatternWithinSiteScope(pathPattern, siteBaseUrl) {
+  if (typeof pathPattern !== 'string') {
+    return false;
+  }
+  if (!siteBaseUrl) {
+    return true;
+  }
+
+  const siteBasePath = toPathname(siteBaseUrl);
+
+  if (siteBasePath === '/') {
+    return true;
+  }
+
+  if (pathPattern.endsWith('/*')) {
+    const prefix = pathPattern.slice(0, -2);
+    return prefix === siteBasePath || prefix.startsWith(`${siteBasePath}/`);
+  }
+  // eslint-disable-next-line no-useless-escape
+  if (/[|()\[\]^$+*?\\.]/.test(pathPattern)) {
+    return false;
+  }
+  return pathPattern === siteBasePath || pathPattern.startsWith(`${siteBasePath}/`);
 }
 
 export {
@@ -568,6 +645,7 @@ export {
   stripTrailingSlash,
   stripWWW,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,

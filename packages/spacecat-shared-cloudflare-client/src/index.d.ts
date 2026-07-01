@@ -19,6 +19,8 @@ export interface WorkerBinding {
 export interface DeployOptions {
   compatibilityDate?: string;
   observability?: boolean;
+  overwrite?: boolean;
+  tags?: string[];
 }
 
 export interface CloudflareAccount {
@@ -47,6 +49,10 @@ export interface PaginationOptions {
   perPage?: number;
 }
 
+export interface ZoneListOptions extends PaginationOptions {
+  accountId?: string;
+}
+
 export default class CloudflareClient {
   static createFrom(context: object): CloudflareClient;
 
@@ -60,7 +66,7 @@ export default class CloudflareClient {
     scriptContent: string,
     bindings?: WorkerBinding[],
     opts?: DeployOptions,
-  ): Promise<object>;
+  ): Promise<object | null>;
 
   setWorkerSecret(
     accountId: string,
@@ -69,7 +75,7 @@ export default class CloudflareClient {
     secretValue: string,
   ): Promise<object>;
 
-  listZones(options?: PaginationOptions): Promise<CloudflareZone[]>;
+  listZones(options?: ZoneListOptions): Promise<CloudflareZone[]>;
 
   listRoutes(zoneId: string): Promise<WorkerRoute[]>;
 

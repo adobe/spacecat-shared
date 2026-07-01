@@ -70,6 +70,7 @@ export {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
@@ -78,6 +79,7 @@ export {
   toPathname,
   hasSamePathname,
   allHaveSamePathname,
+  isPathPatternWithinSiteScope,
 } from './url-helpers.js';
 
 export {

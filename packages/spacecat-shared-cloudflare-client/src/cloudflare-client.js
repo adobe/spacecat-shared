@@ -105,7 +105,12 @@ export default class CloudflareClient {
    * @param {object} [opts]
    * @param {string}  [opts.compatibilityDate]
    * @param {boolean} [opts.observability] - Enable Workers Logs (default: true)
-   * @returns {Promise<object>}
+   * @param {boolean} [opts.overwrite=false] - Bypass all existence checks and always upload.
+   * @param {string[]} [opts.tags] - Tags to attach to the Worker script. When provided:
+   *   script exists with a matching tag → silently skip (idempotent);
+   *   script exists without a matching tag → error (different owner);
+   *   script does not exist → deploy.
+   * @returns {Promise<object|null>} - null when the deploy was skipped
    */
   async deployWorkerScript(accountId, scriptName, scriptContent, bindings = [], opts = {}) {
     if (!hasText(accountId)) {
@@ -121,13 +126,30 @@ export default class CloudflareClient {
     const {
       compatibilityDate = '2025-01-01',
       observability = true,
+      overwrite = false,
+      tags,
     } = opts;
+
+    if (!overwrite) {
+      const found = await this.#findWorker(accountId, scriptName);
+      if (found) {
+        if (Array.isArray(tags) && tags.length > 0) {
+          const settings = await this.#getWorkerSettings(accountId, scriptName);
+          if (tags.some((t) => settings.tags?.includes(t))) {
+            this.log.info(`Worker script '${scriptName}' already deployed with a matching tag — skipping`);
+            return null;
+          }
+        }
+        throw new Error(`Worker script '${scriptName}' already exists in account ${accountId}. Set overwrite: true to replace it.`);
+      }
+    }
 
     const metadata = {
       main_module: 'worker.js',
       bindings,
       compatibility_date: compatibilityDate,
       ...(observability && { observability: { enabled: true } }),
+      ...(Array.isArray(tags) && tags.length > 0 && { tags }),
     };
 
     const form = new FormData();
@@ -168,6 +190,20 @@ export default class CloudflareClient {
     });
   }
 
+  async #findWorker(accountId, scriptName) {
+    // name param returns partial matches — filter to exact script_name.
+    // Note: the result objects use `script_name` for the worker name (used in URLs/routes);
+    // `id` is the script tag identifier and is not the same value.
+    const workers = await this.#cfFetch(
+      `/accounts/${accountId}/workers/scripts-search?name=${encodeURIComponent(scriptName)}&per_page=100`,
+    );
+    return (workers ?? []).find((w) => w.script_name === scriptName) ?? null;
+  }
+
+  async #getWorkerSettings(accountId, scriptName) {
+    return this.#cfFetch(`/accounts/${accountId}/workers/scripts/${scriptName}/script-settings`);
+  }
+
   /**
    * Lists active Cloudflare zones accessible with the current token.
    *
@@ -177,11 +213,13 @@ export default class CloudflareClient {
    * @param {object} [options]
    * @param {number} [options.page=1] - 1-based page number
    * @param {number} [options.perPage=50] - results per page
+   * @param {string} [options.accountId] - restrict results to a specific account
    * @returns {Promise<Array<{id: string, name: string}>>}
    */
-  async listZones({ page = 1, perPage = 50 } = {}) {
+  async listZones({ page = 1, perPage = 50, accountId } = {}) {
     this.log.info('Listing Cloudflare zones');
-    return this.#cfFetch(`/zones?page=${page}&per_page=${perPage}&status=active`);
+    const accountFilter = hasText(accountId) ? `&account.id=${encodeURIComponent(accountId)}` : '';
+    return this.#cfFetch(`/zones?page=${page}&per_page=${perPage}&status=active${accountFilter}`);
   }
 
   /**

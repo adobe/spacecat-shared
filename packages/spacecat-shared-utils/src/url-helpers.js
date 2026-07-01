@@ -596,8 +596,9 @@ export function allHaveSamePathname(urls, referenceUrl) {
 }
 
 /**
- * A pattern is trusted as scoped to the site's base path only when it is an exact match or
- * uses the `/*` pathname-prefix convention (see @adobe/spacecat-shared-tokowaka-client's
+ * A pattern is trusted as scoped to the site's base path only when it is a literal path
+ * (no regex metacharacters) that equals or is nested under the base path, or when it uses
+ * the `/*` pathname-prefix convention (see @adobe/spacecat-shared-tokowaka-client's
  * buildUrlMatcher). Any other pattern is compiled as a regex and matched against the full
  * URL downstream, so a literal `startsWith` check on the pattern text is not sound —
  * e.g. `/kings/.*|/wolves/.*` starts with `/kings` but, once compiled, also matches

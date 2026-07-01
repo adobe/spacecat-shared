@@ -210,7 +210,7 @@ export const createProjectResponseFromRequest = (request = {}) => {
  * bare `createProjectMock({ id, name })` seeds an *invisible* market. This is the seed/default side
  * of adobe/spacecat-shared#1754 gap 3 (live status): it mirrors the live read-view (nested
  * `settings.ai`, like {@link createProjectResponseFromRequest}) but marks the project live
- * (`publish_status:'live'`, `is_draft:false`, `published_at`) with a caller-fixed id. Pass
+ * (`publish_status:'live'`, `published_at`) with a caller-fixed id. Pass
  * `location_id` (a positive Google geoTargetId, e.g. `2840` = US, `2276` = Germany) so the market
  * resolves without depending on api-service's ISO→geo table; `language_id` is a catalog id (→ ISO
  * via {@link isoForLanguageId}). The live create/publish path still starts drafts — only seeds use

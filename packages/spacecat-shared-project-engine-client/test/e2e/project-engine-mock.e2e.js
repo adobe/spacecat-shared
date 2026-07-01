@@ -752,7 +752,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(childrenAfter.total).to.equal(0);
   });
 
-  // PATCH also RENAMES in place: changing `name` (keeping the parent) is reflected in the 201
+  // PATCH also RENAMES in place: changing `name` (keeping the parent) is reflected in the 200
   // response and a subsequent GET. Exercises the full route-handler→response roundtrip for a
   // rename — the stateful unit test covers only the store layer, not the handler's response build.
   it('renames a tag via PATCH (new name reflected in the response and on read)', async () => {

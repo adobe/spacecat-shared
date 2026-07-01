@@ -27,7 +27,7 @@
  * by the mock runner; excluded from coverage.
  */
 
-/** PATCH — re-parent / rename a tag (body: `{ name, parent_id? }`) → 201 TreeNodeResponse. */
+/** PATCH — re-parent / rename a tag (body: `{ name, parent_id? }`) → 200 TreeNodeResponse. */
 export function PATCH($) {
   const { path, body, context } = $;
   const scope = { workspaceId: path.id, projectId: path.project_id };

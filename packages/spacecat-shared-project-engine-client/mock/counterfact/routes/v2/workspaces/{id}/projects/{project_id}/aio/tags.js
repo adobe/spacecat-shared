@@ -35,7 +35,7 @@
  *   non-empty `parent_id` returns that category's CHILDREN; a non-empty `search` additionally
  *   filters by case-insensitive name substring. Each returned tag carries a DERIVED
  *   `children_count` (stored tags whose `parent_id` is this tag's id) and, for a child, a `path[]`
- *   breadcrumb (a single leaf: its root category); a root's `path` is `[]`.
+ *   breadcrumb (a single leaf: its root category); a root's `parent_id` and `path` are `null`.
  * - DELETE (`aio-delete-tags`): removes the body's tag ids (`BatchDeleteRequest` `{ ids }`) from
  *   the standalone tag collection → 204. Prompts that carry a removed tag are a separate
  *   collection and stay intact (the spec's `prompt_id` query param is accepted but not load-bearing

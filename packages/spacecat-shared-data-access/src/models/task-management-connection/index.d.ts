@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Ticket } from '../index';
+import type {
+  BaseCollection, BaseModel, Organization, Ticket,
+} from '../index';
 
 export interface TaskManagementConnection extends BaseModel {
   /** Returns true when the connection is healthy and ready to create tickets. */
@@ -31,19 +33,22 @@ export interface TaskManagementConnection extends BaseModel {
 
   getConnectedAt(): string | null;
   getConnectedBy(): string;
-  getExternalInstanceId(): string;
   getDisplayName(): string;
   getErrorMessage(): string | null;
+  getExternalInstanceId(): string;
   getInstanceUrl(): string;
   getLastUsedAt(): string | null;
   getMetadata(): object;
+  getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
   getProvider(): string;
   getStatus(): string;
   getTickets(): Promise<Ticket[]>;
 
   setConnectedAt(timestamp: string): TaskManagementConnection;
+  setDisplayName(name: string): TaskManagementConnection;
   setErrorMessage(message: string | null): TaskManagementConnection;
+  setInstanceUrl(url: string): TaskManagementConnection;
   setLastUsedAt(timestamp: string): TaskManagementConnection;
   setMetadata(metadata: object): TaskManagementConnection;
   setStatus(status: string): TaskManagementConnection;

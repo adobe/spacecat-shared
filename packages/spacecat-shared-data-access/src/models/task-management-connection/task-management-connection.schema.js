@@ -21,7 +21,7 @@ import { validateMetadata } from './metadata-validator.js';
 
 // Sort key [provider, status] on the Organization GSI lets the collection method
 // findActiveByOrganizationAndProvider() resolve to a single DB call:
-//   allByOrganizationIdAndProviderAndStatus(orgId, 'jira_cloud', 'active')
+//   findByOrganizationIdAndProviderAndStatus(orgId, 'jira_cloud', 'active')
 const schema = new SchemaBuilder(TaskManagementConnection, TaskManagementConnectionCollection)
   // task_management_connections table has updated_at but no updated_by column. Suppress
   // updatedBy so it is not included in INSERTs or UPDATEs.

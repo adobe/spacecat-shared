@@ -10,17 +10,23 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel } from '../index';
+import type {
+  BaseCollection, BaseModel, Organization, Opportunity, TaskManagementConnection, TicketSuggestion,
+} from '../index';
 
 export interface Ticket extends BaseModel {
   getCreatedBy(): string;
+  getOpportunity(): Promise<Opportunity | null>;
   getOpportunityId(): string | undefined;
+  getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
+  getTaskManagementConnection(): Promise<TaskManagementConnection>;
   getTaskManagementConnectionId(): string;
   getExternalTicketId(): string;
   getTicketKey(): string;
   getTicketProvider(): string;
   getTicketStatus(): string;
+  getTicketSuggestions(): Promise<TicketSuggestion[]>;
   getTicketUrl(): string;
 
   setTicketStatus(status: string): Ticket;

@@ -14,6 +14,14 @@ import SeoClient from './client.js';
 
 export default SeoClient;
 export { fetch, BIG_MARKETS, getDatabases } from './client.js';
+export {
+  getGrpcClients,
+  resetGrpcClients,
+  getAccessToken,
+  createAuthInterceptor,
+  fetchTopicHashMap,
+  fetchGapPrompts,
+} from './grpc-client.js';
 export { ENDPOINTS } from './endpoints.js';
 export {
   buildQueryParams, parseCsvResponse, coerceValue, getLimit,

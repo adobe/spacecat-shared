@@ -106,3 +106,22 @@ export const ORGANIC_KEYWORDS_FIELDS: readonly string[];
 export const METRICS_BY_COUNTRY_FILTER_FIELDS: readonly string[];
 export const ENDPOINTS: Record<string, { type: string, path: string, columns: string, defaultParams: object }>;
 export function fetch(...args: any[]): Promise<Response>;
+
+export interface GrpcClients {
+  brandClient: unknown;
+  topicClient: unknown;
+  promptClient: unknown;
+  sourceClient: unknown;
+  competitorClient: unknown;
+  crMetricsClient: unknown;
+  crMetaClient: unknown;
+  voSourcesClient: unknown;
+  prRelationsClient: unknown;
+}
+
+export function getGrpcClients(env: Record<string, string | undefined>): GrpcClients;
+export function resetGrpcClients(): void;
+export function getAccessToken(env: Record<string, string | undefined>): Promise<string>;
+export function createAuthInterceptor(env: Record<string, string | undefined>): (next: Function) => (req: any) => Promise<any>;
+export function fetchTopicHashMap(topicClient: unknown, domain: string, options?: { limit?: number }): Promise<Map<string, string>>;
+export function fetchGapPrompts(promptClient: unknown, topicHash: string, domain: string, options?: { limit?: number }): Promise<object[]>;

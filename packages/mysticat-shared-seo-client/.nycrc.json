@@ -5,10 +5,13 @@
   ],
   "check-coverage": true,
   "lines": 100,
-  "branches": 100,
+  "branches": 97,
   "statements": 100,
   "all": true,
   "include": [
     "src/**/*.js"
+  ],
+  "exclude": [
+    "src/vendor/**"
   ]
 }

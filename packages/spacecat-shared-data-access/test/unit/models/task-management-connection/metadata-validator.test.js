@@ -89,4 +89,16 @@ describe('validateMetadata()', () => {
         .to.throw('No metadata schema for provider: asana');
     });
   });
+
+  describe('invalid metadata shape', () => {
+    it('rejects null metadata', () => {
+      expect(() => validateMetadata('jira_cloud', null))
+        .to.throw('metadata must be a non-null object');
+    });
+
+    it('rejects array metadata', () => {
+      expect(() => validateMetadata('jira_cloud', [{ cloudId: VALID_CLOUD_ID }]))
+        .to.throw('metadata must be a non-null object');
+    });
+  });
 });

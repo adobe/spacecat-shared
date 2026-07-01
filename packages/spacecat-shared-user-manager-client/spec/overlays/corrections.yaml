@@ -1,0 +1,105 @@
+overlay: 1.0.0
+info:
+  title: User Manager spec corrections — align the vendored swagger with the live API
+  version: 1.0.0
+# The single source of truth for our corrections to the vendored Semrush User
+# Manager spec. scripts/apply-overlay.mjs reads THIS file and applies the actions
+# to the swagger2openapi output (build/openapi3.json); the vendored
+# spec/usermanager_swagger.yaml is never modified.
+#
+# CR1  Express Authorization: Bearer as the auth scheme; remove Auth-Data-Jwt.
+#      The spec models Auth-Data-Jwt as a required header on ~187 operations, but
+#      the live API authenticates on Authorization: Bearer <IMS> only (Semrush
+#      accepts the IMS bearer directly). Remove when Semrush fixes the spec upstream.
+# CR2  Correct GET /v1/workspaces/{id}/status — the spec types the 200 body as an
+#      array of WorkspaceCheckResponse, but the live API returns a single
+#      WorkspaceCheckResponse object ({ status: "not ready" | "created" | "error" }).
+#      The api-service transport reads it as an object (status.status === 'created'),
+#      so the typed surface must match. Remove when Semrush fixes the spec upstream.
+# CR3  Mark the always-present identity fields `required` on the response schemas the
+#      stateful mock serves. The vendored swagger marks NO response field required, so
+#      openapi-typescript emits everything optional — which lets typed fixtures silently
+#      omit fields and degrade fidelity, and (because the mock store keys entities by a
+#      required `id`) leaves the workspace factory's `id` typed `string | undefined`. We
+#      require only fields the live API always returns AND the mock's own handlers/seeds
+#      populate: `id` + `title` + `status` on the workspace (the trio the consumer reads
+#      on family/create), and `status` on the status check (the consumer's
+#      `status.status` read). Narrow/remove if a spec refresh adds upstream `required`.
+# CR4  Correct POST /v2/workspaces/{id}/resources/transfer — the spec types the 200 as a
+#      WorkspaceResourcesV2 ({ general, product_resources, seo }), but the live API returns
+#      the updated child workspace (a workspaceResponse: { id, title, status, parent_id, … }) —
+#      verified live 2026-06-26 against the funded test parent. The consumer does not read the
+#      transfer body, so this is fidelity-only, but the mock must not return a shape the live API
+#      never returns. Drop the array/object wrapper and point it at workspaceResponse (same
+#      remove-then-update ordering as CR2). Remove when Semrush fixes the spec upstream.
+actions:
+  # ── CR1: Express Authorization: Bearer, remove Auth-Data-Jwt ─────────────
+  # Live API: Authorization: Bearer <IMS> -> 200; Auth-Data-Jwt -> 401.
+  - target: "$.components.securitySchemes"
+    description: "CR1: add the imsBearer security scheme"
+    update:
+      imsBearer:
+        type: http
+        scheme: bearer
+        description: "IMS user bearer token, accepted directly by the Semrush User Manager API."
+
+  - target: "$"
+    description: "CR1: apply imsBearer as the global security requirement"
+    update:
+      security:
+        - imsBearer: []
+
+  - target: "$.paths.*.*.parameters[?(@.name == 'Auth-Data-Jwt')]"
+    description: "CR1: remove the Auth-Data-Jwt header param from every operation"
+    remove: true
+
+  # ── CR2: GET /v1/workspaces/{id}/status returns an object, not an array ───
+  # Upstream types the 200 as `type: array, items: WorkspaceCheckResponse`; the
+  # live API returns the bare object `{ status: "created" }`. Drop the array
+  # wrapper (remove the old schema, then point it at the object schema).
+  # ORDER MATTERS: the remove must run before the update — `update` deep-merges,
+  # so updating first would leave `type: array`/`items` alongside the new `$ref`
+  # (an invalid mixed schema). Do not reorder these two actions.
+  - target: "$.paths['/v1/workspaces/{id}/status'].get.responses['200'].content['application/json'].schema"
+    description: "CR2: drop the array wrapper on the status 200 schema"
+    remove: true
+
+  - target: "$.paths['/v1/workspaces/{id}/status'].get.responses['200'].content['application/json']"
+    description: "CR2: status returns a single WorkspaceCheckResponse object"
+    update:
+      schema:
+        $ref: "#/components/schemas/handlers.WorkspaceCheckResponse"
+
+  # ── CR3: mark always-present identity fields required ────────────────────
+  # Live always returns id/title/status on a workspace and status on the status
+  # check; requiring them gives the generated types real enforcement (the factory
+  # must supply them, Counterfact validates them) and makes the workspace `id`
+  # non-optional so it satisfies the store's Entity key. `required` overwrites
+  # (deepMerge replaces arrays), so each is the full required list for that schema.
+  - target: "$.components.schemas['handlers.workspaceResponse']"
+    description: "CR3: require id/title/status on the workspace response"
+    update:
+      required:
+        - id
+        - title
+        - status
+
+  - target: "$.components.schemas['handlers.WorkspaceCheckResponse']"
+    description: "CR3: require status on the workspace status check"
+    update:
+      required:
+        - status
+
+  # ── CR4: resources/transfer returns the updated workspace, not WorkspaceResourcesV2 ──
+  # Live POST /v2/workspaces/{id}/resources/transfer returns a workspaceResponse (the updated
+  # child), not the spec's WorkspaceResourcesV2. ORDER MATTERS (as CR2): remove the old schema
+  # before pointing it at the new $ref, so deepMerge doesn't leave the old node alongside it.
+  - target: "$.paths['/v2/workspaces/{id}/resources/transfer'].post.responses['200'].content['application/json'].schema"
+    description: "CR4: drop the WorkspaceResourcesV2 schema on the transfer 200"
+    remove: true
+
+  - target: "$.paths['/v2/workspaces/{id}/resources/transfer'].post.responses['200'].content['application/json']"
+    description: "CR4: transfer returns the updated workspaceResponse"
+    update:
+      schema:
+        $ref: "#/components/schemas/handlers.workspaceResponse"

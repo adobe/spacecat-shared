@@ -307,6 +307,107 @@ describe('AEM Detection', () => {
         const result = detectAEMVersion(htmlSource);
         expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
       });
+
+      it('should NOT detect AEM Headless via publish-p URL alone (asset delivery is not headless)', () => {
+        // A page that only loads an image from an AEM publish tier is not headless —
+        // it is simply fetching an asset; the publish-p host is not a delivery signal.
+        const htmlSource = `
+          <html>
+            <body>
+              <img src="/content/dam/mysite/hero.jpg">
+              <script>
+                window.__AEM__ = { host: "https://publish-p128342-e1259725.adobeaemcloud.com" };
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.OTHER);
+      });
+
+      it('should detect AEM Headless via GraphQL persisted query endpoint', () => {
+        const htmlSource = `
+          <html>
+            <body>
+              <div id="app"></div>
+              <script>
+                const GRAPHQL_ENDPOINT = "https://publish-p128342-e1259725.adobeaemcloud.com/graphql/execute.json/mysite/homepage";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should detect AEM Headless via Sling Model Exporter path', () => {
+        const htmlSource = `
+          <html>
+            <body>
+              <div id="root"></div>
+              <script id="__NEXT_DATA__" type="application/json">
+                {"props":{"pageProps":{"contentPath":"/content/mysite/en/home.model.json"}}}
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT classify as headless when GraphQL endpoint co-exists with lc-hash clientlibs (hybrid CS)', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-abc123-lc.min.css">
+            </head>
+            <body>
+              <div class="cmp-text" data-cmp-is="text">Content</div>
+              <script>
+                const GRAPHQL_ENDPOINT = "/graphql/execute.json/mysite/homepage";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.not.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT classify as headless when model.json co-exists with lc-hash clientlibs (AEM CS SPA Editor)', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-abc123-lc.min.css">
+            </head>
+            <body>
+              <div id="root"></div>
+              <script>
+                window.MODEL_PATH = "/content/mysite/en/home.model.json";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.not.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT classify as headless when model.json co-exists with MD5-hash clientlibs (AEM AMS)', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/base.min.123456789012345678901234567890ab.css">
+            </head>
+            <body>
+              <div id="root"></div>
+              <script>
+                window.MODEL_PATH = "/content/mysite/en/home.model.json";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.not.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
     });
 
     describe('threshold and priority testing', () => {

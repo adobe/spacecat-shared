@@ -110,6 +110,37 @@ interface CreateExperimentScheduleParams {
   timeout?: number;
 }
 
+interface ListJobsParams {
+  /** SpaceCat site UUID (required; maps to the `site` query param). */
+  siteId: string;
+  providerId?: string;
+  /** Single job status (QUEUED/RUNNING/COMPLETED/FAILED); upstream filter is single-valued. */
+  status?: string;
+  /** Job source, e.g. 'brand-activation'. */
+  source?: string;
+  /** Unix timestamp lower bound on submitted_at. */
+  submittedFrom?: number;
+}
+
+interface CreateBrandPresenceScheduleParams {
+  siteId: string;
+  /** SpaceCat brand UUID (sent top-level; required for v2 dedup). */
+  brandId?: string;
+  /** SpaceCat org UUID (sent top-level as `spacecat_org_id`). */
+  orgId?: string;
+  priority?: 'HIGH' | 'LOW';
+  /** Schedule description (not part of the dedup key). */
+  description?: string;
+  triggerImmediately?: boolean;
+  timeout?: number;
+}
+
+interface BrandPresenceScheduleResult {
+  scheduleId: string;
+  /** True when DRS returned a 409 (a matching schedule already existed). */
+  alreadyExisted: boolean;
+}
+
 interface ScheduleJobsSummary {
   total: number;
   completed: number;
@@ -152,6 +183,10 @@ declare class DrsClient {
   createExperimentSchedule(params: CreateExperimentScheduleParams): Promise<ScheduleStatusResult>;
   getScheduleStatus(siteId: string, scheduleId: string): Promise<ScheduleStatusResult>;
   getJob(jobId: string): Promise<Record<string, unknown>>;
+  listJobs(params: ListJobsParams): Promise<Record<string, unknown>[]>;
+  createBrandPresenceSchedule(
+    params: CreateBrandPresenceScheduleParams,
+  ): Promise<BrandPresenceScheduleResult>;
 }
 
 export declare const SCRAPE_DATASET_IDS: Readonly<{

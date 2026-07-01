@@ -31,7 +31,7 @@ npm run mock              # serves on http://localhost:4010
 | Env var | Default | Purpose |
 | --- | --- | --- |
 | `MOCK_PORT` | `4010` | listen port |
-| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data`); unknown → default |
+| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `two-hierarchies`); unknown → default |
 | `MOCK_SEED_FILE` | — | path to a JSON `Snapshot` to boot from; **takes precedence** over `MOCK_SEED` |
 
 ```bash
@@ -137,18 +137,25 @@ method that calls it.
 > with `live_id`/`draft_id` mirrored and `is_draft: true`/`publish_status: 'draft'` — NOT a flat
 > echo of the request body. `addAiModel` resolves the catalog model's `name` and `icon` onto the
 > response (with an empty `key`), matching the live add path; an unmodelled `model_id` keeps the
-> factory default (GPT-4o).
+> catalog-valid factory default (`search-gpt` / ChatGPT).
 
 ---
 
 ## 4. Seeds
 
-Two named seeds ship in `mock/seeds.js`:
+Three named seeds ship in `mock/seeds.js`:
 
-- **`empty-workspace`** — the seed workspace with no projects.
-- **`workspace-with-data`** (default) — one project under the seed workspace, with an AI model, a
-  prompt, an own-brand benchmark, and a brand URL. Canonical ids are exported as `SEED_IDS`
-  (`workspaceId`, `projectId`, `aiModelId`, `promptId`, `benchmarkId`, `brandUrlId`).
+- **`empty-workspace`** — the (child) seed workspace with no projects.
+- **`workspace-with-data`** (default) — one LIVE US/en market under the brand's **child**
+  sub-workspace (`SEED_IDS.workspaceId`, the id a correctly-anchored brand resolves to — NOT the org
+  parent), with a catalog-valid AI model (`search-gpt`), a `topic:`/`source:`/`intent:`/`type:`-tagged
+  prompt, `category:` project tags, an own-brand benchmark, and a brand URL. Canonical ids are
+  exported as `SEED_IDS` (`parentWorkspaceId`, `workspaceId`, `projectId`, `aiModelId`, `promptId`,
+  `benchmarkId`, `brandUrlId`).
+- **`two-hierarchies`** — a strict superset of `workspace-with-data` plus a second, fully
+  independent parent/child hierarchy with its own LIVE DE/de market (`SEED_IDS.secondWorkspaceId` /
+  `secondProjectId`), for the dual-org case where two mock-wired orgs each need a distinct
+  `semrush_workspace_id`.
 
 Boot from a custom state with `MOCK_SEED_FILE=/path/to/snapshot.json` or replace state at runtime
 with `POST /__seed` (§5). A `Snapshot` is a plain JSON object keyed `<resource>:<scope>`:
@@ -156,7 +163,7 @@ with `POST /__seed` (§5). A `Snapshot` is a plain JSON object keyed `<resource>
 ```jsonc
 {
   "projects:<ws>":            [ { "id": "<pid>", "name": "Acme" } ],
-  "ai_models:<ws>:<pid>":     [ { "id": "<id>", "model": { "id": "<mid>", "key": "gpt-4o", "name": "GPT-4o" }, "prompts_count": 0 } ],
+  "ai_models:<ws>:<pid>":     [ { "id": "<id>", "model": { "id": "eab23d14-df70-463f-8779-3f6a4ba770bc", "key": "search-gpt", "name": "ChatGPT", "icon": "openai" }, "prompts_count": 0 } ],
   "prompts:<ws>:<pid>":       [ { "id": "<id>", "name": "What is Acme?", "is_new": false, "tags": [] } ],
   "benchmarks:<ws>:<pid>":    [ { "id": "<bid>", "main_brand": true, "brand_name": "Acme", "domain": "acme.com", "brand_aliases": [], "rejected_brand_aliases": [], "color": "", "favorite": false, "products_count": 0 } ],
   "brand_urls:<ws>:<pid>:<bid>": [ { "id": "<id>", "url": "https://acme.com/about", "type": "own" } ],
@@ -245,7 +252,7 @@ const snapshot = buildSeed({
   projects: [{
     id: projectId,
     name: 'Acme',
-    aiModels: [createProjectAiModelMock({ model: createAiModelMock({ name: 'GPT-4o' }) })],
+    aiModels: [createProjectAiModelMock({ model: createAiModelMock() })], // default = catalog search-gpt
     prompts: [createPromptMock({ name: 'What is Acme?' })],
   }],
   quota: { projects: 3, prompts: 1500 }, // omit for unlimited

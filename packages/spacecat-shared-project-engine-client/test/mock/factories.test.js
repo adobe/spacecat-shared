@@ -13,6 +13,7 @@
 import { expect } from 'chai';
 import {
   createAiModelMock,
+  createLiveProjectMock,
   createProjectResponseFromRequest,
   applyProjectUpdate,
   createBenchmarkMock,
@@ -30,8 +31,13 @@ import {
 // component schema; these runtime tests cover the factory bodies (defaults + override merge) so
 // coverage stays complete and the live-verified shapes are pinned.
 describe('factories — live-shaped entities', () => {
-  it('createAiModelMock carries an icon (the live add path returns name + icon)', () => {
-    expect(createAiModelMock()).to.include({ key: 'gpt-4o', name: 'GPT-4o', icon: 'openai' });
+  it('createAiModelMock defaults to a catalog-valid model (search-gpt) with its icon', () => {
+    // The default is the live catalog's ChatGPT/search-gpt entry (id/key/name/icon all from the
+    // shared AI_MODEL_CATALOG), so a seeded assignment or add-path fallback is never an
+    // unresolvable model chip (#1754 gap 4). `icon` matters — the add path returns name + icon.
+    expect(createAiModelMock()).to.include({
+      id: 'eab23d14-df70-463f-8779-3f6a4ba770bc', key: 'search-gpt', name: 'ChatGPT', icon: 'openai',
+    });
     expect(createAiModelMock({ icon: 'claude' }).icon).to.equal('claude');
   });
 
@@ -107,6 +113,56 @@ describe('factories — live-shaped entities', () => {
     expect(p.settings.ai.country).to.deep.equal({ code: '', name: '' });
     expect(p.settings.ai.location).to.deep.equal({ id: 0, name: null });
     expect(p.settings.ai.primary_url).to.equal('');
+  });
+
+  it('createLiveProjectMock defaults to a live, market-less project (no request)', () => {
+    const p = createLiveProjectMock();
+    expect(p.id).to.match(/^[0-9a-f-]{36}$/);
+    // live, not a draft — the seed/default side of #1754 gap 3.
+    expect(p).to.include({
+      live_id: p.id,
+      draft_id: p.id,
+      type: 'ai',
+      name: 'Seeded Project',
+      domain: '',
+      // is_draft stays true even when live — the publish route flips only publish_status.
+      is_draft: true,
+      publish_status: 'live',
+      published_at: '2026-01-01T00:00:00Z',
+      shared_with: 0,
+    });
+    // empty request → empty settings.ai, so it has no resolvable geo/lang (caller supplies one).
+    expect(p.settings.ai).to.deep.include({ primary_url: '', prompts_count: 0 });
+    expect(p.settings.ai.language).to.deep.equal({ id: '', name: '' });
+  });
+
+  it('createLiveProjectMock builds a resolvable live market from a request (US/en)', () => {
+    const p = createLiveProjectMock({
+      id: 'b8c9d0e1-f2a3-4b4c-8d5e-7f8091021324',
+      type: 'ai',
+      name: 'Seeded Project',
+      domain: 'example.com',
+      brand_names: ['Seeded Brand'],
+      brand_name_display: 'Seeded Brand',
+      language_id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', // catalog English → en
+      country_code: 'us',
+      location_id: 2840,
+      location_name: 'United States',
+      published_at: '2030-06-01T00:00:00Z',
+    });
+    expect(p).to.include({
+      id: 'b8c9d0e1-f2a3-4b4c-8d5e-7f8091021324',
+      live_id: 'b8c9d0e1-f2a3-4b4c-8d5e-7f8091021324',
+      publish_status: 'live',
+      is_draft: true,
+      domain: 'example.com',
+      published_at: '2030-06-01T00:00:00Z',
+    });
+    // geo (location.id) + language.name (ISO) are the load-bearing fields api-service's listMarkets
+    // reads to keep the project as an addressable market.
+    expect(p.settings.ai.location.id).to.equal(2840);
+    expect(p.settings.ai.language).to.deep.equal({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'en' });
+    expect(p.settings.ai.country).to.deep.equal({ code: 'us', name: 'United States' });
   });
 
   it('applyProjectUpdate nests brand fields under settings.ai and keeps name/type/domain top-level', () => {

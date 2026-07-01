@@ -65,9 +65,11 @@ const ENGLISH_LANGUAGE_ID = '5a0a33ed-7f5c-4901-befd-a042c0350da1'; // catalog "
 const US_GEO_TARGET_ID = 2840; // Google geoTargetId (United States)
 
 // --- Hierarchy 2 — a second, fully independent mock-wired org (unique `semrush_workspace_id`s),
-// present only in the `two-hierarchies` seed. A German market so the two read distinctly.
-const PARENT_WORKSPACE_ID_2 = 'a2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d';
-const CHILD_WORKSPACE_ID_2 = 'b3c4d5e6-f7a8-4b9c-8d0e-2f3a4b5c6d7e';
+// present only in the `two-hierarchies` seed. A German market so the two read distinctly. These
+// two ids are the same UUIDs as the User Manager mock's second hierarchy (UM seeds.js), so PE
+// projects and UM workspaces line up across the two packages.
+const PARENT_WORKSPACE_ID_2 = 'a2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d'; // == UM parent2
+const CHILD_WORKSPACE_ID_2 = 'b3c4d5e6-f7a8-4b9c-8d0e-2f3a4b5c6d7e'; // == UM child2
 const PROJECT_ID_2 = 'c4d5e6f7-a8b9-4c0d-8e1f-3a4b5c6d7e8f';
 const AI_MODEL_ASSIGNMENT_ID_2 = 'c5d6e7f8-a9b0-4c1d-8e2f-4a5b6c7d8e9f';
 const GERMAN_LANGUAGE_ID = 'e5282ae9-83a6-4ea3-b3cf-5e99d8f51eca'; // catalog "German" → ISO de

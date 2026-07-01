@@ -33,8 +33,11 @@ import { createWorkspaceMock } from './factories.js';
 // Real-shaped fixtures: the User Manager API types every workspace id as a UUID-like string, so the
 // seeds use fixed UUIDs (not `ws-1`) to mirror production data. Fixed, not generated, so SEED_IDS
 // stays stable for assertions.
-const PARENT_WORKSPACE_ID = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'; // org parent workspace (path {id})
-const CHILD_WORKSPACE_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'; // a brand sub-workspace under it
+// Hierarchy 1 parent/child — the same UUIDs as the Project Engine mock's first hierarchy
+// (PE seeds.js), so PE projects and UM workspaces line up across the two packages. The parent
+// is the URL path `{id}`; the child is a brand sub-workspace under it.
+const PARENT_WORKSPACE_ID = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'; // == PE parent
+const CHILD_WORKSPACE_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'; // == PE child
 
 // A second, fully independent hierarchy (present only in `two-hierarchies`). Ids match the Project
 // Engine mock's second hierarchy so PE projects and UM workspaces line up across the two packages.

@@ -12,7 +12,7 @@
 
 /**
  * Abstract base class for ticket provider clients.
- * Subclasses must implement createTicket().
+ * Subclasses must implement createTicket(), listProjects(), and listIssueTypes().
  *
  * Attachment support is intentionally NOT part of this base interface (ISP):
  * not every provider supports attachments. Providers that do (e.g. JiraCloudClient)
@@ -45,5 +45,24 @@ export default class BaseTicketClient {
   // eslint-disable-next-line no-unused-vars, class-methods-use-this
   async createTicket(ticketData) {
     throw new Error('createTicket() must be implemented by subclass');
+  }
+
+  /**
+   * Return all accessible projects for this connection.
+   * @returns {Promise<Array<{id, key, name}>>}
+   */
+  // eslint-disable-next-line class-methods-use-this
+  async listProjects() {
+    throw new Error('listProjects() must be implemented by subclass');
+  }
+
+  /**
+   * Return issue types for the given Jira project.
+   * @param {string} projectId
+   * @returns {Promise<Array<{id, name, subtask}>>}
+   */
+  // eslint-disable-next-line no-unused-vars, class-methods-use-this
+  async listIssueTypes(projectId) {
+    throw new Error('listIssueTypes() must be implemented by subclass');
   }
 }

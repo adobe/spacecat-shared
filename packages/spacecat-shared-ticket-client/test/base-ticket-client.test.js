@@ -27,4 +27,14 @@ describe('BaseTicketClient', () => {
     const client = new ConcreteClient({}, {}, {});
     await expect(client.createTicket({})).to.be.rejectedWith('createTicket() must be implemented');
   });
+
+  it('throws when listProjects is not implemented', async () => {
+    const client = new ConcreteClient({}, {}, {});
+    await expect(client.listProjects()).to.be.rejectedWith('listProjects() must be implemented');
+  });
+
+  it('throws when listIssueTypes is not implemented', async () => {
+    const client = new ConcreteClient({}, {}, {});
+    await expect(client.listIssueTypes('PROJ')).to.be.rejectedWith('listIssueTypes() must be implemented');
+  });
 });

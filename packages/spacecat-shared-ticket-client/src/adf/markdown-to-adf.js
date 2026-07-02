@@ -12,7 +12,8 @@
 
 import { lexer } from 'marked';
 
-const MAX_INPUT_BYTES = 1024 * 1024; // 1 MB — prevents DoS via large inputs; Lambda sync payload is 6 MB
+// 1 MB cap — prevents DoS via large inputs (Lambda sync payload limit is 6 MB)
+const MAX_INPUT_BYTES = 1024 * 1024;
 const MAX_DEPTH = 20; // prevents stack overflow via deeply nested markdown
 
 /**

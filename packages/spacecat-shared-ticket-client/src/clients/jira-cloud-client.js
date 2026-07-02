@@ -202,7 +202,10 @@ export default class JiraCloudClient extends BaseTicketClient {
       // Date.UTC + getUTC* avoids local-timezone skew in non-Lambda environments.
       const [y, m, d] = dueDate.split('-').map(Number);
       const parsed = new Date(Date.UTC(y, m - 1, d));
-      if (parsed.getUTCFullYear() !== y || parsed.getUTCMonth() !== m - 1 || parsed.getUTCDate() !== d) {
+      const dateValid = parsed.getUTCFullYear() === y
+        && parsed.getUTCMonth() === m - 1
+        && parsed.getUTCDate() === d;
+      if (!dateValid) {
         throw new Error(`Invalid dueDate: not a real calendar date, got: ${dueDate}`);
       }
     }

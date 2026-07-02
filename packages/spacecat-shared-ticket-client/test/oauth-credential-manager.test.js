@@ -686,9 +686,7 @@ describe('OAuthCredentialManager', () => {
           expires_in: 3600,
         }),
       });
-      const manager = new OAuthCredentialManager(
-        smClient, '/test/secret', { fetch: fetchStub }, makeLog(),
-      );
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', { fetch: fetchStub }, makeLog());
 
       // First call fails — lock must be cleared by .finally()
       await expect(manager.refreshAuthHeaders()).to.be.rejectedWith(

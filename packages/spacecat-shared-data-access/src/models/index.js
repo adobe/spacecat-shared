@@ -26,6 +26,7 @@ export * from './geo-experiment/index.js';
 export * from './fix-entity/index.js';
 export * from './fix-entity-suggestion/index.js';
 export * from './experiment/index.js';
+export * from './feedback-event/index.js';
 export * from './import-job/index.js';
 export * from './import-url/index.js';
 export * from './key-event/index.js';

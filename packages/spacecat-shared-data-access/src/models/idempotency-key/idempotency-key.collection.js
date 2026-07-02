@@ -12,7 +12,7 @@
 
 import { hasText, isValidUUID } from '@adobe/spacecat-shared-utils';
 
-import { ValidationError } from '../../errors/index.js';
+import { DataAccessError, ValidationError } from '../../errors/index.js';
 import BaseCollection from '../base/base.collection.js';
 
 /**
@@ -55,7 +55,7 @@ class IdempotencyKeyCollection extends BaseCollection {
       .limit(1);
 
     if (error) {
-      throw error;
+      throw new DataAccessError('Failed to find active idempotency key', { entityName: 'IdempotencyKey' }, error);
     }
 
     if (!data || data.length === 0) {
@@ -79,7 +79,7 @@ class IdempotencyKeyCollection extends BaseCollection {
       .select('id');
 
     if (error) {
-      throw error;
+      throw new DataAccessError('Failed to delete expired idempotency keys', { entityName: 'IdempotencyKey' }, error);
     }
 
     return (data ?? []).length;

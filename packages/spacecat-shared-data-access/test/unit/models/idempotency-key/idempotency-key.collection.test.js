@@ -102,11 +102,11 @@ describe('IdempotencyKeyCollection', () => {
       expect(Date.now() - filterTimestamp.getTime()).to.be.lessThan(5000);
     });
 
-    it('throws when PostgREST returns an error', async () => {
-      setupSelectChain({ data: null, error: new Error('DB error') });
+    it('throws DataAccessError when PostgREST returns an error', async () => {
+      setupSelectChain({ data: null, error: { code: 'PGRST205', message: 'DB error' } });
 
       await expect(instance.findActiveKey('test-key', VALID_ORG_ID))
-        .to.be.rejectedWith('DB error');
+        .to.be.rejectedWith('Failed to find active idempotency key');
     });
 
     it('throws ValidationError when key is missing', async () => {
@@ -164,10 +164,11 @@ describe('IdempotencyKeyCollection', () => {
       expect(Date.now() - filterTimestamp.getTime()).to.be.lessThan(5000);
     });
 
-    it('throws when PostgREST returns an error', async () => {
-      setupDeleteChain({ data: null, error: new Error('DB error') });
+    it('throws DataAccessError when PostgREST returns an error', async () => {
+      setupDeleteChain({ data: null, error: { code: 'PGRST205', message: 'DB error' } });
 
-      await expect(instance.deleteExpired()).to.be.rejectedWith('DB error');
+      await expect(instance.deleteExpired())
+        .to.be.rejectedWith('Failed to delete expired idempotency keys');
     });
   });
 });

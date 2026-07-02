@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.7.0...@adobe/spacecat-shared-project-engine-client-v1.7.1) (2026-07-02)
+
+### Bug Fixes
+
+* **project-engine-client:** retype aio-create-prompt-v2's 200 response (CR14) ([#1765](https://github.com/adobe/spacecat-shared/issues/1765)) ([33315e1](https://github.com/adobe/spacecat-shared/commit/33315e1bcd3d7d789aaec9e1a72c12e69bfa7799)), closes [#1764](https://github.com/adobe/spacecat-shared/issues/1764) [#1764](https://github.com/adobe/spacecat-shared/issues/1764)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.6.0...@adobe/spacecat-shared-project-engine-client-v1.7.0) (2026-07-02)
 
 ### Features

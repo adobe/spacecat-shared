@@ -11,19 +11,21 @@
  */
 
 /**
- * Test-only control route for parent-pool metering — this is how a test / the cross-repo harness
- * *provides* a parent workspace's available pool, so child creates / resource transfers that exceed
- * it return the 422 "insufficient available units" (see mock/quota.js).
+ * Test-only control route for AI resource accounting — this is how a test / the cross-repo harness
+ * *provides* a workspace's finite `{ used, drafted, total }` resources, so it becomes metered and
+ * child creates / resource transfers that over-draw it return the 422 "insufficient units"
+ * (see mock/quota.js). A workspace with no record stays unmetered (unlimited).
  *
- *   POST /__quota  { workspaceId, projects?, prompts? }  — set (absolute) the available pool. An
- *     omitted/null dimension is unlimited. Returns the stored record.
- *   GET  /__quota?workspaceId=<ws>                       — read the pool.
+ *   POST /__quota  { workspaceId, projects?, prompts? }  — set (absolute) resources. Each dimension
+ *     is a bare `total` number OR a `{ used, drafted, total }` object; an omitted dimension is left
+ *     unchanged. Returns the stored `ai` resources.
+ *   GET  /__quota?workspaceId=<ws>                       — read a workspace's resources.
  *
  * Not part of the User Manager API; materialized into `.counterfact/routes/` by the mock runner and
  * excluded from coverage.
  */
 
-/** POST /__quota — set a parent workspace's available pool. */
+/** POST /__quota — set a workspace's finite AI resources (makes it metered). */
 export function POST($) {
   const { body, context } = $;
   if (!body?.workspaceId) {
@@ -33,10 +35,14 @@ export function POST($) {
       contentType: 'application/json',
     };
   }
-  const record = context.quota.set(body.workspaceId, {
-    projects: body?.projects ?? null,
-    prompts: body?.prompts ?? null,
-  });
+  const input = {};
+  if (body.projects !== undefined && body.projects !== null) {
+    input.projects = body.projects;
+  }
+  if (body.prompts !== undefined && body.prompts !== null) {
+    input.prompts = body.prompts;
+  }
+  const record = context.quota.set(body.workspaceId, input);
   return { status: 200, body: record, contentType: 'application/json' };
 }
 

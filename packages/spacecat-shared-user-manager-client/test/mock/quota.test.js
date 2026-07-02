@@ -12,99 +12,163 @@
 
 import { expect } from 'chai';
 import { InMemoryStore } from '../../mock/store.js';
-import { createQuota, POOL_COLLECTION } from '../../mock/quota.js';
+import { createQuota, RESOURCES_COLLECTION, AI_DIMS } from '../../mock/quota.js';
+
+const dim = (used, drafted, total) => ({ used, drafted, total });
 
 function setup() {
   const store = new InMemoryStore();
   return { store, quota: createQuota(store) };
 }
 
-describe('mock quota — parent pool', () => {
-  it('exports the pool collection name', () => {
-    expect(POOL_COLLECTION).to.equal('workspace_pool');
+describe('mock quota — per-workspace AI resource accounting', () => {
+  it('exports the resources collection name and the AI dimensions', () => {
+    expect(RESOURCES_COLLECTION).to.equal('workspace_resources');
+    expect([...AI_DIMS]).to.deep.equal(['projects', 'prompts']);
   });
 
-  describe('set / pool', () => {
-    it('sets an absolute pool (create), then replaces it (update)', () => {
+  describe('resources', () => {
+    it('returns null for an unmetered workspace, the ai record once set', () => {
       const { quota } = setup();
-      expect(quota.set('p', { projects: 5, prompts: 100 }))
-        .to.deep.equal({ id: 'p', projects: 5, prompts: 100 });
-      expect(quota.pool('p')).to.deep.equal({ projects: 5, prompts: 100 });
-      // update branch (record already exists)
-      expect(quota.set('p', { projects: 2 }))
-        .to.deep.equal({ id: 'p', projects: 2, prompts: null });
-      expect(quota.pool('p')).to.deep.equal({ projects: 2, prompts: null });
-    });
-
-    it('treats omitted dimensions as unlimited (null)', () => {
-      const { quota } = setup();
-      expect(quota.set('p')).to.deep.equal({ id: 'p', projects: null, prompts: null });
-    });
-
-    it('returns null for a workspace with no pool', () => {
-      const { quota } = setup();
-      expect(quota.pool('nope')).to.equal(null);
+      expect(quota.resources('w')).to.equal(null);
+      quota.set('w', { projects: 5, prompts: 100 });
+      expect(quota.resources('w')).to.deep.equal({
+        projects: dim(0, 0, 5),
+        prompts: dim(0, 0, 100),
+        weekly_prompts: dim(0, 0, 0),
+      });
     });
   });
 
-  describe('canAllocate', () => {
-    it('unlimited when the owner is unset (e.g. a transfer onto a parent-less workspace)', () => {
-      const { quota } = setup();
-      expect(quota.canAllocate(undefined, { projects: 999 })).to.equal(true);
-      expect(quota.canAllocate('', { projects: 999 })).to.equal(true);
-    });
-
-    it('unlimited when no pool record exists', () => {
-      const { quota } = setup();
-      expect(quota.canAllocate('p', { projects: 999, prompts: 999 })).to.equal(true);
-    });
-
-    it('covers a draw within the pool, and a null dimension is unlimited', () => {
-      const { quota } = setup();
-      quota.set('p', { projects: null, prompts: 100 }); // projects unlimited, prompts finite
-      expect(quota.canAllocate('p', { projects: 999, prompts: 100 })).to.equal(true);
-      expect(quota.canAllocate('p', { projects: 999, prompts: 101 })).to.equal(false); // prompts short
-    });
-
-    it('rejects when the projects dimension is insufficient', () => {
-      const { quota } = setup();
-      quota.set('p', { projects: 1, prompts: null });
-      expect(quota.canAllocate('p', { projects: 2 })).to.equal(false);
-      expect(quota.canAllocate('p', {})).to.equal(true); // empty draw → 0 ≤ 1
+  describe('set / applyDim', () => {
+    it('creates then updates; a bare number sets total, an object sets used/drafted/total', () => {
+      const { quota, store } = setup();
+      // create branch — bare numbers → total, used/drafted default 0
+      quota.set('w', { projects: 3, prompts: 50 });
+      expect(store.get(RESOURCES_COLLECTION, 'w').ai.projects).to.deep.equal(dim(0, 0, 3));
+      // update branch — object with only `used`; other dims/fields preserved
+      quota.set('w', { projects: { used: 1 } });
+      expect(quota.resources('w').projects).to.deep.equal(dim(1, 0, 3));
+      // object with only `drafted`, and only `total`
+      quota.set('w', { projects: { drafted: 2 } });
+      expect(quota.resources('w').projects).to.deep.equal(dim(1, 2, 3));
+      quota.set('w', { projects: { total: 9 } });
+      expect(quota.resources('w').projects).to.deep.equal(dim(1, 2, 9));
+      // full object
+      quota.set('w', { prompts: { used: 4, drafted: 5, total: 60 } });
+      expect(quota.resources('w').prompts).to.deep.equal(dim(4, 5, 60));
+      // omitted dimension is left untouched (applyDim null branch)
+      quota.set('w', {});
+      expect(quota.resources('w')).to.deep.equal({
+        projects: dim(1, 2, 9), prompts: dim(4, 5, 60), weekly_prompts: dim(0, 0, 0),
+      });
     });
   });
 
-  describe('draw', () => {
-    it('no-ops (null) when the owner is unset or unmetered', () => {
+  describe('canCarve (free = total − used, all-or-nothing)', () => {
+    it('is unlimited when the master is unset or unmetered', () => {
       const { quota } = setup();
-      expect(quota.draw(undefined, { projects: 1 })).to.equal(null);
-      expect(quota.draw('p', { projects: 1 })).to.equal(null); // no pool
+      expect(quota.canCarve(undefined, { projects: 999 })).to.equal(true);
+      expect(quota.canCarve('', { prompts: 999 })).to.equal(true);
+      expect(quota.canCarve('nope', { projects: 999, prompts: 999 })).to.equal(true);
     });
 
-    it('deducts numeric dimensions and leaves null dimensions unlimited (projects metered)', () => {
+    it('respects free units per dimension (total − used)', () => {
       const { quota } = setup();
-      quota.set('p', { projects: 5, prompts: null });
-      expect(quota.draw('p', { projects: 2, prompts: 999 }))
-        .to.deep.equal({ projects: 3, prompts: null });
-      expect(quota.pool('p')).to.deep.equal({ projects: 3, prompts: null });
-      // default-0 draw on an omitted dimension
-      expect(quota.draw('p', {})).to.deep.equal({ projects: 3, prompts: null });
-    });
-
-    it('deducts the prompts dimension while projects stays unlimited (mirror)', () => {
-      const { quota } = setup();
-      quota.set('p', { projects: null, prompts: 50 });
-      expect(quota.draw('p', { prompts: 10 }))
-        .to.deep.equal({ projects: null, prompts: 40 });
-      // omitted prompts → 0 deduction
-      expect(quota.draw('p', {})).to.deep.equal({ projects: null, prompts: 40 });
+      quota.set('m', { projects: { used: 2, total: 10 }, prompts: { used: 100, total: 800 } });
+      expect(quota.canCarve('m', { projects: 8, prompts: 700 })).to.equal(true); // exactly free
+      expect(quota.canCarve('m', { projects: 9 })).to.equal(false); // projects short (free 8)
+      expect(quota.canCarve('m', { prompts: 701 })).to.equal(false); // prompts short (free 700)
+      expect(quota.canCarve('m', {})).to.equal(true); // empty need
     });
   });
 
-  it('usage exposes the pool for introspection', () => {
-    const { quota } = setup();
-    quota.set('p', { projects: 4, prompts: 80 });
-    expect(quota.usage('p')).to.deep.equal({ workspaceId: 'p', pool: { projects: 4, prompts: 80 } });
-    expect(quota.usage('nope')).to.deep.equal({ workspaceId: 'nope', pool: null });
+  describe('moveFromMaster', () => {
+    it('no-ops (null) for an unset or unmetered master', () => {
+      const { quota } = setup();
+      expect(quota.moveFromMaster(undefined, { projects: 1 })).to.equal(null);
+      expect(quota.moveFromMaster('nope', { projects: 1 })).to.equal(null);
+    });
+
+    it('decrements total on a positive delta and returns units on a negative delta', () => {
+      const { quota } = setup();
+      quota.set('m', { projects: 10, prompts: 800 });
+      expect(quota.moveFromMaster('m', { projects: 3, prompts: 300 })).to.deep.equal({
+        projects: dim(0, 0, 7), prompts: dim(0, 0, 500), weekly_prompts: dim(0, 0, 0),
+      });
+      // negative delta gives units back; omitted dim → 0 move
+      expect(quota.moveFromMaster('m', { projects: -2 }).projects).to.deep.equal(dim(0, 0, 9));
+    });
+  });
+
+  describe('applyTransfer (absolute set + master movement)', () => {
+    it('carves from the master and sets the child total (fresh child)', () => {
+      const { quota } = setup();
+      quota.set('m', { projects: 10, prompts: 800 });
+      expect(quota.applyTransfer('m', 'c', { projects: 2, prompts: 100 })).to.deep.equal({ ok: true });
+      expect(quota.resources('c').projects).to.deep.equal(dim(0, 0, 2));
+      expect(quota.resources('m').projects).to.deep.equal(dim(0, 0, 8)); // 10 − 2
+      expect(quota.resources('m').prompts).to.deep.equal(dim(0, 0, 700)); // 800 − 100
+    });
+
+    it('is idempotent — re-sending the same total moves nothing further', () => {
+      const { quota } = setup();
+      quota.set('m', { projects: 10 });
+      quota.applyTransfer('m', 'c', { projects: 2 });
+      quota.applyTransfer('m', 'c', { projects: 2 }); // delta 0
+      expect(quota.resources('m').projects.total).to.equal(8);
+      expect(quota.resources('c').projects.total).to.equal(2);
+    });
+
+    it('lowers the child and returns the surplus to the master (release)', () => {
+      const { quota } = setup();
+      quota.set('m', { projects: 10 });
+      quota.applyTransfer('m', 'c', { projects: 5 }); // master 5
+      quota.applyTransfer('m', 'c', { projects: 2 }); // release 3 → master 8
+      expect(quota.resources('m').projects.total).to.equal(8);
+      expect(quota.resources('c').projects.total).to.equal(2);
+    });
+
+    it('releases a dimension all the way to zero (RELEASE_ALLOCATION / decommission)', () => {
+      const { quota } = setup();
+      quota.set('m', { projects: 10 });
+      quota.applyTransfer('m', 'c', { projects: 4 }); // master 6
+      expect(quota.applyTransfer('m', 'c', { projects: 0 })).to.deep.equal({ ok: true }); // release all
+      expect(quota.resources('c').projects.total).to.equal(0);
+      expect(quota.resources('m').projects.total).to.equal(10); // fully returned
+    });
+
+    it('rejects (ok:false) and moves nothing when the master cannot cover a raise', () => {
+      const { quota } = setup();
+      quota.set('m', { projects: { used: 8, total: 10 } }); // free 2
+      expect(quota.applyTransfer('m', 'c', { projects: 3 })).to.deep.equal({ ok: false });
+      expect(quota.resources('m').projects.total).to.equal(10); // untouched
+      expect(quota.resources('c')).to.equal(null); // child never set
+    });
+
+    it('only touches dimensions present in the transfer', () => {
+      const { quota } = setup();
+      quota.set('m', { projects: 10, prompts: 800 });
+      quota.applyTransfer('m', 'c', { prompts: 100 }); // projects omitted
+      expect(quota.resources('c').prompts.total).to.equal(100);
+      expect(quota.resources('c').projects.total).to.equal(0); // untouched
+      expect(quota.resources('m').projects.total).to.equal(10); // master projects untouched
+    });
+
+    it('sets the child total but leaves the master unmoved when the master is unmetered', () => {
+      const { quota } = setup();
+      expect(quota.applyTransfer('unmetered', 'c', { projects: 4 })).to.deep.equal({ ok: true });
+      expect(quota.resources('c').projects.total).to.equal(4);
+      expect(quota.resources('unmetered')).to.equal(null);
+    });
+  });
+
+  describe('usage', () => {
+    it('exposes resources for introspection (null when unmetered)', () => {
+      const { quota } = setup();
+      expect(quota.usage('nope')).to.deep.equal({ workspaceId: 'nope', resources: null });
+      quota.set('w', { projects: 4 });
+      expect(quota.usage('w').resources.projects).to.deep.equal(dim(0, 0, 4));
+    });
   });
 });

@@ -371,6 +371,12 @@ async function waitForReady(apiBase, deadline, getStderr) {
       expect(ai.weekly_prompts.total).to.equal(0); // daily-only
     });
 
+    it('GET /resources on an unmetered workspace returns zeroed defaults (no record set)', async () => {
+      const ai = await readAi(PARENT); // seeded but never given resources → unmetered
+      expect(ai.projects).to.deep.equal({ used: 0, drafted: 0, total: 0 });
+      expect(ai.prompts).to.deep.equal({ used: 0, drafted: 0, total: 0 });
+    });
+
     it('GET /parent/resources returns the workspace\'s OWN allocation (Gate 0, not the master pool)', async () => {
       await setResources(CHILD, { projects: 2, prompts: 100 });
       const { data } = await client.GET('/v1/workspaces/{id}/parent/resources', {

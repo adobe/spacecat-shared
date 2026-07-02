@@ -8,16 +8,17 @@ gateway, `/enterprise/projects/api`) — two deliberately separate packages, one
 - `src/` — the published client (`createSerenityUserManagerApiClient`, an `openapi-fetch` client)
   + generated types (`src/generated/types.ts`). This is the ONLY thing that ships
   (`files: ["src"]`).
-- `mock/` — the stateful mock (store, factories, seeds, parent-pool quota metering, bearer auth,
-  Counterfact handlers, runner). NOT published (`files: ["src"]` ships only `src/`, so the
+- `mock/` — the stateful mock (store, factories, seeds, per-workspace AI resource accounting, bearer
+  auth, Counterfact handlers, runner). NOT published (`files: ["src"]` ships only `src/`, so the
   `./mock/*` subpath export resolves via the in-workspace symlink only, never the published
   registry tarball — intended: consumers use the mock as an in-monorepo dev dependency, not off
   npm). Boot with `npm run mock` (serves on `:4010` under `--prefix /enterprise/users/api`).
-  **Usage manual: `docs/mock-usage.md`** (humans + agents — auth, the five-route endpoint
-  inventory, seeds, control routes, quota, troubleshooting); **statefulness + live-fidelity record:
-  `docs/mock-statefulness.md`**. Parent-pool quota (the `422` the live gateway returns when a child
-  create / resource transfer over-draws the parent allocation) is in `mock/quota.js`, set via the
-  `POST /__quota` control route or `buildSeed({ pools })`; default — no pool record — is unlimited.
+  **Usage manual: `docs/mock-usage.md`** (humans + agents — auth, the endpoint inventory, seeds,
+  control routes, resources, troubleshooting); **statefulness + live-fidelity record:
+  `docs/mock-statefulness.md`**. AI resource accounting — per-workspace `{ used, drafted, total }`
+  for `ai.{projects,prompts}`, the absolute carve/release transfer and the `422` on over-draw — lives
+  in `mock/quota.js`, set via the `POST /__quota` control route or `buildSeed({ resources })`;
+  default — no resources record — is unmetered (unlimited).
   **Bearer auth** (`mock/auth.js`) is modelled like the live gateway — every real route needs
   `Authorization: Bearer <token>` (presence, not validity) or returns `401 { detail: 'Not
   authenticated' }`; the `__*` control routes are exempt. The gate is injected onto every handler at

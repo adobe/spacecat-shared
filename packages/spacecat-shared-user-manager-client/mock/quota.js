@@ -171,7 +171,10 @@ export function createQuota(store) {
      * Applies an ABSOLUTE transfer of `alloc` to a child: for every provided dimension, sets the
      * child's `total` to the value sent and moves the delta to/from the master. Idempotent (a
      * same-value transfer moves nothing). Returns `{ ok: false }` when a positive delta can't be
-     * covered by the master's free units (the caller maps that to the `422`).
+     * covered by the master's free units (the caller maps that to the `422`). Note: this always
+     * writes a child resources record for the provided dims — so transferring onto a previously
+     * unmetered child makes it metered (mirrors the live gateway, where a child always has an
+     * allocation record once resources have been moved to it).
      * @param {string | undefined | null} masterId the child's parent (units source/sink)
      * @param {string} childId
      * @param {Allocation} [alloc] the absolute per-dimension totals to set on the child

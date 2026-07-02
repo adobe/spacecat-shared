@@ -81,6 +81,14 @@ describe('mock quota — per-workspace AI resource accounting', () => {
       expect(quota.canCarve('m', { prompts: 701 })).to.equal(false); // prompts short (free 700)
       expect(quota.canCarve('m', {})).to.equal(true); // empty need
     });
+
+    it('ignores `drafted` — free is total − used, so staged units do not reduce headroom', () => {
+      const { quota } = setup();
+      // drafted is deliberately excluded (live: only published `used` counts against `total`).
+      quota.set('m', { projects: { used: 2, drafted: 5, total: 10 } }); // free = 10 − 2 = 8
+      expect(quota.canCarve('m', { projects: 8 })).to.equal(true); // drafted:5 does NOT reduce free
+      expect(quota.canCarve('m', { projects: 9 })).to.equal(false);
+    });
   });
 
   describe('moveFromMaster', () => {

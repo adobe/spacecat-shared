@@ -30,6 +30,7 @@ export type * from './import-url';
 export type * from './key-event';
 export type * from './latest-audit';
 export type * from './opportunity';
+export type * from './idempotency-key';
 export type * from './oauth-nonce';
 export type * from './organization';
 export type * from './page-citability';

@@ -44,6 +44,7 @@ import type { SiteEnrollmentCollection } from '../models/site-enrollment';
 import type { SiteTopFormCollection } from '../models/site-top-form';
 import type { SiteTopPageCollection } from '../models/site-top-page';
 import type { SuggestionCollection } from '../models/suggestion';
+import type { IdempotencyKeyCollection } from '../models/idempotency-key';
 import type { OAuthNonceCollection } from '../models/oauth-nonce';
 import type { TaskManagementConnectionCollection } from '../models/task-management-connection';
 import type { TicketCollection } from '../models/ticket';
@@ -98,6 +99,7 @@ export interface DataAccess {
   SiteTopForm: SiteTopFormCollection;
   SiteTopPage: SiteTopPageCollection;
   Suggestion: SuggestionCollection;
+  IdempotencyKey: IdempotencyKeyCollection;
   OAuthNonce: OAuthNonceCollection;
   TaskManagementConnection: TaskManagementConnectionCollection;
   Ticket: TicketCollection;

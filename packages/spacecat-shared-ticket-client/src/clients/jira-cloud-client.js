@@ -191,6 +191,10 @@ export default class JiraCloudClient extends BaseTicketClient {
       throw new Error(`Invalid dueDate format: expected YYYY-MM-DD, got: ${dueDate}`);
     }
 
+    if (parent && !TICKET_KEY_REGEX.test(parent)) {
+      throw new Error(`Invalid parent format: expected Jira issue key, got: ${parent}`);
+    }
+
     // markdownToAdf returns null for blank input — omit the field rather than
     // sending an empty ADF document (some Jira issue types treat them differently).
     const adfDescription = markdownToAdf(description);

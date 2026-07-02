@@ -200,11 +200,7 @@ export default class OAuthCredentialManager {
    * Requires GET + PUT SM permission.
    */
   async setRequiresReauth() {
-    const secret = await this.#readSecret();
-    await this.smClient.putSecretValue({
-      SecretId: this.secretPath,
-      SecretString: JSON.stringify({ ...secret, requiresReauth: true }),
-    });
+    await this.#writeReauthFlag();
   }
 
   // ── Private utilities ──────────────────────────────────────────────────────
@@ -364,14 +360,44 @@ export default class OAuthCredentialManager {
   }
 
   /**
-   * Writes requiresReauth: true to SM. Used internally by #writeTokens and
-   * #recoverFromAtlassian401 to avoid routing through the public setRequiresReauth.
+   * Writes requiresReauth: true to SM with up to SM_WRITE_ATTEMPTS retries and
+   * exponential backoff. Used internally by #writeTokens, #recoverFromAtlassian401,
+   * and setRequiresReauth. Reauth writes are naturally idempotent (always writing true)
+   * so no ClientRequestToken is needed.
    */
   async #writeReauthFlag() {
     const secret = await this.#readSecret();
-    await this.smClient.putSecretValue({
+    const payload = {
       SecretId: this.secretPath,
       SecretString: JSON.stringify({ ...secret, requiresReauth: true }),
-    });
+    };
+
+    let lastErr;
+    // eslint-disable-next-line no-plusplus
+    for (let attempt = 0; attempt < SM_WRITE_ATTEMPTS; attempt++) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await this.smClient.putSecretValue(payload);
+        return;
+      } catch (err) {
+        lastErr = err;
+        this.log.warn('SM putSecretValue (reauth flag) failed', {
+          attempt: attempt + 1,
+          secretPath: this.secretPath,
+        });
+        if (attempt < SM_WRITE_ATTEMPTS - 1) {
+          // eslint-disable-next-line no-promise-executor-return, no-await-in-loop
+          await new Promise((resolve) => setTimeout(
+            resolve,
+            SM_WRITE_BASE_DELAY_MS * (2 ** attempt),
+          ));
+        }
+      }
+    }
+
+    throw Object.assign(
+      new Error(`Failed to write requiresReauth flag to SM after ${SM_WRITE_ATTEMPTS} attempts`),
+      { cause: lastErr },
+    );
   }
 }

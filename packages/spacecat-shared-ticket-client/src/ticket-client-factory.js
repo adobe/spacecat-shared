@@ -80,16 +80,16 @@ export default class TicketClientFactory {
     const config = { ...metadata, siteUrl: instanceUrl };
 
     const secretPath = buildSecretPath(organizationId, connectionId);
-    // Rate-limited client is shared by both the credential manager (token refresh calls to
-    // auth.atlassian.com) and the provider client (Jira API calls to api.atlassian.com).
-    // Both transports honour the same retry/backoff logic — different rate-limit domains
-    // but consistent failure handling (Retry-After header + exponential backoff).
+    // Rate-limited client is used only for Jira API calls (api.atlassian.com).
+    // The credential manager receives the unwrapped httpClient — auth.atlassian.com
+    // does not emit RateLimit-Reason or X-RateLimit-Remaining headers, so the Jira-specific
+    // rate-limit wrapper adds no value there and would produce misleading log entries.
     const rateLimitedHttp = new RateLimitAwareHttpClient(httpClient, log);
     const credentialManager = CredentialManagerFactory.create(
       provider,
       smClient,
       secretPath,
-      rateLimitedHttp,
+      httpClient,
       log,
     );
 

@@ -350,6 +350,20 @@ describe('JiraCloudClient', () => {
       expect(body.fields.parent).to.deep.equal({ key: 'ASO-42' });
     });
 
+    it('throws on invalid parent format', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        { fetch: sinon.stub() },
+        makeLog(),
+      );
+      await expect(client.createTicket({
+        projectKey: 'ASO',
+        summary: 'x',
+        parent: 'not-a-valid-key',
+      })).to.be.rejectedWith('Invalid parent format');
+    });
+
     it('omits priority, duedate, components, and parent when not provided', async () => {
       const httpClient = makeCreateWithStatusHttpClient({ id: '1', key: 'ASO-1' }, 'To Do');
       const client = new JiraCloudClient(
@@ -1554,6 +1568,32 @@ describe('JiraCloudClient', () => {
         { id: '10003', key: 'C', name: 'C' },
       ]);
       expect(stub.callCount).to.equal(3);
+    });
+
+    it('stops at MAX_PAGES (100) even when Jira keeps returning isLast: false', async () => {
+      const stub = sinon.stub();
+      // All pages return isLast: false with one project each — simulates a runaway pagination
+      for (let i = 0; i <= 100; i += 1) {
+        stub.onCall(i).resolves({
+          ok: true,
+          status: 200,
+          json: sinon.stub().resolves({
+            values: [{ id: `1000${i}`, key: `P${i}`, name: `Project ${i}` }],
+            isLast: false,
+          }),
+        });
+      }
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        { fetch: stub },
+        makeLog(),
+      );
+      const projects = await client.listProjects();
+      // Page 1 is the first fetch (#withAuthRetry), pages 2-100 are loop iterations.
+      // MAX_PAGES = 100 → loop breaks when pageCount reaches 100, so 100 fetches total.
+      expect(stub.callCount).to.equal(100);
+      expect(projects).to.have.length(100);
     });
   });
 });

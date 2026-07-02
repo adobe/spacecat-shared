@@ -30,6 +30,7 @@ import { createSerenityProjectEngineApiClient } from '../../src/index.js';
 import { buildSeed, SEEDS, SEED_IDS } from '../../mock/seeds.js';
 import { createBenchmarkMock } from '../../mock/factories.js';
 import { AI_MODEL_CATALOG } from '../../mock/ai-model-catalog.js';
+import { tagId } from '../../mock/tag-id.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, '..', '..');
@@ -383,8 +384,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   });
 
   // The consumer's real read path (listPromptsByTags) passes non-empty tag_ids — exercise the
-  // filter branch (OR semantics), not just the list-all branch. `tagged` stores a deterministic
-  // tag id `tag-<name>`, so a prompt tagged 'brand' is found via tag_ids: ['tag-brand'].
+  // filter branch (OR semantics), not just the list-all branch. `tagged` stores the deterministic
+  // opaque `tagId('brand')`, so a prompt tagged 'brand' is found via tag_ids: [tagId('brand')].
   it('by_tags filters to prompts carrying a given tag id (non-empty tag_ids)', async () => {
     await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
@@ -397,12 +398,12 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { tag_ids: ['tag-brand'] },
+        body: { tag_ids: [tagId('brand')] },
       },
     );
     expect(error).to.equal(undefined);
     // Only the 'brand'-tagged prompt matches: the seeded prompt's topic:/source:/intent:/type:
-    // tags (none is the bare 'brand' → tag-brand), and the 'category' one a different tag id.
+    // tags (none is the bare 'brand' → tagId('brand')), and the 'category' one a different tag id.
     expect(branded.items.map((p) => p.name)).to.deep.equal(['Branded question']);
     expect(branded.total).to.equal(1);
   });
@@ -428,6 +429,165 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     expect(listed.total).to.equal(1);
     expect(listed.items[0].id).to.equal(SEED_IDS.promptId);
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Id-based prompt writes (the nested-category migration path, serenity-docs#24):
+  // POST /aio/prompts (create by tag id) + PUT /aio/prompts/tags (batch tag-ref update).
+  // POST returns a list wrapper that diverges from the vendored StringIDName schema, so its
+  // success/500 bodies are asserted via raw fetch (the typed client types the response as
+  // StringIDName); reads go through the typed by_tags client.
+  // ───────────────────────────────────────────────────────────────────────
+
+  // Built lazily: `baseUrl` is only assigned in before(), after this suite body runs.
+  const promptsUrl = () => `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts`;
+  const jsonAuth = {
+    Authorization: 'Bearer e2e-token',
+    'content-type': 'application/json',
+    Accept: 'application/json',
+  };
+  const listByTags = (tagIds) => client.POST(
+    '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+    {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { tag_ids: tagIds },
+    },
+  );
+
+  // POST /aio/prompts references tags by id (not name) and returns the live LIST WRAPPER
+  // { page, total, items:[{id,name}], existing_count }. The created prompts embed the tag's
+  // { id, name }, so a by_tags read on that id correlates them (immediately — no draft gate, like
+  // prompts/tagged.js).
+  it('creates prompts by tag id and reads them back via by_tags', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['Id Q1', 'Id Q2'], tag_ids: [SEED_IDS.categoryTagId] }),
+    });
+    expect(res.status).to.equal(200);
+    const created = await res.json();
+    expect(created.total).to.equal(2);
+    expect(created.existing_count).to.equal(0);
+    expect(created.items).to.have.length(2);
+    expect(created.items[0]).to.have.keys('id', 'name');
+    expect(created.items.map((p) => p.name)).to.deep.equal(['Id Q1', 'Id Q2']);
+
+    // Correlation is free: by_tags on the referenced tag id returns the two created prompts.
+    const { data: byTag } = await listByTags([SEED_IDS.categoryTagId]);
+    expect(byTag.items.map((p) => p.name)).to.have.members(['Id Q1', 'Id Q2']);
+  });
+
+  // Atomic failure: any unresolvable tag id 500s and creates NOTHING (verified live 2026-07-02).
+  it('500s atomically on an unknown tag id (creates no prompt)', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['Should not persist'], tag_ids: ['tag-0000000000000000'] }),
+    });
+    expect(res.status).to.equal(500);
+
+    // Nothing was created — by_tags still shows only the seeded prompt.
+    const { data: all } = await listByTags([]);
+    expect(all.total).to.equal(1);
+    expect(all.items.map((p) => p.name)).to.not.include('Should not persist');
+  });
+
+  // Text-dedupe mirrors prompts/tagged.js: a text already present is folded into existing_count.
+  it('text-dedupes a create-by-id into existing_count (no new id)', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({
+        // the seed already holds "What is the best running shoe?"
+        items: ['What is the best running shoe?', 'A genuinely new id prompt'],
+        tag_ids: [SEED_IDS.categoryTagId],
+      }),
+    });
+    const created = await res.json();
+    expect(created.total).to.equal(1); // only the new text is created
+    expect(created.existing_count).to.equal(1); // the duplicate is counted, not re-created
+  });
+
+  // PUT /aio/prompts/tags with replace:false MERGES references onto the prompt's existing tag set:
+  // the seeded prompt keeps its original topic:/type: tags AND gains the new category ref.
+  it('PUT merges tag references (replace:false keeps existing tags)', async () => {
+    const { response } = await client.PUT(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: {
+          items: [{ id: SEED_IDS.promptId, references: [SEED_IDS.categoryTagId], replace: false }],
+        },
+      },
+    );
+    expect(response.status).to.equal(204);
+
+    // gained the new ref …
+    const { data: byNew } = await listByTags([SEED_IDS.categoryTagId]);
+    expect(byNew.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
+    // … and kept an original one (type:branded)
+    const { data: byOld } = await listByTags([tagId('type:branded')]);
+    expect(byOld.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
+  });
+
+  // PUT with replace:true REPLACES the set: the prompt's tags become EXACTLY the references, so its
+  // original tags are dropped.
+  it('PUT replaces the tag set (replace:true drops existing tags)', async () => {
+    const { response } = await client.PUT(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: {
+          items: [{ id: SEED_IDS.promptId, references: [SEED_IDS.categoryTagId], replace: true }],
+        },
+      },
+    );
+    expect(response.status).to.equal(204);
+
+    // now carries only the new ref …
+    const { data: byNew } = await listByTags([SEED_IDS.categoryTagId]);
+    expect(byNew.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
+    // … and no longer matches an original tag (it was replaced out)
+    const { data: byOld } = await listByTags([tagId('type:branded')]);
+    expect(byOld.items.map((p) => p.id)).to.not.include(SEED_IDS.promptId);
+  });
+
+  // An unknown prompt id is skipped SILENTLY — the call still 204s, no "not found" error.
+  it('PUT silently 204s on an unknown prompt id', async () => {
+    const { response, error } = await client.PUT(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: {
+          items: [{
+            id: '00000000-0000-4000-8000-000000000000',
+            references: [SEED_IDS.categoryTagId],
+            replace: true,
+          }],
+        },
+      },
+    );
+    expect(response.status).to.equal(204);
+    expect(error).to.equal(undefined);
+  });
+
+  // A reference id with no matching registered tag falls back to embedding { id, name: id } — the
+  // id is what by_tags matches on, so the prompt still correlates even without a name to resolve.
+  it('PUT embeds an unresolvable reference id as its own name (by_tags still correlates)', async () => {
+    const unknownTagId = '00000000-0000-4000-8000-0000000000ff';
+    const { response } = await client.PUT(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: {
+          items: [{ id: SEED_IDS.promptId, references: [unknownTagId], replace: false }],
+        },
+      },
+    );
+    expect(response.status).to.equal(204);
+
+    const { data } = await listByTags([unknownTagId]);
+    expect(data.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
   });
 
   it('__reset restores the seed between mutations', async () => {
@@ -585,15 +745,23 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created).to.include.keys('id', 'name', 'prompts_count');
   });
 
-  // Re-creating the same category name is idempotent (deterministic tag-<name> id) — no duplicate.
-  // The `search` query filters by name substring, so it can target one of several stored tags.
-  it('createProjectTags is idempotent by name; GET search filters by name substring', async () => {
+  // Gate 7 (verified live 2026-07-02): the create endpoint does NOT dedupe — re-creating a name
+  // that already exists at the same parent level 500s, ATOMICALLY (nothing in the batch is
+  // written). This pins the resolve-before-create discipline every consumer must follow; a mock
+  // that silently reused would give false confidence and hide a dropped resolve-before-create in an
+  // IT/e2e. The `search` query still filters stored tags by name substring.
+  it('createProjectTags 500s on a same-name/same-parent duplicate (atomic); search filters', async () => {
     const post = (names) => client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
       { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } }, body: { names } },
     );
-    await post(['category:Alpha', 'category:Beta']);
-    await post(['category:Alpha']); // repeat — must not duplicate
+    const { error: firstErr } = await post(['category:Alpha', 'category:Beta']);
+    expect(firstErr).to.equal(undefined);
+
+    // A batch that re-creates the already-stored `category:Alpha` (even alongside a new name) 500s,
+    // and writes NOTHING — resolve-before-create is the consumer's job, not the endpoint's.
+    const { response: dupRes } = await post(['category:Alpha', 'category:Gamma']);
+    expect(dupRes.status).to.equal(500);
 
     const { data: all } = await client.GET(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
@@ -604,8 +772,12 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         },
       },
     );
-    // roots: the baked `category:Running Shoes` + Alpha (once, not duplicated) + Beta
+    // roots: the baked `category:Running Shoes` + Alpha + Beta. The collided batch created
+    // neither a duplicate Alpha nor the co-batched Gamma (atomic), so Gamma is absent.
     expect(all.total).to.equal(3);
+    expect(all.items.map((t) => t.name)).to.have.members([
+      'category:Running Shoes', 'category:Alpha', 'category:Beta',
+    ]);
 
     const { data: filtered } = await client.GET(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',

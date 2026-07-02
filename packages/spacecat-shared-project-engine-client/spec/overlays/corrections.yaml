@@ -375,7 +375,7 @@ actions:
   # rather than replacing it, so updating `schema` in place would leave the old `$ref` behind
   # alongside the new shape — see CR7/CR11 for the same pattern on other endpoints).
   - target: "$.components.schemas['model.StringIDNameListResponse']"
-    description: "CR14a: add existing_count to StringIDNameListResponse (live returns it on aio-create-prompt-v2; the vendored swagger omits it)"
+    description: "CR14a: add existing_count to StringIDNameListResponse (live returns it on aio-create-prompt-v2 ONLY, not the two deprecated endpoints also using this schema; kept optional so it stays spec-valid there too)"
     update:
       properties:
         existing_count: { type: integer }

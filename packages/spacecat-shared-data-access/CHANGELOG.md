@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v3.81.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.80.0...@adobe/spacecat-shared-data-access-v3.81.0) (2026-07-02)
+
+### Features
+
+* **SITES-44690:** add TaskManagementConnection, Ticket, TicketSuggestion, IdempotencyKey, and OAuthNonce data models ([#1702](https://github.com/adobe/spacecat-shared/issues/1702)) ([2ca5096](https://github.com/adobe/spacecat-shared/commit/2ca5096b448a07b8e365021e06b31fa3bee96b09))
+
 ## [@adobe/spacecat-shared-data-access-v3.80.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.79.1...@adobe/spacecat-shared-data-access-v3.80.0) (2026-07-02)
 
 ### Features

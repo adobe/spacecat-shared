@@ -125,7 +125,9 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  * ## Bypass rules (fail-closed)
  *
  *   0. CORS preflight (`OPTIONS`) → bypass.
- *   1. Internal identities (admin, S2S, read-only admin, api-key) → bypass.
+ *   1. Internal identities (admin, S2S admin/consumer, read-only admin,
+ *      api-key, or a `context.s2sConsumer` already authorized by
+ *      `s2sAuthWrapper`) → bypass.
  *   1b. IMS auth channel (`authInfo.getType() === 'ims'` AND no
  *      `facs_permissions` claim) → bypass. Direct IMS tokens are a deprecating
  *      channel that never carry `facs_permissions` and may not resolve a tenant
@@ -223,6 +225,10 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     const authInfo = context.attributes?.authInfo;
 
     // (1) Internal identities bypass — FACS applies to external customers only.
+    // `context.s2sConsumer` is set by `s2sAuthWrapper` when it has already
+    // authorized a service-to-service consumer against its capability map;
+    // such a request carries no user `authInfo`, so it must be recognized here
+    // via the context flag rather than an `isS2SConsumer()` profile claim.
     const authType = authInfo?.getType?.();
     if (
       authInfo?.isAdmin?.()
@@ -231,6 +237,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
       || authInfo?.isReadOnlyAdmin?.()
       || authType === 'legacyApiKey'
       || authType === 'scopedApiKey'
+      || context.s2sConsumer
     ) {
       log.info({
         tag: 'facs',
@@ -242,6 +249,7 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
         isS2SAdmin: !!authInfo?.isS2SAdmin?.(),
         isS2SConsumer: !!authInfo?.isS2SConsumer?.(),
         isReadOnlyAdmin: !!authInfo?.isReadOnlyAdmin?.(),
+        s2sConsumer: !!context.s2sConsumer,
       }, 'FACS bypass: internal identity');
       return fn(request, context);
     }

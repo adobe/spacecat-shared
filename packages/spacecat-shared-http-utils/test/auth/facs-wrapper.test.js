@@ -233,6 +233,19 @@ describe('facsWrapper', () => {
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
     });
+
+    it('bypasses when context.s2sConsumer is set by s2sAuthWrapper (no user authInfo)', async () => {
+      // s2sAuthWrapper authorizes the consumer against its capability map and
+      // sets context.s2sConsumer; the request carries no user authInfo.
+      context.attributes.authInfo = {};
+      context.s2sConsumer = { getId: () => 'consumer-1' };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', bypass: 'internal-identity', s2sConsumer: true },
+      )).to.be.true;
+    });
   });
 
   describe('IMS auth channel bypass', () => {

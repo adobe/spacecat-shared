@@ -48,6 +48,29 @@ describe('markdownToAdf', () => {
     expect(result.type).to.equal('doc');
   });
 
+  it('truncates input by UTF-8 byte length, not code-unit length', () => {
+    // Each emoji '🎉' is 4 UTF-8 bytes but 2 UTF-16 code units.
+    // Build a string that is under MAX_INPUT_BYTES in code units but over in bytes.
+    // MAX_INPUT_BYTES = 1MB = 1,048,576 bytes.
+    // 262,145 emoji × 4 bytes = 1,048,580 bytes (just over 1MB).
+    // 262,145 emoji × 2 code units = 524,290 (well under 1MB in code units).
+    // Old code (.length) would NOT truncate. New code (Buffer.byteLength) WILL truncate.
+    const emoji = '🎉';
+    const count = 262_145; // 4 bytes over 1MB
+    const input = emoji.repeat(count);
+    const result = markdownToAdf(input);
+    expect(result).to.exist;
+    // Extract all text from the ADF and verify it's shorter than input (truncation happened)
+    const allText = result.content
+      .flatMap((block) => (block.content || []).map((n) => n.text || ''))
+      .join('');
+    const inputBytes = Buffer.byteLength(input, 'utf8');
+    const truncatedBytes = Buffer.byteLength(allText, 'utf8');
+    expect(truncatedBytes).to.be.lessThan(inputBytes);
+    // Truncated output must be at or under the 1MB cap
+    expect(truncatedBytes).to.be.at.most(1024 * 1024);
+  });
+
   it('pads empty fenced code block with a space (ADF rejects empty text nodes)', () => {
     // A fenced code block with no body produces token.text = '' — must be padded to ' '
     const result = markdownToAdf('```\n```');

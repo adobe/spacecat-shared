@@ -120,6 +120,19 @@ describe('OAuthCredentialManager', () => {
       expect(httpClient.fetch.called).to.be.false;
     });
 
+    it('throws REQUIRES_REAUTH for secret with requiresReauth but no accessToken', async () => {
+      // Admin/provisioning tool writes { requiresReauth: true } without accessToken
+      const minimalReauth = { requiresReauth: true };
+      const smClient = {
+        getSecretValue: sinon.stub().resolves({ SecretString: JSON.stringify(minimalReauth) }),
+        putSecretValue: sinon.stub().resolves({}),
+      };
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());
+
+      const err = await manager.getAuthHeaders().catch((e) => e);
+      expect(err.code).to.equal('REQUIRES_REAUTH');
+    });
+
     it('throws TOKEN_REFRESH_REQUIRED when token is expired — no Atlassian call', async () => {
       const httpClient = makeHttpClient({});
       const manager = new OAuthCredentialManager(

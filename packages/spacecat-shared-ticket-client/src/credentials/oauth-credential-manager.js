@@ -312,7 +312,11 @@ export default class OAuthCredentialManager {
     if (!parsed || typeof parsed !== 'object') {
       throw new Error(`SM secret at ${this.secretPath} is not a JSON object`);
     }
-    if (typeof parsed.accessToken !== 'string' || !parsed.accessToken) {
+    // Allow secrets flagged requiresReauth without a valid accessToken — admin tools
+    // or provisioning flows may write { requiresReauth: true } as a minimal payload.
+    // getAuthHeaders() checks requiresReauth before using accessToken, so this is safe.
+    if (!parsed.requiresReauth
+      && (typeof parsed.accessToken !== 'string' || !parsed.accessToken)) {
       throw new Error(`SM secret at ${this.secretPath} is missing a valid accessToken`);
     }
     this.#secretCache = parsed;

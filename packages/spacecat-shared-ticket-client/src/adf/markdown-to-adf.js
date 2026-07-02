@@ -240,10 +240,26 @@ export default function markdownToAdf(text) {
     return null;
   }
 
-  // Cap input to prevent DoS via oversized payloads
-  const truncated = safeText.length > MAX_INPUT_BYTES
-    ? safeText.slice(0, MAX_INPUT_BYTES)
-    : safeText;
+  // Cap input to prevent DoS via oversized payloads.
+  // Buffer.byteLength measures actual UTF-8 bytes — .length would undercount
+  // multi-byte characters (emoji, CJK) and allow inputs far beyond 1 MB.
+  let truncated = safeText;
+  if (Buffer.byteLength(safeText, 'utf8') > MAX_INPUT_BYTES) {
+    // Binary-search for the code-point boundary that fits within MAX_INPUT_BYTES.
+    // Avoids splitting surrogate pairs (spread to code points first).
+    const codePoints = [...safeText];
+    let lo = 0;
+    let hi = codePoints.length;
+    while (lo < hi) {
+      const mid = Math.floor((lo + hi + 1) / 2);
+      if (Buffer.byteLength(codePoints.slice(0, mid).join(''), 'utf8') <= MAX_INPUT_BYTES) {
+        lo = mid;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    truncated = codePoints.slice(0, lo).join('');
+  }
 
   try {
     const tokens = lexer(truncated);

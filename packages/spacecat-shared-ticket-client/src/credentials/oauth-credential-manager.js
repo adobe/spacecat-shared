@@ -189,6 +189,11 @@ export default class OAuthCredentialManager {
    *
    * Requires GET + PUT SM permission.
    *
+   * Concurrency note: concurrent callers share the in-flight Promise from the
+   * first caller. The second caller's usedAuthHeader is not re-examined — all
+   * callers receive the first caller's result. In practice this is correct:
+   * concurrent batch-401 callers all hold the same rejected token.
+   *
    * @param {string} [usedAuthHeader] - The Authorization header that the provider
    *   rejected (e.g. 'Bearer <old-token>'). Supplied when the caller knows
    *   which token was used; omitted when the rejected token is unknown.

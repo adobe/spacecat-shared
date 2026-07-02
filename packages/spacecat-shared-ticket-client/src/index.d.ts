@@ -53,8 +53,6 @@ export declare class BaseTicketClient {
 }
 
 export declare class JiraCloudClient extends BaseTicketClient {
-  listProjects(): Promise<Project[]>;
-  listIssueTypes(projectId: string): Promise<IssueType[]>;
   uploadAttachment(ticketKey: string, attachment: Attachment): Promise<void>;
 }
 

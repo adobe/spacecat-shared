@@ -199,9 +199,10 @@ export default class JiraCloudClient extends BaseTicketClient {
       // Reject format-valid but impossible dates like 2026-02-31.
       // V8's Date constructor overflows silently (Feb 31 → Mar 3) instead of returning NaN,
       // so isNaN-check is not enough — use component round-trip to catch impossible dates.
+      // Date.UTC + getUTC* avoids local-timezone skew in non-Lambda environments.
       const [y, m, d] = dueDate.split('-').map(Number);
-      const parsed = new Date(y, m - 1, d);
-      if (parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== d) {
+      const parsed = new Date(Date.UTC(y, m - 1, d));
+      if (parsed.getUTCFullYear() !== y || parsed.getUTCMonth() !== m - 1 || parsed.getUTCDate() !== d) {
         throw new Error(`Invalid dueDate: not a real calendar date, got: ${dueDate}`);
       }
     }

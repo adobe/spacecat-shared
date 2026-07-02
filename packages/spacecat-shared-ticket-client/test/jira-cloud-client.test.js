@@ -1515,6 +1515,8 @@ describe('JiraCloudClient', () => {
       expect(result).to.deep.equal([{ id: '10', name: 'Bug' }]);
       // getAuthHeaders called twice: before first attempt + re-read after 401
       expect(credMgr.getAuthHeaders.callCount).to.equal(2);
+      // 401 re-read must bypass the 30s TTL cache — bypassCache=true
+      expect(credMgr.getAuthHeaders.secondCall.args[0]).to.equal(true);
       // First attempt used stale-token; retry used fresh-token
       expect(fetchStub.firstCall.args[1].headers.Authorization).to.equal('Bearer stale-token');
       expect(fetchStub.secondCall.args[1].headers.Authorization).to.equal('Bearer fresh-token');

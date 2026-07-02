@@ -667,6 +667,39 @@ describe('OAuthCredentialManager', () => {
       // Single-use refresh token must not be double-consumed
       expect(httpClient.fetch.callCount).to.equal(1);
     });
+
+    it('releases the lock after rejection so the next call fires a fresh request', async () => {
+      const smClient = makeSmClient(EXPIRED_SECRET);
+      // First Atlassian call → 503 (transient error); second call → success
+      const fetchStub = sinon.stub();
+      fetchStub.onFirstCall().resolves({
+        ok: false,
+        status: 503,
+        json: sinon.stub().resolves({}),
+      });
+      fetchStub.onSecondCall().resolves({
+        ok: true,
+        status: 200,
+        json: sinon.stub().resolves({
+          access_token: 'recovered-token',
+          refresh_token: 'new-refresh',
+          expires_in: 3600,
+        }),
+      });
+      const manager = new OAuthCredentialManager(
+        smClient, '/test/secret', { fetch: fetchStub }, makeLog(),
+      );
+
+      // First call fails — lock must be cleared by .finally()
+      await expect(manager.refreshAuthHeaders()).to.be.rejectedWith(
+        'Atlassian token refresh failed: 503',
+      );
+
+      // Second call after rejection — lock cleared, fires a fresh Atlassian request
+      const headers = await manager.refreshAuthHeaders();
+      expect(headers).to.deep.equal({ Authorization: 'Bearer recovered-token' });
+      expect(fetchStub.callCount).to.equal(2);
+    });
   });
 
   describe('forceRefreshAuthHeaders', () => {

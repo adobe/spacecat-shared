@@ -407,7 +407,7 @@ export default class OAuthCredentialManager {
       const isGrantRevoked = errorCode === 'invalid_grant' || errorCode === 'unauthorized_client';
       throw Object.assign(
         new Error(`Atlassian token refresh failed: ${response.status}${errorCode ? ` (${errorCode})` : ''}`),
-        { status: response.status, code: isGrantRevoked ? 'GRANT_REVOKED' : undefined },
+        { status: response.status, ...(isGrantRevoked && { code: 'GRANT_REVOKED' }) },
       );
     }
 

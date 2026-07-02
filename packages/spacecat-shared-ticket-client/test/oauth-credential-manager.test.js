@@ -662,7 +662,22 @@ describe('OAuthCredentialManager', () => {
       expect(smClient.putSecretValue.called).to.be.false;
     });
 
-    it('propagates non-401 Atlassian errors without writing requiresReauth', async () => {
+    it('Atlassian 403 access_denied — unrecognized error code does NOT trigger GRANT_REVOKED', async () => {
+      const smClient = makeSmClient(EXPIRED_SECRET);
+      const httpClient = {
+        fetch: sinon.stub().resolves({
+          ok: false,
+          status: 403,
+          json: sinon.stub().resolves({ error: 'access_denied' }),
+        }),
+      };
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
+
+      await expect(manager.refreshAuthHeaders()).to.be.rejectedWith('Atlassian token refresh failed: 403');
+      expect(smClient.putSecretValue.called).to.be.false;
+    });
+
+    it('propagates non-grant Atlassian errors without writing requiresReauth', async () => {
       const smClient = makeSmClient(EXPIRED_SECRET);
       const httpClient = makeHttpClient({}, 503);
       const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
@@ -883,7 +898,7 @@ describe('OAuthCredentialManager', () => {
       expect(smClient.putSecretValue.called).to.be.false;
     });
 
-    it('propagates non-401 Atlassian errors without writing requiresReauth', async () => {
+    it('propagates non-grant Atlassian errors without writing requiresReauth', async () => {
       const smClient = makeSmClient(EXPIRED_SECRET);
       const httpClient = makeHttpClient({}, 503);
       const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());

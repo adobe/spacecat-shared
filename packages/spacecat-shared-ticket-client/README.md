@@ -182,7 +182,7 @@ Sensitive response bodies (which may contain tokens or PII) are never logged. On
 npm test
 ```
 
-100% statement, branch, function, and line coverage is enforced.
+100% statement, function, and line coverage is enforced; 97% branch coverage per repo convention.
 
 ### Linting
 

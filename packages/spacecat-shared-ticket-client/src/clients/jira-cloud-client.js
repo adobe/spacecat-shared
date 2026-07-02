@@ -179,69 +179,8 @@ export default class JiraCloudClient extends BaseTicketClient {
    *   ticketUrl: string, ticketStatus: string|null}>}
    */
   async createTicket(ticketData) {
-    const {
-      projectKey,
-      issueType = 'Task',
-      summary,
-      description,
-      labels = [],
-      priority,
-      dueDate,
-      components,
-      parent,
-    } = ticketData;
-
-    if (!projectKey || typeof projectKey !== 'string') {
-      throw new Error('projectKey is required to create a ticket');
-    }
-
-    if (!summary || !String(summary).trim()) {
-      throw new Error('summary is required to create a ticket');
-    }
-
-    const invalidLabel = labels.find((l) => /\s/.test(String(l)));
-    if (invalidLabel !== undefined) {
-      throw new Error(`Label must not contain whitespace, got: '${invalidLabel}'`);
-    }
-
-    if (dueDate) {
-      if (!DUE_DATE_REGEX.test(dueDate)) {
-        throw new Error(`Invalid dueDate format: expected YYYY-MM-DD, got: ${dueDate}`);
-      }
-      // Reject format-valid but impossible dates like 2026-02-31.
-      // V8's Date constructor overflows silently (Feb 31 → Mar 3) instead of returning NaN,
-      // so isNaN-check is not enough — use component round-trip to catch impossible dates.
-      // Date.UTC + getUTC* avoids local-timezone skew in non-Lambda environments.
-      const [y, m, d] = dueDate.split('-').map(Number);
-      const parsed = new Date(Date.UTC(y, m - 1, d));
-      const dateValid = parsed.getUTCFullYear() === y
-        && parsed.getUTCMonth() === m - 1
-        && parsed.getUTCDate() === d;
-      if (!dateValid) {
-        throw new Error(`Invalid dueDate: not a real calendar date, got: ${dueDate}`);
-      }
-    }
-
-    if (parent && !TICKET_KEY_REGEX.test(parent)) {
-      throw new Error(`Invalid parent format: expected Jira issue key, got: ${parent}`);
-    }
-
-    // markdownToAdf returns null for blank input — omit the field rather than
-    // sending an empty ADF document (some Jira issue types treat them differently).
-    const adfDescription = markdownToAdf(description);
-    const body = {
-      fields: {
-        project: { key: projectKey },
-        issuetype: { name: issueType },
-        summary: sanitizeSummary(summary),
-        ...(adfDescription && { description: adfDescription }),
-        labels: labels.map((l) => String(l)),
-        ...(priority && { priority: { name: priority } }),
-        ...(dueDate && { duedate: dueDate }),
-        ...(components?.length > 0 && { components: components.map((c) => ({ name: c })) }),
-        ...(parent && { parent: { key: parent } }),
-      },
-    };
+    this.#validateTicketInput(ticketData);
+    const body = this.#buildTicketBody(ticketData);
 
     const response = await this.#withAuthRetry(
       (authHeaders) => this.httpClient.fetch(`${this.baseUrl}/issue`, {
@@ -258,8 +197,7 @@ export default class JiraCloudClient extends BaseTicketClient {
 
     await this.#requireOk(response, 'createTicket');
     const created = await response.json();
-    const ticketKey = created.key;
-    const ticketStatus = await this.#fetchTicketStatus(ticketKey);
+    const ticketStatus = await this.#fetchTicketStatus(created.key);
     return this.#buildTicketResult(created, ticketStatus);
   }
 
@@ -489,6 +427,90 @@ export default class JiraCloudClient extends BaseTicketClient {
         `Attachment content does not match declared MIME type '${mimeType}' (magic bytes mismatch)`,
       );
     }
+  }
+
+  /**
+   * Validates all createTicket input fields and throws on the first failing rule.
+   * Separated from createTicket() so validation logic has a single reason to change.
+   *
+   * @param {object} ticketData - same shape as createTicket() parameter
+   */
+  // eslint-disable-next-line class-methods-use-this
+  #validateTicketInput({
+    projectKey, summary, labels = [], dueDate, parent,
+  }) {
+    if (!projectKey || typeof projectKey !== 'string') {
+      throw new Error('projectKey is required to create a ticket');
+    }
+
+    if (!summary || !String(summary).trim()) {
+      throw new Error('summary is required to create a ticket');
+    }
+
+    const invalidLabel = labels.find((l) => /\s/.test(String(l)));
+    if (invalidLabel !== undefined) {
+      throw new Error(`Label must not contain whitespace, got: '${invalidLabel}'`);
+    }
+
+    if (dueDate) {
+      if (!DUE_DATE_REGEX.test(dueDate)) {
+        throw new Error(`Invalid dueDate format: expected YYYY-MM-DD, got: ${dueDate}`);
+      }
+      // Reject format-valid but impossible dates like 2026-02-31.
+      // V8's Date constructor overflows silently (Feb 31 → Mar 3) instead of returning NaN,
+      // so isNaN-check is not enough — use component round-trip to catch impossible dates.
+      // Date.UTC + getUTC* avoids local-timezone skew in non-Lambda environments.
+      const [y, m, d] = dueDate.split('-').map(Number);
+      const parsed = new Date(Date.UTC(y, m - 1, d));
+      const dateValid = parsed.getUTCFullYear() === y
+        && parsed.getUTCMonth() === m - 1
+        && parsed.getUTCDate() === d;
+      if (!dateValid) {
+        throw new Error(`Invalid dueDate: not a real calendar date, got: ${dueDate}`);
+      }
+    }
+
+    if (parent && !TICKET_KEY_REGEX.test(parent)) {
+      throw new Error(`Invalid parent format: expected Jira issue key, got: ${parent}`);
+    }
+  }
+
+  /**
+   * Builds the Jira REST API request body for issue creation.
+   * Handles ADF conversion and optional field spreading.
+   * Separated from createTicket() so field-mapping has a single reason to change.
+   *
+   * @param {object} ticketData - same shape as createTicket() parameter
+   * @returns {object} Jira issue creation request body
+   */
+  // eslint-disable-next-line class-methods-use-this
+  #buildTicketBody({
+    projectKey,
+    issueType = 'Task',
+    summary,
+    description,
+    labels = [],
+    priority,
+    dueDate,
+    components,
+    parent,
+  }) {
+    // markdownToAdf returns null for blank input — omit the field rather than
+    // sending an empty ADF document (some Jira issue types treat them differently).
+    const adfDescription = markdownToAdf(description);
+    return {
+      fields: {
+        project: { key: projectKey },
+        issuetype: { name: issueType },
+        summary: sanitizeSummary(summary),
+        ...(adfDescription && { description: adfDescription }),
+        labels: labels.map((l) => String(l)),
+        ...(priority && { priority: { name: priority } }),
+        ...(dueDate && { duedate: dueDate }),
+        ...(components?.length > 0 && { components: components.map((c) => ({ name: c })) }),
+        ...(parent && { parent: { key: parent } }),
+      },
+    };
   }
 
   /**

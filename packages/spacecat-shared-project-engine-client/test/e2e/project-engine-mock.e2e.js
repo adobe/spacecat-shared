@@ -1038,7 +1038,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
             id: SEED_WORKSPACE, project_id: SEED_PROJECT, tag_id: SEED_IDS.childTagId,
           },
         },
-        // No parent_id key at all — a rename-only call.
+        // No parent_id key at all — a rename-only call. NB: this leaves the seed's
+        // childTagId renamed to 'Ridge' for the rest of this test only (beforeEach resets state
+        // between tests, so this doesn't leak into the next one).
         body: { name: 'Ridge' },
       },
     );
@@ -1071,6 +1073,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
             id: SEED_WORKSPACE, project_id: SEED_PROJECT, tag_id: SEED_IDS.childTagId,
           },
         },
+        // NB: this leaves the seed's childTagId renamed to 'Trail' and promoted to a root for
+        // the rest of this test only (beforeEach resets state between tests).
         body: { name: 'Trail', parent_id: null },
       },
     );

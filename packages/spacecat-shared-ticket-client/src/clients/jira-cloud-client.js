@@ -26,7 +26,8 @@ const CLOUD_ID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 // Single-letter project keys (e.g. A-1) are not supported.
 const TICKET_KEY_REGEX = /^[A-Z][A-Z0-9_]+-\d+$/;
 const DUE_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-// Jira Cloud hard limit for summary field (documented by Atlassian)
+// Jira Cloud enforced limit for summary field (server returns HTTP 400 when exceeded;
+// not formally specified in the OpenAPI spec but consistently enforced in production)
 const SUMMARY_MAX_LENGTH = 255;
 
 // ── Attachment Rules (PR #150) ─────────────────────────────────────────────────

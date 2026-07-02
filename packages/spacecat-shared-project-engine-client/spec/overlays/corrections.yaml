@@ -72,6 +72,11 @@ info:
 #      (verified 2026-07-01 against prod). The vendored swagger types them non-nullable, so a mock
 #      emitting the live `null` fails response validation / the generated type. Mark both nullable.
 #      Remove if Semrush stops returning null (e.g. omits the fields) upstream.
+# CR14 aio-create-prompt-v2 (POST /v2/.../aio/prompts) responds with a paginated list wrapper
+#      `{page, total, items:[{id,name}], existing_count}`, not a bare `model.StringIDName`
+#      (verified 2026-07-02 against prod). Reuses the already-vendored `StringIDNameListResponse`
+#      wrapper (extended with `existing_count`) instead of a new schema. Remove if Semrush retypes
+#      the response upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -357,3 +362,32 @@ actions:
           nullable: true
           items:
             $ref: "#/components/schemas/model.AIOTagLeaf"
+
+  # ── CR14: aio-create-prompt-v2 (POST /v2/.../aio/prompts) returns a paginated
+  # list wrapper, not a bare StringIDName ──────────────────────────────────
+  # Live: POST /v2/.../aio/prompts -> 200 { page, total, items: [{id, name}], existing_count }
+  # (verified 2026-07-02 against prod, a single-item batch). The vendored swagger types the 200 as
+  # one `model.StringIDName` ({id, name}) with no wrapper — a spec/live drift. The wrapper shape
+  # already exists as `model.StringIDNameListResponse` ({items: [StringIDName], page, total}, used
+  # by two unrelated deprecated endpoints), just missing `existing_count` — extend it (CR14a) and
+  # point this endpoint's 200 at it instead (CR14b removes the stale ref, CR14c re-adds it; the
+  # remove-then-add pattern is required because deepMerge recurses into an existing object value
+  # rather than replacing it, so updating `schema` in place would leave the old `$ref` behind
+  # alongside the new shape — see CR7/CR11 for the same pattern on other endpoints).
+  - target: "$.components.schemas['model.StringIDNameListResponse']"
+    description: "CR14a: add existing_count to StringIDNameListResponse (live returns it on aio-create-prompt-v2; the vendored swagger omits it)"
+    update:
+      properties:
+        existing_count: { type: integer }
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/prompts'].post.responses['200']"
+    description: "CR14b: remove the stale 200 (wrongly typed as bare StringIDName) on aio-create-prompt-v2"
+    remove: true
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/prompts'].post.responses"
+    description: "CR14c: add the 200 OK success response on aio-create-prompt-v2, typed as the list wrapper"
+    update:
+      "200":
+        description: "OK"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/model.StringIDNameListResponse"

@@ -2299,6 +2299,7 @@ export interface components {
             items?: components["schemas"]["model.StringIDName"][];
             page?: number;
             total?: number;
+            existing_count?: number;
         };
         "model.TreeNodeListRequest": {
             names: string[];
@@ -7334,7 +7335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["model.StringIDName"];
+                    "application/json": components["schemas"]["model.StringIDNameListResponse"];
                 };
             };
             /** @description Unauthorized */

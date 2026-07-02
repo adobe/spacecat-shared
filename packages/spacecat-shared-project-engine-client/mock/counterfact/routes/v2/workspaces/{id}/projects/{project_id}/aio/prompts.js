@@ -21,11 +21,11 @@
  * POST contract (live-verified 2026-07-02, serenity-docs#24): body
  * `{ items: [text…], tag_ids: [id…] }` (items = prompt texts, tag_ids = tags attached to EVERY
  * created prompt). Response is a LIST WRAPPER
- * `{ page, total, items: [{ id, name }…], existing_count }`
- * — NOT the single `StringIDName` the vendored public swagger models (a known spec↔live drift), so
- * the handler returns it as a raw `{ status, body, contentType }` bypass (the same escape hatch
- * `quota.js` / `auth.js` use), skipping Counterfact response negotiation/validation against the
- * stale schema. Behaviour:
+ * `{ page, total, items: [{ id, name }…], existing_count }` — typed as
+ * `model.StringIDNameListResponse` via the spec overlay's CR14 (the vendored public swagger
+ * originally modelled this as a bare `StringIDName`, a spec↔live drift; CR14 retypes it, so the
+ * 200 below goes through Counterfact's normal `$.response[200].json(...)` validation, not a raw
+ * bypass). Behaviour:
  * - Each `tag_id` resolves against the project's standalone tags collection to embed the full
  *   `{ id, name }` pair on the created prompt (mirroring `prompts/tagged.js`), so `by_tags` (which
  *   matches on the embedded tag id) correlates the write for free.
@@ -52,11 +52,9 @@ export function POST($) {
   const tagsById = new Map(context.ops.tags.list(scope).map((t) => [t.id, t]));
   const unknownTagId = tagIds.find((id) => !tagsById.has(id));
   if (unknownTagId !== undefined) {
-    return {
-      status: 500,
-      body: context.factories.createBasicResponseMock({ message: `unknown tag id: ${unknownTagId}` }),
-      contentType: 'application/json',
-    };
+    return $.response[500].json(
+      context.factories.createBasicResponseMock({ message: `unknown tag id: ${unknownTagId}` }),
+    );
   }
   // Embed the full { id, name } pair (as prompts/tagged.js does) so by_tags correlates on the id.
   const tags = tagIds.map((id) => {
@@ -83,6 +81,9 @@ export function POST($) {
   }));
 
   if (!context.quota.canCreatePrompts(path.id, toCreate.length)) {
+    // 405 is not a declared response for this operation (only 200/401/403/500) — the disguised
+    // quota 405 the live API returns (mock/quota.js), so this stays a raw bypass like every other
+    // quota-gated route in this package; it can't go through $.response[405].json(...).
     return {
       status: 405,
       body: { message: 'Quota exceeded: prompt allocation exhausted' },
@@ -91,16 +92,12 @@ export function POST($) {
   }
 
   const created = context.ops.prompts.createMany(scope, toCreate);
-  return {
-    status: 200,
-    body: {
-      page: 1,
-      total: created.length,
-      items: created.map((p) => ({ id: p.id, name: p.name })),
-      existing_count: existingCount,
-    },
-    contentType: 'application/json',
-  };
+  return $.response[200].json({
+    page: 1,
+    total: created.length,
+    items: created.map((p) => ({ id: p.id, name: p.name })),
+    existing_count: existingCount,
+  });
 }
 
 /** DELETE — batch-delete prompts (body: { ids }) → 204 No Content. */

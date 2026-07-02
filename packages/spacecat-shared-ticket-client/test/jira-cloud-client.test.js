@@ -384,6 +384,90 @@ describe('JiraCloudClient', () => {
       })).to.be.rejectedWith('Invalid parent format');
     });
 
+    it('rejects a format-valid but impossible calendar date (2026-02-31)', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeCreateWithStatusHttpClient({ id: '1', key: 'ASO-1' }, 'To Do'),
+        makeLog(),
+      );
+      await expect(client.createTicket({
+        projectKey: 'ASO',
+        summary: 'x',
+        dueDate: '2026-02-31',
+      })).to.be.rejectedWith('Invalid dueDate: not a real calendar date');
+    });
+
+    it('rejects issueType longer than 255 chars', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeCreateWithStatusHttpClient({ id: '1', key: 'ASO-1' }, 'To Do'),
+        makeLog(),
+      );
+      await expect(client.createTicket({
+        projectKey: 'ASO',
+        summary: 'x',
+        issueType: 'A'.repeat(256),
+      })).to.be.rejectedWith('issueType too long');
+    });
+
+    it('rejects priority longer than 255 chars', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeCreateWithStatusHttpClient({ id: '1', key: 'ASO-1' }, 'To Do'),
+        makeLog(),
+      );
+      await expect(client.createTicket({
+        projectKey: 'ASO',
+        summary: 'x',
+        priority: 'A'.repeat(256),
+      })).to.be.rejectedWith('priority too long');
+    });
+
+    it('rejects more than 10 labels', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeCreateWithStatusHttpClient({ id: '1', key: 'ASO-1' }, 'To Do'),
+        makeLog(),
+      );
+      await expect(client.createTicket({
+        projectKey: 'ASO',
+        summary: 'x',
+        labels: Array.from({ length: 11 }, (_, i) => `label-${i}`),
+      })).to.be.rejectedWith('Too many labels');
+    });
+
+    it('rejects a label longer than 255 chars', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeCreateWithStatusHttpClient({ id: '1', key: 'ASO-1' }, 'To Do'),
+        makeLog(),
+      );
+      await expect(client.createTicket({
+        projectKey: 'ASO',
+        summary: 'x',
+        labels: ['A'.repeat(256)],
+      })).to.be.rejectedWith('Label too long');
+    });
+
+    it('rejects more than 10 components', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeCreateWithStatusHttpClient({ id: '1', key: 'ASO-1' }, 'To Do'),
+        makeLog(),
+      );
+      await expect(client.createTicket({
+        projectKey: 'ASO',
+        summary: 'x',
+        components: Array.from({ length: 11 }, (_, i) => `Component-${i}`),
+      })).to.be.rejectedWith('Too many components');
+    });
+
     it('omits priority, duedate, components, and parent when not provided', async () => {
       const httpClient = makeCreateWithStatusHttpClient({ id: '1', key: 'ASO-1' }, 'To Do');
       const client = new JiraCloudClient(
@@ -1699,6 +1783,10 @@ describe('JiraCloudClient', () => {
         { id: '10003', key: 'C', name: 'C' },
       ]);
       expect(stub.callCount).to.equal(3);
+      // Verify startAt advances correctly with each page
+      expect(stub.firstCall.args[0]).to.include('startAt=0');
+      expect(stub.secondCall.args[0]).to.include('startAt=1'); // firstPage.length = 1
+      expect(stub.thirdCall.args[0]).to.include('startAt=2'); // page.length = 1
     });
 
     it('stops at MAX_PAGES (100) even when Jira keeps returning isLast: false', async () => {

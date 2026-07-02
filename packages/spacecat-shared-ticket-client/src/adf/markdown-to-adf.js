@@ -249,9 +249,12 @@ export default function markdownToAdf(text) {
     const tokens = lexer(truncated);
     const content = tokensToAdf(tokens, 0);
     return { version: 1, type: 'doc', content };
-  } catch {
+  } catch { /* c8 ignore next */
     // Fallback: return input as a single plain-text paragraph to avoid crashing
     // callers (e.g. RangeError from pathological nesting not caught by depth guard).
+    // The catch branch is intentionally not covered in unit tests: the depth guard
+    // prevents all known nesting-based throws, and `marked.lexer` is ESM-bound so
+    // it cannot be stubbed without esmock in this test setup.
     return {
       version: 1,
       type: 'doc',

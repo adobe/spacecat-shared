@@ -57,6 +57,13 @@ export default class OAuthCredentialManager {
 
   #cacheExpiresAt = 0;
 
+  // ── In-process concurrency locks ──────────────────────────────────────────
+  // Serialise concurrent same-Lambda calls so only one Atlassian request fires.
+  // The Promise is stored while a refresh is in flight; cleared when it settles.
+  #refreshLock = null;
+
+  #forceRefreshLock = null;
+
   /**
    * @param {object} smClient - AWS Secrets Manager client
    * @param {string} secretPath - SM path for this connection's tokens
@@ -93,8 +100,8 @@ export default class OAuthCredentialManager {
    *
    * @returns {Promise<{Authorization: string}>}
    */
-  async getAuthHeaders() {
-    const secret = await this.#readSecret();
+  async getAuthHeaders(bypassCache = false) {
+    const secret = await this.#readSecret(bypassCache);
 
     if (secret.requiresReauth) {
       throw Object.assign(
@@ -120,11 +127,23 @@ export default class OAuthCredentialManager {
    * Race-safe pre-read: if another Lambda already refreshed in the narrow
    * concurrent window, their token is returned without calling Atlassian.
    *
+   * In-process lock: concurrent same-Lambda callers (e.g. parallel createTicket
+   * calls) share this Promise so only one Atlassian request is fired.
+   *
    * Requires GET + PUT SM permission.
    *
    * @returns {Promise<{Authorization: string}>}
    */
   async refreshAuthHeaders() {
+    if (this.#refreshLock) {
+      return this.#refreshLock;
+    }
+    this.#refreshLock = this.#doRefreshAuthHeaders()
+      .finally(() => { this.#refreshLock = null; });
+    return this.#refreshLock;
+  }
+
+  async #doRefreshAuthHeaders() {
     const current = await this.#readSecret(true);
 
     // Pre-read exit: concurrent caller already refreshed — use their token.
@@ -176,6 +195,17 @@ export default class OAuthCredentialManager {
    * @returns {Promise<{Authorization: string}>}
    */
   async forceRefreshAuthHeaders(usedAuthHeader = null) {
+    // In-process lock: concurrent same-Lambda callers (e.g. parallel createTicket
+    // calls all getting 401) share this Promise so only one Atlassian request fires.
+    if (this.#forceRefreshLock) {
+      return this.#forceRefreshLock;
+    }
+    this.#forceRefreshLock = this.#doForceRefreshAuthHeaders(usedAuthHeader)
+      .finally(() => { this.#forceRefreshLock = null; });
+    return this.#forceRefreshLock;
+  }
+
+  async #doForceRefreshAuthHeaders(usedAuthHeader) {
     // RFC 6750 §2.1: the Bearer scheme name is case-insensitive.
     // Trim + null-coalesce: "Bearer " (space-only) must not produce an empty usedToken
     // that would always differ from current.accessToken and trigger a false early-exit.

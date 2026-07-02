@@ -193,6 +193,23 @@ describe('OAuthCredentialManager', () => {
       expect(smClient.getSecretValue.callCount).to.equal(1);
     });
 
+    it('bypasses TTL cache when bypassCache=true — reads SM even within the cache window', async () => {
+      const smClient = makeSmClient(VALID_SECRET);
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());
+
+      // First call — populates cache
+      await manager.getAuthHeaders();
+      expect(smClient.getSecretValue.callCount).to.equal(1);
+
+      // Second call within TTL — normally served from cache (no SM call)
+      await manager.getAuthHeaders();
+      expect(smClient.getSecretValue.callCount).to.equal(1);
+
+      // Third call with bypassCache=true — forces SM re-read despite live cache
+      await manager.getAuthHeaders(true);
+      expect(smClient.getSecretValue.callCount).to.equal(2);
+    });
+
     it('re-reads SM after a write path (refreshAuthHeaders) invalidates the cache', async () => {
       const smClient = {
         getSecretValue: sinon.stub()
@@ -629,6 +646,27 @@ describe('OAuthCredentialManager', () => {
         'Atlassian token response has invalid expires_in: -1',
       );
     });
+
+    it('deduplicates concurrent calls — only one Atlassian request fires', async () => {
+      const smClient = makeSmClient(EXPIRED_SECRET);
+      const httpClient = makeHttpClient({
+        access_token: 'new-concurrent-token',
+        refresh_token: 'new-refresh',
+        expires_in: 3600,
+      });
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
+
+      // Start both before either resolves — JS single-thread ensures lock acquired by p1
+      const p1 = manager.refreshAuthHeaders();
+      const p2 = manager.refreshAuthHeaders();
+
+      const [h1, h2] = await Promise.all([p1, p2]);
+
+      expect(h1).to.deep.equal({ Authorization: 'Bearer new-concurrent-token' });
+      expect(h2).to.deep.equal({ Authorization: 'Bearer new-concurrent-token' });
+      // Single-use refresh token must not be double-consumed
+      expect(httpClient.fetch.callCount).to.equal(1);
+    });
   });
 
   describe('forceRefreshAuthHeaders', () => {
@@ -814,6 +852,27 @@ describe('OAuthCredentialManager', () => {
       expect(headers).to.deep.equal({ Authorization: 'Bearer force-refreshed-token' });
       const putCalls = smClient.putSecretValue.args.map((args) => JSON.parse(args[0].SecretString));
       expect(putCalls.every((p) => !p.requiresReauth)).to.be.true;
+    });
+
+    it('deduplicates concurrent calls — only one Atlassian request fires', async () => {
+      const smClient = makeSmClient(EXPIRED_SECRET);
+      const httpClient = makeHttpClient({
+        access_token: 'force-concurrent-token',
+        refresh_token: 'new-refresh',
+        expires_in: 3600,
+      });
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
+
+      // Both callers use the same rejected token — typical batch-401 scenario
+      const p1 = manager.forceRefreshAuthHeaders('Bearer stale-token');
+      const p2 = manager.forceRefreshAuthHeaders('Bearer stale-token');
+
+      const [h1, h2] = await Promise.all([p1, p2]);
+
+      expect(h1).to.deep.equal({ Authorization: 'Bearer force-concurrent-token' });
+      expect(h2).to.deep.equal({ Authorization: 'Bearer force-concurrent-token' });
+      // Single-use refresh token must not be double-consumed
+      expect(httpClient.fetch.callCount).to.equal(1);
     });
   });
 

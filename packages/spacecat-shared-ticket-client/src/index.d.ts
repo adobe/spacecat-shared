@@ -48,6 +48,8 @@ export interface Attachment {
 
 export declare class BaseTicketClient {
   createTicket(ticketData: TicketData): Promise<TicketResult>;
+  listProjects(): Promise<Project[]>;
+  listIssueTypes(projectId: string): Promise<IssueType[]>;
 }
 
 export declare class JiraCloudClient extends BaseTicketClient {

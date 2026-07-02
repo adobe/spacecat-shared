@@ -274,6 +274,99 @@ describe('RateLimitAwareHttpClient', () => {
     expect(innerFetch.callCount).to.equal(5);
   });
 
+  describe('non-idempotent method safety (POST/PUT/PATCH)', () => {
+    it('does not retry 5xx on POST — returns response immediately', async () => {
+      const inner = { fetch: sinon.stub().resolves(makeResponse(503)) };
+      const log = makeLog();
+      const client = new RateLimitAwareHttpClient(inner, log);
+
+      const res = await client.fetch('https://api.atlassian.com/issue', { method: 'POST' });
+
+      expect(res.status).to.equal(503);
+      expect(inner.fetch.callCount).to.equal(1);
+      expect(log.warn.calledOnce).to.be.true;
+      expect(log.warn.firstCall.args[0]).to.include('non-idempotent');
+    });
+
+    it('does not retry 5xx on PUT — returns response immediately', async () => {
+      const inner = { fetch: sinon.stub().resolves(makeResponse(502)) };
+      const client = new RateLimitAwareHttpClient(inner, makeLog());
+
+      const res = await client.fetch('https://api.atlassian.com/issue', { method: 'PUT' });
+
+      expect(res.status).to.equal(502);
+      expect(inner.fetch.callCount).to.equal(1);
+    });
+
+    it('does not retry network errors on POST — throws immediately', async () => {
+      const inner = { fetch: sinon.stub().rejects(new Error('ECONNRESET')) };
+      const client = new RateLimitAwareHttpClient(inner, makeLog());
+
+      await expect(
+        client.fetch('https://api.atlassian.com/issue', { method: 'POST' }),
+      ).to.be.rejectedWith('ECONNRESET');
+
+      expect(inner.fetch.callCount).to.equal(1);
+    });
+
+    it('still retries 429 on POST — rate-limited requests were never processed', async () => {
+      const inner = { fetch: sinon.stub() };
+      inner.fetch.onFirstCall().resolves(makeResponse(429, { 'Retry-After': '1' }));
+      inner.fetch.onSecondCall().resolves(makeResponse(201));
+      const client = new RateLimitAwareHttpClient(inner, makeLog());
+
+      const promise = client.fetch('https://api.atlassian.com/issue', { method: 'POST' });
+      await clock.tickAsync(1100);
+      const res = await promise;
+
+      expect(res.status).to.equal(201);
+      expect(inner.fetch.callCount).to.equal(2);
+    });
+
+    it('retries 5xx on GET — idempotent method is safe to retry', async () => {
+      const inner = { fetch: sinon.stub() };
+      inner.fetch.onFirstCall().resolves(makeResponse(503));
+      inner.fetch.onSecondCall().resolves(makeResponse(200));
+      const client = new RateLimitAwareHttpClient(inner, makeLog());
+
+      const promise = client.fetch('https://api.atlassian.com/projects', { method: 'GET' });
+      await clock.tickAsync(3000);
+      const res = await promise;
+
+      expect(res.status).to.equal(200);
+      expect(inner.fetch.callCount).to.equal(2);
+    });
+
+    it('retries network errors on GET — idempotent method is safe to retry', async () => {
+      const inner = { fetch: sinon.stub() };
+      inner.fetch.onFirstCall().rejects(new Error('ECONNRESET'));
+      inner.fetch.onSecondCall().resolves(makeResponse(200));
+      const client = new RateLimitAwareHttpClient(inner, makeLog());
+
+      const promise = client.fetch('https://api.atlassian.com/projects', { method: 'GET' });
+      await clock.tickAsync(3000);
+      const res = await promise;
+
+      expect(res.status).to.equal(200);
+      expect(inner.fetch.callCount).to.equal(2);
+    });
+
+    it('defaults to GET when options.method is not specified', async () => {
+      const inner = { fetch: sinon.stub() };
+      inner.fetch.onFirstCall().resolves(makeResponse(503));
+      inner.fetch.onSecondCall().resolves(makeResponse(200));
+      const client = new RateLimitAwareHttpClient(inner, makeLog());
+
+      const promise = client.fetch('https://api.atlassian.com/projects', {});
+      await clock.tickAsync(3000);
+      const res = await promise;
+
+      // Defaults to GET → safe to retry
+      expect(res.status).to.equal(200);
+      expect(inner.fetch.callCount).to.equal(2);
+    });
+  });
+
   describe('X-RateLimit quota headers', () => {
     it('logs a warning when X-RateLimit-Remaining is below threshold', async () => {
       const inner = {

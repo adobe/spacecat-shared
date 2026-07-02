@@ -12,6 +12,11 @@
 
 const MAX_RETRIES = 4;
 const BASE_BACKOFF_MS = 2000; // 2s, 4s, 8s, 16s per Atlassian recommendation
+// Idempotent HTTP methods safe to retry on 5xx — non-idempotent methods (POST, PUT, PATCH)
+// must NOT be retried because the server may have processed the request before returning the
+// error (split-brain), and retrying would create duplicate resources (e.g. duplicate Jira tickets).
+// 429 rate-limit retries are always safe regardless of method — Jira rejected the request outright.
+const SAFE_RETRY_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'DELETE']);
 // Hard ceiling on any single retry wait — prevents a rogue Retry-After value from
 // blocking a Lambda for minutes.
 const MAX_WAIT_MS = 30_000;
@@ -45,6 +50,13 @@ const QUOTA_REASONS = new Set([
  *       is wasted compute. Return the 429 immediately so the caller can surface
  *       a meaningful error to the user.
  *
+ * 5xx / network errors are only retried for idempotent methods (GET, HEAD,
+ * OPTIONS, DELETE). Non-idempotent methods (POST, PUT, PATCH) return the error
+ * immediately — the server may have processed the request before failing, and
+ * retrying would risk creating duplicate resources (e.g. duplicate Jira tickets).
+ * 429 rate-limit retries apply to ALL methods since Jira rejected the request
+ * outright and nothing was created.
+ *
  * Additionally reads `X-RateLimit-Remaining` on every response and logs a
  * warning when remaining capacity falls below LOW_QUOTA_THRESHOLD so operators
  * can request a Tier 2 (per-tenant) quota upgrade before exhaustion occurs.
@@ -77,8 +89,11 @@ export default class RateLimitAwareHttpClient {
         // eslint-disable-next-line no-await-in-loop
         response = await this.httpClient.fetch(url, fetchOptions);
       } catch (err) {
-        // Timeout or network error — retry with backoff if attempts remain.
-        if (attempt === MAX_RETRIES) {
+        // Non-idempotent methods (POST, PUT, PATCH): do not retry on network errors.
+        // The server may have processed the request before the connection dropped —
+        // retrying would risk creating duplicate resources (e.g. duplicate Jira tickets).
+        const method = (options?.method || 'GET').toUpperCase();
+        if (attempt === MAX_RETRIES || !SAFE_RETRY_METHODS.has(method)) {
           throw err;
         }
         const waitMs = this.#resolveWaitMs(null, attempt);
@@ -99,9 +114,26 @@ export default class RateLimitAwareHttpClient {
 
       this.#observeQuotaHeaders(response.headers);
 
+      const is429 = response.status === 429;
+      const isRetriable5xx = response.status >= 500 && response.status !== 501;
+
       // Return immediately for anything that is neither a rate-limit (429)
       // nor a retriable server error (5xx except 501 Not Implemented).
-      if (response.status !== 429 && !(response.status >= 500 && response.status !== 501)) {
+      if (!is429 && !isRetriable5xx) {
+        return response;
+      }
+
+      // 5xx on non-idempotent methods (POST, PUT, PATCH): return as-is, do not retry.
+      // The server may have processed the request before returning the error — retrying
+      // would risk creating duplicate resources (e.g. duplicate Jira tickets).
+      // 429 is always safe to retry: Jira rejected the request outright, nothing was created.
+      const method = (options?.method || 'GET').toUpperCase();
+      if (isRetriable5xx && !SAFE_RETRY_METHODS.has(method)) {
+        this.log.warn('Jira 5xx on non-idempotent method — not retrying', {
+          url,
+          method,
+          status: response.status,
+        });
         return response;
       }
 

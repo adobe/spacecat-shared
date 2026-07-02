@@ -1684,8 +1684,8 @@ export interface components {
             children_count?: number;
             id: string;
             name?: string;
-            parent_id?: string;
-            path?: components["schemas"]["model.AIOTagLeaf"][];
+            parent_id?: string | null;
+            path?: components["schemas"]["model.AIOTagLeaf"][] | null;
             prompts_count?: number;
         };
         "model.AIOTagLeaf": {
@@ -8119,8 +8119,8 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["model.TreeNodeRequest"];
         responses: {
-            /** @description Created */
-            201: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8139,6 +8139,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.5.0...@adobe/spacecat-shared-project-engine-client-v1.6.0) (2026-07-01)
+
+### Features
+
+* **project-engine-client:** model 1-level nested AIO tags in the mock ([#1758](https://github.com/adobe/spacecat-shared/issues/1758)) ([a040b45](https://github.com/adobe/spacecat-shared/commit/a040b459b50b0e7fa02d098034f75b2936fb0497)), closes [serenity-docs#21](https://github.com/adobe/serenity-docs/issues/21)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.4.1...@adobe/spacecat-shared-project-engine-client-v1.5.0) (2026-07-01)
+
+### Features
+
+* **project-engine-client:** fold serenity sub-workspace fixtures into the baked mock seed ([#1759](https://github.com/adobe/spacecat-shared/issues/1759)) ([1522237](https://github.com/adobe/spacecat-shared/commit/1522237a0f883ae1c0740adcf2774375ab7f22cb))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.4.0...@adobe/spacecat-shared-project-engine-client-v1.4.1) (2026-06-30)
 
 ### Bug Fixes

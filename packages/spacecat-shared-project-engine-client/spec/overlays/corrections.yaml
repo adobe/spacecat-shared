@@ -57,6 +57,21 @@ info:
 #      list returns both alongside the already-present `project_id` (verified 2026-06-25 against
 #      prod) — same pattern as CR9 — but the vendored swagger omits them. Add them (string).
 #      Remove if Semrush adds the fields upstream.
+# CR11 aio-update-tag (PATCH /v2/.../aio/tags/{tag_id}) responds 200, not 201. The vendored swagger
+#      declares the success response under 201; the live API responds 200 OK (verified 2026-07-01
+#      against prod `adobe-hackathon.semrush.com`, workspace bb0f4e1c-… child, PATCH re-parent+rename
+#      of a tag → 200 with the updated TreeNodeResponse). Move the response 201→200 so the type, the
+#      mock, and the live API agree. Remove if Semrush changes the status upstream.
+# CR12 aio-update-tag returns 404 (not 500) for an unknown tag id. The vendored swagger declares no
+#      404; the live API responds `404 {"message":"not found"}` for a missing tag (verified
+#      2026-07-01 against prod — same shape as the projects delete/patch 404). Add a 404 response
+#      (http_server.BasicResponse) so the mock can return the live status and Counterfact response
+#      validation accepts it. Remove if Semrush declares/relocates it upstream.
+# CR13 model.AIOTag `parent_id` + `path` are NULLABLE. The live tag read returns `parent_id: null`
+#      and `path: null` for a flat / root tag (no parent), not an omitted field or an empty array
+#      (verified 2026-07-01 against prod). The vendored swagger types them non-nullable, so a mock
+#      emitting the live `null` fails response validation / the generated type. Mark both nullable.
+#      Remove if Semrush stops returning null (e.g. omits the fields) upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -297,3 +312,48 @@ actions:
       properties:
         primary_url: { type: string }
         root_domain: { type: string }
+
+  # ── CR11: aio-update-tag success is 200, not 201 ─────────────────────────
+  # Live: PATCH /v2/.../aio/tags/{tag_id} -> 200 TreeNodeResponse (verified 2026-07-01 against prod).
+  # Add the 200 (copy of the 201 body), then remove the stale 201 (mirrors the CR7 pattern).
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}'].patch.responses"
+    description: "CR11: add the 200 OK success response on aio-update-tag"
+    update:
+      "200":
+        description: "OK"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/model.TreeNodeResponse"
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}'].patch.responses['201']"
+    description: "CR11: remove the stale 201 success response on aio-update-tag"
+    remove: true
+
+  # ── CR12: aio-update-tag returns 404 for an unknown tag id ────────────────
+  # Live: PATCH .../aio/tags/<bogus> -> 404 {"message":"not found"} (verified 2026-07-01 against
+  # prod). The vendored swagger declares no 404; add it (http_server.BasicResponse) so the mock can
+  # return the live status and Counterfact response validation accepts it.
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}'].patch.responses"
+    description: "CR12: add the 404 Not Found response on aio-update-tag"
+    update:
+      "404":
+        description: "Not Found"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+
+  # ── CR13: AIOTag parent_id + path are nullable (roots return null) ────────
+  # Live: a flat / root tag reads back `parent_id: null` and `path: null` (verified 2026-07-01
+  # against prod) — not an omitted field or an empty array. Deep-merge adds `nullable: true` to the
+  # existing property nodes (keeps their type/items).
+  - target: "$.components.schemas['model.AIOTag']"
+    description: "CR13: AIOTag parent_id + path are nullable (roots return null)"
+    update:
+      properties:
+        parent_id: { type: string, nullable: true }
+        path:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/model.AIOTagLeaf"

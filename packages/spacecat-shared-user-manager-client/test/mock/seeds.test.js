@@ -12,16 +12,33 @@
 
 import { expect } from 'chai';
 import {
-  SEEDS, DEFAULT_SEED, SEED_IDS, EMPTY_PARENT, PARENT_WITH_CHILD, buildSeed,
+  SEEDS, DEFAULT_SEED, SEED_IDS, EMPTY_PARENT, PARENT_WITH_CHILD, TWO_HIERARCHIES, buildSeed,
 } from '../../mock/seeds.js';
 import { WORKSPACES, STATUS_CONTROL } from '../../mock/stateful.js';
 import { POOL_COLLECTION } from '../../mock/quota.js';
 
 describe('mock seeds', () => {
   it('exposes the named seed sets and the default', () => {
-    expect(Object.keys(SEEDS)).to.have.members(['empty-parent', 'parent-with-child']);
+    expect(Object.keys(SEEDS))
+      .to.have.members(['empty-parent', 'parent-with-child', 'two-hierarchies']);
     expect(DEFAULT_SEED).to.equal('parent-with-child');
     expect(SEEDS[DEFAULT_SEED]).to.equal(PARENT_WITH_CHILD);
+  });
+
+  it('TWO_HIERARCHIES links two independent parent→child families', () => {
+    const ws = TWO_HIERARCHIES[WORKSPACES];
+    expect(ws).to.have.length(4);
+    const ids = ws.map((w) => w.id);
+    expect(ids).to.deep.equal([
+      SEED_IDS.parentWorkspaceId, SEED_IDS.childWorkspaceId,
+      SEED_IDS.secondParentWorkspaceId, SEED_IDS.secondChildWorkspaceId,
+    ]);
+    // each child links to its OWN parent (never the other hierarchy's).
+    expect(ws[1].parent_id).to.equal(SEED_IDS.parentWorkspaceId);
+    expect(ws[3].parent_id).to.equal(SEED_IDS.secondParentWorkspaceId);
+    // roots have no parent.
+    expect(ws[0].parent_id).to.equal('');
+    expect(ws[2].parent_id).to.equal('');
   });
 
   it('EMPTY_PARENT has the org parent only', () => {
@@ -37,9 +54,9 @@ describe('mock seeds', () => {
     expect(child.status).to.equal('created');
   });
 
-  it('SEED_IDS is frozen and exposes both ids', () => {
+  it('SEED_IDS is frozen and exposes both hierarchies ids', () => {
     expect(Object.isFrozen(SEED_IDS)).to.equal(true);
-    expect(SEED_IDS).to.have.all.keys('parentWorkspaceId', 'childWorkspaceId');
+    expect(SEED_IDS).to.have.all.keys('parentWorkspaceId', 'childWorkspaceId', 'secondParentWorkspaceId', 'secondChildWorkspaceId');
   });
 
   describe('buildSeed', () => {

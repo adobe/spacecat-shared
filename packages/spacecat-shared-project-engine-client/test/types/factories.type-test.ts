@@ -27,6 +27,7 @@ import {
   createBenchmarkMock,
   createBrandUrlMock,
   createAIOTagMock,
+  createAIOTagLeafMock,
 } from '../../mock/factories.js';
 import type { components } from '../../src/index.js';
 
@@ -68,6 +69,20 @@ void aioTag.prompts_count;
 void aioTag;
 // @ts-expect-error — keyword_count is a TreeNodeResponse field, not on AIOTag.
 createAIOTagMock({ keyword_count: 0 });
+// 1e-nested: a child tag carries parent_id + a path[] of AIOTagLeaf ancestors (1-level tree).
+type AIOTagLeaf = components['schemas']['model.AIOTagLeaf'];
+const tagLeaf: AIOTagLeaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category:X' });
+const childTag: AIOTag = createAIOTagMock({
+  id: 'tag-child', name: 'Trail', parent_id: 'tag-root', path: [tagLeaf],
+});
+void childTag.parent_id;
+void childTag.path;
+// CR13: live returns null (not omitted/[]) for a flat root's parent_id + path — the overlay makes
+// both nullable, so these only compile while CR13 is in the schema.
+const rootTag: AIOTag = createAIOTagMock({ parent_id: null, path: null });
+void rootTag;
+// @ts-expect-error — a path leaf is an AIOTagLeaf, not a bare string.
+createAIOTagMock({ path: ['tag-root'] });
 // CR10: primary_url + root_domain are added to AIOBenchmarkWithCounters by the overlay (live
 // returns them). These reads only compile while CR10 is in the schema — drop CR10 and they error.
 void benchmark.primary_url;

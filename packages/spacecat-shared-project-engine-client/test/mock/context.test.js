@@ -41,6 +41,12 @@ describe('mock Context', () => {
     expect(ctx.tagId('category:Running Shoes')).to.equal('tag-category%3ARunning%20Shoes');
   });
 
+  it('exposes the shared parentIdField helper for the tag routes', () => {
+    const ctx = new Context();
+    expect(ctx.parentIdField('tag-root')).to.deep.equal({ parent_id: 'tag-root' });
+    expect(ctx.parentIdField('')).to.deep.equal({});
+  });
+
   it('exposes the ai-model catalog for the catalog route + add-path resolution', () => {
     const ctx = new Context();
     expect(ctx.aiModelCatalog).to.be.an('array').with.length.greaterThan(0);

@@ -111,3 +111,19 @@ export const AI_MODEL_CATALOG = Object.freeze([
     icon: 'deepseek',
   },
 ].map((entry) => Object.freeze(entry)));
+
+/**
+ * Resolves a catalog entry by its `key`, THROWING if absent — so a seeded assignment or the factory
+ * default stays catalog-valid by construction (a typo'd key fails loudly instead of silently
+ * falling back to a wrong/default model). The non-nullable return also localizes what would
+ * otherwise be a scattered `find(...)!` / `any` cast to one spot.
+ * @param {string} key
+ * @returns {AiModelCatalogEntry}
+ */
+export const findCatalogEntryByKey = (key) => {
+  const entry = AI_MODEL_CATALOG.find((m) => m.key === key);
+  if (!entry) {
+    throw new Error(`Unknown AI model catalog key: ${key}`);
+  }
+  return entry;
+};

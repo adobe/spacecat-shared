@@ -79,6 +79,7 @@ export {
   toPathname,
   hasSamePathname,
   allHaveSamePathname,
+  isPathPatternWithinSiteScope,
 } from './url-helpers.js';
 
 export {

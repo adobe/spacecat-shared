@@ -86,6 +86,21 @@ describe('Brand Schema', () => {
     });
   });
 
+  describe('semrushSubWorkspaceId attribute (transitional mirror)', () => {
+    it('exists, is read-only, and carries no validator (mirrored by DB trigger)', () => {
+      const attr = attributes.semrushSubWorkspaceId;
+      expect(attr).to.exist;
+      expect(attr.required).to.not.equal(true);
+      expect(attr.readOnly).to.be.true;
+    });
+
+    // No postgrestField override: camelToSnake('semrushSubWorkspaceId') already
+    // produces the DB column name `semrush_sub_workspace_id`.
+    it('uses the default camelToSnake column mapping (no override)', () => {
+      expect(attributes.semrushSubWorkspaceId.postgrestField).to.be.undefined;
+    });
+  });
+
   describe('pendingSemrushProvisioning attribute', () => {
     it('exists with a nullable object validator', () => {
       const attr = attributes.pendingSemrushProvisioning;

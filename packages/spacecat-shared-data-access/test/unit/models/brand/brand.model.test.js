@@ -26,6 +26,7 @@ const sampleRow = {
   name: 'Fixture Brand',
   status: 'active',
   semrushWorkspaceId: 'sub-ws-fixture',
+  semrushSubWorkspaceId: 'sub-ws-fixture',
 };
 
 describe('BrandModel', () => {
@@ -93,6 +94,16 @@ describe('BrandModel', () => {
     it('clears the pointer (disconnects the brand from its subworkspace)', () => {
       instance.setSemrushWorkspaceId(null);
       expect(instance.getSemrushWorkspaceId()).to.equal(null);
+    });
+  });
+
+  describe('semrushSubWorkspaceId (transitional mirror)', () => {
+    it('gets semrushSubWorkspaceId', () => {
+      expect(instance.getSemrushSubWorkspaceId()).to.equal('sub-ws-fixture');
+    });
+
+    it('has no setter (read-only — maintained by the DB sync trigger)', () => {
+      expect(instance.setSemrushSubWorkspaceId).to.be.undefined;
     });
   });
 

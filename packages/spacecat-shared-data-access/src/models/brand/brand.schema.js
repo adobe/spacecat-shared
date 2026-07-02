@@ -46,6 +46,18 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
     type: 'string',
     validate: (value) => value == null || hasText(value),
   })
+  // TRANSITIONAL (serenity-docs brand-semrush-mapping-maintenance.md §10
+  // rename, expand phase): read-only mirror of semrushWorkspaceId above,
+  // maintained entirely by the mysticat-data-service
+  // brands_sync_semrush_sub_workspace_id trigger (migration 20260702091920).
+  // No setter — semrushWorkspaceId remains the only attribute app code
+  // writes until consumers cut over, at which point this becomes canonical
+  // and semrushWorkspaceId (plus the trigger) is retired. Not yet used by
+  // any caller in this package.
+  .addAttribute('semrushSubWorkspaceId', {
+    type: 'string',
+    readOnly: true,
+  })
   // Nullable JSONB blob holding deferred Semrush provisioning data for a
   // pending (draft) brand. Maps to brands.pending_semrush_provisioning
   // (migration 20260618120000). Validated loosely here (object-or-null); the
@@ -58,6 +70,9 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
   // Uniqueness is enforced at the DB level via the UNIQUE constraint on
   // brands.semrush_workspace_id (mysticat-data-service migration
   // 20260615102123), so findBySemrushWorkspaceId returns at most one row.
-  .addAllIndex(['semrushWorkspaceId']);
+  .addAllIndex(['semrushWorkspaceId'])
+  // Same uniqueness guarantee on the mirrored column (brands.semrush_sub_workspace_id,
+  // mysticat-data-service migration 20260702091920).
+  .addAllIndex(['semrushSubWorkspaceId']);
 
 export default schema.build();

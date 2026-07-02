@@ -73,5 +73,12 @@ describe('BrandCollection', () => {
       expect(instance.allBySemrushWorkspaceId).to.be.a('function');
       expect(instance.findBySemrushWorkspaceId).to.be.a('function');
     });
+
+    // Symmetric addAllIndex(['semrushSubWorkspaceId']) for the transitional
+    // mirror column — not used by any caller yet, but ready for the cutover.
+    it('exposes allBySemrushSubWorkspaceId and findBySemrushSubWorkspaceId', () => {
+      expect(instance.allBySemrushSubWorkspaceId).to.be.a('function');
+      expect(instance.findBySemrushSubWorkspaceId).to.be.a('function');
+    });
   });
 });

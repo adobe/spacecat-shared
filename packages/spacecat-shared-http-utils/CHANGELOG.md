@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.33.0...@adobe/spacecat-shared-http-utils-v1.33.1) (2026-07-02)
+
+### Bug Fixes
+
+* **facs:** bypass FACS enforcement for IMS auth channel ([#1762](https://github.com/adobe/spacecat-shared/issues/1762)) ([bc52968](https://github.com/adobe/spacecat-shared/commit/bc52968f018e6a64d8e88432aafe6298effc0048))
+
 ## [@adobe/spacecat-shared-http-utils-v1.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.32.0...@adobe/spacecat-shared-http-utils-v1.33.0) (2026-06-30)
 
 ### Features

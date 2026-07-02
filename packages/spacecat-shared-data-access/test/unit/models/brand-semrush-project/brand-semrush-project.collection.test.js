@@ -16,6 +16,7 @@ import sinonChai from 'sinon-chai';
 import sinon from 'sinon';
 
 import BrandSemrushProject from '../../../../src/models/brand-semrush-project/brand-semrush-project.model.js';
+import DataAccessError from '../../../../src/errors/data-access.error.js';
 
 import { createElectroMocks } from '../../util.js';
 
@@ -165,6 +166,150 @@ describe('BrandSemrushProjectCollection', () => {
       expect(stub.firstCall.args[0]).to.deep.equal({
         semrushProjectId: mockRecord.semrushProjectId,
       });
+    });
+  });
+
+  describe('allByOrganizationId', () => {
+    const organizationId = 'a1b2c3d4-0000-4000-8000-000000000001';
+
+    function setupPostgrestChain(result) {
+      const rangeStub = sinon.stub().resolves(result);
+      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const isStub = sinon.stub().returns({ order: orderStub });
+      const eqStub = sinon.stub().returns({ is: isStub, order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+      return {
+        selectStub, eqStub, isStub, orderStub, rangeStub,
+      };
+    }
+
+    it('queries the embedded brands join, filters tombstones by default, and maps rows to identity DTOs', async () => {
+      const { selectStub, eqStub, isStub } = setupPostgrestChain({
+        data: [{
+          brand_id: mockRecord.brandId,
+          semrush_project_id: mockRecord.semrushProjectId,
+          semrush_location_id: mockRecord.geoTargetId,
+          language: mockRecord.languageCode,
+          site_id: 'a1b2c3d4-0000-4000-8000-000000000002',
+          brands: {
+            organization_id: organizationId,
+            semrush_workspace_id: 'sub-ws-1',
+          },
+        }],
+        error: null,
+      });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(selectStub).to.have.been.calledWithMatch('brands!brand_to_semrush_projects_brand_id_fkey');
+      expect(eqStub).to.have.been.calledWith('brands.organization_id', organizationId);
+      expect(isStub).to.have.been.calledWith('deleted_at', null);
+      expect(results).to.deep.equal([{
+        brandId: mockRecord.brandId,
+        semrushProjectId: mockRecord.semrushProjectId,
+        geoTargetId: mockRecord.geoTargetId,
+        languageCode: mockRecord.languageCode,
+        siteId: 'a1b2c3d4-0000-4000-8000-000000000002',
+        organizationId,
+        semrushSubWorkspaceId: 'sub-ws-1',
+      }]);
+    });
+
+    it('does not filter tombstones when includeDeleted is true', async () => {
+      const { isStub, orderStub } = setupPostgrestChain({ data: [], error: null });
+
+      await instance.allByOrganizationId(organizationId, { includeDeleted: true });
+
+      expect(isStub).to.not.have.been.called;
+      expect(orderStub).to.have.been.calledWith('brand_id');
+    });
+
+    it('defaults null site_id / missing brands embed to null in the DTO', async () => {
+      setupPostgrestChain({
+        data: [{
+          brand_id: mockRecord.brandId,
+          semrush_project_id: mockRecord.semrushProjectId,
+          semrush_location_id: mockRecord.geoTargetId,
+          language: mockRecord.languageCode,
+          site_id: null,
+          brands: null,
+        }],
+        error: null,
+      });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results[0].siteId).to.be.null;
+      expect(results[0].organizationId).to.be.null;
+      expect(results[0].semrushSubWorkspaceId).to.be.null;
+    });
+
+    it('returns an empty array when no rows exist', async () => {
+      setupPostgrestChain({ data: [], error: null });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results).to.deep.equal([]);
+    });
+
+    it('returns an empty array when data is null', async () => {
+      setupPostgrestChain({ data: null, error: null });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results).to.deep.equal([]);
+    });
+
+    it('paginates when results exceed page size', async () => {
+      const DEFAULT_PAGE_SIZE = 1000;
+      const page1 = Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
+        brand_id: `brand-${i}`,
+        semrush_project_id: `proj-${i}`,
+        semrush_location_id: 2840,
+        language: 'en',
+        site_id: null,
+        brands: { organization_id: organizationId, semrush_workspace_id: null },
+      }));
+      const page2 = [{
+        brand_id: `brand-${DEFAULT_PAGE_SIZE}`,
+        semrush_project_id: `proj-${DEFAULT_PAGE_SIZE}`,
+        semrush_location_id: 2840,
+        language: 'en',
+        site_id: null,
+        brands: { organization_id: organizationId, semrush_workspace_id: null },
+      }];
+
+      const rangeStub = sinon.stub();
+      rangeStub.onFirstCall().resolves({ data: page1, error: null });
+      rangeStub.onSecondCall().resolves({ data: page2, error: null });
+      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const isStub = sinon.stub().returns({ order: orderStub });
+      const eqStub = sinon.stub().returns({ is: isStub, order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results).to.have.lengthOf(DEFAULT_PAGE_SIZE + 1);
+      expect(rangeStub).to.have.been.calledTwice;
+      expect(rangeStub.firstCall.args).to.deep.equal([0, DEFAULT_PAGE_SIZE - 1]);
+      // eslint-disable-next-line max-len
+      expect(rangeStub.secondCall.args).to.deep.equal([DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE * 2 - 1]);
+    });
+
+    it('throws DataAccessError when organizationId is missing', async () => {
+      await expect(instance.allByOrganizationId(null))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required');
+      await expect(instance.allByOrganizationId(''))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required');
+    });
+
+    it('throws DataAccessError on PostgREST error', async () => {
+      setupPostgrestChain({ data: null, error: { message: 'boom' } });
+
+      await expect(instance.allByOrganizationId(organizationId))
+        .to.be.rejectedWith(DataAccessError, 'Failed to query mapping rows by organization');
     });
   });
 });

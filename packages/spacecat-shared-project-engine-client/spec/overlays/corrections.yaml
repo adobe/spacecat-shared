@@ -77,6 +77,10 @@ info:
 #      (verified 2026-07-02 against prod). Reuses the already-vendored `StringIDNameListResponse`
 #      wrapper (extended with `existing_count`) instead of a new schema. Remove if Semrush retypes
 #      the response upstream.
+# CR15 model.TreeNodeRequest `parent_id` is NULLABLE. aio-update-tag accepts an explicit
+#      `parent_id: null` to promote a child tag to a root (verified 2026-07-02 against prod). The
+#      vendored swagger types it as a plain string, so request validation rejected the literal
+#      null. Remove if Semrush documents the nullability upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -395,3 +399,19 @@ actions:
           application/json:
             schema:
               $ref: "#/components/schemas/model.StringIDNameListResponse"
+
+  # ── CR15: TreeNodeRequest parent_id is nullable (explicit null promotes to root) ──────────
+  # Live: PATCH /v2/.../aio/tags/{tag_id} accepts an explicit `parent_id: null` in the request
+  # body to promote a child tag to a root (verified 2026-07-02 against prod — serenity-docs#24
+  # §3.1 gate 1). The vendored swagger types `model.TreeNodeRequest.parent_id` as a plain
+  # (non-nullable) string, so Counterfact's request-body validation (enabled — see mock/run.js)
+  # rejected a literal `null` before the handler ever ran, surfacing to the caller as a request
+  # failure. Mark it nullable so the request validates against the corrected spec; the mock's
+  # PATCH handler (aio/tags/{tag_id}.js) distinguishes an OMITTED `parent_id` key (preserve the
+  # tag's current parent) from an explicit `null` (clear it — promote to root). Remove if Semrush
+  # documents the nullability upstream.
+  - target: "$.components.schemas['model.TreeNodeRequest']"
+    description: "CR15: TreeNodeRequest parent_id is nullable (explicit null promotes a child to root)"
+    update:
+      properties:
+        parent_id: { type: string, nullable: true }

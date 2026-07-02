@@ -2312,7 +2312,7 @@ export interface components {
         };
         "model.TreeNodeRequest": {
             name: string;
-            parent_id?: string;
+            parent_id?: string | null;
         };
         "model.TreeNodeResponse": {
             children_count?: number;

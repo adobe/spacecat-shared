@@ -928,6 +928,76 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(childrenAfter.total).to.equal(0);
   });
 
+  // PATCH's `parent_id` is a live-verified 3-way switch (serenity-docs#24 §3.1 gate 1, CR15), NOT
+  // a simple presence check: an explicit `null` promotes to root (asserted above via the
+  // equivalent `''` live shape), an OMITTED key preserves the current parent (asserted here), and
+  // a non-empty string re-parents (asserted by the rename test below). A rename-only caller that
+  // never mentions `parent_id` must not silently un-parent the tag.
+  it('PATCH with parent_id OMITTED preserves the tag\'s current parent (rename-only)', async () => {
+    const { data: patched, error: patchError, response: patchResp } = await client.PATCH(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}',
+      {
+        params: {
+          path: {
+            id: SEED_WORKSPACE, project_id: SEED_PROJECT, tag_id: SEED_IDS.childTagId,
+          },
+        },
+        // No parent_id key at all — a rename-only call.
+        body: { name: 'Ridge' },
+      },
+    );
+    expect(patchError).to.equal(undefined);
+    expect(patchResp.status).to.equal(200);
+    expect(patched).to.include({
+      id: SEED_IDS.childTagId, name: 'Ridge', parent_id: SEED_IDS.categoryTagId,
+    });
+
+    const { data: childrenAfter } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: SEED_IDS.categoryTagId, search: '' },
+        },
+      },
+    );
+    expect(childrenAfter.items.map((t) => t.name)).to.deep.equal(['Ridge']);
+  });
+
+  // Same gate, the other literal: an explicit JSON `null` (not merely a falsy/empty string)
+  // promotes a child to a root. CR15 makes this pass Counterfact's request validation.
+  it('PATCH with an explicit null parent_id promotes a child to a root', async () => {
+    const { data: patched, error: patchError, response: patchResp } = await client.PATCH(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}',
+      {
+        params: {
+          path: {
+            id: SEED_WORKSPACE, project_id: SEED_PROJECT, tag_id: SEED_IDS.childTagId,
+          },
+        },
+        body: { name: 'Trail', parent_id: null },
+      },
+    );
+    expect(patchError).to.equal(undefined);
+    expect(patchResp.status).to.equal(200);
+    // parentIdField omits the key entirely for a root (same convention as the create path) rather
+    // than echoing `null` — the exact omitted-vs-null shape on THIS response is unverified live
+    // (CR13's null verification covers the GET/list AIOTag path, not PATCH's TreeNodeResponse), so
+    // this only asserts the parent link is gone, not which of the two falsy shapes represents it.
+    expect(patched.parent_id).to.not.exist;
+
+    const { data: rootsAfter } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: '', search: '' },
+        },
+      },
+    );
+    expect(rootsAfter.items.map((t) => t.name)).to.have.members(['category:Running Shoes', 'Trail']);
+  });
+
   // PATCH also RENAMES in place: changing `name` (keeping the parent) is reflected in the 200
   // response and a subsequent GET. Exercises the full route-handler→response roundtrip for a
   // rename — the stateful unit test covers only the store layer, not the handler's response build.

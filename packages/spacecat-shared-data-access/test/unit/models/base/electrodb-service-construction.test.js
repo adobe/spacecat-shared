@@ -39,7 +39,11 @@ import EntityRegistry from '../../../../src/models/base/entity.registry.js';
  * does. Any new entity added to `entity.registry.js` is automatically
  * covered.
  */
-describe('EntityRegistry — ElectroDB Service construction', () => {
+describe('EntityRegistry — ElectroDB Service construction', function () {
+  // Service construction time scales with entity count — set a generous ceiling
+  // so CI machines with slower CPUs don't false-positive on a valid schema.
+  this.timeout(10000);
+
   it('new electrodb.Service(EntityRegistry.getEntities()) succeeds', () => {
     const entities = EntityRegistry.getEntities();
 

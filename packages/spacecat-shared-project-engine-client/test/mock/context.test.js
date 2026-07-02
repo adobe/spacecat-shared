@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Context } from '../../mock/context.js';
 import { SEED_IDS, buildSeed } from '../../mock/seeds.js';
+import { tagId } from '../../mock/tag-id.js';
 
 describe('mock Context', () => {
   const { workspaceId, projectId } = SEED_IDS;
@@ -38,7 +39,9 @@ describe('mock Context', () => {
 
   it('exposes the shared tagId helper for the tag-minting routes', () => {
     const ctx = new Context();
-    expect(ctx.tagId('category:Running Shoes')).to.equal('tag-category%3ARunning%20Shoes');
+    // The helper mints an opaque, URL-safe, deterministic id (#1760); Context just re-exposes it.
+    expect(ctx.tagId('category:Running Shoes')).to.equal(tagId('category:Running Shoes'));
+    expect(ctx.tagId('category:Running Shoes')).to.match(/^tag-[0-9a-f]{16}$/);
   });
 
   it('exposes the shared parentIdField helper for the tag routes', () => {

@@ -74,6 +74,10 @@ describe('IdempotencyKey Schema', () => {
       expect(attributes.expiresAt.required).to.be.true;
     });
 
+    it('is readOnly (expiry must not be extended post-creation)', () => {
+      expect(attributes.expiresAt.readOnly).to.be.true;
+    });
+
     it('validates ISO date strings', () => {
       expect(attributes.expiresAt.validate('2026-01-01T00:00:00.000Z')).to.be.true;
     });

@@ -18,10 +18,10 @@ export interface IdempotencyKey extends BaseModel {
   getKey(): string;
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
-  getResponse(): object | null;
+  getResponse(): Record<string, unknown> | null;
   getStatus(): string;
 
-  setResponse(response: object | null): IdempotencyKey;
+  setResponse(response: Record<string, unknown> | null): IdempotencyKey;
   setStatus(status: string): IdempotencyKey;
 }
 

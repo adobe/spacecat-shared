@@ -44,6 +44,7 @@ const schema = new SchemaBuilder(IdempotencyKey, IdempotencyKeyCollection)
   .addAttribute('expiresAt', {
     type: 'string',
     required: true,
+    readOnly: true,
     validate: (value) => isIsoDate(value),
   });
 

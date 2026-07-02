@@ -58,19 +58,19 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  *
  * ## Grant failure scenarios (empirically verified)
  *
- * Both scenarios return HTTP 403 {"error":"unauthorized_client"} — indistinguishable.
- * Both are handled identically: GRANT_REVOKED → #recoverFromRevokedGrant → requiresReauth.
+ * Atlassian returns HTTP 403 {"error":"unauthorized_client"} as a catch-all for
+ * ALL refresh token failures — indistinguishable by HTTP status or error code.
+ * All handled identically: GRANT_REVOKED → #recoverFromRevokedGrant → requiresReauth.
  *
- *   Scenario                  | Atlassian Response            | Outcome
- *   --------------------------|-------------------------------|--------------------
- *   Token >10 min (stale SM)  | 403 unauthorized_client       | User must reconnect
- *   App revoked by user/admin | 403 unauthorized_client       | User must reconnect
+ *   Scenario                     | Atlassian Response            | Outcome
+ *   -----------------------------|-------------------------------|--------------------
+ *   Token >10 min (stale SM)     | 403 unauthorized_client       | User must reconnect
+ *   App revoked by user/admin    | 403 unauthorized_client       | User must reconnect
+ *   Malformed / truncated token  | 403 unauthorized_client       | User must reconnect
+ *   Random string / empty        | 403 unauthorized_client       | User must reconnect
  *
- * Other GRANT_REVOKED triggers (RFC 6749 §5.2 — status codes not empirically verified,
- * assumed 400 per spec; error codes were in the original implementation):
- *   - invalid_grant:  token already rotated / superseded
- *   - invalid_token:  malformed token (RFC 6750 §3.1)
- *   - access_denied:  user denied authorization
+ * RFC 6749 §5.2 codes (invalid_grant, invalid_token, access_denied) were NOT
+ * observed in any test — Atlassian does not emit them at the token endpoint.
  *
  * ## Defensive guards (defense-in-depth, not correctness-critical)
  *
@@ -382,14 +382,15 @@ export default class OAuthCredentialManager {
     });
 
     if (!response.ok) {
-      // Inspect error body to detect grant-level failures (invalid/revoked refresh token).
-      // Empirically verified Atlassian error codes that indicate the grant is dead:
-      //   - unauthorized_client (403): refresh token expired (>10-min reuse window) or app revoked
-      //   - invalid_grant (400):       refresh token already rotated / superseded
-      //   - invalid_token (400):       malformed token
-      //   - access_denied (400):       user denied access
-      // These are thrown with code GRANT_REVOKED so callers check a semantic code,
-      // not a raw HTTP status that varies across Atlassian error types.
+      // Inspect error body to detect grant-level failures.
+      // Empirically verified: Atlassian returns HTTP 403 {"error":"unauthorized_client"}
+      // as a catch-all for ALL refresh token failures regardless of the cause:
+      //   - Refresh token reused past its 10-minute window
+      //   - App revoked by user or admin
+      //   - Malformed / truncated token
+      //   - Random garbage / empty string
+      // RFC 6749 §5.2 codes (invalid_grant, invalid_token, access_denied) were NOT
+      // observed in any test — Atlassian does not use them at the token endpoint.
       let errorCode;
       try {
         const errorBody = await response.json();
@@ -398,8 +399,7 @@ export default class OAuthCredentialManager {
       } catch {
         // ignore parse errors — error code remains undefined
       }
-      const GRANT_ERRORS = new Set(['invalid_grant', 'invalid_token', 'access_denied', 'unauthorized_client']);
-      const isGrantRevoked = GRANT_ERRORS.has(errorCode);
+      const isGrantRevoked = errorCode === 'unauthorized_client';
       throw Object.assign(
         new Error(`Atlassian token refresh failed: ${response.status}${errorCode ? ` (${errorCode})` : ''}`),
         { status: response.status, code: isGrantRevoked ? 'GRANT_REVOKED' : undefined },

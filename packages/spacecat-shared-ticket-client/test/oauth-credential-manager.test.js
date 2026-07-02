@@ -585,37 +585,6 @@ describe('OAuthCredentialManager', () => {
       expect(written.requiresReauth).to.be.true;
     });
 
-    it('Atlassian 400 invalid_grant — treated as revoked refresh token — triggers reauth recovery', async () => {
-      const smClient = {
-        getSecretValue: sinon.stub()
-          .onFirstCall()
-          .resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) })
-          .onSecondCall()
-          .resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) }) // race-check
-          .onCall(2)
-          .resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) }) // final-check
-          .onCall(3)
-          .resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) }), // #writeReauthFlag read
-        putSecretValue: sinon.stub().resolves({}),
-      };
-      const httpClient = {
-        fetch: sinon.stub().resolves({
-          ok: false,
-          status: 400,
-          json: sinon.stub()
-            .resolves({ error: 'invalid_grant', error_description: 'refresh token revoked' }),
-        }),
-      };
-      const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
-
-      await expect(manager.refreshAuthHeaders()).to.be.rejectedWith(
-        'OAuth token refresh failed — connection requires re-authorization',
-      );
-      // requiresReauth must be written
-      const written = JSON.parse(smClient.putSecretValue.firstCall.args[0].SecretString);
-      expect(written.requiresReauth).to.be.true;
-    });
-
     it('Atlassian 403 unauthorized_client — expired reuse window or revoked app — triggers reauth recovery', async () => {
       const smClient = {
         getSecretValue: sinon.stub()

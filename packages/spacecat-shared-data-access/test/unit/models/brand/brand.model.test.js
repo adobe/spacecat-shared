@@ -26,6 +26,7 @@ const sampleRow = {
   name: 'Fixture Brand',
   status: 'active',
   semrushWorkspaceId: 'sub-ws-fixture',
+  semrushSubWorkspaceId: 'sub-ws-fixture',
 };
 
 describe('BrandModel', () => {
@@ -80,19 +81,29 @@ describe('BrandModel', () => {
     });
   });
 
-  describe('semrushWorkspaceId', () => {
+  describe('semrushWorkspaceId (deprecated BC mirror)', () => {
     it('gets semrushWorkspaceId', () => {
       expect(instance.getSemrushWorkspaceId()).to.equal('sub-ws-fixture');
     });
 
+    it('has no setter (read-only — maintained by the DB sync trigger)', () => {
+      expect(instance.setSemrushWorkspaceId).to.be.undefined;
+    });
+  });
+
+  describe('semrushSubWorkspaceId (write-of-record)', () => {
+    it('gets semrushSubWorkspaceId', () => {
+      expect(instance.getSemrushSubWorkspaceId()).to.equal('sub-ws-fixture');
+    });
+
     it('sets a new subworkspace id (re-grant)', () => {
-      instance.setSemrushWorkspaceId('sub-ws-fixture-v2');
-      expect(instance.getSemrushWorkspaceId()).to.equal('sub-ws-fixture-v2');
+      instance.setSemrushSubWorkspaceId('sub-ws-fixture-v2');
+      expect(instance.getSemrushSubWorkspaceId()).to.equal('sub-ws-fixture-v2');
     });
 
     it('clears the pointer (disconnects the brand from its subworkspace)', () => {
-      instance.setSemrushWorkspaceId(null);
-      expect(instance.getSemrushWorkspaceId()).to.equal(null);
+      instance.setSemrushSubWorkspaceId(null);
+      expect(instance.getSemrushSubWorkspaceId()).to.equal(null);
     });
   });
 

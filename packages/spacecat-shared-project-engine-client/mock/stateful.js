@@ -165,6 +165,18 @@ export function createStatefulOps(store) {
         return prompts.map((prompt) => store.create(key, prompt));
       },
       /**
+       * Partially updates one stored prompt in place (the id-based `PUT /aio/prompts/tags` tag-set
+       * write), returning the updated entity or undefined if the id is unknown. Live silently skips
+       * an unknown prompt id, so the handler treats an `undefined` return as a no-op.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {string} id
+       * @param {Record<string, unknown>} patch
+       * @returns {Entity | undefined}
+       */
+      update(scope, id, patch) {
+        return store.update(collectionKey('prompts', scope), id, patch);
+      },
+      /**
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<string>} ids
        * @returns {number}
@@ -225,18 +237,40 @@ export function createStatefulOps(store) {
         return store.list(collectionKey('tags', scope));
       },
       /**
-       * Idempotently persists one tag per supplied entity, returning ALL of them (existing +
-       * newly created) in request order. The handler derives a deterministic id per tag name, so a
-       * repeated create of the same name resolves to the already-stored tag instead of throwing on
-       * the duplicate id — mirroring the live API, which reuses a tag by name rather than
-       * duplicating it.
+       * Resolve-before-create for a batch of project tags — the discipline live REQUIRES of every
+       * consumer (gate 7, verified 2026-07-02): the `POST /aio/tags` endpoint does NOT dedupe, so
+       * creating a tag whose NAME already exists at the same parent is a same-name/same-parent
+       * COLLISION that live answers with a hard 500. This models it: it resolves each requested tag
+       * (by its deterministic id) against the stored collection and, if any would collide with a
+       * stored tag at the same parent — or duplicate another entry in the batch — the batch is
+       * rejected ATOMICALLY (`collision: true`, nothing written) so the caller can 500. On no
+       * collision every tag is persisted. Because the id is derived from the name ALONE, a
+       * same-name tag under a DIFFERENT parent shares the id and collapses onto the stored row
+       * (not a collision) — the documented 1-level-tree limitation (see the tags.js header).
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
-       * @param {Array<Entity>} tags each carrying its deterministic `id`
-       * @returns {Entity[]}
+       * @param {Array<Entity>} tags each carrying its deterministic `id` (+ optional `parent_id`)
+       * @returns {{ tags: Entity[], collision: boolean }} `collision: true` ⇒ nothing was written
        */
       upsertMany(scope, tags) {
         const key = collectionKey('tags', scope);
-        return tags.map((tag) => store.get(key, tag.id) ?? store.create(key, tag));
+        /** @param {Entity} t */
+        const parentOf = (t) => (t.parent_id ? String(t.parent_id) : '');
+        // Atomic pre-check: a tag collides when one with the SAME id already sits at the same
+        // parent, OR the same (id, parent) appears twice in this batch. Checked before any write,
+        // so a collision leaves the store untouched.
+        const seen = new Set();
+        for (const tag of tags) {
+          const marker = `${tag.id}@${parentOf(tag)}`;
+          const existing = store.get(key, tag.id);
+          if (seen.has(marker) || (existing && parentOf(existing) === parentOf(tag))) {
+            return { tags: [], collision: true };
+          }
+          seen.add(marker);
+        }
+        // No collision: create each. A same-name tag under a different parent shares the derived
+        // id, so `get() ?? create()` reuses the stored row (documented collapse) rather than throw.
+        const stored = tags.map((tag) => store.get(key, tag.id) ?? store.create(key, tag));
+        return { tags: stored, collision: false };
       },
       /**
        * Re-parents / renames one tag in place (the `PATCH /aio/tags/{tag_id}` — `aio-update-tag`

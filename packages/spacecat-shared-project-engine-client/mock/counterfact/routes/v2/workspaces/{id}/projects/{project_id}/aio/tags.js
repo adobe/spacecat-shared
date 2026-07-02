@@ -20,14 +20,18 @@
  * from coverage.
  *
  * - POST (`createProjectTags`): request `TreeNodeListRequest` `{ names, parent_id? }`; persists
- *   each tag idempotently (deterministic `tag-<name>` id, so a repeated create reuses the tag,
- *   matching the live reuse-by-name) — when `parent_id` is present the created tags are stored as
- *   children under it. Returns the live shape — a TOP-LEVEL ARRAY of `TreeNodeResponse`
- *   `[{ id, name, parent_id?, children_count, keyword_count }]` (verified 2026-06-25; overlay CR6
- *   retypes the 201 as an array). NB the tag id is derived from the name ALONE (shared with
- *   `POST /aio/prompts/tagged`, which only knows names), so two same-named children under different
- *   parents collapse to one id — a documented mock limitation while the live prompt→child-tag
- *   reference contract stays unverified (serenity-docs#21 §7-Q1).
+ *   each tag (deterministic opaque `tag-<sha256(name) prefix>` id — see tag-id.js / #1760) under
+ *   the given `parent_id` (absent/empty ⇒ a root). The endpoint does NOT dedupe: a create of a
+ *   name that already exists at the same parent is a same-name/same-parent COLLISION that live
+ *   answers with a hard 500 (gate 7, verified 2026-07-02) — resolve-before-create is MANDATORY
+ *   discipline, so `ops.tags.upsertMany` rejects such a batch atomically and the handler 500s
+ *   (`http_server.BasicResponse`); a clean batch returns the live shape — a TOP-LEVEL ARRAY of
+ *   `TreeNodeResponse` `[{ id, name, parent_id?, children_count, keyword_count }]` (verified
+ *   2026-06-25; overlay CR6 retypes the 201 as an array). NB the tag id is derived from the name
+ *   ALONE (shared with `POST /aio/prompts/tagged`, which only knows names), so two same-named
+ *   children under DIFFERENT parents still collapse to one id — a documented mock limitation
+ *   (reused, not a collision) while the live prompt→child-tag reference contract stays unverified
+ *   (serenity-docs#21 §7-Q1).
  * - GET (`aio-get-project-tags`): returns the project's stored tags as `AIOTagsListResponse`
  *   `{ items, page, total }`, so a 0-prompt category created via POST reads back. The spec marks
  *   `parent_id` + `search` as required query params (request validation 400s a request missing
@@ -53,25 +57,22 @@
  *   behind keeps a `parent_id` pointing at the removed root, so it drops out of the roots listing
  *   (`parent_id` is truthy) and is only reachable by querying the now-deleted parent's id. Whether
  *   live Semrush cascades, promotes-to-root, or blocks the delete is unconfirmed (§7).
- * - The tag id is derived from the name (`tag-<name>`, see tag-id.js) but PATCH keeps the id stable
- *   on rename, so after a rename the stored id no longer equals `tagId(currentName)`; a later
- *   create or prompt-tag by the NEW name mints a fresh id and thus a duplicate tag. Faithfully
- *   modelling
- *   this needs the live prompt→child-tag reference contract (id vs name), still open (§7-Q1).
+ * - The tag id is derived from the name (an opaque `tag-<sha256(name) prefix>`, see tag-id.js /
+ *   #1760) but PATCH keeps the id stable on rename, so after a rename the stored id no longer
+ *   equals `tagId(currentName)`; a later create or prompt-tag by the NEW name mints a fresh id and
+ *   thus a duplicate tag. Faithfully modelling this needs the live prompt→child-tag reference
+ *   contract (id vs name), still open (§7-Q1).
  */
 
-/** POST — create (persist, idempotent) project tags → 201 array of TreeNodeResponse. */
+/** POST — create project tags → 201 array of TreeNodeResponse; 500 on same-name/same-parent. */
 export function POST($) {
   const { path, body, context } = $;
   const scope = { workspaceId: path.id, projectId: path.project_id };
   const names = Array.isArray(body?.names) ? body.names : [];
   // A non-empty `parent_id` makes the created tags children under that category; absent/empty ⇒
   // roots (the created tags carry no `parent_id`) — `context.parentIdField` owns that coercion.
-  // `upsertMany` is idempotent by the name-derived id, so re-POSTing an EXISTING name with a
-  // different `parent_id` is a no-op on parentage: it returns the already-stored tag (original
-  // parent) rather than re-parenting it — re-parenting goes through PATCH, not a repeated POST.
   const parentField = context.parentIdField(body?.parent_id);
-  const stored = context.ops.tags.upsertMany(
+  const { tags: stored, collision } = context.ops.tags.upsertMany(
     scope,
     names.map((name) => context.factories.createAIOTagMock({
       id: context.tagId(name),
@@ -79,6 +80,14 @@ export function POST($) {
       ...parentField,
     })),
   );
+  if (collision) {
+    // Gate 7 (verified live 2026-07-02): creating a tag whose name already exists at the same
+    // parent level 500s — the endpoint does NOT dedupe, so resolve-before-create is the consumer's
+    // job. The batch is atomic (nothing written), matching live. 500 is declared (BasicResponse).
+    return $.response[500].json(context.factories.createBasicResponseMock({
+      message: 'tag already exists at this level',
+    }));
+  }
   const tags = stored.map((t) => context.factories.createTagNodeMock({
     id: t.id,
     name: t.name,

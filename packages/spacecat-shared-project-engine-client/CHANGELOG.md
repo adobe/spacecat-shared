@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.6.0...@adobe/spacecat-shared-project-engine-client-v1.7.0) (2026-07-02)
+
+### Features
+
+* **project-engine-client:** URL-safe tag ids + id-based prompt-write mock routes ([#1764](https://github.com/adobe/spacecat-shared/issues/1764)) ([97b9079](https://github.com/adobe/spacecat-shared/commit/97b907986c6236e0bd0a752763ab4c03757ae3fa)), closes [#1760](https://github.com/adobe/spacecat-shared/issues/1760) [#1760](https://github.com/adobe/spacecat-shared/issues/1760)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.5.0...@adobe/spacecat-shared-project-engine-client-v1.6.0) (2026-07-01)
 
 ### Features

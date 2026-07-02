@@ -29,6 +29,8 @@ class GeoExperiment extends BaseModel {
   };
 
   static PHASES = {
+    INITIATED: 'initiated',
+    PROMPT_GENERATION_COMPLETED: 'prompt_generation_completed',
     PRE_ANALYSIS_STARTED: 'pre_analysis_started',
     PRE_ANALYSIS_DONE: 'pre_analysis_done',
     DEPLOYMENT_STARTED: 'deployment_started',

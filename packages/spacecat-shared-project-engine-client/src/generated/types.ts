@@ -2299,6 +2299,7 @@ export interface components {
             items?: components["schemas"]["model.StringIDName"][];
             page?: number;
             total?: number;
+            existing_count?: number;
         };
         "model.TreeNodeListRequest": {
             names: string[];
@@ -2311,7 +2312,7 @@ export interface components {
         };
         "model.TreeNodeRequest": {
             name: string;
-            parent_id?: string;
+            parent_id?: string | null;
         };
         "model.TreeNodeResponse": {
             children_count?: number;
@@ -7328,13 +7329,13 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["model.KeywordRequest"];
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["model.StringIDName"];
+                    "application/json": components["schemas"]["model.StringIDNameListResponse"];
                 };
             };
             /** @description Unauthorized */

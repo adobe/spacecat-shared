@@ -31,19 +31,27 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  *
  * ## Concurrent refresh design
  *
- * Atlassian uses rotating refresh tokens (single-use). If two concurrent callers
- * both see an expired token, the second caller's refresh token is already consumed
- * by the first → Atlassian returns 401 → without mitigation this would mark a
- * working connection as requires_reauth.
+ * Atlassian uses rotating refresh tokens with a 10-minute reuse window (leeway).
+ * Within that window, the same refresh token can be exchanged multiple times —
+ * each call returns a valid access token + a new refresh token. Breach detection
+ * only kicks in after the 10-minute leeway expires.
+ * (Ref: https://developer.atlassian.com/cloud/jira/software/oauth-2-3lo-apps/#faq-rrt-config)
  *
- * Mitigation: refreshAuthHeaders and forceRefreshAuthHeaders re-read SM immediately
- * before calling Atlassian. This collapses the race window from the full 10-minute
- * expiry buffer down to one SM round-trip (~200ms). If the concurrent winner already
- * wrote, the loser exits early without calling Atlassian.
+ * This means most concurrent-refresh scenarios are safe: two Lambdas using the
+ * same refresh token within 10 minutes both succeed. A genuine 401 on refresh
+ * only occurs when the token is past the reuse window, expired (90-day inactivity),
+ * or the user/admin revoked the grant.
  *
- * Residual risk: two callers completing their pre-reads within ~200ms of each other
- * can still both reach Atlassian. On the resulting 401, #recoverFromAtlassian401
- * re-reads SM (immediate + 200ms wait) to catch the winner's write.
+ * Despite the generous reuse window, we still apply defensive guards:
+ *
+ * 1. In-process Promise locks (#refreshLock, #forceRefreshLock) — serialise
+ *    concurrent same-Lambda calls so only one Atlassian request fires per Lambda.
+ * 2. Pre-read SM before calling Atlassian — if a concurrent Lambda already wrote
+ *    new tokens, the loser exits early without calling Atlassian (avoids redundant
+ *    network calls and SM writes, not a correctness requirement).
+ * 3. #recoverFromAtlassian401 — re-reads SM (immediate + 200ms wait) on the rare
+ *    genuine 401. If a concurrent writer landed fresh tokens, uses theirs; otherwise
+ *    marks the connection requiresReauth.
  *
  * ## App-level OAuth credentials
  *
@@ -433,9 +441,15 @@ export default class OAuthCredentialManager {
 
   /**
    * Recovery path when Atlassian returns 401 on a refresh call.
-   * A concurrent caller may have already consumed the refresh token and written new
-   * tokens to SM. Re-reads SM twice (immediate + 200ms wait) to catch their write.
-   * If SM is still expired after both checks, marks the connection as requires_reauth.
+   *
+   * With the 10-minute reuse window, a 401 on refresh is rare — it indicates a
+   * genuinely revoked grant, expired refresh token (90-day inactivity), or password
+   * change. A concurrent Lambda using the same refresh token within 10 minutes would
+   * succeed, not cause a 401.
+   *
+   * Re-reads SM twice (immediate + 200ms wait) as a defensive measure: if a concurrent
+   * caller wrote valid tokens between our refresh attempt and this recovery, we use
+   * theirs instead of marking the connection as requires_reauth.
    */
   async #recoverFromAtlassian401() {
     const raceCheck = await this.#readSecret(true);

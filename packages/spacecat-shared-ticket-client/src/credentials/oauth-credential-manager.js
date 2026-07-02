@@ -366,18 +366,20 @@ export default class OAuthCredentialManager {
    * so no ClientRequestToken is needed.
    */
   async #writeReauthFlag() {
-    const secret = await this.#readSecret();
-    const payload = {
-      SecretId: this.secretPath,
-      SecretString: JSON.stringify({ ...secret, requiresReauth: true }),
-    };
-
     let lastErr;
     // eslint-disable-next-line no-plusplus
     for (let attempt = 0; attempt < SM_WRITE_ATTEMPTS; attempt++) {
       try {
+        // Re-read on every attempt: a concurrent writer between retries could have written
+        // new valid tokens — merging requiresReauth: true onto the freshest snapshot avoids
+        // clobbering their tokens with a stale read-modify-write.
         // eslint-disable-next-line no-await-in-loop
-        await this.smClient.putSecretValue(payload);
+        const secret = await this.#readSecret();
+        // eslint-disable-next-line no-await-in-loop
+        await this.smClient.putSecretValue({
+          SecretId: this.secretPath,
+          SecretString: JSON.stringify({ ...secret, requiresReauth: true }),
+        });
         return;
       } catch (err) {
         lastErr = err;

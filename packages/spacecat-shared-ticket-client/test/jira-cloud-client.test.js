@@ -660,6 +660,37 @@ describe('JiraCloudClient', () => {
       expect(linkNode.marks[0].attrs.href).to.equal('https://adobe.com');
     });
 
+    it('renders link text as plain nodes when href is empty', async () => {
+      const httpClient = makeHttpClient({ id: '1', key: 'ASO-1' });
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        httpClient,
+        makeLog(),
+      );
+      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '[no href]()' });
+      const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
+      const nodes = body.fields.description.content[0].content;
+      expect(nodes.some((n) => n.marks?.some((m) => m.type === 'link'))).to.be.false;
+      expect(nodes[0].text).to.equal('no href');
+    });
+
+    it('strips unsafe link schemes and renders link text as plain nodes (XSS defense)', async () => {
+      const httpClient = makeHttpClient({ id: '1', key: 'ASO-1' });
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        httpClient,
+        makeLog(),
+      );
+      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '[click me](javascript:alert(1))' });
+      const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
+      const nodes = body.fields.description.content[0].content;
+      // Link text rendered as plain text — no link mark, no href
+      expect(nodes.some((n) => n.marks?.some((m) => m.type === 'link'))).to.be.false;
+      expect(nodes[0].text).to.equal('click me');
+    });
+
     it('renders strikethrough with strike mark', async () => {
       const httpClient = makeHttpClient({ id: '1', key: 'ASO-1' });
       const client = new JiraCloudClient(

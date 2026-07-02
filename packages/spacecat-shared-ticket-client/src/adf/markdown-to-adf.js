@@ -57,12 +57,22 @@ function inlineToAdf(tokens, parentMarks = []) {
         break;
       }
 
-      case 'link':
-        nodes.push(...inlineToAdf(token.tokens, [
-          ...parentMarks,
-          { type: 'link', attrs: { href: token.href } },
-        ]));
+      case 'link': {
+        // Reject dangerous URL schemes — defense-in-depth for re-rendering outside Jira.
+        // Jira sanitizes server-side, but hardening here prevents XSS if ADF is consumed
+        // by other renderers (e.g. internal tooling, previews).
+        const href = /^(https?|mailto):/i.test(token.href || '') ? token.href : null;
+        if (href) {
+          nodes.push(...inlineToAdf(token.tokens, [
+            ...parentMarks,
+            { type: 'link', attrs: { href } },
+          ]));
+        } else {
+          // Unsafe scheme (javascript:, data:, etc.) — render link text as plain nodes
+          nodes.push(...inlineToAdf(token.tokens, parentMarks));
+        }
         break;
+      }
 
       case 'br':
         nodes.push({ type: 'hardBreak' });

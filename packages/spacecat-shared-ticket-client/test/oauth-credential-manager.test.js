@@ -148,7 +148,14 @@ describe('OAuthCredentialManager', () => {
   });
 
   describe('refreshAuthHeaders', () => {
+    let clock;
     beforeEach(() => setAppCredentials());
+    afterEach(() => {
+      if (clock) {
+        clock.restore();
+        clock = null;
+      }
+    });
 
     it('exits early when SM already has a fresh valid token (concurrent Lambda beat us to it)', async () => {
       const smClient = makeSmClient(VALID_SECRET);
@@ -361,7 +368,7 @@ describe('OAuthCredentialManager', () => {
 
     it('Atlassian 401 — race-check expired, 200ms re-read fresh — returns delayed winner token', async () => {
       // Only fake setTimeout — preserve Date.now() so #isExpired() still works correctly.
-      const clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
+      clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const freshSecret = { ...VALID_SECRET, accessToken: 'delayed-winner-token' };
       const smClient = {
         getSecretValue: sinon.stub()
@@ -381,11 +388,10 @@ describe('OAuthCredentialManager', () => {
       expect(headers).to.deep.equal({ Authorization: 'Bearer delayed-winner-token' });
       expect(smClient.putSecretValue.called).to.be.false;
       expect(smClient.getSecretValue.callCount).to.equal(3);
-      clock.restore();
     });
 
     it('Atlassian 401 — both race-check and final-check expired — writes requiresReauth and throws', async () => {
-      const clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
+      clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const smClient = {
         getSecretValue: sinon.stub()
           .onFirstCall().resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) })
@@ -407,11 +413,10 @@ describe('OAuthCredentialManager', () => {
       );
       const written = JSON.parse(smClient.putSecretValue.firstCall.args[0].SecretString);
       expect(written.requiresReauth).to.be.true;
-      clock.restore();
     });
 
     it('Atlassian 401 — race-check shows requiresReauth flag — writes reauth and throws', async () => {
-      const clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
+      clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const reauthSecret = { ...EXPIRED_SECRET, requiresReauth: true };
       const smClient = {
         getSecretValue: sinon.stub()
@@ -434,7 +439,6 @@ describe('OAuthCredentialManager', () => {
       );
       const written = JSON.parse(smClient.putSecretValue.firstCall.args[0].SecretString);
       expect(written.requiresReauth).to.be.true;
-      clock.restore();
     });
 
     it('propagates non-401 Atlassian errors without writing requiresReauth', async () => {
@@ -638,7 +642,14 @@ describe('OAuthCredentialManager', () => {
   });
 
   describe('setRequiresReauth', () => {
+    let clock;
     beforeEach(() => setAppCredentials());
+    afterEach(() => {
+      if (clock) {
+        clock.restore();
+        clock = null;
+      }
+    });
 
     it('writes requiresReauth: true to SM', async () => {
       const smClient = makeSmClient(VALID_SECRET);
@@ -651,7 +662,7 @@ describe('OAuthCredentialManager', () => {
     });
 
     it('retries SM write on transient failure and succeeds on second attempt', async () => {
-      const clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
+      clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const smClient = {
         getSecretValue: sinon.stub().resolves({ SecretString: JSON.stringify(VALID_SECRET) }),
         putSecretValue: sinon.stub()
@@ -668,11 +679,10 @@ describe('OAuthCredentialManager', () => {
       expect(smClient.putSecretValue.callCount).to.equal(2);
       const written = JSON.parse(smClient.putSecretValue.secondCall.args[0].SecretString);
       expect(written.requiresReauth).to.be.true;
-      clock.restore();
     });
 
     it('throws after exhausting all SM write attempts', async () => {
-      const clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
+      clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const smClient = {
         getSecretValue: sinon.stub().resolves({ SecretString: JSON.stringify(VALID_SECRET) }),
         putSecretValue: sinon.stub().rejects(new Error('persistent SM error')),
@@ -680,10 +690,10 @@ describe('OAuthCredentialManager', () => {
       const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());
 
       const promise = manager.setRequiresReauth();
-      await clock.tickAsync(500); // covers all retry backoff delays (100ms + 200ms)
+      // Total backoff: SM_WRITE_BASE_DELAY_MS * (2^0 + 2^1) = 100 + 200 = 300ms
+      await clock.tickAsync(300);
       await expect(promise).to.be.rejectedWith('Failed to write requiresReauth flag to SM after 3 attempts');
       expect(smClient.putSecretValue.callCount).to.equal(3);
-      clock.restore();
     });
   });
 });

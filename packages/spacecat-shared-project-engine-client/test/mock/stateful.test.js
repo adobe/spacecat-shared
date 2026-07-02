@@ -96,6 +96,16 @@ describe('stateful — prompts ops', () => {
     expect(ops.removeMany(scope, [...created.map((e) => e.id), 'missing'])).to.equal(2);
     expect(ops.list(scope)).to.have.length(0);
   });
+
+  it('updates a stored prompt in place; returns undefined for an unknown id', () => {
+    const ops = createStatefulOps(new InMemoryStore()).prompts;
+    const [created] = ops.createMany(scope, [{ name: 'p', tags: [] }]);
+    const updated = ops.update(scope, created.id, { tags: [{ id: 'tag-1', name: 'brand' }] });
+    expect(updated.tags).to.deep.equal([{ id: 'tag-1', name: 'brand' }]);
+    expect(ops.list(scope)[0].tags).to.deep.equal([{ id: 'tag-1', name: 'brand' }]);
+    // unknown id → no-op (the PUT /aio/prompts/tags silent-skip contract)
+    expect(ops.update(scope, 'missing', { tags: [] })).to.equal(undefined);
+  });
 });
 
 describe('stateful — benchmarks ops', () => {
@@ -125,23 +135,52 @@ describe('stateful — benchmarks ops', () => {
 describe('stateful — tags ops', () => {
   const scope = { workspaceId: 'w1', projectId: 'p1' };
 
-  it('upserts idempotently (reuses an existing id), lists and bulk-removes', () => {
+  it('creates a clean batch (no collision), lists and bulk-removes', () => {
     const ops = createStatefulOps(new InMemoryStore()).tags;
-    const created = ops.upsertMany(scope, [
+    const { tags: created, collision } = ops.upsertMany(scope, [
       { id: 'tag-a', name: 'category:A' },
       { id: 'tag-b', name: 'category:B' },
     ]);
+    expect(collision).to.equal(false);
     expect(created).to.have.length(2);
     expect(ops.list(scope)).to.have.length(2);
-    // a repeated upsert of an existing id reuses the stored tag — no duplicate, no throw
-    const again = ops.upsertMany(scope, [
-      { id: 'tag-a', name: 'category:A' },
-      { id: 'tag-c', name: 'category:C' },
-    ]);
-    expect(again.map((t) => t.id)).to.deep.equal(['tag-a', 'tag-c']);
-    expect(ops.list(scope)).to.have.length(3);
     expect(ops.removeMany(scope, ['tag-a', 'missing'])).to.equal(1);
-    expect(ops.list(scope)).to.have.length(2);
+    expect(ops.list(scope)).to.have.length(1);
+  });
+
+  it('rejects a same-name/same-parent collision atomically (gate 7 → the route 500s)', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    ops.upsertMany(scope, [{ id: 'tag-a', name: 'category:A' }]);
+    // re-creating the same id at the same (root) level collides — nothing new is written
+    const { tags, collision } = ops.upsertMany(scope, [
+      { id: 'tag-a', name: 'category:A' },
+      { id: 'tag-b', name: 'category:B' },
+    ]);
+    expect(collision).to.equal(true);
+    expect(tags).to.have.length(0);
+    // atomic: the non-colliding tag-b was NOT created
+    expect(ops.list(scope).map((t) => t.id)).to.deep.equal(['tag-a']);
+  });
+
+  it('rejects an intra-batch duplicate (same id+parent twice in one request)', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    const { collision } = ops.upsertMany(scope, [
+      { id: 'tag-a', name: 'category:A' },
+      { id: 'tag-a', name: 'category:A' },
+    ]);
+    expect(collision).to.equal(true);
+    expect(ops.list(scope)).to.have.length(0);
+  });
+
+  it('reuses (collapses) a same-name tag under a DIFFERENT parent — not a collision', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    ops.upsertMany(scope, [{ id: 'tag-x', name: 'Trail', parent_id: 'root-a' }]);
+    // the id is derived from the name alone, so 'Trail' under a different parent shares the id and
+    // collapses onto the stored row (documented 1-level-tree limitation) rather than colliding
+    const { tags, collision } = ops.upsertMany(scope, [{ id: 'tag-x', name: 'Trail', parent_id: 'root-b' }]);
+    expect(collision).to.equal(false);
+    expect(tags[0]).to.include({ id: 'tag-x', parent_id: 'root-a' }); // the original row, reused
+    expect(ops.list(scope)).to.have.length(1);
   });
 
   it('isolates tags across projects (the multi-market scoping invariant)', () => {

@@ -72,6 +72,7 @@ describe('edge-optimize support', () => {
         DescribeFunctionCommand: cfCommand('DescribeFunction'),
         PublishFunctionCommand: cfCommand('PublishFunction'),
         UpdateDistributionCommand: cfCommand('UpdateDistribution'),
+        TagResourceCommand: cfCommand('TagResource'),
       },
       '@aws-sdk/client-iam': {
         IAMClient: function IAMClient(config) {
@@ -415,7 +416,13 @@ describe('edge-optimize support', () => {
       }],
     }));
     const okRoleIam = {
-      GetRole: { Role: { Arn: 'arn:role', AssumeRolePolicyDocument: validTrust } },
+      GetRole: {
+        Role: {
+          Arn: 'arn:role',
+          AssumeRolePolicyDocument: validTrust,
+          Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }],
+        },
+      },
       GetRolePolicy: { PolicyName: 'EdgeOptimizeLambdaLogging', PolicyDocument: '{}' },
       UpdateAssumeRolePolicy: {},
       PutRolePolicy: {},
@@ -657,7 +664,7 @@ describe('edge-optimize support', () => {
 
     it('is idempotent when the origin already exists by id', async () => {
       cfSendStub.resolves({
-        DistributionConfig: { Origins: { Quantity: 1, Items: [{ Id: 'EdgeOptimize_Origin', DomainName: 'x' }] } },
+        DistributionConfig: { Origins: { Quantity: 1, Items: [{ Id: 'EdgeOptimize_Origin', DomainName: 'live.edgeoptimize.net' }] } },
         ETag: 'etag-1',
       });
 
@@ -684,6 +691,23 @@ describe('edge-optimize support', () => {
 
       expect(error.message).to.include('refusing to reuse a non-Edge Optimize origin');
       expect(cfSendStub.calledOnce).to.equal(true);
+    });
+
+    it('refuses to reuse an EdgeOptimize_Origin pointing at a foreign domain (not ours)', async () => {
+      cfSendStub.resolves({
+        DistributionConfig: { Origins: { Quantity: 1, Items: [{ Id: 'EdgeOptimize_Origin', DomainName: 'someone-elses.example.com' }] } },
+        ETag: 'etag-1',
+      });
+
+      let error;
+      try {
+        await edgeOptimize.createOrigin({}, 'E2EXAMPLE', 'dev.edgeoptimize.net');
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error.message).to.include('was not created by LLM Optimizer');
+      expect(error.message).to.include('setup manually');
     });
 
     it('patches the headers when the origin exists without them (self-heal)', async () => {
@@ -804,7 +828,10 @@ describe('edge-optimize support', () => {
     });
 
     it('updates and publishes when the function already exists', async () => {
-      cfSendStub.onFirstCall().resolves({ ETag: 'dev-etag' }); // DescribeFunction DEVELOPMENT
+      cfSendStub.onFirstCall().resolves({
+        ETag: 'dev-etag',
+        FunctionSummary: { FunctionConfig: { Comment: 'EdgeOptimize agentic bot routing — managed by LLM Optimizer' } },
+      }); // DescribeFunction DEVELOPMENT
       cfSendStub.onSecondCall().resolves({ ETag: 'updated-etag' }); // UpdateFunction
       cfSendStub.onThirdCall().resolves({}); // PublishFunction
 
@@ -813,6 +840,50 @@ describe('edge-optimize support', () => {
       expect(result.created).to.equal(false);
       expect(cfSendStub.secondCall.args[0].commandName).to.equal('UpdateFunction');
       expect(cfSendStub.thirdCall.args[0].input.IfMatch).to.equal('updated-etag');
+    });
+
+    it('tags a newly created function with the owner + createdBy tags', async () => {
+      cfSendStub.onFirstCall().rejects(Object.assign(new Error('nf'), { name: 'NoSuchFunctionExists' })); // DescribeFunction
+      cfSendStub.onSecondCall().resolves({ ETag: 'fn-etag', FunctionSummary: { FunctionMetadata: { FunctionARN: 'arn:cf-fn' } } }); // CreateFunction
+      cfSendStub.onThirdCall().resolves({}); // PublishFunction
+      cfSendStub.onCall(3).resolves({}); // TagResource
+
+      await edgeOptimize.createCloudFrontFunction({}, 'origin-aem', 'E2EXAMPLE', null, undefined, 'jane@adobe.com');
+
+      const tagCall = cfSendStub.getCalls().find((c) => c.args[0].commandName === 'TagResource');
+      expect(tagCall, 'TagResource should be called').to.not.equal(undefined);
+      expect(tagCall.args[0].input.Resource).to.equal('arn:cf-fn');
+      expect(tagCall.args[0].input.Tags.Items).to.deep.include({ Key: 'ManagedBy', Value: 'adobe-llmo' });
+      expect(tagCall.args[0].input.Tags.Items).to.deep.include({ Key: 'createdBy', Value: 'jane@adobe.com' });
+    });
+
+    it('still succeeds when tagging the new function fails (best-effort)', async () => {
+      cfSendStub.onFirstCall().rejects(Object.assign(new Error('nf'), { name: 'NoSuchFunctionExists' })); // DescribeFunction
+      cfSendStub.onSecondCall().resolves({ ETag: 'fn-etag', FunctionSummary: { FunctionMetadata: { FunctionARN: 'arn:cf-fn' } } }); // CreateFunction
+      cfSendStub.onThirdCall().resolves({}); // PublishFunction
+      cfSendStub.onCall(3).rejects(new Error('AccessDenied: tagging not permitted')); // TagResource
+
+      const result = await edgeOptimize.createCloudFrontFunction({}, 'origin-aem', 'E2EXAMPLE');
+
+      expect(result.created).to.equal(true);
+      expect(result.stage).to.equal('LIVE');
+    });
+
+    it('refuses to reuse an existing function without our Comment marker (not ours)', async () => {
+      cfSendStub.onFirstCall().resolves({
+        ETag: 'dev-etag',
+        FunctionSummary: { FunctionConfig: { Comment: 'some customer function' } },
+      }); // DescribeFunction DEVELOPMENT
+
+      let error;
+      try {
+        await edgeOptimize.createCloudFrontFunction({}, 'origin-aem', 'E2EXAMPLE');
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error.message).to.include('was not created by LLM Optimizer');
+      expect(cfSendStub.calledOnce).to.equal(true); // never reached UpdateFunction
     });
 
     it('throws when defaultOriginId is missing', async () => {
@@ -1109,7 +1180,7 @@ describe('edge-optimize support', () => {
         },
         ListCachePolicies: (cmd) => (cmd.input.Type === 'managed'
           ? { CachePolicyList: { Items: [{ CachePolicy: { Id: 'managed-1' } }] } }
-          : { CachePolicyList: { Items: [{ CachePolicy: { Id: 'existing-eo', CachePolicyConfig: { Name: 'X-adobe-E2EXAMPLE' } } }] } }),
+          : { CachePolicyList: { Items: [{ CachePolicy: { Id: 'existing-eo', CachePolicyConfig: { Name: 'X-adobe-E2EXAMPLE', Comment: 'Cloned from Managed-X with Edge Optimize headers — managed by LLM Optimizer' } } }] } }),
         GetCachePolicy: {
           CachePolicy: { CachePolicyConfig: { Name: 'Managed-X', ParametersInCacheKeyAndForwardedToOrigin: {} } },
         },
@@ -1122,6 +1193,32 @@ describe('edge-optimize support', () => {
       expect(result.policyId).to.equal('existing-eo');
       expect(result.reused).to.equal(true);
       expect(lastCommand('CreateCachePolicy')).to.equal(undefined); // reused, not created
+    });
+
+    it('refuses to reuse a custom policy matching our clone name but lacking our marker (not ours)', async () => {
+      wireCloudFront({
+        GetDistributionConfig: {
+          DistributionConfig: { DefaultCacheBehavior: { CachePolicyId: 'managed-1' } },
+          ETag: 'dist-etag',
+        },
+        ListCachePolicies: (cmd) => (cmd.input.Type === 'managed'
+          ? { CachePolicyList: { Items: [{ CachePolicy: { Id: 'managed-1' } }] } }
+          : { CachePolicyList: { Items: [{ CachePolicy: { Id: 'existing-eo', CachePolicyConfig: { Name: 'X-adobe-E2EXAMPLE', Comment: 'a customer policy' } } }] } }),
+        GetCachePolicy: {
+          CachePolicy: { CachePolicyConfig: { Name: 'Managed-X', ParametersInCacheKeyAndForwardedToOrigin: {} } },
+        },
+      });
+
+      let error;
+      try {
+        await edgeOptimize.updateCacheSettings({}, 'E2EXAMPLE', 'default');
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error.message).to.include('was not created by LLM Optimizer');
+      expect(lastCommand('CreateCachePolicy')).to.equal(undefined);
+      expect(lastCommand('UpdateDistribution')).to.equal(undefined); // never repointed the behavior
     });
 
     it('handles a LEGACY behavior (ForwardedValues, no CachePolicyId)', async () => {
@@ -1356,7 +1453,7 @@ describe('edge-optimize support', () => {
     it('creates the function (non-blocking) and returns provisioning when the role already exists', async () => {
       // Existing role + missing function: proceed to CreateFunction in the SAME call (unchanged).
       wireIam({
-        GetRole: { Role: { Arn: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role' } },
+        GetRole: { Role: { Arn: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } },
         UpdateAssumeRolePolicy: {},
         PutRolePolicy: {},
       });
@@ -1379,7 +1476,7 @@ describe('edge-optimize support', () => {
 
     it('retries CreateFunction on role-propagation then succeeds', async () => {
       let createAttempts = 0;
-      wireIam({ GetRole: { Role: { Arn: 'arn:role' } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
       wireLambda({
         GetFunctionConfiguration: () => notFound(),
         CreateFunction: () => {
@@ -1400,7 +1497,7 @@ describe('edge-optimize support', () => {
     });
 
     it('rethrows a non-role-propagation CreateFunction error', async () => {
-      wireIam({ GetRole: { Role: { Arn: 'arn:role' } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
       wireLambda({
         GetFunctionConfiguration: () => notFound(),
         CreateFunction: () => Promise.reject(Object.assign(new Error('boom'), { name: 'SomethingElse' })),
@@ -1416,7 +1513,7 @@ describe('edge-optimize support', () => {
     });
 
     it('rethrows an InvalidParameterValue error with no message (not role propagation)', async () => {
-      wireIam({ GetRole: { Role: { Arn: 'arn:role' } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
       wireLambda({
         GetFunctionConfiguration: () => notFound(),
         // name is InvalidParameterValueException but message is empty → `(message || '')` fallback,
@@ -1439,7 +1536,7 @@ describe('edge-optimize support', () => {
     });
 
     it('gives up after the retry budget on persistent role-propagation', async () => {
-      wireIam({ GetRole: { Role: { Arn: 'arn:role' } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
       wireLambda({
         GetFunctionConfiguration: () => notFound(),
         CreateFunction: () => Promise.reject(Object.assign(
@@ -1471,7 +1568,7 @@ describe('edge-optimize support', () => {
     });
 
     it('rethrows an unexpected GetFunctionConfiguration error', async () => {
-      wireIam({ GetRole: { Role: { Arn: 'arn:role' } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
       wireLambda({
         GetFunctionConfiguration: () => Promise.reject(Object.assign(new Error('throttled'), { name: 'TooManyRequestsException' })),
       });
@@ -1486,10 +1583,10 @@ describe('edge-optimize support', () => {
     });
 
     it('returns provisioning (no mutation) while the function is still finalizing', async () => {
-      wireIam({ GetRole: { Role: { Arn: 'arn:role' } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
       wireLambda({
         GetFunctionConfiguration: {
-          FunctionArn: 'arn:fn', State: 'Active', LastUpdateStatus: 'InProgress',
+          FunctionArn: 'arn:fn', State: 'Active', LastUpdateStatus: 'InProgress', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE',
         },
       });
 
@@ -1501,10 +1598,10 @@ describe('edge-optimize support', () => {
     });
 
     it('is idempotent: reuses the existing version when the function is idle', async () => {
-      wireIam({ GetRole: { Role: { Arn: 'arn:role' } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
       wireLambda({
         GetFunctionConfiguration: {
-          FunctionArn: 'arn:fn', State: 'Active', LastUpdateStatus: 'Successful',
+          FunctionArn: 'arn:fn', State: 'Active', LastUpdateStatus: 'Successful', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE',
         },
         ListVersionsByFunction: { Versions: [{ Version: '$LATEST' }, { Version: '3', FunctionArn: 'arn:fn:3' }] },
       });
@@ -1517,11 +1614,47 @@ describe('edge-optimize support', () => {
       expect(lastLambda('PublishVersion')).to.equal(undefined); // reused, not re-published
     });
 
-    it('publishes a version when the function is idle but unpublished', async () => {
-      wireIam({ GetRole: { Role: { Arn: 'arn:role' } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+    it('refuses to reuse an existing Active function whose exec-role is not ours (by role)', async () => {
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
       wireLambda({
         GetFunctionConfiguration: {
-          FunctionArn: 'arn:fn', State: 'Active', LastUpdateStatus: 'Successful',
+          FunctionArn: 'arn:fn', State: 'Active', LastUpdateStatus: 'Successful', Role: 'arn:aws:iam::120569600543:role/some-customer-role',
+        },
+      });
+
+      let error;
+      try {
+        await edgeOptimize.createLambdaAtEdge(creds, '120569600543', { distributionId: 'E2EXAMPLE' });
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error.message).to.include('was not created by LLM Optimizer');
+      expect(lastLambda('PublishVersion')).to.equal(undefined); // never reused/published
+    });
+
+    it('refuses to modify an existing exec role that lacks our owner tag (not ours)', async () => {
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'team', Value: 'customer' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireLambda({ GetFunctionConfiguration: () => notFound() });
+
+      let error;
+      try {
+        await edgeOptimize.createLambdaAtEdge(creds, '120569600543', { distributionId: 'E2EXAMPLE' });
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error.message).to.include('was not created by LLM Optimizer');
+      const updatedTrust = iamSendStub.getCalls()
+        .find((c) => c.args[0].commandName === 'UpdateAssumeRolePolicy');
+      expect(updatedTrust).to.equal(undefined); // never modified their role
+    });
+
+    it('publishes a version when the function is idle but unpublished', async () => {
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireLambda({
+        GetFunctionConfiguration: {
+          FunctionArn: 'arn:fn', State: 'Active', LastUpdateStatus: 'Successful', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE',
         },
         ListVersionsByFunction: { Versions: [{ Version: '$LATEST' }] },
         PublishVersion: { FunctionArn: 'arn:fn:1', Version: '1' },
@@ -1535,7 +1668,7 @@ describe('edge-optimize support', () => {
     });
 
     it('treats a concurrent-create conflict as provisioning', async () => {
-      wireIam({ GetRole: { Role: { Arn: 'arn:role' } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
       wireLambda({
         GetFunctionConfiguration: () => notFound(),
         CreateFunction: () => Promise.reject(Object.assign(new Error('exists'), { name: 'ResourceConflictException' })),
@@ -2045,6 +2178,27 @@ describe('edge-optimize support', () => {
       expect(result.details.bot.status).to.equal(200);
     });
 
+    it('uses a realistic browser User-Agent for the human probe by default', async () => {
+      fetchStub = sinon.stub(global, 'fetch');
+      fetchStub.resolves(makeResponse(200, {}));
+
+      await edgeOptimize.verifyRouting('https://d.cloudfront.net/');
+
+      // bot probe is the first fetch, human probe the second.
+      const humanUa = fetchStub.secondCall.args[1].headers['user-agent'];
+      expect(humanUa).to.include('Chrome/');
+      expect(humanUa).to.not.equal('Mozilla/5.0');
+    });
+
+    it('allows overriding the human User-Agent', async () => {
+      fetchStub = sinon.stub(global, 'fetch');
+      fetchStub.resolves(makeResponse(200, {}));
+
+      await edgeOptimize.verifyRouting('https://d.cloudfront.net/', { humanUa: 'CustomHumanUA/1.0' });
+
+      expect(fetchStub.secondCall.args[1].headers['user-agent']).to.equal('CustomHumanUA/1.0');
+    });
+
     it('ignores non-edgeoptimize response headers', async () => {
       fetchStub = sinon.stub(global, 'fetch');
       fetchStub.onFirstCall().resolves(makeResponse(200, { 'x-edgeoptimize-request-id': 'req-1', 'content-type': 'text/html' }));
@@ -2220,7 +2374,7 @@ describe('edge-optimize support', () => {
     }));
     // IAM mock for an existing, correctly-configured role (roleExists + roleOk = true).
     const okRoleIam = (extra = {}) => ({
-      GetRole: { Role: { Arn: 'arn:role', AssumeRolePolicyDocument: validTrust } },
+      GetRole: { Role: { Arn: 'arn:role', AssumeRolePolicyDocument: validTrust, Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } },
       GetRolePolicy: { PolicyName: 'EdgeOptimizeLambdaLogging', PolicyDocument: '{}' },
       UpdateAssumeRolePolicy: {},
       PutRolePolicy: {},
@@ -2267,7 +2421,9 @@ describe('edge-optimize support', () => {
       GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'InProgress' } },
     });
     const readyLambda = () => ({
-      GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+      GetFunctionConfiguration: {
+        State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+      },
       ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: 'arn:lambda:3', CodeSha256: 'sha' }] },
     });
 
@@ -2449,7 +2605,9 @@ describe('edge-optimize support', () => {
           GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -2518,7 +2676,9 @@ describe('edge-optimize support', () => {
           GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -2573,7 +2733,9 @@ describe('edge-optimize support', () => {
           GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -2622,7 +2784,9 @@ describe('edge-optimize support', () => {
           UpdateDistribution: {}, // origin self-heal write (api-key header added)
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -2666,7 +2830,9 @@ describe('edge-optimize support', () => {
           GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -2712,7 +2878,9 @@ describe('edge-optimize support', () => {
           GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -2772,7 +2940,9 @@ describe('edge-optimize support', () => {
           GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'InProgress' } },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -2818,7 +2988,9 @@ describe('edge-optimize support', () => {
           GetDistribution: {},
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -2861,7 +3033,9 @@ describe('edge-optimize support', () => {
           GetDistribution: () => { throw new Error('get failed'); },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -3019,7 +3193,9 @@ describe('edge-optimize support', () => {
           },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -3170,7 +3346,9 @@ describe('edge-optimize support', () => {
         },
         {
           // Active + idle, NO published version yet → createLambdaAtEdge must publish one.
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [] },
           PublishVersion: { Version: '1', FunctionArn: lambdaVersionArn },
         },
@@ -3216,7 +3394,7 @@ describe('edge-optimize support', () => {
         Statement: [{ Effect: 'Allow', Principal: { Service: 'lambda.amazonaws.com' }, Action: 'sts:AssumeRole' }],
       }));
       wire(readyDeployCf(), readyLambda(), {
-        GetRole: { Role: { Arn: 'arn:role', AssumeRolePolicyDocument: badTrust } },
+        GetRole: { Role: { Arn: 'arn:role', AssumeRolePolicyDocument: badTrust, Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } },
         GetRolePolicy: { PolicyName: 'EdgeOptimizeLambdaLogging', PolicyDocument: '{}' },
         UpdateAssumeRolePolicy: {},
         PutRolePolicy: {},
@@ -3273,7 +3451,9 @@ describe('edge-optimize support', () => {
           GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'Deployed' } },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -3315,7 +3495,9 @@ describe('edge-optimize support', () => {
           GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'InProgress' } },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -3360,7 +3542,9 @@ describe('edge-optimize support', () => {
           },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -3406,7 +3590,9 @@ describe('edge-optimize support', () => {
           GetDistribution: { Distribution: { DomainName: 'd123.cloudfront.net', Status: 'InProgress' } },
         },
         {
-          GetFunctionConfiguration: { State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda' },
+          GetFunctionConfiguration: {
+            State: 'Active', LastUpdateStatus: 'Successful', FunctionArn: 'arn:lambda', Role: 'arn:aws:iam::120569600543:role/edgeoptimize-origin-role-adobe-E2EXAMPLE123',
+          },
           ListVersionsByFunction: { Versions: [{ Version: '3', FunctionArn: lambdaVersionArn, CodeSha256: 'sha' }] },
         },
         okRoleIam(),
@@ -3865,7 +4051,7 @@ describe('edge-optimize support', () => {
           ListVersionsByFunction: { Versions: [] },
         },
         {
-          GetRole: { Role: { Arn: 'arn:role', AssumeRolePolicyDocument: encodeURIComponent('{"Statement":[]}') } },
+          GetRole: { Role: { Arn: 'arn:role', AssumeRolePolicyDocument: encodeURIComponent('{"Statement":[]}'), Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } },
           GetRolePolicy: throwNamed('NoSuchEntityException', 'no policy'),
         },
       );

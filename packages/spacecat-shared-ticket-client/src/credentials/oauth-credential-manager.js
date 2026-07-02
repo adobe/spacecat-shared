@@ -39,8 +39,11 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  * (Ref: https://developer.atlassian.com/cloud/jira/software/oauth-2-3lo-apps/#faq-rrt-config)
  *
  * Verified empirically: the same refresh token was exchanged 5 times within
- * 10 minutes — all calls returned 200. After 10 minutes, ALL tokens (original
- * and derived) returned unauthorized_client.
+ * 10 minutes — all calls returned 200. After 10 minutes, re-using the ORIGINAL
+ * refresh token returns HTTP 403 {"error":"unauthorized_client"} — the same
+ * response received when a user revokes the app. Derived tokens (obtained
+ * within the window) retain their own independent 90-day TTL; in normal
+ * operation SM holds the most recent derived token, not the original.
  *
  * ## Concurrent Lambda behaviour
  *
@@ -479,16 +482,18 @@ export default class OAuthCredentialManager {
   }
 
   /**
-   * Recovery path when Atlassian returns 401 on a refresh call.
+   * Recovery path when Atlassian token refresh fails with a grant-level error.
    *
-   * With the 10-minute reuse window, a 401 on refresh is rare — it indicates a
-   * genuinely revoked grant, expired refresh token (90-day inactivity), or password
-   * change. A concurrent Lambda using the same refresh token within 10 minutes would
-   * succeed, not cause a 401.
+   * Atlassian returns HTTP 403 {"error":"unauthorized_client"} (mapped to synthetic
+   * 401 by #fetchNewTokens) when the refresh token cannot be exchanged:
+   *   - Original refresh token reused past its 10-minute window (the SM pre-read
+   *     optimization normally prevents this — SM should hold the latest derived token)
+   *   - User or admin revoked the OAuth grant
+   *   - Refresh token expired (90-day inactivity)
+   *   - Password change / account security event
    *
-   * Re-reads SM twice (immediate + 200ms wait) as a defensive measure: if a concurrent
-   * caller wrote valid tokens between our refresh attempt and this recovery, we use
-   * theirs instead of marking the connection as requires_reauth.
+   * Re-reads SM twice (immediate + 200ms wait): if a concurrent Lambda wrote valid
+   * tokens between our attempt and now, use theirs instead of marking requiresReauth.
    */
   async #recoverFromAtlassian401() {
     const raceCheck = await this.#readSecret(true);

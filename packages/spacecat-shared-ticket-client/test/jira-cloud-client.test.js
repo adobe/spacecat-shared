@@ -985,10 +985,10 @@ describe('JiraCloudClient', () => {
       expect(body.fields.description.content).to.have.length.greaterThan(0);
     });
 
-    it('truncates input over 50 KB and still produces valid ADF', async () => {
+    it('truncates input over 256 KB and still produces valid ADF', async () => {
       const httpClient = makeHttpClient({ id: '1', key: 'ASO-1' });
       const client = new JiraCloudClient(VALID_CONFIG, makeCredentialManager(), httpClient, makeLog()); // eslint-disable-line max-len
-      const massive = 'word '.repeat(15000); // ~75 KB
+      const massive = 'word '.repeat(60000); // ~300 KB
       await expect(
         client.createTicket({ projectKey: 'ASO', summary: 'x', description: massive }),
       ).to.not.be.rejected;

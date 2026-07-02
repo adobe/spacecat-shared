@@ -12,7 +12,7 @@
 
 import { lexer } from 'marked';
 
-const MAX_INPUT_BYTES = 50 * 1024; // 50 KB — prevents DoS via large inputs
+const MAX_INPUT_BYTES = 256 * 1024; // 256 KB — prevents DoS via large inputs
 const MAX_DEPTH = 20; // prevents stack overflow via deeply nested markdown
 
 /**
@@ -226,7 +226,7 @@ function tokensToAdf(tokens, depth = 0) {
 /**
  * Converts a markdown string to an ADF document.
  *
- * Input is capped at 50 KB to prevent DoS via large payloads.
+ * Input is capped at 256 KB to prevent DoS via large payloads.
  * Deeply nested structures are capped at depth 20.
  * Conversion errors fall back to a plain-text paragraph.
  *

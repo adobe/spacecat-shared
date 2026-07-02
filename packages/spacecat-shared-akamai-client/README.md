@@ -34,7 +34,8 @@ const client = AkamaiClient.createFrom(context);
 ```
 
 Expects `AKAMAI_HOST`, `AKAMAI_CLIENT_TOKEN`, `AKAMAI_CLIENT_SECRET`,
-`AKAMAI_ACCESS_TOKEN`, and optionally `AKAMAI_ACCOUNT_SWITCH_KEY`.
+`AKAMAI_ACCESS_TOKEN`, and optionally `AKAMAI_ACCOUNT_SWITCH_KEY` and
+`AKAMAI_NOTIFY_EMAILS` (comma-separated; required only to call `activate()`).
 
 #### Direct constructor
 
@@ -47,6 +48,7 @@ const client = new AkamaiClient({
   clientSecret: process.env.AKAMAI_CLIENT_SECRET,
   accessToken: process.env.AKAMAI_ACCESS_TOKEN,
   accountSwitchKey: process.env.AKAMAI_ACCOUNT_SWITCH_KEY, // optional
+  notifyEmails: ['team@example.com'], // required only to call activate()
 }, log);
 ```
 
@@ -109,12 +111,13 @@ const result = await client.updateRuleTree(propertyId, version, contractId, grou
 if (result.errors?.length) { /* handle PAPI validation errors */ }
 ```
 
-### `activate(propertyId, version, contractId, groupId, network, notifyEmails, note?)`
+### `activate(propertyId, version, contractId, groupId, network, note?)`
+
+Requires the client to have been constructed with a non-empty `notifyEmails`
+(PAPI requires at least one address to notify about activation progress).
 
 ```javascript
-const activationLink = await client.activate(
-  propertyId, version, contractId, groupId, 'STAGING', ['team@example.com'],
-);
+const activationLink = await client.activate(propertyId, version, contractId, groupId, 'STAGING');
 const activationId = AkamaiClient.activationIdFromLink(activationLink);
 ```
 

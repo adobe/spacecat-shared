@@ -18,6 +18,7 @@ export interface AkamaiClientConfig {
   clientSecret: string;
   accessToken: string;
   accountSwitchKey?: string;
+  notifyEmails?: string[];
 }
 
 export interface PropertyMatch {
@@ -62,6 +63,8 @@ export default class AkamaiClient {
 
   accountSwitchKey?: string;
 
+  notifyEmails?: string[];
+
   searchBy(key: 'hostname' | 'edgeHostname' | 'propertyName', value: string): Promise<object[]>;
 
   findPropertiesByDomain(domain: string): Promise<PropertyMatch[]>;
@@ -97,7 +100,6 @@ export default class AkamaiClient {
     contractId: string,
     groupId: string,
     network: Network,
-    notifyEmails: string[],
     note?: string,
   ): Promise<string>;
 

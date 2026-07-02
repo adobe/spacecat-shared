@@ -28,17 +28,20 @@ const CREDS = {
   clientToken: 'test-client-token',
   clientSecret: 'test-client-secret',
   accessToken: 'test-access-token',
+  notifyEmails: ['a@example.com'],
 };
 const CONTRACT_ID = 'ctr_1';
 const GROUP_ID = 'grp_1';
 const PROPERTY_ID = 'prp_123';
 
+const sandbox = sinon.createSandbox();
+
 function makeLog() {
   return {
-    info: sinon.stub(),
-    debug: sinon.stub(),
-    warn: sinon.stub(),
-    error: sinon.stub(),
+    info: sandbox.stub(),
+    debug: sandbox.stub(),
+    warn: sandbox.stub(),
+    error: sandbox.stub(),
   };
 }
 
@@ -61,6 +64,7 @@ describe('AkamaiClient', () => {
   });
 
   afterEach(() => {
+    sandbox.restore();
     nock.cleanAll();
     nock.enableNetConnect();
   });
@@ -68,7 +72,7 @@ describe('AkamaiClient', () => {
   // ─── createFrom ────────────────────────────────────────────────────────
 
   describe('createFrom', () => {
-    it('creates a client from context.env', () => {
+    it('creates a client from context.env, parsing comma-separated notify emails', () => {
       const c = AkamaiClient.createFrom({
         env: {
           AKAMAI_HOST: HOST,
@@ -76,14 +80,16 @@ describe('AkamaiClient', () => {
           AKAMAI_CLIENT_SECRET: 'cs',
           AKAMAI_ACCESS_TOKEN: 'at',
           AKAMAI_ACCOUNT_SWITCH_KEY: 'ask',
+          AKAMAI_NOTIFY_EMAILS: 'a@example.com, b@example.com',
         },
         log,
       });
       expect(c).to.be.instanceOf(AkamaiClient);
       expect(c.accountSwitchKey).to.equal('ask');
+      expect(c.notifyEmails).to.deep.equal(['a@example.com', 'b@example.com']);
     });
 
-    it('uses console as the default log', () => {
+    it('uses console as the default log and leaves notifyEmails undefined when not set', () => {
       const c = AkamaiClient.createFrom({
         env: {
           AKAMAI_HOST: HOST,
@@ -93,6 +99,7 @@ describe('AkamaiClient', () => {
         },
       });
       expect(c).to.be.instanceOf(AkamaiClient);
+      expect(c.notifyEmails).to.be.undefined;
     });
 
     it('throws when a required env var is missing', () => {
@@ -176,7 +183,7 @@ describe('AkamaiClient', () => {
         .query(true)
         .reply(200, '');
 
-      const link = await client.activate(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID, 'STAGING', ['a@example.com']);
+      const link = await client.activate(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID, 'STAGING');
       expect(link).to.equal('');
     });
 
@@ -465,12 +472,13 @@ describe('AkamaiClient', () => {
           `/papi/v1/properties/${PROPERTY_ID}/activations`,
           (body) => body.note === 'Activated via spacecat-shared-akamai-client'
             && body.network === 'STAGING'
-            && body.acknowledgeAllWarnings === true,
+            && body.acknowledgeAllWarnings === true
+            && JSON.stringify(body.notifyEmails) === JSON.stringify(CREDS.notifyEmails),
         )
         .query({ contractId: CONTRACT_ID, groupId: GROUP_ID })
         .reply(201, { activationLink: '/papi/v1/properties/prp_123/activations/atv_1' });
 
-      const link = await client.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, 'staging', ['a@example.com']);
+      const link = await client.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, 'staging');
       expect(link).to.equal('/papi/v1/properties/prp_123/activations/atv_1');
     });
 
@@ -483,18 +491,30 @@ describe('AkamaiClient', () => {
         .query(true)
         .reply(201, { activationLink: '/link' });
 
-      const link = await client.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, 'PRODUCTION', [], 'custom note');
+      const link = await client.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, 'PRODUCTION', 'custom note');
       expect(link).to.equal('/link');
     });
 
     it('throws when version is not an integer', async () => {
-      await expect(client.activate(PROPERTY_ID, '6', CONTRACT_ID, GROUP_ID, 'STAGING', []))
+      await expect(client.activate(PROPERTY_ID, '6', CONTRACT_ID, GROUP_ID, 'STAGING'))
         .to.be.rejectedWith('version must be an integer');
     });
 
     it('throws when network is missing', async () => {
-      await expect(client.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, '', []))
+      await expect(client.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, ''))
         .to.be.rejectedWith('network is required');
+    });
+
+    it('throws when the client was constructed without notifyEmails', async () => {
+      const c = new AkamaiClient({ ...CREDS, notifyEmails: undefined }, log);
+      await expect(c.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, 'STAGING'))
+        .to.be.rejectedWith(/notifyEmails/);
+    });
+
+    it('throws when the client was constructed with an empty notifyEmails array', async () => {
+      const c = new AkamaiClient({ ...CREDS, notifyEmails: [] }, log);
+      await expect(c.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, 'STAGING'))
+        .to.be.rejectedWith(/notifyEmails/);
     });
   });
 

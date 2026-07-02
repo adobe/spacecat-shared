@@ -64,7 +64,8 @@ export default class AkamaiClient {
    * Creates an AkamaiClient from a Universal context. Reads EdgeGrid
    * credentials from context.env: AKAMAI_HOST, AKAMAI_CLIENT_TOKEN,
    * AKAMAI_CLIENT_SECRET, AKAMAI_ACCESS_TOKEN, and optionally
-   * AKAMAI_ACCOUNT_SWITCH_KEY.
+   * AKAMAI_ACCOUNT_SWITCH_KEY and AKAMAI_NOTIFY_EMAILS (comma-separated,
+   * required only if you intend to call activate()).
    *
    * @param {object} context - Universal function context
    * @returns {AkamaiClient}
@@ -77,9 +78,13 @@ export default class AkamaiClient {
       AKAMAI_CLIENT_SECRET: clientSecret,
       AKAMAI_ACCESS_TOKEN: accessToken,
       AKAMAI_ACCOUNT_SWITCH_KEY: accountSwitchKey,
+      AKAMAI_NOTIFY_EMAILS: notifyEmailsCsv,
     } = env;
+    const notifyEmails = hasText(notifyEmailsCsv)
+      ? notifyEmailsCsv.split(',').map((email) => email.trim()).filter(Boolean)
+      : undefined;
     return new AkamaiClient({
-      host, clientToken, clientSecret, accessToken, accountSwitchKey,
+      host, clientToken, clientSecret, accessToken, accountSwitchKey, notifyEmails,
     }, log);
   }
 
@@ -91,6 +96,8 @@ export default class AkamaiClient {
    * @param {string} config.clientSecret
    * @param {string} config.accessToken
    * @param {string} [config.accountSwitchKey]
+   * @param {string[]} [config.notifyEmails] - Required only to call activate();
+   *   emails PAPI notifies about activation progress.
    * @param {object} [log]
    */
   constructor(config = {}, log = console) {
@@ -104,6 +111,7 @@ export default class AkamaiClient {
     this.#clientSecret = config.clientSecret;
     this.#accessToken = config.accessToken;
     this.accountSwitchKey = config.accountSwitchKey;
+    this.notifyEmails = config.notifyEmails;
     this.log = log;
   }
 
@@ -229,8 +237,12 @@ export default class AkamaiClient {
       try {
         const items = await this.searchBy('hostname', host);
         items.forEach((item) => add(item, 'hostname', host));
-      } catch {
-        // no active version on that hostname, etc. — not a hard failure
+      } catch (e) {
+        // No active version on that hostname, auth failure, rate-limiting,
+        // etc. — not a hard failure (other candidates may still match), but
+        // log it so a systemic failure (e.g. bad credentials) is observable
+        // instead of silently returning an incomplete/empty result set.
+        this.log.warn(`searchBy('hostname', '${host}') failed, continuing: ${e.message}`);
       }
     }));
 
@@ -240,8 +252,8 @@ export default class AkamaiClient {
       try {
         const items = await this.searchBy('propertyName', nameQuery);
         items.forEach((item) => add(item, 'propertyName', nameQuery));
-      } catch {
-        // no match by that name — not a hard failure
+      } catch (e) {
+        this.log.warn(`searchBy('propertyName', '${nameQuery}') failed, continuing: ${e.message}`);
       }
     }));
 
@@ -379,12 +391,15 @@ export default class AkamaiClient {
   // --- Activation --------------------------------------------------------
 
   /**
+   * Activates a property version. Requires the client to have been
+   * constructed with a non-empty `notifyEmails` list (PAPI requires at least
+   * one address to notify about activation progress).
+   *
    * @param {string} propertyId
    * @param {number} version
    * @param {string} contractId
    * @param {string} groupId
    * @param {'STAGING'|'PRODUCTION'} network
-   * @param {string[]} notifyEmails
    * @param {string} [note]
    * @returns {Promise<string>} the activationLink returned by PAPI
    */
@@ -394,7 +409,6 @@ export default class AkamaiClient {
     contractId,
     groupId,
     network,
-    notifyEmails,
     note = 'Activated via spacecat-shared-akamai-client',
   ) {
     requireText('propertyId', propertyId);
@@ -403,6 +417,11 @@ export default class AkamaiClient {
     requireText('network', network);
     if (!Number.isInteger(version)) {
       throw new Error('version must be an integer');
+    }
+    if (!Array.isArray(this.notifyEmails) || this.notifyEmails.length === 0) {
+      throw new Error(
+        'AkamaiClient must be constructed with a non-empty notifyEmails array to call activate()',
+      );
     }
     const id = encodePathSegment(propertyId);
     const upperNetwork = network.toUpperCase();
@@ -413,7 +432,7 @@ export default class AkamaiClient {
         propertyVersion: version,
         network: upperNetwork,
         note,
-        notifyEmails,
+        notifyEmails: this.notifyEmails,
         acknowledgeAllWarnings: true,
       },
     });

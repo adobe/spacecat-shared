@@ -235,6 +235,23 @@ describe('facsWrapper', () => {
     });
   });
 
+  describe('IMS auth channel bypass', () => {
+    it('bypasses for ims auth type before the tenant gate', async () => {
+      // No tenant on the IMS session — without the bypass this would 403 at the
+      // tenant gate for every org request.
+      context.attributes.authInfo = makeAuthInfo({
+        getType: () => 'ims',
+        getTenantIds: () => [],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', bypass: 'ims-auth-channel' },
+      )).to.be.true;
+    });
+  });
+
   describe('tenant assertion', () => {
     it('returns 500 when getTenantIds() returns more than one tenant', async () => {
       context.attributes.authInfo = makeAuthInfo({

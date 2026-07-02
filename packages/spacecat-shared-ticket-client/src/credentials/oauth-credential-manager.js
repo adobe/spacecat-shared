@@ -63,7 +63,9 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  *   Code               | Source          | Triggers GRANT_REVOKED?
  *   -------------------|-----------------|------------------------
  *   invalid_grant      | Official docs   | Yes — documented for expired/revoked tokens
- *   unauthorized_client| Empirical tests | Yes — observed in all manual test scenarios
+ *   unauthorized_client| Empirical tests | Yes — observed for: token reused past 10-min window,
+ *                      |                 |   app revoked by user/admin, malformed/truncated token,
+ *                      |                 |   random string / empty token
  *
  * Official docs (developer.atlassian.com/cloud/oauth/getting-started/refresh-tokens/):
  *   403 {"error":"invalid_grant","error_description":"Unknown or invalid refresh token."}

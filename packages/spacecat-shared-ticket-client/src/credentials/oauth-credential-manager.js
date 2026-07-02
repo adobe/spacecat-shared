@@ -56,10 +56,20 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  * this is harmless: AT_A is in Lambda A's memory (valid 1 hour), and RT_B in
  * SM is valid for 90 days. No token is "consumed and lost" — both calls succeed.
  *
- * A genuine 401 on refresh only occurs when:
- *   - The refresh token is past the 10-minute reuse window AND already used
- *   - The refresh token expired (90-day inactivity)
- *   - The user/admin revoked the grant or changed their password
+ * ## Grant failure scenarios (empirically verified)
+ *
+ * Both scenarios return HTTP 403 {"error":"unauthorized_client"} — indistinguishable.
+ * Both are handled identically: GRANT_REVOKED → #recoverFromRevokedGrant → requiresReauth.
+ *
+ *   Scenario                  | Atlassian Response            | Outcome
+ *   --------------------------|-------------------------------|--------------------
+ *   Token >10 min (stale SM)  | 403 unauthorized_client       | User must reconnect
+ *   App revoked by user/admin | 403 unauthorized_client       | User must reconnect
+ *
+ * Other GRANT_REVOKED triggers (RFC 6749 §5.2):
+ *   - invalid_grant  (400): token already rotated / superseded by a concurrent refresh
+ *   - invalid_token  (400): malformed token
+ *   - access_denied  (400): user denied authorization
  *
  * ## Defensive guards (defense-in-depth, not correctness-critical)
  *
@@ -68,9 +78,10 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  *    Lambda invocation. Reduces redundant network calls and SM writes.
  * 2. Pre-read SM before calling Atlassian — if a concurrent Lambda already
  *    wrote new tokens, the caller exits early without calling Atlassian.
- * 3. #recoverFromRevokedGrant — re-reads SM (immediate + 200ms wait) on grant
- *    failure (GRANT_REVOKED). If a concurrent writer landed fresh tokens, uses
- *    theirs; otherwise marks the connection requiresReauth.
+ * 3. #recoverFromRevokedGrant — re-reads SM (immediate + 200ms wait) on
+ *    GRANT_REVOKED. Handles the rotation-race where Lambda A wins the
+ *    Atlassian call and writes RT_new to SM; Lambda B gets GRANT_REVOKED
+ *    (old token rotated), waits 200ms, finds Lambda A's fresh tokens in SM.
  *
  * ## App-level OAuth credentials
  *
@@ -485,23 +496,27 @@ export default class OAuthCredentialManager {
   /**
    * Recovery path when #fetchNewTokens throws with code GRANT_REVOKED.
    *
-   * Triggered by Atlassian grant-level failures (HTTP 400/403, error codes:
-   * unauthorized_client, invalid_grant, invalid_token, access_denied):
-   *   - Original refresh token reused past its 10-minute window
-   *   - User or admin revoked the OAuth grant
-   *   - Refresh token expired (90-day inactivity)
-   *   - Password change / account security event
+   * Handles two cases:
    *
-   * Re-reads SM twice (immediate + 200ms wait): if a concurrent Lambda wrote valid
-   * tokens between our attempt and now, use theirs instead of marking requiresReauth.
+   * 1. Rotation race (forceRefreshAuthHeaders): Lambda A wins the Atlassian call,
+   *    rotates the refresh token, writes RT_new to SM. Lambda B called 50ms later
+   *    with the same old token → GRANT_REVOKED (already rotated). The 200ms wait
+   *    gives Lambda A time to write RT_new; Lambda B then finds it and uses it.
+   *    Connection is healthy — no requiresReauth needed.
+   *
+   * 2. Genuinely dead grant (token >10 min / app revoked / expired / password change):
+   *    Both SM re-reads return stale/expired → no recovery → requiresReauth written.
+   *    Both scenarios return identical HTTP 403 unauthorized_client from Atlassian.
    */
   async #recoverFromRevokedGrant() {
     const raceCheck = await this.#readSecret(true);
     if (!this.#isExpired(raceCheck) && !raceCheck.requiresReauth) {
-      this.log.debug('Atlassian 401 — concurrent caller already refreshed, using their token');
+      this.log.debug('GRANT_REVOKED — concurrent caller already refreshed, using their token');
       return { Authorization: `Bearer ${raceCheck.accessToken}` };
     }
 
+    // 200ms wait: gives a concurrent Lambda that won the rotation race time to write
+    // its fresh tokens to SM before we conclude the grant is genuinely dead.
     // eslint-disable-next-line no-promise-executor-return
     await new Promise((resolve) => setTimeout(resolve, CONCURRENT_REFRESH_WAIT_MS));
     const finalCheck = await this.#readSecret(true);
@@ -510,7 +525,7 @@ export default class OAuthCredentialManager {
       return { Authorization: `Bearer ${finalCheck.accessToken}` };
     }
 
-    this.log.error('Atlassian token refresh returned 401 — refresh token revoked');
+    this.log.error('GRANT_REVOKED — refresh token expired or app revoked, marking requiresReauth');
     await this.#writeReauthFlag();
     throw new Error('OAuth token refresh failed — connection requires re-authorization');
   }

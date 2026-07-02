@@ -454,7 +454,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     },
   );
 
-  // POST /aio/prompts references tags by id (not name) and returns the live LIST WRAPPER
+  // POST /aio/prompts references tags by id (not name) and returns 201 with the live LIST WRAPPER
   // { page, total, items:[{id,name}], existing_count }. The created prompts embed the tag's
   // { id, name }, so a by_tags read on that id correlates them (immediately — no draft gate, like
   // prompts/tagged.js).
@@ -464,7 +464,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       headers: jsonAuth,
       body: JSON.stringify({ items: ['Id Q1', 'Id Q2'], tag_ids: [SEED_IDS.categoryTagId] }),
     });
-    expect(res.status).to.equal(200);
+    expect(res.status).to.equal(201);
     const created = await res.json();
     expect(created.total).to.equal(2);
     expect(created.existing_count).to.equal(0);

@@ -20,12 +20,13 @@
  *
  * POST contract (live-verified 2026-07-02, serenity-docs#24): body
  * `{ items: [text…], tag_ids: [id…] }` (items = prompt texts, tag_ids = tags attached to EVERY
- * created prompt). Response is a LIST WRAPPER
+ * created prompt). Response is **201 Created** with a LIST WRAPPER
  * `{ page, total, items: [{ id, name }…], existing_count }` — typed as
  * `model.StringIDNameListResponse` via the spec overlay's CR14 (the vendored public swagger
- * originally modelled this as a bare `StringIDName`, a spec↔live drift; CR14 retypes it, so the
- * 200 below goes through Counterfact's normal `$.response[200].json(...)` validation, not a raw
- * bypass). Behaviour:
+ * originally modelled this as a 200 with a bare `StringIDName`, a spec↔live drift on BOTH the
+ * status code and the body shape — the sibling `aio/prompts/tagged` create endpoint already
+ * correctly documents 201; CR14 retypes this one to match, so the 201 below goes through
+ * Counterfact's normal `$.response[201].json(...)` validation, not a raw bypass). Behaviour:
  * - Each `tag_id` resolves against the project's standalone tags collection to embed the full
  *   `{ id, name }` pair on the created prompt (mirroring `prompts/tagged.js`), so `by_tags` (which
  *   matches on the embedded tag id) correlates the write for free.
@@ -36,11 +37,17 @@
  * - Metered like `prompts/tagged.js` (both write the same quota-metered prompts collection): the
  *   whole batch 405s (creates nothing) when it would exceed the workspace's prompt allocation.
  * - Visibility: this mock has NO draft/live distinction for prompts — `prompts/tagged.js` makes a
- *   created prompt immediately visible via the default `by_tags` read, and (per serenity-docs#24,
- *   to avoid inventing a parallel mechanism) POST here mirrors that: it shows up immediately.
+ *   created prompt immediately visible via the default `by_tags` read, and POST here mirrors that:
+ *   it shows up immediately. KNOWN GAP vs live: live writes this endpoint to draft only —
+ *   `by_tags` (no `?draft=`) is empty until the existing publish step runs (serenity-docs#24 §3.1
+ *   gate 2 + §4 deliverable-1 item 2, which explicitly asks this mock to gate on "the mock's
+ *   existing publish semantics" — but no such prompt-level draft/publish state exists anywhere in
+ *   this mock; `publish.js` only flips a project-level `publish_status` that no prompt read
+ *   consults). Left unmodeled deliberately here to avoid inventing a parallel mechanism
+ *   unilaterally; flagged for a decision by the spec owner before a consumer relies on it.
  */
 
-/** POST — create prompts by id-based tag refs → 200 list wrapper; 500 (atomic) on unknown tag. */
+/** POST — create prompts by id-based tag refs → 201 list wrapper; 500 (atomic) on unknown tag. */
 export function POST($) {
   const { path, body, context } = $;
   const scope = { workspaceId: path.id, projectId: path.project_id };
@@ -81,7 +88,7 @@ export function POST($) {
   }));
 
   if (!context.quota.canCreatePrompts(path.id, toCreate.length)) {
-    // 405 is not a declared response for this operation (only 200/401/403/500) — the disguised
+    // 405 is not a declared response for this operation (only 201/401/403/500) — the disguised
     // quota 405 the live API returns (mock/quota.js), so this stays a raw bypass like every other
     // quota-gated route in this package; it can't go through $.response[405].json(...).
     return {
@@ -92,7 +99,7 @@ export function POST($) {
   }
 
   const created = context.ops.prompts.createMany(scope, toCreate);
-  return $.response[200].json({
+  return $.response[201].json({
     page: 1,
     total: created.length,
     items: created.map((p) => ({ id: p.id, name: p.name })),

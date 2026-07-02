@@ -7329,8 +7329,8 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["model.KeywordRequest"];
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

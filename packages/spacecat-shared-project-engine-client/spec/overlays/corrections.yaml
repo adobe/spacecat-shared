@@ -363,30 +363,34 @@ actions:
           items:
             $ref: "#/components/schemas/model.AIOTagLeaf"
 
-  # ── CR14: aio-create-prompt-v2 (POST /v2/.../aio/prompts) returns a paginated
-  # list wrapper, not a bare StringIDName ──────────────────────────────────
-  # Live: POST /v2/.../aio/prompts -> 200 { page, total, items: [{id, name}], existing_count }
-  # (verified 2026-07-02 against prod, a single-item batch). The vendored swagger types the 200 as
-  # one `model.StringIDName` ({id, name}) with no wrapper — a spec/live drift. The wrapper shape
-  # already exists as `model.StringIDNameListResponse` ({items: [StringIDName], page, total}, used
-  # by two unrelated deprecated endpoints), just missing `existing_count` — extend it (CR14a) and
-  # point this endpoint's 200 at it instead (CR14b removes the stale ref, CR14c re-adds it; the
-  # remove-then-add pattern is required because deepMerge recurses into an existing object value
-  # rather than replacing it, so updating `schema` in place would leave the old `$ref` behind
-  # alongside the new shape — see CR7/CR11 for the same pattern on other endpoints).
+  # ── CR14: aio-create-prompt-v2 (POST /v2/.../aio/prompts) returns 201 with a
+  # paginated list wrapper, not 200 with a bare StringIDName ─────────────────
+  # Live: POST /v2/.../aio/prompts -> 201 { page, total, items: [{id, name}], existing_count }
+  # (verified 2026-07-02 against prod, a single-item batch — serenity-docs#24 §3.1 gate 2). The
+  # vendored swagger documents only a 200 typed as one `model.StringIDName` ({id, name}) — BOTH the
+  # status code and the body shape are wrong. The sibling name-based create endpoint
+  # (aio/prompts/tagged, `aio-create-prompts-with-tags`) already correctly documents 201 in this
+  # same vendored swagger, so this looks like an upstream copy/paste inconsistency specific to the
+  # v2 (id-based) variant. The wrapper shape already exists as `model.StringIDNameListResponse`
+  # ({items: [StringIDName], page, total}, used by two unrelated deprecated endpoints), just
+  # missing `existing_count` — extend it (CR14a) and replace the stale 200 with a 201 pointed at it
+  # (CR14b removes the stale 200 entirely, CR14c adds the 201; the remove-then-add pattern is
+  # required because deepMerge recurses into an existing object value rather than replacing it, so
+  # updating `schema` in place would leave the old `$ref` behind alongside the new shape — see
+  # CR7/CR11 for the same pattern on other endpoints).
   - target: "$.components.schemas['model.StringIDNameListResponse']"
     description: "CR14a: add existing_count to StringIDNameListResponse (live returns it on aio-create-prompt-v2 ONLY, not the two deprecated endpoints also using this schema; kept optional so it stays spec-valid there too)"
     update:
       properties:
         existing_count: { type: integer }
   - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/prompts'].post.responses['200']"
-    description: "CR14b: remove the stale 200 (wrongly typed as bare StringIDName) on aio-create-prompt-v2"
+    description: "CR14b: remove the stale 200 (wrong status code AND wrongly typed as bare StringIDName) on aio-create-prompt-v2"
     remove: true
   - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/prompts'].post.responses"
-    description: "CR14c: add the 200 OK success response on aio-create-prompt-v2, typed as the list wrapper"
+    description: "CR14c: add the 201 Created success response on aio-create-prompt-v2, typed as the list wrapper (live returns 201, matching the sibling aio/prompts/tagged create endpoint's status code)"
     update:
-      "200":
-        description: "OK"
+      "201":
+        description: "Created"
         content:
           application/json:
             schema:

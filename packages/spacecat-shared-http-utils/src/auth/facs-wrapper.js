@@ -126,12 +126,15 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  *
  *   0. CORS preflight (`OPTIONS`) → bypass.
  *   1. Internal identities (admin, S2S, read-only admin, api-key) → bypass.
- *   1b. IMS auth channel (`authInfo.getType() === 'ims'`) → bypass. Direct IMS
- *      tokens are a deprecating channel that never carry `facs_permissions` and
- *      may not resolve a tenant `orgId`, so FACS cannot evaluate them; forcing
- *      them through the ladder would 403 every org request. IMS orgs that ARE
- *      FACS/RBAC-enabled are gated ahead of this wrapper, so this bypass only
- *      admits the not-yet-enrolled IMS traffic that must keep working for now.
+ *   1b. IMS auth channel (`authInfo.getType() === 'ims'` AND no
+ *      `facs_permissions` claim) → bypass. Direct IMS tokens are a deprecating
+ *      channel that never carry `facs_permissions` and may not resolve a tenant
+ *      `orgId`, so FACS cannot evaluate them; forcing them through the ladder
+ *      would 403 every org request. IMS orgs that ARE FACS/RBAC-enabled are
+ *      gated ahead of this wrapper, so this bypass only admits the not-yet-
+ *      enrolled IMS traffic that must keep working for now. The no-claims guard
+ *      keeps the bypass self-contained: an IMS session that ever carried FACS
+ *      claims stays on the evaluation ladder rather than skipping it.
  *   2. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) → bypass.
  *   3. Route NOT in any product map → bypass.
  *      Route IS in some product map but `x-product` is missing / mismatched
@@ -249,7 +252,12 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     // would 403 every org request at the tenant gate. IMS orgs that ARE
     // FACS/RBAC-enabled are gated ahead of this wrapper; this bypass only admits
     // the not-yet-enrolled IMS traffic that must keep working for now.
-    if (authType === 'ims') {
+    //
+    // Guard: the bypass is scoped to sessions that carry NO FACS claims (its
+    // stated intent). This keeps it self-contained rather than relying on the
+    // upstream fail-open RBAC gate holding — should an IMS session ever surface
+    // `facs_permissions`, it stays on the evaluation ladder instead of skipping it.
+    if (authType === 'ims' && !authInfo?.getFacsPermissions?.()?.length) {
       log.info({
         tag: 'facs', bypass: 'ims-auth-channel', method, suffix, authType,
       }, 'FACS bypass: IMS auth channel');

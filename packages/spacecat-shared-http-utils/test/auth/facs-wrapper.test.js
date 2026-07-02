@@ -242,6 +242,7 @@ describe('facsWrapper', () => {
       context.attributes.authInfo = makeAuthInfo({
         getType: () => 'ims',
         getTenantIds: () => [],
+        getFacsPermissions: () => [],
       });
       const wrapped = facsWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
@@ -249,6 +250,34 @@ describe('facsWrapper', () => {
       expect(logStub.info.calledWithMatch(
         { tag: 'facs', bypass: 'ims-auth-channel' },
       )).to.be.true;
+    });
+
+    it('bypasses for ims auth type even when a tenant is present (unconditional on tenant)', async () => {
+      context.attributes.authInfo = makeAuthInfo({
+        getType: () => 'ims',
+        getTenantIds: () => ['SOME-ORG@AdobeOrg'],
+        getFacsPermissions: () => [],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', bypass: 'ims-auth-channel' },
+      )).to.be.true;
+    });
+
+    it('does NOT take the ims bypass when the session carries FACS claims', async () => {
+      // Guard: an IMS session that surfaces facs_permissions stays on the
+      // evaluation ladder rather than skipping it.
+      context.attributes.authInfo = makeAuthInfo({
+        getType: () => 'ims',
+        getFacsPermissions: () => ['llmo/some_capability'],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', bypass: 'ims-auth-channel' },
+      )).to.be.false;
     });
   });
 

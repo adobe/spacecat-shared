@@ -571,6 +571,25 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(error).to.equal(undefined);
   });
 
+  // A reference id with no matching registered tag falls back to embedding { id, name: id } — the
+  // id is what by_tags matches on, so the prompt still correlates even without a name to resolve.
+  it('PUT embeds an unresolvable reference id as its own name (by_tags still correlates)', async () => {
+    const unknownTagId = '00000000-0000-4000-8000-0000000000ff';
+    const { response } = await client.PUT(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: {
+          items: [{ id: SEED_IDS.promptId, references: [unknownTagId], replace: false }],
+        },
+      },
+    );
+    expect(response.status).to.equal(204);
+
+    const { data } = await listByTags([unknownTagId]);
+    expect(data.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
+  });
+
   it('__reset restores the seed between mutations', async () => {
     await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },

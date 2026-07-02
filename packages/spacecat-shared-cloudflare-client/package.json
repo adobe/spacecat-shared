@@ -39,7 +39,7 @@
   "devDependencies": {
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
-    "nock": "14.0.15",
+    "nock": "14.0.16",
     "sinon": "22.0.0",
     "sinon-chai": "4.0.1",
     "typescript": "6.0.3"

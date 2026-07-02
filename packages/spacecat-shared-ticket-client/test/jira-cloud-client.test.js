@@ -676,19 +676,23 @@ describe('JiraCloudClient', () => {
     });
 
     it('strips unsafe link schemes and renders link text as plain nodes (XSS defense)', async () => {
-      const httpClient = makeHttpClient({ id: '1', key: 'ASO-1' });
-      const client = new JiraCloudClient(
-        VALID_CONFIG,
-        makeCredentialManager(),
-        httpClient,
-        makeLog(),
-      );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '[click me](javascript:alert(1))' });
-      const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
-      const nodes = body.fields.description.content[0].content;
-      // Link text rendered as plain text — no link mark, no href
-      expect(nodes.some((n) => n.marks?.some((m) => m.type === 'link'))).to.be.false;
-      expect(nodes[0].text).to.equal('click me');
+      // Two cases confirm stripping is scheme-agnostic, not just targeting one scheme.
+      // eslint-disable-next-line no-script-url
+      const unsafeUrls = [['javascript: scheme', 'javascript:alert(1)'], ['data: scheme', 'data:text/html,xss']];
+      for (const [label, url] of unsafeUrls) {
+        // eslint-disable-next-line no-await-in-loop
+        const httpClient = makeHttpClient({ id: '1', key: 'ASO-1' });
+        // eslint-disable-next-line no-await-in-loop
+        // eslint-disable-next-line max-len
+        const client = new JiraCloudClient(VALID_CONFIG, makeCredentialManager(), httpClient, makeLog()); // NOSONAR
+        // eslint-disable-next-line no-await-in-loop
+        await client.createTicket({ projectKey: 'ASO', summary: 'x', description: `[click me](${url})` });
+        const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
+        const nodes = body.fields.description.content[0].content;
+        // Link text rendered as plain text — no link mark, no href
+        expect(nodes.some((n) => n.marks?.some((m) => m.type === 'link')), label).to.be.false;
+        expect(nodes[0].text, label).to.equal('click me');
+      }
     });
 
     it('renders strikethrough with strike mark', async () => {

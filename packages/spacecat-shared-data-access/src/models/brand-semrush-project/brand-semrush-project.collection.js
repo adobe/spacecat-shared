@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { isValidUUID } from '@adobe/spacecat-shared-utils';
+
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
 import { DEFAULT_PAGE_SIZE } from '../../util/postgrest.utils.js';
@@ -78,14 +80,14 @@ class BrandSemrushProjectCollection extends BaseCollection {
    *   geoTargetId: number,
    *   languageCode: string,
    *   siteId: string|null,
-   *   organizationId: string,
+   *   organizationId: string|null,
    *   semrushSubWorkspaceId: string|null,
    * }>>}
    */
   async allByOrganizationId(organizationId, { includeDeleted = false } = {}) {
-    if (!organizationId) {
+    if (!organizationId || !isValidUUID(organizationId)) {
       throw new DataAccessError(
-        'organizationId is required',
+        'organizationId is required and must be a valid UUID',
         { entityName: this.entityName, tableName: this.tableName },
       );
     }
@@ -149,7 +151,7 @@ class BrandSemrushProjectCollection extends BaseCollection {
       }
     }
 
-    return allResults.map((row) => ({
+    return allResults.map((row) => Object.freeze({
       brandId: row.brand_id,
       semrushProjectId: row.semrush_project_id,
       geoTargetId: row.semrush_location_id,

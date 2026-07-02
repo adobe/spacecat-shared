@@ -340,6 +340,11 @@ describe('BrandSemrushProjectCollection', () => {
         .to.be.rejectedWith(DataAccessError, 'organizationId is required');
     });
 
+    it('throws DataAccessError when organizationId is not a valid UUID', async () => {
+      await expect(instance.allByOrganizationId('not-a-uuid'))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required and must be a valid UUID');
+    });
+
     it('throws DataAccessError on PostgREST error', async () => {
       setupPostgrestChain({ data: null, error: { message: 'boom' } });
 

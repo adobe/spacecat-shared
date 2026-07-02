@@ -40,8 +40,11 @@ export interface BrandSemrushProjectOrgRow {
   geoTargetId: number;
   languageCode: string;
   siteId: string | null;
-  // Always present: the select's `!inner` join excludes non-matching parents.
-  organizationId: string;
+  // Expected non-null under the select's `!inner` join (which excludes
+  // non-matching parents), but kept nullable to match the defensive runtime
+  // mapping (`row.brands?.organization_id ?? null`) — see
+  // brand-semrush-project.collection.js's #fetchOrgRows.
+  organizationId: string | null;
   semrushSubWorkspaceId: string | null;
 }
 

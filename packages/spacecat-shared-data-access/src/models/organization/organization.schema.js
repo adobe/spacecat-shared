@@ -25,6 +25,7 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
   .addReference('has_many', 'Projects')
   .addReference('has_many', 'Entitlements')
   .addReference('has_many', 'TrialUsers')
+  .addReference('has_many', 'TaskManagementConnections')
   .addAttribute('config', {
     type: 'any',
     required: true,

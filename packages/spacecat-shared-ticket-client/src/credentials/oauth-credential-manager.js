@@ -307,6 +307,14 @@ export default class OAuthCredentialManager {
     } catch (err) {
       throw new Error(`Malformed SM secret at ${this.secretPath}: ${err.message}`);
     }
+    // Validate minimum structure — a corrupt or partially-written secret would
+    // otherwise produce confusing errors downstream (e.g. 'Bearer undefined').
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error(`SM secret at ${this.secretPath} is not a JSON object`);
+    }
+    if (typeof parsed.accessToken !== 'string' || !parsed.accessToken) {
+      throw new Error(`SM secret at ${this.secretPath} is missing a valid accessToken`);
+    }
     this.#secretCache = parsed;
     this.#cacheExpiresAt = Date.now() + SECRET_CACHE_TTL_MS;
     return parsed;
@@ -510,6 +518,12 @@ export default class OAuthCredentialManager {
         // clobbering their tokens with a stale read-modify-write.
         // eslint-disable-next-line no-await-in-loop
         const secret = await this.#readSecret(true);
+        // If a concurrent Lambda wrote valid tokens since our last check, do NOT
+        // clobber them with requiresReauth: true — the connection is healthy.
+        if (!this.#isExpired(secret) && !secret.requiresReauth) {
+          this.log.debug('Concurrent refresh landed fresh tokens — skipping reauth flag write');
+          return;
+        }
         // eslint-disable-next-line no-await-in-loop
         await this.smClient.putSecretValue({
           SecretId: this.secretPath,

@@ -193,6 +193,15 @@ export default class JiraCloudClient extends BaseTicketClient {
       throw new Error('projectKey is required to create a ticket');
     }
 
+    if (!summary || !String(summary).trim()) {
+      throw new Error('summary is required to create a ticket');
+    }
+
+    const invalidLabel = labels.find((l) => /\s/.test(String(l)));
+    if (invalidLabel !== undefined) {
+      throw new Error(`Label must not contain whitespace, got: '${invalidLabel}'`);
+    }
+
     if (dueDate) {
       if (!DUE_DATE_REGEX.test(dueDate)) {
         throw new Error(`Invalid dueDate format: expected YYYY-MM-DD, got: ${dueDate}`);

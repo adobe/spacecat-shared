@@ -123,6 +123,42 @@ describe('JiraCloudClient', () => {
         .to.be.rejectedWith('projectKey is required');
     });
 
+    it('throws when summary is missing', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeHttpClient({}),
+        makeLog(),
+      );
+      await expect(client.createTicket({ projectKey: 'ASO' }))
+        .to.be.rejectedWith('summary is required');
+    });
+
+    it('throws when summary is blank', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeHttpClient({}),
+        makeLog(),
+      );
+      await expect(client.createTicket({ projectKey: 'ASO', summary: '   ' }))
+        .to.be.rejectedWith('summary is required');
+    });
+
+    it('throws when a label contains whitespace', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeHttpClient({}),
+        makeLog(),
+      );
+      await expect(client.createTicket({
+        projectKey: 'ASO',
+        summary: 'test',
+        labels: ['valid-label', 'has space'],
+      })).to.be.rejectedWith("Label must not contain whitespace, got: 'has space'");
+    });
+
     it('creates a ticket and fetches ticketStatus via GET after create', async () => {
       // POST /issue returns { id, key } only — no fields.
       // GET /issue/{key}?fields=status returns the real initial status.
@@ -265,7 +301,7 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      const result = await client.createTicket({ projectKey: 'ASO', summary: null, description: null });
+      const result = await client.createTicket({ projectKey: 'ASO', summary: 'test', description: null });
       expect(result.ticketKey).to.equal('ASO-1');
     });
 

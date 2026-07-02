@@ -146,6 +146,31 @@ describe('OAuthCredentialManager', () => {
       );
     });
 
+    it('throws when SM secret is missing accessToken', async () => {
+      const noTokenSecret = { refreshToken: 'rt', expiresAt: Date.now() + 3600_000 };
+      const smClient = {
+        getSecretValue: sinon.stub().resolves({ SecretString: JSON.stringify(noTokenSecret) }),
+        putSecretValue: sinon.stub().resolves({}),
+      };
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());
+
+      await expect(manager.getAuthHeaders()).to.be.rejectedWith(
+        'SM secret at /test/secret is missing a valid accessToken',
+      );
+    });
+
+    it('throws when SM secret is not a JSON object', async () => {
+      const smClient = {
+        getSecretValue: sinon.stub().resolves({ SecretString: '"just-a-string"' }),
+        putSecretValue: sinon.stub().resolves({}),
+      };
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());
+
+      await expect(manager.getAuthHeaders()).to.be.rejectedWith(
+        'SM secret at /test/secret is not a JSON object',
+      );
+    });
+
     it('treats missing expiresAt as expired — throws TOKEN_REFRESH_REQUIRED', async () => {
       const noExpirySecret = { ...VALID_SECRET, expiresAt: undefined };
       const manager = new OAuthCredentialManager(
@@ -917,8 +942,8 @@ describe('OAuthCredentialManager', () => {
       }
     });
 
-    it('writes requiresReauth: true to SM', async () => {
-      const smClient = makeSmClient(VALID_SECRET);
+    it('writes requiresReauth: true to SM when token is expired', async () => {
+      const smClient = makeSmClient(EXPIRED_SECRET);
       const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());
 
       await manager.setRequiresReauth();
@@ -930,7 +955,7 @@ describe('OAuthCredentialManager', () => {
     it('retries SM write on transient failure and succeeds on second attempt', async () => {
       clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const smClient = {
-        getSecretValue: sinon.stub().resolves({ SecretString: JSON.stringify(VALID_SECRET) }),
+        getSecretValue: sinon.stub().resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) }),
         putSecretValue: sinon.stub()
           .onFirstCall().rejects(new Error('transient SM error'))
           .onSecondCall()
@@ -947,10 +972,26 @@ describe('OAuthCredentialManager', () => {
       expect(written.requiresReauth).to.be.true;
     });
 
+    it('skips reauth flag write when concurrent Lambda wrote fresh tokens', async () => {
+      // SM returns fresh (non-expired) tokens on re-read inside #writeReauthFlag —
+      // a concurrent Lambda refreshed successfully. Do NOT clobber with requiresReauth.
+      const freshSecret = { ...VALID_SECRET, expiresAt: Date.now() + 3600_000 };
+      const smClient = {
+        getSecretValue: sinon.stub().resolves({ SecretString: JSON.stringify(freshSecret) }),
+        putSecretValue: sinon.stub().resolves({}),
+      };
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());
+
+      await manager.setRequiresReauth();
+
+      // putSecretValue must NOT be called — fresh tokens detected, write skipped
+      expect(smClient.putSecretValue.callCount).to.equal(0);
+    });
+
     it('throws after exhausting all SM write attempts', async () => {
       clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const smClient = {
-        getSecretValue: sinon.stub().resolves({ SecretString: JSON.stringify(VALID_SECRET) }),
+        getSecretValue: sinon.stub().resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) }),
         putSecretValue: sinon.stub().rejects(new Error('persistent SM error')),
       };
       const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());

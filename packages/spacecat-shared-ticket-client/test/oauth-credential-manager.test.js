@@ -616,6 +616,37 @@ describe('OAuthCredentialManager', () => {
       expect(written.requiresReauth).to.be.true;
     });
 
+    it('Atlassian 403 invalid_grant (official docs code) — triggers reauth recovery', async () => {
+      const smClient = {
+        getSecretValue: sinon.stub()
+          .onFirstCall()
+          .resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) })
+          .onSecondCall()
+          .resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) }) // race-check
+          .onCall(2)
+          .resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) }) // final-check
+          .onCall(3)
+          .resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) }), // #writeReauthFlag read
+        putSecretValue: sinon.stub().resolves({}),
+      };
+      const httpClient = {
+        fetch: sinon.stub().resolves({
+          ok: false,
+          status: 403,
+          json: sinon.stub()
+            .resolves({ error: 'invalid_grant', error_description: 'Unknown or invalid refresh token.' }),
+        }),
+      };
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
+
+      await expect(manager.refreshAuthHeaders()).to.be.rejectedWith(
+        'OAuth token refresh failed — connection requires re-authorization',
+      );
+      // requiresReauth must be written to SM
+      const written = JSON.parse(smClient.putSecretValue.firstCall.args[0].SecretString);
+      expect(written.requiresReauth).to.be.true;
+    });
+
     it('Atlassian 400 invalid_client — propagates as non-reauth error', async () => {
       const smClient = makeSmClient(EXPIRED_SECRET);
       const httpClient = {

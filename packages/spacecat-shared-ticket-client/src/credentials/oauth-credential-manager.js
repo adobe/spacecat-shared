@@ -56,21 +56,26 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  * this is harmless: AT_A is in Lambda A's memory (valid 1 hour), and RT_B in
  * SM is valid for 90 days. No token is "consumed and lost" — both calls succeed.
  *
- * ## Grant failure scenarios (empirically verified)
+ * ## Grant failure scenarios
  *
- * Atlassian returns HTTP 403 {"error":"unauthorized_client"} as a catch-all for
- * ALL refresh token failures — indistinguishable by HTTP status or error code.
- * All handled identically: GRANT_REVOKED → #recoverFromRevokedGrant → requiresReauth.
+ * Atlassian returns HTTP 403 for all refresh token failures. Two error codes observed:
  *
- *   Scenario                     | Atlassian Response            | Outcome
- *   -----------------------------|-------------------------------|--------------------
- *   Token >10 min (stale SM)     | 403 unauthorized_client       | User must reconnect
- *   App revoked by user/admin    | 403 unauthorized_client       | User must reconnect
- *   Malformed / truncated token  | 403 unauthorized_client       | User must reconnect
- *   Random string / empty        | 403 unauthorized_client       | User must reconnect
+ *   Code               | Source          | Triggers GRANT_REVOKED?
+ *   -------------------|-----------------|------------------------
+ *   invalid_grant      | Official docs   | Yes — documented for expired/revoked tokens
+ *   unauthorized_client| Empirical tests | Yes — observed in all manual test scenarios
  *
- * RFC 6749 §5.2 codes (invalid_grant, invalid_token, access_denied) were NOT
- * observed in any test — Atlassian does not emit them at the token endpoint.
+ * Official docs (developer.atlassian.com/cloud/oauth/getting-started/refresh-tokens/):
+ *   403 {"error":"invalid_grant","error_description":"Unknown or invalid refresh token."}
+ *   Returned when: password changed, token expired (90-day inactivity), token not rotated.
+ *
+ * Empirical tests returned 403 {"error":"unauthorized_client"} for:
+ *   - Token reused past 10-minute window
+ *   - App revoked by user/admin
+ *   - Malformed / truncated token
+ *   - Random string / empty token
+ *
+ * Both codes handled identically: GRANT_REVOKED → #recoverFromRevokedGrant → requiresReauth.
  *
  * ## Defensive guards (defense-in-depth, not correctness-critical)
  *
@@ -382,15 +387,13 @@ export default class OAuthCredentialManager {
     });
 
     if (!response.ok) {
-      // Inspect error body to detect grant-level failures.
-      // Empirically verified: Atlassian returns HTTP 403 {"error":"unauthorized_client"}
-      // as a catch-all for ALL refresh token failures regardless of the cause:
-      //   - Refresh token reused past its 10-minute window
-      //   - App revoked by user or admin
-      //   - Malformed / truncated token
-      //   - Random garbage / empty string
-      // RFC 6749 §5.2 codes (invalid_grant, invalid_token, access_denied) were NOT
-      // observed in any test — Atlassian does not use them at the token endpoint.
+      // Inspect error body to detect grant-level failures (revoked/expired refresh token).
+      // Atlassian returns HTTP 403 for all grant failures. Two error codes are known:
+      //   - "invalid_grant"      — documented in official Atlassian 3LO OAuth docs
+      //                            (expired token, 90-day inactivity, token not rotated)
+      //   - "unauthorized_client" — observed empirically in manual tests
+      //                            (reused past 10-min window, revoked app, malformed token)
+      // Both are treated as GRANT_REVOKED so callers check a semantic code, not raw HTTP status.
       let errorCode;
       try {
         const errorBody = await response.json();
@@ -399,7 +402,7 @@ export default class OAuthCredentialManager {
       } catch {
         // ignore parse errors — error code remains undefined
       }
-      const isGrantRevoked = errorCode === 'unauthorized_client';
+      const isGrantRevoked = errorCode === 'invalid_grant' || errorCode === 'unauthorized_client';
       throw Object.assign(
         new Error(`Atlassian token refresh failed: ${response.status}${errorCode ? ` (${errorCode})` : ''}`),
         { status: response.status, code: isGrantRevoked ? 'GRANT_REVOKED' : undefined },

@@ -27,6 +27,7 @@ import {
   DescribeFunctionCommand,
   PublishFunctionCommand,
   UpdateDistributionCommand,
+  TagResourceCommand,
 } from '@aws-sdk/client-cloudfront';
 import {
   IAMClient,
@@ -103,6 +104,49 @@ const delay = (ms) => new Promise((resolve) => {
   setTimeout(resolve, ms);
 });
 
+// AWS RoleSessionName allows [\w+=,.@-] and 2-64 chars. Use the operator's email so the customer's
+// CloudTrail attributes every mutation to the person who ran it; fall back to the generic name.
+function sessionNameFor(operator) {
+  const cleaned = String(operator || '').replace(/[^\w+=,.@-]/g, '').slice(0, 64);
+  return cleaned.length >= 2 ? cleaned : SESSION_NAME;
+}
+
+// Ownership marks on resources we create: a fixed owner flag for reuse + the operator as a
+// breadcrumb. Tagged on the taggable resources (Lambda, its exec role, the CloudFront function);
+// cache policy + origin (not taggable) use their name + Comment / EO-header markers instead.
+const OWNER_TAG_KEY = 'ManagedBy';
+const OWNER_TAG_VALUE = 'adobe-llmo';
+const CREATED_BY_TAG_KEY = 'createdBy';
+const tagCreatedBy = (operator) => String(operator || 'unknown')
+  .replace(/[^\w.@+=:/ -]/g, '')
+  .slice(0, 256) || 'unknown';
+// IAM CreateRole + CloudFront TagResource take [{Key,Value}]; Lambda takes an object.
+const ownerTagPairs = (operator) => [
+  { Key: OWNER_TAG_KEY, Value: OWNER_TAG_VALUE },
+  { Key: CREATED_BY_TAG_KEY, Value: tagCreatedBy(operator) },
+];
+const ownerTagsObject = (operator) => Object.fromEntries(
+  ownerTagPairs(operator).map((t) => [t.Key, t.Value]),
+);
+
+// Substring stamped in the Comment of the CloudFront resources we create (function + cloned cache
+// policy). Non-taggable/Comment-only resources use this as their ownership signal.
+const OWNER_COMMENT_MARKER = 'managed by LLM Optimizer';
+// True when an IAM Role's tags (from GetRole) carry our fixed owner marker.
+const roleTagsOwned = (tags = []) => tags.some(
+  (t) => t.Key === OWNER_TAG_KEY && t.Value === OWNER_TAG_VALUE,
+);
+// Guards reuse: never silently reuse or modify a same-named resource we did not create. Throws an
+// actionable error the deploy step surfaces so the customer can finish setup manually.
+function assertOwnedOrThrow(resourceLabel, name, isOurs) {
+  if (!isOurs) {
+    throw new Error(
+      `A CloudFront ${resourceLabel} named "${name}" already exists but was not created by `
+      + 'LLM Optimizer. Remove or rename it, or complete the Edge Optimize setup manually.',
+    );
+  }
+}
+
 /**
  * Assume the customer's cross-account connector role and return short-lived credentials.
  *
@@ -116,6 +160,8 @@ const delay = (ms) => new Promise((resolve) => {
  * @param {string} params.externalId - external ID baked into the connector role trust policy.
  * @param {string} [params.roleName] - connector role name (defaults to the standard name).
  * @param {string} [params.region] - STS region.
+ * @param {string} [params.operator] - operator identity (email); used as the RoleSessionName so the
+ *   customer's CloudTrail attributes each mutation to the person who ran it.
  * @returns {Promise<{roleArn: string, accountId: string, credentials: object}>}
  */
 export async function assumeConnectorRole({
@@ -123,6 +169,7 @@ export async function assumeConnectorRole({
   externalId,
   roleName = EDGE_OPTIMIZE_DEFAULT_ROLE_NAME,
   region = EDGE_OPTIMIZE_REGION,
+  operator,
 }) {
   if (!/^[0-9]{12}$/.test(String(accountId))) {
     throw new Error('accountId must be a 12-digit AWS account ID');
@@ -135,7 +182,7 @@ export async function assumeConnectorRole({
   const sts = new STSClient({ region });
   const response = await sts.send(new AssumeRoleCommand({
     RoleArn: roleArn,
-    RoleSessionName: SESSION_NAME,
+    RoleSessionName: sessionNameFor(operator),
     ExternalId: externalId,
     DurationSeconds: SESSION_DURATION_SECONDS,
   }));
@@ -324,6 +371,12 @@ export async function createOrigin(
   }
 
   if (existing) {
+    // Reuse only our origin: our reserved Id must point at the EO domain.
+    // If it targets something else, it was not created by us (or was repurposed) — do not reuse it.
+    assertOwnedOrThrow('origin', EDGE_OPTIMIZE_ORIGIN_ID, existing.DomainName === originDomain);
+  }
+
+  if (existing) {
     // Idempotent — but self-heal an origin created without the EO headers (earlier bug): patch its
     // CustomHeaders to the desired set when they differ. Never wipe headers if none were supplied.
     const toMap = (arr) => (arr || []).reduce((acc, h) => {
@@ -397,6 +450,7 @@ export async function createCloudFrontFunction(
   distributionId,
   targetedPaths = null,
   region = EDGE_OPTIMIZE_REGION,
+  operator = undefined,
 ) {
   if (!hasText(defaultOriginId)) {
     throw new Error('defaultOriginId is required');
@@ -414,12 +468,16 @@ export async function createCloudFrontFunction(
 
   // Look up the DEVELOPMENT stage to get its ETag (needed to update an existing function).
   let existingEtag = null;
+  let functionArn = null;
+  let existingComment = '';
   try {
     const desc = await client.send(new DescribeFunctionCommand({
       Name: functionName,
       Stage: 'DEVELOPMENT',
     }));
     existingEtag = desc.ETag;
+    functionArn = desc.FunctionSummary?.FunctionMetadata?.FunctionARN ?? null;
+    existingComment = String(desc.FunctionSummary?.FunctionConfig?.Comment || '');
   } catch (err) {
     if (err.name !== 'NoSuchFunctionExists') {
       throw err;
@@ -428,6 +486,9 @@ export async function createCloudFrontFunction(
 
   let etag;
   if (existingEtag) {
+    // Reuse only our function: it must carry our Comment marker (checked before the update below
+    // overwrites the Comment) — a same-named function without it is not ours.
+    assertOwnedOrThrow('function', functionName, existingComment.includes(OWNER_COMMENT_MARKER));
     const updated = await client.send(new UpdateFunctionCommand({
       Name: functionName,
       IfMatch: existingEtag,
@@ -435,6 +496,7 @@ export async function createCloudFrontFunction(
       FunctionCode: code,
     }));
     etag = updated.ETag;
+    functionArn = updated.FunctionSummary?.FunctionMetadata?.FunctionARN ?? functionArn;
   } else {
     const created = await client.send(new CreateFunctionCommand({
       Name: functionName,
@@ -442,12 +504,26 @@ export async function createCloudFrontFunction(
       FunctionCode: code,
     }));
     etag = created.ETag;
+    functionArn = created.FunctionSummary?.FunctionMetadata?.FunctionARN ?? functionArn;
   }
 
   await client.send(new PublishFunctionCommand({
     Name: functionName,
     IfMatch: etag,
   }));
+
+  // Tag the function (CloudFront functions are taggable) so reuse can verify it is ours.
+  // Best-effort: the Comment marker still identifies it as ours if tagging is unavailable.
+  if (functionArn) {
+    try {
+      await client.send(new TagResourceCommand({
+        Resource: functionArn,
+        Tags: { Items: ownerTagPairs(operator) },
+      }));
+    } catch (e) {
+      // best-effort tagging; the Comment marker is the fallback ownership signal
+    }
+  }
 
   return { name: functionName, created: !existingEtag, stage: 'LIVE' };
 }
@@ -602,6 +678,13 @@ export async function updateCacheSettings(
   let newPolicyId;
   let reused = false;
   if (existing) {
+    // Reuse only our clone: a policy matching the derived clone name must carry our Comment marker;
+    // if one with that exact name exists without it, it is not ours — refuse.
+    assertOwnedOrThrow(
+      'cache policy',
+      clonedName,
+      String(existing.CachePolicy.CachePolicyConfig?.Comment || '').includes(OWNER_COMMENT_MARKER),
+    );
     newPolicyId = existing.CachePolicy.Id;
     reused = true;
   } else {
@@ -755,6 +838,7 @@ export async function createLambdaAtEdge(
     distributionId,
     originDomain = EDGE_OPTIMIZE_DEFAULT_ORIGIN_DOMAIN,
     retryDelayMs = 5000,
+    operator,
   } = {},
 ) {
   if (!/^[0-9]{12}$/.test(String(accountId))) {
@@ -778,6 +862,9 @@ export async function createLambdaAtEdge(
     const existing = await iam.send(
       new GetRoleCommand({ RoleName: roleName }),
     );
+    // Reuse only our role: it must carry our owner tag before we modify its trust policy;
+    // a same-named role without it is not ours — refuse rather than repurpose it.
+    assertOwnedOrThrow('Lambda execution role', roleName, roleTagsOwned(existing.Role?.Tags));
     roleArn = existing.Role.Arn;
     await iam.send(new UpdateAssumeRolePolicyCommand({
       RoleName: roleName,
@@ -791,6 +878,7 @@ export async function createLambdaAtEdge(
       RoleName: roleName,
       AssumeRolePolicyDocument: LAMBDA_TRUST_POLICY,
       Description: 'Execution role for EdgeOptimize Lambda@Edge function',
+      Tags: ownerTagPairs(operator),
     }));
     roleArn = created.Role.Arn;
     roleIsNew = true;
@@ -845,6 +933,7 @@ export async function createLambdaAtEdge(
           Description: 'EdgeOptimize origin request/response handler (Lambda@Edge)',
           Timeout: 5,
           MemorySize: 128,
+          Tags: ownerTagsObject(operator),
         }));
         createdArn = created.FunctionArn;
         lastErr = null;
@@ -884,6 +973,14 @@ export async function createLambdaAtEdge(
       status: 'provisioning', functionArn: cfg.FunctionArn, roleArn, created: false, versionArn: null,
     };
   }
+
+  // Reuse only our function: before reusing an existing Active one, confirm it runs as our exec
+  // role; if it points at a different role it was not created by us — refuse.
+  assertOwnedOrThrow(
+    'Lambda@Edge function',
+    lambdaName,
+    String(cfg.Role || '').endsWith(`/${roleName}`),
+  );
 
   // Active and idle. If a numbered version already exists, reuse it (idempotent).
   const existingVersion = await getLatestLambdaVersion(lambda, lambdaName);
@@ -1334,7 +1431,7 @@ async function isBehaviorAlreadyAssociated(client, distributionId, pathPattern) 
 export async function runDeployStep(
   credentials,
   {
-    distributionId, originId, behavior, originDomain, originHeaders, accountId,
+    distributionId, originId, behavior, originDomain, originHeaders, accountId, operator,
   },
   region = EDGE_OPTIMIZE_REGION,
 ) {
@@ -1368,7 +1465,7 @@ export async function runDeployStep(
     if (await isRoutingFunctionLive(client, distributionId)) {
       byKey('function').status = 'done';
     } else {
-      await createCloudFrontFunction(credentials, originId, distributionId, null, region);
+      await createCloudFrontFunction(credentials, originId, distributionId, null, region, operator);
       byKey('function').status = 'done';
     }
   } catch (err) {
@@ -1407,7 +1504,9 @@ export async function runDeployStep(
       const created = await createLambdaAtEdge(
         credentials,
         accountId,
-        { region, distributionId, originDomain },
+        {
+          region, distributionId, originDomain, operator,
+        },
       );
       if (created.status === 'ready') {
         lambdaVersionArn = created.versionArn;

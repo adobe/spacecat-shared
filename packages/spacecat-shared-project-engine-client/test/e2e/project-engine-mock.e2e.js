@@ -342,8 +342,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // Exercises the prompt write-then-read spine through the paths the real consumer uses
   // (spacecat-api-service): create via `tagged`, list via `by_tags`. Not `POST /aio/prompts`
   // (delete-only in the spec) — see mock/.../aio/prompts*.js. Body is keyed by PROMPT TEXT,
-  // value = tag names (the real consumer shape: `{ [text]: tags }`).
-  it('creates aio prompts (tagged) and lists them back (by_tags)', async () => {
+  // value = tag names (the real consumer shape: `{ [text]: tags }`). A freshly created prompt is
+  // DRAFT (`is_new: true`), so this read passes `draft: true` to see it immediately — the next
+  // test pins the default (published-only) gating that state feeds.
+  it('creates aio prompts (tagged) and lists them back (by_tags, draft view)', async () => {
     const { data: created, error: createError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
       {
@@ -355,17 +357,76 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.ids).to.have.length(2);
     expect(created.existing_count).to.equal(0);
 
-    // by_tags with an empty tag_ids lists every prompt: 1 seeded + 2 created.
+    // by_tags with an empty tag_ids + draft:true lists every prompt: 1 seeded (published) + 2
+    // just-created (draft).
     const { data: listed, error: listError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
       {
-        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { draft: true },
+        },
         body: { tag_ids: [] },
       },
     );
     expect(listError).to.equal(undefined);
     expect(listed.total).to.equal(3);
     expect(listed.items.map((p) => p.name)).to.include.members(['What is X?', 'Tell me Y']);
+  });
+
+  // Draft/publish gating (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6): a
+  // freshly created prompt is invisible via the default (non-draft) by_tags read until the
+  // project's publish endpoint runs — mirroring the real consumer's create → publishAffected →
+  // publishProject sequence (spacecat-api-service `src/support/serenity/handlers/prompts.js`).
+  it('gates a freshly created prompt from by_tags until publish', async () => {
+    const { data: created } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { prompts: { 'Draft-gated question': ['brand'] } },
+      },
+    );
+    expect(created.ids).to.have.length(1);
+
+    // Default (no draft) read: only the seeded, already-published prompt is visible.
+    const { data: beforePublish } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { tag_ids: [] },
+      },
+    );
+    expect(beforePublish.total).to.equal(1);
+    expect(beforePublish.items.map((p) => p.name)).to.not.include('Draft-gated question');
+
+    // draft:true sees it immediately, same as live's draft tree.
+    const { data: draftView } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { draft: true },
+        },
+        body: { tag_ids: [] },
+      },
+    );
+    expect(draftView.items.map((p) => p.name)).to.include('Draft-gated question');
+
+    // Publish moves it into the default (published) view.
+    const { response: pubRes } = await client.POST(
+      '/v1/workspaces/{id}/projects/{project_id}/publish',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    expect(pubRes.status).to.equal(202);
+
+    const { data: afterPublish } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { tag_ids: [] },
+      },
+    );
+    expect(afterPublish.items.map((p) => p.name)).to.include('Draft-gated question');
   });
 
   // Live dedups prompts by text: re-creating an existing text yields no new id and existing_count:1
@@ -386,6 +447,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // The consumer's real read path (listPromptsByTags) passes non-empty tag_ids — exercise the
   // filter branch (OR semantics), not just the list-all branch. `tagged` stores the deterministic
   // opaque `tagId('brand')`, so a prompt tagged 'brand' is found via tag_ids: [tagId('brand')].
+  // Fresh creates are draft-gated (see the dedicated gating test above), so this read passes
+  // draft:true — it's exercising the filter branch, not the publish gate.
   it('by_tags filters to prompts carrying a given tag id (non-empty tag_ids)', async () => {
     await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
@@ -397,7 +460,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const { data: branded, error } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
       {
-        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { draft: true },
+        },
         body: { tag_ids: [tagId('brand')] },
       },
     );
@@ -446,19 +512,22 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     'content-type': 'application/json',
     Accept: 'application/json',
   };
-  const listByTags = (tagIds) => client.POST(
+  const listByTags = (tagIds, { draft } = {}) => client.POST(
     '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
     {
-      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+        ...(draft ? { query: { draft: true } } : {}),
+      },
       body: { tag_ids: tagIds },
     },
   );
 
   // POST /aio/prompts references tags by id (not name) and returns 201 with the live LIST WRAPPER
   // { page, total, items:[{id,name}], existing_count }. The created prompts embed the tag's
-  // { id, name }, so a by_tags read on that id correlates them (immediately — no draft gate, like
-  // prompts/tagged.js).
-  it('creates prompts by tag id and reads them back via by_tags', async () => {
+  // { id, name }, so a by_tags read on that id correlates them — but they're DRAFT until publish
+  // (see the dedicated gating test below), so this correlation check reads via draft:true.
+  it('creates prompts by tag id and reads them back via by_tags (draft view)', async () => {
     const res = await fetch(promptsUrl(), {
       method: 'POST',
       headers: jsonAuth,
@@ -473,8 +542,35 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.items.map((p) => p.name)).to.deep.equal(['Id Q1', 'Id Q2']);
 
     // Correlation is free: by_tags on the referenced tag id returns the two created prompts.
-    const { data: byTag } = await listByTags([SEED_IDS.categoryTagId]);
+    const { data: byTag } = await listByTags([SEED_IDS.categoryTagId], { draft: true });
     expect(byTag.items.map((p) => p.name)).to.have.members(['Id Q1', 'Id Q2']);
+  });
+
+  // Draft/publish gating on the id-based create path (live-verified 2026-07-02, serenity-docs#24
+  // §3.1 gate 2 + gate 6) — the same mechanism as prompts/tagged.js's create, pinned separately
+  // here since this endpoint has its own response shape and atomicity contract.
+  it('gates an id-based-created prompt from by_tags until publish', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['Draft-gated id prompt'], tag_ids: [SEED_IDS.categoryTagId] }),
+    });
+    expect(res.status).to.equal(201);
+
+    const { data: beforePublish } = await listByTags([SEED_IDS.categoryTagId]);
+    expect(beforePublish.items.map((p) => p.name)).to.not.include('Draft-gated id prompt');
+
+    const { data: draftView } = await listByTags([SEED_IDS.categoryTagId], { draft: true });
+    expect(draftView.items.map((p) => p.name)).to.include('Draft-gated id prompt');
+
+    const { response: pubRes } = await client.POST(
+      '/v1/workspaces/{id}/projects/{project_id}/publish',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    expect(pubRes.status).to.equal(202);
+
+    const { data: afterPublish } = await listByTags([SEED_IDS.categoryTagId]);
+    expect(afterPublish.items.map((p) => p.name)).to.include('Draft-gated id prompt');
   });
 
   // Atomic failure: any unresolvable tag id 500s and creates NOTHING (verified live 2026-07-02).

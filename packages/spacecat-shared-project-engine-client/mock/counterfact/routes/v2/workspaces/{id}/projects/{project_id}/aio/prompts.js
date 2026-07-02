@@ -36,15 +36,11 @@
  *   same batch) is not re-created — it is folded into `existing_count`.
  * - Metered like `prompts/tagged.js` (both write the same quota-metered prompts collection): the
  *   whole batch 405s (creates nothing) when it would exceed the workspace's prompt allocation.
- * - Visibility: this mock has NO draft/live distinction for prompts — `prompts/tagged.js` makes a
- *   created prompt immediately visible via the default `by_tags` read, and POST here mirrors that:
- *   it shows up immediately. KNOWN GAP vs live: live writes this endpoint to draft only —
- *   `by_tags` (no `?draft=`) is empty until the existing publish step runs (serenity-docs#24 §3.1
- *   gate 2 + §4 deliverable-1 item 2, which explicitly asks this mock to gate on "the mock's
- *   existing publish semantics" — but no such prompt-level draft/publish state exists anywhere in
- *   this mock; `publish.js` only flips a project-level `publish_status` that no prompt read
- *   consults). Left unmodeled deliberately here to avoid inventing a parallel mechanism
- *   unilaterally; flagged for a decision by the spec owner before a consumer relies on it.
+ * - Visibility: writes to DRAFT only, `is_new: true` on the created prompt (like
+ *   `prompts/tagged.js`). `by_tags`'s default (non-draft) read excludes it until the project's
+ *   `publish` endpoint runs, which flips it to `is_new: false` — matching live (serenity-docs#24
+ *   §3.1 gate 2 + gate 6, verified 2026-07-02; see `by_tags.js` + `publish.js`). `?draft=true`
+ *   on `by_tags` sees it immediately, same as live's draft tree.
  */
 
 /** POST — create prompts by id-based tag refs → 201 list wrapper; 500 (atomic) on unknown tag. */

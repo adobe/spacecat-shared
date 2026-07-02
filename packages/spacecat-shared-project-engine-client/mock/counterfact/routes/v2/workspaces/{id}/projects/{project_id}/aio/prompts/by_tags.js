@@ -19,12 +19,27 @@
  * stored prompts (`AIOPromptWithStatus`: id, name, is_new, tags) — so a list reflects prior
  * `tagged` writes. Materialized into `.counterfact/routes/` by the mock runner; excluded from
  * coverage.
+ *
+ * Draft/publish gating (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6): both
+ * prompt-create endpoints (`tagged.js`, id-based `aio/prompts.js`) stamp a fresh prompt
+ * `is_new: true`. The `draft` query param (already declared in the vendored swagger for this
+ * operation — no overlay correction needed) selects the view: the DEFAULT (no `draft`, or any
+ * value other than the literal string `true`) is PUBLISHED-ONLY and excludes `is_new: true`
+ * prompts entirely; `?draft=true` returns every stored prompt regardless of publish state,
+ * matching live's always-visible draft tree. `publish.js` flips `is_new` back to `false` for
+ * every prompt in the project on a successful publish, which is what moves a prompt from
+ * draft-only into this endpoint's default (published) view.
  */
 
-/** POST — list prompts, optionally tag-id filtered (OR) → 200 list response. */
+/** POST — list prompts, optionally tag-id filtered (OR), gated by draft/publish state → 200. */
 export function POST($) {
-  const { path, body, context } = $;
-  const all = context.ops.prompts.list({ workspaceId: path.id, projectId: path.project_id });
+  const {
+    path, query, body, context,
+  } = $;
+  const draft = String(query?.draft ?? '') === 'true';
+  const all = context.ops.prompts
+    .list({ workspaceId: path.id, projectId: path.project_id })
+    .filter((p) => draft || !p.is_new);
   const tagIds = body?.tag_ids ?? [];
   const items = tagIds.length === 0
     ? all

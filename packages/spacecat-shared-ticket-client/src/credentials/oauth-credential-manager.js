@@ -368,7 +368,12 @@ export default class OAuthCredentialManager {
 
     if (!response.ok) {
       // Inspect error body to detect grant-level failures (invalid/revoked refresh token).
-      // These look like 400s from Atlassian but semantically mean 401 — trigger reauth recovery.
+      // These look like 400s/403s from Atlassian but semantically mean 401 — trigger reauth recovery.
+      // Empirically verified error codes (403 body):
+      //   - unauthorized_client: refresh token expired (>10-min reuse window) or app revoked by user
+      //   - invalid_grant: refresh token already rotated / superseded
+      //   - invalid_token: malformed token
+      //   - access_denied: user denied access
       let errorCode;
       try {
         const errorBody = await response.json();
@@ -377,7 +382,7 @@ export default class OAuthCredentialManager {
       } catch {
         // ignore parse errors — error code remains undefined
       }
-      const GRANT_ERRORS = new Set(['invalid_grant', 'invalid_token', 'access_denied']);
+      const GRANT_ERRORS = new Set(['invalid_grant', 'invalid_token', 'access_denied', 'unauthorized_client']);
       const effectiveStatus = GRANT_ERRORS.has(errorCode) ? 401 : response.status;
       throw Object.assign(
         new Error(`Atlassian token refresh failed: ${response.status}${errorCode ? ` (${errorCode})` : ''}`),

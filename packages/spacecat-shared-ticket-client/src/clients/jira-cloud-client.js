@@ -1,0 +1,530 @@
+/*
+ * Copyright 2025 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+import BaseTicketClient from './base-ticket-client.js';
+import markdownToAdf from '../adf/markdown-to-adf.js';
+
+// ── Routing ───────────────────────────────────────────────────────────────────
+const JIRA_GATEWAY = 'https://api.atlassian.com/ex/jira';
+
+// ── Validation ────────────────────────────────────────────────────────────────
+// Case-insensitive: Atlassian accessible-resources API returns lowercase UUIDs, but the
+// Jira gateway accepts both casings — /i prevents spurious rejections if an admin tool
+// or migration ever produces uppercase IDs. UUID_REGEX in ticket-client-factory.js is
+// case-sensitive because DB-sourced IDs are always lowercase.
+const CLOUD_ID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Jira project keys are 2-10 chars — [A-Z][A-Z0-9_]+ enforces the 2-char minimum intentionally.
+// Single-letter project keys (e.g. A-1) are not supported.
+const TICKET_KEY_REGEX = /^[A-Z][A-Z0-9_]+-\d+$/;
+const DUE_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const SUMMARY_MAX_LENGTH = 255;
+
+// ── Attachment Rules (PR #150) ─────────────────────────────────────────────────
+const ATTACHMENT_MAX_BYTES = 3 * 1024 * 1024; // 3 MB — Lambda 6 MB sync limit with headroom
+const ATTACHMENT_FILENAME_MAX_LENGTH = 255;
+// Allowed MIME types only — blocks executables and active content
+const ATTACHMENT_ALLOWED_MIME_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'application/pdf',
+  'text/csv',
+  'text/plain',
+]);
+
+// Magic-byte signatures for each allowed binary MIME type (extension spoofing prevention).
+// Source: https://en.wikipedia.org/wiki/List_of_file_signatures
+// Text types (text/csv, text/plain) have no reliable binary signature and are allowed
+// through the MIME allowlist check; they rely on filename sanitization + Jira's AV scan.
+const MAGIC_BYTES = {
+  'image/png': [{ offset: 0, bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] }],
+  'image/jpeg': [{ offset: 0, bytes: [0xff, 0xd8, 0xff] }],
+  'image/gif': [{ offset: 0, bytes: [0x47, 0x49, 0x46, 0x38] }], // GIF8 (GIF87a or GIF89a)
+  // WEBP: 'RIFF' at offset 0 AND 'WEBP' at offset 8
+  'image/webp': [
+    { offset: 0, bytes: [0x52, 0x49, 0x46, 0x46] }, // RIFF
+    { offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] }, // WEBP
+  ],
+  'application/pdf': [{ offset: 0, bytes: [0x25, 0x50, 0x44, 0x46] }], // %PDF
+};
+
+/**
+ * Verifies that the raw file bytes match the expected MIME type's magic bytes.
+ * Prevents extension spoofing (e.g. a .html file renamed to .png).
+ *
+ * Text types (text/csv, text/plain) have no reliable binary signature; this check
+ * is skipped for them — the MIME allowlist remains the primary control.
+ *
+ * @param {string} mimeType
+ * @param {Buffer|Uint8Array} content
+ * @returns {boolean}
+ */
+function hasMagicBytes(mimeType, content) {
+  const checks = MAGIC_BYTES[mimeType];
+  if (!checks) {
+    return true; // text/* — no magic-byte check
+  }
+  return checks.every(({ offset, bytes }) => {
+    if (offset + bytes.length > content.length) {
+      return false;
+    }
+    return bytes.every((b, i) => content[offset + i] === b);
+  });
+}
+
+// ── ADF helpers ───────────────────────────────────────────────────────────────
+
+/**
+ * Truncates summary to Jira's 255-char hard limit.
+ * Input is treated as plain text — no markup parsing.
+ *
+ * @param {string|null|undefined} text
+ * @returns {string}
+ */
+function sanitizeSummary(text) {
+  const plain = String(text ?? '').replace(/[\r\n]/g, ' ').trim();
+  return plain.slice(0, SUMMARY_MAX_LENGTH);
+}
+
+/**
+ * Sanitizes an attachment filename per PR #150 rules:
+ * - Strips path separators (primary traversal vector)
+ * - Removes null bytes and ASCII control characters
+ * - Truncates to ATTACHMENT_FILENAME_MAX_LENGTH
+ * - Falls back to "attachment" if result is empty
+ *
+ * @param {string} filename
+ * @returns {string}
+ */
+function sanitizeFilename(filename) {
+  const safe = String(filename ?? '')
+    // Strip path separators — primary traversal vector (foo/../bar → foobar after this)
+    .replace(/[/\\]/g, '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .trim()
+    .slice(0, ATTACHMENT_FILENAME_MAX_LENGTH);
+  return safe || 'attachment';
+}
+
+/**
+ * Jira Cloud provider client (REST API v3 with ADF support).
+ *
+ * SSRF protection: all API calls route through the fixed Atlassian gateway
+ * https://api.atlassian.com/ex/jira/{cloudId}/... — cloudId is validated as UUID.
+ * instance_url / siteUrl are display-only and never used as request targets.
+ *
+ * Content sanitization: suggestion-derived text is placed as plain-text leaf nodes only.
+ * Summary is truncated to 255 chars (Jira hard limit).
+ */
+export default class JiraCloudClient extends BaseTicketClient {
+  constructor(config, credentialManager, httpClient, log) {
+    super(config, credentialManager, log);
+
+    if (!CLOUD_ID_REGEX.test(config.cloudId)) {
+      throw new Error(`Invalid cloudId format: ${config.cloudId}`);
+    }
+
+    let siteUrlParsed;
+    try {
+      siteUrlParsed = new URL(config.siteUrl);
+    } catch {
+      throw new Error(`Invalid siteUrl: must be https://*.atlassian.net, got: ${config.siteUrl}`);
+    }
+    if (siteUrlParsed.protocol !== 'https:' || !siteUrlParsed.hostname.endsWith('.atlassian.net')) {
+      throw new Error(`Invalid siteUrl: must be https://*.atlassian.net, got: ${config.siteUrl}`);
+    }
+
+    this.httpClient = httpClient;
+    this.baseUrl = `${JIRA_GATEWAY}/${config.cloudId}/rest/api/3`;
+  }
+
+  /**
+   * Creates a Jira issue and returns identifiers for the created ticket.
+   *
+   * @param {object} ticketData
+   * @param {string} ticketData.projectKey - Jira project key (e.g. "ASO")
+   * @param {string} [ticketData.issueType='Task'] - Jira issue type name
+   * @param {string} ticketData.summary - Issue summary (truncated to 255 chars)
+   * @param {string} [ticketData.description] - Plain-text description (no ADF markup).
+   *   Converted to ADF internally as plain-text leaf nodes only — callers MUST NOT
+   *   pass pre-built ADF objects. This is a deliberate security contract: untrusted
+   *   suggestion content is never rendered as structured markup (spec §13).
+   * @param {string[]} [ticketData.labels=[]] - Labels to apply to the issue
+   * @param {string} [ticketData.priority] - Jira priority name (e.g. "High"). Omitted if not
+   *   provided — Jira uses the project default. Names are instance-specific; passed as-is.
+   * @param {string} [ticketData.dueDate] - Due date in "YYYY-MM-DD" format.
+   * @param {string[]} [ticketData.components] - Component names (e.g. ["Frontend", "API"]).
+   * @param {string} [ticketData.parent] - Parent issue key (e.g. "ASO-42") for epic linking.
+   *   Uses the unified `parent` field per Atlassian's deprecation of Epic Link / Parent Link.
+   * @returns {Promise<{ticketId: string, ticketKey: string,
+   *   ticketUrl: string, ticketStatus: string|null}>}
+   */
+  async createTicket(ticketData) {
+    const {
+      projectKey,
+      issueType = 'Task',
+      summary,
+      description,
+      labels = [],
+      priority,
+      dueDate,
+      components,
+      parent,
+    } = ticketData;
+
+    if (!projectKey || typeof projectKey !== 'string') {
+      throw new Error('projectKey is required to create a ticket');
+    }
+
+    if (dueDate && !DUE_DATE_REGEX.test(dueDate)) {
+      throw new Error(`Invalid dueDate format: expected YYYY-MM-DD, got: ${dueDate}`);
+    }
+
+    if (parent && !TICKET_KEY_REGEX.test(parent)) {
+      throw new Error(`Invalid parent format: expected Jira issue key, got: ${parent}`);
+    }
+
+    // markdownToAdf returns null for blank input — omit the field rather than
+    // sending an empty ADF document (some Jira issue types treat them differently).
+    const adfDescription = markdownToAdf(description);
+    const body = {
+      fields: {
+        project: { key: projectKey },
+        issuetype: { name: issueType },
+        summary: sanitizeSummary(summary),
+        ...(adfDescription && { description: adfDescription }),
+        labels: labels.map((l) => String(l)),
+        ...(priority && { priority: { name: priority } }),
+        ...(dueDate && { duedate: dueDate }),
+        ...(components?.length > 0 && { components: components.map((c) => ({ name: c })) }),
+        ...(parent && { parent: { key: parent } }),
+      },
+    };
+
+    const response = await this.#withAuthRetry(
+      (authHeaders) => this.httpClient.fetch(`${this.baseUrl}/issue`, {
+        method: 'POST',
+        headers: {
+          ...authHeaders,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(body),
+      }),
+    );
+
+    await this.#requireOk(response, 'createTicket');
+    const created = await response.json();
+    const ticketKey = created.key;
+    const ticketStatus = await this.#fetchTicketStatus(ticketKey);
+    return this.#buildTicketResult(created, ticketStatus);
+  }
+
+  /**
+   * Returns all accessible Jira projects for the configured cloud instance.
+   * Paginates automatically until Jira signals isLast: true.
+   *
+   * @returns {Promise<Array<{key: string, name: string}>>}
+   */
+  async listProjects() {
+    const allProjects = [];
+    let startAt = 0;
+    const MAX_PAGES = 100; // Safety bound: 100 pages × 50 results = 5,000 projects max
+    let pageCount = 0;
+
+    // First page uses #withAuthRetry for 401 retry; subsequent pages reuse the
+    // token validated on page 1 — a mid-pagination 401 is not retried (unlikely
+    // given the token was just confirmed valid).
+    const firstResponse = await this.#withAuthRetry(
+      (authHeaders) => this.httpClient.fetch(
+        `${this.baseUrl}/project/search?maxResults=50&orderBy=name&startAt=0`,
+        { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' } },
+      ),
+    );
+    await this.#requireOk(firstResponse, 'listProjects');
+    const firstData = await firstResponse.json();
+    const firstPage = (firstData.values ?? []).map(({ id, key, name }) => ({ id, key, name }));
+    allProjects.push(...firstPage);
+    pageCount += 1;
+
+    if (firstData.isLast !== false || firstPage.length === 0) {
+      return allProjects;
+    }
+    startAt += firstPage.length;
+
+    // Paginate remaining pages with standard auth (token was just validated).
+    // Jira /project/search caps maxResults at 50 per page — enterprise instances
+    // routinely have 100+ projects, so pagination is required to avoid silent truncation.
+    for (;;) {
+      // eslint-disable-next-line no-await-in-loop
+      const authHeaders = await this.credentialManager.getAuthHeaders();
+      // eslint-disable-next-line no-await-in-loop
+      const response = await this.httpClient.fetch(
+        `${this.baseUrl}/project/search?maxResults=50&orderBy=name&startAt=${startAt}`,
+        { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' } },
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await this.#requireOk(response, 'listProjects');
+      // eslint-disable-next-line no-await-in-loop
+      const data = await response.json();
+
+      const page = (data.values ?? []).map(({ id, key, name }) => ({ id, key, name }));
+      allProjects.push(...page);
+
+      pageCount += 1;
+
+      // isLast is explicitly false only when more pages follow; any other value means done.
+      if (data.isLast !== false || page.length === 0 || pageCount >= MAX_PAGES) {
+        break;
+      }
+      startAt += page.length;
+    }
+
+    return allProjects;
+  }
+
+  /**
+   * Returns all non-subtask issue types for a given project.
+   *
+   * Uses GET /project/{projectId}/hierarchy (REST v3) which is scoped to the
+   * project and works with read:jira-work scope. Hierarchy levels:
+   *   level -1 → Subtask (excluded)
+   *   level  0 → standard types (Story, Bug, Task, …)
+   *   level  1 → Epic
+   * All level >= 0 types are returned; the caller may further filter by level
+   * if Epic exclusion is needed.
+   *
+   * @param {string} projectId - Jira project numeric ID, e.g. "10000"
+   * @returns {Promise<Array<{id: string, name: string}>>}
+   */
+  async listIssueTypes(projectId) {
+    if (!projectId || typeof projectId !== 'string') {
+      throw new Error('projectId is required to list issue types');
+    }
+
+    const response = await this.#withAuthRetry(
+      (authHeaders) => this.httpClient.fetch(
+        `${this.baseUrl}/project/${encodeURIComponent(projectId)}/hierarchy`,
+        { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' } },
+      ),
+    );
+    await this.#requireOk(response, 'listIssueTypes');
+    const data = await response.json();
+
+    return (data.hierarchy ?? [])
+      .filter((level) => level.level >= 0)
+      .flatMap((level) => (level.issueTypes ?? []).map(({ id, name }) => ({
+        id: String(id),
+        name,
+      })));
+  }
+
+  /**
+   * Uploads a file attachment to an existing Jira issue.
+   *
+   * Validates file size, MIME type, and filename before sending.
+   * Uses multipart/form-data with X-Atlassian-Token: no-check (required by Jira).
+   *
+   * PR #150 reference: "Attachment Validation" section — 3 MB limit, MIME whitelist,
+   * filename sanitization, X-Atlassian-Token header.
+   *
+   * @param {string} ticketKey - Jira issue key, e.g. "ASO-123"
+   * @param {object} attachment
+   * @param {Buffer|Uint8Array} attachment.content - Raw file bytes
+   * @param {string} attachment.mimeType - MIME type (must be in allowlist)
+   * @param {string} attachment.filename - Original filename (will be sanitized)
+   * @returns {Promise<void>}
+   */
+  async uploadAttachment(ticketKey, attachment) {
+    this.#validateAttachment(ticketKey, attachment);
+
+    const { content, mimeType, filename } = attachment;
+    const safeFilename = sanitizeFilename(filename);
+
+    // FormData / Blob are available in Node 18+ (Lambda runtime)
+    const formData = new FormData();
+    formData.append('file', new Blob([content], { type: mimeType }), safeFilename);
+
+    const response = await this.#withAuthRetry(
+      (authHeaders) => this.httpClient.fetch(
+        `${this.baseUrl}/issue/${encodeURIComponent(ticketKey)}/attachments`,
+        {
+          method: 'POST',
+          headers: {
+            ...authHeaders,
+            // Required by Jira to disable its own CSRF check on the attachments endpoint
+            'X-Atlassian-Token': 'no-check',
+          },
+          body: formData,
+        },
+      ),
+    );
+
+    await this.#requireOk(response, 'uploadAttachment');
+  }
+
+  // ── Auth retry ──────────────────────────────────────────────────────────────
+
+  /**
+   * Wraps a Jira API call with retry-once on 401.
+   *
+   * On first 401: re-reads SM via getAuthHeaders() (pure GET). If a concurrent
+   * caller already refreshed and SM holds a different valid token, retries once
+   * with it. If SM still holds the same stale token or throws (expired /
+   * requires_reauth), propagates the error so the caller can trigger a refresh.
+   *
+   * On second 401 or any other HTTP error: returned as-is for #requireOk to handle.
+   *
+   * NOTE: this does NOT consume a refresh token or write to SM. Token rotation is
+   * the caller's responsibility.
+   *
+   * @param {Function} requestFn - async (authHeaders) => Response
+   * @returns {Promise<Response>}
+   */
+  async #withAuthRetry(requestFn) {
+    const authHeaders = await this.credentialManager.getAuthHeaders();
+    const response = await requestFn(authHeaders);
+
+    if (response.status === 401) {
+      this.log.debug('Jira API returned 401 — re-reading SM for a concurrent refresh');
+      // getAuthHeaders() throws TOKEN_REFRESH_REQUIRED or REQUIRES_REAUTH when SM is
+      // still stale — let those propagate so the caller can trigger a refresh.
+      const freshHeaders = await this.credentialManager.getAuthHeaders();
+      if (freshHeaders.Authorization === authHeaders.Authorization) {
+        // SM holds the same token that Jira just rejected — retrying would fail again.
+        throw Object.assign(
+          new Error('OAuth token expired — caller should trigger a refresh'),
+          { code: 'TOKEN_REFRESH_REQUIRED' },
+        );
+      }
+      return requestFn(freshHeaders);
+    }
+
+    return response;
+  }
+
+  // ── Private helpers ──────────────────────────────────────────────────────────
+
+  /**
+   * Validates a ticket key, MIME type, file size, and magic bytes before uploading.
+   * Throws with a descriptive message on the first failing rule.
+   *
+   * Validation order mirrors the spec §Attachment Validation:
+   *   1. ticketKey format
+   *   2. MIME type allowlist
+   *   3. Content byte length (1 byte ≤ size ≤ 3 MB)
+   *   4. Magic bytes — prevents extension spoofing (e.g. .html renamed to .png)
+   */
+  // eslint-disable-next-line class-methods-use-this
+  #validateAttachment(ticketKey, { mimeType, content }) {
+    if (!TICKET_KEY_REGEX.test(ticketKey)) {
+      throw new Error(`Invalid ticketKey format: ${ticketKey}`);
+    }
+
+    if (!ATTACHMENT_ALLOWED_MIME_TYPES.has(mimeType)) {
+      throw new Error(`Attachment MIME type not allowed: ${mimeType}`);
+    }
+
+    // Normalize ArrayBuffer → Uint8Array so byte-length and magic-byte checks work uniformly.
+    // Buffer.byteLength throws a TypeError on ArrayBuffer, and indexed access (content[n])
+    // returns undefined on raw ArrayBuffer — normalization avoids both pitfalls.
+    const bytes = content instanceof ArrayBuffer ? new Uint8Array(content) : content;
+    const byteLength = Buffer.isBuffer(bytes) || bytes instanceof Uint8Array
+      ? bytes.length
+      : Buffer.byteLength(bytes ?? '');
+    if (byteLength === 0 || byteLength > ATTACHMENT_MAX_BYTES) {
+      throw new Error(
+        `Attachment size must be between 1 byte and ${ATTACHMENT_MAX_BYTES} bytes, got ${byteLength}`,
+      );
+    }
+
+    if (!hasMagicBytes(mimeType, bytes)) {
+      throw new Error(
+        `Attachment content does not match declared MIME type '${mimeType}' (magic bytes mismatch)`,
+      );
+    }
+  }
+
+  /**
+   * Fetches the current status of an issue via GET /rest/api/3/issue/{key}?fields=status.
+   * Called immediately after create — Jira POST /issue response does not include fields.
+   * Returns null on any non-fatal error so ticket creation is never blocked.
+   *
+   * @param {string} ticketKey
+   * @returns {Promise<string|null>}
+   */
+  async #fetchTicketStatus(ticketKey) {
+    try {
+      const authHeaders = await this.credentialManager.getAuthHeaders();
+      const response = await this.httpClient.fetch(
+        `${this.baseUrl}/issue/${encodeURIComponent(ticketKey)}?fields=status`,
+        { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' } },
+      );
+      if (!response.ok) {
+        return null;
+      }
+      const data = await response.json();
+      return data.fields?.status?.name ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Extracts and validates the Jira API response body into a TicketResult.
+   * Validates ticketKey format and ticketUrl host as defensive invariants.
+   */
+  #buildTicketResult(data, ticketStatus = null) {
+    // Jira internal numeric ID — API service uses this to persist the Ticket entity
+    const ticketId = String(data.id);
+    const ticketKey = data.key;
+    const ticketUrl = `${this.config.siteUrl}/browse/${ticketKey}`;
+
+    if (!TICKET_KEY_REGEX.test(ticketKey)) {
+      throw new Error(`Unexpected ticketKey format returned from Jira: ${ticketKey}`);
+    }
+
+    // Defensive invariant: ticketUrl is built from siteUrl, so hosts must match.
+    // Unreachable in practice but guards against future refactors that could skew this.
+    const expectedHost = new URL(this.config.siteUrl).host;
+    const actualHost = new URL(ticketUrl).host;
+    /* c8 ignore next 3 */
+    if (expectedHost !== actualHost) {
+      throw new Error(`ticketUrl host mismatch: expected ${expectedHost}, got ${actualHost}`);
+    }
+
+    return {
+      ticketId,
+      ticketKey,
+      ticketUrl,
+      ticketStatus,
+    };
+  }
+
+  /**
+   * Throws a structured error if the Jira API response is not OK.
+   * Never logs the raw response body — it may contain tokens, PII, or internal hosts.
+   */
+  async #requireOk(response, operation) {
+    if (!response.ok) {
+      this.log.error(`Jira API error in ${operation}`, {
+        status: response.status,
+        operation,
+      });
+      throw Object.assign(new Error(`Jira API error: ${response.status}`), {
+        status: response.status,
+      });
+    }
+  }
+}

@@ -81,29 +81,29 @@ describe('BrandModel', () => {
     });
   });
 
-  describe('semrushWorkspaceId', () => {
+  describe('semrushWorkspaceId (deprecated BC mirror)', () => {
     it('gets semrushWorkspaceId', () => {
       expect(instance.getSemrushWorkspaceId()).to.equal('sub-ws-fixture');
     });
 
-    it('sets a new subworkspace id (re-grant)', () => {
-      instance.setSemrushWorkspaceId('sub-ws-fixture-v2');
-      expect(instance.getSemrushWorkspaceId()).to.equal('sub-ws-fixture-v2');
-    });
-
-    it('clears the pointer (disconnects the brand from its subworkspace)', () => {
-      instance.setSemrushWorkspaceId(null);
-      expect(instance.getSemrushWorkspaceId()).to.equal(null);
+    it('has no setter (read-only — maintained by the DB sync trigger)', () => {
+      expect(instance.setSemrushWorkspaceId).to.be.undefined;
     });
   });
 
-  describe('semrushSubWorkspaceId (transitional mirror)', () => {
+  describe('semrushSubWorkspaceId (write-of-record)', () => {
     it('gets semrushSubWorkspaceId', () => {
       expect(instance.getSemrushSubWorkspaceId()).to.equal('sub-ws-fixture');
     });
 
-    it('has no setter (read-only — maintained by the DB sync trigger)', () => {
-      expect(instance.setSemrushSubWorkspaceId).to.be.undefined;
+    it('sets a new subworkspace id (re-grant)', () => {
+      instance.setSemrushSubWorkspaceId('sub-ws-fixture-v2');
+      expect(instance.getSemrushSubWorkspaceId()).to.equal('sub-ws-fixture-v2');
+    });
+
+    it('clears the pointer (disconnects the brand from its subworkspace)', () => {
+      instance.setSemrushSubWorkspaceId(null);
+      expect(instance.getSemrushSubWorkspaceId()).to.equal(null);
     });
   });
 

@@ -25,7 +25,7 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  *
  * Each public method is self-contained — public methods do not call each other.
  * Private methods (#readSecret, #isExpired, #fetchNewTokens, #writeTokens,
- * #writeReauthFlag, #recoverFromAtlassian401) are shared utilities only.
+ * #writeReauthFlag, #recoverFromRevokedGrant) are shared utilities only.
  *
  * Internal — not exposed via the public API.
  *
@@ -68,8 +68,8 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  *    Lambda invocation. Reduces redundant network calls and SM writes.
  * 2. Pre-read SM before calling Atlassian — if a concurrent Lambda already
  *    wrote new tokens, the caller exits early without calling Atlassian.
- * 3. #recoverFromAtlassian401 — re-reads SM (immediate + 200ms wait) on the
- *    rare genuine 401. If a concurrent writer landed fresh tokens, uses
+ * 3. #recoverFromRevokedGrant — re-reads SM (immediate + 200ms wait) on grant
+ *    failure (GRANT_REVOKED). If a concurrent writer landed fresh tokens, uses
  *    theirs; otherwise marks the connection requiresReauth.
  *
  * ## App-level OAuth credentials
@@ -184,8 +184,8 @@ export default class OAuthCredentialManager {
     try {
       refreshed = await this.#fetchNewTokens(current.refreshToken);
     } catch (err) {
-      if (err.status === 401) {
-        return this.#recoverFromAtlassian401();
+      if (err.code === 'GRANT_REVOKED') {
+        return this.#recoverFromRevokedGrant();
       }
       throw err;
     }
@@ -264,8 +264,8 @@ export default class OAuthCredentialManager {
     try {
       refreshed = await this.#fetchNewTokens(current.refreshToken);
     } catch (err) {
-      if (err.status === 401) {
-        return this.#recoverFromAtlassian401();
+      if (err.code === 'GRANT_REVOKED') {
+        return this.#recoverFromRevokedGrant();
       }
       throw err;
     }
@@ -371,12 +371,13 @@ export default class OAuthCredentialManager {
 
     if (!response.ok) {
       // Inspect error body to detect grant-level failures (invalid/revoked refresh token).
-      // These look like 400s/403s from Atlassian but semantically mean 401 — trigger reauth recovery.
-      // Empirically verified error codes (403 body):
-      //   - unauthorized_client: refresh token expired (>10-min reuse window) or app revoked by user
-      //   - invalid_grant: refresh token already rotated / superseded
-      //   - invalid_token: malformed token
-      //   - access_denied: user denied access
+      // Empirically verified Atlassian error codes that indicate the grant is dead:
+      //   - unauthorized_client (403): refresh token expired (>10-min reuse window) or app revoked
+      //   - invalid_grant (400):       refresh token already rotated / superseded
+      //   - invalid_token (400):       malformed token
+      //   - access_denied (400):       user denied access
+      // These are thrown with code GRANT_REVOKED so callers check a semantic code,
+      // not a raw HTTP status that varies across Atlassian error types.
       let errorCode;
       try {
         const errorBody = await response.json();
@@ -386,10 +387,10 @@ export default class OAuthCredentialManager {
         // ignore parse errors — error code remains undefined
       }
       const GRANT_ERRORS = new Set(['invalid_grant', 'invalid_token', 'access_denied', 'unauthorized_client']);
-      const effectiveStatus = GRANT_ERRORS.has(errorCode) ? 401 : response.status;
+      const isGrantRevoked = GRANT_ERRORS.has(errorCode);
       throw Object.assign(
         new Error(`Atlassian token refresh failed: ${response.status}${errorCode ? ` (${errorCode})` : ''}`),
-        { status: effectiveStatus },
+        { status: response.status, code: isGrantRevoked ? 'GRANT_REVOKED' : undefined },
       );
     }
 
@@ -482,12 +483,11 @@ export default class OAuthCredentialManager {
   }
 
   /**
-   * Recovery path when Atlassian token refresh fails with a grant-level error.
+   * Recovery path when #fetchNewTokens throws with code GRANT_REVOKED.
    *
-   * Atlassian returns HTTP 403 {"error":"unauthorized_client"} (mapped to synthetic
-   * 401 by #fetchNewTokens) when the refresh token cannot be exchanged:
-   *   - Original refresh token reused past its 10-minute window (the SM pre-read
-   *     optimization normally prevents this — SM should hold the latest derived token)
+   * Triggered by Atlassian grant-level failures (HTTP 400/403, error codes:
+   * unauthorized_client, invalid_grant, invalid_token, access_denied):
+   *   - Original refresh token reused past its 10-minute window
    *   - User or admin revoked the OAuth grant
    *   - Refresh token expired (90-day inactivity)
    *   - Password change / account security event
@@ -495,7 +495,7 @@ export default class OAuthCredentialManager {
    * Re-reads SM twice (immediate + 200ms wait): if a concurrent Lambda wrote valid
    * tokens between our attempt and now, use theirs instead of marking requiresReauth.
    */
-  async #recoverFromAtlassian401() {
+  async #recoverFromRevokedGrant() {
     const raceCheck = await this.#readSecret(true);
     if (!this.#isExpired(raceCheck) && !raceCheck.requiresReauth) {
       this.log.debug('Atlassian 401 — concurrent caller already refreshed, using their token');
@@ -517,7 +517,7 @@ export default class OAuthCredentialManager {
 
   /**
    * Writes requiresReauth: true to SM with up to SM_WRITE_ATTEMPTS retries and
-   * exponential backoff. Used internally by #writeTokens, #recoverFromAtlassian401,
+   * exponential backoff. Used internally by #writeTokens, #recoverFromRevokedGrant,
    * and setRequiresReauth. Reauth writes are naturally idempotent (always writing true)
    * so no ClientRequestToken is needed.
    */

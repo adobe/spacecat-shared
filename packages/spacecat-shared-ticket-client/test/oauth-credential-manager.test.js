@@ -493,7 +493,7 @@ describe('OAuthCredentialManager', () => {
       expect(putCalls.every((p) => !p.requiresReauth)).to.be.true;
     });
 
-    it('Atlassian 401 — immediate race-check re-read is fresh — returns concurrent token', async () => {
+    it('Atlassian 403 unauthorized_client — immediate race-check re-read is fresh — returns concurrent token', async () => {
       const freshSecret = { ...VALID_SECRET, accessToken: 'concurrent-winner-token' };
       const smClient = {
         getSecretValue: sinon.stub()
@@ -502,7 +502,7 @@ describe('OAuthCredentialManager', () => {
           .resolves({ SecretString: JSON.stringify(freshSecret) }), // race-check
         putSecretValue: sinon.stub().resolves({}),
       };
-      const httpClient = makeHttpClient({}, 401);
+      const httpClient = makeHttpClient({ error: 'unauthorized_client' }, 403);
       const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
 
       const headers = await manager.refreshAuthHeaders();
@@ -510,7 +510,7 @@ describe('OAuthCredentialManager', () => {
       expect(smClient.putSecretValue.called).to.be.false;
     });
 
-    it('Atlassian 401 — race-check expired, 200ms re-read fresh — returns delayed winner token', async () => {
+    it('Atlassian 403 unauthorized_client — race-check expired, 200ms re-read fresh — returns delayed winner token', async () => {
       // Only fake setTimeout — preserve Date.now() so #isExpired() still works correctly.
       clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const freshSecret = { ...VALID_SECRET, accessToken: 'delayed-winner-token' };
@@ -523,7 +523,7 @@ describe('OAuthCredentialManager', () => {
           .resolves({ SecretString: JSON.stringify(freshSecret) }), // 200ms re-read hit
         putSecretValue: sinon.stub().resolves({}),
       };
-      const httpClient = makeHttpClient({}, 401);
+      const httpClient = makeHttpClient({ error: 'unauthorized_client' }, 403);
       const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
 
       const promise = manager.refreshAuthHeaders();
@@ -534,7 +534,7 @@ describe('OAuthCredentialManager', () => {
       expect(smClient.getSecretValue.callCount).to.equal(3);
     });
 
-    it('Atlassian 401 — both race-check and final-check expired — writes requiresReauth and throws', async () => {
+    it('Atlassian 403 unauthorized_client — both race-check and final-check expired — writes requiresReauth and throws', async () => {
       clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const smClient = {
         getSecretValue: sinon.stub()
@@ -547,7 +547,7 @@ describe('OAuthCredentialManager', () => {
           .resolves({ SecretString: JSON.stringify(EXPIRED_SECRET) }), // #writeReauthFlag read
         putSecretValue: sinon.stub().resolves({}),
       };
-      const httpClient = makeHttpClient({}, 401);
+      const httpClient = makeHttpClient({ error: 'unauthorized_client' }, 403);
       const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
 
       const promise = manager.refreshAuthHeaders();
@@ -559,7 +559,7 @@ describe('OAuthCredentialManager', () => {
       expect(written.requiresReauth).to.be.true;
     });
 
-    it('Atlassian 401 — race-check shows requiresReauth flag — writes reauth and throws', async () => {
+    it('Atlassian 403 unauthorized_client — race-check shows requiresReauth flag — writes reauth and throws', async () => {
       clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
       const reauthSecret = { ...EXPIRED_SECRET, requiresReauth: true };
       const smClient = {
@@ -573,7 +573,7 @@ describe('OAuthCredentialManager', () => {
           .resolves({ SecretString: JSON.stringify(reauthSecret) }), // #writeReauthFlag read
         putSecretValue: sinon.stub().resolves({}),
       };
-      const httpClient = makeHttpClient({}, 401);
+      const httpClient = makeHttpClient({ error: 'unauthorized_client' }, 403);
       const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
 
       const promise = manager.refreshAuthHeaders();
@@ -866,7 +866,7 @@ describe('OAuthCredentialManager', () => {
       expect(httpClient.fetch.calledOnce).to.be.true;
     });
 
-    it('Atlassian 401 — race-check finds fresh token — returns it without requiresReauth', async () => {
+    it('Atlassian 403 unauthorized_client — race-check finds fresh token — returns it without requiresReauth', async () => {
       const freshSecret = { ...VALID_SECRET, accessToken: 'race-won-token' };
       const smClient = {
         getSecretValue: sinon.stub()
@@ -875,7 +875,7 @@ describe('OAuthCredentialManager', () => {
           .resolves({ SecretString: JSON.stringify(freshSecret) }), // race-check
         putSecretValue: sinon.stub().resolves({}),
       };
-      const httpClient = makeHttpClient({}, 401);
+      const httpClient = makeHttpClient({ error: 'unauthorized_client' }, 403);
       const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
 
       const headers = await manager.forceRefreshAuthHeaders();

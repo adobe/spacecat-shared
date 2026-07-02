@@ -40,7 +40,8 @@ export interface BrandSemrushProjectOrgRow {
   geoTargetId: number;
   languageCode: string;
   siteId: string | null;
-  organizationId: string | null;
+  // Always present: the select's `!inner` join excludes non-matching parents.
+  organizationId: string;
   semrushSubWorkspaceId: string | null;
 }
 

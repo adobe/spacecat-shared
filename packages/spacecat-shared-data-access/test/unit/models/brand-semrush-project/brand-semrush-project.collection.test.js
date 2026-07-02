@@ -174,7 +174,12 @@ describe('BrandSemrushProjectCollection', () => {
 
     function setupPostgrestChain(result) {
       const rangeStub = sinon.stub().resolves(result);
-      const orderStub = sinon.stub().returns({ range: rangeStub });
+      // .order() is chained twice (brand_id, then semrush_project_id as a
+      // deterministic secondary sort) — the stub must return an object whose
+      // own `order` also resolves to itself so both calls in the chain work,
+      // matching @supabase/postgrest-js's real `order()` (returns `this`).
+      const orderStub = sinon.stub();
+      orderStub.returns({ range: rangeStub, order: orderStub });
       const isStub = sinon.stub().returns({ order: orderStub });
       const eqStub = sinon.stub().returns({ is: isStub, order: orderStub });
       const selectStub = sinon.stub().returns({ eq: eqStub });
@@ -194,7 +199,7 @@ describe('BrandSemrushProjectCollection', () => {
           site_id: 'a1b2c3d4-0000-4000-8000-000000000002',
           brands: {
             organization_id: organizationId,
-            semrush_workspace_id: 'sub-ws-1',
+            semrush_sub_workspace_id: 'sub-ws-1',
           },
         }],
         error: null,
@@ -202,7 +207,7 @@ describe('BrandSemrushProjectCollection', () => {
 
       const results = await instance.allByOrganizationId(organizationId);
 
-      expect(selectStub).to.have.been.calledWithMatch('brands!brand_to_semrush_projects_brand_id_fkey');
+      expect(selectStub).to.have.been.calledWithMatch('brands!brand_to_semrush_projects_brand_id_fkey!inner');
       expect(eqStub).to.have.been.calledWith('brands.organization_id', organizationId);
       expect(isStub).to.have.been.calledWith('deleted_at', null);
       expect(results).to.deep.equal([{
@@ -269,7 +274,7 @@ describe('BrandSemrushProjectCollection', () => {
         semrush_location_id: 2840,
         language: 'en',
         site_id: null,
-        brands: { organization_id: organizationId, semrush_workspace_id: null },
+        brands: { organization_id: organizationId, semrush_sub_workspace_id: null },
       }));
       const page2 = [{
         brand_id: `brand-${DEFAULT_PAGE_SIZE}`,
@@ -277,13 +282,14 @@ describe('BrandSemrushProjectCollection', () => {
         semrush_location_id: 2840,
         language: 'en',
         site_id: null,
-        brands: { organization_id: organizationId, semrush_workspace_id: null },
+        brands: { organization_id: organizationId, semrush_sub_workspace_id: null },
       }];
 
       const rangeStub = sinon.stub();
       rangeStub.onFirstCall().resolves({ data: page1, error: null });
       rangeStub.onSecondCall().resolves({ data: page2, error: null });
-      const orderStub = sinon.stub().returns({ range: rangeStub });
+      const orderStub = sinon.stub();
+      orderStub.returns({ range: rangeStub, order: orderStub });
       const isStub = sinon.stub().returns({ order: orderStub });
       const eqStub = sinon.stub().returns({ is: isStub, order: orderStub });
       const selectStub = sinon.stub().returns({ eq: eqStub });
@@ -296,6 +302,35 @@ describe('BrandSemrushProjectCollection', () => {
       expect(rangeStub.firstCall.args).to.deep.equal([0, DEFAULT_PAGE_SIZE - 1]);
       // eslint-disable-next-line max-len
       expect(rangeStub.secondCall.args).to.deep.equal([DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE * 2 - 1]);
+    });
+
+    it('truncates at the MAX_ORG_ROWS safety cap and logs a warning instead of paginating forever', async () => {
+      const DEFAULT_PAGE_SIZE = 1000;
+      const MAX_ORG_ROWS = 50_000;
+      const fullPage = () => Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
+        brand_id: `brand-${i}`,
+        semrush_project_id: `proj-${i}`,
+        semrush_location_id: 2840,
+        language: 'en',
+        site_id: null,
+        brands: { organization_id: organizationId, semrush_sub_workspace_id: null },
+      }));
+      // Every page is a FULL page, so without the cap this loop never
+      // terminates on its own (data.length >= DEFAULT_PAGE_SIZE forever).
+      const rangeStub = sinon.stub().callsFake(async () => ({ data: fullPage(), error: null }));
+      const orderStub = sinon.stub();
+      orderStub.returns({ range: rangeStub, order: orderStub });
+      const isStub = sinon.stub().returns({ order: orderStub });
+      const eqStub = sinon.stub().returns({ is: isStub, order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results).to.have.lengthOf(MAX_ORG_ROWS);
+      expect(rangeStub.callCount).to.equal(MAX_ORG_ROWS / DEFAULT_PAGE_SIZE);
+      expect(mockLogger.warn).to.have.been.calledOnce;
+      expect(mockLogger.warn.firstCall.args[0]).to.include(`truncated at ${MAX_ORG_ROWS} rows`);
     });
 
     it('throws DataAccessError when organizationId is missing', async () => {

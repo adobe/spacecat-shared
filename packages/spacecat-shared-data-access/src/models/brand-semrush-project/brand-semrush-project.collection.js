@@ -16,6 +16,13 @@ import { DEFAULT_PAGE_SIZE } from '../../util/postgrest.utils.js';
 
 const BRAND_FK = 'brand_to_semrush_projects_brand_id_fkey';
 
+// Safety cutoff for #fetchOrgRows' pagination loop. The per-FK base-collection
+// queries this package generates elsewhere are naturally bounded (one brand's
+// rows); this org-level fan-out is not, so an unexpectedly large org (or a
+// runaway loop from an accessor bug) is capped rather than growing memory
+// unbounded. Not expected to be hit in practice — see the truncation log.
+const MAX_ORG_ROWS = 50_000;
+
 /**
  * BrandSemrushProjectCollection - collection of BrandSemrushProject rows.
  *
@@ -83,8 +90,13 @@ class BrandSemrushProjectCollection extends BaseCollection {
       );
     }
 
+    // `!inner` is explicit rather than relying on the implicit INNER-JOIN-on-
+    // embedded-filter behavior added in PostgREST v11 — on an older server the
+    // same `.eq('brands.organization_id', ...)` filter alone is a LEFT JOIN,
+    // returning every mapping row with `brands: null` for non-matching
+    // organizations instead of excluding them.
     // eslint-disable-next-line max-len
-    const select = `brand_id, semrush_project_id, semrush_location_id, language, site_id, brands!${BRAND_FK}(organization_id, semrush_workspace_id)`;
+    const select = `brand_id, semrush_project_id, semrush_location_id, language, site_id, brands!${BRAND_FK}!inner(organization_id, semrush_sub_workspace_id)`;
     let query = this.postgrestService.from(this.tableName).select(select)
       .eq('brands.organization_id', organizationId);
     if (!includeDeleted) {
@@ -103,7 +115,12 @@ class BrandSemrushProjectCollection extends BaseCollection {
     const allResults = [];
     let offset = 0;
     let keepGoing = true;
-    const orderedQuery = query.order('brand_id');
+    // Secondary sort on semrush_project_id: brand_id alone does not give a
+    // stable page boundary when one brand has many projects (rows within a
+    // brand could otherwise straddle a page split in a different order on
+    // each call). semrush_project_id is unique per row, so this fully
+    // determines row order.
+    const orderedQuery = query.order('brand_id').order('semrush_project_id');
 
     while (keepGoing) {
       // eslint-disable-next-line no-await-in-loop
@@ -122,8 +139,13 @@ class BrandSemrushProjectCollection extends BaseCollection {
         keepGoing = false;
       } else {
         allResults.push(...data);
-        keepGoing = data.length >= DEFAULT_PAGE_SIZE;
         offset += DEFAULT_PAGE_SIZE;
+        if (allResults.length >= MAX_ORG_ROWS) {
+          this.log.warn(`[${this.entityName}] allByOrganizationId truncated at ${MAX_ORG_ROWS} rows`);
+          keepGoing = false;
+        } else {
+          keepGoing = data.length >= DEFAULT_PAGE_SIZE;
+        }
       }
     }
 
@@ -134,7 +156,7 @@ class BrandSemrushProjectCollection extends BaseCollection {
       languageCode: row.language,
       siteId: row.site_id ?? null,
       organizationId: row.brands?.organization_id ?? null,
-      semrushSubWorkspaceId: row.brands?.semrush_workspace_id ?? null,
+      semrushSubWorkspaceId: row.brands?.semrush_sub_workspace_id ?? null,
     }));
   }
 }

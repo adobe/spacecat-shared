@@ -39,10 +39,14 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
   // rename, write-of-record cutover): read-only mirror of
   // semrushSubWorkspaceId below, maintained entirely by the
   // mysticat-data-service brands_sync_semrush_workspace_id trigger
-  // (migration 20260702094229). No setter — kept for backward compatibility
-  // with any consumer still reading this attribute directly; app code must
-  // write semrushSubWorkspaceId instead. Will be retired (attribute, column,
-  // and trigger) once every direct external reader has migrated.
+  // (migration 20260702094229). No schema-generated setter — app code must
+  // write semrushSubWorkspaceId instead. brand.model.js still defines a
+  // manual, deprecated setSemrushWorkspaceId() that delegates to
+  // setSemrushSubWorkspaceId(), so an existing external caller of the old
+  // setter is not broken (a bare readOnly flip here would be a semver-breaking
+  // removal for any @adobe/spacecat-shared-data-access consumer). Will be
+  // retired (attribute, column, and trigger) once every direct external
+  // reader has migrated.
   .addAttribute('semrushWorkspaceId', {
     type: 'string',
     readOnly: true,

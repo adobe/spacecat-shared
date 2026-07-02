@@ -39,6 +39,23 @@ class Brand extends BaseModel {
    * `pending`; customer offboard writes `deleted`.
    */
   static STATUSES = Object.freeze(['pending', 'active', 'deleted', 'ignored']);
+
+  /**
+   * Deprecated BC-compat setter. `semrushWorkspaceId` is `readOnly: true` in
+   * the schema (mirrored by the mysticat-data-service sync trigger), so no
+   * setter is auto-generated for it — this manual method exists purely so an
+   * existing external caller of `setSemrushWorkspaceId` does not get a
+   * semver-breaking runtime error on upgrade. Delegates to the real
+   * write-of-record attribute. Remove once every direct caller has migrated
+   * to `setSemrushSubWorkspaceId` (see brand.schema.js).
+   *
+   * @deprecated Use setSemrushSubWorkspaceId instead.
+   * @param {string|null} value
+   * @returns {Brand}
+   */
+  setSemrushWorkspaceId(value) {
+    return this.setSemrushSubWorkspaceId(value);
+  }
 }
 
 export default Brand;

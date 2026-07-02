@@ -66,10 +66,11 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  *   Token >10 min (stale SM)  | 403 unauthorized_client       | User must reconnect
  *   App revoked by user/admin | 403 unauthorized_client       | User must reconnect
  *
- * Other GRANT_REVOKED triggers (RFC 6749 §5.2):
- *   - invalid_grant  (400): token already rotated / superseded by a concurrent refresh
- *   - invalid_token  (400): malformed token
- *   - access_denied  (400): user denied authorization
+ * Other GRANT_REVOKED triggers (RFC 6749 §5.2 — status codes not empirically verified,
+ * assumed 400 per spec; error codes were in the original implementation):
+ *   - invalid_grant:  token already rotated / superseded
+ *   - invalid_token:  malformed token (RFC 6750 §3.1)
+ *   - access_denied:  user denied authorization
  *
  * ## Defensive guards (defense-in-depth, not correctness-critical)
  *

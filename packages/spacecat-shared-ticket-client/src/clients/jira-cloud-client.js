@@ -26,12 +26,8 @@ const CLOUD_ID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 // Single-letter project keys (e.g. A-1) are not supported.
 const TICKET_KEY_REGEX = /^[A-Z][A-Z0-9_]+-\d+$/;
 const DUE_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+// Jira Cloud hard limit for summary field (documented by Atlassian)
 const SUMMARY_MAX_LENGTH = 255;
-// issueType, priority — Jira enforces no hard cap but 255 is reasonable
-const FIELD_MAX_LENGTH = 255;
-const LABEL_MAX_LENGTH = 255; // Jira's own label length limit
-const LABEL_MAX_COUNT = 10; // practical guard against runaway label arrays
-const COMPONENT_MAX_COUNT = 10; // practical guard against runaway component arrays
 
 // ── Attachment Rules (PR #150) ─────────────────────────────────────────────────
 const ATTACHMENT_MAX_BYTES = 3 * 1024 * 1024; // 3 MB — Lambda 6 MB sync limit with headroom
@@ -212,28 +208,6 @@ export default class JiraCloudClient extends BaseTicketClient {
 
     if (parent && !TICKET_KEY_REGEX.test(parent)) {
       throw new Error(`Invalid parent format: expected Jira issue key, got: ${parent}`);
-    }
-
-    if (issueType.length > FIELD_MAX_LENGTH) {
-      throw new Error(`issueType too long: max ${FIELD_MAX_LENGTH} chars, got: ${issueType.length}`);
-    }
-
-    if (priority && priority.length > FIELD_MAX_LENGTH) {
-      throw new Error(`priority too long: max ${FIELD_MAX_LENGTH} chars, got: ${priority.length}`);
-    }
-
-    if (labels.length > LABEL_MAX_COUNT) {
-      throw new Error(`Too many labels: max ${LABEL_MAX_COUNT}, got: ${labels.length}`);
-    }
-
-    for (const label of labels) {
-      if (String(label).length > LABEL_MAX_LENGTH) {
-        throw new Error(`Label too long: max ${LABEL_MAX_LENGTH} chars`);
-      }
-    }
-
-    if (components && components.length > COMPONENT_MAX_COUNT) {
-      throw new Error(`Too many components: max ${COMPONENT_MAX_COUNT}, got: ${components.length}`);
     }
 
     // markdownToAdf returns null for blank input — omit the field rather than

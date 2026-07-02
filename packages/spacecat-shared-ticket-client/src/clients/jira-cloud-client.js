@@ -115,9 +115,11 @@ function sanitizeFilename(filename) {
     .replace(/[/\\]/g, '')
     // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]/g, '')
-    .trim()
-    .slice(0, ATTACHMENT_FILENAME_MAX_LENGTH);
-  return safe || 'attachment';
+    .trim();
+  // Spread to code points to avoid splitting surrogate pairs (emoji filenames).
+  // Consistent with sanitizeSummary which uses the same pattern.
+  const truncated = [...safe].slice(0, ATTACHMENT_FILENAME_MAX_LENGTH).join('');
+  return truncated || 'attachment';
 }
 
 /**

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.124.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.123.1...@adobe/spacecat-shared-utils-v1.124.0) (2026-07-01)
+
+### Features
+
+* **utils:** add isPathPatternWithinSiteScope url helper ([#1761](https://github.com/adobe/spacecat-shared/issues/1761)) ([cefc1bd](https://github.com/adobe/spacecat-shared/commit/cefc1bd0e0ac24a5ac4e0694205589ee2c96e596))
+
 ## [@adobe/spacecat-shared-utils-v1.123.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.123.0...@adobe/spacecat-shared-utils-v1.123.1) (2026-06-26)
 
 ### Bug Fixes

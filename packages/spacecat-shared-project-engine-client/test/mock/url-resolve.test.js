@@ -12,6 +12,7 @@
 
 import { expect } from 'chai';
 import { resolveUrl } from '../../mock/url-resolve.js';
+import { createUrlResolveMock } from '../../mock/factories.js';
 
 // The route handler is coverage-excluded, so the canonicalization is unit-tested here against the
 // live contract captured 2026-07-03 (serenity-docs#25 §0). resolveUrl returns only the OVERRIDES
@@ -73,5 +74,41 @@ describe('url-resolve', () => {
 
   it('returns {} for a host with an empty label (trailing dot / double dot)', () => {
     expect(resolveUrl('https://example.com.')).to.deep.equal({});
+  });
+
+  it('strips the query string and fragment (only host + path form the brand URL)', () => {
+    // The canonicalizer reads parsed.pathname only, so ?query and #fragment are dropped by design.
+    expect(resolveUrl('https://lovesac.com/products?ref=123#top')).to.deep.equal({
+      domain: 'lovesac.com',
+      primary_url: 'lovesac.com/products',
+      is_valid: true,
+    });
+  });
+
+  it('strips an explicit port (uses hostname, not host)', () => {
+    expect(resolveUrl('https://www.lovesac.com:8443/path')).to.deep.equal({
+      domain: 'lovesac.com',
+      primary_url: 'lovesac.com/path',
+      is_valid: true,
+    });
+  });
+
+  it('preserves a trailing slash on the path (only a bare root `/` is dropped)', () => {
+    // Mock behavior: parsed.pathname is `/products/`, which is not the bare `/`, so it is kept.
+    // (Live trailing-slash handling is unverified; this pins the mock's documented choice.)
+    expect(resolveUrl('https://lovesac.com/products/')).to.deep.equal({
+      domain: 'lovesac.com',
+      primary_url: 'lovesac.com/products/',
+      is_valid: true,
+    });
+  });
+
+  it('composes with createUrlResolveMock: valid → resolved, invalid → the empty default', () => {
+    // The route handler merges resolveUrl's overrides onto the factory default; that glue is
+    // coverage-excluded, so assert the seam here without booting the mock server.
+    expect(createUrlResolveMock(resolveUrl('https://www.lovesac.com')))
+      .to.deep.equal({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
+    expect(createUrlResolveMock(resolveUrl('garbage !!!')))
+      .to.deep.equal({ domain: '', primary_url: '', is_valid: false });
   });
 });

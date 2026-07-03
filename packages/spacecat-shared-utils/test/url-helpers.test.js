@@ -36,6 +36,7 @@ import {
   toPathname,
   hasSamePathname,
   allHaveSamePathname,
+  isPathPatternWithinSiteScope,
 } from '../src/url-helpers.js';
 
 use(sinonChai);
@@ -1252,9 +1253,9 @@ describe('URL Utility Functions', () => {
       expect(isWithinSiteScope('', 'bulk.com/uk')).to.be.false;
     });
 
-    it('returns true when siteBaseUrl is null or empty (no restriction)', () => {
-      expect(isWithinSiteScope('https://bulk.com/uk/page', null)).to.be.true;
-      expect(isWithinSiteScope('https://bulk.com/uk/page', '')).to.be.true;
+    it('returns false when siteBaseUrl is null or empty (fails closed)', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', null)).to.be.false;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', '')).to.be.false;
     });
 
     it('returns true for all URLs when siteBaseUrl has no subpath', () => {
@@ -1350,9 +1351,9 @@ describe('URL Utility Functions', () => {
       expect(filterBySiteScope(urls, 'bulk.com')).to.deep.equal(urls);
     });
 
-    it('returns all URLs when siteBaseUrl is null', () => {
+    it('returns no URLs when siteBaseUrl is null (fails closed)', () => {
       const urls = ['https://bulk.com/a', 'https://bulk.com/b'];
-      expect(filterBySiteScope(urls, null)).to.deep.equal(urls);
+      expect(filterBySiteScope(urls, null)).to.deep.equal([]);
     });
 
     it('returns empty array when no URLs are in scope', () => {
@@ -1489,6 +1490,48 @@ describe('URL Utility Functions', () => {
     it('matches schema-less URLs in the array against a reference URL', () => {
       const urls = ['a.com/page', 'https://b.com/page'];
       expect(allHaveSamePathname(urls, 'c.com/page')).to.be.true;
+    });
+  });
+
+  describe('isPathPatternWithinSiteScope', () => {
+    it('returns false for non-string patterns', () => {
+      expect(isPathPatternWithinSiteScope(null, 'bulk.com/uk')).to.be.false;
+      expect(isPathPatternWithinSiteScope(undefined, 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns false when no siteBaseUrl is given (fails closed)', () => {
+      expect(isPathPatternWithinSiteScope('/kings/.*', '')).to.be.false;
+    });
+
+    it('returns true when the site is scoped to the root path', () => {
+      expect(isPathPatternWithinSiteScope('/kings/.*', 'bulk.com')).to.be.true;
+      expect(isPathPatternWithinSiteScope('/kings/.*', 'bulk.com/')).to.be.true;
+    });
+
+    it('treats /* prefixed patterns as trusted when the prefix is or extends the base path', () => {
+      expect(isPathPatternWithinSiteScope('/uk/*', 'bulk.com/uk')).to.be.true;
+      expect(isPathPatternWithinSiteScope('/uk/kings/*', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('rejects /* prefixed patterns whose prefix escapes the base path', () => {
+      expect(isPathPatternWithinSiteScope('/us/*', 'bulk.com/uk')).to.be.false;
+      expect(isPathPatternWithinSiteScope('/ukraine/*', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('fails closed for patterns containing regex metacharacters', () => {
+      expect(isPathPatternWithinSiteScope('/kings/.*|/wolves/.*', 'bulk.com/kings')).to.be.false;
+      expect(isPathPatternWithinSiteScope('/uk/(a|b)', 'bulk.com/uk')).to.be.false;
+      expect(isPathPatternWithinSiteScope('/uk/[a-z]', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('treats exact or extending plain-text patterns as within scope', () => {
+      expect(isPathPatternWithinSiteScope('/uk', 'bulk.com/uk')).to.be.true;
+      expect(isPathPatternWithinSiteScope('/uk/kings', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('rejects plain-text patterns that escape the base path', () => {
+      expect(isPathPatternWithinSiteScope('/us', 'bulk.com/uk')).to.be.false;
+      expect(isPathPatternWithinSiteScope('/ukraine', 'bulk.com/uk')).to.be.false;
     });
   });
 });

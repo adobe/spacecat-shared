@@ -16,13 +16,16 @@
  * (spacecat-api-service `createTaggedPrompts`). Request is `AIOTaggedPromptsCreateRequest`:
  * `{ prompts: { [promptText]: [tagName, ...] } }` — keyed by PROMPT TEXT (verified live
  * 2026-06-25), each value the tag names to attach. One stored prompt is created per text key,
- * carrying an `AIOTag` synthesized from each tag name (stable id so `by_tags` filtering works),
- * so a later `by_tags` list reflects the write. Returns 201 `IDsWithStatsResponse`.
+ * carrying an `AIOTag` synthesized from each tag name (stable id so `by_tags` filtering works).
+ * The tag ids are minted via `context.tagId` (the shared mock/tag-id.js helper) so they match the
+ * ids `POST /aio/tags` persists for the same name. Returns 201 `IDsWithStatsResponse`.
+ *
+ * Writes to DRAFT only, `is_new: true` on the created prompt (live-verified 2026-07-02,
+ * serenity-docs#24 §3.1 gate 2 + gate 6, same mechanism as the id-based `aio/prompts.js` create):
+ * `by_tags.js`'s default (non-draft) read excludes it until the project's `publish` endpoint
+ * runs and flips it to `is_new: false`; `?draft=true` sees it immediately.
  * Materialized into `.counterfact/routes/` by the mock runner; excluded from coverage.
  */
-
-/** Deterministic tag id from a tag name so repeated creates under the same name share an id. */
-const tagId = (name) => `tag-${encodeURIComponent(name)}`;
 
 /**
  * POST — create prompts → 201 { ids, existing_count }. Body is `AIOTaggedPromptsCreateRequest`
@@ -48,7 +51,7 @@ export function POST($) {
     .createPromptMock({
       name: text,
       is_new: true,
-      tags: (tags ?? []).map((name) => ({ id: tagId(name), name })),
+      tags: (tags ?? []).map((name) => ({ id: context.tagId(name), name })),
     }));
 
   if (!context.quota.canCreatePrompts(path.id, toCreate.length)) {

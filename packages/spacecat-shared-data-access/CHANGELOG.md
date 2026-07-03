@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v3.81.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.80.0...@adobe/spacecat-shared-data-access-v3.81.0) (2026-07-02)
+
+### Features
+
+* **SITES-44690:** add TaskManagementConnection, Ticket, TicketSuggestion, IdempotencyKey, and OAuthNonce data models ([#1702](https://github.com/adobe/spacecat-shared/issues/1702)) ([2ca5096](https://github.com/adobe/spacecat-shared/commit/2ca5096b448a07b8e365021e06b31fa3bee96b09))
+
+## [@adobe/spacecat-shared-data-access-v3.80.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.79.1...@adobe/spacecat-shared-data-access-v3.80.0) (2026-07-02)
+
+### Features
+
+* **data-access:** add feedback review constants + verdict/signal helpers (SITES-43974) ([#1696](https://github.com/adobe/spacecat-shared/issues/1696)) ([2cabb05](https://github.com/adobe/spacecat-shared/commit/2cabb0596b27dcdefaf66c7d46531403ae005f2c))
+
 ## [@adobe/spacecat-shared-data-access-v3.79.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.79.0...@adobe/spacecat-shared-data-access-v3.79.1) (2026-06-22)
 
 ### Bug Fixes

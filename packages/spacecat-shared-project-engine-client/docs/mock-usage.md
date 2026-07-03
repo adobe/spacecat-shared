@@ -135,6 +135,7 @@ method that calls it.
 | Method + path | Consumer | Behaviour |
 | --- | --- | --- |
 | `GET /v1/languages` | `listLanguages` | language catalog → `{ page, total, items }` |
+| `GET /v1/url/resolve` | brand-URL write path (api-service `resolveUrl`, migration CLI — serenity-docs#25) | canonicalize a raw URL → `{ domain, primary_url, is_valid }` (overlay CR16). `primary_url` strips scheme + `www.` (subdomain + path preserved), `domain` is the registrable apex; garbage input → empty strings + `is_valid:false` at HTTP `200` (never an error). `primary_url` is `required` — a MISSING param `400`s; an EMPTY value falls through to `200 is_valid:false` (Counterfact enforces presence, not the spec's `minLength`). Mock apex = last-two-labels (a multi-part suffix like `example.co.uk` → `co.uk` is a documented simplification vs live's PSL) |
 | `GET /v1/workspaces/{id}/brand-topics` | `getBrandTopics` | top-level array `[{ topic, volume, prompts }]`; `domain` + `country` are `required` query params — omitting either → `400` (enforced by request validation, matching live) |
 | `PUT /v1/workspaces/{id}/projects/{project_id}/ci/competitors` | `updateCiCompetitors` | full replace → `{ ci_competitors }` |
 | `GET /v2/workspaces/{id}/projects/{project_id}/aio/init_status` | `getInitStatus` | `{ initialized }`. **Live route is `/v2`** — the vendored swagger's `/v1` path 404s (overlay CR8, verified live across 4 projects). The api-service consumer still calls `/v1` today (a pre-existing bug — it degrades to `initialized: null`). |

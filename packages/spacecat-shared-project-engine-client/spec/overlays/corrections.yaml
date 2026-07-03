@@ -81,6 +81,15 @@ info:
 #      `parent_id: null` to promote a child tag to a root (verified 2026-07-02 against prod). The
 #      vendored swagger types it as a plain string, so request validation rejected the literal
 #      null. Remove if Semrush documents the nullability upstream.
+# CR16 Add GET /v1/url/resolve — the URL-canonicalization endpoint the live Semrush frontend calls
+#      before writing a brand URL, absent from the vendored spec. Live: GET
+#      /v1/url/resolve?primary_url=<raw> -> 200 { domain, primary_url, is_valid } (verified
+#      2026-07-03 against prod adobe-hackathon.semrush.com — serenity-docs#25 §0). `primary_url` is
+#      the canonical brand-URL value (scheme + `www.` stripped, subdomain + path PRESERVED);
+#      `domain` is the registrable apex (subdomain stripped too); `is_valid` is false — with EMPTY
+#      `domain`/`primary_url` strings, still HTTP 200 — for unresolvable/garbage input. Consumers
+#      resolve a raw URL through this before writing it as a brand URL so the stored value matches
+#      the canonical benchmark Semrush already holds. Remove when Semrush ships the path upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -415,3 +424,63 @@ actions:
     update:
       properties:
         parent_id: { type: string, nullable: true }
+
+  # ── CR16: Add GET /v1/url/resolve ────────────────────────────────────────
+  # Live: 200 -> { domain, primary_url, is_valid }. Verified 2026-07-03 against prod
+  # (serenity-docs#25 §0). All three fields are ALWAYS present — even the is_valid:false case returns
+  # empty `domain`/`primary_url` strings rather than omitting them — so all three are marked required
+  # (the same faithful-`required` philosophy as CR5: the mock's handler always populates them and the
+  # live API always returns them). The query param is `required` + `minLength: 1` to document the live
+  # contract (missing OR empty → 400). Counterfact's request validation enforces the `required`
+  # presence (a MISSING param 400s, as with the brand-topics params) but not the string `minLength`,
+  # so an EMPTY value falls through to the handler, which returns 200 is_valid:false — the one benign
+  # mock divergence from live's empty-400, documented on the route handler.
+  - target: "$.components.schemas"
+    description: "CR16: add the UrlResolveResponse schema"
+    update:
+      "model.UrlResolveResponse":
+        type: object
+        required: [domain, primary_url, is_valid]
+        properties:
+          domain: { type: string }
+          primary_url: { type: string }
+          is_valid: { type: boolean }
+
+  - target: "$.paths"
+    description: "CR16: add the GET /v1/url/resolve path"
+    update:
+      "/v1/url/resolve":
+        get:
+          summary: "Resolve a URL to its canonical brand-URL form"
+          # Folded scalar (>-): authored multi-line for review, emitted as one line.
+          description: >-
+            Canonicalize a raw URL to the form Semrush stores as a brand URL. `primary_url` strips
+            the scheme and a leading `www.` but preserves any other subdomain and the path;
+            `domain` is the registrable apex (subdomain stripped too). For unresolvable or garbage
+            input `is_valid` is false and `domain`/`primary_url` are empty strings — still HTTP 200,
+            so consumers MUST check `is_valid` and never write the empty value.
+          operationId: "resolve-url"
+          tags: ["AIO"]
+          parameters:
+            - { name: primary_url, in: query, required: true, schema: { type: string, minLength: 1 } }
+          responses:
+            "200":
+              description: "OK"
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/model.UrlResolveResponse"
+            "400":
+              description: "Bad Request (missing or empty primary_url)"
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/http_server.BasicResponse"
+            "401":
+              description: "Unauthorized"
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/http_server.BasicResponse"
+          security:
+            - imsBearer: []

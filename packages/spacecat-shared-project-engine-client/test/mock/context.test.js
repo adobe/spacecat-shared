@@ -50,6 +50,15 @@ describe('mock Context', () => {
     expect(ctx.parentIdField('')).to.deep.equal({});
   });
 
+  it('exposes the shared resolveUrl helper for the GET /v1/url/resolve route', () => {
+    const ctx = new Context();
+    // Context just re-exposes the pure canonicalizer; a valid URL yields the resolve overrides…
+    expect(ctx.resolveUrl('https://www.lovesac.com'))
+      .to.deep.equal({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
+    // …and an invalid one yields {} (→ the empty/invalid factory default).
+    expect(ctx.resolveUrl('not a url')).to.deep.equal({});
+  });
+
   it('exposes the ai-model catalog for the catalog route + add-path resolution', () => {
     const ctx = new Context();
     expect(ctx.aiModelCatalog).to.be.an('array').with.length.greaterThan(0);

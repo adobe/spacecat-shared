@@ -1308,6 +1308,53 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data.items.map((m) => m.key)).to.include.members(['perplexity', 'gemini-2.5-flash']);
   });
 
+  it('resolveUrl canonicalizes a raw brand URL (scheme + www stripped, path/subdomain preserved)', async () => {
+    // The endpoint the consumer calls before writing a brand URL (overlay CR16, serenity-docs#25).
+    const resolve = (primaryUrl) => client.GET('/v1/url/resolve', {
+      params: { query: { primary_url: primaryUrl } },
+    });
+
+    const { data, error } = await resolve('https://www.lovesac.com');
+    expect(error).to.equal(undefined);
+    expect(data).to.deep.equal({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
+
+    // path preserved on primary_url, stripped on domain.
+    const { data: withPath } = await resolve('http://www.lovesac.com/products');
+    expect(withPath).to.deep.equal({ domain: 'lovesac.com', primary_url: 'lovesac.com/products', is_valid: true });
+
+    // non-www subdomain preserved on primary_url, collapsed to the apex on domain.
+    const { data: sub } = await resolve('https://blog.hubspot.com');
+    expect(sub).to.deep.equal({ domain: 'hubspot.com', primary_url: 'blog.hubspot.com', is_valid: true });
+  });
+
+  it('resolveUrl returns is_valid:false with empty strings (HTTP 200) for garbage input', async () => {
+    // The live trap (serenity-docs#25 §0): unresolvable input is a 200 with empty strings, NOT an
+    // error — the consumer must check is_valid and never write the empty value.
+    const { data, error, response } = await client.GET('/v1/url/resolve', {
+      params: { query: { primary_url: 'not a url !!!' } },
+    });
+    expect(error).to.equal(undefined);
+    expect(response.status).to.equal(200);
+    expect(data).to.deep.equal({ domain: '', primary_url: '', is_valid: false });
+  });
+
+  // Request validation 400s a MISSING required query param before the handler runs (same mechanism
+  // as getBrandTopics). Counterfact enforces presence but NOT the spec's minLength:1, so an EMPTY
+  // value (`primary_url=`) falls through to the handler, returning 200 is_valid:false — a benign
+  // divergence from live (which 400s empty too): empty is the same "don't write it" signal the
+  // consumer already keys off is_valid. Raw fetch so we can shape a request the typed client bars.
+  it('resolveUrl 400s on a missing primary_url; an empty value 200s is_valid:false', async () => {
+    const auth = { headers: { Authorization: 'Bearer e2e-token' } };
+
+    const missing = await fetch(`${baseUrl}/v1/url/resolve`, auth);
+    expect(missing.status).to.equal(400);
+    expect(await missing.text()).to.match(/primary_url/);
+
+    const empty = await fetch(`${baseUrl}/v1/url/resolve?primary_url=`, auth);
+    expect(empty.status).to.equal(200);
+    expect(await empty.json()).to.deep.equal({ domain: '', primary_url: '', is_valid: false });
+  });
+
   it('getBrandTopics returns a top-level array of { topic, volume, prompts }', async () => {
     const { data, error } = await client.GET('/v1/workspaces/{id}/brand-topics', {
       params: { path: { id: SEED_WORKSPACE }, query: { domain: 'example.com', country: 'us' } },

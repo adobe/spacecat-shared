@@ -37,7 +37,6 @@ describe('PreflightCollection', () => {
     url: 'https://www.example.com/page1',
     status: 'IN_PROGRESS',
     createdBy: { email: 'user1@example.com', displayName: 'User One' },
-    startedAt: '2025-06-01T10:00:01.000Z',
     createdAt: '2025-06-01T10:00:00.000Z',
     updatedAt: '2025-06-01T10:00:00.000Z',
   };

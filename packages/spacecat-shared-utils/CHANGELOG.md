@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.124.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.124.0...@adobe/spacecat-shared-utils-v1.124.1) (2026-07-03)
+
+### Bug Fixes
+
+* **utils:** fail closed in site-scope checks when siteBaseUrl is missing ([#1770](https://github.com/adobe/spacecat-shared/issues/1770)) ([d0d3614](https://github.com/adobe/spacecat-shared/commit/d0d361414953b22e41e22a01c50bf9ff5c17eada))
+
 ## [@adobe/spacecat-shared-utils-v1.124.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.123.1...@adobe/spacecat-shared-utils-v1.124.0) (2026-07-01)
 
 ### Features

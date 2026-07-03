@@ -1602,6 +1602,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/url/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve a URL to its canonical brand-URL form
+         * @description Canonicalize a raw URL to the form Semrush stores as a brand URL. `primary_url` strips the scheme and a leading `www.` but preserves any other subdomain and the path; `domain` is the registrable apex (subdomain stripped too). For unresolvable or garbage input `is_valid` is false and `domain`/`primary_url` are empty strings — still HTTP 200, so consumers MUST check `is_valid` and never write the empty value.
+         */
+        get: operations["resolve-url"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2331,6 +2351,11 @@ export interface components {
             page?: number;
             total?: number;
             items?: components["schemas"]["model.AIModelResponse"][];
+        };
+        "model.UrlResolveResponse": {
+            domain: string;
+            primary_url: string;
+            is_valid: boolean;
         };
     };
     responses: never;
@@ -8360,6 +8385,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["model.AIOProjectInitializedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "resolve-url": {
+        parameters: {
+            query: {
+                primary_url: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.UrlResolveResponse"];
+                };
+            };
+            /** @description Bad Request (missing or empty primary_url) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
                 };
             };
             /** @description Unauthorized */

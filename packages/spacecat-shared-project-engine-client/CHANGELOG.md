@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.7.1...@adobe/spacecat-shared-project-engine-client-v1.8.0) (2026-07-03)
+
+### Features
+
+* **project-engine-client:** add GET /v1/url/resolve to the vendored client + mock ([#1771](https://github.com/adobe/spacecat-shared/issues/1771)) ([e8f22b7](https://github.com/adobe/spacecat-shared/commit/e8f22b75db738a6c10f48796a521d55a8b79f2e3)), closes [#737](https://github.com/adobe/spacecat-shared/issues/737) [serenity-docs#25](https://github.com/adobe/serenity-docs/issues/25) [serenity-docs#25](https://github.com/adobe/serenity-docs/issues/25)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.7.0...@adobe/spacecat-shared-project-engine-client-v1.7.1) (2026-07-02)
 
 ### Bug Fixes

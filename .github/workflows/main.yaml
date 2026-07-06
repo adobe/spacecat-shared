@@ -240,7 +240,23 @@ jobs:
         # packages are already published and the Test-job drift guard is the
         # backstop — hence continue-on-error. If the push loses a race it is
         # left for the next PR's drift guard to surface.
-        if: success()
+        #
+        # Gate is `success() || failure()`, NOT `success()`: semantic-release
+        # pushes a package's release commit (the thing that drifts the lock) and
+        # can then fail LATER in the same run — e.g. a subsequent workspace in
+        # the `-ws` loop whose npm OIDC exchange 404s (a new, not-yet-published
+        # package with no trusted-publisher binding). In that case the release
+        # job fails but the lock is already drifted on main; a `success()` gate
+        # SKIPS this heal, handing every open PR a lock diff it did not author
+        # (RELEASE-RUNBOOK Failure mode 7 — "partial SR failure" variant). So the
+        # single scenario that most needs the re-sync is exactly the one a
+        # success()-gate misses. `success() || failure()` runs the heal on both a
+        # clean release and a partial failure; cancellation is intentionally
+        # excluded (a job cancelled mid-push must not race in a commit). The
+        # HEAD-is-release-commit guard in the script below keeps the failure()
+        # path from committing when no release commit was actually pushed (e.g.
+        # an early `npm ci` failure — nothing drifted, npm may not be pinned).
+        if: success() || failure()
         continue-on-error: true
         shell: bash
         env:
@@ -256,6 +272,26 @@ jobs:
           # mark instead of a false "already in sync" — the `if ! git push`
           # retry below is errexit-safe (the negated condition suppresses it).
           trap 'echo "::warning title=package-lock sync after release failed::Lockfile sync did not complete; see RELEASE-RUNBOOK Failure mode 7. The next PR drift guard will surface residual drift."; echo "package-lock.json sync after release failed — see RELEASE-RUNBOOK Failure mode 7." >> "$GITHUB_STEP_SUMMARY"' ERR
+          # Only heal when semantic-release actually pushed a release commit this
+          # run. Under `success() || failure()` this step also fires when the
+          # release job failed; guard so it acts solely on the "a release commit
+          # was pushed" case. On success HEAD is the just-created
+          # `chore(release): <version>` commit; on a partial SR failure (SR failed
+          # AFTER pushing a release commit) HEAD is still that release commit. On
+          # any failure BEFORE a release was committed (e.g. `npm ci` failed) HEAD
+          # is the triggering feat/fix commit — nothing drifted, so skip rather
+          # than regenerate + commit a spurious lock diff (the runner's npm may
+          # not even be the pinned version yet at that point). The release job's
+          # own `if` guarantees the triggering commit is never a `chore(release)`
+          # commit, so this cleanly distinguishes "release pushed" from "did not".
+          head_subject="$(git log -1 --format=%s)"
+          case "${head_subject}" in
+            'chore(release):'*)
+              echo "HEAD is a release commit (${head_subject}); verifying lock sync." ;;
+            *)
+              echo "HEAD (${head_subject}) is not a release commit; no release was pushed this run — nothing to sync."
+              exit 0 ;;
+          esac
           npm install --package-lock-only --ignore-scripts
           if git diff --quiet -- package-lock.json; then
             echo "OK: package-lock.json already in sync; nothing to commit."

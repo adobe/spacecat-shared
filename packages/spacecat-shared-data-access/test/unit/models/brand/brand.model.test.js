@@ -26,6 +26,7 @@ const sampleRow = {
   name: 'Fixture Brand',
   status: 'active',
   semrushWorkspaceId: 'sub-ws-fixture',
+  semrushSubWorkspaceId: 'sub-ws-fixture',
 };
 
 describe('BrandModel', () => {
@@ -80,19 +81,48 @@ describe('BrandModel', () => {
     });
   });
 
-  describe('semrushWorkspaceId', () => {
+  describe('semrushWorkspaceId (deprecated BC mirror)', () => {
     it('gets semrushWorkspaceId', () => {
       expect(instance.getSemrushWorkspaceId()).to.equal('sub-ws-fixture');
     });
 
+    it('has no schema-generated setter (read-only — maintained by the DB sync trigger)', () => {
+      // No auto-generated setter for the readOnly attribute, but Brand
+      // defines a manual deprecated delegate below for BC — this asserts
+      // the schema-generation side specifically stayed readOnly.
+      const generatedSetterNames = Object.getOwnPropertyNames(instance)
+        .filter((name) => name.startsWith('set'));
+      expect(generatedSetterNames).to.not.include('setSemrushWorkspaceId');
+    });
+
+    it('setSemrushWorkspaceId (manual BC delegate) delegates to setSemrushSubWorkspaceId', () => {
+      // Stubs the delegate target rather than mutating the shared fixture
+      // record in place (sampleRow is reused by reference across tests in
+      // this file — a real mutation here would leak into later tests, e.g.
+      // "gets semrushSubWorkspaceId" below, which asserts the pristine
+      // fixture value).
+      const setSubStub = stub(instance, 'setSemrushSubWorkspaceId').returns(instance);
+
+      const result = instance.setSemrushWorkspaceId('legacy-caller-value');
+
+      expect(setSubStub).to.have.been.calledOnceWithExactly('legacy-caller-value');
+      expect(result).to.equal(instance);
+    });
+  });
+
+  describe('semrushSubWorkspaceId (write-of-record)', () => {
+    it('gets semrushSubWorkspaceId', () => {
+      expect(instance.getSemrushSubWorkspaceId()).to.equal('sub-ws-fixture');
+    });
+
     it('sets a new subworkspace id (re-grant)', () => {
-      instance.setSemrushWorkspaceId('sub-ws-fixture-v2');
-      expect(instance.getSemrushWorkspaceId()).to.equal('sub-ws-fixture-v2');
+      instance.setSemrushSubWorkspaceId('sub-ws-fixture-v2');
+      expect(instance.getSemrushSubWorkspaceId()).to.equal('sub-ws-fixture-v2');
     });
 
     it('clears the pointer (disconnects the brand from its subworkspace)', () => {
-      instance.setSemrushWorkspaceId(null);
-      expect(instance.getSemrushWorkspaceId()).to.equal(null);
+      instance.setSemrushSubWorkspaceId(null);
+      expect(instance.getSemrushSubWorkspaceId()).to.equal(null);
     });
   });
 

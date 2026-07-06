@@ -26,6 +26,7 @@ import {
   createBasicResponseMock,
   createInitStatusMock,
   createCiCompetitorMock,
+  createUrlResolveMock,
 } from '../../mock/factories.js';
 
 // The .ts type-tests under test/types/ enforce that each factory's return is assignable to its
@@ -290,5 +291,13 @@ describe('factories — live-shaped entities', () => {
     expect(c).to.include({ domain: 'competitor.example', color: '' });
     expect(createCiCompetitorMock({ domain: 'x.example', project_id: 'p1' }))
       .to.include({ domain: 'x.example', project_id: 'p1' });
+  });
+
+  it('createUrlResolveMock defaults to the live invalid/empty shape, overridable', () => {
+    // The default IS the live is_valid:false case (empty domain/primary_url, still HTTP 200); the
+    // route handler passes resolveUrl overrides for a valid input and nothing for an invalid one.
+    const valid = { domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true };
+    expect(createUrlResolveMock()).to.deep.equal({ domain: '', primary_url: '', is_valid: false });
+    expect(createUrlResolveMock(valid)).to.deep.equal(valid);
   });
 });

@@ -28,6 +28,7 @@ import {
   createBrandUrlMock,
   createAIOTagMock,
   createAIOTagLeafMock,
+  createUrlResolveMock,
 } from '../../mock/factories.js';
 import type { components } from '../../src/index.js';
 
@@ -38,6 +39,7 @@ type AIModel = components['schemas']['model.AIModelResponse'];
 type Benchmark = components['schemas']['model.AIOBenchmarkWithCounters'];
 type BrandUrl = components['schemas']['model.BrandURL'];
 type AIOTag = components['schemas']['model.AIOTag'];
+type UrlResolve = components['schemas']['model.ResolveURLResponse'];
 
 // 1. Each factory returns exactly its spec type (assignable in both directions).
 const project: Project = createProjectMock();
@@ -90,6 +92,17 @@ void benchmark.root_domain;
 void benchmark.project_id;
 void benchmark;
 void brandUrl;
+
+// 1f. the url-resolve factory (overlay CR16). All three fields are required by the schema, so the
+// default must supply them — this only compiles while CR16 is in the schema.
+const urlResolve: UrlResolve = createUrlResolveMock();
+const resolveFields: [string, string, boolean] = [
+  urlResolve.domain, urlResolve.primary_url, urlResolve.is_valid,
+];
+void resolveFields;
+createUrlResolveMock({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
+// @ts-expect-error — is_valid is a boolean, not a string.
+createUrlResolveMock({ is_valid: 'yes' });
 
 // 2. Partial overrides of real fields are accepted.
 createProjectMock({ name: 'Acme' });

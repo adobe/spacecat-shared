@@ -64,9 +64,10 @@ const BRAND_URL_ID = 'a7b8c9d0-e1f2-4a3b-8c4d-6e7f80910213'; // BrandURL.id
 const ENGLISH_LANGUAGE_ID = '5a0a33ed-7f5c-4901-befd-a042c0350da1'; // catalog "English" → ISO en
 const US_GEO_TARGET_ID = 2840; // Google geoTargetId (United States)
 // Nested category taxonomy (1-level tree, serenity-docs#21 / #1758): a root `category:` tag with
-// one bare child linked by `parent_id`. Ids derive from the shared `tagId(name)` helper — the same
-// derivation the tag-minting routes use — so a POST/tagged create of the same name lands on the
-// seeded id and the Categories surface / `by_tags` correlate them.
+// one bare child linked by `parent_id`. Ids derive from the shared `tagId(name)` helper (an opaque,
+// URL-safe sha256-derived token — see tag-id.js / #1760) — the same derivation the tag-minting
+// routes use — so a POST/tagged create of the same name lands on the seeded id and the Categories
+// surface / `by_tags` correlate them.
 const CATEGORY_ROOT_NAME = 'category:Running Shoes';
 const CATEGORY_CHILD_NAME = 'Trail';
 const CATEGORY_TAG_ID = tagId(CATEGORY_ROOT_NAME); // root category

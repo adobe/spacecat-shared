@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Shared modules of the Spacecat Services - Akamai Client",
   "type": "module",
+  "private": true,
   "engines": {
     "node": ">=22.0.0 <25.0.0",
     "npm": ">=10.9.0 <12.0.0"

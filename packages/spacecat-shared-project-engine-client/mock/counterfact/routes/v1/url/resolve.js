@@ -13,8 +13,9 @@
 /**
  * Static handler for GET /v1/url/resolve — the URL-canonicalization endpoint the consumer
  * (spacecat-api-service brand-URL write path + the Serenity migration CLI) calls before writing a
- * brand URL, so the stored value matches the canonical benchmark Semrush already holds. Added to
- * the spec by overlay CR16. Live shape: `{ domain, primary_url, is_valid }` (verified 2026-07-03
+ * brand URL, so the stored value matches the canonical benchmark Semrush already holds. The path +
+ * response schema are vendored natively; overlay CR16 only marks the three fields `required`. Live
+ * shape: `{ domain, primary_url, is_valid }` (verified 2026-07-03
  * against prod — serenity-docs#25 §0). The canonicalization lives in `mock/url-resolve.js` (exposed
  * as `$.context.resolveUrl`) so it is unit-tested on its own; the empty/invalid default lives in
  * the factory (`createUrlResolveMock`), so a garbage input returns `{ domain: '', primary_url: '',

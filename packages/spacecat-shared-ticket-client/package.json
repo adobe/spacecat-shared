@@ -1,6 +1,7 @@
 {
   "name": "@adobe/spacecat-shared-ticket-client",
   "version": "1.0.0",
+  "private": true,
   "description": "Shared modules of the SpaceCat Services - Ticket Client",
   "type": "module",
   "engines": {

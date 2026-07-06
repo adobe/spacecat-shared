@@ -114,6 +114,24 @@ describe('edgegrid-auth', () => {
       expect(withHeaders).to.not.equal(withoutHeaders);
     });
 
+    it('truncates the POST body at MAX_BODY_BYTES so trailing bytes do not affect the signature', () => {
+      // MAX_BODY_BYTES is 131072; a body at exactly the limit and the same body
+      // with extra bytes appended must sign identically. Guards against the
+      // subarray(0, MAX_BODY_BYTES) truncation being removed or the constant
+      // changed — the reference-vector tests use small bodies and wouldn't catch it.
+      const base = {
+        method: 'POST',
+        url: 'https://akab-xxxxx.luna.akamaiapis.net/papi/v1/some/path',
+        timestamp: FIXED_TS,
+        nonce: FIXED_NONCE,
+        ...CREDS,
+      };
+      const exactBody = 'x'.repeat(131072);
+      const overBody = `${exactBody}EXTRA_BYTES_BEYOND_LIMIT`;
+      expect(signRequest({ ...base, body: exactBody }))
+        .to.equal(signRequest({ ...base, body: overBody }));
+    });
+
     it('generates a timestamp and nonce when not provided', () => {
       const header = signRequest({
         method: 'GET',

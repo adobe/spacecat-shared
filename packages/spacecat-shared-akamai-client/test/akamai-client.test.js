@@ -346,6 +346,10 @@ describe('AkamaiClient', () => {
       const matches = await client.findPropertiesByDomain('example.com');
       expect(matches).to.have.lengthOf(1);
       expect(matches[0].propertyId).to.equal(PROPERTY_ID);
+      // The whole point of catching each lookup is to keep partial failures
+      // observable rather than silent — assert they were actually logged.
+      expect(log.warn).to.have.been.called;
+      expect(log.warn).to.have.been.calledWithMatch(/failed, continuing/);
     });
 
     it('tie-breaks two hostname matches without a propertyName without throwing', async () => {
@@ -461,6 +465,20 @@ describe('AkamaiClient', () => {
       await expect(client.updateRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, null))
         .to.be.rejectedWith('ruleTree must be an object');
     });
+
+    it('rejects a ruleFormat that would inject into the Content-Type header', async () => {
+      const evil = 'v2024-01-01\r\nX-Evil: 1';
+      const attempt = client.updateRuleTree(
+        PROPERTY_ID,
+        6,
+        CONTRACT_ID,
+        GROUP_ID,
+        { rules: {} },
+        evil,
+      );
+      await expect(attempt)
+        .to.be.rejectedWith('ruleFormat must contain only letters, digits, and hyphens');
+    });
   });
 
   // ─── activation ─────────────────────────────────────────────────────────
@@ -503,6 +521,11 @@ describe('AkamaiClient', () => {
     it('throws when network is missing', async () => {
       await expect(client.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, ''))
         .to.be.rejectedWith('network is required');
+    });
+
+    it('throws when network is not STAGING or PRODUCTION', async () => {
+      await expect(client.activate(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, 'sandbox'))
+        .to.be.rejectedWith('network must be one of STAGING, PRODUCTION, got: sandbox');
     });
 
     it('throws when the client was constructed without notifyEmails', async () => {
@@ -574,6 +597,11 @@ describe('AkamaiClient', () => {
   });
 
   describe('latestActivation', () => {
+    it('throws when network is not STAGING or PRODUCTION', async () => {
+      await expect(client.latestActivation(PROPERTY_ID, CONTRACT_ID, GROUP_ID, 'sandbox'))
+        .to.be.rejectedWith('network must be one of STAGING, PRODUCTION, got: sandbox');
+    });
+
     it('returns undefined when the property was never activated on that network', async () => {
       nock(API_BASE)
         .get(`/papi/v1/properties/${PROPERTY_ID}/activations`)
@@ -667,6 +695,10 @@ describe('AkamaiClient', () => {
 
     it('passes through an already-bare hostname', () => {
       expect(normalizeDomain('example.com')).to.equal('example.com');
+    });
+
+    it('strips a bare FQDN trailing dot with no scheme, port, or path', () => {
+      expect(normalizeDomain('example.com.')).to.equal('example.com');
     });
 
     it('returns an empty string for a falsy input', () => {

@@ -16,6 +16,11 @@ import { signRequest } from './edgegrid-auth.js';
 
 const REQUIRED_CONFIG_KEYS = ['host', 'clientToken', 'clientSecret', 'accessToken'];
 const SEARCH_KEYS = ['hostname', 'edgeHostname', 'propertyName'];
+const ACTIVATION_NETWORKS = ['STAGING', 'PRODUCTION'];
+// Akamai rule formats are "latest" or a dated token like "v2024-01-01". A strict
+// allowlist keeps a caller-supplied value from injecting into the Content-Type
+// header (e.g. a CR/LF-bearing string).
+const RULE_FORMAT_RE = /^[a-z0-9-]+$/i;
 
 function requireText(name, value) {
   if (!hasText(value)) {
@@ -372,6 +377,9 @@ export default class AkamaiClient {
     if (ruleTree === null || typeof ruleTree !== 'object') {
       throw new Error('ruleTree must be an object');
     }
+    if (ruleFormat && !RULE_FORMAT_RE.test(ruleFormat)) {
+      throw new Error('ruleFormat must contain only letters, digits, and hyphens');
+    }
     const id = encodePathSegment(propertyId);
     const headers = ruleFormat
       ? { 'Content-Type': `application/vnd.akamai.papirules.${ruleFormat}+json` }
@@ -423,8 +431,11 @@ export default class AkamaiClient {
         'AkamaiClient must be constructed with a non-empty notifyEmails array to call activate()',
       );
     }
-    const id = encodePathSegment(propertyId);
     const upperNetwork = network.toUpperCase();
+    if (!ACTIVATION_NETWORKS.includes(upperNetwork)) {
+      throw new Error(`network must be one of ${ACTIVATION_NETWORKS.join(', ')}, got: ${network}`);
+    }
+    const id = encodePathSegment(propertyId);
     this.log.info(`Activating property ${propertyId} v${version} to ${upperNetwork}`);
     const data = await this.#request('POST', `/papi/v1/properties/${id}/activations`, {
       params: { contractId, groupId },
@@ -508,6 +519,9 @@ export default class AkamaiClient {
   async latestActivation(propertyId, contractId, groupId, network) {
     requireText('network', network);
     const upperNetwork = network.toUpperCase();
+    if (!ACTIVATION_NETWORKS.includes(upperNetwork)) {
+      throw new Error(`network must be one of ${ACTIVATION_NETWORKS.join(', ')}, got: ${network}`);
+    }
     const activations = await this.listActivations(propertyId, contractId, groupId);
     const candidates = activations.filter(
       (a) => (a.network || '').toUpperCase() === upperNetwork,

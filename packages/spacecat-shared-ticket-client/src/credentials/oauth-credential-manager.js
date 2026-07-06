@@ -450,6 +450,7 @@ export default class OAuthCredentialManager {
         accessToken: refreshed.access_token,
         refreshToken: refreshed.refresh_token,
         expiresAt: Date.now() + refreshed.expires_in * 1000,
+        tokenRefreshedAt: new Date().toISOString(),
         requiresReauth: false,
       }),
     };

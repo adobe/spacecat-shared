@@ -831,10 +831,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     );
     expect(listError).to.equal(undefined);
-    // Roots: the baked `category:Running Shoes` + the just-created `category:Hydration`.
-    expect(listed.total).to.equal(2);
+    // Roots: the baked `category:Running Shoes` + the baked sibling `tag:Trail Running`
+    // (serenity-docs#26) + the just-created `category:Hydration`.
+    expect(listed.total).to.equal(3);
     expect(listed.items.map((t) => t.name)).to.have.members([
-      'category:Running Shoes', 'category:Hydration',
+      'category:Running Shoes', 'tag:Trail Running', 'category:Hydration',
     ]);
     // The stored/listed shape is an AIOTag (prompts_count), not a TreeNodeResponse (keyword_count).
     const created = listed.items.find((t) => t.name === 'category:Hydration');
@@ -868,11 +869,12 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         },
       },
     );
-    // roots: the baked `category:Running Shoes` + Alpha + Beta. The collided batch created
-    // neither a duplicate Alpha nor the co-batched Gamma (atomic), so Gamma is absent.
-    expect(all.total).to.equal(3);
+    // roots: the baked `category:Running Shoes` + the baked `tag:Trail Running` + Alpha + Beta. The
+    // collided batch created neither a duplicate Alpha nor the co-batched Gamma (atomic), so Gamma
+    // is absent.
+    expect(all.total).to.equal(4);
     expect(all.items.map((t) => t.name)).to.have.members([
-      'category:Running Shoes', 'category:Alpha', 'category:Beta',
+      'category:Running Shoes', 'tag:Trail Running', 'category:Alpha', 'category:Beta',
     ]);
 
     const { data: filtered } = await client.GET(
@@ -906,9 +908,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         },
       },
     );
-    // back to the baked baseline (the created `category:Ephemeral` is gone)
-    expect(listed.total).to.equal(1);
-    expect(listed.items.map((t) => t.name)).to.deep.equal(['category:Running Shoes']);
+    // back to the baked baseline (the created `category:Ephemeral` is gone): the two baked roots,
+    // the `category:` and the sibling `tag:` dimension (serenity-docs#26).
+    expect(listed.total).to.equal(2);
+    expect(listed.items.map((t) => t.name))
+      .to.deep.equal(['category:Running Shoes', 'tag:Trail Running']);
   });
 
   // Nested create: a child is created with a `parent_id` and reads back under that parent, with a
@@ -982,6 +986,25 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     ]);
   });
 
+  // The boot seed also bakes the sibling `tag:` dimension (serenity-docs#26): a root
+  // `tag:Trail Running` → bare child `Ultra`, coexisting with the `category:` tree in one
+  // collection, so a consumer reads both dimensions off the same project out of the box.
+  it('reads the baked tag: nested taxonomy from the boot seed', async () => {
+    const { data: children } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: SEED_IDS.tagRootTagId, search: '' },
+        },
+      },
+    );
+    expect(children.items.map((t) => t.name)).to.deep.equal(['Ultra']);
+    expect(children.items[0].path).to.deep.equal([
+      { id: SEED_IDS.tagRootTagId, name: 'tag:Trail Running' },
+    ]);
+  });
+
   // PATCH (aio-update-tag) re-parents / promotes a tag in place. Promoting the baked child `Trail`
   // to a root clears its parent_id, so it leaves the parent's children and appears among the roots.
   it('re-parents a tag via PATCH (promote a child to a root)', async () => {
@@ -1010,7 +1033,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         },
       },
     );
-    expect(rootsAfter.items.map((t) => t.name)).to.have.members(['category:Running Shoes', 'Trail']);
+    expect(rootsAfter.items.map((t) => t.name))
+      .to.have.members(['category:Running Shoes', 'tag:Trail Running', 'Trail']);
 
     const { data: childrenAfter } = await client.GET(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
@@ -1095,7 +1119,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         },
       },
     );
-    expect(rootsAfter.items.map((t) => t.name)).to.have.members(['category:Running Shoes', 'Trail']);
+    expect(rootsAfter.items.map((t) => t.name))
+      .to.have.members(['category:Running Shoes', 'tag:Trail Running', 'Trail']);
   });
 
   // PATCH also RENAMES in place: changing `name` (keeping the parent) is reflected in the 200
@@ -1221,8 +1246,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         },
       },
     );
-    // `category:Doomed` is gone; the baked root survives (delete targets only the id sent).
-    expect(tagsAfter.items.map((t) => t.name)).to.deep.equal(['category:Running Shoes']);
+    // `category:Doomed` is gone; the baked roots survive (delete targets only the id sent) — both
+    // the `category:` root and the sibling `tag:` root (serenity-docs#26).
+    expect(tagsAfter.items.map((t) => t.name))
+      .to.deep.equal(['category:Running Shoes', 'tag:Trail Running']);
 
     // The seeded prompt is untouched — the tag delete does not cascade to the prompts collection.
     const { data: prompts } = await client.POST(

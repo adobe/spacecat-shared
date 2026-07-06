@@ -114,6 +114,15 @@ describe('seeds', () => {
     expect(secondProject.settings.ai.language.name).to.equal('de');
     // distinct workspace ids (the DB enforces unique semrush_workspace_id per org/brand).
     expect(secondWs).to.not.equal(SEED_IDS.workspaceId);
+
+    // the second hierarchy carries BOTH open tag dimensions in its one tags collection: the
+    // `category:` flat list and the sibling `tag:` flat list (serenity-docs#26).
+    const secondTags = ops.tags
+      .list({ workspaceId: secondWs, projectId: SEED_IDS.secondProjectId })
+      .map((t) => t.name);
+    expect(secondTags).to.deep.equal([
+      'category:Laufschuhe', 'category:Trailrunning', 'tag:Laufschuhe', 'tag:Trailrunning',
+    ]);
   });
 
   it('reset restores a seed after mutation', () => {

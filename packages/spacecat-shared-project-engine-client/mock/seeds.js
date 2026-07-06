@@ -116,8 +116,9 @@ const DE_GEO_TARGET_ID = 2276; // Google geoTargetId (Germany)
  *   {@link createPromptMock} so the shape is checked
  * @property {Array<Schemas['model.AIOBenchmarkWithCounters']>} [benchmarks] build with
  *   {@link createBenchmarkMock} (the competitor + own-brand benchmarks the consumer syncs)
- * @property {Array<Schemas['model.AIOTag']>} [tags] standalone project tags (the `category:<name>`
- *   taxonomy); build with {@link createAIOTagMock} so the shape is checked
+ * @property {Array<Schemas['model.AIOTag']>} [tags] standalone project tags across all open tag
+ *   dimensions (`category:<name>` and the sibling `tag:<name>`, serenity-docs#26 — they share one
+ *   per-project collection); build with {@link createAIOTagMock} so the shape is checked
  * @property {Array<{ benchmarkId: string, urls: Array<Schemas['model.BrandURL']> }>} [brandUrls]
  *   brand URLs grouped by their benchmark id; build each url with {@link createBrandUrlMock}
  */

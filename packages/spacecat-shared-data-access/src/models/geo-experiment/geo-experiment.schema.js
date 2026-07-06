@@ -34,6 +34,10 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     type: 'string',
     validate: (value) => !value || hasText(value),
   })
+  .addAttribute('impactTaskId', {
+    type: 'string',
+    validate: (value) => !value || hasText(value),
+  })
   .addAttribute('type', {
     type: Object.values(GeoExperiment.TYPES),
     required: true,
@@ -78,6 +82,10 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     validate: (value) => !value || hasText(value),
   })
   .addAttribute('metadata', {
+    type: 'any',
+    validate: (value) => !value || isObject(value),
+  })
+  .addAttribute('insights', {
     type: 'any',
     validate: (value) => !value || isObject(value),
   })

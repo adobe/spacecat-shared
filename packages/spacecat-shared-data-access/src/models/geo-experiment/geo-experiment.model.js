@@ -35,6 +35,8 @@ class GeoExperiment extends BaseModel {
     DEPLOYMENT_DONE: 'deployment_done',
     POST_ANALYSIS_STARTED: 'post_analysis_started',
     POST_ANALYSIS_DONE: 'post_analysis_done',
+    IMPACT_MEASUREMENT_STARTED: 'impact_measurement_started',
+    IMPACT_MEASUREMENT_DONE: 'impact_measurement_done',
   };
 
   /**

@@ -31,6 +31,7 @@ describe('GeoExperimentModel', () => {
     opportunityId: '3b7de19c-4bf8-4687-a337-b9f4a5d56f8e',
     preScheduleId: 'drs-pre-schedule-id',
     postScheduleId: 'drs-post-schedule-id',
+    impactTaskId: 'mystique-impact-task-id',
     type: GeoExperiment.TYPES.ONSITE_OPPORTUNITY_DEPLOYMENT,
     status: GeoExperiment.STATUSES.COMPLETED,
     phase: GeoExperiment.PHASES.POST_ANALYSIS_DONE,
@@ -39,6 +40,7 @@ describe('GeoExperimentModel', () => {
     promptsCount: 5,
     promptsLocation: 'geo-experiments/site-123/exp-456-prompts.json',
     metadata: { deployType: 'edge' },
+    insights: { version: '1', analyses: [] },
     error: { message: 'none' },
     updatedBy: 'spacecat-api-service',
   };
@@ -67,6 +69,12 @@ describe('GeoExperimentModel', () => {
     expect(instance.getPostScheduleId()).to.equal('drs-post-schedule-id');
     instance.setPostScheduleId('post-2');
     expect(instance.getPostScheduleId()).to.equal('post-2');
+  });
+
+  it('gets and sets impactTaskId', () => {
+    expect(instance.getImpactTaskId()).to.equal('mystique-impact-task-id');
+    instance.setImpactTaskId('mystique-impact-task-id-2');
+    expect(instance.getImpactTaskId()).to.equal('mystique-impact-task-id-2');
   });
 
   it('exposes SCHEDULE_CONFIG_ENV_VAR constant', () => {
@@ -114,6 +122,15 @@ describe('GeoExperimentModel', () => {
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_DONE);
     instance.setPhase(GeoExperiment.PHASES.POST_ANALYSIS_STARTED);
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_STARTED);
+    instance.setPhase(GeoExperiment.PHASES.IMPACT_MEASUREMENT_STARTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.IMPACT_MEASUREMENT_STARTED);
+    instance.setPhase(GeoExperiment.PHASES.IMPACT_MEASUREMENT_DONE);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.IMPACT_MEASUREMENT_DONE);
+  });
+
+  it('exposes the impact-measurement phases', () => {
+    expect(GeoExperiment.PHASES.IMPACT_MEASUREMENT_STARTED).to.equal('impact_measurement_started');
+    expect(GeoExperiment.PHASES.IMPACT_MEASUREMENT_DONE).to.equal('impact_measurement_done');
   });
 
   it('gets and sets promptsLocation', () => {
@@ -159,6 +176,17 @@ describe('GeoExperimentModel', () => {
     instance.setError({ message: 'failed' });
     expect(instance.getMetadata()).to.deep.equal({ attempt: 2 });
     expect(instance.getError()).to.deep.equal({ message: 'failed' });
+  });
+
+  it('gets and sets insights', () => {
+    expect(instance.getInsights()).to.deep.equal({ version: '1', analyses: [] });
+    const insights = {
+      version: '1',
+      generatedAt: '2026-06-25T10:00:00.000Z',
+      analyses: [{ kind: 'citation_rate' }],
+    };
+    instance.setInsights(insights);
+    expect(instance.getInsights()).to.deep.equal(insights);
   });
 
   it('gets and sets updatedBy', () => {

@@ -156,4 +156,48 @@ describe('BrandSemrushProject Schema', () => {
       expect(attributes.brandId.validate('123')).to.be.false;
     });
   });
+
+  describe('siteId attribute', () => {
+    it('is optional with a UUID validator', () => {
+      const attr = attributes.siteId;
+      expect(attr).to.exist;
+      expect(attr.required).to.not.be.true;
+      expect(attr.validate).to.be.a('function');
+    });
+
+    it('accepts a valid UUID', () => {
+      expect(attributes.siteId.validate('c3e1a4b6-2a8e-4d61-8b03-7d0a1d6b3201')).to.be.true;
+    });
+
+    it('rejects non-UUID strings', () => {
+      expect(attributes.siteId.validate('not-a-uuid')).to.be.false;
+    });
+
+    it('accepts nullish values (nullable)', () => {
+      expect(attributes.siteId.validate(null)).to.be.true;
+      expect(attributes.siteId.validate(undefined)).to.be.true;
+    });
+  });
+
+  describe('deletedAt attribute', () => {
+    it('is optional with an ISO-date validator', () => {
+      const attr = attributes.deletedAt;
+      expect(attr).to.exist;
+      expect(attr.required).to.not.be.true;
+      expect(attr.validate).to.be.a('function');
+    });
+
+    it('accepts a valid ISO date string', () => {
+      expect(attributes.deletedAt.validate('2026-07-02T00:00:00.000Z')).to.be.true;
+    });
+
+    it('rejects non-ISO-date strings', () => {
+      expect(attributes.deletedAt.validate('not-a-date')).to.be.false;
+    });
+
+    it('accepts nullish values (nullable — NULL means live)', () => {
+      expect(attributes.deletedAt.validate(null)).to.be.true;
+      expect(attributes.deletedAt.validate(undefined)).to.be.true;
+    });
+  });
 });

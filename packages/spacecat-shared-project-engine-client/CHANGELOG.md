@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.8.0...@adobe/spacecat-shared-project-engine-client-v1.9.0) (2026-07-06)
+
+### Features
+
+* **project-engine-client:** re-vendor Semrush swagger; retire CR9/CR10, slim CR16 ([#1772](https://github.com/adobe/spacecat-shared/issues/1772)) ([8e63f1a](https://github.com/adobe/spacecat-shared/commit/8e63f1af63339a9b8b6cb5c7fd65481098956326))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.7.1...@adobe/spacecat-shared-project-engine-client-v1.8.0) (2026-07-03)
 
 ### Features

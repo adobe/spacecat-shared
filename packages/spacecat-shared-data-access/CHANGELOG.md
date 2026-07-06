@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.1.0...@adobe/spacecat-shared-data-access-v4.1.1) (2026-07-06)
+
+### Bug Fixes
+
+* add new phases to IVE states ([#1768](https://github.com/adobe/spacecat-shared/issues/1768)) ([91c5182](https://github.com/adobe/spacecat-shared/commit/91c5182cfbba5d9d9fcb7a53e45598bbccf93e19))
+
 ## [@adobe/spacecat-shared-data-access-v4.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.0.0...@adobe/spacecat-shared-data-access-v4.1.0) (2026-07-06)
 
 ### Features

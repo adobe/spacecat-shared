@@ -31,7 +31,11 @@
  *   ALONE (shared with `POST /aio/prompts/tagged`, which only knows names), so two same-named
  *   children under DIFFERENT parents still collapse to one id — a documented mock limitation
  *   (reused, not a collision) while the live prompt→child-tag reference contract stays unverified
- *   (serenity-docs#21 §7-Q1).
+ *   (serenity-docs#21 §7-Q1). PENDING LIVE-PROBE CONFIRMATION (serenity-docs#26 §9 G1): whether
+ *   real Semrush keys a child tag by `(parent_id, name)` or by `name` alone is the open G1
+ *   question; the mock keeps the `name`-alone derivation AS-IS until that probe lands (see
+ *   `mock/tag-id.js` and `mock/stateful.js` `ops.tags.upsertMany` — the two other spots this same
+ *   limitation lives).
  * - GET (`aio-get-project-tags`): returns the project's stored tags as `AIOTagsListResponse`
  *   `{ items, page, total }`, so a 0-prompt category created via POST reads back. The spec marks
  *   `parent_id` + `search` as required query params (request validation 400s a request missing

@@ -34,6 +34,15 @@ import { createHash } from 'node:crypto';
  * rename (a renamed tag keeps its stored id, so `tagId(newName)` no longer matches) — id stability
  * across rename is explicitly out of scope for #1760.
  *
+ * PENDING LIVE-PROBE CONFIRMATION (serenity-docs#26 §9 G1): the id is a function of `name` ALONE
+ * (no `parent_id` salt), so two same-named children under DIFFERENT roots collapse to ONE id.
+ * Whether real Semrush keys a child tag by `(parent_id, name)` or by `name` alone is UNVERIFIED.
+ * The mock deliberately keeps the `name`-alone derivation until the G1 probe answers it: "fixing"
+ * it now would bet on the unconfirmed answer and make the mock diverge from reality in exactly the
+ * way that would hide the bug the probe exists to catch. The same limitation lives in two other
+ * spots to fix together once G1 lands — `mock/stateful.js` `ops.tags.upsertMany` and the `aio/tags`
+ * route header.
+ *
  * @param {string} name the tag name
  * @returns {string} the deterministic, URL-safe id (`tag-<first 16 hex of sha256(name)>`)
  */

@@ -247,6 +247,10 @@ export function createStatefulOps(store) {
        * collision every tag is persisted. Because the id is derived from the name ALONE, a
        * same-name tag under a DIFFERENT parent shares the id and collapses onto the stored row
        * (not a collision) — the documented 1-level-tree limitation (see the tags.js header).
+       * PENDING LIVE-PROBE CONFIRMATION (serenity-docs#26 §9 G1): whether real Semrush keys a child
+       * tag by `(parent_id, name)` or by `name` alone is UNVERIFIED, so this collapse is left AS-IS
+       * (not "fixed" to salt by parent) until the G1 probe answers it — see `mock/tag-id.js` and
+       * the `aio/tags` route header for the two other spots this same limitation lives.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<Entity>} tags each carrying its deterministic `id` (+ optional `parent_id`)
        * @returns {{ tags: Entity[], collision: boolean }} `collision: true` ⇒ nothing was written

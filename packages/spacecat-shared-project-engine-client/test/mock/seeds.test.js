@@ -77,16 +77,26 @@ describe('seeds', () => {
     const [assigned] = ops.ai_models.list({ workspaceId, projectId });
     expect(assigned.model).to.include({ key: 'search-gpt', name: 'ChatGPT' });
 
-    // the seeded prompt carries dimension:value tags; the project has a 1-level NESTED category
-    // taxonomy — a root category + a bare child linked by parent_id (#1758 / serenity-docs#21).
+    // the seeded prompt carries dimension:value tags; the project has TWO sibling 1-level NESTED
+    // taxonomies in one tags collection — the `category:` dimension (#1758 / serenity-docs#21) and
+    // the sibling `tag:` dimension (serenity-docs#26) — each a root + a bare child via parent_id.
     const [prompt] = ops.prompts.list({ workspaceId, projectId });
     expect(prompt.tags.map((t) => t.name))
       .to.deep.equal(['topic:Running Shoes', 'source:blog', 'intent:commercial', 'type:branded']);
-    const categories = ops.tags.list({ workspaceId, projectId });
-    expect(categories.map((t) => t.name)).to.deep.equal(['category:Running Shoes', 'Trail']);
-    const [root, child] = categories;
-    expect(root).to.not.have.property('parent_id'); // a root carries no parent
-    expect(child).to.include({ name: 'Trail', parent_id: SEED_IDS.categoryTagId });
+    const tags = ops.tags.list({ workspaceId, projectId });
+    expect(tags.map((t) => t.name))
+      .to.deep.equal(['category:Running Shoes', 'Trail', 'tag:Trail Running', 'Ultra']);
+    const [catRoot, catChild, tagRoot, tagChild] = tags;
+    // category: dimension — root has no parent, child points at the root.
+    expect(catRoot).to.not.have.property('parent_id');
+    expect(catChild).to.include({ name: 'Trail', parent_id: SEED_IDS.categoryTagId });
+    // tag: dimension — same shape, a distinct root/child pair (distinct child name so the
+    // name-alone-derived id doesn't collapse onto the category child).
+    expect(tagRoot).to.include({ id: SEED_IDS.tagRootTagId, name: 'tag:Trail Running' });
+    expect(tagRoot).to.not.have.property('parent_id');
+    expect(tagChild).to.include({
+      id: SEED_IDS.tagChildTagId, name: 'Ultra', parent_id: SEED_IDS.tagRootTagId,
+    });
   });
 
   it('two-hierarchies is a superset with a second, independent live market (DE/de)', () => {

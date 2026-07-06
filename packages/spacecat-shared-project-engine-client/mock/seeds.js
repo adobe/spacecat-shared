@@ -72,6 +72,17 @@ const CATEGORY_ROOT_NAME = 'category:Running Shoes';
 const CATEGORY_CHILD_NAME = 'Trail';
 const CATEGORY_TAG_ID = tagId(CATEGORY_ROOT_NAME); // root category
 const CHILD_TAG_ID = tagId(CATEGORY_CHILD_NAME); // bare child under the root
+// The `tag:` open dimension (serenity-docs#26): a sibling of `category:` with the SAME
+// 1-level-tree shape — a root `tag:<name>` owning one bare child linked by `parent_id` — living in
+// the same per-project `tags` collection (dimensions coexist; the prefix is all that distinguishes
+// them). The child name is deliberately DISTINCT from the category child (`Trail`): the mock still
+// derives a tag id from `tagId(name)` ALONE (no parent salt — a limitation pending the
+// serenity-docs#26 §9 G1 live probe, see tag-id.js), so two same-named children under different
+// roots would collapse to ONE stored id; keeping every child name unique sidesteps that.
+const TAG_ROOT_NAME = 'tag:Trail Running';
+const TAG_CHILD_NAME = 'Ultra';
+const TAG_ROOT_TAG_ID = tagId(TAG_ROOT_NAME); // root tag: dimension
+const TAG_CHILD_TAG_ID = tagId(TAG_CHILD_NAME); // bare child under the tag: root
 
 // --- Hierarchy 2 — a second, fully independent mock-wired org (unique `semrush_workspace_id`s),
 // present only in the `two-hierarchies` seed. A German market so the two read distinctly. These
@@ -170,13 +181,15 @@ const aioTags = (names) => names.map((name) => createAIOTagMock({ id: tagId(name
  * own-brand benchmark + URL, and standalone `category:` tags) under a CHILD workspace, via the
  * public {@link buildSeed} recipe. Both seeded hierarchies go through here so they stay identical
  * in shape.
- * `categoryTags` is passed pre-built (not as names) so a hierarchy can seed a flat list (via
- * {@link aioTags}) OR a 1-level nested tree (a root + a `parent_id`-linked child).
+ * `categoryTags` and `tagTags` are each passed pre-built (not as names) so a hierarchy can seed a
+ * flat list (via {@link aioTags}) OR a 1-level nested tree (a root + a `parent_id`-linked child).
+ * They are the two open tag dimensions (`category:` / `tag:`, serenity-docs#26) and share the one
+ * per-project `tags` collection, so they are concatenated into it here.
  * @param {{ childWorkspaceId: string, projectId: string, aiModelAssignmentId: string, name: string,
  *   domain: string, brandName: string, languageId: string, countryCode: string, locationId: number,
  *   locationName: string, modelKey: string, promptId: string, promptName: string,
  *   promptTagNames: string[], benchmarkId: string, brandUrlId: string,
- *   categoryTags: Array<Schemas['model.AIOTag']> }} cfg
+ *   categoryTags: Array<Schemas['model.AIOTag']>, tagTags: Array<Schemas['model.AIOTag']> }} cfg
  * @returns {Snapshot}
  */
 const peHierarchy = (cfg) => buildSeed({
@@ -208,7 +221,7 @@ const peHierarchy = (cfg) => buildSeed({
       domain: cfg.domain,
       main_brand: true,
     })],
-    tags: cfg.categoryTags,
+    tags: [...cfg.categoryTags, ...cfg.tagTags],
     brandUrls: [{
       benchmarkId: cfg.benchmarkId,
       urls: [createBrandUrlMock({ id: cfg.brandUrlId, url: `https://${cfg.domain}/about`, type: 'own' })],
@@ -248,6 +261,12 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
     createAIOTagMock({ id: CATEGORY_TAG_ID, name: CATEGORY_ROOT_NAME }),
     createAIOTagMock({ id: CHILD_TAG_ID, name: CATEGORY_CHILD_NAME, parent_id: CATEGORY_TAG_ID }),
   ],
+  // The sibling `tag:` dimension (serenity-docs#26): the same nested shape (root + bare child) in
+  // the same collection, so a consumer reads both dimensions off one project.
+  tagTags: [
+    createAIOTagMock({ id: TAG_ROOT_TAG_ID, name: TAG_ROOT_NAME }),
+    createAIOTagMock({ id: TAG_CHILD_TAG_ID, name: TAG_CHILD_NAME, parent_id: TAG_ROOT_TAG_ID }),
+  ],
 }));
 
 /**
@@ -277,6 +296,7 @@ export const TWO_HIERARCHIES = Object.freeze({
     benchmarkId: 'e7f8a9b0-c1d2-4e3f-8a4b-6c7d8e9f0112',
     brandUrlId: 'f8a9b0c1-d2e3-4f4a-8b5c-7d8e9f011223',
     categoryTags: aioTags(['category:Laufschuhe', 'category:Trailrunning']),
+    tagTags: aioTags(['tag:Laufschuhe', 'tag:Trailrunning']),
   }),
 });
 
@@ -308,6 +328,9 @@ export const SEED_IDS = Object.freeze({
   // The H1 project's nested category taxonomy: the root category + its bare child (#1758).
   categoryTagId: CATEGORY_TAG_ID,
   childTagId: CHILD_TAG_ID,
+  // The H1 project's sibling `tag:` taxonomy: the root tag + its bare child (serenity-docs#26).
+  tagRootTagId: TAG_ROOT_TAG_ID,
+  tagChildTagId: TAG_CHILD_TAG_ID,
   // Hierarchy 2 (present only in `two-hierarchies`).
   secondParentWorkspaceId: PARENT_WORKSPACE_ID_2,
   secondWorkspaceId: CHILD_WORKSPACE_ID_2,

@@ -265,6 +265,18 @@ describe('factories — live-shaped entities', () => {
     expect(child.path).to.deep.equal([{ id: 'tag-root', name: 'category:Running' }]);
   });
 
+  it('createAIOTagMock is dimension-agnostic — builds a tag: root/child like a category: one', () => {
+    // `category:` and `tag:` are sibling open dimensions with the same shape (serenity-docs#26):
+    // the factory only stores name/parent_id, so the dimension lives entirely in the name prefix.
+    const root = createAIOTagMock({ id: 'tag-troot', name: 'tag:Trail Running' });
+    expect(root).to.deep.equal({
+      id: 'tag-troot', name: 'tag:Trail Running', children_count: 0, prompts_count: 0,
+    });
+    expect(root).to.not.have.property('parent_id'); // a root carries no parent, in either dimension
+    const child = createAIOTagMock({ id: 'tag-tchild', name: 'Ultra', parent_id: 'tag-troot' });
+    expect(child).to.include({ id: 'tag-tchild', name: 'Ultra', parent_id: 'tag-troot' });
+  });
+
   it('createAIOTagLeafMock yields an AIOTagLeaf { id, name } (no parent_id, matching live)', () => {
     const leaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category:Running' });
     expect(leaf).to.deep.equal({ id: 'tag-root', name: 'category:Running' });

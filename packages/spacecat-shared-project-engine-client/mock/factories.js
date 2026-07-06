@@ -344,14 +344,19 @@ export const createTagNodeMock = (overrides = {}) => ({
  * A stored/listed project tag (`AIOTag`) — the `GET /aio/tags` (`AIOTagsListResponse`) item and
  * the shape the mock persists in the per-project `tags` collection.
  *
- * The tag taxonomy is a 1-level tree (see serenity-docs#21): a **root category** is a top-level
- * node named `category:<name>` with no `parent_id`; a **child** (sub-category / migrated topic) is
- * a bare `<name>` (no prefix) whose `parent_id` is its root's id. Because roots legitimately have
- * no parent, `parent_id` is left OUT of the defaults (optional, supplied via override on a child) —
- * a plain `createAIOTagMock()` is a root. `children_count` and `path` are DERIVED at read time by
- * the `GET /aio/tags` handler from the stored collection (count of children; the ancestor
- * breadcrumb), never stored — so they stay consistent as children are added; the
- * `children_count: 0` default is only the empty baseline a childless root carries in the store.
+ * The tag taxonomy is a 1-level tree (see serenity-docs#21): a **root** is a top-level node named
+ * `<dimension>:<name>` with no `parent_id`; a **child** (sub-category / migrated topic) is a bare
+ * `<name>` (no prefix) whose `parent_id` is its root's id. The `<dimension>:` prefix is an OPEN
+ * set: `category:` (the Categories surface) and `tag:` (serenity-docs#26) are sibling dimensions
+ * with the SAME shape — a `tag:<name>` root owns bare children like a `category:<name>` root —
+ * NOT sub-types of one another. This factory is dimension-agnostic (it only stores name/parent_id),
+ * so it builds a root or child in either dimension; the dimension lives entirely in the `name`
+ * prefix. Because roots legitimately have no parent, `parent_id` is left OUT of the defaults
+ * (optional, supplied via override on a child) — a plain `createAIOTagMock()` is a root.
+ * `children_count` and `path` are DERIVED at read time by the `GET /aio/tags` handler from the
+ * stored collection (count of children; the ancestor breadcrumb), never stored — so they stay
+ * consistent as children are added; the `children_count: 0` default is only the empty baseline a
+ * childless root carries in the store.
  *
  * Distinct from {@link createTagNodeMock}: the create path returns a `TreeNodeResponse`
  * (`keyword_count`) while the list/store shape is an `AIOTag` (`prompts_count`) — two genuinely

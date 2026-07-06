@@ -47,16 +47,10 @@ info:
 #      OPTIONS /v2 -> allow: GET, OPTIONS /v1 -> 404). Relocate the path to v2 so the typed
 #      client + mock match the live API. The consumer (spacecat-api-service rest-transport
 #      `getInitStatus`) must call /v2 too. Remove if Semrush adds the v1 alias upstream.
-# CR9  Add `primary_url` to model.AISettings. The live `settings.ai` returns `primary_url` (the
-#      project's own domain) on every project — verified 2026-06-25 against the test workspace
-#      (`GET .../projects/{id}` and the `POST .../projects` create response) — but the vendored
-#      swagger's AISettings schema omits it, so a typed fixture/handler that populates it fails
-#      tsc. Add it (string) so the type, the factory, and the live API agree. Remove if Semrush
-#      adds the field upstream.
-# CR10 Add `primary_url` + `root_domain` to model.AIOBenchmarkWithCounters. The live benchmarks
-#      list returns both alongside the already-present `project_id` (verified 2026-06-25 against
-#      prod) — same pattern as CR9 — but the vendored swagger omits them. Add them (string).
-#      Remove if Semrush adds the fields upstream.
+# CR9  RETIRED 2026-07-06: the swagger refresh added `primary_url` to model.AISettings upstream,
+#      so this correction became redundant (the freshness gate fails a no-op action). Dropped.
+# CR10 RETIRED 2026-07-06: the swagger refresh added `primary_url` + `root_domain` to
+#      model.AIOBenchmarkWithCounters upstream, so this correction became redundant. Dropped.
 # CR11 aio-update-tag (PATCH /v2/.../aio/tags/{tag_id}) responds 200, not 201. The vendored swagger
 #      declares the success response under 201; the live API responds 200 OK (verified 2026-07-01
 #      against prod `adobe-hackathon.semrush.com`, workspace bb0f4e1c-… child, PATCH re-parent+rename
@@ -81,15 +75,16 @@ info:
 #      `parent_id: null` to promote a child tag to a root (verified 2026-07-02 against prod). The
 #      vendored swagger types it as a plain string, so request validation rejected the literal
 #      null. Remove if Semrush documents the nullability upstream.
-# CR16 Add GET /v1/url/resolve — the URL-canonicalization endpoint the live Semrush frontend calls
-#      before writing a brand URL, absent from the vendored spec. Live: GET
-#      /v1/url/resolve?primary_url=<raw> -> 200 { domain, primary_url, is_valid } (verified
-#      2026-07-03 against prod adobe-hackathon.semrush.com — serenity-docs#25 §0). `primary_url` is
-#      the canonical brand-URL value (scheme + `www.` stripped, subdomain + path PRESERVED);
-#      `domain` is the registrable apex (subdomain stripped too); `is_valid` is false — with EMPTY
-#      `domain`/`primary_url` strings, still HTTP 200 — for unresolvable/garbage input. Consumers
-#      resolve a raw URL through this before writing it as a brand URL so the stored value matches
-#      the canonical benchmark Semrush already holds. Remove when Semrush ships the path upstream.
+# CR16 Mark model.ResolveURLResponse's `domain` + `primary_url` + `is_valid` `required`. The
+#      swagger refresh (2026-07-06) shipped GET /v1/url/resolve and its response schema
+#      (model.ResolveURLResponse) upstream, so the path-add + custom-schema this correction
+#      originally carried are gone — the endpoint is now vendored natively. What upstream still
+#      omits is the `required` array: all three fields are ALWAYS present (even the is_valid:false
+#      case returns empty `domain`/`primary_url` strings rather than omitting them — verified
+#      2026-07-03 against prod, serenity-docs#25 §0), and the mock's createUrlResolveMock always
+#      populates them, so we mark them required (the same faithful-`required` philosophy as CR5).
+#      The query param is already `required` upstream, and auth is handled by CR2's global
+#      Auth-Data-Jwt strip + imsBearer. Remove if Semrush marks the fields required upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -306,30 +301,9 @@ actions:
     description: "CR8: remove the stale /v1 init_status path (404s live)"
     remove: true
 
-  # ── CR9: AISettings carries primary_url (live), absent from the vendored swagger ──
-  # Live: GET/POST projects → settings.ai.primary_url = the project's own domain. Deep-merge adds
-  # the property alongside the existing AISettings properties (does not clobber them).
-  - target: "$.components.schemas['model.AISettings']"
-    description: "CR9: add primary_url to AISettings (live returns it; vendored swagger omits it)"
-    update:
-      properties:
-        primary_url: { type: string }
-
-  # ── CR10: AIOBenchmarkWithCounters carries primary_url + root_domain (live), absent from swagger ──
-  # Live: GET /v1/.../ai_models/benchmarks → each aio_benchmark carries primary_url + root_domain
-  # alongside the already-present project_id. Verified live 2026-06-25 against a real project's
-  # main-brand + competitor benchmarks: both equalled the benchmark's domain (the fixtures were bare
-  # domains; the mock mirrors the domain and does NOT extract a registrable root — a known
-  # simplification, faithful for bare-domain rows). primary_url and root_domain are absent from the
-  # vendored swagger (the CR9 pattern). Deep-merge adds the
-  # properties alongside the existing ones. Kept optional (like CR9), not required: the factory
-  # always populates them, but a sparse stored row stays spec-valid.
-  - target: "$.components.schemas['model.AIOBenchmarkWithCounters']"
-    description: "CR10: add primary_url + root_domain to AIOBenchmarkWithCounters (live returns them; vendored swagger omits them)"
-    update:
-      properties:
-        primary_url: { type: string }
-        root_domain: { type: string }
+  # CR9 + CR10 RETIRED 2026-07-06 — the swagger refresh added their fields upstream
+  # (model.AISettings.primary_url and model.AIOBenchmarkWithCounters.primary_url + root_domain),
+  # so both actions became redundant no-ops that the freshness gate rejects. See the header.
 
   # ── CR11: aio-update-tag success is 200, not 201 ─────────────────────────
   # Live: PATCH /v2/.../aio/tags/{tag_id} -> 200 TreeNodeResponse (verified 2026-07-01 against prod).
@@ -425,62 +399,15 @@ actions:
       properties:
         parent_id: { type: string, nullable: true }
 
-  # ── CR16: Add GET /v1/url/resolve ────────────────────────────────────────
-  # Live: 200 -> { domain, primary_url, is_valid }. Verified 2026-07-03 against prod
-  # (serenity-docs#25 §0). All three fields are ALWAYS present — even the is_valid:false case returns
-  # empty `domain`/`primary_url` strings rather than omitting them — so all three are marked required
-  # (the same faithful-`required` philosophy as CR5: the mock's handler always populates them and the
-  # live API always returns them). The query param is `required` + `minLength: 1` to document the live
-  # contract (missing OR empty → 400). Counterfact's request validation enforces the `required`
-  # presence (a MISSING param 400s, as with the brand-topics params) but not the string `minLength`,
-  # so an EMPTY value falls through to the handler, which returns 200 is_valid:false — the one benign
-  # mock divergence from live's empty-400, documented on the route handler.
-  - target: "$.components.schemas"
-    description: "CR16: add the UrlResolveResponse schema"
+  # ── CR16: model.ResolveURLResponse identity fields are required ───────────
+  # GET /v1/url/resolve and its response schema (model.ResolveURLResponse) are now vendored natively
+  # (2026-07-06 swagger refresh), so this correction no longer adds the path or the schema — it only
+  # marks the three always-present fields `required`. Live: 200 -> { domain, primary_url, is_valid }.
+  # Verified 2026-07-03 against prod (serenity-docs#25 §0). All three are ALWAYS present — even the
+  # is_valid:false case returns empty `domain`/`primary_url` strings rather than omitting them — and
+  # the mock's createUrlResolveMock always populates them, so we require them (the CR5 philosophy).
+  # The query param is already `required` upstream; auth is handled by CR2's global strip + imsBearer.
+  - target: "$.components.schemas['model.ResolveURLResponse']"
+    description: "CR16: model.ResolveURLResponse always carries domain + primary_url + is_valid"
     update:
-      "model.UrlResolveResponse":
-        type: object
-        required: [domain, primary_url, is_valid]
-        properties:
-          domain: { type: string }
-          primary_url: { type: string }
-          is_valid: { type: boolean }
-
-  - target: "$.paths"
-    description: "CR16: add the GET /v1/url/resolve path"
-    update:
-      "/v1/url/resolve":
-        get:
-          summary: "Resolve a URL to its canonical brand-URL form"
-          # Folded scalar (>-): authored multi-line for review, emitted as one line.
-          description: >-
-            Canonicalize a raw URL to the form Semrush stores as a brand URL. `primary_url` strips
-            the scheme and a leading `www.` but preserves any other subdomain and the path;
-            `domain` is the registrable apex (subdomain stripped too). For unresolvable or garbage
-            input `is_valid` is false and `domain`/`primary_url` are empty strings — still HTTP 200,
-            so consumers MUST check `is_valid` and never write the empty value.
-          operationId: "resolve-url"
-          tags: ["AIO"]
-          parameters:
-            - { name: primary_url, in: query, required: true, schema: { type: string, minLength: 1 } }
-          responses:
-            "200":
-              description: "OK"
-              content:
-                application/json:
-                  schema:
-                    $ref: "#/components/schemas/model.UrlResolveResponse"
-            "400":
-              description: "Bad Request (missing or empty primary_url)"
-              content:
-                application/json:
-                  schema:
-                    $ref: "#/components/schemas/http_server.BasicResponse"
-            "401":
-              description: "Unauthorized"
-              content:
-                application/json:
-                  schema:
-                    $ref: "#/components/schemas/http_server.BasicResponse"
-          security:
-            - imsBearer: []
+      required: [domain, primary_url, is_valid]

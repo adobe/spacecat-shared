@@ -1644,6 +1644,30 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(after.brand_urls.map((u) => u.id)).to.not.include(created.ids[0]);
   });
 
+  it('rejects a non-https brand URL with the live 400 (https:// required, #25)', async () => {
+    const { benchmarkId } = SEED_IDS;
+    const BRAND_URLS = '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls';
+    const path = { id: SEED_WORKSPACE, project_id: SEED_PROJECT, benchmark_id: benchmarkId };
+
+    // Scheme-less (the resolve `primary_url` form) → 400 on the go-validator `url` tag, exactly
+    // as prod: the value cannot be written as a brand URL. Guards the mock against going green
+    // over a write the live gateway rejects.
+    const { response, error } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ url: 'lovesac.com', type: 'website' }],
+    });
+    expect(response.status).to.equal(400);
+    expect(error.message).to.match(/failed on the 'url' tag/);
+
+    // A valid but http:// URL → 400 on `startswith`.
+    const { response: httpRes, error: httpErr } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ url: 'http://lovesac.com', type: 'website' }],
+    });
+    expect(httpRes.status).to.equal(400);
+    expect(httpErr.message).to.match(/failed on the 'startswith' tag/);
+  });
+
   it('publishProject + getInitStatus respond with the intended mock contract', async () => {
     const { response: pubRes } = await client.POST(
       '/v1/workspaces/{id}/projects/{project_id}/publish',

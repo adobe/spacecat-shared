@@ -34,6 +34,17 @@ export function GET($) {
 export function POST($) {
   const { path, body, context } = $;
   const entries = Array.isArray(body) ? body : [];
+  // Live requires every brand URL to be a literal https:// value (write-probed prod, #25): a
+  // scheme-less value 400s on the go-validator `url` tag, a non-https URL on `startswith`. Enforce
+  // it here so an IT can't go green over a write the live gateway would reject.
+  for (const entry of entries) {
+    const tag = context.brandUrlHttpsTag(entry?.url);
+    if (tag) {
+      return $.response[400].json(context.factories.createBasicResponseMock({
+        message: `Key: 'BrandURLRequest.URL' Error:Field validation for 'URL' failed on the '${tag}' tag`,
+      }));
+    }
+  }
   const created = context.ops.brand_urls.createMany(
     { workspaceId: path.id, projectId: path.project_id, benchmarkId: path.benchmark_id },
     entries.map((u) => context.factories.createBrandUrlMock({

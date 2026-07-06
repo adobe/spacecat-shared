@@ -28,6 +28,25 @@ function requireText(name, value) {
   }
 }
 
+// Every property-scoped PAPI call needs the same (propertyId, contractId,
+// groupId) triple present — validate them in one place.
+function requirePropertyRef(propertyId, contractId, groupId) {
+  requireText('propertyId', propertyId);
+  requireText('contractId', contractId);
+  requireText('groupId', groupId);
+}
+
+// Validates a network argument against PAPI's two networks and returns the
+// canonical upper-cased form.
+function assertNetwork(network) {
+  requireText('network', network);
+  const upper = network.toUpperCase();
+  if (!ACTIVATION_NETWORKS.includes(upper)) {
+    throw new Error(`network must be one of ${ACTIVATION_NETWORKS.join(', ')}, got: ${network}`);
+  }
+  return upper;
+}
+
 // Path segments are user/caller-supplied IDs interpolated directly into PAPI
 // URLs — encode them so a stray "/", "?", "&", or "#" can't redirect the
 // request to an unintended endpoint instead of failing loudly.
@@ -288,9 +307,7 @@ export default class AkamaiClient {
    * @returns {Promise<number>} the latest property version
    */
   async getLatestVersion(propertyId, contractId, groupId) {
-    requireText('propertyId', propertyId);
-    requireText('contractId', contractId);
-    requireText('groupId', groupId);
+    requirePropertyRef(propertyId, contractId, groupId);
     const id = encodePathSegment(propertyId);
     this.log.info(`Fetching latest version for property ${propertyId}`);
     const data = await this.#request('GET', `/papi/v1/properties/${id}/versions/latest`, {
@@ -311,9 +328,7 @@ export default class AkamaiClient {
    * @returns {Promise<{ruleTree: object, ruleFormat: string|undefined}>}
    */
   async getRuleTree(propertyId, version, contractId, groupId) {
-    requireText('propertyId', propertyId);
-    requireText('contractId', contractId);
-    requireText('groupId', groupId);
+    requirePropertyRef(propertyId, contractId, groupId);
     if (!Number.isInteger(version)) {
       throw new Error('version must be an integer');
     }
@@ -335,9 +350,7 @@ export default class AkamaiClient {
    * @returns {Promise<number>} the newly created version number
    */
   async createVersion(propertyId, baseVersion, contractId, groupId) {
-    requireText('propertyId', propertyId);
-    requireText('contractId', contractId);
-    requireText('groupId', groupId);
+    requirePropertyRef(propertyId, contractId, groupId);
     if (!Number.isInteger(baseVersion)) {
       throw new Error('baseVersion must be an integer');
     }
@@ -368,9 +381,7 @@ export default class AkamaiClient {
    * @returns {Promise<object>}
    */
   async updateRuleTree(propertyId, version, contractId, groupId, ruleTree, ruleFormat) {
-    requireText('propertyId', propertyId);
-    requireText('contractId', contractId);
-    requireText('groupId', groupId);
+    requirePropertyRef(propertyId, contractId, groupId);
     if (!Number.isInteger(version)) {
       throw new Error('version must be an integer');
     }
@@ -419,10 +430,8 @@ export default class AkamaiClient {
     network,
     note = 'Activated via spacecat-shared-akamai-client',
   ) {
-    requireText('propertyId', propertyId);
-    requireText('contractId', contractId);
-    requireText('groupId', groupId);
-    requireText('network', network);
+    requirePropertyRef(propertyId, contractId, groupId);
+    const upperNetwork = assertNetwork(network);
     if (!Number.isInteger(version)) {
       throw new Error('version must be an integer');
     }
@@ -430,10 +439,6 @@ export default class AkamaiClient {
       throw new Error(
         'AkamaiClient must be constructed with a non-empty notifyEmails array to call activate()',
       );
-    }
-    const upperNetwork = network.toUpperCase();
-    if (!ACTIVATION_NETWORKS.includes(upperNetwork)) {
-      throw new Error(`network must be one of ${ACTIVATION_NETWORKS.join(', ')}, got: ${network}`);
     }
     const id = encodePathSegment(propertyId);
     this.log.info(`Activating property ${propertyId} v${version} to ${upperNetwork}`);
@@ -473,10 +478,8 @@ export default class AkamaiClient {
    * @returns {Promise<object|undefined>}
    */
   async getActivation(propertyId, activationId, contractId, groupId) {
-    requireText('propertyId', propertyId);
+    requirePropertyRef(propertyId, contractId, groupId);
     requireText('activationId', activationId);
-    requireText('contractId', contractId);
-    requireText('groupId', groupId);
     const id = encodePathSegment(propertyId);
     const actId = encodePathSegment(activationId);
     const data = await this.#request(
@@ -496,9 +499,7 @@ export default class AkamaiClient {
    * @returns {Promise<Array<object>>}
    */
   async listActivations(propertyId, contractId, groupId) {
-    requireText('propertyId', propertyId);
-    requireText('contractId', contractId);
-    requireText('groupId', groupId);
+    requirePropertyRef(propertyId, contractId, groupId);
     const id = encodePathSegment(propertyId);
     const data = await this.#request('GET', `/papi/v1/properties/${id}/activations`, {
       params: { contractId, groupId },
@@ -517,11 +518,7 @@ export default class AkamaiClient {
    * @returns {Promise<object|undefined>}
    */
   async latestActivation(propertyId, contractId, groupId, network) {
-    requireText('network', network);
-    const upperNetwork = network.toUpperCase();
-    if (!ACTIVATION_NETWORKS.includes(upperNetwork)) {
-      throw new Error(`network must be one of ${ACTIVATION_NETWORKS.join(', ')}, got: ${network}`);
-    }
+    const upperNetwork = assertNetwork(network);
     const activations = await this.listActivations(propertyId, contractId, groupId);
     const candidates = activations.filter(
       (a) => (a.network || '').toUpperCase() === upperNetwork,

@@ -40,15 +40,6 @@ export function edgeGridTimestamp(date = new Date()) {
   return `${year}${month}${day}T${hours}:${minutes}:${seconds}+0000`;
 }
 
-function canonicalizeHeaders(headers) {
-  if (!headers) {
-    return '';
-  }
-  return Object.entries(headers)
-    .map(([name, value]) => `${name.toLowerCase()}:${String(value).trim().replace(/\s+/g, ' ')}`)
-    .join('\t');
-}
-
 // The EdgeGrid spec only signs the body for POST requests — PUT (used by PAPI
 // to write rule trees) is intentionally left unsigned here too, matching the
 // official akamai-edgegrid and edgegrid-python reference implementations.
@@ -71,8 +62,6 @@ function contentHash(method, body) {
  * @param {string} params.clientSecret
  * @param {string} params.accessToken
  * @param {string} [params.body] - Request body, if any (only signed for POST)
- * @param {Record<string,string>} [params.headersToSign] - Headers to include
- *   in the signature, keyed by header name (rarely needed for PAPI)
  * @param {string} [params.timestamp] - Overrides the generated timestamp
  *   (mainly for tests)
  * @param {string} [params.nonce] - Overrides the generated nonce (mainly for
@@ -86,7 +75,6 @@ export function signRequest({
   clientSecret,
   accessToken,
   body,
-  headersToSign,
   timestamp = edgeGridTimestamp(),
   nonce = randomUUID(),
 }) {
@@ -101,7 +89,9 @@ export function signRequest({
     parsedUrl.protocol.replace(':', ''),
     parsedUrl.host,
     parsedUrl.pathname + parsedUrl.search,
-    canonicalizeHeaders(headersToSign),
+    // Canonicalized signed-headers field — always empty: PAPI does not require
+    // signing any request headers, so the client never supplies them.
+    '',
     contentHash(upperMethod, body),
     unsignedAuthHeader,
   ].join('\t');

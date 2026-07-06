@@ -98,22 +98,6 @@ describe('edgegrid-auth', () => {
       expect(signRequest({ ...base, body: '' })).to.equal(signRequest(base));
     });
 
-    it('includes canonicalized headersToSign in the signature when provided', () => {
-      const base = {
-        url: 'https://akab-xxxxx.luna.akamaiapis.net/papi/v1/some/path',
-        method: 'GET',
-        timestamp: FIXED_TS,
-        nonce: FIXED_NONCE,
-        ...CREDS,
-      };
-      const withHeaders = signRequest({
-        ...base,
-        headersToSign: { 'X-Custom': '  multiple   spaces  ' },
-      });
-      const withoutHeaders = signRequest(base);
-      expect(withHeaders).to.not.equal(withoutHeaders);
-    });
-
     it('truncates the POST body at MAX_BODY_BYTES so trailing bytes do not affect the signature', () => {
       // MAX_BODY_BYTES is 131072; a body at exactly the limit and the same body
       // with extra bytes appended must sign identically. Guards against the

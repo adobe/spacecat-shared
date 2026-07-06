@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Ticket:** LLMO-5975
-- **Deciders:** Alicia (DRS/BP), Rainer Friederich
+- **Deciders:** Alicia (BP), Rainer Friederich
 - **Date:** 2026-07-06
 - **Relates to:** PR #1661 (typed client wrapper), PR #2766 (retry re-enabled in api-service), LLMO-5461/5459 (Semrush Project Engine client)
 

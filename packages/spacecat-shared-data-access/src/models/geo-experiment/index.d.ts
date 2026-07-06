@@ -26,7 +26,6 @@ export interface GeoExperiment extends BaseModel {
   getOpportunity(): Promise<Opportunity>;
   getPreScheduleId(): string | undefined;
   getPostScheduleId(): string | undefined;
-  getImpactTaskId(): string | undefined;
   getType(): string;
   getPhase(): string;
   getStatus(): string;
@@ -37,7 +36,7 @@ export interface GeoExperiment extends BaseModel {
   getStartTime(): string | undefined;
   getEndTime(): string | undefined;
   getMetadata(): object | undefined;
-  getInsights(): object | undefined;
+  getInsightsLocation(): string | undefined;
   getError(): object | undefined;
   getUpdatedBy(): string;
 
@@ -45,7 +44,6 @@ export interface GeoExperiment extends BaseModel {
   setOpportunityId(opportunityId?: string): GeoExperiment;
   setPreScheduleId(preScheduleId?: string): GeoExperiment;
   setPostScheduleId(postScheduleId?: string): GeoExperiment;
-  setImpactTaskId(impactTaskId?: string): GeoExperiment;
   setType(type: string): GeoExperiment;
   setPhase(phase: string): GeoExperiment;
   setStatus(status: string): GeoExperiment;
@@ -56,7 +54,7 @@ export interface GeoExperiment extends BaseModel {
   setStartTime(startTime?: string): GeoExperiment;
   setEndTime(endTime?: string): GeoExperiment;
   setMetadata(metadata?: object): GeoExperiment;
-  setInsights(insights?: object): GeoExperiment;
+  setInsightsLocation(insightsLocation?: string): GeoExperiment;
   setError(error?: object): GeoExperiment;
   setUpdatedBy(updatedBy: string): GeoExperiment;
 }

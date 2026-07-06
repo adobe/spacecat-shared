@@ -31,7 +31,6 @@ describe('GeoExperimentModel', () => {
     opportunityId: '3b7de19c-4bf8-4687-a337-b9f4a5d56f8e',
     preScheduleId: 'drs-pre-schedule-id',
     postScheduleId: 'drs-post-schedule-id',
-    impactTaskId: 'mystique-impact-task-id',
     type: GeoExperiment.TYPES.ONSITE_OPPORTUNITY_DEPLOYMENT,
     status: GeoExperiment.STATUSES.COMPLETED,
     phase: GeoExperiment.PHASES.POST_ANALYSIS_DONE,
@@ -40,7 +39,7 @@ describe('GeoExperimentModel', () => {
     promptsCount: 5,
     promptsLocation: 'geo-experiments/site-123/exp-456-prompts.json',
     metadata: { deployType: 'edge' },
-    insights: { version: '1', analyses: [] },
+    insightsLocation: 'geo-experiments/site-123/exp-456-insights.json',
     error: { message: 'none' },
     updatedBy: 'spacecat-api-service',
   };
@@ -71,18 +70,15 @@ describe('GeoExperimentModel', () => {
     expect(instance.getPostScheduleId()).to.equal('post-2');
   });
 
-  it('gets and sets impactTaskId', () => {
-    expect(instance.getImpactTaskId()).to.equal('mystique-impact-task-id');
-    instance.setImpactTaskId('mystique-impact-task-id-2');
-    expect(instance.getImpactTaskId()).to.equal('mystique-impact-task-id-2');
-  });
-
   it('exposes SCHEDULE_CONFIG_ENV_VAR constant', () => {
     expect(GeoExperiment.SCHEDULE_CONFIG_ENV_VAR).to.equal('EXPERIMENT_SCHEDULE_CONFIG');
   });
 
   it('exposes METADATA_KEYS constant', () => {
-    expect(GeoExperiment.METADATA_KEYS).to.deep.equal({ SCHEDULE_CONFIG: 'scheduleConfig' });
+    expect(GeoExperiment.METADATA_KEYS).to.deep.equal({
+      SCHEDULE_CONFIG: 'scheduleConfig',
+      IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
+    });
   });
 
   it('exposes SCHEDULE_CONFIG_KEYS constant', () => {
@@ -178,15 +174,10 @@ describe('GeoExperimentModel', () => {
     expect(instance.getError()).to.deep.equal({ message: 'failed' });
   });
 
-  it('gets and sets insights', () => {
-    expect(instance.getInsights()).to.deep.equal({ version: '1', analyses: [] });
-    const insights = {
-      version: '1',
-      generatedAt: '2026-06-25T10:00:00.000Z',
-      analyses: [{ kind: 'citation_rate' }],
-    };
-    instance.setInsights(insights);
-    expect(instance.getInsights()).to.deep.equal(insights);
+  it('gets and sets insightsLocation', () => {
+    expect(instance.getInsightsLocation()).to.equal('geo-experiments/site-123/exp-456-insights.json');
+    instance.setInsightsLocation('geo-experiments/site-123/exp-789-insights.json');
+    expect(instance.getInsightsLocation()).to.equal('geo-experiments/site-123/exp-789-insights.json');
   });
 
   it('gets and sets updatedBy', () => {

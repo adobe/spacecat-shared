@@ -53,10 +53,11 @@ class GeoExperiment extends BaseModel {
    * Well-known keys used within a GeoExperiment's metadata object.
    * Centralised here so all consumers reference the same key names.
    *
-   * @type {{ SCHEDULE_CONFIG: string }}
+   * @type {{ SCHEDULE_CONFIG: string, IMPACT_MEASUREMENT_TASK_ID: string }}
    */
   static METADATA_KEYS = {
     SCHEDULE_CONFIG: 'scheduleConfig',
+    IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
   };
 
   /**

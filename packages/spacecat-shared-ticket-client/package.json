@@ -9,9 +9,19 @@
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src"
+  ],
   "scripts": {
     "test": "c8 mocha",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
@@ -29,7 +39,7 @@
   "bugs": {
     "url": "https://github.com/adobe/spacecat-shared/issues"
   },
-  "homepage": "https://github.com/adobe/spacecat-shared#readme",
+  "homepage": "https://github.com/adobe/spacecat-shared/packages/spacecat-shared-ticket-client/#readme",
   "publishConfig": {
     "access": "public"
   },

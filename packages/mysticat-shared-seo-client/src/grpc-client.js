@@ -18,6 +18,7 @@ import { TopicService } from './vendor/v2/topic/service_pb.js';
 import { PromptService } from './vendor/v2/prompt/service_pb.js';
 import { SourceService } from './vendor/v2/source/service_pb.js';
 import { CompetitorService } from './vendor/v2/competitor/service_pb.js';
+import { FanoutService } from './vendor/v2/fanout/service_pb.js';
 import {
   CompetitorsMetrics,
   Meta as CrMeta,
@@ -33,12 +34,16 @@ import {
   GapPromptsResponseSchema,
 } from './vendor/v2/prompt/messages_pb.js';
 import {
+  ResolveTopicMetricsRequestSchema,
+  ResolveTopicMetricsResponseSchema,
+} from './vendor/v2/fanout/messages_pb.js';
+import {
   GAP_KIND_ENUM,
   COUNTRY_ENUM,
   LLM_ENUM,
 } from './vendor/common/types_pb.js';
 
-const DEFAULT_SCOPES = 'ai-seo.meta ai-seo.topics ai-seo.prompts ai-seo.sources ai-seo.brand-metrics ai-seo.relations ai-seo.competitors-metrics ai-seo.competitor';
+const DEFAULT_SCOPES = 'ai-seo.meta ai-seo.topics ai-seo.prompts ai-seo.sources ai-seo.brand-metrics ai-seo.relations ai-seo.competitors-metrics ai-seo.competitor ai-seo.fanout';
 const GRPC_BASE_URL = 'https://grpc-api.semrush.com';
 const PROTO_FROM_JSON = { ignoreUnknownFields: true };
 const PROTO_TO_JSON = { useProtoFieldName: false, alwaysEmitImplicit: true };
@@ -111,6 +116,7 @@ export function getGrpcClients(env) {
     promptClient: createClient(PromptService, transport),
     sourceClient: createClient(SourceService, transport),
     competitorClient: createClient(CompetitorService, transport),
+    fanoutClient: createClient(FanoutService, transport),
     crMetricsClient: createClient(CompetitorsMetrics, transport),
     crMetaClient: createClient(CrMeta, transport),
     voSourcesClient: createClient(VoSources, transport),
@@ -190,4 +196,81 @@ export async function fetchGapPrompts(promptClient, topicHash, domain, { limit =
     toJson(GapPromptsResponseSchema, response, PROTO_TO_JSON)
   );
   return json.prompts ?? [];
+}
+
+/**
+ * Calls FanoutService.resolveTopicMetrics for a list of topic names and returns,
+ * per topic, the fanout keywords where the brand appears in SERP rankings but
+ * at a position worse than `positionThreshold`.
+ *
+ * @param {object} fanoutClient - Semrush FanoutService client
+ * @param {string[]} topics - Topic names (max 100 per batch)
+ * @param {string} domain - Bare domain to look up in rankings (e.g. "lovesac.com")
+ * @param {{
+ *   country?: number,
+ *   llm?: number,
+ *   similarityThreshold?: number,
+ *   positionThreshold?: number,
+ * }} [options]
+ * @returns {Promise<Map<string, {
+ *   matchedTopicName: string,
+ *   matchedTopicId: string,
+ *   similarityScore: number,
+ *   lowRankKeywords: Array<{ keyword: string, volume: number, brandPosition: number }>
+ * }>>}
+ */
+export async function fetchLowRankFanoutKeywords(fanoutClient, topics, domain, {
+  country = COUNTRY_ENUM.US,
+  llm = LLM_ENUM.ALL,
+  similarityThreshold = 70,
+  positionThreshold = 5,
+} = {}) {
+  if (!topics?.length) {
+    return new Map();
+  }
+
+  const request = fromJson(
+    ResolveTopicMetricsRequestSchema,
+    { country, llm, topics },
+    PROTO_FROM_JSON,
+  );
+
+  const response = await fanoutClient.resolveTopicMetrics(request);
+  const json = /** @type {{ topicMetrics?: Array }} */ (
+    toJson(ResolveTopicMetricsResponseSchema, response, PROTO_TO_JSON)
+  );
+
+  const byTopic = new Map();
+  const qualifiedMetrics = (json.topicMetrics ?? [])
+    .filter((m) => (m.similarityScore ?? 0) >= similarityThreshold);
+  for (const tm of qualifiedMetrics) {
+    const lowRankKeywords = (tm.fanoutQueries ?? []).reduce((acc, q) => {
+      const brandPositions = (q.rankings ?? [])
+        .filter((r) => r.domain === domain)
+        .map((r) => r.position);
+
+      if (brandPositions.length === 0) {
+        return acc;
+      }
+
+      const bestPosition = Math.min(...brandPositions);
+      if (bestPosition > positionThreshold) {
+        acc.push({
+          keyword: q.keyword,
+          volume: Number(q.volume ?? 0),
+          brandPosition: bestPosition,
+        });
+      }
+      return acc;
+    }, []).sort((a, b) => b.volume - a.volume);
+
+    byTopic.set(tm.originalTopic, {
+      matchedTopicName: tm.matchedTopicName,
+      matchedTopicId: tm.matchedTopicId,
+      similarityScore: tm.similarityScore,
+      lowRankKeywords,
+    });
+  }
+
+  return byTopic;
 }

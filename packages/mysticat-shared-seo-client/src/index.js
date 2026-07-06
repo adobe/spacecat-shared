@@ -21,6 +21,7 @@ export {
   createAuthInterceptor,
   fetchTopicHashMap,
   fetchGapPrompts,
+  fetchLowRankFanoutKeywords,
 } from './grpc-client.js';
 export { ENDPOINTS } from './endpoints.js';
 export {

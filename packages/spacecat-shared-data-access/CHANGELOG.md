@@ -1,3 +1,13 @@
+## [@adobe/spacecat-shared-data-access-v4.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.81.0...@adobe/spacecat-shared-data-access-v4.0.0) (2026-07-03)
+
+### ⚠ BREAKING CHANGES
+
+* **data-access:** drop startedAt/result/error from Preflight schema (SITES-47254) (#1740)
+
+### Features
+
+* **data-access:** drop startedAt/result/error from Preflight schema (SITES-47254) ([#1740](https://github.com/adobe/spacecat-shared/issues/1740)) ([5b728bb](https://github.com/adobe/spacecat-shared/commit/5b728bb623060289221e744088b9762a8acfe519)), closes [#2713](https://github.com/adobe/spacecat-shared/issues/2713) [#2713](https://github.com/adobe/spacecat-shared/issues/2713) [post-#2713](https://github.com/adobe/post-/issues/2713)
+
 ## [@adobe/spacecat-shared-data-access-v3.81.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.80.0...@adobe/spacecat-shared-data-access-v3.81.0) (2026-07-02)
 
 ### Features

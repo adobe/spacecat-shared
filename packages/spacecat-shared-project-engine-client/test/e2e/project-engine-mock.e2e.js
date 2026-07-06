@@ -342,8 +342,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // Exercises the prompt write-then-read spine through the paths the real consumer uses
   // (spacecat-api-service): create via `tagged`, list via `by_tags`. Not `POST /aio/prompts`
   // (delete-only in the spec) — see mock/.../aio/prompts*.js. Body is keyed by PROMPT TEXT,
-  // value = tag names (the real consumer shape: `{ [text]: tags }`).
-  it('creates aio prompts (tagged) and lists them back (by_tags)', async () => {
+  // value = tag names (the real consumer shape: `{ [text]: tags }`). A freshly created prompt is
+  // DRAFT (`is_new: true`), so this read passes `draft: true` to see it immediately — the next
+  // test pins the default (published-only) gating that state feeds.
+  it('creates aio prompts (tagged) and lists them back (by_tags, draft view)', async () => {
     const { data: created, error: createError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
       {
@@ -355,17 +357,76 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.ids).to.have.length(2);
     expect(created.existing_count).to.equal(0);
 
-    // by_tags with an empty tag_ids lists every prompt: 1 seeded + 2 created.
+    // by_tags with an empty tag_ids + draft:true lists every prompt: 1 seeded (published) + 2
+    // just-created (draft).
     const { data: listed, error: listError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
       {
-        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { draft: true },
+        },
         body: { tag_ids: [] },
       },
     );
     expect(listError).to.equal(undefined);
     expect(listed.total).to.equal(3);
     expect(listed.items.map((p) => p.name)).to.include.members(['What is X?', 'Tell me Y']);
+  });
+
+  // Draft/publish gating (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6): a
+  // freshly created prompt is invisible via the default (non-draft) by_tags read until the
+  // project's publish endpoint runs — mirroring the real consumer's create → publishAffected →
+  // publishProject sequence (spacecat-api-service `src/support/serenity/handlers/prompts.js`).
+  it('gates a freshly created prompt from by_tags until publish', async () => {
+    const { data: created } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { prompts: { 'Draft-gated question': ['brand'] } },
+      },
+    );
+    expect(created.ids).to.have.length(1);
+
+    // Default (no draft) read: only the seeded, already-published prompt is visible.
+    const { data: beforePublish } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { tag_ids: [] },
+      },
+    );
+    expect(beforePublish.total).to.equal(1);
+    expect(beforePublish.items.map((p) => p.name)).to.not.include('Draft-gated question');
+
+    // draft:true sees it immediately, same as live's draft tree.
+    const { data: draftView } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { draft: true },
+        },
+        body: { tag_ids: [] },
+      },
+    );
+    expect(draftView.items.map((p) => p.name)).to.include('Draft-gated question');
+
+    // Publish moves it into the default (published) view.
+    const { response: pubRes } = await client.POST(
+      '/v1/workspaces/{id}/projects/{project_id}/publish',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    expect(pubRes.status).to.equal(202);
+
+    const { data: afterPublish } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { tag_ids: [] },
+      },
+    );
+    expect(afterPublish.items.map((p) => p.name)).to.include('Draft-gated question');
   });
 
   // Live dedups prompts by text: re-creating an existing text yields no new id and existing_count:1
@@ -386,6 +447,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // The consumer's real read path (listPromptsByTags) passes non-empty tag_ids — exercise the
   // filter branch (OR semantics), not just the list-all branch. `tagged` stores the deterministic
   // opaque `tagId('brand')`, so a prompt tagged 'brand' is found via tag_ids: [tagId('brand')].
+  // Fresh creates are draft-gated (see the dedicated gating test above), so this read passes
+  // draft:true — it's exercising the filter branch, not the publish gate.
   it('by_tags filters to prompts carrying a given tag id (non-empty tag_ids)', async () => {
     await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
@@ -397,7 +460,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const { data: branded, error } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
       {
-        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { draft: true },
+        },
         body: { tag_ids: [tagId('brand')] },
       },
     );
@@ -446,25 +512,28 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     'content-type': 'application/json',
     Accept: 'application/json',
   };
-  const listByTags = (tagIds) => client.POST(
+  const listByTags = (tagIds, { draft } = {}) => client.POST(
     '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
     {
-      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+        ...(draft ? { query: { draft: true } } : {}),
+      },
       body: { tag_ids: tagIds },
     },
   );
 
-  // POST /aio/prompts references tags by id (not name) and returns the live LIST WRAPPER
+  // POST /aio/prompts references tags by id (not name) and returns 201 with the live LIST WRAPPER
   // { page, total, items:[{id,name}], existing_count }. The created prompts embed the tag's
-  // { id, name }, so a by_tags read on that id correlates them (immediately — no draft gate, like
-  // prompts/tagged.js).
-  it('creates prompts by tag id and reads them back via by_tags', async () => {
+  // { id, name }, so a by_tags read on that id correlates them — but they're DRAFT until publish
+  // (see the dedicated gating test below), so this correlation check reads via draft:true.
+  it('creates prompts by tag id and reads them back via by_tags (draft view)', async () => {
     const res = await fetch(promptsUrl(), {
       method: 'POST',
       headers: jsonAuth,
       body: JSON.stringify({ items: ['Id Q1', 'Id Q2'], tag_ids: [SEED_IDS.categoryTagId] }),
     });
-    expect(res.status).to.equal(200);
+    expect(res.status).to.equal(201);
     const created = await res.json();
     expect(created.total).to.equal(2);
     expect(created.existing_count).to.equal(0);
@@ -473,8 +542,35 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.items.map((p) => p.name)).to.deep.equal(['Id Q1', 'Id Q2']);
 
     // Correlation is free: by_tags on the referenced tag id returns the two created prompts.
-    const { data: byTag } = await listByTags([SEED_IDS.categoryTagId]);
+    const { data: byTag } = await listByTags([SEED_IDS.categoryTagId], { draft: true });
     expect(byTag.items.map((p) => p.name)).to.have.members(['Id Q1', 'Id Q2']);
+  });
+
+  // Draft/publish gating on the id-based create path (live-verified 2026-07-02, serenity-docs#24
+  // §3.1 gate 2 + gate 6) — the same mechanism as prompts/tagged.js's create, pinned separately
+  // here since this endpoint has its own response shape and atomicity contract.
+  it('gates an id-based-created prompt from by_tags until publish', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['Draft-gated id prompt'], tag_ids: [SEED_IDS.categoryTagId] }),
+    });
+    expect(res.status).to.equal(201);
+
+    const { data: beforePublish } = await listByTags([SEED_IDS.categoryTagId]);
+    expect(beforePublish.items.map((p) => p.name)).to.not.include('Draft-gated id prompt');
+
+    const { data: draftView } = await listByTags([SEED_IDS.categoryTagId], { draft: true });
+    expect(draftView.items.map((p) => p.name)).to.include('Draft-gated id prompt');
+
+    const { response: pubRes } = await client.POST(
+      '/v1/workspaces/{id}/projects/{project_id}/publish',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    expect(pubRes.status).to.equal(202);
+
+    const { data: afterPublish } = await listByTags([SEED_IDS.categoryTagId]);
+    expect(afterPublish.items.map((p) => p.name)).to.include('Draft-gated id prompt');
   });
 
   // Atomic failure: any unresolvable tag id 500s and creates NOTHING (verified live 2026-07-02).
@@ -928,6 +1024,80 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(childrenAfter.total).to.equal(0);
   });
 
+  // PATCH's `parent_id` is a live-verified 3-way switch (serenity-docs#24 §3.1 gate 1, CR15), NOT
+  // a simple presence check: an explicit `null` promotes to root (asserted above via the
+  // equivalent `''` live shape), an OMITTED key preserves the current parent (asserted here), and
+  // a non-empty string re-parents (asserted by the rename test below). A rename-only caller that
+  // never mentions `parent_id` must not silently un-parent the tag.
+  it('PATCH with parent_id OMITTED preserves the tag\'s current parent (rename-only)', async () => {
+    const { data: patched, error: patchError, response: patchResp } = await client.PATCH(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}',
+      {
+        params: {
+          path: {
+            id: SEED_WORKSPACE, project_id: SEED_PROJECT, tag_id: SEED_IDS.childTagId,
+          },
+        },
+        // No parent_id key at all — a rename-only call. NB: this leaves the seed's
+        // childTagId renamed to 'Ridge' for the rest of this test only (beforeEach resets state
+        // between tests, so this doesn't leak into the next one).
+        body: { name: 'Ridge' },
+      },
+    );
+    expect(patchError).to.equal(undefined);
+    expect(patchResp.status).to.equal(200);
+    expect(patched).to.include({
+      id: SEED_IDS.childTagId, name: 'Ridge', parent_id: SEED_IDS.categoryTagId,
+    });
+
+    const { data: childrenAfter } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: SEED_IDS.categoryTagId, search: '' },
+        },
+      },
+    );
+    expect(childrenAfter.items.map((t) => t.name)).to.deep.equal(['Ridge']);
+  });
+
+  // Same gate, the other literal: an explicit JSON `null` (not merely a falsy/empty string)
+  // promotes a child to a root. CR15 makes this pass Counterfact's request validation.
+  it('PATCH with an explicit null parent_id promotes a child to a root', async () => {
+    const { data: patched, error: patchError, response: patchResp } = await client.PATCH(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}',
+      {
+        params: {
+          path: {
+            id: SEED_WORKSPACE, project_id: SEED_PROJECT, tag_id: SEED_IDS.childTagId,
+          },
+        },
+        // NB: this leaves the seed's childTagId renamed to 'Trail' and promoted to a root for
+        // the rest of this test only (beforeEach resets state between tests).
+        body: { name: 'Trail', parent_id: null },
+      },
+    );
+    expect(patchError).to.equal(undefined);
+    expect(patchResp.status).to.equal(200);
+    // parentIdField omits the key entirely for a root (same convention as the create path) rather
+    // than echoing `null` — the exact omitted-vs-null shape on THIS response is unverified live
+    // (CR13's null verification covers the GET/list AIOTag path, not PATCH's TreeNodeResponse), so
+    // this only asserts the parent link is gone, not which of the two falsy shapes represents it.
+    expect(patched.parent_id).to.not.exist;
+
+    const { data: rootsAfter } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: '', search: '' },
+        },
+      },
+    );
+    expect(rootsAfter.items.map((t) => t.name)).to.have.members(['category:Running Shoes', 'Trail']);
+  });
+
   // PATCH also RENAMES in place: changing `name` (keeping the parent) is reflected in the 200
   // response and a subsequent GET. Exercises the full route-handler→response roundtrip for a
   // rename — the stateful unit test covers only the store layer, not the handler's response build.
@@ -1136,6 +1306,53 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data.items).to.be.an('array').with.length(11);
     expect(data.items[0]).to.include.keys(['id', 'name', 'key', 'icon']);
     expect(data.items.map((m) => m.key)).to.include.members(['perplexity', 'gemini-2.5-flash']);
+  });
+
+  it('resolveUrl canonicalizes a raw brand URL (scheme + www stripped, path/subdomain preserved)', async () => {
+    // The endpoint the consumer calls before writing a brand URL (overlay CR16, serenity-docs#25).
+    const resolve = (primaryUrl) => client.GET('/v1/url/resolve', {
+      params: { query: { primary_url: primaryUrl } },
+    });
+
+    const { data, error } = await resolve('https://www.lovesac.com');
+    expect(error).to.equal(undefined);
+    expect(data).to.deep.equal({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
+
+    // path preserved on primary_url, stripped on domain.
+    const { data: withPath } = await resolve('http://www.lovesac.com/products');
+    expect(withPath).to.deep.equal({ domain: 'lovesac.com', primary_url: 'lovesac.com/products', is_valid: true });
+
+    // non-www subdomain preserved on primary_url, collapsed to the apex on domain.
+    const { data: sub } = await resolve('https://blog.hubspot.com');
+    expect(sub).to.deep.equal({ domain: 'hubspot.com', primary_url: 'blog.hubspot.com', is_valid: true });
+  });
+
+  it('resolveUrl returns is_valid:false with empty strings (HTTP 200) for garbage input', async () => {
+    // The live trap (serenity-docs#25 §0): unresolvable input is a 200 with empty strings, NOT an
+    // error — the consumer must check is_valid and never write the empty value.
+    const { data, error, response } = await client.GET('/v1/url/resolve', {
+      params: { query: { primary_url: 'not a url !!!' } },
+    });
+    expect(error).to.equal(undefined);
+    expect(response.status).to.equal(200);
+    expect(data).to.deep.equal({ domain: '', primary_url: '', is_valid: false });
+  });
+
+  // Request validation 400s a MISSING required query param before the handler runs (same mechanism
+  // as getBrandTopics). Counterfact enforces presence but NOT the spec's minLength:1, so an EMPTY
+  // value (`primary_url=`) falls through to the handler, returning 200 is_valid:false — a benign
+  // divergence from live (which 400s empty too): empty is the same "don't write it" signal the
+  // consumer already keys off is_valid. Raw fetch so we can shape a request the typed client bars.
+  it('resolveUrl 400s on a missing primary_url; an empty value 200s is_valid:false', async () => {
+    const auth = { headers: { Authorization: 'Bearer e2e-token' } };
+
+    const missing = await fetch(`${baseUrl}/v1/url/resolve`, auth);
+    expect(missing.status).to.equal(400);
+    expect(await missing.text()).to.match(/primary_url/);
+
+    const empty = await fetch(`${baseUrl}/v1/url/resolve?primary_url=`, auth);
+    expect(empty.status).to.equal(200);
+    expect(await empty.json()).to.deep.equal({ domain: '', primary_url: '', is_valid: false });
   });
 
   it('getBrandTopics returns a top-level array of { topic, volume, prompts }', async () => {

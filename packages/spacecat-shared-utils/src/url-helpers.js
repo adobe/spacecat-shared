@@ -498,7 +498,7 @@ function isWithinSiteScope(url, siteBaseUrl) {
     return false;
   }
   if (!siteBaseUrl) {
-    return true;
+    return false;
   }
 
   try {
@@ -613,7 +613,7 @@ export function isPathPatternWithinSiteScope(pathPattern, siteBaseUrl) {
     return false;
   }
   if (!siteBaseUrl) {
-    return true;
+    return false;
   }
 
   const siteBasePath = toPathname(siteBaseUrl);

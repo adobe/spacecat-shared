@@ -47,6 +47,7 @@ import { LANGUAGE_CATALOG } from './language-catalog.js';
 import { AI_MODEL_CATALOG } from './ai-model-catalog.js';
 import { tagId } from './tag-id.js';
 import { parentIdField } from './parent-id.js';
+import { resolveUrl } from './url-resolve.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
 /**
@@ -104,6 +105,11 @@ export class Context {
     // `PATCH /aio/tags/{tag_id}` — share one coerce-then-spread definition and can't drift, the
     // same `$.context` lib-helper convention as `tagId` above.
     this.parentIdField = parentIdField;
+    // The URL canonicalizer (mock/url-resolve.js). Exposed so the `GET /v1/url/resolve` route
+    // computes the normalized `{ domain, primary_url, is_valid }` through one pure, unit-tested
+    // function rather than inline in the coverage-excluded handler — same `$.context` lib-helper
+    // convention as `tagId`. The consumer resolves a raw brand URL through this before writing it.
+    this.resolveUrl = resolveUrl;
   }
 
   /**

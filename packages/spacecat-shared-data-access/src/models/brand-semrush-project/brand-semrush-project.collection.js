@@ -109,6 +109,15 @@ class BrandSemrushProjectCollection extends BaseCollection {
   }
 
   /**
+   * Offset-paginates `query` and returns plain frozen identity DTOs.
+   *
+   * This deliberately rolls its own offset loop instead of reusing the
+   * cursor-based helper in `postgrest.utils.js`: that helper hydrates model
+   * instances through the base collection, whereas this accessor's contract
+   * (spec §7.2) is to return frozen, read-only identity DTOs from an
+   * embedded-join projection. Offset pagination over a fully-ordered query is
+   * sufficient here and keeps the projected columns / freeze in one place.
+   *
    * @param {object} query - PostgREST query builder
    * @returns {Promise<Array<object>>}
    * @private
@@ -125,6 +134,10 @@ class BrandSemrushProjectCollection extends BaseCollection {
     const orderedQuery = query.order('brand_id').order('semrush_project_id');
 
     while (keepGoing) {
+      // `.range()` returns a NEW builder rather than mutating in place (true
+      // for the current supabase-js / postgrest-js lineage), so re-deriving
+      // each page from the shared `orderedQuery` is safe. A client fork that
+      // mutated in place would break this loop.
       // eslint-disable-next-line no-await-in-loop
       const { data, error } = await orderedQuery.range(offset, offset + DEFAULT_PAGE_SIZE - 1);
 

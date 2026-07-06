@@ -17,6 +17,7 @@ import sinon from 'sinon';
 
 import BrandSemrushProject from '../../../../src/models/brand-semrush-project/brand-semrush-project.model.js';
 import DataAccessError from '../../../../src/errors/data-access.error.js';
+import { DEFAULT_PAGE_SIZE } from '../../../../src/util/postgrest.utils.js';
 
 import { createElectroMocks } from '../../util.js';
 
@@ -267,7 +268,6 @@ describe('BrandSemrushProjectCollection', () => {
     });
 
     it('paginates when results exceed page size', async () => {
-      const DEFAULT_PAGE_SIZE = 1000;
       const page1 = Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
         brand_id: `brand-${i}`,
         semrush_project_id: `proj-${i}`,
@@ -305,7 +305,6 @@ describe('BrandSemrushProjectCollection', () => {
     });
 
     it('truncates at the MAX_ORG_ROWS safety cap and logs a warning instead of paginating forever', async () => {
-      const DEFAULT_PAGE_SIZE = 1000;
       const MAX_ORG_ROWS = 50_000;
       const fullPage = () => Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
         brand_id: `brand-${i}`,

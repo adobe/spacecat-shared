@@ -39,7 +39,7 @@ type AIModel = components['schemas']['model.AIModelResponse'];
 type Benchmark = components['schemas']['model.AIOBenchmarkWithCounters'];
 type BrandUrl = components['schemas']['model.BrandURL'];
 type AIOTag = components['schemas']['model.AIOTag'];
-type UrlResolve = components['schemas']['model.UrlResolveResponse'];
+type UrlResolve = components['schemas']['model.ResolveURLResponse'];
 
 // 1. Each factory returns exactly its spec type (assignable in both directions).
 const project: Project = createProjectMock();

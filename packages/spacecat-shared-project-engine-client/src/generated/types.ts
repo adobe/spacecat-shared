@@ -64,6 +64,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/url/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve URL
+         * @description Normalizes the given primary_url and extracts its registrable domain (eTLD+1).
+         */
+        get: operations["resolve-url"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{id}/brand-topics": {
         parameters: {
             query?: never;
@@ -153,6 +173,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{id}/crawls/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop SI crawl
+         * @description Stop a running crawl for the given project and crawl configuration
+         */
+        post: operations["si-stop-crawl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{id}/keywords": {
         parameters: {
             query?: never;
@@ -169,6 +209,27 @@ export interface paths {
          *     For proper pagination, specify the type parameter (either "prompt" or "brand_name").
          */
         get: operations["workspace-list-keywords"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{id}/managed-ai-models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get managed AI models for a workspace
+         * @description Returns the full catalog of managed AI models with their enabled/disabled status
+         *     for the master workspace.
+         */
+        get: operations["managed-ai-models-get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -574,6 +635,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{id}/projects/{project_id}/apply_interactive_unignore_issue_rules/{crawl_configuration_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish interactive unignore issue rules event
+         * @description Publishes an interactive-ignore-issue-rules event with operation "unignore" to the pub/sub topic for the given crawl configuration. Accepts the same payload as the ignore endpoint.
+         */
+        post: operations["si-apply-interactive-unignore-issue-rules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{id}/projects/{project_id}/ci/competitors": {
         parameters: {
             query?: never;
@@ -969,26 +1050,6 @@ export interface paths {
         head?: never;
         /** Set advanced crawling consent for SI project */
         patch: operations["projects-update-advanced-crawling-consent"];
-        trace?: never;
-    };
-    "/v1/workspaces/{id}/projects/{project_id}/si/allow_more_parallel_instances": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * set allow_more_parallel_instances for SI project
-         * @description Sets allow_more_parallel_instances flag for a project in workspace with given ID
-         */
-        patch: operations["projects-set-allow-more-parallel-instances"];
         trace?: never;
     };
     "/v1/workspaces/{id}/projects/{project_id}/tags": {
@@ -1602,26 +1663,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/url/resolve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Resolve a URL to its canonical brand-URL form
-         * @description Canonicalize a raw URL to the form Semrush stores as a brand URL. `primary_url` strips the scheme and a leading `www.` but preserves any other subdomain and the path; `domain` is the registrable apex (subdomain stripped too). For unresolvable or garbage input `is_valid` is false and `domain`/`primary_url` are empty strings — still HTTP 200, so consumers MUST check `is_valid` and never write the empty value.
-         */
-        get: operations["resolve-url"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1649,6 +1690,8 @@ export interface components {
             color?: string;
             domain?: string;
             favorite?: boolean;
+            main_brand?: boolean;
+            primary_url?: string;
         };
         "model.AIOBenchmarkWithCounters": {
             brand_aliases?: string[];
@@ -1658,11 +1701,11 @@ export interface components {
             favorite?: boolean;
             id: string;
             main_brand?: boolean;
+            primary_url?: string;
             product_names?: string[];
             products_count?: number;
             project_id?: string;
             rejected_brand_aliases?: string[];
-            primary_url?: string;
             root_domain?: string;
         };
         "model.AIOProduct": {
@@ -1731,10 +1774,10 @@ export interface components {
             language?: components["schemas"]["model.LanguageResponse"];
             location?: components["schemas"]["model.LocationResponse"];
             models_stats?: components["schemas"]["model.ProjectModelStats"];
+            primary_url?: string;
             products_count?: number;
             prompts_count?: number;
             segments_count?: number;
-            primary_url?: string;
         };
         "model.AdvancedCrawlingConsentRequest": {
             accepted: boolean;
@@ -1749,9 +1792,11 @@ export interface components {
             confirmed_by_name?: string;
         };
         "model.ApplyInteractiveIgnoreIssueRulesRequest": {
-            filters: number[];
-            id?: string;
-            name: string;
+            issue_ids: string[];
+            issue_type: string;
+            /** @enum {string} */
+            match_by: "one_shot_rule" | "issue_id";
+            recent_check?: number;
         };
         "model.AvailablePromptsResponse": {
             available?: number;
@@ -2120,6 +2165,11 @@ export interface components {
             id?: number;
             name?: string;
         };
+        "model.ManagedAIModelsResponse": {
+            managed_ai_models?: {
+                [key: string]: boolean;
+            };
+        };
         "model.ProjectAIModelListResponse": {
             items?: components["schemas"]["model.ProjectAIModelResponse"][];
             page?: number;
@@ -2163,6 +2213,7 @@ export interface components {
             location_id?: number;
             location_name?: string;
             name: string;
+            primary_url?: string;
             /**
              * @description enum: seo, ai, mfour, si, ci
              * @enum {string}
@@ -2200,6 +2251,7 @@ export interface components {
             location_id?: number;
             location_name?: string;
             name?: string;
+            primary_url?: string;
             /**
              * @description enum: ai, mfour, si
              * @enum {string}
@@ -2260,6 +2312,11 @@ export interface components {
             location_name?: string;
             status?: string;
         };
+        "model.ResolveURLResponse": {
+            domain: string;
+            is_valid: boolean;
+            primary_url: string;
+        };
         "model.RestorePromptNamesRequest": {
             ids: string[];
         };
@@ -2275,12 +2332,8 @@ export interface components {
             behaviour?: string;
             custom_robots_txt?: string;
         };
-        "model.SIProjectSettingsRequest": {
-            allow_more_parallel_instances?: boolean;
-        };
         "model.SISettings": {
             advanced_crawling_consent?: components["schemas"]["model.AdvancedCrawlingConsentResponse"];
-            allow_more_parallel_instances?: boolean;
             crawler_stats?: components["schemas"]["model.CrawlerStats"][];
             crawlers_count?: number;
             extractions_count?: number;
@@ -2310,6 +2363,10 @@ export interface components {
             ai?: components["schemas"]["model.AISettings"];
             ci?: components["schemas"]["model.CISettings"];
             si?: components["schemas"]["model.SISettings"];
+        };
+        "model.StopCrawlRequest": {
+            crawl_configuration_id: string;
+            project_id: string;
         };
         "model.StringIDName": {
             id?: string;
@@ -2351,11 +2408,6 @@ export interface components {
             page?: number;
             total?: number;
             items?: components["schemas"]["model.AIModelResponse"][];
-        };
-        "model.UrlResolveResponse": {
-            domain: string;
-            primary_url: string;
-            is_valid: boolean;
         };
     };
     responses: never;
@@ -2418,6 +2470,12 @@ export interface components {
         "model.UUIDsListRequest": {
             content: {
                 "application/json": components["schemas"]["model.UUIDsListRequest"];
+            };
+        };
+        /** @description Request body */
+        "model.ApplyInteractiveIgnoreIssueRulesRequest": {
+            content: {
+                "application/json": components["schemas"]["model.ApplyInteractiveIgnoreIssueRulesRequest"];
             };
         };
         /** @description Request body */
@@ -2590,6 +2648,118 @@ export interface operations {
             };
         };
     };
+    "resolve-url": {
+        parameters: {
+            query: {
+                /** @description Primary URL to resolve */
+                primary_url: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.ResolveURLResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "si-stop-crawl": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Request body */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["model.StopCrawlRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
     "workspace-list-keywords": {
         parameters: {
             query?: {
@@ -2628,6 +2798,59 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "managed-ai-models-get": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bearer token */
+                Authorization: string;
+            };
+            path: {
+                /** @description Workspace ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.ManagedAIModelsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4137,6 +4360,8 @@ export interface operations {
             query?: {
                 /** @description Get draft project data */
                 draft?: boolean;
+                /** @description Get only main_brand benchmark */
+                main_brand?: boolean;
             };
             header?: never;
             path: {
@@ -4373,12 +4598,68 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Request body */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["model.ApplyInteractiveIgnoreIssueRulesRequest"];
+        requestBody: components["requestBodies"]["model.ApplyInteractiveIgnoreIssueRulesRequest"];
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
             };
         };
+    };
+    "si-apply-interactive-unignore-issue-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace ID */
+                id: string;
+                /** @description Project ID */
+                project_id: string;
+                /** @description Crawl Configuration ID */
+                crawl_configuration_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["model.ApplyInteractiveIgnoreIssueRulesRequest"];
         responses: {
             /** @description Accepted */
             202: {
@@ -6020,63 +6301,6 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["http_server.BasicResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["http_server.BasicResponse"];
-                };
-            };
-        };
-    };
-    "projects-set-allow-more-parallel-instances": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description workspace ID */
-                id: string;
-                /** @description project ID */
-                project_id: string;
-            };
-            cookie?: never;
-        };
-        /** @description Request body */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["model.SIProjectSettingsRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["model.ProjectResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["http_server.BasicResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8385,46 +8609,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["model.AIOProjectInitializedResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["http_server.BasicResponse"];
-                };
-            };
-        };
-    };
-    "resolve-url": {
-        parameters: {
-            query: {
-                primary_url: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["model.UrlResolveResponse"];
-                };
-            };
-            /** @description Bad Request (missing or empty primary_url) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["http_server.BasicResponse"];
                 };
             };
             /** @description Unauthorized */

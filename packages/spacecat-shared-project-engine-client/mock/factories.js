@@ -41,7 +41,7 @@
 /** @typedef {Schemas['http_server.BasicResponse']} BasicResponse */
 /** @typedef {Schemas['model.AIOProjectInitializedResponse']} InitStatus */
 /** @typedef {Schemas['model.CICompetitor']} CiCompetitor */
-/** @typedef {Schemas['model.UrlResolveResponse']} UrlResolve */
+/** @typedef {Schemas['model.ResolveURLResponse']} UrlResolve */
 
 import { isoForLanguageId } from './language-catalog.js';
 import { findCatalogEntryByKey } from './ai-model-catalog.js';
@@ -431,7 +431,7 @@ export const createCiCompetitorMock = (overrides = {}) => ({
 });
 
 /**
- * A URL-resolve result (`UrlResolveResponse`) — the `GET /v1/url/resolve` body. The DEFAULT is the
+ * A URL-resolve result (`ResolveURLResponse`) — the `GET /v1/url/resolve` body. The DEFAULT is the
  * live invalid/unresolvable shape (`{ domain: '', primary_url: '', is_valid: false }`, HTTP 200),
  * so the route handler passes the {@link resolveUrl} overrides for a valid input and nothing (→
  * this empty default) for an invalid one. All three fields are required by the schema (CR16).

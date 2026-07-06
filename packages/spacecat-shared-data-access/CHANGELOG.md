@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v4.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.1.0...@adobe/spacecat-shared-data-access-v4.1.1) (2026-07-06)
+
+### Bug Fixes
+
+* add new phases to IVE states ([#1768](https://github.com/adobe/spacecat-shared/issues/1768)) ([91c5182](https://github.com/adobe/spacecat-shared/commit/91c5182cfbba5d9d9fcb7a53e45598bbccf93e19))
+
+## [@adobe/spacecat-shared-data-access-v4.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.0.0...@adobe/spacecat-shared-data-access-v4.1.0) (2026-07-06)
+
+### Features
+
+* **data-access:** mapping-table site_id/deletedAt + Brand workspace-id rename ([#1763](https://github.com/adobe/spacecat-shared/issues/1763)) ([c91faf0](https://github.com/adobe/spacecat-shared/commit/c91faf009b2643c5451a9912a627426ce97be0d1)), closes [#765](https://github.com/adobe/spacecat-shared/issues/765) [adobe/mysticat-data-service#765](https://github.com/adobe/mysticat-data-service/issues/765) [adobe/spacecat-api-service#2739](https://github.com/adobe/spacecat-api-service/issues/2739) [#765](https://github.com/adobe/spacecat-shared/issues/765) [mysticat-data-service#765](https://github.com/adobe/mysticat-data-service/issues/765)
+
 ## [@adobe/spacecat-shared-data-access-v4.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v3.81.0...@adobe/spacecat-shared-data-access-v4.0.0) (2026-07-03)
 
 ### ⚠ BREAKING CHANGES

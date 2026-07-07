@@ -15,6 +15,9 @@ import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { signRequest } from './edgegrid-auth.js';
 
 const REQUIRED_CONFIG_KEYS = ['host', 'clientToken', 'clientSecret', 'accessToken'];
+// The HTTP redirect statuses we follow manually (re-signing each hop). Excludes 300 (multiple
+// choices) and 304 (not modified), which are not location-driven redirects to follow.
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const SEARCH_KEYS = ['hostname', 'edgeHostname', 'propertyName'];
 const ACTIVATION_NETWORKS = ['STAGING', 'PRODUCTION'];
 // Akamai rule formats are "latest" or a dated token like "v2024-01-01". A strict
@@ -149,31 +152,66 @@ export default class AkamaiClient {
   }
 
   async #request(method, path, { params, body, headers } = {}) {
-    const url = this.#buildUrl(path, params);
     const bodyStr = body ? JSON.stringify(body) : undefined;
-    const authorization = signRequest({
-      method,
-      url,
-      body: bodyStr,
-      clientToken: this.#clientToken,
-      clientSecret: this.#clientSecret,
-      accessToken: this.#accessToken,
-    });
 
+    // The EG1-HMAC-SHA256 signature is bound to the exact request URL, so a followed redirect
+    // would carry an Authorization header signed for the *previous* URL and be rejected with a
+    // 401 "signature does not match". PAPI relies on redirects for some GETs (e.g.
+    // /versions/latest 301s to /versions/{N}), so we follow them manually and RE-SIGN each hop.
+    let url = this.#buildUrl(path, params);
     let res;
-    try {
-      res = await fetch(url, {
+    for (let hop = 0; ; hop += 1) {
+      const authorization = signRequest({
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: authorization,
-          ...headers,
-        },
+        url,
         body: bodyStr,
+        clientToken: this.#clientToken,
+        clientSecret: this.#clientSecret,
+        accessToken: this.#accessToken,
       });
-    } catch (e) {
-      throw new Error(`PAPI ${method} ${path} request failed: ${e.message}`);
+
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        res = await fetch(url, {
+          method,
+          redirect: 'manual',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: authorization,
+            ...headers,
+          },
+          body: bodyStr,
+        });
+      } catch (e) {
+        throw new Error(`PAPI ${method} ${path} request failed: ${e.message}`);
+      }
+
+      const location = REDIRECT_STATUSES.has(res.status) ? res.headers.get('location') : null;
+      if (!location) {
+        break;
+      }
+      // Only safe, body-less methods are followed. PAPI only redirects idempotent GETs; replaying
+      // a POST/PUT body to a redirect target would be semantically wrong, so refuse it explicitly
+      // rather than silently re-issue the mutation elsewhere.
+      if (method !== 'GET' && method !== 'HEAD') {
+        throw new Error(`PAPI ${method} ${path} -> unexpected redirect (${res.status})`);
+      }
+      if (hop >= 5) {
+        throw new Error(`PAPI ${method} ${path} -> too many redirects`);
+      }
+      // Re-signing attaches the Authorization header to the redirect target, so refuse to cross to
+      // a different host (mirrors browsers stripping Authorization on cross-origin redirects) — the
+      // client only ever legitimately talks to its configured EdgeGrid host. Relative Locations
+      // resolve against the current URL and stay same-host.
+      const redirectUrl = new URL(location, url);
+      if (redirectUrl.host !== new URL(url).host) {
+        throw new Error(
+          `PAPI ${method} ${path} -> redirect to different host rejected: ${redirectUrl.host}`,
+        );
+      }
+      // Re-sign for the new URL on the next iteration.
+      url = redirectUrl.toString();
     }
 
     if (!res.ok) {

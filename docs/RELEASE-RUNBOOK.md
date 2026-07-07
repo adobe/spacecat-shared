@@ -54,6 +54,40 @@ Verify provenance after a release:
 npm view @adobe/<package> --json | jq '.dist.attestations'
 ```
 
+## Bootstrapping a new package's first publish
+
+Every new workspace package starts `"private": true` (copy of
+`spacecat-shared-example`). OIDC Trusted Publishing cannot authenticate a
+package's first-ever publish — npm only lets you register a trust binding
+for a package that already exists on the registry — so the normal `main.yaml`
+release job silently skips the npm-publish step for it (`@semantic-release/npm`
+treats `private: true` as "compute the version, don't publish").
+
+`.github/workflows/bootstrap-npm-publish.yaml` (`workflow_dispatch`, inputs
+`package_dir` + `confirm_package_name`) handles the one-time bootstrap:
+
+1. Validates the target package exists, is still `private: true`, and is not
+   already on the npm registry.
+2. Removes `"private": true` from that package's `package.json` and pushes
+   the commit straight to `main` as `adobe-bot` (`ADOBE_BOT_GITHUB_TOKEN`).
+3. Publishes it once via `npm publish --access public`, authenticated with
+   the classic `ADOBE_BOT_NPM_TOKEN` secret (see "ADOBE_BOT_NPM_TOKEN" below —
+   this is the one place in the repo that still needs a non-OIDC token,
+   precisely because no OIDC trust binding can exist yet).
+4. Opens a **draft** PR that adds the package to the `PACKAGES` array in
+   `scripts/setup-npm-trusted-publishers.sh`.
+
+Manual step still required after the workflow finishes: merge that PR, then
+run `scripts/setup-npm-trusted-publishers.sh` as `adobe-bot` (npm login + gh
+CLI auth) to actually register the OIDC trust binding on npmjs.com — editing
+the `PACKAGES` array is source-only and does not itself call `npm trust`.
+Once the binding is registered, every subsequent merge to `main` touching
+that package publishes through the normal OIDC release job above.
+
+Runs in the same `npm-publish` GitHub Environment and `npm-publish-main`
+concurrency group as the release job, so it can't run off `main` or race a
+real release.
+
 ---
 
 ## Failure mode 1: First OIDC release fails after merge
@@ -497,18 +531,25 @@ To revert (drop the gate again), repeat the PUT with `"reviewers": []`.
 
 ---
 
-## ADOBE_BOT_NPM_TOKEN retirement
+## ADOBE_BOT_NPM_TOKEN
 
-`ADOBE_BOT_NPM_TOKEN` was the pre-OIDC publish token, retained in GitHub repo
-secrets as rollback insurance during the migration. OIDC has been the live
-publish path since #1592 (2026-05-21) with many successful releases, and no
-workflow references the token any more (grep `.github/` — only this runbook
-mentions it). Retire it:
+`ADOBE_BOT_NPM_TOKEN` was the pre-OIDC publish token. It was deleted after
+OIDC became the live publish path (#1592, 2026-05-21), then **reinstated** to
+back `.github/workflows/bootstrap-npm-publish.yaml` — OIDC cannot authenticate
+a package's first-ever publish (see "Bootstrapping a new package's first
+publish" above), so that one workflow still needs a classic token.
 
-1. Delete the `ADOBE_BOT_NPM_TOKEN` secret from
-   `Settings → Secrets and variables → Actions` (it may already be gone — it is
-   no longer present in the repo secret list).
-2. Revoke the npm-side token on npmjs.com (separate from GitHub deletion).
+Only `bootstrap-npm-publish.yaml` references it; `main.yaml`'s routine release
+job remains 100% OIDC. Scope the secret to the `npm-publish` GitHub Environment
+(`Settings → Environments → npm-publish → Secrets`) rather than adding it
+repo-wide, so it's readable only by jobs that declare that environment.
+
+If bootstrap publishing is ever retired (e.g. npm adds a way to pre-register
+trust for a not-yet-published package):
+
+1. Delete `bootstrap-npm-publish.yaml`.
+2. Delete the `ADOBE_BOT_NPM_TOKEN` secret from wherever it's scoped.
+3. Revoke the npm-side token on npmjs.com (separate from GitHub deletion).
 
 Do NOT remove the `SR_NO_NPM_AUTH` guard as part of this. It is permanent, not a
 bootstrap artifact: the Test-job dry-run has no npm publish auth (OIDC works only
@@ -525,6 +566,7 @@ red-line the dry-run on every PR.
 
 - [SITES-42702](https://jira.corp.adobe.com/browse/SITES-42702) — migration tracking ticket
 - `.github/workflows/main.yaml` — release workflow with inline rename hazards
+- `.github/workflows/bootstrap-npm-publish.yaml` — one-time first-publish workflow for new packages
 - `scripts/setup-npm-trusted-publishers.sh` — trust binding setup + preflight
 - npm Trusted Publishers docs: https://docs.npmjs.com/trusted-publishers
 - sigstore status: https://status.sigstore.dev/

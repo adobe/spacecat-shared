@@ -39,6 +39,7 @@ describe('GeoExperimentModel', () => {
     promptsCount: 5,
     promptsLocation: 'geo-experiments/site-123/exp-456-prompts.json',
     metadata: { deployType: 'edge' },
+    insightsLocation: 'geo-experiments/site-123/exp-456-insights.json',
     error: { message: 'none' },
     updatedBy: 'spacecat-api-service',
   };
@@ -74,7 +75,10 @@ describe('GeoExperimentModel', () => {
   });
 
   it('exposes METADATA_KEYS constant', () => {
-    expect(GeoExperiment.METADATA_KEYS).to.deep.equal({ SCHEDULE_CONFIG: 'scheduleConfig' });
+    expect(GeoExperiment.METADATA_KEYS).to.deep.equal({
+      SCHEDULE_CONFIG: 'scheduleConfig',
+      IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
+    });
   });
 
   it('exposes SCHEDULE_CONFIG_KEYS constant', () => {
@@ -120,6 +124,15 @@ describe('GeoExperimentModel', () => {
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.DEPLOYMENT_DONE);
     instance.setPhase(GeoExperiment.PHASES.POST_ANALYSIS_STARTED);
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_STARTED);
+    instance.setPhase(GeoExperiment.PHASES.IMPACT_MEASUREMENT_STARTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.IMPACT_MEASUREMENT_STARTED);
+    instance.setPhase(GeoExperiment.PHASES.IMPACT_MEASUREMENT_DONE);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.IMPACT_MEASUREMENT_DONE);
+  });
+
+  it('exposes the impact-measurement phases', () => {
+    expect(GeoExperiment.PHASES.IMPACT_MEASUREMENT_STARTED).to.equal('impact_measurement_started');
+    expect(GeoExperiment.PHASES.IMPACT_MEASUREMENT_DONE).to.equal('impact_measurement_done');
   });
 
   it('gets and sets promptsLocation', () => {
@@ -165,6 +178,12 @@ describe('GeoExperimentModel', () => {
     instance.setError({ message: 'failed' });
     expect(instance.getMetadata()).to.deep.equal({ attempt: 2 });
     expect(instance.getError()).to.deep.equal({ message: 'failed' });
+  });
+
+  it('gets and sets insightsLocation', () => {
+    expect(instance.getInsightsLocation()).to.equal('geo-experiments/site-123/exp-456-insights.json');
+    instance.setInsightsLocation('geo-experiments/site-123/exp-789-insights.json');
+    expect(instance.getInsightsLocation()).to.equal('geo-experiments/site-123/exp-789-insights.json');
   });
 
   it('gets and sets updatedBy', () => {

@@ -231,6 +231,37 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Just a container with neutral text.');
     });
 
+    it('should remove FontFaceObserver mmMwWLliI0fiflO font-test spans', async () => {
+      const words = Array(20).fill('word').join(' ');
+      const html = `<html><body>
+        <h1>Real Content</h1>
+        <p>Important text here</p>
+        <div>${words}</div>
+        <br><span style="white-space: nowrap;">mmMwWLliI0fiflO&amp;1</span>
+        <br><span style="white-space: nowrap; font-family: serif;">mmMwWLliI0fiflO&amp;1</span>
+        <br><span style="white-space: nowrap; font-family: sans-serif;">mmMwWLliI0fiflO&amp;1</span>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Real Content');
+      expect(text).to.include('Important text here');
+      expect(text).to.not.include('mmMwWLliI0fiflO');
+      expect(text).to.not.match(/(\bword\b\s*){10,}/);
+    });
+
+    it('should not strip legitimate content containing the word "word"', async () => {
+      const html = `<html><body>
+        <h1>Word Processing Tips</h1>
+        <p>Use the right word in the right context. A word can change meaning.</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Word Processing Tips');
+      expect(text).to.include('Use the right word in the right context');
+    });
+
     it('should remove noscript elements by default', async () => {
       const html = '<html><body><h1>Title</h1><noscript>Please enable JavaScript</noscript><p>Content</p></body></html>';
       const text = await stripTagsToText(html);

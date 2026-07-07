@@ -86,6 +86,15 @@ const ACCESSIBILITY_SELECTORS = [
   '#digiAccess',
 ];
 
+// FontFaceObserver / Next.js @next/font inject transient test elements into the DOM to
+// detect when custom fonts have loaded. Puppeteer captures these before the library cleans
+// them up; the Chrome extension sees the page after cleanup so it's unaffected.
+// The two patterns are:
+//   1. A <div> containing only 10+ repetitions of "word" (character-width measurement)
+//   2. Spans containing "mmMwWLliI0fiflO" (the classic font-metrics test string)
+const FONT_DETECTION_TEST_STRING = 'mmMwWLliI0fiflO';
+const FONT_DETECTION_WORD_MIN_REPS = 10;
+
 /**
  * Validates if an element is likely a cookie banner based on text content
  * Optimized: Set lookup + early exit for common keywords (3x faster)
@@ -185,6 +194,60 @@ function removeAccessibilityElementsCheerio($) {
 }
 
 /**
+ * Returns true if the element is a leaf (no element children) whose text content is
+ * either the font-metrics test string or only repeated "word" tokens.
+ * Operates on the element's OWN text to avoid false-positive matches on ancestors.
+ * @param {string} text - trimmed textContent of the element
+ * @returns {boolean}
+ */
+function isFontDetectionLeaf(text) {
+  if (!text) {
+    return false;
+  }
+  if (text.includes(FONT_DETECTION_TEST_STRING)) {
+    return true;
+  }
+  // Must consist solely of "word" tokens and whitespace
+  if (/[^word\s]/.test(text)) {
+    return false;
+  }
+  return (text.match(/\bword\b/g) || []).length >= FONT_DETECTION_WORD_MIN_REPS;
+}
+
+/**
+ * Remove FontFaceObserver / Next.js font-detection test elements (browser environment).
+ * Only targets leaf elements (no element children) to avoid removing ancestor containers
+ * that also hold legitimate content.
+ * @param {Element} element - DOM element to filter
+ */
+function removeFontDetectionElements(element) {
+  element.querySelectorAll('*').forEach((el) => {
+    if (el.children.length > 0) {
+      return; // skip non-leaf elements — their text includes descendants' content
+    }
+    if (isFontDetectionLeaf((el.textContent || '').trim())) {
+      el.remove();
+    }
+  });
+}
+
+/**
+ * Remove FontFaceObserver / Next.js font-detection test elements (Node.js / cheerio).
+ * @param {CheerioAPI} $ - Cheerio instance
+ */
+function removeFontDetectionElementsCheerio($) {
+  $('*').each((i, el) => {
+    const $el = $(el);
+    if ($el.children().length > 0) {
+      return; // skip non-leaf elements
+    }
+    if (isFontDetectionLeaf($el.text().trim())) {
+      $el.remove();
+    }
+  });
+}
+
+/**
  * Remove navigation and footer elements (Node.js environment)
  * Optimized: single cheerio query instead of 35 separate queries (35x performance improvement)
  * @param {CheerioAPI} $ - Cheerio instance
@@ -262,6 +325,9 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNosc
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   const mediaSelector = 'img,video,audio,picture,svg,canvas,embed,object,iframe';
   documentElement.querySelectorAll(mediaSelector).forEach((n) => n.remove());
+
+  // Remove font-detection test elements injected by FontFaceObserver / Next.js @next/font
+  removeFontDetectionElements(documentElement);
 
   // Remove consent banners with intelligent detection
   removeCookieBanners(documentElement);
@@ -341,6 +407,9 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
 
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   $('img, video, audio, picture, svg, canvas, embed, object, iframe').remove();
+
+  // Remove font-detection test elements injected by FontFaceObserver / Next.js @next/font
+  removeFontDetectionElementsCheerio($);
 
   // Remove cookie banners with comprehensive detection
   removeCookieBannersCheerio($);

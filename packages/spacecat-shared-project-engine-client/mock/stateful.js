@@ -15,9 +15,10 @@
 /**
  * The stateful slice of the Project Engine mock.
  *
- * The confirmed consumer inventory (see docs/mock-statefulness.md) makes five resource groups
- * write-then-read: **projects** (per workspace), **ai_models** / **prompts** / **benchmarks** (per
- * project), and **brand_urls** (per benchmark) — see {@link STATEFUL_RESOURCES}. This module
+ * The confirmed consumer inventory (see docs/mock-statefulness.md) makes six resource groups
+ * write-then-read: **projects** (per workspace), **ai_models** / **prompts** / **benchmarks** /
+ * **tags** (per project), and **brand_urls** (per benchmark) — see {@link STATEFUL_RESOURCES}.
+ * This module
  * encodes that set as pure operations over an {@link InMemoryStore} —
  * collection-key scoping plus the CRUD each group needs — with no Counterfact / HTTP coupling,
  * so it is unit-testable on its own. The Counterfact runner adapts these into per-path handlers
@@ -36,17 +37,19 @@
  * Resource groups the live audit confirmed the consumer
  * write-then-reads: projects, ai_models, prompts, plus benchmarks (per project) and brand_urls
  * (per benchmark) — the competitor-benchmark and brand-URL sync flows create→list→update→delete,
- * so they need real state to be faithfully testable.
+ * so they need real state to be faithfully testable. `tags` are the project-level AIO taxonomy
+ * (the Categories surface): the consumer creates a standalone `category:<name>` tag per market
+ * project and must read it back even before any prompt carries it, so it needs real state too.
  */
 export const STATEFUL_RESOURCES = Object.freeze([
-  'projects', 'ai_models', 'prompts', 'benchmarks', 'brand_urls',
+  'projects', 'ai_models', 'prompts', 'benchmarks', 'tags', 'brand_urls',
 ]);
 
 /**
  * Builds the store collection key for a resource, scoped so two workspaces (or projects, or
  * benchmarks) never share state. `projects` are scoped per workspace; `ai_models`, `prompts`,
- * and `benchmarks` per project; `brand_urls` per benchmark (within a project).
- * @param {'projects' | 'ai_models' | 'prompts' | 'benchmarks' | 'brand_urls'} resource
+ * `benchmarks`, and `tags` per project; `brand_urls` per benchmark (within a project).
+ * @param {'projects' | 'ai_models' | 'prompts' | 'benchmarks' | 'tags' | 'brand_urls'} resource
  * @param {{ workspaceId?: string | number, projectId?: string | number,
  *   benchmarkId?: string | number }} scope
  * @returns {string}
@@ -162,6 +165,18 @@ export function createStatefulOps(store) {
         return prompts.map((prompt) => store.create(key, prompt));
       },
       /**
+       * Partially updates one stored prompt in place (the id-based `PUT /aio/prompts/tags` tag-set
+       * write), returning the updated entity or undefined if the id is unknown. Live silently skips
+       * an unknown prompt id, so the handler treats an `undefined` return as a no-op.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {string} id
+       * @param {Record<string, unknown>} patch
+       * @returns {Entity | undefined}
+       */
+      update(scope, id, patch) {
+        return store.update(collectionKey('prompts', scope), id, patch);
+      },
+      /**
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<string>} ids
        * @returns {number}
@@ -209,6 +224,78 @@ export function createStatefulOps(store) {
        */
       removeMany(scope, ids) {
         const key = collectionKey('benchmarks', scope);
+        return ids.reduce((removed, id) => (store.delete(key, id) ? removed + 1 : removed), 0);
+      },
+    },
+
+    tags: {
+      /**
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @returns {Entity[]}
+       */
+      list(scope) {
+        return store.list(collectionKey('tags', scope));
+      },
+      /**
+       * Resolve-before-create for a batch of project tags — the discipline live REQUIRES of every
+       * consumer (gate 7, verified 2026-07-02): the `POST /aio/tags` endpoint does NOT dedupe, so
+       * creating a tag whose NAME already exists at the same parent is a same-name/same-parent
+       * COLLISION that live answers with a hard 500. This models it: it resolves each requested tag
+       * (by its deterministic id) against the stored collection and, if any would collide with a
+       * stored tag at the same parent — or duplicate another entry in the batch — the batch is
+       * rejected ATOMICALLY (`collision: true`, nothing written) so the caller can 500. On no
+       * collision every tag is persisted. Because the id is derived from the name ALONE, a
+       * same-name tag under a DIFFERENT parent shares the id and collapses onto the stored row
+       * (not a collision) — the documented 1-level-tree limitation (see the tags.js header).
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<Entity>} tags each carrying its deterministic `id` (+ optional `parent_id`)
+       * @returns {{ tags: Entity[], collision: boolean }} `collision: true` ⇒ nothing was written
+       */
+      upsertMany(scope, tags) {
+        const key = collectionKey('tags', scope);
+        /** @param {Entity} t */
+        const parentOf = (t) => (t.parent_id ? String(t.parent_id) : '');
+        // Atomic pre-check: a tag collides when one with the SAME id already sits at the same
+        // parent, OR the same (id, parent) appears twice in this batch. Checked before any write,
+        // so a collision leaves the store untouched.
+        const seen = new Set();
+        for (const tag of tags) {
+          const marker = `${tag.id}@${parentOf(tag)}`;
+          const existing = store.get(key, tag.id);
+          if (seen.has(marker) || (existing && parentOf(existing) === parentOf(tag))) {
+            return { tags: [], collision: true };
+          }
+          seen.add(marker);
+        }
+        // No collision: create each. A same-name tag under a different parent shares the derived
+        // id, so `get() ?? create()` reuses the stored row (documented collapse) rather than throw.
+        const stored = tags.map((tag) => store.get(key, tag.id) ?? store.create(key, tag));
+        return { tags: stored, collision: false };
+      },
+      /**
+       * Re-parents / renames one tag in place (the `PATCH /aio/tags/{tag_id}` — `aio-update-tag`
+       * surface), returning the updated entity or undefined if the id is unknown. The id stays
+       * stable (Semrush tag ids are opaque; only `name`/`parent_id` change). Promoting a child to a
+       * root is expressed by patching `parent_id` to `''` (the read path treats a falsy `parent_id`
+       * as a root); `children_count`/`path` are never stored, so they are not part of the patch.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {string} id
+       * @param {Record<string, unknown>} patch
+       * @returns {Entity | undefined}
+       */
+      update(scope, id, patch) {
+        return store.update(collectionKey('tags', scope), id, patch);
+      },
+      /**
+       * Removes the given tag ids from the project's tag collection, reporting how many were
+       * actually removed. Only the standalone tag collection is touched — prompts that carry a
+       * removed tag are a separate collection and keep their tag map intact.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<string>} ids
+       * @returns {number}
+       */
+      removeMany(scope, ids) {
+        const key = collectionKey('tags', scope);
         return ids.reduce((removed, id) => (store.delete(key, id) ? removed + 1 : removed), 0);
       },
     },

@@ -18,16 +18,36 @@
  * version-agnostic store key (`ai_models:{workspaceId}:{projectId}`), so a subsequent v1 GET
  * reflects it. v2 has no list/delete variant, so only POST is wired here.
  *
+ * The posted `model_id` is resolved against the global AI-model catalog
+ * (`$.context.aiModelCatalog`) so the stored/echoed model carries the REAL model's `name` + `icon`
+ * — only `key` comes back empty, matching the live add path (verified 2026-06-25). Without this
+ * lookup every added model fell back to the `createAiModelMock` default (GPT-4o), so a project
+ * tracking e.g. Perplexity + Gemini read back as identical "GPT-4o" rows. An unknown id keeps the
+ * factory default (the id is still preserved), a faithful-enough floor for the unmodelled case.
+ *
  * Materialized into `.counterfact/routes/` by the mock runner; excluded from coverage.
  */
 
 /** POST — add an AI model to the project (body: { model_id }) → 201 (matches live). */
 export function POST($) {
   const { path, body, context } = $;
+  const catalogModel = context.aiModelCatalog.find((m) => m.id === body.model_id);
+  // Live echoes the catalog model's name + icon on add; only `key` comes back empty there.
+  // A missing model_id can't reach here on the validated route (the request schema marks it
+  // required → 400), but guard anyway so the unmodelled fallback never overrides the factory's
+  // generated id with `undefined`.
+  let modelOverrides = {};
+  if (catalogModel) {
+    modelOverrides = {
+      id: body.model_id, key: '', name: catalogModel.name, icon: catalogModel.icon,
+    };
+  } else if (body.model_id) {
+    modelOverrides = { id: body.model_id };
+  }
   const created = context.ops.ai_models.add(
     { workspaceId: path.id, projectId: path.project_id },
     context.factories.createProjectAiModelMock({
-      model: context.factories.createAiModelMock({ id: body.model_id }),
+      model: context.factories.createAiModelMock(modelOverrides),
       prompts_count: 0,
     }),
   );

@@ -62,6 +62,7 @@ State boots from a named seed (`MOCK_SEED`), or a JSON snapshot file (`MOCK_SEED
 | --- | --- |
 | `parent-with-child` (default) | the org parent + one provisioned child (`SEED_IDS.parentWorkspaceId` / `.childWorkspaceId`) |
 | `empty-parent` | the org parent only — the "create a sub-workspace from scratch" flow |
+| `two-hierarchies` | a superset of `parent-with-child` plus a second, independent parent→child family (`SEED_IDS.secondParentWorkspaceId` / `.secondChildWorkspaceId`) for the dual-org case; pairs with the Project Engine mock's `two-hierarchies` |
 
 `buildSeed({ workspaces, pools })` authors a snapshot from a DB-shaped description (use the
 `semrush_workspace_id` UUIDs from your fixtures so the mock and Postgres line up). Each workspace is
@@ -87,12 +88,13 @@ to model exhaustion:
 ```bash
 curl -s -XPOST localhost:4010/enterprise/users/api/__quota \
   -H 'content-type: application/json' -d '{"workspaceId":"<parent>","projects":0,"prompts":0}'
-# now a createSubworkspace under <parent> → 422 { "message": "insufficient available units" }
+# now a createSubworkspace under <parent> → 422 { "message": "insufficient available units in subscription" }
 ```
 
-The 422 **envelope** (`{ message }`) is live-confirmed (2026-06-26). Live also returns a second 422
-variant — `{ "message": "workspace not ready" }` — when a transfer/delete races a still-settling
-child; the mock is immediately-consistent and does not model that lock (see mock-statefulness.md).
+The 422 string is live-pinned (2026-06-29): `{ "message": "insufficient available units in
+subscription" }`. Live also returns a second 422 variant — `{ "message": "workspace not ready" }` —
+when a transfer/delete races a still-settling child; the mock is immediately-consistent and does not
+model that lock (see mock-statefulness.md).
 
 ## 7. Driving the mock from tests / an agent
 

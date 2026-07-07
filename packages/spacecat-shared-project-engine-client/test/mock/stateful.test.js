@@ -19,9 +19,9 @@ import {
 } from '../../mock/stateful.js';
 
 describe('stateful — confirmed resource set', () => {
-  it('is projects, ai_models, prompts, benchmarks, brand_urls (live-audited surface)', () => {
+  it('is projects, ai_models, prompts, benchmarks, tags, brand_urls (live-audited surface)', () => {
     expect([...STATEFUL_RESOURCES]).to.deep.equal([
-      'projects', 'ai_models', 'prompts', 'benchmarks', 'brand_urls',
+      'projects', 'ai_models', 'prompts', 'benchmarks', 'tags', 'brand_urls',
     ]);
   });
 });
@@ -31,10 +31,11 @@ describe('stateful — collectionKey scoping', () => {
     expect(collectionKey('projects', { workspaceId: 'w1' })).to.equal('projects:w1');
   });
 
-  it('scopes ai_models, prompts and benchmarks per project', () => {
+  it('scopes ai_models, prompts, benchmarks and tags per project', () => {
     expect(collectionKey('ai_models', { workspaceId: 'w1', projectId: 'p1' })).to.equal('ai_models:w1:p1');
     expect(collectionKey('prompts', { workspaceId: 'w1', projectId: 'p1' })).to.equal('prompts:w1:p1');
     expect(collectionKey('benchmarks', { workspaceId: 'w1', projectId: 'p1' })).to.equal('benchmarks:w1:p1');
+    expect(collectionKey('tags', { workspaceId: 'w1', projectId: 'p1' })).to.equal('tags:w1:p1');
   });
 
   it('scopes brand_urls per benchmark (within a project)', () => {
@@ -95,6 +96,16 @@ describe('stateful — prompts ops', () => {
     expect(ops.removeMany(scope, [...created.map((e) => e.id), 'missing'])).to.equal(2);
     expect(ops.list(scope)).to.have.length(0);
   });
+
+  it('updates a stored prompt in place; returns undefined for an unknown id', () => {
+    const ops = createStatefulOps(new InMemoryStore()).prompts;
+    const [created] = ops.createMany(scope, [{ name: 'p', tags: [] }]);
+    const updated = ops.update(scope, created.id, { tags: [{ id: 'tag-1', name: 'brand' }] });
+    expect(updated.tags).to.deep.equal([{ id: 'tag-1', name: 'brand' }]);
+    expect(ops.list(scope)[0].tags).to.deep.equal([{ id: 'tag-1', name: 'brand' }]);
+    // unknown id → no-op (the PUT /aio/prompts/tags silent-skip contract)
+    expect(ops.update(scope, 'missing', { tags: [] })).to.equal(undefined);
+  });
 });
 
 describe('stateful — benchmarks ops', () => {
@@ -118,6 +129,83 @@ describe('stateful — benchmarks ops', () => {
     const ops = createStatefulOps(new InMemoryStore()).benchmarks;
     ops.createMany({ workspaceId: 'w1', projectId: 'p1' }, [{ domain: 'a.example' }]);
     expect(ops.list({ workspaceId: 'w1', projectId: 'p2' })).to.have.length(0);
+  });
+});
+
+describe('stateful — tags ops', () => {
+  const scope = { workspaceId: 'w1', projectId: 'p1' };
+
+  it('creates a clean batch (no collision), lists and bulk-removes', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    const { tags: created, collision } = ops.upsertMany(scope, [
+      { id: 'tag-a', name: 'category:A' },
+      { id: 'tag-b', name: 'category:B' },
+    ]);
+    expect(collision).to.equal(false);
+    expect(created).to.have.length(2);
+    expect(ops.list(scope)).to.have.length(2);
+    expect(ops.removeMany(scope, ['tag-a', 'missing'])).to.equal(1);
+    expect(ops.list(scope)).to.have.length(1);
+  });
+
+  it('rejects a same-name/same-parent collision atomically (gate 7 → the route 500s)', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    ops.upsertMany(scope, [{ id: 'tag-a', name: 'category:A' }]);
+    // re-creating the same id at the same (root) level collides — nothing new is written
+    const { tags, collision } = ops.upsertMany(scope, [
+      { id: 'tag-a', name: 'category:A' },
+      { id: 'tag-b', name: 'category:B' },
+    ]);
+    expect(collision).to.equal(true);
+    expect(tags).to.have.length(0);
+    // atomic: the non-colliding tag-b was NOT created
+    expect(ops.list(scope).map((t) => t.id)).to.deep.equal(['tag-a']);
+  });
+
+  it('rejects an intra-batch duplicate (same id+parent twice in one request)', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    const { collision } = ops.upsertMany(scope, [
+      { id: 'tag-a', name: 'category:A' },
+      { id: 'tag-a', name: 'category:A' },
+    ]);
+    expect(collision).to.equal(true);
+    expect(ops.list(scope)).to.have.length(0);
+  });
+
+  it('reuses (collapses) a same-name tag under a DIFFERENT parent — not a collision', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    ops.upsertMany(scope, [{ id: 'tag-x', name: 'Trail', parent_id: 'root-a' }]);
+    // the id is derived from the name alone, so 'Trail' under a different parent shares the id and
+    // collapses onto the stored row (documented 1-level-tree limitation) rather than colliding
+    const { tags, collision } = ops.upsertMany(scope, [{ id: 'tag-x', name: 'Trail', parent_id: 'root-b' }]);
+    expect(collision).to.equal(false);
+    expect(tags[0]).to.include({ id: 'tag-x', parent_id: 'root-a' }); // the original row, reused
+    expect(ops.list(scope)).to.have.length(1);
+  });
+
+  it('isolates tags across projects (the multi-market scoping invariant)', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    ops.upsertMany({ workspaceId: 'w1', projectId: 'p1' }, [{ id: 'tag-a', name: 'category:A' }]);
+    expect(ops.list({ workspaceId: 'w1', projectId: 'p2' })).to.have.length(0);
+  });
+
+  it('re-parents / renames a tag in place, keeping the id stable', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    ops.upsertMany(scope, [
+      { id: 'tag-root', name: 'category:Root' },
+      { id: 'tag-child', name: 'Child' },
+    ]);
+    // re-parent the child under the root
+    const parented = ops.update(scope, 'tag-child', { name: 'Child', parent_id: 'tag-root' });
+    expect(parented).to.include({ id: 'tag-child', name: 'Child', parent_id: 'tag-root' });
+    // promote back to a root (parent_id cleared to '')
+    const promoted = ops.update(scope, 'tag-child', { name: 'Child', parent_id: '' });
+    expect(promoted).to.include({ id: 'tag-child', parent_id: '' });
+  });
+
+  it('returns undefined when updating an unknown tag id', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    expect(ops.update(scope, 'missing', { name: 'x', parent_id: '' })).to.equal(undefined);
   });
 });
 

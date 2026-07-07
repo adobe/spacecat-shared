@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-user-manager-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.3.1...@adobe/spacecat-shared-user-manager-client-v1.4.0) (2026-07-01)
+
+### Features
+
+* **project-engine-client:** fold serenity sub-workspace fixtures into the baked mock seed ([#1759](https://github.com/adobe/spacecat-shared/issues/1759)) ([1522237](https://github.com/adobe/spacecat-shared/commit/1522237a0f883ae1c0740adcf2774375ab7f22cb))
+
+## [@adobe/spacecat-shared-user-manager-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.3.0...@adobe/spacecat-shared-user-manager-client-v1.3.1) (2026-06-29)
+
+### Bug Fixes
+
+* **project-engine-client, user-manager-client:** round-trip created+published market + live-fidelity sweep ([#1745](https://github.com/adobe/spacecat-shared/issues/1745)) ([#1746](https://github.com/adobe/spacecat-shared/issues/1746)) ([d3d823c](https://github.com/adobe/spacecat-shared/commit/d3d823c58f155ffa35258ff40c16b2b6f4fe2d56)), closes [#1742](https://github.com/adobe/spacecat-shared/issues/1742)
+
 ## [@adobe/spacecat-shared-user-manager-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.2.0...@adobe/spacecat-shared-user-manager-client-v1.3.0) (2026-06-26)
 
 ### Features

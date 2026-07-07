@@ -22,15 +22,24 @@ services:
     # re-pushed tag — if ECR re-publishes v5.15.0 with a different binary, the digest mismatch
     # causes a hard pull failure instead of silent drift.
     #
+    # NOTE: v5.52.0 (mysticat migration 20260626153444) dropped the async-job-owned
+    # columns (started_at/result/error) from `preflights`; the Preflight model was
+    # updated to the new schema in SITES-47254 (they live on AsyncJob now), so the
+    # old ">= v5.52.0 breaks the Preflight IT suite" blocker no longer applies.
+    # v5.57.0 additionally carries the brand_to_semrush_projects site_id/soft-delete
+    # and brands semrush_sub_workspace_id columns (mysticat-data-service #765) that
+    # this branch's model changes require.
+    #
     # To obtain or refresh the digest:
     #   aws ecr describe-images \
     #     --profile <your-profile> --region us-east-1 \
     #     --repository-name mysticat-data-service \
-    #     --image-ids imageTag=v5.51.0 \
+    #     --image-ids imageTag=v5.57.0 \
     #     --query 'imageDetails[0].imageDigest' --output text
+    #   -> sha256:86e548a57d1e5390fec4db5d713574fecb092158f69f283eedf78e4ce2633e4d
     # Then export MYSTICAT_DATA_SERVICE_DIGEST=sha256:<the-digest> before npm run test:it,
     # or set it in the .env file consumed by docker compose. Leave unset for local dev.
-    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v5.51.0}${MYSTICAT_DATA_SERVICE_DIGEST:+@${MYSTICAT_DATA_SERVICE_DIGEST}}
+    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v5.57.0}${MYSTICAT_DATA_SERVICE_DIGEST:+@${MYSTICAT_DATA_SERVICE_DIGEST}}
     depends_on:
       db:
         condition: service_healthy

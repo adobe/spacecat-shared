@@ -44,6 +44,10 @@ definitions:
         type: string
       favorite:
         type: boolean
+      main_brand:
+        type: boolean
+      primary_url:
+        type: string
     type: object
   model.AIOBenchmarkWithCounters:
     properties:
@@ -63,6 +67,8 @@ definitions:
         type: string
       main_brand:
         type: boolean
+      primary_url:
+        type: string
       product_names:
         items:
           type: string
@@ -75,6 +81,8 @@ definitions:
         items:
           type: string
         type: array
+      root_domain:
+        type: string
     type: object
   model.AIOProduct:
     properties:
@@ -218,6 +226,8 @@ definitions:
         $ref: '#/definitions/model.LocationResponse'
       models_stats:
         $ref: '#/definitions/model.ProjectModelStats'
+      primary_url:
+        type: string
       products_count:
         type: integer
       prompts_count:
@@ -254,17 +264,23 @@ definitions:
     type: object
   model.ApplyInteractiveIgnoreIssueRulesRequest:
     properties:
-      filters:
+      issue_ids:
         items:
-          type: integer
+          type: string
         type: array
-      id:
+      issue_type:
         type: string
-      name:
+      match_by:
+        enum:
+        - one_shot_rule
+        - issue_id
         type: string
+      recent_check:
+        type: integer
     required:
-    - filters
-    - name
+    - issue_ids
+    - issue_type
+    - match_by
     type: object
   model.AvailablePromptsResponse:
     properties:
@@ -1083,6 +1099,13 @@ definitions:
       name:
         type: string
     type: object
+  model.ManagedAIModelsResponse:
+    properties:
+      managed_ai_models:
+        additionalProperties:
+          type: boolean
+        type: object
+    type: object
   model.ProjectAIModelListResponse:
     properties:
       items:
@@ -1161,6 +1184,8 @@ definitions:
         type: string
       name:
         type: string
+      primary_url:
+        type: string
       type:
         description: 'enum: seo, ai, mfour, si, ci'
         enum:
@@ -1238,6 +1263,8 @@ definitions:
       location_name:
         type: string
       name:
+        type: string
+      primary_url:
         type: string
       type:
         description: 'enum: ai, mfour, si'
@@ -1366,6 +1393,15 @@ definitions:
       status:
         type: string
     type: object
+  model.ResolveURLResponse:
+    properties:
+      domain:
+        type: string
+      is_valid:
+        type: boolean
+      primary_url:
+        type: string
+    type: object
   model.RestorePromptNamesRequest:
     properties:
       ids:
@@ -1404,17 +1440,10 @@ definitions:
       custom_robots_txt:
         type: string
     type: object
-  model.SIProjectSettingsRequest:
-    properties:
-      allow_more_parallel_instances:
-        type: boolean
-    type: object
   model.SISettings:
     properties:
       advanced_crawling_consent:
         $ref: '#/definitions/model.AdvancedCrawlingConsentResponse'
-      allow_more_parallel_instances:
-        type: boolean
       crawler_stats:
         items:
           $ref: '#/definitions/model.CrawlerStats'
@@ -1475,6 +1504,16 @@ definitions:
         $ref: '#/definitions/model.CISettings'
       si:
         $ref: '#/definitions/model.SISettings'
+    type: object
+  model.StopCrawlRequest:
+    properties:
+      crawl_configuration_id:
+        type: string
+      project_id:
+        type: string
+    required:
+    - crawl_configuration_id
+    - project_id
     type: object
   model.StringIDName:
     properties:
@@ -1668,6 +1707,40 @@ paths:
       summary: Resolve locations
       tags:
       - Locations
+  /v1/url/resolve:
+    get:
+      description: Normalizes the given primary_url and extracts its registrable domain
+        (eTLD+1).
+      operationId: resolve-url
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Primary URL to resolve
+        in: query
+        name: primary_url
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ResolveURLResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Resolve URL
+      tags:
+      - URL
   /v1/workspaces/{id}/brand-topics:
     get:
       description: Returns top 10 brand topics with their search volume and up to
@@ -1724,6 +1797,55 @@ paths:
       summary: Get brand topics with prompts
       tags:
       - AI-SEO
+  /v1/workspaces/{id}/crawls/stop:
+    post:
+      description: Stop a running crawl for the given project and crawl configuration
+      operationId: si-stop-crawl
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.StopCrawlRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Stop SI crawl
+      tags:
+      - SI
   /v1/workspaces/{id}/keywords:
     get:
       consumes:
@@ -1779,6 +1901,45 @@ paths:
       summary: list keywords for workspace
       tags:
       - Suggestions
+  /v1/workspaces/{id}/managed-ai-models:
+    get:
+      description: |-
+        Returns the full catalog of managed AI models with their enabled/disabled status
+        for the master workspace.
+      operationId: managed-ai-models-get
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ManagedAIModelsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Get managed AI models for a workspace
+      tags:
+      - AI Models
   /v1/workspaces/{id}/projects:
     get:
       consumes:
@@ -3313,6 +3474,10 @@ paths:
         in: query
         name: draft
         type: boolean
+      - description: Get only main_brand benchmark
+        in: query
+        name: main_brand
+        type: boolean
       produces:
       - application/json
       responses:
@@ -3529,6 +3694,65 @@ paths:
           schema:
             $ref: '#/definitions/http_server.BasicResponse'
       summary: Publish interactive ignore issue rules event
+      tags:
+      - SI
+  /v1/workspaces/{id}/projects/{project_id}/apply_interactive_unignore_issue_rules/{crawl_configuration_id}:
+    post:
+      consumes:
+      - application/json
+      description: Publishes an interactive-ignore-issue-rules event with operation
+        "unignore" to the pub/sub topic for the given crawl configuration. Accepts
+        the same payload as the ignore endpoint.
+      operationId: si-apply-interactive-unignore-issue-rules
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Crawl Configuration ID
+        in: path
+        name: crawl_configuration_id
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.ApplyInteractiveIgnoreIssueRulesRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Publish interactive unignore issue rules event
       tags:
       - SI
   /v1/workspaces/{id}/projects/{project_id}/ci/competitors:
@@ -4993,57 +5217,6 @@ paths:
           schema:
             $ref: '#/definitions/http_server.BasicResponse'
       summary: Set advanced crawling consent for SI project
-      tags:
-      - Projects
-  /v1/workspaces/{id}/projects/{project_id}/si/allow_more_parallel_instances:
-    patch:
-      consumes:
-      - application/json
-      description: Sets allow_more_parallel_instances flag for a project in workspace
-        with given ID
-      operationId: projects-set-allow-more-parallel-instances
-      parameters:
-      - description: JWT Token
-        in: header
-        name: Auth-Data-Jwt
-        required: true
-        type: string
-      - description: workspace ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: project ID
-        in: path
-        name: project_id
-        required: true
-        type: string
-      - description: Request body
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.SIProjectSettingsRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.ProjectResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/http_server.BasicResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/http_server.BasicResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/http_server.BasicResponse'
-      summary: set allow_more_parallel_instances for SI project
       tags:
       - Projects
   /v1/workspaces/{id}/projects/{project_id}/tags:

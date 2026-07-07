@@ -211,6 +211,42 @@ describe('AkamaiClient', () => {
       await expect(client.getLatestVersion(PROPERTY_ID, CONTRACT_ID, GROUP_ID))
         .to.be.rejectedWith(/no versions/);
     });
+
+    // PAPI 301-redirects /versions/latest to the concrete /versions/{N}. Because the EdgeGrid
+    // signature is bound to the request URL, the client must follow the redirect manually and
+    // re-sign for the new URL (a followed-and-not-re-signed request is rejected 401).
+    it('follows a redirect and re-signs the request for the new URL', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID })
+        .matchHeader('Authorization', hasEdgeGridAuth)
+        .reply(301, '', {
+          Location: `${API_BASE}/papi/v1/properties/${PROPERTY_ID}/versions/7`
+            + `?contractId=${CONTRACT_ID}&groupId=${GROUP_ID}`,
+        });
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/7`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID })
+        .matchHeader('Authorization', hasEdgeGridAuth)
+        .reply(200, { versions: { items: [{ propertyVersion: 7 }] } });
+
+      const version = await client.getLatestVersion(PROPERTY_ID, CONTRACT_ID, GROUP_ID);
+      expect(version).to.equal(7);
+    });
+
+    it('gives up after too many redirects', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID })
+        .times(6)
+        .reply(301, '', {
+          Location: `/papi/v1/properties/${PROPERTY_ID}/versions/latest`
+            + `?contractId=${CONTRACT_ID}&groupId=${GROUP_ID}`,
+        });
+
+      await expect(client.getLatestVersion(PROPERTY_ID, CONTRACT_ID, GROUP_ID))
+        .to.be.rejectedWith(/too many redirects/);
+    });
   });
 
   // ─── searchBy / findPropertiesByDomain ─────────────────────────────────

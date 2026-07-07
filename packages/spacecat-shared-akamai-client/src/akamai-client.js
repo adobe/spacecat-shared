@@ -149,31 +149,52 @@ export default class AkamaiClient {
   }
 
   async #request(method, path, { params, body, headers } = {}) {
-    const url = this.#buildUrl(path, params);
     const bodyStr = body ? JSON.stringify(body) : undefined;
-    const authorization = signRequest({
-      method,
-      url,
-      body: bodyStr,
-      clientToken: this.#clientToken,
-      clientSecret: this.#clientSecret,
-      accessToken: this.#accessToken,
-    });
 
+    // The EG1-HMAC-SHA256 signature is bound to the exact request URL, so a followed redirect
+    // would carry an Authorization header signed for the *previous* URL and be rejected with a
+    // 401 "signature does not match". PAPI relies on redirects for some GETs (e.g.
+    // /versions/latest 301s to /versions/{N}), so we follow them manually and RE-SIGN each hop.
+    let url = this.#buildUrl(path, params);
     let res;
-    try {
-      res = await fetch(url, {
+    for (let hop = 0; ; hop += 1) {
+      const authorization = signRequest({
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: authorization,
-          ...headers,
-        },
+        url,
         body: bodyStr,
+        clientToken: this.#clientToken,
+        clientSecret: this.#clientSecret,
+        accessToken: this.#accessToken,
       });
-    } catch (e) {
-      throw new Error(`PAPI ${method} ${path} request failed: ${e.message}`);
+
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        res = await fetch(url, {
+          method,
+          redirect: 'manual',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: authorization,
+            ...headers,
+          },
+          body: bodyStr,
+        });
+      } catch (e) {
+        throw new Error(`PAPI ${method} ${path} request failed: ${e.message}`);
+      }
+
+      const isRedirect = res.status >= 300 && res.status < 400;
+      const location = isRedirect ? res.headers.get('location') : null;
+      if (!location) {
+        break;
+      }
+      if (hop >= 5) {
+        throw new Error(`PAPI ${method} ${path} -> too many redirects`);
+      }
+      // Resolve relative Locations against the current URL, then re-sign for the new URL on the
+      // next iteration. Method and body are preserved (PAPI only redirects idempotent GETs here).
+      url = new URL(location, url).toString();
     }
 
     if (!res.ok) {

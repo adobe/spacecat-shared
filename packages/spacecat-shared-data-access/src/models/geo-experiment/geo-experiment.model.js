@@ -38,6 +38,8 @@ class GeoExperiment extends BaseModel {
     DEPLOYMENT_DONE: 'deployment_done',
     POST_ANALYSIS_STARTED: 'post_analysis_started',
     POST_ANALYSIS_DONE: 'post_analysis_done',
+    IMPACT_MEASUREMENT_STARTED: 'impact_measurement_started',
+    IMPACT_MEASUREMENT_DONE: 'impact_measurement_done',
   };
 
   /**
@@ -54,10 +56,11 @@ class GeoExperiment extends BaseModel {
    * Well-known keys used within a GeoExperiment's metadata object.
    * Centralised here so all consumers reference the same key names.
    *
-   * @type {{ SCHEDULE_CONFIG: string }}
+   * @type {{ SCHEDULE_CONFIG: string, IMPACT_MEASUREMENT_TASK_ID: string }}
    */
   static METADATA_KEYS = {
     SCHEDULE_CONFIG: 'scheduleConfig',
+    IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
   };
 
   /**

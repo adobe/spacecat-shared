@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.1.1...@adobe/spacecat-shared-data-access-v4.2.0) (2026-07-07)
+
+### Features
+
+* **data-access:** GeoExperiment impact-measurement phases + insights/impactTaskId fields ([#1779](https://github.com/adobe/spacecat-shared/issues/1779)) ([f56ae3d](https://github.com/adobe/spacecat-shared/commit/f56ae3dafe8c14fca29ae3c126bd044390f4a399))
+
 ## [@adobe/spacecat-shared-data-access-v4.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.1.0...@adobe/spacecat-shared-data-access-v4.1.1) (2026-07-06)
 
 ### Bug Fixes

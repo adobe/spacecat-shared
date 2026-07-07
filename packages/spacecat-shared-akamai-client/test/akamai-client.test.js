@@ -247,6 +247,32 @@ describe('AkamaiClient', () => {
       await expect(client.getLatestVersion(PROPERTY_ID, CONTRACT_ID, GROUP_ID))
         .to.be.rejectedWith(/too many redirects/);
     });
+
+    // Re-signing re-attaches the Authorization header to the redirect target, so a cross-host
+    // Location must be refused rather than leaking EdgeGrid credentials to another origin.
+    it('refuses to follow a redirect to a different host', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID })
+        .reply(301, '', { Location: 'https://evil.example.com/papi/v1/steal' });
+
+      await expect(client.getLatestVersion(PROPERTY_ID, CONTRACT_ID, GROUP_ID))
+        .to.be.rejectedWith(/redirect to different host rejected: evil\.example\.com/);
+    });
+
+    // Following a redirect only makes sense for safe, body-less methods; replaying a POST/PUT
+    // body to the redirect target would silently re-issue the mutation elsewhere.
+    it('refuses to follow a redirect on a non-GET request', async () => {
+      nock(API_BASE)
+        .post(`/papi/v1/properties/${PROPERTY_ID}/activations`)
+        .query(true)
+        .reply(307, '', {
+          Location: `${API_BASE}/papi/v1/properties/${PROPERTY_ID}/activations-elsewhere`,
+        });
+
+      await expect(client.activate(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID, 'STAGING'))
+        .to.be.rejectedWith(/unexpected redirect \(307\)/);
+    });
   });
 
   // ─── searchBy / findPropertiesByDomain ─────────────────────────────────

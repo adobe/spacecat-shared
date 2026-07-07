@@ -15,6 +15,9 @@ import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { signRequest } from './edgegrid-auth.js';
 
 const REQUIRED_CONFIG_KEYS = ['host', 'clientToken', 'clientSecret', 'accessToken'];
+// The HTTP redirect statuses we follow manually (re-signing each hop). Excludes 300 (multiple
+// choices) and 304 (not modified), which are not location-driven redirects to follow.
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const SEARCH_KEYS = ['hostname', 'edgeHostname', 'propertyName'];
 const ACTIVATION_NETWORKS = ['STAGING', 'PRODUCTION'];
 // Akamai rule formats are "latest" or a dated token like "v2024-01-01". A strict
@@ -184,17 +187,31 @@ export default class AkamaiClient {
         throw new Error(`PAPI ${method} ${path} request failed: ${e.message}`);
       }
 
-      const isRedirect = res.status >= 300 && res.status < 400;
-      const location = isRedirect ? res.headers.get('location') : null;
+      const location = REDIRECT_STATUSES.has(res.status) ? res.headers.get('location') : null;
       if (!location) {
         break;
+      }
+      // Only safe, body-less methods are followed. PAPI only redirects idempotent GETs; replaying
+      // a POST/PUT body to a redirect target would be semantically wrong, so refuse it explicitly
+      // rather than silently re-issue the mutation elsewhere.
+      if (method !== 'GET' && method !== 'HEAD') {
+        throw new Error(`PAPI ${method} ${path} -> unexpected redirect (${res.status})`);
       }
       if (hop >= 5) {
         throw new Error(`PAPI ${method} ${path} -> too many redirects`);
       }
-      // Resolve relative Locations against the current URL, then re-sign for the new URL on the
-      // next iteration. Method and body are preserved (PAPI only redirects idempotent GETs here).
-      url = new URL(location, url).toString();
+      // Re-signing attaches the Authorization header to the redirect target, so refuse to cross to
+      // a different host (mirrors browsers stripping Authorization on cross-origin redirects) — the
+      // client only ever legitimately talks to its configured EdgeGrid host. Relative Locations
+      // resolve against the current URL and stay same-host.
+      const redirectUrl = new URL(location, url);
+      if (redirectUrl.host !== new URL(url).host) {
+        throw new Error(
+          `PAPI ${method} ${path} -> redirect to different host rejected: ${redirectUrl.host}`,
+        );
+      }
+      // Re-sign for the new URL on the next iteration.
+      url = redirectUrl.toString();
     }
 
     if (!res.ok) {

@@ -330,6 +330,8 @@ describe('OAuthCredentialManager', () => {
       expect(httpClient.fetch.calledOnce).to.be.true;
       const written = JSON.parse(smClient.putSecretValue.firstCall.args[0].SecretString);
       expect(written.requiresReauth).to.be.false;
+      expect(written.tokenRefreshedAt).to.be.a('string');
+      expect(new Date(written.tokenRefreshedAt).getTime()).to.be.closeTo(Date.now(), 5000);
     });
 
     it('sends client_id, client_secret, grant_type, and refresh_token in Atlassian request', async () => {

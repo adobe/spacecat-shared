@@ -272,6 +272,7 @@ PACKAGES=(
   "@adobe/spacecat-shared-scrape-client"
   "@adobe/spacecat-shared-slack-client"
   "@adobe/spacecat-shared-splunk-client"
+  "@adobe/spacecat-shared-ticket-client"
   "@adobe/spacecat-shared-tier-client"
   "@adobe/spacecat-shared-tokowaka-client"
   "@adobe/spacecat-shared-user-manager-client"

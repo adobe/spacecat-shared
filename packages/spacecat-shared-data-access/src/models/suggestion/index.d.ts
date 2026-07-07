@@ -36,3 +36,15 @@ export interface SuggestionCollection extends BaseCollection<Suggestion> {
   findByOpportunityIdAndStatus(opportunityId: string, status: string, options?: QueryOptions): Promise<Suggestion | null>;
   getFixEntitiesBySuggestionId(suggestionId: string): Promise<{data: Array<FixEntity>, unprocessed: Array<string>}>;
 }
+
+// Status transition table + predicate, and the 1:1 bubble-up (SITES-47091).
+export declare const SUGGESTION_CREATE: unique symbol;
+export declare const SUGGESTION_TRANSITIONS: Record<string | symbol, string[]>;
+export declare function isAllowedSuggestionTransition(
+  from: string | null | undefined,
+  to: string,
+): boolean;
+export declare function deriveSuggestionStatus(
+  fixes: Array<FixEntity | { status?: string } | string>,
+  issues?: Array<object>,
+): string | null;

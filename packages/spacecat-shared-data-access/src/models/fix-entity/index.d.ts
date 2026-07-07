@@ -44,3 +44,11 @@ export interface FixEntityCollection extends BaseCollection<FixEntity> {
   getAllFixesWithSuggestionByCreatedAt(opportunityId: string, fixEntityCreatedDate: string): Promise<Array<{fixEntity: FixEntity, suggestions: Array<Suggestion>}>>;
   getAllFixesWithSuggestionsByOpportunityId(opportunityId: string): Promise<Array<{fixEntity: FixEntity, suggestions: Array<Suggestion>}>>;
 }
+
+// Canonical FixEntity status transition table + predicate (SITES-47091).
+export declare const FIX_ENTITY_CREATE: unique symbol;
+export declare const FIX_ENTITY_TRANSITIONS: Record<string | symbol, string[]>;
+export declare function isAllowedFixTransition(
+  from: string | null | undefined,
+  to: string,
+): boolean;

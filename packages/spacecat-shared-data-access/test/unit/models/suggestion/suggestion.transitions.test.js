@@ -17,6 +17,7 @@ import {
   SUGGESTION_CREATE,
   isAllowedSuggestionTransition,
 } from '../../../../src/models/suggestion/suggestion.transitions.js';
+import Suggestion from '../../../../src/models/suggestion/suggestion.model.js';
 
 describe('Suggestion transitions', () => {
   const legal = [
@@ -63,5 +64,14 @@ describe('Suggestion transitions', () => {
 
   it('returns false for an unknown current status', () => {
     expect(isAllowedSuggestionTransition('NOPE', 'NEW')).to.equal(false);
+  });
+
+  // Drift guard: the table duplicates the status literals to avoid a circular
+  // import, so assert every real Suggestion.STATUSES value has a row. Fails at CI
+  // time if the enum grows without a matching transition entry.
+  it('has a transition row for every Suggestion.STATUSES value', () => {
+    Object.values(Suggestion.STATUSES).forEach((status) => {
+      expect(SUGGESTION_TRANSITIONS).to.have.property(status);
+    });
   });
 });

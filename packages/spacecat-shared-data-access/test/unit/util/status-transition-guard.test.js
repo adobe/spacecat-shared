@@ -104,11 +104,29 @@ describe('status-transition-guard', () => {
       expect(log.warn.firstCall.args[0]).to.contain('Suggestion <unknown> <create> -> C');
     });
 
-    it('throws ValidationError in enforce mode', () => {
+    it('throws a sanitized ValidationError in enforce mode (no id / current status)', () => {
       process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      let thrown;
+      try {
+        guardTransition({ ...base, from: 'A', to: 'C' });
+      } catch (e) {
+        thrown = e;
+      }
+      expect(thrown).to.be.instanceOf(ValidationError);
+      expect(thrown.message).to.equal('Invalid status transition for FixEntity: cannot transition to C');
+      // must NOT leak the entity id or the current status
+      expect(thrown.message).to.not.contain('id-1');
+      expect(thrown.message).to.not.contain('A');
+    });
+
+    it('still logs the detailed violation in enforce mode', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const log = { warn: spy() };
       expect(() => guardTransition({
-        ...base, from: 'A', to: 'C',
-      })).to.throw(ValidationError, 'FixEntity id-1 A -> C');
+        ...base, from: 'A', to: 'C', log,
+      })).to.throw(ValidationError);
+      expect(log.warn).to.have.been.calledOnce;
+      expect(log.warn.firstCall.args[0]).to.contain('FixEntity id-1 A -> C');
     });
 
     it('does nothing in off mode', () => {

@@ -66,8 +66,8 @@ const toStatus = (fix) => {
  * ADR's per-issue vocabulary (`cwvIssueStatus` = PATCH_GENERATED / GUIDANCE_*
  * / PATCH_FAILED_*) does not match the data layer (mystique writes those into
  * the overloaded per-issue `status` field; the JS `ISSUE_STATUSES` enum lists
- * only Suggestion statuses). Reconciling that is a follow-up sub-task under
- * SITES-47076. Passing a non-empty `issues` argument throws to prevent a caller
+ * only Suggestion statuses). Reconciling that is a follow-up sub-task,
+ * SITES-47285. Passing a non-empty `issues` argument throws to prevent a caller
  * from silently receiving an unimplemented CWV result.
  *
  * @param {Array<object|string>} fixes - fix entities / `{status}` / status strings
@@ -77,14 +77,20 @@ const toStatus = (fix) => {
  */
 export const deriveSuggestionStatus = (fixes, issues = []) => {
   if (Array.isArray(issues) && issues.length > 0) {
-    throw new Error('deriveSuggestionStatus: CWV multi-issue bubble-up is not yet implemented (deferred to SITES-47076)');
+    throw new Error('deriveSuggestionStatus: CWV multi-issue bubble-up is not yet implemented (deferred to SITES-47285)');
   }
 
   if (!Array.isArray(fixes) || fixes.length === 0) {
     return null;
   }
 
-  const statuses = fixes.map(toStatus);
+  // Drop null/undefined entries (e.g. a sparse junction result) so one malformed
+  // entry cannot nullify an otherwise well-defined derivation; degrades to the
+  // same "no fixes" behavior as an empty array.
+  const statuses = fixes.map(toStatus).filter((s) => s != null);
+  if (statuses.length === 0) {
+    return null;
+  }
 
   if (statuses.includes(FIX.FAILED)) {
     return SUGGESTION.ERROR;

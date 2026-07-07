@@ -44,7 +44,8 @@ export const getEnforcementMode = () => {
  * @param {string} params.to - target status
  * @param {(from: string|null|undefined, to: string) => boolean} params.isAllowed
  *   - transition predicate (isAllowedFixTransition / isAllowedSuggestionTransition)
- * @param {object} [params.log] - logger with a `warn` method (warn mode only)
+ * @param {object} [params.log] - logger with a `warn` method; the detailed
+ *   violation is logged in both `warn` and `enforce` modes
  * @throws {ValidationError} in `enforce` mode when the transition is not allowed
  */
 export const guardTransition = ({
@@ -53,23 +54,24 @@ export const guardTransition = ({
   if (from === to) {
     return;
   }
-  if (isAllowed(from, to)) {
-    return;
-  }
 
   const mode = getEnforcementMode();
   if (mode === ENFORCEMENT_MODES.OFF) {
     return;
   }
-
-  const message = `status transition violation: ${entityName} ${entityId ?? '<unknown>'} ${from ?? '<create>'} -> ${to}`;
-
-  if (mode === ENFORCEMENT_MODES.ENFORCE) {
-    throw new ValidationError(message);
+  if (isAllowed(from, to)) {
+    return;
   }
 
-  // warn mode: log without blocking.
+  // Detailed message goes to the server-side log (both warn and enforce) for ops/debugging.
+  const message = `status transition violation: ${entityName} ${entityId ?? '<unknown>'} ${from ?? '<create>'} -> ${to}`;
   if (log) {
     log.warn(message);
+  }
+
+  // enforce: throw a sanitized error (no entity id / current status) so an illegal
+  // transition surfaced via the API layer cannot be used as an existence/state oracle.
+  if (mode === ENFORCEMENT_MODES.ENFORCE) {
+    throw new ValidationError(`Invalid status transition for ${entityName}: cannot transition to ${to}`);
   }
 };

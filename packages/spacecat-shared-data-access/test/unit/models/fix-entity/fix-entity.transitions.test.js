@@ -17,6 +17,7 @@ import {
   FIX_ENTITY_CREATE,
   isAllowedFixTransition,
 } from '../../../../src/models/fix-entity/fix-entity.transitions.js';
+import FixEntity from '../../../../src/models/fix-entity/fix-entity.model.js';
 
 describe('FixEntity transitions', () => {
   const legal = [
@@ -63,5 +64,14 @@ describe('FixEntity transitions', () => {
 
   it('returns false for an unknown current status', () => {
     expect(isAllowedFixTransition('NOPE', 'PENDING')).to.equal(false);
+  });
+
+  // Drift guard: the table duplicates the status literals to avoid a circular
+  // import, so assert every real FixEntity.STATUSES value has a row. Fails at CI
+  // time if the enum grows without a matching transition entry.
+  it('has a transition row for every FixEntity.STATUSES value', () => {
+    Object.values(FixEntity.STATUSES).forEach((status) => {
+      expect(FIX_ENTITY_TRANSITIONS).to.have.property(status);
+    });
   });
 });

@@ -449,7 +449,7 @@ export default class OAuthCredentialManager {
       SecretString: JSON.stringify({
         accessToken: refreshed.access_token,
         refreshToken: refreshed.refresh_token,
-        // expiresAt: epoch ms; tokenRefreshedAt: ISO 8601 — both match auth-service contract
+        // expiresAt: epoch ms (numeric comparisons); tokenRefreshedAt: ISO 8601 (audit/display)
         expiresAt: Date.now() + refreshed.expires_in * 1000,
         tokenRefreshedAt: new Date().toISOString(),
         requiresReauth: false,

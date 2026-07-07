@@ -108,6 +108,12 @@ describe('GeoExperimentModel', () => {
 
   it('gets and sets phase', () => {
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.POST_ANALYSIS_DONE);
+    instance.setPhase(GeoExperiment.PHASES.INITIATED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.INITIATED);
+    instance.setPhase(GeoExperiment.PHASES.PROMPT_GENERATION_STARTED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PROMPT_GENERATION_STARTED);
+    instance.setPhase(GeoExperiment.PHASES.PROMPT_GENERATION_COMPLETED);
+    expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PROMPT_GENERATION_COMPLETED);
     instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_STARTED);
     expect(instance.getPhase()).to.equal(GeoExperiment.PHASES.PRE_ANALYSIS_STARTED);
     instance.setPhase(GeoExperiment.PHASES.PRE_ANALYSIS_DONE);

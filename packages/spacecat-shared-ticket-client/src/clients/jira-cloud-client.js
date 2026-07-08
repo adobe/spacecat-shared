@@ -348,6 +348,25 @@ export default class JiraCloudClient extends BaseTicketClient {
   // ── Auth retry ──────────────────────────────────────────────────────────────
 
   /**
+   * Returns auth headers, retrying with bypassCache=true when the cached token
+   * is stale (TOKEN_REFRESH_REQUIRED or REQUIRES_REAUTH). Another Lambda may
+   * have written fresh tokens to SM since the cache was populated.
+   * If the bypass call also fails, the error propagates to the caller.
+   * Non-credential errors (network, SDK, IAM) are re-thrown immediately.
+   */
+  async #getAuthHeadersWithCacheBypass() {
+    try {
+      return await this.credentialManager.getAuthHeaders();
+    } catch (err) {
+      if (err.code !== 'TOKEN_REFRESH_REQUIRED' && err.code !== 'REQUIRES_REAUTH') {
+        throw err;
+      }
+      this.log.debug(`getAuthHeaders() threw ${err.code} — bypassing cache for SM re-read`);
+      return this.credentialManager.getAuthHeaders(true);
+    }
+  }
+
+  /**
    * Wraps a Jira API call with retry-once on 401.
    *
    * If getAuthHeaders() throws (cache stale — TOKEN_REFRESH_REQUIRED or
@@ -368,21 +387,6 @@ export default class JiraCloudClient extends BaseTicketClient {
    * @param {Function} requestFn - async (authHeaders) => Response
    * @returns {Promise<Response>}
    */
-  /**
-   * Returns auth headers, retrying with bypassCache=true on any error from the
-   * in-memory cache (TOKEN_REFRESH_REQUIRED, REQUIRES_REAUTH). Another Lambda
-   * may have written fresh tokens to SM since the cache was populated.
-   * If the bypass call also fails, the error propagates to the caller.
-   */
-  async #getAuthHeadersWithCacheBypass() {
-    try {
-      return await this.credentialManager.getAuthHeaders();
-    } catch {
-      this.log.debug('getAuthHeaders() cache stale — bypassing cache for SM re-read');
-      return this.credentialManager.getAuthHeaders(true);
-    }
-  }
-
   async #withAuthRetry(requestFn) {
     const authHeaders = await this.#getAuthHeadersWithCacheBypass();
     const response = await requestFn(authHeaders);

@@ -1674,6 +1674,22 @@ describe('JiraCloudClient', () => {
       expect(fetchStub.callCount).to.equal(0); // never reached Jira
     });
 
+    it('re-throws non-credential errors from getAuthHeaders without cache bypass', async () => {
+      // Non-credential errors (network, IAM, SDK) must propagate immediately —
+      // retrying with bypassCache would mask the real failure.
+      const networkErr = new Error('NetworkingError: socket hang up');
+      const credMgr = {
+        getAuthHeaders: sinon.stub().rejects(networkErr),
+      };
+      const fetchStub = sinon.stub();
+      const client = new JiraCloudClient(VALID_CONFIG, credMgr, { fetch: fetchStub }, makeLog());
+
+      const err = await client.listIssueTypes('10000').catch((e) => e);
+      expect(err.message).to.equal('NetworkingError: socket hang up');
+      expect(credMgr.getAuthHeaders.callCount).to.equal(1); // no bypass retry
+      expect(fetchStub.callCount).to.equal(0);
+    });
+
     it('propagates REQUIRES_REAUTH after cache bypass also fails', async () => {
       // Both cache and SM have requiresReauth — error propagates after bypass retry.
       const reauthErr = Object.assign(

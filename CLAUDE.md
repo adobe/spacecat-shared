@@ -71,7 +71,7 @@ spacecat-shared/
 | **Utilities** | `utils` | Validation, S3/SQS helpers, schemas, date functions |
 | **Secrets** | `vault-secrets` | HashiCorp Vault integration (AppRole auth, KV secrets) |
 | **HTML** | `html-analyzer` | HTML analysis and extraction |
-| **API clients** | `athena-client`, `brand-client`, `cloud-manager-client`, `content-client`, `drs-client`, `google-client`, `gpt-client`, `ims-client`, `launchdarkly-client`, `mac-giver-client`, `mysticat-shared-seo-client`, `project-engine-client`, `rum-api-client`, `scrape-client`, `slack-client`, `splunk-client`, `tier-client`, `tokowaka-client`, `user-manager-client` | External service integrations |
+| **API clients** | `athena-client`, `brand-client`, `cloud-manager-client`, `content-client`, `drs-client`, `google-client`, `gpt-client`, `ims-client`, `launchdarkly-client`, `mac-giver-client`, `mysticat-shared-seo-client`, `project-engine-client`, `rum-api-client`, `scrape-client`, `slack-client`, `splunk-client`, `ticket-client`, `tier-client`, `tokowaka-client`, `user-manager-client` | External service integrations |
 | **Example** | `example` | Template for creating new packages |
 
 ### Package-Level CLAUDE.md Files
@@ -81,6 +81,8 @@ Some packages have their own CLAUDE.md with deeper architectural guidance:
 - [`packages/spacecat-shared-data-access/CLAUDE.md`](packages/spacecat-shared-data-access/CLAUDE.md) — Entity pattern, SchemaBuilder DSL, PostgREST queries, integration tests
 - [`packages/spacecat-shared-vault-secrets/CLAUDE.md`](packages/spacecat-shared-vault-secrets/CLAUDE.md) — Vault pipeline, AppRole auth, E2E validation
 - [`packages/spacecat-shared-google-client/docs/CLAUDE.md`](packages/spacecat-shared-google-client/docs/CLAUDE.md) — GSC client, OAuth, environment variables
+- [`packages/spacecat-shared-project-engine-client/CLAUDE.md`](packages/spacecat-shared-project-engine-client/CLAUDE.md) — mandatory `// @ts-check`, the Counterfact mock + factory-pattern fixtures, the spec overlay
+- [`packages/spacecat-shared-user-manager-client/CLAUDE.md`](packages/spacecat-shared-user-manager-client/CLAUDE.md) — mandatory `// @ts-check`, the Counterfact mock + factory-pattern fixtures, parent-pool quota metering + bearer auth, the spec overlay + freshness gate
 
 ---
 

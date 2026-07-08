@@ -19,6 +19,77 @@ info:
 #      path key + a `query: { id }`, so a caller passing the runtime-correct
 #      `path: { id }` fails to type-check. Remove when Semrush fixes the param
 #      location upstream.
+# CR5  Mark the always-present identity fields `required` on the response schemas
+#      the stateful mock serves (projects, ai_models, prompts read paths). The
+#      vendored swagger marks NO response field required, so openapi-typescript
+#      emits everything optional — which lets typed fixtures silently omit fields
+#      and degrade fidelity. We require only fields the live API always returns AND
+#      that the mock's own create handlers populate, so generated types gain real
+#      enforcement (factories must supply them; Counterfact validates them at
+#      runtime) without misrepresenting the vendor. Notably AIModelResponse keeps
+#      only `id` required: the live shapes vary in which optional fields appear
+#      (e.g. the add path `POST .../ai_models {model_id}` returns `name` + `icon`
+#      but an EMPTY `key` — verified 2026-06-25), so requiring more than `id` would
+#      risk a false `required` claim. Narrow/remove if a spec refresh adds upstream
+#      `required` arrays.
+# CR6  createProjectTags (POST /v2/.../aio/tags) returns a TOP-LEVEL ARRAY of
+#      TreeNodeResponse, not a single object. The vendored swagger types the 201 as
+#      one `model.TreeNodeResponse`, so Counterfact's mock returned an object while the
+#      live API returns `[{ id, name, children_count, keyword_count }]` (verified
+#      2026-06-25 against prod). Retype the 201 as an array. Remove if Semrush fixes it.
+# CR7  addAiModel v2 (POST /v2/.../ai_models) returns 201, not 200. The vendored swagger
+#      declares the success response under 200; the live API responds 201 Created
+#      (verified 2026-06-25 against prod). Move the response to 201 so the type, the mock,
+#      and the live API agree. Remove if Semrush changes the status upstream.
+# CR8  init_status lives on /v2, not /v1. The vendored swagger declares
+#      GET /v1/.../aio/init_status, but that path 404s live while
+#      GET /v2/.../aio/init_status -> 200 { initialized } (verified 2026-06-25 against prod;
+#      OPTIONS /v2 -> allow: GET, OPTIONS /v1 -> 404). Relocate the path to v2 so the typed
+#      client + mock match the live API. The consumer (spacecat-api-service rest-transport
+#      `getInitStatus`) must call /v2 too. Remove if Semrush adds the v1 alias upstream.
+# CR9  RETIRED 2026-07-06: the swagger refresh added `primary_url` to model.AISettings upstream,
+#      so this correction became redundant (the freshness gate fails a no-op action). Dropped.
+# CR10 RETIRED 2026-07-06: the swagger refresh added `primary_url` + `root_domain` to
+#      model.AIOBenchmarkWithCounters upstream, so this correction became redundant. Dropped.
+# CR11 aio-update-tag (PATCH /v2/.../aio/tags/{tag_id}) responds 200, not 201. The vendored swagger
+#      declares the success response under 201; the live API responds 200 OK (verified 2026-07-01
+#      against prod `adobe-hackathon.semrush.com`, workspace bb0f4e1c-… child, PATCH re-parent+rename
+#      of a tag → 200 with the updated TreeNodeResponse). Move the response 201→200 so the type, the
+#      mock, and the live API agree. Remove if Semrush changes the status upstream.
+# CR12 aio-update-tag returns 404 (not 500) for an unknown tag id. The vendored swagger declares no
+#      404; the live API responds `404 {"message":"not found"}` for a missing tag (verified
+#      2026-07-01 against prod — same shape as the projects delete/patch 404). Add a 404 response
+#      (http_server.BasicResponse) so the mock can return the live status and Counterfact response
+#      validation accepts it. Remove if Semrush declares/relocates it upstream.
+# CR13 model.AIOTag `parent_id` + `path` are NULLABLE. The live tag read returns `parent_id: null`
+#      and `path: null` for a flat / root tag (no parent), not an omitted field or an empty array
+#      (verified 2026-07-01 against prod). The vendored swagger types them non-nullable, so a mock
+#      emitting the live `null` fails response validation / the generated type. Mark both nullable.
+#      Remove if Semrush stops returning null (e.g. omits the fields) upstream.
+# CR14 aio-create-prompt-v2 (POST /v2/.../aio/prompts) responds with a paginated list wrapper
+#      `{page, total, items:[{id,name}], existing_count}`, not a bare `model.StringIDName`
+#      (verified 2026-07-02 against prod). Reuses the already-vendored `StringIDNameListResponse`
+#      wrapper (extended with `existing_count`) instead of a new schema. Remove if Semrush retypes
+#      the response upstream.
+# CR15 model.TreeNodeRequest `parent_id` is NULLABLE. aio-update-tag accepts an explicit
+#      `parent_id: null` to promote a child tag to a root (verified 2026-07-02 against prod). The
+#      vendored swagger types it as a plain string, so request validation rejected the literal
+#      null. Remove if Semrush documents the nullability upstream.
+# CR16 Mark model.ResolveURLResponse's `domain` + `primary_url` + `is_valid` `required`. The
+#      swagger refresh (2026-07-06) shipped GET /v1/url/resolve and its response schema
+#      (model.ResolveURLResponse) upstream, so the path-add + custom-schema this correction
+#      originally carried are gone — the endpoint is now vendored natively. What upstream still
+#      omits is the `required` array: all three fields are ALWAYS present (even the is_valid:false
+#      case returns empty `domain`/`primary_url` strings rather than omitting them — verified
+#      2026-07-03 against prod, serenity-docs#25 §0), and the mock's createUrlResolveMock always
+#      populates them, so we mark them required (the same faithful-`required` philosophy as CR5).
+#      The query param is already `required` upstream, and auth is handled by CR2's global
+#      Auth-Data-Jwt strip + imsBearer. Remove if Semrush marks the fields required upstream.
+#
+# Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
+# nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
+# spec that makes a correction stale or redundant fails CI. `npm run spec:overlay` likewise
+# exits non-zero on a stale (0-match) correction.
 actions:
   # ── CR1: Add GET /v1/ai_models ──────────────────────────────────────────
   # Live: 200 -> { page:int, total:int, items:[AIModelResponse] }.
@@ -118,3 +189,225 @@ actions:
     description: "CR4: workspace `id` is a path parameter on every operation (not query)"
     update:
       in: path
+
+  # ── CR5: Require the always-present identity fields on served responses ───
+  - target: "$.components.schemas['model.ProjectResponse']"
+    description: "CR5: a project response always carries id + name"
+    update:
+      required: [id, name]
+
+  - target: "$.components.schemas['model.ProjectAIModelResponse']"
+    description: "CR5: an assigned model always carries id + model + prompts_count"
+    update:
+      required: [id, model, prompts_count]
+
+  - target: "$.components.schemas['model.AIModelResponse']"
+    description: "CR5: a catalog model always carries id (name/icon present on add, key empty there)"
+    update:
+      required: [id]
+
+  - target: "$.components.schemas['model.AIOPromptWithStatus']"
+    description: "CR5: a prompt-with-status always carries id + name + tags"
+    # `is_new` is NOT marked required: the live `by_tags` list omits it (verified
+    # 2026-06-25 against prod), most likely an omit-when-false boolean. Requiring it
+    # would misrepresent the live API and make the type lie. It stays an optional
+    # property (the mock may still populate it; that is a spec-valid superset).
+    update:
+      required: [id, name, tags]
+
+  - target: "$.components.schemas['model.AIOBenchmarkWithCounters']"
+    description: "CR5: a listed benchmark always carries id (the benchmark_id brand URLs attach to)"
+    # Now that benchmarks are stateful-served by the mock, the served list item always has an id
+    # (verified live 2026-06-25). Conservative: id only — brand_name/domain can legitimately be
+    # absent on a sparse competitor row.
+    update:
+      required: [id]
+
+  - target: "$.components.schemas['model.BrandURL']"
+    description: "CR5: a listed brand URL always carries id"
+    update:
+      required: [id]
+
+  - target: "$.components.schemas['model.AIOTag']"
+    description: "CR5: a listed/stored project tag always carries id"
+    # Now that project tags are stateful-served by the mock (GET /aio/tags), the served list item
+    # always has an id (the deterministic `tag-<name>`). Conservative: id only — the count fields
+    # default to 0 but are not asserted required, and parent_id/path are absent on a flat tag.
+    update:
+      required: [id]
+
+  # ── CR6: createProjectTags returns a top-level ARRAY ─────────────────────
+  # Live: POST /v2/.../aio/tags -> 201 [{ id, name, children_count, keyword_count }].
+  # The vendored 201 schema is a single TreeNodeResponse; replace it with an array.
+  # Two actions: drop the scalar `$ref` (deep-merge cannot overwrite an object node),
+  # then set the array schema in its place.
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags'].post.responses['201'].content['application/json'].schema.$ref"
+    description: "CR6: drop the single-object $ref on the tags-create 201"
+    remove: true
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags'].post.responses['201'].content['application/json'].schema"
+    description: "CR6: the tags-create 201 is an array of TreeNodeResponse"
+    update:
+      type: array
+      items:
+        $ref: "#/components/schemas/model.TreeNodeResponse"
+
+  # ── CR7: addAiModel v2 responds 201, not 200 ─────────────────────────────
+  # Live: POST /v2/.../ai_models -> 201 ProjectAIModelResponse. Move the success
+  # response from 200 to 201 so the type, the Counterfact mock, and the live API agree.
+  # Add the 201 (copy of the 200 body), then remove the stale 200.
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/ai_models'].post.responses"
+    description: "CR7: add the 201 Created success response on the v2 ai_models add"
+    update:
+      "201":
+        description: "Created"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/model.ProjectAIModelResponse"
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/ai_models'].post.responses['200']"
+    description: "CR7: remove the stale 200 success response on the v2 ai_models add"
+    remove: true
+
+  # ── CR8: init_status is a /v2 route, not /v1 ─────────────────────────────
+  # Live: GET /v2/.../aio/init_status -> 200 { initialized }; the /v1 path 404s.
+  - target: "$.paths"
+    description: "CR8: add the GET /v2/.../aio/init_status path (the live location)"
+    update:
+      "/v2/workspaces/{id}/projects/{project_id}/aio/init_status":
+        get:
+          summary: "AIO project initialization status"
+          description: "Check whether AIO project initialization has finished for the workspace and project."
+          operationId: "aio-get-project-init-status-v2"
+          tags: ["AIO"]
+          parameters:
+            - { name: id, in: path, required: true, schema: { type: string } }
+            - { name: project_id, in: path, required: true, schema: { type: string } }
+          responses:
+            "200":
+              description: "OK"
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/model.AIOProjectInitializedResponse"
+            "401":
+              description: "Unauthorized"
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/http_server.BasicResponse"
+          security:
+            - imsBearer: []
+  - target: "$.paths['/v1/workspaces/{id}/projects/{project_id}/aio/init_status']"
+    description: "CR8: remove the stale /v1 init_status path (404s live)"
+    remove: true
+
+  # CR9 + CR10 RETIRED 2026-07-06 — the swagger refresh added their fields upstream
+  # (model.AISettings.primary_url and model.AIOBenchmarkWithCounters.primary_url + root_domain),
+  # so both actions became redundant no-ops that the freshness gate rejects. See the header.
+
+  # ── CR11: aio-update-tag success is 200, not 201 ─────────────────────────
+  # Live: PATCH /v2/.../aio/tags/{tag_id} -> 200 TreeNodeResponse (verified 2026-07-01 against prod).
+  # Add the 200 (copy of the 201 body), then remove the stale 201 (mirrors the CR7 pattern).
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}'].patch.responses"
+    description: "CR11: add the 200 OK success response on aio-update-tag"
+    update:
+      "200":
+        description: "OK"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/model.TreeNodeResponse"
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}'].patch.responses['201']"
+    description: "CR11: remove the stale 201 success response on aio-update-tag"
+    remove: true
+
+  # ── CR12: aio-update-tag returns 404 for an unknown tag id ────────────────
+  # Live: PATCH .../aio/tags/<bogus> -> 404 {"message":"not found"} (verified 2026-07-01 against
+  # prod). The vendored swagger declares no 404; add it (http_server.BasicResponse) so the mock can
+  # return the live status and Counterfact response validation accepts it.
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}'].patch.responses"
+    description: "CR12: add the 404 Not Found response on aio-update-tag"
+    update:
+      "404":
+        description: "Not Found"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+
+  # ── CR13: AIOTag parent_id + path are nullable (roots return null) ────────
+  # Live: a flat / root tag reads back `parent_id: null` and `path: null` (verified 2026-07-01
+  # against prod) — not an omitted field or an empty array. Deep-merge adds `nullable: true` to the
+  # existing property nodes (keeps their type/items).
+  - target: "$.components.schemas['model.AIOTag']"
+    description: "CR13: AIOTag parent_id + path are nullable (roots return null)"
+    update:
+      properties:
+        parent_id: { type: string, nullable: true }
+        path:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/model.AIOTagLeaf"
+
+  # ── CR14: aio-create-prompt-v2 (POST /v2/.../aio/prompts) returns 201 with a
+  # paginated list wrapper, not 200 with a bare StringIDName ─────────────────
+  # Live: POST /v2/.../aio/prompts -> 201 { page, total, items: [{id, name}], existing_count }
+  # (verified 2026-07-02 against prod, a single-item batch — serenity-docs#24 §3.1 gate 2). The
+  # vendored swagger documents only a 200 typed as one `model.StringIDName` ({id, name}) — BOTH the
+  # status code and the body shape are wrong. The sibling name-based create endpoint
+  # (aio/prompts/tagged, `aio-create-prompts-with-tags`) already correctly documents 201 in this
+  # same vendored swagger, so this looks like an upstream copy/paste inconsistency specific to the
+  # v2 (id-based) variant. The wrapper shape already exists as `model.StringIDNameListResponse`
+  # ({items: [StringIDName], page, total}, used by two unrelated deprecated endpoints), just
+  # missing `existing_count` — extend it (CR14a) and replace the stale 200 with a 201 pointed at it
+  # (CR14b removes the stale 200 entirely, CR14c adds the 201; the remove-then-add pattern is
+  # required because deepMerge recurses into an existing object value rather than replacing it, so
+  # updating `schema` in place would leave the old `$ref` behind alongside the new shape — see
+  # CR7/CR11 for the same pattern on other endpoints).
+  - target: "$.components.schemas['model.StringIDNameListResponse']"
+    description: "CR14a: add existing_count to StringIDNameListResponse (live returns it on aio-create-prompt-v2 ONLY, not the two deprecated endpoints also using this schema; kept optional so it stays spec-valid there too)"
+    update:
+      properties:
+        existing_count: { type: integer }
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/prompts'].post.responses['200']"
+    description: "CR14b: remove the stale 200 (wrong status code AND wrongly typed as bare StringIDName) on aio-create-prompt-v2"
+    remove: true
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/prompts'].post.responses"
+    description: "CR14c: add the 201 Created success response on aio-create-prompt-v2, typed as the list wrapper (live returns 201, matching the sibling aio/prompts/tagged create endpoint's status code)"
+    update:
+      "201":
+        description: "Created"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/model.StringIDNameListResponse"
+
+  # ── CR15: TreeNodeRequest parent_id is nullable (explicit null promotes to root) ──────────
+  # Live: PATCH /v2/.../aio/tags/{tag_id} accepts an explicit `parent_id: null` in the request
+  # body to promote a child tag to a root (verified 2026-07-02 against prod — serenity-docs#24
+  # §3.1 gate 1). The vendored swagger types `model.TreeNodeRequest.parent_id` as a plain
+  # (non-nullable) string, so Counterfact's request-body validation (enabled — see mock/run.js)
+  # rejected a literal `null` before the handler ever ran, surfacing to the caller as a request
+  # failure. Mark it nullable so the request validates against the corrected spec; the mock's
+  # PATCH handler (aio/tags/{tag_id}.js) distinguishes an OMITTED `parent_id` key (preserve the
+  # tag's current parent) from an explicit `null` (clear it — promote to root). Remove if Semrush
+  # documents the nullability upstream.
+  - target: "$.components.schemas['model.TreeNodeRequest']"
+    description: "CR15: TreeNodeRequest parent_id is nullable (explicit null promotes a child to root)"
+    update:
+      properties:
+        parent_id: { type: string, nullable: true }
+
+  # ── CR16: model.ResolveURLResponse identity fields are required ───────────
+  # GET /v1/url/resolve and its response schema (model.ResolveURLResponse) are now vendored natively
+  # (2026-07-06 swagger refresh), so this correction no longer adds the path or the schema — it only
+  # marks the three always-present fields `required`. Live: 200 -> { domain, primary_url, is_valid }.
+  # Verified 2026-07-03 against prod (serenity-docs#25 §0). All three are ALWAYS present — even the
+  # is_valid:false case returns empty `domain`/`primary_url` strings rather than omitting them — and
+  # the mock's createUrlResolveMock always populates them, so we require them (the CR5 philosophy).
+  # The query param is already `required` upstream; auth is handled by CR2's global strip + imsBearer.
+  - target: "$.components.schemas['model.ResolveURLResponse']"
+    description: "CR16: model.ResolveURLResponse always carries domain + primary_url + is_valid"
+    update:
+      required: [domain, primary_url, is_valid]

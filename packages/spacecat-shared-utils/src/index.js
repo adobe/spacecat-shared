@@ -70,9 +70,16 @@ export {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
+  toPathname,
+  hasSamePathname,
+  allHaveSamePathname,
+  isPathPatternWithinSiteScope,
 } from './url-helpers.js';
 
 export {

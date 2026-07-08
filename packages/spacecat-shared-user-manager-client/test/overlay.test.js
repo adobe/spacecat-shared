@@ -12,12 +12,35 @@
 
 import { expect } from 'chai';
 import {
+  readFileSync, writeFileSync, mkdtempSync, rmSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import {
+  join, resolve, dirname,
+} from 'node:path';
+import { fileURLToPath } from 'node:url';
+import sinon from 'sinon';
+import yaml from 'js-yaml';
+import swagger2openapi from 'swagger2openapi';
+import {
   parsePath,
   select,
   deepMerge,
   applyAction,
   applyOverlay,
+  main,
 } from '../scripts/apply-overlay.mjs';
+
+const PKG_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const VENDORED_SPEC = resolve(PKG_ROOT, 'spec/usermanager_swagger.yaml');
+const OVERLAY = resolve(PKG_ROOT, 'spec/overlays/corrections.yaml');
+
+/** Reproduces `npm run spec:convert`: the vendored swagger 2.0 → the OAS3 doc the overlay edits. */
+async function convertVendoredSpec() {
+  const swagger = yaml.load(readFileSync(VENDORED_SPEC, 'utf-8'));
+  const { openapi } = await swagger2openapi.convertObj(swagger, { patch: true });
+  return openapi;
+}
 
 describe('apply-overlay: parsePath', () => {
   it('parses key, bracketed-key, wildcard and filter segments', () => {
@@ -165,5 +188,89 @@ describe('apply-overlay: applyOverlay', () => {
         target: "$.params[?(@.name == 'gone')]", remove: true, hits: 0, staleRemove: true,
       },
     ]);
+  });
+});
+
+// The freshness gate (mirrors project-engine-client #1733): every correction in corrections.yaml
+// must still do real work against the swagger we vendor. This runs the SAME pipeline as
+// `npm run spec:convert` (vendored swagger 2.0 → OAS3) and then applies each correction, asserting
+// it both still applies (matches >0 nodes) and is still necessary (actually changes the spec). It
+// is fully offline — no live API, no credentials, no cron — so a re-vendored swagger that makes a
+// correction stale or redundant fails CI here, instead of drifting silently until the next manual
+// live-capture pass.
+describe('apply-overlay: freshness gate (corrections vs the vendored swagger)', () => {
+  it('every correction still applies (>0 nodes) and is still necessary (changes the spec)', async () => {
+    const spec = await convertVendoredSpec();
+    const overlay = yaml.load(readFileSync(OVERLAY, 'utf-8'));
+    expect(overlay.actions.length, 'the overlay must declare at least one correction').to.be.greaterThan(0);
+
+    for (const action of overlay.actions) {
+      const label = action.description || action.target;
+      const before = structuredClone(spec);
+      // A 0-match `update` throws from applyAction; a 0-match `remove` returns 0 (caught below).
+      // Actions apply in order to the running doc, as applyOverlay/main run them.
+      const hits = applyAction(spec, action);
+      expect(
+        hits,
+        `correction matched 0 nodes — it is STALE (upstream moved/removed the target): ${label}`,
+      ).to.be.greaterThan(0);
+      expect(
+        spec,
+        `correction is a no-op — it is REDUNDANT (the vendored swagger already declares it): ${label}`,
+      ).to.not.deep.equal(before);
+    }
+  });
+});
+
+describe('apply-overlay: main (CLI exit code)', () => {
+  const sandbox = sinon.createSandbox();
+  let tmp;
+  let logger;
+
+  beforeEach(() => {
+    tmp = mkdtempSync(join(tmpdir(), 'um-overlay-'));
+    logger = { log: sandbox.spy(), error: sandbox.spy() };
+  });
+
+  afterEach(() => {
+    rmSync(tmp, { recursive: true, force: true });
+    sandbox.restore();
+  });
+
+  const errorOutput = () => logger.error.getCalls().map((c) => c.args.join(' ')).join('\n');
+
+  it('returns 0, applies the overlay, and writes the spec back', () => {
+    const specPath = join(tmp, 'openapi3.json');
+    const overlayPath = join(tmp, 'corrections.yaml');
+    writeFileSync(specPath, JSON.stringify({ paths: { '/a': { get: {} } }, components: {} }));
+    writeFileSync(overlayPath, yaml.dump({
+      actions: [
+        { target: '$.components.x', update: { v: 1 } },
+        { target: "$.paths['/a']", remove: true },
+      ],
+    }));
+
+    const code = main({ specPath, overlayPath, logger });
+
+    expect(code).to.equal(0);
+    expect(logger.error.called).to.equal(false);
+    const written = JSON.parse(readFileSync(specPath, 'utf-8'));
+    expect(written.components.x).to.deep.equal({ v: 1 });
+    expect(written.paths).to.deep.equal({});
+  });
+
+  it('returns 1 and reports every stale (0-match remove) correction', () => {
+    const specPath = join(tmp, 'openapi3.json');
+    const overlayPath = join(tmp, 'corrections.yaml');
+    writeFileSync(specPath, JSON.stringify({ params: [{ name: 'id' }] }));
+    writeFileSync(overlayPath, yaml.dump({
+      actions: [{ target: "$.params[?(@.name == 'gone')]", remove: true }],
+    }));
+
+    const code = main({ specPath, overlayPath, logger });
+
+    expect(code).to.equal(1);
+    expect(errorOutput()).to.include('stale correction');
+    expect(errorOutput()).to.include("$.params[?(@.name == 'gone')]");
   });
 });

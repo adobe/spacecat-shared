@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-ticket-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ticket-client-v1.0.1...@adobe/spacecat-shared-ticket-client-v1.0.2) (2026-07-08)
+
+### Bug Fixes
+
+* enable npm publishing for spacecat-shared-ticket-client ([#1787](https://github.com/adobe/spacecat-shared/issues/1787)) ([99dc3c9](https://github.com/adobe/spacecat-shared/commit/99dc3c9893f724320711652ea667017b16f1e4ee))
+
 ## [@adobe/spacecat-shared-ticket-client-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ticket-client-v1.0.0...@adobe/spacecat-shared-ticket-client-v1.0.1) (2026-07-07)
 
 ### Bug Fixes

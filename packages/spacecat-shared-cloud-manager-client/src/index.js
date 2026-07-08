@@ -991,6 +991,8 @@ export default class CloudManagerClient {
   #PR_PATH_BY_PROVIDER = Object.freeze({
     [CM_REPO_TYPE.GITHUB]: (n) => `/pull/${n}`,
     [CM_REPO_TYPE.GITLAB]: (n) => `/-/merge_requests/${n}`,
+    [CM_REPO_TYPE.AZURE_DEVOPS]: (n) => `/pullrequest/${n}`,
+    [CM_REPO_TYPE.BITBUCKET]: (n) => `/pull-requests/${n}`,
   });
 
   /**
@@ -1008,6 +1010,10 @@ export default class CloudManagerClient {
       provider = CM_REPO_TYPE.GITHUB;
     } else if (repoUrl.includes('gitlab.com') || repoUrl.includes('gitlab.')) {
       provider = CM_REPO_TYPE.GITLAB;
+    } else if (repoUrl.includes('dev.azure.com') || repoUrl.includes('visualstudio.com')) {
+      provider = CM_REPO_TYPE.AZURE_DEVOPS;
+    } else if (repoUrl.includes('bitbucket.org')) {
+      provider = CM_REPO_TYPE.BITBUCKET;
     }
 
     const pathBuilder = provider && this.#PR_PATH_BY_PROVIDER[provider];

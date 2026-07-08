@@ -1811,6 +1811,72 @@ describe('CloudManagerClient', () => {
       expect(result.pullRequestUrl).to.equal('https://gitlab.corp.example.com/team/repo/-/merge_requests/3');
     });
 
+    it('constructs pullRequestUrl for Azure DevOps', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '7', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://dev.azure.com/myorg/myproject/_git/myrepo',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://dev.azure.com/myorg/myproject/_git/myrepo/pullrequest/7');
+    });
+
+    it('constructs pullRequestUrl for legacy Azure DevOps (visualstudio.com)', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '9', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://myorg.visualstudio.com/myproject/_git/myrepo',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://myorg.visualstudio.com/myproject/_git/myrepo/pullrequest/9');
+    });
+
+    it('constructs pullRequestUrl for Bitbucket', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '4', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://bitbucket.org/workspace/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://bitbucket.org/workspace/repo/pull-requests/4');
+    });
+
     it('does not set pullRequestUrl for unsupported provider', async () => {
       nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
@@ -1826,7 +1892,7 @@ describe('CloudManagerClient', () => {
           sourceBranch: 'fix',
           title: 'Fix',
           description: 'desc',
-          repoUrl: 'https://bitbucket.org/owner/repo.git',
+          repoUrl: 'https://git.example.com/owner/repo.git',
         },
       );
 

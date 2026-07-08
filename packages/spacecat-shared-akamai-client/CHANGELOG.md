@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-akamai-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-akamai-client-v1.0.1...@adobe/spacecat-shared-akamai-client-v1.0.2) (2026-07-08)
+
+### Bug Fixes
+
+* enable npm publishing for spacecat-shared-akamai-client ([#1789](https://github.com/adobe/spacecat-shared/issues/1789)) ([0d743d1](https://github.com/adobe/spacecat-shared/commit/0d743d1222104896b35741995fc2f3f415ddd5e5))
+
 ## [@adobe/spacecat-shared-akamai-client-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-akamai-client-v1.0.0...@adobe/spacecat-shared-akamai-client-v1.0.1) (2026-07-07)
 
 ### Bug Fixes

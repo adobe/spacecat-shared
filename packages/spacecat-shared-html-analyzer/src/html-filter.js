@@ -208,36 +208,46 @@ function removeAccessibilityElementsCheerio($) {
 }
 
 /**
- * Returns true if the element is a leaf (no element children) whose text content is
- * either the font-metrics test string or only repeated "word" tokens.
- * Operates on the element's OWN text to avoid false-positive matches on ancestors.
+ * Returns true if the text is entirely composed of font-detection noise:
+ * either the font-metrics test string or exclusively repeated "word" tokens.
+ * Used on both leaf elements and (in a second pass) on container text to catch
+ * split-span cases where each child holds fewer than MIN_REPS occurrences.
  * @param {string} text - trimmed textContent of the element
  * @returns {boolean}
  */
-function isFontDetectionLeaf(text) {
+export function isFontDetectionLeaf(text) {
   if (!text) {
     return false;
   }
   if (text.includes(FONT_DETECTION_TEST_STRING)) {
     return true;
   }
-  // Must consist solely of "word" tokens and whitespace
-  if (/[^word\s]/.test(text)) {
-    return false;
-  }
-  return (text.match(/\bword\b/g) || []).length >= FONT_DETECTION_WORD_MIN_REPS;
+  const tokens = text.trim().split(/\s+/);
+  return tokens.length >= FONT_DETECTION_WORD_MIN_REPS && tokens.every((t) => t === 'word');
 }
 
 /**
  * Remove FontFaceObserver / Next.js font-detection test elements (browser environment).
- * Only targets leaf elements (no element children) to avoid removing ancestor containers
- * that also hold legitimate content.
+ * Two-pass strategy:
+ *   1. Leaf pass — removes single-element noise nodes.
+ *   2. Container pass — removes wrappers whose combined text is entirely noise,
+ *      catching split-span cases (<div><span>word</span><span>word</span>…</div>)
+ *      where each child individually falls below the repetition threshold.
+ * Exported for direct unit testing without a full browser environment.
  * @param {Element} element - DOM element to filter
  */
-function removeFontDetectionElements(element) {
+export function removeFontDetectionElements(element) {
   element.querySelectorAll('*').forEach((el) => {
     if (el.children.length > 0) {
-      return; // skip non-leaf elements — their text includes descendants' content
+      return;
+    }
+    if (isFontDetectionLeaf((el.textContent || '').trim())) {
+      el.remove();
+    }
+  });
+  element.querySelectorAll('*').forEach((el) => {
+    if (el.children.length === 0) {
+      return; // already handled in pass 1
     }
     if (isFontDetectionLeaf((el.textContent || '').trim())) {
       el.remove();
@@ -247,13 +257,23 @@ function removeFontDetectionElements(element) {
 
 /**
  * Remove FontFaceObserver / Next.js font-detection test elements (Node.js / cheerio).
+ * Two-pass strategy mirrors the browser version — see removeFontDetectionElements.
  * @param {CheerioAPI} $ - Cheerio instance
  */
 function removeFontDetectionElementsCheerio($) {
   $('*').each((i, el) => {
     const $el = $(el);
     if ($el.children().length > 0) {
-      return; // skip non-leaf elements
+      return;
+    }
+    if (isFontDetectionLeaf($el.text().trim())) {
+      $el.remove();
+    }
+  });
+  $('*').each((i, el) => {
+    const $el = $(el);
+    if ($el.children().length === 0) {
+      return; // already handled in pass 1
     }
     if (isFontDetectionLeaf($el.text().trim())) {
       $el.remove();

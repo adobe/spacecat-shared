@@ -12,6 +12,7 @@
 
 import * as cheerio from 'cheerio';
 import { expect } from 'chai';
+import sinon from 'sinon';
 import {
   analyzeTextComparison,
   calculateStats,
@@ -20,6 +21,10 @@ import {
   generateMarkdownDiff,
   getAddedMarkdownBlocks,
 } from '../src/index.js';
+import {
+  isFontDetectionLeaf,
+  removeFontDetectionElements,
+} from '../src/html-filter.js';
 
 describe('HTML Visibility Analyzer', () => {
   const simpleHtml = '<html><body><h1>Title</h1><p>Content here</p></body></html>';
@@ -315,6 +320,21 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Use the right word in the right context');
     });
 
+    it('should remove split-span font-detection noise where each span holds fewer than 10 repetitions', async () => {
+      const spans = Array(20).fill('<span>word</span>').join(' ');
+      const html = `<html><body>
+        <h1>Real Content</h1>
+        <p>Important text here</p>
+        <div>${spans}</div>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Real Content');
+      expect(text).to.include('Important text here');
+      expect(text).to.not.match(/(\bword\b\s*){10,}/);
+    });
+
     it('should remove noscript elements by default', async () => {
       const html = '<html><body><h1>Title</h1><noscript>Please enable JavaScript</noscript><p>Content</p></body></html>';
       const text = await stripTagsToText(html);
@@ -363,6 +383,90 @@ describe('HTML Visibility Analyzer', () => {
       expect(textWith).to.include('Content');
       expect(textWith).to.include('First noscript');
       expect(textWith).to.include('Second noscript');
+    });
+  });
+
+  describe('isFontDetectionLeaf (unit)', () => {
+    it('should return false for empty string', () => {
+      expect(isFontDetectionLeaf('')).to.equal(false);
+    });
+
+    it('should return true for the mmMwWLliI0fiflO test string', () => {
+      expect(isFontDetectionLeaf('mmMwWLliI0fiflO')).to.equal(true);
+    });
+
+    it('should return true for 10+ space-separated "word" tokens', () => {
+      expect(isFontDetectionLeaf(Array(20).fill('word').join(' '))).to.equal(true);
+    });
+
+    it('should return false for fewer than 10 "word" tokens', () => {
+      expect(isFontDetectionLeaf('word word word')).to.equal(false);
+    });
+
+    it('should return false when other letters from {w,o,r,d} form different words', () => {
+      const mixed = `${Array(10).fill('word').join(' ')} door wood row`;
+      expect(isFontDetectionLeaf(mixed)).to.equal(false);
+    });
+
+    it('should return false for concatenated "word" repetitions without spaces', () => {
+      expect(isFontDetectionLeaf('word'.repeat(15))).to.equal(false);
+    });
+
+    it('should return false for legitimate prose mentioning "word" many times', () => {
+      const prose = Array(10).fill('the right word matters').join(' ');
+      expect(isFontDetectionLeaf(prose)).to.equal(false);
+    });
+  });
+
+  describe('removeFontDetectionElements (browser path unit)', () => {
+    function makeLeaf(text) {
+      return {
+        children: [],
+        get textContent() { return text; },
+        remove: sinon.stub(),
+      };
+    }
+
+    function makeContainer(children) {
+      const combined = children.map((c) => c.textContent).join(' ');
+      const el = {
+        children,
+        get textContent() { return combined; },
+        remove: sinon.stub(),
+        querySelectorAll: sinon.stub(),
+      };
+      el.querySelectorAll.returns([...children, el]);
+      return el;
+    }
+
+    it('should remove a leaf with the mmMwWLliI0fiflO test string', () => {
+      const leaf = makeLeaf('mmMwWLliI0fiflO');
+      const root = makeContainer([leaf]);
+      removeFontDetectionElements(root);
+      expect(leaf.remove.calledOnce).to.equal(true);
+    });
+
+    it('should remove a leaf with 20 repeated "word" tokens', () => {
+      const leaf = makeLeaf(Array(20).fill('word').join(' '));
+      const root = makeContainer([leaf]);
+      removeFontDetectionElements(root);
+      expect(leaf.remove.calledOnce).to.equal(true);
+    });
+
+    it('should not remove a leaf with legitimate content', () => {
+      const leaf = makeLeaf('Real content here');
+      const root = makeContainer([leaf]);
+      removeFontDetectionElements(root);
+      expect(leaf.remove.called).to.equal(false);
+    });
+
+    it('should remove a container whose combined child text is all "word" tokens (split-span)', () => {
+      const children = Array(20).fill(null).map(() => makeLeaf('word'));
+      const container = makeContainer(children);
+      const root = makeContainer([container]);
+      root.querySelectorAll.returns([...children, container]);
+      removeFontDetectionElements(root);
+      expect(container.remove.calledOnce).to.equal(true);
     });
   });
 

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-user-manager-client",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "description": "Shared modules of the Spacecat Services - Semrush User Manager client and generated types",
   "type": "module",
   "main": "src/index.js",
@@ -9,7 +9,8 @@
     ".": {
       "types": "./src/index.d.ts",
       "default": "./src/index.js"
-    }
+    },
+    "./mock/*": "./mock/*"
   },
   "files": [
     "src"
@@ -28,7 +29,11 @@
     "generate:ts": "openapi-typescript build/openapi3.json --output src/generated/types.ts",
     "generate:pydantic": "command -v datamodel-codegen >/dev/null 2>&1 || { echo 'ERROR: datamodel-codegen not found on PATH. Install it first: pip install datamodel-code-generator'; exit 1; }; datamodel-codegen --input build/openapi3.json --input-file-type openapi --output python/serenity_user_manager/ --output-model-type pydantic_v2.BaseModel",
     "generate": "npm run spec:convert && npm run spec:overlay && npm run generate:ts && npm run generate:pydantic",
-    "mock": "counterfact spec/usermanager_swagger.yaml .counterfact --port 4010"
+    "mock": "node mock/run.js",
+    "docker:build": "docker build -t ghcr.io/adobe/spacecat-shared-user-manager-client-mock:local .",
+    "docker:run": "docker run --rm -p 127.0.0.1:8443:8443 ghcr.io/adobe/spacecat-shared-user-manager-client-mock:local",
+    "test:e2e": "MOCK_E2E=1 mocha --no-package --reporter spec --timeout 60000 test/e2e/**/*.e2e.js",
+    "test:types": "tsc -p tsconfig.json"
   },
   "mocha": {
     "reporter": "mocha-multi-reporters",
@@ -60,6 +65,7 @@
     "mocha-multi-reporters": "1.5.1",
     "openapi-typescript": "7.13.0",
     "sinon": "22.0.0",
-    "swagger2openapi": "7.0.8"
+    "swagger2openapi": "7.0.8",
+    "typescript": "6.0.3"
   }
 }

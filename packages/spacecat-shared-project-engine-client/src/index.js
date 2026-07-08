@@ -10,4 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
+// @ts-check
+
 export { createSerenityProjectEngineApiClient } from './client.js';

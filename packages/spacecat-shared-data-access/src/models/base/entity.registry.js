@@ -55,6 +55,11 @@ import SentimentGuidelineCollection from '../sentiment-guideline/sentiment-guide
 import SentimentTopicCollection from '../sentiment-topic/sentiment-topic.collection.js';
 import AccessGrantLogCollection from '../access-grant-log/access-grant-log.collection.js';
 import SiteImsOrgAccessCollection from '../site-ims-org-access/site-ims-org-access.collection.js';
+import IdempotencyKeyCollection from '../idempotency-key/idempotency-key.collection.js';
+import OAuthNonceCollection from '../oauth-nonce/oauth-nonce.collection.js';
+import TaskManagementConnectionCollection from '../task-management-connection/task-management-connection.collection.js';
+import TicketCollection from '../ticket/ticket.collection.js';
+import TicketSuggestionCollection from '../ticket-suggestion/ticket-suggestion.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -97,6 +102,11 @@ import SentimentGuidelineSchema from '../sentiment-guideline/sentiment-guideline
 import SentimentTopicSchema from '../sentiment-topic/sentiment-topic.schema.js';
 import AccessGrantLogSchema from '../access-grant-log/access-grant-log.schema.js';
 import SiteImsOrgAccessSchema from '../site-ims-org-access/site-ims-org-access.schema.js';
+import IdempotencyKeySchema from '../idempotency-key/idempotency-key.schema.js';
+import OAuthNonceSchema from '../oauth-nonce/oauth-nonce.schema.js';
+import TaskManagementConnectionSchema from '../task-management-connection/task-management-connection.schema.js';
+import TicketSchema from '../ticket/ticket.schema.js';
+import TicketSuggestionSchema from '../ticket-suggestion/ticket-suggestion.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -234,6 +244,11 @@ EntityRegistry.registerEntity(SentimentGuidelineSchema, SentimentGuidelineCollec
 EntityRegistry.registerEntity(SentimentTopicSchema, SentimentTopicCollection);
 EntityRegistry.registerEntity(AccessGrantLogSchema, AccessGrantLogCollection);
 EntityRegistry.registerEntity(SiteImsOrgAccessSchema, SiteImsOrgAccessCollection);
+EntityRegistry.registerEntity(IdempotencyKeySchema, IdempotencyKeyCollection);
+EntityRegistry.registerEntity(OAuthNonceSchema, OAuthNonceCollection);
+EntityRegistry.registerEntity(TaskManagementConnectionSchema, TaskManagementConnectionCollection);
+EntityRegistry.registerEntity(TicketSchema, TicketCollection);
+EntityRegistry.registerEntity(TicketSuggestionSchema, TicketSuggestionCollection);
 EntityRegistry.defaultEntities = { ...EntityRegistry.entities };
 
 export default EntityRegistry;

@@ -1,3 +1,39 @@
+## [@adobe/spacecat-shared-utils-v1.124.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.124.0...@adobe/spacecat-shared-utils-v1.124.1) (2026-07-03)
+
+### Bug Fixes
+
+* **utils:** fail closed in site-scope checks when siteBaseUrl is missing ([#1770](https://github.com/adobe/spacecat-shared/issues/1770)) ([d0d3614](https://github.com/adobe/spacecat-shared/commit/d0d361414953b22e41e22a01c50bf9ff5c17eada))
+
+## [@adobe/spacecat-shared-utils-v1.124.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.123.1...@adobe/spacecat-shared-utils-v1.124.0) (2026-07-01)
+
+### Features
+
+* **utils:** add isPathPatternWithinSiteScope url helper ([#1761](https://github.com/adobe/spacecat-shared/issues/1761)) ([cefc1bd](https://github.com/adobe/spacecat-shared/commit/cefc1bd0e0ac24a5ac4e0694205589ee2c96e596))
+
+## [@adobe/spacecat-shared-utils-v1.123.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.123.0...@adobe/spacecat-shared-utils-v1.123.1) (2026-06-26)
+
+### Bug Fixes
+
+* **utils:** added some patterns for aem_headless detection ([#1716](https://github.com/adobe/spacecat-shared/issues/1716)) ([a646b2b](https://github.com/adobe/spacecat-shared/commit/a646b2bf8aeb0bb11e13e03c43f57f414af7caad))
+
+## [@adobe/spacecat-shared-utils-v1.123.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.122.1...@adobe/spacecat-shared-utils-v1.123.0) (2026-06-26)
+
+### Features
+
+* **rum:** scope latest-metrics RUM to locale path prefix ([#1707](https://github.com/adobe/spacecat-shared/issues/1707)) ([77cdb33](https://github.com/adobe/spacecat-shared/commit/77cdb33d7f55a9bff795b768621ec70830b2cba3))
+
+## [@adobe/spacecat-shared-utils-v1.122.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.122.0...@adobe/spacecat-shared-utils-v1.122.1) (2026-06-26)
+
+### Bug Fixes
+
+* add schema-less URL support to pathname helpers ([#1727](https://github.com/adobe/spacecat-shared/issues/1727)) ([7e875a7](https://github.com/adobe/spacecat-shared/commit/7e875a7be924257ff66285df2539e8a195e55186))
+
+## [@adobe/spacecat-shared-utils-v1.122.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.121.0...@adobe/spacecat-shared-utils-v1.122.0) (2026-06-25)
+
+### Features
+
+* **utils:** add toPathname, hasSamePathname, allHaveSamePathname URL helpers ([#1724](https://github.com/adobe/spacecat-shared/issues/1724)) ([6da512a](https://github.com/adobe/spacecat-shared/commit/6da512aebf199189eea666f6d7655878349588d0))
+
 ## [@adobe/spacecat-shared-utils-v1.121.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.120.1...@adobe/spacecat-shared-utils-v1.121.0) (2026-06-24)
 
 ### Features

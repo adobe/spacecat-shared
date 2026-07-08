@@ -17,13 +17,24 @@ import type {
 export interface Brand extends BaseModel {
   getName(): string;
   getStatus(): string;
+  // Deprecated BC mirror (brands.semrush_workspace_id), maintained by the
+  // mysticat-data-service sync trigger. No schema-generated setter; the
+  // deprecated setSemrushWorkspaceId below is a manual delegate defined in
+  // brand.model.js, kept only for backward compatibility. Use
+  // getSemrushSubWorkspaceId/setSemrushSubWorkspaceId instead. See
+  // brand.schema.js.
   getSemrushWorkspaceId(): string | null;
+  getSemrushSubWorkspaceId(): string | null;
   setName(value: string): Brand;
   setStatus(value: string): Brand;
+  setSemrushSubWorkspaceId(value: string | null): Brand;
+  /** @deprecated Use setSemrushSubWorkspaceId instead. */
   setSemrushWorkspaceId(value: string | null): Brand;
 }
 
 export interface BrandCollection extends BaseCollection<Brand> {
   allBySemrushWorkspaceId(semrushWorkspaceId: string): Promise<Brand[]>;
   findBySemrushWorkspaceId(semrushWorkspaceId: string): Promise<Brand | null>;
+  allBySemrushSubWorkspaceId(semrushSubWorkspaceId: string): Promise<Brand[]>;
+  findBySemrushSubWorkspaceId(semrushSubWorkspaceId: string): Promise<Brand | null>;
 }

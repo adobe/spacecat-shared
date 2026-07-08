@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-ticket-client-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ticket-client-v1.0.2...@adobe/spacecat-shared-ticket-client-v1.0.3) (2026-07-08)
+
+### Bug Fixes
+
+* **ticket-client:** retry with cache bypass on TOKEN_REFRESH_REQUIRED ([#1791](https://github.com/adobe/spacecat-shared/issues/1791)) ([73b3873](https://github.com/adobe/spacecat-shared/commit/73b387382ffb8563771cb16ac11f6b0ec555d7e0))
+
 ## [@adobe/spacecat-shared-ticket-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ticket-client-v1.0.1...@adobe/spacecat-shared-ticket-client-v1.0.2) (2026-07-08)
 
 ### Bug Fixes

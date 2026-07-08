@@ -238,7 +238,7 @@ export default class JiraCloudClient extends BaseTicketClient {
     // routinely have 100+ projects, so pagination is required to avoid silent truncation.
     for (;;) {
       // eslint-disable-next-line no-await-in-loop
-      const authHeaders = await this.credentialManager.getAuthHeaders();
+      const authHeaders = await this.#getAuthHeadersWithCacheBypass();
       // eslint-disable-next-line no-await-in-loop
       const response = await this.httpClient.fetch(
         `${this.baseUrl}/project/search?maxResults=50&orderBy=name&startAt=${startAt}`,
@@ -348,7 +348,31 @@ export default class JiraCloudClient extends BaseTicketClient {
   // ── Auth retry ──────────────────────────────────────────────────────────────
 
   /**
+   * Returns auth headers, retrying with bypassCache=true when the cached token
+   * is stale (TOKEN_REFRESH_REQUIRED or REQUIRES_REAUTH). Another Lambda may
+   * have written fresh tokens to SM since the cache was populated.
+   * If the bypass call also fails, the error propagates to the caller.
+   * Non-credential errors (network, SDK, IAM) are re-thrown immediately.
+   */
+  async #getAuthHeadersWithCacheBypass() {
+    try {
+      return await this.credentialManager.getAuthHeaders();
+    } catch (err) {
+      if (err.code !== 'TOKEN_REFRESH_REQUIRED' && err.code !== 'REQUIRES_REAUTH') {
+        throw err;
+      }
+      this.log.debug(`getAuthHeaders() threw ${err.code} — bypassing cache for SM re-read`);
+      return this.credentialManager.getAuthHeaders(true);
+    }
+  }
+
+  /**
    * Wraps a Jira API call with retry-once on 401.
+   *
+   * If getAuthHeaders() throws (cache stale — TOKEN_REFRESH_REQUIRED or
+   * REQUIRES_REAUTH): retries with bypassCache=true to pick up tokens written
+   * by a concurrent Lambda (e.g. auth-service ensure-tokens). If SM is also
+   * bad, the error propagates.
    *
    * On first 401: re-reads SM via getAuthHeaders() (pure GET). If a concurrent
    * caller already refreshed and SM holds a different valid token, retries once
@@ -364,7 +388,7 @@ export default class JiraCloudClient extends BaseTicketClient {
    * @returns {Promise<Response>}
    */
   async #withAuthRetry(requestFn) {
-    const authHeaders = await this.credentialManager.getAuthHeaders();
+    const authHeaders = await this.#getAuthHeadersWithCacheBypass();
     const response = await requestFn(authHeaders);
 
     if (response.status === 401) {

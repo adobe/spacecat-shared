@@ -51,6 +51,22 @@ export const CM_REPO_TYPE = Object.freeze({
 export const GIT_CLOUD_MANAGER_HOST = 'git.cloudmanager.adobe.com';
 
 /**
+ * Transient-failure retry policy for CM Repo API pull-request creation.
+ * A single retry after a short wait rides out brief 5xx/429/network blips
+ * without masking permanent failures — 4xx responses other than 429 are
+ * treated as permanent and are not retried.
+ */
+const CM_PR_MAX_ATTEMPTS = 2;
+const CM_PR_RETRY_DELAY_MS = 1500;
+
+/** true for HTTP statuses worth retrying (server errors + rate limiting). */
+const isTransientStatus = (status) => status >= 500 || status === 429;
+
+const sleep = (ms) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
+
+/**
  * Returns true for any repo type that tunnels through the CM repo service
  * proxy (i.e. anything other than STANDARD). BYOG repos need extra handling
  * for submodules because the proxy URL uses numeric repository IDs, not
@@ -1047,7 +1063,7 @@ export default class CloudManagerClient {
 
     this.log.info(`Creating PR for program=${programId}, repo=${repositoryId}: ${title}`);
 
-    const response = await fetch(url, {
+    const fetchOptions = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1061,11 +1077,50 @@ export default class CloudManagerClient {
         destinationBranch,
         description,
       }),
-    });
+    };
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Pull request creation failed: ${response.status} - ${errorText}`);
+    // Attempt the create, retrying ONCE on a transient failure (5xx / 429 /
+    // network error) after a short wait. Permanent failures (4xx other than
+    // 429) throw immediately without a retry.
+    let response;
+    for (let attempt = 1; attempt <= CM_PR_MAX_ATTEMPTS; attempt += 1) {
+      response = undefined;
+      let transient = false;
+      let failureDetail;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        response = await fetch(url, fetchOptions);
+        if (response.ok) {
+          break;
+        }
+        // eslint-disable-next-line no-await-in-loop
+        const errorText = await response.text();
+        failureDetail = `HTTP ${response.status} - ${errorText}`;
+        transient = isTransientStatus(response.status);
+        if (!transient) {
+          throw new Error(`Pull request creation failed: ${failureDetail}`);
+        }
+      } catch (err) {
+        // Re-throw permanent HTTP failures immediately; a thrown fetch (network
+        // /timeout) has no response and is treated as transient.
+        if (response && !transient) {
+          throw err;
+        }
+        transient = true;
+        failureDetail = err.message;
+      }
+
+      if (attempt >= CM_PR_MAX_ATTEMPTS) {
+        throw new Error(
+          `Pull request creation failed after ${CM_PR_MAX_ATTEMPTS} attempts: ${failureDetail}`,
+        );
+      }
+      this.log.warn(
+        `Transient failure creating PR (attempt ${attempt}/${CM_PR_MAX_ATTEMPTS}): ${failureDetail}. `
+        + `Retrying in ${CM_PR_RETRY_DELAY_MS}ms.`,
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await sleep(CM_PR_RETRY_DELAY_MS);
     }
 
     const result = await response.json();

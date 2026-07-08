@@ -1961,5 +1961,86 @@ describe('CloudManagerClient', () => {
         },
       )).to.be.rejectedWith('Pull request creation failed');
     });
+
+    // eslint-disable-next-line prefer-arrow-callback
+    it('retries once after a transient 5xx failure and then succeeds', async function () {
+      this.timeout(5000); // real ~1.5s retry delay
+      const scope = nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(503, 'Service Unavailable')
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '8', state: 'OPEN' });
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://github.com/owner/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://github.com/owner/repo/pull/8');
+      expect(scope.isDone()).to.be.true;
+      // the transient failure is logged before retrying
+      expect(context.log.warn).to.have.been.calledWithMatch('Transient failure creating PR');
+    });
+
+    // eslint-disable-next-line prefer-arrow-callback
+    it('retries once after a network error and then succeeds', async function () {
+      this.timeout(5000);
+      const scope = nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .replyWithError('ECONNRESET')
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '11', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://github.com/owner/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://github.com/owner/repo/pull/11');
+      expect(scope.isDone()).to.be.true;
+    });
+
+    // eslint-disable-next-line prefer-arrow-callback
+    it('throws after two consecutive transient failures (one retry)', async function () {
+      this.timeout(5000);
+      const scope = nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(503, 'down')
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(503, 'still down');
+
+      const client = CloudManagerClient.createFrom(createContext());
+      await expect(client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+        },
+      )).to.be.rejectedWith('Pull request creation failed after 2 attempts');
+      expect(scope.isDone()).to.be.true;
+    });
   });
 });

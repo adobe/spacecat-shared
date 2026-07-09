@@ -1036,6 +1036,22 @@ describe('FixEntityCollection', () => {
       expect(opStub.in.secondCall.args[1]).to.have.lengthOf(10);
     });
 
+    it('should deduplicate opportunity IDs before chunking', async () => {
+      const opportunityIds = ['opp-1', 'opp-2', 'opp-1'];
+      const mockFixEntities = [{ getId: () => 'fix-1' }];
+
+      fixEntityCollection.all = stub().resolves(mockFixEntities);
+
+      const result = await fixEntityCollection.allByOpportunityIds(opportunityIds);
+
+      expect(result).to.deep.equal(mockFixEntities);
+      expect(fixEntityCollection.all).to.have.been.calledOnce;
+
+      const opStub = { in: stub().returns('IN_EXPR') };
+      fixEntityCollection.all.firstCall.args[1].where({ opportunityId: 'opportunityId' }, opStub);
+      expect(opStub.in).to.have.been.calledOnceWith('opportunityId', ['opp-1', 'opp-2']);
+    });
+
     it('should handle errors and throw DataAccessError', async () => {
       const error = new Error('Database error');
       fixEntityCollection.all = stub().rejects(error);
@@ -1043,6 +1059,19 @@ describe('FixEntityCollection', () => {
       await expect(fixEntityCollection.allByOpportunityIds(['opp-1']))
         .to.be.rejectedWith(DataAccessError, 'Failed to get all fixes by opportunity IDs');
       expect(mockLogger.error).to.have.been.calledWith('Failed to get all fixes by opportunity IDs', error);
+    });
+
+    it('should re-throw DataAccessError without wrapping', async () => {
+      const innerError = new DataAccessError('inner failure');
+      fixEntityCollection.all = stub().rejects(innerError);
+
+      try {
+        await fixEntityCollection.allByOpportunityIds(['opp-1']);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.equal(innerError);
+      }
+      expect(mockLogger.error).to.not.have.been.called;
     });
   });
 

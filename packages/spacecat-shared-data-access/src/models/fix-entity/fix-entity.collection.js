@@ -250,9 +250,11 @@ class FixEntityCollection extends BaseCollection {
     }
 
     try {
+      const uniqueIds = [...new Set(opportunityIds)];
+
       const chunks = [];
-      for (let i = 0; i < opportunityIds.length; i += IN_FILTER_CHUNK_SIZE) {
-        chunks.push(opportunityIds.slice(i, i + IN_FILTER_CHUNK_SIZE));
+      for (let i = 0; i < uniqueIds.length; i += IN_FILTER_CHUNK_SIZE) {
+        chunks.push(uniqueIds.slice(i, i + IN_FILTER_CHUNK_SIZE));
       }
 
       const results = await Promise.all(
@@ -264,6 +266,9 @@ class FixEntityCollection extends BaseCollection {
 
       return results.flat();
     } catch (error) {
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
       this.log.error('Failed to get all fixes by opportunity IDs', error);
       throw new DataAccessError('Failed to get all fixes by opportunity IDs', this, error);
     }

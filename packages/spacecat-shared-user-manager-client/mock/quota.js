@@ -37,6 +37,15 @@
  * This module owns `total` + the master-pool movement only. A child's own `used` is NOT changed
  * here: metered writes happen on the separate Project Engine gateway/process (the UM/PE split — the
  * two mocks do not share state; full round-trip fidelity is the live-gateway canary's job).
+ *
+ * SCOPE DECISION (serenity-docs#22, Rainer 2026-07-08 — explicit, NOT a missing feature): this
+ * mock deliberately does NOT implement a true cross-mock closed loop — a Project-Engine-mock
+ * publish does NOT decrement this User-Manager-mock's `used`. The two mock containers are separate
+ * processes with no shared state, and wiring them together was evaluated and rejected as
+ * unnecessary. Instead a test sets up exactly the `{ used, drafted, total }` state it needs
+ * directly, via the `set` hook (exposed over `POST /__quota`), and exercises the allocator logic in
+ * isolation. The "does a live publish actually consume quota" question is answered by the
+ * live-gateway canary, not by this mock.
  */
 
 /** The store collection holding per-workspace AI resources: `{ id, ai: AiResources }`. */

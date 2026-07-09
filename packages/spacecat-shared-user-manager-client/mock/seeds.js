@@ -128,6 +128,11 @@ export const TWO_HIERARCHIES = Object.freeze({
  * The parent holds a gold-shaped pool net of the child's carve (13/800 total, child already carved
  * 2/100 → parent shows 11/700); the child holds its `2 projects / 100 prompts` allocation. Reads
  * (`/resources`) and transfers (carve/release, `422` on over-draw) meter against these.
+ *
+ * These are STATIC seed values, deliberately pre-netted by hand — NOT the output of a live
+ * cross-mock loop. Consistent with the scope decision in `quota.js`: a test sets up whatever
+ * `{ used, drafted, total }` starting state it needs directly (this seed, or `POST /__quota`); no
+ * Project-Engine publish feeds back into these numbers (that fidelity is the canary's job).
  */
 export const PARENT_WITH_CHILD_METERED = Object.freeze({
   [WORKSPACES]: [

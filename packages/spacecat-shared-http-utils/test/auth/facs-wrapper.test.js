@@ -235,6 +235,52 @@ describe('facsWrapper', () => {
     });
   });
 
+  describe('IMS auth channel bypass', () => {
+    it('bypasses for ims auth type before the tenant gate', async () => {
+      // No tenant on the IMS session — without the bypass this would 403 at the
+      // tenant gate for every org request.
+      context.attributes.authInfo = makeAuthInfo({
+        getType: () => 'ims',
+        getTenantIds: () => [],
+        getFacsPermissions: () => [],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', bypass: 'ims-auth-channel' },
+      )).to.be.true;
+    });
+
+    it('bypasses for ims auth type even when a tenant is present (unconditional on tenant)', async () => {
+      context.attributes.authInfo = makeAuthInfo({
+        getType: () => 'ims',
+        getTenantIds: () => ['SOME-ORG@AdobeOrg'],
+        getFacsPermissions: () => [],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', bypass: 'ims-auth-channel' },
+      )).to.be.true;
+    });
+
+    it('does NOT take the ims bypass when the session carries FACS claims', async () => {
+      // Guard: an IMS session that surfaces facs_permissions stays on the
+      // evaluation ladder rather than skipping it.
+      context.attributes.authInfo = makeAuthInfo({
+        getType: () => 'ims',
+        getFacsPermissions: () => ['llmo/some_capability'],
+      });
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', bypass: 'ims-auth-channel' },
+      )).to.be.false;
+    });
+  });
+
   describe('tenant assertion', () => {
     it('returns 500 when getTenantIds() returns more than one tenant', async () => {
       context.attributes.authInfo = makeAuthInfo({
@@ -503,6 +549,13 @@ describe('facsWrapper', () => {
       expect(logStub.info.calledWithMatch(
         { tag: 'facs', defer: 'no-resolvable-resource' },
       )).to.be.true;
+      // The enrolled, resource-scoped defer surfaces a ReBAC session flag so
+      // collection endpoints can filter their results.
+      expect(context.attributes.facs).to.deep.equal({
+        enabled: true,
+        product: 'LLMO',
+        subjectId: 'user@example.com',
+      });
     });
 
     it('defers when product has no alias lookup at all', async () => {

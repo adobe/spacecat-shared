@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidUUID } from '@adobe/spacecat-shared-utils';
+import {
+  hasText, isIsoDate, isValidUUID,
+} from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import BrandSemrushProject from './brand-semrush-project.model.js';
@@ -68,6 +70,25 @@ const schema = new SchemaBuilder(BrandSemrushProject, BrandSemrushProjectCollect
     validate: (value) => hasText(value) && LANGUAGE_TAG_REGEX.test(value),
     postgrestField: 'language',
   })
-  .addAllIndex(['semrushProjectId']);
+  .addAllIndex(['semrushProjectId'])
+  // Market-mirror Site for this project. Nullable — the mirror is created
+  // best-effort and may lag the row. Not unique: mirror Sites are per
+  // (brand, domain), so many projects of a brand sharing a domain share one
+  // Site. See serenity-docs brand-semrush-mapping-maintenance.md §5.1.
+  .addAttribute('siteId', {
+    type: 'string',
+    validate: (value) => !value || isValidUUID(value),
+  })
+  // Soft-delete tombstone. NULL = live (project exists in the child
+  // workspace, draft or live). Set = the project was deleted upstream —
+  // Semrush data does not survive deletion, so this is the only remaining
+  // record it existed. Mirrors the ApiKey.deletedAt precedent
+  // (api-key.schema.js) — no package-level soft-delete scope exists, so
+  // every accessor except `allByOrganizationId` (collection.js) returns
+  // tombstones; callers that need only live rows must filter explicitly.
+  .addAttribute('deletedAt', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
+  });
 
 export default schema.build();

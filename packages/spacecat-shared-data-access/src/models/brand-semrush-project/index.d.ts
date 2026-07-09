@@ -25,9 +25,27 @@ export interface BrandSemrushProject extends BaseModel {
   getSemrushProjectId(): string;
   getGeoTargetId(): number;
   getLanguageCode(): string;
+  getSiteId(): string | undefined;
+  getDeletedAt(): string | undefined;
   setSemrushProjectId(value: string): BrandSemrushProject;
   setGeoTargetId(value: number): BrandSemrushProject;
   setLanguageCode(value: string): BrandSemrushProject;
+  setSiteId(value: string): BrandSemrushProject;
+  setDeletedAt(value: string): BrandSemrushProject;
+}
+
+export interface BrandSemrushProjectOrgRow {
+  brandId: string;
+  semrushProjectId: string;
+  geoTargetId: number;
+  languageCode: string;
+  siteId: string | null;
+  // Expected non-null under the select's `!inner` join (which excludes
+  // non-matching parents), but kept nullable to match the defensive runtime
+  // mapping (`row.brands?.organization_id ?? null`) — see
+  // brand-semrush-project.collection.js's #fetchOrgRows.
+  organizationId: string | null;
+  semrushSubWorkspaceId: string | null;
 }
 
 export interface BrandSemrushProjectCollection extends
@@ -41,4 +59,8 @@ export interface BrandSemrushProjectCollection extends
     geoTargetId: number,
     languageCode: string,
   ): Promise<BrandSemrushProject | null>;
+  allByOrganizationId(
+    organizationId: string,
+    options?: { includeDeleted?: boolean },
+  ): Promise<BrandSemrushProjectOrgRow[]>;
 }

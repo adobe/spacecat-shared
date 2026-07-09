@@ -606,4 +606,47 @@ describe('SuggestionModel', () => {
       });
     });
   });
+
+  describe('setStatus / transitionStatus guard (SITES-47091)', () => {
+    const original = process.env.STATUS_TRANSITION_ENFORCEMENT;
+
+    afterEach(() => {
+      if (original === undefined) {
+        delete process.env.STATUS_TRANSITION_ENFORCEMENT;
+      } else {
+        process.env.STATUS_TRANSITION_ENFORCEMENT = original;
+      }
+    });
+
+    it('applies an allowed transition (NEW -> IN_PROGRESS) without warning', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model, mockLogger } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      mockLogger.warn.resetHistory(); // ignore construction-time warnings
+      model.transitionStatus('IN_PROGRESS');
+      expect(model.record.status).to.equal('IN_PROGRESS');
+      expect(mockLogger.warn).to.not.have.been.called;
+    });
+
+    it('warns but still applies an illegal transition in warn mode (default)', () => {
+      delete process.env.STATUS_TRANSITION_ENFORCEMENT;
+      const { model, mockLogger } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      mockLogger.warn.resetHistory(); // ignore construction-time warnings
+      model.setStatus('REJECTED'); // REJECTED only legal from PENDING_VALIDATION
+      expect(model.record.status).to.equal('REJECTED');
+      expect(mockLogger.warn).to.have.been.calledOnce;
+    });
+
+    it('allows REJECTED only from PENDING_VALIDATION in enforce mode', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model } = createElectroMocks(Suggestion, { ...mockRecord, status: 'PENDING_VALIDATION' });
+      expect(() => model.setStatus('REJECTED')).to.not.throw();
+      expect(model.record.status).to.equal('REJECTED');
+    });
+
+    it('throws on an illegal transition (NEW -> REJECTED) in enforce mode', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      expect(() => model.setStatus('REJECTED')).to.throw('Suggestion');
+    });
+  });
 });

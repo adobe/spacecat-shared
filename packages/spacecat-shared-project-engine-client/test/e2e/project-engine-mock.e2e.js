@@ -40,6 +40,8 @@ const READY_TIMEOUT_MS = 30_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
 const SEED_WORKSPACE = SEED_IDS.workspaceId;
 const SEED_PROJECT = SEED_IDS.projectId;
+// Every project's root level holds exactly these four dimension roots and nothing else.
+const DIMENSION_ROOT_NAMES = ['category', 'intent', 'source', 'type'];
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -445,8 +447,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   });
 
   // The consumer's real read path (listPromptsByTags) passes non-empty tag_ids — exercise the
-  // filter branch (OR semantics), not just the list-all branch. `tagged` stores the deterministic
-  // opaque `tagId('brand')`, so a prompt tagged 'brand' is found via tag_ids: [tagId('brand')].
+  // filter branch (OR semantics), not just the list-all branch. `tagged` is name-keyed and
+  // ROOT-only: it derives `tagId(name)` with no parent, so a prompt tagged 'brand' is found via
+  // tag_ids: [tagId('brand')]. Neither probe name is a dimension root — a bare name that IS one
+  // (`category`, `intent`, `source`, `type`) would resolve to that real root's id, which is exactly
+  // why no caller may reach this endpoint with dimension-root data.
   // Fresh creates are draft-gated (see the dedicated gating test above), so this read passes
   // draft:true — it's exercising the filter branch, not the publish gate.
   it('by_tags filters to prompts carrying a given tag id (non-empty tag_ids)', async () => {
@@ -454,7 +459,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { prompts: { 'Branded question': ['brand'], 'Generic question': ['category'] } },
+        body: { prompts: { 'Branded question': ['brand'], 'Generic question': ['generic'] } },
       },
     );
     const { data: branded, error } = await client.POST(
@@ -468,8 +473,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     );
     expect(error).to.equal(undefined);
-    // Only the 'brand'-tagged prompt matches: the seeded prompt's topic:/source:/intent:/type:
-    // tags (none is the bare 'brand' → tagId('brand')), and the 'category' one a different tag id.
+    // Only the 'brand'-tagged prompt matches: the seeded prompt carries dimension-root descendant
+    // ids (never `tagId('brand')`), and 'Generic question' carries a different derived root id.
     expect(branded.items.map((p) => p.name)).to.deep.equal(['Branded question']);
     expect(branded.total).to.equal(1);
   });
@@ -522,16 +527,29 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       body: { tag_ids: tagIds },
     },
   );
+  // One level of the tag tree: `parentId: ''` lists the dimension roots, an id lists that tag's
+  // direct children. `parent_id` and `search` are both spec-required query params.
+  const listTags = (parentId, search = '') => client.GET(
+    '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+    {
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+        query: { parent_id: parentId, search },
+      },
+    },
+  );
 
   // POST /aio/prompts references tags by id (not name) and returns 201 with the live LIST WRAPPER
   // { page, total, items:[{id,name}], existing_count }. The created prompts embed the tag's
   // { id, name }, so a by_tags read on that id correlates them — but they're DRAFT until publish
   // (see the dedicated gating test below), so this correlation check reads via draft:true.
   it('creates prompts by tag id and reads them back via by_tags (draft view)', async () => {
+    // `childTagId` (the sub-category `Trail`) carries no seeded prompts, so by_tags on it returns
+    // exactly what this test creates.
     const res = await fetch(promptsUrl(), {
       method: 'POST',
       headers: jsonAuth,
-      body: JSON.stringify({ items: ['Id Q1', 'Id Q2'], tag_ids: [SEED_IDS.categoryTagId] }),
+      body: JSON.stringify({ items: ['Id Q1', 'Id Q2'], tag_ids: [SEED_IDS.childTagId] }),
     });
     expect(res.status).to.equal(201);
     const created = await res.json();
@@ -542,7 +560,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.items.map((p) => p.name)).to.deep.equal(['Id Q1', 'Id Q2']);
 
     // Correlation is free: by_tags on the referenced tag id returns the two created prompts.
-    const { data: byTag } = await listByTags([SEED_IDS.categoryTagId], { draft: true });
+    const { data: byTag } = await listByTags([SEED_IDS.childTagId], { draft: true });
     expect(byTag.items.map((p) => p.name)).to.have.members(['Id Q1', 'Id Q2']);
   });
 
@@ -605,24 +623,24 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   });
 
   // PUT /aio/prompts/tags with replace:false MERGES references onto the prompt's existing tag set:
-  // the seeded prompt keeps its original topic:/type: tags AND gains the new category ref.
+  // the seeded prompt keeps its original closed-dimension tags AND gains the new sub-category ref.
   it('PUT merges tag references (replace:false keeps existing tags)', async () => {
     const { response } = await client.PUT(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
         body: {
-          items: [{ id: SEED_IDS.promptId, references: [SEED_IDS.categoryTagId], replace: false }],
+          items: [{ id: SEED_IDS.promptId, references: [SEED_IDS.childTagId], replace: false }],
         },
       },
     );
     expect(response.status).to.equal(204);
 
-    // gained the new ref …
-    const { data: byNew } = await listByTags([SEED_IDS.categoryTagId]);
+    // gained the new ref (the `Trail` sub-category, which the seed does not attach) …
+    const { data: byNew } = await listByTags([SEED_IDS.childTagId]);
     expect(byNew.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
-    // … and kept an original one (type:branded)
-    const { data: byOld } = await listByTags([tagId('type:branded')]);
+    // … and kept an original one (the `branded` value under the `type` root)
+    const { data: byOld } = await listByTags([SEED_IDS.typeBrandedTagId]);
     expect(byOld.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
   });
 
@@ -643,8 +661,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // now carries only the new ref …
     const { data: byNew } = await listByTags([SEED_IDS.categoryTagId]);
     expect(byNew.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
-    // … and no longer matches an original tag (it was replaced out)
-    const { data: byOld } = await listByTags([tagId('type:branded')]);
+    // … and no longer matches an original tag (the `branded` value was replaced out)
+    const { data: byOld } = await listByTags([SEED_IDS.typeBrandedTagId]);
     expect(byOld.items.map((p) => p.id)).to.not.include(SEED_IDS.promptId);
   });
 
@@ -798,7 +816,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { names: ['type:branded', 'topic:Probe'] },
+        body: { names: ['Probe One', 'Probe Two'], parent_id: SEED_IDS.categoryRootTagId },
       },
     );
     expect(error).to.equal(undefined);
@@ -806,39 +824,35 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data).to.be.an('array');
   });
 
-  // The core fix: a standalone tag created via createProjectTags must PERSIST so a 0-prompt
-  // category reads back via GET /aio/tags (today the elmo Categories surface falls back to an
-  // optimistic add because the mock couldn't persist it). parent_id + search are spec-required
-  // query params (the consumer sends them); empty parent_id lists the root categories. A brand-new
-  // name (distinct from the baked seed's `category:Running Shoes`) proves the create→read path.
+  // Under the dimension-root model a customer category is a bare-named CHILD of the `category`
+  // root, never a root itself. A standalone tag created via createProjectTags must PERSIST so a
+  // 0-prompt category reads back via GET /aio/tags. parent_id + search are spec-required query
+  // params (the consumer sends them); parent_id = the `category` root lists the categories.
   it('persists createProjectTags and reads a new 0-prompt category back via GET /aio/tags', async () => {
     const { error: createError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { names: ['category:Hydration'] },
+        body: { names: ['Hydration'], parent_id: SEED_IDS.categoryRootTagId },
       },
     );
     expect(createError).to.equal(undefined);
 
-    const { data: listed, error: listError } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: '', search: '' },
-        },
-      },
-    );
+    const { data: listed, error: listError } = await listTags(SEED_IDS.categoryRootTagId);
     expect(listError).to.equal(undefined);
-    // Roots: the baked `category:Running Shoes` + the just-created `category:Hydration`.
+    // Categories: the baked `Running Shoes` + the just-created `Hydration`.
     expect(listed.total).to.equal(2);
-    expect(listed.items.map((t) => t.name)).to.have.members([
-      'category:Running Shoes', 'category:Hydration',
-    ]);
+    expect(listed.items.map((t) => t.name)).to.have.members(['Running Shoes', 'Hydration']);
     // The stored/listed shape is an AIOTag (prompts_count), not a TreeNodeResponse (keyword_count).
-    const created = listed.items.find((t) => t.name === 'category:Hydration');
+    const created = listed.items.find((t) => t.name === 'Hydration');
     expect(created).to.include.keys('id', 'name', 'prompts_count');
+    // …and it hangs off the `category` root, carrying a one-leaf breadcrumb.
+    expect(created.parent_id).to.equal(SEED_IDS.categoryRootTagId);
+    expect(created.path.map((leaf) => leaf.name)).to.deep.equal(['category']);
+
+    // The root level is untouched: still exactly the four dimension roots.
+    const { data: roots } = await listTags('');
+    expect(roots.items.map((t) => t.name)).to.deep.equal(DIMENSION_ROOT_NAMES);
   });
 
   // Gate 7 (verified live 2026-07-02): the create endpoint does NOT dedupe — re-creating a name
@@ -849,79 +863,109 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   it('createProjectTags 500s on a same-name/same-parent duplicate (atomic); search filters', async () => {
     const post = (names) => client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } }, body: { names } },
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { names, parent_id: SEED_IDS.categoryRootTagId },
+      },
     );
-    const { error: firstErr } = await post(['category:Alpha', 'category:Beta']);
+    const { error: firstErr } = await post(['Alpha', 'Beta']);
     expect(firstErr).to.equal(undefined);
 
-    // A batch that re-creates the already-stored `category:Alpha` (even alongside a new name) 500s,
-    // and writes NOTHING — resolve-before-create is the consumer's job, not the endpoint's.
-    const { response: dupRes } = await post(['category:Alpha', 'category:Gamma']);
+    // A batch that re-creates the already-stored `Alpha` (even alongside a new name) 500s, and
+    // writes NOTHING — resolve-before-create is the consumer's job, not the endpoint's.
+    const { response: dupRes } = await post(['Alpha', 'Gamma']);
     expect(dupRes.status).to.equal(500);
 
-    const { data: all } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: '', search: '' },
-        },
-      },
-    );
-    // roots: the baked `category:Running Shoes` + Alpha + Beta. The collided batch created
-    // neither a duplicate Alpha nor the co-batched Gamma (atomic), so Gamma is absent.
+    // categories: the baked `Running Shoes` + Alpha + Beta. The collided batch created neither a
+    // duplicate Alpha nor the co-batched Gamma (atomic), so Gamma is absent.
+    const { data: all } = await listTags(SEED_IDS.categoryRootTagId);
     expect(all.total).to.equal(3);
-    expect(all.items.map((t) => t.name)).to.have.members([
-      'category:Running Shoes', 'category:Alpha', 'category:Beta',
-    ]);
+    expect(all.items.map((t) => t.name)).to.have.members(['Running Shoes', 'Alpha', 'Beta']);
 
-    const { data: filtered } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: '', search: 'beta' },
-        },
-      },
-    );
-    expect(filtered.items.map((t) => t.name)).to.deep.equal(['category:Beta']);
+    const { data: filtered } = await listTags(SEED_IDS.categoryRootTagId, 'beta');
+    expect(filtered.items.map((t) => t.name)).to.deep.equal(['Beta']);
   });
 
-  // __reset restores the boot seed (the baked root category, no ad-hoc tags), so a created
+  // `search` is scoped to ONE level and never descends (verified live) — a nested tag is unfindable
+  // from the root level. Every consumer of GET /aio/tags inherits this, so the mock must mirror it:
+  // the dimension-root model deliberately trades type-to-find for grouping.
+  it('search never descends: a nested tag is invisible from the root level', async () => {
+    // `Running Shoes` (depth 2) and `Trail` (depth 3) both exist, and neither is a root.
+    const { data: fromRoot } = await listTags('', 'running');
+    expect(fromRoot.items).to.have.length(0);
+    const { data: fromRootTrail } = await listTags('', 'trail');
+    expect(fromRootTrail.items).to.have.length(0);
+
+    // Each is findable only at its own level.
+    const { data: atCategoryRoot } = await listTags(SEED_IDS.categoryRootTagId, 'running');
+    expect(atCategoryRoot.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
+    const { data: atCategory } = await listTags(SEED_IDS.categoryTagId, 'trail');
+    expect(atCategory.items.map((t) => t.name)).to.deep.equal(['Trail']);
+  });
+
+  // A depth-3 tag's `path[]` is the FULL ancestry, root-first, excluding itself — so `path[0]` is
+  // its dimension at any depth. A breadcrumb truncated to the direct parent would resolve a
+  // sub-category's dimension to its category, which every downstream consumer keys off.
+  it('reads a depth-3 sub-category with a two-leaf root-first breadcrumb', async () => {
+    const { data: children } = await listTags(SEED_IDS.categoryTagId);
+    const trail = children.items.find((t) => t.name === 'Trail');
+
+    expect(trail.parent_id).to.equal(SEED_IDS.categoryTagId);
+    expect(trail.path.map((leaf) => leaf.name)).to.deep.equal(['category', 'Running Shoes']);
+    expect(trail.path.map((leaf) => leaf.id))
+      .to.deep.equal([SEED_IDS.categoryRootTagId, SEED_IDS.categoryTagId]);
+    // The root leaf carries no parent; the deeper leaf carries the leaf before it.
+    expect(trail.path[0]).to.not.have.property('parent_id');
+    expect(trail.path[1].parent_id).to.equal(SEED_IDS.categoryRootTagId);
+  });
+
+  // A sub-category and a closed-dimension value may share a bare NAME and must stay distinct tags —
+  // ids are keyed on (parent, name). This is the cross-dimension collision case the dimension-root
+  // model must survive; the seed bakes it so it is exercised rather than assumed.
+  it('keeps a sub-category and a same-named source value as distinct tags', async () => {
+    const { data: subcategories } = await listTags(SEED_IDS.categoryTagId);
+    const { data: sources } = await listTags(SEED_IDS.sourceRootTagId);
+
+    const subHuman = subcategories.items.find((t) => t.name === 'human');
+    const srcHuman = sources.items.find((t) => t.name === 'human');
+
+    expect(subHuman.id).to.equal(SEED_IDS.childCollidingTagId);
+    expect(srcHuman.id).to.equal(SEED_IDS.sourceHumanTagId);
+    expect(subHuman.id).to.not.equal(srcHuman.id);
+    expect(subHuman.path[0].name).to.equal('category');
+    expect(srcHuman.path[0].name).to.equal('source');
+  });
+
+  // __reset restores the boot seed (the four dimension roots, no ad-hoc tags), so a created
   // standalone tag is cleared — proving the tags collection rides the seed/reset lifecycle like
   // every other stateful resource.
   it('clears created tags on __reset (tags ride the seed lifecycle)', async () => {
     await client.POST('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
       params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-      body: { names: ['category:Ephemeral'] },
+      body: { names: ['Ephemeral'], parent_id: SEED_IDS.categoryRootTagId },
     });
     await fetch(`${baseUrl}/__reset`, { method: 'POST' });
 
-    const { data: listed } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: '', search: '' },
-        },
-      },
-    );
-    // back to the baked baseline (the created `category:Ephemeral` is gone)
-    expect(listed.total).to.equal(1);
-    expect(listed.items.map((t) => t.name)).to.deep.equal(['category:Running Shoes']);
+    // back to the baked baseline: the four dimension roots, and `Ephemeral` is gone
+    const { data: roots } = await listTags('');
+    expect(roots.total).to.equal(4);
+    expect(roots.items.map((t) => t.name)).to.deep.equal(DIMENSION_ROOT_NAMES);
+    const { data: categories } = await listTags(SEED_IDS.categoryRootTagId);
+    expect(categories.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
   });
 
   // Nested create: a child is created with a `parent_id` and reads back under that parent, with a
-  // `path[]` ancestor breadcrumb; the parent's `children_count` reflects it.
+  // `path[]` ancestor breadcrumb; the parent's `children_count` reflects it. Depth is uncapped, so
+  // this creates a category (depth 2) and a sub-category (depth 3) under the `category` root.
   it('creates a child under a parent (parent_id) and reads it back with path + children_count', async () => {
-    const { data: roots } = await client.POST(
+    const { data: categories } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { names: ['category:Footwear'] },
+        body: { names: ['Footwear'], parent_id: SEED_IDS.categoryRootTagId },
       },
     );
-    const parentId = roots[0].id;
+    const parentId = categories[0].id;
 
     const { data: childCreate } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
@@ -933,52 +977,41 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // the create echo carries the parent linkage
     expect(childCreate[0]).to.include({ name: 'Sneakers', parent_id: parentId });
 
-    // GET with a non-empty parent_id returns that category's children, each with a path breadcrumb
-    const { data: children } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: parentId, search: '' },
-        },
-      },
-    );
+    // GET with a non-empty parent_id returns that tag's children, each with a full breadcrumb
+    const { data: children } = await listTags(parentId);
     expect(children.items.map((t) => t.name)).to.deep.equal(['Sneakers']);
     expect(children.items[0].parent_id).to.equal(parentId);
     expect(children.items[0].children_count).to.equal(0); // the new leaf has no children of its own
-    // the path leaf is { id, name } — live does not echo parent_id on the breadcrumb (D6)
-    expect(children.items[0].path).to.deep.equal([{ id: parentId, name: 'category:Footwear' }]);
+    // root-first ancestry, excluding the tag itself: the `category` root, then `Footwear`
+    expect(children.items[0].path).to.deep.equal([
+      { id: SEED_IDS.categoryRootTagId, name: 'category' },
+      { id: parentId, name: 'Footwear', parent_id: SEED_IDS.categoryRootTagId },
+    ]);
 
-    // the parent root now reports children_count 1, and a root's parent_id + path are null (D5)
-    const { data: rootList } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: '', search: 'footwear' },
-        },
-      },
-    );
-    expect(rootList.items[0]).to.include({ name: 'category:Footwear', children_count: 1 });
-    expect(rootList.items[0].parent_id).to.equal(null); // live returns null for a root
-    expect(rootList.items[0].path).to.equal(null); // live returns null (not []) for a root
+    // the parent now reports children_count 1 and hangs off the `category` root
+    const { data: categoryList } = await listTags(SEED_IDS.categoryRootTagId, 'footwear');
+    expect(categoryList.items[0]).to.include({ name: 'Footwear', children_count: 1 });
+    expect(categoryList.items[0].parent_id).to.equal(SEED_IDS.categoryRootTagId);
+
+    // a ROOT's parent_id + path are null (D5) — live returns null, not [] / an omitted field
+    const { data: rootList } = await listTags('', 'category');
+    expect(rootList.items[0]).to.include({ name: 'category' });
+    expect(rootList.items[0].parent_id).to.equal(null);
+    expect(rootList.items[0].path).to.equal(null);
   });
 
-  // The boot seed bakes a nested taxonomy (root `category:Running Shoes` → bare child `Trail`), so
-  // consumers get a populated Categories tree out of the box.
+  // The boot seed bakes the dimension-root tree (`category` → `Running Shoes` → `Trail`/`human`),
+  // so consumers get a populated Categories tree out of the box.
   it('reads the baked nested taxonomy from the boot seed', async () => {
-    const { data: children } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: SEED_IDS.categoryTagId, search: '' },
-        },
-      },
-    );
-    expect(children.items.map((t) => t.name)).to.deep.equal(['Trail']);
+    const { data: children } = await listTags(SEED_IDS.categoryTagId);
+    expect(children.items.map((t) => t.name)).to.deep.equal(['Trail', 'human']);
     expect(children.items[0].path).to.deep.equal([
-      { id: SEED_IDS.categoryTagId, name: 'category:Running Shoes' },
+      { id: SEED_IDS.categoryRootTagId, name: 'category' },
+      {
+        id: SEED_IDS.categoryTagId,
+        name: 'Running Shoes',
+        parent_id: SEED_IDS.categoryRootTagId,
+      },
     ]);
   });
 
@@ -1000,28 +1033,16 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(patchResp.status).to.equal(200); // live responds 200, not 201 (D1/CR11)
     expect(patched).to.include({ id: SEED_IDS.childTagId, name: 'Trail' });
 
-    // the promoted tag now appears as a root, and the old parent has no children left
-    const { data: rootsAfter } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: '', search: '' },
-        },
-      },
-    );
-    expect(rootsAfter.items.map((t) => t.name)).to.have.members(['category:Running Shoes', 'Trail']);
+    // the promoted tag now sits alongside the dimension roots — a stranded tag, exactly the failure
+    // mode the reshape's post-condition ("the root listing is exactly the four dimension roots")
+    // exists to catch
+    const { data: rootsAfter } = await listTags('');
+    expect(rootsAfter.items.map((t) => t.name))
+      .to.have.members([...DIMENSION_ROOT_NAMES, 'Trail']);
 
-    const { data: childrenAfter } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: SEED_IDS.categoryTagId, search: '' },
-        },
-      },
-    );
-    expect(childrenAfter.total).to.equal(0);
+    // …and it has left its category, whose remaining sub-category is untouched
+    const { data: childrenAfter } = await listTags(SEED_IDS.categoryTagId);
+    expect(childrenAfter.items.map((t) => t.name)).to.deep.equal(['human']);
   });
 
   // PATCH's `parent_id` is a live-verified 3-way switch (serenity-docs#24 §3.1 gate 1, CR15), NOT
@@ -1050,16 +1071,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       id: SEED_IDS.childTagId, name: 'Ridge', parent_id: SEED_IDS.categoryTagId,
     });
 
-    const { data: childrenAfter } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: SEED_IDS.categoryTagId, search: '' },
-        },
-      },
-    );
-    expect(childrenAfter.items.map((t) => t.name)).to.deep.equal(['Ridge']);
+    const { data: childrenAfter } = await listTags(SEED_IDS.categoryTagId);
+    expect(childrenAfter.items.map((t) => t.name)).to.deep.equal(['Ridge', 'human']);
   });
 
   // Same gate, the other literal: an explicit JSON `null` (not merely a falsy/empty string)
@@ -1086,16 +1099,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // this only asserts the parent link is gone, not which of the two falsy shapes represents it.
     expect(patched.parent_id).to.not.exist;
 
-    const { data: rootsAfter } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: '', search: '' },
-        },
-      },
-    );
-    expect(rootsAfter.items.map((t) => t.name)).to.have.members(['category:Running Shoes', 'Trail']);
+    const { data: rootsAfter } = await listTags('');
+    expect(rootsAfter.items.map((t) => t.name))
+      .to.have.members([...DIMENSION_ROOT_NAMES, 'Trail']);
   });
 
   // PATCH also RENAMES in place: changing `name` (keeping the parent) is reflected in the 200
@@ -1119,16 +1125,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
 
     // the child still sits under the same parent, now carrying the new name
-    const { data: children } = await client.GET(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-      {
-        params: {
-          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: SEED_IDS.categoryTagId, search: '' },
-        },
-      },
-    );
-    expect(children.items.map((t) => t.name)).to.deep.equal(['Hiking']);
+    const { data: children } = await listTags(SEED_IDS.categoryTagId);
+    expect(children.items.map((t) => t.name)).to.deep.equal(['Hiking', 'human']);
     expect(children.items[0].id).to.equal(SEED_IDS.childTagId);
   });
 
@@ -1171,15 +1169,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
     await client.POST('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
       params: { path: { id: ws, project_id: projectA } },
-      body: { names: ['category:Shared'] },
+      body: { names: ['category'] },
     });
 
-    const listTags = (pid) => client.GET('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
+    const listProjectRoots = (pid) => client.GET('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
       params: { path: { id: ws, project_id: pid }, query: { parent_id: '', search: '' } },
     });
-    const { data: aTags } = await listTags(projectA);
-    const { data: bTags } = await listTags(projectB);
-    expect(aTags.items.map((t) => t.name)).to.deep.equal(['category:Shared']);
+    const { data: aTags } = await listProjectRoots(projectA);
+    const { data: bTags } = await listProjectRoots(projectB);
+    expect(aTags.items.map((t) => t.name)).to.deep.equal(['category']);
     expect(bTags.total).to.equal(0);
 
     // restore the boot seed (__seed rewrote the reset baseline) so later cases stay independent.
@@ -1190,14 +1188,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
   });
 
-  // DELETE removes the standalone project tag (so a 0-prompt orphan can be cleaned up), but the
-  // prompts collection is independent — a prompt that happens to carry the tag is NOT deleted.
-  it('deletes a project tag without touching prompts', async () => {
+  // DELETE removes the standalone project tag (so a 0-prompt orphan can be cleaned up). The prompts
+  // themselves are never deleted — only the tag reference is detached from them (see the gate-4
+  // test below, which exercises a tag the seeded prompt actually carries).
+  it('deletes a project tag without deleting prompts', async () => {
     const { data: created } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
       {
         params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { names: ['category:Doomed'] },
+        body: { names: ['Doomed'], parent_id: SEED_IDS.categoryRootTagId },
       },
     );
     const { response: delRes } = await client.DELETE(
@@ -1212,28 +1211,84 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     expect(delRes.status).to.equal(204);
 
-    const { data: tagsAfter } = await client.GET(
+    // `Doomed` is gone; the baked category survives (delete targets only the id sent) …
+    const { data: categoriesAfter } = await listTags(SEED_IDS.categoryRootTagId);
+    expect(categoriesAfter.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
+    // … and the four dimension roots are untouched.
+    const { data: rootsAfter } = await listTags('');
+    expect(rootsAfter.items.map((t) => t.name)).to.deep.equal(DIMENSION_ROOT_NAMES);
+
+    // The seeded prompt survives — deleting a tag never deletes a prompt. `Doomed` carried none,
+    // so the prompt's own tags are untouched too.
+    const { data: prompts } = await listByTags([]);
+    expect(prompts.total).to.equal(1);
+    expect(prompts.items[0].id).to.equal(SEED_IDS.promptId);
+    expect(prompts.items[0].tags.map((t) => t.id)).to.include(SEED_IDS.categoryTagId);
+  });
+
+  // Gate 4 (verified live 2026-07-02): deleting a tag DETACHES it from every carrying prompt. The
+  // prompt survives without it and stops matching `by_tags` on the removed id. A mock that left the
+  // tag embedded would keep answering by_tags for an id that no longer exists.
+  it('detaches a deleted tag from the prompts carrying it', async () => {
+    // The seeded prompt carries the `branded` value under the `type` root.
+    const { data: before } = await listByTags([SEED_IDS.typeBrandedTagId]);
+    expect(before.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
+
+    const { response: delRes } = await client.DELETE(
       '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
       {
         params: {
           path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-          query: { parent_id: '', search: '' },
+          query: { prompt_id: '' },
         },
+        body: { ids: [SEED_IDS.typeBrandedTagId] },
       },
     );
-    // `category:Doomed` is gone; the baked root survives (delete targets only the id sent).
-    expect(tagsAfter.items.map((t) => t.name)).to.deep.equal(['category:Running Shoes']);
+    expect(delRes.status).to.equal(204);
 
-    // The seeded prompt is untouched — the tag delete does not cascade to the prompts collection.
-    const { data: prompts } = await client.POST(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
-      {
-        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { tag_ids: [] },
+    // by_tags on the deleted id no longer matches …
+    const { data: after } = await listByTags([SEED_IDS.typeBrandedTagId]);
+    expect(after.items.map((p) => p.id)).to.not.include(SEED_IDS.promptId);
+
+    // … the prompt itself survives, minus that one tag, keeping every other …
+    const { data: all } = await listByTags([]);
+    expect(all.total).to.equal(1);
+    const [prompt] = all.items;
+    expect(prompt.tags.map((t) => t.id)).to.not.include(SEED_IDS.typeBrandedTagId);
+    expect(prompt.tags.map((t) => t.id)).to.have.members([
+      SEED_IDS.categoryTagId,
+      SEED_IDS.childCollidingTagId,
+      SEED_IDS.sourceHumanTagId,
+      SEED_IDS.intentCommercialTagId,
+    ]);
+
+    // … and the same-named `human` sub-category is untouched by the source value's deletion.
+    const { data: subcategories } = await listTags(SEED_IDS.categoryTagId);
+    expect(subcategories.items.map((t) => t.id)).to.include(SEED_IDS.childCollidingTagId);
+  });
+
+  // A prompt whose ONLY tag is deleted becomes fully unassigned — not orphaned, not deleted.
+  it('leaves a prompt fully unassigned when its last tag is deleted', async () => {
+    const delTags = (ids) => client.DELETE('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+        query: { prompt_id: '' },
       },
-    );
-    expect(prompts.total).to.equal(1);
-    expect(prompts.items[0].id).to.equal(SEED_IDS.promptId);
+      body: { ids },
+    });
+    const { response } = await delTags([
+      SEED_IDS.categoryTagId,
+      SEED_IDS.childCollidingTagId,
+      SEED_IDS.sourceHumanTagId,
+      SEED_IDS.intentCommercialTagId,
+      SEED_IDS.typeBrandedTagId,
+    ]);
+    expect(response.status).to.equal(204);
+
+    const { data: all } = await listByTags([]);
+    expect(all.total).to.equal(1);
+    expect(all.items[0].id).to.equal(SEED_IDS.promptId);
+    expect(all.items[0].tags).to.deep.equal([]);
   });
 
   // Anchors the DELETE-orphan limitation documented in the tags.js header: deleting a parent does
@@ -1248,22 +1303,17 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
       body: { ids },
     });
-    // delete the baked root category while its child `Trail` still points at it
+    // delete the baked category while its sub-categories still point at it
     const { response: delRes } = await delTag([SEED_IDS.categoryTagId]);
     expect(delRes.status).to.equal(204);
 
-    const listTags = (parentId) => client.GET('/v2/workspaces/{id}/projects/{project_id}/aio/tags', {
-      params: {
-        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-        query: { parent_id: parentId, search: '' },
-      },
-    });
-    // the child is not among the roots (its parent_id is still the deleted id, so it's not a root)
+    // the children are not among the roots (their parent_id is still the deleted id)
     const { data: roots } = await listTags('');
-    expect(roots.items.map((t) => t.name)).to.not.include('Trail');
-    // it survives ONLY as a child of the now-deleted parent id — reachable only via that stale id
+    expect(roots.items.map((t) => t.name)).to.deep.equal(DIMENSION_ROOT_NAMES);
+    // they survive ONLY as children of the now-deleted parent id — reachable via that stale id
     const { data: orphans } = await listTags(SEED_IDS.categoryTagId);
-    expect(orphans.items.map((t) => t.id)).to.deep.equal([SEED_IDS.childTagId]);
+    expect(orphans.items.map((t) => t.id))
+      .to.deep.equal([SEED_IDS.childTagId, SEED_IDS.childCollidingTagId]);
   });
 
   // Request validation is enabled, so GET /aio/tags 400s when a required query param

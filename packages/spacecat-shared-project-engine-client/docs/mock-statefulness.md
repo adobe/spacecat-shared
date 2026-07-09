@@ -53,10 +53,11 @@ benchmark).** These six are `STATEFUL_RESOURCES` in `mock/stateful.js`. This mat
 recommended first cut plus the competitor-benchmark + brand-URL sync the consumer drives
 (`spacecat-api-service` `syncCompetitorBenchmarksAcrossMarkets` / `syncBrandUrlsAcrossMarkets` /
 `attachBrandUrlsToProject` — each write-then-reads, so by the decision rule above they belong in
-the set). `tags` joined the set for the Categories surface: the consumer registers a standalone
-`category:<name>` tag per market project (one `createProjectTags` per market — a category spans N
-projects, so the collection is scoped per project, never global) and must read it back via
-`GET /aio/tags` even before any prompt carries it. The `publish` action and the `GET /v1/ai_models`
+the set). `tags` joined the set for the Categories surface: the consumer registers standalone tags
+per market project — a bare-named category under the `category` dimension root (one
+`createProjectTags` per market — a category spans N projects, so the collection is scoped per
+project, never global) — and must read them back via `GET /aio/tags` even before any prompt carries
+them. The `publish` action and the `GET /v1/ai_models`
 / `GET /v1/languages` reference lookups are thin hand-authored echo/catalog handlers (no store, no
 auto-stub). The store is generic, so growing the stateful set later is cheap and needs no rework —
 benchmarks + brand_urls + tags were added as ops with no store change, the live proof.

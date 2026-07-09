@@ -1694,6 +1694,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   const PROJECTS = '/v1/workspaces/{id}/projects';
   const TAGGED = '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged';
   const PUBLISH = '/v1/workspaces/{id}/projects/{project_id}/publish';
+  const ADD_MODEL = '/v2/workspaces/{id}/projects/{project_id}/ai_models';
 
   async function setQuota(workspaceId, allocation) {
     const res = await fetch(`${baseUrl}/__quota`, {
@@ -1716,20 +1717,49 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(error).to.not.equal(undefined);
   });
 
-  it('meters prompt create: 405 (all-or-nothing) when a batch exceeds the prompts allocation', async () => {
+  it('meters prompt create: 405 (all-or-nothing), sized texts × models', async () => {
     const id = globalThis.crypto.randomUUID();
     const projectId = globalThis.crypto.randomUUID();
     await setQuota(id, { projects: 5, prompts: 2 });
+    // Attach one model so each text costs 1 unit (prompt unit = texts × models). With zero models
+    // the texts would be free and never 405.
+    const { response: model } = await client.POST(ADD_MODEL, {
+      params: { path: { id, project_id: projectId } },
+      body: { model_id: globalThis.crypto.randomUUID() },
+    });
+    expect(model.status).to.equal(201);
     const { response: ok } = await client.POST(TAGGED, {
       params: { path: { id, project_id: projectId } },
       body: { prompts: { 'prompt one': ['t'], 'prompt two': ['t'] } },
     });
-    expect(ok.status).to.equal(201);
+    expect(ok.status).to.equal(201); // 2 texts × 1 model = 2 == limit
     const { response: over } = await client.POST(TAGGED, {
       params: { path: { id, project_id: projectId } },
       body: { prompts: { 'prompt three': ['t'] } },
     });
-    expect(over.status).to.equal(405);
+    expect(over.status).to.equal(405); // 3rd text × 1 model = 3 > 2
+  });
+
+  it('meters model attach: 405 when re-metering existing texts exceeds the allocation', async () => {
+    const id = globalThis.crypto.randomUUID();
+    const projectId = globalThis.crypto.randomUUID();
+    await setQuota(id, { projects: 5, prompts: 3 });
+    // One model + 3 texts = 3 units (== limit). Attaching a 2nd model re-meters the 3 texts (+3).
+    const { response: m1 } = await client.POST(ADD_MODEL, {
+      params: { path: { id, project_id: projectId } },
+      body: { model_id: globalThis.crypto.randomUUID() },
+    });
+    expect(m1.status).to.equal(201);
+    const { response: prompts } = await client.POST(TAGGED, {
+      params: { path: { id, project_id: projectId } },
+      body: { prompts: { a: ['t'], b: ['t'], c: ['t'] } },
+    });
+    expect(prompts.status).to.equal(201);
+    const { response: over } = await client.POST(ADD_MODEL, {
+      params: { path: { id, project_id: projectId } },
+      body: { model_id: globalThis.crypto.randomUUID() },
+    });
+    expect(over.status).to.equal(405); // 3 used + 3 texts re-metered = 6 > 3
   });
 
   it('meters publish: 405 for an empty-units workspace, 202 when unlimited', async () => {

@@ -31,6 +31,15 @@
 /** POST — add an AI model to the project (body: { model_id }) → 201 (matches live). */
 export function POST($) {
   const { path, body, context } = $;
+  // A new model re-meters every one of the project's existing texts (prompt unit = texts × models),
+  // so the add itself is a metered op the live API 405s when it would exceed the allocation.
+  if (!context.quota.canAddModel(path.id, path.project_id)) {
+    return {
+      status: 405,
+      body: { message: 'Quota exceeded: model attach exceeds prompt allocation' },
+      contentType: 'application/json',
+    };
+  }
   const catalogModel = context.aiModelCatalog.find((m) => m.id === body.model_id);
   // Live echoes the catalog model's name + icon on add; only `key` comes back empty there.
   // A missing model_id can't reach here on the validated route (the request schema marks it

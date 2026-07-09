@@ -83,7 +83,7 @@ export function POST($) {
     tags,
   }));
 
-  if (!context.quota.canCreatePrompts(path.id, toCreate.length)) {
+  if (!context.quota.canCreatePrompts(path.id, path.project_id, toCreate.length)) {
     // 405 is not a declared response for this operation (only 201/401/403/500) — the disguised
     // quota 405 the live API returns (mock/quota.js), so this stays a raw bypass like every other
     // quota-gated route in this package; it can't go through $.response[405].json(...).

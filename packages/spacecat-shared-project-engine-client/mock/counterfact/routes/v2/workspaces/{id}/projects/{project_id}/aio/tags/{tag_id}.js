@@ -17,32 +17,38 @@
  * `name` + `parent_id` are updated in place while its id stays stable (Semrush tag ids are opaque
  * and don't move on rename). NB because the mock derives ids from the name, a rename leaves the id
  * keyed to the OLD name — a documented, live-unverified limitation (see the `tags.js` header's
- * "Known limitations": a later create/tag by the new name would mint a duplicate). A non-empty
- * `parent_id` re-parents the tag under that category; an
- * absent/empty `parent_id` promotes it to a root (`parent_id` cleared to `''`, which the read path
- * treats as a root). `children_count`/`path` are derived at read time, so they are not part of the
- * update. Returns 200 `TreeNodeResponse` and 404 `{ message: 'not found' }` for an unknown
- * `tag_id` — both verified 2026-07-01 against prod (`adobe-hackathon.semrush.com`); the vendored
- * swagger's 201/no-404 is corrected by overlay CR11/CR12. Materialized into `.counterfact/routes/`
- * by the mock runner; excluded from coverage.
+ * "Known limitations": a later create/tag by the new name would mint a duplicate).
+ *
+ * `parent_id` is a live-verified 3-way switch (serenity-docs#24 §3.1 gate 1, verified 2026-07-02
+ * against prod), NOT a simple presence check: an OMITTED `parent_id` key preserves the tag's
+ * current parent (a rename-only call must not silently un-parent the tag); an explicit JSON
+ * `null` promotes the tag to a root (`parent_id` cleared to `''`, which the read path treats as a
+ * root); a non-empty string re-parents it under that id. CR15 marks `TreeNodeRequest.parent_id`
+ * nullable in the overlay so a literal `null` passes Counterfact's request validation.
+ * `children_count`/`path` are derived at read time, so they are not part of the update. Returns
+ * 200 `TreeNodeResponse` and 404 `{ message: 'not found' }` for an unknown `tag_id` — both
+ * verified 2026-07-01 against prod (`adobe-hackathon.semrush.com`); the vendored swagger's
+ * 201/no-404 is corrected by overlay CR11/CR12. Materialized into `.counterfact/routes/` by the
+ * mock runner; excluded from coverage.
  */
 
 /** PATCH — re-parent / rename a tag (body: `{ name, parent_id? }`) → 200 TreeNodeResponse. */
 export function PATCH($) {
   const { path, body, context } = $;
   const scope = { workspaceId: path.id, projectId: path.project_id };
-  // Empty `parent_id` (or omitted) promotes the tag to a root — clear it to '' so the stored shape
-  // reflects "no parent" (the read path treats a falsy parent_id as a root). A degenerate
-  // self-referential `parent_id` (== `tag_id`) is NOT guarded: the consumer never parents a
-  // category to itself, and live Semrush's handling of it is unverified (serenity-docs#21 §7), so
-  // the mock stores it verbatim rather than inventing a rejection — a read would then show a
-  // self-loop (path/children_count pointing at the tag itself), an artefact of that degenerate
-  // input.
-  const parentId = String(body?.parent_id ?? '');
-  const updated = context.ops.tags.update(scope, path.tag_id, {
-    name: body?.name,
-    parent_id: parentId,
-  });
+  const patch = { name: body?.name };
+  // A degenerate self-referential `parent_id` (== `tag_id`) is NOT guarded: the consumer never
+  // parents a category to itself, and live Semrush's handling of it is unverified
+  // (serenity-docs#21 §7), so the mock stores it verbatim rather than inventing a rejection — a
+  // read would then show a self-loop (path/children_count pointing at the tag itself), an
+  // artefact of that degenerate input.
+  if (Object.prototype.hasOwnProperty.call(body ?? {}, 'parent_id')) {
+    // Explicit null -> promote to root (cleared to ''); a non-null value -> re-parent verbatim.
+    patch.parent_id = body.parent_id === null ? '' : String(body.parent_id);
+  }
+  // No `parent_id` key at all -> omit it from the patch so store.update's shallow merge leaves
+  // the tag's current parent untouched (a rename-only call must not un-parent it).
+  const updated = context.ops.tags.update(scope, path.tag_id, patch);
   if (!updated) {
     // Live returns `404 {"message":"not found"}` for an unknown tag id (verified 2026-07-01 against
     // prod — CR12 declares the 404 so response validation accepts it).

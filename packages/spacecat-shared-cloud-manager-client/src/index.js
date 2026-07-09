@@ -909,6 +909,13 @@ export default class CloudManagerClient {
     }
 
     const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
+    // Explicitly pass the ref as the last argument so `git pull` fetches and
+    // merges that branch. Without it, `git pull <url>` merges the remote's
+    // default branch (its HEAD) into the checked-out branch, which can
+    // conflict with — or silently diverge from — the branch we actually want.
+    if (hasText(ref)) {
+      pullArgs.push(ref);
+    }
     // Always pull the parent only — never `--recurse-submodules` — so a
     // submodule failure can't take down the parent pull. Submodules are
     // populated below in a path whose errors are caught and logged.

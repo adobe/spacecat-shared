@@ -979,7 +979,8 @@ class TokowakaClient {
     await saveSuggestions(this.dataAccess, savedEligibleSuggestions);
 
     // Roll back pattern suggestions: fetch metaconfig once, remove all patterns in a single
-    // in-memory pass, upload once, then save each suggestion and clean up its covered entries.
+    // in-memory pass, upload once, then save each suggestion. Cleanup of suggestions this
+    // pattern had covered happens separately, asynchronously, via the import worker.
     const succeededPatternSuggestions = [];
     const failedPatternSuggestions = [];
 

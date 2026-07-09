@@ -35,12 +35,13 @@ describe('Suggestion transitions', () => {
     ['ERROR', 'IN_PROGRESS'], // retry
     ['SKIPPED', 'NEW'], // un-skip
     ['OUTDATED', 'NEW'],
+    ['REJECTED', 'NEW'], // reopen after incorrect classification (sandsinh review)
   ];
 
   const illegal = [
     ['NEW', 'REJECTED'], // REJECTED only from PENDING_VALIDATION
     ['FIXED', 'REJECTED'],
-    ['REJECTED', 'NEW'], // terminal
+    ['REJECTED', 'FIXED'], // reopen only to NEW, not straight to a terminal outcome
     ['SKIPPED', 'FIXED'],
     [undefined, 'FIXED'], // cannot create as FIXED
     ['NEW', 'BOGUS'],

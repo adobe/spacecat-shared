@@ -64,8 +64,8 @@ export const SUGGESTION_TRANSITIONS = {
   [S.SKIPPED]: [S.NEW, S.OUTDATED],
   // re-detection reopens an outdated suggestion.
   [S.OUTDATED]: [S.NEW],
-  // terminal.
-  [S.REJECTED]: [],
+  // near-terminal: allow reopen to NEW to correct an incorrect classification (sandsinh review).
+  [S.REJECTED]: [S.NEW],
 };
 
 /**

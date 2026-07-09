@@ -85,6 +85,16 @@ describe('deriveSuggestionStatus (non-CWV 1:1 bubble-up)', () => {
       expect(deriveSuggestionStatus([{}])).to.equal(null);
     });
 
+    it('falls back to currentStatus when nothing is derivable (sandsinh review)', () => {
+      expect(deriveSuggestionStatus([], [], 'IN_PROGRESS')).to.equal('IN_PROGRESS');
+      expect(deriveSuggestionStatus(['WAT'], [], 'FIXED')).to.equal('FIXED');
+      expect(deriveSuggestionStatus([null], [], 'ERROR')).to.equal('ERROR');
+    });
+
+    it('prefers a derived status over currentStatus when fixes yield one', () => {
+      expect(deriveSuggestionStatus([{ status: 'DEPLOYED' }], [], 'NEW')).to.equal('FIXED');
+    });
+
     it('throws if a non-empty issues array is passed (CWV deferred)', () => {
       expect(() => deriveSuggestionStatus(['DEPLOYED'], [{ id: 'i1' }]))
         .to.throw(/CWV multi-issue bubble-up is not yet implemented/);

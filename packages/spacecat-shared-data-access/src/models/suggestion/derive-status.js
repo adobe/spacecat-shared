@@ -72,16 +72,19 @@ const toStatus = (fix) => {
  *
  * @param {Array<object|string>} fixes - fix entities / `{status}` / status strings
  * @param {Array<object>} [issues] - CWV per-issue data; MUST be empty for now
- * @returns {string|null} derived Suggestion status, or null if there are no fixes
+ * @param {string|null} [currentStatus] - the Suggestion's current status, returned as the
+ *   fallback when nothing is derivable (no fixes / all-null / no matching rule) so a derive
+ *   call never clobbers a status set elsewhere. Defaults to null (prior behavior).
+ * @returns {string|null} derived Suggestion status, or `currentStatus` when nothing is derivable
  * @throws {Error} if a non-empty `issues` array is supplied (CWV deferred)
  */
-export const deriveSuggestionStatus = (fixes, issues = []) => {
+export const deriveSuggestionStatus = (fixes, issues = [], currentStatus = null) => {
   if (Array.isArray(issues) && issues.length > 0) {
     throw new Error('deriveSuggestionStatus: CWV multi-issue bubble-up is not yet implemented (deferred to SITES-47285)');
   }
 
   if (!Array.isArray(fixes) || fixes.length === 0) {
-    return null;
+    return currentStatus;
   }
 
   // Drop null/undefined entries (e.g. a sparse junction result) so one malformed
@@ -89,7 +92,7 @@ export const deriveSuggestionStatus = (fixes, issues = []) => {
   // same "no fixes" behavior as an empty array.
   const statuses = fixes.map(toStatus).filter((s) => s != null);
   if (statuses.length === 0) {
-    return null;
+    return currentStatus;
   }
 
   if (statuses.includes(FIX.FAILED)) {
@@ -105,5 +108,5 @@ export const deriveSuggestionStatus = (fixes, issues = []) => {
     return SUGGESTION.SKIPPED;
   }
 
-  return null;
+  return currentStatus;
 };

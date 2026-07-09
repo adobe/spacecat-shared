@@ -14,7 +14,9 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
   endpoint inventory, seeds, control routes, quota, troubleshooting). AI-unit quota (the
   disguised-405 the live API returns for an over-allocation) is in `mock/quota.js`, set via the
   `POST /__quota` control route or `buildSeed({ quota })`, enforced on project create / prompt write
-  / publish. **Bearer auth** (`mock/auth.js`) is modelled like the live gateway — every real route
+  / model attach / publish. The prompt UNIT is `texts × models` per project (a model-less project's
+  texts are free), so attaching a model re-meters the project's existing texts and can itself 405.
+  **Bearer auth** (`mock/auth.js`) is modelled like the live gateway — every real route
   needs `Authorization: Bearer <token>` (presence, not validity) or returns `401 { detail: 'Not
   authenticated' }`; the `__*` control routes are exempt. The gate is injected onto every handler at
   the materialization seam by `injectAuthGuard` in `mock/run.js` (so no handler can forget it). A new

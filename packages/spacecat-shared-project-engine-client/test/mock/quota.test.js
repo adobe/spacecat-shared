@@ -158,6 +158,20 @@ describe('quota — canAddModel (attach re-meters existing texts)', () => {
     quota.set(WS, { prompts: 6 });
     expect(quota.canAddModel(WS, 'p0')).to.equal(true); // 3 + 3 = 6 <= 6
   });
+
+  it('the add cost is the TARGET project text count (not another project\'s)', () => {
+    const store = new InMemoryStore();
+    const quota = createQuota(store);
+    // pA: 2 texts × 1 model = 2; pB: 5 texts × 1 model = 5 → workspace used 7.
+    seedUsage(store, {
+      promptsByProject: { pA: 2, pB: 5 }, modelsByProject: { pA: 1, pB: 1 },
+    });
+    quota.set(WS, { prompts: 9 });
+    // Adding a model to pA costs pA's 2 texts (7 + 2 = 9 <= 9) — NOT pB's 5 (which would be 12).
+    expect(quota.canAddModel(WS, 'pA')).to.equal(true);
+    // Adding a model to pB costs pB's 5 texts (7 + 5 = 12 > 9).
+    expect(quota.canAddModel(WS, 'pB')).to.equal(false);
+  });
 });
 
 describe('quota — canPublish', () => {

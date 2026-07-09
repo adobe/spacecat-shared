@@ -1760,6 +1760,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       body: { model_id: globalThis.crypto.randomUUID() },
     });
     expect(over.status).to.equal(405); // 3 used + 3 texts re-metered = 6 > 3
+    // The rejected model must NOT have been persisted — the project still has its single model.
+    const { data: models } = await client.GET('/v1/workspaces/{id}/projects/{project_id}/ai_models', {
+      params: { path: { id, project_id: projectId } },
+    });
+    expect(models.items).to.have.length(1);
   });
 
   it('meters publish: 405 for an empty-units workspace, 202 when unlimited', async () => {

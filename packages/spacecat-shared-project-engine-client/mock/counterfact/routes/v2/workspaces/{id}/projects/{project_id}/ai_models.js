@@ -34,6 +34,9 @@ export function POST($) {
   // A new model re-meters every one of the project's existing texts (prompt unit = texts × models),
   // so the add itself is a metered op the live API 405s when it would exceed the allocation.
   if (!context.quota.canAddModel(path.id, path.project_id)) {
+    // 405 is not a declared response for this operation (only 201/401/403/500) — the disguised
+    // quota 405 the live API returns (mock/quota.js), so this stays a raw bypass like every other
+    // quota-gated route in this package; it can't go through $.response[405].json(...).
     return {
       status: 405,
       body: { message: 'Quota exceeded: model attach exceeds prompt allocation' },

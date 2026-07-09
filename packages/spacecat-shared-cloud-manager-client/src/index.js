@@ -1075,3 +1075,5 @@ export default class CloudManagerClient {
     return result;
   }
 }
+
+export { default as CloudManagerApiClient } from './cloud-manager-api-client.js';

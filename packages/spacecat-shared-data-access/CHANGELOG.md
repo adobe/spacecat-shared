@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.2.0...@adobe/spacecat-shared-data-access-v4.3.0) (2026-07-09)
+
+### Features
+
+* **data-access:** status transition guard + deriveSuggestionStatus (SITES-47091) ([#1748](https://github.com/adobe/spacecat-shared/issues/1748)) ([0888866](https://github.com/adobe/spacecat-shared/commit/0888866df45778a8e28a86ce2b11c721b81cf0c0))
+
 ## [@adobe/spacecat-shared-data-access-v4.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.1.1...@adobe/spacecat-shared-data-access-v4.2.0) (2026-07-07)
 
 ### Features

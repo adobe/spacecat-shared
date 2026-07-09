@@ -278,4 +278,84 @@ export default class CloudflareClient {
       method: 'DELETE',
     });
   }
+
+  /**
+   * Requests a Logpush ownership challenge for a destination. Cloudflare writes a challenge
+   * file containing a token to the destination itself (e.g. the S3 path in `destinationConf`);
+   * the caller must read that file out-of-band and pass the resulting token as
+   * `ownership_challenge` when calling {@link createLogpushJob}.
+   *
+   * Zone-scoped (matches the zone-scoped `http_requests` dataset used for Logpush jobs here).
+   *
+   * @param {string} zoneId
+   * @param {string} destinationConf - e.g. "s3://bucket/path/{DATE}?region=us-east-1"
+   * @returns {Promise<{filename: string, valid: boolean, message?: string}>}
+   */
+  async requestLogpushOwnership(zoneId, destinationConf) {
+    if (!hasText(zoneId)) {
+      throw new Error('zoneId is required');
+    }
+    if (!hasText(destinationConf)) {
+      throw new Error('destinationConf is required');
+    }
+    this.log.info(`Requesting Logpush ownership challenge for zone ${zoneId}`);
+    return this.#cfFetch(`/zones/${zoneId}/logpush/ownership`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ destination_conf: destinationConf }),
+    });
+  }
+
+  /**
+   * Lists Logpush jobs for a zone, scoped to a single dataset.
+   * @param {string} zoneId
+   * @param {string} dataset - e.g. "http_requests"
+   * @returns {Promise<Array<object>>} Logpush job objects (id, dataset, destination_conf, ...)
+   */
+  async listLogpushJobs(zoneId, dataset) {
+    if (!hasText(zoneId)) {
+      throw new Error('zoneId is required');
+    }
+    if (!hasText(dataset)) {
+      throw new Error('dataset is required');
+    }
+    this.log.info(`Listing Logpush jobs for zone ${zoneId}, dataset ${dataset}`);
+    return this.#cfFetch(`/zones/${zoneId}/logpush/datasets/${dataset}/jobs`);
+  }
+
+  /**
+   * Creates a Logpush job for a zone. `payload.ownership_challenge` must be the token read
+   * from the challenge file written by {@link requestLogpushOwnership} — Cloudflare validates
+   * it inline against `payload.destination_conf` when creating the job.
+   *
+   * @param {string} zoneId
+   * @param {object} payload
+   * @param {string} payload.dataset - e.g. "http_requests"
+   * @param {string} payload.destination_conf
+   * @param {string} payload.ownership_challenge
+   * @param {string} [payload.name]
+   * @param {object} [payload.output_options] - e.g. { field_names, timestamp_format }
+   * @param {boolean} [payload.enabled]
+   * @returns {Promise<object>} the created Logpush job
+   */
+  async createLogpushJob(zoneId, payload) {
+    if (!hasText(zoneId)) {
+      throw new Error('zoneId is required');
+    }
+    if (!payload || !hasText(payload.dataset)) {
+      throw new Error('payload.dataset is required');
+    }
+    if (!hasText(payload.destination_conf)) {
+      throw new Error('payload.destination_conf is required');
+    }
+    if (!hasText(payload.ownership_challenge)) {
+      throw new Error('payload.ownership_challenge is required');
+    }
+    this.log.info(`Creating Logpush job on zone ${zoneId} for dataset ${payload.dataset}`);
+    return this.#cfFetch(`/zones/${zoneId}/logpush/jobs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
 }

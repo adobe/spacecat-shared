@@ -12,7 +12,7 @@
 
 import { expect } from 'chai';
 
-import { deriveSuggestionStatus } from '../../../../src/models/suggestion/derive-status.js';
+import { deriveSuggestionStatus, classifyStatus } from '../../../../src/models/suggestion/derive-status.js';
 
 describe('deriveSuggestionStatus (non-CWV 1:1 bubble-up)', () => {
   it('maps a single DEPLOYED fix to FIXED', () => {
@@ -102,6 +102,61 @@ describe('deriveSuggestionStatus (non-CWV 1:1 bubble-up)', () => {
 
     it('ignores an empty issues array', () => {
       expect(deriveSuggestionStatus(['DEPLOYED'], [])).to.equal('FIXED');
+    });
+  });
+
+  describe('explicit outcome tokens + mixed vocabulary (SITES-47285)', () => {
+    it("maps an explicit 'SKIPPED' outcome to SKIPPED", () => {
+      expect(deriveSuggestionStatus(['SKIPPED'])).to.equal('SKIPPED');
+    });
+
+    it("maps an explicit 'ERROR' outcome to ERROR", () => {
+      expect(deriveSuggestionStatus(['ERROR'])).to.equal('ERROR');
+    });
+
+    it("resolves an all-NEUTRAL signal set (e.g. only 'NEW') to NEW", () => {
+      expect(deriveSuggestionStatus(['NEW'])).to.equal('NEW');
+      expect(deriveSuggestionStatus(['NEW', 'OUTDATED'])).to.equal('NEW');
+    });
+
+    it('collapses mixed fix + suggestion vocab by severity', () => {
+      expect(deriveSuggestionStatus([{ status: 'DEPLOYED' }, 'ERROR'])).to.equal('ERROR');
+      expect(deriveSuggestionStatus([{ status: 'DEPLOYED' }, 'SKIPPED'])).to.equal('FIXED');
+      expect(deriveSuggestionStatus(['SKIPPED', 'NEW'])).to.equal('SKIPPED');
+    });
+
+    it('distinguishes empty (=> currentStatus) from all-neutral (=> NEW)', () => {
+      expect(deriveSuggestionStatus([], [], 'IN_PROGRESS')).to.equal('IN_PROGRESS');
+      expect(deriveSuggestionStatus(['NEW'], [], 'IN_PROGRESS')).to.equal('NEW');
+    });
+  });
+
+  describe('classifyStatus', () => {
+    it('classifies both fix and suggestion vocabularies', () => {
+      expect(classifyStatus('FAILED')).to.equal('ERROR');
+      expect(classifyStatus('ERROR')).to.equal('ERROR');
+      expect(classifyStatus('PENDING')).to.equal('IN_PROGRESS');
+      expect(classifyStatus('IN_PROGRESS')).to.equal('IN_PROGRESS');
+      expect(classifyStatus('DEPLOYED')).to.equal('FIXED');
+      expect(classifyStatus('PUBLISHED')).to.equal('FIXED');
+      expect(classifyStatus('FIXED')).to.equal('FIXED');
+      expect(classifyStatus('ROLLED_BACK')).to.equal('SKIPPED');
+      expect(classifyStatus('REJECTED')).to.equal('SKIPPED');
+      expect(classifyStatus('SKIPPED')).to.equal('SKIPPED');
+      expect(classifyStatus('NEW')).to.equal('NEUTRAL');
+      expect(classifyStatus('OUTDATED')).to.equal('NEUTRAL');
+    });
+
+    it('returns null for unknown or nullish tokens', () => {
+      expect(classifyStatus('WAT')).to.equal(null);
+      expect(classifyStatus(undefined)).to.equal(null);
+      expect(classifyStatus(null)).to.equal(null);
+    });
+
+    it('returns null for Object.prototype keys (own-property lookup only)', () => {
+      expect(classifyStatus('constructor')).to.equal(null);
+      expect(classifyStatus('toString')).to.equal(null);
+      expect(deriveSuggestionStatus(['constructor'], [], 'FIXED')).to.equal('FIXED');
     });
   });
 });

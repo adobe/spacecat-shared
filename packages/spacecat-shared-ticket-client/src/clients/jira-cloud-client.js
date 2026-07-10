@@ -236,13 +236,13 @@ export default class JiraCloudClient extends BaseTicketClient {
     // Paginate remaining pages with standard auth (token was just validated).
     // Jira /project/search caps maxResults at 50 per page — enterprise instances
     // routinely have 100+ projects, so pagination is required to avoid silent truncation.
+    // Read auth headers once before the loop — avoids an SM round-trip per page.
+    const paginationAuthHeaders = await this.credentialManager.getAuthHeaders();
     for (;;) {
-      // eslint-disable-next-line no-await-in-loop
-      const authHeaders = await this.credentialManager.getAuthHeaders();
       // eslint-disable-next-line no-await-in-loop
       const response = await this.httpClient.fetch(
         `${this.baseUrl}/project/search?maxResults=50&orderBy=name&startAt=${startAt}`,
-        { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' }, redirect: 'error' },
+        { method: 'GET', headers: { ...paginationAuthHeaders, Accept: 'application/json' }, redirect: 'error' },
       );
       // eslint-disable-next-line no-await-in-loop
       await this.#requireOk(response, 'listProjects');
@@ -364,6 +364,10 @@ export default class JiraCloudClient extends BaseTicketClient {
    *
    * @param {Function} requestFn - async (authHeaders) => Response
    * @returns {Promise<Response>}
+   * @throws {Error} TOKEN_REFRESH_REQUIRED - SM still holds the rejected token; caller must
+   *   trigger ensure-tokens. The error carries `code: 'TOKEN_REFRESH_REQUIRED'` and
+   *   `status: 401` (the HTTP status returned by Jira).
+   * @throws {Error} REQUIRES_REAUTH - credential manager flagged the connection as revoked.
    */
   async #withAuthRetry(requestFn) {
     const authHeaders = await this.credentialManager.getAuthHeaders();

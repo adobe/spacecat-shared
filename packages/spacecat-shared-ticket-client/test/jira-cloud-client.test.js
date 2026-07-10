@@ -1525,8 +1525,8 @@ describe('JiraCloudClient', () => {
     function makeRetryCredentialManager() {
       return {
         getAuthHeaders: sinon.stub()
+          .onFirstCall()
           .resolves({ Authorization: 'Bearer stale-token' })
-          .onSecondCall()
           .resolves({ Authorization: 'Bearer fresh-token' }),
       };
     }
@@ -1673,23 +1673,6 @@ describe('JiraCloudClient', () => {
       const err = await client.listIssueTypes('10000').catch((e) => e);
       expect(err.code).to.equal('REQUIRES_REAUTH');
       expect(credMgr.getAuthHeaders.callCount).to.equal(1); // no retry
-      expect(fetchStub.callCount).to.equal(0);
-    });
-
-    it('propagates REQUIRES_REAUTH without attempting Jira call', async () => {
-      const reauthErr = Object.assign(
-        new Error('OAuth connection requires re-authorization'),
-        { code: 'REQUIRES_REAUTH' },
-      );
-      const credMgr = {
-        getAuthHeaders: sinon.stub().rejects(reauthErr),
-      };
-      const fetchStub = sinon.stub();
-      const client = new JiraCloudClient(VALID_CONFIG, credMgr, { fetch: fetchStub }, makeLog());
-
-      const err = await client.listIssueTypes('10000').catch((e) => e);
-      expect(err.code).to.equal('REQUIRES_REAUTH');
-      expect(credMgr.getAuthHeaders.callCount).to.equal(1);
       expect(fetchStub.callCount).to.equal(0);
     });
 

@@ -31,7 +31,12 @@ gateway, `/enterprise/projects/api`) — two deliberately separate packages, one
   + `Caddyfile` (TLS terminator) + `docker-entrypoint.sh` + `docker-compose.yml`, published by
   `.github/workflows/user-manager-client-mock-image.yaml` when a release is published.
 - `spec/` — the vendored swagger (`spec/usermanager_swagger.yaml`, NEVER edited) +
-  `spec/overlays/corrections.yaml` (corrections), applied by `scripts/apply-overlay.mjs`.
+  `spec/overlays/corrections.yaml` (corrections), applied by `scripts/apply-overlay.mjs`. A committed
+  SHA-256 of the vendored swagger lives beside it (`spec/usermanager_swagger.yaml.sha256`) and is
+  verified by the **spec-verify gate** (LLMO-5976) in `test/foundation.test.js`: any re-vendor
+  changes the bytes and FAILS CI (`npm test`) until a human reviews the diff and bumps the recorded
+  hash in the same PR — `shasum -a 256 spec/usermanager_swagger.yaml` → paste into the `.sha256`.
+  This makes silent spec drift impossible: a re-vendor is inert until the hash is bumped.
 
 **Coverage:** this package enforces **`branches: 100`** (also lines/statements) in `.nycrc.json` —
 stricter than the monorepo-standard 97% (root `CLAUDE.md`) — over `src/**` + `mock/**`, and excludes

@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-data-access-v4.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.3.1...@adobe/spacecat-shared-data-access-v4.4.0) (2026-07-09)
+
+### Features
+
+* **fix-entity:** add allByOpportunityIds for site-wide fix queries ([#1792](https://github.com/adobe/spacecat-shared/issues/1792)) ([25309bf](https://github.com/adobe/spacecat-shared/commit/25309bff4be7d90c0f7cdbf854c48a20adfd3e57))
+
+## [@adobe/spacecat-shared-data-access-v4.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.3.0...@adobe/spacecat-shared-data-access-v4.3.1) (2026-07-09)
+
+### Bug Fixes
+
+* **ticket-suggestion:** use createdAt as belongs_to sort key instead of updatedAt ([#1798](https://github.com/adobe/spacecat-shared/issues/1798)) ([711eecd](https://github.com/adobe/spacecat-shared/commit/711eecdc187ec9a21a79dedca808e6622bd18933)), closes [#2661](https://github.com/adobe/spacecat-shared/issues/2661)
+
+## [@adobe/spacecat-shared-data-access-v4.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.2.0...@adobe/spacecat-shared-data-access-v4.3.0) (2026-07-09)
+
+### Features
+
+* **data-access:** status transition guard + deriveSuggestionStatus (SITES-47091) ([#1748](https://github.com/adobe/spacecat-shared/issues/1748)) ([0888866](https://github.com/adobe/spacecat-shared/commit/0888866df45778a8e28a86ce2b11c721b81cf0c0))
+
 ## [@adobe/spacecat-shared-data-access-v4.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.1.1...@adobe/spacecat-shared-data-access-v4.2.0) (2026-07-07)
 
 ### Features

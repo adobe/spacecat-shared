@@ -36,14 +36,26 @@ export function POST($) {
   const {
     path, query, body, context,
   } = $;
+  const scope = { workspaceId: path.id, projectId: path.project_id };
   const draft = String(query?.draft ?? '') === 'true';
-  const all = context.ops.prompts
-    .list({ workspaceId: path.id, projectId: path.project_id })
-    .filter((p) => draft || !p.is_new);
+  const all = context.ops.prompts.list(scope).filter((p) => draft || !p.is_new);
   const tagIds = body?.tag_ids ?? [];
-  const items = tagIds.length === 0
+  const matched = tagIds.length === 0
     ? all
     : all.filter((p) => (p.tags ?? []).some((t) => tagIds.includes(t.id)));
+
+  // A prompt REFERENCES its tags; the tag object is a view, derived here from the project's tag
+  // collection through the one shared serializer. Live embeds the full tag — a descendant carries
+  // its own `parent_id` + root-first `path`, a root carries neither — and the embedded object is
+  // identical to the same tag read from `GET /aio/tags`. Deriving at read (rather than returning
+  // whatever was embedded at write time) is also what keeps a re-parent or a rename from leaving a
+  // stale breadcrumb behind on a prompt.
+  const { byId } = context.buildTagView(context.ops.tags.list(scope), context.factories);
+  const items = matched.map((p) => ({
+    ...p,
+    tags: (p.tags ?? []).map((t) => byId.get(t.id) ?? t),
+  }));
+
   return $.response[200].json({
     items, page: body?.page ?? 1, total: items.length, unassigned: 0,
   });

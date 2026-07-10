@@ -376,6 +376,80 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(listed.items.map((p) => p.name)).to.include.members(['What is X?', 'Tell me Y']);
   });
 
+  // The single-serializer contract. Live returns the SAME tag object whether it is embedded on a
+  // prompt or listed by the tree read — fetching one id both ways and comparing yields equality
+  // (verified 2026-07-10 against prod). What varies is DEPTH: a root omits `parent_id`/`path`, a
+  // descendant carries both. A mock that narrowed the prompt-embedded shape would let a consumer
+  // read parentage locally and `undefined` in production; this test is what forbids that.
+  it('embeds a prompt tag as the IDENTICAL object the tag tree returns for the same id', async () => {
+    const { data: listed } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { draft: true },
+        },
+        body: { tag_ids: [] },
+      },
+    );
+    const embedded = listed.items
+      .flatMap((p) => p.tags ?? [])
+      .find((t) => t.id === SEED_IDS.childCollidingTagId);
+    expect(embedded, 'the sub-category `human` is carried by a seeded prompt').to.not.equal(undefined);
+
+    // The same tag, read from the tree under its category parent.
+    const { data: fromTree } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: SEED_IDS.categoryTagId, search: '' },
+        },
+      },
+    );
+    const tracked = fromTree.items.find((t) => t.id === SEED_IDS.childCollidingTagId);
+    expect(embedded).to.deep.equal(tracked);
+
+    // A DESCENDANT carries its own parentage on the prompt payload: no tag-tree join needed.
+    expect(embedded.parent_id).to.equal(SEED_IDS.categoryTagId);
+    expect(embedded.path[0]).to.include({ id: SEED_IDS.categoryRootTagId, name: 'category' });
+  });
+
+  // The other half of the same contract: a ROOT carried by a prompt omits both keys, so a consumer
+  // reading `path[0]` for the dimension must fall back to the tag's own name.
+  it('embeds a ROOT prompt tag with no parent_id and no path', async () => {
+    const { data: listed } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { draft: true },
+        },
+        body: { tag_ids: [] },
+      },
+    );
+    const rootTag = listed.items
+      .flatMap((p) => p.tags ?? [])
+      .find((t) => t.id === SEED_IDS.categoryRootTagId);
+    if (rootTag) {
+      expect(rootTag).to.not.have.property('parent_id');
+      expect(rootTag).to.not.have.property('path');
+    }
+
+    // Every embedded tag is either a root (no path) or carries a root-first path whose first leaf
+    // is a dimension root — there is no third shape.
+    const allEmbedded = listed.items.flatMap((p) => p.tags ?? []);
+    expect(allEmbedded.length).to.be.greaterThan(0);
+    allEmbedded.forEach((t) => {
+      if (t.path === undefined) {
+        expect(t).to.not.have.property('parent_id');
+      } else {
+        expect(t.path[0].name).to.be.oneOf(['category', 'intent', 'source', 'type']);
+        expect(t.parent_id).to.be.a('string');
+      }
+    });
+  });
+
   // Draft/publish gating (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6): a
   // freshly created prompt is invisible via the default (non-draft) by_tags read until the
   // project's publish endpoint runs — mirroring the real consumer's create → publishAffected →
@@ -993,11 +1067,13 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(categoryList.items[0]).to.include({ name: 'Footwear', children_count: 1 });
     expect(categoryList.items[0].parent_id).to.equal(SEED_IDS.categoryRootTagId);
 
-    // a ROOT's parent_id + path are null (D5) — live returns null, not [] / an omitted field
+    // A ROOT carries neither key: live OMITS `parent_id` and `path` entirely rather than
+    // nulling them (verified 2026-07-10 against prod — `has_parent_id: false`). A tag with no
+    // `path` is therefore a root, and its own name is its dimension.
     const { data: rootList } = await listTags('', 'category');
     expect(rootList.items[0]).to.include({ name: 'category' });
-    expect(rootList.items[0].parent_id).to.equal(null);
-    expect(rootList.items[0].path).to.equal(null);
+    expect(rootList.items[0]).to.not.have.property('parent_id');
+    expect(rootList.items[0]).to.not.have.property('path');
   });
 
   // The boot seed bakes the dimension-root tree (`category` → `Running Shoes` → `Trail`/`human`),

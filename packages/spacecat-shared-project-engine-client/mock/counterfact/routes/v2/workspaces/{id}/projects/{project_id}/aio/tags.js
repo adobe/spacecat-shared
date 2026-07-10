@@ -41,7 +41,7 @@
  *   nested tag is unfindable from the root level, exactly as on the real API. Each returned tag
  *   carries a DERIVED `children_count` (stored tags whose `parent_id` is this tag's id) and a
  *   root-first `path[]` ancestry breadcrumb excluding itself (a depth-2 tag: one leaf, its
- *   dimension root; a depth-3 tag: two leaves); a root's `parent_id` and `path` are `null`.
+ *   dimension root; a depth-3 tag: two leaves); a root omits `parent_id` and `path` entirely.
  * - DELETE (`aio-delete-tags`): removes the body's tag ids (`BatchDeleteRequest` `{ ids }`) from
  *   the standalone tag collection AND detaches each id from every prompt carrying it → 204. A
  *   prompt whose only tag was deleted becomes fully unassigned (gate 4, verified 2026-07-02); it is
@@ -104,15 +104,6 @@ export function GET($) {
   const parentId = String(query?.parent_id ?? '');
   const search = String(query?.search ?? '').toLowerCase();
   const stored = context.ops.tags.list(scope);
-  const byId = new Map(stored.map((t) => [t.id, t]));
-  // Pre-count children per parent in one O(n) pass, so the per-item map below is O(n) overall
-  // (not an O(n^2) re-scan of `stored` inside every iteration).
-  const childCounts = new Map();
-  for (const t of stored) {
-    if (t.parent_id) {
-      childCounts.set(t.parent_id, (childCounts.get(t.parent_id) ?? 0) + 1);
-    }
-  }
 
   // `parent_id=''` ⇒ roots (no parent); a non-empty `parent_id` ⇒ that category's children.
   const scoped = parentId
@@ -122,35 +113,11 @@ export function GET($) {
     ? scoped.filter((t) => String(t.name).toLowerCase().includes(search))
     : scoped;
 
-  // The full ancestry breadcrumb, ROOT-FIRST, excluding the tag itself — the shape live returns at
-  // every depth (verified 2026-07-09 against prod: a depth-3 node reads back with a two-leaf path).
-  // Consumers key a tag's DIMENSION off `path[0]`, so a breadcrumb truncated to the direct parent
-  // would resolve a sub-category's dimension to its category. Each leaf beyond the root carries its
-  // own `parent_id`; the root leaf carries none.
-  const ancestryOf = (tag) => {
-    const leaves = [];
-    const guard = new Set([tag.id]);
-    let cursor = tag.parent_id ? byId.get(tag.parent_id) : undefined;
-    while (cursor && !guard.has(cursor.id)) {
-      guard.add(cursor.id);
-      leaves.unshift(context.factories.createAIOTagLeafMock({
-        id: cursor.id,
-        name: cursor.name,
-        ...context.parentIdField(cursor.parent_id),
-      }));
-      cursor = cursor.parent_id ? byId.get(cursor.parent_id) : undefined;
-    }
-    return leaves.length > 0 ? leaves : null;
-  };
-
-  const items = matched.map((t) => context.factories.createAIOTagMock({
-    ...t,
-    // Derived, never stored: the live tree carries these on every read. Live returns `null` (not an
-    // omitted field / an empty array) for a root's parent_id + path (CR13 makes both nullable).
-    children_count: childCounts.get(t.id) ?? 0,
-    parent_id: t.parent_id || null,
-    path: ancestryOf(t),
-  }));
+  // The one serializer every tag endpoint shares (see mock/tag-view.js): derives `children_count`
+  // and the root-first `path[]` from the stored collection, and leaves `parent_id`/`path` OFF a
+  // root entirely — exactly as live does.
+  const { serialize } = context.buildTagView(stored, context.factories);
+  const items = matched.map(serialize);
   // `page` arrives as a query string (e.g. "2"); coerce so the response field stays the numeric
   // type AIOTagsListResponse declares, regardless of whether the param was passed.
   return $.response[200].json({ items, page: Number(query?.page ?? 1), total: items.length });

@@ -57,7 +57,7 @@ export declare class JiraCloudClient extends BaseTicketClient {
 }
 
 export declare class OAuthCredentialManager {
-  getAuthHeaders(bypassCache?: boolean): Promise<Record<string, string>>;
+  getAuthHeaders(): Promise<Record<string, string>>;
   refreshAuthHeaders(): Promise<Record<string, string>>;
   forceRefreshAuthHeaders(usedAuthHeader?: string | null): Promise<Record<string, string>>;
   setRequiresReauth(): Promise<void>;

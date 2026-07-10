@@ -1519,13 +1519,12 @@ describe('JiraCloudClient', () => {
   describe('auth retry on 401', () => {
     /**
      * Credential manager that simulates a concurrent auth-service refresh:
-     * first getAuthHeaders call returns a stale token, second returns a fresh one.
-     * No forceRefreshAuthHeaders — #withAuthRetry uses getAuthHeaders (GET-only).
+     * getAuthHeaders returns a stale token on the first call; on 401,
+     * #withAuthRetry calls getAuthHeaders() again which returns a fresh token.
      */
     function makeRetryCredentialManager() {
       return {
         getAuthHeaders: sinon.stub()
-          .onFirstCall()
           .resolves({ Authorization: 'Bearer stale-token' })
           .onSecondCall()
           .resolves({ Authorization: 'Bearer fresh-token' }),
@@ -1549,11 +1548,8 @@ describe('JiraCloudClient', () => {
 
       const result = await client.listIssueTypes('10000');
       expect(result).to.deep.equal([{ id: '10', name: 'Bug' }]);
-      // getAuthHeaders called twice: before first attempt + re-read after 401
+      // getAuthHeaders called twice: (1) before first attempt, (2) re-read SM after 401
       expect(credMgr.getAuthHeaders.callCount).to.equal(2);
-      // 401 re-read must bypass the 30s TTL cache — bypassCache=true
-      expect(credMgr.getAuthHeaders.firstCall.args[0]).to.be.undefined;
-      expect(credMgr.getAuthHeaders.secondCall.args[0]).to.equal(true);
       // First attempt used stale-token; retry used fresh-token
       expect(fetchStub.firstCall.args[1].headers.Authorization).to.equal('Bearer stale-token');
       expect(fetchStub.secondCall.args[1].headers.Authorization).to.equal('Bearer fresh-token');
@@ -1600,7 +1596,7 @@ describe('JiraCloudClient', () => {
 
       const result = await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '' });
       expect(result.ticketKey).to.equal('ASO-1');
-      // 3 calls: (1) before POST, (2) re-read after 401, (3) #fetchTicketStatus after create
+      // 3 getAuthHeaders calls: (1) before POST, (2) re-read SM after 401, (3) #fetchTicketStatus
       expect(credMgr.getAuthHeaders.callCount).to.equal(3);
     });
 
@@ -1623,20 +1619,13 @@ describe('JiraCloudClient', () => {
       expect(credMgr.getAuthHeaders.callCount).to.equal(2);
     });
 
-    it('bypasses cache when getAuthHeaders throws TOKEN_REFRESH_REQUIRED (stale cache)', async () => {
-      // Simulates: auth-service refreshed SM, but api-service cache still holds
-      // the expired token. First getAuthHeaders() throws; retry with bypassCache
-      // reads fresh token from SM → Jira call succeeds.
-      const tokenRefreshErr = Object.assign(
-        new Error('OAuth token expired — caller should trigger a refresh'),
-        { code: 'TOKEN_REFRESH_REQUIRED' },
-      );
+    it('getAuthHeaders returns expired token — Jira validates via its own revocation check', async () => {
+      // getAuthHeaders no longer throws for expired tokens — it returns them.
+      // Jira validates access tokens via its own revocation check, not JWT exp.
+      // If Jira accepts the token, the call succeeds without any retry.
       const credMgr = {
         getAuthHeaders: sinon.stub()
-          .onFirstCall()
-          .rejects(tokenRefreshErr)
-          .onSecondCall()
-          .resolves({ Authorization: 'Bearer fresh-token' }),
+          .resolves({ Authorization: 'Bearer expired-but-valid-token' }),
       };
       const fetchStub = sinon.stub().resolves({
         ok: true,
@@ -1649,34 +1638,14 @@ describe('JiraCloudClient', () => {
 
       const result = await client.listIssueTypes('10000');
       expect(result).to.deep.equal([{ id: '10', name: 'Bug' }]);
-      expect(credMgr.getAuthHeaders.callCount).to.equal(2);
-      // Second call must bypass cache
-      expect(credMgr.getAuthHeaders.firstCall.args[0]).to.be.undefined;
-      expect(credMgr.getAuthHeaders.secondCall.args[0]).to.equal(true);
+      expect(credMgr.getAuthHeaders.callCount).to.equal(1);
       expect(fetchStub.callCount).to.equal(1);
-      expect(fetchStub.firstCall.args[1].headers.Authorization).to.equal('Bearer fresh-token');
-    });
-
-    it('propagates TOKEN_REFRESH_REQUIRED when SM is also expired after cache bypass', async () => {
-      // Both cache and SM hold expired tokens — error must propagate to caller.
-      const tokenRefreshErr = Object.assign(
-        new Error('OAuth token expired — caller should trigger a refresh'),
-        { code: 'TOKEN_REFRESH_REQUIRED' },
-      );
-      const credMgr = {
-        getAuthHeaders: sinon.stub().rejects(tokenRefreshErr),
-      };
-      const fetchStub = sinon.stub();
-      const client = new JiraCloudClient(VALID_CONFIG, credMgr, { fetch: fetchStub }, makeLog());
-
-      const err = await client.listIssueTypes('10000').catch((e) => e);
-      expect(err.code).to.equal('TOKEN_REFRESH_REQUIRED');
-      expect(fetchStub.callCount).to.equal(0); // never reached Jira
+      expect(fetchStub.firstCall.args[1].headers.Authorization).to.equal('Bearer expired-but-valid-token');
     });
 
     it('re-throws non-credential errors from getAuthHeaders without cache bypass', async () => {
       // Non-credential errors (network, IAM, SDK) must propagate immediately —
-      // retrying with bypassCache would mask the real failure.
+      // retrying would mask the real failure.
       const networkErr = new Error('NetworkingError: socket hang up');
       const credMgr = {
         getAuthHeaders: sinon.stub().rejects(networkErr),
@@ -1690,8 +1659,7 @@ describe('JiraCloudClient', () => {
       expect(fetchStub.callCount).to.equal(0);
     });
 
-    it('propagates REQUIRES_REAUTH after cache bypass also fails', async () => {
-      // Both cache and SM have requiresReauth — error propagates after bypass retry.
+    it('propagates REQUIRES_REAUTH immediately from getAuthHeaders', async () => {
       const reauthErr = Object.assign(
         new Error('OAuth connection requires re-authorization'),
         { code: 'REQUIRES_REAUTH' },
@@ -1704,92 +1672,69 @@ describe('JiraCloudClient', () => {
 
       const err = await client.listIssueTypes('10000').catch((e) => e);
       expect(err.code).to.equal('REQUIRES_REAUTH');
-      expect(credMgr.getAuthHeaders.callCount).to.equal(2); // cache + bypass
-      expect(credMgr.getAuthHeaders.firstCall.args[0]).to.be.undefined;
-      expect(credMgr.getAuthHeaders.secondCall.args[0]).to.equal(true);
+      expect(credMgr.getAuthHeaders.callCount).to.equal(1); // no retry
       expect(fetchStub.callCount).to.equal(0);
     });
 
-    it('handles combined cache-bypass + 401 retry (two-layer interaction)', async () => {
-      // Layer 1: getAuthHeaders() cache throws → bypass gets token-A from SM.
-      // Layer 2: Jira 401 with token-A → re-reads SM → token-B → OK.
-      const tokenRefreshErr = Object.assign(
-        new Error('OAuth token expired'),
-        { code: 'TOKEN_REFRESH_REQUIRED' },
+    it('propagates REQUIRES_REAUTH without attempting Jira call', async () => {
+      const reauthErr = Object.assign(
+        new Error('OAuth connection requires re-authorization'),
+        { code: 'REQUIRES_REAUTH' },
       );
       const credMgr = {
-        getAuthHeaders: sinon.stub()
-          // Call 1: cache → throws
-          .onCall(0)
-          .rejects(tokenRefreshErr)
-          // Call 2: bypass → token-A (Jira will reject)
-          .onCall(1)
-          .resolves({ Authorization: 'Bearer token-A' })
-          // Call 3: 401 re-read bypass → token-B (fresh)
-          .onCall(2)
-          .resolves({ Authorization: 'Bearer token-B' }),
+        getAuthHeaders: sinon.stub().rejects(reauthErr),
       };
       const fetchStub = sinon.stub();
-      fetchStub.onFirstCall().resolves({
-        ok: false,
-        status: 401,
-        json: sinon.stub().resolves({}),
-      });
-      fetchStub.onSecondCall().resolves({
-        ok: true,
-        status: 200,
-        json: sinon.stub().resolves({
-          hierarchy: [{ level: 0, issueTypes: [{ id: 10, name: 'Bug' }] }],
-        }),
-      });
       const client = new JiraCloudClient(VALID_CONFIG, credMgr, { fetch: fetchStub }, makeLog());
 
-      const result = await client.listIssueTypes('10000');
-      expect(result).to.deep.equal([{ id: '10', name: 'Bug' }]);
-      expect(credMgr.getAuthHeaders.callCount).to.equal(3);
-      expect(credMgr.getAuthHeaders.firstCall.args[0]).to.be.undefined;
-      expect(credMgr.getAuthHeaders.secondCall.args[0]).to.equal(true);
-      expect(credMgr.getAuthHeaders.thirdCall.args[0]).to.equal(true);
-      expect(fetchStub.firstCall.args[1].headers.Authorization).to.equal('Bearer token-A');
-      expect(fetchStub.secondCall.args[1].headers.Authorization).to.equal('Bearer token-B');
+      const err = await client.listIssueTypes('10000').catch((e) => e);
+      expect(err.code).to.equal('REQUIRES_REAUTH');
+      expect(credMgr.getAuthHeaders.callCount).to.equal(1);
+      expect(fetchStub.callCount).to.equal(0);
     });
 
-    it('throws TOKEN_REFRESH_REQUIRED on 401 when SM still has the same token', async () => {
-      // SM re-read returns the same stale token — retrying Jira would fail again.
-      // #withAuthRetry must signal the caller to trigger an auth-service refresh.
-      const fetchStub = sinon.stub().resolves({
+    it('throws TOKEN_REFRESH_REQUIRED when getAuthHeaders returns same token on 401', async () => {
+      // On 401, #withAuthRetry calls getAuthHeaders(). If the token is the
+      // same as the one Jira rejected, it throws TOKEN_REFRESH_REQUIRED.
+      const fetchStub = sinon.stub();
+      fetchStub.onFirstCall().resolves({
         ok: false, status: 401, json: sinon.stub().resolves({}),
       });
       const credMgr = {
-        getAuthHeaders: sinon.stub().resolves({ Authorization: 'Bearer stale-token' }),
+        getAuthHeaders: sinon.stub()
+          .resolves({ Authorization: 'Bearer same-token' }),
       };
       const client = new JiraCloudClient(VALID_CONFIG, credMgr, { fetch: fetchStub }, makeLog());
 
       const err = await client.listIssueTypes('10000').catch((e) => e);
       expect(err.code).to.equal('TOKEN_REFRESH_REQUIRED');
-      expect(fetchStub.callCount).to.equal(1); // no retry with same token
+      expect(err.status).to.equal(401);
+      expect(err.message).to.include('no refreshed token is available in SM');
+      expect(credMgr.getAuthHeaders.callCount).to.equal(2);
+      expect(fetchStub.callCount).to.equal(1);
     });
 
-    it('propagates REQUIRES_REAUTH when SM re-read shows requiresReauth', async () => {
-      // Concurrent Lambda wrote requiresReauth:true while we were in-flight.
+    it('propagates REQUIRES_REAUTH when getAuthHeaders throws on 401 retry', async () => {
+      // Concurrent Lambda wrote requiresReauth:true → getAuthHeaders()
+      // discovers the grant is revoked and throws REQUIRES_REAUTH.
       const fetchStub = sinon.stub().onFirstCall().resolves({
         ok: false, status: 401, json: sinon.stub().resolves({}),
       });
-      const reauthError = Object.assign(
+      const reauthErr = Object.assign(
         new Error('OAuth connection requires re-authorization'),
         { code: 'REQUIRES_REAUTH' },
       );
       const credMgr = {
         getAuthHeaders: sinon.stub()
-          .onFirstCall()
-          .resolves({ Authorization: 'Bearer stale-token' })
+          .onFirstCall().resolves({ Authorization: 'Bearer stale-token' })
           .onSecondCall()
-          .rejects(reauthError),
+          .rejects(reauthErr),
       };
       const client = new JiraCloudClient(VALID_CONFIG, credMgr, { fetch: fetchStub }, makeLog());
 
       const err = await client.listIssueTypes('10000').catch((e) => e);
       expect(err.code).to.equal('REQUIRES_REAUTH');
+      expect(err.message).to.include('connection requires re-authorization');
     });
 
     it('throws on 401 if retry also returns 401', async () => {
@@ -1889,7 +1834,7 @@ describe('JiraCloudClient', () => {
       expect(stub.thirdCall.args[0]).to.include('startAt=2'); // page.length = 1
     });
 
-    it('propagates REQUIRES_REAUTH from pagination after cache bypass also fails', async () => {
+    it('propagates REQUIRES_REAUTH from pagination immediately', async () => {
       const reauthErr = Object.assign(
         new Error('OAuth connection requires re-authorization'),
         { code: 'REQUIRES_REAUTH' },
@@ -1897,10 +1842,7 @@ describe('JiraCloudClient', () => {
       const credMgr = {
         getAuthHeaders: sinon.stub()
           .onCall(0).resolves({ Authorization: 'Bearer ok-token' })
-          // pagination loop: cache throw + bypass throw
           .onCall(1)
-          .rejects(reauthErr)
-          .onCall(2)
           .rejects(reauthErr),
       };
       const stub = sinon.stub();
@@ -1915,27 +1857,19 @@ describe('JiraCloudClient', () => {
 
       const err = await client.listProjects().catch((e) => e);
       expect(err.code).to.equal('REQUIRES_REAUTH');
-      expect(credMgr.getAuthHeaders.callCount).to.equal(3); // page1 + cache + bypass
-      expect(credMgr.getAuthHeaders.thirdCall.args[0]).to.equal(true);
+      expect(credMgr.getAuthHeaders.callCount).to.equal(2); // page1 + page2 throw
     });
 
-    it('bypasses cache in pagination loop when getAuthHeaders throws TOKEN_REFRESH_REQUIRED', async () => {
-      const tokenRefreshErr = Object.assign(
-        new Error('OAuth token expired'),
-        { code: 'TOKEN_REFRESH_REQUIRED' },
+    it('propagates REQUIRES_REAUTH from pagination without retrying', async () => {
+      const reauthErr = Object.assign(
+        new Error('OAuth connection requires re-authorization'),
+        { code: 'REQUIRES_REAUTH' },
       );
-      // Page 1 succeeds via #withAuthRetry; page 2 getAuthHeaders() throws from
-      // stale cache, then retry with bypassCache=true returns fresh token.
       const credMgr = {
         getAuthHeaders: sinon.stub()
-          // Call 1: #withAuthRetry page 1 (cache ok)
           .onCall(0).resolves({ Authorization: 'Bearer ok-token' })
-          // Call 2: pagination loop page 2 — cache stale → throws
           .onCall(1)
-          .rejects(tokenRefreshErr)
-          // Call 3: pagination loop retry with bypassCache=true
-          .onCall(2)
-          .resolves({ Authorization: 'Bearer fresh-token' }),
+          .rejects(reauthErr),
       };
       const stub = sinon.stub();
       stub.onCall(0).resolves({
@@ -1945,23 +1879,12 @@ describe('JiraCloudClient', () => {
           values: [{ id: '1', key: 'A', name: 'A' }], isLast: false,
         }),
       });
-      stub.onCall(1).resolves({
-        ok: true,
-        status: 200,
-        json: sinon.stub().resolves({
-          values: [{ id: '2', key: 'B', name: 'B' }], isLast: true,
-        }),
-      });
       const client = new JiraCloudClient(VALID_CONFIG, credMgr, { fetch: stub }, makeLog());
 
-      const projects = await client.listProjects();
-      expect(projects).to.deep.equal([
-        { id: '1', key: 'A', name: 'A' },
-        { id: '2', key: 'B', name: 'B' },
-      ]);
-      // bypassCache=true on the third call
-      expect(credMgr.getAuthHeaders.thirdCall.args[0]).to.equal(true);
-      expect(stub.secondCall.args[1].headers.Authorization).to.equal('Bearer fresh-token');
+      const err = await client.listProjects().catch((e) => e);
+      expect(err.code).to.equal('REQUIRES_REAUTH');
+      expect(credMgr.getAuthHeaders.callCount).to.equal(2); // page1 ok + page2 throw
+      expect(stub.callCount).to.equal(1); // only page 1 fetch
     });
 
     it('stops at MAX_PAGES (100) even when Jira keeps returning isLast: false', async () => {

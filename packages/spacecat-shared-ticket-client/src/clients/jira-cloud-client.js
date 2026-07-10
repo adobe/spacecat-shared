@@ -238,7 +238,7 @@ export default class JiraCloudClient extends BaseTicketClient {
     // routinely have 100+ projects, so pagination is required to avoid silent truncation.
     for (;;) {
       // eslint-disable-next-line no-await-in-loop
-      const authHeaders = await this.#getAuthHeadersWithCacheBypass();
+      const authHeaders = await this.credentialManager.getAuthHeaders();
       // eslint-disable-next-line no-await-in-loop
       const response = await this.httpClient.fetch(
         `${this.baseUrl}/project/search?maxResults=50&orderBy=name&startAt=${startAt}`,
@@ -348,31 +348,11 @@ export default class JiraCloudClient extends BaseTicketClient {
   // ── Auth retry ──────────────────────────────────────────────────────────────
 
   /**
-   * Returns auth headers, retrying with bypassCache=true when the cached token
-   * is stale (TOKEN_REFRESH_REQUIRED or REQUIRES_REAUTH). Another Lambda may
-   * have written fresh tokens to SM since the cache was populated.
-   * If the bypass call also fails, the error propagates to the caller.
-   * Non-credential errors (network, SDK, IAM) are re-thrown immediately.
-   */
-  async #getAuthHeadersWithCacheBypass() {
-    try {
-      return await this.credentialManager.getAuthHeaders();
-    } catch (err) {
-      if (err.code !== 'TOKEN_REFRESH_REQUIRED' && err.code !== 'REQUIRES_REAUTH') {
-        throw err;
-      }
-      this.log.debug(`getAuthHeaders() threw ${err.code} — bypassing cache for SM re-read`);
-      return this.credentialManager.getAuthHeaders(true);
-    }
-  }
-
-  /**
    * Wraps a Jira API call with retry-once on 401.
    *
-   * If getAuthHeaders() throws (cache stale — TOKEN_REFRESH_REQUIRED or
-   * REQUIRES_REAUTH): retries with bypassCache=true to pick up tokens written
-   * by a concurrent Lambda (e.g. auth-service ensure-tokens). If SM is also
-   * bad, the error propagates.
+   * If getAuthHeaders() throws (TOKEN_REFRESH_REQUIRED or REQUIRES_REAUTH):
+   * retries to pick up tokens written by a concurrent Lambda (e.g. auth-service
+   * ensure-tokens). If SM is also bad, the error propagates.
    *
    * On first 401: re-reads SM via getAuthHeaders() (pure GET). If a concurrent
    * caller already refreshed and SM holds a different valid token, retries once
@@ -388,21 +368,23 @@ export default class JiraCloudClient extends BaseTicketClient {
    * @returns {Promise<Response>}
    */
   async #withAuthRetry(requestFn) {
-    const authHeaders = await this.#getAuthHeadersWithCacheBypass();
+    const authHeaders = await this.credentialManager.getAuthHeaders();
     const response = await requestFn(authHeaders);
 
     if (response.status === 401) {
       this.log.debug('Jira API returned 401 — re-reading SM for a concurrent refresh');
-      // bypassCache=true: forces SM re-read, making a concurrent Lambda's refresh
-      // visible even within the 30s TTL window.
-      // getAuthHeaders() throws TOKEN_REFRESH_REQUIRED or REQUIRES_REAUTH when SM is
-      // still stale — let those propagate so the caller can trigger a refresh.
-      const freshHeaders = await this.credentialManager.getAuthHeaders(true);
+      // 401 means Jira revoked the access token (refresh-token rotation window
+      // closed). Re-read SM with cache bypass to pick up tokens written by a
+      // concurrent caller (e.g. auth-service ensure-tokens).
+      // NOTE: this Lambda does NOT refresh tokens itself — token rotation is
+      // the auth-service's responsibility (it has SM PUT + Atlassian credentials).
+      const freshHeaders = await this.credentialManager.getAuthHeaders();
       if (freshHeaders.Authorization === authHeaders.Authorization) {
-        // SM holds the same token that Jira just rejected — retrying would fail again.
+        // SM still holds the same revoked token — caller must trigger a refresh
+        // via ensure-tokens (auth-service).
         throw Object.assign(
-          new Error('OAuth token expired — caller should trigger a refresh'),
-          { code: 'TOKEN_REFRESH_REQUIRED' },
+          new Error('Jira rejected the access token and no refreshed token is available in SM'),
+          { code: 'TOKEN_REFRESH_REQUIRED', status: 401 },
         );
       }
       return requestFn(freshHeaders);

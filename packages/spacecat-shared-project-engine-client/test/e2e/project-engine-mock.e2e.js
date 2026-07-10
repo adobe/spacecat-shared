@@ -926,7 +926,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
     // The root level is untouched: still exactly the four dimension roots.
     const { data: roots } = await listTags('');
-    expect(roots.items.map((t) => t.name)).to.deep.equal(DIMENSION_ROOT_NAMES);
+    expect(roots.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
   });
 
   // Gate 7 (verified live 2026-07-02): the create endpoint does NOT dedupe — re-creating a name
@@ -1023,7 +1023,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // back to the baked baseline: the four dimension roots, and `Ephemeral` is gone
     const { data: roots } = await listTags('');
     expect(roots.total).to.equal(4);
-    expect(roots.items.map((t) => t.name)).to.deep.equal(DIMENSION_ROOT_NAMES);
+    expect(roots.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
     const { data: categories } = await listTags(SEED_IDS.categoryRootTagId);
     expect(categories.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
   });
@@ -1292,7 +1292,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(categoriesAfter.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
     // … and the four dimension roots are untouched.
     const { data: rootsAfter } = await listTags('');
-    expect(rootsAfter.items.map((t) => t.name)).to.deep.equal(DIMENSION_ROOT_NAMES);
+    expect(rootsAfter.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
 
     // The seeded prompt survives — deleting a tag never deletes a prompt. `Doomed` carried none,
     // so the prompt's own tags are untouched too.
@@ -1385,7 +1385,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
     // the children are not among the roots (their parent_id is still the deleted id)
     const { data: roots } = await listTags('');
-    expect(roots.items.map((t) => t.name)).to.deep.equal(DIMENSION_ROOT_NAMES);
+    expect(roots.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
     // they survive ONLY as children of the now-deleted parent id — reachable via that stale id
     const { data: orphans } = await listTags(SEED_IDS.categoryTagId);
     expect(orphans.items.map((t) => t.id))

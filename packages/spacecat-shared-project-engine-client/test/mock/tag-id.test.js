@@ -65,9 +65,9 @@ describe('tag-id', () => {
     expect(tagId('human')).to.not.equal(tagId('human', 'tag-source'));
   });
 
-  // The separator makes the preimage unambiguous: without it, ('ab' + '') and ('a' + 'b') would
-  // hash identically and two unrelated tags would share an id.
+  // The separator makes the preimage unambiguous: without it, the category `ab` under parent `c`
+  // and the category `b` under parent `ca` both concatenate to `cab` and would share an id.
   it('does not let a parent/name boundary shift produce the same id', () => {
-    expect(tagId('', 'ab')).to.not.equal(tagId('b', 'a'));
+    expect(tagId('ab', 'c')).to.not.equal(tagId('b', 'ca'));
   });
 });

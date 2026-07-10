@@ -16,8 +16,8 @@ import { createHash } from 'node:crypto';
 
 /**
  * Separates the parent id from the name in the hash preimage. A byte that cannot occur in either
- * makes the encoding unambiguous: without it, `(parent: 'ab', name: '')` and `(parent: 'a',
- * name: 'b')` would hash the same preimage and collide.
+ * makes the encoding unambiguous: without it, `(parent: 'c', name: 'ab')` and `(parent: 'ca',
+ * name: 'b')` would both hash `cab` and collide.
  */
 const SEPARATOR = '\u0000';
 

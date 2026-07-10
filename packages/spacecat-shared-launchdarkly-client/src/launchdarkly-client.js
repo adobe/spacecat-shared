@@ -148,9 +148,12 @@ class LaunchDarklyClient {
    * @returns {Promise<*>} The evaluated flag value
    */
   async variation(flagKey, context, defaultValue) {
-    await this.init();
-
     try {
+      // init() is inside the try/catch so that a LaunchDarkly outage (e.g. the
+      // initialization timeout rejecting) fails open and returns defaultValue,
+      // rather than propagating and taking down callers such as /auth/login.
+      await this.init();
+
       const value = await this.client.variation(flagKey, context, defaultValue);
       this.log.debug(`Flag "${flagKey}" evaluated to:`, value);
       return value;

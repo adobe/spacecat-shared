@@ -350,19 +350,17 @@ export default class JiraCloudClient extends BaseTicketClient {
   /**
    * Wraps a Jira API call with retry-once on 401.
    *
-   * If getAuthHeaders() throws (TOKEN_REFRESH_REQUIRED or REQUIRES_REAUTH):
-   * retries to pick up tokens written by a concurrent Lambda (e.g. auth-service
-   * ensure-tokens). If SM is also bad, the error propagates.
+   * If getAuthHeaders() throws REQUIRES_REAUTH, the error propagates
+   * immediately — no Jira call is attempted.
    *
-   * On first 401: re-reads SM via getAuthHeaders() (pure GET). If a concurrent
-   * caller already refreshed and SM holds a different valid token, retries once
-   * with it. If SM still holds the same stale token or throws (expired /
-   * requires_reauth), propagates the error so the caller can trigger a refresh.
+   * On first 401: re-reads SM via getAuthHeaders(). If a concurrent caller
+   * (e.g. auth-service ensure-tokens) already refreshed and SM holds a
+   * different valid token, retries once with it. If SM still holds the same
+   * revoked token, throws TOKEN_REFRESH_REQUIRED so the caller can trigger
+   * a refresh via ensure-tokens.
    *
-   * On second 401 or any other HTTP error: returned as-is for #requireOk to handle.
-   *
-   * NOTE: this does NOT consume a refresh token or write to SM. Token rotation is
-   * the caller's responsibility.
+   * NOTE: this does NOT consume a refresh token or write to SM. Token
+   * rotation is the auth-service's responsibility.
    *
    * @param {Function} requestFn - async (authHeaders) => Response
    * @returns {Promise<Response>}
@@ -374,8 +372,8 @@ export default class JiraCloudClient extends BaseTicketClient {
     if (response.status === 401) {
       this.log.debug('Jira API returned 401 — re-reading SM for a concurrent refresh');
       // 401 means Jira revoked the access token (refresh-token rotation window
-      // closed). Re-read SM with cache bypass to pick up tokens written by a
-      // concurrent caller (e.g. auth-service ensure-tokens).
+      // closed). Re-read SM to pick up tokens written by a concurrent caller
+      // (e.g. auth-service ensure-tokens).
       // NOTE: this Lambda does NOT refresh tokens itself — token rotation is
       // the auth-service's responsibility (it has SM PUT + Atlassian credentials).
       const freshHeaders = await this.credentialManager.getAuthHeaders();

@@ -128,12 +128,13 @@ export default class OAuthCredentialManager {
   // ── Public methods ────────────────────────────────────────────────────────
 
   /**
-   * Returns a valid Bearer header from the current SM state.
-   * Pure read — no SM writes, no Atlassian calls.
+   * Returns a Bearer header from the current SM state.
+   * Pure read — no SM writes, no Atlassian calls. Always reads SM fresh.
    *
-   * Throws with code TOKEN_REFRESH_REQUIRED when the token is expired so the
-   * caller can return a 401 to the UI, which then triggers a refresh
-   * before retrying.
+   * Returns the token regardless of its expiry state — Jira validates
+   * access tokens via its own revocation check (tied to the refresh-token
+   * rotation window), not the JWT exp claim. Callers should handle a real
+   * 401 from Jira reactively rather than blocking on local expiry checks.
    *
    * Throws with code REQUIRES_REAUTH when the connection is flagged for
    * re-authorization (refresh token revoked — user must reconnect).

@@ -517,6 +517,32 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(embedded).to.not.have.property('path');
   });
 
+  // Minting resolves each name against the stored tags BEFORE writing, because `upsertMany` rejects
+  // a batch ATOMICALLY on any already-stored id. A batch that names one existing root and one new
+  // one would therefore register neither, and the new tag would go back to being a phantom id that
+  // `by_tags` could only echo as a stub. Reusing `category` — a seeded dimension root — forces that
+  // mixed batch.
+  it('mints only the ABSENT root when a `prompts/tagged` batch also names an existing one', async () => {
+    const res = await fetch(`${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/tagged`, {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ prompts: { 'Mixed Q': ['category', 'Brand New Root'] } }),
+    });
+    expect(res.status).to.equal(201);
+
+    const { data: roots } = await listTags('');
+    const names = roots.items.map((t) => t.name);
+    expect(names).to.include('Brand New Root');
+    // `category` is still one single root, not duplicated by the re-mention.
+    expect(names.filter((n) => n === 'category')).to.have.length(1);
+
+    // Both tags on the prompt serialize fully — neither is a bare `{ id, name }` stub.
+    const mintedId = roots.items.find((t) => t.name === 'Brand New Root').id;
+    const { data: listed } = await listByTags([mintedId], { draft: true });
+    expect(listed.items.map((p) => p.name)).to.deep.equal(['Mixed Q']);
+    listed.items[0].tags.forEach((t) => expect(t).to.have.property('children_count'));
+  });
+
   // Draft/publish gating (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6): a
   // freshly created prompt is invisible via the default (non-draft) by_tags read until the
   // project's publish endpoint runs — mirroring the real consumer's create → publishAffected →

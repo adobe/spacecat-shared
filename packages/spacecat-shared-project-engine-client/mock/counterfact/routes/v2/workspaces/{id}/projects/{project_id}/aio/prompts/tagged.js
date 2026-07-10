@@ -76,8 +76,11 @@ export function POST($) {
   // A name absent from the root level mints a ROOT tag, so every tag a created prompt carries is a
   // real row in the project's tag tree — which is what lets `by_tags` serialize an embedded tag
   // through the same view as `GET /aio/tags` rather than echoing a bare `{ id, name }` stub.
-  // Resolve-before-create: only the absent ids are written, since `upsertMany` treats an id that is
-  // already stored as a collision. Runs after the quota gate so a 405 still creates nothing.
+  // Resolve-before-create: only the absent ids are written. This is NOT redundant with the
+  // collision check inside `upsertMany`, which rejects a batch ATOMICALLY on any already-stored id.
+  // A batch naming one existing root and one new one would register NEITHER, leaving the new tag a
+  // phantom id. Filtering first is what makes a re-mentioned root a no-op instead of a poison pill.
+  // Runs after the quota gate so a 405 still creates nothing.
   const storedTagIds = new Set(context.ops.tags.list(scope).map((t) => t.id));
   const minted = new Map();
   for (const tag of created.flatMap((p) => p.tags ?? [])) {

@@ -12,12 +12,17 @@
 
 /**
  * Stateful handler for PATCH /v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}
- * (`aio-update-tag`) — re-parent / rename one tag in the 1-level category tree (see
- * serenity-docs#21). Request is `TreeNodeRequest` `{ name, parent_id? }`; the stored tag's
- * `name` + `parent_id` are updated in place while its id stays stable (Semrush tag ids are opaque
- * and don't move on rename). NB because the mock derives ids from the name, a rename leaves the id
- * keyed to the OLD name — a documented, live-unverified limitation (see the `tags.js` header's
- * "Known limitations": a later create/tag by the new name would mint a duplicate).
+ * (`aio-update-tag`) — re-parent / rename one tag in the dimension-root tag tree. Request is
+ * `TreeNodeRequest` `{ name, parent_id? }`; the stored tag's `name` + `parent_id` are updated in
+ * place while its id stays stable (Semrush tag ids are opaque and don't move on rename). NB because
+ * the mock derives ids from `(parent, name)`, a rename or a re-parent leaves the id keyed to the
+ * OLD pair — a documented limitation (see the `tags.js` header's "Known limitations": re-creating
+ * the original pair collides rather than minting a fresh id as live would).
+ *
+ * This is the endpoint the live reshape runs on, and its one destructive failure mode: a PATCH to a
+ * CHILD that omits `parent_id` promotes it to a root, stranding it outside its dimension while
+ * every carrying prompt stays attached to it. Callers must re-send the resolved `parent_id` on
+ * every child PATCH, including rename-only ones.
  *
  * `parent_id` is a live-verified 3-way switch (serenity-docs#24 §3.1 gate 1, verified 2026-07-02
  * against prod), NOT a simple presence check: an OMITTED `parent_id` key preserves the tag's

@@ -36,4 +36,4 @@ export {
   SUGGESTION_CREATE,
   isAllowedSuggestionTransition,
 } from './suggestion.transitions.js';
-export { deriveSuggestionStatus } from './derive-status.js';
+export { deriveSuggestionStatus, classifyStatus } from './derive-status.js';

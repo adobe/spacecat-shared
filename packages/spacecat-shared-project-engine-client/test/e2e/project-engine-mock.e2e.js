@@ -116,6 +116,36 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   /** Set once the spawned server process has exited, so teardown knows whether to escalate. */
   let serverExited = false;
 
+  // Request helpers, shared by every test below. All are lazy — `baseUrl` and `client` are only
+  // assigned in before(), after this suite body has run.
+  const promptsUrl = () => `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts`;
+  const jsonAuth = {
+    Authorization: 'Bearer e2e-token',
+    'content-type': 'application/json',
+    Accept: 'application/json',
+  };
+  const listByTags = (tagIds, { draft } = {}) => client.POST(
+    '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+    {
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+        ...(draft ? { query: { draft: true } } : {}),
+      },
+      body: { tag_ids: tagIds },
+    },
+  );
+  // One level of the tag tree: `parentId: ''` lists the dimension roots, an id lists that tag's
+  // direct children. `parent_id` and `search` are both spec-required query params.
+  const listTags = (parentId, search = '') => client.GET(
+    '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+    {
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+        query: { parent_id: parentId, search },
+      },
+    },
+  );
+
   before(async () => {
     const port = await pickPort();
     baseUrl = `http://127.0.0.1:${port}/enterprise/projects/api`;
@@ -418,6 +448,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // The other half of the same contract: a ROOT carried by a prompt omits both keys, so a consumer
   // reading `path[0]` for the dimension must fall back to the tag's own name.
   it('embeds a ROOT prompt tag with no parent_id and no path', async () => {
+    // No SEEDED prompt carries a dimension root — every seeded tag value is a descendant — so the
+    // root must be attached here for this assertion to have a subject at all.
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['Rooted Q'], tag_ids: [SEED_IDS.categoryRootTagId] }),
+    });
+    expect(res.status).to.equal(201);
+
     const { data: listed } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
       {
@@ -431,10 +470,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const rootTag = listed.items
       .flatMap((p) => p.tags ?? [])
       .find((t) => t.id === SEED_IDS.categoryRootTagId);
-    if (rootTag) {
-      expect(rootTag).to.not.have.property('parent_id');
-      expect(rootTag).to.not.have.property('path');
-    }
+    expect(rootTag, 'the `category` root is carried by the prompt just created').to.not.equal(undefined);
+    expect(rootTag).to.not.have.property('parent_id');
+    expect(rootTag).to.not.have.property('path');
 
     // Every embedded tag is either a root (no path) or carries a root-first path whose first leaf
     // is a dimension root — there is no third shape.
@@ -448,6 +486,35 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         expect(t.parent_id).to.be.a('string');
       }
     });
+  });
+
+  // `prompts/tagged` is name-keyed and root-only: a name absent from the root level MINTS a root.
+  // The minted tag has to become a real row in the tag tree, otherwise the prompt would reference
+  // an id the tag collection does not hold and `by_tags` could only echo a bare `{ id, name }` stub
+  // — a shape live never returns, and one that would slip past a serializer assertion made only
+  // against seeded tags.
+  it('registers the ROOT tag that `prompts/tagged` mints, and serializes it like any other', async () => {
+    const res = await fetch(`${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/tagged`, {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ prompts: { 'Minted Q': ['Freshly Minted'] } }),
+    });
+    expect(res.status).to.equal(201);
+
+    // The minted name is now a root in the tag tree, alongside the four dimension roots.
+    const { data: roots } = await listTags('');
+    const minted = roots.items.find((t) => t.name === 'Freshly Minted');
+    expect(minted, 'the minted root is registered in the tag tree').to.not.equal(undefined);
+
+    // …and the prompt embeds that exact object, not a stub: same id, and the full root shape.
+    const { data: listed } = await listByTags([minted.id], { draft: true });
+    expect(listed.items.map((p) => p.name)).to.deep.equal(['Minted Q']);
+    const embedded = listed.items[0].tags.find((t) => t.id === minted.id);
+    expect(embedded).to.deep.equal(minted);
+    expect(embedded).to.have.property('children_count', 0);
+    expect(embedded).to.have.property('prompts_count');
+    expect(embedded).to.not.have.property('parent_id');
+    expect(embedded).to.not.have.property('path');
   });
 
   // Draft/publish gating (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6): a
@@ -583,35 +650,6 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // success/500 bodies are asserted via raw fetch (the typed client types the response as
   // StringIDName); reads go through the typed by_tags client.
   // ───────────────────────────────────────────────────────────────────────
-
-  // Built lazily: `baseUrl` is only assigned in before(), after this suite body runs.
-  const promptsUrl = () => `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts`;
-  const jsonAuth = {
-    Authorization: 'Bearer e2e-token',
-    'content-type': 'application/json',
-    Accept: 'application/json',
-  };
-  const listByTags = (tagIds, { draft } = {}) => client.POST(
-    '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
-    {
-      params: {
-        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-        ...(draft ? { query: { draft: true } } : {}),
-      },
-      body: { tag_ids: tagIds },
-    },
-  );
-  // One level of the tag tree: `parentId: ''` lists the dimension roots, an id lists that tag's
-  // direct children. `parent_id` and `search` are both spec-required query params.
-  const listTags = (parentId, search = '') => client.GET(
-    '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
-    {
-      params: {
-        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-        query: { parent_id: parentId, search },
-      },
-    },
-  );
 
   // POST /aio/prompts references tags by id (not name) and returns 201 with the live LIST WRAPPER
   // { page, total, items:[{id,name}], existing_count }. The created prompts embed the tag's

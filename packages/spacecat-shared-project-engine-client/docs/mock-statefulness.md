@@ -34,7 +34,7 @@ api-service calls (`src/support/serenity/handlers/*`):
 | `GET  /v1/ai_models` | ai_models (catalog) | no | static |
 | `GET  /v1/languages` | languages | no | static |
 | `POST /v2/workspaces/{id}/projects/{id}/aio/prompts/by_tags` | prompts | no (read) | **stateful** (list) |
-| `POST /v2/workspaces/{id}/projects/{id}/aio/prompts/tagged` | prompts | yes | **stateful** |
+| `POST /v2/workspaces/{id}/projects/{id}/aio/prompts/tagged` | prompts, tags | yes | **stateful** (a tag name absent from the root level mints a root tag) |
 | `DELETE /v2/workspaces/{id}/projects/{id}/aio/prompts` | prompts | yes | **stateful** |
 | `POST /v2/workspaces/{id}/projects/{id}/aio/tags` | tags | yes | **stateful** (project-tag create, idempotent by name) |
 | `GET  /v2/workspaces/{id}/projects/{id}/aio/tags` | tags | yes | **stateful** (list — surfaces 0-prompt categories) |

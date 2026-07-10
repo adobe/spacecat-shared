@@ -50,6 +50,13 @@ export function POST($) {
   // identical to the same tag read from `GET /aio/tags`. Deriving at read (rather than returning
   // whatever was embedded at write time) is also what keeps a re-parent or a rename from leaving a
   // stale breadcrumb behind on a prompt.
+  //
+  // Every id a prompt references resolves: the two create paths both register their tags — the
+  // id-based `aio/prompts.js` rejects an unresolvable id outright, and `tagged.js` mints a root for
+  // an unknown name — and `DELETE /aio/tags` detaches a removed tag from its prompts. The `?? t`
+  // guard is what a store hand-seeded with a prompt referencing an unregistered tag would fall back
+  // to: the raw `{ id, name }` stub, missing `children_count`, `prompts_count` and `path`. That
+  // degraded shape is not what live returns, so seed prompts only with tags the seed registers too.
   const { byId } = context.buildTagView(context.ops.tags.list(scope), context.factories);
   const items = matched.map((p) => ({
     ...p,

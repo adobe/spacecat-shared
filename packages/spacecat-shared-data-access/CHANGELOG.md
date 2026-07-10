@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.4.0...@adobe/spacecat-shared-data-access-v4.5.0) (2026-07-10)
+
+### Features
+
+* **data-access:** generalize deriveSuggestionStatus bubble-up + classifyStatus (SITES-47285) ([#1797](https://github.com/adobe/spacecat-shared/issues/1797)) ([732f647](https://github.com/adobe/spacecat-shared/commit/732f647724d1922f70d32b42fedd46824b0c1bde))
+
 ## [@adobe/spacecat-shared-data-access-v4.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.3.1...@adobe/spacecat-shared-data-access-v4.4.0) (2026-07-09)
 
 ### Features

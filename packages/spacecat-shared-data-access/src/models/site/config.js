@@ -477,9 +477,7 @@ export const configSchema = Joi.object({
       storeCode: Joi.string().required(),
       storeViewCode: Joi.string().required(),
       hostName: Joi.string().optional(),
-      magentoEndpoint: Joi.string().uri().optional(),
-      magentoAPIKey: Joi.string().optional(),
-    }),
+    }).options({ stripUnknown: true }),
   ).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),

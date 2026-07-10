@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v4.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.4.0...@adobe/spacecat-shared-data-access-v4.5.0) (2026-07-10)
+
+### Features
+
+* **data-access:** generalize deriveSuggestionStatus bubble-up + classifyStatus (SITES-47285) ([#1797](https://github.com/adobe/spacecat-shared/issues/1797)) ([732f647](https://github.com/adobe/spacecat-shared/commit/732f647724d1922f70d32b42fedd46824b0c1bde))
+
+## [@adobe/spacecat-shared-data-access-v4.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.3.1...@adobe/spacecat-shared-data-access-v4.4.0) (2026-07-09)
+
+### Features
+
+* **fix-entity:** add allByOpportunityIds for site-wide fix queries ([#1792](https://github.com/adobe/spacecat-shared/issues/1792)) ([25309bf](https://github.com/adobe/spacecat-shared/commit/25309bff4be7d90c0f7cdbf854c48a20adfd3e57))
+
 ## [@adobe/spacecat-shared-data-access-v4.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.3.0...@adobe/spacecat-shared-data-access-v4.3.1) (2026-07-09)
 
 ### Bug Fixes

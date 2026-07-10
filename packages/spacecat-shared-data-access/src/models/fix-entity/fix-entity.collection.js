@@ -15,6 +15,11 @@ import ValidationError from '../../errors/validation.error.js';
 import { guardId, guardArray, guardString } from '../../util/guards.js';
 import { resolveUpdates } from '../../util/util.js';
 
+// PostgREST GET requests serialize IN-filters into the URL, so large ID lists must be
+// chunked to stay well under the ~8KB URL length limit (see batchGetByKeys / llmo-brand-presence
+// for the same pattern elsewhere in this package).
+const IN_FILTER_CHUNK_SIZE = 50;
+
 /**
  * FixEntityCollection - A collection class responsible for managing FixEntities.
  * Extends the BaseCollection to provide specific methods for interacting with
@@ -223,6 +228,49 @@ class FixEntityCollection extends BaseCollection {
       }
       this.log.error('Failed to get all fixes with suggestions by opportunity ID', error);
       throw new DataAccessError('Failed to get all fixes with suggestions by opportunity ID', this, error);
+    }
+  }
+
+  /**
+   * Gets all fixes across a set of opportunities (e.g. every opportunity for a site),
+   * by filtering on opportunityId IN (...). Chunks the IN-filter to stay under
+   * PostgREST's URL length limit.
+   *
+   * @async
+   * @param {string[]} opportunityIds - The IDs of the opportunities.
+   * @returns {Promise<FixEntity[]>} - A promise that resolves to an array of FixEntity models.
+   * @throws {DataAccessError} - Throws an error if the query fails.
+   * @throws {ValidationError} - Throws an error if opportunityIds is not an array of strings.
+   */
+  async allByOpportunityIds(opportunityIds) {
+    guardArray('opportunityIds', opportunityIds, 'FixEntityCollection', 'string');
+
+    if (opportunityIds.length === 0) {
+      return [];
+    }
+
+    try {
+      const uniqueIds = [...new Set(opportunityIds)];
+
+      const chunks = [];
+      for (let i = 0; i < uniqueIds.length; i += IN_FILTER_CHUNK_SIZE) {
+        chunks.push(uniqueIds.slice(i, i + IN_FILTER_CHUNK_SIZE));
+      }
+
+      const results = await Promise.all(
+        chunks.map((chunk) => this.all(
+          {},
+          { where: (attrs, op) => op.in(attrs.opportunityId, chunk) },
+        )),
+      );
+
+      return results.flat();
+    } catch (error) {
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
+      this.log.error('Failed to get all fixes by opportunity IDs', error);
+      throw new DataAccessError('Failed to get all fixes by opportunity IDs', this, error);
     }
   }
 

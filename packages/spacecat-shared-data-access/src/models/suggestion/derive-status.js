@@ -11,10 +11,10 @@
  */
 
 /**
- * Suggestion + FixEntity status literals.
+ * Suggestion status literals (return values).
  *
- * Duplicated from the model enums to keep this a dependency-light pure module.
- * Keep in sync if either enum changes. (Same pattern as suggestion.data-schemas.js.)
+ * Duplicated from the model enum to keep this a dependency-light pure module.
+ * Keep in sync if the enum changes. (Same pattern as suggestion.data-schemas.js.)
  */
 const SUGGESTION = {
   NEW: 'NEW',
@@ -24,89 +24,135 @@ const SUGGESTION = {
   ERROR: 'ERROR',
 };
 
-const FIX = {
-  PENDING: 'PENDING',
-  DEPLOYED: 'DEPLOYED',
-  PUBLISHED: 'PUBLISHED',
-  FAILED: 'FAILED',
-  ROLLED_BACK: 'ROLLED_BACK',
+/**
+ * Severity classes for the bubble-up (ADR adobe/mysticat-architecture#174).
+ * Highest severity first-match-wins; NEUTRAL never contributes to severity
+ * (a suggestion whose only signals are NEUTRAL resolves to NEW).
+ */
+const CLASS = {
+  ERROR: 'ERROR',
+  IN_PROGRESS: 'IN_PROGRESS',
+  FIXED: 'FIXED',
+  SKIPPED: 'SKIPPED',
+  NEUTRAL: 'NEUTRAL',
 };
 
 /**
- * Normalizes a fix entry to its status string. Accepts a FixEntity model
+ * Maps a status token to its severity class. Covers BOTH vocabularies so a
+ * caller can pass FixEntity statuses (DEPLOYED/FAILED/PENDING/ROLLED_BACK/...)
+ * and/or explicit Suggestion-status outcomes (FIXED/ERROR/SKIPPED/NEW/...) for
+ * cases with no fix entity (e.g. a consciously-skipped or not-actionable
+ * suggestion). `REJECTED` collapses to SKIPPED in either vocabulary. Unknown
+ * tokens are ignored (null).
+ */
+const CLASS_BY_STATUS = {
+  // ERROR-class
+  FAILED: CLASS.ERROR, // fix
+  ERROR: CLASS.ERROR, // suggestion
+  // IN_PROGRESS-class
+  PENDING: CLASS.IN_PROGRESS, // fix
+  IN_PROGRESS: CLASS.IN_PROGRESS, // suggestion
+  // FIXED-class
+  DEPLOYED: CLASS.FIXED, // fix
+  PUBLISHED: CLASS.FIXED, // fix
+  FIXED: CLASS.FIXED, // suggestion
+  // SKIPPED-class
+  ROLLED_BACK: CLASS.SKIPPED, // fix
+  REJECTED: CLASS.SKIPPED, // fix / suggestion
+  SKIPPED: CLASS.SKIPPED, // suggestion
+  // NEUTRAL — present but non-severity; all-NEUTRAL resolves to NEW
+  NEW: CLASS.NEUTRAL,
+  OUTDATED: CLASS.NEUTRAL,
+  APPROVED: CLASS.NEUTRAL,
+  PENDING_VALIDATION: CLASS.NEUTRAL,
+};
+
+/**
+ * Classifies a status token into its bubble-up severity class, or null if the
+ * token is unknown.
+ *
+ * @param {string|null|undefined} token
+ * @returns {'ERROR'|'IN_PROGRESS'|'FIXED'|'SKIPPED'|'NEUTRAL'|null}
+ */
+export const classifyStatus = (token) => (
+  Object.prototype.hasOwnProperty.call(CLASS_BY_STATUS, token)
+    ? CLASS_BY_STATUS[token]
+    : null
+);
+
+/**
+ * Normalizes an outcome entry to its status string. Accepts a FixEntity model
  * instance (`getStatus()`), a plain `{ status }` object, or a status string.
  */
-const toStatus = (fix) => {
-  if (typeof fix === 'string') {
-    return fix;
+const toStatus = (outcome) => {
+  if (typeof outcome === 'string') {
+    return outcome;
   }
-  if (fix && typeof fix.getStatus === 'function') {
-    return fix.getStatus();
+  if (outcome && typeof outcome.getStatus === 'function') {
+    return outcome.getStatus();
   }
-  return fix?.status;
+  return outcome?.status;
 };
 
 /**
- * Derives a Suggestion's status from its fix entities — the **non-CWV (1:1)**
- * bubble-up from ADR adobe/mysticat-architecture#174 §"Bubble-up rule (non-CWV
- * opportunities)":
+ * Derives a Suggestion's status from a per-suggestion list of outcome signals —
+ * the bubble-up from ADR adobe/mysticat-architecture#174.
  *
- *   FAILED      -> ERROR
- *   PENDING     -> IN_PROGRESS
- *   DEPLOYED    -> FIXED
- *   PUBLISHED   -> FIXED
- *   ROLLED_BACK -> SKIPPED
+ * Each `outcomes` entry is a FixEntity, a `{ status }` object, or a status
+ * string, from EITHER vocabulary:
+ *  - FixEntity statuses: DEPLOYED/PUBLISHED -> FIXED, FAILED -> ERROR,
+ *    PENDING -> IN_PROGRESS, ROLLED_BACK/REJECTED -> SKIPPED.
+ *  - explicit Suggestion-status outcomes for no-fix cases a handler asserts
+ *    (e.g. a consciously skipped suggestion -> 'SKIPPED', a not-actionable one
+ *    -> 'NEW').
  *
- * For a single fix this is exactly the ADR map. For multiple fixes it collapses
- * by severity (ERROR > IN_PROGRESS > FIXED > SKIPPED) so partial failure wins —
- * consistent with the CWV severity ordering. `Fix.REJECTED` is intentionally
- * absent: it is not in `FixEntity.STATUSES` (see SITES-47076).
+ * Signals are classified (`classifyStatus`) and collapsed **first-match-wins by
+ * severity**: ERROR > IN_PROGRESS > FIXED > SKIPPED. If signals are present but
+ * all NEUTRAL (e.g. only 'NEW') the result is NEW. If there are no recognized
+ * signals (empty / all-null / all-unknown) the result is `currentStatus`
+ * (default null), so a derive call never clobbers a status set elsewhere.
  *
  * The **CWV multi-issue** bubble-up is deliberately NOT implemented here: the
- * ADR's per-issue vocabulary (`cwvIssueStatus` = PATCH_GENERATED / GUIDANCE_*
- * / PATCH_FAILED_*) does not match the data layer (mystique writes those into
- * the overloaded per-issue `status` field; the JS `ISSUE_STATUSES` enum lists
- * only Suggestion statuses). Reconciling that is a follow-up sub-task,
- * SITES-47285. Passing a non-empty `issues` argument throws to prevent a caller
- * from silently receiving an unimplemented CWV result.
+ * per-issue vocabulary (mystique's cwvIssueStatus = PATCH_GENERATED /
+ * GUIDANCE_* / PATCH_FAILED_*) is not yet reconciled with the JS layer
+ * (SITES-47285). Passing a non-empty `issues` argument throws to prevent a
+ * caller from silently receiving an unimplemented CWV result.
  *
- * @param {Array<object|string>} fixes - fix entities / `{status}` / status strings
+ * @param {Array<object|string>} outcomes - fix entities / `{status}` / status strings
  * @param {Array<object>} [issues] - CWV per-issue data; MUST be empty for now
- * @param {string|null} [currentStatus] - the Suggestion's current status, returned as the
- *   fallback when nothing is derivable (no fixes / all-null / no matching rule) so a derive
- *   call never clobbers a status set elsewhere. Defaults to null (prior behavior).
- * @returns {string|null} derived Suggestion status, or `currentStatus` when nothing is derivable
+ * @param {string|null} [currentStatus] - fallback when nothing is derivable
+ * @returns {string|null} derived Suggestion status, or `currentStatus`
  * @throws {Error} if a non-empty `issues` array is supplied (CWV deferred)
  */
-export const deriveSuggestionStatus = (fixes, issues = [], currentStatus = null) => {
+export const deriveSuggestionStatus = (outcomes, issues = [], currentStatus = null) => {
   if (Array.isArray(issues) && issues.length > 0) {
     throw new Error('deriveSuggestionStatus: CWV multi-issue bubble-up is not yet implemented (deferred to SITES-47285)');
   }
 
-  if (!Array.isArray(fixes) || fixes.length === 0) {
+  if (!Array.isArray(outcomes)) {
     return currentStatus;
   }
 
-  // Drop null/undefined entries (e.g. a sparse junction result) so one malformed
-  // entry cannot nullify an otherwise well-defined derivation; degrades to the
-  // same "no fixes" behavior as an empty array.
-  const statuses = fixes.map(toStatus).filter((s) => s != null);
-  if (statuses.length === 0) {
+  // Classify each signal; drop unknown/null so one malformed entry cannot
+  // nullify an otherwise well-defined derivation.
+  const classes = outcomes.map(toStatus).map(classifyStatus).filter((c) => c != null);
+  if (classes.length === 0) {
     return currentStatus;
   }
 
-  if (statuses.includes(FIX.FAILED)) {
+  if (classes.includes(CLASS.ERROR)) {
     return SUGGESTION.ERROR;
   }
-  if (statuses.includes(FIX.PENDING)) {
+  if (classes.includes(CLASS.IN_PROGRESS)) {
     return SUGGESTION.IN_PROGRESS;
   }
-  if (statuses.includes(FIX.DEPLOYED) || statuses.includes(FIX.PUBLISHED)) {
+  if (classes.includes(CLASS.FIXED)) {
     return SUGGESTION.FIXED;
   }
-  if (statuses.every((s) => s === FIX.ROLLED_BACK)) {
+  if (classes.includes(CLASS.SKIPPED)) {
     return SUGGESTION.SKIPPED;
   }
 
-  return currentStatus;
+  // signals present but all NEUTRAL (e.g. only NEW/OUTDATED)
+  return SUGGESTION.NEW;
 };

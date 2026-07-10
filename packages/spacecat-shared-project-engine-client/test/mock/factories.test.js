@@ -236,14 +236,14 @@ describe('factories — live-shaped entities', () => {
   });
 
   it('createTagNodeMock yields a TreeNodeResponse', () => {
-    const t = createTagNodeMock({ name: 'topic:Probe' });
-    expect(t).to.include({ name: 'topic:Probe', children_count: 0, keyword_count: 0 });
+    const t = createTagNodeMock({ name: 'Probe' });
+    expect(t).to.include({ name: 'Probe', children_count: 0, keyword_count: 0 });
   });
 
   it('createAIOTagMock yields an AIOTag (prompts_count, not keyword_count)', () => {
-    const t = createAIOTagMock({ id: 'tag-x', name: 'category:Probe' });
+    const t = createAIOTagMock({ id: 'tag-x', name: 'Probe' });
     expect(t).to.deep.equal({
-      id: 'tag-x', name: 'category:Probe', children_count: 0, prompts_count: 0,
+      id: 'tag-x', name: 'Probe', children_count: 0, prompts_count: 0,
     });
   });
 
@@ -258,16 +258,16 @@ describe('factories — live-shaped entities', () => {
       id: 'tag-child',
       name: 'Trail',
       parent_id: 'tag-root',
-      path: [createAIOTagLeafMock({ id: 'tag-root', name: 'category:Running' })],
+      path: [createAIOTagLeafMock({ id: 'tag-root', name: 'Running Shoes' })],
     });
     expect(child).to.include({ id: 'tag-child', name: 'Trail', parent_id: 'tag-root' });
     // the path leaf is { id, name } — live does not echo parent_id on the breadcrumb
-    expect(child.path).to.deep.equal([{ id: 'tag-root', name: 'category:Running' }]);
+    expect(child.path).to.deep.equal([{ id: 'tag-root', name: 'Running Shoes' }]);
   });
 
   it('createAIOTagLeafMock yields an AIOTagLeaf { id, name } (no parent_id, matching live)', () => {
-    const leaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category:Running' });
-    expect(leaf).to.deep.equal({ id: 'tag-root', name: 'category:Running' });
+    const leaf = createAIOTagLeafMock({ id: 'tag-root', name: 'Running Shoes' });
+    expect(leaf).to.deep.equal({ id: 'tag-root', name: 'Running Shoes' });
   });
 
   it('createBrandTopicMock yields { topic, volume, prompts }', () => {

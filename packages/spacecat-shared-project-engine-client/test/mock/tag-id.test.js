@@ -36,6 +36,19 @@ describe('tag-id', () => {
     expect(tagId('category')).to.equal(tagId('category'));
   });
 
+  // The derivation is a PUBLISHED contract, not an implementation detail. Consumers pin the mock by
+  // the client's version (the GHCR image tag is the installed version, with no `latest` and no
+  // fallback), and their fixtures carry these ids. Changing the hash preimage — the separator, the
+  // field order, the digest, the truncation width — silently reshuffles every id in every seed and
+  // breaks those repos at a distance, with no local signal. These golden values make that a red
+  // test here instead. Do not "fix" them to match a new derivation: change them only in a commit
+  // that deliberately reissues the ids and that says so.
+  it('pins the exact derived id for a root and for a child (cross-repo contract)', () => {
+    const categoryRoot = tagId('category');
+    expect(categoryRoot).to.equal('tag-c6782d4af8e0befb');
+    expect(tagId('Running Shoes', categoryRoot)).to.equal('tag-0e00813e37484864');
+  });
+
   it('maps distinct names under one parent to distinct ids', () => {
     expect(tagId('A', 'tag-root')).to.not.equal(tagId('B', 'tag-root'));
     expect(tagId('brand')).to.not.equal(tagId('Brand'));

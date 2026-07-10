@@ -368,6 +368,7 @@ export default class JiraCloudClient extends BaseTicketClient {
    *   trigger ensure-tokens. The error carries `code: 'TOKEN_REFRESH_REQUIRED'` and
    *   `status: 401` (the HTTP status returned by Jira).
    * @throws {Error} REQUIRES_REAUTH - credential manager flagged the connection as revoked.
+   *   Also thrown if a concurrent caller flags the connection during the retry window.
    */
   async #withAuthRetry(requestFn) {
     const authHeaders = await this.credentialManager.getAuthHeaders();

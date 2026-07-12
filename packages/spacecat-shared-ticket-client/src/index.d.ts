@@ -73,7 +73,7 @@ export interface RequiresReauthError extends Error {
 export declare class BaseTicketClient {
   createTicket(ticketData: TicketData): Promise<TicketResult>;
   listProjects(): Promise<Project[]>;
-  listIssueTypes(projectId: string): Promise<IssueType[]>;
+  listIssueTypes(projectIdOrKey: string): Promise<IssueType[]>;
 }
 
 export declare class JiraCloudClient extends BaseTicketClient {

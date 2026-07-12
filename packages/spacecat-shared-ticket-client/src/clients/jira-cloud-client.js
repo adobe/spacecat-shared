@@ -247,6 +247,13 @@ export default class JiraCloudClient extends BaseTicketClient {
     // Jira /project/search caps maxResults at 50 per page — enterprise instances
     // routinely have 100+ projects, so pagination is required to avoid silent truncation.
     // Read auth headers once before the loop — avoids an SM round-trip per page.
+    //
+    // Note (intentional divergence from listIssueTypes): that method calls
+    // #withAuthRetry per page (mid-loop 401 recovery) whereas this hoists auth once.
+    // Accepted tradeoff — a token cannot be revoked within a single Lambda's
+    // sub-second pagination window, so hoisting trades unreachable mid-loop
+    // recovery for fewer Secrets Manager reads. A 401 here still surfaces via
+    // #requireOk; it just is not retried mid-pagination.
     const paginationAuthHeaders = await this.credentialManager.getAuthHeaders();
     for (;;) {
       // eslint-disable-next-line no-await-in-loop
@@ -293,12 +300,12 @@ export default class JiraCloudClient extends BaseTicketClient {
    * (subtask: true) are excluded; all other types (standard + Epic) are
    * returned as { id, name }.
    *
-   * @param {string} projectId - Jira project numeric ID (e.g. "10000") or key (e.g. "ASO")
+   * @param {string} projectIdOrKey - Jira project numeric ID (e.g. "10000") or key (e.g. "ASO")
    * @returns {Promise<Array<{id: string, name: string}>>}
    */
-  async listIssueTypes(projectId) {
-    if (!projectId || typeof projectId !== 'string') {
-      throw new Error('projectId is required to list issue types');
+  async listIssueTypes(projectIdOrKey) {
+    if (!projectIdOrKey || typeof projectIdOrKey !== 'string') {
+      throw new Error('projectIdOrKey is required to list issue types');
     }
 
     const pageSize = 50;
@@ -307,7 +314,7 @@ export default class JiraCloudClient extends BaseTicketClient {
     let startAt = 0;
 
     for (let page = 0; page < maxPages; page += 1) {
-      const url = `${this.baseUrl}/issue/createmeta/${encodeURIComponent(projectId)}/issuetypes`
+      const url = `${this.baseUrl}/issue/createmeta/${encodeURIComponent(projectIdOrKey)}/issuetypes`
         + `?startAt=${startAt}&maxResults=${pageSize}`;
       // eslint-disable-next-line no-await-in-loop
       const response = await this.#withAuthRetry(

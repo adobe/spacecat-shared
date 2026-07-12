@@ -1430,7 +1430,7 @@ describe('JiraCloudClient', () => {
         makeHttpClient({}),
         makeLog(),
       );
-      await expect(client.listIssueTypes('')).to.be.rejectedWith('projectId is required');
+      await expect(client.listIssueTypes('')).to.be.rejectedWith('projectIdOrKey is required');
     });
 
     it('throws on non-2xx response without leaking response body', async () => {

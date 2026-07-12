@@ -239,7 +239,6 @@ describe('Suggestion Utils', () => {
         sqs: { sendMessage: sinon.stub().resolves() },
         queueUrl: 'https://sqs.example.com/queue',
         siteId: 'site-1',
-        opportunityId: 'opp-1',
         set: { coveredByDomainWide: 'pattern-sugg-id' },
         updatedBy: 'system',
         log: { warn: sinon.stub(), info: sinon.stub() },
@@ -255,7 +254,6 @@ describe('Suggestion Utils', () => {
       expect(payload).to.deep.equal({
         type: SUGGESTION_BULK_UPDATE_TYPE,
         siteId: 'site-1',
-        opportunityId: 'opp-1',
         suggestionIds: items.map((s) => s.getId()),
         set: { coveredByDomainWide: 'pattern-sugg-id' },
         updatedBy: 'system',
@@ -273,7 +271,6 @@ describe('Suggestion Utils', () => {
         sqs: { sendMessage: sinon.stub().resolves() },
         queueUrl: 'https://sqs.example.com/queue',
         siteId: 'site-1',
-        opportunityId: 'opp-1',
         unset: ['coveredByDomainWide'],
         updatedBy: 'system',
         log: { warn: sinon.stub(), info: sinon.stub() },
@@ -296,7 +293,6 @@ describe('Suggestion Utils', () => {
         sqs: { sendMessage: sinon.stub().resolves() },
         queueUrl: undefined,
         siteId: 'site-1',
-        opportunityId: 'opp-1',
         updatedBy: 'system',
         log: { warn: sinon.stub(), info: sinon.stub() },
       };
@@ -318,7 +314,6 @@ describe('Suggestion Utils', () => {
         sqs: { sendMessage: sinon.stub().rejects(new Error('SQS unavailable')) },
         queueUrl: 'https://sqs.example.com/queue',
         siteId: 'site-1',
-        opportunityId: 'opp-1',
         updatedBy: 'system',
         log: { warn: sinon.stub(), info: sinon.stub() },
       };

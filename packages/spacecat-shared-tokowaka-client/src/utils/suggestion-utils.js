@@ -109,7 +109,7 @@ export const SUGGESTION_BULK_UPDATE_TYPE = 'suggestion-bulk-update';
  *
  * @param {Object} dataAccess - Data access layer
  * @param {Array} suggestions - Suggestion entities to save
- * @param {Object} [queueContext] - sqs, queueUrl, siteId, opportunityId, set/unset,
+ * @param {Object} [queueContext] - sqs, queueUrl, siteId, set/unset,
  *   updatedBy (already resolved), log
  * @returns {Promise<void>}
  */
@@ -122,7 +122,7 @@ export async function saveSuggestions(dataAccess, suggestions, queueContext) {
   if (suggestions.length > PARALLEL_SAVE_THRESHOLD) {
     if (queueContext) {
       const {
-        sqs, queueUrl, siteId, opportunityId, set, unset, updatedBy, log,
+        sqs, queueUrl, siteId, set, unset, updatedBy, log,
       } = queueContext;
 
       if (!queueUrl) {
@@ -137,7 +137,6 @@ export async function saveSuggestions(dataAccess, suggestions, queueContext) {
         await sqs.sendMessage(queueUrl, {
           type: SUGGESTION_BULK_UPDATE_TYPE,
           siteId,
-          opportunityId,
           suggestionIds: suggestions.map((s) => s.getId()),
           ...(set && { set }),
           ...(unset && { unset }),

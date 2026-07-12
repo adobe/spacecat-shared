@@ -1090,7 +1090,6 @@ class TokowakaClient {
             sqs: this.sqs,
             queueUrl: this.importWorkerQueueUrl,
             siteId: site.getId(),
-            opportunityId: opportunity.getId(),
             unset: fieldsToStrip,
             updatedBy: updatedBy ?? coveredFallback,
             log: this.log,
@@ -1522,7 +1521,6 @@ class TokowakaClient {
    * @param {string} updatedBy
    * @param {Array} coveredSuggestions - Accumulator (mutated)
    * @param {string} siteId
-   * @param {string} opportunityId
    * @returns {Promise<void>} Throws on metaconfig upload failure
    * @private
    */
@@ -1536,7 +1534,6 @@ class TokowakaClient {
     updatedBy,
     coveredSuggestions,
     siteId,
-    opportunityId,
   ) {
     const data = suggestion.getData();
     const coverageField = data?.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
@@ -1611,7 +1608,6 @@ class TokowakaClient {
           sqs: this.sqs,
           queueUrl: this.importWorkerQueueUrl,
           siteId,
-          opportunityId,
           set: { [coverageField]: suggestion.getId() },
           updatedBy,
           log: this.log,
@@ -1709,7 +1705,6 @@ class TokowakaClient {
             updatedBy,
             coveredSuggestions,
             site.getId(),
-            opportunity.getId(),
           );
           deployedPatternSuggestions.push(suggestion);
         } catch (error) {

@@ -3236,7 +3236,8 @@ describe('TokowakaClient', () => {
       expect(client.sqs.sendMessage).to.have.been.calledOnce;
       const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
       expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
-      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123', opportunityId: 'opp-dw' });
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123' });
+      expect(payload).to.not.have.property('opportunityId');
       expect(payload.suggestionIds).to.have.length(1701);
       expect(payload.unset).to.deep.equal(['coveredByDomainWide']);
       expect(payload.updatedBy).to.equal('test@example.com');
@@ -3332,7 +3333,8 @@ describe('TokowakaClient', () => {
       expect(client.sqs.sendMessage).to.have.been.calledOnce;
       const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
       expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
-      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123', opportunityId: 'opp-p' });
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123' });
+      expect(payload).to.not.have.property('opportunityId');
       expect(payload.suggestionIds).to.have.length(1701);
       expect(payload.unset).to.deep.equal(['edgeDeployed', 'tokowakaDeployed', 'coveredByPattern']);
     });
@@ -6087,7 +6089,8 @@ describe('TokowakaClient', () => {
       expect(client.sqs.sendMessage).to.have.been.calledOnce;
       const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
       expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
-      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123', opportunityId: 'opp-123' });
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123' });
+      expect(payload).to.not.have.property('opportunityId');
       expect(payload.suggestionIds).to.have.length(1701);
       expect(payload.set).to.deep.equal({ coveredByDomainWide: 'dw1' });
     });
@@ -6618,7 +6621,8 @@ describe('TokowakaClient', () => {
       expect(client.sqs.sendMessage).to.have.been.calledOnce;
       const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
       expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
-      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123', opportunityId: 'opp-123' });
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123' });
+      expect(payload).to.not.have.property('opportunityId');
       expect(payload.suggestionIds).to.have.length(1701);
       expect(payload.set).to.deep.equal({ coveredByPattern: 'p1' });
     });
